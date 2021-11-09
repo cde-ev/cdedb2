@@ -1,0 +1,74 @@
+{% set sidenav_active='event_lodgements' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% set jshint='strong' %}
+{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{{ util.cdedb_script('cdedb_dynamicrow.js') }}{% endblock %}
+{% block title %}
+    {% trans title=ambience['event']['title'] %}
+    	Lodgement Groups ({{ title }})
+    {% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+{{ super() }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+{{ util.breadcrumb_link(cdedblink("event/lodgements"), gettext("Lodgements")) }}
+{{ util.breadcrumb_link(cdedblink("event/lodgement_group_summary"), gettext("Manage Lodgement Groups"), active=True) }}
+{% endblock %}
+{% block heading %}
+    {{ util.context_heading(gettext("Lodgement Groups"), ambience['event']['title'],
+                            'chalkboard-teacher', gettext("Event")) }}
+{% endblock %}
+
+
+{% block content %}
+    <form action="{{ cdedblink('event/lodgement_group_summary') }}" method="POST" id="lodgementgroupsummaryform">
+        {{ util.anti_csrf_token('event/lodgement_group_summary') }}
+        <table class="table table-condensed" id="drow-table">
+            <thead>
+                <tr>
+                    <th>{% trans %}Name{% endtrans %}</th>
+                    <th></th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% call(id, row_class, is_new_row) util.dynamic_row_meta(sorted_group_ids) %}
+                    <tr class="{{ row_class }}" role="group" aria-label="Lodgement Group {{ id }}">
+                        <td class={{ util.has_errors(drow_name("title", id)) }}>
+                            {{ util.input_text(drow_name("title", id), aclass='drow-input form-control',
+                                    attributes=util.drow_basename("title"), arialabel=gettext("Name")) }}
+                            {{ util.output_errors(drow_name("title", id)) }}
+                        </td>
+                        <td>
+                            <span class="drow-buttonspace">
+                                {% if is_new_row %}
+                                    {{ util.input_checkbox(drow_create(id), label=gettext("Add"),
+                                            attributes=util.drow_basename("create"), aclass='drow-indicator') }}
+                                {% else %}
+                                    {{ util.input_checkbox(drow_delete(id), label=gettext("Delete"),
+                                            readonly=False, aclass='drow-indicator') }}
+                                {% endif %}
+                            </span>
+                        </td>
+                    </tr>
+                {% endcall %}
+            </tbody>
+        </table>
+
+        <p>
+            <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">
+                {{ util.make_icon('plus') }} {% trans %}Add Lodgement Group{% endtrans %}
+            </button>
+        </p>
+        {{ util.input_submit(label=gettext("Save")) }}
+    </form>
+
+    <script nonce="{{ csp_nonce }}">
+        $(function() {
+            $('#drow-table').cdedbDynamicRow({
+                addButton: $('#drow-addbutton'),
+                delButtonTitle: "{{ gettext("Delete line") }}"});
+            $('#lodgementgroupsummaryform').cdedbProtectChanges();
+        });
+    </script>
+{% endblock %}

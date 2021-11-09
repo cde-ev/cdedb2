@@ -71,7 +71,7 @@ class CdEBackend(AbstractBackend):
         }
         return self.sql_insert(rs, "cde.log", data)
 
-    @access("cde_admin")
+    @access("cde_admin", "auditor")
     def retrieve_cde_log(self, rs: RequestState,
                          codes: Collection[const.CdeLogCodes] = None,
                          offset: int = None, length: int = None,
@@ -90,7 +90,7 @@ class CdEBackend(AbstractBackend):
             submitted_by=submitted_by, change_note=change_note,
             time_start=time_start, time_stop=time_stop)
 
-    @access("core_admin", "cde_admin")
+    @access("core_admin", "cde_admin", "auditor")
     def retrieve_finance_log(self, rs: RequestState,
                              codes: Collection[const.FinanceLogCodes] = None,
                              offset: int = None, length: int = None,
@@ -157,8 +157,7 @@ class CdEBackend(AbstractBackend):
                             raise ValueError(n_(
                                 "Failed to revoke active lastschrift permit"))
                         revoked_permits.append(active_permit)
-            code = self.core.change_membership_easy_mode(
-                rs, persona_id, is_member)
+            code = self.core.change_membership_easy_mode(rs, persona_id, is_member)
         return code, revoked_permits, collateral_transactions
 
     @access("member", "core_admin", "cde_admin")

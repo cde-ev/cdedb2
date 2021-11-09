@@ -41,8 +41,9 @@ from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.common import (
-    ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, CdEDBObject, CdEDBObjectMap, PathLike,
-    PrivilegeError, RequestState, merge_dicts, nearly_now, now, roles_to_db_role,
+    ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, CdEDBLog, CdEDBObject, CdEDBObjectMap,
+    PathLike, PrivilegeError, RequestState, merge_dicts, nearly_now, now,
+    roles_to_db_role,
 )
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -256,11 +257,17 @@ class BasicTest(unittest.TestCase):
             shutil.rmtree(self.storage_dir)
 
     @staticmethod
-    def get_sample_data(table: str, ids: Iterable[int],
-                        keys: Iterable[str]) -> CdEDBObjectMap:
+    def get_sample_data(table: str, ids: Iterable[int] = None,
+                        keys: Iterable[str] = None) -> CdEDBObjectMap:
         """This mocks a select request against the sample data.
 
         "SELECT <keys> FROM <table> WHERE id = ANY(<ids>)"
+
+        if `keys` is None:
+        "SELECT * FROM <table> WHERE id = ANY(<ids>)"
+
+        if `ids` is None:
+        "SELECT <keys> FROM <table>"
 
         For some fields of some tables we perform a type conversion. These
         should be added as necessary to ease comparison against backend results.
@@ -275,28 +282,33 @@ class BasicTest(unittest.TestCase):
                 return nearly_now()
             return datetime.datetime.fromisoformat(s)
 
+        if keys is None:
+            try:
+                keys = next(iter(_SAMPLE_DATA[table].values())).keys()
+            except StopIteration:
+                return {}
+        if ids is None:
+            ids = _SAMPLE_DATA[table].keys()
         # Turn Iterator into Collection and ensure consistent order.
         keys = tuple(keys)
-        if not keys:
-            keys = tuple(next(iter(_SAMPLE_DATA[table].values())).keys())
         ret = {}
         for anid in ids:
             r = {}
             for k in keys:
                 r[k] = copy.deepcopy(_SAMPLE_DATA[table][anid][k])
                 if table == 'core.personas':
-                    if k == 'balance':
+                    if k == 'balance' and r[k]:
                         r[k] = decimal.Decimal(r[k])
-                    if k == 'birthday':
+                    if k == 'birthday' and r[k]:
                         r[k] = datetime.date.fromisoformat(r[k])
                 if k in {'ctime', 'atime', 'vote_begin', 'vote_end',
-                         'vote_extension_end', 'signup_end'}:
+                         'vote_extension_end', 'signup_end'} and r[k]:
                     r[k] = parse_datetime(r[k])
             ret[anid] = r
         return ret
 
     def get_sample_datum(self, table: str, id_: int) -> CdEDBObject:
-        return self.get_sample_data(table, [id_], [])[id_]
+        return self.get_sample_data(table, [id_])[id_]
 
 
 class CdEDBTest(BasicTest):
@@ -381,22 +393,32 @@ class BackendTest(CdEDBTest):
         users = {get_user(i)["id"] for i in identifiers}
         return self.user.get("id", -1) in users
 
-    def assertLogEqual(self, log_expectation: Sequence[CdEDBObject], realm: str,
+    def assertLogEqual(self, log_expectation: Sequence[CdEDBObject], *,
+                       realm: str = None,
+                       log_retriever: Callable[..., CdEDBLog] = None,
                        **kwargs: Any) -> None:
         """Helper to compare a log expectation to the actual thing."""
-        _, log = getattr(self, realm).retrieve_log(self.key, **kwargs)
-        log_expectation = tuple(log_expectation)
-        for e in log:
-            del e['id']
-        for e in log_expectation:
-            if 'ctime' not in e:
-                e['ctime'] = nearly_now()
-            if 'submitted_by' not in e:
-                e['submitted_by'] = self.user['id']
+        if realm and not log_retriever:
+            log_retriever = getattr(self, realm).retrieve_log
+        if log_retriever:
+            _, log = log_retriever(self.key, **kwargs)
+        else:
+            raise ValueError("No method of log retrieval provided.")
+
+        for real, exp in zip(log, log_expectation):
+            if 'id' not in exp:
+                del real['id']
+            if 'ctime' not in exp:
+                exp['ctime'] = nearly_now()
+            if 'submitted_by' not in exp:
+                exp['submitted_by'] = self.user['id']
             for k in ('persona_id', 'change_note'):
-                if k not in e:
-                    e[k] = None
-        self.assertEqual(log_expectation, log)
+                if k not in exp:
+                    exp[k] = None
+            for k in ('total', 'delta', 'new_balance'):
+                if exp.get(k):
+                    exp[k] = decimal.Decimal(exp[k])
+        self.assertEqual(log, tuple(log_expectation))
 
     @staticmethod
     def initialize_raw_backend(backendcls: Type[SessionBackend]
@@ -631,6 +653,16 @@ USER_DICT: Dict[str, UserObject] = {
         'given_names': "Farin",
         'family_name': "Finanzvorstand",
         'default_name_format': "Farin Finanzvorstand",
+    },
+    "katarina": {
+        'id': 37,
+        'DB-ID': "DB-37-X",
+        'username': "katarina@example.cde",
+        'password': "secret",
+        'diplay_name': "Katarina",
+        'given_names': "Katarina",
+        'family_name': "Kassenprüfer",
+        'default_name_format': "Katarina Kassenprüfer",
     },
     "viktor": {
         'id': 48,
@@ -1476,11 +1508,13 @@ class FrontendTest(BackendTest):
         :return: The button element to perform further checks.
             Is actually of type `bs4.BeautifulSoup`.
         """
+        if isinstance(label, str):
+            label = re.compile(label)
         f = self.response.forms['adminviewstoggleform']
-        button = self.response.html\
-            .find(id="adminviewstoggleform")\
-            .find(text=label)\
-            .parent
+        button = self.response.html.find(id="adminviewstoggleform").find(text=label)
+        if not button:
+            raise KeyError(f"Admin view toggle with label {label!r} not found.")
+        button = button.parent
         if current_state is not None:
             if current_state:
                 self.assertIn("active", button['class'])

@@ -60,6 +60,7 @@ vera@example.cde        DB-22-1   secret     former member, corresponding to Ver
 werner@example.cde      DB-23-X   secret     former member, corresponding to Versammlungsleitung (presider)
 annika@example.cde      DB-27-2   secret     former member, corresponding to Akademieteam
 farin@example.cde       DB-32-9   secret     former member, corresponding to Finanzvorstand
+katarina@example.cde    DB-37-X   secret     auditor (Kassenprüfer)
 viktor@example.cde      DB-48-5   secret     assembly admin
 akira@example.cde       DB-100-7  secret     equal to Anton - to test sorting
 ======================= ========= ========== ================================================

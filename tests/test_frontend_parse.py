@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 # pylint: disable=missing-module-docstring
-
+import collections
 import csv
 import re
 from datetime import datetime
-from typing import Any
+from typing import Any, List
 
 import webtest
 
-import cdedb.frontend.parse_statement as parse
-from cdedb.common import Accounts, CdEDBObject, now
+import cdedb.frontend.cde.parse_statement as parse
+from cdedb.common import Accounts, CdEDBObject
 from cdedb.frontend.common import CustomCSVDialect
 from tests.common import FrontendTest, as_users, storage
 
@@ -24,27 +24,63 @@ class TestParseFrontend(FrontendTest):
             self.assertPresence("Erfolg", div="notifications")
         self.response.text = self.response.text[1:]
 
-    def test_reference(self) -> None:
-        raw_transaction = {
-            "id": 0,
-            "myAccNr": parse.Accounts.Account0.value,
-            "statementDate": now().strftime(parse.STATEMENT_INPUT_DATEFORMAT),
-            "amount": "5,00",
-            "reference": "EREF+DB-1-9DB-2-7DB-43SVWZ+DB-2-7DB-35",
-            "accHolder": "",
-            "accHolder2": "",
-            "IBAN": "",
-            "BIC": "",
-            "posting": "",
-        }
-        t = parse.Transaction.from_csv(raw_transaction)
+    def test_reconstruct_cdedbid(self) -> None:
+        # pylint: disable=protected-access
+        for val, ret_val in (
+            ("DB-1-9", 1),
+            ("db-27", 2),
+            ("DB-2-0-1-0-9-X", 20109),
+            ("19", 1),
+            ("", None),  # empty
+            ("abc", None),  # invalid characters
+            ("d b 1 9", None),  # no space allowed between "d" and "b"
+            ("db 1 9", 1),
+            ("6x", 6),
+            ("66", None),  # invalid checkdigit
+        ):
+            with self.subTest(val=val, ret_val=ret_val):
+                ret, errs = parse._reconstruct_cdedbid(val)
+                self.assertEqual(ret, ret_val)
+                if ret_val is None:
+                    self.assertTrue(bool(errs))
+
+    @staticmethod
+    def get_transaction_with_references(
+        reference: str, other_references: List[str] = None
+    ) -> parse.Transaction:
+        transaction_data: CdEDBObject = collections.defaultdict(str)
+        transaction_data.update({
+            "reference": reference,
+            "other_references": parse.REFERENCE_SEPARATOR.join(other_references or []),
+        })
+        return parse.Transaction(transaction_data)
+
+    def test_find_cdedbids(self) -> None:
+        # pylint: disable=protected-access
+        cl = parse.ConfidenceLevel
+        t = self.get_transaction_with_references(
+            "DB-2-7 DB-35",
+            ["DB-1-9 DB-2-7 DB-43"]
+        )
+        # All confidence values are reduced by two, because multiple ids were found.
         expectation = {
-            1: parse.ConfidenceLevel.Low,
-            2: parse.ConfidenceLevel.Medium,
-            3: parse.ConfidenceLevel.Low,
-            4: parse.ConfidenceLevel.Null,
+            2: parse.ConfidenceLevel.Medium,  # good match in primary reference.
+            3: parse.ConfidenceLevel.Low,  # close match in primary reference.
+            1: parse.ConfidenceLevel.Low,  # good match in secondary reference.
+            4: parse.ConfidenceLevel.Null,  # close match in secondary reference.
         }
-        self.assertEqual(expectation, t._find_cdedbids(parse.ConfidenceLevel.Full))  # pylint: disable=protected-access
+        self.assertEqual(t._find_cdedbids(cl.Full), expectation)  # pylint: disable=protected-access
+
+        t = self.get_transaction_with_references("DB-1000-6")
+        self.assertEqual(t._find_cdedbids(cl.Full), {1000: cl.Full})
+        t = self.get_transaction_with_references("", ["DB-1000-6"])
+        self.assertEqual(t._find_cdedbids(cl.Full), {1000: cl.High})
+        t = self.get_transaction_with_references("DB-1000-6", ["DB-1000-6"])
+        self.assertEqual(t._find_cdedbids(cl.Full), {1000: cl.Full})
+        t = self.get_transaction_with_references("DB-1000-6", ["DB-100-7"])
+        self.assertEqual(t._find_cdedbids(cl.Full), {1000: cl.Medium, 100: cl.Low})
+        t = self.get_transaction_with_references("DB-10 00-6", ["DB-100-7"])
+        self.assertEqual(t._find_cdedbids(cl.Full), {1000: cl.Low, 100: cl.Low})
 
     def test_parse_statement_additional(self) -> None:
         pseudo_winter = {"title": "CdE Pseudo-WinterAkademie",
@@ -138,13 +174,13 @@ class TestParseFrontend(FrontendTest):
         self.assertPresence("cdedbid: Unsicher über Mitgliedszuordnung.",
                             div="transaction6_errors")
         self.assertPresence(
-            "given_names: (Anton Armin A.) nicht in (DB-1-9;DB-1-9) gefunden.",
+            "given_names: (Anton Armin A.) nicht im Verwendungszweck gefunden.",
             div="transaction6_warnings")
         self.assertPresence(
-            "family_name: (Administrator) nicht in (DB-1-9;DB-1-9) gefunden.",
+            "family_name: (Administrator) nicht im Verwendungszweck gefunden.",
             div="transaction6_warnings")
         self.assertEqual(f["cdedbid6"].value, "DB-1-9")
-        f["persona_id_confirm6"].checked = True
+        f["persona_confirm6"].checked = True
 
         # Fix line 9:
         self.assertPresence("cdedbid: Braucht Mitgliedszuordnung.",
@@ -159,14 +195,14 @@ class TestParseFrontend(FrontendTest):
                             div="transaction11_errors")
         self.assertEqual(f["account_holder11"].value, "Anton & Berta")
         self.assertEqual(f["cdedbid11"].value, "DB-1-9")
-        f["persona_id_confirm11"].checked = True
+        f["persona_confirm11"].checked = True
 
         # Check transactions with warnings.
 
         # Line 8:
         self.assertPresence(
-            "given_names: (Garcia G.) nicht in (DB-7-8, Garci G."
-            " Generalis;DB-6-8) gefunden.", div="transaction8_warnings")
+            "given_names: (Garcia G.) nicht im Verwendungszweck gefunden.",
+            div="transaction8_warnings")
 
         self.submit(f, button="validate", check_notification=False)
 
@@ -181,7 +217,7 @@ class TestParseFrontend(FrontendTest):
         self.assertPresence("cdedbid: Unsicher über Mitgliedszuordnung.",
                             div="transaction9_errors")
         self.assertEqual(f["cdedbid9"].value, "DB-4-3")
-        f["persona_id_confirm9"].checked = True
+        f["persona_confirm9"].checked = True
 
         self.submit(f, button="validate", check_notification=False)
 
@@ -208,9 +244,6 @@ class TestParseFrontend(FrontendTest):
             family_name="Administrator",
             given_names="Anton Armin A.",
             statement_date="28.12.2018",
-            transaction_type_confidence_str="ConfidenceLevel.Full",
-            persona_id_confidence_str="ConfidenceLevel.Full",
-            event_id_confidence_str="ConfidenceLevel.Full",
         )
         self.check_dict(
             result[1],
@@ -219,9 +252,6 @@ class TestParseFrontend(FrontendTest):
             family_name="Generalis",
             given_names="Garcia G.",
             statement_date="27.12.2018",
-            transaction_type_confidence_str="ConfidenceLevel.Full",
-            persona_id_confidence_str="ConfidenceLevel.High",
-            event_id_confidence_str="ConfidenceLevel.High",
         )
         self.check_dict(
             result[2],
@@ -230,9 +260,6 @@ class TestParseFrontend(FrontendTest):
             family_name="Eventis",
             given_names="Emilia E.",
             statement_date="20.12.2018",
-            transaction_type_confidence_str="ConfidenceLevel.Full",
-            persona_id_confidence_str="ConfidenceLevel.Full",
-            event_id_confidence_str="ConfidenceLevel.High",
         )
 
         # check membership_fees.csv
@@ -280,7 +307,7 @@ class TestParseFrontend(FrontendTest):
             family_name="Administrator",
             given_names="Anton Armin A.",
             category_old="Mitgliedsbeitrag",
-            account="8068900",
+            account_nr="8068900",
         )
         self.check_dict(
             result[1],
@@ -290,7 +317,7 @@ class TestParseFrontend(FrontendTest):
             family_name="Beispiel",
             given_names="Bertålotta",
             category_old="Mitgliedsbeitrag",
-            account="8068900",
+            account_nr="8068900",
         )
         self.check_dict(
             result[2],
@@ -300,7 +327,7 @@ class TestParseFrontend(FrontendTest):
             family_name="Generalis",
             given_names="Garcia G.",
             category_old="Mitgliedsbeitrag",
-            account="8068900",
+            account_nr="8068900",
         )
         self.check_dict(
             result[3],
@@ -310,7 +337,7 @@ class TestParseFrontend(FrontendTest):
             family_name="Dino",
             given_names="Daniel D.",
             category_old="Mitgliedsbeitrag",
-            account="8068900",
+            account_nr="8068900",
             reference="Mitgliedsbeitrag",
             account_holder="Daniel Dino",
         )
@@ -322,7 +349,7 @@ class TestParseFrontend(FrontendTest):
             family_name="Administrator",
             given_names="Anton Armin A.",
             category_old="Spende",
-            account="8068900",
+            account_nr="8068900",
             reference="Anton Armin A. Administrator DB-1-9 Spende",
         )
         self.check_dict(
@@ -333,7 +360,7 @@ class TestParseFrontend(FrontendTest):
             family_name="Administrator",
             given_names="Anton Armin A.",
             category_old="Mitgliedsbeitrag",
-            account="8068900",
+            account_nr="8068900",
         )
         self.check_dict(
             result[6],
@@ -343,17 +370,17 @@ class TestParseFrontend(FrontendTest):
             family_name="Eventis",
             given_names="Emilia E.",
             category_old="TestAka",
-            account="8068900",
+            account_nr="8068900",
         )
         self.check_dict(
             result[7],
             statement_date="19.12.2018",
-            amount_german="1.234,50",
+            amount_german="1234,50",
             cdedbid="",
             family_name="",
             given_names="",
             category_old="Spende",
-            account="8068900",
+            account_nr="8068900",
         )
 
         # check account 01
@@ -370,7 +397,7 @@ class TestParseFrontend(FrontendTest):
             family_name="",
             given_names="",
             category_old="Sonstiges",
-            account="8068901",
+            account_nr="8068901",
             In_reference="Genutzte Freiposten",
         )
         self.check_dict(
@@ -381,7 +408,7 @@ class TestParseFrontend(FrontendTest):
             family_name="",
             given_names="",
             category_old="Sonstiges",
-            account="8068901",
+            account_nr="8068901",
             reference="KONTOFUEHRUNGSGEBUEHREN",
         )
         self.check_dict(
@@ -392,7 +419,7 @@ class TestParseFrontend(FrontendTest):
             family_name="",
             given_names="",
             category_old="TestAka",
-            account="8068901",
+            account_nr="8068901",
             account_holder="Anton Administrator",
             In_reference="Kursleitererstattung Anton Armin A. Administrator",
         )
@@ -404,7 +431,7 @@ class TestParseFrontend(FrontendTest):
             family_name="Administrator",
             given_names="Anton Armin A.",
             category_old="TestAka",
-            account="8068901",
+            account_nr="8068901",
         )
         self.check_dict(
             result[4],
@@ -414,5 +441,5 @@ class TestParseFrontend(FrontendTest):
             family_name="Generalis",
             given_names="Garcia G.",
             category_old="TestAka",
-            account="8068901",
+            account_nr="8068901",
         )

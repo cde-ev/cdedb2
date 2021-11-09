@@ -294,6 +294,12 @@
     {%- endif %}
 {%- endmacro %}
 
+{% macro has_errors(name) %}
+    {%- if name in errors %}
+        {{- "has-warning" if is_warning(name) else "has-error"}}
+    {%- endif -%}
+{% endmacro %}
+
 {% macro output_errors(name, displayerrors=True, wrapper=False) %}
     {%- if displayerrors and name in errors %}
         {%- if wrapper %}
@@ -361,7 +367,7 @@
 {% endmacro %}
 
 {% macro form_input_general(name=none, label='', anid=none, small=False, info='', displayerrors=True,
-        horizontal=True, labelid=none, addon='', markdown=False) %}
+        horizontal=True, labelid=none, addon='', markdown=False, wide=False) %}
     <div class="form-group {% if name in errors %}
                                {% if is_warning(name) %}
                                    has-warning
@@ -378,7 +384,7 @@
         {%- endif %}
         {%- if horizontal %}
             <div class="
-                {{ "col-sm-6" if small else "col-sm-8" }}
+                {{ "col-sm-6" if (small and not wide) else "col-sm-8" }}
                 {{ ("col-sm-offset-2" if small else "col-sm-offset-4") if not label }}
             ">
         {%- endif %}
@@ -506,24 +512,31 @@
 {%- endmacro %}
 
 {% macro input_checkboxes(name, entries, readonly=False, actualreadonly=False, defaultvalue='', inline=False,
-        radio=False, aclass=none, arialabeledby='', sort=False) %}
+        radio=False, aclass=none, arialabeledby='', sort=False, slice=1, checkboxclass='') %}
     <div{{ dict(
+        class="row",
         role="radiogroup" if radio else "group",
         **{'aria-labelledby': arialabeledby}
     )|xmlattr }}>
         {%- if arialabel %}<legend class="sr-only">{{ arialabel }}</legend>{% endif %}
         {% set entries = entries|sort(attribute=1) if sort else entries %}
-        {%- for entry_value, entry_label in entries %}
-            {% if not inline -%}
-                <div class="{{ "radio" if radio else "checkbox"}}{{" disabled" if readonly}}">
-            {%- endif -%}
-                {{ input_checkbox(name, entry_label, entry_value, defaultvalue, readonly, inline=inline, radio=radio,
-                                  aclass=aclass) }}
-            {%- if not inline %}</div>{% endif %}
-            {# checkboxes do not support the readonly attribute, so we emulate it with a disabled select and a hidden input. #}
-            {%- if actualreadonly -%}
-                {{ input_hidden(name) }}
-            {%- endif -%}
+        {% set col_width = 12 // slice %}
+        {%- for column in entries|slice(slice) %}
+            <div class="col-sm-{{ col_width }}">
+                {%- for entry_value, entry_label in column %}
+                    {% if not inline -%}
+                        <div class="{{ "radio" if radio else "checkbox"}}{{" disabled" if readonly}}
+                                    {{ " " + checkboxclass if checkboxclass }}">
+                    {%- endif -%}
+                        {{ input_checkbox(name, entry_label, entry_value, defaultvalue, readonly, inline=inline, radio=radio,
+                                          aclass=aclass) }}
+                    {%- if not inline %}</div>{% endif %}
+                    {# checkboxes do not support the readonly attribute, so we emulate it with a disabled select and a hidden input. #}
+                    {%- if actualreadonly -%}
+                        {{ input_hidden(name) }}
+                    {%- endif -%}
+                {%- endfor %}
+            </div>
         {%- endfor %}
     </div>
 {%- endmacro %}
@@ -551,11 +564,12 @@
 {#- This is the version for multiple checkboxes as opposed to input_checkbox().
     entries is of type [(str, str)]. #}
 {% macro form_input_checkboxes(name, entries, label='', info='', displayerrors=True, readonly=False, actualreadonly=False,
-        defaultvalue='', small=False, radio=False, horizontal=True, aclass=none, labelid=none, sort=False) %}
+        defaultvalue='', small=False, wide=False, radio=False, horizontal=True, aclass=none, labelid=none, sort=False, slice=1,
+        checkboxclass='') %}
     {%- if not labelid %}{% set labelid = "inputgroup-{}-label".format(name) %}{% endif %}
-    {%- call form_input_general(name, label, '', small, info, displayerrors, horizontal, labelid) %}
+    {%- call form_input_general(name, label, '', small, info, displayerrors, horizontal, labelid, wide=wide) %}
         {{- input_checkboxes(name, entries, readonly=readonly, actualreadonly=actualreadonly, defaultvalue=defaultvalue,
-                             radio=radio, aclass=aclass, arialabeledby=labelid, sort=sort) }}
+                             radio=radio, aclass=aclass, arialabeledby=labelid, sort=sort, slice=slice, checkboxclass='') }}
     {%- endcall %}
 {%- endmacro %}
 
@@ -767,94 +781,40 @@
     {%- endcall %}
 {%- endmacro %}
 
-{# Macro for a general row, used in a dynamic row table.
+{# Macro to take care of all the meta dynamic row stuff.
 
-   non-deletable rows have a disabled 'delete'-checkbox,
-   readonly rows have all fields disabled
-   aclass is used to pass classes to the row, such as drow-row, drow-prototype, drow-new
-   newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes
-   prefix is used to specify a string inserting before every parameter name #}
-{% macro dynamic_row(id, tablename, columns, deletable=True, readonly=False, aclass="", newrow=False, prefix="") %}
-    <tr class="{{ aclass }}" role="group" aria-label="{{ tablename }} {{ id }}">
-        {% for column in columns %}
-            {% set func = column['func'] %}
-            {% set name = '{}{}_{}'.format(prefix, column['name'], id) %}
-            <td {% if name in errors %}class="{{ "has-warning" if is_warning(name) else "has-error" }}"{% endif %}>
-                {# TODO set the remaining items of colum as attributes to func #}
-                {# this is a call for a generic util.input_* macro specified by the caller #}
-                {{ func(name=name,
-                        aclass='drow-input form-control' + " " + column.get('aclass', ""),
-                        attributes=('data-basename="{}{}_"'.format(prefix, column['name'])|s if newrow else ''),
-                        arialabel=gettext(column['label']),
-                        readonly=readonly,
-                        **column.get('func_additional_input', {})
-                        ) }}
-                {{ output_errors(name) }}
-            </td>
-        {% endfor %}
+This macro must be called, and the call body have to provide a generic row. The calling macro must take
+  * id: the id of the row
+  * row_class: css-class which is used to identify existing, new and prototype rows internally
+  * is_new_row: bool which shows if the current row is a new row (drow-new or drow-prototype)
+as arguments. #}
+{% macro dynamic_row_meta(existing_ids, prefix="", add_prototype_row=True) %}
+    {# Old items, already stored in the database #}
+    {% for id in existing_ids %}
+        {{- caller(id=id, row_class='drow-row', is_new_row=False) }}
+    {% endfor %}
 
-        <td>
-            <span class="drow-buttonspace">
-                {% if newrow %}
-                    {{ util.input_checkbox("{}create_{}".format(prefix, id), label=gettext("Add"),
-                                           attributes='data-basename="{}create_"'.format(prefix)|s, readonly=readonly,
-                                           aclass='drow-indicator') }}
-                {% else %}
-                    {{ util.input_checkbox("{}delete_{}".format(prefix, id), label=gettext("Delete"),
-                                           readonly=not deletable or readonly, aclass='drow-indicator') }}
-                {% endif %}
-            </span>
-        </td>
-    </tr>
-{% endmacro %}
+    {# Items that were added by the user but failed validation. They are still new and have no official id. #}
+    {% set last_index = values.get(drow_last_index(prefix), 0) %}
+    {% for i in range(1, last_index + 1) %}
+        {{- caller(id=-i, row_class='drow-new', is_new_row=True)  }}
+    {% endfor %}
 
-{# This macro creates a table which entries can be added, deleted and modified by the user.
-
-   name:     the name of the table
-   columns:  List of dicts. Each dict must contain a 'func' key, specifing the util.input_* macro for this column,
-             the 'name' (mapping the input to a db field) and a 'label'.
-   existing: a dict of already existing entries.
-   locked:   iterable which contains all id of existing entries which must not be modified or deleted by the user
-   readonly: if true, all input fields are disabled and no new row is shown
-   modification_only: if true, no rows can be added or deleted, but they may be modified
-   sortkey:  to sort existing
-   prefix is used to specify a string inserting before every parameter name #}
-{% macro dynamic_row_table(name, columns, existing, locked=[], readonly=False, modification_only=False, sortkey=none, prefix="") %}
-    {% set prefix = prefix + '_' if prefix else '' %}
-    <table class="table table-condensed" id="{{ prefix }}drow-table">
-        <thead>
-            <tr>
-                {% for column in columns %}
-                    <th>{% trans title=column['label']%}{{ title }}{% endtrans %}</th>
-                {% endfor %}
-            </tr>
-        </thead>
-        <tbody>
-            {% set sorted_existing = existing|keydictsort(sortkey) if sortkey else existing|dictsort %}
-            {# Old items, already stored in the database #}
-            {% for id, entry in sorted_existing %}
-                {{ dynamic_row(id, name, columns, deletable=id not in locked and not modification_only,
-                               readonly=readonly, aclass='drow-row', prefix=prefix) }}
-            {% endfor %}
-            {# Items that were added by the user but failed validation. They are still new and have no official id. #}
-            {% set last_index_key = prefix+"create_last_index"  %}
-            {% for i in range(1, values.get(last_index_key, 0) + 1) %}
-                {{ dynamic_row(-i, name, columns, deletable=False, readonly=readonly, aclass='drow-new', newrow=True, prefix=prefix) }}
-            {% endfor %}
-            {# Prototype row. For non-JS users: an empty row with 'create'-checkbox, for JS: prototype for new rows. #}
-            {% if not readonly and not modification_only %}
-                {{ dynamic_row(-values.get(last_index_key, 0) - 1, name, columns, deletable=False, aclass='drow-prototype', newrow=True, prefix=prefix) }}
-            {% endif %}
-        </tbody>
-    </table>
-    {% if not (readonly or modification_only) %}
-        <p>
-            <button type="button" class="btn btn-success softhide pull-right" id="{{ prefix }}drow-addbutton">
-                {{ make_icon('plus') }} {% trans %}Add {{ name }}{% endtrans %}
-            </button>
-        </p>
+    {# Prototype row. For non-JS users: an empty row with 'create'-checkbox, for JS: prototype for new rows. #}
+    {% if add_prototype_row %}
+        {{- caller(id=-last_index - 1, row_class='drow-prototype', is_new_row=True)  }}
     {% endif %}
 {% endmacro %}
+
+{# Macro to create the additional 'data-basename' attribute for dynamic rows
+
+This is needed for the javascript to create a new row from a prototype row. This must be added as extra
+attribute to each field of a dynamic row. #}
+{% macro drow_basename(field_name, prefix="") %}
+    {%- set prefix = prefix + "_" if prefix else "" -%}
+    {{- ('data-basename="'|s + prefix + field_name + '_"'|s)|s -}}
+{% endmacro %}
+
 
 {# Generate an anti CSRF (Cross-Site Request Forgery) token and add it as hidden input to an HTML form.
 
@@ -1158,4 +1118,40 @@ mailto:
     {%- elif persona['trial_member'] %}
         {{ gettext("(trial member)") -}}
     {% endif -%}
+{% endmacro %}
+
+{% macro realm_icon(realm, desc=False) %}
+    {% with title_icon_map = {
+        "is_cde_realm": (gettext("cde_realm"), "graduation-cap"),
+        "is_event_realm": (gettext("Events"), "chalkboard-teacher"),
+        "is_ml_realm": (gettext("Mailinglists"), "envelope"),
+        "is_assembly_realm": (gettext("Assemblies"), "bullhorn"),
+        } %}
+        {% set description, icon = title_icon_map[realm] %}
+        {{ make_icon(icon, title=description) }}
+        {% if desc %}
+            {{ description }}
+        {% endif %}
+    {% endwith %}
+{% endmacro %}
+
+
+{% macro privilege_icon(privilege, desc=False) %}
+    {% with title_icon_map = {
+        "is_meta_admin": (gettext("Meta-Admin"), "wrench"),
+        "is_core_admin": (gettext("Core-Admin"), "user"),
+        "is_cde_admin": (gettext("CdE-Admin"), "graduation-cap"),
+        "is_finance_admin": (gettext("Finance-Admin"), "euro-sign"),
+        "is_event_admin": (gettext("Event-Admin"), "chalkboard-teacher"),
+        "is_ml_admin": (gettext("Mailinglist-Admin"), "envelope"),
+        "is_cdelokal_admin": (gettext("CdElokal-Admin"), "city"),
+        "is_assembly_admin": (gettext("Assembly-Admin"), "bullhorn"),
+        "is_auditor": (gettext("Auditor"), "search-dollar"),
+        } %}
+        {% set description, icon = title_icon_map[privilege] %}
+        {{ make_icon(icon, title=description) }}
+        {% if desc %}
+            {{ description }}
+        {% endif %}
+    {% endwith %}
 {% endmacro %}

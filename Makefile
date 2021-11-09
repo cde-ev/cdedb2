@@ -236,7 +236,7 @@ ldap-remove:
 ###############################
 
 format:
-	$(ISORT) cdedb tests
+	$(ISORT) bin/*.py cdedb tests
 
 mypy:
 	$(MYPY) bin/*.py cdedb tests
@@ -248,7 +248,7 @@ isort:
 	@echo "All of isort"
 	@echo $(BANNERLINE)
 	@echo ""
-	$(ISORT) --check-only cdedb tests
+	$(ISORT) --check-only bin/*.py cdedb tests
 
 flake8:
 	@echo $(BANNERLINE)
@@ -262,8 +262,7 @@ pylint:
 	@echo "All of pylint"
 	@echo $(BANNERLINE)
 	@echo ""
-	# test_subman crashes pylint seemingly due to symlinking
-	$(PYLINT) cdedb tests --ignore=test_subman.py
+	$(PYLINT) cdedb tests
 
 template-line-length:
 	@echo $(BANNERLINE)

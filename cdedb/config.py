@@ -21,7 +21,7 @@ from typing import Any, Callable, Dict, Iterator, Mapping
 import pytz
 
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, PathLike, deduct_years, n_, now
+from cdedb.common import ADMIN_KEYS, CdEDBObject, PathLike, deduct_years, n_, now
 from cdedb.query import Query, QueryOperators, QueryScope
 
 _LOGGER = logging.getLogger(__name__)
@@ -523,18 +523,12 @@ _DEFAULTS = {
                 QueryScope.persona, QueryScope.core_user.get_spec(),
                 ("personas.id", "given_names", "family_name"),
                 tuple(),
-                (("family_name", True), ("given_names", True),
-                 ("personas.id", True))),
+                (("family_name", True), ("given_names", True), ("personas.id", True))),
             n_("10_query_core_any_admin"): Query(
                 QueryScope.persona, QueryScope.core_user.get_spec(),
-                ("personas.id", "given_names", "family_name", "is_ml_admin",
-                 "is_event_admin", "is_assembly_admin", "is_cde_admin",
-                 "is_core_admin", "is_meta_admin"),
-                (("is_ml_admin,is_event_admin,is_assembly_admin,"
-                  "is_cde_admin,is_core_admin,is_meta_admin",
-                  QueryOperators.equal, True),),
-                (("family_name", True), ("given_names", True),
-                 ("personas.id", True))),
+                ("personas.id", "given_names", "family_name", *ADMIN_KEYS),
+                ((",".join(ADMIN_KEYS), QueryOperators.equal, True),),
+                (("family_name", True), ("given_names", True), ("personas.id", True))),
         },
         QueryScope.assembly_user: {
             n_("00_query_assembly_user_all"): Query(

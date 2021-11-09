@@ -26,5 +26,5 @@
     {% endcall %}
 
     {{ logging.navigation('cde/view_past_log', total, length, loglinks) }}
-    {{ logging.filter('cde/view_past_log', enums['PastEventLogCodes'], 'admin_persona', 'pevent_id') }}
+    {{ logging.filter('cde/view_past_log', enums['PastEventLogCodes'], 'past_event_user', 'pevent_id') }}
 {% endblock %}

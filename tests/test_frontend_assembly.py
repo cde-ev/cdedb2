@@ -820,10 +820,12 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             with self.subTest(url=url):
                 self.assertRedirect(url, target_url=version_target)
 
-        # Check that legacy urls without a version redirect to the latest version.
+        # Check that urls without a version redirect to the latest version.
         non_version_target = urls[0]
 
         urls = (
+            # simple url for convenience
+            f"/assembly/assembly/{assembly_id}/attachment/{attachment_id}/",
             # Legacy url that used to retrieve the latest version.
             f"/assembly/assembly/{assembly_id}/attachment/{attachment_id}/get",
         ) + tuple(
@@ -1372,16 +1374,17 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             f['votes'] = ""
             self.submit(f)
             self.assertTitle("Maximale Länge der Verfassung (Internationaler Kongress)")
+            ballot = self.assembly.get_ballot(self.key, 1001)
             self.assertPresence(
-                "Verlängerung bis 01.05.2037, 00:00:00, falls 10 Stimmen nicht "
-                "erreicht werden.", div='voting-period')
+                f"Verlängerung bis 01.05.2037, 00:00:00, falls {ballot['quorum']}"
+                f" Stimmen nicht erreicht werden.", div='voting-period')
 
             frozen_time.tick(delta=4*delta)
             self.traverse({'href': '/assembly/1/ballot/list'},
                           {'description': 'Maximale Länge der Verfassung'},)
             self.assertTitle("Maximale Länge der Verfassung (Internationaler Kongress)")
-            s = ("Wurde bis 01.05.2037, 00:00:00 verlängert, da 10 Stimmen nicht "
-                 "erreicht wurden.")
+            s = (f"Wurde bis 01.05.2037, 00:00:00 verlängert, da {ballot['quorum']}"
+                 f" Stimmen nicht erreicht wurden.")
             self.assertPresence(s, div='voting-period')
 
     @storage

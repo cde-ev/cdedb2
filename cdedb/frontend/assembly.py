@@ -24,7 +24,8 @@ from cdedb.common import (
 from cdedb.frontend.common import (
     AbstractUserFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, access,
     assembly_guard, calculate_db_logparams, calculate_loglinks, cdedburl,
-    check_validation as check, periodic, process_dynamic_input, request_extractor,
+    check_validation as check, drow_name, periodic, process_dynamic_input,
+    request_extractor,
 )
 from cdedb.query import QueryScope
 from cdedb.validation import (
@@ -106,7 +107,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             self.assemblyproxy.submit_general_query,
             endpoint="archived_user_search")
 
-    @access("assembly_admin")
+    @access("assembly_admin", "auditor")
     @REQUESTdata(*LOG_FIELDS_COMMON, "assembly_id")
     def view_log(self, rs: RequestState,
                  codes: Collection[const.AssemblyLogCodes],
@@ -133,15 +134,14 @@ class AssemblyFrontend(AbstractUserFrontend):
                  entry['submitted_by']}
                 | {entry['persona_id'] for entry in log if entry['persona_id']})
         personas = self.coreproxy.get_personas(rs, personas)
-        assemblies = {entry['assembly_id']
-                      for entry in log if entry['assembly_id']}
-        assemblies = self.assemblyproxy.get_assemblies(rs, assemblies)
         all_assemblies = self.assemblyproxy.list_assemblies(rs)
         loglinks = calculate_loglinks(rs, total, offset, length)
         return self.render(rs, "view_log", {
             'log': log, 'total': total, 'length': _length, 'personas': personas,
-            'assemblies': assemblies, 'all_assemblies': all_assemblies,
-            'loglinks': loglinks})
+            'all_assemblies': all_assemblies, 'loglinks': loglinks,
+            'may_view': lambda assembly_id: self.assemblyproxy.may_assemble(
+                rs, assembly_id=assembly_id),
+        })
 
     @access("assembly")
     @assembly_guard
@@ -518,11 +518,11 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("member", modi={"POST"})
     def signup(self, rs: RequestState, assembly_id: int) -> Response:
         """Join an assembly."""
+        if rs.has_validation_errors():
+            return self.show_assembly(rs, assembly_id)
         if now() > rs.ambience['assembly']['signup_end']:
             rs.notify("warning", n_("Signup already ended."))
             return self.redirect(rs, "assembly/show_assembly")
-        if rs.has_validation_errors():
-            return self.show_assembly(rs, assembly_id)
         self.process_signup(rs, assembly_id)
         return self.redirect(rs, "assembly/show_assembly")
 
@@ -532,12 +532,12 @@ class AssemblyFrontend(AbstractUserFrontend):
     def external_signup(self, rs: RequestState, assembly_id: int,
                         persona_id: CdedbID) -> Response:
         """Add an external participant to an assembly."""
-        if now() > rs.ambience['assembly']['signup_end']:
-            rs.notify("warning", n_("Signup already ended."))
-            return self.redirect(rs, "assembly/list_attendees")
         if rs.has_validation_errors():
             # Shortcircuit for invalid id
             return self.list_attendees(rs, assembly_id)
+        if now() > rs.ambience['assembly']['signup_end']:
+            rs.notify("warning", n_("Signup already ended."))
+            return self.redirect(rs, "assembly/list_attendees")
         if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
             rs.append_validation_error(
                 ('persona_id',
@@ -901,6 +901,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         """Show a vote in a ballot of an old assembly by providing secret."""
         if (rs.ambience["assembly"]["is_active"]
                 or not rs.ambience["ballot"]["is_tallied"]):
+            rs.ignore_validation_errors()
             return self.show_ballot(rs, assembly_id, ballot_id)
         if rs.has_validation_errors():
             return self.show_ballot_result(rs, assembly_id, ballot_id)
@@ -944,11 +945,14 @@ class AssemblyFrontend(AbstractUserFrontend):
         else:
             merge_dicts(rs.values, {'vote': vote_dict['own_vote']})
 
-        # this is used for the flux candidate table
+        # this is used for the dynamic row candidate table
         current = {
-            f"{key}_{candidate_id}": value
+            drow_name(field_name=key, entity_id=candidate_id): value
             for candidate_id, candidate in ballot['candidates'].items()
             for key, value in candidate.items() if key != 'id'}
+        sorted_candidate_ids = [
+            e["id"] for e in xsorted(ballot["candidates"].values(),
+                                     key=EntitySorter.candidates)]
         merge_dicts(rs.values, current)
 
         ballots_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
@@ -967,6 +971,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         next_ballot = ballots[ballot_list[i+1]] if i + 1 < length else None
 
         return self.render(rs, "show_ballot", {
+            "sorted_candidate_ids": sorted_candidate_ids,
             'latest_versions': latest_versions,
             'definitive_versions': definitive_versions,
             'MAGIC_ABSTAIN': MAGIC_ABSTAIN,
@@ -1467,7 +1472,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         for candidate_id, candidate in candidates.items():
             if candidate and candidate['shortname'] in shortnames:
                 rs.append_validation_error(
-                    (f"shortname_{candidate_id}",
+                    (drow_name("shortname", candidate_id),
                      ValueError(n_("Duplicate shortname.")))
                 )
             if candidate:
