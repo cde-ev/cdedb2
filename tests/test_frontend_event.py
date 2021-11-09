@@ -14,7 +14,9 @@ import lxml.etree
 import webtest
 
 import cdedb.database.constants as const
-from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, now
+from cdedb.common import (
+    ADMIN_VIEWS_COOKIE_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, now, unwrap,
+)
 from cdedb.filter import iban_filter
 from cdedb.frontend.common import CustomCSVDialect
 from cdedb.query import QueryOperators
@@ -2410,7 +2412,7 @@ etc;anything else""", f['entries_2'].value)
         # Fake JS link redirection
         self.get("/event/event/1/registration/multiedit?reg_ids=2,3")
         self.assertTitle("Anmeldungen bearbeiten (Große Testakademie 2222)")
-        f = self.response.forms['changeregistrationform']
+        f = self.response.forms['changeregistrationsform']
         self.assertEqual(False, f['enable_part2.status'].checked)
         self.assertEqual(True, f['enable_part3.status'].checked)
         self.assertEqual(
@@ -2423,7 +2425,7 @@ etc;anything else""", f['entries_2'].value)
         f['fields.may_reserve'] = True
         self.submit(f)
         self.get("/event/event/1/registration/multiedit?reg_ids=2,3")
-        f = self.response.forms['changeregistrationform']
+        f = self.response.forms['changeregistrationsform']
         self.assertEqual(True, f['enable_fields.transportation'].checked)
         self.assertEqual(True, f['enable_fields.may_reserve'].checked)
         self.assertEqual("pedes", f['fields.transportation'].value)
@@ -2451,7 +2453,7 @@ etc;anything else""", f['entries_2'].value)
         # Now, check with change_note
         self.get("/event/event/1/registration/multiedit?reg_ids=2,3")
         self.assertTitle("Anmeldungen bearbeiten (Große Testakademie 2222)")
-        f = self.response.forms['changeregistrationform']
+        f = self.response.forms['changeregistrationsform']
         f['fields.transportation'] = "etc"
         f['change_note'] = "Muss doch nicht laufen."
         self.submit(f)
@@ -2468,6 +2470,47 @@ etc;anything else""", f['entries_2'].value)
                             div=str(self.EVENT_LOG_OFFSET + 3) + "-1003")
         self.assertPresence("Multi-Edit: Muss doch nicht laufen.",
                             div=str(self.EVENT_LOG_OFFSET + 4) + "-1004")
+
+    @as_users("garcia")
+    def test_multiedit_course_instructors(self) -> None:
+        event_id = 3
+        event = self.event.get_event(self.key, event_id)
+        track_id = unwrap(event['tracks'].keys())
+        course_id = 8
+        registration_id = 7
+        regisration2_id = 8
+        # Disable course choices
+        edata = {
+            'id': event_id,
+            'parts': {
+                event['tracks'][track_id]['part_id']: {
+                    'tracks': {
+                        track_id: {
+                            'id': track_id,
+                            'num_choices': 0,
+                            'min_choices': 0,
+                            'title': event['tracks'][track_id]['title']
+                        }
+                    }
+                }
+            }
+        }
+        self.event.set_event(self.key, edata)
+        # Make Daniel a course instructor.
+        rdata = {
+            'id': registration_id,
+            'tracks': {
+                track_id: {
+                    'course_instructor': course_id
+                }
+            }
+        }
+        self.event.set_registration(self.key, rdata)
+        # Multiedit doesn't work without JS.
+        self.get(f'/event/event/{event_id}/registration/multiedit?'
+                 f'reg_ids={registration_id},{regisration2_id}')
+        f = self.response.forms['changeregistrationsform']
+        self.submit(f)
 
     @as_users("garcia")
     def test_show_registration(self) -> None:
@@ -2494,7 +2537,7 @@ etc;anything else""", f['entries_2'].value)
         # Fake JS link redirection
         self.get("/event/event/1/registration/multiedit?reg_ids=1,2,3,4")
         self.assertTitle("Anmeldungen bearbeiten (Große Testakademie 2222)")
-        f = self.response.forms['changeregistrationform']
+        f = self.response.forms['changeregistrationsform']
         self.assertEqual(False, f['enable_track2.course_id'].checked)
         self.submit(f)
         self.traverse({'description': 'Alle Anmeldungen'},
