@@ -3535,12 +3535,14 @@ class TestEventBackend(BackendTest):
             'part_end': datetime.date(2110, 9, 21),
             'fee': decimal.Decimal("1.23"),
             'tracks': {
-                1002: {'id': 1002,
-                       'title': "Second lecture v2",  # hardcoded id 5
-                       'shortname': "Second v2",
-                       'num_choices': 5,
-                       'min_choices': 4,
-                       'sortkey': 3}}
+                1002: {
+                    'title': "Second lecture v2",  # hardcoded id 5
+                    'shortname': "Second v2",
+                    'num_choices': 5,
+                    'min_choices': 4,
+                    'sortkey': 3,
+                },
+            },
         }
         newfield = {
             'association': 1,
