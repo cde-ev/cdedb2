@@ -923,10 +923,10 @@ def cast_fields(data: CdEDBObject, fields: CdEDBObjectMap) -> CdEDBObject:
 #:
 #: This is utilized during handling jsonb columns.
 PYTHON_TO_SQL_MAP = {
-    "int": "integer",
-    "str": "varchar",
-    "float": "double precision",
-    "date": "date",
-    "datetime": "timestamp with time zone",
-    "bool": "boolean",
+    FieldDatatypes.int: "integer",
+    FieldDatatypes.str: "varchar",
+    FieldDatatypes.float: "double precision",
+    FieldDatatypes.date: "date",
+    FieldDatatypes.datetime: "timestamp with time zone",
+    FieldDatatypes.bool: "boolean",
 }
