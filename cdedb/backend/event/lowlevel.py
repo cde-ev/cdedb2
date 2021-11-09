@@ -234,17 +234,14 @@ class EventLowLevelBackend(AbstractBackend):
         deleted = {x for x in data if x > 0 and data[x] is None}
         # new
         for x in mixed_existence_sorter(new):
-            track_data = data[x]
-            assert track_data is not None
-            new_track = {
-                "part_id": part_id,
-                **track_data
-            }
+            new_track = copy.copy(data[x])
+            assert new_track is not None
+            new_track['part_id'] = part_id
             new_track_id = self.sql_insert(rs, "event.course_tracks", new_track)
             ret *= new_track_id
             self.event_log(
                 rs, const.EventLogCodes.track_added, event_id,
-                change_note=track_data['title'])
+                change_note=new_track['title'])
             reg_data = self.sql_select(
                 rs, "event.registrations", ("id",), (event_id,), "event_id")
             reg_ids = tuple(e['id'] for e in reg_data)
@@ -259,16 +256,14 @@ class EventLowLevelBackend(AbstractBackend):
                     rs, "event.registration_tracks", reg_track)
         # updated
         for x in mixed_existence_sorter(updated):
-            track_data = data[x]
-            assert track_data is not None
-            if current[x] != track_data:
-                update = {
-                    'id': x,
-                    **track_data
-                }
-                ret *= self.sql_update(rs, "event.course_tracks", update)
-                self.event_log(rs, const.EventLogCodes.track_updated, event_id,
-                               change_note=track_data.get('title', current[x]['title']))
+            updated_track = copy.copy(data[x])
+            assert updated_track is not None
+            if any(updated_track[k] != current[x][k] for k in updated_track):
+                updated_track['id'] = x
+                ret *= self.sql_update(rs, "event.course_tracks", updated_track)
+                self.event_log(
+                    rs, const.EventLogCodes.track_updated, event_id,
+                    change_note=updated_track.get('title', current[x]['title']))
 
         # deleted
         if deleted:
@@ -504,8 +499,9 @@ class EventLowLevelBackend(AbstractBackend):
                 fee_modifiers = updated.pop('fee_modifiers', {})
                 if any(updated[k] != current_part_data[x][k] for k in updated):
                     ret *= self.sql_update(rs, "event.event_parts", updated)
-                    self.event_log(rs, const.EventLogCodes.part_changed, event_id,
-                                   change_note=current_part_data[x]['title'])
+                    self.event_log(
+                        rs, const.EventLogCodes.part_changed, event_id,
+                        change_note=updated.get('title', current_part_data[x]['title']))
                 ret *= self._set_tracks(rs, event_id, x, tracks)
                 ret *= self._set_event_fee_modifiers(rs, event_id, x, fee_modifiers)
 
