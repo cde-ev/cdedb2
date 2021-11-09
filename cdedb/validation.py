@@ -3220,7 +3220,7 @@ def _serialized_event(
         'event.event_parts': _augment_dict_validator(
             _event_part, {'id': ID, 'event_id': ID}),
         'event.course_tracks': _augment_dict_validator(
-            _event_track, {'part_id': ID}),
+            _event_track, {'id': ID, 'part_id': ID}),
         'event.courses': _augment_dict_validator(
             _course, {'event_id': ID}),
         'event.course_segments': _augment_dict_validator(
