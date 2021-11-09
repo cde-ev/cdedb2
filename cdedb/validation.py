@@ -2465,16 +2465,23 @@ def _event_track(
 
 def _EVENT_FIELD_COMMON_FIELDS(extra_suffix: str) -> TypeMapping:
     return {
-        'kind{}'.format(extra_suffix): const.FieldDatatypes,
-        'association{}'.format(extra_suffix): const.FieldAssociations,
-        'entries{}'.format(extra_suffix): Any,  # type: ignore
+        f'kind{extra_suffix}': const.FieldDatatypes,
+        f'association{extra_suffix}': const.FieldAssociations,
+        f'entries{extra_suffix}': Any,  # type: ignore[dict-item]
     }
 
 
 def _EVENT_FIELD_OPTIONAL_FIELDS(extra_suffix: str) -> TypeMapping:
     return {
+        f'title{extra_suffix}': str,
+        f'sortkey{extra_suffix}': int,
         f'checkin{extra_suffix}': bool,
     }
+
+
+def _EVENT_FIELD_ALL_FIELDS(extra_suffix: str) -> TypeMapping:
+    return dict(_EVENT_FIELD_COMMON_FIELDS(extra_suffix),
+                **_EVENT_FIELD_OPTIONAL_FIELDS(extra_suffix))
 
 
 @_add_typed_validator
@@ -2493,7 +2500,7 @@ def _event_field(
     """
     val = _mapping(val, argname, **kwargs)
 
-    field_name_key = "field_name{}".format(extra_suffix)
+    field_name_key = f"field_name{extra_suffix}"
     if field_name is not None:
         val = dict(val)
         val[field_name_key] = field_name
@@ -2504,14 +2511,13 @@ def _event_field(
         optional_fields: TypeMapping = _EVENT_FIELD_OPTIONAL_FIELDS(extra_suffix)
     else:
         mandatory_fields = {}
-        optional_fields = dict(_EVENT_FIELD_COMMON_FIELDS(extra_suffix),
-                               **_EVENT_FIELD_OPTIONAL_FIELDS(extra_suffix))
+        optional_fields = _EVENT_FIELD_ALL_FIELDS(extra_suffix)
 
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, argname=argname, **kwargs)
 
-    entries_key = "entries{}".format(extra_suffix)
-    kind_key = "kind{}".format(extra_suffix)
+    entries_key = f"entries{extra_suffix}"
+    kind_key = f"kind{extra_suffix}"
 
     errs = ValidationSummary()
     if not val.get(entries_key, True):

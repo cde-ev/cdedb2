@@ -676,7 +676,7 @@ class EntitySorter:
 
     @staticmethod
     def event_field(event_field: CdEDBObject) -> Sortkey:
-        return (event_field['field_name'], event_field['id'])
+        return (event_field['sortkey'], event_field['field_name'], event_field['id'])
 
     @staticmethod
     def candidates(candidates: CdEDBObject) -> Sortkey:
@@ -2189,7 +2189,8 @@ COURSE_TRACK_FIELDS = ("id", "part_id", "title", "shortname", "num_choices",
 
 #: Fields of an extended attribute associated to an event entity
 FIELD_DEFINITION_FIELDS = (
-    "id", "event_id", "field_name", "kind", "association", "entries", "checkin",
+    "id", "event_id", "field_name", "title", "sortkey", "kind", "association",
+    "checkin", "entries",
 )
 
 #: Fields of a modifier for an event_parts fee.

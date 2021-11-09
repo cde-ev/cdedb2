@@ -24,6 +24,7 @@ from cdedb.frontend.common import (
 )
 from cdedb.frontend.event.base import EventBaseFrontend
 from cdedb.query import Query, QueryOperators, QueryScope
+from cdedb.validation import _EVENT_FIELD_ALL_FIELDS
 from cdedb.validationtypes import VALIDATOR_LOOKUP
 
 EntitySetter = Callable[[RequestState, Dict[str, Any]], int]
@@ -77,73 +78,57 @@ class EventFieldMixin(EventBaseFrontend):
                    if delete_flags['delete_{}'.format(field_id)]}
         ret: CdEDBOptionalMap = {}
 
-        def params_change(anid: int) -> vtypes.TypeMapping:
-            """Return specification of parameters for changing an existing field."""
-            return {
-                f"kind_{anid}": const.FieldDatatypes,
-                f"association_{anid}": const.FieldAssociations,
-                f"entries_{anid}": Optional[str],  # type: ignore
-                f"checkin_{anid}": bool,
-            }
-        tmp: Optional[CdEDBObject]
         for field_id in fields:
             if field_id not in deletes:
-                tmp = request_extractor(rs, params_change(field_id))
+                suffix = f"_{field_id}"
+                params = _EVENT_FIELD_ALL_FIELDS(suffix)
+                field_data: Optional[CdEDBObject] = request_extractor(rs, params)
                 if rs.has_validation_errors():
                     break
-                tmp = check(rs, vtypes.EventField, tmp, extra_suffix=f"_{field_id}")
-                if tmp:
-                    temp = {
-                        'kind': tmp[f"kind_{field_id}"],
-                        'association': tmp[f"association_{field_id}"],
-                        'entries': tmp[f"entries_{field_id}"],
-                        'checkin': tmp[f"checkin_{field_id}"],
+                field_data = check(
+                    rs, vtypes.EventField, field_data, extra_suffix=suffix)
+                if field_data:
+                    ret[field_id] = {
+                        field_data[k.removesuffix(suffix)]: field_data[k]
+                        for k in params
                     }
-                    ret[field_id] = temp
         for field_id in deletes:
             ret[field_id] = None
         marker = 1
 
-        def params_creation(anid: int) -> vtypes.TypeMapping:
-            """Return specification of parameters for creating a new field."""
-            return {
-                f"field_name_-{anid}": str,
-                f"kind_-{anid}": const.FieldDatatypes,
-                f"association_-{anid}": const.FieldAssociations,
-                f"entries_-{anid}": Optional[str],  # type: ignore
-                f"checkin_-{anid}": bool,
-            }
         while marker < 2 ** 10:
             will_create = unwrap(request_extractor(rs, {f"create_-{marker}": bool}))
             if will_create:
-                tmp = request_extractor(rs, params_creation(marker))
+                suffix = f"_{marker}"
+                params = {
+                    **_EVENT_FIELD_ALL_FIELDS(suffix),
+                    'field_name': str
+                }
+                new_field: Optional[CdEDBObject] = request_extractor(rs, params)
                 if rs.has_validation_errors():
                     marker += 1
                     break
-                tmp = check(rs, vtypes.EventField, tmp, creation=True,
-                            extra_suffix=f"_-{marker}")
-                if tmp:
-                    temp = {
-                        'field_name': tmp[f"field_name_-{marker}"],
-                        'kind': tmp[f"kind_-{marker}"],
-                        'association': tmp[f"association_-{marker}"],
-                        'entries': tmp[f"entries_-{marker}"],
-                        'checkin': tmp[f"checkin_-{marker}"],
+                new_field = check(rs, vtypes.EventField, new_field, creation=True,
+                                  extra_suffix=suffix)
+                if new_field:
+                    ret[-marker] = {
+                        new_field[k.removesuffix(suffix)]: new_field[k]
+                        for k in params
                     }
-                    ret[-marker] = temp
             else:
                 break
             marker += 1
 
         def field_name(field_id: int, field: Optional[CdEDBObject]) -> str:
+            """Helper to get the name of a (new or existing) field."""
             return (field['field_name'] if field and 'field_name' in field
                     else fields[field_id]['field_name'])
         count = Counter(field_name(f_id, field) for f_id, field in ret.items())
         for field_id, field in ret.items():
             if field and count.get(field_name(field_id, field), 0) > 1:
                 rs.append_validation_error(
-                    ("field_name_{}".format(field_id),
-                      ValueError(n_("Field name not unique."))))
+                    (f"field_name_{field_id}",
+                     ValueError(n_("Field name not unique."))))
         rs.values['create_last_index'] = marker - 1
         return ret
 
@@ -153,8 +138,7 @@ class EventFieldMixin(EventBaseFrontend):
     def field_summary(self, rs: RequestState, event_id: int, active_tab: Optional[str]
                       ) -> Response:
         """Manipulate the fields of an event."""
-        fields = self.process_field_input(
-            rs, rs.ambience['event']['fields'])
+        fields = self.process_field_input(rs, rs.ambience['event']['fields'])
         if rs.has_validation_errors():
             return self.field_summary_form(rs, event_id)
         for field_id, field in rs.ambience['event']['fields'].items():
