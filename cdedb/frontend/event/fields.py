@@ -71,7 +71,7 @@ class EventFieldMixin(EventBaseFrontend):
                       ) -> Response:
         """Manipulate the fields of an event."""
         spec = _EVENT_FIELD_ALL_FIELDS("")
-        creation_spec = {**spec, 'field_name': str}
+        creation_spec: vtypes.TypeMapping = {**spec, 'field_name': str}
         existing_fields = rs.ambience['event']['fields'].keys()
         fields = process_dynamic_input(
             rs, vtypes.EventField, existing_fields, spec, creation_spec=creation_spec)

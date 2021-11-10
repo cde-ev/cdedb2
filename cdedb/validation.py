@@ -2507,6 +2507,7 @@ def _event_field(
         val[field_name_key] = field_name
     if creation:
         if title_key in val and not val[title_key]:
+            val = dict(val)
             val[title_key] = val.get(field_name_key)
         spec = {**_EVENT_FIELD_COMMON_FIELDS(extra_suffix),
                 field_name_key: RestrictiveIdentifier}
