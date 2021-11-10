@@ -25,59 +25,79 @@
 {% macro print_field(field_id, association, deletable, changeable, aclass="", newrow=False) %}
     <div class="col-md-6 {{ aclass }}" role="group">
         <div class="panel panel-default panel-condensed">
-            <div class="panel-heading {% if "field_name_{}".format(field_id) in errors %}has-error{% endif %}">
-                {{ util.input_text(name="field_name_{}".format(field_id),
-                                   placeholder=gettext("Name of the Custom Field"),
-                                   readonly=not newrow, aclass='drow-input form-control',
-                                   arialabel=gettext("Name of the Custom Field"),
-                                   attributes=('data-basename="field_name_"'|s if newrow else '')) }}
-                {{ util.output_errors("field_name_{}".format(field_id)) }}
+            <div class="panel-heading {{ util.has_errors(drow_name('title', field_id)) }}">
+                {{ util.input_text(name=drow_name('title', field_id), actualreadonly=not changeable,
+                                   placeholder=gettext("Title of the Custom Field"),
+                                   aclass='drow-input form-control',
+                                   arialabel=gettext("Title of the Custom Field"),
+                                   attributes=('data-basename="title_"'|s if newrow else '')) }}
+                {{ util.output_errors(drow_name('title', field_id)) }}
             </div>
             <div class="panel-body">
                 <div class="form-group">
-                    <label class="col-sm-4 control-label" for="{{ "input-select-kind_{}".format(field_id) }}">
+                    <label class="col-sm-4 control-label" for="{{ drow_name('input-text-field_name', field_id) }}">
+                        {% trans %}Field Name{% endtrans %}
+                    </label>
+                    <div class="col-sm-8 {{ util.has_errors(drow_name('field_name', field_id)) }}">
+                        {{ util.input_text(name=drow_name('field_name', field_id), aclass='drow-input form-control',
+                                           actualreadonly=not newrow, anid=drow_name('input-text-field_name', field_id),
+                                           attributes='data-basename="field_name"'|s if newrow else '') }}
+                        {{ util.output_errors(drow_name('field_name', field_id)) }}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-4 control-label" for="{{ drow_name('input-text-sortkey', field_id) }}">
+                        {% trans %}Sortkey{% endtrans %}
+                    </label>
+                    <div class="col-sm-8 {{ util.has_errors(drow_name('sortkey', field_id)) }}">
+                        {{ util.input_text(name=drow_name('sortkey', field_id), aclass='drow-input form-control',
+                                           actualreadonly=not changeable, anid=drow_name('input-text-sortkey', field_id),
+                                           attributes='data-basename="sortkey_"'|s if newrow else '') }}
+                        {{ util.output_errors(drow_name('sortkey', field_id)) }}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-4 control-label" for="{{ drow_name('input-select-kind', field_id) }}">
                         {% trans %}Datatype{% endtrans %}
                     </label>
-                    <div class="col-sm-5 {% if "kind_{}".format(field_id) in errors %}has-error{% endif %}">
-                        {{ util.input_select(name="kind_{}".format(field_id), entries=enums['FieldDatatypes']|enum_entries(processing=gettext),
-                            attributes=('data-basename="kind_"'|s if newrow else ('readonly' if not changeable else '')), aclass='drow-input form-control',
-                            anid="input-select-kind_{}".format(field_id)) }}
-                        {{ util.output_errors("kind_{}".format(field_id)) }}
-                    </div>
-                    <div class="col-sm-3">
-                        <div class="text-right">
-                            <span class="drow-buttonspace">
-                                {% if newrow %}
-                                    {{ util.input_checkbox("create_{}".format(field_id), label=gettext("Add"),
-                                                           attributes='data-basename="create_"'|s, aclass='drow-indicator') }}
-                                {% else %}
-                                    {{ util.input_checkbox("delete_{}".format(field_id), label=gettext("Remove"),
-                                                           readonly=not deletable, aclass='drow-indicator') }}
-                                {% endif %}
-                            </span>
-                        </div>
+                    <div class="col-sm-8 {{ util.has_errors(drow_name('kind', field_id)) }}">
+                        {{ util.input_select(name=drow_name('kind', field_id),
+                                             entries=enums['FieldDatatypes']|enum_entries(processing=gettext),
+                                             attributes='data-basename="kind_"'|s if newrow else '',
+                                             aclass='drow-input form-control', actualreadonly=not changeable,
+                                             anid=drow_name('input-select-kind', field_id)) }}
+                        {{ util.output_errors(drow_name('kind', field_id)) }}
                     </div>
                 </div>
                 {% if "association_{}".format(field_id) not in values %}
                     <div class="association-input-container">
-                        {{ util.form_input_select(label=gettext("Fields for"),
-                                                  name="association_{}".format(field_id),
+                        {{ util.form_input_select(label=gettext("Fields for"), name=drow_name('association', field_id),
                                                   entries=enums['FieldAssociations']|enum_entries(processing=gettext),
-                                                  attributes=('data-basename="association_"'|s if newrow else ('readonly' if not changeable else '')),
-                                                  aclass='drow-input form-control association-input')
-                        }}
+                                                  attributes='data-basename="association_"'|s if newrow else '',
+                                                  actualreadonly=not changeable,
+                                                  aclass='drow-input form-control association-input') }}
                     </div>
                 {% else %}
                     {{ util.input_hidden(name="association_{}".format(field_id), value=association) }}
                 {% endif %}
                 {{ util.form_input_textarea(name="entries_{}".format(field_id), label=gettext("Options"),
-                                            attributes=('data-basename="entries_"'|s if newrow else ('readonly' if not changeable else '')),
-                                            aclass='drow-input') }}
+                                            actualreadonly=not changeable, aclass='drow-input',
+                                            attributes='data-basename="entries_"'|s if newrow else '') }}
                 {% if association == enums['FieldAssociations'].registration %}
                     {{ util.form_input_checkbox(
                             label=gettext("Display at Checkin"), name="checkin_{}".format(field_id),
-                            attributes=('data-basename="creation_"'|s if newrow else ('readonly' if not changeable else ''))) }}
+                            actualreadonly=not changeable, attributes='data-basename="creation_"'|s if newrow else '') }}
                 {% endif %}
+                <div class="drow-buttonspace">
+                    {% if newrow %}
+                        {{ util.form_input_checkbox("create_{}".format(field_id), label=gettext("Add"),
+                                                    attributes='data-basename="create_"'|s,
+                                                    aclass='drow-indicator') }}
+                    {% else %}
+                        {{ util.form_input_checkbox("delete_{}".format(field_id), label=gettext("Remove"),
+                                                    readonly=not deletable, aclass='drow-indicator') }}
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>

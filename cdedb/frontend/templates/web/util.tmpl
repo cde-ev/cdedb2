@@ -465,7 +465,7 @@
 {%- endmacro %}
 
 {% macro input_textarea(name, readonly=False, defaultvalue='', anid=none, aclass='form-control', maxlength=none, rows=3,
-                        arialabel=none, attributes='') %}
+                        arialabel=none, attributes='', actualreadonly=False) %}
     <textarea{{ dict(
         name=name,
         id=anid,
@@ -473,6 +473,7 @@
         rows=rows,
         maxlength=maxlength,
         disabled="disabled" if readonly,
+        readonly="readonly" if actualreadonly,
         **{ 'aria-label': arialabel }
     )|xmlattr }} {{ attributes }}>
     {#- TODO sort if this is a list -#}
@@ -481,7 +482,7 @@
 {%- endmacro %}
 
 {% macro form_input_textarea(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid=none,
-        aclass=none, small=False, maxlength=none, rows=3, horizontal=True, attributes='', markdown=False) %}
+        aclass=none, small=False, maxlength=none, rows=3, horizontal=True, attributes='', markdown=False, actualreadonly=False) %}
     {%- set anid = anid or "input-textarea-{}".format(name) %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, markdown=markdown) %}
         {{- input_textarea(name, readonly, defaultvalue, anid, maxlength=maxlength, rows=rows, attributes=attributes,
@@ -542,7 +543,7 @@
 {%- endmacro %}
 
 {% macro form_input_checkbox(name, label="", value=True, info='', displayerrors=True, readonly=False,
-        actualreadonly=False, defaultvalue='', anid=none, horizontal=True, small=False, attributes='') %}
+        actualreadonly=False, defaultvalue='', anid=none, horizontal=True, small=False, attributes='', aclass='') %}
     {#- This is the version for a single checkbox as opposed to form_input_checkboxes(). #}
     {%- set anid = anid or "input-checkbox-{}".format(name) %}
     <div class="form-group
@@ -553,7 +554,7 @@
         "{% endif %}>
             <div class="checkbox{{ " disabled" if readonly }}">
                 {{ input_checkbox(name, label, value, defaultvalue, readonly, actualreadonly, anid,
-                                  attributes=attributes) }}
+                                  attributes=attributes, aclass=aclass) }}
             </div>
             {{- output_errors(name, displayerrors) }}
             {{- output_info(info) }}
