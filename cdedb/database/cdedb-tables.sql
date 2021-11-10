@@ -736,7 +736,7 @@ CREATE TABLE event.field_definitions (
         -- the field_name is an identifier and may not be changed.
         field_name              varchar NOT NULL,
         -- the title is displayed to the user, may contain any string and can be changed.
-        title                   varchar,
+        title                   varchar NOT NULL,
         sortkey                 integer NOT NULL DEFAULT 0,
         -- anything allowed as type in a query spec, see cdedb.database.constants.FieldDatatypes
         kind                    integer NOT NULL,

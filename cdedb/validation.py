@@ -2501,10 +2501,13 @@ def _event_field(
     val = _mapping(val, argname, **kwargs)
 
     field_name_key = f"field_name{extra_suffix}"
+    title_key = f"title{extra_suffix}"
     if field_name is not None:
         val = dict(val)
         val[field_name_key] = field_name
     if creation:
+        if title_key in val and not val[title_key]:
+            val[title_key] = val.get(field_name_key)
         spec = {**_EVENT_FIELD_COMMON_FIELDS(extra_suffix),
                 field_name_key: RestrictiveIdentifier}
         mandatory_fields = spec
