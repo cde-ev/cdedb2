@@ -250,7 +250,7 @@ class EventFieldMixin(EventBaseFrontend):
                     'field_id': field_id, 'kind': kind.value})
         _, ordered_ids, labels, _ = self.field_set_aux(rs, event_id, field_id, ids,
                                                        kind)
-        fields = [(field['id'], field['field_name'])
+        fields = [(field['id'], field['title'])
                   for field in xsorted(rs.ambience['event']['fields'].values(),
                                        key=EntitySorter.event_field)
                   if field['association'] == kind]

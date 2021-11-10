@@ -239,7 +239,7 @@
         <dl class="dl-horizontal">
             {% for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field) %}
                 {% if field['association'] == enums['FieldAssociations'].registration %}
-                    <dt>{{ field['field_name'] }}</dt>
+                    <dt>{{ field['title'] }}</dt>
                     <dd>
                         {{ generic_event.display_field(field, ambience['registration']['fields'].get(field['field_name'])) }}
                     </dd>
