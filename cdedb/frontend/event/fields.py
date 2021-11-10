@@ -80,7 +80,8 @@ class EventFieldMixin(EventBaseFrontend):
             return (field['field_name'] if field and 'field_name' in field
                     else rs.ambience['event']['fields'][field_id]['field_name'])
 
-        count = Counter(field_name(f_id, field) for f_id, field in fields.items())
+        count = Counter(
+            field_name(f_id, field) for f_id, field in fields.items() if field)
         for field_id, field in fields.items():
             if field and count.get(field_name(field_id, field), 0) > 1:
                 rs.append_validation_error(
