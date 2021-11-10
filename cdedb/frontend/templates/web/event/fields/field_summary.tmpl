@@ -41,7 +41,7 @@
                     <div class="col-sm-8 {{ util.has_errors(drow_name('field_name', field_id)) }}">
                         {{ util.input_text(name=drow_name('field_name', field_id), aclass='drow-input form-control',
                                            actualreadonly=not newrow, anid=drow_name('input-text-field_name', field_id),
-                                           attributes='data-basename="field_name"'|s if newrow else '') }}
+                                           attributes='data-basename="field_name_"'|s if newrow else '') }}
                         {{ util.output_errors(drow_name('field_name', field_id)) }}
                     </div>
                 </div>
