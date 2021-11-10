@@ -2514,7 +2514,7 @@ def _event_field(
         optional_fields: TypeMapping = _EVENT_FIELD_OPTIONAL_FIELDS(extra_suffix)
     else:
         mandatory_fields = {}
-        optional_fields = _EVENT_FIELD_ALL_FIELDS(extra_suffix)
+        optional_fields = {**_EVENT_FIELD_ALL_FIELDS(extra_suffix), 'id': ID}
 
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, argname=argname, **kwargs)

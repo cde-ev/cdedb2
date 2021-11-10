@@ -20,7 +20,7 @@ from cdedb.common import (
 from cdedb.filter import safe_filter
 from cdedb.frontend.common import (
     REQUESTdata, access, check_validation as check, event_guard, make_persona_name,
-    request_extractor,
+    request_extractor, process_dynamic_input, drow_name
 )
 from cdedb.frontend.event.base import EventBaseFrontend
 from cdedb.query import Query, QueryOperators, QueryScope
@@ -64,81 +64,30 @@ class EventFieldMixin(EventBaseFrontend):
         return self.render(rs, "fields/field_summary", {
             'referenced': referenced, 'fee_modifiers': fee_modifiers})
 
-    @staticmethod
-    def process_field_input(rs: RequestState, fields: CdEDBObjectMap
-                            ) -> CdEDBOptionalMap:
-        """This handles input to configure the fields.
-
-        Since this covers a variable number of rows, we cannot do this
-        statically. This takes care of validation too.
-        """
-        delete_flags = request_extractor(
-            rs, {f"delete_{field_id}": bool for field_id in fields})
-        deletes = {field_id for field_id in fields
-                   if delete_flags['delete_{}'.format(field_id)]}
-        ret: CdEDBOptionalMap = {}
-
-        for field_id in fields:
-            if field_id not in deletes:
-                suffix = f"_{field_id}"
-                params = _EVENT_FIELD_ALL_FIELDS(suffix)
-                field_data: Optional[CdEDBObject] = request_extractor(rs, params)
-                if rs.has_validation_errors():
-                    continue
-                field_data = check(
-                    rs, vtypes.EventField, field_data, extra_suffix=suffix)
-                if field_data:
-                    ret[field_id] = {
-                        k.removesuffix(suffix): field_data[k]
-                        for k in params
-                    }
-        for field_id in deletes:
-            ret[field_id] = None
-        marker = 1
-
-        while marker < 2 ** 10:
-            will_create = unwrap(request_extractor(rs, {f"create_-{marker}": bool}))
-            if will_create:
-                suffix = f"_{marker}"
-                params = {
-                    **_EVENT_FIELD_ALL_FIELDS(suffix),
-                    'field_name': str
-                }
-                new_field: Optional[CdEDBObject] = request_extractor(rs, params)
-                if rs.has_validation_errors():
-                    marker += 1
-                    break
-                new_field = check(rs, vtypes.EventField, new_field, creation=True,
-                                  extra_suffix=suffix)
-                if new_field:
-                    ret[-marker] = {
-                        k.removesuffix(suffix): new_field[k]
-                        for k in params
-                    }
-            else:
-                break
-            marker += 1
-
-        def field_name(field_id: int, field: Optional[CdEDBObject]) -> str:
-            """Helper to get the name of a (new or existing) field."""
-            return (field['field_name'] if field and 'field_name' in field
-                    else fields[field_id]['field_name'])
-        count = Counter(field_name(f_id, field) for f_id, field in ret.items())
-        for field_id, field in ret.items():
-            if field and count.get(field_name(field_id, field), 0) > 1:
-                rs.append_validation_error(
-                    (f"field_name_{field_id}",
-                     ValueError(n_("Field name not unique."))))
-        rs.values['create_last_index'] = marker - 1
-        return ret
-
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
     @REQUESTdata("active_tab")
     def field_summary(self, rs: RequestState, event_id: int, active_tab: Optional[str]
                       ) -> Response:
         """Manipulate the fields of an event."""
-        fields = self.process_field_input(rs, rs.ambience['event']['fields'])
+        spec = _EVENT_FIELD_ALL_FIELDS("")
+        creation_spec = {**spec, 'field_name': str}
+        existing_fields = rs.ambience['event']['fields'].keys()
+        fields = process_dynamic_input(
+            rs, vtypes.EventField, existing_fields, spec, creation_spec=creation_spec)
+
+        def field_name(field_id: int, field: Optional[CdEDBObject]) -> str:
+            """Helper to get the name of a (new or existing) field."""
+            return (field['field_name'] if field and 'field_name' in field
+                    else rs.ambience['event']['fields'][field_id]['field_name'])
+
+        count = Counter(field_name(f_id, field) for f_id, field in fields.items())
+        for field_id, field in fields.items():
+            if field and count.get(field_name(field_id, field), 0) > 1:
+                rs.append_validation_error(
+                    (drow_name("field_name", field_id),
+                     ValueError(n_("Field name not unique."))))
+
         if rs.has_validation_errors():
             return self.field_summary_form(rs, event_id)
         for field_id, field in rs.ambience['event']['fields'].items():
