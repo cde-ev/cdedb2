@@ -14,13 +14,12 @@ from werkzeug import Response
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap, EntitySorter, RequestState,
-    merge_dicts, n_, unwrap, xsorted,
+    CdEDBObject, CdEDBObjectMap, EntitySorter, RequestState, merge_dicts, n_, xsorted,
 )
 from cdedb.filter import safe_filter
 from cdedb.frontend.common import (
-    REQUESTdata, access, check_validation as check, drow_name, event_guard,
-    make_persona_name, process_dynamic_input, request_extractor,
+    REQUESTdata, access, drow_name, event_guard, make_persona_name,
+    process_dynamic_input, request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
 from cdedb.query import Query, QueryOperators, QueryScope
