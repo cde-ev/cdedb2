@@ -19,8 +19,8 @@ from cdedb.common import (
 )
 from cdedb.filter import safe_filter
 from cdedb.frontend.common import (
-    REQUESTdata, access, check_validation as check, event_guard, make_persona_name,
-    request_extractor, process_dynamic_input, drow_name
+    REQUESTdata, access, check_validation as check, drow_name, event_guard,
+    make_persona_name, process_dynamic_input, request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
 from cdedb.query import Query, QueryOperators, QueryScope
