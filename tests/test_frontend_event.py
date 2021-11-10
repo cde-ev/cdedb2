@@ -644,12 +644,15 @@ class TestEventFrontend(FrontendTest):
 
     @as_users("annika")
     def test_part_summary_complex(self) -> None:
+        event_id = 2
+        log_expectation = []
+
         self.traverse("Veranstaltungen", 'Alle Veranstaltungen', 'CdE-Party 2050',
                       'Veranstaltungsteile')
         self.assertTitle("Veranstaltungsteile konfigurieren (CdE-Party 2050)")
         self.assertNonPresence("Cooldown")
 
-        # add new part
+        # Add a new part.
         self.traverse("Teil hinzufügen")
         f = self.response.forms['addpartform']
         f['title'] = "Cooldown"
@@ -661,8 +664,12 @@ class TestEventFrontend(FrontendTest):
         self.assertValidationError('part_end', "Muss später als Beginn sein.")
         f['part_begin'] = "2233-4-5"
         self.submit(f)
+        log_expectation.append({
+            'code': const.EventLogCodes.part_created,
+            'change_note': f['title'].value,
+        })
 
-        # add track to new added part
+        # Add a track to newly added part.
         self.traverse({"href": "/event/event/2/part/1001/change"})
         f = self.response.forms['changepartform']
         f['track_create_-1'].checked = True
@@ -672,8 +679,12 @@ class TestEventFrontend(FrontendTest):
         f['track_min_choices_-1'] = "1"
         f['track_sortkey_-1'] = "1"
         self.submit(f)
+        log_expectation.append({
+            'code': const.EventLogCodes.track_added,
+            'change_note': f['track_title_-1'].value,
+        })
 
-        # change the new added part
+        # Change the newly added part.
         self.traverse({"href": "/event/event/2/part/1001/change"})
         f = self.response.forms['changepartform']
         self.assertEqual("Cooldown", f['title'].value)
@@ -686,9 +697,13 @@ class TestEventFrontend(FrontendTest):
         self.assertValidationError('part_end', "Muss später als Beginn sein")
         f['part_end'] = "2233-4-5"
         self.submit(f)
-
-        # and now for tracks
+        log_expectation.append({
+            'code': const.EventLogCodes.part_changed,
+            'change_note': f['title'].value,
+        })
         self.assertTitle("Veranstaltungsteile konfigurieren (CdE-Party 2050)")
+
+        # Add another track.
         self.traverse({"href": "/event/event/2/part/1001/change"})
         f = self.response.forms['changepartform']
         self.assertNotIn('track_1002', f.fields)
@@ -704,14 +719,22 @@ class TestEventFrontend(FrontendTest):
             "Muss kleiner oder gleich der Gesamtzahl von Kurswahlen sein.")
         f['track_min_choices_-1'] = "2"
         self.submit(f)
+        log_expectation.append({
+            'code': const.EventLogCodes.track_added,
+            'change_note': f['track_title_-1'].value,
+        })
 
-        # change the track
+        # Change the new track.
         self.traverse({"href": "/event/event/2/part/1001/change"})
         f = self.response.forms['changepartform']
         self.assertEqual("Spätschicht", f['track_title_1002'].value)
         f['track_title_1002'] = "Nachtschicht"
         f['track_shortname_1002'] = "Nacht"
         self.submit(f)
+        log_expectation.append({
+            'code': const.EventLogCodes.track_updated,
+            'change_note': f['track_title_1002'].value,
+        })
 
         # delete the track
         self.traverse({"href": "/event/event/2/part/1001/change"})
@@ -720,43 +743,32 @@ class TestEventFrontend(FrontendTest):
         self.assertEqual("Nacht", f['track_shortname_1002'].value)
         f['track_delete_1002'].checked = True
         self.submit(f)
-
-        # delete new part
+        log_expectation.append({
+            'code': const.EventLogCodes.track_removed,
+            'change_note': log_expectation[-1]['change_note'],
+        })
         self.assertTitle("Veranstaltungsteile konfigurieren (CdE-Party 2050)")
         self.assertNonPresence("Nachtschicht", div="part1001")
+
+        # delete new part
         f = self.response.forms['deletepartform1001']
         f['ack_delete'].checked = True
         self.submit(f)
+        log_expectation.append({
+            'code': const.EventLogCodes.track_removed,
+            'change_note': "Chillout Training",
+        })
+        log_expectation.append({
+            'code': const.EventLogCodes.part_deleted,
+            'change_note': "Größere Hälfte",
+        })
 
         self.assertTitle("Veranstaltungsteile konfigurieren (CdE-Party 2050)")
         self.assertNonPresence("Größere Hälfte")
 
         # check log
         self.get('/event/event/log')
-        self.assertPresence("Veranstaltungsteil erstellt",
-                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
-        self.assertPresence("Kursschiene hinzugefügt",
-                            div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
-        self.assertPresence("Veranstaltungsteil geändert",
-                            div=str(self.EVENT_LOG_OFFSET + 3) + "-1003")
-        self.assertPresence("Kursschiene geändert",
-                            div=str(self.EVENT_LOG_OFFSET + 4) + "-1004")
-        self.assertPresence("Kursschiene hinzugefügt",
-                            div=str(self.EVENT_LOG_OFFSET + 5) + "-1005")
-        self.assertPresence("Kursschiene geändert",
-                            div=str(self.EVENT_LOG_OFFSET + 6) + "-1006")
-        self.assertPresence("Kursschiene geändert",
-                            div=str(self.EVENT_LOG_OFFSET + 7) + "-1007")
-        self.assertPresence("Kursschiene geändert",
-                            div=str(self.EVENT_LOG_OFFSET + 8) + "-1008")
-        self.assertPresence("Kursschiene geändert",
-                            div=str(self.EVENT_LOG_OFFSET + 9) + "-1009")
-        self.assertPresence("Kursschiene entfernt",
-                            div=str(self.EVENT_LOG_OFFSET + 10) + "-1010")
-        self.assertPresence("Kursschiene entfernt",
-                            div=str(self.EVENT_LOG_OFFSET + 11) + "-1011")
-        self.assertPresence("Veranstaltungsteil gelöscht",
-                            div=str(self.EVENT_LOG_OFFSET + 12) + "-1012")
+        self.assertLogEqual(log_expectation, realm="event", event_id=event_id)
 
     @as_users("garcia")
     def test_aposteriori_change_num_choices(self) -> None:
@@ -2486,10 +2498,8 @@ etc;anything else""", f['entries_2'].value)
                 event['tracks'][track_id]['part_id']: {
                     'tracks': {
                         track_id: {
-                            'id': track_id,
                             'num_choices': 0,
                             'min_choices': 0,
-                            'title': event['tracks'][track_id]['title']
                         }
                     }
                 }
@@ -4068,7 +4078,14 @@ etc;anything else""", f['entries_2'].value)
 
         # Check that all old logs are deleted and there is only a deletion log entry
         self.get("/event/event/log")
-        self.assertPresence("Veranstaltung gelöscht", div="1-1007")
+        log_expectation = [
+            {
+                'change_note': "Große Testakademie 2222",
+                'code': const.EventLogCodes.event_deleted,
+                'event_id': None,
+            },
+        ]
+        self.assertLogEqual(log_expectation, realm="event")
 
         # since annika is no member, she can not access the past events
         self.logout()

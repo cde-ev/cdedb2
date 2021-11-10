@@ -222,12 +222,13 @@ class TestEventBackend(BackendTest):
             'fee': decimal.Decimal("1.23"),
             'waitlist_field': None,
             'tracks': {
-                1002: {'id': 1002,
-                       'title': "Second lecture v2",
-                       'shortname': "Second v2",
-                       'num_choices': 5,
-                       'min_choices': 4,
-                       'sortkey': 3}
+                1002: {
+                    'title': "Second lecture v2",
+                    'shortname': "Second v2",
+                    'num_choices': 5,
+                    'min_choices': 4,
+                    'sortkey': 3,
+                }
             },
             'fee_modifiers': {
                 1001: {
@@ -275,10 +276,11 @@ class TestEventBackend(BackendTest):
                 data['parts'][part] = newpart
                 data['parts'][part]['id'] = part
                 data['parts'][part]['event_id'] = new_id
-                self.assertEqual(set(x['title']
-                                     for x in data['parts'][part]['tracks'].values()),
-                                 set(x['title']
-                                     for x in tmp['parts'][part]['tracks'].values()))
+                self.assertEqual(
+                    set(x['title'] for x in data['parts'][part]['tracks'].values()),
+                    set(x['title'] for x in tmp['parts'][part]['tracks'].values()))
+                for track in tmp['parts'][part]['tracks']:
+                    tmp['parts'][part]['tracks'][track]['id'] = track
                 data['parts'][part]['tracks'] = tmp['parts'][part]['tracks']
                 data['parts'][part]['fee_modifiers'] = (
                     tmp['parts'][part]['fee_modifiers'])
@@ -303,24 +305,29 @@ class TestEventBackend(BackendTest):
         data['begin'] = datetime.date(2110, 9, 8)
         data['end'] = datetime.date(2111, 8, 20)
         # TODO dynamically adapt ids from the database result
-        data['tracks'] = {1002: {'id': 1002,
-                                 'part_id': 1002,
-                                 'title': 'Second lecture v2',
-                                 'shortname': "Second v2",
-                                 'num_choices': 5,
-                                 'min_choices': 4,
-                                 'sortkey': 3},
-                          1003: {'id': 1003,
-                                 'part_id': 1003,
-                                 'title': 'Third lecture',
-                                 'shortname': 'Third',
-                                 'num_choices': 2,
-                                 'min_choices': 2,
-                                 'sortkey': 2}}
+        data['tracks'] = {
+            1002: {
+                'id': 1002,
+                'part_id': 1002,
+                'title': 'Second lecture v2',
+                'shortname': "Second v2",
+                'num_choices': 5,
+                'min_choices': 4,
+                'sortkey': 3,
+            },
+            1003: {
+                'id': 1003,
+                'part_id': 1003,
+                'title': 'Third lecture',
+                'shortname': 'Third',
+                'num_choices': 2,
+                'min_choices': 2,
+                'sortkey': 2,
+            },
+        }
         data['fee_modifiers'] = changed_part['fee_modifiers']
 
-        self.assertEqual(data,
-                         self.event.get_event(self.key, new_id))
+        self.assertEqual(data, self.event.get_event(self.key, new_id))
 
         self.assertNotIn(new_id, old_events)
         new_events = self.event.list_events(self.key)
@@ -3528,12 +3535,14 @@ class TestEventBackend(BackendTest):
             'part_end': datetime.date(2110, 9, 21),
             'fee': decimal.Decimal("1.23"),
             'tracks': {
-                1002: {'id': 1002,
-                       'title': "Second lecture v2",  # hardcoded id 5
-                       'shortname': "Second v2",
-                       'num_choices': 5,
-                       'min_choices': 4,
-                       'sortkey': 3}}
+                1002: {
+                    'title': "Second lecture v2",  # hardcoded id 5
+                    'shortname': "Second v2",
+                    'num_choices': 5,
+                    'min_choices': 4,
+                    'sortkey': 3,
+                },
+            },
         }
         newfield = {
             'association': const.FieldAssociations.registration,
