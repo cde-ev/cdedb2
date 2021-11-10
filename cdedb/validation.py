@@ -2499,15 +2499,14 @@ def _event_field(
       necessity of the frontend to create unambiguous names.
     """
     val = _mapping(val, argname, **kwargs)
+    val = dict(val)
 
     field_name_key = f"field_name{extra_suffix}"
-    title_key = f"title{extra_suffix}"
     if field_name is not None:
-        val = dict(val)
         val[field_name_key] = field_name
     if creation:
+        title_key = f"title{extra_suffix}"
         if title_key in val and not val[title_key]:
-            val = dict(val)
             val[title_key] = val.get(field_name_key)
         spec = {**_EVENT_FIELD_COMMON_FIELDS(extra_suffix),
                 field_name_key: RestrictiveIdentifier}
@@ -2517,8 +2516,7 @@ def _event_field(
         mandatory_fields = {}
         optional_fields = {**_EVENT_FIELD_ALL_FIELDS(extra_suffix), 'id': ID}
 
-    val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, argname=argname, **kwargs)
+    val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
 
     entries_key = f"entries{extra_suffix}"
     kind_key = f"kind{extra_suffix}"
