@@ -84,12 +84,12 @@ class EventFieldMixin(EventBaseFrontend):
                 params = _EVENT_FIELD_ALL_FIELDS(suffix)
                 field_data: Optional[CdEDBObject] = request_extractor(rs, params)
                 if rs.has_validation_errors():
-                    break
+                    continue
                 field_data = check(
                     rs, vtypes.EventField, field_data, extra_suffix=suffix)
                 if field_data:
                     ret[field_id] = {
-                        field_data[k.removesuffix(suffix)]: field_data[k]
+                        k.removesuffix(suffix): field_data[k]
                         for k in params
                     }
         for field_id in deletes:
@@ -112,7 +112,7 @@ class EventFieldMixin(EventBaseFrontend):
                                   extra_suffix=suffix)
                 if new_field:
                     ret[-marker] = {
-                        new_field[k.removesuffix(suffix)]: new_field[k]
+                        k.removesuffix(suffix): new_field[k]
                         for k in params
                     }
             else:
