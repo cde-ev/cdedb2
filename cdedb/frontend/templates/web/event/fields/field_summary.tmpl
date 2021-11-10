@@ -30,7 +30,7 @@
                                    placeholder=gettext("Title of the Custom Field"),
                                    aclass='drow-input form-control',
                                    arialabel=gettext("Title of the Custom Field"),
-                                   attributes=('data-basename="title_"'|s if newrow else '')) }}
+                                   attributes=util.drow_basename('title')|s if newrow else '') }}
                 {{ util.output_errors(drow_name('title', field_id)) }}
             </div>
             <div class="panel-body">
@@ -41,7 +41,7 @@
                     <div class="col-sm-8 {{ util.has_errors(drow_name('field_name', field_id)) }}">
                         {{ util.input_text(name=drow_name('field_name', field_id), aclass='drow-input form-control',
                                            actualreadonly=not newrow, anid=drow_name('input-text-field_name', field_id),
-                                           attributes='data-basename="field_name_"'|s if newrow else '') }}
+                                           attributes=util.drow_basename('field_name')|s if newrow else '') }}
                         {{ util.output_errors(drow_name('field_name', field_id)) }}
                     </div>
                 </div>
@@ -51,8 +51,9 @@
                     </label>
                     <div class="col-sm-8 {{ util.has_errors(drow_name('sortkey', field_id)) }}">
                         {{ util.input_text(name=drow_name('sortkey', field_id), aclass='drow-input form-control',
-                                           actualreadonly=not changeable, anid=drow_name('input-text-sortkey', field_id),
-                                           attributes='data-basename="sortkey_"'|s if newrow else '') }}
+                                           actualreadonly=not changeable, type='number',
+                                           attributes=util.drow_basename('sortkey')|s if newrow else '',
+                                           anid=drow_name('input-text-sortkey', field_id), defaultvalue=0) }}
                         {{ util.output_errors(drow_name('sortkey', field_id)) }}
                     </div>
                 </div>
@@ -63,17 +64,17 @@
                     <div class="col-sm-8 {{ util.has_errors(drow_name('kind', field_id)) }}">
                         {{ util.input_select(name=drow_name('kind', field_id),
                                              entries=enums['FieldDatatypes']|enum_entries(processing=gettext),
-                                             attributes='data-basename="kind_"'|s if newrow else '',
+                                             attributes=util.drow_basename('kind')|s if newrow else '',
                                              aclass='drow-input form-control', actualreadonly=not changeable,
                                              anid=drow_name('input-select-kind', field_id)) }}
                         {{ util.output_errors(drow_name('kind', field_id)) }}
                     </div>
                 </div>
-                {% if "association_{}".format(field_id) not in values %}
+                {% if drow_name('association', field_id) not in values %}
                     <div class="association-input-container">
                         {{ util.form_input_select(label=gettext("Fields for"), name=drow_name('association', field_id),
                                                   entries=enums['FieldAssociations']|enum_entries(processing=gettext),
-                                                  attributes='data-basename="association_"'|s if newrow else '',
+                                                  attributes=util.drow_basename('association')|s if newrow else '',
                                                   actualreadonly=not changeable,
                                                   aclass='drow-input form-control association-input') }}
                     </div>
