@@ -4,8 +4,9 @@ import json
 import re
 from typing import Any, Dict, List
 
+from cdedb.backend.core import CoreBackend
 from cdedb.common import CustomJSONEncoder, RequestState, nearly_now
-from cdedb.script import CoreBackend, Script
+from cdedb.script import Script
 
 # per default, we sort entries in a table by their id. Here we can specify any arbitrary
 # columns which should be used as sorting key for the table.

@@ -3,7 +3,7 @@ import json
 from itertools import chain
 from typing import Any, Callable, Dict, List, Set, Sized, Tuple, Type, TypedDict
 
-from cdedb.backend.common import PsycoJson, DatabaseValue_s
+from cdedb.backend.common import DatabaseValue_s, PsycoJson
 from cdedb.backend.core import CoreBackend
 from cdedb.common import CdEDBObject, RequestState
 from cdedb.script import Script
