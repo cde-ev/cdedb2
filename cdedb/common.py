@@ -2204,7 +2204,7 @@ COURSE_FIELDS = ("id", "event_id", "title", "description", "nr", "shortname",
                  "instructors", "max_size", "min_size", "notes", "fields")
 
 #: Fields specifying in which part a course is available
-COURSE_SEGMENT_FIELDS = ("course_id", "track_id", "is_active")
+COURSE_SEGMENT_FIELDS = ("id", "course_id", "track_id", "is_active")
 
 #: Fields of a registration to an event organized via the CdEDB
 REGISTRATION_FIELDS = (
@@ -2229,7 +2229,7 @@ LODGEMENT_FIELDS = ("id", "event_id", "title", "regular_capacity",
 
 # Fields of a row in a questionnaire.
 # (This can be displayed in different places according to `kind`).
-QUESTIONNAIRE_ROW_FIELDS = ("field_id", "pos", "title", "info",
+QUESTIONNAIRE_ROW_FIELDS = ("event_id", "field_id", "pos", "title", "info",
                             "input_size", "readonly", "default_value", "kind")
 
 #: Fields for a stored event query.

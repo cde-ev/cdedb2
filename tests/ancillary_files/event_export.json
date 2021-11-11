@@ -9,7 +9,8 @@
             "field_id": 7,
             "id": 1,
             "title": "Ich bin unter 13 Jahre alt.",
-            "kind": 1
+            "kind": 1,
+            "defaultvalue": null,
         },
         "3": {
             "readonly": false,
@@ -20,7 +21,8 @@
             "field_id": 1,
             "id": 3,
             "title": "B\u00e4lle",
-            "kind": 2
+            "kind": 2,
+            "default_value": "True"
         },
         "7": {
             "readonly": false,
@@ -31,7 +33,8 @@
             "field_id": 3,
             "id": 7,
             "title": "Hauswunsch",
-            "kind": 2
+            "kind": 2,
+            "default_value": null
         },
         "5": {
             "readonly": null,
@@ -42,7 +45,8 @@
             "field_id": null,
             "id": 5,
             "title": "Weitere \u00dcberschrift",
-            "kind": 2
+            "kind": 2,
+            "default_value": null
         },
         "2": {
             "readonly": null,
@@ -53,7 +57,8 @@
             "field_id": null,
             "id": 2,
             "title": "Unter\u00fcberschrift",
-            "kind": 2
+            "kind": 2,
+            "default_value": null
         },
         "4": {
             "readonly": null,
@@ -64,7 +69,8 @@
             "field_id": null,
             "id": 4,
             "title": null,
-            "kind": 2
+            "kind": 2,
+            "default_value": null
         },
         "6": {
             "readonly": false,
@@ -75,7 +81,8 @@
             "field_id": 2,
             "id": 6,
             "title": "Vehikel",
-            "kind": 2
+            "kind": 2,
+            "default_value": "etc"
         }
     },
     "kind": "full",
