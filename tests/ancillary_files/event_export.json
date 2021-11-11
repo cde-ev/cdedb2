@@ -10,7 +10,7 @@
             "id": 1,
             "title": "Ich bin unter 13 Jahre alt.",
             "kind": 1,
-            "defaultvalue": null,
+            "defaultvalue": null
         },
         "3": {
             "readonly": false,

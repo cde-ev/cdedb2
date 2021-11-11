@@ -111,20 +111,16 @@ class TestEventBackend(BackendTest):
             },
             'fields': {
                 -1: {
-                    'association': const.FieldAssociations.registration,
+                    'association': 1,
                     'field_name': "instrument",
-                    'title': "Instrument",
-                    'sortkey': 3,
-                    'kind': const.FieldDatatypes.str,
+                    'kind': 1,
                     'entries': None,
                     'checkin': False,
                 },
                 -2: {
-                    'association': const.FieldAssociations.registration,
+                    'association': 1,
                     'field_name': "preferred_excursion_date",
-                    'title': "Bevorzugtes Ausflugsdatum",
-                    'sortkey': 7,
-                    'kind': const.FieldDatatypes.date,
+                    'kind': 5,
                     'entries': [["2109-08-16", "In the first coming"],
                                 ["2110-08-16", "During the second coming"]],
                     'checkin': True,
@@ -132,8 +128,6 @@ class TestEventBackend(BackendTest):
                 -3: {
                     'association': const.FieldAssociations.registration,
                     'field_name': "is_child",
-                    'title': "Kind",
-                    'sortkey': -2,
                     'kind': const.FieldDatatypes.bool,
                     'entries': None,
                     'checkin': False,
@@ -203,7 +197,8 @@ class TestEventBackend(BackendTest):
                     del data['fields'][oldfield]
                     break
 
-        self.assertEqual(data, self.event.get_event(self.key, new_id))
+        self.assertEqual(data,
+                         self.event.get_event(self.key, new_id))
         data['title'] = "Alternate Universe Academy"
         newpart = {
             'tracks': {
@@ -243,17 +238,15 @@ class TestEventBackend(BackendTest):
             },
         }
         newfield = {
-            'association': const.FieldAssociations.lodgement,
+            'association': 3,
             'field_name': "kuea",
-            'title': "KüA",
-            'sortkey': 0,
-            'kind': const.FieldDatatypes.str,
+            'kind': 1,
             'entries': None,
             'checkin': False,
         }
         changed_field = {
-            'association': const.FieldAssociations.registration,
-            'kind': const.FieldDatatypes.date,
+            'association': 2,
+            'kind': 5,
             'entries': [
                 ["2110-08-15", "early second coming"],
                 ["2110-08-17", "late second coming"],
@@ -306,7 +299,7 @@ class TestEventBackend(BackendTest):
         changed_field['id'] = field_map["preferred_excursion_date"]
         changed_field['event_id'] = new_id
         changed_field['field_name'] = "preferred_excursion_date"
-        data['fields'][field_map["preferred_excursion_date"]].update(changed_field)
+        data['fields'][field_map["preferred_excursion_date"]] = changed_field
         data['begin'] = datetime.date(2110, 9, 8)
         data['end'] = datetime.date(2111, 8, 20)
         # TODO dynamically adapt ids from the database result
@@ -326,8 +319,7 @@ class TestEventBackend(BackendTest):
                                  'sortkey': 2}}
         data['fee_modifiers'] = changed_part['fee_modifiers']
 
-        self.assertEqual(data,
-                         self.event.get_event(self.key, new_id))
+        self.assertEqual(data, self.event.get_event(self.key, new_id))
 
         self.assertNotIn(new_id, old_events)
         new_events = self.event.list_events(self.key)
@@ -2329,12 +2321,13 @@ class TestEventBackend(BackendTest):
         # field definitions
         new_data['event.field_definitions'].update({
             11000: {
-                'association': 1,
+                'association': const.FieldAssociations.registration,
                 'entries': [['good', 'good'],
                             ['neutral', 'so so'],
                             ['bad', 'not good']],
                 'event_id': 1,
-                'field_name': 'behaviour',
+                'field_name': "behaviour",
+                'title': "Benehmen",
                 'id': 11000,
                 'kind': const.FieldDatatypes.str,
                 'checkin': False,
@@ -2344,6 +2337,7 @@ class TestEventBackend(BackendTest):
                 'entries': None,
                 'event_id': 1,
                 'field_name': "solidarity",
+                'title': "Solidarität",
                 'id': 11001,
                 'kind': const.FieldDatatypes.bool,
                 'checkin': False,
@@ -2360,6 +2354,7 @@ class TestEventBackend(BackendTest):
             'readonly': True,
             'title': 'Vorsätze',
             'kind': const.QuestionnaireUsages.additional,
+            'default_value': None,
         }
         new_data['event.fee_modifiers'][13000] = {
             'id': 13000,
@@ -2545,7 +2540,9 @@ class TestEventBackend(BackendTest):
                             ['neutral', 'so so'],
                             ['bad', 'not good']],
                 'event_id': 1,
-                'field_name': 'behaviour',
+                'field_name': "behaviour",
+                'title': "Benehmen",
+                'sortkey': 0,
                 'id': 1001,
                 'kind': const.FieldDatatypes.str,
                 'checkin': False,
@@ -2554,7 +2551,9 @@ class TestEventBackend(BackendTest):
                 'association': const.FieldAssociations.registration,
                 'entries': None,
                 'event_id': 1,
-                'field_name': 'solidarity',
+                'field_name': "solidarity",
+                'title': "Solidarität",
+                'sortkey': 0,
                 'id': 1002,
                 'kind': const.FieldDatatypes.bool,
                 'checkin': False,
@@ -2577,6 +2576,7 @@ class TestEventBackend(BackendTest):
             'readonly': True,
             'title': 'Vorsätze',
             'kind': const.QuestionnaireUsages.additional,
+            'default_value': None,
         }
 
         result = self.event.export_event(self.key, 1)
