@@ -494,7 +494,7 @@ class EventBaseBackend(EventLowLevelBackend):
         event_id = affirm(vtypes.ID, event_id)
         kinds = kinds or []
         affirm_set(const.QuestionnaireUsages, kinds)
-        columns = ', '.join(QUESTIONNAIRE_ROW_FIELDS)
+        columns = ', '.join(k for k in QUESTIONNAIRE_ROW_FIELDS if k != 'event_id')
         query = f"SELECT {columns} FROM event.questionnaire_rows"
         constraints = ["event_id = %s"]
         params: List[Any] = [event_id]
