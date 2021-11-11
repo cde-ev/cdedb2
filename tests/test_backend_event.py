@@ -111,16 +111,20 @@ class TestEventBackend(BackendTest):
             },
             'fields': {
                 -1: {
-                    'association': 1,
+                    'association': const.FieldAssociations.registration,
                     'field_name': "instrument",
-                    'kind': 1,
+                    'title': "Instrument",
+                    'sortkey': 0,
+                    'kind': const.FieldDatatypes.str,
                     'entries': None,
                     'checkin': False,
                 },
                 -2: {
-                    'association': 1,
+                    'association': const.FieldAssociations.registration,
                     'field_name': "preferred_excursion_date",
-                    'kind': 5,
+                    'title': "Bevorzugtes Ausflugsdatum",
+                    'sortkey': 0,
+                    'kind': const.FieldDatatypes.date,
                     'entries': [["2109-08-16", "In the first coming"],
                                 ["2110-08-16", "During the second coming"]],
                     'checkin': True,
@@ -128,6 +132,8 @@ class TestEventBackend(BackendTest):
                 -3: {
                     'association': const.FieldAssociations.registration,
                     'field_name': "is_child",
+                    'title': "Ist Kind",
+                    'sortkey': 5,
                     'kind': const.FieldDatatypes.bool,
                     'entries': None,
                     'checkin': False,
@@ -197,8 +203,7 @@ class TestEventBackend(BackendTest):
                     del data['fields'][oldfield]
                     break
 
-        self.assertEqual(data,
-                         self.event.get_event(self.key, new_id))
+        self.assertEqual(data, self.event.get_event(self.key, new_id))
         data['title'] = "Alternate Universe Academy"
         newpart = {
             'tracks': {
@@ -238,15 +243,17 @@ class TestEventBackend(BackendTest):
             },
         }
         newfield = {
-            'association': 3,
+            'association': const.FieldAssociations.lodgement,
             'field_name': "kuea",
-            'kind': 1,
+            'title': "KäA",
+            'sortkey': -7,
+            'kind': const.FieldDatatypes.str,
             'entries': None,
             'checkin': False,
         }
         changed_field = {
-            'association': 2,
-            'kind': 5,
+            'association': const.FieldAssociations.registration,
+            'kind': const.FieldDatatypes.date,
             'entries': [
                 ["2110-08-15", "early second coming"],
                 ["2110-08-17", "late second coming"],
@@ -299,7 +306,7 @@ class TestEventBackend(BackendTest):
         changed_field['id'] = field_map["preferred_excursion_date"]
         changed_field['event_id'] = new_id
         changed_field['field_name'] = "preferred_excursion_date"
-        data['fields'][field_map["preferred_excursion_date"]] = changed_field
+        data['fields'][field_map["preferred_excursion_date"]].update(changed_field)
         data['begin'] = datetime.date(2110, 9, 8)
         data['end'] = datetime.date(2111, 8, 20)
         # TODO dynamically adapt ids from the database result
