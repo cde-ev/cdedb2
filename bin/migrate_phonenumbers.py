@@ -2,20 +2,21 @@
 from functools import partial
 
 import cdedb.validationtypes as vtypes
-from cdedb.common import PERSONA_ALL_FIELDS, CdEDBObject
+from cdedb.common import CdEDBObject
 from cdedb.script import CoreBackend, Script
 from cdedb.validation import validate_assert_optional
 
-script = Script(dbuser="cdb")
+script = Script(persona_id=1, dbuser="cdb_admin")
 rs = script.rs()
 
 core: CoreBackend = script.make_backend("core", proxy=False)
 phone = partial(validate_assert_optional, vtypes.Phone, ignore_warnings=True)
 
 phone_fields = ('telephone', 'mobile')
+msg = "Normalisierung von Telefonnummern"
 
 p_id = None
-count = {"personas": 0, "changelog": 0}
+count = 0
 with script:
     while p_id := core.next_persona(rs, p_id, is_member=None, is_archived=None):
         # Adjust stored values in personas table.
@@ -25,22 +26,8 @@ with script:
                 'id': p_id,
                 **{k: phone(persona[k]) for k in phone_fields},
             }
-            # print("\n".join(f"{persona[k]} -> {update[k]}" for k in phone_fields))
-            count["personas"] += 1
-            core.sql_update(rs, "core.personas", update)
+            core.set_persona(rs, update, change_note=msg, automated_change=True)
+            count += 1
+            print("\n".join(f"{persona[k]} -> {update[k]}" for k in phone_fields))
 
-        # Adjust stored values in changelog table.
-        changelog = core.sql_select(
-            rs, "core.changelog", PERSONA_ALL_FIELDS, (p_id,), "persona_id")
-        for entry in changelog:
-            if any(entry[k] for k in phone_fields):
-                update = {
-                    'id': entry['id'],
-                    **{k: phone(entry[k]) for k in phone_fields},
-                }
-                # print("\n".join(f"{entry[k]} -> {update[k]}" for k in phone_fields))
-                count["changelog"] += 1
-                core.sql_update(rs, "core.changelog", update)
-
-    for k, c in count.items():
-        print(f"Updated {c} entries in the {k} table.")
+    print(f"Updated {count} entries.")
