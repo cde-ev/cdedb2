@@ -36,7 +36,8 @@ steps:
   # we do not tag a version as this would create many images
   # which would not be cleared from docker cache
   - docker build --file related/docker/Dockerfile-postgres --tag cdepostgres .
-  - docker build --file related/docker/Dockerfile-cdedb --tag cdedb .
+  - docker build --file related/docker/Dockerfile-cdedb --tag cdedb:20210705 .
+  - docker build --file related/docker/Dockerfile-ldap --tag ldap:20210705 .
 - name: cdb # is used as the hostname for the container
   image: cdepostgres
   pull: never # do not try to pull image from docker hub
@@ -49,8 +50,8 @@ steps:
   depends_on:
   - build images
 - name: evolution-trial
-  image: cdedb
-  pull: never
+  image: cdedb:20210705
+  pull: never # do not try to pull image from docker hub
   depends_on:
     - cdb
   commands:
@@ -60,7 +61,7 @@ steps:
     - make sql-test # create the necessary test database.
     - bin/evolution-trial.sh origin/$DRONE_TARGET_BRANCH $DRONE_COMMIT
 - name: mypy
-  image: cdedb
+  image: cdedb:20210705
   pull: never # do not try to pull image from docker hub
   depends_on:
     - evolution-trial # wait for all git operations to be done
@@ -71,7 +72,7 @@ steps:
   commands:
     - make mypy
 - name: lint
-  image: cdedb
+  image: cdedb:20210705
   pull: never # do not try to pull image from docker hub
   depends_on:
     - evolution-trial # wait for all git operations to be done
@@ -81,72 +82,102 @@ steps:
     - success
   commands:
     - make lint
-- name: frontend tests a-d
-  image: cdedb
+- name: testsuite-setup
+  image: cdedb:20210705
   pull: never # do not try to pull image from docker hub
   depends_on:
-  - evolution-trial
+    - evolution-trial # wait for all git operations to be done
   when:
     status:
-    - failure
-    - success
+      - failure
+      - success
+  commands:
+  - sleep 5
+  - pg_isready --host=cdb --timeout=10 # wait for database to come online
+  - make i18n-compile # required for sample-data target
+  - make sample-data # this creates the sql schema and copies the localconfig.py
+  - make TESTDATABASENAME=cdb_test sql-test # create the test database for ldap
+- name: ldap # is used as the hostname for the container
+  image: ldap:20210705
+  pull: never # do not try to pull image from docker hub
+  detach: true # detach to keep running for the following steps
+  depends_on:
+  - testsuite-setup
+  when:
+    status:
+      - failure
+      - success
+  environment:
+    # we use the database without a name as only readonly access is required
+    # and this will work regardless of the id the testing container gets
+    DATABASE_NAME: cdb_test
+- name: frontend tests a-d
+  image: cdedb:20210705
+  pull: never # do not try to pull image from docker hub
+  depends_on:
+  - testsuite-setup
+  - ldap
+  when:
+    status:
+      - failure
+      - success
   volumes:
   - name: tmp_dir
     path: /tmp
   commands:
   - bin/check.py --verbose --first # everything before event
 - name: frontend tests e-z
-  image: cdedb
+  image: cdedb:20210705
   pull: never # do not try to pull image from docker hub
   depends_on:
-  - evolution-trial
+  - testsuite-setup
+  - ldap
   when:
     status:
-    - failure
-    - success
+      - failure
+      - success
   volumes:
   - name: tmp_dir
     path: /tmp
   commands:
-  - sleep 15 # wait for make sample-data to finish
   - bin/check.py --verbose --second # event and following
-- name: backend tests
-  image: cdedb
+- name: non-frontend tests
+  image: cdedb:20210705
   pull: never # do not try to pull image from docker hub
   depends_on:
-  - evolution-trial
+  - testsuite-setup
+  - ldap
   when:
     status:
-    - failure
-    - success
+      - failure
+      - success
   volumes:
   - name: tmp_dir
     path: /tmp
   commands:
-  - sleep 15 # wait for make sample-data to finish
+  - sleep 10
   - bin/check.py --verbose --third
 - name: xss
-  image: cdedb
+  image: cdedb:20210705
   pull: never
   depends_on:
-  - evolution-trial
+    - testsuite-setup
   when:
     status:
-    - failure
-    - success
+      - failure
+      - success
   volumes:
   - name: tmp_dir
     path: /tmp
   commands:
-    - sleep 15 # wait for make sample-data in testsuite to finish
-    - make xss-check
+    - python3 bin/check.py --xss-check --verbose
 - name: check for merge conflicts
   image: docker:20.10-git
   pull: never # do not try to pull image from docker hub
   depends_on:
   - frontend tests a-d
   - frontend tests e-z
-  - backend tests
+  - non-frontend tests
   - xss
   when:
     status:

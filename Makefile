@@ -184,6 +184,7 @@ ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
 endif
 ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl stop pgbouncer
+	sudo systemctl stop slapd
 endif
 	$(PSQL_ADMIN) -f cdedb/database/cdedb-users.sql
 	$(PSQL_ADMIN) -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb
@@ -191,7 +192,11 @@ ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl start pgbouncer
 endif
 	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=cdb
+	$(PSQL) -f cdedb/database/cdedb-ldap.sql --dbname=cdb
 	$(PSQL) -f tests/ancillary_files/sample_data.sql --dbname=cdb
+ifneq ($(wildcard /CONTAINER),/CONTAINER)
+	sudo systemctl start slapd
+endif
 
 sql-test:
 ifneq ($(wildcard /CONTAINER),/CONTAINER)
@@ -202,7 +207,8 @@ ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl start pgbouncer
 endif
 	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=${TESTDATABASENAME}
-	$(MAKE) sql-test-shallow
+	$(PSQL) -f cdedb/database/cdedb-ldap.sql --dbname=${TESTDATABASENAME}
+	$(PSQL) -f tests/ancillary_files/sample_data.sql --dbname=${TESTDATABASENAME}
 
 sql-test-shallow: tests/ancillary_files/sample_data.sql
 	$(PSQL) -f tests/ancillary_files/clean_data.sql --dbname=${TESTDATABASENAME}
@@ -210,6 +216,20 @@ sql-test-shallow: tests/ancillary_files/sample_data.sql
 
 cron:
 	sudo -u www-data /cdedb2/bin/cron_execute.py
+
+
+########
+# LDAP #
+########
+
+ldap-create:
+	sudo SCRIPT_DRY_RUN="" $(PYTHONBIN) ldap/create-ldap.py
+
+ldap-update:
+	sudo SCRIPT_DRY_RUN="" $(PYTHONBIN) ldap/update-ldap.py
+
+ldap-remove:
+	sudo SCRIPT_DRY_RUN="" $(PYTHONBIN) ldap/remove-ldap.py
 
 ###############################
 # Code testing and formatting #
@@ -266,7 +286,7 @@ else
 endif
 
 check:
-	$(PYTHONBIN) -m bin.check --verbose
+	$(PYTHONBIN) bin/check.py --verbose $(or $(TESTPATTERNS), )
 
 sql-xss: tests/ancillary_files/sample_data_xss.sql
 ifneq ($(wildcard /CONTAINER),/CONTAINER)
@@ -277,10 +297,11 @@ ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl start pgbouncer
 endif
 	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=${TESTDATABASENAME}
+	$(PSQL) -f cdedb/database/cdedb-ldap.sql --dbname=${TESTDATABASENAME}
 	$(PSQL) -f tests/ancillary_files/sample_data_xss.sql --dbname=${TESTDATABASENAME}
 
 xss-check:
-	$(PYTHONBIN) -m bin.check --xss-check --verbose
+	$(PYTHONBIN) bin/check.py --xss-check --verbose
 
 dump-html:
 	$(MAKE) -B /tmp/cdedb-dump/
@@ -320,7 +341,7 @@ coverage: .coverage
 	@echo "HTML reports for easier inspection are in ./htmlcov"
 
 tests/ancillary_files/sample_data.sql: tests/ancillary_files/sample_data.json \
-		$(SAMPLE_DATA_SQL) cdedb/database/cdedb-tables.sql
+		$(SAMPLE_DATA_SQL) cdedb/database/cdedb-tables.sql cdedb/database/cdedb-ldap.sql
 	SQLTEMPFILE=`sudo -u www-data mktemp` \
 		&& sudo -u www-data chmod +r "$${SQLTEMPFILE}" \
 		&& sudo rm -f /tmp/cdedb*log \
@@ -333,7 +354,7 @@ tests/ancillary_files/sample_data.sql: tests/ancillary_files/sample_data.json \
 		&& sudo -u www-data rm "$${SQLTEMPFILE}"
 
 tests/ancillary_files/sample_data_xss.sql: tests/ancillary_files/sample_data.json \
-		$(SAMPLE_DATA_SQL) cdedb/database/cdedb-tables.sql
+		$(SAMPLE_DATA_SQL) cdedb/database/cdedb-tables.sql cdedb/database/cdedb-ldap.sql
 	SQLTEMPFILE=`sudo -u www-data mktemp` \
 		&& sudo -u www-data chmod +r "$${SQLTEMPFILE}" \
 		&& sudo rm -f /tmp/cdedb*log \

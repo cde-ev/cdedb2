@@ -6,6 +6,7 @@ import os
 import tempfile
 import unittest
 from contextlib import redirect_stdout
+from pkgutil import resolve_name
 from typing import Any, Callable
 
 import psycopg2.errorcodes
@@ -68,6 +69,13 @@ class TestScript(unittest.TestCase):
             self.assertEqual(
                 42,
                 configured_script.make_backend("core", proxy=False).conf["LOCKDOWN"])
+
+        for realm, backend_name in Script.backend_map.items():
+            backend_class = resolve_name(f"cdedb.backend.{realm}.{backend_name}")
+            backendproxy = self.script.make_backend(realm, proxy=True)
+            self.assertIs(backend_class, backendproxy.get_backend_class())
+            backend = self.script.make_backend(realm, proxy=False)
+            self.assertIsInstance(backend, backend_class)
 
     def test_script_atomizer(self) -> None:
         rs = self.script.rs()
