@@ -348,7 +348,7 @@ CREATE TABLE core.changelog (
         generation              integer NOT NULL,
         change_note             varchar,
         -- Flag for whether this was an automated change.
-        is_automated            boolean NOT NULL DEFAULT FALSE,
+        automated_change        boolean NOT NULL DEFAULT FALSE,
         -- enum for progress of change
         -- see cdedb.database.constants.MemberChangeStati
         code                    integer NOT NULL DEFAULT 0,
