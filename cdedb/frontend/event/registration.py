@@ -811,7 +811,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                 extractor(i)
                 for i in range(track['num_choices']) if extractor(i))
             choices_set = set()
-            own_course = new_tracks[track_id]["course_instructor"]
+            own_course = new_tracks[track_id].get("course_instructor")
             for i_choice, choice in enumerate(choices_tuple):
                 if own_course == choice:
                     rs.add_validation_error(

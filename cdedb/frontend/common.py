@@ -2277,7 +2277,8 @@ def process_dynamic_input(
         else:
             entry = ret[anid]
             assert entry is not None
-            entry["id"] = anid
+            if type_ is not vtypes.EventTrack:
+                entry["id"] = anid
             entry.update(additional)
             # apply the promised validation
             ret[anid] = check_validation(rs, type_, entry, field_prefix=field_prefix,

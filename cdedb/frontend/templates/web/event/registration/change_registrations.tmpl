@@ -69,7 +69,7 @@
                                 "registrations. Fields that are equal in all registrations are already "
                                 "selected.")) }}
 
-    <form action="{{ cdedblink('event/change_registrations') }}" method="POST" id="changeregistrationform"
+    <form action="{{ cdedblink('event/change_registrations') }}" method="POST" id="changeregistrationsform"
           class="form-horizontal">
         {{ util.anti_csrf_token('event/change_registrations') }}
         {{ util.input_hidden("reg_ids", value=registrations.keys()|join(',')) }}
@@ -258,6 +258,6 @@
             update_state.call(this);
         });
 
-        $('#changeregistrationform').cdedbProtectChanges();
+        $('#changeregistrationsform').cdedbProtectChanges();
     </script>
 {% endblock %}

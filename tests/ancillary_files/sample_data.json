@@ -8429,5 +8429,37 @@
             "persona_id": 1
         }
     ],
-    "ml.log": []
+    "ml.log": [],
+    "ldap.duas": [
+            {
+                "id": 1,
+                "cn": "admin",
+                "password_hash": "$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1"
+            },
+            {
+                "id": 2,
+                "cn": "apache",
+                "password_hash": "$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1"
+            },
+            {
+                "id": 3,
+                "cn": "cloud",
+                "password_hash": "$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1"
+            },
+            {
+                "id": 4,
+                "cn": "cyberaka",
+                "password_hash": "$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1"
+            },
+            {
+                "id": 5,
+                "cn": "dokuwiki",
+                "password_hash": "$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1"
+            },
+            {
+                "id": 999999999,
+                "cn": "test",
+                "password_hash": "$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1"
+            }
+        ]
 }
