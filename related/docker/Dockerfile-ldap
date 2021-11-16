@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3-jinja2 \
     python3-markdown \
     python3-passlib \
+    python3-phonenumbers \
     python3-psycopg2 \
     python3-tz \
     python3-werkzeug
