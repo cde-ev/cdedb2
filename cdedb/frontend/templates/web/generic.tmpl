@@ -104,154 +104,27 @@
         </div>
     </div>
 
-    {{ user_search_mask(realm, archived=archived, selection_blacklist=("pevent_id",)) }}
+    {{ user_search_mask(realm, archived=archived, selection_blacklist=("pevent_id", "pcourse_id")) }}
 
     {% if values['is_search'] %}
         <h3 id="query-results">{% trans %}Result{% endtrans %} [{{ result|length }}]</h3>
-        {{ user_search_result(result) }}
+        {{ display_query_result(result, query) }}
     {% endif %}
 {% endmacro %}
 
 
 {% macro user_search_mask(realm, archived=False, selection_blacklist=[]) %}
-    {% with TITLES = {
-        "fulltext": gettext("Fulltext"),
-        "personas.id": gettext("ID"),
-        "username": gettext("E-Mail"),
-        "is_active": gettext("Active Account"),
-        "family_name": gettext("Family Name"),
-        "birth_name": gettext("Birth Name"),
-        "given_names": gettext("Given Names"),
-        "display_name": gettext("Known as (Forename)"),
-        "title": gettext("Title_[[of a persona]]"),
-        "name_supplement": gettext("Name Affix"),
-        "gender": gettext("Gender"),
-        "birthday": gettext("Birthday"),
-        "telephone": gettext("Phone"),
-        "mobile": gettext("Mobile Phone"),
-        "address": gettext("Address"),
-        "address_supplement": gettext("Address Supplement"),
-        "postal_code": gettext("ZIP"),
-        "location": gettext("City"),
-        "country": gettext("Country"),
-        "address2": gettext("Address (2)"),
-        "address_supplement2": gettext("Address Supplement (2)"),
-        "postal_code2": gettext("ZIP (2)"),
-        "location2": gettext("City (2)"),
-        "country2": gettext("Country (2)"),
-        "weblink": gettext("WWW"),
-        "specialisation": gettext("Specialisation"),
-        "affiliation": gettext("School, University, …"),
-        "timeline": gettext("Year(s) of Graduation"),
-        "interests": gettext("Interests"),
-        "free_form": gettext("Miscellaneous"),
-        "pevent_id": gettext("Past Event"),
-        "pcourse_id": gettext("Past Course"),
-        "balance": gettext("Membership-Fee Balance"),
-        "decided_search": gettext("Searchability Decided"),
-        "trial_member": gettext("Trial Member"),
-        "paper_expuls": gettext("Printed exPuls"),
-        "notes": gettext("Admin-Notes"),
-        'is_member': gettext("CdE-Member"),
-        'is_searchable': gettext("Searchable"),
-        'is_ml_realm': gettext("Realm") + ": " + gettext("Mailinglists"),
-        'is_event_realm': gettext("Realm") + ": " + gettext("Events"),
-        'is_assembly_realm': gettext("Realm") + ": " + gettext("Assemblies"),
-        'is_cde_realm': gettext("Realm") + ": " + gettext("cde_realm"),
-        'is_ml_admin': gettext("Admin") + ": " + gettext("Mailinglists"),
-        'is_event_admin': gettext("Admin") + ": " + gettext("Events"),
-        'is_assembly_admin': gettext("Admin") + ": " + gettext("Assemblies"),
-        'is_cde_admin': gettext("Admin") + ": " + gettext("cde_realm"),
-        'is_finance_admin': gettext("Admin") + ": " + gettext("Finance"),
-        'is_cdelokal_admin': gettext("Admin") + ": " + gettext("CdElokal"),
-        'is_auditor': gettext("Admin") + ": " + gettext("Auditor"),
-        'is_core_admin': gettext("Admin") + ": " + gettext("Core"),
-        'is_meta_admin': gettext("Admin") + ": " + gettext("Meta"),
-        ','.join(ADMIN_KEYS): gettext("Admin") + ": " + gettext("Any"),
-        'lastschrift.granted_at': gettext("Lastschrift Granted"),
-        'lastschrift.revoked_at': gettext("Lastschrift Revoked"),
-        'lastschrift.active_lastschrift': gettext("Active Lastschrift"),
-        'lastschrift.amount': gettext("Lastschrift Amount"),
-    } %}
-
-            {% if archived %}
-                {% set target=cdedblink('{}/archived_user_search'.format(realm)) %}
-            {% else %}
-                {% set target=cdedblink('{}/user_search'.format(realm)) %}
-            {% endif %}
-            {{ format_query(scope, spec, TITLES, choices,
-                            target + '#query-results', selection_blacklist=selection_blacklist,
-                            selection_default=('personas.id', 'username', 'family_name', 'given_names')) }}
-
-    {% endwith %}
-{% endmacro %}
-
-{% macro user_search_result(result) %}
-    {# warning: titles will not be escaped! #}
-    {% with TITLES = {
-        "fulltext": gettext("Fulltext"),
-        "personas.id": gettext("ID"),
-        "username": gettext("E-Mail"),
-        "is_active": gettext("Active Account"),
-        "family_name": gettext("Family Name"),
-        "birth_name": gettext("Birth Name"),
-        "given_names": gettext("Given Names"),
-        "display_name": gettext("Known as (Forename)"),
-        "title": gettext("Title_[[of a persona]]"),
-        "name_supplement": gettext("Name Affix"),
-        "gender": gettext("Gender"),
-        "birthday": gettext("Birthday"),
-        "telephone": gettext("Phone"),
-        "mobile": gettext("Mobile Phone"),
-        "address": gettext("Address"),
-        "address_supplement": gettext("Address Supplement"),
-        "postal_code": gettext("ZIP"),
-        "location": gettext("City"),
-        "country": gettext("Country"),
-        "address2": gettext("Address (2)"),
-        "address_supplement2": gettext("Address Supplement (2)"),
-        "postal_code2": gettext("ZIP (2)"),
-        "location2": gettext("City (2)"),
-        "country2": gettext("Country (2)"),
-        "weblink": gettext("WWW"),
-        "specialisation": gettext("Specialisation"),
-        "affiliation": gettext("School, University, …"),
-        "timeline": gettext("Year(s) of Graduation"),
-        "interests": gettext("Interests"),
-        "free_form": gettext("Miscellaneous"),
-        "pevent_id": gettext("Past Event"),
-        "pcourse_id": gettext("Past Course"),
-        "balance": gettext("Membership-Fee Balance"),
-        "decided_search": gettext("Searchability Decided"),
-        "trial_member": gettext("Trial Member"),
-        "paper_expuls": gettext("Printed exPuls"),
-        "notes": gettext("Admin-Notes"),
-        'is_member': gettext("CdE-Member"),
-        'is_searchable': gettext("Searchable"),
-        'is_ml_realm': util.make_icon('envelope', title=gettext("Realm") + ": " + gettext("Mailinglists")),
-        'is_event_realm': util.make_icon('chalkboard-teacher', title=gettext("Realm") + ": " + gettext("Events")),
-        'is_assembly_realm': util.make_icon('bullhorn', title=gettext("Realm") + ": " + gettext("Assemblies")),
-        'is_cde_realm': util.make_icon('graduation-cap', title=gettext("Realm") + ": " + gettext("cde_realm")),
-        'is_ml_admin': "Admin " + util.make_icon('envelope', title=gettext("Admin") + ": " + gettext("Mailinglists")),
-        'is_event_admin': "Admin " + util.make_icon('chalkboard-teacher', title=gettext("Admin") + ": " + gettext("Events")),
-        'is_assembly_admin': "Admin " + util.make_icon('bullhorn', title=gettext("Admin") + ": " + gettext("Assemblies")),
-        'is_cde_admin': "Admin " + util.make_icon('graduation-cap', title=gettext("Admin") + ": " + gettext("cde_realm")),
-        'is_core_admin': "Admin " + util.make_icon('user', title=gettext("Admin") + ": " + gettext("Core")),
-        'is_meta_admin': "Admin " + util.make_icon('wrench', title=gettext("Admin") + ": " + gettext("Meta")),
-        'lastschrift.granted_at': gettext("Lastschrift Granted"),
-        'lastschrift.revoked_at': gettext("Lastschrift Revoked"),
-        'lastschrift.active_lastschrift': gettext("Active Lastschrift"),
-        'lastschrift.amount': gettext("Lastschrift Amount"),
-    } %}
-
-        {{ display_query_result(result, query, TITLES, choices) }}
-    {% endwith %}
+    {% if archived %}
+        {% set target=cdedblink('{}/archived_user_search'.format(realm)) %}
+    {% else %}
+        {% set target=cdedblink('{}/user_search'.format(realm)) %}
+    {% endif %}
+    {{ format_query(scope, spec, target + '#query-results', selection_blacklist=selection_blacklist,
+                    selection_default=('personas.id', 'username', 'family_name', 'given_names')) }}
 {% endmacro %}
 
 
-
-
-{% macro format_query(scope, spec, titles, choices, target, output_selection=True, selection_blacklist=[],
+{% macro format_query(scope, spec, target, output_selection=True, selection_blacklist=[],
                       selection_default=[]) %}
     <form action="{{ target }}" method="GET" id="queryform" aria-labelledby="qf_title">
         {{ util.input_hidden(name="is_search", value=True) }}
@@ -291,7 +164,7 @@
                                 {% for field in spec %}
                                     <tr class="query_field {% if field in errors %}errorInput{% endif %}
                                                {% if field == scope.get_primary_key() %}id-field{% endif %}"
-                                            data-type="{{ spec[field] }}" data-id="{{ field }}">
+                                            data-type="{{ spec[field].type }}" data-id="{{ field }}">
                                         <td>
                                             {# multi-fields are not reliably selectable, so we disable selection #}
                                             {% if ',' not in field and field not in selection_blacklist %}
@@ -301,21 +174,20 @@
                                                                 value=True,
                                                                 defaultvalue=('True' if field in selection_default
                                                                         and not values['is_search'] else ''),
-                                                                arialabel=(gettext("show %s")
-                                                                           |format(titles.get(field, field)))) }}
+                                                                arialabel=gettext("show %s")|format(spec[field].get_title(gettext))) }}
                                                     {% else %}
                                                         {{ util.input_hidden(name, value=True) }}
                                                     {% endif %}
                                                 {% endwith %}
                                             {% endif %}
                                         </td>
-                                        <td class="name">{{ titles.get(field, field) }}</td>
+                                        <td class="name">{{ spec[field].get_title(gettext) }}</td>
                                         <td>
                                             {% with name = "qop_{}".format(field) %}
                                                 {% with theid = "qop_{}".format(field) %}
                                                     {#- jinja does not support list comprehension ... #}
                                                     {%- set myentries = [] %}
-                                                    {%- for op in query_mod.VALID_QUERY_OPERATORS[spec[field]]
+                                                    {%- for op in query_mod.VALID_QUERY_OPERATORS[spec[field].type]
                                                             if field not in choices
                                                                 or op in query_mod.SELECTION_VALUE_OPERATORS %}
                                                         {%- do myentries.append((op.value,
@@ -324,26 +196,26 @@
                                                     {{ util.input_select(name, entries=myentries, nulloption=nbsp,
                                                             aclass='form-control input-sm filter-op', anid=theid,
                                                             arialabel=(gettext("filter operator for %s")
-                                                                       |format(titles.get(field, field)))) }}
+                                                                       |format(spec[field].get_title(gettext)))) }}
                                                 {% endwith %}
                                             {% endwith %}
                                         </td>
                                         <td {% if field in errors %}class="has-error"{% endif %}>
                                             {% with name = "qval_{}".format(field) %}
-                                                {% if spec[field] == 'bool' %}
+                                                {% if spec[field].type == 'bool' %}
                                                     {# Boolean fields are the only ones that don't need a text input field,
                                                        for none of their filter operators. So we can provide a select box
-                                                       for none-javascript users. #}
+                                                       for non-javascript users. #}
                                                     {{ util.input_select(name, anid="qinput_{}".format(field),
                                                             aclass='form-control input-sm filter-value',
                                                             entries=(('',''),(True, gettext("Yes")),(False, gettext("No"))),
                                                             arialabel=(gettext("compare value for %s")
-                                                                       |format(titles.get(field, field)))) }}
+                                                                       |format(spec[field].get_title(gettext)))) }}
                                                 {% else %}
                                                     {{ util.input_text(name, anid="qinput_{}".format(field),
                                                             aclass='form-control input-sm filter-value',
                                                             arialabel=(gettext("compare value for %s")
-                                                                       |format(titles.get(field, field)))) }}
+                                                                       |format(spec[field].get_title(gettext)))) }}
                                                 {% endif %}
                                                 {{ util.output_errors(field) }}
                                             {% endwith %}
@@ -367,7 +239,7 @@
                                             {#- jinja does not support list comprehension ... #}
                                             {%- set myentries = [] %}
                                             {%- for field in spec if ',' not in field %}
-                                                {%- do myentries.append((field, titles.get(field,field))) %}
+                                                {%- do myentries.append((field, spec[field].get_title(gettext))) %}
                                             {%- endfor %}
                                             {{ util.input_select(name, entries=myentries, nulloption=nbsp,
                                                                  aclass="form-control input-sm sort-field",
@@ -548,7 +420,7 @@
     {% endif %}
 {% endmacro %}
 
-{% macro display_query_result(result, query, titles, choices) %}
+{% macro display_query_result(result, query) %}
     {% if not result|length %}
         {% trans %}No search results!{% endtrans %}
     {% else %}
@@ -612,7 +484,7 @@
                     {% for csvfield in query.fields_of_interest %}
                         {% for field in csvfield.split(',') %}
                             <th>
-                                {{ titles.get(field, field) }}
+                                {{ query.spec[field].get_title(gettext) }}
                                 {% if values.get("qop_{}".format(field)) %}
                                     <span class="label label-default" title="{% trans %}filtered column{% endtrans %}">
                                         {{ util.make_icon('filter') }}
@@ -662,8 +534,7 @@
                                     by the query #}
                                 <td data-col="{{ field }}">  {# The data-col attribute is mainly used for testing #}
                                     {% set format_spec = query.get_field_format_spec(field) %}
-                                    {% set text = choices.get(csvfield, {}).get(row.get(field),
-                                                                                row.get(field, "UNDEFINED")) %}
+                                    {% set text = query.spec[field].choices.get(row.get(field), row.get(field, "UNDEFINED")) %}
                                     {% if format_spec == ResultFormat.persona %}
                                         <span class="nowrap">
                                             {% if primary_field == "personas.id" %}
