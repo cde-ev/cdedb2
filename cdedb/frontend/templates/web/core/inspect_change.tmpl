@@ -30,6 +30,8 @@
             {{- util.href(show_user_link(user, persona['id']), persona['id']|cdedbid, aclass='nowrap') -}}
         {% elif key == 'country' or key == 'country2' %}
             {{- util.gettext_country(persona[key]) -}}
+        {% elif key == 'mobile' or key == 'telephone' %}
+            {{- persona[key]|phone }}
         {% else %}
             {{- persona[key] -}}
         {% endif %}

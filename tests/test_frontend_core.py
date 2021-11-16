@@ -228,8 +228,8 @@ class TestCoreFrontend(FrontendTest):
                  "FN:Bertålotta Beispiel",
                  "N:Beispiel;Bertålotta;;Dr.;MdB",
                  "NICKNAME:Bertå",
-                 "TEL;TYPE=\"home,voice\":+49 (5432) 987654321",
-                 "TEL;TYPE=\"cell,voice\":0163/123456789",
+                 "TEL;TYPE=\"home,voice\":+495432987654321",
+                 "TEL;TYPE=\"cell,voice\":+4916312345678",
                  "END:VCARD"]
         for line in vcard:
             self.assertIn(line, self.response.text)
@@ -1580,6 +1580,11 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['promotionform']
         self.assertNonPresence("Die Kursauswahl wird angezeigt, nachdem")
         f['pcourse_id'] = ''
+        self.submit(f, check_notification=False)
+        # ignore phone number ValidationWarning
+        # TODO list this warnings anywhere?
+        # self.assertValidationWarning("mobile", "Telefonnummer scheint invalide zu")
+        f[IGNORE_WARNINGS_NAME].checked = True
         self.submit(f)
         self.assertTitle("Emilia E. Eventis")
         self.assertPresence("0,00 €", div='balance')
