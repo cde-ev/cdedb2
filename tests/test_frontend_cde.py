@@ -882,9 +882,9 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Dr. Zelda Zeruda-Hime von und zu",
                             div='personal-information')
         self.assertPresence("05.06.1987", div='personal-information')
-        self.assertPresence("030 456790", div='contact-telephone',
+        self.assertPresence("+49 30 456790", div='contact-telephone',
                             exact=True)
-        self.assertPresence("0160 20479204", div='contact-mobile', exact=True)
+        self.assertPresence("+49 160 20479204", div='contact-mobile', exact=True)
         self.assertPresence("12345 Lynna", div='address')
         self.assertPresence("Ligusterweg 4", div='address2')
         self.assertPresence("CdE-Mitglied (Probemitgliedschaft)",
