@@ -48,9 +48,9 @@
         <dt>{% trans %}E-Mail{% endtrans %}</dt>
         <dd>{{ util.username_mailto(persona) }} </dd>
         <dt>{% trans %}Phone{% endtrans %}</dt>
-        <dd>{{ persona['telephone'] }}</dd>
+        <dd>{{ persona['telephone']|phone }}</dd>
         <dt>{% trans %}Mobile Phone{% endtrans %}</dt>
-        <dd>{{ persona['mobile'] }}</dd>
+        <dd>{{ persona['mobile']|phone }}</dd>
     </dl>
     <dl class="dl-horizontal">
         <dt>{% trans %}Address{% endtrans %}</dt>

@@ -69,6 +69,7 @@ from typing import (
 )
 
 import magic
+import phonenumbers
 import PIL.Image
 import pytz
 import pytz.tzinfo
@@ -91,8 +92,7 @@ from cdedb.query import (
     QueryOrder, QueryScope,
 )
 from cdedb.validationdata import (
-    COUNTRY_CODES, FREQUENCY_LISTS, GERMAN_PHONE_CODES, GERMAN_POSTAL_CODES,
-    IBAN_LENGTHS, ITU_CODES,
+    COUNTRY_CODES, FREQUENCY_LISTS, GERMAN_POSTAL_CODES, IBAN_LENGTHS,
 )
 from cdedb.validationtypes import *  # pylint: disable=wildcard-import,unused-wildcard-import; # noqa: F403
 
@@ -1412,75 +1412,24 @@ def _single_digit_int(
 
 @_add_typed_validator
 def _phone(
-    val: Any, argname: str = None, **kwargs: Any
+    val: Any, argname: str = None, *,  ignore_warnings: bool = False, **kwargs: Any
 ) -> Phone:
-    val = _printable_ascii(val, argname, **kwargs)
-    orig = val.strip()
-    val = ''.join(c for c in val if c in '+1234567890')
+    raw = _printable_ascii(val, argname, **kwargs, ignore_warnings=ignore_warnings)
 
-    if len(val) < 7:
-        raise ValidationSummary(ValueError(argname, n_("Too short.")))
+    try:
+        # default to german if no region is provided
+        phone: phonenumbers.PhoneNumber = phonenumbers.parse(raw, region="DE")
+    except phonenumbers.NumberParseException:
+        msg = n_("Phone number can not be parsed.")
+        raise ValidationSummary(ValueError(argname, msg)) from None
+    if not phonenumbers.is_valid_number(phone) and not ignore_warnings:
+        msg = n_("Phone number seems to be not valid.")
+        raise ValidationSummary(ValidationWarning(argname, msg))
 
-    # This is pretty horrible, but seems to be the best way ...
-    # It works thanks to the test-suite ;)
+    # handle the phone number as normalized string internally
+    phone_str = phonenumbers.format_number(phone, phonenumbers.PhoneNumberFormat.E164)
 
-    errs = ValidationSummary()
-    retval = "+"
-    # first the international part
-    if val.startswith(("+", "00")):
-        for prefix in ("+", "00"):
-            if val.startswith(prefix):
-                val = val[len(prefix):]
-        for code in ITU_CODES:
-            if val.startswith(code):
-                retval += code
-                val = val[len(code):]
-                break
-        else:
-            errs.append(ValueError(argname, n_("Invalid international part.")))
-        if retval == "+49" and not val.startswith("0"):
-            val = "0" + val
-    else:
-        retval += "49"
-    # now the national part
-    if retval == "+49":
-        # german stuff here
-        if not val.startswith("0"):
-            errs.append(ValueError(argname, n_("Invalid national part.")))
-        else:
-            val = val[1:]
-        for length in range(1, 7):
-            if val[:length] in GERMAN_PHONE_CODES:
-                retval += " ({}) {}".format(val[:length], val[length:])
-                if length + 2 >= len(val):
-                    errs.append(ValueError(argname, n_("Invalid local part.")))
-                break
-        else:
-            errs.append(ValueError(argname, n_("Invalid national part.")))
-    else:
-        index = 0
-        try:
-            index = orig.index(retval[1:]) + len(retval) - 1
-        except ValueError:
-            errs.append(ValueError(argname, n_("Invalid international part.")))
-        # this will terminate since we know that there are sufficient digits
-        while not orig[index] in string.digits:
-            index += 1
-        rest = orig[index:]
-        sep = ''.join(c for c in rest if c not in string.digits)
-        try:
-            national = rest[:rest.index(sep)]
-            local = rest[rest.index(sep) + len(sep):]
-            if not national or not local:
-                raise ValidationSummary()  # TODO more specific?
-            retval += " ({}) {}".format(national, local)
-        except ValueError:
-            retval += " " + val
-
-    if errs:
-        raise errs
-
-    return Phone(retval)
+    return phone_str
 
 
 @_add_typed_validator
