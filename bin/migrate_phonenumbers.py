@@ -3,13 +3,13 @@ from functools import partial
 
 import cdedb.validationtypes as vtypes
 from cdedb.common import CdEDBObject
-from cdedb.script import CoreBackend, Script
+from cdedb.script import Script
 from cdedb.validation import validate_assert_optional
 
 script = Script(persona_id=1, dbuser="cdb_admin")
 rs = script.rs()
 
-core: CoreBackend = script.make_backend("core", proxy=False)
+core = script.make_backend("core", proxy=False)
 phone = partial(validate_assert_optional, vtypes.Phone, ignore_warnings=True)
 
 phone_fields = ('telephone', 'mobile')
