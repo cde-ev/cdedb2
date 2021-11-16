@@ -17,5 +17,6 @@
     {{ util.breadcrumb_link(cdedblink("assembly/archived_user_search"), gettext("Search Archived Users"), active="True") }}
 {% endblock %}
 {% block content %}
-    {{ generic.user_search("assembly", archived=True, info=gettext("This search will only show archived pure assembly users.")) }}
+    {{ generic.user_search("assembly", result, query, archived=True, info=gettext(
+            "This search will only show archived pure assembly users.")) }}
 {% endblock %}
