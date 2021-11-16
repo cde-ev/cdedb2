@@ -88,7 +88,7 @@ from cdedb.database.constants import FieldAssociations, FieldDatatypes
 from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS
 from cdedb.query import (
     MULTI_VALUE_OPERATORS, NO_VALUE_OPERATORS, VALID_QUERY_OPERATORS, QueryOperators,
-    QueryOrder, QueryScope,
+    QueryOrder, QueryScope, QuerySpec,
 )
 from cdedb.validationdata import (
     COUNTRY_CODES, FREQUENCY_LISTS, GERMAN_PHONE_CODES, GERMAN_POSTAL_CODES,
@@ -4237,7 +4237,7 @@ def _non_regex(
 @_add_typed_validator
 def _query_input(
     val: Any, argname: str = None, *,
-    spec: Mapping[str, str], allow_empty: bool = False,
+    spec: QuerySpec, allow_empty: bool = False,
     separator: str = ',', escape: str = '\\',
     **kwargs: Any
 ) -> QueryInput:
@@ -4272,7 +4272,8 @@ def _query_input(
     order: List[QueryOrder] = []
     errs = ValidationSummary()
 
-    for field, validator in spec.items():
+    for field, spec_entry in spec.items():
+        validator = spec_entry.type
         # First the selection of fields of interest
         try:
             selected = _bool(val.get("qsel_{}".format(
@@ -4440,13 +4441,14 @@ def _query(
         val.name, "name", **kwargs)
 
     # spec
-    for field, validator in val.spec.items():
+    for field, spec_entry in val.spec.items():
         try:
             _csv_identifier(field, "spec", **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
 
         try:
+            validator = spec_entry.type
             _printable_ascii(validator, "spec", **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
@@ -4485,7 +4487,7 @@ def _query(
             errs.extend(e)
             continue
 
-        if operator not in VALID_QUERY_OPERATORS[val.spec[field]]:
+        if operator not in VALID_QUERY_OPERATORS[val.spec[field].type]:
             errs.append(ValueError("constraints/{}".format(field),
                                    n_("Invalid operator.")))
             continue
@@ -4495,7 +4497,7 @@ def _query(
 
         elif operator in MULTI_VALUE_OPERATORS:
             validator = _ALL_TYPED[
-                Optional[VALIDATOR_LOOKUP[val.spec[field]]]]  # type: ignore
+                Optional[VALIDATOR_LOOKUP[val.spec[field].type]]]  # type: ignore
             for v in value:
                 try:
                     validator(v, "constraints/{}".format(field), **kwargs)
@@ -4504,7 +4506,7 @@ def _query(
         else:
             try:
                 _ALL_TYPED[
-                    Optional[VALIDATOR_LOOKUP[val.spec[field]]]  # type: ignore
+                    Optional[VALIDATOR_LOOKUP[val.spec[field].type]]  # type: ignore
                 ](
                     value,
                     "constraints/{}".format(field),

@@ -11291,6 +11291,9 @@ msgstr "für %(track)s"
 msgid "%s. Choice"
 msgstr "%s. Wahl"
 
+msgid "{rank}. Choice"
+msgstr "{rank}. Wahl"
+
 #: cdedb/frontend/templates/web/event/generic.tmpl:25
 msgid "Optional choice"
 msgstr "Optionale Wahl"
@@ -16202,8 +16205,8 @@ msgid "instructors"
 msgstr "Kursleiter"
 
 #: cdedb/query.py:1200 cdedb/query.py:1213
-msgid "{}. choices"
-msgstr "{}. Wahlen"
+msgid "{rank}. choices"
+msgstr "{rank}. Wahlen"
 
 #: cdedb/query.py:1296 cdedb/query.py:1307
 msgid "--no group--"
@@ -16240,7 +16243,7 @@ msgstr "Reguläre Bewohner"
 
 #: cdedb/query.py:1343 cdedb/query.py:1354 cdedb/query.py:1360
 #: cdedb/query.py:1371
-msgid "Reserve Inhabitants"
+msgid "Camping Mat Inhabitants"
 msgstr "Isomattenschläfer"
 
 #: cdedb/query.py:1345 cdedb/query.py:1356 cdedb/query.py:1362
@@ -16255,7 +16258,7 @@ msgstr "Unterkunftsgruppe: Reguläre Bewohner"
 
 #: cdedb/query.py:1349 cdedb/query.py:1360 cdedb/query.py:1367
 #: cdedb/query.py:1378
-msgid "Group Reserve Inhabitants"
+msgid "Group Camping Mat Inhabitants"
 msgstr "Unterkufntsgruppe: Isomattenschläfer"
 
 #: cdedb/query.py:1351 cdedb/query.py:1362 cdedb/query.py:1369
