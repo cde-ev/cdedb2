@@ -819,11 +819,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             query = check_validation(rs, vtypes.QueryInput, query_input, "query",
                                      spec=spec, allow_empty=False)
         default_queries = self.conf["DEFAULT_QUERIES"][default_scope]
-        if not choices:
-            choices = {}
-        choices_lists = {k: list(v.items()) for k, v in choices.items()}
+        choices_lists = {}
+        for k, v in choices.items():
+            choices_lists[k] = list(v.items())
+            if query:
+                query.spec[k] = query.spec[k].replace_choices(v)
         params = {
-            'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
+            'spec': spec, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'query': query, 'scope': scope,
             'ADMIN_KEYS': ADMIN_KEYS,
         }

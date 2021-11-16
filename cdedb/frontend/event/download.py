@@ -23,10 +23,7 @@ from cdedb.common import (
 from cdedb.frontend.common import REQUESTdata, access, event_guard, make_persona_name
 from cdedb.frontend.event.base import EventBaseFrontend
 from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
-from cdedb.query import (
-    Query, QueryOperators, QueryScope, make_course_query_aux, make_lodgement_query_aux,
-    make_registration_query_aux,
-)
+from cdedb.query import Query, QueryOperators, QueryScope
 
 
 class EventDownloadMixin(EventBaseFrontend):
@@ -422,13 +419,13 @@ class EventDownloadMixin(EventBaseFrontend):
         """Create CSV file with all courses"""
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
-
-        spec = QueryScope.event_course.get_spec(event=rs.ambience['event'])
-        choices, _ = make_course_query_aux(
-            rs, rs.ambience['event'], courses, fixed_gettext=True)
+        spec = QueryScope.event_course.get_spec(
+            event=rs.ambience['event'], courses=courses)
+        choices = {k: v.choices for k, v in spec.items() if v.choices}
         fields_of_interest = list(spec.keys())
-        query = Query(QueryScope.event_course, spec, fields_of_interest, [], [])
-        result = self.eventproxy.submit_general_query(rs, query, event_id)
+        query = Query(QueryScope.event_course, spec, fields_of_interest,
+                      constraints=[], order=[])
+        result = self.eventproxy.submit_general_query(rs, query, event_id=event_id)
         if not result:
             rs.notify("info", n_("Empty File."))
             return self.redirect(rs, "event/downloads")
@@ -446,12 +443,13 @@ class EventDownloadMixin(EventBaseFrontend):
         group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
         groups = self.eventproxy.get_lodgement_groups(rs, group_ids)
 
-        spec = QueryScope.lodgement.get_spec(event=rs.ambience['event'])
-        choices, _ = make_lodgement_query_aux(
-            rs, rs.ambience['event'], lodgements, groups, fixed_gettext=True)
+        spec = QueryScope.lodgement.get_spec(
+            event=rs.ambience['event'], lodgements=lodgements, lodgement_groups=groups)
+        choices = {k: v.choices for k, v in spec.items() if v.choices}
         fields_of_interest = list(spec.keys())
-        query = Query(QueryScope.lodgement, spec, fields_of_interest, [], [])
-        result = self.eventproxy.submit_general_query(rs, query, event_id)
+        query = Query(QueryScope.lodgement, spec, fields_of_interest,
+                      constraints=[], order=[])
+        result = self.eventproxy.submit_general_query(rs, query, event_id=event_id)
         if not result:
             rs.notify("info", n_("Empty File."))
             return self.redirect(rs, "event/downloads")
@@ -472,14 +470,14 @@ class EventDownloadMixin(EventBaseFrontend):
         lodgement_group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
         lodgement_groups = self.eventproxy.get_lodgement_groups(rs, lodgement_group_ids)
 
-        spec = QueryScope.registration.get_spec(event=rs.ambience['event'])
+        spec = QueryScope.registration.get_spec(
+            event=rs.ambience['event'], courses=courses, lodgements=lodgements,
+            lodgement_groups=lodgement_groups)
+        choices = {k: v.choices for k, v in spec.items() if v.choices}
         fields_of_interest = list(spec.keys())
-        choices, _ = make_registration_query_aux(
-            rs, rs.ambience['event'], courses, lodgements, lodgement_groups,
-            fixed_gettext=True)
-        query = Query(QueryScope.registration, spec, fields_of_interest, [], [])
-        result = self.eventproxy.submit_general_query(
-            rs, query, event_id=event_id)
+        query = Query(QueryScope.registration, spec, fields_of_interest,
+                      constraints=[], order=[])
+        result = self.eventproxy.submit_general_query(rs, query, event_id=event_id)
         if not result:
             rs.notify("info", n_("Empty File."))
             return self.redirect(rs, "event/downloads")

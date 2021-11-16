@@ -36,7 +36,7 @@
         </div>
     </div>
 
-    {{ generic.format_query(enums['QueryScope'].lodgement, spec, titles, choices, cdedblink('event/lodgement_query'),
+    {{ generic.format_query(enums['QueryScope'].lodgement, spec, cdedblink('event/lodgement_query'),
                             selection_default=selection_default) }}
 
     {% if values['is_search'] %}
@@ -47,7 +47,7 @@
             {{ generic.query_button_field_set(enums['FieldAssociations'].lodgement) }}
         </div>
 
-        {{ generic.display_query_result(result, query, titles, choices) }}
+        {{ generic.display_query_result(result, query) }}
 
     {% endif %}
 {% endblock %}
