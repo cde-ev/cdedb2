@@ -224,12 +224,8 @@ def phone_filter(val: Optional[str]) -> Optional[str]:
         # default to the raw value if it can not be parsed
         return val
 
-    # show german numbers in national, others in international format
-    if phone.country_code == 49:
-        phone_number_format = phonenumbers.PhoneNumberFormat.NATIONAL
-    else:
-        phone_number_format = phonenumbers.PhoneNumberFormat.INTERNATIONAL
-    return phonenumbers.format_number(phone, phone_number_format)
+    return phonenumbers.format_number(
+        phone, phonenumbers.PhoneNumberFormat.INTERNATIONAL)
 
 
 @overload
