@@ -820,9 +820,11 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                                      spec=spec, allow_empty=False)
         default_queries = self.conf["DEFAULT_QUERIES"][default_scope]
         choices_lists = {}
+        if choices is None:
+            choices = {}
         for k, v in choices.items():
             choices_lists[k] = list(v.items())
-            if query:
+            if query and k in query.spec:
                 query.spec[k] = query.spec[k].replace_choices(v)
         params = {
             'spec': spec, 'choices_lists': choices_lists,
@@ -836,7 +838,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             if download:
                 return self.send_query_download(
                     rs, result, fields=query.fields_of_interest, kind=download,
-                    filename=endpoint + "_result", substitutions=params['choices'])
+                    filename=endpoint + "_result", substitutions=choices)
         else:
             rs.values['is_search'] = False
         return self.render(rs, endpoint, params)

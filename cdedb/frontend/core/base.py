@@ -1103,7 +1103,7 @@ class CoreBaseFrontend(AbstractFrontend):
             'gender': collections.OrderedDict(
                 enum_entries_filter(
                     const.Genders,
-                    rs.gettext if download is None else rs.default_gettext))
+                    rs.gettext if download is None else rs.default_gettext)),
         }
         return self.generic_user_search(
             rs, download, is_search, QueryScope.core_user, QueryScope.core_user,
@@ -1138,12 +1138,10 @@ class CoreBaseFrontend(AbstractFrontend):
         """
         events = self.pasteventproxy.list_past_events(rs)
         choices: Dict[str, Dict[Any, str]] = {
-            'pevent_id': collections.OrderedDict(
-                xsorted(events.items(), key=operator.itemgetter(1))),
             'gender': collections.OrderedDict(
                 enum_entries_filter(
                     const.Genders,
-                    rs.gettext if download is None else rs.default_gettext))
+                    rs.gettext if download is None else rs.default_gettext)),
         }
         return self.generic_user_search(
             rs, download, is_search,
