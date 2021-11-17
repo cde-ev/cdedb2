@@ -811,10 +811,22 @@ class EventQueryMixin(EventBaseFrontend):
         if download:
             shortname = rs.ambience['event']['shortname']
             return self.send_query_download(
-                rs, params['result'], query.fields_of_interest, kind=download,
-                filename=f"{shortname}_{filename}",
-                substitutions=params['choices'])
+                rs, params['result'], query, kind=download,
+                filename=f"{shortname}_{filename}")
         else:
+            # Add choices that could not be automatically applied before.
+            for k, v in query.spec.items():
+                if k.endswith("gender"):
+                    query.spec[k] = query.spec[k].replace_choices(
+                        dict(enum_entries_filter(const.Genders, rs.gettext)))
+                if k.endswith(".status"):
+                    query.spec[k] = query.spec[k].replace_choices(
+                        dict(enum_entries_filter(
+                            const.RegistrationPartStati, rs.gettext)))
+                if k.endswith(("country", "country2")):
+                    query.spec[k] = query.spec[k].replace_choices(
+                        dict(get_localized_country_codes(rs)))
+            substitutions = {k: v.choices for k, v in query.spec.items() if v.choices}
             return self.render(rs, scope.get_target(redirect=False), params)
 
     @access("event")

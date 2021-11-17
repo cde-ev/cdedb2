@@ -17,9 +17,10 @@ from werkzeug import Response
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    EntitySorter, RequestState, asciificator, determine_age_class, json_serialize, n_,
-    unwrap, xsorted,
+    EntitySorter, RequestState, asciificator, determine_age_class,
+    get_localized_country_codes, json_serialize, n_, unwrap, xsorted,
 )
+from cdedb.filter import enum_entries_filter
 from cdedb.frontend.common import REQUESTdata, access, event_guard, make_persona_name
 from cdedb.frontend.event.base import EventBaseFrontend
 from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
@@ -419,18 +420,18 @@ class EventDownloadMixin(EventBaseFrontend):
         """Create CSV file with all courses"""
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
+
         spec = QueryScope.event_course.get_spec(
             event=rs.ambience['event'], courses=courses)
-        choices = {k: v.choices for k, v in spec.items() if v.choices}
-        fields_of_interest = list(spec.keys())
-        query = Query(QueryScope.event_course, spec, fields_of_interest,
-                      constraints=[], order=[])
+
+        query = Query(QueryScope.event_course, spec,
+                      fields_of_interest=spec.keys(), constraints=[], order=[])
         result = self.eventproxy.submit_general_query(rs, query, event_id=event_id)
         if not result:
             rs.notify("info", n_("Empty File."))
             return self.redirect(rs, "event/downloads")
         return self.send_query_download(
-            rs, result, fields_of_interest, "csv", substitutions=choices,
+            rs, result, query, "csv",
             filename=f"{rs.ambience['event']['shortname']}_courses")
 
     @access("event")
@@ -445,16 +446,15 @@ class EventDownloadMixin(EventBaseFrontend):
 
         spec = QueryScope.lodgement.get_spec(
             event=rs.ambience['event'], lodgements=lodgements, lodgement_groups=groups)
-        choices = {k: v.choices for k, v in spec.items() if v.choices}
-        fields_of_interest = list(spec.keys())
-        query = Query(QueryScope.lodgement, spec, fields_of_interest,
-                      constraints=[], order=[])
+
+        query = Query(QueryScope.lodgement, spec,
+                      fields_of_interest=spec.keys(), constraints=[], order=[])
         result = self.eventproxy.submit_general_query(rs, query, event_id=event_id)
         if not result:
             rs.notify("info", n_("Empty File."))
             return self.redirect(rs, "event/downloads")
         return self.send_query_download(
-            rs, result, fields_of_interest, "csv", substitutions=choices,
+            rs, result, query, "csv",
             filename=f"{rs.ambience['event']['shortname']}_lodgements")
 
     @access("event")
@@ -473,16 +473,15 @@ class EventDownloadMixin(EventBaseFrontend):
         spec = QueryScope.registration.get_spec(
             event=rs.ambience['event'], courses=courses, lodgements=lodgements,
             lodgement_groups=lodgement_groups)
-        choices = {k: v.choices for k, v in spec.items() if v.choices}
-        fields_of_interest = list(spec.keys())
-        query = Query(QueryScope.registration, spec, fields_of_interest,
-                      constraints=[], order=[])
+
+        query = Query(QueryScope.registration, spec,
+                      fields_of_interest=spec.keys(), constraints=[], order=[])
         result = self.eventproxy.submit_general_query(rs, query, event_id=event_id)
         if not result:
             rs.notify("info", n_("Empty File."))
             return self.redirect(rs, "event/downloads")
         return self.send_query_download(
-            rs, result, fields_of_interest, "csv", substitutions=choices,
+            rs, result, query, "csv",
             filename=f"{rs.ambience['event']['shortname']}_registrations")
 
     @access("event", modi={"GET"})
