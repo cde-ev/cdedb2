@@ -22,7 +22,7 @@ import pytz
 
 import cdedb.database.constants as const
 from cdedb.common import ADMIN_KEYS, CdEDBObject, PathLike, deduct_years, n_, now
-from cdedb.query import Query, QueryOperators, QueryScope
+from cdedb.query import Query, QueryOperators, QueryScope, QuerySpec
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -63,7 +63,7 @@ _BASIC_DEFAULTS = {
 
 def generate_event_registration_default_queries(
         gettext: Callable[[str], str], event: CdEDBObject,
-        spec: Dict[str, str]) -> Dict[str, Query]:
+        spec: QuerySpec) -> Dict[str, Query]:
     """
     Generate default queries for registration_query.
 
@@ -201,7 +201,7 @@ def generate_event_registration_default_queries(
 
 def generate_event_course_default_queries(
         gettext: Callable[[str], str], event: CdEDBObject,
-        spec: Dict[str, str]) -> Dict[str, Query]:
+        spec: QuerySpec) -> Dict[str, Query]:
     """
     Generate default queries for course_queries.
 

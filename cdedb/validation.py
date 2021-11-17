@@ -4397,8 +4397,7 @@ def _query(
             errs.extend(e)
 
         try:
-            validator = spec_entry.type
-            _printable_ascii(validator, "spec", **kwargs)
+            _printable_ascii(spec_entry.type, "spec", **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
 
