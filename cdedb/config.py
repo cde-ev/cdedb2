@@ -520,12 +520,12 @@ _DEFAULTS = {
         },
         QueryScope.core_user: {
             n_("00_query_core_user_all"): Query(
-                QueryScope.persona, QueryScope.core_user.get_spec(),
+                QueryScope.core_user, QueryScope.core_user.get_spec(),
                 ("personas.id", "given_names", "family_name"),
                 tuple(),
                 (("family_name", True), ("given_names", True), ("personas.id", True))),
             n_("10_query_core_any_admin"): Query(
-                QueryScope.persona, QueryScope.core_user.get_spec(),
+                QueryScope.core_user, QueryScope.core_user.get_spec(),
                 ("personas.id", "given_names", "family_name", *ADMIN_KEYS),
                 ((",".join(ADMIN_KEYS), QueryOperators.equal, True),),
                 (("family_name", True), ("given_names", True), ("personas.id", True))),

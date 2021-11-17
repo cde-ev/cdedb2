@@ -2241,17 +2241,12 @@ class CoreBaseFrontend(AbstractFrontend):
             err = {'error': tuple(map(str, rs.retrieve_validation_errors()))}
             return self.send_json(rs, err)
 
-        spec = {
-            "id": "id",
-            "username": "str",
-            "is_event_realm": "bool",
-        }
         constraints = (
             ('username', QueryOperators.equal, username),
             ('is_event_realm', QueryOperators.equal, True),
         )
-        query = Query(QueryScope.persona, spec,
+        query = Query(QueryScope.persona, QueryScope.persona.get_spec(),
                       ("given_names", "family_name", "is_member", "username"),
-                      constraints, (('id', True),))
+                      constraints, (('personas.id', True),))
         result = self.coreproxy.submit_resolve_api_query(rs, query)
         return self.send_json(rs, unwrap(result) if result else {})
