@@ -26,7 +26,9 @@ from cdedb.frontend.common import (
     inspect_validation as inspect, periodic,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
-from cdedb.query import Query, QueryConstraint, QueryOperators, QueryOrder, QueryScope
+from cdedb.query import (
+    Query, QueryConstraint, QueryOperators, QueryOrder, QueryScope, QuerySpecEntry,
+)
 
 RPS = const.RegistrationPartStati
 
@@ -844,7 +846,6 @@ class EventQueryMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.send_json(rs, {})
 
-        spec_additions: Dict[str, str] = {}
         search_additions: List[QueryConstraint] = []
         event = None
         num_preview_personas = (self.conf["NUM_PREVIEW_PERSONAS_CORE_ADMIN"]
@@ -886,12 +887,11 @@ class EventQueryMixin(EventBaseFrontend):
             if not valid:
                 data = []
             else:
-                search = [("username,family_name,given_names,display_name",
-                           QueryOperators.match, t) for t in terms]
+                key = "username,family_name,given_names,display_name"
+                search = [(key, QueryOperators.match, t) for t in terms]
                 search.extend(search_additions)
                 spec = QueryScope.quick_registration.get_spec()
-                spec["username,family_name,given_names,display_name"] = "str"
-                spec.update(spec_additions)
+                spec[key] = QuerySpecEntry("str", "")
                 query = Query(
                     QueryScope.quick_registration, spec,
                     ("registrations.id", "username", "family_name",

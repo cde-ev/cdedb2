@@ -667,7 +667,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             # Collate compatible to COLLATOR in python
             orders = []
             for entry, ascending in query.order:
-                if query.spec[entry] == 'str':
+                if query.spec[entry].type == 'str':
                     orders.append(
                         f'{entry.split(",")[0]} COLLATE "{LOCALE}" '
                         f'{"ASC" if ascending else "DESC"}')

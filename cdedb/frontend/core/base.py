@@ -902,7 +902,6 @@ class CoreBaseFrontend(AbstractFrontend):
         if rs.has_validation_errors():
             return self.send_json(rs, {})
 
-        spec_additions: Dict[str, str] = {}
         search_additions = []
         mailinglist = None
         num_preview_personas = (self.conf["NUM_PREVIEW_PERSONAS_CORE_ADMIN"]
@@ -1009,7 +1008,6 @@ class CoreBaseFrontend(AbstractFrontend):
                 search.extend(search_additions)
                 spec = QueryScope.core_user.get_spec()
                 spec[key] = QuerySpecEntry("str", "")
-                spec.update(spec_additions)
                 query = Query(
                     QueryScope.core_user, spec,
                     ("personas.id", "username", "family_name", "given_names",
