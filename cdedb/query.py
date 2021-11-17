@@ -114,9 +114,10 @@ class QuerySpecEntry(NamedTuple):
     title_params: Dict[str, str] = {}
     choices: QueryChoices = {}
 
-    def get_title(self, gettext: Callable[[str], str]) -> str:
-        ret_prefix = gettext(f"{self.title_prefix}: ") if self.title_prefix else ""
-        ret_title = gettext(self.title_base).format(**self.title_params)
+    # Mask gettext so pybabel doesn't try to extract the f-string.
+    def get_title(self, g: Callable[[str], str]) -> str:
+        ret_prefix = g(f"{self.title_prefix}: ") if self.title_prefix else ""
+        ret_title = g(self.title_base).format(**self.title_params)
         return ret_prefix + ret_title
 
     def replace_choices(self, choices: QueryChoices) -> "QuerySpecEntry":
