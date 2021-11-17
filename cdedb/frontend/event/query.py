@@ -27,7 +27,8 @@ from cdedb.frontend.common import (
 )
 from cdedb.frontend.event.base import EventBaseFrontend
 from cdedb.query import (
-    Query, QueryConstraint, QueryOperators, QueryOrder, QueryScope, QuerySpecEntry,
+    Query, QueryConstraint, QueryOperators, QueryOrder, QueryScope, QuerySpec,
+    QuerySpecEntry,
 )
 
 RPS = const.RegistrationPartStati
@@ -599,15 +600,7 @@ class EventQueryMixin(EventBaseFrontend):
         scope = QueryScope.registration
         spec = scope.get_spec(event=rs.ambience["event"], courses=courses,
                               lodgements=lodgements, lodgement_groups=lodgement_groups)
-        # Fix some complicated choices.
-        spec['persona.gender'] = spec['persona.gender'].replace_choices(
-            dict(enum_entries_filter(const.Genders, rs.gettext)))
-        spec['persona.country'] = spec['persona.country'].replace_choices(
-            dict(get_localized_country_codes(rs)))
-        for k, v in spec.items():
-            if k.endswith(".status"):
-                spec[k] = spec[k].replace_choices(
-                    dict(enum_entries_filter(const.RegistrationPartStati, rs.gettext)))
+        self._fix_query_choices(rs, spec)
 
         # mangle the input, so we can prefill the form
         query_input = scope.mangle_query_input(rs)
@@ -623,9 +616,13 @@ class EventQueryMixin(EventBaseFrontend):
             rs, event_id, scopes=(scope,))
         default_queries.update(stored_queries)
 
+        choices_lists = {k: list(spec_entry.choices.items())
+                         for k, spec_entry in spec.items()
+                         if spec_entry.choices}
+
         params = {
-            'spec': spec, 'query': query, 'default_queries': default_queries,
-            'has_registrations': has_registrations,
+            'spec': spec, 'query': query, 'choices_lists': choices_lists,
+            'default_queries': default_queries, 'has_registrations': has_registrations,
         }
         # Tricky logic: In case of no validation errors we perform a query
         if not rs.has_validation_errors() and is_search and query:
@@ -713,6 +710,7 @@ class EventQueryMixin(EventBaseFrontend):
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         scope = QueryScope.event_course
         spec = scope.get_spec(event=rs.ambience['event'], courses=courses)
+        self._fix_query_choices(rs, spec)
         query_input = scope.mangle_query_input(rs)
         query: Optional[Query] = None
         if is_search:
@@ -730,9 +728,13 @@ class EventQueryMixin(EventBaseFrontend):
             rs.gettext, rs.ambience['event'], spec)
         default_queries.update(stored_queries)
 
+        choices_lists = {k: list(spec_entry.choices.items())
+                         for k, spec_entry in spec.items()
+                         if spec_entry.choices}
+
         params = {
-            'spec': spec, 'query': query, 'default_queries': default_queries,
-            'selection_default': selection_default,
+            'spec': spec, 'query': query, 'choices_lists': choices_lists,
+            'default_queries': default_queries, 'selection_default': selection_default,
         }
 
         if not rs.has_validation_errors() and is_search and query:
@@ -761,6 +763,7 @@ class EventQueryMixin(EventBaseFrontend):
             rs, lodgement_group_ids)
         spec = scope.get_spec(event=rs.ambience["event"], lodgements=lodgements,
                               lodgement_groups=lodgement_groups)
+        self._fix_query_choices(rs, spec)
         query_input = scope.mangle_query_input(rs)
         query: Optional[Query] = None
         if is_search:
@@ -780,9 +783,13 @@ class EventQueryMixin(EventBaseFrontend):
             rs, event_id, scopes=(scope,))
         default_queries.update(stored_queries)
 
+        choices_lists = {k: list(spec_entry.choices.items())
+                         for k, spec_entry in spec.items()
+                         if spec_entry.choices}
+
         params = {
-            'spec': spec, 'query': query, 'default_queries': default_queries,
-            'selection_default': selection_default,
+            'spec': spec, 'query': query, 'choices_list': choices_lists,
+            'default_queries': default_queries, 'selection_default': selection_default,
         }
 
         if not rs.has_validation_errors() and is_search and query:
@@ -795,6 +802,21 @@ class EventQueryMixin(EventBaseFrontend):
             rs.values['is_search'] = is_search = False
             return self.render(rs, "query/lodgement_query", params)
 
+    @staticmethod
+    def _fix_query_choices(rs: RequestState, spec: QuerySpec) -> None:
+        # Add choices that could not be automatically applied before.
+        for k, v in spec.items():
+            if k.endswith("gender"):
+                spec[k] = spec[k].replace_choices(
+                    dict(enum_entries_filter(const.Genders, rs.gettext)))
+            if k.endswith(".status"):
+                spec[k] = spec[k].replace_choices(
+                    dict(enum_entries_filter(
+                        const.RegistrationPartStati, rs.gettext)))
+            if k.endswith(("country", "country2")):
+                spec[k] = spec[k].replace_choices(
+                    dict(get_localized_country_codes(rs)))
+
     def _send_query_result(self, rs: RequestState, download: Optional[str],
                            filename: str, scope: QueryScope, query: Query,
                            params: CdEDBObject) -> Response:
@@ -804,21 +826,6 @@ class EventQueryMixin(EventBaseFrontend):
                 rs, params['result'], query, kind=download,
                 filename=f"{shortname}_{filename}")
         else:
-            # Add choices that could not be automatically applied before.
-            for k, v in query.spec.items():
-                if k.endswith("gender"):
-                    query.spec[k] = query.spec[k].replace_choices(
-                        dict(enum_entries_filter(const.Genders, rs.gettext)))
-                if k.endswith(".status"):
-                    query.spec[k] = query.spec[k].replace_choices(
-                        dict(enum_entries_filter(
-                            const.RegistrationPartStati, rs.gettext)))
-                if k.endswith(("country", "country2")):
-                    query.spec[k] = query.spec[k].replace_choices(
-                        dict(get_localized_country_codes(rs)))
-            params['choices_lists'] = {k: list(spec_entry.choices.items())
-                                       for k, spec_entry in query.spec.items()
-                                       if spec_entry.choices}
             return self.render(rs, scope.get_target(redirect=False), params)
 
     @access("event")
