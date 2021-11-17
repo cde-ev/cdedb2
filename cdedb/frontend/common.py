@@ -631,7 +631,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         for k, v in query.spec.items():
             if k.endswith("gender"):
                 query.spec[k] = query.spec[k].replace_choices(
-                    dict(enum_entries_filter(const.Genders, lambda x: x.name, raw=True)))
+                    dict(enum_entries_filter(
+                        const.Genders, lambda x: x.name, raw=True)))
             if k.endswith(".status"):
                 query.spec[k] = query.spec[k].replace_choices(
                     dict(enum_entries_filter(
