@@ -4479,12 +4479,17 @@ def _query(
         except ValueError:
             msg = n_("Invalid ordering condition number %(index)s")
             errs.append(ValueError("order", msg, {'index': idx}))
-        else:
-            try:
-                _csv_identifier(field, "order", **kwargs)
-                _bool(ascending, "order", **kwargs)
-            except ValidationSummary as e:
-                errs.extend(e)
+            continue
+
+        try:
+            field = _csv_identifier(field, "order", **kwargs)
+            ascending = _bool(ascending, "order", **kwargs)
+        except ValidationSummary as e:
+            errs.extend(e)
+
+        if field not in val.spec:
+            errs.append(KeyError("order", n_("Invalid field.")))
+            continue
 
     if errs:
         raise errs
