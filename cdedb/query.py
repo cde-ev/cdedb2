@@ -14,7 +14,9 @@ import copy
 import enum
 import itertools
 import re
-from typing import Any, Callable, Collection, Dict, List, NamedTuple, Optional, Tuple
+from typing import (
+    Any, Callable, Collection, Dict, List, Mapping, NamedTuple, Optional, Tuple, Union,
+)
 
 import cdedb.database.constants as const
 from cdedb.common import (
@@ -102,7 +104,7 @@ QueryConstraint = Tuple[str, QueryOperators, Any]
 # is ASC (i.e. True -> ASC, False -> DESC).
 QueryOrder = Tuple[str, bool]
 
-QueryChoices = Dict[int, str]
+QueryChoices = Mapping[Union[int, str, enum.Enum], str]
 
 
 class QuerySpecEntry(NamedTuple):
@@ -684,7 +686,8 @@ class Query:
 def _sort_event_fields(fields: CdEDBObjectMap
                        ) -> Dict[const.FieldAssociations, List[CdEDBObject]]:
     """Helper to sort event fields and group them by association."""
-    sorted_fields = {association: [] for association in const.FieldAssociations}
+    sorted_fields: Dict[const.FieldAssociations, List[CdEDBObject]] = {
+        association: [] for association in const.FieldAssociations}
     for field in xsorted(fields.values(), key=EntitySorter.event_field):
         sorted_fields[field['association']].append(field)
     return sorted_fields
@@ -699,7 +702,7 @@ def _combine_specs(spec_map: Dict[int, QuerySpec], entity_ids: Collection[int],
     If the spec for one entity is shorter, that entity will simple be ignored when
     creating the combinations.
     """
-    ret = {}
+    ret: QuerySpec = {}
     entity_ids = xsorted(entity_ids)
     if len(entity_ids) <= 1:
         return ret
@@ -764,7 +767,7 @@ def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = N
 
     sorted_fields = _sort_event_fields(event['fields'])
     field_choices = {
-        field['field_name']: dict(field['entries']) if field['entries'] else None
+        field['field_name']: dict(field['entries']) if field['entries'] else {}
         for field in event['fields'].values()
     }
     course_choices = _get_course_choices(courses)
@@ -781,7 +784,7 @@ def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = N
         "persona.title": QuerySpecEntry("str", n_("Title_[[of a persona]]")),
         "persona.name_supplement": QuerySpecEntry("str", n_("Name Affix")),
         # Choices for the gender will be manually set when displaying the result.
-        "persona.gender": QuerySpecEntry("int", n_("Gender"), choices=None),
+        "persona.gender": QuerySpecEntry("int", n_("Gender"), choices=None),  # type: ignore[arg-type]
         "persona.birthday": QuerySpecEntry("date", n_("Birthday")),
         "persona.telephone": QuerySpecEntry("str", n_("Phone")),
         "persona.mobile": QuerySpecEntry("str", n_("Mobile Phone")),
@@ -790,7 +793,7 @@ def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = N
         "persona.postal_code": QuerySpecEntry("str", n_("ZIP")),
         "persona.location": QuerySpecEntry("str", n_("City")),
         # Choices for the country will be manually set when displaying the result.
-        "persona.country": QuerySpecEntry("id", n_("Country"), choices=None),
+        "persona.country": QuerySpecEntry("id", n_("Country"), choices=None),  # type: ignore[arg-type]
         "reg.payment": QuerySpecEntry("date", n_("Payment")),
         "reg.amount_paid": QuerySpecEntry("float", n_("Amount Paid")),
         "reg.amount_owed": QuerySpecEntry("float", n_("Amount Owed")),
@@ -811,7 +814,7 @@ def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = N
         return {
             # Choices for the status will be manually set.
             f"part{part_id}.status": QuerySpecEntry(
-                "int", n_("registration status"), prefix, choices=None),
+                "int", n_("registration status"), prefix, choices=None),  # type: ignore[arg-type]
             f"part{part_id}.is_camping_mat": QuerySpecEntry(
                 "bool", n_("camping mat user"), prefix),
             f"part{part_id}.lodgement_id": QuerySpecEntry(
@@ -884,7 +887,8 @@ def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = N
         prefix = "" if len(event['tracks']) <= 1 else f"{track['shortname']}: "
         return {
             f"course_choices{track_id}.rank{i}": QuerySpecEntry(
-                "id", n_("{rank}. Choice"), prefix, {'rank': i + 1}, choices=course_choices,
+                "id", n_("{rank}. Choice"), prefix, {'rank': str(i + 1)},
+                choices=course_choices,
             )
             for i in range(track['num_choices'])
         }
@@ -939,8 +943,8 @@ def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = N
     for part_ids in part_groups:
         spec.update(_combine_specs(part_specs, part_ids, prefix=n_("any part")))
         # Add entries for track combinations.
-        track_ids = itertools.chain.from_iterable(
-            event['parts'][part_id]['tracks'].keys() for part_id in part_ids)
+        track_ids = tuple(itertools.chain.from_iterable(
+            event['parts'][part_id]['tracks'].keys() for part_id in part_ids))
         spec.update(_combine_specs(
             track_specs, track_ids, prefix=n_("any track")))
         spec.update(_combine_specs(
@@ -966,7 +970,7 @@ def make_course_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None,
     sorted_course_fields = _sort_event_fields(event['fields'])[
         const.FieldAssociations.course]
     field_choices = {
-        field['field_name']: dict(field['entries']) if field['entries'] else None
+        field['field_name']: dict(field['entries']) if field['entries'] else {}
         for field in sorted_course_fields
     }
 
@@ -1000,12 +1004,12 @@ def make_course_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None,
                 "int", n_("instructors"), prefix),
         }
 
-    def get_course_choice_spec(track: CdEDBObject) -> Dict[str, str]:
+    def get_course_choice_spec(track: CdEDBObject) -> QuerySpec:
         track_id = track['id']
         prefix = "" if len(event['tracks']) <= 1 else f"{track['shortname']}: "
         return {
             f"track{track_id}.num_choices{i}": QuerySpecEntry(
-                "int", n_("{rank}. choices"), prefix, {'rank': i + 1})
+                "int", n_("{rank}. choices"), prefix, {'rank': str(i + 1)})
             for i in range(track['num_choices'])
         }
 
@@ -1048,7 +1052,8 @@ def make_course_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None,
 
     spec.update({
         f"course_fields.xfield_{field['field_name']}": QuerySpecEntry(
-            field['kind'].name, field['field_name'], field_choices[field['field_name']])
+            field['kind'].name, field['field_name'],
+            choices=field_choices[field['field_name']])
         for field in sorted_course_fields
     })
 
@@ -1067,7 +1072,7 @@ def make_lodgement_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None
     sorted_lodgement_fields = _sort_event_fields(event['fields'])[
         const.FieldAssociations.lodgement]
     field_choices = {
-        field['field_name']: dict(field['entries']) if field['entries'] else None
+        field['field_name']: dict(field['entries']) if field['entries'] else {}
         for field in sorted_lodgement_fields
     }
     lodgement_choices = _get_lodgement_choices(lodgements)
