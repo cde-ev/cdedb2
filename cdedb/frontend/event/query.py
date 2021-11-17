@@ -615,10 +615,6 @@ class EventQueryMixin(EventBaseFrontend):
         if is_search:
             query = check(rs, vtypes.QueryInput,
                           query_input, "query", spec=spec, allow_empty=False)
-
-        choices_lists = {k: list(spec_entry.choices.items())
-                         for k, spec_entry in spec.items()
-                         if spec_entry.choices}
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
 
         default_queries = self.conf["DEFAULT_QUERIES_REGISTRATION"](
@@ -628,8 +624,8 @@ class EventQueryMixin(EventBaseFrontend):
         default_queries.update(stored_queries)
 
         params = {
-            'spec': spec, 'choices_lists': choices_lists, 'query': query,
-            'default_queries': default_queries, 'has_registrations': has_registrations,
+            'spec': spec, 'query': query, 'default_queries': default_queries,
+            'has_registrations': has_registrations,
         }
         # Tricky logic: In case of no validation errors we perform a query
         if not rs.has_validation_errors() and is_search and query:
@@ -723,9 +719,6 @@ class EventQueryMixin(EventBaseFrontend):
             query = check(rs, vtypes.QueryInput, query_input,
                           "query", spec=spec, allow_empty=False)
 
-        choices_lists = {k: list(spec_entry.choices.items())
-                         for k, spec_entry in spec.items()
-                         if spec_entry.choices}
         tracks = rs.ambience['event']['tracks']
         selection_default = ["course.shortname", ]
         for col in ("is_offered", "takes_place", "attendees"):
@@ -738,8 +731,8 @@ class EventQueryMixin(EventBaseFrontend):
         default_queries.update(stored_queries)
 
         params = {
-            'spec': spec, 'choices_lists': choices_lists, 'query': query,
-            'default_queries': default_queries, 'selection_default': selection_default,
+            'spec': spec, 'query': query, 'default_queries': default_queries,
+            'selection_default': selection_default,
         }
 
         if not rs.has_validation_errors() and is_search and query:
@@ -773,9 +766,6 @@ class EventQueryMixin(EventBaseFrontend):
         if is_search:
             query = check(rs, vtypes.QueryInput,
                           query_input, "query", spec=spec, allow_empty=False)
-        choices_lists = {k: list(spec_entry.choices.items())
-                         for k, spec_entry in spec.items()
-                         if spec_entry.choices}
 
         parts = rs.ambience['event']['parts']
         selection_default = ["lodgement.title"] + [
@@ -791,8 +781,8 @@ class EventQueryMixin(EventBaseFrontend):
         default_queries.update(stored_queries)
 
         params = {
-            'spec': spec, 'choices_lists': choices_lists, 'query': query,
-            'default_queries': default_queries, 'selection_default': selection_default,
+            'spec': spec, 'query': query, 'default_queries': default_queries,
+            'selection_default': selection_default,
         }
 
         if not rs.has_validation_errors() and is_search and query:
@@ -826,7 +816,9 @@ class EventQueryMixin(EventBaseFrontend):
                 if k.endswith(("country", "country2")):
                     query.spec[k] = query.spec[k].replace_choices(
                         dict(get_localized_country_codes(rs)))
-            substitutions = {k: v.choices for k, v in query.spec.items() if v.choices}
+            params['choices_lists'] = {k: list(spec_entry.choices.items())
+                                       for k, spec_entry in query.spec.items()
+                                       if spec_entry.choices}
             return self.render(rs, scope.get_target(redirect=False), params)
 
     @access("event")

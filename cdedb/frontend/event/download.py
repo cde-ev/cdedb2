@@ -17,10 +17,9 @@ from werkzeug import Response
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    EntitySorter, RequestState, asciificator, determine_age_class,
-    get_localized_country_codes, json_serialize, n_, unwrap, xsorted,
+    EntitySorter, RequestState, asciificator, determine_age_class, json_serialize, n_,
+    unwrap, xsorted,
 )
-from cdedb.filter import enum_entries_filter
 from cdedb.frontend.common import REQUESTdata, access, event_guard, make_persona_name
 from cdedb.frontend.event.base import EventBaseFrontend
 from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes

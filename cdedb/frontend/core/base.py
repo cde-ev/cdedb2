@@ -1134,7 +1134,6 @@ class CoreBaseFrontend(AbstractFrontend):
         Archived users are somewhat special since they are not visible
         otherwise.
         """
-        events = self.pasteventproxy.list_past_events(rs)
         choices: Dict[str, Dict[Any, str]] = {
             'gender': collections.OrderedDict(
                 enum_entries_filter(
