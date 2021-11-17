@@ -137,6 +137,7 @@ class RequestState:
     convenient semi-magic behaviours (magic enough to be nice, but non-magic
     enough to not be non-nice).
     """
+    default_lang = "en"
 
     def __init__(self, sessionkey: Optional[str], apitoken: Optional[str], user: User,
                  request: werkzeug.Request, notifications: Collection[Notification],
@@ -204,11 +205,11 @@ class RequestState:
 
     @property
     def default_gettext(self) -> Callable[[str], str]:
-        return self.translations["en"].gettext
+        return self.translations[self.default_lang].gettext
 
     @property
     def default_ngettext(self) -> Callable[[str, str, int], str]:
-        return self.translations["en"].ngettext
+        return self.translations[self.default_lang].ngettext
 
     def notify(self, ntype: NotificationType, message: str,
                params: CdEDBObject = None) -> None:
@@ -563,7 +564,8 @@ def format_country_code(code: str) -> str:
     return f'CountryCodes.{code}'
 
 
-def get_localized_country_codes(rs: RequestState) -> List[Tuple[str, str]]:
+def get_localized_country_codes(rs: RequestState, lang: str = None
+                                ) -> List[Tuple[str, str]]:
     """Generate a list of country code - name tuples in current language."""
 
     if not hasattr(get_localized_country_codes, "localized_country_codes"):
@@ -576,7 +578,7 @@ def get_localized_country_codes(rs: RequestState) -> List[Tuple[str, str]]:
             for lang in rs.translations
         }
         get_localized_country_codes.localized_country_codes = localized_country_codes  # type: ignore[attr-defined]
-    return get_localized_country_codes.localized_country_codes[rs.lang]  # type: ignore[attr-defined]
+    return get_localized_country_codes.localized_country_codes[lang or rs.lang]  # type: ignore[attr-defined]
 
 
 def get_country_code_from_country(rs: RequestState, country: str) -> str:
