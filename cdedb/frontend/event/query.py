@@ -788,7 +788,7 @@ class EventQueryMixin(EventBaseFrontend):
                          if spec_entry.choices}
 
         params: CdEDBObject = {
-            'spec': spec, 'query': query, 'choices_list': choices_lists,
+            'spec': spec, 'query': query, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'selection_default': selection_default,
         }
 
