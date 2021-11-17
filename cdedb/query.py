@@ -552,7 +552,7 @@ class Query:
     everything.
     """
 
-    def __init__(self, scope: QueryScope, spec: CdEDBObject,
+    def __init__(self, scope: QueryScope, spec: QuerySpec,
                  fields_of_interest: Collection[str],
                  constraints: Collection[QueryConstraint],
                  order: Collection[QueryOrder],
@@ -573,7 +573,7 @@ class Query:
             the id of the entry in the corresponding table.
         """
         self.scope = scope
-        self.spec = spec
+        self.spec = dict(spec)
         self.fields_of_interest = list(fields_of_interest)
         self.constraints = list(constraints)
         self.order = list(order)
