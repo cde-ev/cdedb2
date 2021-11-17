@@ -309,7 +309,7 @@ PRIMARY_KEYS = {
 
 # See QueryScope.get_spec().
 _QUERY_SPECS = {
-    QueryScope.persona:  # query for a persona without past event infos
+    QueryScope.persona:
         {
             "personas.id": QuerySpecEntry("id", n_("ID")),
             "given_names": QuerySpecEntry("str", n_("Given Names")),
@@ -330,29 +330,9 @@ _QUERY_SPECS = {
                 k: QuerySpecEntry("bool", k, n_("Admin"))
                 for k in ADMIN_KEYS
             },
-            "pevent_id": QuerySpecEntry("id", n_("Past Event")),
+            ",".join(ADMIN_KEYS): QuerySpecEntry("bool", n_("Any"), n_("Admin")),
             "notes": QuerySpecEntry("str", n_("Admin-Notes")),
-        },
-    QueryScope.core_user:  # query for a general user including past event infos
-        {
-            "personas.id": QuerySpecEntry("id", n_("ID")),
-            "given_names": QuerySpecEntry("str", n_("Given Names")),
-            "family_name": QuerySpecEntry("str", n_("Family Name")),
-            "username": QuerySpecEntry("str", n_("E-Mail")),
-            "display_name": QuerySpecEntry("str", n_("Known as (Forename)")),
-            "is_active": QuerySpecEntry("bool", n_("Active Account")),
-            "is_ml_realm": QuerySpecEntry("bool", n_("Mailinglists"), n_("Realm")),
-            "is_event_realm": QuerySpecEntry("bool", n_("Events"), n_("Realm")),
-            "is_assembly_realm": QuerySpecEntry("bool", n_("Assemblies"), n_("Realm")),
-            "is_cde_realm": QuerySpecEntry("bool", n_("cde_realm"), n_("Realm")),
-            "is_member": QuerySpecEntry("bool", n_("CdE-Member")),
-            "is_searchable": QuerySpecEntry("bool", n_("Searchable")),
-            **{
-                k: QuerySpecEntry("bool", k, n_("Admin"))
-                for k in ADMIN_KEYS
-            },
-            "pevent_id": QuerySpecEntry("id", n_("Past Event")),
-            "notes": QuerySpecEntry("str", n_("Admin-Notes")),
+            "fulltext": QuerySpecEntry("str", n_("Fulltext")),
         },
     QueryScope.cde_user:
         {
@@ -389,6 +369,7 @@ _QUERY_SPECS = {
                 k: QuerySpecEntry("bool", k, n_("Admin"))
                 for k in ADMIN_KEYS
             },
+            ",".join(ADMIN_KEYS): QuerySpecEntry("bool", n_("Any"), n_("Admin")),
             "weblink": QuerySpecEntry("str", n_("WWW")),
             "specialisation": QuerySpecEntry("str", n_("Specialisation")),
             "affiliation": QuerySpecEntry("str", n_("School, University, …")),
@@ -405,7 +386,6 @@ _QUERY_SPECS = {
                 "bool", n_("Active Lastschrift")),
             "lastschrift.amount": QuerySpecEntry("float", n_("Lastschrift Amount")),
             "notes": QuerySpecEntry("str", n_("Admin-Notes")),
-            "fulltext": QuerySpecEntry("str", n_("Fulltext")),
         },
     QueryScope.event_user:
         {
@@ -426,11 +406,15 @@ _QUERY_SPECS = {
             "location": QuerySpecEntry("str", n_("City")),
             "country": QuerySpecEntry("str", n_("Country")),
             "is_active": QuerySpecEntry("bool", n_("Active Account")),
-            "is_cde_realm": QuerySpecEntry("bool", n_("is_cde_realm"), n_("Realm")),
             "is_member": QuerySpecEntry("bool", n_("CdE-Member")),
             "is_searchable": QuerySpecEntry("bool", n_("Searchable")),
-            "is_event_admin": QuerySpecEntry("bool", n_("is_event_admin"), n_("Admin")),
-            "is_ml_admin": QuerySpecEntry("bool", n_("is_ml_admin"), n_("Admin")),
+            **{
+                k: QuerySpecEntry("bool", k, n_("Admin"))
+                for k in ADMIN_KEYS
+            },
+            ",".join(ADMIN_KEYS): QuerySpecEntry("bool", n_("Any"), n_("Admin")),
+            "pevent_id": QuerySpecEntry("id", n_("Past Event")),
+            "pcourse_id": QuerySpecEntry("id", n_("Past Course")),
             "notes": QuerySpecEntry("str", n_("Admin-Notes")),
         },
     QueryScope.past_event_user:
@@ -538,6 +522,7 @@ _QUERY_SPECS = {
             "events.tempus": QuerySpecEntry("date", n_("tempus"), n_("Past Event")),
         },
 }
+_QUERY_SPECS[QueryScope.core_user] = _QUERY_SPECS[QueryScope.persona]
 _QUERY_SPECS[QueryScope.ml_user] = _QUERY_SPECS[QueryScope.persona]
 _QUERY_SPECS[QueryScope.assembly_user] = _QUERY_SPECS[QueryScope.persona]
 
