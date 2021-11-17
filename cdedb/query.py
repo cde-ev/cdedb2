@@ -664,11 +664,11 @@ class Query:
         return params
 
     def get_field_format_spec(self, field: str) -> QueryResultEntryFormat:
-        if self.spec[field] == "date":
+        if self.spec[field].type == "date":
             return QueryResultEntryFormat.date
-        if self.spec[field] == "datetime":
+        if self.spec[field].type == "datetime":
             return QueryResultEntryFormat.datetime
-        if self.spec[field] == "bool":
+        if self.spec[field].type == "bool":
             return QueryResultEntryFormat.bool
         if self.scope == QueryScope.registration:
             if field == "persona.id":

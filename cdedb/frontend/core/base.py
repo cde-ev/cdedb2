@@ -36,7 +36,7 @@ from cdedb.frontend.common import (
     periodic, request_dict_extractor, request_extractor,
 )
 from cdedb.ml_type_aux import MailinglistGroup
-from cdedb.query import Query, QueryOperators, QueryScope
+from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.subman.machine import SubscriptionPolicy
 from cdedb.validation import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
@@ -827,10 +827,10 @@ class CoreBaseFrontend(AbstractFrontend):
             if self.coreproxy.verify_id(rs, anid, is_archived=None):
                 return self.redirect_show_user(rs, anid)
         terms = tuple(t.strip() for t in phrase.split(' ') if t)
-        search = [("username,family_name,given_names,display_name",
-                   QueryOperators.match, t) for t in terms]
+        key = "username,family_name,given_names,display_name"
+        search = [(key, QueryOperators.match, t) for t in terms]
         spec = QueryScope.core_user.get_spec()
-        spec["username,family_name,given_names,display_name"] = "str"
+        spec[key] = QuerySpecEntry("str", "")
         query = Query(
             QueryScope.core_user,
             spec,
@@ -1004,11 +1004,11 @@ class CoreBaseFrontend(AbstractFrontend):
                 data = tuple()
             else:
                 search: List[Tuple[str, QueryOperators, Any]]
-                search = [("username,family_name,given_names,display_name",
-                           QueryOperators.match, t) for t in terms]
+                key = "username,family_name,given_names,display_name"
+                search = [(key, QueryOperators.match, t) for t in terms]
                 search.extend(search_additions)
                 spec = QueryScope.core_user.get_spec()
-                spec["username,family_name,given_names,display_name"] = "str"
+                spec[key] = QuerySpecEntry("str", "")
                 spec.update(spec_additions)
                 query = Query(
                     QueryScope.core_user, spec,
