@@ -9086,7 +9086,6 @@ msgid "Auditors"
 msgstr "Kassenprüfer"
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:130
-#, fuzzy
 msgid ""
 "Auditors may view all logs, in particular those related to finance "
 "administration, i.e. the documentation of membership fees."

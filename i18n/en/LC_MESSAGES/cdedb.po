@@ -8579,9 +8579,8 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:128
-#, fuzzy
 msgid "Auditors"
-msgstr "Auditor"
+msgstr "Auditors"
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:130
 msgid ""
