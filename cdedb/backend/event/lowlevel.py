@@ -589,6 +589,102 @@ class EventLowLevelBackend(AbstractBackend):
                 {"type": "part group", "block": blockers.keys()})
         return ret
 
+    def set_part_groups(self, rs: RequestState, event_id: int,
+                         part_groups: CdEDBOptionalMap) -> DefaultReturnCode:
+        """Helper for creating deleting and/or updating part groups for one event.
+
+        :note: This has to be called inside an atomized context.
+        """
+        event_id = affirm(vtypes.ID, event_id)
+        part_groups = affirm(vtypes.EventPartGroupSetter, part_groups)
+        ret = 1
+        if not part_groups:
+            return ret
+
+        parts = {e['id']: e for e in self.sql_select(
+            rs, "event.event_parts", EVENT_PART_FIELDS, (event_id,),
+            entity_key="event_id")}
+
+        existing_part_groups = {unwrap(e) for e in self.sql_select(
+            rs, "event.part_groups", ("id",), (event_id,), entity_key="event_id")}
+        new_part_groups = {x for x in part_groups if x < 0}
+        updated_part_groups = {
+            x for x in part_groups if x > 0 and part_groups[x] is not None}
+        deleted_part_groups = {
+            x for x in part_groups if x > 0 and part_groups[x] is None}
+
+        # new
+        for x in mixed_existence_sorter(new_part_groups):
+            new_part_group = copy.copy(part_groups[x])
+            assert new_part_group is not None
+            part_ids = new_part_group.pop('part_ids', set())
+            new_id = self.sql_insert(rs, "event.part_groups", new_part_group)
+            ret *= new_id
+            self.event_log(
+                rs, const.EventLogCodes.part_group_created, event_id,
+                change_note=new_part_group['title'])
+            if part_ids:
+                ret *= self._set_part_group_parts(
+                    rs, event_id, part_group_id=new_id, part_ids=part_ids, parts=parts,
+                    part_group_title=new_part_group['title'])
+
+        # updated
+        if updated_part_groups:
+            current_part_group_data = {e['id']: e for e in self.sql_select(
+                rs, "event.part_groups", PART_GROUP_FIELDS, updated_part_groups)}
+            for x in mixed_existence_sorter(updated_part_groups):
+                updated = copy.copy(part_groups[x])
+                assert updated is not None
+                part_ids = updated.pop('part_ids', None)
+                title = updated.get('title', current_part_group_data[x]['title'])
+                if any(updated[k] != current_part_group_data[x][k] for k in updated):
+                    ret *= self.sql_update(rs, "event.part_groups", updated)
+                    self.event_log(
+                        rs, const.EventLogCodes.part_group_changed, event_id,
+                        change_note=title)
+                if part_ids is not None:
+                    ret *= self._set_part_group_parts(
+                        rs, event_id, part_group_id=x, part_ids=part_ids, parts=parts,
+                        part_group_title=title)
+
+        if deleted_part_groups:
+            cascade = ("part_group_parts",)
+            for x in mixed_existence_sorter(deleted_part_groups):
+                ret *= self._delete_part_group(rs, part_group_id=x, cascade=cascade)
+
+        return ret
+
+    @internal
+    def _set_part_group_parts(self, rs: RequestState, event_id: int, part_group_id: int,
+                              part_group_title: str, part_ids: Set[int],
+                              parts: CdEDBObjectMap) -> None:
+        """Helper to link the given event parts to the given part group."""
+        ret = 1
+        self.affirm_atomized_context(rs)
+
+        current_part_ids = {e['part_id'] for e in self.sql_select(
+            rs, "event.part_group_parts", ("part_id",), (part_group_id,),
+            entity_key="part_group_id")}
+
+        if deleted_part_ids := current_part_ids - part_ids:
+            query = ("DELETE FROM event.part_group_parts"
+                     " WHERE part_group_id = %s AND part_id = ANY(%s)")
+            ret *= self.query_exec(rs, query, (part_group_id, deleted_part_ids))
+            for x in mixed_existence_sorter(deleted_part_ids):
+                self.event_log(
+                    rs, const.EventLogCodes.part_group_link_deleted, event_id,
+                    change_note=f"{parts[x]['title']} -> {part_group_title}")
+
+        if new_part_ids := part_ids - current_part_ids:
+            inserter = []
+            for x in mixed_existence_sorter(new_part_ids):
+                inserter.append({'part_group_id': part_group_id, 'part_id': x})
+                self.event_log(
+                    rs, const.EventLogCodes.part_group_link_created,
+                    change_note=f"{parts[x]['title']} -> {part_group_title}")
+            ret *= self.sql_insert_many(rs, "event.part_group_parts", inserter)
+        return ret
+
     def _delete_event_field_blockers(self, rs: RequestState,
                                      field_id: int) -> DeletionBlockers:
         """Determine what keeps an event part from being deleted.

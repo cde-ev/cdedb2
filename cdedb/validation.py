@@ -2374,6 +2374,62 @@ def _event_part(
     return EventPart(val)
 
 
+EVENT_PART_GROUP_COMMON_FIELDS: TypeMapping = {
+    'title': str,
+    'shortname': Shortname,
+    'constraint_type': const.EventPartGroupType,
+    'notes': Optional[str],  # type: ignore[dict-item]
+}
+
+
+@_add_typed_validator
+def _event_part_group(
+    val: Any, argname: str = "part_group", *,
+    creation: bool = False, **kwargs: Any
+) -> EventPartGroup:
+    val = _mapping(val, argname, **kwargs)
+
+    if creation:
+        mandatory_fields = {**EVENT_PART_GROUP_COMMON_FIELDS}
+        optional_fields: TypeMapping = {}
+    else:
+        mandatory_fields: TypeMapping = {}
+        optional_fields = {**EVENT_PART_GROUP_COMMON_FIELDS}
+
+    val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
+
+    return EventPartGroup(val)
+
+
+@_add_typed_validator
+def _event_part_group_setter(
+    val: Any, argname: str = "part_groups",
+    **kwargs: Any
+) -> EventPartGroupSetter:
+    val = _mapping(val, argname)
+
+    errs = ValidationSummary()
+    new_part_groups = {}
+    for anid, part in val.items():
+        try:
+            anid = _partial_import_id(anid, 'parts', **kwargs)
+        except ValidationSummary as e:
+            errs.extend(e)
+            continue
+        creation = (anid < 0)
+        try:
+            if creation:
+                part_group = _ALL_TYPED[EventPartGroup](part, creation=True, **kwargs)
+            else:
+                part_group = _ALL_TYPED[Optional[EventPartGroup]](part, **kwargs)
+        except ValidationSummary as e:
+            errs.extend(e)
+        else:
+            new_part_groups[anid] = part
+
+    return EventPartGroupSetter(new_part_groups)
+
+
 EVENT_TRACK_COMMON_FIELDS: TypeMapping = {
     'title': str,
     'shortname': Shortname,

@@ -362,6 +362,8 @@ class EventLogCodes(enum.IntEnum):
     part_group_created = 100  #:
     part_group_changed = 101  #:
     part_group_deleted = 102  #:
+    part_group_link_created = 105  #:
+    part_group_link_deleted = 106  #:
 
 
 @enum.unique
