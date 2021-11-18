@@ -517,7 +517,7 @@ class EventLowLevelBackend(AbstractBackend):
         if deleted_parts:
             # Recursively delete fee modifiers and tracks, but not registrations, since
             # this is only allowed if no registrations exist anyway.
-            cascade = ("fee_modifiers", "course_tracks")
+            cascade = ("fee_modifiers", "course_tracks", "part_group_parts")
             for x in mixed_existence_sorter(deleted_parts):
                 ret *= self._delete_event_part(rs, part_id=x, cascade=cascade)
 
