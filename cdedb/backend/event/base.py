@@ -886,15 +886,17 @@ class EventBaseBackend(EventLowLevelBackend):
             shutil.rmtree(event_keeper_directory)
         event_keeper_directory.mkdir(parents=True)
         # See https://git-scm.com/book/en/v2/Git-on-the-Server-The-Protocols
-        subprocess.run(["git", "init"], cwd=event_keeper_directory)
+        subprocess.run(["git", "init"], cwd=event_keeper_directory, check=True)
         shutil.move(event_keeper_directory / ".git/hooks/post-update.sample",
                     event_keeper_directory / ".git/hooks/post-update")
         # Additionally run post-commit since we commit on the repository itself
         shutil.copy(event_keeper_directory / ".git/hooks/post-update",
                     event_keeper_directory / ".git/hooks/post-commit")
         subprocess.run(["chmod", "a+x", ".git/hooks/post-update",
-                        ".git/hooks/post-commit"],  cwd=event_keeper_directory)
-        subprocess.run(["git", "update-server-info"], cwd=event_keeper_directory)
+                        ".git/hooks/post-commit"],  cwd=event_keeper_directory,
+                       check=True)
+        subprocess.run(["git", "update-server-info"], cwd=event_keeper_directory,
+                       check=True)
 
     @access("event_admin")
     def event_keeper_drop(self, rs: RequestState, event_id: int) -> None:
@@ -933,15 +935,18 @@ class EventBaseBackend(EventLowLevelBackend):
             # Declare the temporary directory to be the working tree, and specify the
             # actual git directory.
             subprocess.run(["git", f"--work-tree={td}", "add", td / filename],
-                           cwd=event_keeper_dir)
+                           cwd=event_keeper_dir, check=True)
             # Then commit everything as if we were in the repository directory.
             if rs.user.persona_id:
-                subprocess.run([
-                    "git", "-C", event_keeper_dir, "commit", "-m",
-                    commit_msg.encode('utf8'),
-                    "--author", (f"{rs.user.given_names} {rs.user.family_name}"
-                                f"<{rs.user.username}>").encode("utf8")])
+                subprocess.run(
+                    [
+                        "git", "-C", event_keeper_dir, "commit", "-m",
+                        commit_msg.encode('utf8'),
+                        "--author", (f"{rs.user.given_names} {rs.user.family_name}"
+                                     f"<{rs.user.username}>").encode("utf8")
+                    ],
+                    check=True)
             else:
                 subprocess.run(["git", "-C", event_keeper_dir, "commit", "-m",
-                                commit_msg.encode("utf8")])
+                                commit_msg.encode("utf8")], check=True)
         return export
