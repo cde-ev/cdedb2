@@ -597,6 +597,9 @@ class EventLowLevelBackend(AbstractBackend):
         """
         event_id = affirm(vtypes.ID, event_id)
         part_groups = affirm(vtypes.EventPartGroupSetter, part_groups)
+
+        if not self.is_admin(rs) or self.is_orga(rs, event_id=event_id):
+            raise PrivilegeError(n_("Not privileged."))
         ret = 1
         if not part_groups:
             return ret
@@ -612,6 +615,9 @@ class EventLowLevelBackend(AbstractBackend):
             x for x in part_groups if x > 0 and part_groups[x] is not None}
         deleted_part_groups = {
             x for x in part_groups if x > 0 and part_groups[x] is None}
+
+        if not (updated_part_groups | deleted_part_groups) <= existing_part_groups:
+            raise ValueError(n_("Unknown part group."))
 
         # new
         for x in mixed_existence_sorter(new_part_groups):
