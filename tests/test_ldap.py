@@ -296,7 +296,7 @@ class TestLDAP(BasicTest):
             f"(cn={group_cn})"
             ")"
         )
-        self.no_result_search(search_filter, except_users={"cn=cloud"})
+        self.no_result_search(search_filter, except_users={"cn=cloud", "cn=apache"})
         self.single_result_search(search_filter, expectation, user=self.admin_dua_dn,
                                   password=self.admin_dua_pw)
 
@@ -320,7 +320,7 @@ class TestLDAP(BasicTest):
             f"(cn={group_cn})"
             ")"
         )
-        self.no_result_search(search_filter, except_users={"cn=cloud"})
+        self.no_result_search(search_filter, except_users={"cn=cloud", "cn=apache"})
         self.single_result_search(search_filter, expectation, search_base=search_base,
                                   user=self.admin_dua_dn, password=self.admin_dua_pw)
 
@@ -343,7 +343,7 @@ class TestLDAP(BasicTest):
             f"(cn={group_cn})"
             ")"
         )
-        self.no_result_search(search_filter, except_users={"cn=cloud"})
+        self.no_result_search(search_filter, except_users={"cn=cloud", "cn=apache"})
         self.single_result_search(search_filter, expectation, search_base=search_base,
                                   user=self.admin_dua_dn, password=self.admin_dua_pw)
 
@@ -366,7 +366,7 @@ class TestLDAP(BasicTest):
             f"(cn={group_cn})"
             ")"
         )
-        self.no_result_search(search_filter, except_users={"cn=cloud"})
+        self.no_result_search(search_filter, except_users={"cn=cloud", "cn=apache"})
         self.single_result_search(search_filter, expectation, search_base=search_base,
                                   user=self.admin_dua_dn, password=self.admin_dua_pw)
 
@@ -389,7 +389,7 @@ class TestLDAP(BasicTest):
             f"(cn={group_cn})"
             ")"
         )
-        self.no_result_search(search_filter, except_users={"cn=cloud"})
+        self.no_result_search(search_filter, except_users={"cn=cloud", "cn=apache"})
         self.single_result_search(search_filter, expectation, search_base=search_base,
                                   user=self.admin_dua_dn, password=self.admin_dua_pw)
 
@@ -448,7 +448,7 @@ class TestLDAP(BasicTest):
                 f"(uniqueMember=uid={user_id},ou=users,{self.root_dn})"
             ")"
         )
-        self.no_result_search(search_filter, except_users={"cn=cloud"})
+        self.no_result_search(search_filter, except_users={"cn=cloud", "cn=apache"})
         with ldap3.Connection(
                 self.server, user=self.admin_dua_dn, password=self.admin_dua_pw
         ) as conn:
@@ -486,7 +486,7 @@ class TestLDAP(BasicTest):
                 f"(uniqueMember=uid={user_id},ou=users,{self.root_dn})"
             ")"
         )
-        self.no_result_search(search_filter, except_users={"cn=cloud"})
+        self.no_result_search(search_filter, except_users={"cn=cloud", "cn=apache"})
         with ldap3.Connection(
             self.server, user=self.admin_dua_dn, password=self.admin_dua_pw
         ) as conn:
@@ -509,7 +509,7 @@ class TestLDAP(BasicTest):
             'cn': ['42@lists.cde-ev.de'],
             'objectClass': ['groupOfUniqueNames']
         }
-        self.no_result_search(search_filter, except_users={"cn=cloud"})
+        self.no_result_search(search_filter, except_users={"cn=cloud", "cn=apache"})
         # TODO use appropiate non-admin-dua here
         self.single_result_search(search_filter, expectation, attributes=attributes,
                                   user=self.admin_dua_dn, password=self.admin_dua_pw)
