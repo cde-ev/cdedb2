@@ -82,7 +82,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
             blockers["event_parts"] = [e["id"] for e in event_parts]
             fee_modifiers = self.sql_select(
                 rs, "event.fee_modifiers", ("id",), blockers["event_parts"],
-                entity_id="part_id")
+                entity_key="part_id")
             if fee_modifiers:
                 blockers["fee_modifiers"] = [e["id"] for e in fee_modifiers]
             course_tracks = self.sql_select(
