@@ -928,12 +928,13 @@ class EventBaseBackend(EventLowLevelBackend):
             # Then commit everything as if we were in the repository directory.
             if rs.user.persona_id:
                 subprocess.run([
-                    "git", "-C", event_keeper_dir, "commit", "-m", commit_msg,
-                    "--author", f"{rs.user.given_names} {rs.user.family_name}"
-                                f"<{rs.user.username}>"])
+                    "git", "-C", event_keeper_dir, "commit", "-m",
+                    commit_msg.encode('utf8'),
+                    "--author", (f"{rs.user.given_names} {rs.user.family_name}"
+                                f"<{rs.user.username}>").encode("utf8")])
             else:
                 subprocess.run(["git", "-C", event_keeper_dir, "commit", "-m",
-                                commit_msg])
+                                commit_msg.encode("utf8")])
         return export
 
     @access("anonymous")
