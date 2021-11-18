@@ -59,7 +59,7 @@
                             </td>
                         {% endfor %}
                         {% for part_group_id, part_group in ambience['event']['part_groups']|keydictsort(EntitySorter.event_part_group) %}
-                            <td class="text-right">
+                            <td class="text-right {% if loop.first %}b-left{% endif %}">
                                 {% set query = stat.get_query_part_group(ambience['event'], part_group_id) %}
                                 {% set datum = row[-part_group_id] %}
                                 {% if query %}
