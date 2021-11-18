@@ -576,7 +576,8 @@ class EventLowLevelBackend(AbstractBackend):
         if not blockers:
             part_group = self.sql_select_one(
                 rs, "event.part_groups", ("event_id", "title"), part_group_id)
-            assert part_group is not None
+            if part_group is None:
+                return 0
             ret *= self.sql_delete_one(rs, "event.part_groups", part_group_id)
             self.event_log(rs, const.EventLogCodes.part_group_deleted,
                            event_id=part_group["event_id"],
