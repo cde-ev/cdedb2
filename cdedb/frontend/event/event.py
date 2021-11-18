@@ -780,6 +780,11 @@ class EventEventMixin(EventBaseFrontend):
 
         new_ids, message = self.pasteventproxy.archive_event(
             rs, event_id, create_past_event=create_past_event)
+
+        # Delete non-pseudonymized event keeper only after internal work has been
+        # concluded successfully
+        self.eventproxy.event_keeper_drop(rs, event_id)
+
         if message:
             rs.notify("warning", message)
             return self.redirect(rs, "event/show_event")
@@ -819,6 +824,10 @@ class EventEventMixin(EventBaseFrontend):
         if not code:
             return self.show_event(rs, event_id)
         else:
+            # Delete non-pseudonymized event keeper only after internal work has been
+            # concluded successfully
+            self.eventproxy.event_keeper_drop(rs, event_id)
+
             rs.notify("success", n_("Event deleted."))
             return self.redirect(rs, "event/index")
 

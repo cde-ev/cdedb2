@@ -897,6 +897,15 @@ class EventBaseBackend(EventLowLevelBackend):
         subprocess.run(["git", "update-server-info"], cwd=event_keeper_directory)
 
     @access("event_admin")
+    def event_keeper_drop(self, rs: RequestState, event_id: int) -> None:
+        try:
+            shutil.rmtree(self.event_keeper_dir / str(event_id))
+        except FileNotFoundError:
+            # We do not care if the event keeper has been deleted yet.
+            # This is the case for deleting an archived event.
+            pass
+
+    @access("event_admin")
     def event_keeper_create(self, rs: RequestState, event_id: int) -> CdEDBObject:
         """Create a new git repository for keeping track of event changes."""
         event_id = affirm(vtypes.ID, event_id)
