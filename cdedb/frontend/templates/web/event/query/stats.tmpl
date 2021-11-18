@@ -30,7 +30,7 @@
                         </th>
                     {% endfor %}
                     {% for part_group_id, part_group in ambience['event']['part_groups']|keydictsort(EntitySorter.event_part_group) %}
-                        <th class="text-right">
+                        <th class="text-right {% if loop.first %}b-left{% endif %}">
                             {{ part_group['shortname'] }}
                         </th>
                     {% endfor %}
