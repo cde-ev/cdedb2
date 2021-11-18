@@ -363,7 +363,7 @@ class EventRegistrationPartStatistic(enum.Enum):
             order=[('persona.family_name', True), ('persona.given_names', True)]
         )
         all_fields, all_constraints = [], []
-        for part_id in event['part_groups'][part_group_id]['part_ids']:
+        for part_id in xsorted(event['part_groups'][part_group_id]['part_ids']):
             fields, constraints, _ = self._get_query_aux(event, part_id)
             all_fields.extend(fields)
             all_constraints.append(constraints)
