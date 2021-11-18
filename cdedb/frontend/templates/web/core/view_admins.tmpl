@@ -60,8 +60,8 @@
         <h3>{% trans %}Finance-Admins{% endtrans %}</h3>
         <div class="p">
             {% trans %}
-                Finance-Admins may manage direct debit authorizations and membershipfee transactions.
-                They also handle semestermanagement, i.e. the sending of payment notifications, as well
+                Finance-Admins may manage direct debit authorizations and membership fee transactions.
+                They also handle semester management, i.e. the sending of payment notifications, as well
                 as the removal of inactive members and the updating of balances.
             {% endtrans %}
         </div>
@@ -121,6 +121,19 @@
         </div>
         <div id="assembly" class="row">
             {{ slice_admins(admins["assembly"]) }}
+        </div>
+    {% endif %}
+
+    {% if "cde" in user.roles %}
+        <h3>{% trans %}Auditors{% endtrans %}</h3>
+        <div class="p">
+            {% trans %}
+                Auditors may view all logs, in particular those related to finance administration,
+                i.e. the documentation of membership fees.
+            {% endtrans %}
+        </div>
+        <div id="auditor" class="row">
+            {{ slice_admins(admins["auditor"]) }}
         </div>
     {% endif %}
 
