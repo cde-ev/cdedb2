@@ -4104,28 +4104,64 @@
         {
             "id": 9,
             "part_id": 9,
-            "title": "Oberwesel Kurs 2",
-            "shortname": "OK2",
-            "num_choices": 4,
+            "title": "Oberwesel Kurs 2 morgens",
+            "shortname": "OK2m",
+            "num_choices": 5,
             "min_choices": 2,
             "sortkey": 1
         },
         {
             "id": 10,
-            "part_id": 10,
-            "title": "Windischleuba Kurs 2",
-            "shortname": "WK1",
-            "num_choices": 4,
+            "part_id": 9,
+            "title": "Oberwesel Kurs 2 nachmittags",
+            "shortname": "OK2n",
+            "num_choices": 5,
             "min_choices": 2,
             "sortkey": 1
         },
         {
             "id": 11,
+            "part_id": 10,
+            "title": "Windischleuba Kurs 2 morgens",
+            "shortname": "WK2m",
+            "num_choices": 3,
+            "min_choices": 2,
+            "sortkey": 1
+        },
+        {
+            "id": 12,
+            "part_id": 10,
+            "title": "Windischleuba Kurs 2 nachmittags",
+            "shortname": "WK2n",
+            "num_choices": 3,
+            "min_choices": 2,
+            "sortkey": 1
+        },
+        {
+            "id": 13,
             "part_id": 11,
-            "title": "Kaub Kurs 2",
-            "shortname": "KK2",
+            "title": "Kaub Kurs 2 morgens",
+            "shortname": "KK2m",
             "num_choices": 4,
             "min_choices": 2,
+            "sortkey": 1
+        },
+        {
+            "id": 14,
+            "part_id": 11,
+            "title": "Kaub Kurs 2 nachmittags",
+            "shortname": "KK2n",
+            "num_choices": 4,
+            "min_choices": 2,
+            "sortkey": 1
+        },
+        {
+            "id": 15,
+            "part_id": 11,
+            "title": "Kaub Vortäge",
+            "shortname": "KV",
+            "num_choices": 1,
+            "min_choices": 1,
             "sortkey": 1
         }
     ],
