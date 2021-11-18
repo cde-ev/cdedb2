@@ -936,17 +936,3 @@ class EventBaseBackend(EventLowLevelBackend):
                 subprocess.run(["git", "-C", event_keeper_dir, "commit", "-m",
                                 commit_msg.encode("utf8")])
         return export
-
-    @access("anonymous")
-    def get_event_keeper(self, rs: RequestState,
-                       event_id: int, subpath: str) -> Optional[bytes]:
-        """Retrieve the eventkeeper git form for an event."""
-        event_id = affirm(vtypes.ID, event_id)
-        #if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
-        #    raise PrivilegeError(n_("Not privileged."))
-        path = self.event_keeper_dir / str(event_id) / ".git" / subpath
-        ret = None
-        if path.exists() and path.is_file():
-            with open(path, "rb") as f:
-                ret = f.read()
-        return ret
