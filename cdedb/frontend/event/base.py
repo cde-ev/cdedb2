@@ -459,13 +459,3 @@ class EventBaseFrontend(AbstractUserFrontend):
                 state['events'][event_id] = log_entry_id
 
         return state
-
-    @access("anonymous")
-    def get_event_keeper(self, rs: RequestState, event_id: int, shortname: str,
-                         subpath: Optional[str]) -> Response:
-        """Deliver event keeper git via clone.
-
-        TODO: Use HTTP basic auth and only allow orgas or use LDAP instead
-        """
-        file = self.eventproxy.get_event_keeper(rs, event_id, subpath) or bytes()
-        return self.send_file(rs, data=file, filename=subpath)

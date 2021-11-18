@@ -581,9 +581,7 @@ CDEDB_PATHS = werkzeug.routing.Map((
                     rule("/set", methods=_GET,
                          endpoint="field_set_form"),
                     rule("/set", methods=_POST,
-                         endpoint="field_set"),)),
-                rule('/<shortname>.git/<path:subpath>', methods=_GET,
-                     endpoint="get_event_keeper"),)),
+                         endpoint="field_set"),)),)),
         )),)),
     werkzeug.routing.EndpointPrefix('assembly/', (
         sub('/assembly', (
