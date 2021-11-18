@@ -22,7 +22,6 @@ doc/source/Handbuch_Email_Templates.rst
 
 # local configuration
 cdedb/localconfig.py
-.ldap_rootpw_local
 
 # cache data
 .mypy_cache/
@@ -42,3 +41,9 @@ i18n/cdedb.pot
 i18n/*/LC_MESSAGES/cdedb.mo
 i18n/*/LC_MESSAGES/cdedb.spellcheck
 messages.mo
+
+# local ldap config files
+ldap/output
+
+# virtual environment
+.venv

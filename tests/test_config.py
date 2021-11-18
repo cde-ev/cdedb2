@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# pylint: disable=missing-module-docstring
+
 import os
 import unittest
 
@@ -24,7 +26,7 @@ class TestConfig(unittest.TestCase):
 
     def test_caching(self) -> None:
         # this is a regression test
-        basic = BasicConfig()
+        BasicConfig()
         extrasecret = SecretsConfig("tests/ancillary_files/extra_config.py")
         self.assertEqual("matrix", extrasecret["URL_PARAMETER_SALT"])
         testsecret = SecretsConfig()

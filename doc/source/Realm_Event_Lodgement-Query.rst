@@ -49,6 +49,7 @@ The final view will be constructed as follows (slightly simplified). ::
 The following columns will be available in this view:
 
 * ``lodgement.id``
+* ``lodgement.lodgement_id`` *This is magically replaced by "{title}" linking to the lodgement.*
 * ``lodgement.event_id``
 * ``lodgement.title``
 * ``lodgement.regular_capacity``

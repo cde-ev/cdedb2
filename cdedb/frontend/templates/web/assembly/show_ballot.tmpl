@@ -18,9 +18,8 @@
 {% endblock %}
 
 {% block heading %}
-    <h1 class="title">
-        {{ ambience['ballot']['title'] }}
-    </h1>
+    {{ util.context_heading(ambience["ballot"]["title"], ambience['assembly']['title'],
+                            'bullhorn', gettext("Assembly")) }}
 {% endblock %}
 
 {% block breadcrumb %}
@@ -90,9 +89,7 @@
     {% endif %}
 
 
-    {% if attachments or edit_mode %}
-        {{ ballot_meta.show_attachments(edit_mode) }}
-    {% endif %}
+    {{ ballot_meta.show_attachments() }}
 
     {{ ballot_meta.show_navigation(page_name="assembly/show_ballot") }}
 

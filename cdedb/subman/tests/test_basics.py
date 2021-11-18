@@ -1,8 +1,12 @@
+"""Basic testing for the subman library"""
+# We allow 120 line length here.
+# pylint: disable=line-too-long
+
 import enum
 import itertools
 import unittest
 
-from cdedb.subman import SubscriptionState, SubscriptionManager
+from cdedb.subman import SubscriptionManager, SubscriptionState
 
 
 class SubmanTest(unittest.TestCase):

@@ -7,28 +7,29 @@ template for all services.
 """
 
 import abc
+import cgitb
 import collections.abc
 import copy
 import datetime
 import enum
 import functools
 import logging
+import sys
 from types import TracebackType
 from typing import (
-    Any, Callable, ClassVar, Collection, Dict, Iterable, List, Mapping,
+    Any, Callable, ClassVar, Collection, Dict, Iterable, List, Literal, Mapping,
     Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast, overload,
 )
 
 import psycopg2.extensions
 import psycopg2.extras
-from typing_extensions import Literal
 
 import cdedb.validation as validate
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    LOCALE, CdEDBLog, CdEDBObject, CdEDBObjectMap, PathLike, PrivilegeError, PsycoJson,
-    Realm, RequestState, Role, diacritic_patterns, glue, make_proxy, make_root_logger,
-    n_, unwrap,
+    LOCALE, CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Error, PathLike,
+    PrivilegeError, PsycoJson, Realm, RequestState, Role, diacritic_patterns, glue,
+    make_proxy, make_root_logger, n_, unwrap,
 )
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
@@ -143,6 +144,45 @@ def batchify(function: Callable[..., T],
     return batchified
 
 
+def read_conditional_write_composer(
+        reader: Callable[..., Any], writer: Callable[..., int],
+        id_param_name: str = "anid", datum_param_name: str = "data",
+        id_key_name: str = "id",) -> Callable[..., int]:
+    """This takes two functions and returns a combined version.
+
+    The overall semantics are similar to the writer. However the write is
+    elided if the reader returns a value equal to the object to be written
+    (i.e. there is no change).
+
+    :param id_param_name: Name of the reader argument specifying the object
+        id.
+    :param datum_param_name: Name of the writer argument specifying the
+        object value.
+    :param id_key_name: Key associated to the id in the object value
+        dictionary.
+    """
+
+    @functools.wraps(writer)
+    def composed(self: AbstractBackend, rs: RequestState, *args: Any,
+                 **kwargs: Any) -> DefaultReturnCode:
+        ret = 1
+        reader_kwargs = kwargs.copy()
+        reader_args = args[:]
+        if datum_param_name in reader_kwargs:
+            data = reader_kwargs.pop(datum_param_name)
+            reader_kwargs[id_param_name] = data[id_key_name]
+        else:
+            data = reader_args[0]
+            reader_args = (data[id_key_name],) + reader_args[1:]
+        with Atomizer(rs):
+            current = reader(self, rs, *reader_args, **reader_kwargs)
+            if {k: v for k, v in current.items() if k in data} != data:
+                ret = writer(self, rs, *args, **kwargs)
+        return ret
+
+    return composed
+
+
 def access(*roles: Role) -> Callable[[F], F]:
     """The @access decorator marks a function of a backend for publication.
 
@@ -215,12 +255,13 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         # logger are thread-safe!
         self.logger = logging.getLogger("cdedb.backend.{}".format(self.realm))
-        self.logger.debug("Instantiated {} with configpath {}.".format(
-            self, configpath))
+        self.logger.debug(f"Instantiated {self} with configpath {configpath}.")
         # Everybody needs access to the core backend
         # Import here since we otherwise have a cyclic import.
         # I don't see how we can get out of this ...
-        from cdedb.backend.core import CoreBackend
+        from cdedb.backend.core import (  # pylint: disable=import-outside-toplevel
+            CoreBackend,
+        )
         self.core: CoreBackend
         if isinstance(self, CoreBackend):
             # self.core = cast('CoreBackend', self)
@@ -307,8 +348,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         """
         sanitized_params = tuple(
             self._sanitize_db_input(p) for p in params)
-        self.logger.debug("Execute PostgreSQL query {}.".format(cur.mogrify(
-            query, sanitized_params)))
+        self.logger.debug(f"Execute PostgreSQL query"
+                          f" {cur.mogrify(query, sanitized_params)}.")
         cur.execute(query, sanitized_params)
 
     def query_exec(self, rs: RequestState, query: str,
@@ -349,7 +390,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
 
         See :py:meth:`sql_select` for thoughts on this.
 
-        :param unique: Whether to do nothing if conflicting with a constraint
+        :param drop_on_conflict: Whether to do nothing if conflicting with a constraint
         :returns: id of inserted row
         """
         keys = tuple(key for key in data)
@@ -402,7 +443,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         return self.query_all(rs, query, (entities,))
 
     def sql_select_one(self, rs: RequestState, table: str, columns: Sequence[str],
-                       entity: EntityKey, entity_key: str = "id") -> Optional[CdEDBObject]:
+                       entity: EntityKey, entity_key: str = "id"
+                       ) -> Optional[CdEDBObject]:
         """Generic SQL select query for one row.
 
         See :py:meth:`sql_select` for thoughts on this.
@@ -473,6 +515,21 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         query = f"DELETE FROM {table} WHERE {entity_key} = %s"
         return self.query_exec(rs, query, (entity,))
 
+    def cgitb_log(self) -> None:
+        """Log the current exception.
+
+        This uses the standard logger and formats the exception with cgitb.
+        We take special care to contain any exceptions as cgitb is prone to
+        produce them with its prying fingers.
+        """
+        # noinspection PyBroadException
+        try:
+            self.logger.error(cgitb.text(sys.exc_info(), context=7))
+        except Exception:
+            # cgitb is very invasive when generating the stack trace, which might go
+            # wrong.
+            pass
+
     def general_query(self, rs: RequestState, query: Query,
                       distinct: bool = True, view: str = None
                       ) -> Tuple[CdEDBObject, ...]:
@@ -485,7 +542,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         :returns: all results of the query
         """
         query.fix_custom_columns()
-        self.logger.debug("Performing general query {}.".format(query))
+        self.logger.debug(f"Performing general query {query}.")
         select = ", ".join('{} AS "{}"'.format(column, column.replace('"', ''))
                            for field in query.fields_of_interest
                            for column in field.split(','))
@@ -511,11 +568,13 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                 # for str as well as for other types
                 sql_param_str = "lower({0})"
 
-                def caser(x: T) -> T: return x.lower()  # type: ignore[attr-defined]
+                def caser(x: T) -> T:
+                    return x.lower()  # type: ignore[attr-defined]
             else:
                 sql_param_str = "{0}"
 
-                def caser(x: T) -> T: return x
+                def caser(x: T) -> T:
+                    return x
             columns = field.split(',')
             # Treat containsall and friends special since they want to find
             # each value in any column, without caring that the columns are
@@ -565,7 +624,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                     phrase = "{0} = ANY(%s)".format(sql_param_str)
                 else:
                     phrase = "NOT({0} = ANY(%s))".format(sql_param_str)
-                params.extend((tuple(caser(x) for x in value),) * len(columns))  # type: ignore[arg-type] # noqa
+                params.extend((tuple(caser(x) for x in value),) * len(columns))  # type: ignore[arg-type]
             elif operator in (_ops.match, _ops.unmatch):
                 if operator == _ops.match:
                     phrase = "{} ~* %s"
@@ -666,18 +725,17 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         assert issubclass(code_validator, enum.IntEnum)
         codes = affirm_set_validation(code_validator, codes or set())
         entity_ids = affirm_set_validation(vtypes.ID, entity_ids or set())
-        offset: Optional[int] = affirm_validation_typed_optional(
+        offset: Optional[int] = affirm_validation_optional(
             vtypes.NonNegativeInt, offset)
-        length: Optional[int] = affirm_validation_typed_optional(
-            vtypes.PositiveInt, length)
+        length: Optional[int] = affirm_validation_optional(vtypes.PositiveInt, length)
         additional_columns = affirm_set_validation(
             vtypes.RestrictiveIdentifier, additional_columns or set())
-        persona_id = affirm_validation_typed_optional(vtypes.ID, persona_id)
-        submitted_by = affirm_validation_typed_optional(vtypes.ID, submitted_by)
-        reviewed_by = affirm_validation_typed_optional(vtypes.ID, reviewed_by)
-        change_note = affirm_validation_typed_optional(vtypes.Regex, change_note)
-        time_start = affirm_validation_typed_optional(datetime.datetime, time_start)
-        time_stop = affirm_validation_typed_optional(datetime.datetime, time_stop)
+        persona_id = affirm_validation_optional(vtypes.ID, persona_id)
+        submitted_by = affirm_validation_optional(vtypes.ID, submitted_by)
+        reviewed_by = affirm_validation_optional(vtypes.ID, reviewed_by)
+        change_note = affirm_validation_optional(vtypes.Regex, change_note)
+        time_start = affirm_validation_optional(datetime.datetime, time_start)
+        time_stop = affirm_validation_optional(datetime.datetime, time_stop)
 
         length = length or self.conf["DEFAULT_LOG_LENGTH"]
         additional_columns: List[str] = list(additional_columns or [])
@@ -746,7 +804,10 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         if offset is not None:
             query = glue(query, "OFFSET {}".format(offset))
 
-        return total, self.query_all(rs, query, params)
+        data = self.query_all(rs, query, params)
+        for e in data:
+            e['code'] = code_validator(e['code'])
+        return total, data
 
 
 class Silencer:
@@ -766,6 +827,8 @@ class Silencer:
         self.rs = rs
 
     def __enter__(self) -> None:
+        if self.rs.is_quiet:
+            raise RuntimeError("Already silenced. Reentrant use is unsupported.")
         self.rs.is_quiet = True
         _affirm_atomized_context(self.rs)
 
@@ -774,23 +837,27 @@ class Silencer:
         self.rs.is_quiet = False
 
 
-def _affirm_validation(assertion: str, value: T, **kwargs: Any) -> T:
-    """Wrapper to call asserts in :py:mod:`cdedb.validation`."""
-    checker = getattr(validate, "assert_{}".format(assertion))
-    return checker(value, **kwargs)
+def affirm_validation(assertion: Type[T], value: Any, **kwargs: Any) -> T:
+    """Wrapper to call asserts in :py:mod:`cdedb.validation`.
+
+    ValidationWarnings are used to hint the user to re-think about a given valid entry.
+    The user may decide that the given entry is fine by ignoring the warning.
+    Therefore, the frontend has to handle ValidationWarnings properly, while the backend
+    must **ignore** them always to reduce redundancy between frontend and backend.
+    """
+    return validate.validate_assert(assertion, value, ignore_warnings=True, **kwargs)
 
 
-def affirm_validation_typed(assertion: Type[T], value: Any, **kwargs: Any) -> T:
-    """Wrapper to call asserts in :py:mod:`cdedb.validation`."""
-    return validate.validate_assert(assertion, value, **kwargs)
-
-
-def affirm_validation_typed_optional(
+def affirm_validation_optional(
     assertion: Type[T], value: Any, **kwargs: Any
 ) -> Optional[T]:
-    """Wrapper to call asserts in :py:mod:`cdedb.validation`."""
-    return validate.validate_assert(
-        Optional[assertion], value, **kwargs)  # type: ignore
+    """Wrapper to call asserts in :py:mod:`cdedb.validation`.
+
+    This is similar to :func:`~cdedb.backend.common.affirm_validation`
+    but also allows optional/falsy values.
+    """
+    return validate.validate_assert_optional(
+        Optional[assertion], value, ignore_warnings=True, **kwargs)  # type: ignore
 
 
 def affirm_array_validation(
@@ -798,7 +865,7 @@ def affirm_array_validation(
 ) -> Tuple[T, ...]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation` for an array."""
     return tuple(
-        affirm_validation_typed(assertion, value, **kwargs)
+        affirm_validation(assertion, value, **kwargs)
         for value in values
     )
 
@@ -808,9 +875,21 @@ def affirm_set_validation(
 ) -> Set[T]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation` for a set."""
     return set(
-        affirm_validation_typed(assertion, value, **kwargs)
+        affirm_validation(assertion, value, **kwargs)
         for value in values
     )
+
+
+def inspect_validation(
+    type_: Type[T], value: Any, *, ignore_warnings: bool = True, **kwargs: Any
+) -> Tuple[Optional[T], List[Error]]:
+    """Convenient wrapper to call checks in :py:mod:`cdedb.validation`.
+
+    This should only be used if the error handling must be done in the backend to
+    retrieve the errors and not raising them (like affirm would do).
+    """
+    return validate.validate_check(
+        type_, value, ignore_warnings=ignore_warnings, **kwargs)
 
 
 def cast_fields(data: CdEDBObject, fields: CdEDBObjectMap) -> CdEDBObject:
@@ -844,10 +923,10 @@ def cast_fields(data: CdEDBObject, fields: CdEDBObjectMap) -> CdEDBObject:
 #:
 #: This is utilized during handling jsonb columns.
 PYTHON_TO_SQL_MAP = {
-    "int": "integer",
-    "str": "varchar",
-    "float": "double precision",
-    "date": "date",
-    "datetime": "timestamp with time zone",
-    "bool": "boolean",
+    FieldDatatypes.int: "integer",
+    FieldDatatypes.str: "varchar",
+    FieldDatatypes.float: "double precision",
+    FieldDatatypes.date: "date",
+    FieldDatatypes.datetime: "timestamp with time zone",
+    FieldDatatypes.bool: "boolean",
 }

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# pylint: disable=missing-module-docstring
+
 import os
 import pathlib
 import shutil
@@ -69,7 +71,7 @@ class TestOffline(FrontendTest):
                           {'href': 'event/event/1/registration/1/show'},
                           {'href': 'core/persona/1/show'},
                           {'href': 'core/persona/1/adminchange'})
-            self.assertTitle('Anton Armin A. Administrator bearbeiten')
+            self.assertTitle('Anton Administrator bearbeiten')
             f = self.response.forms['changedataform']
             f['display_name'] = "Zelda"
             f['birthday'] = "3.4.1933"
@@ -85,7 +87,6 @@ class TestOffline(FrontendTest):
                 headers={'X-CdEDB-API-token': 'y1f2i3d4x5b6'})
             self.assertEqual(self.response.json["message"], "success")
             expectation = {
-                'CDEDB_EXPORT_EVENT_VERSION',
                 'EVENT_SCHEMA_VERSION',
                 'kind',
                 'timestamp',

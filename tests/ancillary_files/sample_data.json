@@ -14,6 +14,7 @@
             "is_ml_admin": true,
             "is_assembly_admin": true,
             "is_cdelokal_admin": true,
+            "is_auditor": true,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -29,7 +30,7 @@
             "name_supplement": null,
             "gender": 2,
             "birthday": "1991-03-30",
-            "telephone": "+49 (234) 98765",
+            "telephone": "+4923498765",
             "mobile": null,
             "address_supplement": null,
             "address": "Auf der Düne 42",
@@ -70,6 +71,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -85,8 +87,8 @@
             "name_supplement": "MdB",
             "gender": 1,
             "birthday": "1981-02-11",
-            "telephone": "+49 (5432) 987654321",
-            "mobile": "0163/123456789",
+            "telephone": "+495432987654321",
+            "mobile": "+4916312345678",
             "address_supplement": "bei Spielmanns",
             "address": "Im Garten 77",
             "postal_code": "34576",
@@ -126,6 +128,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -182,6 +185,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -238,6 +242,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": false,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -246,15 +251,15 @@
             "is_searchable": false,
             "is_archived": false,
             "is_purged": false,
-            "display_name": "Emilia",
+            "display_name": "Emmy",
             "given_names": "Emilia E.",
             "family_name": "Eventis",
             "title": null,
             "name_supplement": null,
             "gender": 1,
             "birthday": "2012-06-02",
-            "telephone": "+49 (5432) 555666777",
-            "mobile": "01577/314159",
+            "telephone": "+495432555666777",
+            "mobile": "+491577314159",
             "address_supplement": null,
             "address": "Hohle Gasse 13",
             "postal_code": "56767",
@@ -294,6 +299,7 @@
             "is_ml_admin": true,
             "is_assembly_admin": true,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -350,6 +356,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -406,6 +413,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -462,6 +470,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": true,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -478,7 +487,7 @@
             "gender": 1,
             "birthday": "2222-01-01",
             "telephone": null,
-            "mobile": "0163/456897",
+            "mobile": "+49163456897",
             "address_supplement": null,
             "address": "Zwergstraße 1",
             "postal_code": "10999",
@@ -518,6 +527,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": false,
             "is_event_realm": false,
             "is_ml_realm": true,
@@ -574,6 +584,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": false,
             "is_event_realm": false,
             "is_ml_realm": true,
@@ -630,6 +641,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -686,6 +698,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -742,6 +755,7 @@
             "is_ml_admin": true,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": false,
             "is_event_realm": false,
             "is_ml_realm": true,
@@ -798,6 +812,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -854,6 +869,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -910,6 +926,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -966,6 +983,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": false,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -1022,6 +1040,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -1078,6 +1097,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -1134,6 +1154,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -1190,6 +1211,7 @@
             "is_ml_admin": true,
             "is_assembly_admin": true,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -1233,6 +1255,63 @@
             "fulltext": null
         },
         {
+            "id": 37,
+            "username": "katarina@example.cde",
+            "password_hash": "$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/",
+            "is_active": true,
+            "notes": null,
+            "is_meta_admin": false,
+            "is_core_admin": false,
+            "is_cde_admin": false,
+            "is_finance_admin": false,
+            "is_event_admin": false,
+            "is_ml_admin": false,
+            "is_assembly_admin": false,
+            "is_cdelokal_admin": false,
+            "is_auditor": true,
+            "is_cde_realm": true,
+            "is_event_realm": true,
+            "is_ml_realm": true,
+            "is_assembly_realm": true,
+            "is_member": false,
+            "is_searchable": true,
+            "is_archived": false,
+            "is_purged": false,
+            "display_name": "Katarina",
+            "given_names": "Katarina",
+            "family_name": "Kassenprüfer",
+            "title": null,
+            "name_supplement":  null,
+            "gender": 1,
+            "birthday": "1999-12-31",
+            "telephone": null,
+            "mobile": null,
+            "address_supplement": null,
+            "address": null,
+            "postal_code":  null,
+            "location": null,
+            "country": "DE",
+            "birth_name":  null,
+            "address_supplement2": null,
+            "address2": null,
+            "postal_code2": null,
+            "location2": null,
+            "country2": null,
+            "weblink": null,
+            "specialisation": null,
+            "affiliation": null,
+            "timeline": null,
+            "interests": null,
+            "free_form": null,
+            "balance": "5.00",
+            "decided_search": true,
+            "trial_member": false,
+            "bub_search": true,
+            "foto": null,
+            "paper_expuls": true,
+            "fulltext": null
+        },
+        {
             "id": 48,
             "username": "viktor@example.cde",
             "password_hash": "$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/",
@@ -1246,6 +1325,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": true,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -1302,6 +1382,7 @@
             "is_ml_admin": true,
             "is_assembly_admin": true,
             "is_cdelokal_admin": true,
+            "is_auditor": true,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -1317,7 +1398,7 @@
             "name_supplement": null,
             "gender": 10,
             "birthday": "2019-12-28",
-            "telephone": "+81 (314) 159263",
+            "telephone": "+81314159263",
             "mobile": null,
             "address_supplement": null,
             "address": "Kasumigaseki 1-3-2",
@@ -1375,7 +1456,6 @@
     "core.log": [],
     "core.changelog": [
         {
-            "id": 1,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1394,6 +1474,7 @@
             "is_ml_admin": true,
             "is_assembly_admin": true,
             "is_cdelokal_admin": true,
+            "is_auditor": true,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -1409,7 +1490,7 @@
             "name_supplement": null,
             "gender": 2,
             "birthday": "1991-03-30",
-            "telephone": "+49 (234) 98765",
+            "telephone": "+4923498765",
             "mobile": null,
             "address_supplement": null,
             "address": "Auf der Düne 42",
@@ -1436,7 +1517,6 @@
             "paper_expuls": true
         },
         {
-            "id": 2,
             "submitted_by": 2,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1455,6 +1535,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -1470,8 +1551,8 @@
             "name_supplement": "MdB",
             "gender": 1,
             "birthday": "1981-02-11",
-            "telephone": "+49 (5432) 987654321",
-            "mobile": "0163/123456789",
+            "telephone": "+495432987654321",
+            "mobile": "+4916312345678",
             "address_supplement": "bei Spielmanns",
             "address": "Im Garten 77",
             "postal_code": "34576",
@@ -1497,7 +1578,6 @@
             "paper_expuls": true
         },
         {
-            "id": 3,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1516,6 +1596,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -1558,7 +1639,6 @@
             "paper_expuls": true
         },
         {
-            "id": 4,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1577,6 +1657,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -1619,7 +1700,6 @@
             "paper_expuls": true
         },
         {
-            "id": 5,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1638,6 +1718,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": false,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -1646,15 +1727,15 @@
             "is_searchable": false,
             "is_archived": false,
             "is_purged": false,
-            "display_name": "Emilia",
+            "display_name": "Emmy",
             "given_names": "Emilia E.",
             "family_name": "Eventis",
             "title": null,
             "name_supplement": null,
             "gender": 1,
             "birthday": "2012-06-02",
-            "telephone": "+49 (5432) 555666777",
-            "mobile": "01577/314159",
+            "telephone": "+495432555666777",
+            "mobile": "+491577314159",
             "address_supplement": null,
             "address": "Hohle Gasse 13",
             "postal_code": "56767",
@@ -1680,7 +1761,6 @@
             "paper_expuls": null
         },
         {
-            "id": 6,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1699,6 +1779,7 @@
             "is_ml_admin": true,
             "is_assembly_admin": true,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -1741,7 +1822,6 @@
             "paper_expuls": true
         },
         {
-            "id": 7,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1760,6 +1840,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -1802,7 +1883,6 @@
             "paper_expuls": true
         },
         {
-            "id": 8,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1821,6 +1901,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -1863,7 +1944,6 @@
             "paper_expuls": true
         },
         {
-            "id": 9,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1882,6 +1962,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": true,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -1898,7 +1979,7 @@
             "gender": 1,
             "birthday": "2222-01-01",
             "telephone": null,
-            "mobile": null,
+            "mobile": "+49163456897",
             "address_supplement": null,
             "address": "Zwergstraße 1",
             "postal_code": "10999",
@@ -1924,7 +2005,6 @@
             "paper_expuls": true
         },
         {
-            "id": 10,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1943,6 +2023,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": false,
             "is_event_realm": false,
             "is_ml_realm": true,
@@ -1985,7 +2066,6 @@
             "paper_expuls": null
         },
         {
-            "id": 11,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2004,6 +2084,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": false,
             "is_event_realm": false,
             "is_ml_realm": true,
@@ -2046,7 +2127,6 @@
             "paper_expuls": null
         },
         {
-            "id": 12,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2065,6 +2145,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -2107,7 +2188,6 @@
             "paper_expuls": true
         },
         {
-            "id": 13,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2126,6 +2206,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -2168,7 +2249,6 @@
             "paper_expuls": true
         },
         {
-            "id": 14,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2187,6 +2267,7 @@
             "is_ml_admin": true,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": false,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -2229,7 +2310,6 @@
             "paper_expuls": null
         },
         {
-            "id": 15,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2248,6 +2328,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -2290,7 +2371,6 @@
             "paper_expuls": true
         },
         {
-            "id": 16,
             "submitted_by": 6,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2309,6 +2389,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -2351,7 +2432,6 @@
             "paper_expuls": true
         },
         {
-            "id": 17,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2370,6 +2450,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -2412,7 +2493,6 @@
             "paper_expuls": true
         },
         {
-            "id": 18,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2431,6 +2511,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -2473,7 +2554,6 @@
             "paper_expuls": true
         },
         {
-            "id": 19,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2492,6 +2572,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -2510,10 +2591,10 @@
             "telephone": null,
             "mobile": null,
             "address_supplement": null,
-            "address": null,
-            "postal_code": null,
-            "location": null,
-            "country": null,
+            "address": "Auf der Düne 120",
+            "postal_code": "03205",
+            "location": "Musterstadt",
+            "country": "DE",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -2534,7 +2615,6 @@
             "paper_expuls": true
         },
         {
-            "id": 20,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2553,6 +2633,7 @@
             "is_ml_admin": true,
             "is_assembly_admin": true,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -2595,7 +2676,67 @@
             "paper_expuls": true
         },
         {
-            "id": 21,
+            "submitted_by": 1,
+            "reviewed_by": null,
+            "ctime": "---now---",
+            "generation": 1,
+            "change_note": "Init.",
+            "code": 2,
+            "persona_id": 37,
+            "username": "katarina@example.cde",
+            "is_active": true,
+            "notes": null,
+            "is_meta_admin": false,
+            "is_core_admin": false,
+            "is_cde_admin": false,
+            "is_finance_admin": false,
+            "is_event_admin": false,
+            "is_ml_admin": false,
+            "is_assembly_admin": false,
+            "is_cdelokal_admin": false,
+            "is_auditor": true,
+            "is_cde_realm": true,
+            "is_event_realm": true,
+            "is_ml_realm": true,
+            "is_assembly_realm": true,
+            "is_member": false,
+            "is_searchable": true,
+            "is_archived": false,
+            "is_purged": false,
+            "display_name": "Katarina",
+            "given_names": "Katarina",
+            "family_name": "Kassenprüfer",
+            "title": null,
+            "name_supplement":  null,
+            "gender": 1,
+            "birthday": "1999-12-31",
+            "telephone": null,
+            "mobile": null,
+            "address_supplement": null,
+            "address": null,
+            "postal_code":  null,
+            "location": null,
+            "country": "DE",
+            "birth_name":  null,
+            "address_supplement2": null,
+            "address2": null,
+            "postal_code2": null,
+            "location2": null,
+            "country2": null,
+            "weblink": null,
+            "specialisation": null,
+            "affiliation": null,
+            "timeline": null,
+            "interests": null,
+            "free_form": null,
+            "balance": "5.00",
+            "decided_search": true,
+            "trial_member": false,
+            "bub_search": true,
+            "foto": null,
+            "paper_expuls": true
+        },
+        {
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2614,6 +2755,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": true,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -2656,7 +2798,6 @@
             "paper_expuls": true
         },
         {
-            "id": 22,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2675,6 +2816,7 @@
             "is_ml_admin": true,
             "is_assembly_admin": true,
             "is_cdelokal_admin": true,
+            "is_auditor": true,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -2690,7 +2832,7 @@
             "name_supplement": null,
             "gender": 10,
             "birthday": "2019-12-28",
-            "telephone": "+81 (314) 159263",
+            "telephone": "+81314159263",
             "mobile": null,
             "address_supplement": null,
             "address": "Kasumigaseki 1-3-2",
@@ -2717,7 +2859,6 @@
             "paper_expuls": true
         },
         {
-            "id": 23,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2736,6 +2877,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -2778,7 +2920,6 @@
             "paper_expuls": true
         },
         {
-            "id": 24,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2797,6 +2938,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -2839,7 +2981,6 @@
             "paper_expuls": true
         },
         {
-            "id": 25,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2858,6 +2999,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": false,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -2900,7 +3042,6 @@
             "paper_expuls": null
         },
         {
-            "id": 26,
             "submitted_by": 100,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2919,6 +3060,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -2961,7 +3103,6 @@
             "paper_expuls": true
         },
         {
-            "id": 27,
             "submitted_by": 100,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2980,6 +3121,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": true,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -3022,7 +3164,6 @@
             "paper_expuls": true
         },
         {
-            "id": 28,
             "submitted_by": 100,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -3041,6 +3182,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -3059,10 +3201,10 @@
             "telephone": null,
             "mobile": null,
             "address_supplement": null,
-            "address": null,
-            "postal_code": null,
-            "location": null,
-            "country": null,
+            "address": "Auf der Düne 120",
+            "postal_code": "03205",
+            "location": "Musterstadt",
+            "country": "DE",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -3083,7 +3225,6 @@
             "paper_expuls": true
         },
         {
-            "id": 29,
             "submitted_by": 100,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -3102,6 +3243,7 @@
             "is_ml_admin": true,
             "is_assembly_admin": true,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -3144,7 +3286,6 @@
             "paper_expuls": true
         },
         {
-            "id": 30,
             "submitted_by": 100,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -3163,6 +3304,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -3205,7 +3347,6 @@
             "paper_expuls": true
         },
         {
-            "id": 31,
             "submitted_by": 100,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -3224,6 +3365,7 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_cde_realm": true,
             "is_event_realm": true,
             "is_ml_realm": true,
@@ -3515,7 +3657,7 @@
             "is_instructor": false,
             "is_orga": false
         },
-         {
+        {
             "persona_id": 4,
             "pevent_id": 1,
             "pcourse_id": 2,
@@ -3759,7 +3901,8 @@
             "field_name": "brings_balls",
             "kind": 2,
             "association": 1,
-            "entries": null
+            "entries": null,
+            "checkin": true
         },
         {
             "id": 2,
@@ -3780,7 +3923,8 @@
                     "etc",
                     "anything else"
                 ]
-            ]
+            ],
+            "checkin": false
         },
         {
             "id": 3,
@@ -3788,7 +3932,8 @@
             "field_name": "lodge",
             "kind": 1,
             "association": 1,
-            "entries": null
+            "entries": null,
+            "checkin": false
         },
         {
             "id": 4,
@@ -3796,7 +3941,8 @@
             "field_name": "may_reserve",
             "kind": 2,
             "association": 1,
-            "entries": null
+            "entries": null,
+            "checkin": false
         },
         {
             "id": 5,
@@ -3804,7 +3950,8 @@
             "field_name": "room",
             "kind": 1,
             "association": 2,
-            "entries": null
+            "entries": null,
+            "checkin": false
         },
         {
             "id": 6,
@@ -3829,7 +3976,8 @@
                     "none",
                     "no radiation"
                 ]
-            ]
+            ],
+            "checkin": false
         },
         {
             "id": 7,
@@ -3837,7 +3985,8 @@
             "field_name": "is_child",
             "kind": 2,
             "association": 1,
-            "entries": null
+            "entries": null,
+            "checkin": false
         },
         {
             "id": 8,
@@ -3845,7 +3994,8 @@
             "field_name": "anzahl_GROSSBUCHSTABEN",
             "kind": 3,
             "association": 1,
-            "entries": null
+            "entries": null,
+            "checkin": true
         }
     ],
     "event.fee_modifiers": [
@@ -4189,7 +4339,7 @@
             "checkin": null,
             "list_consent": true,
             "fields": {
-                "lodge": "Die üblichen Verdächtigen :)",
+                "lodge": "Die üblichen Verdächtigen, insb. Berta Beispiel und garcia@example.cde :)",
                 "is_child": false,
                 "anzahl_GROSSBUCHSTABEN": 4
             }
@@ -4316,6 +4466,22 @@
         {
             "id": 8,
             "persona_id": 15,
+            "real_persona_id": null,
+            "event_id": 3,
+            "notes": null,
+            "orga_notes": null,
+            "payment": null,
+            "amount_paid": "0.00",
+            "amount_owed": "0.00",
+            "parental_agreement": false,
+            "mixed_lodging": false,
+            "checkin": null,
+            "list_consent": false,
+            "fields": {}
+        },
+        {
+            "id": 9,
+            "persona_id": 7,
             "real_persona_id": null,
             "event_id": 3,
             "notes": null,
@@ -4490,6 +4656,14 @@
             "status": 2,
             "lodgement_id": null,
             "is_camping_mat": false
+        },
+        {
+            "id": 21,
+            "registration_id": 9,
+            "part_id": 5,
+            "status": 2,
+            "lodgement_id": null,
+            "is_camping_mat": false
         }
     ],
     "event.registration_tracks": [
@@ -4629,6 +4803,13 @@
         {
             "id": 20,
             "registration_id": 8,
+            "track_id": 4,
+            "course_id": null,
+            "course_instructor": null
+        },
+        {
+            "id": 21,
+            "registration_id": 9,
             "track_id": 4,
             "course_id": null,
             "course_instructor": null
@@ -4925,7 +5106,7 @@
             "title": "Ich bin unter 13 Jahre alt.",
             "info": null,
             "input_size": null,
-            "readonly": null,
+            "readonly": false,
             "default_value": null,
             "kind": 1
         },
@@ -5008,15 +5189,15 @@
             "query_name": "Test-Query",
             "scope": 30,
             "serialized_query": {
+                "scope": 30,
                 "is_search": true,
                 "query_name": "Test-Query",
-                "scope": 30,
                 "qsel_reg.id": true,
-                "qsel_persona.id": true,
-                "qsel_persona.birthday": true,
-                "qop_persona.birthday": 20,
-                "qval_persona.birthday": "2000-01-01",
                 "qord_primary": "persona.birthday",
+                "qsel_persona.id": true,
+                "qop_persona.birthday": 20,
+                "qsel_persona.birthday": true,
+                "qval_persona.birthday": "2000-01-01",
                 "qord_primary_ascending": true
             }
         }
@@ -5357,6 +5538,23 @@
             "id": 16,
             "assembly_id": 3,
             "title": "Ganz wichtige Wahl",
+            "description": null,
+            "vote_begin": "2222-02-22T00:00:00+00:00",
+            "vote_end": "2222-02-22T00:01:00+00:00",
+            "vote_extension_end": null,
+            "extended": null,
+            "use_bar": false,
+            "abs_quorum": 0,
+            "rel_quorum": 0,
+            "quorum": null,
+            "votes": null,
+            "is_tallied": false,
+            "notes": null
+        },
+        {
+            "id": 17,
+            "assembly_id": 3,
+            "title": "Genauso wichtige Wahl",
             "description": null,
             "vote_begin": "2222-02-22T00:00:00+00:00",
             "vote_end": "2222-02-22T00:01:00+00:00",
@@ -6392,17 +6590,24 @@
     "assembly.attachments": [
         {
             "id": 1,
-            "assembly_id": 3,
-            "ballot_id": null
+            "assembly_id": 3
         },
         {
             "id": 2,
-            "assembly_id": 3,
-            "ballot_id": null
+            "assembly_id": 3
         },
         {
             "id": 3,
-            "assembly_id": null,
+            "assembly_id": 3
+        }
+    ],
+    "assembly.attachment_ballot_links": [
+        {
+            "attachment_id": 3,
+            "ballot_id": 6
+        },
+        {
+            "attachment_id": 3,
             "ballot_id": 16
         }
     ],
@@ -6410,7 +6615,7 @@
         {
             "id": 1,
             "attachment_id": 1,
-            "version": 1,
+            "version_nr": 1,
             "title": "Rechenschaftsbericht",
             "authors": "Farin",
             "filename": "rechen.pdf",
@@ -6421,7 +6626,7 @@
         {
             "id": 2,
             "attachment_id": 2,
-            "version": 1,
+            "version_nr": 1,
             "title": "Kassenprüferbericht",
             "authors": "Berta",
             "filename": "kasse.pdf",
@@ -6432,7 +6637,7 @@
         {
             "id": 3,
             "attachment_id": 2,
-            "version": 2,
+            "version_nr": 2,
             "title": null,
             "authors": null,
             "filename": null,
@@ -6443,7 +6648,7 @@
         {
             "id": 4,
             "attachment_id": 2,
-            "version": 3,
+            "version_nr": 3,
             "title": "Kassenprüferbericht 2",
             "authors": "Garcia",
             "filename": "kasse.pdf",
@@ -6454,11 +6659,11 @@
         {
             "id": 5,
             "attachment_id": 3,
-            "version": 1,
-            "title": "Liste der Kanditaten",
+            "version_nr": 1,
+            "title": "Liste der Kandidaten",
             "authors": "Wahlleitung",
             "filename": "kandidaten.pdf",
-            "ctime": "---now---",
+            "ctime": "1990-01-01T00:00",
             "dtime": null,
             "file_hash": "xyz"
         }
@@ -7592,6 +7797,11 @@
         },
         {
             "mailinglist_id": 13,
+            "persona_id": 37,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 13,
             "persona_id": 48,
             "subscription_state": 1
         },
@@ -7976,6 +8186,11 @@
             "mailinglist_id": 4,
             "persona_id": 6,
             "address": "ferdinand-unterhaltung@example.cde"
+        },
+        {
+            "mailinglist_id": 52,
+            "persona_id": 9,
+            "address": "inga-papierkorb@example.cde"
         }
     ],
     "ml.whitelist": [
@@ -8214,5 +8429,37 @@
             "persona_id": 1
         }
     ],
-    "ml.log": []
+    "ml.log": [],
+    "ldap.duas": [
+            {
+                "id": 1,
+                "cn": "admin",
+                "password_hash": "$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1"
+            },
+            {
+                "id": 2,
+                "cn": "apache",
+                "password_hash": "$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1"
+            },
+            {
+                "id": 3,
+                "cn": "cloud",
+                "password_hash": "$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1"
+            },
+            {
+                "id": 4,
+                "cn": "cyberaka",
+                "password_hash": "$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1"
+            },
+            {
+                "id": 5,
+                "cn": "dokuwiki",
+                "password_hash": "$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1"
+            },
+            {
+                "id": 999999999,
+                "cn": "test",
+                "password_hash": "$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1"
+            }
+        ]
 }

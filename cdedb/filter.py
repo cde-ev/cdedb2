@@ -1,24 +1,26 @@
+"""Filter definitions for jinja templates"""
+
 import datetime
 import decimal
 import enum
+import logging
 import re
 import threading
-
-import logging
 from typing import (
-    Any, Callable, Collection, Container, Dict, Iterable, ItemsView, List,
-    Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, overload
+    Any, Callable, Collection, Container, Dict, ItemsView, Iterable, List, Literal,
+    Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, overload,
 )
-from typing_extensions import Literal
 
 import bleach
 import icu
 import jinja2
 import markdown
 import markdown.extensions.toc
+import markupsafe
+import phonenumbers
 
-from cdedb.common import CdEDBObject, compute_checkdigit, xsorted
 import cdedb.database.constants as const
+from cdedb.common import CdEDBObject, compute_checkdigit, xsorted
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -45,10 +47,10 @@ def safe_filter(val: None) -> None: ...
 
 
 @overload
-def safe_filter(val: str) -> jinja2.Markup: ...
+def safe_filter(val: str) -> markupsafe.Markup: ...
 
 
-def safe_filter(val: Optional[str]) -> Optional[jinja2.Markup]:
+def safe_filter(val: Optional[str]) -> Optional[markupsafe.Markup]:
     """Custom jinja filter to mark a string as safe.
 
     This prevents autoescaping of this entity. To be used for dynamically
@@ -58,7 +60,7 @@ def safe_filter(val: Optional[str]) -> Optional[jinja2.Markup]:
     """
     if val is None:
         return None
-    return jinja2.Markup(val)
+    return markupsafe.Markup(val)
 
 
 def date_filter(val: Union[datetime.date, str, None],
@@ -92,9 +94,19 @@ def date_filter(val: Union[datetime.date, str, None],
         date_formatter = icu.DateFormat.createDateInstance(
             verbosity_mapping[verbosity], locale
         )
-        return date_formatter.format(datetime.datetime.combine(val, datetime.time()))
-    else:
-        return val.strftime(formatstr)
+        effective = datetime.datetime.combine(val, datetime.time())
+        if not hasattr(effective, '_date_to_freeze'):
+            # This branch is only avoided if freezegun is in effect
+            # (hence only under test).
+            #
+            # Sadly pyICU is incompatible with freezegun (see for example
+            # https://github.com/spulec/freezegun/issues/207). Thus we have
+            # to forfeit nicely formatted dates in this scenario.
+            #
+            # The attribute check is a bit fragile, but no better way to
+            # detect freezegun was available.
+            return date_formatter.format(effective)
+    return val.strftime(formatstr)
 
 
 @overload
@@ -193,14 +205,38 @@ def hidden_iban_filter(val: Optional[str]) -> Optional[str]:
 
 
 @overload
+def phone_filter(val: None) -> None: ...
+
+
+@overload
+def phone_filter(val: str) -> str: ...
+
+
+def phone_filter(val: Optional[str]) -> Optional[str]:
+    """Custom jinja filter to format phone numbers."""
+    if val is None:
+        return None
+
+    try:
+        # default to german if no region is provided
+        phone = phonenumbers.parse(val, region="DE")
+    except phonenumbers.NumberParseException:
+        # default to the raw value if it can not be parsed
+        return val
+
+    return phonenumbers.format_number(
+        phone, phonenumbers.PhoneNumberFormat.INTERNATIONAL)
+
+
+@overload
 def escape_filter(val: None) -> None: ...
 
 
 @overload
-def escape_filter(val: str) -> jinja2.Markup: ...
+def escape_filter(val: str) -> markupsafe.Markup: ...
 
 
-def escape_filter(val: Optional[str]) -> Optional[jinja2.Markup]:
+def escape_filter(val: Optional[str]) -> Optional[markupsafe.Markup]:
     """Custom jinja filter to reconcile escaping with the finalize method
     (which suppresses all ``None`` values and thus mustn't be converted to
     strings first).
@@ -213,7 +249,7 @@ def escape_filter(val: Optional[str]) -> Optional[jinja2.Markup]:
     if val is None:
         return None
     else:
-        return jinja2.escape(val)
+        return markupsafe.escape(val)
 
 
 LATEX_ESCAPE_REGEX = (
@@ -303,12 +339,12 @@ def linebreaks_filter(val: None, replacement: str) -> None: ...
 
 
 @overload
-def linebreaks_filter(val: Union[str, jinja2.Markup],
-                      replacement: str) -> jinja2.Markup: ...
+def linebreaks_filter(val: Union[str, markupsafe.Markup],
+                      replacement: str) -> markupsafe.Markup: ...
 
 
-def linebreaks_filter(val: Union[None, str, jinja2.Markup],
-                      replacement: str = "<br>") -> Optional[jinja2.Markup]:
+def linebreaks_filter(val: Union[None, str, markupsafe.Markup],
+                      replacement: str = "<br>") -> Optional[markupsafe.Markup]:
     """Custom jinja filter to convert line breaks to <br>.
 
     This filter escapes the input value (if required), replaces the linebreaks
@@ -317,9 +353,9 @@ def linebreaks_filter(val: Union[None, str, jinja2.Markup],
     if val is None:
         return None
     # escape the input. This function consumes an unescaped string or a
-    # jinja2.Markup safe html object and returns an escaped string.
-    val = jinja2.escape(val)
-    return val.replace('\n', jinja2.Markup(replacement))
+    # markupsafe.Markup safe html object and returns an escaped string.
+    val = markupsafe.escape(val)
+    return val.replace('\n', markupsafe.Markup(replacement))
 
 
 #: bleach internals are not thread-safe, so we have to be a bit defensive
@@ -341,7 +377,9 @@ def get_bleach_cleaner() -> bleach.sanitizer.Cleaner:
         # customizations
         'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'colgroup', 'col', 'tr', 'th',
         'thead', 'table', 'tbody', 'td', 'hr', 'p', 'span', 'div', 'pre', 'tt',
-        'sup', 'sub', 'br', 'u', 'dl', 'dt', 'dd', 'details', 'summary']
+        'sup', 'sub', 'small', 'br', 'u', 'dl', 'dt', 'dd', 'details', 'summary',
+        's',
+    ]
     attributes = {
         'a': ['href', 'title'],
         'abbr': ['title'],
@@ -366,14 +404,14 @@ def bleach_filter(val: None) -> None: ...
 
 
 @overload
-def bleach_filter(val: str) -> jinja2.Markup: ...
+def bleach_filter(val: str) -> markupsafe.Markup: ...
 
 
-def bleach_filter(val: Optional[str]) -> Optional[jinja2.Markup]:
+def bleach_filter(val: Optional[str]) -> Optional[markupsafe.Markup]:
     """Custom jinja filter to convert sanitize html with bleach."""
     if val is None:
         return None
-    return jinja2.Markup(get_bleach_cleaner().clean(val))
+    return markupsafe.Markup(get_bleach_cleaner().clean(val))
 
 
 #: The Markdown parser has internal state, so we have to be a bit defensive
@@ -402,7 +440,7 @@ def get_markdown_parser() -> markdown.Markdown:
     md = getattr(MARKDOWN_PARSER, 'md', None)
 
     if md is None:
-        extension_configs = {
+        extension_configs: Mapping[str, Mapping[str, Any]] = {
             "toc": {
                 "baselevel": 4,
                 "permalink": True,
@@ -418,7 +456,7 @@ def get_markdown_parser() -> markdown.Markdown:
             },
         }
         md = markdown.Markdown(extensions=["extra", "sane_lists", "smarty", "toc"],
-                               extension_configs=extension_configs)  # type: ignore
+                               extension_configs=extension_configs)
 
         MARKDOWN_PARSER.md = md
     else:
@@ -426,7 +464,7 @@ def get_markdown_parser() -> markdown.Markdown:
     return md
 
 
-def markdown_parse_safe(val: str) -> jinja2.Markup:
+def markdown_parse_safe(val: str) -> markupsafe.Markup:
     md = get_markdown_parser()
     return bleach_filter(md.convert(val))
 
@@ -436,10 +474,10 @@ def md_filter(val: None) -> None: ...
 
 
 @overload
-def md_filter(val: str) -> jinja2.Markup: ...
+def md_filter(val: str) -> markupsafe.Markup: ...
 
 
-def md_filter(val: Optional[str]) -> Optional[jinja2.Markup]:
+def md_filter(val: Optional[str]) -> Optional[markupsafe.Markup]:
     """Custom jinja filter to convert markdown to html."""
     if val is None:
         return None
@@ -522,9 +560,10 @@ def map_dict_filter(d: Dict[str, str], processing: Callable[[Any], str]
     return {k: processing(v) for k, v in d.items()}.items()
 
 
-def enum_entries_filter(enum: enum.EnumMeta, processing: Callable[[Any], str] = None,
-                        raw: bool = False,
-                        prefix: str = "") -> List[Tuple[int, str]]:
+def enum_entries_filter(enum: Iterable[enum.Enum],
+                        processing: Callable[[Any], str] = None,
+                        raw: bool = False, prefix: str = "",
+                        ) -> List[Tuple[enum.Enum, str]]:
     """
     Transform an Enum into a list of of (value, string) tuple entries. The
     string is piped trough the passed processing callback function to get the
@@ -544,10 +583,9 @@ def enum_entries_filter(enum: enum.EnumMeta, processing: Callable[[Any], str] = 
     if raw:
         pre = lambda x: x
     else:
-        pre = str
-    to_sort = ((entry.value, prefix + processing(pre(entry)))  # type: ignore
-               for entry in enum)
-    return xsorted(to_sort)
+        pre = lambda x: (x.display_str() if hasattr(x, "display_str") else str(x))
+    to_sort = ((entry, prefix + processing(pre(entry))) for entry in enum)
+    return xsorted(to_sort, key=lambda e: e[0].value)
 
 
 def dict_entries_filter(items: List[Tuple[Any, Mapping[T, S]]],
@@ -610,6 +648,7 @@ JINJA_FILTERS = {
     'cdedbid': cdedbid_filter,
     'iban': iban_filter,
     'hidden_iban': hidden_iban_filter,
+    'phone': phone_filter,
     'escape': escape_filter,
     'e': escape_filter,
     'stringIn': stringIn_filter,

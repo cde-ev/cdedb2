@@ -3,30 +3,24 @@
 
 Should not be archived after use.
 """
-# setup
-
-import time
-from typing import Optional
-
 from cdedb.common import PERSONA_ALL_FIELDS
-from cdedb.script import make_backend, setup, Script, CoreBackend
-
+from cdedb.script import Script
 
 # config
-
-rs = setup(persona_id=-1, dbuser="cdb_admin",
-           dbpassword="9876543210abcdefghijklmnopqrst")()
-
-ALL_FIELDS = PERSONA_ALL_FIELDS + ("fulltext",)
-core: CoreBackend = make_backend("core", proxy=False)
-DRY_RUN = True
 CHECK = True
+
+# setup
+
+script = Script(persona_id=-1, dbuser="cdb_admin")
+rs = script.rs()
+core = script.make_backend("core", proxy=False)
 
 # work
 
+ALL_FIELDS = PERSONA_ALL_FIELDS + ("fulltext",)
 count = 0
 
-with Script(rs, dry_run=DRY_RUN):
+with script:
     persona_id = core.next_persona(rs, -1, is_member=None, is_archived=None)
     while persona_id is not None:
         persona = core.retrieve_persona(rs, persona_id, ALL_FIELDS)

@@ -2,12 +2,11 @@ import argparse
 import datetime
 import json
 import re
-
 from typing import Any, Dict, List
 
-from cdedb.common import CustomJSONEncoder, nearly_now, RequestState
-from cdedb.script import make_backend, setup
 from cdedb.backend.core import CoreBackend
+from cdedb.common import CustomJSONEncoder, RequestState, nearly_now
+from cdedb.script import Script
 
 # per default, we sort entries in a table by their id. Here we can specify any arbitrary
 # columns which should be used as sorting key for the table.
@@ -63,6 +62,12 @@ def dump_sql_data(rs: RequestState, core: CoreBackend
         tables = [table.group('name')
                   for table in re.finditer(r'CREATE TABLE\s(?P<name>\w+\.\w+)', f.read())]
 
+    # extract the ldap tables from the separate file
+    with open("/cdedb2/cdedb/database/cdedb-ldap.sql", "r") as f:
+        tables.extend(
+            [table.group('name')
+             for table in re.finditer(r'CREATE TABLE\s(?P<name>\w+\.\w+)', f.read())])
+
     # take care that the order is preserved
     full_sample_data = dict()
     reference_frame = nearly_now(delta=datetime.timedelta(days=30))
@@ -103,8 +108,9 @@ def main() -> None:
     args = parser.parse_args()
 
     # Setup rs
-    rs = setup(1, "cdb_admin", "9876543210abcdefghijklmnopqrst")()
-    core = make_backend("core", proxy=False)
+    script = Script(dbuser="cdb_admin")
+    rs = script.rs()
+    core = script.make_backend("core", proxy=False)
 
     data = dump_sql_data(rs, core)
 

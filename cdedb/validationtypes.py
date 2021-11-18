@@ -1,10 +1,14 @@
+"""data types for the CdEDB project"""
+
 import datetime
 import decimal
-from typing import Any, Dict, List, NewType as _NewType, Type
+from typing import Any, Dict, List, Mapping, NewType as _NewType, Type
 
 from cdedb.common import CdEDBObject
-from cdedb.subman import SubscriptionState
 from cdedb.query import Query
+from cdedb.subman import SubscriptionState
+
+TypeMapping = Mapping[str, Type[Any]]
 
 # SIMPLE/PRIMITIVE/ATOMIC TYPES
 
@@ -25,6 +29,11 @@ EmptyList = _NewType("EmptyList", List[Any])
 
 Realm = _NewType("Realm", str)
 StringType = _NewType("StringType", str)
+Shortname = _NewType("Shortname", str)
+ShortnameIdentifier = _NewType("ShortnameIdentifier", Shortname)
+ShortnameRestrictiveIdentifier = _NewType(
+    "ShortnameRestrictiveIdentifier", ShortnameIdentifier)
+LegacyShortname = _NewType("LegacyShortname", str)
 PrintableASCIIType = _NewType("PrintableASCIIType", str)
 PrintableASCII = _NewType("PrintableASCII", str)  # TODO make these subtypes?
 Alphanumeric = _NewType("Alphanumeric", str)
@@ -66,11 +75,14 @@ ByFieldDatatype = _NewType("ByFieldDatatype", str)
 
 Persona = _NewType("Persona", CdEDBObject)
 GenesisCase = _NewType("GenesisCase", CdEDBObject)
+BatchAdmissionEntry = _NewType("BatchAdmissionEntry", CdEDBObject)
 PrivilegeChange = _NewType("PrivilegeChange", CdEDBObject)
 Period = _NewType("Period", CdEDBObject)
 ExPuls = _NewType("ExPuls", CdEDBObject)
+MoneyTransferEntry = _NewType("MoneyTransferEntry", CdEDBObject)
 Lastschrift = _NewType("Lastschrift", CdEDBObject)
 LastschriftTransaction = _NewType("LastschriftTransaction", CdEDBObject)
+LastschriftTransactionEntry = _NewType("LastschriftTransactionEntry", CdEDBObject)
 SepaTransactions = _NewType("SepaTransactions", List[CdEDBObject])
 SepaMeta = _NewType("SepaMeta", CdEDBObject)
 MetaInfo = _NewType("MetaInfo", CdEDBObject)
@@ -87,15 +99,21 @@ Registration = _NewType("Registration", CdEDBObject)
 RegistrationPart = _NewType("RegistrationPart", CdEDBObject)
 RegistrationTrack = _NewType("RegistrationTrack", CdEDBObject)
 EventAssociatedFields = _NewType("EventAssociatedFields", CdEDBObject)
+FeeBookingEntry = _NewType("FeeBookingEntry", CdEDBObject)
 LodgementGroup = _NewType("LodgementGroup", CdEDBObject)
 Lodgement = _NewType("Lodgement", CdEDBObject)
-Questionnaire = _NewType("Questionnaire", Dict[int, Any])  # TODO maybe cast keys to str
+QuestionnaireRow = _NewType("QuestionnaireRow", CdEDBObject)
+# TODO maybe cast keys to str
+Questionnaire = _NewType("Questionnaire", Dict[int, List[QuestionnaireRow]])
 
 SerializedEvent = _NewType("SerializedEvent", CdEDBObject)
 SerializedEventUpload = _NewType("SerializedEventUpload", SerializedEvent)
 SerializedPartialEvent = _NewType("SerializedPartialEvent", CdEDBObject)
 SerializedPartialEventUpload = _NewType(
     "SerializedPartialEventUpload", SerializedPartialEvent)
+SerializedEventQuestionnaire = _NewType("SerializedEventQuestionnaire", CdEDBObject)
+SerializedEventQuestionnaireUpload = _NewType(
+    "SerializedEventQuestionnaireUpload", SerializedEventQuestionnaire)
 
 PartialCourse = _NewType("PartialCourse", CdEDBObject)
 PartialLodgementGroup = _NewType("PartialLodgementGroup", CdEDBObject)

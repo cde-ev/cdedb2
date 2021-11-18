@@ -5,14 +5,11 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% import "web/generic.tmpl" as generic with context %}
 {% block title %}
-    {% trans given_names=data['given_names'], family_name=data['family_name'] %}
-        {{ given_names }} {{ family_name }}
-    {% endtrans %}
+    {{ util.persona_name(data) }}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), "{} {}".format(ambience['persona']['given_names'],
-                                                                                  ambience['persona']['family_name']),
+{{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), util.persona_name(ambience['persona']),
         icon="user", active=True) }}
 {% endblock %}
 
@@ -20,7 +17,7 @@
 {# This is a bit special, because also non-core roles determinate what a user can see or modify from another one #}
 {% block adminviews %}
     {% set views = [] %}
-    {% if "relative_admin" in access_mode %}
+    {% if "any_admin" in access_mode %}
         {{ views.append((gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], None)) }}
     {% endif %}
     {{ views.append((gettext("Admin Administration"), ["meta_admin"], None)) }}
@@ -37,7 +34,7 @@
 {% endblock %}
 
 {% block static_notifications %}
-    {% if is_relative_admin %}
+    {% if is_relative_admin_view %}
         {% if ambience['persona']['is_purged'] %}
             {% call util.notification('info', id='purged') %}
                 {% trans %}This user has been purged.{% endtrans %}
@@ -55,45 +52,67 @@
 {% endblock %}
 
 {% block content %}
-    {% if quoteable %}
-        {{ util.href(show_user_link(user, ambience['persona']['id'], quote_me=True), gettext("Show complete Profile"),
-                     aclass="btn btn-info btn-sm", icon='eye-slash') }}
-    {% endif %}
-    {% if data['id'] == user.persona_id or is_relative_admin %}
-        <div class="p">
+    {# Actions #}
+    {% if data['id'] == user.persona_id or is_relative_admin_view %}
+        <div class="p button-par">
             {% if not ambience['persona']['is_archived'] %}
-                {% if is_relative_admin %}
+                {% if is_relative_admin_view %}
                     {% if data['id'] == user.persona_id %}
                         {{ util.href(cdedblink('core/change_user_form'), gettext("Edit (normal)"),
-                                aclass="btn btn-warning btn-sm mosp", icon="pen") }}
+                                aclass="btn btn-warning btn-sm", icon="pen") }}
                         {{ util.href(cdedblink('core/admin_change_user_form'), gettext("Edit (as Admin)"),
-                                aclass="btn btn-warning btn-sm mosp", icon="pen") }}
+                                aclass="btn btn-warning btn-sm", icon="pen") }}
                     {% else %}
                         {{ util.href(cdedblink('core/admin_change_user_form'), gettext("Edit"),
-                                aclass="btn btn-warning btn-sm mosp", icon="pen") }}
+                                aclass="btn btn-warning btn-sm", icon="pen") }}
                     {% endif %}
                 {% else %}
                     {{ util.href(cdedblink('core/change_user_form'), gettext("Edit"),
-                            aclass="btn btn-warning btn-sm mosp", icon="pen") }}
+                            aclass="btn btn-warning btn-sm", icon="pen") }}
                 {% endif %}
                 {% if data['id'] == user.persona_id %}
                     {{ util.href(cdedblink("core/change_password_form"), gettext("Change Password"),
-                            aclass="btn btn-warning btn-sm mosp", icon="edit") }}
+                            aclass="btn btn-warning btn-sm", icon="edit") }}
                     <form action="{{ cdedblink("core/logout_all") }}" method="POST" id="logoutallform"
                           class="display-inline">
                         {{ util.anti_csrf_token('core/logout_all') }}
-                        {{ util.input_submit(label=gettext("Logout Everywhere"), title=gettext("Logout Everywhere"),
-                                             icon="power-off", aclass="btn btn-danger btn-sm mosp") }}
+                        {{ util.input_submit(label=(gettext("Log out from all (%(count)s) devices")
+                                                    |format(count=active_session_count)),
+                                             title=gettext("Logout Everywhere"), icon="power-off",
+                                             aclass="btn btn-danger btn-sm") }}
                     </form>
-                    {{ util.href(docurl('Realm_Core_Privacy'), gettext("Who can see my data?"),aclass="btn btn-info btn-sm pull-right mosp", icon="question-circle") }}
-                {% endif %}
-                {% if is_relative_admin %}
-                    {{ util.href(cdedblink("core/show_history"), gettext("Change History"),
-                            aclass="btn btn-info btn-sm mosp", icon="clock") }}
+                    {{ util.href(docurl('Realm_Core_Privacy'), gettext("Who can see my data?"),aclass="btn btn-info btn-sm pull-right", icon="question-circle") }}
                 {% endif %}
             {% elif not ambience['persona']['is_purged'] %}
                 {{ util.href(cdedblink('core/dearchive_persona_form'), gettext("Restore Account"),
-                             aclass="btn btn-success btn-sm mosp", icon="file-medical-alt") }}
+                             aclass="btn btn-success btn-sm", icon="file-medical-alt") }}
+            {% endif %}
+        </div>
+    {% endif %}
+
+    {# Related pages #}
+    {% set show_admin_buttons = is_relative_admin_view or user.admin_views.intersection(["event_user", "ml_user"]|set) %}
+    {% if quoteable or show_admin_buttons %}
+        <div class="p button-par">
+            {% if quoteable %}
+                {{ util.href(show_user_link(user, ambience['persona']['id'], quote_me=True),
+                             gettext("Show complete Profile"), aclass="btn btn-info btn-sm", icon='eye-slash') }}
+            {% endif %}
+            {% if is_relative_admin_view or show_admin_buttons %}
+                {% if is_relative_admin_view %}
+                    {{ util.href(cdedblink("core/show_history"), gettext("Change History"),
+                                 aclass="btn btn-info btn-sm", icon="clock") }}
+                {% endif %}
+                {% if is_relative_admin_view or "event_user" in user.admin_views %}
+                    {{ util.href(cdedblink("core/show_user_events", {'persona_id': data['id']}),
+                                 gettext("Show Event Data"), aclass="btn btn-default btn-sm",
+                                 icon="chalkboard-teacher") }}
+                {% endif %}
+                {% if is_relative_admin_view or "ml_user" in user.admin_views %}
+                    {{ util.href(cdedblink("core/show_user_mailinglists", {'persona_id': data['id']}),
+                                 gettext("Show Mailinglist Data"), aclass="btn btn-default btn-sm",
+                                 icon="envelope") }}
+                {% endif %}
             {% endif %}
         </div>
     {% endif %}
@@ -112,7 +131,7 @@
                         <img src="{{ staticurl("generic-avatar.png") }}" alt="{{ gettext("Default Profile Picture") }}"
                              class="profilepic img-thumbnail mosp">
                     {%- endif -%}
-                    {% if data['id'] == user.persona_id or is_relative_admin -%}
+                    {% if data['id'] == user.persona_id or is_relative_admin_view -%}
                         <br />
                         {{ util.href(cdedblink('core/set_foto_form'), gettext("Change Profile Picture"),
                                 aclass="btn btn-xs btn-warning mosp", icon="pen") }}
@@ -142,8 +161,7 @@
         <dl class="dl-horizontal" id="personal-information">
             <dt>{% trans %}Name{% endtrans %}</dt>
             <dd>
-                {{ data['title'] }} {{ util.output_given_displayname(data['given_names'], data ['display_name']) }}
-                {{ data['family_name'] }} {{ data['name_supplement'] }}
+                {{ util.persona_name(data, given_and_display_names=True, with_titles=True) }}
             </dd>
             {% if data['birth_name'] %}
                 <dt>{% trans %}Birth Name{% endtrans %}</dt>
@@ -181,16 +199,14 @@
                 <dl class="dl-horizontal">
                     <dt>{% trans %}Realms{% endtrans %}</dt>
                     <dd id="has-realm">
+                        {% set realm_bits = ['is_cde_realm','is_event_realm', 'is_ml_realm', 'is_assembly_realm'] %}
                         {% set vars = {'any_realm_not': False} %}
-                        {% for bit, desc, icon in (("is_cde_realm", gettext("cde_realm"), "graduation-cap"),
-                                                   ("is_event_realm", gettext("Events"), "chalkboard-teacher"),
-                                                   ("is_ml_realm", gettext("Mailinglists"), "envelope"),
-                                                   ("is_assembly_realm", gettext("Assemblies"), "bullhorn"),)%}
+                        {% for bit in realm_bits %}
                             {% if data[bit] %}
-                                {{ util.make_icon(icon, title=desc) }}
+                                {{ util.realm_icon(bit) }}
                             {% else %}
                                 {# Dirty hack to workaround Jinjas set drawbacks #}
-                                {% set tmp = vars.update({'any_realm_not': True}) %}
+                                {% do vars.update({'any_realm_not': True}) %}
                             {% endif %}
                         {% endfor %}
                         {% if 'core_user' in user.admin_views
@@ -200,27 +216,23 @@
                                     aclass="btn btn-xs btn-warning") }}
                         {% endif %}
                     </dd>
+                    {% if data['id'] == user.persona_id and not data['is_cde_realm'] %}
+                        <dt></dt>
+                        <dd class="text-info">
+                            {{ util.make_icon('info-circle') }}
+                            {% trans mailto=util.href(util.mailto(MANAGEMENT_ADDRESS), MANAGEMENT_ADDRESS) %}
+                                To request an upgrade to a member account, contact {{ mailto }}.
+                            {% endtrans %}
+                        </dd>
+                    {% endif %}
 
                     <dt>{% trans %}Admin Privileges{% endtrans %}</dt>
                     <dd id="admin-realms">
-                        {% set vars = {'any_privilege': False} %}
-                        {% for bit, desc, icon in (("is_meta_admin", gettext("Meta-Admin"), "wrench"),
-                                                  ("is_core_admin", gettext("Core-Admin"), "user"),
-                                                  ("is_cde_admin", gettext("CdE-Admin"), "graduation-cap"),
-                                                  ("is_finance_admin", gettext("Finance-Admin"), "euro-sign"),
-                                                  ("is_event_admin", gettext("Event-Admin"), "chalkboard-teacher"),
-                                                  ("is_ml_admin", gettext("Mailinglist-Admin"), "envelope"),
-                                                  ("is_cdelokal_admin", gettext("CdElokal-Admin"), "city"),
-                                                  ("is_assembly_admin", gettext("Assembly-Admin"), "bullhorn"),
-                                                  )%}
-                            {% if data[bit] %}
-                                {{ util.make_icon(icon, title=desc) }}
-                                {% do vars.update({'any_privilege': True}) %}
-                            {% endif %}
-                        {% endfor %}
-                        {% if not vars['any_privilege'] %}
+                        {% for key in ADMIN_KEYS if data[key] %}
+                            {{ util.privilege_icon(key) }}
+                        {% else %}
                             <i>{% trans %}None{% endtrans %}</i>
-                        {% endif %}
+                        {% endfor %}
                         {% if 'meta_admin' in user.admin_views and not ambience['persona']['is_archived'] %}
                             {{ util.href(cdedblink("core/change_privileges_form"), gettext("Edit"), icon="pen",
                                     aclass="btn btn-xs btn-warning") }}
@@ -247,7 +259,7 @@
                         {% if data['trial_member'] %}
                             {% trans %}(Trialmembership){% endtrans %}
                         {% endif %}
-                        {% if is_relative_admin %}
+                        {% if is_relative_admin_view %}
                             {{ util.href(cdedblink('core/modify_membership_form'), gettext("Change Status"), icon="pen",
                                          aclass="btn btn-xs btn-warning") }}
                         {% endif %}
@@ -328,7 +340,7 @@
                     {% if data['id'] == user.persona_id %}
                         {{ util.href(cdedblink('core/change_username_form'), gettext("Edit"),
                                      aclass="btn btn-xs btn-warning", icon="pen") }}
-                    {% elif is_relative_admin and not ambience['persona']['is_archived'] %}
+                    {% elif is_relative_admin_view and not ambience['persona']['is_archived'] %}
                         {{ util.href(cdedblink('core/admin_username_change_form'), gettext("Edit"),
                                      aclass="btn btn-xs btn-warning", icon="pen") }}
                     {% endif %}
@@ -336,13 +348,13 @@
                 {% if data['telephone'] %}
                     <dt>{% trans %}Phone{% endtrans %}</dt>
                     <dd id="contact-telephone">
-                        {{ util.tel_link(data['telephone']) }}
+                        {{ util.tel_link(data['telephone']|phone) }}
                     </dd>
                 {% endif %}
                 {% if data['mobile'] %}
                     <dt>{% trans %}Mobile Phone{% endtrans %}</dt>
                     <dd id="contact-mobile">
-                        {{ util.tel_link(data['mobile']) }}
+                        {{ util.tel_link(data['mobile']|phone) }}
                     </dd>
                 {% endif %}
                 {% if data['weblink'] %}
@@ -412,7 +424,8 @@
         {% endif %}
 
         {% if past_events %}
-            <h4 id="past-events" class="heading-underline">{% trans %}Past Events{% endtrans %}</h4>
+            <div id="past-events">
+            <h4 class="heading-underline">{% trans %}Past Events{% endtrans %}</h4>
             <table class="table table-hover past-event-table">
             <tbody>
                 {% for pevent_id, pevent in past_events|keydictsort(EntitySorter.past_event, reverse=True) %}
@@ -442,9 +455,11 @@
                 {% endfor %}
             </tbody>
             </table>
+            </div>
         {% endif %}
 
-        {% if is_relative_admin and data["is_cde_realm"] and not CDEDB_OFFLINE_DEPLOYMENT and not ambience['persona']['is_purged'] %}
+        {% if is_relative_admin_view and data["is_cde_realm"] and not CDEDB_OFFLINE_DEPLOYMENT
+                and not ambience['persona']['is_purged'] %}
             <h4 class="heading-underline">{% trans %}Copy-Paste Template{% endtrans %}</h4>
             <pre id="copy-paste-template">
 Kontoinhaber:       {{ meta_info['CdE_Konto_Inhaber'] }}
@@ -465,7 +480,7 @@ Mitglied.</pre>
         {% endif %}
     </div>
 
-    {% if data['id'] != user.persona_id and is_relative_admin and not ambience['persona']['is_purged'] %}
+    {% if data['id'] != user.persona_id and is_relative_admin_view and not ambience['persona']['is_purged'] %}
         {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
             {% if not ambience['persona']['is_archived'] %}
                     <div class="row">

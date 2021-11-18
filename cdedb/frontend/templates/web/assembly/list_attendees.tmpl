@@ -8,10 +8,8 @@
     {% endtrans %}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {{ gettext("Participantlist") }}
-        <small>{{ util.make_icon('bullhorn') }} {{ ambience['assembly']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Participantlist"), ambience['assembly']['title'],
+                            'bullhorn', gettext("Assembly")) }}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
@@ -64,7 +62,7 @@
             <div class="col-sm-4">
                 <ul class="slim nosp">
                     {% for persona in list %}
-                        <li>{{ persona['given_names'] }} {{ persona['family_name'] }}</li>
+                        <li>{{ util.persona_name(persona, only_given_names=True, with_titles=True) }}</li>
                     {% endfor %}
                 </ul>
             </div>

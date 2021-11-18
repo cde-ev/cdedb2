@@ -1,17 +1,21 @@
 #!/usr/bin/env python3
+# pylint: disable=missing-module-docstring
 
 import copy
 import datetime
 import decimal
 import unittest
-from typing import Any, Iterable, List, Mapping, Tuple, Type, Union
+from typing import Any, Dict, Iterable, List, Mapping, Tuple, Type, Union
 
 import pytz
 
 import cdedb.database.constants as const
 import cdedb.validation as validate
 from cdedb.common import ValidationWarning
-from cdedb.validationtypes import *
+from cdedb.validationtypes import (
+    IBAN, JSON, Email, GenesisCase, PasswordStrength, Persona, Phone, PrintableASCII,
+    PrintableASCIIType, SafeStr, StringType, Vote,
+)
 
 
 class TestValidation(unittest.TestCase):
@@ -19,65 +23,84 @@ class TestValidation(unittest.TestCase):
         self,
         type_: Type[Any],
         spec: Iterable[Tuple[Any, Any, Union[Type[Exception], Exception, None]]],
-        extraparams: Mapping[str, Any] = None
+        extraparams: Mapping[str, Any] = None, ignore_warnings: bool = True
     ) -> None:
         extraparams = extraparams or {}
         for inval, retval, exception in spec:
             with self.subTest(inval=inval):
                 if not exception:
                     self.assertEqual(
-                        validate.validate_check(type_, inval, **extraparams),
+                        validate.validate_check(
+                            type_, inval, ignore_warnings, **extraparams),
                         (retval, []),
                     )
                     self.assertEqual(
-                        validate.validate_assert(type_, inval, **extraparams),
+                        validate.validate_assert(
+                            type_, inval, ignore_warnings, **extraparams),
                         retval,
                     )
                 else:
                     self.assertEqual(
                         None,
-                        validate.validate_check(type_, inval, **extraparams)[0],
+                        validate.validate_check(
+                            type_, inval, ignore_warnings, **extraparams)[0],
                     )
                     self.assertNotEqual(
                         [],
-                        validate.validate_check(type_, inval, **extraparams)[1],
+                        validate.validate_check(
+                            type_, inval, ignore_warnings, **extraparams)[1],
                     )
                     exception_args = None
                     if isinstance(exception, Exception):
                         exception_args = exception.args
                         exception = type(exception)
                     with self.assertRaises(exception) as cm:
-                        validate.validate_assert(type_, inval, **extraparams)
+                        validate.validate_assert(
+                            type_, inval, ignore_warnings, **extraparams)
                     if exception_args:
                         self.assertEqual(cm.exception.args, exception_args)
-                onepass = validate.validate_check(type_, inval, **extraparams)[0]
-                twopass = validate.validate_check(type_, onepass, **extraparams)[0]
+                onepass = validate.validate_check(
+                    type_, inval, ignore_warnings, **extraparams)[0]
+                twopass = validate.validate_check(
+                    type_, onepass, ignore_warnings, **extraparams)[0]
                 self.assertEqual(onepass, twopass)
 
     def test_optional(self) -> None:
-        self.assertEqual((12, []), validate.validate_check(int, 12))
-        self.assertEqual(None, validate.validate_check(int, None)[0])
-        self.assertLess(0, len(validate.validate_check(int, None)[1]))
-        self.assertEqual(None, validate.validate_check(int, "garbage")[0])
-        self.assertLess(0, len(validate.validate_check(int, "garbage")[1]))
-        self.assertEqual((12, []), validate.validate_check(int, "12"))
-        self.assertEqual((12, []), validate.validate_check_optional(int, 12))
-        self.assertEqual((None, []), validate.validate_check_optional(int, None))
-        self.assertEqual((12, []), validate.validate_check_optional(int, "12"))
-        self.assertEqual(None, validate.validate_check_optional(int, "garbage")[0])
-        self.assertLess(0, len(validate.validate_check_optional(int, "garbage")[1]))
+        ignore_warnings = True
+        self.assertEqual((12, []), validate.validate_check(int, 12, ignore_warnings))
+        self.assertEqual(None, validate.validate_check(int, None, ignore_warnings)[0])
+        self.assertLess(0, len(validate.validate_check(int, None, ignore_warnings)[1]))
+        self.assertEqual(
+            None, validate.validate_check(int, "garbage", ignore_warnings)[0])
+        self.assertLess(
+            0, len(validate.validate_check(int, "garbage", ignore_warnings)[1]))
+        self.assertEqual((12, []), validate.validate_check(int, "12", ignore_warnings))
+        self.assertEqual(
+            (12, []), validate.validate_check_optional(int, 12, ignore_warnings))
+        self.assertEqual(
+            (None, []), validate.validate_check_optional(int, None, ignore_warnings))
+        self.assertEqual(
+            (12, []), validate.validate_check_optional(int, "12", ignore_warnings))
+        self.assertEqual(
+            None, validate.validate_check_optional(int, "garbage", ignore_warnings)[0])
+        self.assertLess(
+            0, len(validate.validate_check_optional(int, "garbage", ignore_warnings)[1])
+        )
 
-        self.assertEqual(12, validate.validate_assert(int, 12))
+        self.assertEqual(12, validate.validate_assert(int, 12, ignore_warnings))
         with self.assertRaises(TypeError):
-            validate.validate_assert(int, None)
+            validate.validate_assert(int, None, ignore_warnings)
         with self.assertRaises(ValueError):
-            validate.validate_assert(int, "garbage")
-        self.assertEqual(12, validate.validate_assert(int, "12"))
-        self.assertEqual(12, validate.validate_assert_optional(int, 12))
-        self.assertEqual(None, validate.validate_assert_optional(int, None))
-        self.assertEqual(12, validate.validate_assert_optional(int, "12"))
+            validate.validate_assert(int, "garbage", ignore_warnings)
+        self.assertEqual(12, validate.validate_assert(int, "12", ignore_warnings))
+        self.assertEqual(
+            12, validate.validate_assert_optional(int, 12, ignore_warnings))
+        self.assertEqual(
+            None, validate.validate_assert_optional(int, None, ignore_warnings))
+        self.assertEqual(
+            12, validate.validate_assert_optional(int, "12", ignore_warnings))
         with self.assertRaises(ValueError):
-            validate.validate_assert_optional(int, "garbage")
+            validate.validate_assert_optional(int, "garbage", ignore_warnings)
 
     def test_int(self) -> None:
         self.do_validator_test(int, (
@@ -293,17 +316,17 @@ class TestValidation(unittest.TestCase):
 
     def test_phone(self) -> None:
         self.do_validator_test(Phone, (
-            ("+49 (3641) 12345", "+49 (3641) 12345", None),
-            ("0049364112345", "+49 (3641) 12345", None),
-            ("03641/12345", "+49 (3641) 12345", None),
-            ("+500 (1111) 54321", "+500 (1111) 54321", None),
-            ("+500-1111/54321", "+500 (1111) 54321", None),
-            ("+500/1111/54321", "+500 (1111) 54321", None),
-            ("00500__1111__54321", "+500 (1111) 54321", None),
-            ("+5001111-54321", "+500 (1111) 54321", None),
-            ("00500111154321", "+500 111154321", None),
-            ("+49 (36460) 12345", None, ValueError),
-            ("12345", None, ValueError),
+            ("+49 (3641) 12345", "+49364112345", None),
+            ("0049364112345", "+49364112345", None),
+            ("03641/12345", "+49364112345", None),
+            ("+500 (1111) 54321", "+500111154321", None),
+            ("+500-1111/54321", "+500111154321", None),
+            ("+500/1111/54321", "+500111154321", None),
+            ("00500__1111__54321", None, ValueError),
+            ("+5001111-54321", "+500111154321", None),
+            ("00500111154321", "+500111154321", None),
+            ("+49 (36460) 12345", "+493646012345", None),
+            ("12345", "+4912345", None),
             ("+210 (12390) 12345", None, ValueError),
         ))
 
@@ -320,8 +343,8 @@ class TestValidation(unittest.TestCase):
             "name_supplement": "of Łord",
             "gender": 1,
             "birthday": datetime.date(1984, 5, 25),
-            "telephone": "+49 (3641) 12345",
-            "mobile": "+49 (175) 12345",
+            "telephone": "+49364112345",
+            "mobile": "+4917512345",
             "address_supplement": "unterm Schrank",
             "address": "Weg 23",
             "postal_code": "07743",
@@ -357,8 +380,10 @@ class TestValidation(unittest.TestCase):
             (convert_example, base_example, None),
             (stripped_example, stripped_example, None),
             (key_example, key_example, KeyError),
-            (value_example, value_example, ValidationWarning),
         ))
+        self.do_validator_test(
+            Persona, [(value_example, value_example, ValidationWarning)],
+            ignore_warnings=False)
 
     def test_event_user_data(self) -> None:
         base_example: Dict[str, Any] = {
@@ -374,8 +399,8 @@ class TestValidation(unittest.TestCase):
             "name_supplement": "of Łord",
             "gender": 1,
             "birthday": datetime.date(1984, 5, 25),
-            "telephone": "+49 (3641) 12345",
-            "mobile": "+49 (175) 12345",
+            "telephone": "+49364112345",
+            "mobile": "+4917512345",
             "address_supplement": "unterm Schrank",
             "address": "Weg 23",
             "postal_code": "07743",
@@ -395,8 +420,9 @@ class TestValidation(unittest.TestCase):
             (convert_example, base_example, None),
             (stripped_example, stripped_example, None),
             (key_example, None, KeyError),
-            (value_example, None, ValidationWarning),
         ))
+        self.do_validator_test(
+            Persona, [(value_example, None, ValidationWarning)], ignore_warnings=False)
 
     def test_enum_validators(self) -> None:
         stati = const.RegistrationPartStati
@@ -444,7 +470,7 @@ class TestValidation(unittest.TestCase):
             ("A>_bar_>B=C=D>E", None, ValueError),
             ("_bar_>A=B=C=D>E", None, ValueError),
             ("A>B=C=D=E>_bar_", None, ValueError),
-            ("E=C>A>_bar_=D=B",  None, ValueError),
+            ("E=C>A>_bar_=D=B", None, ValueError),
         ), extraparams={'ballot': classical_ballot})
 
     def test_iban(self) -> None:
@@ -476,7 +502,8 @@ class TestValidation(unittest.TestCase):
                 (b'{"open": 1', None, ValueError),
                 (b"\xff", None, ValueError)):
             with self.subTest(input=input_):
-                result, errs = validate.validate_check(JSON, input_)
+                result, errs = validate.validate_check(
+                    JSON, input_, ignore_warnings=True)
                 self.assertEqual(output, result)
                 if error is None:
                     self.assertFalse(errs)
@@ -505,12 +532,12 @@ class TestValidation(unittest.TestCase):
                  {'id': 1, 'postal_code': "47239"},
                  None),
             )
-            if assertion == GenesisCase:
+            if assertion == GenesisCase:  # pylint: disable=comparison-with-callable
                 for inv, outv, _ in spec:
                     inv['realm'] = "event"
                     if outv is not None:
                         outv['realm'] = "event"
-            self.do_validator_test(assertion, spec, None)
+            self.do_validator_test(assertion, spec, None, ignore_warnings=False)
             spec = (
                 ({'id': 1, 'postal_code': "ABC", 'country': ""}, None, ValueError),
                 ({'id': 1, 'postal_code': "ABC", 'country': None}, None, ValueError),
@@ -532,12 +559,12 @@ class TestValidation(unittest.TestCase):
                  {'id': 1, 'postal_code': "47239"},
                  None),
             )
-            if assertion == GenesisCase:
+            if assertion == GenesisCase:  # pylint: disable=comparison-with-callable
                 for inv, outv, _ in spec:
                     inv['realm'] = "event"
                     if outv is not None:
                         outv['realm'] = "event"
-            self.do_validator_test(assertion, spec, {'_ignore_warnings': True})
+            self.do_validator_test(assertion, spec, ignore_warnings=True)
 
     def test_encoding(self) -> None:
         # Make sure decoding utf-8 as if it were utf-8-sig works.

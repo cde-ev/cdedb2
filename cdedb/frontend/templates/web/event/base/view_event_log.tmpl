@@ -1,0 +1,56 @@
+{% set sidenav_active='event_event_log' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/logging.tmpl" as logging with context %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_searchpersona.js') }}
+{% endblock %}
+{% block title %}
+    {% trans title=ambience['event']['title'] -%}{{ title }}: Log{% endtrans %}
+    {{ logging.counter(total, values['offset'] or '', length) }}
+{% endblock %}
+{% block heading %}
+    {{ util.context_heading(gettext("Log") + logging.counter(total, values['offset'] or '', length),
+                            ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon='chalkboard-teacher') }}
+    {{ util.breadcrumb_link(cdedblink("event/view_event_log"), gettext("Log"), active="True") }}
+{% endblock %}
+{% block content %}
+    {% call logging.table(log) %}
+        {% for entry in log %}
+            {# The event_id parameter makes this complicated, so we can not use logging.row() here. #}
+            <tr id="{{ loop.index }}-{{ entry['id'] }}">
+                <td>{{ entry['ctime']|datetime(formatstr="%d.%m.%Y %H:%M:%S") }}</td>
+                <td>{{ gettext(enums['EventLogCodes'](entry['code'])|string) }}</td>
+                <td>
+                    {% if entry['submitted_by'] %}
+                        {{ util.persona_anchor(personas[entry['submitted_by']], event_id=ambience['event']['id']) }}
+                    {% else %}
+                        –
+                    {% endif %}
+                </td>
+                <td>
+                    {% if entry['persona_id'] %}
+                        {% if (entry['event_id'], entry['persona_id']) in registration_map %}
+                            {{ util.href(cdedblink('event/show_registration',
+                                    {'registration_id': registration_map[(entry['event_id'], entry['persona_id'])],
+                                     'event_id': entry['event_id']}),
+                                    label=util.persona_name(personas[entry['persona_id']])) }}
+                        {% else %}
+                            {{ util.persona_anchor(personas[entry['persona_id']], event_id=ambience['event']['id']) }}
+                        {% endif %}
+                    {% else %}
+                        –
+                    {% endif %}
+                </td>
+                <td>{{ entry['change_note'] }}</td>
+            </tr>
+        {% endfor %}
+    {% endcall %}
+
+    {{ logging.navigation('event/view_event_log', total, length, loglinks) }}
+    {{ logging.filter('event/view_event_log', enums['EventLogCodes'], 'event_user') }}
+{% endblock %}

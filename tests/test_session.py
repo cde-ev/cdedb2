@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
+# pylint: disable=missing-module-docstring
+
 import datetime
 import secrets
-from typing import List, NamedTuple, Sequence, Optional, cast
+from typing import List, NamedTuple, Optional, Sequence, cast
 
 from cdedb.common import RequestState, User, now
 from tests.common import (
-    UserIdentifier, USER_DICT, BackendTest, MultiAppFrontendTest, execsql, get_user,
+    USER_DICT, BackendTest, MultiAppFrontendTest, UserIdentifier, execsql, get_user,
 )
 
 SessionEntry = NamedTuple(
@@ -183,7 +185,7 @@ class TestMultiSessionFrontend(MultiAppFrontendTest):
             keys.append(self.app.cookies[session_cookie])
             # Check that we are correctly logged in.
             self.get("/core/self/show")
-            self.assertTitle(f"{user['given_names']} {user['family_name']}")
+            self.assertTitle(user['default_name_format'])
             self.assertNotIn('loginform', self.response.forms)
         self.assertEqual(len(set(keys)), len(keys))
 
@@ -205,7 +207,8 @@ class TestMultiSessionFrontend(MultiAppFrontendTest):
             self.switch_app(i)
             with self.subTest(app_index=i):
                 self.get("/core/self/show")
-                self.assertTitle(f"{user['given_names']} {user['family_name']}")
+                self.assertTitle(user['default_name_format'])
+                self.assertPresence(f"Von allen ({self.n - 1}) Geräten abmelden")
                 self.assertNotIn('loginform', self.response.forms)
 
         # Now terminate all sessions and check that they are all inactive.

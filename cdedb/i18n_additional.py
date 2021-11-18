@@ -29,8 +29,10 @@ I18N_STRINGS = (
     n_("AssemblyLogCodes.assembly_presider_added"),
     n_("AssemblyLogCodes.assembly_presider_removed"),
     n_("AssemblyLogCodes.attachment_added"),
-    n_("AssemblyLogCodes.attachment_changed"),
     n_("AssemblyLogCodes.attachment_removed"),
+    n_("AssemblyLogCodes.attachment_changed"),
+    n_("AssemblyLogCodes.attachment_ballot_link_created"),
+    n_("AssemblyLogCodes.attachment_ballot_link_deleted"),
     n_("AssemblyLogCodes.attachment_version_added"),
     n_("AssemblyLogCodes.attachment_version_removed"),
     n_("AssemblyLogCodes.attachment_version_changed"),
@@ -292,6 +294,8 @@ I18N_STRINGS = (
     n_("is_event_admin"),
     n_("is_ml_admin"),
     n_("is_assembly_admin"),
+    n_("is_cdelokal_admin"),
+    n_("is_auditor"),
 
     # zxcvbn feedback
     n_('Use a few words, avoid common phrases.'),

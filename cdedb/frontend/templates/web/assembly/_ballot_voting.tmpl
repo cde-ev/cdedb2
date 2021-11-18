@@ -317,12 +317,52 @@
 {% macro add_candidate_form() -%}
     <h3>{% trans %}Candidates{% endtrans %}</h3>
 
-    {% set columns =  [dict(name="shortname", label=gettext("Shortname"), func=util.input_text),
-                       dict(name="title", label=gettext("Title_[[name of an entity]]"), func=util.input_text)] %}
-
     <form action="{{ cdedblink('assembly/edit_candidates') }}" method="POST" id="candidatessummaryform">
         {{ util.anti_csrf_token('assembly/edit_candidates') }}
-        {{ util.dynamic_row_table(gettext("Candidates"), columns, ambience['ballot']['candidates'], sortkey=EntitySorter.candidate) }}
+
+        <table class="table table-condensed" id="drow-table">
+            <thead>
+                <tr>
+                    <th>{% trans %}Shortname{% endtrans %}</th>
+                    <th>{% trans %}Title_[[name of an entity]]{% endtrans %}</th>
+                    <th></th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% call(id, row_class, is_new_row) util.dynamic_row_meta(sorted_candidate_ids) %}
+                    <tr class="{{ row_class }}" role="group" aria-label="Candidate {{ id }}">
+                        <td class={{ util.has_errors(drow_name("shortname", id)) }}>
+                            {{ util.input_text(drow_name("shortname", id), aclass='drow-input form-control',
+                                    attributes=util.drow_basename("shortname"), arialabel=gettext("Shortname")) }}
+                            {{ util.output_errors(drow_name("shortname", id)) }}
+                        </td>
+                        <td class={{ util.has_errors(drow_name("title", id)) }}>
+                            {{ util.input_text(drow_name("title", id), aclass='drow-input form-control',
+                                    attributes=util.drow_basename("title"), arialabel=gettext("Name")) }}
+                            {{ util.output_errors(drow_name("title", id)) }}
+                        </td>
+                        <td>
+                            <span class="drow-buttonspace">
+                                {% if is_new_row %}
+                                    {{ util.input_checkbox(drow_create(id), label=gettext("Add"),
+                                            attributes=util.drow_basename("create"), aclass='drow-indicator') }}
+                                {% else %}
+                                    {{ util.input_checkbox(drow_delete(id), label=gettext("Delete"),
+                                            aclass='drow-indicator') }}
+                                {% endif %}
+                            </span>
+                        </td>
+                    </tr>
+                {% endcall %}
+            </tbody>
+        </table>
+
+        <p>
+            <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">
+                {{ util.make_icon('plus') }} {% trans %}Add Candidate{% endtrans %}
+            </button>
+        </p>
         {{ util.input_submit(label=gettext("Save")) }}
     </form>
 

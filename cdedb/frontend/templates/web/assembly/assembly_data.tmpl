@@ -25,10 +25,8 @@
 {% endblock %}
 {% block heading %}
     {% if ambience["assembly"] %}
-        <h1 class="title">
-            {% trans %}Configuration{% endtrans %}
-            <small>{{ util.make_icon('bullhorn', arialabel=gettext("Assembly")) }} {{ ambience["assembly"]["title"] }}</small>
-        </h1>
+        {{ util.context_heading(gettext("Configuration"), ambience['assembly']['title'],
+                                'bullhorn', gettext("Assembly")) }}
     {% else %}
         {{ super() }}
     {% endif %}
@@ -50,12 +48,11 @@
         {# Data field definitions. #}
         {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]")) }}
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
-        {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
-                                    info=util.markdownhint) }}
+        {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5", markdown=True) }}
         {{ util.form_input_text(name="presider_address", label=gettext("Presider Address"),
                                     info=gettext("This will be the default address for replies to mails sent for this assembly.")) }}
         {{ util.form_input_text(name="signup_end", label=gettext("Application Deadline"), type="datetime-local") }}
-        {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="5", info=util.markdownhint) }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="5", markdown=True) }}
 
         {# Display a warning and submit buttons.
            For creation additionally allow specifying presiders and creating mailinglists. #}

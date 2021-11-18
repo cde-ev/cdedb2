@@ -280,6 +280,62 @@
         });
         return this;
     };
+
+    /**
+     * Preview rendered HTML from Markdown plaintext
+     *
+     * @param link (String) Link to markdown parsing frontend endpoint
+     * @param translations (object) A dict containing the localized labels for the preview modal. Should have
+     *                              "title", "loading" and "closa" as keys.
+     */
+    $.fn.cdedbMarkdownPreview = function (link, translations) {
+        $(".mdjs").show();
+        const loading_spinner = `
+<div class="text-center">
+    <span class="fas fa-sync fa-spin" aria-hidden="true"></span>
+    <span class="sr-only">${translations["loading"]}</span>
+</div>
+        `;
+        const modal = `
+<div class="modal fade" id="mdpreview-modal" tabindex="-1" role="dialog" aria-labelledby="mdpreview-modal-label">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="mdpreview-modal-label">
+                    ${translations["title"]}
+                </h4>
+            </div>
+            <div class="modal-body" id="mdpreview-html">
+                ${loading_spinner}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">
+                    ${translations["close"]}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+        `;
+        let input = this;  // we need it inside the onclick-function
+        $(`#${ input.attr("id") }-mdpreview`).click(function() {
+            if (!$("#mdpreview-modal").length) {  // check if modal is already present from a previous run
+                $("body").append(modal);
+            }
+            $("#mdpreview-html").html(loading_spinner);
+            $.post(link,
+                { md_str: input.val() },
+                function(result) {
+                    $("#mdpreview-html").html(result);
+                }
+            );
+            $("#mdpreview-modal").modal("show");
+        });
+        return this;
+    };
 })(jQuery);
 
 

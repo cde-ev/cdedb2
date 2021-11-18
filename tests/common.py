@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""General testing utilities for CdEDB2 testsuite"""
 
 import collections.abc
 import copy
@@ -19,7 +20,6 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import time
 import unittest
 import urllib.parse
 from typing import (
@@ -31,6 +31,7 @@ from typing import (
 import PIL.Image
 import webtest
 import webtest.utils
+
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.common import AbstractBackend
@@ -40,24 +41,25 @@ from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.common import (
-    ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, CdEDBObject, CdEDBObjectMap, PathLike,
-    PrivilegeError, RequestState, nearly_now, now, roles_to_db_role, merge_dicts,
+    ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, CdEDBLog, CdEDBObject, CdEDBObjectMap,
+    PathLike, PrivilegeError, RequestState, merge_dicts, nearly_now, now,
+    roles_to_db_role,
 )
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.application import Application
-from cdedb.frontend.common import AbstractFrontend
+from cdedb.frontend.common import AbstractFrontend, Worker, setup_translations
 from cdedb.frontend.cron import CronFrontend
 from cdedb.query import QueryOperators
-from cdedb.script import setup
+from cdedb.script import Script
 
 _BASICCONF = BasicConfig()
-_SECRETSCONF = SecretsConfig()
 
 # TODO: use TypedDict to specify UserObject.
 UserObject = Mapping[str, Any]
 UserIdentifier = Union[UserObject, str, int]
+LinkIdentifier = Union[MutableMapping[str, Any], str]
 
 # This is to be used in place of `self.key` for anonymous requests. It makes mypy happy.
 ANONYMOUS = cast(RequestState, None)
@@ -104,7 +106,7 @@ def json_keys_to_int(obj: T) -> T:
 
 def _read_sample_data(filename: PathLike = "/cdedb2/tests/ancillary_files/"
                                            "sample_data.json"
-                     ) -> Dict[str, CdEDBObjectMap]:
+                      ) -> Dict[str, CdEDBObjectMap]:
     """Helper to turn the sample data from the JSON file into usable format."""
     with open(filename, "r", encoding="utf8") as f:
         sample_data: Dict[str, List[CdEDBObject]] = json.load(f)
@@ -139,15 +141,14 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
     This is similar to the normal make_proxy but encorporates a different
     wrapper.
     """
+    # pylint: disable=protected-access
 
     sessionproxy = SessionBackend(backend.conf._configpath)
     secrets = SecretsConfig(backend.conf._configpath)
     connpool = connection_pool_factory(
         backend.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
         secrets, backend.conf["DB_PORT"])
-    translator = gettext.translation(
-        'cdedb', languages=['de'],
-        localedir=str(backend.conf["REPOSITORY_PATH"] / 'i18n'))
+    translations = setup_translations(backend.conf)
 
     def setup_requeststate(key: Optional[str], ip: str = "127.0.0.0"
                            ) -> RequestState:
@@ -171,11 +172,19 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
             apitoken = key
 
         rs = RequestState(
-            sessionkey=sessionkey, apitoken=apitoken, user=user,
-            request=None, notifications=[], mapadapter=None,  # type: ignore
-            requestargs=None, errors=[], values=None, lang="de",
-            gettext=translator.gettext, ngettext=translator.ngettext,
-            coders=None, begin=now())
+            sessionkey=sessionkey,
+            apitoken=apitoken,
+            user=user,
+            request=None,  # type: ignore[arg-type]
+            notifications=[],
+            mapadapter=None,  # type: ignore[arg-type]
+            requestargs=None,
+            errors=[],
+            values=None,
+            begin=now(),
+            lang="de",
+            translations=translations,
+        )
         rs._conn = connpool[roles_to_db_role(rs.user.roles)]
         rs.conn = rs._conn
         if "event" in rs.user.roles and hasattr(backend, "orga_info"):
@@ -209,7 +218,11 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
             @functools.wraps(attr)
             def wrapper(key: Optional[str], *args: Any, **kwargs: Any) -> Any:
                 rs = setup_requeststate(key)
-                return attr(rs, *args, **kwargs)
+                try:
+                    return attr(rs, *args, **kwargs)
+                except FileNotFoundError as e:
+                    raise RuntimeError("Did you forget to add a `@storage` decorator to"
+                                       " the test?") from e
 
             return wrapper
 
@@ -244,11 +257,17 @@ class BasicTest(unittest.TestCase):
             shutil.rmtree(self.storage_dir)
 
     @staticmethod
-    def get_sample_data(table: str, ids: Iterable[int],
-                        keys: Iterable[str]) -> CdEDBObjectMap:
+    def get_sample_data(table: str, ids: Iterable[int] = None,
+                        keys: Iterable[str] = None) -> CdEDBObjectMap:
         """This mocks a select request against the sample data.
 
         "SELECT <keys> FROM <table> WHERE id = ANY(<ids>)"
+
+        if `keys` is None:
+        "SELECT * FROM <table> WHERE id = ANY(<ids>)"
+
+        if `ids` is None:
+        "SELECT <keys> FROM <table>"
 
         For some fields of some tables we perform a type conversion. These
         should be added as necessary to ease comparison against backend results.
@@ -263,42 +282,46 @@ class BasicTest(unittest.TestCase):
                 return nearly_now()
             return datetime.datetime.fromisoformat(s)
 
+        if keys is None:
+            try:
+                keys = next(iter(_SAMPLE_DATA[table].values())).keys()
+            except StopIteration:
+                return {}
+        if ids is None:
+            ids = _SAMPLE_DATA[table].keys()
         # Turn Iterator into Collection and ensure consistent order.
         keys = tuple(keys)
         ret = {}
         for anid in ids:
-            if keys:
-                r = {}
-                for k in keys:
-                    r[k] = copy.deepcopy(_SAMPLE_DATA[table][anid][k])
-                    if table == 'core.personas':
-                        if k == 'balance':
-                            r[k] = decimal.Decimal(r[k])
-                        if k == 'birthday':
-                            r[k] = datetime.date.fromisoformat(r[k])
-                    if k in {'ctime', 'atime', 'vote_begin', 'vote_end',
-                             'vote_extension_end'}:
-                        r[k] = parse_datetime(r[k])
-                ret[anid] = r
-            else:
-                ret[anid] = copy.deepcopy(_SAMPLE_DATA[table][anid])
+            r = {}
+            for k in keys:
+                r[k] = copy.deepcopy(_SAMPLE_DATA[table][anid][k])
+                if table == 'core.personas':
+                    if k == 'balance' and r[k]:
+                        r[k] = decimal.Decimal(r[k])
+                    if k == 'birthday' and r[k]:
+                        r[k] = datetime.date.fromisoformat(r[k])
+                if k in {'ctime', 'atime', 'vote_begin', 'vote_end',
+                         'vote_extension_end', 'signup_end'} and r[k]:
+                    r[k] = parse_datetime(r[k])
+            ret[anid] = r
         return ret
 
     def get_sample_datum(self, table: str, id_: int) -> CdEDBObject:
-        return self.get_sample_data(table, [id_], [])[id_]
+        return self.get_sample_data(table, [id_])[id_]
 
 
 class CdEDBTest(BasicTest):
     """Reset the DB for every test."""
+    longMessage = False
 
     def setUp(self) -> None:
-        with setup(
+        with Script(
             persona_id=-1,
             dbuser="cdb",
-            dbpassword=_SECRETSCONF["CDB_DATABASE_ROLES"]["cdb"],
             dbname=self.conf["CDB_DATABASE_NAME"],
             check_system_user=False,
-        )().conn as conn:
+        ).rs().conn as conn:
             conn.set_session(autocommit=True)
             with conn.cursor() as curr:
                 with open("tests/ancillary_files/clean_data.sql") as f:
@@ -323,6 +346,7 @@ class BackendTest(CdEDBTest):
     pastevent: ClassVar[PastEventBackend]
     ml: ClassVar[MlBackend]
     assembly: ClassVar[AssemblyBackend]
+    translations: ClassVar[Mapping[str, gettext.NullTranslations]]
     user: UserObject
     key: RequestState
 
@@ -339,6 +363,7 @@ class BackendTest(CdEDBTest):
         # Workaround to make orga info available for calls into the MLBackend.
         cls.ml.orga_info = lambda rs, persona_id: cls.event.orga_info(  # type: ignore
             rs.sessionkey, persona_id)
+        cls.translations = setup_translations(cls.conf)
 
     def setUp(self) -> None:
         """Reset login state."""
@@ -369,6 +394,36 @@ class BackendTest(CdEDBTest):
         users = {get_user(i)["id"] for i in identifiers}
         return self.user.get("id", -1) in users
 
+    def assertLogEqual(self, log_expectation: Sequence[CdEDBObject], *,
+                       realm: str = None,
+                       log_retriever: Callable[..., CdEDBLog] = None,
+                       **kwargs: Any) -> None:
+        """Helper to compare a log expectation to the actual thing."""
+        if realm and not log_retriever:
+            log_retriever = getattr(self, realm).retrieve_log
+        if log_retriever:
+            _, log = log_retriever(self.key, **kwargs)
+        else:
+            raise ValueError("No method of log retrieval provided.")
+
+        for real, exp in zip(log, log_expectation):
+            if 'id' not in exp:
+                del real['id']
+            if 'ctime' not in exp:
+                exp['ctime'] = nearly_now()
+            if 'submitted_by' not in exp:
+                exp['submitted_by'] = self.user['id']
+            for k in ('event_id', 'assembly_id', 'mailinglist_id'):
+                if k in kwargs and k not in exp:
+                    exp[k] = kwargs[k]
+            for k in ('persona_id', 'change_note'):
+                if k not in exp:
+                    exp[k] = None
+            for k in ('total', 'delta', 'new_balance'):
+                if exp.get(k):
+                    exp[k] = decimal.Decimal(exp[k])
+        self.assertEqual(log, tuple(log_expectation))
+
     @staticmethod
     def initialize_raw_backend(backendcls: Type[SessionBackend]
                                ) -> SessionBackend:
@@ -391,6 +446,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Anton",
         'given_names': "Anton Armin A.",
         'family_name': "Administrator",
+        'default_name_format': "Anton Administrator",
     },
     "berta": {
         'id': 2,
@@ -400,6 +456,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Bertå",
         'given_names': "Bertålotta",
         'family_name': "Beispiel",
+        'default_name_format': "Bertå Beispiel",
     },
     "charly": {
         'id': 3,
@@ -409,6 +466,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Charly",
         'given_names': "Charly C.",
         'family_name': "Clown",
+        'default_name_format': "Charly Clown",
     },
     "daniel": {
         'id': 4,
@@ -418,15 +476,17 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Daniel",
         'given_names': "Daniel D.",
         'family_name': "Dino",
+        'default_name_format': "Daniel Dino",
     },
     "emilia": {
         'id': 5,
         'DB-ID': "DB-5-1",
         'username': "emilia@example.cde",
         'password': "secret",
-        'display_name': "Emilia",
+        'display_name': "Emmy",
         'given_names': "Emilia E.",
         'family_name': "Eventis",
+        'default_name_format': "Emilia E. Eventis",
     },
     "ferdinand": {
         'id': 6,
@@ -436,6 +496,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Ferdinand",
         'given_names': "Ferdinand F.",
         'family_name': "Findus",
+        'default_name_format': "Ferdinand Findus",
     },
     "garcia": {
         'id': 7,
@@ -445,6 +506,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Garcia",
         'given_names': "Garcia G.",
         'family_name': "Generalis",
+        'default_name_format': "Garcia Generalis",
     },
     "hades": {
         'id': 8,
@@ -454,6 +516,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': None,
         'given_names': "Hades",
         'family_name': "Hell",
+        'default_name_format': "Hades Hell",
     },
     "inga": {
         'id': 9,
@@ -463,6 +526,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Inga",
         'given_names': "Inga",
         'family_name': "Iota",
+        'default_name_format': "Inga Iota",
     },
     "janis": {
         'id': 10,
@@ -472,6 +536,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Janis",
         'given_names': "Janis",
         'family_name': "Jalapeño",
+        'default_name_format': "Janis Jalapeño",
     },
     "kalif": {
         'id': 11,
@@ -481,6 +546,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Kalif",
         'given_names': "Kalif ibn al-Ḥasan",
         'family_name': "Karabatschi",
+        'default_name_format': "Kalif Karabatschi",
     },
     "lisa": {
         'id': 12,
@@ -490,6 +556,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Lisa",
         'given_names': "Lisa",
         'family_name': "Lost",
+        'default_name_format': "Lisa Lost",
     },
     "martin": {
         'id': 13,
@@ -499,6 +566,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Martin",
         'given_names': "Martin",
         'family_name': "Meister",
+        'default_name_format': "Martin Meister",
     },
     "nina": {
         'id': 14,
@@ -508,6 +576,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Nina",
         'given_names': "Nina",
         'family_name': "Neubauer",
+        'default_name_format': "Nina Neubauer",
     },
     "olaf": {
         'id': 15,
@@ -517,6 +586,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Olaf",
         'given_names': "Olaf",
         'family_name': "Olafson",
+        'default_name_format': "Olaf Olafson",
     },
     "paul": {
         'id': 16,
@@ -526,6 +596,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Paul",
         'given_names': "Paulchen",
         'family_name': "Panther",
+        'default_name_format': "Paul Panther",
     },
     "quintus": {
         'id': 17,
@@ -535,6 +606,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Quintus",
         'given_names': "Quintus",
         'family_name': "da Quirm",
+        'default_name_format': "Quintus da Quirm",
     },
     "rowena": {
         'id': 18,
@@ -544,6 +616,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Rowena",
         'given_names': "Rowena",
         'family_name': "Ravenclaw",
+        'default_name_format': "Rowena Ravenclaw",
     },
     "vera": {
         'id': 22,
@@ -553,6 +626,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Vera",
         'given_names': "Vera",
         'family_name': "Verwaltung",
+        'default_name_format': "Vera Verwaltung",
     },
     "werner": {
         'id': 23,
@@ -562,6 +636,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Werner",
         'given_names': "Werner",
         'family_name': "Wahlleitung",
+        'default_name_format': "Werner Wahlleitung",
     },
     "annika": {
         'id': 27,
@@ -571,6 +646,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Annika",
         'given_names': "Annika",
         'family_name': "Akademieteam",
+        'default_name_format': "Annika Akademieteam",
     },
     "farin": {
         'id': 32,
@@ -580,6 +656,17 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Farin",
         'given_names': "Farin",
         'family_name': "Finanzvorstand",
+        'default_name_format': "Farin Finanzvorstand",
+    },
+    "katarina": {
+        'id': 37,
+        'DB-ID': "DB-37-X",
+        'username': "katarina@example.cde",
+        'password': "secret",
+        'diplay_name': "Katarina",
+        'given_names': "Katarina",
+        'family_name': "Kassenprüfer",
+        'default_name_format': "Katarina Kassenprüfer",
     },
     "viktor": {
         'id': 48,
@@ -589,6 +676,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Viktor",
         'given_names': "Viktor",
         'family_name': "Versammlungsadmin",
+        'default_name_format': "Viktor Versammlungsadmin",
     },
     "akira": {
         'id': 100,
@@ -598,6 +686,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Akira",
         'given_names': "Akira",
         'family_name': "Abukara",
+        'default_name_format': "Akira Abukara",
     },
     "anonymous": {
         'id': None,
@@ -672,8 +761,7 @@ def execsql(sql: AnyStr) -> None:
     """Execute arbitrary SQL-code on the test database."""
     psql = ("/cdedb2/bin/execute_sql_script.py",
             "--username", "cdb", "--dbname", os.environ['CDEDB_TEST_DATABASE'])
-    # TODO: remove the type: ignore in a newer mypy version (0.800 or higher)
-    mode = 'wb' if isinstance(sql, bytes) else 'w'  # type: ignore[unreachable]
+    mode = 'wb' if isinstance(sql, bytes) else 'w'
     with tempfile.NamedTemporaryFile(mode=mode, suffix='.sql') as sql_file:
         sql_file.write(sql)
         sql_file.flush()
@@ -699,6 +787,7 @@ class FrontendTest(BackendTest):
     response: webtest.TestResponse
     app_extra_environ = {
         'REMOTE_ADDR': "127.0.0.0",
+        'HTTP_HOST': "localhost",
         'SERVER_PROTOCOL': "HTTP/1.1",
         'wsgi.url_scheme': 'https'}
 
@@ -750,7 +839,8 @@ class FrontendTest(BackendTest):
             # path without host but with query string - capped at 64 chars
             # To enhance readability, we mark most chars as safe. All special chars are
             # allowed in linux file paths, but sadly windows is more restrictive...
-            url = urllib.parse.quote(self.response.request.path_qs, safe='/;@&=+$,~')[:64]
+            url = urllib.parse.quote(
+                self.response.request.path_qs, safe='/;@&=+$,~')[:64]
             # since / chars are forbidden in file paths, we replace them by _
             url = url.replace('/', '_')
             # create a temporary file in scrap_path with url as a prefix
@@ -782,6 +872,16 @@ class FrontendTest(BackendTest):
         self.response = self.response.maybe_follow(**kwargs)
         if self.response != oldresponse:
             self._log_generation_time(oldresponse)
+
+    def assertRedirect(self, url: str, *args: Any, target_url: str,
+                       verbose: bool = False, **kwargs: Any) -> webtest.TestResponse:
+        """Checck that a GET-request to the url returns a redirect to the target url."""
+        response: webtest.TestResponse = self.app.get(url, *args, **kwargs)
+        self.assertLessEqual(300, response.status_int)
+        self.assertGreater(400, response.status_int)
+        self.assertIn("You should be redirected", response)
+        self.assertIn(target_url, response)
+        return response
 
     def post(self, url: str, *args: Any, verbose: bool = False, **kwargs: Any) -> None:
         """Directly send a POST-request.
@@ -829,8 +929,7 @@ class FrontendTest(BackendTest):
                 raise AssertionError(
                     "Post request did not produce success notification.")
 
-    def traverse(self, *links: Union[MutableMapping[str, Any], str],
-                 verbose: bool = False) -> None:
+    def traverse(self, *links: LinkIdentifier, verbose: bool = False) -> None:
         """Follow a sequence of links, described by their kwargs.
 
         A link can also be just a string, in which case that string is assumed
@@ -862,8 +961,8 @@ class FrontendTest(BackendTest):
             self.follow()
             self.basic_validate(verbose=verbose)
 
-    def login(self, user: UserIdentifier, *, ip: str = "", verbose: bool = False
-              ) -> Optional[str]:
+    def login(self, user: UserIdentifier, *,  # pylint: disable=arguments-differ
+              ip: str = "", verbose: bool = False) -> Optional[str]:
         """Log in as the given user.
 
         :param verbose: If True display additional debug information.
@@ -881,7 +980,7 @@ class FrontendTest(BackendTest):
             self.user = USER_DICT["anonymous"]
         return self.key  # type: ignore
 
-    def logout(self, verbose: bool = False) -> None:
+    def logout(self, verbose: bool = False) -> None:  # pylint: disable=arguments-differ
         """Log out. Raises a KeyError if not currently logged in.
 
         :param verbose: If True display additional debug information.
@@ -907,8 +1006,7 @@ class FrontendTest(BackendTest):
         f['phrase'] = u["DB-ID"]
         self.submit(f)
         if check:
-            self.assertTitle("{} {}".format(u['given_names'],
-                                            u['family_name']))
+            self.assertTitle(u['default_name_format'])
 
     def realm_admin_view_profile(self, user: str, realm: str,
                                  check: bool = True, verbose: bool = False
@@ -933,8 +1031,7 @@ class FrontendTest(BackendTest):
         self.submit(f, verbose=verbose)
         self.traverse({'description': 'Profil'}, verbose=verbose)
         if check:
-            self.assertTitle("{} {}".format(u['given_names'],
-                                            u['family_name']))
+            self.assertTitle(u['default_name_format'])
 
     def _fetch_mail(self) -> List[email.message.EmailMessage]:
         """
@@ -1017,7 +1114,7 @@ class FrontendTest(BackendTest):
             self.assertEqual(str(status), checkbox['data-checked'])
         elif "type" in checkbox.attrs:
             self.assertEqual("checkbox", checkbox['type'])
-            self.assertEqual(status, 'checked' == checkbox.get('checked'))
+            self.assertEqual(status, checkbox.get('checked') == 'checked')
         else:
             raise ValueError("Id doesnt belong to a checkbox", anid)
 
@@ -1053,7 +1150,7 @@ class FrontendTest(BackendTest):
         else:
             try:
                 content = self.response.lxml.xpath(f"//*[@id='{div}']")[0]
-            except IndexError as e:
+            except IndexError:
                 if check_div:
                     raise AssertionError(
                         f"Specified div {div!r} not found.") from None
@@ -1085,10 +1182,47 @@ class FrontendTest(BackendTest):
         :raise AssertionError: If field is not found, field is not within
             .has-error container or error message is not found
         """
+        self._assertValidationComplaint(
+            kind="error", fieldname=fieldname, message=message, index=index,
+            notification=notification)
+
+    def assertValidationWarning(
+            self, fieldname: str, message: str = "", index: int = None,
+            notification: Optional[str] = "Eingaben scheinen fehlerhaft") -> None:
+        """
+        Check for a specific form input field to be highlighted as .has-warning
+        and a specific warning message to be shown near the field. Also check that an
+        .alert-warning notification (with the given text) is indicating validation
+        warning.
+
+        :param fieldname: The field's 'name' attribute
+        :param index: If more than one field with the given name exists,
+            specify which one should be checked.
+        :param message: The expected warning message displayed below the input
+        :param notification: The expected notification displayed at the top of the page
+            This can be a regex. If this is None, skip the notification check.
+        :raise AssertionError: If field is not found, field is not within
+            .has-warning container or error message is not found
+        """
+        self._assertValidationComplaint(
+            kind="warning", fieldname=fieldname, message=message, index=index,
+            notification=notification)
+
+    def _assertValidationComplaint(
+            self, kind: str, fieldname: str, message: str, index: Optional[int],
+            notification: Optional[str]) -> None:
+        """Common helper for assertValidationError and assertValidationWarning."""
+        if kind == "error":
+            alert_type = "danger"
+        elif kind == "warning":
+            alert_type = "warning"
+        else:
+            raise NotImplementedError
+
         if notification is not None:
-            self.assertIn("alert alert-danger", self.response.text)
-            self.assertPresence(notification, div="notifications",
-                                regex=True)
+            self.assertIn(f"alert alert-{alert_type}", self.response.text,
+                          f"No Notification of type {kind!r} found.")
+            self.assertPresence(notification, div="notifications", regex=True)
 
         nodes = self.response.lxml.xpath(
             '(//input|//select|//textarea)[@name="{}"]'.format(fieldname))
@@ -1096,7 +1230,7 @@ class FrontendTest(BackendTest):
         if index is None:
             if len(nodes) == 1:
                 node = nodes[0]
-            elif len(nodes) == 0:
+            elif not nodes:
                 raise AssertionError(f"No input with name {f!r} found.")
             else:
                 raise AssertionError(f"More than one input with name {f!r}"
@@ -1112,10 +1246,10 @@ class FrontendTest(BackendTest):
         # From https://devhints.io/xpath#class-check
         container = node.xpath(
             "ancestor::*[contains(concat(' ',normalize-space(@class),' '),"
-            "' has-error ')]")
+            f"' has-{kind} ')]")
         if not container:
             raise AssertionError(
-                f"Input with name {f!r} is not contained in an .has-error box")
+                f"Input with name {f!r} is not contained in an .has-{kind} box")
         msg = f"Expected error message not found near input with name {f!r}."
         self.assertIn(message, container[0].text_content(), msg)
 
@@ -1241,7 +1375,7 @@ class FrontendTest(BackendTest):
         f = self.response.forms['logshowform']
         # use internal value property as I don't see a way to get the
         # checkbox value otherwise
-        codes = [field._value for field in f.fields['codes']]
+        codes = [field._value for field in f.fields['codes']]  # pylint: disable=protected-access
         f['codes'] = codes
         self.assertGreater(len(codes), 1)
         self.submit(f)
@@ -1323,7 +1457,8 @@ class FrontendTest(BackendTest):
         self.submit(f)
         self.assertTitle("Zelda Zeruda-Hime")
         for key, value in data.items():
-            if key not in {'birthday', 'telephone', 'mobile', 'country', 'country2'}:
+            if key not in {'birthday', 'telephone', 'mobile', 'country', 'country2',
+                           'gender'}:
                 # Omit values with heavy formatting in the frontend here
                 self.assertPresence(value)
         # Now test archival
@@ -1378,11 +1513,13 @@ class FrontendTest(BackendTest):
         :return: The button element to perform further checks.
             Is actually of type `bs4.BeautifulSoup`.
         """
+        if isinstance(label, str):
+            label = re.compile(label)
         f = self.response.forms['adminviewstoggleform']
-        button = self.response.html\
-            .find(id="adminviewstoggleform")\
-            .find(text=label)\
-            .parent
+        button = self.response.html.find(id="adminviewstoggleform").find(text=label)
+        if not button:
+            raise KeyError(f"Admin view toggle with label {label!r} not found.")
+        button = button.parent
         if current_state is not None:
             if current_state:
                 self.assertIn("active", button['class'])
@@ -1392,23 +1529,24 @@ class FrontendTest(BackendTest):
                     value=button['value'])
         return button
 
-    def reload_and_check_form(self, form: webtest.Form, link: Union[CdEDBObject, str],
-                              max_tries: int = 42, waittime: float = 0.1,
-                              fail: bool = True) -> None:
-        """Helper to repeatedly reload a page until a certain form is present.
+    def join_worker_thread(self, worker_name: str, link: LinkIdentifier, *,
+                           realm: str = "cde", timeout: float = 2) -> None:
+        """Wait for the specified Worker thread to finish.
 
-        This is mostly required for the "Semesterverwaltung".
+        :param realm: specify to which realm the Worker belongs. Currently only the
+            CdEFrontend uses Workers.
+        :param timeout: pecificy a maximum wait time for the thread to end. In our
+            testing environment Worker threads should not take longer than a couple
+            seconds.
         """
-        count = 0
-        while count < max_tries:
-            time.sleep(waittime)
-            self.traverse(link)
-            if form in self.response.forms:
-                break
-            count += 1
-        else:
-            if fail:
-                self.fail(f"Form {form} not found after {count} reloads.")
+        ref = Worker.active_workers[worker_name]
+        worker = ref()
+        if worker:
+            worker.join(timeout)
+            if worker.is_alive():
+                self.fail(f"Worker {realm}/{worker_name} still active after {timeout}"
+                          f" seconds.")
+        self.traverse(link)
 
 
 class MultiAppFrontendTest(FrontendTest):

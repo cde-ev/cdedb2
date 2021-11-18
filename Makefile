@@ -28,13 +28,8 @@ help:
 	@echo ""
 	@echo "Code testing:"
 	@echo "mypy           -- let mypy run over our codebase (bin, cdedb, tests)"
-	@echo "lint           -- run linters (flake8 and pylint)"
+	@echo "lint           -- run linters (isort, flake8 and pylint)"
 	@echo "check          -- run (parts of the) test suite"
-	@echo "                  (TESTPATTERNS specifies globs to match against the testnames like"
-	@echo "                      '404 500' or tests.test_frontend_event.TestEventFrontend.test_show_event"
-	@echo "                      If TESTPATTERNS is empty, run full test suite)"
-	@echo "check-parallel -- run full test suite using multiple CPU cores/threads"
-	@echo "                  (beta, not stable yet!)"
 	@echo "xss-check      -- check for xss vulnerabilities"
 	@echo "dump-html      -- run frontend tests and store all encountered pages inside"
 	@echo "                  /tmp/cdedb-dump/"
@@ -44,6 +39,7 @@ help:
 
 # Executables
 PYTHONBIN ?= python3
+ISORT ?= $(PYTHONBIN) -m isort
 FLAKE8 ?= $(PYTHONBIN) -m flake8
 PYLINT ?= $(PYTHONBIN) -m pylint
 COVERAGE ?= $(PYTHONBIN) -m coverage
@@ -157,9 +153,10 @@ endif
 	sudo cp tests/ancillary_files/kandidaten.pdf /var/lib/cdedb/assembly_attachment/3_v1
 	sudo chown --recursive www-data:www-data /var/lib/cdedb
 
-TESTFILES := picture.pdf,picture.png,picture.jpg,form.pdf,ballot_result.json,sepapain.xml$\
+TESTFILES := picture.pdf,picture.png,picture.jpg,form.pdf,rechen.pdf,ballot_result.json,sepapain.xml$\
 		,event_export.json,batch_admission.csv,money_transfers.csv,money_transfers_valid.csv$\
-		,partial_event_import.json,TestAka_partial_export_event.json,statement.csv
+		,partial_event_import.json,TestAka_partial_export_event.json,statement.csv$\
+		,questionnaire_import.json
 
 storage-test:
 	rm -rf -- ${TESTSTORAGEPATH}/*
@@ -189,6 +186,7 @@ ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
 endif
 ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl stop pgbouncer
+	sudo systemctl stop slapd
 endif
 	$(PSQL_ADMIN) -f cdedb/database/cdedb-users.sql
 	$(PSQL_ADMIN) -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb
@@ -196,7 +194,11 @@ ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl start pgbouncer
 endif
 	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=cdb
+	$(PSQL) -f cdedb/database/cdedb-ldap.sql --dbname=cdb
 	$(PSQL) -f tests/ancillary_files/sample_data.sql --dbname=cdb
+ifneq ($(wildcard /CONTAINER),/CONTAINER)
+	sudo systemctl start slapd
+endif
 
 sql-test:
 ifneq ($(wildcard /CONTAINER),/CONTAINER)
@@ -207,7 +209,8 @@ ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl start pgbouncer
 endif
 	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=${TESTDATABASENAME}
-	$(MAKE) sql-test-shallow
+	$(PSQL) -f cdedb/database/cdedb-ldap.sql --dbname=${TESTDATABASENAME}
+	$(PSQL) -f tests/ancillary_files/sample_data.sql --dbname=${TESTDATABASENAME}
 
 sql-test-shallow: tests/ancillary_files/sample_data.sql
 	$(PSQL) -f tests/ancillary_files/clean_data.sql --dbname=${TESTDATABASENAME}
@@ -217,28 +220,51 @@ cron:
 	sudo -u www-data /cdedb2/bin/cron_execute.py
 
 
-################
-# Code testing #
-################
+########
+# LDAP #
+########
+
+ldap-create:
+	sudo SCRIPT_DRY_RUN="" $(PYTHONBIN) ldap/create-ldap.py
+
+ldap-update:
+	sudo SCRIPT_DRY_RUN="" $(PYTHONBIN) ldap/update-ldap.py
+
+ldap-remove:
+	sudo SCRIPT_DRY_RUN="" $(PYTHONBIN) ldap/remove-ldap.py
+
+###############################
+# Code testing and formatting #
+###############################
+
+format:
+	$(ISORT) bin/*.py cdedb tests
 
 mypy:
-	$(MYPY) bin cdedb tests
+	$(MYPY) bin/*.py cdedb tests
 
 BANNERLINE := "================================================================================"
+
+isort:
+	@echo $(BANNERLINE)
+	@echo "All of isort"
+	@echo $(BANNERLINE)
+	@echo ""
+	$(ISORT) --check-only bin/*.py cdedb tests
 
 flake8:
 	@echo $(BANNERLINE)
 	@echo "All of flake8"
 	@echo $(BANNERLINE)
 	@echo ""
-	$(FLAKE8) cdedb
+	$(FLAKE8) cdedb tests
 
 pylint:
 	@echo $(BANNERLINE)
 	@echo "All of pylint"
 	@echo $(BANNERLINE)
 	@echo ""
-	$(PYLINT) cdedb --load-plugins=pylint.extensions.bad_builtin
+	$(PYLINT) cdedb tests
 
 template-line-length:
 	@echo $(BANNERLINE)
@@ -247,7 +273,7 @@ template-line-length:
 	@echo ""
 	grep -E -R '^.{121,}' cdedb/frontend/templates/ | grep 'tmpl:'
 
-lint: flake8 pylint
+lint: isort flake8 pylint
 
 prepare-check:
 ifneq ($(TESTPREPARATION), manual)
@@ -261,23 +287,8 @@ else
 	@echo "Omitting test preparation."
 endif
 
-check-parallel:
-	# TODO: move this logic into bin/check.py
-	# TODO: using inverse regex arguments possible? Would be helpful for not overlooking some tests
-	# sleeping is necessary here that the i18n-refresh runs at the very beginning to not interfere
-	$(PYTHONBIN) -m bin.check \
-		test_backend test_common test_config test_database test_offline test_script test_session \
-		test_validation test_vote_verification & \
-	sleep 0.5; \
-	$(PYTHONBIN) -m bin.check \
-		frontend_event frontend_ml frontend_privacy frontend_parse & \
-	sleep 0.5; \
-	$(PYTHONBIN) -m bin.check \
-		frontend_application frontend_assembly frontend_common frontend_core frontend_cde \
-		frontend_cron
-
 check:
-	$(PYTHONBIN) -m bin.check $(or $(TESTPATTERNS), )
+	$(PYTHONBIN) bin/check.py --verbose $(or $(TESTPATTERNS), )
 
 sql-xss: tests/ancillary_files/sample_data_xss.sql
 ifneq ($(wildcard /CONTAINER),/CONTAINER)
@@ -288,17 +299,18 @@ ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl start pgbouncer
 endif
 	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=${TESTDATABASENAME}
+	$(PSQL) -f cdedb/database/cdedb-ldap.sql --dbname=${TESTDATABASENAME}
 	$(PSQL) -f tests/ancillary_files/sample_data_xss.sql --dbname=${TESTDATABASENAME}
 
 xss-check:
-	$(PYTHONBIN) -m bin.check --xss-check --verbose
+	$(PYTHONBIN) bin/check.py --xss-check --verbose
 
 dump-html:
 	$(MAKE) -B /tmp/cdedb-dump/
 
 /tmp/cdedb-dump/: export CDEDB_TEST_DUMP_DIR=/tmp/cdedb-dump/
 /tmp/cdedb-dump/:
-	$(PYTHONBIN) -m bin.check test_frontend
+	$(PYTHONBIN) -m bin.check --verbose tests.test_frontend*
 
 validate-html: /tmp/cdedb-dump/ /opt/validator/vnu-runtime-image/bin/vnu
 	/opt/validator/vnu-runtime-image/bin/vnu --no-langdetect --stdout \
@@ -331,7 +343,7 @@ coverage: .coverage
 	@echo "HTML reports for easier inspection are in ./htmlcov"
 
 tests/ancillary_files/sample_data.sql: tests/ancillary_files/sample_data.json \
-		$(SAMPLE_DATA_SQL) cdedb/database/cdedb-tables.sql
+		$(SAMPLE_DATA_SQL) cdedb/database/cdedb-tables.sql cdedb/database/cdedb-ldap.sql
 	SQLTEMPFILE=`sudo -u www-data mktemp` \
 		&& sudo -u www-data chmod +r "$${SQLTEMPFILE}" \
 		&& sudo rm -f /tmp/cdedb*log \
@@ -344,7 +356,7 @@ tests/ancillary_files/sample_data.sql: tests/ancillary_files/sample_data.json \
 		&& sudo -u www-data rm "$${SQLTEMPFILE}"
 
 tests/ancillary_files/sample_data_xss.sql: tests/ancillary_files/sample_data.json \
-		$(SAMPLE_DATA_SQL) cdedb/database/cdedb-tables.sql
+		$(SAMPLE_DATA_SQL) cdedb/database/cdedb-tables.sql cdedb/database/cdedb-ldap.sql
 	SQLTEMPFILE=`sudo -u www-data mktemp` \
 		&& sudo -u www-data chmod +r "$${SQLTEMPFILE}" \
 		&& sudo rm -f /tmp/cdedb*log \

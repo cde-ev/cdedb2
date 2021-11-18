@@ -12,18 +12,17 @@ import decimal
 from pathlib import Path
 from secrets import token_hex
 from typing import (
-    Any, Collection, Dict, List, Optional, Set, Tuple, Union, cast, overload,
+    Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, Union, cast, overload,
 )
 
 from passlib.hash import sha512_crypt
-from typing_extensions import Protocol
 
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_set_validation as affirm_set,
-    affirm_validation_typed as affirm,
-    affirm_validation_typed_optional as affirm_optional, internal, singularize,
+    affirm_validation as affirm, affirm_validation_optional as affirm_optional,
+    inspect_validation as inspect, internal, singularize,
 )
 from cdedb.common import (
     ADMIN_KEYS, ALL_ROLES, GENESIS_CASE_FIELDS, GENESIS_REALM_OVERRIDE,
@@ -33,13 +32,12 @@ from cdedb.common import (
     CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, Error,
     PathLike, PrivilegeError, PsycoJson, QuotaException, Realm, RequestState, Role,
     User, decode_parameter, encode_parameter, extract_realms, extract_roles, get_hash,
-    glue, implied_realms, merge_dicts, n_, now, privilege_tier, unwrap, xsorted
+    glue, implied_realms, merge_dicts, n_, now, privilege_tier, unwrap, xsorted,
 )
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import Atomizer, connection_pool_factory
 from cdedb.query import Query, QueryOperators, QueryScope
-from cdedb.validation import validate_check
 
 
 class CoreBackend(AbstractBackend):
@@ -229,7 +227,7 @@ class CoreBackend(AbstractBackend):
                 data.update(members=0, total=0)
             return self.sql_insert(rs, "cde.finance_log", data)
 
-    @access("core_admin")
+    @access("core_admin", "auditor")
     def retrieve_log(self, rs: RequestState,
                      codes: Collection[const.CoreLogCodes] = None,
                      offset: int = None, length: int = None,
@@ -248,7 +246,7 @@ class CoreBackend(AbstractBackend):
             submitted_by=submitted_by, change_note=change_note,
             time_start=time_start, time_stop=time_stop)
 
-    @access("core_admin")
+    @access("core_admin", "auditor")
     def retrieve_changelog_meta(
             self, rs: RequestState,
             stati: Collection[const.MemberChangeStati] = None,
@@ -271,7 +269,8 @@ class CoreBackend(AbstractBackend):
 
     def changelog_submit_change(self, rs: RequestState, data: CdEDBObject,
                                 generation: Optional[int], may_wait: bool,
-                                change_note: str, force_review: bool = False
+                                change_note: str, force_review: bool = False,
+                                automated_change: bool = False,
                                 ) -> DefaultReturnCode:
         """Insert an entry in the changelog.
 
@@ -298,8 +297,8 @@ class CoreBackend(AbstractBackend):
             current_generation = unwrap(self.changelog_get_generations(
                 rs, (data['id'],)))
             if generation is not None and current_generation != generation:
-                self.logger.info("Generation mismatch {} != {} for {}".format(
-                    current_generation, generation, data['id']))
+                self.logger.info(f"Generation mismatch ({current_generation} !="
+                                 f" {generation}) for {data['id']}")
                 return 0
 
             # get current state
@@ -378,6 +377,7 @@ class CoreBackend(AbstractBackend):
                 "change_note": change_note,
                 "code": const.MemberChangeStati.pending,
                 "persona_id": data['id'],
+                "automated_change": automated_change,
             })
             del insert['id']
             if 'ctime' in insert:
@@ -403,10 +403,12 @@ class CoreBackend(AbstractBackend):
                 insert.update(diff)
                 insert.update({
                     "submitted_by": rs.user.persona_id,
+                    "reviewed_by": None,
                     "generation": next_generation + 1,
+                    "change_note": "Verdrängte Änderung.",
                     "code": const.MemberChangeStati.pending,
                     "persona_id": data['id'],
-                    "change_note": "Verdrängte Änderung.",
+                    "automated_change": automated_change,
                 })
                 del insert['id']
                 self.sql_insert(rs, "core.changelog", insert)
@@ -497,7 +499,7 @@ class CoreBackend(AbstractBackend):
                               ) -> CdEDBObjectMap:
         """Retrieve changes in the changelog."""
         stati = affirm_set(const.MemberChangeStati, stati)
-        query = glue("SELECT id, persona_id, given_names, family_name,",
+        query = glue("SELECT id, persona_id, given_names, display_name, family_name,",
                      "generation, ctime",
                      "FROM core.changelog WHERE code = ANY(%s)")
         data = self.query_all(rs, query, (stati,))
@@ -532,7 +534,12 @@ class CoreBackend(AbstractBackend):
         query = query.format(fields=', '.join(fields),
                              conditions=' AND '.join(conditions))
         data = self.query_all(rs, query, params)
-        return {e['generation']: e for e in data}
+        ret = {}
+        for d in data:
+            if d.get('gender'):
+                d['gender'] = const.Genders(d['gender'])
+            ret[d['generation']] = d
+        return ret
 
     @internal
     @access("persona", "droid")
@@ -547,7 +554,12 @@ class CoreBackend(AbstractBackend):
         if "id" not in columns:
             columns += ("id",)
         data = self.sql_select(rs, "core.personas", columns, persona_ids)
-        return {d['id']: d for d in data}
+        ret = {}
+        for d in data:
+            if d.get('gender'):
+                d['gender'] = const.Genders(d['gender'])
+            ret[d['id']] = d
+        return ret
 
     class _RetrievePersonaProtocol(Protocol):
         def __call__(self, rs: RequestState, persona_id: int,
@@ -622,7 +634,8 @@ class CoreBackend(AbstractBackend):
         if is_archived is not None:
             constraints.append("is_archived = %s")
             params.append(is_archived)
-        query += " WHERE " + " AND ".join(constraints)
+        if constraints:
+            query += " WHERE " + " AND ".join(constraints)
         return unwrap(self.query_one(rs, query, params))
 
     def commit_persona(self, rs: RequestState, data: CdEDBObject,
@@ -652,7 +665,8 @@ class CoreBackend(AbstractBackend):
                     generation: int = None, change_note: str = None,
                     may_wait: bool = True,
                     allow_specials: Tuple[str, ...] = tuple(),
-                    force_review: bool = False
+                    force_review: bool = False,
+                    automated_change: bool = True,
                     ) -> DefaultReturnCode:
         """Internal helper for modifying a persona data set.
 
@@ -676,8 +690,7 @@ class CoreBackend(AbstractBackend):
           without.
         """
         if not change_note:
-            self.logger.info(
-                "No change note specified (persona_id={}).".format(data['id']))
+            self.logger.info(f"No change note specified (persona_id={data['id']}).")
             change_note = "Allgemeine Änderung"
 
         current = self.sql_select_one(
@@ -693,7 +706,7 @@ class CoreBackend(AbstractBackend):
                 and ("core_admin" not in rs.user.roles
                      or not {"realms", "purge"} & set(allow_specials))):
             raise PrivilegeError(n_("Realm modification prevented."))
-        if (set(data) & ADMIN_KEYS
+        if (set(data) & ADMIN_KEYS.keys()
                 and ("meta_admin" not in rs.user.roles
                      or "admins" not in allow_specials)):
             if any(data[key] for key in ADMIN_KEYS):
@@ -726,7 +739,7 @@ class CoreBackend(AbstractBackend):
             raise PrivilegeError(n_("Own activation prevented."))
 
         # check for permission to edit
-        allow_meta_admin = data.keys() <= ADMIN_KEYS | {"id"}
+        allow_meta_admin = data.keys() <= ADMIN_KEYS.keys() | {"id"}
         if (rs.user.persona_id != data['id']
                 and not self.is_relative_admin(rs, data['id'],
                                                allow_meta_admin)):
@@ -744,7 +757,7 @@ class CoreBackend(AbstractBackend):
             ret = self.changelog_submit_change(
                 rs, data, generation=generation,
                 may_wait=may_wait, change_note=change_note,
-                force_review=force_review)
+                force_review=force_review, automated_change=automated_change)
             if allow_specials and ret < 0:
                 raise RuntimeError(n_("Special change not committed."))
         return ret
@@ -753,7 +766,6 @@ class CoreBackend(AbstractBackend):
     def change_persona(self, rs: RequestState, data: CdEDBObject,
                        generation: int = None, may_wait: bool = True,
                        change_note: str = None,
-                       ignore_warnings: bool = False,
                        force_review: bool = False) -> DefaultReturnCode:
         """Change a data set. Note that you need privileges to edit someone
         elses data set.
@@ -763,11 +775,10 @@ class CoreBackend(AbstractBackend):
           the check
         :param may_wait: override for system requests (which may not wait)
         :param change_note: Descriptive line for changelog
-        :param ignore_warnings: Ignore errors of type ValidationWarning.
         :param force_review: force a change to be reviewed, even if it may be committed
           without.
         """
-        data = affirm(vtypes.Persona, data, _ignore_warnings=ignore_warnings)
+        data = affirm(vtypes.Persona, data)
         generation = affirm_optional(int, generation)
         may_wait = affirm(bool, may_wait)
         change_note = affirm_optional(str, change_note)
@@ -776,27 +787,27 @@ class CoreBackend(AbstractBackend):
                                 force_review=force_review)
 
     @access("core_admin")
-    def change_persona_realms(self, rs: RequestState,
-                              data: CdEDBObject) -> DefaultReturnCode:
+    def change_persona_realms(self, rs: RequestState, data: CdEDBObject,
+                              change_note: str) -> DefaultReturnCode:
         """Special modification function for realm transitions."""
         data = affirm(vtypes.Persona, data, transition=True)
+        change_note = affirm(str, change_note)
         with Atomizer(rs):
             if data.get('is_cde_realm'):
                 # Fix balance
-                tmp = unwrap(self.get_total_personas(rs, (data['id'],)))
+                tmp = self.get_total_persona(rs, data['id'])
                 if tmp['balance'] is None:
                     data['balance'] = decimal.Decimal('0.0')
                 else:
                     data['balance'] = tmp['balance']
             ret = self.set_persona(
-                rs, data, may_wait=False,
-                change_note="Bereiche geändert.",
+                rs, data, may_wait=False, change_note=change_note,
                 allow_specials=("realms", "finance", "membership"))
             if data.get('trial_member'):
-                ret *= self.change_membership(rs, data['id'], is_member=True)
+                ret *= self.change_membership_easy_mode(rs, data['id'], is_member=True)
             self.core_log(
                 rs, const.CoreLogCodes.realm_change, data['id'],
-                change_note="Bereiche geändert.")
+                change_note=change_note)
         return ret
 
     @access("persona")
@@ -882,32 +893,19 @@ class CoreBackend(AbstractBackend):
                     stati=(const.PrivilegeChangeStati.pending,)):
                 raise ValueError(n_("Pending privilege change."))
 
-            persona = unwrap(self.get_total_personas(rs, (data['persona_id'],)))
+            persona = self.get_total_persona(rs, data['persona_id'])
 
             # see also cdedb.frontend.templates.core.change_privileges
             # and change_privileges in cdedb.frontend.core
 
             errormsg = n_("User does not fit the requirements for this"
                           " admin privilege.")
-            realms = {"cde", "event", "ml", "assembly"}
-            for realm in realms:
-                if not persona['is_{}_realm'.format(realm)]:
-                    if data.get('is_{}_admin'.format(realm)):
+            for admin, required in ADMIN_KEYS.items():
+                if data.get(admin):
+                    if data.get(required) is False:
                         raise ValueError(errormsg)
-
-            if data.get('is_finance_admin'):
-                if (data.get('is_cde_admin') is False
-                    or (not persona['is_cde_admin']
-                        and not data.get('is_cde_admin'))):
-                    raise ValueError(errormsg)
-
-            if data.get('is_core_admin') or data.get('is_meta_admin'):
-                if not persona['is_cde_realm']:
-                    raise ValueError(errormsg)
-
-            if data.get('is_cdelokal_admin'):
-                if not persona['is_ml_realm']:
-                    raise ValueError(errormsg)
+                    if not persona[required] and not data.get(required):
+                        raise ValueError(errormsg)
 
             self.core_log(
                 rs, const.CoreLogCodes.privilege_change_pending,
@@ -1042,7 +1040,11 @@ class CoreBackend(AbstractBackend):
         privilege_change_ids = affirm_set(vtypes.ID, privilege_change_ids)
         data = self.sql_select(
             rs, "core.privilege_changes", PRIVILEGE_CHANGE_FIELDS, privilege_change_ids)
-        return {e["id"]: e for e in data}
+        ret = {}
+        for e in data:
+            e['status'] = const.PrivilegeChangeStati(e['status'])
+            ret[e['id']] = e
+        return ret
 
     class _GetPrivilegeChangeProtocol(Protocol):
         def __call__(self, rs: RequestState, privilege_change_id: int
@@ -1118,9 +1120,17 @@ class CoreBackend(AbstractBackend):
                 return 0
 
     @access("core_admin", "cde_admin")
-    def change_membership(self, rs: RequestState, persona_id: int,
-                          is_member: bool) -> DefaultReturnCode:
-        """Special modification function for membership."""
+    def change_membership_easy_mode(self, rs: RequestState, persona_id: int,
+                                    is_member: bool) -> DefaultReturnCode:
+        """Special modification function for membership.
+
+        This variant only works for easy cases, that is for gaining membership
+        or if no active lastschrift permits exist. Otherwise (i.e. in the
+        general case) the change_membership function from the cde-backend
+        has to be used.
+
+        :param is_member: Desired target state of membership.
+        """
         persona_id = affirm(vtypes.ID, persona_id)
         is_member = affirm(bool, is_member)
         update: CdEDBObject = {
@@ -1134,7 +1144,15 @@ class CoreBackend(AbstractBackend):
                 raise RuntimeError(n_("Not a CdE account."))
             if current['is_member'] == is_member:
                 return 0
+
             if not is_member:
+                # Peek at the CdE-realm, this is somewhat of a transgression,
+                # but sadly necessary duct tape to keep the whole thing working.
+                query = ("SELECT id FROM cde.lastschrift"
+                         " WHERE persona_id = %s AND revoked_at IS NULL")
+                params = [persona_id]
+                if self.query_all(rs, query, params):
+                    raise RuntimeError(n_("Active lastschrift permit found."))
                 delta = -current['balance']
                 new_balance = decimal.Decimal(0)
                 code = const.FinanceLogCodes.lose_membership
@@ -1362,10 +1380,25 @@ class CoreBackend(AbstractBackend):
                 raise ArchiveError(n_("Cannot archive admins."))
 
             #
-            # 2. Remove complicated attributes (membership, foto and password)
+            # 2. Handle lastschrift
+            #
+            lastschrift = self.sql_select(
+                rs, "cde.lastschrift", ("id", "revoked_at"), (persona_id,),
+                "persona_id")
+            if any(not ls['revoked_at'] for ls in lastschrift):
+                raise ArchiveError(n_("Active lastschrift exists."))
+            query = ("UPDATE cde.lastschrift"
+                     " SET (amount, iban, account_owner, account_address)"
+                     " = (%s, %s, %s, %s)"
+                     " WHERE persona_id = %s"
+                     " AND revoked_at < now() - interval '14 month'")
+            if lastschrift:
+                self.query_exec(rs, query, (0, "", "", "", persona_id))
+            #
+            # 3. Remove complicated attributes (membership, foto and password)
             #
             if persona['is_member']:
-                code = self.change_membership(rs, persona_id, is_member=False)
+                code = self.change_membership_easy_mode(rs, persona_id, is_member=False)
                 if not code:
                     raise ArchiveError(n_("Failed to revoke membership."))
             if persona['foto']:
@@ -1380,7 +1413,7 @@ class CoreBackend(AbstractBackend):
             query = "UPDATE core.personas SET password_hash = %s WHERE id = %s"
             self.query_exec(rs, query, (password_hash, persona_id))
             #
-            # 3. Strip all unnecessary attributes and mark as archived
+            # 4. Strip all unnecessary attributes and mark as archived
             #
             update = {
                 'id': persona_id,
@@ -1396,6 +1429,7 @@ class CoreBackend(AbstractBackend):
                 'is_ml_admin': False,
                 'is_assembly_admin': False,
                 'is_cdelokal_admin': False,
+                'is_auditor': False,
                 # Do no touch the realms, to preserve integrity and
                 # allow reactivation.
                 # 'is_cde_realm'
@@ -1445,25 +1479,10 @@ class CoreBackend(AbstractBackend):
                 change_note="Archivierung vorbereitet.",
                 allow_specials=("archive", "username"))
             #
-            # 4. Delete all sessions and quotas
+            # 5. Delete all sessions and quotas
             #
             self.sql_delete(rs, "core.sessions", (persona_id,), "persona_id")
             self.sql_delete(rs, "core.quota", (persona_id,), "persona_id")
-            #
-            # 5. Handle lastschrift
-            #
-            lastschrift = self.sql_select(
-                rs, "cde.lastschrift", ("id", "revoked_at"), (persona_id,),
-                "persona_id")
-            if any(not ls['revoked_at'] for ls in lastschrift):
-                raise ArchiveError(n_("Active lastschrift exists."))
-            query = ("UPDATE cde.lastschrift"
-                     " SET (amount, iban, account_owner, account_address)"
-                     " = (%s, %s, %s, %s)"
-                     " WHERE persona_id = %s"
-                     " AND revoked_at < now() - interval '14 month'")
-            if lastschrift:
-                self.query_exec(rs, query, (0, "", "", "", persona_id))
             #
             # 6. Handle event realm
             #
@@ -1554,6 +1573,7 @@ class CoreBackend(AbstractBackend):
             update = {
                 'id': persona_id,
                 'is_archived': False,
+                'is_active': True,
                 'username': new_username,
             }
             code = self.set_persona(
@@ -1907,8 +1927,7 @@ class CoreBackend(AbstractBackend):
 
     @access(*REALM_ADMINS)
     def create_persona(self, rs: RequestState, data: CdEDBObject,
-                       submitted_by: int = None, ignore_warnings: bool = False
-                       ) -> DefaultReturnCode:
+                       submitted_by: int = None) -> DefaultReturnCode:
         """Instantiate a new data set.
 
         This does the house-keeping and inserts the corresponding entry in
@@ -1917,22 +1936,11 @@ class CoreBackend(AbstractBackend):
         :param submitted_by: Allow to override the submitter for genesis.
         :returns: The id of the newly created persona.
         """
-        data = affirm(vtypes.Persona, data,
-                      creation=True, _ignore_warnings=ignore_warnings)
+        data = affirm(vtypes.Persona, data, creation=True)
         submitted_by = affirm_optional(vtypes.ID, submitted_by)
         # zap any admin attempts
-        data.update({
-            'is_meta_admin': False,
-            'is_archived': False,
-            'is_assembly_admin': False,
-            'is_cde_admin': False,
-            'is_finance_admin': False,
-            'is_core_admin': False,
-            'is_event_admin': False,
-            'is_ml_admin': False,
-            'is_cdelokal_admin': False,
-            'is_purged': False,
-        })
+        data.update({'is_archived': False, 'is_purged': False})
+        data.update({k: False for k in ADMIN_KEYS})
         # Check if admin has rights to create the user in its realms
         if not any(admin <= rs.user.roles
                    for admin in privilege_tier(extract_roles(data),
@@ -1989,8 +1997,7 @@ class CoreBackend(AbstractBackend):
                 not self.conf["CDEDB_OFFLINE_DEPLOYMENT"]
                 and not self.verify_persona_password(rs, password, data["id"])):
             # log message to be picked up by fail2ban
-            self.logger.warning("CdEDB login failure from {} for {}".format(
-                ip, username))
+            self.logger.warning(f"CdEDB login failure from {ip} for {username}")
             return None
         if self.conf["LOCKDOWN"] and not (data['is_meta_admin']
                                           or data['is_core_admin']):
@@ -2036,7 +2043,8 @@ class CoreBackend(AbstractBackend):
             rs.conn = self.connpool['cdb_member']
         else:
             rs.conn = self.connpool['cdb_persona']
-        rs._conn = rs.conn  # Necessary to keep the mechanics happy
+        # Necessary to keep the mechanics happy.
+        rs._conn = rs.conn  # pylint: disable=protected-access
 
         # Get more information about user (for immediate use in frontend)
         data = self.sql_select_one(rs, "core.personas",
@@ -2069,6 +2077,14 @@ class CoreBackend(AbstractBackend):
             params.append(rs.sessionkey)
         query += " WHERE " + " AND ".join(constraints)
         return self.query_exec(rs, query, params)
+
+    @access("persona")
+    def count_active_sessions(self, rs: RequestState) -> int:
+        """Retrieve number of currently active sessions"""
+        query = ("SELECT COUNT(*) FROM core.sessions"
+                 " WHERE is_active = True AND persona_id = %s")
+        count = unwrap(self.query_one(rs, query, (rs.user.persona_id,))) or 0
+        return count
 
     @access("core_admin")
     def deactivate_old_sessions(self, rs: RequestState) -> DefaultReturnCode:
@@ -2225,7 +2241,7 @@ class CoreBackend(AbstractBackend):
     def genesis_attachment_usage(self, rs: RequestState,
                                  attachment_hash: str) -> bool:
         """Check whether a genesis attachment is still referenced in a case."""
-        attachment_hash = affirm(str, attachment_hash)
+        attachment_hash = affirm(vtypes.RestrictiveIdentifier, attachment_hash)
         query = "SELECT COUNT(*) FROM core.genesis_cases WHERE attachment_hash = %s"
         return bool(unwrap(self.query_one(rs, query, (attachment_hash,))))
 
@@ -2234,25 +2250,27 @@ class CoreBackend(AbstractBackend):
         """Delete genesis attachments that are no longer in use."""
         ret = 0
         for f in self.genesis_attachment_dir.iterdir():
-            if f.is_file() and not self.genesis_attachment_usage(rs, str(f)):
+            if f.is_file() and not self.genesis_attachment_usage(rs, f.name):
                 f.unlink()
                 ret += 1
         return ret
 
     @access("anonymous")
-    def verify_existence(self, rs: RequestState, email: str) -> bool:
+    def verify_existence(self, rs: RequestState, email: str,
+                         include_genesis: bool = True) -> bool:
         """Check wether a certain email belongs to any persona."""
         email = affirm(vtypes.Email, email)
         query = "SELECT COUNT(*) AS num FROM core.personas WHERE username = %s"
-        num1 = unwrap(self.query_one(rs, query, (email,))) or 0
-        query = glue("SELECT COUNT(*) AS num FROM core.genesis_cases",
-                     "WHERE username = %s AND case_status = ANY(%s)")
-        # This should be all stati which are not final.
-        stati = (const.GenesisStati.unconfirmed,
-                 const.GenesisStati.to_review,
-                 const.GenesisStati.approved)  # approved is a temporary state.
-        num2 = unwrap(self.query_one(rs, query, (email, stati))) or 0
-        return bool(num1 + num2)
+        num = unwrap(self.query_one(rs, query, (email,))) or 0
+        if include_genesis:
+            query = glue("SELECT COUNT(*) AS num FROM core.genesis_cases",
+                         "WHERE username = %s AND case_status = ANY(%s)")
+            # This should be all stati which are not final.
+            stati = (const.GenesisStati.unconfirmed,
+                     const.GenesisStati.to_review,
+                     const.GenesisStati.approved)  # approved is a temporary state.
+            num += unwrap(self.query_one(rs, query, (email, stati))) or 0
+        return bool(num)
 
     RESET_COOKIE_PAYLOAD = "X"
 
@@ -2284,7 +2302,7 @@ class CoreBackend(AbstractBackend):
     # # This should work but Literal seems to be broken.
     # # https://github.com/python/mypy/issues/7399
     # if TYPE_CHECKING:
-    #     from typing_extensions import Literal
+    #     from typing import Literal
     #     ret_type = Union[Tuple[Literal[False], str],
     #                      Tuple[Literal[True], None]]
     # else:
@@ -2349,7 +2367,7 @@ class CoreBackend(AbstractBackend):
                 return False, msg  # type: ignore
         if not new_password:
             return False, n_("No new password provided.")
-        _val, errs = validate_check(vtypes.PasswordStrength, new_password)
+        _, errs = inspect(vtypes.PasswordStrength, new_password)
         if errs:
             return False, n_("Password too weak.")
         # escalate db privilege role in case of resetting passwords
@@ -2415,10 +2433,9 @@ class CoreBackend(AbstractBackend):
         assert persona_id is not None
 
         columns_of_interest = [
-            "is_cde_realm", "is_meta_admin", "is_core_admin", "is_cde_admin",
-            "is_event_admin", "is_ml_admin", "is_assembly_admin", "username",
-            "given_names", "family_name", "display_name", "title",
-            "name_supplement", "birthday"]
+            *ADMIN_KEYS, "username", "given_names", "family_name", "display_name",
+            "title", "name_supplement", "birthday",
+        ]
 
         # escalate db privilege role in case of resetting passwords
         orig_conn = None
@@ -2438,9 +2455,7 @@ class CoreBackend(AbstractBackend):
             if orig_conn:
                 rs.conn = orig_conn
 
-        admin = any(persona[admin] for admin in
-                    ("is_meta_admin", "is_core_admin", "is_cde_admin",
-                     "is_event_admin", "is_ml_admin", "is_assembly_admin"))
+        admin = any(persona[admin] for admin in ADMIN_KEYS)
         inputs = (persona['username'].split('@') +
                   persona['given_names'].replace('-', ' ').split() +
                   persona['family_name'].replace('-', ' ').split() +
@@ -2452,8 +2467,8 @@ class CoreBackend(AbstractBackend):
         if persona['birthday']:
             inputs.extend(persona['birthday'].isoformat().split('-'))
 
-        password, errs = validate_check(vtypes.PasswordStrength, password,
-                                        argname=argname, admin=admin, inputs=inputs)
+        password, errs = inspect(vtypes.PasswordStrength, password, argname=argname,
+                                 admin=admin, inputs=inputs)
 
         return password, errs
 
@@ -2513,19 +2528,16 @@ class CoreBackend(AbstractBackend):
         return success, msg
 
     @access("anonymous")
-    def genesis_request(self, rs: RequestState, data: CdEDBObject,
-                        ignore_warnings: bool = False
+    def genesis_request(self, rs: RequestState, data: CdEDBObject
                         ) -> Optional[DefaultReturnCode]:
         """Log a request for a new account.
 
         This is the initial entry point for such a request.
 
-        :param ignore_warnings: Ignore errors with kind ValidationWarning
         :returns: id of the new request or None if the username is already
           taken
         """
-        data = affirm(vtypes.GenesisCase, data,
-                      creation=True, _ignore_warnings=ignore_warnings)
+        data = affirm(vtypes.GenesisCase, data, creation=True)
 
         if self.verify_existence(rs, data['username']):
             return None
@@ -2701,11 +2713,14 @@ class CoreBackend(AbstractBackend):
         genesis_case_ids = affirm_set(vtypes.ID, genesis_case_ids)
         data = self.sql_select(rs, "core.genesis_cases", GENESIS_CASE_FIELDS,
                                genesis_case_ids)
-        if ("core_admin" not in rs.user.roles
-                and any("{}_admin".format(e['realm']) not in rs.user.roles
-                        for e in data)):
-            raise PrivilegeError(n_("Not privileged."))
-        return {e['id']: e for e in data}
+        ret = {}
+        for e in data:
+            if "core_admin" not in rs.user.roles:
+                if f"{e['realm']}_admin" not in rs.user.roles:
+                    raise PrivilegeError(n_("Not privileged."))
+            e['case_status'] = const.GenesisStati(e['case_status'])
+            ret[e['id']] = e
+        return ret
 
     class _GenesisGetCaseProtocol(Protocol):
         def __call__(self, rs: RequestState, genesis_case_id: int) -> CdEDBObject: ...
@@ -2713,14 +2728,10 @@ class CoreBackend(AbstractBackend):
         genesis_get_cases, "genesis_case_ids", "genesis_case_id")
 
     @access(*REALM_ADMINS)
-    def genesis_modify_case(self, rs: RequestState, data: CdEDBObject,
-                            ignore_warnings: bool = False) -> DefaultReturnCode:
-        """Modify a persona creation case.
-
-        :param ignore_warnings: Ignore errors with kind ValidationWarning
-        """
-        data = affirm(vtypes.GenesisCase, data,
-                      _ignore_warnings=ignore_warnings)
+    def genesis_modify_case(self, rs: RequestState, data: CdEDBObject
+                            ) -> DefaultReturnCode:
+        """Modify a persona creation case."""
+        data = affirm(vtypes.GenesisCase, data)
 
         with Atomizer(rs):
             current = self.sql_select_one(
@@ -2758,22 +2769,22 @@ class CoreBackend(AbstractBackend):
         case_id = affirm(vtypes.ID, case_id)
         with Atomizer(rs):
             case = unwrap(self.genesis_get_cases(rs, (case_id,)))
+            if self.verify_existence(rs, case['username'], include_genesis=False):
+                raise ValueError(n_("Email address already taken."))
             data = {k: v for k, v in case.items()
                     if k in PERSONA_ALL_FIELDS and k != "id"}
             data['display_name'] = data['given_names']
             merge_dicts(data, PERSONA_DEFAULTS)
             # Fix realms, so that the persona validator does the correct thing
             data.update(GENESIS_REALM_OVERRIDE[case['realm']])
-            data = affirm(vtypes.Persona, data,
-                          creation=True, _ignore_warnings=True)
+            data = affirm(vtypes.Persona, data, creation=True)
             if case['case_status'] != const.GenesisStati.approved:
                 raise ValueError(n_("Invalid genesis state."))
             roles = extract_roles(data)
             if extract_realms(roles) != \
                     ({case['realm']} | implied_realms(case['realm'])):
                 raise PrivilegeError(n_("Wrong target realm."))
-            ret = self.create_persona(
-                rs, data, submitted_by=case['reviewer'], ignore_warnings=True)
+            ret = self.create_persona(rs, data, submitted_by=case['reviewer'])
             update = {
                 'id': case_id,
                 'case_status': const.GenesisStati.successful,
@@ -2788,11 +2799,14 @@ class CoreBackend(AbstractBackend):
 
         This is for batch admission, where we may encounter datasets to
         already existing accounts. In that case we do not want to create
-        a new account.
+        a new account. It is also used during genesis to avoid creation
+        of duplicate accounts.
 
         :returns: A dict of possibly matching account data.
         """
-        persona = affirm(vtypes.Persona, persona)
+        persona = affirm(vtypes.Persona, persona, _ignore_warnings=True)
+        if persona['birthday'] == datetime.date.min:
+            persona['birthday'] = None
         scores: Dict[int, int] = collections.defaultdict(lambda: 0)
         queries: List[Tuple[int, str, Tuple[Any, ...]]] = [
             (10, "given_names = %s OR display_name = %s",
@@ -2804,8 +2818,8 @@ class CoreBackend(AbstractBackend):
             (10, "birthday = %s", (persona['birthday'],)),
             (5, "location = %s", (persona['location'],)),
             (5, "postal_code = %s", (persona['postal_code'],)),
-            (20, "given_names = %s AND family_name = %s",
-             (persona['family_name'], persona['given_names'],)),
+            (20, "(given_names = %s OR display_name = %s) AND family_name = %s",
+             (persona['given_names'], persona['given_names'], persona['family_name'],)),
             (21, "username = %s", (persona['username'],)),
         ]
         # Omit queries where some parameters are None

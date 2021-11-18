@@ -1,0 +1,63 @@
+{% set sidenav_active='partial_import' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block title %}
+    {% trans title=ambience['event']['title'] %}
+        Partial Import for Event {{ title }}
+    {% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+{{ super() }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+{{ util.breadcrumb_link(cdedblink("event/partial_import_form"), gettext("Partial Import"), active=True) }}
+{% endblock %}
+{% block heading %}
+    {{ util.context_heading(gettext("Partial Import"), ambience['event']['title'],
+                            'chalkboard-teacher', gettext("Event"), doclink="Handbuch_Orga_Partieller-Import") }}
+{% endblock %}
+{% block content %}
+    {% if errors %}
+        {% call util.bootstrap_panel(gettext("Validation errors"), aclass='panel-warning', icon='exclamation-circle') %}
+            <p class="text-warning">
+                {% trans %}
+                    Your upload contained errors and was not processed.
+                    The following is a list of the observed violations.
+                {% endtrans %}
+            </p>
+            <ul>
+                {%- for argname, errorlist in errors|dictsort %}
+                    {%- for error in errorlist %}
+                        <li>
+                            {{ argname }}:
+                            {% if error.args %}
+                                {{ util.format_error(error) }}
+                            {% else %}
+                                {% trans %}unspecific error{% endtrans %}
+                            {% endif %}
+                        </li>
+                    {%- endfor %}
+                {%- endfor %}
+            </ul>
+        {% endcall %}
+    {% endif %}
+    <p>
+        {% trans %}
+            Update of event data with prefabricated changesets (e.g. known
+            list of lodgements) or external programms. In the latter case,
+            please read the documentation first.
+        {% endtrans %}
+    </p>
+    <p>
+        {% trans %}
+            After the upload a summary of the changes will be displayed and
+            the import must be approved.
+        {% endtrans %}
+    </p>
+
+    <form action="{{ cdedblink('event/partial_import') }}" method="POST" id="importform"
+      enctype="multipart/form-data" class="form-horizontal">
+        {{ util.anti_csrf_token('event/partial_import') }}
+        {{ util.form_input_file('json_file', label=gettext('JSON file'), accept="text/*,application/json") }}
+        {{ util.form_input_submit(gettext('Validate')) }}
+    </form>
+{% endblock %}

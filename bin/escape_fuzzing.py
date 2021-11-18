@@ -24,14 +24,15 @@ import argparse
 import itertools
 import pathlib
 import queue
+import sys
 import tempfile
 import time
-from typing import Collection, List, NamedTuple, Optional, Set, TYPE_CHECKING
+from typing import TYPE_CHECKING, Collection, List, NamedTuple, Optional, Set
 
 import webtest
+from bin.test_runner_helpers import check_test_setup
 
 from cdedb.frontend.application import Application
-from bin.test_runner_helpers import check_test_setup
 
 # Custom type definitions.
 ResponseData = NamedTuple("ResponseData", [("response", webtest.TestResponse),
@@ -118,13 +119,18 @@ def main() -> int:
             response_queue.put(rd)
     end_time = time.time()
     print(f"Found {len(errors)} errors in {end_time - start_time:.3f} seconds.")
+    if errors:
+        write_next_file(outdir, "\n".join(errors).encode(), filename="summary")
     return len(errors)
 
 
-def write_next_file(outdir: Optional[pathlib.Path], data: bytes) -> None:
+def write_next_file(outdir: Optional[pathlib.Path], data: bytes, filename: str = None
+                    ) -> None:
     """Write data to the next available numbered file in the target directory."""
     if outdir and outdir.exists():
-        outfile = outdir / str(len(list(outdir.iterdir())))
+        if filename is None:
+            filename = str(len(list(outdir.iterdir())))
+        outfile = outdir / filename
         with open(outfile, "wb") as f:
             f.write(data)
 
@@ -245,4 +251,5 @@ def check(response_data: ResponseData, *, payload: str,
 
 
 if __name__ == "__main__":
-    main()
+    ret = main()
+    sys.exit(ret)

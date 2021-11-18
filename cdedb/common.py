@@ -8,6 +8,7 @@ import datetime
 import decimal
 import enum
 import functools
+import gettext  # pylint: disable=unused-import
 import hashlib
 import hmac
 import itertools
@@ -19,20 +20,22 @@ import re
 import string
 import sys
 from typing import (
-    Generic, TYPE_CHECKING, Any, Callable, Collection, Container, Dict, Generator,
+    TYPE_CHECKING, Any, Callable, Collection, Container, Dict, Generator, Generic,
     Iterable, KeysView, List, Mapping, MutableMapping, Optional, Set, Tuple, Type,
-    TypeVar, Union, cast, overload
+    TypeVar, Union, cast, overload,
 )
 
 import icu
 import psycopg2.extras
 import pytz
 import werkzeug
+import werkzeug.datastructures
 import werkzeug.exceptions
 import werkzeug.routing
 
 import cdedb.database.constants as const
 from cdedb.database.connection import IrradiatedConnection
+from cdedb.validationdata import COUNTRY_CODES
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -135,19 +138,16 @@ class RequestState:
     enough to not be non-nice).
     """
 
-    def __init__(self, sessionkey: Optional[str], apitoken: Optional[str],
-                 user: User, request: werkzeug.Request,
-                 notifications: Collection[Notification],
+    def __init__(self, sessionkey: Optional[str], apitoken: Optional[str], user: User,
+                 request: werkzeug.Request, notifications: Collection[Notification],
                  mapadapter: werkzeug.routing.MapAdapter,
                  requestargs: Optional[Dict[str, int]],
                  errors: Collection[Error],
-                 values: Optional[CdEDBMultiDict], lang: str,
-                 gettext: Callable[[str], str],
-                 ngettext: Callable[[str, str, int], str],
-                 coders: Optional[Mapping[str, Callable]],  # type: ignore
+                 values: Optional[CdEDBMultiDict],
                  begin: Optional[datetime.datetime],
-                 default_gettext: Callable[[str], str] = None,
-                 default_ngettext: Callable[[str, str, int], str] = None):
+                 lang: str,
+                 translations: Mapping[str, gettext.NullTranslations],
+                 ) -> None:
         """
         :param mapadapter: URL generator (specific for this request)
         :param requestargs: verbatim copy of the arguments contained in the URL
@@ -156,13 +156,9 @@ class RequestState:
           filling forms in.
         :param lang: language code for i18n, currently only 'de' and 'en' are
             valid.
-        :param coders: Functions for encoding and decoding parameters primed
-          with secrets. This is hacky, but sadly necessary.
+        :param translations: A mapping of language (like the `lang` parameter) to
+            gettext translation object.
         :param begin: time where we started to process the request
-        :param default_gettext: default translation function used to ensure
-            stability across different locales
-        :param default_ngettext: default translation function used to ensure
-            stability across different locales
         """
         self.ambience: Dict[str, CdEDBObject] = {}
         self.sessionkey = sessionkey
@@ -177,11 +173,7 @@ class RequestState:
             values = werkzeug.datastructures.MultiDict(values)
         self.values = values or werkzeug.datastructures.MultiDict()
         self.lang = lang
-        self.gettext = gettext
-        self.ngettext = ngettext
-        self.default_gettext = default_gettext or gettext
-        self.default_ngettext = default_ngettext or ngettext
-        self._coders = coders or {}
+        self.translations = translations
         self.begin = begin or now()
         # Visible version of the database connection
         # noinspection PyTypeChecker
@@ -192,12 +184,31 @@ class RequestState:
         self._conn: IrradiatedConnection = None  # type: ignore
         # Toggle to disable logging
         self.is_quiet = False
+        # Toggle to ignore validation warnings. The value is parsed directly inside
+        # application.py
+        self.ignore_warnings = False
         # Is true, if the application detected an invalid (or no) CSRF token
         self.csrf_alert = False
         # Used for validation enforcement, set to False if a validator
         # is executed and then to True with the corresponding methods
         # of this class
         self.validation_appraised: Optional[bool] = None
+
+    @property
+    def gettext(self) -> Callable[[str], str]:
+        return self.translations[self.lang].gettext
+
+    @property
+    def ngettext(self) -> Callable[[str, str, int], str]:
+        return self.translations[self.lang].ngettext
+
+    @property
+    def default_gettext(self) -> Callable[[str], str]:
+        return self.translations["en"].gettext
+
+    @property
+    def default_ngettext(self) -> Callable[[str, str, int], str]:
+        return self.translations["en"].ngettext
 
     def notify(self, ntype: NotificationType, message: str,
                params: CdEDBObject = None) -> None:
@@ -304,7 +315,7 @@ def make_proxy(backend: B, internal: bool = False) -> B:
                 if not internal:
                     # Expose database connection for the backends
                     # noinspection PyProtectedMember
-                    rs.conn = rs._conn
+                    rs.conn = rs._conn  # pylint: disable=protected-access
                 return fun(rs, *args, **kwargs)
             finally:
                 if not internal:
@@ -325,7 +336,7 @@ def make_proxy(backend: B, internal: bool = False) -> B:
             return wrapit(attr)
 
         @staticmethod
-        def _get_backend_class() -> Type[B]:
+        def get_backend_class() -> Type[B]:
             return backend.__class__
 
     return cast(B, Proxy())
@@ -341,7 +352,7 @@ def make_root_logger(name: str, logfile_path: PathLike,
     """
     logger = logging.getLogger(name)
     if logger.handlers:
-        logger.debug("Logger {} already initialized.".format(name))
+        logger.debug(f"Logger {name} already initialized.")
         return logger
     logger.propagate = False
     logger.setLevel(log_level)
@@ -361,7 +372,7 @@ def make_root_logger(name: str, logfile_path: PathLike,
         console_handler.setLevel(console_log_level)
         console_handler.setFormatter(formatter)
         logger.addHandler(console_handler)
-    logger.debug("Configured logger {}.".format(name))
+    logger.debug(f"Configured logger {name}.")
     return logger
 
 
@@ -445,7 +456,7 @@ class NearlyNow(datetime.datetime):
     """
     _delta: datetime.timedelta
 
-    def __new__(cls, *args: Any, delta: datetime.timedelta = _NEARLY_DELTA_DEFAULT,  # pylint: disable=arguments-differ
+    def __new__(cls, *args: Any, delta: datetime.timedelta = _NEARLY_DELTA_DEFAULT,
                 **kwargs: Any) -> "NearlyNow":
         self = super().__new__(cls, *args, **kwargs)
         self._delta = delta
@@ -543,6 +554,49 @@ def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
                   reverse=reverse)
 
 
+def format_country_code(code: str) -> str:
+    """Helper to make string hidden to pybabel.
+
+    All possible combined strings are given for translation
+    in `i18n_additional.py`
+    """
+    return f'CountryCodes.{code}'
+
+
+def get_localized_country_codes(rs: RequestState) -> List[Tuple[str, str]]:
+    """Generate a list of country code - name tuples in current language."""
+
+    if not hasattr(get_localized_country_codes, "localized_country_codes"):
+        localized_country_codes = {
+            lang: xsorted(
+                ((cc, rs.translations[lang].gettext(format_country_code(cc)))
+                 for cc in COUNTRY_CODES),
+                key=lambda x: x[1]
+            )
+            for lang in rs.translations
+        }
+        get_localized_country_codes.localized_country_codes = localized_country_codes  # type: ignore[attr-defined]
+    return get_localized_country_codes.localized_country_codes[rs.lang]  # type: ignore[attr-defined]
+
+
+def get_country_code_from_country(rs: RequestState, country: str) -> str:
+    """Match a country to its country code."""
+
+    if not hasattr(get_country_code_from_country, "reverse_country_code_map"):
+        reverse_map = {
+            lang: {
+                rs.translations[lang].gettext(format_country_code(cc)): cc
+                for cc in COUNTRY_CODES
+            }
+            for lang in rs.translations
+        }
+        get_country_code_from_country.reverse_map = reverse_map  # type: ignore[attr-defined]
+    for lang, v in get_country_code_from_country.reverse_map.items():  # type: ignore[attr-defined]
+        if ret := v.get(country):
+            return ret
+    return country
+
+
 Sortkey = Tuple[Union[str, int, datetime.datetime], ...]
 KeyFunction = Callable[[CdEDBObject], Sortkey]
 
@@ -617,6 +671,10 @@ class EntitySorter:
         return (course_track['sortkey'], course_track['id'])
 
     @staticmethod
+    def fee_modifier(fee_modifier: CdEDBObject) -> Sortkey:
+        return (fee_modifier['modifier_name'], fee_modifier['id'])
+
+    @staticmethod
     def event_field(event_field: CdEDBObject) -> Sortkey:
         return (event_field['field_name'], event_field['id'])
 
@@ -633,16 +691,13 @@ class EntitySorter:
         return (ballot['title'], ballot['id'])
 
     @staticmethod
-    def get_attachment_sorter(histories: CdEDBObject) -> KeyFunction:
-        def attachment(attachment: CdEDBObject) -> Sortkey:
-            attachment = histories[attachment['id']][attachment['current_version']]
-            return (attachment['title'], attachment['attachment_id'])
-
-        return attachment
+    def attachment(attachment: CdEDBObject) -> Sortkey:
+        """This is used for dicts containing one version of different attachments."""
+        return (attachment["title"], attachment["attachment_id"])
 
     @staticmethod
     def attachment_version(version: CdEDBObject) -> Sortkey:
-        return (version['attachment_id'], version['version'])
+        return (version['attachment_id'], version['version_nr'])
 
     @staticmethod
     def past_event(past_event: CdEDBObject) -> Sortkey:
@@ -765,7 +820,7 @@ def int_to_words(num: int, lang: str) -> str:
 
 class CustomJSONEncoder(json.JSONEncoder):
     """Custom JSON encoder to handle the types that occur for us."""
-    # pylint: disable=method-hidden,arguments-differ
+    # pylint: disable=arguments-differ
 
     @overload
     def default(self, obj: Union[datetime.date, datetime.datetime,
@@ -1203,7 +1258,7 @@ class CourseChoiceToolActions(enum.IntEnum):
 
 
 @enum.unique
-class Accounts(enum.Enum):
+class Accounts(enum.IntEnum):
     """Store the existing CdE Accounts."""
     Account0 = 8068900
     Account1 = 8068901
@@ -1211,8 +1266,37 @@ class Accounts(enum.Enum):
     # Fallback if Account is none of the above
     Unknown = 0
 
-    def __str__(self) -> str:
+    def display_str(self) -> str:
         return str(self.value)
+
+
+@enum.unique
+class ConfidenceLevel(enum.IntEnum):
+    """Store the different Levels of Confidence about the prediction."""
+    Null = 0
+    Low = 1
+    Medium = 2
+    High = 3
+    Full = 4
+
+    @classmethod
+    def destroy(cls) -> "ConfidenceLevel":
+        return cls.Null
+
+    def decrease(self, amount: int = 1) -> "ConfidenceLevel":
+        if self.value - amount > self.__class__.Null.value:
+            return self.__class__(self.value - amount)
+        else:
+            return self.__class__.Null
+
+    def increase(self, amount: int = 1) -> "ConfidenceLevel":
+        if self.value + amount < self.__class__.Full.value:
+            return self.__class__(self.value + amount)
+        else:
+            return self.__class__.Full
+
+    def __format__(self, format_spec: str) -> str:
+        return str(self)
 
 
 @enum.unique
@@ -1273,32 +1357,30 @@ class TransactionType(enum.IntEnum):
         else:
             return "Sonstiges"
 
-    def __str__(self) -> str:
+    def display_str(self) -> str:
         """
-        Return a string represantation for the TransactionType.
+        Return a string representation for the TransactionType meant to be displayed.
 
         These are _not_ translated on purpose, so that the generated download
         is the same regardless of locale.
         """
-        to_string = {TransactionType.MembershipFee.name: "Mitgliedsbeitrag",
-                     TransactionType.EventFee.name: "Teilnehmerbeitrag",
-                     TransactionType.Donation.name: "Spende",
-                     TransactionType.I25p.name: "Initiative25+",
-                     TransactionType.Other.name: "Sonstiges",
-                     TransactionType.EventFeeRefund.name:
-                         "Teilnehmererstattung",
-                     TransactionType.InstructorRefund.name: "KL-Erstattung",
-                     TransactionType.EventExpenses.name:
-                         "Veranstaltungsausgabe",
-                     TransactionType.Expenses.name: "Ausgabe",
-                     TransactionType.AccountFee.name: "Kontogebühr",
-                     TransactionType.OtherPayment.name: "Andere Zahlung",
-                     TransactionType.Unknown.name: "Unbekannt",
-                     }
-        if self.name in to_string:
-            return to_string[self.name]
-        else:
-            return repr(self)
+        display_str = {
+            TransactionType.MembershipFee: "Mitgliedsbeitrag",
+            TransactionType.EventFee: "Teilnehmerbeitrag",
+            TransactionType.Donation: "Spende",
+            TransactionType.I25p: "Initiative25+",
+            TransactionType.Other: "Sonstiges",
+            TransactionType.EventFeeRefund:
+                "Teilnehmererstattung",
+            TransactionType.InstructorRefund: "KL-Erstattung",
+            TransactionType.EventExpenses:
+                "Veranstaltungsausgabe",
+            TransactionType.Expenses: "Ausgabe",
+            TransactionType.AccountFee: "Kontogebühr",
+            TransactionType.OtherPayment: "Andere Zahlung",
+            TransactionType.Unknown: "Unbekannt",
+        }
+        return display_str.get(self, str(self))
 
 
 class SemesterSteps(enum.Enum):
@@ -1343,6 +1425,37 @@ def n_(x: str) -> str:
     return x
 
 
+UMLAUT_MAP = {
+    "ä": "ae", "æ": "ae",
+    "Ä": "AE", "Æ": "AE",
+    "ö": "oe", "ø": "oe", "œ": "oe",
+    "Ö": "Oe", "Ø": "Oe", "Œ": "Oe",
+    "ü": "ue",
+    "Ü": "Ue",
+    "ß": "ss",
+    "à": "a", "á": "a", "â": "a", "ã": "a", "å": "a", "ą": "a",
+    "À": "A", "Á": "A", "Â": "A", "Ã": "A", "Å": "A", "Ą": "A",
+    "ç": "c", "č": "c", "ć": "c",
+    "Ç": "C", "Č": "C", "Ć": "C",
+    "è": "e", "é": "e", "ê": "e", "ë": "e", "ę": "e",
+    "È": "E", "É": "E", "Ê": "E", "Ë": "E", "Ę": "E",
+    "ì": "i", "í": "i", "î": "i", "ï": "i",
+    "Ì": "I", "Í": "I", "Î": "I", "Ï": "I",
+    "ł": "l",
+    "Ł": "L",
+    "ñ": "n", "ń": "n",
+    "Ñ": "N", "Ń": "N",
+    "ò": "o", "ó": "o", "ô": "o", "õ": "o", "ő": "o",
+    "Ò": "O", "Ó": "O", "Ô": "O", "Õ": "O", "Ő": "O",
+    "ù": "u", "ú": "u", "û": "u", "ű": "u",
+    "Ù": "U", "Ú": "U", "Û": "U", "Ű": "U",
+    "ý": "y", "ÿ": "y",
+    "Ý": "Y", "Ÿ": "Y",
+    "ź": "z",
+    "Ź": "Z",
+}
+
+
 def asciificator(s: str) -> str:
     """Pacify a string.
 
@@ -1350,39 +1463,10 @@ def asciificator(s: str) -> str:
     be used if your use case does not tolerate any fancy characters
     (like SEPA files).
     """
-    umlaut_map = {
-        "ä": "ae", "æ": "ae",
-        "Ä": "AE", "Æ": "AE",
-        "ö": "oe", "ø": "oe", "œ": "oe",
-        "Ö": "Oe", "Ø": "Oe", "Œ": "Oe",
-        "ü": "ue",
-        "Ü": "Ue",
-        "ß": "ss",
-        "à": "a", "á": "a", "â": "a", "ã": "a", "å": "a", "ą": "a",
-        "À": "A", "Á": "A", "Â": "A", "Ã": "A", "Å": "A", "Ą": "A",
-        "ç": "c", "č": "c", "ć": "c",
-        "Ç": "C", "Č": "C", "Ć": "C",
-        "è": "e", "é": "e", "ê": "e", "ë": "e", "ę": "e",
-        "È": "E", "É": "E", "Ê": "E", "Ë": "E", "Ę": "E",
-        "ì": "i", "í": "i", "î": "i", "ï": "i",
-        "Ì": "I", "Í": "I", "Î": "I", "Ï": "I",
-        "ł": "l",
-        "Ł": "L",
-        "ñ": "n", "ń": "n",
-        "Ñ": "N", "Ń": "N",
-        "ò": "o", "ó": "o", "ô": "o", "õ": "o", "ő": "o",
-        "Ò": "O", "Ó": "O", "Ô": "O", "Õ": "O", "Ő": "O",
-        "ù": "u", "ú": "u", "û": "u", "ű": "u",
-        "Ù": "U", "Ú": "U", "Û": "U", "Ű": "U",
-        "ý": "y", "ÿ": "y",
-        "Ý": "Y", "Ÿ": "Y",
-        "ź": "z",
-        "Ź": "Z",
-    }
     ret = ""
     for char in s:
-        if char in umlaut_map:
-            ret += umlaut_map[char]
+        if char in UMLAUT_MAP:
+            ret += UMLAUT_MAP[char]
         elif char in (  # pylint: disable=superfluous-parens
             string.ascii_letters + string.digits + " /-?:().,+"
         ):
@@ -1390,6 +1474,18 @@ def asciificator(s: str) -> str:
         else:
             ret += ' '
     return ret
+
+
+# According to https://en.wikipedia.org/wiki/Filename#Reserved_characters_and_words
+FILENAME_SANITIZE_MAP = str.maketrans({
+    x: '_'
+    for x in "/\\?%*:|\"<> ."
+})
+
+
+def sanitize_filename(name: str) -> str:
+    """Sanitize filenames by replacing forbidden and problematic characters with '_'."""
+    return name.translate(FILENAME_SANITIZE_MAP)
 
 
 MaybeStr = TypeVar("MaybeStr", str, Type[None])
@@ -1441,6 +1537,25 @@ def diacritic_patterns(s: str, two_way_replace: bool = False) -> str:
         for _, regex in umlaut_map:
             s = re.sub(regex, regex, s, flags=re.IGNORECASE)
     return s
+
+
+UMLAUT_TRANSLATE_TABLE = str.maketrans({
+    char: f"({char}|{repl})" if len(repl) > 1 else f"[{char}{repl}]"
+    for char, repl in UMLAUT_MAP.items()})
+
+
+def inverse_diacritic_patterns(s: str) -> str:
+    """
+    Replace diacritic letters in a search pattern with a regex that
+    matches either the diacritic letter or its ASCII representation.
+
+    This function does kind of the opposite thing than
+    :func:`diacritic_patterns`: Instead of enhancing a search expression such
+    that also searches for similiar words with diacritics, it takes a word with
+    diacritic characters and enhances it to a search expression that will find
+    the word even when written without the diacritics.
+    """
+    return s.translate(UMLAUT_TRANSLATE_TABLE)
 
 
 _tdelta = datetime.timedelta
@@ -1526,8 +1641,7 @@ def decode_parameter(salt: str, target: str, name: str, param: str,
         if persona_id:
             # Allow non-anonymous requests for parameters with anonymous access
             return decode_parameter(salt, target, name, param, persona_id=None)
-        _LOGGER.debug("Hash mismatch ({} != {}) for {}".format(
-            h.hexdigest(), mac, tohash))
+        _LOGGER.debug(f"Hash mismatch ({h.hexdigest()} != {mac}) for {tohash}")
         return False, None
     timestamp = message[:24]
     if timestamp == 24 * '.':
@@ -1535,7 +1649,7 @@ def decode_parameter(salt: str, target: str, name: str, param: str,
     else:
         ttl = datetime.datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S%z")
         if ttl <= now():
-            _LOGGER.debug("Expired protected parameter {}".format(tohash))
+            _LOGGER.debug(f"Expired protected parameter {tohash}")
             return True, None
     return None, message[26:]
 
@@ -1575,6 +1689,8 @@ def extract_roles(session: CdEDBObject, introspection_only: bool = False
             ret.add("member")
             if session.get("is_searchable"):
                 ret.add("searchable")
+        if session.get("is_auditor"):
+            ret.add("auditor")
     if "ml" in ret:
         if session.get("is_cdelokal_admin"):
             ret.add("cdelokal_admin")
@@ -1755,6 +1871,10 @@ ANTI_CSRF_TOKEN_NAME = "_anti_csrf"
 #: The value the anti CSRF token is expected to have
 ANTI_CSRF_TOKEN_PAYLOAD = "_anti_csrf_check"
 
+#: The form field name used to ignore ValidationWarnings.
+#: This is added on-the-fly by util.form_input_submit if needed
+IGNORE_WARNINGS_NAME = "_magic_ignore_warnings"
+
 #: Map of available privilege levels to those present in the SQL database
 #: (where we have less differentiation for the sake of simplicity).
 #:
@@ -1766,10 +1886,18 @@ else:
     role_map_type = collections.OrderedDict
 
 #: List of all roles we consider admin roles. Changes in these roles must be
-#: approved by two meta admins in total.
-ADMIN_KEYS = {"is_meta_admin", "is_core_admin", "is_cde_admin",
-              "is_finance_admin", "is_event_admin", "is_ml_admin",
-              "is_assembly_admin", "is_cdelokal_admin"}
+#: approved by two meta admins in total. Values are required roles.
+ADMIN_KEYS = {
+    "is_meta_admin": "is_cde_realm",
+    "is_core_admin": "is_cde_realm",
+    "is_cde_admin": "is_cde_realm",
+    "is_finance_admin": "is_cde_admin",
+    "is_event_admin": "is_event_realm",
+    "is_ml_admin": "is_ml_realm",
+    "is_assembly_admin": "is_assembly_realm",
+    "is_cdelokal_admin": "is_ml_realm",
+    "is_auditor": "is_cde_realm",
+}
 
 #: List of all admin roles who actually have a corresponding realm with a user role.
 REALM_ADMINS = {"core_admin", "cde_admin", "event_admin", "ml_admin", "assembly_admin"}
@@ -1788,6 +1916,7 @@ DB_ROLE_MAPPING: role_map_type = collections.OrderedDict((
     ("member", "cdb_member"),
     ("cde", "cdb_member"),
     ("assembly", "cdb_member"),
+    ("auditor", "cdb_member"),
 
     ("event", "cdb_persona"),
     ("ml", "cdb_persona"),
@@ -1825,7 +1954,9 @@ ALL_ADMIN_VIEWS: Set[AdminView] = {
     "ml_mgmt_cdelokal", "ml_mod_cdelokal",
     "assembly_user", "assembly_mgmt", "assembly_presider",
     "ml_mgmt_assembly", "ml_mod_assembly",
-    "genesis"}
+    "auditor",
+    "genesis",
+}
 
 ALL_MOD_ADMIN_VIEWS: Set[AdminView] = {
     "ml_mod", "ml_mod_cde", "ml_mod_event", "ml_mod_cdelokal",
@@ -1858,6 +1989,8 @@ def roles_to_admin_views(roles: Set[Role]) -> Set[AdminView]:
     if "assembly_admin" in roles:
         result |= {"assembly_user", "assembly_mgmt", "assembly_presider",
                    "ml_mgmt_assembly", "ml_mod_assembly"}
+    if "auditor" in roles:
+        result |= {"auditor"}
     if roles & ({'core_admin'} | set(
             "{}_admin".format(realm)
             for realm in REALM_SPECIFIC_GENESIS_FIELDS)):
@@ -1865,17 +1998,12 @@ def roles_to_admin_views(roles: Set[Role]) -> Set[AdminView]:
     return result
 
 
-#: Deprecated, use EVENT_SCHEMA_VERSION instead. This should no longer be
-#: modified.
-#: TODO remove it
-CDEDB_EXPORT_EVENT_VERSION = 13
-
 #: Version tag, so we know that we don't run out of sync with exported event
 #: data. This has to be incremented whenever the event schema changes.
 #: If the partial export and import are unaffected the minor version may be
 #: incremented.
 #: If you increment this, it must be incremented in make_offline_vm.py as well.
-EVENT_SCHEMA_VERSION = (15, 2)
+EVENT_SCHEMA_VERSION = (15, 4)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3
@@ -1885,7 +2013,9 @@ PERSONA_STATUS_FIELDS = (
     "is_active", "is_meta_admin", "is_core_admin", "is_cde_admin",
     "is_finance_admin", "is_event_admin", "is_ml_admin", "is_assembly_admin",
     "is_cde_realm", "is_event_realm", "is_ml_realm", "is_assembly_realm",
-    "is_cdelokal_admin", "is_member", "is_searchable", "is_archived", "is_purged")
+    "is_cdelokal_admin", "is_auditor", "is_member", "is_searchable", "is_archived",
+    "is_purged",
+)
 
 #: Names of all columns associated to an abstract persona.
 #: This does not include the ``password_hash`` for security reasons.
@@ -1924,7 +2054,7 @@ GENESIS_CASE_FIELDS = (
     "id", "ctime", "username", "given_names", "family_name",
     "gender", "birthday", "telephone", "mobile", "address_supplement",
     "address", "postal_code", "location", "country", "birth_name", "attachment_hash",
-    "realm", "notes", "case_status", "reviewer")
+    "realm", "notes", "case_status", "reviewer", "pevent_id", "pcourse_id")
 
 # The following dict defines, which additional fields are required for genesis
 # request for distinct realms. Additionally, it is used to define for which
@@ -1936,7 +2066,7 @@ REALM_SPECIFIC_GENESIS_FIELDS: Dict[Realm, Tuple[str, ...]] = {
               "country"),
     "cde": ("gender", "birthday", "telephone", "mobile",
             "address_supplement", "address", "postal_code", "location",
-            "country", "birth_name", "attachment_hash"),
+            "country", "birth_name", "attachment_hash", "pevent_id", "pcourse_id"),
 }
 
 # This overrides the more general PERSONA_DEFAULTS dict with some realm-specific
@@ -2026,10 +2156,11 @@ def get_persona_fields_by_realm(roles: Set[Role], restricted: bool = True
 
 #: Fields of a pending privilege change.
 PRIVILEGE_CHANGE_FIELDS = (
-    "id", "ctime", "ftime", "persona_id", "submitted_by", "status",
-    "is_meta_admin", "is_core_admin", "is_cde_admin",
-    "is_finance_admin", "is_event_admin", "is_ml_admin",
-    "is_assembly_admin", "is_cdelokal_admin", "notes", "reviewer")
+    "id", "ctime", "ftime", "persona_id", "submitted_by", "status", "is_meta_admin",
+    "is_core_admin", "is_cde_admin", "is_finance_admin", "is_event_admin",
+    "is_ml_admin", "is_assembly_admin", "is_cdelokal_admin", "is_auditor", "notes",
+    "reviewer",
+)
 
 #: Fields for institutions of events
 INSTITUTION_FIELDS = ("id", "title", "shortname")
@@ -2057,8 +2188,9 @@ COURSE_TRACK_FIELDS = ("id", "part_id", "title", "shortname", "num_choices",
                        "min_choices", "sortkey")
 
 #: Fields of an extended attribute associated to an event entity
-FIELD_DEFINITION_FIELDS = ("id", "event_id", "field_name", "kind",
-                           "association", "entries")
+FIELD_DEFINITION_FIELDS = (
+    "id", "event_id", "field_name", "kind", "association", "entries", "checkin",
+)
 
 #: Fields of a modifier for an event_parts fee.
 FEE_MODIFIER_FIELDS = ("id", "part_id", "modifier_name", "amount", "field_id")
@@ -2134,9 +2266,9 @@ BALLOT_FIELDS = (
 
 #: Fields of an attachment in the assembly realm (attached either to an
 #: assembly or a ballot)
-ASSEMBLY_ATTACHMENT_FIELDS = ("id", "assembly_id", "ballot_id")
+ASSEMBLY_ATTACHMENT_FIELDS = ("id", "assembly_id")
 
-ASSEMBLY_ATTACHMENT_VERSION_FIELDS = ("attachment_id", "version", "title",
+ASSEMBLY_ATTACHMENT_VERSION_FIELDS = ("attachment_id", "version_nr", "title",
                                       "authors", "filename", "ctime", "dtime",
                                       "file_hash")
 
@@ -2166,10 +2298,10 @@ LASTSCHRIFT_TRANSACTION_FIELDS = (
 #: Datatype and Association of special purpose event fields
 EVENT_FIELD_SPEC: Dict[
     str, Tuple[Set[const.FieldDatatypes], Set[const.FieldAssociations]]] = {
-    'lodge': ({const.FieldDatatypes.str}, {const.FieldAssociations.registration}),
-    'camping_mat': (
+    'lodge_field': ({const.FieldDatatypes.str}, {const.FieldAssociations.registration}),
+    'camping_mat_field': (
         {const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),
-    'course_room': ({const.FieldDatatypes.str}, {const.FieldAssociations.course}),
+    'course_room_field': ({const.FieldDatatypes.str}, {const.FieldAssociations.course}),
     'waitlist': ({const.FieldDatatypes.int}, {const.FieldAssociations.registration}),
     'fee_modifier': (
         {const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),
@@ -2183,3 +2315,7 @@ EPSILON = 10 ** (-6)  #:
 #: Timestamp which lies in the future. Make a constant so we do not have to
 #: hardcode the value otherwere
 FUTURE_TIMESTAMP = datetime.datetime(9996, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
+
+#: Specification for the output date format of money transfers.
+#: Note how this differs from the input in that we use 4 digit years.
+PARSE_OUTPUT_DATEFORMAT = "%d.%m.%Y"

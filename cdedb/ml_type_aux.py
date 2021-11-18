@@ -1,11 +1,12 @@
+"""Classes for different types of mailinglists"""
+
 import enum
 import itertools
+import typing
 from collections import OrderedDict
 from typing import (
-    TYPE_CHECKING, Any, Collection, Dict, List, Mapping, Optional, Set, Type, Union,
+    TYPE_CHECKING, Collection, Dict, List, Literal, Mapping, Optional, Set, Type, Union,
 )
-
-from typing_extensions import Literal
 
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
@@ -14,11 +15,10 @@ from cdedb.common import (
 from cdedb.database.constants import (
     MailinglistDomain, MailinglistTypes, RegistrationPartStati,
 )
-from cdedb.subman.machine import SubscriptionPolicy
 from cdedb.query import Query, QueryOperators, QueryScope
+from cdedb.subman.machine import SubscriptionPolicy
 
 SubscriptionPolicyMap = Dict[int, SubscriptionPolicy]
-TypeMapping = Mapping[str, Type[Any]]
 
 
 class BackendContainer:
@@ -32,7 +32,7 @@ class BackendContainer:
 def get_full_address(val: CdEDBObject) -> str:
     """Construct the full address of a mailinglist."""
     if isinstance(val, dict):
-        return val['local_part'] + '@' + str(MailinglistDomain(val['domain']))
+        return val['local_part'] + '@' + MailinglistDomain(val['domain']).get_domain()
     else:
         raise ValueError(n_("Cannot determine full address for %(input)s."),
                          {'input': val})
@@ -84,8 +84,8 @@ class GeneralMailinglist:
     allow_unsub: bool = True
 
     # Additional fields for validation. See docstring for details.
-    mandatory_validation_fields: TypeMapping = {}
-    optional_validation_fields: TypeMapping = {}
+    mandatory_validation_fields: vtypes.TypeMapping = {}
+    optional_validation_fields: vtypes.TypeMapping = {}
 
     @classmethod
     def get_additional_fields(cls) -> Mapping[
@@ -96,7 +96,7 @@ class GeneralMailinglist:
             **cls.mandatory_validation_fields,
             **cls.optional_validation_fields,
         }.items():
-            if getattr(argtype, "__origin__", None) is list:
+            if typing.get_origin(argtype) is list:
                 ret[field] = "[str]"
             else:
                 ret[field] = "str"
@@ -116,7 +116,8 @@ class GeneralMailinglist:
         - `viewer_roles`: A set of roles other than `ml_admin` which allows
           a user to view a mailinglist. The semantics are similar to `@access`.
         """
-        return bool((cls.viewer_roles | {"ml_admin"}) & rs.user.roles)
+        return (bool((cls.viewer_roles | {"ml_admin"}) & rs.user.roles)
+            or cls.is_relevant_admin(rs.user))
 
     @classmethod
     def is_restricted_moderator(cls, rs: RequestState, bc: BackendContainer,
@@ -280,7 +281,7 @@ class AllMembersImplicitMeta(GeneralMailinglist):
 class EventAssociatedMeta(GeneralMailinglist):
     """Metaclass for all event associated mailinglists."""
     # Allow empty event_id to mark legacy event-lists.
-    mandatory_validation_fields: TypeMapping = {
+    mandatory_validation_fields: vtypes.TypeMapping = {
         "event_id": Optional[vtypes.ID]  # type: ignore
     }
 
@@ -403,7 +404,7 @@ class RestrictedTeamMailinglist(TeamMeta, MemberInvitationOnlyMailinglist):
 
 
 class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
-    mandatory_validation_fields: TypeMapping = {
+    mandatory_validation_fields: vtypes.TypeMapping = {
             **EventAssociatedMeta.mandatory_validation_fields,
             "registration_stati": List[RegistrationPartStati],
     }
@@ -446,14 +447,11 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         if mailinglist["event_id"] is None:
             return {anid: SubscriptionPolicy.invitation_only for anid in persona_ids}
 
-        ret = {}
-        for persona_id in persona_ids:
-            if bc.event.check_registration_status(
-                    rs, persona_id, mailinglist['event_id'],
-                    mailinglist['registration_stati']):
-                ret[persona_id] = SubscriptionPolicy.subscribable
-            else:
-                ret[persona_id] = SubscriptionPolicy.none
+        ret = bc.event.check_registrations_status(
+            rs, persona_ids, mailinglist['event_id'],
+            mailinglist['registration_stati'])
+        for k, v in ret.items():
+            ret[k] = SubscriptionPolicy.subscribable if v else SubscriptionPolicy.none
 
         return ret
 
@@ -660,7 +658,10 @@ MLType = Type[GeneralMailinglist]
 
 def get_type(val: Union[str, int, MLTypeLike]) -> MLType:
     if isinstance(val, str):
-        val = int(val)
+        if val.startswith(MailinglistTypes.__name__):
+            val = MailinglistTypes[val.replace(MailinglistTypes.__name__ + ".", "")]
+        else:
+            val = int(val)
     if isinstance(val, int):
         val = MailinglistTypes(val)
     if isinstance(val, MailinglistTypes):

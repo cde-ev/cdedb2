@@ -121,6 +121,8 @@ a2dissite 000-default
 cp /media/cdrom0/cdedb-site.conf /etc/apache2/sites-available
 cp /media/cdrom0/index.html /var/www/html/
 chown www-data:www-data /var/www/html/index.html
+ln -s ../mods-available/http2.conf
+ln -s ../mods-available/http2.load
 a2ensite cdedb-site
 
 echo "" > /etc/apache2/ports.conf

@@ -11,6 +11,7 @@ General Design
    Design_Backend
    Design_Frontend
    Design_Template
+   Design_UX_Conventions
    Design_Configuration
    Design_Validation
    Design_Logging

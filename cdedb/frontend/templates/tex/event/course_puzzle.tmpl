@@ -32,8 +32,7 @@
         <<% for track_id in tracks_sorted %>>
             <<% set track = ambience['event']['tracks'][track_id] %>>
                 <<% if registration['parts'][ambience['event']['tracks'][track_id]['part_id']]['status'] == enums['RegistrationPartStati'].participant %>>
-                    \participant{<<< personas[registration['persona_id']]['given_names']|te >>>
-                                 <<< personas[registration['persona_id']]['family_name']|te >>>}%
+                    \participant{<<< personas[registration['persona_id']]|persona_name(given_and_display_names=True)|te >>>}%
                                 {<<< track['title']|te >>>}%
                                 {<<% if registration['tracks'][track_id]['course_instructor'] -%>>
                                     <<% trans %>> Instructor <<% endtrans %>>:

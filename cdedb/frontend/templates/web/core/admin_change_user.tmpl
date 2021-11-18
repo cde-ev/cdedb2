@@ -4,16 +4,21 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans given_names=values['given_names'], family_name=values['family_name'] %}
-        Edit {{ given_names }} {{ family_name }}
+    {% trans name=util.persona_name(values) %}
+        Edit {{ name }}
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(show_user_link(user, values['id']), values['given_names'] + " " + values['family_name'],
+    {{ util.breadcrumb_link(show_user_link(user, values['id']), util.persona_name(values),
             icon="user") }}
     {{ util.breadcrumb_link(cdedblink("core/admin_change_user_form"), gettext("Edit Userdata"), active=True) }}
 {% endblock %}
+
+{% block heading %}
+    {{ util.context_heading(gettext("Edit Userdata"), util.persona_name(values), 'user', gettext("User")) }}
+{% endblock %}
+
 {% block content %}
     <script nonce="{{ csp_nonce }}">
         $(function() {
@@ -32,11 +37,11 @@
             {{ util.form_input_text(name="birth_name", label=gettext("Birth Name")) }}
         {% endif %}
         {{ util.form_input_text(name="name_supplement", label=gettext("Name Affix")) }}
-        {{ util.form_input_text(name="display_name", label=gettext("First Given Name")) }}
+        {{ util.form_input_text(name="display_name", label=gettext("Known as (Forename)")) }}
         {% if 'event' in admin_bits %}
             {% if "gender" in shown_fields %}
                 {{ util.form_input_select(name="gender", entries=enums['Genders']|enum_entries(processing=gettext),
-                                          label=gettext("Gender"), sort=True) }}
+                                          label=gettext("Gender")) }}
             {% endif %}
             {% if "birthday" in shown_fields %}
                 {{ util.form_input_text(name="birthday", label=gettext("Birthday"), placeholder="YYYY-MM-DD", type="date") }}
@@ -52,8 +57,8 @@
                 {{ util.form_input_checkbox(name="paper_expuls", label=gettext("Printed exPuls")) }}
             {% endif %}
         {% endif %}
-        {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="7",
-                                    info=util.markdownhint + " " + gettext("Visible to all Admins.")) }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="7", markdown=True,
+                                    info=gettext("Visible to all Admins.")) }}
 
         <h4 class="heading-underline">{% trans %}Contact Information{% endtrans %}</h4>
         {{ util.form_input_static(label=gettext("E-Mail"), value=values['username']) }}
@@ -62,7 +67,7 @@
             {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone"), type="tel") }}
         {% endif %}
         {% if "weblink" in shown_fields and 'cde' in admin_bits %}
-            {{ util.form_input_text(name="weblink", label=gettext("WWW"), info=util.markdownhint) }}
+            {{ util.form_input_text(name="weblink", label=gettext("WWW"), markdown=True) }}
         {% endif %}
 
         {% if "address" in shown_fields and 'event' in admin_bits %}
@@ -99,15 +104,11 @@
 
         {% if "specialisation" in shown_fields and 'cde' in admin_bits %}
             <h4 class="heading-underline">{% trans %}Miscellaneous{% endtrans %}</h4>
-            {{ util.form_input_textarea(name="specialisation", label=gettext("Specialisation"),
-                                        info=util.markdownhint) }}
-            {{ util.form_input_textarea(name="affiliation", label=gettext("School, University, …"),
-                                        info=util.markdownhint) }}
-            {{ util.form_input_textarea(name="timeline", label=gettext("Year(s) of Graduation"),
-                                        info=util.markdownhint) }}
-            {{ util.form_input_textarea(name="interests", label=gettext("Interests"), info=util.markdownhint) }}
-            {{ util.form_input_textarea(name="free_form", label=gettext("Miscellaneous"), rows="5",
-                                        info=util.markdownhint) }}
+            {{ util.form_input_textarea(name="specialisation", label=gettext("Specialisation"), markdown=True) }}
+            {{ util.form_input_textarea(name="affiliation", label=gettext("School, University, …"), markdown=True) }}
+            {{ util.form_input_textarea(name="timeline", label=gettext("Year(s) of Graduation"), markdown=True) }}
+            {{ util.form_input_textarea(name="interests", label=gettext("Interests"), markdown=True) }}
+            {{ util.form_input_textarea(name="free_form", label=gettext("Miscellaneous"), rows="5", markdown=True) }}
         {% endif %}
 
         <div class="panel panel-primary">
@@ -115,6 +116,6 @@
                 {{ util.form_input_textarea(name="change_note", label=gettext("Changenotes")) }}
             </div>
         </div>
-        {{ util.form_input_submit(label=gettext("Save"), cancellink=show_user_link(user, values['persona_id']), differentiate_warnings=True) }}
+        {{ util.form_input_submit(label=gettext("Save"), cancellink=show_user_link(user, values['persona_id'])) }}
     </form>
 {% endblock %}

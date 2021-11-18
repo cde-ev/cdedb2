@@ -2,12 +2,11 @@
 
 """The WSGI-application to tie it all together."""
 
-import gettext
 import json
 import os
 import pathlib
 import types
-from typing import Any, Callable, Dict, Optional, Set
+from typing import Set
 
 import jinja2
 import psycopg2.extensions
@@ -22,8 +21,9 @@ from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.common import (
-    ADMIN_VIEWS_COOKIE_NAME, CdEDBObject, PathLike, QuotaException, RequestState,
-    User, glue, make_proxy, make_root_logger, n_, now, roles_to_db_role,
+    ADMIN_VIEWS_COOKIE_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, PathLike,
+    QuotaException, RequestState, User, glue, make_proxy, make_root_logger, n_, now,
+    roles_to_db_role,
 )
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -31,8 +31,9 @@ from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.assembly import AssemblyFrontend
 from cdedb.frontend.cde import CdEFrontend
 from cdedb.frontend.common import (
-    JINJA_FILTERS, BaseApp, FrontendEndpoint, Response, construct_redirect, docurl,
-    sanitize_None, staticurl, datetime_filter,
+    JINJA_FILTERS, AbstractFrontend, BaseApp, FrontendEndpoint, Response,
+    construct_redirect, datetime_filter, docurl, sanitize_None, setup_translations,
+    staticurl,
 )
 from cdedb.frontend.core import CoreFrontend
 from cdedb.frontend.event import EventFrontend
@@ -85,11 +86,7 @@ class Application(BaseApp):
         self.jinja_env.filters.update(JINJA_FILTERS)
         self.jinja_env.filters.update({'datetime': datetime_filter})
         self.jinja_env.policies['ext.i18n.trimmed'] = True  # type: ignore
-        self.translations = {
-            lang: gettext.translation(
-                'cdedb', languages=[lang],
-                localedir=str(self.conf["REPOSITORY_PATH"] / 'i18n'))
-            for lang in self.conf["I18N_LANGUAGES"]}
+        self.translations = setup_translations(self.conf)
         if pathlib.Path("/PRODUCTIONVM").is_file():
             # Sanity checks for the live instance
             if self.conf["CDEDB_DEV"] or self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
@@ -197,22 +194,12 @@ class Application(BaseApp):
 
             endpoint, args = urls.match()
 
-            coders: Dict[str, Callable[..., Any]] = {
-                "encode_parameter": self.encode_parameter,
-                "decode_parameter": self.decode_parameter,
-                "encode_notification": self.encode_notification,
-                "decode_notification": self.decode_notification,
-            }
             lang = self.get_locale(request)
             rs = RequestState(
                 sessionkey=sessionkey, apitoken=apitoken, user=user,
                 request=request, notifications=[], mapadapter=urls,
-                requestargs=args, errors=[], values=None, lang=lang,
-                gettext=self.translations[lang].gettext,
-                ngettext=self.translations[lang].ngettext,
-                coders=coders, begin=begin,
-                default_gettext=self.translations["en"].gettext,
-                default_ngettext=self.translations["en"].ngettext
+                requestargs=args, errors=[], values=None, begin=begin,
+                lang=lang, translations=self.translations,
             )
             rs.values.update(args)
             component, action = endpoint.split('/')
@@ -229,14 +216,14 @@ class Application(BaseApp):
                             assert nparams is not None
                             rs.notify(ntype, nmessage, nparams)
                         else:
-                            self.logger.info(
-                                "Invalid notification '{}'".format(note))
+                            self.logger.info(f"Invalid notification '{note}'")
                 except Exception:
                     # Do nothing if we fail to handle a notification,
                     # they can be manipulated by the client side, so
                     # we can not assume anything.
                     self.logger.debug(f"Invalid raw notification '{raw_notifications}'")
-            handler: FrontendEndpoint = getattr(getattr(self, component), action)
+            frontend: AbstractFrontend = getattr(self, component)
+            handler: FrontendEndpoint = getattr(frontend, action)
             if request.method not in handler.modi:
                 raise werkzeug.exceptions.MethodNotAllowed(
                     handler.modi,
@@ -245,13 +232,16 @@ class Application(BaseApp):
 
             # Check anti CSRF token (if required by the endpoint)
             if handler.anti_csrf.check and 'droid' not in user.roles:
-                error = check_anti_csrf(rs, component, action, handler.anti_csrf.name,
-                                        handler.anti_csrf.payload)
+                error = frontend.check_anti_csrf(rs, action, handler.anti_csrf.name,
+                                                 handler.anti_csrf.payload)
                 if error is not None:
                     rs.csrf_alert = True
                     rs.extend_validation_errors(
                         ((handler.anti_csrf.name, ValueError(error)),))
                     rs.notify('error', error)
+
+            # Decide whether the user wants to ignore ValidationWarnings
+            rs.ignore_warnings = rs.request.values.get(IGNORE_WARNINGS_NAME, False)
 
             # Store database connection as private attribute.
             # It will be made accessible for the backends by the make_proxy.
@@ -281,6 +271,9 @@ class Application(BaseApp):
             try:
                 ret = handler(rs, **args)
                 if rs.validation_appraised is False:
+                    self.logger.error(
+                        f"User {rs.user.persona_id} has evaded input validation"
+                        f" with errors {rs.retrieve_validation_errors()}")
                     raise RuntimeError(f"Input validation forgotten: {handler}")
                 return ret
             except QuotaException as e:
@@ -313,9 +306,8 @@ class Application(BaseApp):
                    "to simultaneous access. Please reload the page to try "
                    "again."))
         except Exception as e:
-            self.logger.error(glue(
-                ">>>\n>>>\n>>>\n>>> Exception while serving {}",
-                "<<<\n<<<\n<<<\n<<<").format(request.url))
+            self.logger.error(f">>>\n>>>\n>>>\n>>> Exception while serving"
+                              f" {request.url} <<<\n<<<\n<<<\n<<<")
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
 
@@ -350,39 +342,3 @@ class Application(BaseApp):
 
         return request.accept_languages.best_match(
             self.conf["I18N_LANGUAGES"], default="de")
-
-
-def check_anti_csrf(rs: RequestState, component: str, action: str,
-                    token_name: str, token_payload: str) -> Optional[str]:
-    """
-    A helper function to check the anti CSRF token
-
-    The anti CSRF token is a signed userid, added as hidden input to most
-    forms, used to mitigate Cross Site Request Forgery (CSRF) attacks. It is
-    checked before calling the handler function, if the handler function is
-    marked to be protected against CSRF attacks, which is the default for
-    all POST endpoints.
-
-    The anti CSRF token should be created using the util.anti_csrf_token
-    template macro.
-
-    :param action: The name of the endpoint, checked by 'decode_parameter'
-    :param component: The name of the realm, checked by 'decode_parameter'
-    :param token_name: The name of the anti CSRF token.
-    :param token_payload: The expected payload of the anti CSRF token.
-    :return: None if everything is ok, or an error message otherwise.
-    """
-    val = rs.request.values.get(token_name, "").strip()
-    if not val:
-        return n_("Anti CSRF token is required for this form.")
-    # noinspection PyProtectedMember
-    timeout, val = rs._coders['decode_parameter'](
-        "{}/{}".format(component, action), token_name, val, rs.user.persona_id)
-    if not val:
-        if timeout:
-            return n_("Anti CSRF token expired. Please try again.")
-        else:
-            return n_("Anti CSRF token is forged.")
-    if val != token_payload:
-        return n_("Anti CSRF token is invalid.")
-    return None

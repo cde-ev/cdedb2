@@ -1,0 +1,122 @@
+{% set sidenav_active='event_registration' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% set jshint='weak' %}
+{% block title %}
+    {% trans name=util.persona_name(persona), title=ambience['event']['title'] %}
+        Edit Registration by {{ name }} ({{ title }})
+    {% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+{{ super() }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+{{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations")) }}
+{{ util.breadcrumb_link(cdedblink("event/show_registration"), util.persona_name(persona), icon="user") }}
+{{ util.breadcrumb_link(cdedblink("event/change_registration"), gettext("Edit"), active=True) }}
+{% endblock %}
+{% block heading %}
+    {{ util.context_heading(gettext("Edit %(name)s")|format(name=util.persona_name(persona))|s,
+                            ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+{% endblock %}
+
+{% block content %}
+    <form action="{{ cdedblink('event/change_registration') }}" method="POST" id="changeregistrationform"
+          class="form-horizontal">
+        {{ util.anti_csrf_token('event/change_registration') }}
+        {% for val in skip %}{{ util.input_hidden('skip', val) }}{% endfor %}
+
+        <h3 class="heading-underline">{% trans %}Personal Information{% endtrans %}</h3>
+        {{ util.form_input_static(label=gettext("Full Name"),
+                                  value=util.persona_name(persona, given_and_display_names=True, with_titles=True))
+                }}
+        {{ util.form_input_static(label=gettext("CdEDB-ID"), value=persona['id']|cdedbid) }}
+        {% if CDEDB_OFFLINE_DEPLOYMENT %}
+            {{ util.form_input_text(name="reg.real_persona_id", label=gettext("Online CdEDB-ID")) }}
+        {% endif %}
+        {{ util.form_input_static(label=gettext("Birthday"), value=persona['birthday']|date(lang=lang)) }}
+        {{ util.form_input_static(label=gettext("Gender"), value=gettext(enums['Genders'](persona['gender'])|string)) }}
+        {{ util.form_input_textarea(name="reg.orga_notes", label=gettext("Orga-Notes"), rows="5") }}
+
+        <h3 class="heading-underline">{% trans %}Status{% endtrans %}</h3>
+        <p class="text-info">
+            {{ util.make_icon('info-circle') }}
+            {% trans my_registration=util.href(cdedblink('event/registration_status'), gettext("My Registration")) %}
+                The registered people are able to see their current registration status, the payment status and – for
+                minors – the status of the parental consent at “{{ my_registration }}”.
+            {% endtrans %}
+        </p>
+        {{ util.form_input_text(name="reg.payment", label=gettext("Fee paid"), type="date",
+                                placeholder="YYYY-MM-DD") }}
+        {{ util.form_input_text(name="reg.amount_paid", label=gettext("Amount Paid"), type="number", attributes='step="0.01"'|s) }}
+        {{ util.form_input_checkbox(name="reg.parental_agreement", label=gettext("Parental Consent")) }}
+        {{ util.form_input_text(name="reg.checkin", label=gettext("Checked-In"), type="datetime-local",
+                                readonly='reg.checkin' in skip) }}
+
+        {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+            {% if ambience['event']['parts']|length > 1 %}
+                <h4>{{ part['title'] }}</h4>
+            {% endif %}
+            {{ util.form_input_select(name="part{}.status".format(part_id), label=gettext("Status"),
+                                      entries=enums['RegistrationPartStati']|enum_entries(processing=gettext)) }}
+            {{ util.form_input_select(name="part{}.lodgement_id".format(part_id), label=gettext("Lodgement"),
+                                      entries=lodgements|keydictsort(EntitySorter.lodgement)|dict_entries('id', 'title'), nulloption=nbsp) }}
+            {{ util.form_input_checkbox(name="part{}.is_camping_mat".format(part_id), label=gettext("Uses Camping Mat")) }}
+
+            {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) if track['part_id'] == part_id %}
+                {% set course_entries = courses|keydictsort(EntitySorter.course)
+                                        |xdict_entries('{id}', '{nr}. {shortname}', include=course_choices[track_id]) %}
+                {{ util.form_input_select(name="track{}.course_id".format(track_id),
+                                          label=gettext("Course %s")|format(track['shortname'])
+                                                if ambience['event']['tracks']|length > 1  else gettext("Course"),
+                                          entries=course_entries,
+                                          nulloption=nbsp) }}
+            {% endfor %}
+        {% endfor %}
+
+        <h3 class="heading-underline">{% trans %}Registration Data{% endtrans %}</h3>
+        {{ util.form_input_checkbox(name="reg.mixed_lodging", label=gettext("Mixed Lodging")) }}
+        {{ util.form_input_checkbox(name="reg.list_consent", label=gettext("Participant List Consent")) }}
+        {{ util.form_input_textarea(name="reg.notes", label=gettext("Notes"), rows="5") }}
+        {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
+            {% if course_choices[track_id]|length > 0 %}
+                <h4>
+                    {% trans %}Course Choices{% endtrans %}
+                    {% if ambience['event']['tracks']|length > 1 %}
+                    {{ track['shortname'] }}
+                    {% endif %}
+                </h4>
+
+                {% set course_entries = courses|keydictsort(EntitySorter.course)
+                                        |xdict_entries('{id}', '{nr}. {shortname}', include=course_choices[track_id]) %}
+                {{ util.form_input_select(name="track{}.course_instructor".format(track_id), label=gettext("Instructor of"),
+                                         entries=course_entries, nulloption=nbsp) }}
+                {% for i in range(track['num_choices']) %}
+                    {{ util.form_input_select(name="track{}.course_choice_{}".format(track_id, i),
+                                              label=gettext("%s. Choice")|format(i + 1), entries=course_entries, nulloption=nbsp) }}
+                {% endfor %}
+            {% endif %}
+        {% endfor %}
+
+        {% if ambience['event']['fields']|length > 0 %}
+            <h3 class="heading-underline">{% trans %}Custom Fields{% endtrans %}</h3>
+            {% for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field) %}
+                {% if field['association'] == enums['FieldAssociations'].registration %}
+                    {{ util.form_event_field_input(field) }}
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+
+        <div class="panel panel-primary">
+            <div class="panel-body">
+                {{ util.form_input_textarea(name="change_note", label=gettext("Changenotes"),
+                   info=gettext("Summary to be added to the log entry.")) }}
+            </div>
+        </div>
+
+        {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("event/show_registration")) }}
+    </form>
+    <script nonce="{{ csp_nonce }}">
+        $('#changeregistrationform').cdedbProtectChanges();
+    </script>
+{% endblock %}

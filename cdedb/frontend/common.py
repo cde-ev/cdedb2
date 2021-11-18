@@ -23,6 +23,7 @@ import email.mime.multipart
 import email.mime.text
 import email.utils
 import functools
+import gettext
 import io
 import json
 import logging
@@ -37,24 +38,26 @@ import threading
 import typing
 import urllib.error
 import urllib.parse
+import weakref
 from email.mime.nonmultipart import MIMENonMultipart
 from secrets import token_hex
+from types import TracebackType
 from typing import (
-    IO, AbstractSet, Any, AnyStr, Callable, ClassVar, Collection, Dict,
-    Iterable, List, Mapping, MutableMapping, NamedTuple, Optional, Sequence,
-    Tuple, Type, TypeVar, Union, cast, overload,
+    IO, AbstractSet, Any, AnyStr, Callable, ClassVar, Collection, Dict, Iterable, List,
+    Literal, Mapping, MutableMapping, NamedTuple, Optional, Protocol, Sequence, Tuple,
+    Type, TypeVar, Union, cast, overload,
 )
 
 import icu
 import jinja2
-import mailmanclient.restobjects.mailinglist
 import mailmanclient.restobjects.held_message
+import mailmanclient.restobjects.mailinglist
+import markupsafe
 import werkzeug
 import werkzeug.datastructures
 import werkzeug.exceptions
 import werkzeug.utils
 import werkzeug.wrappers
-from typing_extensions import Literal, Protocol
 
 import cdedb.query as query_mod
 import cdedb.validation as validate
@@ -67,13 +70,14 @@ from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.common import (
-    ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS, ANTI_CSRF_TOKEN_NAME,
-    ANTI_CSRF_TOKEN_PAYLOAD, REALM_SPECIFIC_GENESIS_FIELDS, PERSONA_DEFAULTS,
-    CdEDBMultiDict, CdEDBObject, CustomJSONEncoder, EntitySorter, Error, Notification,
-    NotificationType, PathLike, PrivilegeError, RequestState, Role, User,
-    ValidationWarning, _tdelta, asciificator, decode_parameter, encode_parameter,
-    glue, json_serialize, make_proxy, make_root_logger, merge_dicts, n_, now,
-    roles_to_db_role, unwrap, xsorted,
+    ADMIN_KEYS, ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS, ANTI_CSRF_TOKEN_NAME,
+    ANTI_CSRF_TOKEN_PAYLOAD, IGNORE_WARNINGS_NAME, PERSONA_DEFAULTS,
+    REALM_SPECIFIC_GENESIS_FIELDS, CdEDBMultiDict, CdEDBObject, CustomJSONEncoder,
+    EntitySorter, Error, Notification, NotificationType, PathLike, PrivilegeError,
+    RequestState, Role, User, ValidationWarning, _tdelta, asciificator,
+    decode_parameter, encode_parameter, format_country_code,
+    get_localized_country_codes, glue, json_serialize, make_proxy, make_root_logger,
+    merge_dicts, n_, now, roles_to_db_role, unwrap,
 )
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -82,7 +86,6 @@ from cdedb.devsamples import HELD_MESSAGE_SAMPLE
 from cdedb.enums import ENUMS_DICT
 from cdedb.filter import JINJA_FILTERS, cdedbid_filter, safe_filter, sanitize_None
 from cdedb.query import Query
-from cdedb.validationdata import COUNTRY_CODES
 
 _LOGGER = logging.getLogger(__name__)
 _BASICCONF = BasicConfig()
@@ -126,8 +129,7 @@ class BaseApp(metaclass=abc.ABCMeta):
             syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         self.logger = logging.getLogger(logger_name)  # logger are thread-safe!
-        self.logger.debug("Instantiated {} with configpath {}.".format(
-            self, configpath))
+        self.logger.debug(f"Instantiated {self} with configpath {configpath}.")
         # local variable to prevent closure over secrets
         url_parameter_salt = secrets["URL_PARAMETER_SALT"]
         self.decode_parameter = (
@@ -220,6 +222,14 @@ class BaseApp(metaclass=abc.ABCMeta):
         return self.encode_parameter(target, token_name, token_payload, persona_id)
 
 
+def raise_jinja(val: str) -> None:
+    """Helper to point out programming errors in jinja.
+
+    May not be used for handling of user input, user-errors or control flow.
+    """
+    raise RuntimeError(val)
+
+
 # This needs acces to config, and cannot be moved to filter.py
 def datetime_filter(val: Union[datetime.datetime, str, None],
                     formatstr: str = "%Y-%m-%d %H:%M (%Z)", lang: str = None,
@@ -238,7 +248,7 @@ def datetime_filter(val: Union[datetime.datetime, str, None],
     if val.tzinfo is not None:
         val = val.astimezone(_BASICCONF["DEFAULT_TIMEZONE"])
     else:
-        _LOGGER.warning("Found naive datetime object {}.".format(val))
+        _LOGGER.warning(f"Found naive datetime object {val}.")
 
     if lang:
         locale = icu.Locale(lang)
@@ -249,6 +259,38 @@ def datetime_filter(val: Union[datetime.datetime, str, None],
         return datetime_formatter.format(val)
     else:
         return val.strftime(formatstr)
+
+
+PeriodicMethod = Callable[[Any, RequestState, CdEDBObject], CdEDBObject]
+
+
+class PeriodicJob(Protocol):
+    cron: CdEDBObject
+
+    def __call__(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject:
+        ...
+
+
+def periodic(name: str, period: int = 1
+             ) -> Callable[[PeriodicMethod], PeriodicJob]:
+    """This decorator marks a function of a frontend for periodic execution.
+
+    This just adds a flag and all of the actual work is done by the
+    CronFrontend.
+
+    :param name: the name of this job
+    :param period: the interval in which to execute this job (e.g. period ==
+      2 means every second invocation of the CronFrontend)
+    """
+    def decorator(fun: PeriodicMethod) -> PeriodicJob:
+        fun = cast(PeriodicJob, fun)
+        fun.cron = {
+            'name': name,
+            'period': period,
+        }
+        return fun
+
+    return decorator
 
 
 class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
@@ -274,17 +316,23 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'query_mod': query_mod,
             'glue': glue,
             'enums': ENUMS_DICT,
+            'raise': raise_jinja,
             'encode_parameter': self.encode_parameter,
             'encode_anti_csrf': self.encode_anti_csrf_token,
             'staticurl': functools.partial(staticurl,
                                            version=self.conf["GIT_COMMIT"][:8]),
             'docurl': docurl,
+            "drow_name": drow_name,
+            "drow_create": drow_create,
+            "drow_delete": drow_delete,
+            "drow_last_index": drow_last_index,
             'CDEDB_OFFLINE_DEPLOYMENT': self.conf["CDEDB_OFFLINE_DEPLOYMENT"],
             'CDEDB_DEV': self.conf["CDEDB_DEV"],
             'UNCRITICAL_PARAMETER_TIMEOUT': self.conf[
                 "UNCRITICAL_PARAMETER_TIMEOUT"],
             'ANTI_CSRF_TOKEN_NAME': ANTI_CSRF_TOKEN_NAME,
             'ANTI_CSRF_TOKEN_PAYLOAD': ANTI_CSRF_TOKEN_PAYLOAD,
+            'IGNORE_WARNINGS_NAME': IGNORE_WARNINGS_NAME,
             'GIT_COMMIT': self.conf["GIT_COMMIT"],
             'I18N_LANGUAGES': self.conf["I18N_LANGUAGES"],
             'I18N_ADVERTISED_LANGUAGES': self.conf["I18N_ADVERTISED_LANGUAGES"],
@@ -308,6 +356,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             comment_start_string="<<#",
             comment_end_string="#>>",
         )
+        self.jinja_env_tex.filters.update({'persona_name': make_persona_name})
         self.jinja_env_mail = self.jinja_env.overlay(
             autoescape=False,
             trim_blocks=True,
@@ -335,18 +384,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         also have additional roles with elevated privileges.
         """
         return "{}_admin".format(cls.realm) in rs.user.roles
-
-    @staticmethod
-    def get_localized_country_codes(rs: RequestState) -> List[Tuple[str, str]]:
-        """Generate a list of country code - name tupes in current language."""
-
-        def _format_country_code(code: str) -> str:
-            """Helper to make string hidden to pybabel."""
-            return f'CountryCodes.{code}'
-
-        return xsorted(
-            [(v, rs.gettext(_format_country_code(v))) for v in COUNTRY_CODES],
-            key=lambda x: x[1])
 
     def fill_template(self, rs: RequestState, modus: str, templatename: str,
                       params: CdEDBObject) -> str:
@@ -430,10 +467,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         def _has_warnings() -> bool:
             """Determine if there are any warnings among the errors."""
-            all_errors = rs.retrieve_validation_errors()
-            return any(
-                isinstance(kind, ValidationWarning)
-                for param, kind in all_errors)
+            return bool(validate.get_warnings(rs.retrieve_validation_errors()))
 
         def _make_backend_checker(rs: RequestState, backend: AbstractBackend,
                                   method_name: str) -> Callable[..., Any]:
@@ -454,7 +488,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         # here come the always accessible things promised above
         data = {
-            'COUNTRY_CODES': self.get_localized_country_codes(rs),
+            'COUNTRY_CODES': get_localized_country_codes(rs),
             'ambience': rs.ambience,
             'cdedblink': _cdedblink,
             'doclink': _doclink,
@@ -505,7 +539,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     def send_csv_file(rs: RequestState, mimetype: str = 'text/csv',
                       filename: str = None, inline: bool = True, *,
                       path: Union[str, pathlib.Path] = None,
-                      afile: IO[AnyStr] = None,
+                      afile: IO[bytes] = None,
                       data: AnyStr = None) -> Response:
         """Wrapper around :py:meth:`send_file` for CSV files.
 
@@ -522,7 +556,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     @staticmethod
     def send_file(rs: RequestState, mimetype: str = None, filename: str = None,
                   inline: bool = True, *, path: PathLike = None,
-                  afile: IO[AnyStr] = None, data: AnyStr = None,
+                  afile: IO[bytes] = None, data: AnyStr = None,
                   encoding: str = 'utf-8') -> Response:
         """Wrapper around :py:meth:`werkzeug.wsgi.wrap_file` to offer a file for
         download.
@@ -543,31 +577,22 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if (path and afile) or (path and data) or (afile and data):
             raise ValueError(n_("Ambiguous input."))
 
-        data_buffer = io.BytesIO()
+        payload: Union[Iterable[bytes], bytes]
         if path:
-            path = pathlib.Path(path)
-            if not path.is_file():
-                raise werkzeug.exceptions.NotFound()
-            with open(path, 'rb') as f:
-                data_buffer.write(f.read())
+            f = pathlib.Path(path).open("rb")
+            payload = werkzeug.wsgi.wrap_file(rs.request.environ, f)
         elif afile:
-            content = afile.read()
-            if isinstance(content, str):
-                data_buffer.write(content.encode(encoding))
-            elif isinstance(content, bytes):
-                data_buffer.write(content)
-            else:
-                raise ValueError(n_("Invalid datatype read from file."))
+            payload = werkzeug.wsgi.wrap_file(rs.request.environ, afile)
         elif data:
             if isinstance(data, str):
-                data_buffer.write(data.encode(encoding))
+                payload = data.encode(encoding)
             elif isinstance(data, bytes):
-                data_buffer.write(data)
+                payload = data
             else:
                 raise ValueError(n_("Invalid input type."))
-        data_buffer.seek(0)
+        else:
+            raise RuntimeError(n_("Impossible."))
 
-        wrapped_file = werkzeug.wsgi.wrap_file(rs.request.environ, data_buffer)
         extra_args = {}
         if mimetype is not None:
             extra_args['mimetype'] = mimetype
@@ -577,8 +602,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             disposition += '; filename="{}"'.format(filename)
         headers.append(('Content-Disposition', disposition))
         headers.append(('X-Generation-Time', str(now() - rs.begin)))
-        return Response(wrapped_file, direct_passthrough=True, headers=headers,
-                        **extra_args)
+        return Response(payload, direct_passthrough=True, headers=headers, **extra_args)
 
     @staticmethod
     def send_json(rs: RequestState, data: Any) -> Response:
@@ -639,8 +663,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
             _LOGGER.debug(debugstring)
             params['debugstring'] = debugstring
-        if rs.retrieve_validation_errors() and not rs.notifications:
-            rs.notify("error", n_("Failed validation."))
+        if (errors := rs.retrieve_validation_errors()) and not rs.notifications:
+            if all(isinstance(kind, ValidationWarning) for param, kind in errors):
+                rs.notify("warning", n_("Input seems faulty. Please double-check if"
+                                        " you really want to save it."))
+            else:
+                rs.notify("error", n_("Failed validation."))
         if self.conf["LOCKDOWN"]:
             rs.notify("info", n_("The database currently undergoes "
                                  "maintenance and is unavailable."))
@@ -759,7 +787,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                             submit_general_query: Callable[[RequestState, Query],
                                                            Tuple[CdEDBObject, ...]], *,
                             endpoint: str = "user_search",
-                            choices: Dict[str, collections.OrderedDict] = None,  # type: ignore
+                            choices: Mapping[str, Mapping[Any, str]] = None,
                             query: Query = None) -> werkzeug.Response:
         """Perform user search.
 
@@ -796,7 +824,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         choices_lists = {k: list(v.items()) for k, v in choices.items()}
         params = {
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
-            'default_queries': default_queries, 'query': query, 'scope': scope}
+            'default_queries': default_queries, 'query': query, 'scope': scope,
+            'ADMIN_KEYS': ADMIN_KEYS,
+        }
         # Tricky logic: In case of no validation errors we perform a query
         if not rs.has_validation_errors() and is_search and query:
             result = submit_general_query(rs, query)
@@ -861,10 +891,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             with tempfile.NamedTemporaryFile(mode='w', prefix="cdedb-mail-",
                                              suffix=".txt", delete=False) as f:
                 f.write(str(msg))
-                self.logger.debug("Stored mail to {}.".format(f.name))
+                self.logger.debug(f"Stored mail to {f.name}.")
                 ret = f.name
-        self.logger.info("Sent email with subject '{}' to '{}'".format(
-            msg['Subject'], msg['To']))
+        self.logger.info(f"Sent email with subject '{msg['Subject']}' to '{msg['To']}'")
         return ret
 
     def redirect_show_user(self, rs: RequestState, persona_id: int,
@@ -928,22 +957,20 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         pdf_path = pathlib.Path(cwd, pdf_file)
 
         args = ("lualatex", "-interaction", "batchmode", target_file)
-        self.logger.info("Invoking {}".format(args))
+        self.logger.info(f"Invoking {args}")
         try:
             for _ in range(runs):
                 subprocess.run(args, cwd=cwd, check=True,
                                stdout=subprocess.DEVNULL)
         except subprocess.CalledProcessError as e:
             if pdf_path.exists():
-                self.logger.debug(
-                    "Deleting corrupted file {}".format(pdf_path))
+                self.logger.debug(f"Deleting corrupted file {pdf_path}")
                 pdf_path.unlink()
-            self.logger.debug("Exception \"{}\" caught and handled.".format(e))
+            self.logger.debug(f"Exception \"{e}\" caught and handled.")
             if self.conf["CDEDB_DEV"]:
                 tstamp = round(now().timestamp())
                 backup_path = "/tmp/cdedb-latex-error-{}.tex".format(tstamp)
-                self.logger.info("Copying source file to {}".format(
-                    backup_path))
+                self.logger.info(f"Copying source file to {backup_path}")
                 shutil.copy2(target_file, backup_path)
             errormsg = errormsg or n_(
                 "LaTeX compilation failed. Try downloading the "
@@ -1063,6 +1090,40 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             else:
                 return None
 
+    def check_anti_csrf(self, rs: RequestState, action: str,
+                        token_name: str, token_payload: str) -> Optional[str]:
+        """
+        A helper function to check the anti CSRF token
+
+        The anti CSRF token is a signed userid, added as hidden input to most
+        forms, used to mitigate Cross Site Request Forgery (CSRF) attacks. It is
+        checked before calling the handler function, if the handler function is
+        marked to be protected against CSRF attacks, which is the default for
+        all POST endpoints.
+
+        The anti CSRF token should be created using the util.anti_csrf_token
+        template macro.
+
+        :param action: The name of the endpoint, checked by 'decode_parameter'
+        :param token_name: The name of the anti CSRF token.
+        :param token_payload: The expected payload of the anti CSRF token.
+        :return: None if everything is ok, or an error message otherwise.
+        """
+        val = rs.request.values.get(token_name, "").strip()
+        if not val:
+            return n_("Anti CSRF token is required for this form.")
+        # noinspection PyProtectedMember
+        timeout, val = self.decode_parameter(
+            f"{self.realm}/{action}", token_name, val, rs.user.persona_id)
+        if not val:
+            if timeout:
+                return n_("Anti CSRF token expired. Please try again.")
+            else:
+                return n_("Anti CSRF token is forged.")
+        if val != token_payload:
+            return n_("Anti CSRF token is invalid.")
+        return None
+
 
 class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     """Base class for all frontends which have their own user realm.
@@ -1084,12 +1145,10 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     # @access("realm_admin", modi={"POST"})
     # @REQUESTdatadict(...)
     @abc.abstractmethod
-    def create_user(self, rs: RequestState, data: CdEDBObject,
-                    ignore_warnings: bool = False) -> werkzeug.Response:
+    def create_user(self, rs: RequestState, data: CdEDBObject) -> werkzeug.Response:
         """Create new user account."""
         merge_dicts(data, PERSONA_DEFAULTS)
-        data = check_validation(
-            rs, vtypes.Persona, data, creation=True, _ignore_warnings=ignore_warnings)
+        data = check_validation(rs, vtypes.Persona, data, creation=True)
         if data:
             exists = self.coreproxy.verify_existence(rs, data['username'])
             if exists:
@@ -1098,8 +1157,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
                       ValueError("User with this E-Mail exists already.")),))
         if rs.has_validation_errors() or not data:
             return self.create_user_form(rs)
-        new_id = self.coreproxy.create_persona(
-            rs, data, ignore_warnings=ignore_warnings)
+        new_id = self.coreproxy.create_persona(rs, data)
         if new_id:
             success, message = self.coreproxy.make_reset_cookie(rs, data[
                 'username'])
@@ -1150,8 +1208,7 @@ class CdEMailmanClient(mailmanclient.Client):
             syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         self.logger = logging.getLogger(logger_name)
-        self.logger.debug("Instantiated {} with configpath {}.".format(
-            self, conf._configpath))
+        self.logger.debug(f"Instantiated {self} with configpath {conf._configpath}.")
 
     def get_list_safe(self, address: str) -> Optional[
             mailmanclient.restobjects.mailinglist.MailingList]:
@@ -1184,8 +1241,15 @@ class CdEMailmanClient(mailmanclient.Client):
             return mmlist.held if mmlist else None
 
 
+# Type Aliases for the Worker class.
 WorkerTarget = Callable[[RequestState], bool]
-TaskInfo = NamedTuple("TaskInfo", (("task", WorkerTarget), ("name", str), ("doc", str)))
+WorkerTasks = Union[WorkerTarget, Sequence[WorkerTarget]]
+
+
+class WorkerTaskInfo(NamedTuple):
+    task: WorkerTarget
+    name: str
+    doc: str
 
 
 class Worker(threading.Thread):
@@ -1196,19 +1260,20 @@ class Worker(threading.Thread):
     concurrency is no concern.
     """
 
-    def __init__(self, conf: Config, tasks: Union[WorkerTarget, Sequence[WorkerTarget]],
-                 rs: RequestState) -> None:
+    # For details about this class variable dict see `Worker.create()`.
+    active_workers: ClassVar[Dict[str, "weakref.ReferenceType[Worker]"]] = {}
+
+    def __init__(self, conf: Config, tasks: WorkerTasks, rs: RequestState) -> None:
         """
-        :param tasks: Every task will called with the cloned request state as a single
-            argument.
+        :param tasks: Every task will be called with the cloned request state as a
+            single argument.
         """
         # noinspection PyProtectedMember
         rrs = RequestState(
             sessionkey=rs.sessionkey, apitoken=rs.apitoken, user=rs.user,
             request=rs.request, notifications=[], mapadapter=rs.urls,
-            requestargs=rs.requestargs, errors=[],
-            values=copy.deepcopy(rs.values), lang=rs.lang, gettext=rs.gettext,
-            ngettext=rs.ngettext, coders=rs._coders, begin=rs.begin)
+            requestargs=rs.requestargs, errors=[], values=copy.deepcopy(rs.values),
+            begin=rs.begin, lang=rs.lang, translations=rs.translations)
         # noinspection PyProtectedMember
         secrets = SecretsConfig(conf._configpath)
         connpool = connection_pool_factory(
@@ -1220,9 +1285,9 @@ class Worker(threading.Thread):
             return task.__doc__.splitlines()[0] if task.__doc__ else ""
 
         if isinstance(tasks, Sequence):
-            task_infos = [TaskInfo(t, t.__name__, get_doc(t)) for t in tasks]
+            task_infos = [WorkerTaskInfo(t, t.__name__, get_doc(t)) for t in tasks]
         else:
-            task_infos = [TaskInfo(tasks, tasks.__name__, get_doc(tasks))]
+            task_infos = [WorkerTaskInfo(tasks, tasks.__name__, get_doc(tasks))]
 
         def runner() -> None:
             """Implement the actual loop running the task inside the Thread."""
@@ -1260,6 +1325,41 @@ class Worker(threading.Thread):
 
         super().__init__(target=runner, daemon=False)
 
+    @classmethod
+    def create(cls, rs: RequestState, name: str, tasks: "WorkerTasks",
+               conf: Config, timeout: Optional[float] = 0.1) -> "Worker":
+        """Create a new Worker, remember and start it.
+
+        The state of the `cls.active_workers` dict is not shared between the threads of
+        a multithreaded instance of the application. Thus it should not be relied upon
+        for anything other than testing purposes.
+
+        In order to not mess with garbage collection of finished workers, we only keep
+        a weak reference to the instance. This means that the weakref object needs to
+        be called. If it returns `None`, the referenced object has already been garbage
+        collected. Otherwise it will return the `Worker` instance which can then be
+        joined. Workers will automatically be garbaage collected once they finish
+        execution unless a reference is specifically kept somewhere.
+
+        Note the pattern of assigning the result of this call first, because otherwise
+        there is a race condition between checking for truthyness and calling the
+        `is_alive` method where the Worker could finish in the meantime.
+
+        :param timeout: If this is not None, wait for the given number of seconds for
+            the worker thread to finish.
+        """
+        if name in cls.active_workers:
+            # Dereference the weakref.
+            old_worker = cls.active_workers[name]()
+            if old_worker and old_worker.is_alive():
+                raise RuntimeError("Worker already active.")
+        worker = cls(conf, tasks, rs)
+        cls.active_workers[name] = weakref.ref(worker)
+        worker.start()
+        if timeout is not None:
+            worker.join(timeout)
+        return worker
+
 
 def reconnoitre_ambience(obj: AbstractFrontend,
                          rs: RequestState) -> Dict[str, CdEDBObject]:
@@ -1277,14 +1377,6 @@ def reconnoitre_ambience(obj: AbstractFrontend,
         if not x:
             raise werkzeug.exceptions.BadRequest(
                 rs.gettext("Inconsistent request."))
-
-    def attachment_check(a: CdEDBObject) -> None:
-        if a['attachment']['ballot_id']:
-            do_assert(a['attachment']['ballot_id']
-                      == rs.requestargs.get('ballot_id'))
-        else:
-            do_assert(a['attachment']['assembly_id']
-                      == rs.requestargs['assembly_id'])
 
     scouts = (
         Scout(lambda anid: obj.coreproxy.get_persona(rs, anid), 'persona_id',
@@ -1332,7 +1424,9 @@ def reconnoitre_ambience(obj: AbstractFrontend,
               ((lambda a: do_assert(rs.requestargs['field_id']
                                     in a['event']['fields'])),)),
         Scout(lambda anid: obj.assemblyproxy.get_attachment(rs, anid),
-              'attachment_id', 'attachment', (attachment_check,)),
+              'attachment_id', 'attachment',
+              ((lambda a: do_assert(a['attachment']['assembly_id']
+                                    == rs.requestargs['assembly_id'])),)),
         Scout(lambda anid: obj.assemblyproxy.get_assembly(rs, anid),
               'assembly_id', 'assembly', ()),
         Scout(lambda anid: obj.assemblyproxy.get_ballot(rs, anid),
@@ -1355,7 +1449,7 @@ def reconnoitre_ambience(obj: AbstractFrontend,
             except KeyError:
                 raise werkzeug.exceptions.NotFound(
                     rs.gettext("Object {param}={value} not found").format(
-                        param=param, value=value))
+                        param=param, value=value)) from None
             except PrivilegeError as e:
                 if not obj.conf['CDEDB_DEV']:
                     msg = "Not privileged to view object {param}={value}: {exc}"
@@ -1414,7 +1508,7 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
                                       for role in access_list)
                 if rs.user.roles == {"anonymous"} and expects_persona:
                     params = {
-                        'wants': rs._coders['encode_parameter'](
+                        'wants': obj.encode_parameter(
                             "core/index", "wants", rs.request.url,
                             persona_id=rs.user.persona_id,
                             timeout=obj.conf["UNCRITICAL_PARAMETER_TIMEOUT"])
@@ -1422,7 +1516,7 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
                     ret = basic_redirect(rs, cdedburl(rs, "core/index", params))
                     # noinspection PyProtectedMember
                     notifications = json_serialize([
-                        rs._coders['encode_notification'](
+                        obj.encode_notification(
                             rs, "error", n_("You must login."))])
                     ret.set_cookie("displaynote", notifications)
                     return ret
@@ -1440,38 +1534,6 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
         )
 
         return cast(F, new_fun)
-
-    return decorator
-
-
-PeriodicMethod = Callable[[Any, RequestState, CdEDBObject], CdEDBObject]
-
-
-class PeriodicJob(Protocol):
-    cron: CdEDBObject
-
-    def __call__(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject:
-        ...
-
-
-def periodic(name: str, period: int = 1
-             ) -> Callable[[PeriodicMethod], PeriodicJob]:
-    """This decorator marks a function of a frontend for periodic execution.
-
-    This just adds a flag and all of the actual work is done by the
-    CronFrontend.
-
-    :param name: the name of this job
-    :param period: the interval in which to execute this job (e.g. period ==
-      2 means every second invocation of the CronFrontend)
-    """
-    def decorator(fun: PeriodicMethod) -> PeriodicJob:
-        fun = cast(PeriodicJob, fun)
-        fun.cron = {
-            'name': name,
-            'period': period,
-        }
-        return fun
 
     return decorator
 
@@ -1532,13 +1594,6 @@ def cdedburl(rs: RequestState, endpoint: str,
         for key in params:
             allparams[key] = params[key]
 
-    # Until Werkzeug 0.15, this workaround is necessary to keep duplicates.
-    allparams = allparams.to_dict(flat=False)
-    for key in allparams:
-        # And then, this needs to be done to keep <magic replacements> working
-        if len(allparams[key]) == 1:
-            allparams[key] = unwrap(allparams[key])
-
     return rs.urls.build(endpoint, allparams, force_external=force_external)
 
 
@@ -1559,7 +1614,7 @@ def staticurl(path: str, version: str = "") -> str:
 
 @overload
 def staticlink(rs: RequestState, label: str, path: str, version: str = "",
-               html: Literal[True] = True) -> jinja2.Markup: ...
+               html: Literal[True] = True) -> markupsafe.Markup: ...
 
 
 @overload
@@ -1568,14 +1623,14 @@ def staticlink(rs: RequestState, label: str, path: str, version: str = "",
 
 
 def staticlink(rs: RequestState, label: str, path: str, version: str = "",
-               html: bool = True) -> Union[jinja2.Markup, str]:
+               html: bool = True) -> Union[markupsafe.Markup, str]:
     """Create a link to a static resource.
 
     This can either create a basic html link or a fully qualified, static https link.
 
     .. note:: This will be overridden by _staticlink in templates, see fill_template.
     """
-    link: Union[jinja2.Markup, str]
+    link: Union[markupsafe.Markup, str]
     if html:
         return safe_filter(f'<a href="{staticurl(path, version=version)}">{label}</a>')
     else:
@@ -1593,7 +1648,7 @@ def docurl(topic: str, anchor: str = "") -> str:
 
 @overload
 def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
-            html: Literal[True] = True) -> jinja2.Markup: ...
+            html: Literal[True] = True) -> markupsafe.Markup: ...
 
 
 @overload
@@ -1602,13 +1657,13 @@ def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
 
 
 def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
-            html: bool = True) -> Union[jinja2.Markup, str]:
+            html: bool = True) -> Union[markupsafe.Markup, str]:
     """Create a link to our documentation.
 
     This can either create a basic html link or a fully qualified, static https link.
     .. note:: This will be overridden by _doclink in templates, see fill_template.
     """
-    link: Union[jinja2.Markup, str]
+    link: Union[markupsafe.Markup, str]
     if html:
         return safe_filter(f'<a href="{docurl(topic, anchor=anchor)}">{label}</a>')
     else:
@@ -1618,7 +1673,7 @@ def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
 
 # noinspection PyPep8Naming
 def REQUESTdata(
-    *spec: str, _hints: validate.TypeMapping = None
+    *spec: str, _hints: vtypes.TypeMapping = None, _postpone_validation: bool = False
 ) -> Callable[[F], F]:
     """Decorator to extract parameters from requests and validate them.
 
@@ -1639,6 +1694,8 @@ def REQUESTdata(
         are valid as a type.
         To extract an encoded parameter one may prepended the name of it
         with an octothorpe (``#``).
+    :param _postpone_validation: Whether or not validation should be applied inside.
+        This should be used rarely, but sometimes its necessary.
     """
 
     def wrap(fun: F) -> F:
@@ -1656,7 +1713,7 @@ def REQUESTdata(
 
                 if name not in kwargs:
 
-                    if getattr(hints[name], "__origin__", None) is Union:
+                    if typing.get_origin(hints[name]) is Union:
                         type_, _ = hints[name].__args__
                         optional = True
                     else:
@@ -1669,17 +1726,15 @@ def REQUESTdata(
                     if encoded and val:
                         # only decode if exists
                         # noinspection PyProtectedMember
-                        timeout, val = rs._coders['decode_parameter'](
-                            "{}/{}".format(obj.realm, fun.__name__),
+                        timeout, val = obj.decode_parameter(
+                            f"{obj.realm}/{fun.__name__}",
                             name, val, persona_id=rs.user.persona_id)
                         if timeout is True:
                             rs.notify("warning", n_("Link expired."))
                         if timeout is False:
                             rs.notify("warning", n_("Link invalid."))
 
-                    if getattr(
-                        type_, "__origin__", None
-                    ) is collections.abc.Collection:
+                    if typing.get_origin(type_) is collections.abc.Collection:
                         type_ = unwrap(type_.__args__)
                         vals = tuple(rs.request.values.getlist(name))
                         if vals:
@@ -1689,7 +1744,9 @@ def REQUESTdata(
                             # We have to be careful, since empty lists are
                             # problematic for the werkzeug MultiDict
                             rs.values[name] = None
-                        if optional:
+                        if _postpone_validation:
+                            kwargs[name] = tuple(vals)
+                        elif optional:
                             kwargs[name] = tuple(
                                 check_validation_optional(rs, type_, val, name)
                                 for val in vals
@@ -1701,7 +1758,9 @@ def REQUESTdata(
                             )
                     else:
                         rs.values[name] = val
-                        if optional:
+                        if _postpone_validation:
+                            kwargs[name] = val
+                        elif optional:
                             kwargs[name] = check_validation_optional(
                                 rs, type_, val, name)
                         else:
@@ -1759,8 +1818,9 @@ RequestConstraint = Tuple[Callable[[CdEDBObject], bool], Error]
 
 
 def request_extractor(
-        rs: RequestState, spec: validate.TypeMapping,
-        constraints: Collection[RequestConstraint] = None) -> CdEDBObject:
+        rs: RequestState, spec: vtypes.TypeMapping,
+        constraints: Collection[RequestConstraint] = None,
+        postpone_validation: bool = False) -> CdEDBObject:
     """Utility to apply REQUESTdata later than usual.
 
     This is intended to bu used, when the parameter list is not known before
@@ -1780,9 +1840,10 @@ def request_extractor(
     :param spec: handed through to the decorator
     :param constraints: additional constraints that shoud produce
       validation errors
+    :param postpone_validation: handed through to the decorator
     :returns: dict containing the requested values
     """
-    @REQUESTdata(*spec, _hints=spec)
+    @REQUESTdata(*spec, _hints=spec, _postpone_validation=postpone_validation)
     def fun(_: None, rs: RequestState, **kwargs: Any) -> CdEDBObject:
         if not rs.has_validation_errors():
             for checker, error in constraints or []:
@@ -1937,7 +1998,10 @@ def assembly_guard(fun: F) -> F:
 
 def check_validation(rs: RequestState, type_: Type[T], value: Any,
                      name: str = None, **kwargs: Any) -> Optional[T]:
-    """Helper to perform parameter sanitization.
+    """Wrapper to call checks in :py:mod:`cdedb.validation`.
+
+    This performs the check and appends all occurred errors to the RequestState.
+    This also ignores warnings appropriately due to rs.ignore_warnings.
 
     :param type_: type to check for
     :param name: name of the parameter to check (bonus points if you find
@@ -1945,19 +2009,23 @@ def check_validation(rs: RequestState, type_: Type[T], value: Any,
       capabilities, but I didn't see how this should be done).
     """
     if name is not None:
-        ret, errs = validate.validate_check(type_, value, argname=name, **kwargs)
+        ret, errs = validate.validate_check(
+            type_, value, ignore_warnings=rs.ignore_warnings, argname=name, **kwargs)
     else:
-        ret, errs = validate.validate_check(type_, value, **kwargs)
+        ret, errs = validate.validate_check(
+            type_, value, ignore_warnings=rs.ignore_warnings, **kwargs)
     rs.extend_validation_errors(errs)
     return ret
 
 
 def check_validation_optional(rs: RequestState, type_: Type[T], value: Any,
                               name: str = None, **kwargs: Any) -> Optional[T]:
-    """Helper to perform parameter sanitization.
+    """Wrapper to call checks in :py:mod:`cdedb.validation`.
 
     This is similar to :func:`~cdedb.frontend.common.check_validation`
     but also allows optional/falsy values.
+
+    This also ignores warnings appropriately due to rs.ignore_warnings.
 
     :param type_: type to check for
     :param name: name of the parameter to check (bonus points if you find
@@ -1966,11 +2034,37 @@ def check_validation_optional(rs: RequestState, type_: Type[T], value: Any,
     """
     if name is not None:
         ret, errs = validate.validate_check_optional(
-            type_, value, argname=name, **kwargs)
+            type_, value, ignore_warnings=rs.ignore_warnings, argname=name, **kwargs)
     else:
-        ret, errs = validate.validate_check_optional(type_, value, **kwargs)
+        ret, errs = validate.validate_check_optional(
+            type_, value, ignore_warnings=rs.ignore_warnings, **kwargs)
     rs.extend_validation_errors(errs)
     return ret
+
+
+def inspect_validation(
+    type_: Type[T], value: Any, *, ignore_warnings: bool = False, **kwargs: Any
+) -> Tuple[Optional[T], List[Error]]:
+    """Convenient wrapper to call checks in :py:mod:`cdedb.validation`.
+
+    This is similar to :func:`~cdedb.frontend.common.check_validation` but returns
+    all encountered errors instead of appending them to the RequestState.
+    This should only be used if the error handling differs from the default handling.
+    """
+    return validate.validate_check(
+        type_, value, ignore_warnings=ignore_warnings, **kwargs)
+
+
+def inspect_validation_optional(
+    type_: Type[T], value: Any, *, ignore_warnings: bool = False, **kwargs: Any
+) -> Tuple[Optional[T], List[Error]]:
+    """Convenient wrapper to call checks in :py:mod:`cdedb.validation`.
+
+    This is similar to :func:`~cdedb.frontend.common.inspect_validation` but also allows
+    optional/falsy values.
+    """
+    return validate.validate_check_optional(
+        type_, value, ignore_warnings=ignore_warnings, **kwargs)
 
 
 def basic_redirect(rs: RequestState, url: str) -> werkzeug.Response:
@@ -2011,7 +2105,7 @@ def construct_redirect(request: werkzeug.Request,
         return ret
 
 
-def make_postal_address(persona: CdEDBObject) -> List[str]:
+def make_postal_address(rs: RequestState, persona: CdEDBObject) -> List[str]:
     """Prepare address info for formatting.
 
     Addresses have some specific formatting wishes, so we are flexible
@@ -2034,7 +2128,7 @@ def make_postal_address(persona: CdEDBObject) -> List[str]:
         ret.append("{} {}".format(p['postal_code'] or '',
                                   p['location'] or ''))
     if p['country']:
-        ret.append(p['country'])
+        ret.append(rs.translations["de"].gettext(format_country_code(p['country'])))
     return ret
 
 
@@ -2063,52 +2157,152 @@ def make_event_fee_reference(persona: CdEDBObject, event: CdEDBObject) -> str:
     )
 
 
-def process_dynamic_input(rs: RequestState, existing: Collection[int],
-                          spec: validate.TypeMapping,
-                          additional: CdEDBObject = None
-                          ) -> Dict[int, Optional[CdEDBObject]]:
-    """Retrieve information provided by flux tables.
+def make_persona_name(persona: CdEDBObject,
+                      only_given_names: bool = False,
+                      only_display_name: bool = False,
+                      given_and_display_names: bool = False,
+                      with_family_name: bool = True,
+                      with_titles: bool = False) -> str:
+    """Format the name of a given persona according to the display name specification
 
-    This returns a data dict to update the database, which includes:
-    - existing, mapped to their (validated) input fields (from spec)
-    - existing, mapped to None (if they were marked to be deleted)
+    This is the Python pendant of the `util.persona_name()` macro.
+    For a full specification, which name variant should be used in which context, see
+    the documentation page about "User Experience Conventions".
+    """
+    display_name: str = persona.get('display_name', "")
+    given_names: str = persona['given_names']
+    ret = []
+    if with_titles and persona.get('title'):
+        ret.append(persona['title'])
+    if only_given_names:
+        ret.append(given_names)
+    elif only_display_name:
+        ret.append(display_name)
+    elif given_and_display_names:
+        if not display_name or display_name == given_names:
+            ret.append(given_names)
+        else:
+            ret.append(f"{given_names} ({display_name})")
+    elif display_name and display_name in given_names:
+        ret.append(display_name)
+    else:
+        ret.append(given_names)
+    if with_family_name:
+        ret.append(persona['family_name'])
+    if with_titles and persona.get('name_supplement'):
+        ret.append(persona['name_supplement'])
+    return " ".join(ret)
+
+
+def drow_name(field_name: str, entity_id: int, prefix: str = "") -> str:
+    prefix = prefix + "_" if prefix else ""
+    return f"{prefix}{field_name}_{entity_id}"
+
+
+def drow_create(entity_id: int, prefix: str = "") -> str:
+    return drow_name("create", entity_id, prefix)
+
+
+def drow_delete(entity_id: int, prefix: str = "") -> str:
+    return drow_name("delete", entity_id, prefix)
+
+
+def drow_last_index(prefix: str = "") -> str:
+    return f"{prefix}create_last_index"
+
+
+# TODO maybe retrieve the spec from the type_?
+def process_dynamic_input(
+    rs: RequestState,
+    type_: Type[T],
+    existing: Collection[int],
+    spec: vtypes.TypeMapping,
+    *,
+    additional: CdEDBObject = None,
+    prefix: str = "",
+) -> Dict[int, Optional[CdEDBObject]]:
+    """Retrieve data from rs provided by 'dynamic_row_meta' macros.
+
+    This takes a 'spec' of field_names mapped to their validation. Each field_name is
+    prepended with the 'prefix' and appended with the entity_id in the form of
+    "{prefix}{field_name}_{entity_id}" before being extracted from the RequestState.
+
+    'process_dynamic_input' returns a data dict to update the database, which includes:
+    - existing entries, mapped to their (validated) input fields (from spec)
+    - existing entries, mapped to None (if they were marked to be deleted)
     - new entries, mapped to their (validated) input fields (from spec)
 
+    This adds some additional keys to some entities of the return dict:
+    - To each existing, not deleted entry: the 'id' of the entry.
+    - To each new and each existing, not deleted entry: all entries of 'additional'
+
+    Take care to check for validation_errors directly after calling this function!
+    Since the validation facillity is used inside, a ValidationError inside an entry
+    causes the entry to be set to None (similar to all deleted entries), which may have
+    unwanted side-effects if you simply proceed.
+
+    :param type_: validation_type of the entities
     :param existing: ids of already existent objects
-    :param spec: name of input fields, mapped to their validation
+    :param spec: name of input fields, mapped to their validation. This uses the same
+        format as the `request_extractor`, but adds the 'prefix' to each key if present.
     :param additional: additional keys added to each output object
+    :param prefix: prefix in front of all concerned fields. Should be used when more
+        then one dynamic input table is present on the same page.
     """
-    delete_flags = request_extractor(rs, {f"delete_{anid}": bool for anid in existing})
-    deletes = {anid for anid in existing if delete_flags[f"delete_{anid}"]}
-    params: validate.TypeMapping = {
-        f"{key}_{anid}": value
-        for anid in existing if anid not in deletes
+    additional = additional or dict()
+    # this is the used prefix for the validation
+    field_prefix = f"{prefix}_" if prefix else ""
+
+    delete_spec = {drow_delete(anid, prefix): bool for anid in existing}
+    delete_flags = request_extractor(rs, delete_spec)
+    deletes = {anid for anid in existing if delete_flags[drow_delete(anid, prefix)]}
+    non_deleted_existing = {anid for anid in existing if anid not in deletes}
+
+    existing_data_spec: vtypes.TypeMapping = {
+        drow_name(key, anid, prefix): value
+        for anid in non_deleted_existing
         for key, value in spec.items()
     }
-    data = request_extractor(rs, params)
+    # validation is postponed to a later point to use the validator for the whole object
+    data = request_extractor(rs, existing_data_spec, postpone_validation=True)
+
+    # build the return dict of all existing entries and check if they pass validation
     ret: Dict[int, Optional[CdEDBObject]] = {
-        anid: {key: data[f"{key}_{anid}"] for key in spec}
-        for anid in existing if anid not in deletes
+        anid: {key: data[drow_name(key, anid, prefix)] for key in spec}
+        for anid in non_deleted_existing
     }
     for anid in existing:
         if anid in deletes:
             ret[anid] = None
         else:
-            ret[anid]['id'] = anid  # type: ignore
+            entry = ret[anid]
+            assert entry is not None
+            if type_ is not vtypes.EventTrack:
+                entry["id"] = anid
+            entry.update(additional)
+            # apply the promised validation
+            ret[anid] = check_validation(rs, type_, entry, field_prefix=field_prefix,
+                                         field_postfix=f"_{anid}")  # type: ignore
+
+    # extract the new entries which shall be created
     marker = 1
     while marker < 2 ** 10:
         will_create = unwrap(
-            request_extractor(rs, {f"create_-{marker}": bool}))
+            request_extractor(rs, {drow_create(-marker, prefix): bool}))
         if will_create:
-            params = {f"{key}_-{marker}": value for key, value in spec.items()}
-            data = request_extractor(rs, params)
-            ret[-marker] = {key: data[f"{key}_-{marker}"] for key in spec}
-            if additional:
-                ret[-marker].update(additional)  # type: ignore
+            params = {
+                drow_name(key, -marker, prefix): value for key, value in spec.items()}
+            data = request_extractor(rs, params, postpone_validation=True)
+            entry = {
+                key: data[drow_name(key, -marker, prefix)] for key in spec}
+            entry.update(additional)
+            ret[-marker] = check_validation(
+                rs, type_, entry, field_prefix=field_prefix,
+                field_postfix=f"_{-marker}", creation=True)  # type: ignore
         else:
             break
         marker += 1
-    rs.values['create_last_index'] = marker - 1
+    rs.values[drow_last_index(prefix)] = marker - 1
     return ret
 
 
@@ -2235,3 +2429,52 @@ def calculate_loglinks(rs: RequestState, total: int,
     ret: Dict[str, Union[CdEDBMultiDict, List[CdEDBMultiDict]]]
     ret = dict(**loglinks, **{"pre-current": pre, "post-current": post})
     return ret
+
+
+class TransactionObserver:
+    """Helper to watch over a non-atomic transaction.
+
+    This is a substitute for the Atomizer which is not available in the
+    frontend. We are not able to guarantee atomic transactions, but we can
+    detect failed transactions and generate error notifications.
+
+    This should only be used in cases where a failure is deemed sufficiently
+    unlikely.
+    """
+
+    def __init__(self, rs: RequestState, frontend: AbstractFrontend, name: str):
+        self.rs = rs
+        self.frontend = frontend
+        self.name = name
+
+    def __enter__(self) -> "TransactionObserver":
+        return self
+
+    def __exit__(self, atype: Optional[Type[Exception]],
+                 value: Optional[Exception],
+                 tb: Optional[TracebackType]) -> Literal[False]:
+        if value:
+            self.frontend.do_mail(
+                self.rs, "transaction_error",
+                {
+                    'To': (self.frontend.conf['MANAGEMENT_ADDRESS'],
+                           self.frontend.conf['TROUBLESHOOTING_ADDRESS']),
+                    'Subject': "Transaktionsfehler",
+                },
+                {
+                    'now': now(),
+                    'name': self.name,
+                    'atype': atype,
+                    'value': value,
+                    'tb': tb,
+                })
+        return False
+
+
+def setup_translations(conf: Config) -> Mapping[str, gettext.NullTranslations]:
+    """Helper to setup a mapping of languages to gettext translation objects."""
+    return {
+        lang: gettext.translation('cdedb', languages=[lang],
+                                  localedir=conf["REPOSITORY_PATH"] / 'i18n')
+        for lang in conf["I18N_LANGUAGES"]
+    }

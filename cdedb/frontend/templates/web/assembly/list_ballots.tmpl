@@ -6,10 +6,7 @@
     {% endtrans %}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {{ gettext("Ballots") }}
-        <small>{{ util.make_icon('bullhorn') }} {{ ambience['assembly']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Ballots"), ambience['assembly']['title'], 'bullhorn', gettext("Assembly")) }}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
@@ -46,7 +43,8 @@
                                     <span class="text-danger">{{ gettext("Not yet voted") }}</span>
                                 {%- endif -%})
                             {% endif %}
-                            {% if "assembly_presider" in user.admin_views and now() < ballot['vote_begin'] %}
+                            {% if ("assembly_presider" in user.admin_views or ambience['assembly']['id'] in user.presider)
+                                   and now() < ballot['vote_begin'] %}
                                 {{ util.href(cdedblink("assembly/change_ballot", {'ballot_id': ballot_id}), gettext("Edit"),
                                             aclass="btn btn-xs btn-warning list-button-float hide-hover", icon="pen") }}
                             {% endif %}

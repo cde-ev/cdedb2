@@ -21,9 +21,7 @@ from typing import Any, Callable, Dict, Iterator, Mapping
 import pytz
 
 import cdedb.database.constants as const
-from cdedb.common import (
-    CdEDBObject, EntitySorter, PathLike, deduct_years, n_, now, xsorted,
-)
+from cdedb.common import ADMIN_KEYS, CdEDBObject, PathLike, deduct_years, n_, now
 from cdedb.query import Query, QueryOperators, QueryScope
 
 _LOGGER = logging.getLogger(__name__)
@@ -82,7 +80,7 @@ def generate_event_registration_default_queries(
                     ("reg.id", True))
 
     all_part_stati_column = ",".join(
-        "part{0}.status".format(part_id) for part_id in event['parts'])
+        f"part{part_id}.status" for part_id in event['parts'])
 
     dokuteam_course_picture_fields_of_interest = [
         "persona.id", "persona.given_names", "persona.family_name"]
@@ -186,18 +184,6 @@ def generate_event_registration_default_queries(
               const.RegistrationPartStati.participant.value),), default_sort),
     }
 
-    def get_waitlist_order(part: CdEDBObject) -> str:
-        if part['waitlist_field']:
-            field = event['fields'][part['waitlist_field']]
-            return f"reg_fields.xfield_{field['field_name']}"
-        return "ctime.creation_time"
-
-    def waitlist_query_name(part: CdEDBObject) -> str:
-        ret = gettext("17_query_event_registration_waitlist")
-        if len(event['parts']) > 1:
-            ret += f" {part['shortname']}"
-        return ret
-
     if len(event['parts']) > 1:
         queries.update({
             n_("16_query_event_registration_waitlist"): Query(
@@ -209,20 +195,6 @@ def generate_event_registration_default_queries(
                   const.RegistrationPartStati.waitlist.value),),
                 (("ctime.creation_time", True),)),
         })
-
-    queries.update({
-        n_("17_query_event_registration_waitlist") + f"_{i}_part{part['id']}":
-            Query(
-                QueryScope.registration, spec,
-                ("persona.given_names", "persona.family_name"),
-                ((f"part{part['id']}.status", QueryOperators.equal,
-                  const.RegistrationPartStati.waitlist.value),),
-                ((get_waitlist_order(part), True),),
-                name=waitlist_query_name(part)
-            )
-        for i, part in enumerate(xsorted(
-            event['parts'].values(), key=EntitySorter.event_part))
-    })
 
     return queries
 
@@ -242,11 +214,13 @@ def generate_event_course_default_queries(
     :return: Dict of default queries
     """
 
+    takes_place = ",".join(f"track{anid}.takes_place" for anid in event["tracks"])
+
     queries = {
         n_("50_query_dokuteam_courselist"): Query(
             QueryScope.event_course, spec,
             ("course.nr", "course.shortname", "course.title"),
-            tuple(),
+            ((takes_place, QueryOperators.equal, True),),
             (("course.nr", True),)),
     }
 
@@ -264,6 +238,13 @@ _DEFAULTS = {
 
     # port on which the database listens, preferably a pooler like pgbouncer
     "DB_PORT": 6432,
+
+    # host name where the ldap server is running
+    "LDAP_HOST": "localhost",
+
+    # port on which the ldap server listens
+    # TODO switch to TLS port?
+    "LDAP_PORT": 389,
 
     # True for offline versions running on academies
     "CDEDB_OFFLINE_DEPLOYMENT": False,
@@ -297,6 +278,10 @@ _DEFAULTS = {
     "EMAIL_PARAMETER_TIMEOUT": datetime.timedelta(days=2),
     # maximum length of rationale for requesting an account
     "MAX_RATIONALE": 500,
+    # for shortnames longer than this, a ValidationWarning will be raised
+    "SHORTNAME_LENGTH": 10,
+    # a bit longer, but still a shortname
+    "LEGACY_SHORTNAME_LENGTH": 30,
     # minimal number of input characters to start a search for personas
     # fitting an intelligent input field
     "NUM_PREVIEW_CHARS": 3,
@@ -333,6 +318,8 @@ _DEFAULTS = {
     "MAIL_DOMAIN": "db.cde-ev.de",
     # host to use for sending emails
     "MAIL_HOST": "localhost",
+    # email for internal system trouble notifications
+    "TROUBLESHOOTING_ADDRESS": "admin@cde-ev.de",
 
     # email for cde account requests
     "CDE_ADMIN_ADDRESS": "cde-admins@cde-ev.de",
@@ -344,7 +331,7 @@ _DEFAULTS = {
     "ASSEMBLY_ADMIN_ADDRESS": "vorstand@cde-ev.de",
 
     # email for privilege changes
-    "META_ADMIN_ADDRESS": "admin@lists.cde-ev.de",
+    "META_ADMIN_ADDRESS": "admin@cde-ev.de",
 
     # email for ballot tallies
     "BALLOT_TALLY_ADDRESS": "wahlbekanntmachung@lists.cde-ev.de",
@@ -536,18 +523,12 @@ _DEFAULTS = {
                 QueryScope.persona, QueryScope.core_user.get_spec(),
                 ("personas.id", "given_names", "family_name"),
                 tuple(),
-                (("family_name", True), ("given_names", True),
-                 ("personas.id", True))),
+                (("family_name", True), ("given_names", True), ("personas.id", True))),
             n_("10_query_core_any_admin"): Query(
                 QueryScope.persona, QueryScope.core_user.get_spec(),
-                ("personas.id", "given_names", "family_name", "is_ml_admin",
-                 "is_event_admin", "is_assembly_admin", "is_cde_admin",
-                 "is_core_admin", "is_meta_admin"),
-                (("is_ml_admin,is_event_admin,is_assembly_admin,"
-                  "is_cde_admin,is_core_admin,is_meta_admin",
-                  QueryOperators.equal, True),),
-                (("family_name", True), ("given_names", True),
-                 ("personas.id", True))),
+                ("personas.id", "given_names", "family_name", *ADMIN_KEYS),
+                ((",".join(ADMIN_KEYS), QueryOperators.equal, True),),
+                (("family_name", True), ("given_names", True), ("personas.id", True))),
         },
         QueryScope.assembly_user: {
             n_("00_query_assembly_user_all"): Query(
@@ -620,7 +601,22 @@ _SECRECTS_DEFAULTS = {
 
         # zero-config partial export in offline mode
         "quick_partial_export": "y1f2i3d4x5b6",
-    }
+    },
+
+    # ldap related stuff
+    "LDAP_SLAPD": {
+        "ADMIN_PASSWORD": "secret",
+        "PASSWORD1": "secret",
+        "PASSWORD2": "secret"
+    },
+    "LDAP_OLC_ROOT_PW": "secret",
+    "LDAP_DUA_PW": {
+        "admin": "secret",
+        "apache": "secret",
+        "cloud": "secret",
+        "cyberaka": "secret",
+        "dokuwiki": "secret",
+    },
 }
 
 
@@ -637,7 +633,7 @@ class BasicConfig(Mapping[str, Any]):
     # noinspection PyUnresolvedReferences
     def __init__(self) -> None:
         try:
-            import cdedb.localconfig as config_mod
+            import cdedb.localconfig as config_mod  # pylint: disable=import-outside-toplevel
             config = {
                 key: getattr(config_mod, key)
                 for key in _BASIC_DEFAULTS.keys() & set(dir(config_mod))
@@ -672,7 +668,7 @@ class Config(BasicConfig):
         :param configpath: path to file with overrides
         """
         super().__init__()
-        _LOGGER.debug("Initialising Config with path {}".format(configpath))
+        _LOGGER.debug(f"Initialising Config with path {configpath}")
         self._configpath = configpath
         config_keys = _DEFAULTS.keys() | _BASIC_DEFAULTS.keys()
 
@@ -680,8 +676,9 @@ class Config(BasicConfig):
             spec = importlib.util.spec_from_file_location(
                 "primaryconf", str(configpath)
             )
+            if not spec:
+                raise ImportError
             primaryconf = importlib.util.module_from_spec(spec)
-            # noinspection PyUnresolvedReferences
             spec.loader.exec_module(primaryconf)  # type: ignore
             primaryconf = {
                 key: getattr(primaryconf, key)
@@ -692,7 +689,7 @@ class Config(BasicConfig):
 
         try:
             # noinspection PyUnresolvedReferences
-            import cdedb.localconfig as secondaryconf_mod
+            import cdedb.localconfig as secondaryconf_mod  # pylint: disable=import-outside-toplevel
             secondaryconf = {
                 key: getattr(secondaryconf_mod, key)
                 for key in config_keys & set(dir(secondaryconf_mod))
@@ -722,8 +719,9 @@ class SecretsConfig(Mapping[str, Any]):
             spec = importlib.util.spec_from_file_location(
                 "primaryconf", str(configpath)
             )
+            if not spec:
+                raise ImportError
             primaryconf = importlib.util.module_from_spec(spec)
-            # noinspection PyUnresolvedReferences
             spec.loader.exec_module(primaryconf)  # type: ignore
             primaryconf = {
                 key: getattr(primaryconf, key)
@@ -734,7 +732,7 @@ class SecretsConfig(Mapping[str, Any]):
 
         try:
             # noinspection PyUnresolvedReferences
-            import cdedb.localconfig as secondaryconf_mod
+            import cdedb.localconfig as secondaryconf_mod  # pylint: disable=import-outside-toplevel
             secondaryconf = {
                 key: getattr(secondaryconf_mod, key)
                 for key in _SECRECTS_DEFAULTS.keys() & set(

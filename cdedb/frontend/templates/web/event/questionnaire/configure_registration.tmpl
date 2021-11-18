@@ -1,0 +1,76 @@
+{% set sidenav_active='event_configure_registration' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% set jshint='strong' %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+    {{ util.cdedb_script('cdedb_dynamicrow.js') }}
+    {{ util.cdedb_script('cdedb_questionnaire_config.js') }}
+{% endblock %}
+{% block title %}
+    {% trans title=ambience['event']['title'] %}
+    	Configure Registration ({{ title }})
+    {% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+    {{ util.breadcrumb_link(cdedblink("event/configure_registration"), gettext("Configure Registration"), active=True) }}
+{% endblock %}
+{% block heading %}
+    {{ util.context_heading(gettext("Configure Registration"), ambience['event']['title'],
+                            'chalkboard-teacher', gettext("Event")) }}
+{% endblock %}
+
+{% block content %}
+    <div class="p button-par">
+        {{ util.href(cdedblink('event/register', {"preview": True}), gettext("Registration Preview"),
+                     aclass="btn btn-info btn-sm", icon='edit') }}
+        {{ util.href(cdedblink('event/reorder_questionnaire_form', {'kind': enums['QuestionnaireUsages'].registration.value}),
+                     gettext("Reorder Registration"), readonly=is_locked,
+                     aclass="btn btn-info btn-sm", icon='sort') }}
+        {{ util.href(cdedblink('event/questionnaire_import_form'), gettext("Questionnaire Import"), readonly=is_locked,
+                     aclass="btn btn-info btn-sm", icon='file-upload') }}
+    </div>
+    <form action="{{ cdedblink('event/configure_registration') }}" method="POST" id="configureregistrationform">
+        {{ util.anti_csrf_token('event/configure_registration') }}
+        {% set kind = enums['QuestionnaireUsages'].registration %}
+        <div id="drow-container">
+            {# Old items, already stored in the database #}
+            {% for entry in reg_questionnaire %}
+                {{ util.print_questionnaire_config(loop.index0, kind, aclass='drow-row') }}
+            {% endfor %}
+
+            {# Items that were added by the user but failed validation. They are still new and have no official id. #}
+            {% for i in range(1, values.get('create_last_index', 0) + 1) %}
+                {{ util.print_questionnaire_config(-i, kind, aclass='drow-new', newrow=True) }}
+            {% endfor %}
+            {# Prototype row. For non-JS users: an empty row with 'create'-checkbox, for JS: prototype for new rows. #}
+            {{ util.print_questionnaire_config(-values.get('create_last_index', 0) - 1, kind=kind, aclass='drow-prototype', newrow=True) }}
+            <p>
+                <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">
+                    {{ util.make_icon('plus') }} {% trans %}Add Part{% endtrans %}
+                </button>
+            </p>
+        </div>
+        {{ util.input_submit(label=gettext("Save"), readonly=is_locked) }}
+    </form>
+    <script type="text/javascript" nonce="{{ csp_nonce }}">
+        (function() {
+            var field_list = {{ registration_fields|tojson }};
+            var translations = {
+                'true': "{{ gettext("true") }}",
+                'false': "{{ gettext("false") }}"};
+            $('#drow-container').cdedbDynamicRow(
+                {
+                    addButton: $('#drow-addbutton'),
+                    callback: function () {
+                        $(this).cdedbQuestionnaireConfig(field_list, translations);
+                    },
+                    delButtonTitle: "{{ gettext("Delete Questionnaire Part") }}"
+                });
+            $('#configureregistrationform').cdedbProtectChanges();
+            $('.drow-row').cdedbQuestionnaireConfig(field_list, translations);
+        })()
+    </script>
+{% endblock %}

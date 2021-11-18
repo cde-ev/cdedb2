@@ -2,15 +2,19 @@
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans given_names=persona['given_names'], family_name=persona['family_name'] %}
-    	Privilege Change for {{ given_names }} {{ family_name }}
+    {% trans name=util.persona_name(persona) %}
+    	Privilege Change for {{ name }}
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("core/list_privilege_changes"), gettext("Privilege Changes")) }}
 {{ util.breadcrumb_link(cdedblink('core/show_privilege_change', {'case_id': ambience['privilege_change']['id']}),
-        "{} {}".format(persona['given_names'], persona['family_name']), icon="user", active="True") }}
+        util.persona_name(persona), icon="user", active="True") }}
+{% endblock %}
+
+{% block heading %}
+    {{ util.context_heading(gettext("Privilege Change"), util.persona_name(persona), 'user', gettext("User")) }}
 {% endblock %}
 
 {% block content %}
@@ -20,15 +24,7 @@
 
     <h4 class="heading-underline">{% trans %}Admin Privileges{% endtrans %}</h4>
     <div class="diff-view" id="diff-view">
-        {% for privilege in ("is_meta_admin",
-                             "is_core_admin",
-                             "is_cde_admin",
-                             "is_finance_admin",
-                             "is_event_admin",
-                             "is_ml_admin",
-                             "is_cdelokal_admin",
-                             "is_assembly_admin",
-                             ) %}
+        {% for privilege in admin_keys %}
             {% if ambience['privilege_change'][privilege] is not none %}
                 <div class="row">
                     <label class="col-sm-3">

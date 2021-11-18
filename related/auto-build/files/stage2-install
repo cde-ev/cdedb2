@@ -25,6 +25,9 @@ cp /media/cdrom0/server* /etc/ssl/apache2/
 chmod 600 /etc/ssl/apache2/server.key
 chmod 644 /etc/ssl/apache2/server.pem
 
+# TODO run the python scripts in /cdedb2/ldap ?
+# install --mode=640 --group=openldap /media/cdrom0/odbc.ini /etc/odbc.ini
+
 echo ""
 echo "Getting the system up to date..."
 echo "--------------------------------------------"
@@ -65,7 +68,7 @@ apt-get install --yes --no-install-recommends                       \
     \
     apache2 python3 libapache2-mod-wsgi-py3 fail2ban                \
     \
-    slapd ldap-utils                                                \
+    slapd ldap-utils unixodbc odbc-postgresql                       \
     \
     postgresql-client postgresql postgresql-contrib pgbouncer       \
     \
@@ -78,13 +81,23 @@ apt-get install --yes --no-install-recommends                       \
     python3-ldap3 python3-passlib python3-bleach python3-magic      \
     python3-sphinx-rtd-theme python3-zxcvbn python3-markdown        \
     python3-mailmanclient python3-requests python3-qrcode           \
-    python3-vobject python3-typing-extensions                       \
+    python3-vobject python3-graphviz python3-phonenumbers           \
     \
-    python3-pip flake8 isort pylint3
+    python3-pip isort python3-freezegun
 # some packages interpret "recommends" very narrowly, breaking if they are missing
 apt-get install --yes python3-coverage
 
-python3 -m pip install --no-cache-dir mypy==0.790
+python3 -m pip install --no-cache-dir \
+    mypy==0.910 \
+    flake8==3.8.4 \
+    pylint==2.7.2 \
+    types-werkzeug \
+    types-pytz \
+    types-jinja2 \
+    types-python-dateutil \
+    types-freezegun \
+    types-bleach \
+    types-Markdown
 
 for file in /var/cache/apt/archives/*.deb
 do
@@ -112,6 +125,9 @@ sudo -u cdedb touch /home/cdedb/.bash_profile
 echo "cd /cdedb2" >> /home/cdedb/.bash_profile
 echo "" >> /home/cdedb/.bash_profile
 echo "%cdedb ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+# apply our ldap schema
+ldapmodify -Y EXTERNAL -H ldapi:/// -f /cdedb2/sql-ldap.ldif
 
 cat > /etc/motd <<EOF
 

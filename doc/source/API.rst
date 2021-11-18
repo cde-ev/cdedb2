@@ -7,4 +7,5 @@ APIs
 
    API_Constants
    API_Droids
+   API_LDAP
    API_OAuth
