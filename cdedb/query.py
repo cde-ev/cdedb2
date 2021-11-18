@@ -504,7 +504,7 @@ _QUERY_SPECS = {
         },
     QueryScope.quick_registration:
         {
-            "registrations.id": QuerySpecEntry("id", n_("registration ID")),
+            "registrations.id": QuerySpecEntry("id", n_("ID")),
             "given_names": QuerySpecEntry("str", n_("Given Names")),
             "family_name": QuerySpecEntry("str", n_("Family Name")),
             "username": QuerySpecEntry("str", n_("E-Mail")),
@@ -521,8 +521,8 @@ _QUERY_SPECS = {
             "courses.title": QuerySpecEntry("str", n_("course title")),
             "courses.description": QuerySpecEntry("str", n_("course description")),
             "events.title": QuerySpecEntry(
-                "str", n_("Title_[[name of an entity]"), n_("Past Event")),
-            "events.tempus": QuerySpecEntry("date", n_("tempus"), n_("Past Event")),
+                "str", n_("Title_[[name of an entity]]"), n_("Past Event")),
+            "events.tempus": QuerySpecEntry("date", n_("Cutoff date"), n_("Past Event")),
         },
 }
 _QUERY_SPECS[QueryScope.core_user] = _QUERY_SPECS[QueryScope.persona]
@@ -1082,7 +1082,7 @@ def make_lodgement_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None
     spec = {
         "lodgement.id": QuerySpecEntry("id", n_("lodgement ID")),
         "lodgement.lodgement_id": QuerySpecEntry(
-            "id", n_("ldogement"), choices=lodgement_choices),
+            "id", n_("lodgement"), choices=lodgement_choices),
         "lodgement.title": QuerySpecEntry("str", n_("Title_[[name of an entity]]")),
         "lodgement.regular_capacity": QuerySpecEntry("int", n_("Regular Capacity")),
         "lodgement.camping_mat_capacity": QuerySpecEntry(
