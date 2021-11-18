@@ -938,6 +938,10 @@ msgstr "Anmeldungen vorhanden, nur Änderungen möglich."
 msgid "Unknown field."
 msgstr "Unbekanntes Feld."
 
+#: cdedb/backend/event/lowlevel.py:620
+msgid "Unknown part group."
+msgstr "Unbekannte Veranstaltungsteilgruppe."
+
 #: cdedb/backend/event/lowlevel.py:856
 msgid "Non-existing fields specified."
 msgstr "Angegebene Felder existieren nicht."
