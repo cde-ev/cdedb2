@@ -169,6 +169,7 @@ class EventBaseBackend(EventLowLevelBackend):
         some data attached to such an event. Namely we have additional data on:
 
         * parts,
+        * part_groups,
         * orgas,
         * fields.
 
