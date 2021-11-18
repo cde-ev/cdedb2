@@ -18,9 +18,9 @@ from cdedb.backend.common import (
 )
 from cdedb.common import (
     COURSE_TRACK_FIELDS, EVENT_FIELD_SPEC, EVENT_PART_FIELDS, FEE_MODIFIER_FIELDS,
-    FIELD_DEFINITION_FIELDS, CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap,
-    DefaultReturnCode, DeletionBlockers, PathLike, PrivilegeError, PsycoJson,
-    RequestState, mixed_existence_sorter, n_, now, unwrap,
+    FIELD_DEFINITION_FIELDS, PART_GROUP_FIELDS, CdEDBObject, CdEDBObjectMap,
+    CdEDBOptionalMap, DefaultReturnCode, DeletionBlockers, PathLike, PrivilegeError,
+    PsycoJson, RequestState, mixed_existence_sorter, n_, now, unwrap,
 )
 from cdedb.validation import parse_date, parse_datetime
 
@@ -575,13 +575,14 @@ class EventLowLevelBackend(AbstractBackend):
 
         if not blockers:
             part_group = self.sql_select_one(
-                rs, "event.part_groups", ("event_id", "title"), part_group_id)
+                rs, "event.part_groups", PART_GROUP_FIELDS, part_group_id)
             if part_group is None:
                 return 0
+            type_ = const.EventPartGroupType(part_group['constraint_type'])
             ret *= self.sql_delete_one(rs, "event.part_groups", part_group_id)
             self.event_log(rs, const.EventLogCodes.part_group_deleted,
                            event_id=part_group["event_id"],
-                           change_note=part_group["title"])
+                           change_note=f"{part_group['title']}({type_.name})")
         else:
             raise ValueError(
                 n_("Deletion of %(type)s blocked by %(block)s."),
