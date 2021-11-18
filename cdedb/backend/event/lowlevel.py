@@ -582,7 +582,7 @@ class EventLowLevelBackend(AbstractBackend):
             ret *= self.sql_delete_one(rs, "event.part_groups", part_group_id)
             self.event_log(rs, const.EventLogCodes.part_group_deleted,
                            event_id=part_group["event_id"],
-                           change_note=f"{part_group['title']}({type_.name})")
+                           change_note=f"{part_group['title']} ({type_.name})")
         else:
             raise ValueError(
                 n_("Deletion of %(type)s blocked by %(block)s."),
