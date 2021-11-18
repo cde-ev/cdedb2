@@ -2393,7 +2393,7 @@ def _event_part_group(
         mandatory_fields = {**EVENT_PART_GROUP_COMMON_FIELDS}
         optional_fields: TypeMapping = {}
     else:
-        mandatory_fields: TypeMapping = {}
+        mandatory_fields = {}
         optional_fields = {**EVENT_PART_GROUP_COMMON_FIELDS}
 
     val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
@@ -2421,7 +2421,7 @@ def _event_part_group_setter(
             if creation:
                 part_group = _ALL_TYPED[EventPartGroup](part, creation=True, **kwargs)
             else:
-                part_group = _ALL_TYPED[Optional[EventPartGroup]](part, **kwargs)
+                part_group = _ALL_TYPED[Optional[EventPartGroup]](part, **kwargs)  # type: ignore[index]
         except ValidationSummary as e:
             errs.extend(e)
         else:

@@ -4,7 +4,7 @@ import datetime
 import decimal
 from typing import Any, Dict, List, Mapping, NewType as _NewType, Type
 
-from cdedb.common import CdEDBObject
+from cdedb.common import CdEDBObject, CdEDBOptionalMap
 from cdedb.query import Query
 from cdedb.subman import SubscriptionState
 
@@ -91,7 +91,7 @@ PastEvent = _NewType("PastEvent", CdEDBObject)
 Event = _NewType("Event", CdEDBObject)
 EventPart = _NewType("EventPart", CdEDBObject)
 EventPartGroup = _NewType("EventPartGroup", CdEDBObject)
-EventPartGroupSetter = _NewType("EventPartGroupSetter", CdEDBObject)
+EventPartGroupSetter = _NewType("EventPartGroupSetter", CdEDBOptionalMap)
 EventTrack = _NewType("EventTrack", CdEDBObject)
 EventField = _NewType("EventField", CdEDBObject)
 EventFeeModifier = _NewType("EventFeeModifier", CdEDBObject)

@@ -657,7 +657,7 @@ class EventLowLevelBackend(AbstractBackend):
     @internal
     def _set_part_group_parts(self, rs: RequestState, event_id: int, part_group_id: int,
                               part_group_title: str, part_ids: Set[int],
-                              parts: CdEDBObjectMap) -> None:
+                              parts: CdEDBObjectMap) -> DefaultReturnCode:
         """Helper to link the given event parts to the given part group."""
         ret = 1
         self.affirm_atomized_context(rs)
@@ -680,7 +680,7 @@ class EventLowLevelBackend(AbstractBackend):
             for x in mixed_existence_sorter(new_part_ids):
                 inserter.append({'part_group_id': part_group_id, 'part_id': x})
                 self.event_log(
-                    rs, const.EventLogCodes.part_group_link_created,
+                    rs, const.EventLogCodes.part_group_link_created, event_id,
                     change_note=f"{parts[x]['title']} -> {part_group_title}")
             ret *= self.sql_insert_many(rs, "event.part_group_parts", inserter)
         return ret
