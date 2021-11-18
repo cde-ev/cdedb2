@@ -522,7 +522,8 @@ _QUERY_SPECS = {
             "courses.description": QuerySpecEntry("str", n_("course description")),
             "events.title": QuerySpecEntry(
                 "str", n_("Title_[[name of an entity]]"), n_("Past Event")),
-            "events.tempus": QuerySpecEntry("date", n_("Cutoff date"), n_("Past Event")),
+            "events.tempus": QuerySpecEntry(
+                "date", n_("Cutoff date"), n_("Past Event")),
         },
 }
 _QUERY_SPECS[QueryScope.core_user] = _QUERY_SPECS[QueryScope.persona]
