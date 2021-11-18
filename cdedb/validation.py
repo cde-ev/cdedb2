@@ -2410,7 +2410,7 @@ def _event_part_group_setter(
 
     errs = ValidationSummary()
     new_part_groups = {}
-    for anid, part in val.items():
+    for anid, part_group in val.items():
         try:
             anid = _partial_import_id(anid, 'parts', **kwargs)
         except ValidationSummary as e:
@@ -2419,13 +2419,14 @@ def _event_part_group_setter(
         creation = (anid < 0)
         try:
             if creation:
-                part_group = _ALL_TYPED[EventPartGroup](part, creation=True, **kwargs)
+                part_group = _ALL_TYPED[EventPartGroup](
+                    part_group, creation=True, **kwargs)
             else:
-                part_group = _ALL_TYPED[Optional[EventPartGroup]](part, **kwargs)  # type: ignore[index]
+                part_group = _ALL_TYPED[Optional[EventPartGroup]](part_group, **kwargs)  # type: ignore[index]
         except ValidationSummary as e:
             errs.extend(e)
         else:
-            new_part_groups[anid] = part
+            new_part_groups[anid] = part_group
 
     return EventPartGroupSetter(new_part_groups)
 
