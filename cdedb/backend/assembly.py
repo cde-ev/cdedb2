@@ -985,10 +985,6 @@ class AssemblyBackend(AbstractBackend):
             if not assembly['is_active']:
                 raise ValueError(n_("Assembly already concluded."))
             bdata = {k: v for k, v in data.items() if k in BALLOT_FIELDS}
-            # TODO: Do we want to allow creating a running ballot???
-            # do a little dance, so that creating a running ballot does not
-            # throw an error
-            begin, bdata['vote_begin'] = bdata['vote_begin'], FUTURE_TIMESTAMP
             new_id = self.sql_insert(rs, "assembly.ballots", bdata)
             self.assembly_log(rs, const.AssemblyLogCodes.ballot_created,
                               data['assembly_id'], change_note=data['title'])
@@ -1008,13 +1004,6 @@ class AssemblyBackend(AbstractBackend):
                     'ballot_id': new_id,
                 }
                 self.sql_insert(rs, "assembly.voter_register", entry)
-            # fix vote_begin stashed above
-            update = {
-                'id': new_id,
-                'vote_begin': begin,
-            }
-            with Silencer(rs):
-                self.set_ballot(rs, update)
         return new_id
 
     @access("assembly")
