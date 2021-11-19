@@ -628,7 +628,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         future = {k: v for k, v in ballots.items()
                   if v['vote_begin'] > ref}
         # `current` also contains ballots which wait for
-        # check_voting_priod_extension() being called on them
+        # check_voting_period_extension() being called on them
         current = {k: v for k, v in ballots.items()
                    if (v['vote_begin'] <= ref < v['vote_end']
                        or (v['vote_end'] <= ref and v['extended'] is None))}
