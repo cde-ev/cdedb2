@@ -834,6 +834,11 @@ class AssemblyBackend(AbstractBackend):
     is_ballot_voting: _IsBallotVotingProtocol = singularize(
         are_ballots_voting, "ballot_ids", "ballot_id")
 
+    def is_ballot_concluded(self, rs: RequestState, ballot_id: int) -> bool:
+        """Helper to check whether the given ballot has been concluded."""
+        return (self.is_ballot_locked(rs, ballot_id)
+            and not self.is_ballot_voting(rs, ballot_id))
+
     @access("assembly")
     def get_ballots(self, rs: RequestState, ballot_ids: Collection[int]
                     ) -> CdEDBObjectMap:
@@ -852,7 +857,8 @@ class AssemblyBackend(AbstractBackend):
         timestamp = now()
 
         with Atomizer(rs):
-            data = self.sql_select(rs, "assembly.ballots", BALLOT_FIELDS, ballot_ids)
+            data = self.sql_select(rs, "assembly.ballots", BALLOT_FIELDS + ('comment',),
+                                   ballot_ids)
             are_voting = self.are_ballots_voting(rs, ballot_ids)
             ret = {}
             for e in data:
@@ -911,7 +917,8 @@ class AssemblyBackend(AbstractBackend):
         complete data set which will be used to create a new candidate.
 
         .. note:: It is forbidden to modify a ballot after voting has
-          started.
+          started. In contrast, the comment can not be set here, but only after
+          the ballot has ended using `comment_concluded_ballot`.
         """
         data = affirm(vtypes.Ballot, data)
         ret = 1
@@ -1016,6 +1023,36 @@ class AssemblyBackend(AbstractBackend):
             with Silencer(rs):
                 self.set_ballot(rs, update)
         return new_id
+
+    @access("assembly")
+    def comment_concluded_ballot(self, rs: RequestState, ballot_id: int,
+                                 comment: str = None) -> DefaultReturnCode:
+        """Add a comment to a concluded ballot.
+
+        This is intended to note comments regarding tallying, for exmaple tie breakers
+        or special preferential votes.
+
+        It is the only operation on a ballot allowed after it has started, and it is
+        only allowed after it has ended.
+        """
+        ballot_id = affirm(vtypes.ID, ballot_id)
+        comment = affirm_optional(str, comment)
+
+        if not self.is_presider(rs, ballot_id=ballot_id):
+            raise PrivilegeError(n_("Must have privileged access to comment ballot."))
+
+        with Atomizer(rs):
+            if not self.is_ballot_concluded(rs, ballot_id):
+                raise ValueError(n_("Comments are only allowed for concluded ballots."))
+            # TODO Check whether assembly has been archived.
+            # For now, we would like to use this to clean up archived assmblies.
+            current = self.get_ballot(rs, ballot_id)
+            data = {'id': ballot_id, 'comment': comment}
+            ret = self.sql_update(rs, "assembly.ballots", data)
+            self.assembly_log(
+                rs, const.AssemblyLogCodes.ballot_changed,
+                current['assembly_id'], change_note=current['title'])
+        return ret
 
     @access("assembly")
     def delete_ballot_blockers(self, rs: RequestState,

@@ -251,6 +251,7 @@ class TestAssemblyBackend(BackendTest):
                         'shortname': '4',
                     },
                 },
+                'comment': None,
                 'description': 'Nach dem Leben, dem Universum und dem ganzen Rest.',
                 'extended': True,
                 'id': 1,
@@ -304,6 +305,7 @@ class TestAssemblyBackend(BackendTest):
                         'shortname': 'N',
                     },
                 },
+                'comment': None,
                 'description': 'denkt an die Frutaner',
                 'extended': None,
                 'id': 4,
@@ -350,6 +352,7 @@ class TestAssemblyBackend(BackendTest):
                                'title': 'Blau',
                                'id': 9,
                                'shortname': 'blau'}},
+            'comment': None,
             'description': 'Ulitmativ letzte Entscheidung',
             'extended': None,
             'id': ballot_id,
@@ -455,6 +458,7 @@ class TestAssemblyBackend(BackendTest):
         })
         self.assertLess(0, new_id)
         data.update({
+            'comment': None,
             'extended': None,
             'quorum': 10,
             'id': new_id,
@@ -847,6 +851,52 @@ class TestAssemblyBackend(BackendTest):
             self.assertEqual({23, 11}, self.assembly.list_attendees(self.key, new_id))
             self.login("anton")
             self.assertLess(0, self.assembly.conclude_assembly(self.key, new_id))
+
+    @as_users("werner")
+    def test_comment(self) -> None:
+        # For some unfathomable reason, this returns None.
+        print(self.assembly.are_ballots_voting(self.key, [15]))
+        comment = "Ein Kommentar."
+
+        # Comment not possible for future and running ballots
+        for ballot_id in {2, 14}:
+            with self.assertRaises(ValueError) as cm:
+                self.assembly.comment_concluded_ballot(self.key, ballot_id, comment)
+            self.assertIn("Comments are only allowed for concluded ballots.",
+                          cm.exception.args[0])
+
+        # Comment is possible for tallied ballots
+        self.assembly.comment_concluded_ballot(self.key, 1, comment)
+        self.assertEqual(self.assembly.get_ballot(self.key, 1)['comment'], comment)
+        self.assembly.comment_concluded_ballot(self.key, 1, "")
+        self.assertEqual(self.assembly.get_ballot(self.key, 1)['comment'], None)
+
+        # Test log
+        self.logout()
+        self.login('anton')
+        expectation = (
+            {'assembly_id': 1,
+             'change_note': 'Antwort auf die letzte aller Fragen',
+             'code': const.AssemblyLogCodes.ballot_changed,
+             'ctime': nearly_now(),
+             'id': 1001,
+             'persona_id': None,
+             'submitted_by': 23},
+            {'assembly_id': 1,
+             'change_note': 'Antwort auf die letzte aller Fragen',
+             'code': const.AssemblyLogCodes.ballot_changed,
+             'ctime': nearly_now(),
+             'id': 1002,
+             'persona_id': None,
+             'submitted_by': 23}
+        )
+        _, log = self.assembly.retrieve_log(
+            self.key, codes={const.AssemblyLogCodes.ballot_changed},
+            assembly_id=1)
+
+        self.assertEqual(expectation, log)
+        from pprint import pprint
+        pprint(log)
 
     @storage
     @as_users("werner")

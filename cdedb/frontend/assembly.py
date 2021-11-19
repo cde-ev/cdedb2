@@ -1335,6 +1335,20 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @access("assembly", modi={"POST"})
     @assembly_guard
+    @REQUESTdata("comment")
+    def comment_concluded_ballot(self, rs: RequestState, assembly_id: int,
+                                 ballot_id: int, comment: str) -> Response:
+        if rs.has_validation_errors():
+            return self.redirect(rs, "assembly/show_ballot")
+        if not self.assemblyproxy.is_ballot_concluded(rs, ballot_id):
+            rs.notify("error", n_("Comments are only allowed for concluded ballots."))
+            return self.redirect(rs, "assembly/show_ballot")
+        code = self.assemblyproxy.comment_concluded_ballot(rs, ballot_id, comment)
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "assembly/show_ballot")
+
+    @access("assembly", modi={"POST"})
+    @assembly_guard
     def ballot_start_voting(self, rs: RequestState, assembly_id: int,
                             ballot_id: int) -> Response:
         """Immediately start voting period of a ballot.

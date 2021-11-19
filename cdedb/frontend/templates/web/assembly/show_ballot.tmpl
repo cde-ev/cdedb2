@@ -65,6 +65,12 @@
                          aclass="btn btn-info btn-sm pull-right", icon="book") }}
         </h3>
         {{ ballot_tallied.show_result(ambience['ballot'], result) }}
+        {% if ambience['ballot']['comment'] %}
+            {% call util.bootstrap_panel(title=gettext("Ballot Comment"), icon="tag",
+                                         aclass="panel-warning panel-condensed") %}
+                {{ ambience['ballot']['comment']|md }}
+        {% endcall %}
+        {% endif %}
         {{ ballot_tallied.explain_result(classical=is_classical, preferential=is_preferential,
                                         use_bar=ambience['ballot']['use_bar']) }}
     {% else %}
