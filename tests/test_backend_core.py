@@ -1265,9 +1265,10 @@ class TestCoreBackend(BackendTest):
                     self.assertTrue(res)
                     key = self.key
                     generation = self.core.changelog_get_generation(key, u["id"])
-                    self.core.change_persona(
+                    self.core.set_persona(
                         key, {"id": u["id"], "notes": "test"},
-                        change_note="Land auf Ländercode umgestellt.")
+                        change_note="Land auf Ländercode umgestellt.",
+                        automated_change=True)
                     self.assertEqual(
                         generation + 1,
                         self.core.changelog_get_generation(key, u["id"]))
