@@ -666,7 +666,7 @@ class CoreBackend(AbstractBackend):
                     may_wait: bool = True,
                     allow_specials: Tuple[str, ...] = tuple(),
                     force_review: bool = False,
-                    automated_change: bool = True,
+                    automated_change: bool = False,
                     ) -> DefaultReturnCode:
         """Internal helper for modifying a persona data set.
 
