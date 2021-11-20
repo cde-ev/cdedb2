@@ -893,10 +893,7 @@ class TestAssemblyBackend(BackendTest):
         _, log = self.assembly.retrieve_log(
             self.key, codes={const.AssemblyLogCodes.ballot_changed},
             assembly_id=1)
-
         self.assertEqual(expectation, log)
-        from pprint import pprint
-        pprint(log)
 
     @storage
     @as_users("werner")
