@@ -479,7 +479,7 @@ class EventBaseBackend(EventLowLevelBackend):
         event_id = affirm(vtypes.ID, event_id)
         part_groups = affirm(vtypes.EventPartGroupSetter, part_groups)
 
-        if not self.is_admin(rs) or self.is_orga(rs, event_id=event_id):
+        if not (self.is_admin(rs) or self.is_orga(rs, event_id=event_id)):
             raise PrivilegeError(n_("Not privileged."))
         ret = 1
         if not part_groups:
