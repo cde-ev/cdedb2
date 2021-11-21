@@ -582,9 +582,9 @@ CDEDB_PATHS = werkzeug.routing.Map((
                     rule("/query", methods=_GET,
                          endpoint="lodgement_query"),
                     sub('/group', (
-                        rule("/group/summary", methods=_GET,
+                        rule("/summary", methods=_GET,
                              endpoint="lodgement_group_summary_form"),
-                        rule("/group/summary", methods=_POST,
+                        rule("/summary", methods=_POST,
                              endpoint="lodgement_group_summary"),
                     )),
                     sub('/graph', (
