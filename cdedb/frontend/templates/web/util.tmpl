@@ -494,6 +494,7 @@
 {# list as default value is not supported yet #}
 {% macro input_checkbox(name, label='', value=True, defaultvalue='', readonly=False, actualreadonly=False, anid=none,
         aclass=none, inline=False, radio=False, arialabel=none, attributes='') -%}
+    {% set selected = value|stringIn(values.getlist(name)) or (not name in values and value|string == defaultvalue) %}
     <label{% if inline %} class="{{"radio" if radio else "checkbox"}}-inline"{% endif %}>
         <input{{ dict(
             type="radio" if radio else "checkbox",
@@ -501,15 +502,15 @@
             id=anid,
             class=aclass,
             value=value,
-            checked="checked" if value|stringIn(values.getlist(name)) or (not name in values and value|string == defaultvalue),
+            checked="checked" if selected,
             disabled="disabled" if readonly or actualreadonly,
             **{ 'aria-label': arialabel }
         )|xmlattr }} {{ attributes }}/>
         {{ label -}}
     </label>
     {# checkboxes do not support the readonly attribute, so we emulate it with a disabled select and a hidden input. #}
-    {% if actualreadonly %}
-        {{ input_hidden(name) }}
+    {% if actualreadonly and selected %}
+        {{ input_hidden(name, value) }}
     {% endif %}
 {%- endmacro %}
 
@@ -530,13 +531,10 @@
                         <div class="{{ "radio" if radio else "checkbox"}}{{" disabled" if readonly}}
                                     {{ " " + checkboxclass if checkboxclass }}">
                     {%- endif -%}
-                        {{ input_checkbox(name, entry_label, entry_value, defaultvalue, readonly, inline=inline, radio=radio,
-                                          aclass=aclass) }}
+                        {{ input_checkbox(name, entry_label, entry_value, defaultvalue,
+                                          readonly=readonly, actualreadonly=actualreadonly,
+                                          inline=inline, radio=radio, aclass=aclass) }}
                     {%- if not inline %}</div>{% endif %}
-                    {# checkboxes do not support the readonly attribute, so we emulate it with a disabled select and a hidden input. #}
-                    {%- if actualreadonly -%}
-                        {{ input_hidden(name) }}
-                    {%- endif -%}
                 {%- endfor %}
             </div>
         {%- endfor %}
