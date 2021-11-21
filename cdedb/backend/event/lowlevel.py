@@ -688,6 +688,11 @@ class EventLowLevelBackend(AbstractBackend):
         if not updated_fields | deleted_fields <= existing_fields:
             raise ValueError(n_("Non-existing fields specified."))
 
+        # Do deletion first to avoid error due to duplicate field names.
+        for x in mixed_existence_sorter(deleted_fields):
+            # Only allow deletion of unused fields.
+            self._delete_event_field(rs, x, cascade=None)
+
         for x in mixed_existence_sorter(new_fields):
             new_field = copy.deepcopy(fields[x])
             assert new_field is not None
@@ -719,10 +724,6 @@ class EventLowLevelBackend(AbstractBackend):
                     ret *= self.sql_update(rs, "event.field_definitions", updated_field)
                     self.event_log(rs, const.EventLogCodes.field_updated, event_id,
                                    change_note=current_field_data[x]['field_name'])
-
-        for x in mixed_existence_sorter(deleted_fields):
-            # Only allow deletion of unused fields.
-            self._delete_event_field(rs, x, cascade=None)
 
         return ret
 
