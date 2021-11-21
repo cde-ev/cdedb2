@@ -3044,6 +3044,7 @@ def _questionnaire_row(
     else:
         errs.append(ValueError(argname_prefix + 'kind', n_("No kind specified.")))
         raise errs
+    assert kind is not None
 
     fields_by_name = ({f['field_name']: f for f in field_definitions.values()}
                       if field_definitions else {})
