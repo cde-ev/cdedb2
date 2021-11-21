@@ -12,5 +12,5 @@
     {{ util.breadcrumb_link(cdedblink("event/user_search"), gettext("Manage Users"), active="True") }}
 {% endblock %}
 {% block content %}
-    {{ generic.user_search('event', info=gettext("This search will only show pure event users.")) }}
+    {{ generic.user_search('event', result, query, info=gettext("This search will only show pure event users.")) }}
 {% endblock %}

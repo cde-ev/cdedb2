@@ -433,8 +433,14 @@ class CdEBaseFrontend(AbstractUserFrontend):
             if persona[k] and not persona[k].strip().startswith(("0", "+")):
                 persona[k] = "0" + persona[k].strip()
         merge_dicts(persona, PERSONA_DEFAULTS)
+        persona_backup = copy.deepcopy(persona)
         persona, problems = inspect(
             vtypes.Persona, persona, argname="persona", creation=True)
+        # make sure ValidationWarnings do not block the further processing
+        if persona is None:
+            persona, _ = inspect(
+                vtypes.Persona, persona_backup, argname="persona", ignore_warnings=True,
+                creation=True)
         if persona:
             if persona['birthday'] > deduct_years(now().date(), 10):
                 problems.append(

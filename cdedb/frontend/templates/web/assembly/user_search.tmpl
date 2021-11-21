@@ -10,6 +10,6 @@
     {{ util.breadcrumb_link(cdedblink("assembly/create_assembly"), gettext("Manage Users"), active=True) }}
 {% endblock %}
 {% block content %}
-    {{ generic.user_search('assembly', info=gettext("This search will only show pure assembly users. "
-                                                    "This does not include members, not even past members.")) }}
+    {{ generic.user_search('assembly', result, query, info=gettext(
+            "This search will only show pure assembly users. This does not include members, not even past members.")) }}
 {% endblock %}

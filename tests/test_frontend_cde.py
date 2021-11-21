@@ -39,7 +39,7 @@ PERSONA_TEMPLATE = {
         "free_form": "jaaah",
         "gender": str(const.Genders.female),
         "telephone": "030456790",
-        "mobile": "01602047",
+        "mobile": "016020479204",
         "weblink": "www.zzz.cc",
         "address": "Street 7",
         "address_supplement": "on the left",
@@ -882,9 +882,9 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Dr. Zelda Zeruda-Hime von und zu",
                             div='personal-information')
         self.assertPresence("05.06.1987", div='personal-information')
-        self.assertPresence("+49 (30) 456790", div='contact-telephone',
+        self.assertPresence("+49 30 456790", div='contact-telephone',
                             exact=True)
-        self.assertPresence("+49 (160) 2047", div='contact-mobile', exact=True)
+        self.assertPresence("+49 160 20479204", div='contact-mobile', exact=True)
         self.assertPresence("12345 Lynna", div='address')
         self.assertPresence("Ligusterweg 4", div='address2')
         self.assertPresence("CdE-Mitglied (Probemitgliedschaft)",
@@ -910,6 +910,22 @@ class TestCdEFrontend(FrontendTest):
     @as_users("paul", "quintus")
     def test_create_archive_user(self) -> None:
         self.check_create_archive_user('cde', PERSONA_TEMPLATE.copy())
+
+    @as_users("vera")
+    def test_archived_user_search(self) -> None:
+        self.traverse({'href': '/cde/$'}, "Archivsuche")
+        self.assertTitle("Archivsuche")
+        f = self.response.forms['queryform']
+        f['qval_birthday'] = '31.12.2000'
+        f['qop_birthday'] = QueryOperators.less.value
+        for field in f.fields:
+            if field and field.startswith('qsel_'):
+                f[field].checked = True
+        self.submit(f)
+        self.assertTitle("Archivsuche")
+        self.assertPresence("Ergebnis [2]", div='query-results')
+        self.assertPresence("Hell", div='query-result')
+        self.assertPresence("Lost", div='query-result')
 
     @as_users("farin")
     def test_lastschrift_index(self) -> None:

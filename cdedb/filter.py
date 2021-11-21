@@ -17,6 +17,7 @@ import jinja2
 import markdown
 import markdown.extensions.toc
 import markupsafe
+import phonenumbers
 
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, compute_checkdigit, xsorted
@@ -201,6 +202,30 @@ def hidden_iban_filter(val: Optional[str]) -> Optional[str]:
     else:
         val = val[:4] + "*" * (len(val) - 8) + val[-4:]
         return iban_filter(val)
+
+
+@overload
+def phone_filter(val: None) -> None: ...
+
+
+@overload
+def phone_filter(val: str) -> str: ...
+
+
+def phone_filter(val: Optional[str]) -> Optional[str]:
+    """Custom jinja filter to format phone numbers."""
+    if val is None:
+        return None
+
+    try:
+        # default to german if no region is provided
+        phone = phonenumbers.parse(val, region="DE")
+    except phonenumbers.NumberParseException:
+        # default to the raw value if it can not be parsed
+        return val
+
+    return phonenumbers.format_number(
+        phone, phonenumbers.PhoneNumberFormat.INTERNATIONAL)
 
 
 @overload
@@ -623,6 +648,7 @@ JINJA_FILTERS = {
     'cdedbid': cdedbid_filter,
     'iban': iban_filter,
     'hidden_iban': hidden_iban_filter,
+    'phone': phone_filter,
     'escape': escape_filter,
     'e': escape_filter,
     'stringIn': stringIn_filter,

@@ -7,37 +7,31 @@ on boilerplate.
 
 Additionally this provides some level of guidance on how to interact
 with the production environment.
+
+Note that some imports are only made when they are actually needed, so that this
+facility may be used in a minimized environment, such as the ldap docker container.
 """
 
 import getpass
 import os
 import tempfile
 import time
+from pkgutil import resolve_name
 from types import TracebackType
-from typing import IO, Any, Dict, Optional, Tuple, Type
+from typing import IO, TYPE_CHECKING, Any, Dict, Mapping, Optional, Tuple, Type
 
 import psycopg2
 import psycopg2.extensions
 import psycopg2.extras
 
-from cdedb.backend.assembly import AssemblyBackend
-from cdedb.backend.cde import CdEBackend
-from cdedb.backend.common import AbstractBackend
-from cdedb.backend.core import CoreBackend
-from cdedb.backend.event import EventBackend
-from cdedb.backend.ml import MlBackend
-from cdedb.backend.past_event import PastEventBackend
-from cdedb.common import ALL_ROLES, PathLike, RequestState, User, make_proxy
+from cdedb.common import (
+    ALL_ROLES, AbstractBackend, PathLike, RequestState, User, make_proxy,
+)
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import Atomizer, IrradiatedConnection
-from cdedb.frontend.common import setup_translations
 
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
-
-_CONFIG = Config()
-_TRANSLATIONS = setup_translations(_CONFIG)
-
 
 __all__ = ['DryRunError', 'Script', 'ScriptAtomizer']
 
@@ -74,12 +68,12 @@ class TempConfig:
 
 class Script:
     backend_map = {
-        "core": CoreBackend,
-        "cde": CdEBackend,
-        "past_event": PastEventBackend,
-        "ml": MlBackend,
-        "assembly": AssemblyBackend,
-        "event": EventBackend,
+        "core": "CoreBackend",
+        "cde": "CdEBackend",
+        "past_event": "PastEventBackend",
+        "ml": "MlBackend",
+        "assembly": "AssemblyBackend",
+        "event": "EventBackend",
     }
 
     def __init__(self, *, persona_id: int = None, dry_run: bool = None,
@@ -131,7 +125,12 @@ class Script:
         with self._tempconfig as p:
             self.config = Config(p)
             self._secrets = SecretsConfig(p)
-        self._backends: Dict[Tuple[str, bool], AbstractBackend] = {}
+        if TYPE_CHECKING:
+            import gettext  # pylint: disable=import-outside-toplevel
+            self._translations: Optional[Mapping[str, gettext.NullTranslations]]
+            self._backends: Dict[Tuple[str, bool], AbstractBackend]
+        self._translations = None
+        self._backends = {}
         self._request_states: Dict[int, RequestState] = {}
         self._connect(dbuser, dbname, cursor)
 
@@ -164,7 +163,8 @@ class Script:
         if ret := self._backends.get((realm, proxy)):
             return ret
         with self._tempconfig as p:
-            backend = self.backend_map[realm](p)
+            backend_name = self.backend_map[realm]
+            backend = resolve_name(f"cdedb.backend.{realm}.{backend_name}")(p)
         self._backends.update({
             (realm, True): make_proxy(backend),
             (realm, False): backend,
@@ -176,6 +176,11 @@ class Script:
         persona_id = self.persona_id if persona_id is None else persona_id
         if ret := self._request_states.get(persona_id):
             return ret
+        if self._translations is None:
+            from cdedb.frontend.common import (  # pylint: disable=import-outside-toplevel
+                setup_translations,
+            )
+            self._translations = setup_translations(self.config)
         rs = RequestState(
             sessionkey=None,
             apitoken=None,
@@ -191,7 +196,7 @@ class Script:
             values=None,
             begin=None,
             lang="de",
-            translations=_TRANSLATIONS,
+            translations=self._translations,
         )
         rs.conn = rs._conn = self._conn
         self._request_states[persona_id] = rs

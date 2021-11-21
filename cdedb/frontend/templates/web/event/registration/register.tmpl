@@ -79,9 +79,9 @@
             <dt>{% trans %}E-Mail{% endtrans %}</dt>
             <dd> {{ persona['username'] }} </dd>
             <dt>{% trans %}Phone{% endtrans %}</dt>
-            <dd>{{ persona['telephone'] }}</dd>
+            <dd>{{ persona['telephone']|phone }}</dd>
             <dt>{% trans %}Mobile Phone{% endtrans %}</dt>
-            <dd>{{ persona['mobile'] }}</dd>
+            <dd>{{ persona['mobile']|phone }}</dd>
             <dt>{% trans %}Address{% endtrans %}</dt>
             <dd>{{ persona['address'] }}</dd>
             <dt>{% trans %}Address Supplement{% endtrans %}</dt>

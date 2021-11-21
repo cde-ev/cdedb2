@@ -37,7 +37,7 @@ from cdedb.common import (
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import Atomizer, connection_pool_factory
-from cdedb.query import Query, QueryOperators, QueryScope
+from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 
 
 class CoreBackend(AbstractBackend):
@@ -269,7 +269,8 @@ class CoreBackend(AbstractBackend):
 
     def changelog_submit_change(self, rs: RequestState, data: CdEDBObject,
                                 generation: Optional[int], may_wait: bool,
-                                change_note: str, force_review: bool = False
+                                change_note: str, force_review: bool = False,
+                                automated_change: bool = False,
                                 ) -> DefaultReturnCode:
         """Insert an entry in the changelog.
 
@@ -376,6 +377,7 @@ class CoreBackend(AbstractBackend):
                 "change_note": change_note,
                 "code": const.MemberChangeStati.pending,
                 "persona_id": data['id'],
+                "automated_change": automated_change,
             })
             del insert['id']
             if 'ctime' in insert:
@@ -401,10 +403,12 @@ class CoreBackend(AbstractBackend):
                 insert.update(diff)
                 insert.update({
                     "submitted_by": rs.user.persona_id,
+                    "reviewed_by": None,
                     "generation": next_generation + 1,
+                    "change_note": "Verdrängte Änderung.",
                     "code": const.MemberChangeStati.pending,
                     "persona_id": data['id'],
-                    "change_note": "Verdrängte Änderung.",
+                    "automated_change": automated_change,
                 })
                 del insert['id']
                 self.sql_insert(rs, "core.changelog", insert)
@@ -630,7 +634,8 @@ class CoreBackend(AbstractBackend):
         if is_archived is not None:
             constraints.append("is_archived = %s")
             params.append(is_archived)
-        query += " WHERE " + " AND ".join(constraints)
+        if constraints:
+            query += " WHERE " + " AND ".join(constraints)
         return unwrap(self.query_one(rs, query, params))
 
     def commit_persona(self, rs: RequestState, data: CdEDBObject,
@@ -660,7 +665,8 @@ class CoreBackend(AbstractBackend):
                     generation: int = None, change_note: str = None,
                     may_wait: bool = True,
                     allow_specials: Tuple[str, ...] = tuple(),
-                    force_review: bool = False
+                    force_review: bool = False,
+                    automated_change: bool = False,
                     ) -> DefaultReturnCode:
         """Internal helper for modifying a persona data set.
 
@@ -751,7 +757,7 @@ class CoreBackend(AbstractBackend):
             ret = self.changelog_submit_change(
                 rs, data, generation=generation,
                 may_wait=may_wait, change_note=change_note,
-                force_review=force_review)
+                force_review=force_review, automated_change=automated_change)
             if allow_specials and ret < 0:
                 raise RuntimeError(n_("Special change not committed."))
         return ret
@@ -2889,7 +2895,7 @@ class CoreBackend(AbstractBackend):
         if query.scope in {QueryScope.core_user, QueryScope.archived_core_user}:
             query.constraints.append(("is_archived", QueryOperators.equal,
                                       query.scope == QueryScope.archived_core_user))
-            query.spec["is_archived"] = "bool"
+            query.spec["is_archived"] = QuerySpecEntry("bool", "")
         else:
             raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query)
