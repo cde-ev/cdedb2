@@ -36,7 +36,7 @@ from cdedb.frontend.common import (
     periodic, request_dict_extractor, request_extractor,
 )
 from cdedb.ml_type_aux import MailinglistGroup
-from cdedb.query import Query, QueryOperators, QueryScope
+from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.subman.machine import SubscriptionPolicy
 from cdedb.validation import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
@@ -827,10 +827,10 @@ class CoreBaseFrontend(AbstractFrontend):
             if self.coreproxy.verify_id(rs, anid, is_archived=None):
                 return self.redirect_show_user(rs, anid)
         terms = tuple(t.strip() for t in phrase.split(' ') if t)
-        search = [("username,family_name,given_names,display_name",
-                   QueryOperators.match, t) for t in terms]
+        key = "username,family_name,given_names,display_name"
+        search = [(key, QueryOperators.match, t) for t in terms]
         spec = QueryScope.core_user.get_spec()
-        spec["username,family_name,given_names,display_name"] = "str"
+        spec[key] = QuerySpecEntry("str", "")
         query = Query(
             QueryScope.core_user,
             spec,
@@ -902,7 +902,6 @@ class CoreBaseFrontend(AbstractFrontend):
         if rs.has_validation_errors():
             return self.send_json(rs, {})
 
-        spec_additions: Dict[str, str] = {}
         search_additions = []
         mailinglist = None
         num_preview_personas = (self.conf["NUM_PREVIEW_PERSONAS_CORE_ADMIN"]
@@ -1004,12 +1003,11 @@ class CoreBaseFrontend(AbstractFrontend):
                 data = tuple()
             else:
                 search: List[Tuple[str, QueryOperators, Any]]
-                search = [("username,family_name,given_names,display_name",
-                           QueryOperators.match, t) for t in terms]
+                key = "username,family_name,given_names,display_name"
+                search = [(key, QueryOperators.match, t) for t in terms]
                 search.extend(search_additions)
                 spec = QueryScope.core_user.get_spec()
-                spec["username,family_name,given_names,display_name"] = "str"
-                spec.update(spec_additions)
+                spec[key] = QuerySpecEntry("str", "")
                 query = Query(
                     QueryScope.core_user, spec,
                     ("personas.id", "username", "family_name", "given_names",
@@ -1103,7 +1101,7 @@ class CoreBaseFrontend(AbstractFrontend):
             'gender': collections.OrderedDict(
                 enum_entries_filter(
                     const.Genders,
-                    rs.gettext if download is None else rs.default_gettext))
+                    rs.gettext if download is None else rs.default_gettext)),
         }
         return self.generic_user_search(
             rs, download, is_search, QueryScope.core_user, QueryScope.core_user,
@@ -1136,14 +1134,11 @@ class CoreBaseFrontend(AbstractFrontend):
         Archived users are somewhat special since they are not visible
         otherwise.
         """
-        events = self.pasteventproxy.list_past_events(rs)
         choices: Dict[str, Dict[Any, str]] = {
-            'pevent_id': collections.OrderedDict(
-                xsorted(events.items(), key=operator.itemgetter(1))),
             'gender': collections.OrderedDict(
                 enum_entries_filter(
                     const.Genders,
-                    rs.gettext if download is None else rs.default_gettext))
+                    rs.gettext if download is None else rs.default_gettext)),
         }
         return self.generic_user_search(
             rs, download, is_search,
@@ -2243,17 +2238,12 @@ class CoreBaseFrontend(AbstractFrontend):
             err = {'error': tuple(map(str, rs.retrieve_validation_errors()))}
             return self.send_json(rs, err)
 
-        spec = {
-            "id": "id",
-            "username": "str",
-            "is_event_realm": "bool",
-        }
         constraints = (
             ('username', QueryOperators.equal, username),
             ('is_event_realm', QueryOperators.equal, True),
         )
-        query = Query(QueryScope.persona, spec,
+        query = Query(QueryScope.persona, QueryScope.persona.get_spec(),
                       ("given_names", "family_name", "is_member", "username"),
-                      constraints, (('id', True),))
+                      constraints, (('personas.id', True),))
         result = self.coreproxy.submit_resolve_api_query(rs, query)
         return self.send_json(rs, unwrap(result) if result else {})

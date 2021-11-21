@@ -3498,8 +3498,8 @@ etc;anything else""", f['entries_2'].value)
                                     for row in result))
         self.assertIn(const.RegistrationPartStati.cancelled.name,
                       tuple(row['part2.status'] for row in result))
-        self.response = save.click(href='/event/event/1/download/csv_courses')
 
+        self.response = save.click(href='/event/event/1/download/csv_courses')
         result = list(csv.DictReader(self.response.text.split('\n'),
                                      dialect=CustomCSVDialect))
         self.assertIn('ToFi & Co', tuple(row['course.instructors'] for row in result))
@@ -3508,8 +3508,8 @@ etc;anything else""", f['entries_2'].value)
             and row['track2.takes_place'] == 'False' for row in result))
         self.assertIn('Seminarraum 42', tuple(row['course_fields.xfield_room']
                                               for row in result))
-        self.response = save.click(href='/event/event/1/download/csv_lodgements')
 
+        self.response = save.click(href='/event/event/1/download/csv_lodgements')
         result = list(csv.DictReader(self.response.text.split('\n'),
                                      dialect=CustomCSVDialect))
         self.assertIn(

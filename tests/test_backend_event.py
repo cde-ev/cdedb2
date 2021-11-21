@@ -1663,17 +1663,6 @@ class TestEventBackend(BackendTest):
                  ['pedes', 'etc'])],
             order=(("reg.id", True),),)
 
-        # fix query spec (normally done by frontend)
-        query.spec.update({
-            'lodgement1.id': "int",
-            'part3.status': "int",
-            'course2.id': "int",
-            'lodgement2.xfield_contamination': "str",
-            'course1.xfield_room': "str",
-            'reg_fields.xfield_brings_balls': "bool",
-            'reg_fields.xfield_transportation': "str",
-            'part2.status': "int",
-        })
         result = self.event.submit_general_query(self.key, query, event_id=1)
         expectation = (
             {'birthday': datetime.date(2012, 6, 2),
