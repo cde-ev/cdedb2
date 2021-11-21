@@ -3733,7 +3733,7 @@ class TestEventBackend(BackendTest):
         self.event.set_questionnaire(self.key, 1, data)
 
         # now check it
-        expectation = (35, (
+        expectation = (
             {'id': 1001,
              'change_note': None,
              'code': const.EventLogCodes.event_created,
@@ -3818,23 +3818,20 @@ class TestEventBackend(BackendTest):
              'event_id': 1001,
              'persona_id': None,
              'submitted_by': self.user['id']},
-            {'id': 1013,
-             'change_note': 'kuea',
+            {'change_note': 'instrument',
+             'code': const.EventLogCodes.field_removed,
+             'ctime': nearly_now(),
+             'event_id': 1001,
+             'persona_id': None,
+             'submitted_by': self.user['id']},
+            {'change_note': 'kuea',
              'code': const.EventLogCodes.field_added,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
              'submitted_by': self.user['id']},
-            {'id': 1014,
-             'change_note': 'preferred_excursion_date',
+            {'change_note': 'preferred_excursion_date',
              'code': const.EventLogCodes.field_updated,
-             'ctime': nearly_now(),
-             'event_id': 1001,
-             'persona_id': None,
-             'submitted_by': self.user['id']},
-            {'id': 1015,
-             'change_note': 'instrument',
-             'code': const.EventLogCodes.field_removed,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
@@ -3950,10 +3947,10 @@ class TestEventBackend(BackendTest):
              'ctime': nearly_now(),
              'event_id': 1,
              'persona_id': None,
-             'submitted_by': self.user['id'], }))
+             'submitted_by': self.user['id']},
+        )
 
-        result = self.event.retrieve_log(self.key, offset=offset)
-        self.assertEqual(expectation, result)
+        self.assertLogEqual(expectation, realm="event", offset=offset)
 
     def _create_registration(self, persona_id: int, event_id: int) -> int:
         event = self.event.get_event(self.key, event_id)
