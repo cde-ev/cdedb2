@@ -32,8 +32,8 @@ from cdedb.common import (
     LODGEMENT_FIELDS, LODGEMENT_GROUP_FIELDS, PART_GROUP_FIELDS, PERSONA_EVENT_FIELDS,
     PERSONA_STATUS_FIELDS, QUESTIONNAIRE_ROW_FIELDS, REGISTRATION_FIELDS,
     REGISTRATION_PART_FIELDS, REGISTRATION_TRACK_FIELDS, CdEDBLog, CdEDBObject,
-    CdEDBObjectMap, DefaultReturnCode, PrivilegeError, RequestState, glue, n_, now,
-    unwrap, xsorted,
+    CdEDBObjectMap, CdEDBOptionalMap, DefaultReturnCode, PrivilegeError, RequestState,
+    glue, mixed_existence_sorter, n_, now, unwrap, xsorted,
 )
 from cdedb.database.connection import Atomizer
 
@@ -471,6 +471,87 @@ class EventBaseBackend(EventLowLevelBackend):
                 update_data['id'] = new_id
                 self.set_event(rs, update_data)
         return new_id
+
+    @access("event")
+    def set_part_groups(self, rs: RequestState, event_id: int,
+                        part_groups: CdEDBOptionalMap) -> DefaultReturnCode:
+        """Create, delete and/or update part groups for one event."""
+        event_id = affirm(vtypes.ID, event_id)
+        part_groups = affirm(vtypes.EventPartGroupSetter, part_groups)
+
+        if not self.is_admin(rs) or self.is_orga(rs, event_id=event_id):
+            raise PrivilegeError(n_("Not privileged."))
+        ret = 1
+        if not part_groups:
+            return ret
+
+        with Atomizer(rs):
+            parts = {e['id']: e for e in self.sql_select(
+                rs, "event.event_parts", EVENT_PART_FIELDS, (event_id,),
+                entity_key="event_id")}
+
+            existing_part_groups = {unwrap(e) for e in self.sql_select(
+                rs, "event.part_groups", ("id",), (event_id,), entity_key="event_id")}
+            new_part_groups = {x for x in part_groups if x < 0}
+            updated_part_groups = {
+                x for x in part_groups if x > 0 and part_groups[x] is not None}
+            deleted_part_groups = {
+                x for x in part_groups if x > 0 and part_groups[x] is None}
+
+            if not (updated_part_groups | deleted_part_groups) <= existing_part_groups:
+                raise ValueError(n_("Unknown part group."))
+
+            # new
+            for x in mixed_existence_sorter(new_part_groups):
+                new_part_group = copy.copy(part_groups[x])
+                assert new_part_group is not None
+                new_part_group['event_id'] = event_id
+                part_ids = affirm_set(vtypes.ID, new_part_group.pop('part_ids'))
+                new_id = self.sql_insert(rs, "event.part_groups", new_part_group)
+                ret *= new_id
+                self.event_log(
+                    rs, const.EventLogCodes.part_group_created, event_id,
+                    change_note=new_part_group['title'])
+                if part_ids:
+                    if not part_ids <= parts.keys():
+                        raise ValueError(n_("Unknown part for the given event."))
+                    ret *= self._set_part_group_parts(
+                        rs, event_id, part_group_id=new_id, part_ids=part_ids,
+                        parts=parts, part_group_title=new_part_group['title'])
+
+            # updated
+            if updated_part_groups:
+                current_part_group_data = {e['id']: e for e in self.sql_select(
+                    rs, "event.part_groups", PART_GROUP_FIELDS, updated_part_groups)}
+                for x in mixed_existence_sorter(updated_part_groups):
+                    updated = copy.copy(part_groups[x])
+                    assert updated is not None
+                    updated['id'] = x
+                    # Changing the constraint type is not allowed.
+                    updated.pop('constraint_type', None)
+                    part_ids = updated.pop('part_ids', None)
+                    title = updated.get('title', current_part_group_data[x]['title'])
+                    if any(updated[k] != current_part_group_data[x][k]
+                           for k in updated):
+                        self.logger.debug(updated)
+                        ret *= self.sql_update(rs, "event.part_groups", updated)
+                        self.event_log(
+                            rs, const.EventLogCodes.part_group_changed, event_id,
+                            change_note=title)
+                    if part_ids is not None:
+                        part_ids = affirm_set(vtypes.ID, part_ids)
+                        if not part_ids <= parts.keys():
+                            raise ValueError(n_("Unknown part for the given event."))
+                        ret *= self._set_part_group_parts(
+                            rs, event_id, part_group_id=x, part_ids=part_ids,
+                            parts=parts, part_group_title=title)
+
+            if deleted_part_groups:
+                cascade = ("part_group_parts",)
+                for x in mixed_existence_sorter(deleted_part_groups):
+                    ret *= self._delete_part_group(rs, part_group_id=x, cascade=cascade)
+
+        return ret
 
     @access("event")
     def check_orga_addition_limit(self, rs: RequestState,
