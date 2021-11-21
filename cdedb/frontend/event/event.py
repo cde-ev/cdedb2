@@ -32,7 +32,7 @@ from cdedb.frontend.event.base import EventBaseFrontend
 from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.validation import (
     EVENT_EXPOSED_FIELDS, EVENT_PART_COMMON_FIELDS,
-    EVENT_PART_CREATION_MANDATORY_FIELDS,
+    EVENT_PART_CREATION_MANDATORY_FIELDS, EVENT_PART_GROUP_COMMON_FIELDS,
 )
 
 
@@ -564,6 +564,38 @@ class EventEventMixin(EventBaseFrontend):
         self.notify_return_code(rs, code)
 
         return self.redirect(rs, "event/part_summary")
+
+    @access("event")
+    @event_guard()
+    def part_group_summary_form(self, rs: RequestState, event_id: int) -> Response:
+        sorted_part_group_ids = [
+            e["id"] for e in xsorted(rs.ambience['event']['part_groups'].values(),
+                                     key=EntitySorter.event_part_group)]
+
+        current = {}
+        for part_group_id, part_group in rs.ambience['event']['part_groups'].items():
+            for key, value in part_group.items():
+                if key == 'id':
+                    continue
+                k = drow_name(key, entity_id=part_group_id)
+                current[k] = value
+        merge_dicts(rs.values, current)
+
+        return self.render(rs, "event/part_group_summary", {
+            'sorted_part_group_ids': sorted_part_group_ids,
+        })
+
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
+    def part_group_summary(self, rs: RequestState, event_id: int) -> Response:
+        data = process_dynamic_input(
+            rs, vtypes.EventPartGroup, rs.ambience['event']['part_groups'],
+            EVENT_PART_GROUP_COMMON_FIELDS)
+        if rs.has_validation_errors():
+            return self.part_group_summary_form(rs, event_id)
+        code = self.eventproxy.set_part_groups(rs, event_id, data)
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "event/part_group_summary_form")
 
     @staticmethod
     def _get_mailinglist_setter(event: CdEDBObject, orgalist: bool = False
