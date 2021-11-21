@@ -1750,7 +1750,8 @@ def REQUESTdata(
                         if timeout is False:
                             rs.notify("warning", n_("Link invalid."))
 
-                    if typing.get_origin(type_) is collections.abc.Collection:
+                    origin = typing.get_origin(type_)
+                    if origin is collections.abc.Collection or origin is list:
                         type_ = unwrap(type_.__args__)
                         vals = tuple(rs.request.values.getlist(name))
                         if vals:
