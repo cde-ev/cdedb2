@@ -719,9 +719,9 @@ GRANT SELECT ON event.event_parts TO cdb_anonymous;
 
 CREATE TABLE event.part_groups (
         id                      serial PRIMARY KEY,
-        event_id                integer REFERENCES event.events(id),
-        title                   varchar,
-        shortname               varchar,
+        event_id                integer REFERENCES event.events(id) NOT NULL,
+        title                   varchar NOT NULL,
+        shortname               varchar NOT NULL,
         notes                   varchar,
         constraint_type         integer NOT NULL
 );
@@ -739,6 +739,7 @@ CREATE TABLE event.part_group_parts (
 CREATE UNIQUE INDEX idx_part_group_parts_constraint ON event.part_group_parts(part_group_id, part_id);
 GRANT INSERT, SELECT, DELETE ON event.part_group_parts TO cdb_persona;
 GRANT SELECT, UPDATE ON event.part_group_parts TO cdb_persona;
+GRANT SELECT, UPDATE ON event.part_group_parts_id_seq TO cdb_persona;
 GRANT SELECT ON event.part_group_parts TO cdb_anonymous;
 
 -- each course can take place in an arbitrary number of tracks
