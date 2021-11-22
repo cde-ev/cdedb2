@@ -1218,6 +1218,7 @@ class CoreBaseFrontend(AbstractFrontend):
         display_realms = rs.user.roles.intersection(REALM_INHERITANCE)
         if "cde" in display_realms:
             display_realms.add("finance")
+            display_realms.add("auditor")
         if "ml" in display_realms:
             display_realms.add("cdelokal")
         for realm in display_realms:
