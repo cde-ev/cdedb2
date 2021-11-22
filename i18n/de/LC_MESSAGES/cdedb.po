@@ -9090,7 +9090,7 @@ msgid ""
 "Auditors may view all logs, in particular those related to finance "
 "administration, i.e. the documentation of membership fees."
 msgstr ""
-"Kassenprüfer dürfen alle Logbücher einsehen, insbesondere diejenigen, die "
+"Kassenprüfer dürfen alle Logs einsehen, insbesondere diejenigen, die "
 "mit der Finanzverwaltung zusammenhängen, z.B. die Dokumentation der "
 "Mitgliedsbeiträge."
 
