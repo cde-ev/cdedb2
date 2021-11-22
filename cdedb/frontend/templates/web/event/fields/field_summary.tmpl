@@ -79,23 +79,23 @@
                                                   aclass='drow-input form-control association-input') }}
                     </div>
                 {% else %}
-                    {{ util.input_hidden(name="association_{}".format(field_id), value=association) }}
+                    {{ util.input_hidden(name=drow_name('association', field_id), value=association) }}
                 {% endif %}
-                {{ util.form_input_textarea(name="entries_{}".format(field_id), label=gettext("Options"),
+                {{ util.form_input_textarea(name=drow_name('entries', field_id), label=gettext("Options"),
                                             actualreadonly=not changeable, aclass='drow-input',
-                                            attributes='data-basename="entries_"'|s if newrow else '') }}
+                                            attributes=util.drow_basename('entries')|s if newrow else '') }}
                 {% if association == enums['FieldAssociations'].registration %}
-                    {{ util.form_input_checkbox(
-                            label=gettext("Display at Checkin"), name="checkin_{}".format(field_id),
-                            actualreadonly=not changeable, attributes='data-basename="creation_"'|s if newrow else '') }}
+                    {{ util.form_input_checkbox(label=gettext("Display at Checkin"), name=drow_name('checkin', field_id),
+                                                actualreadonly=not changeable,
+                                                attributes=util.drow_basename('checkin')|s if newrow else '') }}
                 {% endif %}
                 <div class="drow-buttonspace">
                     {% if newrow %}
-                        {{ util.form_input_checkbox("create_{}".format(field_id), label=gettext("Add"),
-                                                    attributes='data-basename="create_"'|s,
+                        {{ util.form_input_checkbox(drow_create(field_id), label=gettext("Add"),
+                                                    attributes=util.drow_basename('create')|s,
                                                     aclass='drow-indicator') }}
                     {% else %}
-                        {{ util.form_input_checkbox("delete_{}".format(field_id), label=gettext("Remove"),
+                        {{ util.form_input_checkbox(drow_delete(field_id), label=gettext("Remove"),
                                                     readonly=not deletable, aclass='drow-indicator') }}
                     {% endif %}
                 </div>
@@ -133,8 +133,8 @@
                     {% endfor %}
 
                     {# Items that were added by the user but failed validation. They are still new and have no official id. #}
-                    {% for i in range(1, values.get('create_last_index', 0) + 1)
-                            if values.get("association_{}".format(-i), '') == association|string %}
+                    {% for i in range(1, values.get(drow_last_index(), 0) + 1)
+                            if values.get(drow_name('association', -i), '') == association|string %}
                         {% do relevant_fields.append((-i, None)) %}
                     {% endfor %}
 
