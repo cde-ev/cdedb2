@@ -59,6 +59,7 @@ import werkzeug.exceptions
 import werkzeug.utils
 import werkzeug.wrappers
 
+import cdedb.database.constants as const
 import cdedb.query as query_mod
 import cdedb.validation as validate
 import cdedb.validationtypes as vtypes
@@ -84,7 +85,9 @@ from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.devsamples import HELD_MESSAGE_SAMPLE
 from cdedb.enums import ENUMS_DICT
-from cdedb.filter import JINJA_FILTERS, cdedbid_filter, safe_filter, sanitize_None
+from cdedb.filter import (
+    JINJA_FILTERS, cdedbid_filter, enum_entries_filter, safe_filter, sanitize_None,
+)
 from cdedb.query import Query
 
 _LOGGER = logging.getLogger(__name__)
@@ -612,25 +615,35 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         response.headers.add('X-Generation-Time', str(now() - rs.begin))
         return response
 
-    def send_query_download(self, rs: RequestState,
-                            result: Collection[CdEDBObject], fields: List[str],
-                            kind: str, filename: str,
-                            substitutions: Mapping[
-                                str, Mapping[Any, Any]] = None
-                            ) -> Response:
+    def send_query_download(self, rs: RequestState, result: Collection[CdEDBObject],
+                            query: Query, kind: str, filename: str) -> Response:
         """Helper to send download of query result.
 
-        :param fields: List of fields the output should have. Commaseparated
-            fields will be split up.
         :param kind: Can be either `'csv'` or `'json'`.
         :param filename: The extension will be added automatically depending on
             the kind specified.
         """
-        if not fields:
-            raise ValueError(n_("Cannot download query result without fields"
-                                " of interest."))
-        fields: List[str] = sum((csvfield.split(',') for csvfield in fields), [])
+        fields: List[str] = sum(
+            (csvfield.split(',') for csvfield in query.fields_of_interest), [])
         filename += f".{kind}"
+
+        # Apply special handling to enums and country codes for downloads.
+        for k, v in query.spec.items():
+            if k.endswith("gender"):
+                query.spec[k] = query.spec[k].replace_choices(
+                    dict(enum_entries_filter(
+                        const.Genders, lambda x: x.name, raw=True)))
+            if k.endswith(".status"):
+                query.spec[k] = query.spec[k].replace_choices(
+                    dict(enum_entries_filter(
+                        const.RegistrationPartStati, lambda x: x.name, raw=True)))
+            if k.endswith(("country", "country2")):
+                query.spec[k] = query.spec[k].replace_choices(
+                    dict(get_localized_country_codes(rs, rs.default_lang)))
+            if "xfield" in k:
+                query.spec[k] = query.spec[k].replace_choices({})
+        substitutions = {k: v.choices for k, v in query.spec.items() if v.choices}
+
         if kind == "csv":
             csv_data = csv_output(result, fields, substitutions=substitutions)
             return self.send_csv_file(
@@ -819,11 +832,15 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             query = check_validation(rs, vtypes.QueryInput, query_input, "query",
                                      spec=spec, allow_empty=False)
         default_queries = self.conf["DEFAULT_QUERIES"][default_scope]
-        if not choices:
+        choices_lists = {}
+        if choices is None:
             choices = {}
-        choices_lists = {k: list(v.items()) for k, v in choices.items()}
+        for k, v in choices.items():
+            choices_lists[k] = list(v.items())
+            if query and k in query.spec:
+                query.spec[k] = query.spec[k].replace_choices(v)
         params = {
-            'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
+            'spec': spec, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'query': query, 'scope': scope,
             'ADMIN_KEYS': ADMIN_KEYS,
         }
@@ -833,8 +850,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             params['result'] = result
             if download:
                 return self.send_query_download(
-                    rs, result, fields=query.fields_of_interest, kind=download,
-                    filename=endpoint + "_result", substitutions=params['choices'])
+                    rs, result, query, kind=download, filename=endpoint + "_result")
         else:
             rs.values['is_search'] = False
         return self.render(rs, endpoint, params)

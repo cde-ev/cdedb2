@@ -17,5 +17,5 @@
     {{ util.breadcrumb_link(cdedblink("cde/archived_user_search"), gettext("Search Archived Users"), active="True") }}
 {% endblock %}
 {% block content %}
-    {{ generic.user_search("cde", archived=True) }}
+    {{ generic.user_search("cde", result, query, archived=True) }}
 {% endblock %}

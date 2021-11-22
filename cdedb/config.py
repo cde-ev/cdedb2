@@ -22,7 +22,7 @@ import pytz
 
 import cdedb.database.constants as const
 from cdedb.common import ADMIN_KEYS, CdEDBObject, PathLike, deduct_years, n_, now
-from cdedb.query import Query, QueryOperators, QueryScope
+from cdedb.query import Query, QueryOperators, QueryScope, QuerySpec
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -63,7 +63,7 @@ _BASIC_DEFAULTS = {
 
 def generate_event_registration_default_queries(
         gettext: Callable[[str], str], event: CdEDBObject,
-        spec: Dict[str, str]) -> Dict[str, Query]:
+        spec: QuerySpec) -> Dict[str, Query]:
     """
     Generate default queries for registration_query.
 
@@ -201,7 +201,7 @@ def generate_event_registration_default_queries(
 
 def generate_event_course_default_queries(
         gettext: Callable[[str], str], event: CdEDBObject,
-        spec: Dict[str, str]) -> Dict[str, Query]:
+        spec: QuerySpec) -> Dict[str, Query]:
     """
     Generate default queries for course_queries.
 
@@ -520,12 +520,12 @@ _DEFAULTS = {
         },
         QueryScope.core_user: {
             n_("00_query_core_user_all"): Query(
-                QueryScope.persona, QueryScope.core_user.get_spec(),
+                QueryScope.core_user, QueryScope.core_user.get_spec(),
                 ("personas.id", "given_names", "family_name"),
                 tuple(),
                 (("family_name", True), ("given_names", True), ("personas.id", True))),
             n_("10_query_core_any_admin"): Query(
-                QueryScope.persona, QueryScope.core_user.get_spec(),
+                QueryScope.core_user, QueryScope.core_user.get_spec(),
                 ("personas.id", "given_names", "family_name", *ADMIN_KEYS),
                 ((",".join(ADMIN_KEYS), QueryOperators.equal, True),),
                 (("family_name", True), ("given_names", True), ("personas.id", True))),

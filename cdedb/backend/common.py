@@ -550,7 +550,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             # Collate compatible to COLLATOR in python
             orders = []
             for entry, _ in query.order:
-                if query.spec[entry] == 'str':
+                if query.spec[entry].type == 'str':
                     orders.append(f'{entry.split(",")[0]} COLLATE "{LOCALE}"')
                 else:
                     orders.append(entry.split(',')[0])
@@ -562,7 +562,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         constraints = []
         _ops = QueryOperators
         for field, operator, value in query.constraints:
-            lowercase = (query.spec[field] == "str")
+            lowercase = (query.spec[field].type == "str")
             if lowercase:
                 # the following should be used with operators which are allowed
                 # for str as well as for other types
@@ -667,7 +667,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             # Collate compatible to COLLATOR in python
             orders = []
             for entry, ascending in query.order:
-                if query.spec[entry] == 'str':
+                if query.spec[entry].type == 'str':
                     orders.append(
                         f'{entry.split(",")[0]} COLLATE "{LOCALE}" '
                         f'{"ASC" if ascending else "DESC"}')
