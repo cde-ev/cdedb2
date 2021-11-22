@@ -3481,7 +3481,7 @@ msgstr "und"
 
 #: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:87
 msgid "Against all Candidates."
-msgstr "Gegen alle Kanidaten."
+msgstr "Gegen alle Kandidaten."
 
 #: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:91
 msgid "Rejection limit."
