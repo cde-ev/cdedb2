@@ -1523,6 +1523,10 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
                 expects_persona = any('droid' not in role
                                       for role in access_list)
                 if rs.user.roles == {"anonymous"} and expects_persona:
+                    # Validation errors do not matter on session expiration,
+                    # since we redirect to get anyway.
+                    # In practice, this is mostly relevant for the anti csrf error.
+                    rs.ignore_validation_errors()
                     params = {
                         'wants': obj.encode_parameter(
                             "core/index", "wants", rs.request.url,

@@ -203,4 +203,4 @@ trigger:
   branch:
   - master
   - stable
-#  - ci/*
+  - ci/*
