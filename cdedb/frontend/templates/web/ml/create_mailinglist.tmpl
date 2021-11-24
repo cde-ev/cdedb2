@@ -21,6 +21,11 @@
             {{ util.form_input_submit(label=gettext("Continue"), cancellink=cdedblink("ml/index"), icon="pen") }}
         </form>
     {% else %}
+    <script nonce="{{ csp_nonce }}">
+        $(function() {
+            $('#createlistform').cdedbProtectChanges();
+        });
+    </script>
     <form action="{{ cdedblink('ml/create_mailinglist') }}" method="POST" id="createlistform" class="form-horizontal">
         {{ util.anti_csrf_token('ml/create_mailinglist') }}
         <h4 class="heading-underline">{% trans %}Meta{% endtrans %}</h4>
