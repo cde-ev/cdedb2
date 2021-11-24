@@ -1390,7 +1390,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         if not self.assemblyproxy.may_assemble(rs, ballot_id=ballot_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         if not self.assemblyproxy.is_ballot_voting(rs, ballot_id):
-            rs.notify("error", n_("Ballot is outside it's voting period."))
+            rs.notify("error", n_("Ballot is outside its voting period."))
             return self.redirect(rs, "assembly/show_ballot", {'ballot_id': ballot_id})
         ballot = rs.ambience['ballot']
         candidates = tuple(e['shortname']
