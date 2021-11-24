@@ -2239,6 +2239,7 @@ def process_dynamic_input(
     spec: vtypes.TypeMapping,
     *,
     additional: CdEDBObject = None,
+    creation_spec: vtypes.TypeMapping = None,
     prefix: str = "",
 ) -> Dict[int, Optional[CdEDBObject]]:
     """Retrieve data from rs provided by 'dynamic_row_meta' macros.
@@ -2266,10 +2267,12 @@ def process_dynamic_input(
     :param spec: name of input fields, mapped to their validation. This uses the same
         format as the `request_extractor`, but adds the 'prefix' to each key if present.
     :param additional: additional keys added to each output object
+    :param creation_spec: alternative spec used for new entries. Defaults to spec.
     :param prefix: prefix in front of all concerned fields. Should be used when more
         then one dynamic input table is present on the same page.
     """
     additional = additional or dict()
+    creation_spec = creation_spec or spec
     # this is the used prefix for the validation
     field_prefix = f"{prefix}_" if prefix else ""
 
@@ -2310,11 +2313,11 @@ def process_dynamic_input(
         will_create = unwrap(
             request_extractor(rs, {drow_create(-marker, prefix): bool}))
         if will_create:
-            params = {
-                drow_name(key, -marker, prefix): value for key, value in spec.items()}
+            params = {drow_name(key, -marker, prefix): value
+                      for key, value in creation_spec.items()}
             data = request_extractor(rs, params, postpone_validation=True)
             entry = {
-                key: data[drow_name(key, -marker, prefix)] for key in spec}
+                key: data[drow_name(key, -marker, prefix)] for key in creation_spec}
             entry.update(additional)
             ret[-marker] = check_validation(
                 rs, type_, entry, field_prefix=field_prefix,

@@ -906,28 +906,20 @@ etc;anything else""", f['entries_2'].value)
     def test_event_fields_unique_name(self) -> None:
         self.get("/event/event/1/field/summary")
         f = self.response.forms['fieldsummaryform']
-        f['delete_1'].checked = True
         f['create_-1'].checked = True
-        f['field_name_-1'] = f['field_name_1'].value
+        f['field_name_-1'] = f['field_name_8'].value
         f['association_-1'] = const.FieldAssociations.registration
         f['kind_-1'] = const.FieldDatatypes.str
         self.submit(f, check_notification=False)
         self.assertValidationError('field_name_-1', "Feldname nicht eindeutig.")
+        self.assertValidationError('field_name_8', "Feldname nicht eindeutig.")
         f = self.response.forms['fieldsummaryform']
         self.assertIn('field_name_1', f.fields)
         self.assertNotIn('field_name_9', f.fields)
 
-        f = self.response.forms['fieldsummaryform']
-        # If the form would be valid in the first turn, we would need the
-        # following (hacky) code to add the fields, which are normally added by
-        # Javascript.
-        # for field in (webtest.forms.Checkbox(f, 'input', 'create_-2', 100,
-        #                                      value='True'),
-        #               webtest.forms.Text(f, 'input', 'field_name_-2', 101),
-        #               webtest.forms.Text(f, 'input', 'association_-2', 102),
-        #               webtest.forms.Text(f, 'input', 'kind_-2', 103)):
-        #     f.fields.setdefault(field.name, []).append(field)
-        #     f.field_order.append((field.name, field))
+        # If we delete the old field first, this works.
+        f['delete_8'] = True
+        self.submit(f)
 
         f['create_-1'].checked = True
         f['field_name_-1'] = "food_stuff"

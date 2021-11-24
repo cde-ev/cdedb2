@@ -9,7 +9,8 @@
             "field_id": 7,
             "id": 1,
             "title": "Ich bin unter 13 Jahre alt.",
-            "kind": 1
+            "kind": 1,
+            "default_value": null
         },
         "3": {
             "readonly": false,
@@ -20,7 +21,8 @@
             "field_id": 1,
             "id": 3,
             "title": "B\u00e4lle",
-            "kind": 2
+            "kind": 2,
+            "default_value": "True"
         },
         "7": {
             "readonly": false,
@@ -31,7 +33,8 @@
             "field_id": 3,
             "id": 7,
             "title": "Hauswunsch",
-            "kind": 2
+            "kind": 2,
+            "default_value": null
         },
         "5": {
             "readonly": null,
@@ -42,7 +45,8 @@
             "field_id": null,
             "id": 5,
             "title": "Weitere \u00dcberschrift",
-            "kind": 2
+            "kind": 2,
+            "default_value": null
         },
         "2": {
             "readonly": null,
@@ -53,7 +57,8 @@
             "field_id": null,
             "id": 2,
             "title": "Unter\u00fcberschrift",
-            "kind": 2
+            "kind": 2,
+            "default_value": null
         },
         "4": {
             "readonly": null,
@@ -64,7 +69,8 @@
             "field_id": null,
             "id": 4,
             "title": null,
-            "kind": 2
+            "kind": 2,
+            "default_value": null
         },
         "6": {
             "readonly": false,
@@ -75,7 +81,8 @@
             "field_id": 2,
             "id": 6,
             "title": "Vehikel",
-            "kind": 2
+            "kind": 2,
+            "default_value": "etc"
         }
     },
     "kind": "full",
@@ -314,6 +321,8 @@
             "kind": 1,
             "id": 2,
             "field_name": "transportation",
+            "title": "Reist an mit",
+            "sortkey": 0,
             "association": 1,
             "checkin": false
         },
@@ -340,6 +349,8 @@
             "kind": 1,
             "id": 6,
             "field_name": "contamination",
+            "title": "Verseuchung",
+            "sortkey": 0,
             "association": 3,
             "checkin": false
         },
@@ -349,6 +360,8 @@
             "kind": 2,
             "id": 4,
             "field_name": "may_reserve",
+            "title": "Würde auf Isomatte schlafen",
+            "sortkey": 0,
             "association": 1,
             "checkin": false
         },
@@ -358,6 +371,8 @@
             "kind": 2,
             "id": 1,
             "field_name": "brings_balls",
+            "title": "Bringt Bälle mit",
+            "sortkey": 0,
             "association": 1,
             "checkin": true
         },
@@ -367,6 +382,8 @@
             "kind": 1,
             "id": 3,
             "field_name": "lodge",
+            "title": "Zimmerwünsche",
+            "sortkey": 0,
             "association": 1,
             "checkin": false
         },
@@ -376,6 +393,8 @@
             "kind": 1,
             "id": 5,
             "field_name": "room",
+            "title": "Kursraum",
+            "sortkey": 0,
             "association": 2,
             "checkin": false
         },
@@ -385,6 +404,8 @@
             "kind": 2,
             "id": 7,
             "field_name": "is_child",
+            "title": "Ist U12",
+            "sortkey": 0,
             "association": 1,
             "checkin": false
         },
@@ -393,6 +414,8 @@
             "entries": null,
             "event_id": 1,
             "field_name": "anzahl_GROSSBUCHSTABEN",
+            "title": "Anzahl Großbuchstaben",
+            "sortkey": 0,
             "id": 8,
             "kind": 3,
             "checkin": true
