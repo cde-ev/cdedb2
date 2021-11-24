@@ -1189,6 +1189,30 @@ class MlBackend(AbstractBackend):
         return ret
 
     @access("ml")
+    def get_implicit_whitelist(self, rs: RequestState, mailinglist_id: int
+                               ) -> Set[str]:
+        """Get all usernames of users which have a custom subscription address
+        configured for the mailinglist.
+
+        This allows those users to also pass moderation with mails sent from
+        their username address instead of just their subscription address,
+        if the ml has non_subscribers moderation policy.
+        Take care to use this function only in this case!
+
+        :returns: Set of mailadresses to whitelist
+        """
+        persona_ids = self.get_subscription_states(
+            rs, mailinglist_id, states=const.SubscriptionState.subscribing_states())
+        persona_ids = {
+            persona_id for persona_id, address
+            in self.get_subscription_addresses(
+                rs, mailinglist_id, persona_ids, explicits_only=True).items()
+            if address
+        }
+        return {persona['username'] for persona
+                in self.core.get_ml_users(rs, persona_ids).values()}
+
+    @access("ml")
     def is_subscribed(self, rs: RequestState, persona_id: Optional[int],
                       mailinglist_id: int) -> bool:
         """Sugar coating around :py:meth:`get_user_subscriptions`.
