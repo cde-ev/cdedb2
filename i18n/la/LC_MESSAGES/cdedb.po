@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2021-11-22 15:16+0100\n"
+"POT-Creation-Date: 2021-11-24 19:56+0000\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -102,7 +102,7 @@ msgstr ""
 #: cdedb/frontend/assembly.py:572 cdedb/frontend/assembly.py:653
 #: cdedb/frontend/assembly.py:719 cdedb/frontend/assembly.py:923
 #: cdedb/frontend/assembly.py:1000 cdedb/frontend/assembly.py:1257
-#: cdedb/frontend/assembly.py:1391 cdedb/frontend/assembly.py:1447
+#: cdedb/frontend/assembly.py:1391 cdedb/frontend/assembly.py:1450
 #: cdedb/frontend/core/base.py:671 cdedb/frontend/core/base.py:700
 #: cdedb/frontend/core/base.py:912 cdedb/frontend/core/base.py:915
 #: cdedb/frontend/core/base.py:920 cdedb/frontend/core/base.py:926
@@ -740,7 +740,7 @@ msgstr ""
 msgid "Preventing reset of admin."
 msgstr ""
 
-#: cdedb/backend/core.py:2329 cdedb/frontend/common.py:1749
+#: cdedb/backend/core.py:2329 cdedb/frontend/common.py:1753
 msgid "Link expired."
 msgstr ""
 
@@ -1499,19 +1499,23 @@ msgstr ""
 msgid "Force starting a ballot is only possible in dev mode."
 msgstr ""
 
-#: cdedb/frontend/assembly.py:1402
+#: cdedb/frontend/assembly.py:1393
+msgid "Ballot is outside it's voting period."
+msgstr ""
+
+#: cdedb/frontend/assembly.py:1405
 msgid "Option not available."
 msgstr ""
 
-#: cdedb/frontend/assembly.py:1411
+#: cdedb/frontend/assembly.py:1414
 msgid "Rejection is exclusive."
 msgstr ""
 
-#: cdedb/frontend/assembly.py:1450
+#: cdedb/frontend/assembly.py:1453
 msgid "Ballot not yet tallied."
 msgstr ""
 
-#: cdedb/frontend/assembly.py:1476
+#: cdedb/frontend/assembly.py:1479
 msgid "Duplicate shortname."
 msgstr ""
 
@@ -1971,48 +1975,48 @@ msgstr ""
 msgid "Object {param}={value} not found"
 msgstr ""
 
-#: cdedb/frontend/common.py:1536
+#: cdedb/frontend/common.py:1540
 msgid "You must login."
 msgstr ""
 
-#: cdedb/frontend/common.py:1540
+#: cdedb/frontend/common.py:1544
 msgid "Access denied to {realm}/{endpoint}."
 msgstr ""
 
-#: cdedb/frontend/common.py:1600
+#: cdedb/frontend/common.py:1604
 msgid "Magic URL parameter replacement failed."
 msgstr ""
 
-#: cdedb/frontend/common.py:1751
+#: cdedb/frontend/common.py:1755
 msgid "Link invalid."
 msgstr ""
 
-#: cdedb/frontend/common.py:1823
+#: cdedb/frontend/common.py:1827
 msgid "Invalid argtype {t} found."
 msgstr ""
 
-#: cdedb/frontend/common.py:1938
+#: cdedb/frontend/common.py:1942
 msgid "This page can only be accessed by orgas."
 msgstr ""
 
-#: cdedb/frontend/common.py:1943
+#: cdedb/frontend/common.py:1947
 msgid "This event is locked for offline usage."
 msgstr ""
 
-#: cdedb/frontend/common.py:1975
+#: cdedb/frontend/common.py:1979
 msgid "This page can only be accessed by the mailinglist’s moderators."
 msgstr ""
 
-#: cdedb/frontend/common.py:1980
+#: cdedb/frontend/common.py:1984
 msgid ""
 "You only have restricted moderator access and may not change subscriptions."
 msgstr ""
 
-#: cdedb/frontend/common.py:1985
+#: cdedb/frontend/common.py:1989
 msgid "This page can only be accessed by appropriate admins."
 msgstr ""
 
-#: cdedb/frontend/common.py:2007
+#: cdedb/frontend/common.py:2011
 msgid ""
 "This page may only be accessed by the assembly's presiders or assembly "
 "admins."
