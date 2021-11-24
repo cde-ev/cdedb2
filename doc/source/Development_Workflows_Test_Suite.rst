@@ -79,6 +79,29 @@ Assembly User               Secret
 2        Rowena             asdgeargsd
 ======== ================== ==========
 
+LDAP
+^^^^
+
+We expose some information about our users via ldap. This contains some general
+information like name and mail address, and group privileges of the user in particular.
+The data is directly retrieved from the sql tables of the CdEDB and therefore
+needs no syncing.
+
+To locally test our ldap integration, we add some ldap agents to the CdEDB
+sample data. They can be used to connect to and retrieve data from the ldap system.
+To test the permissions of the live duas properly, we also add them in our
+sample-data.
+
+============= ============== =====================================
+CN            Password       Notes
+============= ============== =====================================
+admin         secret         olcRootDN
+apache        secret
+cloud         secret
+cyberaka      secret
+dokuwiki      secret
+test          secret         does not exist in live instance
+============= ============== =====================================
 
 .. _running-tests:
 

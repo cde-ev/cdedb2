@@ -215,11 +215,13 @@
 {% endmacro %}
 
 {% macro tel_link(phonenumber) %}
-    {% set linknumber = phonenumber|replace(" ", "")|replace("(", "")|replace(")", "")|replace("/", "") %}
+    {% set linknumber = phonenumber|replace(" ", "")|replace("(", "")|replace(")", "")|replace("/", "")|replace("-", ("")) %}
     {%- if linknumber.startswith("+") -%}
         {{ href('tel:%s'|format(linknumber), phonenumber) }}
     {%- elif linknumber.startswith("0") -%}
         {{ href('tel:%s'|format(linknumber|replace("0", "+49", 1)), phonenumber) }}
+    {%- else -%}
+        {{ phonenumber }}
     {%- endif -%}
 {% endmacro %}
 

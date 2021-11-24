@@ -228,8 +228,8 @@ class TestCoreFrontend(FrontendTest):
                  "FN:Bertålotta Beispiel",
                  "N:Beispiel;Bertålotta;;Dr.;MdB",
                  "NICKNAME:Bertå",
-                 "TEL;TYPE=\"home,voice\":+49 (5432) 987654321",
-                 "TEL;TYPE=\"cell,voice\":0163/123456789",
+                 "TEL;TYPE=\"home,voice\":+495432987654321",
+                 "TEL;TYPE=\"cell,voice\":+4916312345678",
                  "END:VCARD"]
         for line in vcard:
             self.assertIn(line, self.response.text)
@@ -1303,6 +1303,12 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'Archivsuche'})
         self.assertTitle("Archivsuche")
         f = self.response.forms['queryform']
+        self.submit(f)
+        self.assertPresence("Ergebnis [2]", div='query-results')
+        self.assertPresence("Hell", div='query-result')
+        self.assertPresence("Lost", div='query-result')
+        self.assertNonPresence("N/A", div='query-result')
+
         f['qop_given_names'] = QueryOperators.match.value
         f['qval_given_names'] = 'des'
         for field in f.fields:
@@ -1312,23 +1318,6 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Archivsuche")
         self.assertPresence("Ergebnis [1]", div='query-results')
         self.assertPresence("Hell", div='query-result')
-
-    @as_users("vera")
-    def test_archived_user_search2(self) -> None:
-        self.traverse({'description': 'Archivsuche'})
-        self.assertTitle("Archivsuche")
-        f = self.response.forms['queryform']
-        f['qval_birthday'] = '31.12.2000'
-        f['qop_birthday'] = QueryOperators.less.value
-        for field in f.fields:
-            if field and field.startswith('qsel_'):
-                f[field].checked = True
-        self.submit(f)
-        self.assertTitle("Archivsuche")
-        self.assertPresence("Ergebnis [2]", div='query-results')
-        self.assertPresence("Hell", div='query-result')
-        self.assertPresence("Lost", div='query-result')
-        self.assertPresence("N/A", div='query-result')
 
     @as_users("vera")
     def test_show_archived_user(self) -> None:
@@ -1580,6 +1569,11 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['promotionform']
         self.assertNonPresence("Die Kursauswahl wird angezeigt, nachdem")
         f['pcourse_id'] = ''
+        self.submit(f, check_notification=False)
+        # ignore phone number ValidationWarning
+        # TODO list this warnings anywhere?
+        # self.assertValidationWarning("mobile", "Telefonnummer scheint invalide zu")
+        f[IGNORE_WARNINGS_NAME].checked = True
         self.submit(f)
         self.assertTitle("Emilia E. Eventis")
         self.assertPresence("0,00 €", div='balance')

@@ -26,6 +26,18 @@ services:
       - 127.0.0.1:8443:443 # apache
     depends_on:
       - cdb
+  ldap:
+    image: ldap
+    build:
+      context: ../..
+      dockerfile: ./related/docker/Dockerfile-ldap
+    volumes:
+      - ldap:/var/lib/slapd/data # ldap data and first run flag/file
+    ports:
+      - 127.0.0.1:8389:389
+    depends_on:
+      - cdb
+      - app # not really necessary but app creates the sample-data
   adminer:
     image: adminer
     ports:
@@ -34,3 +46,4 @@ services:
 volumes:
   database:
   files:
+  ldap:

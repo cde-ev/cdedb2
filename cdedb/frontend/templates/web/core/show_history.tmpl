@@ -206,7 +206,13 @@
                                (gettext("Mobile Phone"), 'mobile'),
                                (gettext("WWW"), 'weblink')) %}
             {% call history_field(name) %}
-                {{ print_history(field) }}
+                {% call(c) print_history(field) %}
+                    {% if field == 'telephone' or field == 'mobile' %}
+                        {{ entries[c][field]|phone }}
+                    {% else %}
+                        {{ entries[c][field] }}
+                    {% endif %}
+                {% endcall %}
             {% endcall %}
         {% endfor %}
 
