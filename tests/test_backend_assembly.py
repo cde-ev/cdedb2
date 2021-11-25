@@ -854,12 +854,10 @@ class TestAssemblyBackend(BackendTest):
 
     @as_users("werner")
     def test_comment(self) -> None:
-        # For some unfathomable reason, this returns None.
-        print(self.assembly.are_ballots_voting(self.key, [15]))
         comment = "Ein Kommentar."
 
         # Comment not possible for future and running ballots
-        for ballot_id in {2, 14}:
+        for ballot_id in {2, 14, 15}:
             with self.assertRaises(ValueError) as cm:
                 self.assembly.comment_concluded_ballot(self.key, ballot_id, comment)
             self.assertIn("Comments are only allowed for concluded ballots.",
@@ -875,18 +873,19 @@ class TestAssemblyBackend(BackendTest):
         self.logout()
         self.login('anton')
         expectation = (
+            # 1001 is tallying ballot 15
             {'assembly_id': 1,
              'change_note': 'Antwort auf die letzte aller Fragen',
              'code': const.AssemblyLogCodes.ballot_changed,
              'ctime': nearly_now(),
-             'id': 1001,
+             'id': 1002,
              'persona_id': None,
              'submitted_by': 23},
             {'assembly_id': 1,
              'change_note': 'Antwort auf die letzte aller Fragen',
              'code': const.AssemblyLogCodes.ballot_changed,
              'ctime': nearly_now(),
-             'id': 1002,
+             'id': 1003,
              'persona_id': None,
              'submitted_by': 23}
         )

@@ -818,16 +818,34 @@ class AssemblyBackend(AbstractBackend):
                            ) -> Dict[int, bool]:
         """Helper to check whether the given ballots are (partially) open for voting.
 
+        This uses non-obvious logic to catch some edge cases, since extended is None
+        until  check_voting_period_extension  is called.
+
         :returns: True if any of the given ballots is open for voting.
         """
         ballot_ids = affirm_set(vtypes.ID, ballot_ids)
-        q = """
-        SELECT id, (vote_end > %s OR (extended = True AND vote_extension_end > %s))
-                    AND vote_begin < %s AS is_voting
+        # This conditional looks complicated since extended may be None and
+        # (True/False = None) = None.
+        # Therefore, this returns None iff the ballot has not been checked for extension
+        # yet, but is between vote_end and vote_extension_end.
+        # The third part of the statement makes sure this returns False instead of None
+        # if the ballot is definitely over.
+        q = """SELECT id, (
+            vote_begin < %s
+            AND (vote_end > %s OR (vote_extension_end > %s AND extended = True))
+            AND NOT COALESCE(vote_extension_end, vote_end) < %s
+            ) AS is_voting
         FROM assembly.ballots WHERE id = ANY(%s)"""
         reference_time = now()
-        params = (reference_time, reference_time, reference_time, ballot_ids)
-        return {e["id"]: e['is_voting'] for e in self.query_all(rs, q, params)}
+        params = (reference_time, reference_time, reference_time, reference_time,
+                  ballot_ids)
+
+        # If is_voting is no bool, the voting period extension has not been checked yet.
+        # The result of this check equals whether the ballot is still voting.
+        with Atomizer(rs):
+            return {e["id"]: e['is_voting'] if e['is_voting'] is not None
+                    else self.check_voting_period_extension(rs, e["id"])
+                    for e in self.query_all(rs, q, params)}
 
     class _IsBallotVotingProtocol(Protocol):
         def __call__(self, rs: RequestState, anid: int) -> bool: ...
@@ -836,12 +854,13 @@ class AssemblyBackend(AbstractBackend):
 
     def is_ballot_concluded(self, rs: RequestState, ballot_id: int) -> bool:
         """Helper to check whether the given ballot has been concluded."""
-        return (self.is_ballot_locked(rs, ballot_id)
-            and not self.is_ballot_voting(rs, ballot_id))
+        with Atomizer(rs):
+            return (self.is_ballot_locked(rs, ballot_id)
+                and not self.is_ballot_voting(rs, ballot_id))
 
     @access("assembly")
-    def get_ballots(self, rs: RequestState, ballot_ids: Collection[int]
-                    ) -> CdEDBObjectMap:
+    def get_ballots(self, rs: RequestState, ballot_ids: Collection[int], *,
+                    include_is_voting=True) -> CdEDBObjectMap:
         """Retrieve data for some ballots,
 
         They do not need to be associated to the same assembly. This has an
@@ -852,6 +871,9 @@ class AssemblyBackend(AbstractBackend):
         will be `None` and the correct value will be calculated on the fly here.
         Once regular voting ends, the quorum value at that point will be stored and
         afterwards this specific value will be used from there on.
+
+        :param include_is_voting: If False, do not include is_voting key to prevent
+            infinite recursions.
         """
         ballot_ids = affirm_set(vtypes.ID, ballot_ids)
         timestamp = now()
@@ -859,7 +881,8 @@ class AssemblyBackend(AbstractBackend):
         with Atomizer(rs):
             data = self.sql_select(rs, "assembly.ballots", BALLOT_FIELDS + ('comment',),
                                    ballot_ids)
-            are_voting = self.are_ballots_voting(rs, ballot_ids)
+            if include_is_voting:
+                are_voting = self.are_ballots_voting(rs, ballot_ids)
             ret = {}
             for e in data:
                 if e["quorum"] is None:
@@ -880,7 +903,8 @@ class AssemblyBackend(AbstractBackend):
                     else:
                         e["quorum"] = 0
                 e["is_locked"] = timestamp > e["vote_begin"]
-                e["is_voting"] = are_voting[e["id"]]
+                if include_is_voting:
+                    e["is_voting"] = are_voting[e["id"]]
                 ret[e['id']] = e
             data = self.sql_select(
                 rs, "assembly.candidates",
@@ -1187,7 +1211,7 @@ class AssemblyBackend(AbstractBackend):
         ballot_id = affirm(vtypes.ID, ballot_id)
 
         with Atomizer(rs):
-            ballot = unwrap(self.get_ballots(rs, (ballot_id,)))
+            ballot = unwrap(self.get_ballots(rs, (ballot_id,), include_is_voting=False))
             if ballot['extended'] is not None:
                 return ballot['extended']
             if now() < ballot['vote_end']:
