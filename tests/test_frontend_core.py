@@ -95,8 +95,8 @@ class TestCoreFrontend(FrontendTest):
             self.assertPresence("Nutzer verwalten", div='adminshowuser-box')
             self.assertPresence("Platin-Lounge", div='moderator-box')
             # Check moderation notification
-            self.assertPresence("Mailman-Migration", div='moderator-box')
-            self.traverse({'href': '/ml/mailinglist/99/moderate',
+            self.assertPresence("Moderatoren-Liste", div='moderator-box')
+            self.traverse({'href': '/ml/mailinglist/12/moderate',
                            'description': "3 E-Mails"})
             self.traverse({'href': '/'})
             self.assertTitle("CdE-Datenbank")
