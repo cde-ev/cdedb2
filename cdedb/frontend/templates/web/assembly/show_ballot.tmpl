@@ -31,7 +31,7 @@
 {% endblock %}
 
 {% block content %}
-    {% set edit_mode = now() < ambience['ballot']['vote_begin']
+    {% set edit_mode = not ambience['ballot']['is_voting']
                        and ("assembly_presider" in user.admin_views
                             or ambience['assembly']['id'] in user.presider) %}
     {% set is_classical = ambience['ballot']['votes'] %}
@@ -42,7 +42,7 @@
         <div class="p">
             {{ util.href(cdedblink("assembly/change_ballot_form"), gettext("Edit"), icon="pen",
                     aclass="btn btn-sm btn-warning") }}
-            {% if CDEDB_DEV %}
+            {% if CDEDB_DEV and now() < ambience['ballot']['vote_begin'] %}
                 <form action="{{ cdedblink("assembly/ballot_start_voting") }}" method="POST"
                       id="startvotingform" style="display: inline;">
                     {{ util.anti_csrf_token("assembly/ballot_start_voting") }}
@@ -69,7 +69,7 @@
             {% call util.bootstrap_panel(title=gettext("Ballot Comment"), icon="tag",
                                          aclass="panel-warning panel-condensed") %}
                 {{ ambience['ballot']['comment']|md }}
-        {% endcall %}
+            {% endcall %}
         {% endif %}
         {{ ballot_tallied.explain_result(classical=is_classical, preferential=is_preferential,
                                         use_bar=ambience['ballot']['use_bar']) }}

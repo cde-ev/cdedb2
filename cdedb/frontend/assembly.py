@@ -1278,9 +1278,11 @@ class AssemblyFrontend(AbstractUserFrontend):
     def change_ballot_form(self, rs: RequestState, assembly_id: int,
                            ballot_id: int) -> Response:
         """Render form"""
-        if now() > rs.ambience['ballot']['vote_begin']:
+        if rs.ambience['ballot']['is_voting']:
             rs.notify("warning", n_("Unable to modify active ballot."))
             return self.redirect(rs, "assembly/show_ballot")
+        if rs.ambience['ballot']['is_tallied']:
+            return self.render(rs, "comment_ballot")
         attachment_ids = self.assemblyproxy.list_attachments(
             rs, assembly_id=assembly_id)
         attachment_versions = self.assemblyproxy.get_latest_attachments_version(
@@ -1337,9 +1339,9 @@ class AssemblyFrontend(AbstractUserFrontend):
     @assembly_guard
     @REQUESTdata("comment")
     def comment_concluded_ballot(self, rs: RequestState, assembly_id: int,
-                                 ballot_id: int, comment: str) -> Response:
+                                 ballot_id: int, comment: Optional[str]) -> Response:
         if rs.has_validation_errors():
-            return self.redirect(rs, "assembly/show_ballot")
+            return self.change_ballot_form(rs, assembly_id, ballot_id)
         if not self.assemblyproxy.is_ballot_concluded(rs, ballot_id):
             rs.notify("error", n_("Comments are only allowed for concluded ballots."))
             return self.redirect(rs, "assembly/show_ballot")
