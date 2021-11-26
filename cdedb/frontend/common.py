@@ -1250,7 +1250,11 @@ class CdEMailmanClient(mailmanclient.Client):
         if self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or self.conf["CDEDB_DEV"]:
             self.logger.info("Skipping mailman query in dev/offline mode.")
             if self.conf["CDEDB_DEV"]:
-                return HELD_MESSAGE_SAMPLE
+                # Some diversity regarding moderation.
+                if dblist['id'] % 2 == 0:
+                    return HELD_MESSAGE_SAMPLE
+                else:
+                    return []
             return None
         else:
             mmlist = self.get_list_safe(dblist['address'])
