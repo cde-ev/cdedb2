@@ -391,7 +391,7 @@ class TestMlFrontend(FrontendTest):
         # Test if moderation hints work
         self.assertPresence("Mailman-Migration", div="mailinglist-99-row")
         self.assertPresence("Mitglieder (Opt-in)", div="mailinglist-99-row")
-        self.assertPresence("3", div="mailinglist-99-row")
+        self.assertPresence("0", div="mailinglist-99-row")
         self.assertPresence("0 Abonnenten. 1 Moderator.", div="mailinglist-99-row")
         # Test that events are shown
         self.assertPresence("Große Testakademie 2222")
@@ -428,7 +428,7 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("Mitgliedermailinglisten")
         self.assertPresence("Aktivenforum 2001", div="mailinglist-7-row")
         self.assertPresence("Mitglieder (Opt-in)", div="mailinglist-7-row")
-        self.assertPresence("3", div="mailinglist-7-row")
+        self.assertPresence("0", div="mailinglist-7-row")
         self.assertPresence("1 Abonnent. 2 Moderatoren.", div="mailinglist-7-row")
         if self.user_in('berta'):
             self.assertPresence("Veranstaltungslisten")
