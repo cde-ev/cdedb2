@@ -735,12 +735,16 @@ GRANT SELECT ON event.course_tracks TO cdb_anonymous;
 CREATE TABLE event.field_definitions (
         id                      serial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
+        -- the field_name is an identifier and may not be changed.
         field_name              varchar NOT NULL,
+        -- the title is displayed to the user, may contain any string and can be changed.
+        title                   varchar NOT NULL,
+        sortkey                 integer NOT NULL DEFAULT 0,
         -- anything allowed as type in a query spec, see cdedb.database.constants.FieldDatatypes
         kind                    integer NOT NULL,
         -- see cdedb.database.constants.FieldAssociations
         association             integer NOT NULL,
-        -- whether or not to display this field during checking
+        -- whether or not to display this field during checkin.
         checkin                 boolean NOT NULL DEFAULT FALSE,
         -- the following array describes the available selections
         -- first entry of each tuple is the value, second entry the description

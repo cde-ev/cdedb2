@@ -1545,6 +1545,13 @@ class TestMlBackend(BackendTest):
         self.assertEqual(expectation,
                          self.ml.get_subscription_addresses(self.key, 10))
 
+    def _check_implicit_whitelist(self, mailinglist_id: int,
+                                  persona_ids: Collection[int]) -> None:
+        expectation = {persona['username'] for persona
+                       in self.core.get_ml_users(self.key, persona_ids).values()}
+        result = self.ml.get_implicit_whitelist(self.key, mailinglist_id)
+        self.assertEqual(result, expectation)
+
     @as_users("janis")
     def test_set_subscription_address(self) -> None:
         # This is a bit tricky, since users may only change their own
@@ -1558,6 +1565,7 @@ class TestMlBackend(BackendTest):
         }
         result = self.ml.get_subscription_addresses(self.key, mailinglist_id)
         self.assertEqual(result, expectation)
+        self._check_implicit_whitelist(mailinglist_id, expectation.keys())
 
         # Add an addresses.
         datum = {
@@ -1570,6 +1578,7 @@ class TestMlBackend(BackendTest):
 
         result = self.ml.get_subscription_addresses(self.key, mailinglist_id)
         self.assertEqual(result, expectation)
+        self._check_implicit_whitelist(mailinglist_id, expectation.keys())
 
         datum = {
             'mailinglist_id': mailinglist_id,
@@ -1581,6 +1590,7 @@ class TestMlBackend(BackendTest):
 
         result = self.ml.get_subscription_addresses(self.key, mailinglist_id)
         self.assertEqual(result, expectation)
+        self._check_implicit_whitelist(mailinglist_id, expectation.keys())
 
         # Remove an address.
         datum = {
@@ -1592,6 +1602,8 @@ class TestMlBackend(BackendTest):
 
         result = self.ml.get_subscription_addresses(self.key, mailinglist_id)
         self.assertEqual(result, expectation)
+        self._check_implicit_whitelist(mailinglist_id,
+                                       expectation.keys() - {self.user['id']})
 
     @as_users("janis")
     def test_remove_subscription_address(self) -> None:

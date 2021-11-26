@@ -37,7 +37,7 @@ from cdedb.common import (
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import Atomizer, connection_pool_factory
-from cdedb.query import Query, QueryOperators, QueryScope
+from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 
 
 class CoreBackend(AbstractBackend):
@@ -666,7 +666,7 @@ class CoreBackend(AbstractBackend):
                     may_wait: bool = True,
                     allow_specials: Tuple[str, ...] = tuple(),
                     force_review: bool = False,
-                    automated_change: bool = True,
+                    automated_change: bool = False,
                     ) -> DefaultReturnCode:
         """Internal helper for modifying a persona data set.
 
@@ -1068,6 +1068,7 @@ class CoreBackend(AbstractBackend):
             "ml": "is_ml_admin = TRUE",
             "assembly": "is_assembly_admin = TRUE",
             "cdelokal": "is_cdelokal_admin = TRUE",
+            "auditor": "is_auditor = TRUE",
         }
         constraint = constraints.get(realm)
 
@@ -2895,7 +2896,7 @@ class CoreBackend(AbstractBackend):
         if query.scope in {QueryScope.core_user, QueryScope.archived_core_user}:
             query.constraints.append(("is_archived", QueryOperators.equal,
                                       query.scope == QueryScope.archived_core_user))
-            query.spec["is_archived"] = "bool"
+            query.spec["is_archived"] = QuerySpecEntry("bool", "")
         else:
             raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query)

@@ -10,5 +10,5 @@
     {{ util.breadcrumb_link(cdedblink("cde/user_search"), gettext("Manage Users"), active="True") }}
 {% endblock %}
 {% block content %}
-    {{ generic.user_search("cde") }}
+    {{ generic.user_search("cde", result, query) }}
 {% endblock %}

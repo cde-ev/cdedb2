@@ -35,38 +35,7 @@
         </div>
     </div>
 
-    {% do titles.update({
-            "reg.id": gettext("ID"),
-            "reg.notes": gettext("Notes"),
-            "reg.orga_notes": gettext("Orga-Notes"),
-            "reg.payment": gettext("Payment"),
-            "reg.amount_paid": gettext("Amount Paid"),
-            "reg.amount_owed": gettext("Amount Owed"),
-            "reg.parental_agreement": gettext("Parental Consent"),
-            "reg.mixed_lodging": gettext("Mixed Lodging"),
-            "reg.checkin": gettext("Checkin"),
-            "reg.list_consent": gettext("Participant List Consent"),
-            "persona.id": gettext("CdEDB-ID"),
-            "persona.is_member": gettext("CdE-Member"),
-            "persona.username": gettext("E-Mail"),
-            "persona.family_name": gettext("Family Name"),
-            "persona.given_names": gettext("Given Names"),
-            "persona.display_name": gettext("Known as (Forename)"),
-            "persona.title": gettext("Title_[[of a persona]]"),
-            "persona.name_supplement": gettext("Name Affix"),
-            "persona.gender": gettext("Gender"),
-            "persona.birthday": gettext("Birthday"),
-            "persona.telephone": gettext("Phone"),
-            "persona.mobile": gettext("Mobile Phone"),
-            "persona.address": gettext("Address"),
-            "persona.address_supplement": gettext("Address Supplement"),
-            "persona.postal_code": gettext("ZIP"),
-            "persona.location": gettext("City"),
-            "persona.country": gettext("Country"),
-            "ctime.creation_time": gettext("Registration Time"),
-            "mtime.modification_time": gettext("Last Modification Time"),}) %}
-
-    {{ generic.format_query(enums['QueryScope'].registration, spec, titles, choices,
+    {{ generic.format_query(enums['QueryScope'].registration, spec,
                             cdedblink('event/registration_query') + '#query-results',
                             selection_default=('persona.username', 'persona.family_name', 'persona.given_names')) }}
 
@@ -137,7 +106,7 @@
             </script>
         </div>
 
-        {{ generic.display_query_result(result, query, titles, choices) }}
+        {{ generic.display_query_result(result, query) }}
 
     {% endif %}
 {% endblock %}

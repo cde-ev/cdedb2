@@ -35,7 +35,7 @@
         </div>
     </div>
 
-    {{ generic.format_query(enums['QueryScope'].event_course, spec, titles, choices, cdedblink('event/course_query'),
+    {{ generic.format_query(enums['QueryScope'].event_course, spec, cdedblink('event/course_query'),
                             selection_default=selection_default) }}
 
     {% if values['is_search'] %}
@@ -46,7 +46,7 @@
             {{ generic.query_button_field_set(enums['FieldAssociations'].course) }}
         </div>
 
-        {{ generic.display_query_result(result, query, titles, choices) }}
+        {{ generic.display_query_result(result, query) }}
 
     {% endif %}
 {% endblock %}

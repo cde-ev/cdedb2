@@ -201,6 +201,14 @@ class TestCron(CronTest):
     @storage
     @prepsql(genesis_template(
         ctime=datetime.datetime(2000, 1, 1),
+        case_status=const.GenesisStati.successful.value))
+    def test_genesis_forget_successful(self) -> None:
+        self.execute('genesis_forget')
+        self.assertEqual({}, self.core.genesis_list_cases(RS))
+
+    @storage
+    @prepsql(genesis_template(
+        ctime=datetime.datetime(2000, 1, 1),
         case_status=const.GenesisStati.rejected.value))
     def test_genesis_forget_rejected(self) -> None:
         self.execute('genesis_forget')

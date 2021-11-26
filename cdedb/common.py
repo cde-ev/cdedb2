@@ -137,6 +137,7 @@ class RequestState:
     convenient semi-magic behaviours (magic enough to be nice, but non-magic
     enough to not be non-nice).
     """
+    default_lang = "en"
 
     def __init__(self, sessionkey: Optional[str], apitoken: Optional[str], user: User,
                  request: werkzeug.Request, notifications: Collection[Notification],
@@ -204,11 +205,11 @@ class RequestState:
 
     @property
     def default_gettext(self) -> Callable[[str], str]:
-        return self.translations["en"].gettext
+        return self.translations[self.default_lang].gettext
 
     @property
     def default_ngettext(self) -> Callable[[str, str, int], str]:
-        return self.translations["en"].ngettext
+        return self.translations[self.default_lang].ngettext
 
     def notify(self, ntype: NotificationType, message: str,
                params: CdEDBObject = None) -> None:
@@ -563,7 +564,8 @@ def format_country_code(code: str) -> str:
     return f'CountryCodes.{code}'
 
 
-def get_localized_country_codes(rs: RequestState) -> List[Tuple[str, str]]:
+def get_localized_country_codes(rs: RequestState, lang: str = None
+                                ) -> List[Tuple[str, str]]:
     """Generate a list of country code - name tuples in current language."""
 
     if not hasattr(get_localized_country_codes, "localized_country_codes"):
@@ -576,7 +578,7 @@ def get_localized_country_codes(rs: RequestState) -> List[Tuple[str, str]]:
             for lang in rs.translations
         }
         get_localized_country_codes.localized_country_codes = localized_country_codes  # type: ignore[attr-defined]
-    return get_localized_country_codes.localized_country_codes[rs.lang]  # type: ignore[attr-defined]
+    return get_localized_country_codes.localized_country_codes[lang or rs.lang]  # type: ignore[attr-defined]
 
 
 def get_country_code_from_country(rs: RequestState, country: str) -> str:
@@ -676,7 +678,7 @@ class EntitySorter:
 
     @staticmethod
     def event_field(event_field: CdEDBObject) -> Sortkey:
-        return (event_field['field_name'], event_field['id'])
+        return (event_field['sortkey'], event_field['field_name'], event_field['id'])
 
     @staticmethod
     def candidates(candidates: CdEDBObject) -> Sortkey:
@@ -2189,7 +2191,8 @@ COURSE_TRACK_FIELDS = ("id", "part_id", "title", "shortname", "num_choices",
 
 #: Fields of an extended attribute associated to an event entity
 FIELD_DEFINITION_FIELDS = (
-    "id", "event_id", "field_name", "kind", "association", "entries", "checkin",
+    "id", "event_id", "field_name", "title", "sortkey", "kind", "association",
+    "checkin", "entries",
 )
 
 #: Fields of a modifier for an event_parts fee.
@@ -2203,7 +2206,7 @@ COURSE_FIELDS = ("id", "event_id", "title", "description", "nr", "shortname",
                  "instructors", "max_size", "min_size", "notes", "fields")
 
 #: Fields specifying in which part a course is available
-COURSE_SEGMENT_FIELDS = ("course_id", "track_id", "is_active")
+COURSE_SEGMENT_FIELDS = ("id", "course_id", "track_id", "is_active")
 
 #: Fields of a registration to an event organized via the CdEDB
 REGISTRATION_FIELDS = (
@@ -2228,7 +2231,7 @@ LODGEMENT_FIELDS = ("id", "event_id", "title", "regular_capacity",
 
 # Fields of a row in a questionnaire.
 # (This can be displayed in different places according to `kind`).
-QUESTIONNAIRE_ROW_FIELDS = ("field_id", "pos", "title", "info",
+QUESTIONNAIRE_ROW_FIELDS = ("event_id", "field_id", "pos", "title", "info",
                             "input_size", "readonly", "default_value", "kind")
 
 #: Fields for a stored event query.

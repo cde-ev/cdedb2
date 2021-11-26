@@ -222,11 +222,12 @@ class CoreGenesisMixin(CoreBaseFrontend):
     @periodic("genesis_forget", period=96)
     def genesis_forget(self, rs: RequestState, store: CdEDBObject
                        ) -> CdEDBObject:
-        """Cron job for deleting unconfirmed or rejected genesis cases.
+        """Cron job for deleting successful, unconfirmed or rejected genesis cases.
 
         This allows the username to be used once more.
         """
-        stati = (const.GenesisStati.unconfirmed, const.GenesisStati.rejected)
+        stati = (const.GenesisStati.successful, const.GenesisStati.unconfirmed,
+                 const.GenesisStati.rejected)
         cases = self.coreproxy.genesis_list_cases(
             rs, stati=stati)
 

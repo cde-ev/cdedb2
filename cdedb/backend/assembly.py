@@ -49,7 +49,7 @@ from cdedb.common import (
     mixed_existence_sorter, n_, now, schulze_evaluate, unwrap, xsorted,
 )
 from cdedb.database.connection import Atomizer
-from cdedb.query import Query, QueryOperators, QueryScope
+from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 
 
 class AssemblyBackend(AbstractBackend):
@@ -308,13 +308,13 @@ class AssemblyBackend(AbstractBackend):
                                       True))
             query.constraints.append(("is_archived", QueryOperators.equal,
                                       query.scope == QueryScope.archived_persona))
-            query.spec["is_assembly_realm"] = "bool"
-            query.spec["is_archived"] = "bool"
+            query.spec["is_assembly_realm"] = QuerySpecEntry("bool", "")
+            query.spec["is_archived"] = QuerySpecEntry("bool", "")
             # Exclude users of any higher realm (implying event)
             for realm in implying_realms('assembly'):
                 query.constraints.append(
                     ("is_{}_realm".format(realm), QueryOperators.equal, False))
-                query.spec["is_{}_realm".format(realm)] = "bool"
+                query.spec["is_{}_realm".format(realm)] = QuerySpecEntry("bool", "")
         else:
             raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query)

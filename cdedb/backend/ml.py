@@ -28,7 +28,7 @@ from cdedb.common import (
 )
 from cdedb.database.connection import Atomizer
 from cdedb.ml_type_aux import MLType, MLTypeLike
-from cdedb.query import Query, QueryOperators, QueryScope
+from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.subman.machine import SubscriptionAction, SubscriptionPolicy
 
 SubStates = Collection[const.SubscriptionState]
@@ -294,13 +294,13 @@ class MlBackend(AbstractBackend):
                                       True))
             query.constraints.append(("is_archived", QueryOperators.equal,
                                       query.scope == QueryScope.archived_persona))
-            query.spec["is_ml_realm"] = "bool"
-            query.spec["is_archived"] = "bool"
+            query.spec["is_ml_realm"] = QuerySpecEntry("bool", "")
+            query.spec["is_archived"] = QuerySpecEntry("bool", "")
             # Exclude users of any higher realm (implying event)
             for realm in implying_realms('ml'):
                 query.constraints.append(
                     ("is_{}_realm".format(realm), QueryOperators.equal, False))
-                query.spec["is_{}_realm".format(realm)] = "bool"
+                query.spec["is_{}_realm".format(realm)] = QuerySpecEntry("bool", "")
         else:
             raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query)
@@ -1187,6 +1187,30 @@ class MlBackend(AbstractBackend):
         ret = set(data.values())
         ret.add(rs.user.username)
         return ret
+
+    @access("ml")
+    def get_implicit_whitelist(self, rs: RequestState, mailinglist_id: int
+                               ) -> Set[str]:
+        """Get all usernames of users which have a custom subscription address
+        configured for the mailinglist.
+
+        This allows those users to also pass moderation with mails sent from
+        their username address instead of just their subscription address,
+        if the ml has non_subscribers moderation policy.
+        Take care to use this function only in this case!
+
+        :returns: Set of mailadresses to whitelist
+        """
+        persona_ids = self.get_subscription_states(
+            rs, mailinglist_id, states=const.SubscriptionState.subscribing_states())
+        persona_ids = {
+            persona_id for persona_id, address
+            in self.get_subscription_addresses(
+                rs, mailinglist_id, persona_ids, explicits_only=True).items()
+            if address
+        }
+        return {persona['username'] for persona
+                in self.core.get_ml_users(rs, persona_ids).values()}
 
     @access("ml")
     def is_subscribed(self, rs: RequestState, persona_id: Optional[int],
