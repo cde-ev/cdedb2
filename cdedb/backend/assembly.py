@@ -852,6 +852,7 @@ class AssemblyBackend(AbstractBackend):
     is_ballot_voting: _IsBallotVotingProtocol = singularize(
         are_ballots_voting, "ballot_ids", "ballot_id")
 
+    @access("assembly")
     def is_ballot_concluded(self, rs: RequestState, ballot_id: int) -> bool:
         """Helper to check whether the given ballot has been concluded."""
         with Atomizer(rs):
@@ -860,7 +861,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def get_ballots(self, rs: RequestState, ballot_ids: Collection[int], *,
-                    include_is_voting=True) -> CdEDBObjectMap:
+                    include_is_voting: bool = True) -> CdEDBObjectMap:
         """Retrieve data for some ballots,
 
         They do not need to be associated to the same assembly. This has an
