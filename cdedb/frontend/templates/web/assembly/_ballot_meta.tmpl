@@ -45,7 +45,6 @@
             <div id="extension-period">
                 {% if ambience['ballot']['extended'] is none %}
                     {% if ambience['ballot']['quorum'] %}
-                        <br />
                         {% trans extension=ambience['ballot']['vote_extension_end']|datetime(lang=lang),
                                  quorum=ambience['ballot']['quorum'] -%}
                         Extension until {{ extension }} if {{ quorum }} votes are not reached.
@@ -53,13 +52,11 @@
                     {% endif %}
                 {% else %}
                     {% if ambience['ballot']['extended'] %}
-                        <br />
                         {% trans extension=ambience['ballot']['vote_extension_end']|datetime(lang=lang),
                                  quorum=ambience['ballot']['quorum'] -%}
                         Extended until {{ extension }} because {{ quorum }} votes were not reached.
                         {% endtrans %}
                     {% elif ambience['ballot']['quorum'] %}
-                        <br />
                         {% trans quorum=anbience['ballot']['quorum'] %}
                         No extension neccessary, because {{ quorum }} votes were reached.
                         {% endtrans %}
