@@ -83,6 +83,12 @@ Content-Type: text/html; charset="UTF-8"
 Received: from mail-il1-f180.google.com (mail-il1-f180.google.com [209.85.166.180])
 	by mail.cde-ev.de (Postfix) with ESMTP id D03062000E7
 	for <mailman-migration@testmail.cde-ev.de>; Tue, 15 Dec 2020 18:36:08 +0100 (CET)
+X-Spam-Flag: YES
+X-Spam-Score: 1.108
+X-Spam-Level: *
+X-Spam-Status: Yes, score=1.108 tagged_above=-999 required=1
+	tests=[HTML_IMAGE_RATIO_08=0.001, HTML_MESSAGE=0.001,
+	MIME_HTML_ONLY=1.105, SPF_HELO_NEUTRAL=0.001]
 Received: by mail-il1-f180.google.com with SMTP id x15so20028263ilq.1
         for <mailman-migration@testmail.cde-ev.de>; Tue, 15 Dec 2020 09:36:08 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
@@ -144,6 +150,13 @@ Content-Type: text/html; charset="UTF-8"
 Received: from mail-il1-f180.google.com (mail-il1-f180.google.com [209.85.166.180])
 	by mail.cde-ev.de (Postfix) with ESMTP id D03062000E7
 	for <mailman-migration@testmail.cde-ev.de>; Tue, 15 Dec 2020 18:36:08 +0100 (CET)
+X-Spam-Flag: YES
+X-Spam-Score: 2.725
+X-Spam-Level: **
+X-Spam-Status: Yes, score=2.725 tagged_above=-999 required=1
+	tests=[HTML_IMAGE_ONLY_08=1.781, HTML_IMAGE_RATIO_02=0.805,
+	HTML_MESSAGE=0.001, HTML_SHORT_LINK_IMG_1=0.139, SPF_HELO_PASS=-0.001,
+	SPF_PASS=-0.001, URIBL_RED=0.001] autolearn=no autolearn_force=no
 Received: by mail-il1-f180.google.com with SMTP id x15so20028263ilq.1
         for <mailman-migration@testmail.cde-ev.de>; Tue, 15 Dec 2020 09:36:08 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
