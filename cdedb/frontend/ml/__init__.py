@@ -51,15 +51,17 @@ class MlFrontend(MlMailmanMixin, MlBaseFrontend):
             for request_id in request_ids:
                 try:
                     held = mmlist.get_held_message(request_id)
+                    sender, subject, msg = held.sender, held.subject, held.msg
+                    # This destroys the information we just queried.
                     response = mmlist.moderate_message(request_id, action)
                 except urllib.error.HTTPError:
                     rs.notify("error", n_("Message unavailable."))
                 else:
                     if response.status_code // 100 == 2:
                         success += 1
-                        headers = email.parser.HeaderParser().parsestr(held.msg)
+                        headers = email.parser.HeaderParser().parsestr(msg)
                         change_note = (
-                            f'{held.sender} / {held.subject} / '
+                            f'{sender} / {subject} / '
                             f'Spam score: {headers.get("X-Spam-Score", "—")}')
                         self.mlproxy.log_moderation(
                             rs, self._moderate_action_logcodes[action],
