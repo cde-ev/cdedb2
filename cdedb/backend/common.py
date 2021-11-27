@@ -428,7 +428,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         reader. ;)
         """
         query = (f"SELECT {', '.join(columns)} FROM {table}"
-                 f" WHERE {entity_key} = ANY(%s)")
+                 f" WHERE {entity_key} = ANY(%s) ORDER BY {entity_key}")
         return self.query_all(rs, query, (entities,))
 
     def sql_select_one(self, rs: RequestState, table: str, columns: Sequence[str],
