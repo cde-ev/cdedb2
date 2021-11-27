@@ -1385,7 +1385,7 @@ class CoreBackend(AbstractBackend):
             #
             lastschrift = self.sql_select(
                 rs, "cde.lastschrift", ("id", "revoked_at"), (persona_id,),
-                "persona_id")
+                entity_key="persona_id")
             if any(not ls['revoked_at'] for ls in lastschrift):
                 raise ArchiveError(n_("Active lastschrift exists."))
             query = ("UPDATE cde.lastschrift"
