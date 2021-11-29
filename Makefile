@@ -198,7 +198,7 @@ ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl start slapd
 endif
 
-sql-test:
+sql-test: tests/ancillary_files/sample_data.sql
 ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl stop pgbouncer
 endif
