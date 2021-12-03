@@ -1433,7 +1433,7 @@ class CdEBackend(AbstractBackend):
 
         :returns: None if nothing happened. True if a new member account was created or
             membership was granted to an existing (non-member) account. False if
-            (trial-)membership was renewed for an existing (already member) account.
+            the existing user was already a member.
         """
         # Require an Atomizer.
         self.affirm_atomized_context(rs)
@@ -1518,6 +1518,8 @@ class CdEBackend(AbstractBackend):
                 self.core.change_persona_realms(
                     rs, promotion, change_note="Datenübernahme nach Massenaufnahme")
             if datum['resolution'].do_trial():
+                if current['is_member']:
+                    raise RuntimeError(n_("May not grant trial membership to member."))
                 code, _, _ = self.change_membership(
                     rs, datum['doppelganger_id'], is_member=True)
                 # This will be true if the user was not a member before.
