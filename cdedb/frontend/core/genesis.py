@@ -376,9 +376,15 @@ class CoreGenesisMixin(CoreBaseFrontend):
         if (not self.is_admin(rs)
                 and "{}_admin".format(case['realm']) not in rs.user.roles):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        if self.coreproxy.verify_existence(rs, case['username'], include_genesis=False):
-            rs.notify("error", n_("Email address already taken."))
+        if case_status not in {const.GenesisStati.approved,
+                               const.GenesisStati.rejected}:
+            rs.notify("error", n_("Invalid input."))
             return self.genesis_show_case(rs, genesis_case_id)
+        if case_status == const.GenesisStati.approved:
+            if self.coreproxy.verify_existence(
+                    rs, case['username'], include_genesis=False):
+                rs.notify("error", n_("Email address already taken."))
+                return self.genesis_show_case(rs, genesis_case_id)
         if case['case_status'] != const.GenesisStati.to_review:
             rs.notify("error", n_("Case not to review."))
             return self.genesis_show_case(rs, genesis_case_id)
