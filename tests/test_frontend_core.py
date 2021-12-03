@@ -13,7 +13,7 @@ from cdedb.common import (
 )
 from cdedb.query import QueryOperators
 from tests.common import (
-    USER_DICT, FrontendTest, UserIdentifier, UserObject, as_users, storage,
+    USER_DICT, FrontendTest, UserIdentifier, UserObject, as_users, get_user, storage,
 )
 
 
@@ -2111,14 +2111,19 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesisapprovalform']
         self.submit(f)
 
-    @as_users("vera")
-    def test_genesis_doppelganger(self) -> None:
+    def _create_genesis_doppelganger(self, user: UserIdentifier = None) -> UserObject:
+        user = get_user(user or self.user)
         # Create a new request almost identical to the current user.
-        dg_data = {k: self.user[k] for k in self.ML_GENESIS_DATA if k in self.user}
+        dg_data = {k: user[k] for k in self.ML_GENESIS_DATA if k in user}
         dg_data["username"] = "notme@example.cde"
         dg_data["notes"] = "Bestimmt jemand anderes1"
         dg_data["realm"] = "ml"
         self._genesis_request(dg_data)
+        return dg_data
+
+    @as_users("vera")
+    def test_genesis_doppelganger(self) -> None:
+        self._create_genesis_doppelganger()
 
         self.traverse("Accountanfragen", "Details")
         self.assertTitle(f"Accountanfrage von {self.user['given_names']}"
@@ -2149,6 +2154,28 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Ähnliche Accounts")
         self.assertPresence(self.EVENT_GENESIS_DATA['username'], div="doppelgangers")
         self.assertPresence(self.EVENT_GENESIS_DATA['username'], div="doppelganger0")
+        f = self.response.forms['genesisrejectionform']
+        self.submit(f, check_notification=False)
+        self.assertPresence("Anfrage abgewiesen", div="notifications")
+
+    @as_users("vera")
+    def test_genesis_dearchive_doppelganger(self) -> None:
+        hades = get_user("hades")
+        genesis_data = self._create_genesis_doppelganger(hades)
+        self.traverse("Accountanfragen", "Details")
+        self.assertTitle(f"Accountanfrage von {hades['given_names']}"
+                         f" {hades['family_name']}")
+        self.assertPresence(f"{hades['given_names']} {hades['family_name']}",
+                            div="doppelgangers")
+        self.assertPresence("(archiviert)", div="doppelgangers")
+        self.core.dearchive_persona(self.key, hades['id'], genesis_data['username'])
+        self.traverse("Accountanfragen", "Details")
+        self.assertTitle(f"Accountanfrage von {hades['given_names']}"
+                         f" {hades['family_name']}")
+        self.assertPresence(f"{hades['given_names']} {hades['family_name']}",
+                            div="doppelgangers")
+        self.assertPresence(f"<{genesis_data['username']}>", div="doppelgangers")
+        self.assertNonPresence("(archiviert)", div="doppelgangers")
         f = self.response.forms['genesisrejectionform']
         self.submit(f, check_notification=False)
         self.assertPresence("Anfrage abgewiesen", div="notifications")
