@@ -378,7 +378,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         if case_status not in {const.GenesisStati.approved,
                                const.GenesisStati.rejected}:
-            rs.notify("error", n_("Invalid input."))
+            rs.notify("error", n_("Invalid genesis state."))
             return self.genesis_show_case(rs, genesis_case_id)
         if case_status == const.GenesisStati.approved:
             if self.coreproxy.verify_existence(
