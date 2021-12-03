@@ -2112,7 +2112,7 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
 
     def _create_genesis_doppelganger(self, user: UserIdentifier = None) -> UserObject:
-        user = get_user(user)
+        user = get_user(user or self.user)
         # Create a new request almost identical to the current user.
         dg_data = {k: user[k] for k in self.ML_GENESIS_DATA if k in user}
         dg_data["username"] = "notme@example.cde"
@@ -2159,7 +2159,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Anfrage abgewiesen", div="notifications")
 
     @as_users("vera")
-    def test_genesis_dearchive_doppelganger(self):
+    def test_genesis_dearchive_doppelganger(self) -> None:
         hades = get_user("hades")
         genesis_data = self._create_genesis_doppelganger(hades)
         self.traverse("Accountanfragen", "Details")
@@ -2179,7 +2179,6 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesisrejectionform']
         self.submit(f, check_notification=False)
         self.assertPresence("Anfrage abgewiesen", div="notifications")
-
 
     def test_resolve_api(self) -> None:
         at = urllib.parse.quote_plus('@')
