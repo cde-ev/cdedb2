@@ -870,29 +870,10 @@ class TestAssemblyBackend(BackendTest):
         self.assertEqual(self.assembly.get_ballot(self.key, 1)['comment'], None)
 
         # Test log
-        self.logout()
-        self.login('anton')
-        expectation = (
-            # 1001 is tallying ballot 15
-            {'assembly_id': 1,
-             'change_note': 'Antwort auf die letzte aller Fragen',
-             'code': const.AssemblyLogCodes.ballot_changed,
-             'ctime': nearly_now(),
-             'id': 1002,
-             'persona_id': None,
-             'submitted_by': 23},
-            {'assembly_id': 1,
-             'change_note': 'Antwort auf die letzte aller Fragen',
-             'code': const.AssemblyLogCodes.ballot_changed,
-             'ctime': nearly_now(),
-             'id': 1003,
-             'persona_id': None,
-             'submitted_by': 23}
-        )
-        _, log = self.assembly.retrieve_log(
-            self.key, codes={const.AssemblyLogCodes.ballot_changed},
-            assembly_id=1)
-        self.assertEqual(expectation, log)
+        entry = {'change_note': 'Antwort auf die letzte aller Fragen',
+                 'code': const.AssemblyLogCodes.ballot_changed}
+        expectation = (entry, entry)
+        self.assertLogEqual(expectation, realm="assembly", assembly_id=1)
 
     @storage
     @as_users("werner")
