@@ -1216,7 +1216,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.get('/assembly/assembly/3/ballot/6/show')
         self.follow()
         self.assertNonPresence("Abstimmungskommentar")
-        self.traverse("Bearbeiten")
+        self.traverse("Kommentieren")
         f = self.response.forms['changeballotform']
         comment = "War nur ein *Experiment*."
         f['comment'] = comment
@@ -1224,7 +1224,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertTitle("Test-Abstimmung – bitte ignorieren (Archiv-Sammlung)")
         self.assertPresence("Abstimmungskommentar")
         self.assertPresence("War nur ein Experiment.")
-        self.traverse("Bearbeiten")
+        self.traverse("Kommentieren")
         f = self.response.forms['changeballotform']
         # check that the form is filled with the current comment
         self.assertEqual(comment, f['comment'].value)

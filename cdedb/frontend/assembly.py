@@ -1278,11 +1278,9 @@ class AssemblyFrontend(AbstractUserFrontend):
     def change_ballot_form(self, rs: RequestState, assembly_id: int,
                            ballot_id: int) -> Response:
         """Render form"""
-        if rs.ambience['ballot']['is_voting']:
+        if now() > rs.ambience['ballot']['vote_begin']:
             rs.notify("warning", n_("Unable to modify active ballot."))
             return self.redirect(rs, "assembly/show_ballot")
-        if rs.ambience['ballot']['is_tallied']:
-            return self.render(rs, "comment_ballot")
         attachment_ids = self.assemblyproxy.list_attachments(
             rs, assembly_id=assembly_id)
         attachment_versions = self.assemblyproxy.get_latest_attachments_version(
@@ -1335,13 +1333,27 @@ class AssemblyFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/show_ballot")
 
+    @access("assembly")
+    @assembly_guard
+    @REQUESTdata("comment")
+    def comment_concluded_ballot_form(self, rs: RequestState, assembly_id: int,
+                                      ballot_id: int, comment: Optional[str]
+                                      ) -> Response:
+        rs.ignore_validation_errors()
+        if not rs.ambience['ballot']['is_tallied']:
+            rs.notify("error", n_("Comments are only allowed for concluded ballots."))
+            return self.redirect(rs, "assembly/show_ballot")
+        rs.values['comment'] = comment or rs.ambience['ballot']['comment']
+        return self.render(rs, "comment_ballot")
+
     @access("assembly", modi={"POST"})
     @assembly_guard
     @REQUESTdata("comment")
     def comment_concluded_ballot(self, rs: RequestState, assembly_id: int,
                                  ballot_id: int, comment: Optional[str]) -> Response:
         if rs.has_validation_errors():
-            return self.change_ballot_form(rs, assembly_id, ballot_id)
+            return self.comment_concluded_ballot_form(rs, assembly_id, ballot_id,
+                                                      comment)
         if not self.assemblyproxy.is_ballot_concluded(rs, ballot_id):
             rs.notify("error", n_("Comments are only allowed for concluded ballots."))
             return self.redirect(rs, "assembly/show_ballot")

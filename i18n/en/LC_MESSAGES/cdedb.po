@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2021-11-26 02:22+0100\n"
+"POT-Creation-Date: 2021-12-05 02:27+0100\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -103,7 +103,7 @@ msgstr ""
 #: cdedb/frontend/assembly.py:572 cdedb/frontend/assembly.py:653
 #: cdedb/frontend/assembly.py:719 cdedb/frontend/assembly.py:923
 #: cdedb/frontend/assembly.py:1000 cdedb/frontend/assembly.py:1257
-#: cdedb/frontend/assembly.py:1407 cdedb/frontend/assembly.py:1463
+#: cdedb/frontend/assembly.py:1417 cdedb/frontend/assembly.py:1473
 #: cdedb/frontend/core/base.py:671 cdedb/frontend/core/base.py:700
 #: cdedb/frontend/core/base.py:912 cdedb/frontend/core/base.py:915
 #: cdedb/frontend/core/base.py:920 cdedb/frontend/core/base.py:926
@@ -146,7 +146,7 @@ msgid "Some of these users are not assembly users."
 msgstr ""
 
 #: cdedb/backend/assembly.py:712 cdedb/frontend/assembly.py:446
-#: cdedb/frontend/assembly.py:1387
+#: cdedb/frontend/assembly.py:1397
 msgid "Unable to remove active ballot."
 msgstr ""
 
@@ -189,7 +189,8 @@ msgstr ""
 msgid "Must have privileged access to comment ballot."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1071 cdedb/frontend/assembly.py:1346
+#: cdedb/backend/assembly.py:1071 cdedb/frontend/assembly.py:1344
+#: cdedb/frontend/assembly.py:1356
 msgid "Comments are only allowed for concluded ballots."
 msgstr ""
 
@@ -1407,7 +1408,7 @@ msgstr ""
 
 #: cdedb/frontend/assembly.py:441 cdedb/frontend/assembly.py:600
 #: cdedb/frontend/assembly.py:774 cdedb/frontend/assembly.py:836
-#: cdedb/frontend/assembly.py:867 cdedb/frontend/assembly.py:1382
+#: cdedb/frontend/assembly.py:867 cdedb/frontend/assembly.py:1392
 #: cdedb/frontend/cde/past_event.py:400 cdedb/frontend/cde/past_event.py:460
 #: cdedb/frontend/core/base.py:2083 cdedb/frontend/core/base.py:2126
 #: cdedb/frontend/event/course.py:183 cdedb/frontend/event/event.py:325
@@ -1503,23 +1504,23 @@ msgstr ""
 msgid "Entered invalid secret"
 msgstr ""
 
-#: cdedb/frontend/assembly.py:1360
+#: cdedb/frontend/assembly.py:1370
 msgid "Force starting a ballot is only possible in dev mode."
 msgstr ""
 
-#: cdedb/frontend/assembly.py:1418
+#: cdedb/frontend/assembly.py:1428
 msgid "Option not available."
 msgstr ""
 
-#: cdedb/frontend/assembly.py:1427
+#: cdedb/frontend/assembly.py:1437
 msgid "Rejection is exclusive."
 msgstr ""
 
-#: cdedb/frontend/assembly.py:1466
+#: cdedb/frontend/assembly.py:1476
 msgid "Ballot not yet tallied."
 msgstr ""
 
-#: cdedb/frontend/assembly.py:1492
+#: cdedb/frontend/assembly.py:1502
 msgid "Duplicate shortname."
 msgstr ""
 
@@ -4547,7 +4548,11 @@ msgstr ""
 msgid "Start Voting"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:63
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:56
+msgid "Comment_[[verb]]"
+msgstr "Comment"
+
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:68
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:34
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:60
 #: cdedb/frontend/templates/web/cde/past_event/past_course_search.tmpl:21
@@ -4559,13 +4564,13 @@ msgstr ""
 msgid "Result"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:64
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:69
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:14
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:23
 msgid "Detailed Results"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:69
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:74
 msgid "Ballot Comment"
 msgstr ""
 

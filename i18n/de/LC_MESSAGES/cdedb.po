@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2021-11-26 02:22+0100\n"
+"POT-Creation-Date: 2021-12-05 02:27+0100\n"
 "PO-Revision-Date: 2020-12-06 11:30+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -103,7 +103,7 @@ msgstr "Nicht berechtigt auf Veranstaltungstabellen zuzugreifen"
 #: cdedb/frontend/assembly.py:572 cdedb/frontend/assembly.py:653
 #: cdedb/frontend/assembly.py:719 cdedb/frontend/assembly.py:923
 #: cdedb/frontend/assembly.py:1000 cdedb/frontend/assembly.py:1257
-#: cdedb/frontend/assembly.py:1407 cdedb/frontend/assembly.py:1463
+#: cdedb/frontend/assembly.py:1417 cdedb/frontend/assembly.py:1473
 #: cdedb/frontend/core/base.py:671 cdedb/frontend/core/base.py:700
 #: cdedb/frontend/core/base.py:912 cdedb/frontend/core/base.py:915
 #: cdedb/frontend/core/base.py:920 cdedb/frontend/core/base.py:926
@@ -148,7 +148,7 @@ msgid "Some of these users are not assembly users."
 msgstr "Einige dieser Nutzer sind keine Versammlungsnutzer."
 
 #: cdedb/backend/assembly.py:712 cdedb/frontend/assembly.py:446
-#: cdedb/frontend/assembly.py:1387
+#: cdedb/frontend/assembly.py:1397
 msgid "Unable to remove active ballot."
 msgstr "Eine aktive Abstimmung kann nicht gelöscht werden."
 
@@ -191,7 +191,8 @@ msgstr "Fehlende Zugriffsrechte zum Anlegen neuer Abstimmungen."
 msgid "Must have privileged access to comment ballot."
 msgstr "Fehlende Zugriffsrechte zum Kommentieren von Abstimmungen."
 
-#: cdedb/backend/assembly.py:1071 cdedb/frontend/assembly.py:1346
+#: cdedb/backend/assembly.py:1071 cdedb/frontend/assembly.py:1344
+#: cdedb/frontend/assembly.py:1356
 msgid "Comments are only allowed for concluded ballots."
 msgstr "Kommentare sind nur für beendete Abstimmungen erlaubt."
 
@@ -1448,7 +1449,7 @@ msgstr "Versammlung angelegt."
 
 #: cdedb/frontend/assembly.py:441 cdedb/frontend/assembly.py:600
 #: cdedb/frontend/assembly.py:774 cdedb/frontend/assembly.py:836
-#: cdedb/frontend/assembly.py:867 cdedb/frontend/assembly.py:1382
+#: cdedb/frontend/assembly.py:867 cdedb/frontend/assembly.py:1392
 #: cdedb/frontend/cde/past_event.py:400 cdedb/frontend/cde/past_event.py:460
 #: cdedb/frontend/core/base.py:2083 cdedb/frontend/core/base.py:2126
 #: cdedb/frontend/event/course.py:183 cdedb/frontend/event/event.py:325
@@ -1546,23 +1547,23 @@ msgstr "Ablehnungsgrenze"
 msgid "Entered invalid secret"
 msgstr "Ungültiges Geheimniss eingegeben."
 
-#: cdedb/frontend/assembly.py:1360
+#: cdedb/frontend/assembly.py:1370
 msgid "Force starting a ballot is only possible in dev mode."
 msgstr "Forcieren eines Abstimmungsstarts ist nur im Entwicklermodus möglich."
 
-#: cdedb/frontend/assembly.py:1418
+#: cdedb/frontend/assembly.py:1428
 msgid "Option not available."
 msgstr "Option nicht verfügbar."
 
-#: cdedb/frontend/assembly.py:1427
+#: cdedb/frontend/assembly.py:1437
 msgid "Rejection is exclusive."
 msgstr "Ablehnung kann nur exklusiv gewählt werden."
 
-#: cdedb/frontend/assembly.py:1466
+#: cdedb/frontend/assembly.py:1476
 msgid "Ballot not yet tallied."
 msgstr "Abstimmung noch nicht ausgezählt."
 
-#: cdedb/frontend/assembly.py:1492
+#: cdedb/frontend/assembly.py:1502
 msgid "Duplicate shortname."
 msgstr "Option doppelt gefunden."
 
@@ -4751,7 +4752,11 @@ msgstr "Die Versammlung wird irreversibel gelöscht."
 msgid "Start Voting"
 msgstr "Abstimmung starten"
 
-#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:63
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:56
+msgid "Comment_[[verb]]"
+msgstr "Kommentieren"
+
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:68
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:34
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:60
 #: cdedb/frontend/templates/web/cde/past_event/past_course_search.tmpl:21
@@ -4763,13 +4768,13 @@ msgstr "Abstimmung starten"
 msgid "Result"
 msgstr "Ergebnis"
 
-#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:64
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:69
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:14
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:23
 msgid "Detailed Results"
 msgstr "Ergebnisdetails"
 
-#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:69
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:74
 msgid "Ballot Comment"
 msgstr "Abstimmungskommentar"
 
