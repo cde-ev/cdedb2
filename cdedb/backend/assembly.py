@@ -43,9 +43,9 @@ from cdedb.backend.common import (
 )
 from cdedb.common import (
     ASSEMBLY_ATTACHMENT_FIELDS, ASSEMBLY_ATTACHMENT_VERSION_FIELDS,
-    ASSEMBLY_BAR_SHORTNAME, ASSEMBLY_FIELDS, BALLOT_FIELDS, FUTURE_TIMESTAMP, CdEDBLog,
-    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, EntitySorter,
-    PrivilegeError, RequestState, get_hash, glue, implying_realms, json_serialize,
+    ASSEMBLY_BAR_SHORTNAME, ASSEMBLY_FIELDS, BALLOT_FIELDS, CdEDBLog, CdEDBObject,
+    CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, EntitySorter, PrivilegeError,
+    RequestState, get_hash, glue, implying_realms, json_serialize,
     mixed_existence_sorter, n_, now, schulze_evaluate, unwrap, xsorted,
 )
 from cdedb.database.connection import Atomizer
@@ -1017,10 +1017,6 @@ class AssemblyBackend(AbstractBackend):
             if not assembly['is_active']:
                 raise ValueError(n_("Assembly already concluded."))
             bdata = {k: v for k, v in data.items() if k in BALLOT_FIELDS}
-            # TODO: Do we want to allow creating a running ballot???
-            # do a little dance, so that creating a running ballot does not
-            # throw an error
-            begin, bdata['vote_begin'] = bdata['vote_begin'], FUTURE_TIMESTAMP
             new_id = self.sql_insert(rs, "assembly.ballots", bdata)
             self.assembly_log(rs, const.AssemblyLogCodes.ballot_created,
                               data['assembly_id'], change_note=data['title'])
@@ -1040,13 +1036,6 @@ class AssemblyBackend(AbstractBackend):
                     'ballot_id': new_id,
                 }
                 self.sql_insert(rs, "assembly.voter_register", entry)
-            # fix vote_begin stashed above
-            update = {
-                'id': new_id,
-                'vote_begin': begin,
-            }
-            with Silencer(rs):
-                self.set_ballot(rs, update)
         return new_id
 
     @access("assembly")
