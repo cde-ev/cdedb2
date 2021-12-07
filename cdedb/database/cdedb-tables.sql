@@ -1058,12 +1058,12 @@ CREATE TABLE assembly.ballots (
         -- True after creation of the result summary file
         is_tallied              boolean NOT NULL DEFAULT False,
         -- administrative comments
-        notes                   varchar
+        notes                   varchar,
+        -- comment to be added after the ballot has finished
+        comment                 varchar
 );
 CREATE INDEX idx_ballots_assembly_id ON assembly.ballots(assembly_id);
-GRANT SELECT ON assembly.ballots TO cdb_member;
-GRANT UPDATE (extended, is_tallied) ON assembly.ballots TO cdb_member;
-GRANT INSERT, UPDATE, DELETE ON assembly.ballots TO cdb_member;
+GRANT SELECT, INSERT, UPDATE, DELETE ON assembly.ballots TO cdb_member;
 GRANT SELECT, UPDATE ON assembly.ballots_id_seq TO cdb_member;
 
 CREATE TABLE assembly.candidates (

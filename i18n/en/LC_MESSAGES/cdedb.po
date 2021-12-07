@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2021-11-24 22:55+0100\n"
+"POT-Creation-Date: 2021-12-05 02:27+0100\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -41,7 +41,7 @@ msgid "Bad scope."
 msgstr ""
 
 #: cdedb/backend/assembly.py:363 cdedb/backend/assembly.py:386
-#: cdedb/backend/assembly.py:2072 cdedb/backend/event/base.py:65
+#: cdedb/backend/assembly.py:2135 cdedb/backend/event/base.py:65
 #: cdedb/backend/event/lowlevel.py:49 cdedb/backend/past_event.py:580
 #: cdedb/frontend/common.py:579
 msgid "No input specified."
@@ -51,7 +51,7 @@ msgstr ""
 msgid "Can only retrieve id for exactly one assembly."
 msgstr ""
 
-#: cdedb/backend/assembly.py:388 cdedb/backend/assembly.py:2074
+#: cdedb/backend/assembly.py:388 cdedb/backend/assembly.py:2137
 #: cdedb/backend/event/base.py:54 cdedb/backend/event/lowlevel.py:51
 #: cdedb/backend/past_event.py:572
 msgid "Too many inputs specified."
@@ -62,10 +62,10 @@ msgid "Not privileged to access assembly tables"
 msgstr ""
 
 #: cdedb/backend/assembly.py:457 cdedb/backend/assembly.py:505
-#: cdedb/backend/assembly.py:786 cdedb/backend/assembly.py:1423
-#: cdedb/backend/assembly.py:1897 cdedb/backend/assembly.py:1923
-#: cdedb/backend/assembly.py:2053 cdedb/backend/assembly.py:2078
-#: cdedb/backend/assembly.py:2132 cdedb/backend/cde.py:175
+#: cdedb/backend/assembly.py:786 cdedb/backend/assembly.py:1486
+#: cdedb/backend/assembly.py:1960 cdedb/backend/assembly.py:1986
+#: cdedb/backend/assembly.py:2116 cdedb/backend/assembly.py:2141
+#: cdedb/backend/assembly.py:2195 cdedb/backend/cde.py:175
 #: cdedb/backend/cde.py:200 cdedb/backend/cde.py:351 cdedb/backend/core.py:521
 #: cdedb/backend/core.py:746 cdedb/backend/core.py:2690
 #: cdedb/backend/core.py:2693 cdedb/backend/core.py:2721
@@ -103,7 +103,7 @@ msgstr ""
 #: cdedb/frontend/assembly.py:572 cdedb/frontend/assembly.py:653
 #: cdedb/frontend/assembly.py:719 cdedb/frontend/assembly.py:923
 #: cdedb/frontend/assembly.py:1000 cdedb/frontend/assembly.py:1257
-#: cdedb/frontend/assembly.py:1391 cdedb/frontend/assembly.py:1447
+#: cdedb/frontend/assembly.py:1417 cdedb/frontend/assembly.py:1473
 #: cdedb/frontend/core/base.py:671 cdedb/frontend/core/base.py:700
 #: cdedb/frontend/core/base.py:912 cdedb/frontend/core/base.py:915
 #: cdedb/frontend/core/base.py:920 cdedb/frontend/core/base.py:926
@@ -116,7 +116,7 @@ msgstr ""
 msgid "Not privileged."
 msgstr ""
 
-#: cdedb/backend/assembly.py:513 cdedb/backend/assembly.py:1624
+#: cdedb/backend/assembly.py:513 cdedb/backend/assembly.py:1687
 msgid "Something went wrong."
 msgstr ""
 
@@ -124,7 +124,7 @@ msgstr ""
 msgid "Must have privileged access to change assembly."
 msgstr ""
 
-#: cdedb/backend/assembly.py:541 cdedb/backend/assembly.py:985
+#: cdedb/backend/assembly.py:541 cdedb/backend/assembly.py:1018
 #: cdedb/frontend/assembly.py:260 cdedb/frontend/assembly.py:684
 msgid "Assembly already concluded."
 msgstr ""
@@ -146,13 +146,13 @@ msgid "Some of these users are not assembly users."
 msgstr ""
 
 #: cdedb/backend/assembly.py:712 cdedb/frontend/assembly.py:446
-#: cdedb/frontend/assembly.py:1371
+#: cdedb/frontend/assembly.py:1397
 msgid "Unable to remove active ballot."
 msgstr ""
 
 #: cdedb/backend/assembly.py:716 cdedb/backend/assembly.py:772
-#: cdedb/backend/assembly.py:1096 cdedb/backend/assembly.py:1132
-#: cdedb/backend/assembly.py:1682 cdedb/backend/assembly.py:1718
+#: cdedb/backend/assembly.py:1159 cdedb/backend/assembly.py:1195
+#: cdedb/backend/assembly.py:1745 cdedb/backend/assembly.py:1781
 #: cdedb/backend/cde.py:303 cdedb/backend/cde.py:329 cdedb/backend/core.py:2601
 #: cdedb/backend/core.py:2624 cdedb/backend/event/__init__.py:146
 #: cdedb/backend/event/__init__.py:225 cdedb/backend/event/course.py:293
@@ -169,175 +169,184 @@ msgstr ""
 msgid "Deletion of %(type)s blocked by %(block)s."
 msgstr ""
 
-#: cdedb/backend/assembly.py:921
+#: cdedb/backend/assembly.py:953
 msgid "Must have privileged access to change ballot."
 msgstr ""
 
-#: cdedb/backend/assembly.py:924 cdedb/frontend/assembly.py:1282
+#: cdedb/backend/assembly.py:956 cdedb/frontend/assembly.py:1282
 msgid "Unable to modify active ballot."
 msgstr ""
 
-#: cdedb/backend/assembly.py:934
+#: cdedb/backend/assembly.py:966
 msgid "Non-existing candidates specified."
 msgstr ""
 
-#: cdedb/backend/assembly.py:980
+#: cdedb/backend/assembly.py:1013
 msgid "Must have privileged access to create ballot."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1042 cdedb/backend/assembly.py:1106
+#: cdedb/backend/assembly.py:1067
+msgid "Must have privileged access to comment ballot."
+msgstr ""
+
+#: cdedb/backend/assembly.py:1071 cdedb/frontend/assembly.py:1344
+#: cdedb/frontend/assembly.py:1356
+msgid "Comments are only allowed for concluded ballots."
+msgstr ""
+
+#: cdedb/backend/assembly.py:1105 cdedb/backend/assembly.py:1169
 msgid "Must have privileged access to delete ballot."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1087
+#: cdedb/backend/assembly.py:1150
 msgid "Cannot delete ballot once it has been locked."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1089
+#: cdedb/backend/assembly.py:1152
 msgid "Cannot delete ballot once the assembly has been locked."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1092
+#: cdedb/backend/assembly.py:1155
 msgid "Cannot delete ballot that has votes."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1156
+#: cdedb/backend/assembly.py:1219
 msgid "Normal voting still going on."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1188 cdedb/frontend/assembly.py:524
+#: cdedb/backend/assembly.py:1251 cdedb/frontend/assembly.py:524
 #: cdedb/frontend/assembly.py:539
 msgid "Signup already ended."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1224
+#: cdedb/backend/assembly.py:1287
 msgid "Must have privileged access to add an external assembly participant."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1229
+#: cdedb/backend/assembly.py:1292
 msgid "Not allowed for members."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1231
+#: cdedb/backend/assembly.py:1294
 msgid "Only allowed for assembly users."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1267
+#: cdedb/backend/assembly.py:1330
 msgid "Must attend to vote."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1273
+#: cdedb/backend/assembly.py:1336
 msgid "Ballot already closed."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1275
+#: cdedb/backend/assembly.py:1338
 msgid "Ballot not yet open."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1287
+#: cdedb/backend/assembly.py:1350
 msgid "Could not determine secret."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1321 cdedb/backend/assembly.py:1358
+#: cdedb/backend/assembly.py:1384 cdedb/backend/assembly.py:1421
 msgid "Must attend the ballot."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1384
+#: cdedb/backend/assembly.py:1447
 msgid "May not access result for this ballot."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1430
+#: cdedb/backend/assembly.py:1493
 msgid "Extension unchecked."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1436
+#: cdedb/backend/assembly.py:1499
 msgid "Voting still going on."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1537
+#: cdedb/backend/assembly.py:1600
 msgid "Assembly is not active."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1539
+#: cdedb/backend/assembly.py:1602
 msgid "Assembly has open ballots."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1542 cdedb/backend/assembly.py:1575
+#: cdedb/backend/assembly.py:1605 cdedb/backend/assembly.py:1638
 #, python-format
 msgid "Conclusion of assembly blocked by %(block)s."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1589
+#: cdedb/backend/assembly.py:1652
 msgid "Can only access attachments from exactly one assembly at a time."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1606
+#: cdedb/backend/assembly.py:1669
 msgid "Must have privileged access to add attachment."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1608 cdedb/backend/assembly.py:1674
+#: cdedb/backend/assembly.py:1671 cdedb/backend/assembly.py:1737
 msgid "Cannot delete attachment once the assembly has been locked."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1627 cdedb/backend/assembly.py:1985
+#: cdedb/backend/assembly.py:1690 cdedb/backend/assembly.py:2048
 msgid "File already exists."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1677
+#: cdedb/backend/assembly.py:1740
 msgid "Cannot delete attachment once any linked ballot has been locked."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1694
+#: cdedb/backend/assembly.py:1757
 msgid "Must have privileged access to delete attachment."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1761
+#: cdedb/backend/assembly.py:1824
 msgid "Must have privileged access to add attachment link."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1765
+#: cdedb/backend/assembly.py:1828
 msgid "Cannot link attachment to ballot that has been locked."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1793
+#: cdedb/backend/assembly.py:1856
 msgid "Must have privileged access to delete attachment link."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1797
+#: cdedb/backend/assembly.py:1860
 msgid "Cannot unlink attachment from ballot that has been locked."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1970
+#: cdedb/backend/assembly.py:2033
 msgid "Cannot add attachment version once the assembly has been locked."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1977
+#: cdedb/backend/assembly.py:2040
 msgid "Attachment does not exist."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1990
+#: cdedb/backend/assembly.py:2053
 msgid "Must have privileged access to add attachment version."
 msgstr ""
 
-#: cdedb/backend/assembly.py:2005
+#: cdedb/backend/assembly.py:2068
 msgid "Must have privileged access to remove attachment version."
 msgstr ""
 
-#: cdedb/backend/assembly.py:2008
+#: cdedb/backend/assembly.py:2071
 msgid ""
 "Cannot remove attachment version once the assembly or any linked ballots "
 "have been locked."
 msgstr ""
 
-#: cdedb/backend/assembly.py:2013 cdedb/frontend/assembly.py:886
+#: cdedb/backend/assembly.py:2076 cdedb/frontend/assembly.py:886
 msgid "This version does not exist."
 msgstr ""
 
-#: cdedb/backend/assembly.py:2015 cdedb/frontend/assembly.py:889
+#: cdedb/backend/assembly.py:2078 cdedb/frontend/assembly.py:889
 msgid "This version has already been deleted."
 msgstr ""
 
-#: cdedb/backend/assembly.py:2018 cdedb/frontend/assembly.py:880
+#: cdedb/backend/assembly.py:2081 cdedb/frontend/assembly.py:880
 msgid "Cannot remove the last remaining version of an attachment."
 msgstr ""
 
@@ -740,7 +749,7 @@ msgstr ""
 msgid "Preventing reset of admin."
 msgstr ""
 
-#: cdedb/backend/core.py:2329 cdedb/frontend/common.py:1753
+#: cdedb/backend/core.py:2329 cdedb/frontend/common.py:1757
 msgid "Link expired."
 msgstr ""
 
@@ -1067,35 +1076,35 @@ msgstr ""
 msgid "Non-unique mailinglist name"
 msgstr ""
 
-#: cdedb/backend/ml.py:1229
+#: cdedb/backend/ml.py:1253
 msgid "Moderator access has been restricted."
 msgstr ""
 
-#: cdedb/backend/ml.py:1353
+#: cdedb/backend/ml.py:1377
 msgid "Source User is admin and can not be merged."
 msgstr ""
 
-#: cdedb/backend/ml.py:1356
+#: cdedb/backend/ml.py:1380
 msgid "Source persona must be a ml-only user."
 msgstr ""
 
-#: cdedb/backend/ml.py:1358
+#: cdedb/backend/ml.py:1382
 msgid "Source User is not accessible."
 msgstr ""
 
-#: cdedb/backend/ml.py:1364
+#: cdedb/backend/ml.py:1388
 msgid "Target User is no valid ml user."
 msgstr ""
 
-#: cdedb/backend/ml.py:1366
+#: cdedb/backend/ml.py:1390
 msgid "Target User is not accessible."
 msgstr ""
 
-#: cdedb/backend/ml.py:1368 cdedb/frontend/ml/base.py:310
+#: cdedb/backend/ml.py:1392 cdedb/frontend/ml/base.py:310
 msgid "Can not merge user into himself."
 msgstr ""
 
-#: cdedb/backend/ml.py:1383
+#: cdedb/backend/ml.py:1407
 #, python-format
 msgid "Both users are related to the same mailinglists: %(mls)s"
 msgstr ""
@@ -1399,7 +1408,7 @@ msgstr ""
 
 #: cdedb/frontend/assembly.py:441 cdedb/frontend/assembly.py:600
 #: cdedb/frontend/assembly.py:774 cdedb/frontend/assembly.py:836
-#: cdedb/frontend/assembly.py:867 cdedb/frontend/assembly.py:1366
+#: cdedb/frontend/assembly.py:867 cdedb/frontend/assembly.py:1392
 #: cdedb/frontend/cde/past_event.py:400 cdedb/frontend/cde/past_event.py:460
 #: cdedb/frontend/core/base.py:2083 cdedb/frontend/core/base.py:2126
 #: cdedb/frontend/event/course.py:183 cdedb/frontend/event/event.py:325
@@ -1495,23 +1504,23 @@ msgstr ""
 msgid "Entered invalid secret"
 msgstr ""
 
-#: cdedb/frontend/assembly.py:1344
+#: cdedb/frontend/assembly.py:1370
 msgid "Force starting a ballot is only possible in dev mode."
 msgstr ""
 
-#: cdedb/frontend/assembly.py:1402
+#: cdedb/frontend/assembly.py:1428
 msgid "Option not available."
 msgstr ""
 
-#: cdedb/frontend/assembly.py:1411
+#: cdedb/frontend/assembly.py:1437
 msgid "Rejection is exclusive."
 msgstr ""
 
-#: cdedb/frontend/assembly.py:1450
+#: cdedb/frontend/assembly.py:1476
 msgid "Ballot not yet tallied."
 msgstr ""
 
-#: cdedb/frontend/assembly.py:1476
+#: cdedb/frontend/assembly.py:1502
 msgid "Duplicate shortname."
 msgstr ""
 
@@ -1962,56 +1971,56 @@ msgstr ""
 msgid "User created."
 msgstr ""
 
-#: cdedb/frontend/common.py:1395
+#: cdedb/frontend/common.py:1399
 msgid "Inconsistent request."
 msgstr ""
 
-#: cdedb/frontend/common.py:1467
+#: cdedb/frontend/common.py:1471
 msgid "Object {param}={value} not found"
 msgstr ""
 
-#: cdedb/frontend/common.py:1540
+#: cdedb/frontend/common.py:1544
 msgid "You must login."
 msgstr ""
 
-#: cdedb/frontend/common.py:1544
+#: cdedb/frontend/common.py:1548
 msgid "Access denied to {realm}/{endpoint}."
 msgstr ""
 
-#: cdedb/frontend/common.py:1604
+#: cdedb/frontend/common.py:1608
 msgid "Magic URL parameter replacement failed."
 msgstr ""
 
-#: cdedb/frontend/common.py:1755
+#: cdedb/frontend/common.py:1759
 msgid "Link invalid."
 msgstr ""
 
-#: cdedb/frontend/common.py:1827
+#: cdedb/frontend/common.py:1831
 msgid "Invalid argtype {t} found."
 msgstr ""
 
-#: cdedb/frontend/common.py:1942
+#: cdedb/frontend/common.py:1946
 msgid "This page can only be accessed by orgas."
 msgstr ""
 
-#: cdedb/frontend/common.py:1947
+#: cdedb/frontend/common.py:1951
 msgid "This event is locked for offline usage."
 msgstr ""
 
-#: cdedb/frontend/common.py:1979
+#: cdedb/frontend/common.py:1983
 msgid "This page can only be accessed by the mailinglist’s moderators."
 msgstr ""
 
-#: cdedb/frontend/common.py:1984
+#: cdedb/frontend/common.py:1988
 msgid ""
 "You only have restricted moderator access and may not change subscriptions."
 msgstr ""
 
-#: cdedb/frontend/common.py:1989
+#: cdedb/frontend/common.py:1993
 msgid "This page can only be accessed by appropriate admins."
 msgstr ""
 
-#: cdedb/frontend/common.py:2011
+#: cdedb/frontend/common.py:2015
 msgid ""
 "This page may only be accessed by the assembly's presiders or assembly "
 "admins."
@@ -3389,7 +3398,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/show_history.tmpl:195
 #: cdedb/frontend/templates/web/core/show_user.tmpl:243
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:73
-#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:51
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:50
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:60 cdedb/query.py:337
 #: cdedb/query.py:391 cdedb/query.py:421 cdedb/query.py:444 cdedb/query.py:460
 #: cdedb/query.py:472 cdedb/query.py:485
@@ -3455,37 +3464,37 @@ msgstr ""
 msgid "Rejection limit."
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:169
+#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:170
 #, python-format
 msgid "%(abstentions)s voters had abstained."
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:178
+#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:180
 msgid "Help for tallying"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:181
+#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:183
 msgid "Classical vote"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:186
+#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:188
 msgid ""
 "Pro votes are the sum of all votes in favor of this candidate. Votes against "
 "single candidates are not possible in this voting system."
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:193
+#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:195
 msgid ""
 "Using the \"Against all candidates\" option it is possible to vote against "
 "all candidates. This option can only be exclusively chosen, potential other "
 "votes expire."
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:202
+#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:204
 msgid "Preferential vote"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:207
+#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:209
 msgid ""
 "Pro votes and Contra votes are valid for the given position and are relative "
 "to the next lower position. Multiple candidates can share the same position "
@@ -3758,7 +3767,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/lodgement/change_lodgement.tmpl:26
 #: cdedb/frontend/templates/web/event/lodgement/create_lodgement.tmpl:25
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:56
-#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:34
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:33
 #: cdedb/frontend/templates/web/util.tmpl:928 cdedb/query.py:524
 #: cdedb/query.py:1087
 msgid "Title_[[name of an entity]]"
@@ -3807,6 +3816,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:366
 #: cdedb/frontend/templates/web/assembly/assembly_data.tmpl:63
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:38
+#: cdedb/frontend/templates/web/assembly/comment_ballot.tmpl:7
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_change.tmpl:40
 #: cdedb/frontend/templates/web/cde/past_event/change_past_course.tmpl:39
 #: cdedb/frontend/templates/web/cde/past_event/change_past_event.tmpl:37
@@ -3872,7 +3882,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/logging.tmpl:100
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:98
 #: cdedb/frontend/templates/web/ml/change_ml_type.tmpl:51
-#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:69
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:68
 msgid "Assembly"
 msgstr ""
 
@@ -4002,7 +4012,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/event/create_event.tmpl:22
 #: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:72
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:72
-#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:50
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:49
 msgid "Description"
 msgstr ""
 
@@ -4063,7 +4073,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/past_event/create_past_event.tmpl:37
 #: cdedb/frontend/templates/web/event/event/create_event.tmpl:61
 #: cdedb/frontend/templates/web/event/lodgement/create_lodgement.tmpl:39
-#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:113
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:112
 msgid "Create"
 msgstr ""
 
@@ -4275,6 +4285,11 @@ msgstr ""
 msgid "– none –"
 msgstr ""
 
+#: cdedb/frontend/templates/web/assembly/comment_ballot.tmpl:6
+#: cdedb/frontend/templates/web/cde/parse/money_transfers.tmpl:37
+msgid "Comment"
+msgstr ""
+
 #: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:7
 #: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:12
 #: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:16
@@ -4393,7 +4408,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/logging.tmpl:91
 #: cdedb/frontend/templates/web/logging.tmpl:95
 #: cdedb/frontend/templates/web/logging.tmpl:117
-#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:84
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:83
 #: cdedb/frontend/templates/web/ml/management.tmpl:63
 #: cdedb/frontend/templates/web/ml/management.tmpl:159
 #: cdedb/frontend/templates/web/ml/merge_accounts.tmpl:41
@@ -4533,7 +4548,11 @@ msgstr ""
 msgid "Start Voting"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:63
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:56
+msgid "Comment_[[verb]]"
+msgstr "Comment"
+
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:68
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:34
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:60
 #: cdedb/frontend/templates/web/cde/past_event/past_course_search.tmpl:21
@@ -4545,10 +4564,14 @@ msgstr ""
 msgid "Result"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:64
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:69
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:14
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:23
 msgid "Detailed Results"
+msgstr ""
+
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:74
+msgid "Ballot Comment"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:8
@@ -4741,7 +4764,11 @@ msgstr ""
 msgid "Voters"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/summary_ballots.tmpl:27
+#: cdedb/frontend/templates/web/assembly/summary_ballots.tmpl:24
+msgid "Comment:"
+msgstr ""
+
+#: cdedb/frontend/templates/web/assembly/summary_ballots.tmpl:33
 msgid "No ballots have been tallied yet."
 msgstr ""
 
@@ -6080,8 +6107,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:56
 #: cdedb/frontend/templates/web/generic.tmpl:42
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:57
-#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:35
-#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:41
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:34
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:40
 #: cdedb/query.py:354 cdedb/query.py:406 cdedb/query.py:436 cdedb/query.py:494
 #: cdedb/query.py:793
 msgid "Address"
@@ -6244,10 +6271,6 @@ msgid "Transfers"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/parse/money_transfers.tmpl:37
-msgid "Comment"
-msgstr ""
-
-#: cdedb/frontend/templates/web/cde/parse/money_transfers.tmpl:37
 #: cdedb/query.py:317 cdedb/query.py:342 cdedb/query.py:395 cdedb/query.py:425
 #: cdedb/query.py:448 cdedb/query.py:464 cdedb/query.py:476 cdedb/query.py:489
 #: cdedb/query.py:507 cdedb/query.py:779
@@ -6352,7 +6375,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/logging.tmpl:106
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:89
 #: cdedb/frontend/templates/web/ml/change_ml_type.tmpl:45
-#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:60
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:59
 msgid "Event"
 msgstr ""
 
@@ -7336,7 +7359,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/create_user.tmpl:25
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:51
 #: cdedb/frontend/templates/web/event/fields/field_set_select.tmpl:43
-#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:22
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:21
 msgid "Continue"
 msgstr ""
 
@@ -8046,7 +8069,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/show_history.tmpl:141
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:55
-#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:33
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:32
 msgid "Active"
 msgstr ""
 
@@ -8800,7 +8823,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/course/change_course.tmpl:26
 #: cdedb/frontend/templates/web/event/course/create_course.tmpl:25
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:54
-#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:32
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:31
 msgid "Meta"
 msgstr ""
 
@@ -11915,25 +11938,25 @@ msgid "Some fields may only be changed by admins."
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:60
-#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:37
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:36
 msgid "Domain"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:75
-#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:53
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:52
 msgid "Moderation & Subscribers"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:76
-#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:54
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:53
 msgid "Moderation"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:80
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:83
 #: cdedb/frontend/templates/web/ml/change_ml_type.tmpl:33
-#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:21
-#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:57
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:20
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:56
 msgid "Mailinglist Type"
 msgstr ""
 
@@ -11945,7 +11968,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:90
 #: cdedb/frontend/templates/web/ml/change_ml_type.tmpl:46
-#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:61
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:60
 msgid ""
 "The participants of this event will be subscribers of this mailinglist. (Opt-"
 "Out)"
@@ -11953,30 +11976,30 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:94
 #: cdedb/frontend/templates/web/ml/change_ml_type.tmpl:48
-#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:65
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:64
 msgid "Event Audience"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:99
 #: cdedb/frontend/templates/web/ml/change_ml_type.tmpl:52
-#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:71
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:70
 msgid ""
 "The participants of this assembly will be subscribers of this mailinglist. "
 "(Opt-Out)"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:103
-#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:88
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:87
 msgid "Mails"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:104
-#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:89
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:88
 msgid "Subject Prefix"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:105
-#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:90
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:89
 msgid ""
 "Example: If the subject prefix is set to \"info\" and a user sends a Mail "
 "with subject \"Invitation to PfingstAka\", the mail will be sent to the "
@@ -11984,13 +12007,13 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:115
-#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:100
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:99
 #, python-format
 msgid "Preview: %(prefix)sMail'sSubjectHere"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:121
-#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:106
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:105
 msgid "MIME filter / Attachments"
 msgstr ""
 
@@ -12001,7 +12024,7 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:125
-#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:111
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:110
 msgid "max. message size (in kB)"
 msgstr ""
 
@@ -12023,21 +12046,21 @@ msgid ""
 "The following fields are only relevant for some of the mailinglist types."
 msgstr ""
 
-#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:11
-#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:15
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:10
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:14
 #: cdedb/frontend/templates/web/ml/index.tmpl:26
 #: cdedb/frontend/templates/web/ml/list_mailinglists.tmpl:19
 msgid "Create Mailinglist"
 msgstr ""
 
-#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:74
-#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:76
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:73
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:75
 #: cdedb/frontend/templates/web/ml/management.tmpl:45
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:47
 msgid "Moderators"
 msgstr ""
 
-#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:107
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:106
 msgid ""
 "For Mailman mailinglists, this setting currently has no effect. By default, "
 "these mailinglists accept PDF attachments only. Other attachment policy can "

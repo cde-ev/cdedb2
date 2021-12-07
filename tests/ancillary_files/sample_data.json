@@ -5302,7 +5302,8 @@
             "quorum": null,
             "votes": null,
             "is_tallied": false,
-            "notes": null
+            "notes": null,
+            "comment": null
         },
         {
             "id": 2,
@@ -5319,7 +5320,8 @@
             "quorum": null,
             "votes": null,
             "is_tallied": false,
-            "notes": "Nochmal alle auf diese wichtige Entscheidung hinweisen."
+            "notes": "Nochmal alle auf diese wichtige Entscheidung hinweisen.",
+            "comment": null
         },
         {
             "id": 3,
@@ -5336,7 +5338,8 @@
             "quorum": null,
             "votes": 1,
             "is_tallied": false,
-            "notes": null
+            "notes": null,
+            "comment": null
         },
         {
             "id": 4,
@@ -5353,7 +5356,8 @@
             "quorum": null,
             "votes": 2,
             "is_tallied": false,
-            "notes": null
+            "notes": null,
+            "comment": null
         },
         {
             "id": 5,
@@ -5370,7 +5374,8 @@
             "quorum": null,
             "votes": null,
             "is_tallied": false,
-            "notes": null
+            "notes": null,
+            "comment": null
         },
         {
             "id": 6,
@@ -5387,7 +5392,8 @@
             "quorum": null,
             "votes": 1,
             "is_tallied": false,
-            "notes": null
+            "notes": null,
+            "comment": null
         },
         {
             "id": 7,
@@ -5404,7 +5410,8 @@
             "quorum": null,
             "votes": 1,
             "is_tallied": false,
-            "notes": null
+            "notes": null,
+            "comment": null
         },
         {
             "id": 8,
@@ -5421,7 +5428,8 @@
             "quorum": null,
             "votes": 1,
             "is_tallied": false,
-            "notes": null
+            "notes": null,
+            "comment": "Alles bleibt beim alten!"
         },
         {
             "id": 9,
@@ -5438,7 +5446,8 @@
             "quorum": null,
             "votes": 2,
             "is_tallied": false,
-            "notes": null
+            "notes": null,
+            "comment": null
         },
         {
             "id": 10,
@@ -5455,7 +5464,8 @@
             "quorum": null,
             "votes": null,
             "is_tallied": false,
-            "notes": null
+            "notes": null,
+            "comment": null
         },
         {
             "id": 11,
@@ -5472,7 +5482,8 @@
             "quorum": null,
             "votes": 1,
             "is_tallied": false,
-            "notes": null
+            "notes": null,
+            "comment": null
         },
         {
             "id": 12,
@@ -5489,7 +5500,8 @@
             "quorum": null,
             "votes": 1,
             "is_tallied": false,
-            "notes": null
+            "notes": null,
+            "comment": null
         },
         {
             "id": 13,
@@ -5506,7 +5518,8 @@
             "quorum": null,
             "votes": null,
             "is_tallied": false,
-            "notes": null
+            "notes": null,
+            "comment": null
         },
         {
             "id": 14,
@@ -5523,7 +5536,8 @@
             "quorum": null,
             "votes": null,
             "is_tallied": false,
-            "notes": null
+            "notes": null,
+            "comment": null
         },
         {
             "id": 15,
@@ -5540,7 +5554,8 @@
             "quorum": null,
             "votes": null,
             "is_tallied": false,
-            "notes": null
+            "notes": null,
+            "comment": null
         },
         {
             "id": 16,
@@ -5557,7 +5572,8 @@
             "quorum": null,
             "votes": null,
             "is_tallied": false,
-            "notes": null
+            "notes": null,
+            "comment": null
         },
         {
             "id": 17,
@@ -5574,7 +5590,8 @@
             "quorum": null,
             "votes": null,
             "is_tallied": false,
-            "notes": null
+            "notes": null,
+            "comment": null
         }
     ],
     "assembly.candidates": [
