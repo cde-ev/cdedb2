@@ -1211,6 +1211,29 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.assertEqual(json.load(f), json.loads(self.response.body))
 
     @storage
+    @as_users("werner")
+    def test_comment(self) -> None:
+        self.get('/assembly/assembly/3/ballot/6/show')
+        self.follow()
+        self.assertNonPresence("Abstimmungskommentar")
+        self.traverse("Kommentieren")
+        f = self.response.forms['changeballotform']
+        comment = "War nur ein *Experiment*."
+        f['comment'] = comment
+        self.submit(f)
+        self.assertTitle("Test-Abstimmung – bitte ignorieren (Archiv-Sammlung)")
+        self.assertPresence("Abstimmungskommentar")
+        self.assertPresence("War nur ein Experiment.")
+        self.traverse("Kommentieren")
+        f = self.response.forms['changeballotform']
+        # check that the form is filled with the current comment
+        self.assertEqual(comment, f['comment'].value)
+        f['comment'] = ""
+        self.submit(f)
+        self.assertTitle("Test-Abstimmung – bitte ignorieren (Archiv-Sammlung)")
+        self.assertNonPresence("Abstimmungskommentar")
+
+    @storage
     @as_users("anton")
     def test_ballot_result_page(self) -> None:
         for ballot_id in self.CANONICAL_BALLOTS:
