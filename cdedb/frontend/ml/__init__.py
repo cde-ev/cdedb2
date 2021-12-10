@@ -38,7 +38,7 @@ class MlFrontend(MlMailmanMixin, MlBaseFrontend):
         """Helper to take care of the communication with mailman."""
         dblist = rs.ambience['mailinglist']
         if (self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or (
-                self.conf["CDEDB_DEV"] and not self.conf["CDEDB_TEST"])):  # pragma: no cover
+                self.conf["CDEDB_DEV"] and not self.conf["CDEDB_TEST"])):  # pragma: no cover, pylint: disable=line-too-long
             self.logger.info("Skipping mailman request in dev/offline mode.")
             rs.notify('info', n_("Skipping mailman request in dev/offline mode."))
         else:

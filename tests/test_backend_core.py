@@ -139,8 +139,7 @@ class TestCoreBackend(BackendTest):
     @as_users("anton", "berta", "janis")
     def test_change_password(self) -> None:
         user = self.user
-        ret, _ = self.core.change_password(self.key, self.user['password'],
-                                           "weakpass")
+        ret, _ = self.core.change_password(self.key, self.user['password'], "weakpass")
         self.assertFalse(ret)
         newpass = "er3NQ_5bkrc#"
         ret, message = self.core.change_password(self.key, self.user['password'],

@@ -27,7 +27,7 @@ from cdedb.query import Query, QueryOperators, QueryScope, QuerySpec
 _LOGGER = logging.getLogger(__name__)
 
 _currentpath = pathlib.Path(__file__).resolve().parent
-if _currentpath.parts[0] != '/' or _currentpath.parts[-1] != 'cdedb':  # pragma: no cover
+if _currentpath.parts[0] != '/' or _currentpath.parts[-1] != 'cdedb':  # pragma: no cover, pylint: disable=line-too-long
     raise RuntimeError(n_("Failed to locate repository"))
 _repopath = _currentpath.parent
 

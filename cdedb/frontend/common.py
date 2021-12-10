@@ -899,7 +899,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if not msg["To"] and not msg["Cc"] and not msg["Bcc"]:
             self.logger.warning("No recipients for mail. Dropping it.")
             return None
-        if not self.conf["CDEDB_DEV"]:
+        if not self.conf["CDEDB_DEV"]:  # pragma: no cover
             s = smtplib.SMTP(self.conf["MAIL_HOST"])
             s.send_message(msg)
             s.quit()
