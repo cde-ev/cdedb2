@@ -87,7 +87,7 @@ class Application(BaseApp):
         self.jinja_env.filters.update({'datetime': datetime_filter})
         self.jinja_env.policies['ext.i18n.trimmed'] = True  # type: ignore
         self.translations = setup_translations(self.conf)
-        if pathlib.Path("/PRODUCTIONVM").is_file():
+        if pathlib.Path("/PRODUCTIONVM").is_file():  # pragma: no cover
             # Sanity checks for the live instance
             if self.conf["CDEDB_DEV"] or self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
                 raise RuntimeError(

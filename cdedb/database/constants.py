@@ -15,7 +15,7 @@ from cdedb.subman.machine import (  # pylint: disable=unused-import # noqa: F401
 )
 
 
-def n_(x: str) -> str:
+def n_(x: str) -> str:  # pragma: no cover
     """Clone of :py:func:`cdedb.common.n_` for marking translatable strings."""
     return x
 
@@ -189,7 +189,7 @@ class MailinglistDomain(enum.IntEnum):
 
     def get_domain(self) -> str:
         """Return the actual domain for this enum member."""
-        if self not in _DOMAIN_STR_MAP:
+        if self not in _DOMAIN_STR_MAP:  # pragma: no cover
             raise NotImplementedError(n_("This domain is not supported."))
         return _DOMAIN_STR_MAP[self]
 

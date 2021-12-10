@@ -27,14 +27,14 @@ from cdedb.query import Query, QueryOperators, QueryScope, QuerySpec
 _LOGGER = logging.getLogger(__name__)
 
 _currentpath = pathlib.Path(__file__).resolve().parent
-if _currentpath.parts[0] != '/' or _currentpath.parts[-1] != 'cdedb':
+if _currentpath.parts[0] != '/' or _currentpath.parts[-1] != 'cdedb':  # pragma: no cover
     raise RuntimeError(n_("Failed to locate repository"))
 _repopath = _currentpath.parent
 
 try:
     _git_commit = subprocess.check_output(
         ("git", "rev-parse", "HEAD"), cwd=str(_repopath)).decode().strip()
-except FileNotFoundError:  # only catch git executable not found
+except FileNotFoundError:  # pragma: no cover, only catch git executable not found
     with pathlib.Path(_repopath, '.git/HEAD').open() as head:
         _git_commit = head.read().strip()
 
