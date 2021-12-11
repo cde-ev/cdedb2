@@ -241,7 +241,9 @@ class BasicTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.conf = Config()
+        configpath = os.environ['CDEDB_TEST_CONFIGPATH']
+        # TODO replace with TestConfig
+        cls.conf = Config(configpath)
         cls.storage_dir = cls.conf['STORAGE_DIR']
         cls.testfile_dir = cls.storage_dir / "testfiles"
 
@@ -424,14 +426,14 @@ class BackendTest(CdEDBTest):
                     exp[k] = decimal.Decimal(exp[k])
         self.assertEqual(log, tuple(log_expectation))
 
-    @staticmethod
-    def initialize_raw_backend(backendcls: Type[SessionBackend]
+    @classmethod
+    def initialize_raw_backend(cls, backendcls: Type[SessionBackend]
                                ) -> SessionBackend:
-        return backendcls()
+        return backendcls(configpath=cls.conf._configpath)
 
     @classmethod
     def initialize_backend(cls, backendcls: Type[B]) -> B:
-        return _make_backend_shim(backendcls(), internal=True)
+        return _make_backend_shim(backendcls(configpath=cls.conf._configpath), internal=True)
 
 
 # A reference of the most important attributes for all users. This is used for
