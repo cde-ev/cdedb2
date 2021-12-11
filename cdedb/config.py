@@ -669,6 +669,7 @@ class Config(BasicConfig):
         super().__init__()
         _LOGGER.debug(f"Initialising Config with path {configpath}")
         self._configpath = configpath
+        # TODO this is diametral to the statement above
         config_keys = _DEFAULTS.keys() | _BASIC_DEFAULTS.keys()
 
         if configpath:
@@ -702,6 +703,42 @@ class Config(BasicConfig):
 
         for key in _BASIC_DEFAULTS.keys() & set(dir(primaryconf)):
             _LOGGER.debug(f"Ignored basic config entry {key} in {configpath}.")
+
+
+class TestConfig(BasicConfig):
+    """Main configuration for tests.
+
+    This is very similar to Config: It can also be extended by a given configpath and
+    has the same default values.
+
+    The big difference is that we do not take the localconfig into account and allow
+    arbitrary new keys to be introduced via the configpath. This is usefull to bundle
+    all the configuration in our testsuite in a configfile.
+    """
+
+    def __init__(self, configpath: PathLike = None):
+        """
+        :param configpath: path to file with overrides
+        """
+        super().__init__()
+        _LOGGER.debug(f"Initialising TestConfig with path {configpath}")
+        self._configpath = configpath
+
+        if configpath:
+            spec = importlib.util.spec_from_file_location(
+                "primaryconf", str(configpath)
+            )
+            if not spec:
+                raise ImportError
+            additional = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(additional)  # type: ignore
+            additional = {key: getattr(additional, key) for key in dir(additional)}
+        else:
+            additional = {}
+
+        self._configchain = collections.ChainMap(
+            additional, _DEFAULTS, _BASIC_DEFAULTS
+        )
 
 
 class SecretsConfig(Mapping[str, Any]):
