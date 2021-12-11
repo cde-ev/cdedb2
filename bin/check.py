@@ -17,6 +17,7 @@ sys.path.append(str(root))
 os.chdir(root)
 
 from bin.test_runner_helpers import MyTextTestResult, MyTextTestRunner, check_test_setup
+from tests.prepare_tests import prepare_environment
 
 
 class CdEDBTestLock:
@@ -105,16 +106,19 @@ def check_xss(payload: str, thread_id: int = 1, verbose: bool = False,
     return ret.returncode
 
 
-def run_testsuite(testpatterns: List[str] = None, *, thread_id: int = 1,
-                  verbose: bool = False, manual_preparation: bool = False) -> int:
-    if not manual_preparation:
-        _prepare_check(thread_id=thread_id)
-    check_test_setup()
+def run_tests():
+    pass
+
+
+def run_regular_tests(configpath: pathlib.Path, testpatterns: List[str] = None, *,
+                      verbose: bool = False) -> int:
+    prepare_environment(configpath)
 
     if testpatterns:  # when no/empty pattern given, specify nothing to run full suite
         unittest.defaultTestLoader.testNamePatterns = [
             pattern if "*" in pattern else f"*{pattern}*" for pattern in testpatterns
         ]
+    # TODO exclude ldap tests
     all_tests = unittest.defaultTestLoader.discover('tests', top_level_dir=str(root))
 
     unittest.installHandler()
@@ -124,7 +128,22 @@ def run_testsuite(testpatterns: List[str] = None, *, thread_id: int = 1,
     return 0 if ran_tests.wasSuccessful() else 1
 
 
+def run_xss_tests():
+    pass
+
+
+def run_ldap_tests():
+    pass
+
+
 if __name__ == '__main__':
+    configpath = root / "tests/config/test_1.py"
+    os.environ['CDEDB_TEST_CONFIGPATH'] = str(configpath)
+    # pattern = "test_dummy"
+    # code = run_regular_tests(configpath, testpatterns=[pattern], verbose=True)
+    code = run_regular_tests(configpath, verbose=True)
+    exit()
+
     # parse arguments
     parser = argparse.ArgumentParser(
         description="Entry point to CdEDB's testing facilities.")
