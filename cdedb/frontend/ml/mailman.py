@@ -279,7 +279,7 @@ The original message as received by Mailman is attached.
         This has an @periodic decorator in the frontend.
         """
         if (self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or (
-                self.conf["CDEDB_DEV"] and not self.conf["CDEDB_TEST"])):  # pragma: no cover, pylint: disable=line-too-long
+                self.conf["CDEDB_DEV"] and not self.conf["CDEDB_TEST"])):  # pragma: no cover
             self.logger.debug("Skipping mailman sync in dev/offline mode.")
             return store
         mailman = self.get_mailman()
