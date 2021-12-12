@@ -212,7 +212,7 @@ class Script:
                  exc_val: Optional[Exception],
                  exc_tb: Optional[TracebackType]) -> bool:
         """Thin wrapper around `ScriptAtomizer`."""
-        if self._atomizer is None:
+        if self._atomizer is None:  # pragma: no cover
             raise RuntimeError(n_("Impossible."))
         return self._atomizer.__exit__(exc_type, exc_val, exc_tb)
 
