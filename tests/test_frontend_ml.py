@@ -1090,7 +1090,6 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Klatsch und Tratsch")
         link = self.fetch_link()
         self.get(link)
-        self.follow()
         self.assertTitle("Klatsch und Tratsch")
         self.assertIn('unsubscribeform', self.response.forms)
         self.assertPresence('pepper@example.cde')

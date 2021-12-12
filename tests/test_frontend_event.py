@@ -584,7 +584,6 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("Let‘s have a party!")
         self.assertNonPresence("Kursliste", div="sidebar")
         self.get('/event/event/2/course/list')
-        self.follow()
         self.assertPresence("Die Kursliste ist noch nicht öffentlich",
                             div='notifications')
 
@@ -1353,7 +1352,6 @@ etc;anything else""", f['entries_2'].value)
         # check participant info page for unregistered users
         participant_info_url = '/event/event/1/notes'
         self.get(participant_info_url)
-        self.follow()
         self.assertTitle("Große Testakademie 2222")
         self.assertPresence("Kein Teilnehmer der Veranstaltung.", div='notifications')
 
@@ -1455,7 +1453,6 @@ etc;anything else""", f['entries_2'].value)
         with self.assertRaises(IndexError):
             self.traverse({'href': participant_info_url})
         self.get(participant_info_url)
-        self.follow()
         self.assertTitle("Große Testakademie 2222")
         self.assertPresence("Kein Teilnehmer der Veranstaltung", div='notifications')
 
@@ -1918,7 +1915,6 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'})
         self.get('/event/event/1/registration/list')
-        self.follow()
         self.assertTitle("Große Testakademie 2222")
         self.assertPresence("Fehler! Die Teilnehmerliste ist noch nicht "
                             "veröffentlicht.", div='notifications')
@@ -3154,7 +3150,6 @@ etc;anything else""", f['entries_2'].value)
     def test_invalid_course_choices(self) -> None:
         # Check there is no error for without courses
         self.get('/event/event/2/course/choices')
-        self.follow()
         self.basic_validate()
         self.assertTitle("Kurse verwalten (CdE-Party 2050)")
         self.assertPresence("sind nur in Veranstaltungen mit Kursschienen möglich.",
@@ -4250,7 +4245,6 @@ etc;anything else""", f['entries_2'].value)
         self.traverse("Meine Anmeldung")
         self.assertNonPresence("Bearbeiten")
         self.get("/event/event/1/registration/amend")
-        self.follow()
         self.assertPresence("Veranstaltung ist bereits archiviert.",
                             div="notifications")
 

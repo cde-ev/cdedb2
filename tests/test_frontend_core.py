@@ -770,7 +770,6 @@ class TestCoreFrontend(FrontendTest):
                         continue
                     link = self.fetch_link()
                     self.get(link)
-                    self.follow()
                     self.assertTitle("Neues Passwort setzen")
                     f = self.response.forms['passwordresetform']
                     f['new_password'] = val
@@ -803,7 +802,6 @@ class TestCoreFrontend(FrontendTest):
         link = self.fetch_link()
         # First reset should work
         self.get(link)
-        self.follow()
         self.assertTitle("Neues Passwort setzen")
         f = self.response.forms['passwordresetform']
         f['new_password'] = new_password
@@ -811,7 +809,6 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         # Second reset with same link should fail
         self.get(link)
-        self.follow()
         self.assertTitle("Neues Passwort setzen")
         f = self.response.forms['passwordresetform']
         f['new_password'] = new_password
@@ -831,7 +828,6 @@ class TestCoreFrontend(FrontendTest):
         link = self.fetch_link()
         self.logout()
         self.get(link)
-        self.follow()
         self.assertTitle("Neues Passwort setzen")
         f = self.response.forms['passwordresetform']
         f['new_password'] = new_password
@@ -1692,7 +1688,6 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         link = self.fetch_link()
         self.get(link)
-        self.follow()
 
         self.traverse({'description': 'Accountanfragen'},
                       {'description': 'Details'},
@@ -1723,7 +1718,6 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         link = self.fetch_link()
         self.get(link)
-        self.follow()
 
     ML_GENESIS_DATA_NO_REALM: CdEDBObject = {
         'given_names': "Zelda", 'family_name': "Zeruda-Hime",
@@ -1875,7 +1869,6 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         link = self.fetch_link()
         self.get(link)
-        self.follow()
         self.login(USER_DICT["vera"])
         self.traverse({'href': '/core'},
                       {'href': '/core/genesis/list'})

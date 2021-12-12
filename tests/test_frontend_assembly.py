@@ -609,7 +609,6 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
     @as_users("anton")
     def test_preferential_vote_result(self) -> None:
         self.get('/assembly/assembly/1/ballot/1/show')
-        self.follow()  # Redirect because ballot has not been tallied yet.
         self.assertTitle("Antwort auf die letzte aller Fragen "
                          "(Internationaler Kongress)")
         self.assertPresence("Nach dem Leben, dem Universum und dem ganzen Rest")
@@ -625,7 +624,6 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f = self.response.forms['signupform']
         self.submit(f)
         self.get('/assembly/assembly/1/ballot/1/show')
-        self.follow()  # Redirect because ballot has not been tallied yet.
         self.assertTitle("Antwort auf die letzte aller Fragen "
                          "(Internationaler Kongress)")
         self.assertPresence("Nach dem Leben, dem Universum und dem ganzen Rest")
@@ -647,8 +645,6 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             with self.subTest(ballot=ballot_id):
                 assembly = assemblies[ballot['assembly_id']]
                 self.get(f"/assembly/assembly/{assembly['id']}/ballot/{ballot_id}/show")
-                # redirect in case of tallying, extending etc
-                self.follow()
                 self.assertTitle(f"{ballot['title']} ({assembly['title']})")
 
                 # Check display of regular voting period.
@@ -694,7 +690,6 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
     @as_users("garcia")
     def test_show_ballot_without_attendance(self) -> None:
         self.get('/assembly/assembly/1/ballot/1/show')
-        self.follow()  # Redirect because ballot has not been tallied yet.
         self.assertTitle("Antwort auf die letzte aller Fragen "
                          "(Internationaler Kongress)")
         self.assertPresence("Nach dem Leben, dem Universum und dem ganzen Rest")
@@ -1214,7 +1209,6 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
     @as_users("werner")
     def test_comment(self) -> None:
         self.get('/assembly/assembly/3/ballot/6/show')
-        self.follow()
         self.assertNonPresence("Abstimmungskommentar")
         self.traverse("Kommentieren")
         f = self.response.forms['changeballotform']
@@ -1241,8 +1235,6 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             assembly = self.get_sample_datum(
                 'assembly.assemblies', ballot['assembly_id'])
             self.get(f'/assembly/assembly/{assembly["id"]}/ballot/{ballot_id}/result')
-            # redirect in case of tallying, extending etc
-            self.follow()
 
             # redirect to show_ballot if the ballot has not been tallied yet
             if ballot_id in self.BALLOT_STATES['tallied']:
