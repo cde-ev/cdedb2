@@ -30,9 +30,9 @@ from cdedb.common import (
     PERSONA_CORE_FIELDS, PERSONA_DEFAULTS, PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS,
     PERSONA_STATUS_FIELDS, PRIVILEGE_CHANGE_FIELDS, REALM_ADMINS, ArchiveError,
     CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, Error,
-    PathLike, PrivilegeError, PsycoJson, QuotaException, Realm, RequestState, Role,
-    User, decode_parameter, encode_parameter, extract_realms, extract_roles, get_hash,
-    glue, implied_realms, merge_dicts, n_, now, privilege_tier, unwrap, xsorted,
+    PathLike, PrivilegeError, PsycoJson, QuotaException, RequestState, Role, User,
+    decode_parameter, encode_parameter, extract_realms, extract_roles, get_hash, glue,
+    implied_realms, merge_dicts, n_, now, privilege_tier, unwrap, xsorted,
 )
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -2152,22 +2152,6 @@ class CoreBackend(AbstractBackend):
         def __call__(self, rs: RequestState, persona_id: Optional[int],
                      introspection_only: bool = False) -> Set[Role]: ...
     get_roles_single: _GetRolesSingleProtocol = singularize(get_roles_multi)
-
-    @access("persona")
-    def get_realms_multi(self, rs: RequestState, persona_ids: Collection[int],
-                         introspection_only: bool = False
-                         ) -> Dict[Optional[int], Set[Realm]]:
-        """Resolve persona ids into realms (only for active users)."""
-        persona_ids = affirm_set(vtypes.ID, persona_ids)
-        roles = self.get_roles_multi(rs, persona_ids, introspection_only)
-        all_realms = {"cde", "event", "assembly", "ml"}
-        return {key: value & all_realms for key, value in roles.items()}
-
-    class _GetRealmsSingleProtocol(Protocol):
-        def __call__(self, rs: RequestState, persona_id: int,
-                     introspection_only: bool = False) -> Set[Realm]: ...
-    get_realms_single: _GetRealmsSingleProtocol = singularize(
-        get_realms_multi, "persona_ids", "persona_id")
 
     @access("persona")
     def verify_personas(self, rs: RequestState, persona_ids: Collection[int],
