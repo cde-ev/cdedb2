@@ -1702,7 +1702,7 @@ class CoreBackend(AbstractBackend):
         return self.retrieve_personas(rs, persona_ids, columns=PERSONA_CORE_FIELDS)
 
     class _GetPersonaProtocol(Protocol):
-        # `persona_id` is actually not optional, but it produces a lot of errors.
+        # TODO: `persona_id` is actually not optional, but it produces a lot of errors.
         def __call__(self, rs: RequestState, persona_id: Optional[int]
                      ) -> CdEDBObject: ...
     get_persona: _GetPersonaProtocol = singularize(
