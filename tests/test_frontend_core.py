@@ -2199,7 +2199,7 @@ class TestCoreFrontend(FrontendTest):
     @as_users("vera")
     def test_genesis_dearchive_doppelganger(self) -> None:
         hades = get_user("hades")
-        genesis_data = self._create_genesis_doppelganger(hades)
+        self._create_genesis_doppelganger(hades)
         self.traverse("Accountanfragen", "Details")
         self.assertTitle(f"Accountanfrage von {hades['given_names']}"
                          f" {hades['family_name']}")
