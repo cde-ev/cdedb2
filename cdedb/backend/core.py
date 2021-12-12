@@ -2631,16 +2631,21 @@ class CoreBackend(AbstractBackend):
     @access("anonymous")
     def genesis_case_by_email(self, rs: RequestState,
                               email: str) -> Optional[int]:
-        """Get the id of an unconfirmed genesis case for a given email.
+        """Get the id of an unconfirmed or unreviewed genesis case for a given email.
 
-        :returns: The case id or None if no such case exists.
+        :returns: The case id if the case is uncofirmed, the negative id if the case
+            is pending review, None if no such case exists.
         """
         email = affirm(str, email)
-        query = glue("SELECT id FROM core.genesis_cases",
-                     "WHERE username = %s AND case_status = %s")
+        query = ("SELECT id FROM core.genesis_cases"
+                 " WHERE username = %s AND case_status = %s")
         params = (email, const.GenesisStati.unconfirmed)
         data = self.query_one(rs, query, params)
-        return unwrap(data) if data else None
+        if data:
+            return unwrap(data)
+        params = (email, const.GenesisStati.to_review)
+        data = self.query_one(rs, query, params)
+        return -unwrap(data) if data else None
 
     @access("anonymous")
     def genesis_verify(self, rs: RequestState, case_id: int

@@ -1998,6 +1998,13 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertPresence("Bestätigungsmail erneut versendet.",
                             div="notifications")
+        link = self.fetch_link()
+        self.get(link)
+        self.follow()
+        # Submit thrice
+        self.submit(f, check_notification=False)
+        self.assertPresence("Deine Anfrage wartet derzeit auf Bestätigung.",
+                            div="notifications")
         self.get('/')
         self.traverse({'description': 'Account anfordern'})
         self.assertTitle("Account anfordern")

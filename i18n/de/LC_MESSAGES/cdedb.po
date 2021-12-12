@@ -2341,6 +2341,12 @@ msgstr "Darf nicht leer sein."
 msgid "Confirmation email has been resent."
 msgstr "Bestätigungsmail erneut versendet."
 
+msgid "Your request is currently pending review."
+msgstr "Deine Anfrage wartet derzeit auf Bestätigung."
+
+msgid "User with this E-Mail exists already."
+msgstr "Ein Benutzer mit dieser E-Mail-Adresse existiert bereits."
+
 #: cdedb/frontend/core/genesis.py:125
 msgid "Email address already in DB. Reset password."
 msgstr "E-Mail-Adresse bereits vorhanden. Bitte das Passwort zurücksetzen."

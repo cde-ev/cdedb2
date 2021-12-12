@@ -113,16 +113,18 @@ class CoreGenesisMixin(CoreBaseFrontend):
         if self.coreproxy.verify_existence(rs, data['username']):
             existing_id = self.coreproxy.genesis_case_by_email(
                 rs, data['username'])
-            if existing_id:
+            if existing_id and existing_id > 0:
                 # TODO this case is kind of a hack since it throws
                 # away the information entered by the user, but in
                 # theory this should not happen too often (reality
                 # notwithstanding)
                 rs.notify("info", n_("Confirmation email has been resent."))
                 case_id = existing_id
+            elif existing_id and existing_id < 0:
+                rs.notify("info", n_("Your request is currently pending review."))
+                return self.redirect(rs, "core/index")
             else:
-                rs.notify("error",
-                          n_("Email address already in DB. Reset password."))
+                rs.notify("error", n_("Email address already in DB. Reset password."))
                 return self.redirect(rs, "core/index")
         else:
             new_id = self.coreproxy.genesis_request(rs, data)
