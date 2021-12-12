@@ -271,19 +271,6 @@ class AbstractBackend(metaclass=abc.ABCMeta):
 
     affirm_atomized_context = staticmethod(_affirm_atomized_context)
 
-    def affirm_realm(self, rs: RequestState, ids: Collection[int],
-                     realms: Set[Realm] = None) -> None:
-        """Check that all personas corresponding to the ids are in the
-        appropriate realm.
-
-        :param realms: Set of realms to check for. By default this is
-          the set containing only the realm of this class.
-        """
-        realms = realms or {self.realm}
-        actual_realms = self.core.get_realms_multi(rs, ids)
-        if any(not x >= realms for x in actual_realms.values()):
-            raise ValueError(n_("Wrong realm for personas."))
-
     @classmethod
     @abc.abstractmethod
     def is_admin(cls, rs: RequestState) -> bool:
