@@ -1571,6 +1571,8 @@ class CoreBackend(AbstractBackend):
         persona_id = affirm(vtypes.ID, persona_id)
         new_username = affirm(vtypes.Email, new_username)
         with Atomizer(rs):
+            if self.verify_existence(rs, new_username):
+                raise ValueError(n_("User with this E-Mail exists already."))
             update = {
                 'id': persona_id,
                 'is_archived': False,

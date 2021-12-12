@@ -2015,9 +2015,16 @@ class TestCoreFrontend(FrontendTest):
         self.login(user)
         self.traverse({'description': 'Account-Log'})
         f = self.response.forms['logshowform']
-        f['codes'] = [20]
+        f['codes'] = [const.CoreLogCodes.genesis_request]
         self.submit(f)
         self.assertTitle("Account-Log [1–1 von 1]")
+        self.admin_view_profile("hades")
+        self.traverse("Account wiederherstellen")
+        f = self.response.forms['dearchivepersonaform']
+        f['new_username'] = self.ML_GENESIS_DATA_NO_REALM['username']
+        self.submit(f, check_notification=False)
+        self.assertValidationError(
+            'new_username', "Ein Benutzer mit dieser E-Mail-Adresse existiert bereits.")
 
     def test_genesis_verification_mail_resend(self) -> None:
         self.get('/')
