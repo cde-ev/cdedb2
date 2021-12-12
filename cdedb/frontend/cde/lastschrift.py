@@ -475,7 +475,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         elif failure:
             status = const.LastschriftTransactionStati.failure
         else:
-            raise RuntimeError("Impossible.")
+            raise RuntimeError(n_("Impossible."))
         code = 1
         transactions = [
             {

@@ -25,5 +25,5 @@ try:
     # seems to be the most sensible way
     os.chmod(str(_BASICCONF["GLOBAL_LOG"]), stat.S_IRUSR | stat.S_IWUSR |
              stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH)
-except (PermissionError, FileNotFoundError):
+except (PermissionError, FileNotFoundError):  # pragma: no cover
     pass

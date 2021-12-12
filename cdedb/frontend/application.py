@@ -87,7 +87,7 @@ class Application(BaseApp):
         self.jinja_env.filters.update({'datetime': datetime_filter})
         self.jinja_env.policies['ext.i18n.trimmed'] = True  # type: ignore
         self.translations = setup_translations(self.conf)
-        if pathlib.Path("/PRODUCTIONVM").is_file():
+        if pathlib.Path("/PRODUCTIONVM").is_file():  # pragma: no cover
             # Sanity checks for the live instance
             if self.conf["CDEDB_DEV"] or self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
                 raise RuntimeError(
@@ -142,7 +142,7 @@ class Application(BaseApp):
             response = Response(html, mimetype='text/html', status=error.code)
             response.headers.add('X-Generation-Time', str(now() - begin))
             return response
-        except Exception:
+        except Exception:  # pragma: no cover
             self.logger.exception("Exception while rendering error page")
             return Response("HTTP {}: {}\n{}".format(error.code, error.name,
                                                      error.description),
@@ -322,7 +322,7 @@ class Application(BaseApp):
                 raise
 
             # debug output if applicable
-            if self.conf["CDEDB_DEV"]:
+            if self.conf["CDEDB_DEV"]:  # pragma: no cover
                 return self.cgitb_html()
 
             # generic errors

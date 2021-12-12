@@ -25,7 +25,7 @@ import psycopg2.extensions
 import psycopg2.extras
 
 from cdedb.common import (
-    ALL_ROLES, AbstractBackend, PathLike, RequestState, User, make_proxy,
+    ALL_ROLES, AbstractBackend, PathLike, RequestState, User, make_proxy, n_,
 )
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import Atomizer, IrradiatedConnection
@@ -213,7 +213,7 @@ class Script:
                  exc_tb: Optional[TracebackType]) -> bool:
         """Thin wrapper around `ScriptAtomizer`."""
         if self._atomizer is None:
-            raise RuntimeError("Impossible.")
+            raise RuntimeError(n_("Impossible."))
         return self._atomizer.__exit__(exc_type, exc_val, exc_tb)
 
 

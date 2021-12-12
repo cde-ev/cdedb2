@@ -1367,7 +1367,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                             ballot_id: int) -> Response:
         """Immediately start voting period of a ballot.
         Only possible in CDEDB_DEV mode."""
-        if not self.conf["CDEDB_DEV"]:
+        if not self.conf["CDEDB_DEV"]:  # pragma: no cover
             raise RuntimeError(
                 n_("Force starting a ballot is only possible in dev mode."))
 

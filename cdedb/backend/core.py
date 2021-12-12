@@ -2051,7 +2051,7 @@ class CoreBackend(AbstractBackend):
         data = self.sql_select_one(rs, "core.personas",
                                    PERSONA_CORE_FIELDS, data["id"])
         if data is None:
-            raise RuntimeError("Impossible.")
+            raise RuntimeError(n_("Impossible."))
         vals = {k: data[k] for k in (
             'username', 'given_names', 'display_name', 'family_name')}
         vals['persona_id'] = data['id']

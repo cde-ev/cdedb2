@@ -634,7 +634,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 elif id_name == "track_id":
                     id_range = set(ret['event.course_tracks'])
                 else:
-                    raise RuntimeError("Impossible.")
+                    raise RuntimeError(n_("Impossible."))
                 if 'id' not in columns:
                     columns += ('id',)
                 ret[table] = list_to_dict(self.sql_select(
