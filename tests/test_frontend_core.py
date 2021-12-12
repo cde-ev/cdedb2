@@ -1706,8 +1706,8 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesismodifyform']
         f[IGNORE_WARNINGS_NAME].checked = True
         self.submit(f)
-        f = self.response.forms['genesisapprovalform']
-        self.submit(f)
+        f = self.response.forms['genesisdecisionform']
+        self.submit(f, button="decision", value=str(GenesisDecision.approve))
 
     def _genesis_request(self, data: CdEDBObject, realm: Optional[str] = None) -> None:
         if realm:
@@ -2259,16 +2259,16 @@ class TestCoreFrontend(FrontendTest):
 
         # approve the account requests
         self.login(user)
-        self.traverse({'description': 'Accountanfragen'})
-        f = self.response.forms['genesismlapprovalform1']
-        self.submit(f)
+        self.traverse("Accountanfragen", "Details")
+        f = self.response.forms['genesisdecisionform']
+        self.submit(f, button="decision", value=str(GenesisDecision.approve))
         logs.append((1005, const.CoreLogCodes.genesis_approved))
         logs.append((1006, const.CoreLogCodes.persona_creation))
         logs.append((1007, const.CoreLogCodes.password_reset_cookie))
 
-        self.traverse({'href': 'core/genesis/1002/show'})
-        f = self.response.forms['genesisapprovalform']
-        self.submit(f)
+        self.traverse("Details")
+        f = self.response.forms['genesisdecisionform']
+        self.submit(f, button="decision", value=str(GenesisDecision.approve))
         logs.append((1008, const.CoreLogCodes.genesis_approved))
         logs.append((1009, const.CoreLogCodes.persona_creation))
         logs.append((1010, const.CoreLogCodes.password_reset_cookie))
