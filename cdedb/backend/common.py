@@ -28,8 +28,8 @@ import cdedb.validation as validate
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
     LOCALE, CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Error, PathLike,
-    PrivilegeError, PsycoJson, Realm, RequestState, Role, diacritic_patterns, glue,
-    make_proxy, make_root_logger, n_, unwrap,
+    PrivilegeError, PsycoJson, RequestState, Role, diacritic_patterns, glue, make_proxy,
+    make_root_logger, n_, unwrap,
 )
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
