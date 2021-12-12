@@ -2347,6 +2347,15 @@ msgstr "Deine Anfrage wartet derzeit auf Bestätigung."
 msgid "User with this E-Mail exists already."
 msgstr "Ein Benutzer mit dieser E-Mail-Adresse existiert bereits."
 
+msgid "User dearchived and updated."
+msgstr "Benutzer wiederhergestellt und aktualisiert."
+
+msgid "User updated."
+msgstr "Benutzer aktualisiert."
+
+msgid "Update_[[genesis case]]"
+msgstr "Aktualisieren"
+
 #: cdedb/frontend/core/genesis.py:125
 msgid "Email address already in DB. Reset password."
 msgstr "E-Mail-Adresse bereits vorhanden. Bitte das Passwort zurücksetzen."

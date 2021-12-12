@@ -124,41 +124,57 @@
         </dl>
     {% endif %}
 
-    {% if doppelgangers %}
-        <h4 class="heading-underline">{% trans %}Doppelgangers{% endtrans %}</h4>
-        <p class="text-warning">{{ util.make_icon('exclamation-triangle', title=gettext("Warning")) }}
-        {% trans %}
-            This genesis request looks similar to these existing accounts. Maybe consider updating one of these
-            instead of creating a new account?
-        {% endtrans %}
-        </p>
-        <ul id="doppelgangers">
-            {% for persona_id, persona in doppelgangers|keydictsort(EntitySorter.persona) %}
-                <li id="doppelganger{{ loop.index0 }}">{{ util.print_doppelganger(persona, link=True) }}</li>
-            {% endfor %}
-        </ul>
 
+    {% if ambience['genesis_case']['case_status'] == enums['GenesisStati'].to_review %}
+        <form action="{{ cdedblink('core/genesis_decide') }}" method="POST"
+         id="genesisdecisionform" style="display: inline;">
+            {{ util.anti_csrf_token('core/genesis_decide') }}
+
+            {% if doppelgangers %}
+                <h4 class="heading-underline">{% trans %}Doppelgangers{% endtrans %}</h4>
+                <p class="text-warning">{{ util.make_icon('exclamation-triangle', title=gettext("Warning")) }}
+                {% trans %}
+                    This genesis request looks similar to these existing accounts. Maybe consider updating one of these
+                    instead of creating a new account?
+                {% endtrans %}
+                </p>
+
+                <label id="doppelgangers-label">
+                    {% trans %}Merge with Account{% endtrans %}
+                </label>
+                <div class="p strip-space" id="doppelgangers">
+                    <div role="radiogroup" aria-labelledby="doppelgangers-label">
+                        {% set entries = [(None, "–")] %}
+                        {% for key, value in doppelgangers|keydictsort(EntitySorter.persona) %}
+                            {% do entries.append((key, util.print_doppelganger(value))) %}
+                        {% endfor %}
+                        {{ util.input_checkboxes("persona_id", entries, radio=True) }}
+                    </div>
+                </div>
+
+            {% endif %}
+
+            <div class="button-par">
+                {{ util.input_submit(
+                    name="decision", value = enums['GenesisDecision'].approve,
+                    label=gettext("Approve"), aclass="btn btn-success") }}
+                {{ util.input_submit(
+                    name="decision", value = enums['GenesisDecision'].deny,
+                    label=gettext("Reject"), aclass="btn btn-danger", icon="ban") }}
+                {% if doppelgangers %}
+                    {{ util.input_submit(
+                        name="decision", value = enums['GenesisDecision'].dearchive,
+                        label=gettext("Dearchive"), aclass="btn btn-success") }}
+                    {{ util.input_submit(
+                        name="decision", value = enums['GenesisDecision'].update,
+                        label=gettext("Update_[[genesis case]]"), aclass="btn btn-success") }}
+                {% endif %}
+                {{ util.href(cdedblink('core/genesis_modify_form'), gettext("Edit"),
+                    aclass="btn btn-warning", icon="pen") }}
+                &emsp;
+                {{ util.href(cdedblink("core/genesis_list_cases"), gettext("Cancel"),
+                             aclass="btn btn btn-default", icon="times-circle") }}
+            </div>
+        </form>
     {% endif %}
-
-    <div class="button-par">
-        {% if ambience['genesis_case']['case_status'] == enums['GenesisStati'].to_review %}
-            <form action="{{ cdedblink('core/genesis_decide') }}" method="POST"
-             id="genesisapprovalform" style="display: inline;">
-                {{ util.anti_csrf_token('core/genesis_decide') }}
-                {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].approved.value) }}
-                {{ util.input_submit(label=gettext("Approve"), aclass="btn btn-success") }}
-            </form>
-            <form action="{{ cdedblink('core/genesis_decide') }}" method="POST"
-             id="genesisrejectionform" class="rejection-form" style="display: inline;">
-                {{ util.anti_csrf_token('core/genesis_decide') }}
-                {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].rejected.value) }}
-                {{ util.input_submit(label=gettext("Reject"), icon="ban", aclass="btn btn-danger") }}
-            </form>
-            {{ util.href(cdedblink('core/genesis_modify_form'), gettext("Edit"),
-                aclass="btn btn-warning", icon="pen") }}
-            &emsp;
-        {% endif %}
-        {{ util.href(cdedblink("core/genesis_list_cases"), gettext("Cancel"),
-                     aclass="btn btn btn-default", icon="times-circle") }}
-    </div>
 {% endblock %}

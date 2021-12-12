@@ -13,7 +13,8 @@ from werkzeug import Response
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    REALM_SPECIFIC_GENESIS_FIELDS, CdEDBObject, RequestState, merge_dicts, n_, now,
+    PERSONA_FIELDS_BY_REALM, REALM_SPECIFIC_GENESIS_FIELDS, CdEDBObject,
+    GenesisDecision, RequestState, extract_roles, merge_dicts, n_, now,
 )
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, TransactionObserver, access,
@@ -365,12 +366,15 @@ class CoreGenesisMixin(CoreBaseFrontend):
     @access("core_admin", *("{}_admin".format(realm)
                             for realm in REALM_SPECIFIC_GENESIS_FIELDS),
             modi={"POST"})
-    @REQUESTdata("case_status")
+    @REQUESTdata("decision", "persona_id")
     def genesis_decide(self, rs: RequestState, genesis_case_id: int,
-                       case_status: const.GenesisStati) -> Response:
+                       decision: GenesisDecision, persona_id: Optional[int]
+                       ) -> Response:
         """Approve or decline a genensis case.
 
         This either creates a new account or declines account creation.
+        If the request is declined, an existing account can optionally be dearchived
+        and/or updated.
         """
         if rs.has_validation_errors():
             return self.genesis_show_case(rs, genesis_case_id)
@@ -378,21 +382,31 @@ class CoreGenesisMixin(CoreBaseFrontend):
         if (not self.is_admin(rs)
                 and "{}_admin".format(case['realm']) not in rs.user.roles):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        if case_status not in {const.GenesisStati.approved,
-                               const.GenesisStati.rejected}:
-            rs.notify("error", n_("Invalid genesis state."))
-            return self.genesis_show_case(rs, genesis_case_id)
-        if case_status == const.GenesisStati.approved:
+        if decision.is_create():
             if self.coreproxy.verify_existence(
                     rs, case['username'], include_genesis=False):
                 rs.notify("error", n_("Email address already taken."))
-                return self.genesis_show_case(rs, genesis_case_id)
+                return self.redirect(rs, "core/genesis_show_case")
+        if decision.is_dearchive() or decision.is_update():
+            if not persona_id or not self.coreproxy.verify_persona(
+                    rs, persona_id, (case['realm'],)):
+                rs.notify("error", n_("Invalid persona for update."))
+                return self.redirect(rs, "core/genesis_show_case")
+            persona = self.coreproxy.get_persona(rs, persona_id)
+            if decision.is_dearchive() != persona['is_archived']:
+                if decision.is_dearchive():
+                    rs.notify("error", n_("Cannot dearchive non-archived persona."))
+                else:
+                    rs.notify("error", n_("User is archived."))
+                return self.redirect(rs, "core/genesis_show_case")
         if case['case_status'] != const.GenesisStati.to_review:
             rs.notify("error", n_("Case not to review."))
-            return self.genesis_show_case(rs, genesis_case_id)
+            return self.redirect(rs, "core/genesis_show_case")
         data = {
             'id': genesis_case_id,
-            'case_status': case_status,
+            'case_status':
+                const.GenesisStati.approved if decision.is_create()
+                else const.GenesisStati.rejected,
             'reviewer': rs.user.persona_id,
             'realm': case['realm'],
         }
@@ -401,34 +415,74 @@ class CoreGenesisMixin(CoreBaseFrontend):
             success = bool(code)
             new_id = None
             pcode = 1
-            if success and data['case_status'] == const.GenesisStati.approved:
+            if success and decision.is_create():
                 new_id = self.coreproxy.genesis(rs, genesis_case_id)
                 if case['pevent_id']:
                     pcode = self.pasteventproxy.add_participant(
                         rs, pevent_id=case['pevent_id'], pcourse_id=case['pcourse_id'],
                         persona_id=new_id)
                 success = bool(new_id)
+            elif success and decision.is_dearchive():
+                assert persona_id is not None
+                success = bool(
+                    self.coreproxy.dearchive_persona(rs, persona_id, case['username']))
+            # Note that dearchival also includes updating.
+            if success and decision.is_update():
+                assert persona_id is not None
+                persona = self.coreproxy.get_persona(rs, persona_id)
+                roles = extract_roles(persona)
+                if case['username'] != persona['username']:
+                    success = bool(self.coreproxy.change_username(
+                        rs, persona_id, case['username'], None))
+                update_keys = {'given_names', 'family_name'}
+                for realm, fields in REALM_SPECIFIC_GENESIS_FIELDS.items():
+                    update_keys.update(set(fields) & PERSONA_FIELDS_BY_REALM[realm])
+                update = {
+                    k: case[k] for k in update_keys if case[k]
+                }
+                update['display_name'] = update['given_names']
+                update['id'] = persona_id
+                success &= bool(self.coreproxy.change_persona(
+                    rs, update, change_note="Daten aus Accountanfrage übernommen.",
+                    force_review=True))
         if not pcode and success:
             rs.notify("error", n_("Past event attendance could not be established."))
             return self.genesis_list_cases(rs)
         if not success:
             rs.notify("error", n_("Failed."))
             return self.genesis_list_cases(rs)
-        if case_status == const.GenesisStati.approved and new_id:
+        if decision.is_create():
+            assert new_id is not None
             persona = self.coreproxy.get_persona(rs, new_id)
             meta_info = self.coreproxy.get_meta_info(rs)
             success, cookie = self.coreproxy.make_reset_cookie(
                 rs, persona['username'],
                 timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
-            email = self.encode_parameter("core/do_password_reset_form", "email",
-                                          persona['username'], persona_id=None,
-                                          timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
+            email = self.encode_parameter(
+                "core/do_password_reset_form", "email", persona['username'],
+                persona_id=None, timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
             self.do_mail(
                 rs, "welcome",
                 {'To': (persona['username'],), 'Subject': "Aufnahme in den CdE"},
                 {'data': persona, 'email': email, 'cookie': cookie,
                  'fee': self.conf['MEMBERSHIP_FEE'], 'meta_info': meta_info})
             rs.notify("success", n_("Case approved."))
+        elif decision.is_dearchive() or decision.is_update():
+            assert persona_id is not None
+            persona = self.coreproxy.get_persona(rs, persona_id)
+            success, cookie = self.coreproxy.make_reset_cookie(
+                rs, persona['username'], timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
+            email = self.encode_parameter(
+                "core/do_password_reset_form", "email", persona['username'],
+                persona_id=None, timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
+            self.do_mail(
+                rs, "genesis/genesis_updated",
+                {'To': (persona['username'],), 'Subject': "CdEDB Account reaktiviert"},
+                {'persona': persona, 'email': email, 'cookie': cookie})
+            if decision.is_dearchive():
+                rs.notify("success", n_("User dearchived and updated."))
+            else:
+                rs.notify("success", n_("User updated."))
         else:
             self.do_mail(
                 rs, "genesis/genesis_declined",

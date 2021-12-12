@@ -9,7 +9,8 @@ import webtest
 
 import cdedb.database.constants as const
 from cdedb.common import (
-    ADMIN_VIEWS_COOKIE_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, get_hash,
+    ADMIN_VIEWS_COOKIE_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, GenesisDecision,
+    get_hash,
 )
 from cdedb.query import QueryOperators
 from tests.common import (
@@ -1784,10 +1785,11 @@ class TestCoreFrontend(FrontendTest):
             div='no-ml-request')
         self.traverse({'href': '/core/genesis/1001/show'})
         self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
-        f = self.response.forms['genesisapprovalform']
-        self.submit(f)
+        f = self.response.forms['genesisdecisionform']
+        self.submit(f, button="decision", value=str(GenesisDecision.approve))
         link = self.fetch_link()
-        self.submit(f, check_notification=False)
+        self.submit(f, button="decision", value=str(GenesisDecision.approve),
+                    check_notification=False)
         self.assertPresence("Emailadresse bereits vergeben.", div="notifications")
         self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
         self.logout()
@@ -1815,7 +1817,7 @@ class TestCoreFrontend(FrontendTest):
         user = USER_DICT['vera']
         self._genesis_request(self.ML_GENESIS_DATA_NO_REALM, realm='ml')
         self.login(user)
-        self.traverse({'description': 'Accountanfrage'})
+        self.traverse('Accountanfragen')
         self.assertTitle("Accountanfragen")
         self.assertPresence("zelda@example.cde", div='request-1001')
         self.assertPresence(
@@ -1823,8 +1825,9 @@ class TestCoreFrontend(FrontendTest):
             div='no-event-request')
         self.assertNonPresence(
             "Aktuell stehen keine Mailinglisten-Account-Anfragen zur Bestätigung aus.")
-        f = self.response.forms['genesismlapprovalform1']
-        self.submit(f)
+        self.traverse("Details")
+        f = self.response.forms['genesisdecisionform']
+        self.submit(f, button="decision", value=str(GenesisDecision.approve))
         link = self.fetch_link()
         self.logout()
         self.get(link)
@@ -1946,8 +1949,8 @@ class TestCoreFrontend(FrontendTest):
             "Aktuell stehen keine CdE-Mitglieds-Account-Anfragen zur Bestätigung aus.")
         self.traverse({'href': '/core/genesis/1001/show'})
         self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
-        f = self.response.forms['genesisapprovalform']
-        self.submit(f)
+        f = self.response.forms['genesisdecisionform']
+        self.submit(f, button="decision", value=str(GenesisDecision.approve))
         link = self.fetch_link()
         self.traverse({'href': '^/$'})
         f = self.response.forms['adminshowuserform']
@@ -2122,8 +2125,9 @@ class TestCoreFrontend(FrontendTest):
         self.traverse("Abbrechen")
 
         self.assertTitle("Accountanfrage von Zelda Zeruda")
-        f = self.response.forms['genesisapprovalform']
-        self.submit(f)
+        f = self.response.forms['genesisdecisionform']
+        self.submit(f, button="decision", value=str(GenesisDecision.approve),
+                    check_notification=False)
 
     def _create_genesis_doppelganger(self, user: UserIdentifier = None) -> UserObject:
         user = get_user(user or self.user)
@@ -2144,33 +2148,53 @@ class TestCoreFrontend(FrontendTest):
                          f" {self.user['family_name']}")
         self.assertPresence("Ähnliche Accounts")
         self.assertPresence(self.user['username'], div="doppelgangers")
-        self.assertPresence(self.user['username'], div="doppelganger0")
-        f = self.response.forms['genesisrejectionform']
+        f = self.response.forms['genesisdecisionform']
         # Rejection causes info not success notification.
-        self.submit(f, check_notification=False)
+        self.submit(f, button="decision", value=str(GenesisDecision.deny),
+                    check_notification=False, verbose=True)
         self.assertPresence("Anfrage abgewiesen", div="notifications")
 
         # Create two almost identical requests, approve one and check that the second
         # one finds a doppelgänger.
         self._genesis_request(self.EVENT_GENESIS_DATA)
+        alternate_username = "notzelda@example.cde"
         self._genesis_request(
-            dict(self.EVENT_GENESIS_DATA, username="notzelda@example.cde"))
+            dict(self.EVENT_GENESIS_DATA, username=alternate_username))
 
+        # Approve the first request.
         self.traverse("Accountanfragen", "Details")
         self.assertTitle(f"Accountanfrage von {self.EVENT_GENESIS_DATA['given_names']}"
                          f" {self.EVENT_GENESIS_DATA['family_name']}")
         self.assertNonPresence("Ähnliche Accounts")
-        f = self.response.forms['genesisapprovalform']
-        self.submit(f)
+        self.assertNonPresence("Wiederherstellen", div="genesisdecisionform")
+        f = self.response.forms['genesisdecisionform']
+        self.submit(f, button="decision", value=str(GenesisDecision.approve),
+                    check_notification=False)
+
+        # Check that the first username exists and the alternate one does not.
+        self.assertTrue(self.core.verify_existence(
+            self.key, self.EVENT_GENESIS_DATA['username']))
+        self.assertFalse(self.core.verify_existence(
+            self.key, alternate_username, include_genesis=False))
+
+        # Check that the second request finds the new account as a doppelgänger and
+        # update that account to the alternate username.
         self.traverse("Accountanfragen", "Details")
         self.assertTitle(f"Accountanfrage von {self.EVENT_GENESIS_DATA['given_names']}"
                          f" {self.EVENT_GENESIS_DATA['family_name']}")
         self.assertPresence("Ähnliche Accounts")
         self.assertPresence(self.EVENT_GENESIS_DATA['username'], div="doppelgangers")
-        self.assertPresence(self.EVENT_GENESIS_DATA['username'], div="doppelganger0")
-        f = self.response.forms['genesisrejectionform']
-        self.submit(f, check_notification=False)
-        self.assertPresence("Anfrage abgewiesen", div="notifications")
+        f = self.response.forms['genesisdecisionform']
+        # Set persona_id to the value of the second radio button.
+        f['persona_id'] = f['persona_id'].options[1][0]
+        self.submit(f, button="decision", value=str(GenesisDecision.update))
+        self.assertPresence("Benutzer aktualisiert", div="notifications")
+
+        # Check that the first username no longer exists, but the alternate one does.
+        self.assertFalse(self.core.verify_existence(
+            self.key, self.EVENT_GENESIS_DATA['username']))
+        self.assertTrue(self.core.verify_existence(
+            self.key, alternate_username))
 
     @as_users("vera")
     def test_genesis_dearchive_doppelganger(self) -> None:
@@ -2182,17 +2206,11 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence(f"{hades['given_names']} {hades['family_name']}",
                             div="doppelgangers")
         self.assertPresence("(archiviert)", div="doppelgangers")
-        self.core.dearchive_persona(self.key, hades['id'], genesis_data['username'])
-        self.traverse("Accountanfragen", "Details")
-        self.assertTitle(f"Accountanfrage von {hades['given_names']}"
-                         f" {hades['family_name']}")
-        self.assertPresence(f"{hades['given_names']} {hades['family_name']}",
-                            div="doppelgangers")
-        self.assertPresence(f"<{genesis_data['username']}>", div="doppelgangers")
-        self.assertNonPresence("(archiviert)", div="doppelgangers")
-        f = self.response.forms['genesisrejectionform']
-        self.submit(f, check_notification=False)
-        self.assertPresence("Anfrage abgewiesen", div="notifications")
+        f = self.response.forms['genesisdecisionform']
+        f['persona_id'] = hades['id']
+        self.submit(f, button="decision", value=str(GenesisDecision.dearchive))
+        self.assertPresence("Benutzer wiederhergestellt und aktualisiert.",
+                            div="notifications")
 
     def test_resolve_api(self) -> None:
         at = urllib.parse.quote_plus('@')
