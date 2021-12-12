@@ -1226,7 +1226,7 @@ class FrontendTest(BackendTest):
             self.assertPresence(notification, div="notifications", regex=True)
 
         nodes = self.response.lxml.xpath(
-            '(//input|//select|//textarea)[@name="{}"]'.format(fieldname))
+            f'(//input|//select|//textarea)[@name="{fieldname}"]')
         f = fieldname
         if index is None:
             if len(nodes) == 1:
