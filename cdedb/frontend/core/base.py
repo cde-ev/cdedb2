@@ -2109,7 +2109,7 @@ class CoreBaseFrontend(AbstractFrontend):
         """Reinstate a persona from the attic."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
-        if self.coreproxy.verify_existence(rs, new_username):
+        if new_username and self.coreproxy.verify_existence(rs, new_username):
             rs.append_validation_error(
                 ("new_username",
                  ValueError(n_("User with this E-Mail exists already."))))
