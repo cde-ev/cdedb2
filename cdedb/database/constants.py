@@ -106,13 +106,6 @@ class QuestionnaireUsages(enum.IntEnum):
         """Whether or not rows with this usage may use fee modifier fields."""
         return self == QuestionnaireUsages.registration
 
-    def get_icon(self) -> str:
-        icons = {
-            QuestionnaireUsages.registration: "sign-in-alt",
-            QuestionnaireUsages.additional: "pen",
-        }
-        return icons.get(self, repr(self))
-
 
 @enum.unique
 class GenesisStati(enum.IntEnum):
