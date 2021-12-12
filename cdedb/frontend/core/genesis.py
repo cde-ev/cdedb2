@@ -436,7 +436,8 @@ class CoreGenesisMixin(CoreBaseFrontend):
                         rs, persona_id, case['username'], None))
                 update_keys = {'given_names', 'family_name'}
                 for realm, fields in REALM_SPECIFIC_GENESIS_FIELDS.items():
-                    update_keys.update(set(fields) & PERSONA_FIELDS_BY_REALM[realm])
+                    if realm in roles:
+                        update_keys.update(set(fields) & PERSONA_FIELDS_BY_REALM[realm])
                 update = {
                     k: case[k] for k in update_keys if case[k]
                 }
