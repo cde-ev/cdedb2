@@ -796,7 +796,7 @@ class FrontendTest(BackendTest):
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
-        app = Application()
+        app = Application(configpath=os.environ['CDEDB_TEST_CONFIGPATH'])
         cls.gettext = app.translations[cls.lang].gettext
         cls.app = webtest.TestApp(app, extra_environ=cls.app_extra_environ)
 
