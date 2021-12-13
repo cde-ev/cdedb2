@@ -183,6 +183,9 @@ if __name__ == '__main__':
     parser.add_argument('testpatterns', default=[], nargs="*")
 
     test_options = parser.add_argument_group("general options")
+    test_options.add_argument(
+        "--part", choices=["all", "ldap", "regular", "xss"], default="all",
+        help="part of the test suite to be run, defaults to all.")
     # TODO is this necessary?
     test_options.add_argument('--manual-preparation', action='store_true',
                               help="don't do test preparation")
@@ -204,14 +207,6 @@ if __name__ == '__main__':
                                   help="run third part of test suite (everything except"
                                        " for the frontend tests)")
 
-    xss_options = parser.add_argument_group("XSS Options")
-    xss_options.add_argument('--xss-check', '--xss', action='store_true',
-                             help="check for xss vulnerabilities as implemented in"
-                                  " bin/escape_fuzzing.py (Note that this ignores some"
-                                  " other options, like --first)")
-    xss_options.add_argument('--payload', type=str, default='<script>abcdef</script>',
-                             help="Payload string to use for xss vulnerability check")
-
     parser.add_argument('--verbose', '-v', action='store_true',
                         help="more detailed output")
     args = parser.parse_args()
@@ -225,11 +220,17 @@ if __name__ == '__main__':
         args.testpatterns.append('tests.backend_tests.*')
         args.testpatterns.append('tests.test_[!f]*')
 
-    with CdEDBTestLock(args.thread_id) as Lock:
-        assert Lock.thread_id is not None
-        print(f"Using thread {Lock.thread_id}", file=sys.stderr)
-        return_code = run_regular_tests(
-            configpath=Lock.configpath, testpatterns=args.testpatterns,
-            verbose=args.verbose)
+    return_code = 0
+    if args.part == "regular" or args.part == "all":
+        with CdEDBTestLock(args.thread_id) as Lock:
+            assert Lock.thread_id is not None
+            print(f"Using thread {Lock.thread_id}", file=sys.stderr)
+            return_code += run_regular_tests(
+                configpath=Lock.configpath, testpatterns=args.testpatterns,
+                verbose=args.verbose)
+    if args.part == "ldap" or args.part == "all":
+        return_code += run_ldap_tests(args.testpatterns, verbose=args.verbose)
+    if args.part == "xss" or args.part == "all":
+        return_code += run_xss_tests(verbose=args.verbose)
 
     sys.exit(return_code)
