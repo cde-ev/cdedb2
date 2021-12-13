@@ -26,10 +26,12 @@ import pathlib
 import queue
 import sys
 import time
-from typing import TYPE_CHECKING, Collection, List, NamedTuple, Optional, Tuple, Set
+from typing import TYPE_CHECKING, Collection, List, NamedTuple, Optional, Set, Tuple
 
 import webtest
+from bin.test_runner_helpers import check_test_setup
 
+from cdedb.config import TestConfig
 from cdedb.frontend.application import Application
 
 # Custom type definitions.
@@ -52,6 +54,9 @@ def work(
     secondary_payload: Tuple[str, ...] = ("&amp;lt;", "&amp;gt;")
 ) -> int:
     """Iterate over all visible page links and check them for the xss payload."""
+    conf = TestConfig(configpath)
+    check_test_setup(conf)
+
     app = Application(configpath)
     wt_app = webtest.TestApp(app, extra_environ={
         'REMOTE_ADDR': "127.0.0.0",
@@ -245,5 +250,5 @@ if __name__ == "__main__":
 
     ret = work(
         pathlib.Path(args.configpath), pathlib.Path(args.outdir), verbose=args.verbose,
-        payload=args.payload,secondary_payload=args.secondary)
+        payload=args.payload, secondary_payload=args.secondary)
     sys.exit(ret)
