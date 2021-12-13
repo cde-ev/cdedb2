@@ -1648,7 +1648,7 @@ class CronTest(CdEDBTest):
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
-        cls.cron = CronFrontend()
+        cls.cron = CronFrontend(configpath=cls.conf._configpath)
         cls.core = make_cron_backend_proxy(cls.cron, cls.cron.core.coreproxy)
         cls.cde = make_cron_backend_proxy(cls.cron, cls.cron.core.cdeproxy)
         cls.event = make_cron_backend_proxy(cls.cron, cls.cron.core.eventproxy)
