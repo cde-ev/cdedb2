@@ -3,12 +3,12 @@
 import argparse
 import os
 import pathlib
-import subprocess
 import sys
+import types
 import unittest
-from unittest import TestLoader, TestSuite
 from types import TracebackType
-from typing import List, Optional, TextIO, Tuple, Type
+from typing import List, Optional, TextIO, Type
+from unittest import TestLoader, TestSuite
 
 # the directory containing the cdedb and tests modules
 root = pathlib.Path(__file__).absolute().parent.parent
@@ -17,36 +17,15 @@ sys.path.append(str(root))
 # this is necessary for calling make as subprocess
 os.chdir(root)
 
-from bin.test_runner_helpers import MyTextTestResult, MyTextTestRunner, check_test_setup
 from bin.escape_fuzzing import work as xss_check
-from tests.prepare_tests import prepare_environment, prepare_storage
+from bin.test_runner_helpers import MyTextTestResult, MyTextTestRunner
 
 # import all TestCases which should be tested
 import tests.backend_tests as backend_tests
 import tests.frontend_tests as frontend_tests
-from tests.test_common import TestCommon
-from tests.test_config import TestConfig
-from tests.test_database import TestDatabase
-from tests.test_ldap import TestLDAP
-from tests.test_script import TestScript
-from tests.test_session import TestSessionBackend, TestSessionFrontend, TestMultiSessionFrontend
-from tests.test_subman import SubmanTest
-from tests.test_validation import TestValidation
-from tests.test_vote_verification_script import TestVerificationScript
-from tests.test_zzzoffline import TestOffline
-
-
-TEST_CASES = {
-    "regular": [
-        TestCommon, TestConfig, TestDatabase, TestScript,
-        TestSessionBackend, TestSessionFrontend, TestMultiSessionFrontend,
-        SubmanTest,
-        TestValidation, TestVerificationScript, TestOffline
-    ],
-    "ldap": [
-        TestLDAP
-    ]
-}
+import tests.ldap_tests as ldap_tests
+import tests.other_tests as other_tests
+from tests.prepare_tests import prepare_environment, prepare_storage
 
 
 class CdEDBTestLock:
@@ -107,10 +86,10 @@ class CdEDBTestLock:
         self.release()
 
 
-def _load_tests(testpatterns: List[str], test_modules=None, test_cases=None) -> TestSuite:
+def _load_tests(testpatterns: Optional[List[str]],
+                test_modules: List[types.ModuleType] = None) -> TestSuite:
     """Load all tests from test_modules and test_cases matching one of testpatterns."""
     test_modules = test_modules or list()
-    test_cases = test_cases or list()
 
     test_loader = TestLoader()
     test_suite = TestSuite()
@@ -123,25 +102,17 @@ def _load_tests(testpatterns: List[str], test_modules=None, test_cases=None) -> 
 
     for test_module in test_modules:
         test_suite.addTests(test_loader.loadTestsFromModule(test_module))
-    for test_case in test_cases:
-        test_suite.addTests(test_loader.loadTestsFromTestCase(test_case))
 
     return test_suite
-
-
-def run_tests():
-    pass
 
 
 def run_regular_tests(configpath: pathlib.Path, testpatterns: List[str] = None, *,
                       verbose: bool = False) -> int:
     prepare_environment(configpath)
-    os.environ['CDEDB_TEST_CONFIGPATH'] = str(configpath)
 
     # load all tests which are not meant to be run separately (f.e. the ldap tests)
-    test_cases = TEST_CASES["regular"]
-    test_modules = [backend_tests, frontend_tests]
-    test_suite = _load_tests(testpatterns, test_modules, test_cases)
+    test_modules = [backend_tests, frontend_tests, other_tests]
+    test_suite = _load_tests(testpatterns, test_modules)
 
     unittest.installHandler()
     test_runner = MyTextTestRunner(verbosity=(2 if verbose else 1),
@@ -154,7 +125,6 @@ def run_xss_tests(*, verbose: bool = False) -> int:
     configpath = root / "tests/config/test_xss.py"
     conf = prepare_environment(configpath, prepare_xss=True)
     prepare_storage(conf)
-    os.environ['CDEDB_TEST_CONFIGPATH'] = str(configpath)
 
     ret = xss_check(
         configpath, conf["XSS_OUTDIR"], verbose=verbose, payload=conf["XSS_PAYLOAD"],
@@ -167,9 +137,8 @@ def run_xss_tests(*, verbose: bool = False) -> int:
 def run_ldap_tests(testpatterns: List[str] = None, *, verbose: bool = False) -> int:
     configpath = root / "tests/config/test_ldap.py"
     prepare_environment(configpath)
-    os.environ['CDEDB_TEST_CONFIGPATH'] = str(configpath)
 
-    test_suite = _load_tests(testpatterns, test_cases=TEST_CASES["ldap"])
+    test_suite = _load_tests(testpatterns, [ldap_tests])
 
     unittest.installHandler()
     test_runner = MyTextTestRunner(verbosity=(2 if verbose else 1),
@@ -185,10 +154,6 @@ if __name__ == '__main__':
     parser.add_argument('testpatterns', default=[], nargs="*")
 
     test_options = parser.add_argument_group("general options")
-    test_options.add_argument(
-        "--part", choices=["all", "ldap", "regular", "xss"], default="all",
-        help="part of the test suite to be run, defaults to all.")
-    # TODO is this necessary?
     test_options.add_argument('--manual-preparation', action='store_true',
                               help="don't do test preparation")
     # TODO is this necessary?
@@ -208,31 +173,39 @@ if __name__ == '__main__':
     parallel_options.add_argument('--third', '-3', action='store_true',
                                   help="run third part of test suite (everything except"
                                        " for the frontend tests)")
+    parallel_options.add_argument('--ldap', action='store_true',
+                                  help="run ldap tests")
+    parallel_options.add_argument('--xss', action='store_true',
+                                  help="run xss check")
+    parallel_options.add_argument('--all', action='store_true',
+                                  help="run all regular tests.")
 
     parser.add_argument('--verbose', '-v', action='store_true',
                         help="more detailed output")
     args = parser.parse_args()
 
-    # splitup in three parts with similar runtime
-    if args.first:
+    # Split regular tests into three parts with similar runtime
+    if args.first or args.all:
         args.testpatterns.append('tests.frontend_tests.[abcd]*')
-    if args.second:
+    if args.second or args.all:
         args.testpatterns.append('tests.frontend_tests.[!abcd]*')
-    if args.third:
+    if args.third or args.all:
         args.testpatterns.append('tests.backend_tests.*')
-        args.testpatterns.append('tests.test_[!f]*')
+        args.testpatterns.append('tests.other_tests.*')
 
     return_code = 0
-    if args.part == "regular" or args.part == "all":
+    # If xss and/or ldap is selected, don't run all tests. If ldap is selected and
+    # patterns given, it will be used for both regular and ldap tests.
+    if args.testpatterns and not (args.xss or args.ldap):
         with CdEDBTestLock(args.thread_id) as Lock:
             assert Lock.thread_id is not None
             print(f"Using thread {Lock.thread_id}", file=sys.stderr)
             return_code += run_regular_tests(
                 configpath=Lock.configpath, testpatterns=args.testpatterns,
                 verbose=args.verbose)
-    if args.part == "ldap" or args.part == "all":
+    if args.ldap:
         return_code += run_ldap_tests(args.testpatterns, verbose=args.verbose)
-    if args.part == "xss" or args.part == "all":
+    if args.xss:
         return_code += run_xss_tests(verbose=args.verbose)
 
     sys.exit(return_code)
