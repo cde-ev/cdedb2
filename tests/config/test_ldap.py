@@ -25,6 +25,10 @@ CDEDB_TEST = True
 
 STORAGE_DIR = pathlib.Path("/tmp/cdedb-test-ldap")
 
+if pathlib.Path('/CONTAINER').is_file():
+    # ldap host server differs for vms and docker containers
+    LDAP_HOST = "ldap"
+
 
 #############
 # Log stuff #

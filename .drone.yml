@@ -156,7 +156,23 @@ steps:
     path: /tmp
   commands:
   - sleep 10
-  - bin/check.py --verbose --third
+  - bin/check.py --verbose --third --part=regular
+- name: ldap tests
+  image: cdedb:20210705
+  pull: never # do not try to pull image from docker hub
+  depends_on:
+  - testsuite-setup
+  - ldap
+  when:
+    status:
+      - failure
+      - success
+  volumes:
+  - name: tmp_dir
+    path: /tmp
+  commands:
+  - sleep 10
+  - bin/check.py --verbose --part=ldap
 - name: xss
   image: cdedb:20210705
   pull: never
