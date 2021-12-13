@@ -80,7 +80,7 @@ from cdedb.common import (
     get_localized_country_codes, glue, json_serialize, make_proxy, make_root_logger,
     merge_dicts, n_, now, roles_to_db_role, unwrap,
 )
-from cdedb.config import BasicConfig, Config, SecretsConfig
+from cdedb.config import BasicConfig, Config, SecretsConfig, TestConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.devsamples import HELD_MESSAGE_SAMPLE
@@ -2497,7 +2497,8 @@ class TransactionObserver:
         return False
 
 
-def setup_translations(conf: Config) -> Mapping[str, gettext.NullTranslations]:
+def setup_translations(conf: Union[Config, TestConfig]
+                       ) -> Mapping[str, gettext.NullTranslations]:
     """Helper to setup a mapping of languages to gettext translation objects."""
     return {
         lang: gettext.translation('cdedb', languages=[lang],
