@@ -1632,6 +1632,8 @@ def make_cron_backend_proxy(cron: CronFrontend, backend: B) -> B:
 class CronTest(CdEDBTest):
     _remaining_periodics: Set[str]
     _remaining_tests: Set[str]
+    stores: List[StoreTrace]
+    mails: List[MailTrace]
     cron: ClassVar[CronFrontend]
     core: ClassVar[CoreBackend]
     cde: ClassVar[CdEBackend]
@@ -1639,11 +1641,6 @@ class CronTest(CdEDBTest):
     pastevent: ClassVar[PastEventBackend]
     assembly: ClassVar[AssemblyBackend]
     ml: ClassVar[MlBackend]
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self.stores: List[StoreTrace] = []
-        self.mails: List[MailTrace] = []
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -1661,6 +1658,8 @@ class CronTest(CdEDBTest):
             for job in cls.cron.find_periodics(frontend)
         }
         cls._remaining_tests = {x for x in dir(cls) if x.startswith("test_")}
+        cls.stores = []
+        cls.mails = []
 
     @classmethod
     def tearDownClass(cls) -> None:
