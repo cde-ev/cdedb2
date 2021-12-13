@@ -108,6 +108,9 @@ class CdEDBTestLock:
 
 def _load_tests(testpatterns: List[str], test_modules=None, test_cases=None) -> TestSuite:
     """Load all tests from test_modules and test_cases matching one of testpatterns."""
+    test_modules = test_modules or list()
+    test_cases = test_cases or list()
+
     test_loader = TestLoader()
     test_suite = TestSuite()
 
