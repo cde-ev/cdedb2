@@ -30,7 +30,7 @@ class TestOffline(FrontendTest):
             shutil.copyfile(existing_config, config_backup)
         subprocess.run(
             ['bin/execute_sql_script.py', '-U', 'cdb',
-             '-d', os.environ['CDEDB_TEST_DATABASE'],
+             '-d', self.conf["CDB_DATABASE_NAME"],
              '-f', 'tests/ancillary_files/clean_data.sql'],
             cwd=base, check=True, stdout=subprocess.DEVNULL)
         try:
