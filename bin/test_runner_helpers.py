@@ -46,10 +46,10 @@ class MyTextTestResult(unittest.TextTestResult):
     We keep track of the errors, failures and skips occurring in SubTests,
     and print a summary at the end of the TestCase itself.
     """
+    stream: TextIO
+    showAll: bool
 
     def __init__(self, stream: TextIO, descriptions: bool, verbosity: int) -> None:
-        self.showAll: bool
-        self.stream: TextIO
         super().__init__(stream, descriptions, verbosity)
         self._subTestErrors: List[ExceptionInfo] = []
         self._subTestFailures: List[ExceptionInfo] = []
