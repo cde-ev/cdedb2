@@ -18,12 +18,13 @@ CONSOLE_LOG_LEVEL = None
 
 # CDB_DATABASE_NAME = os.environ['CDEDB_TEST_DATABASE']
 # STORAGE_DIR = pathlib.Path(os.environ['CDEDB_TEST_TMP_DIR'], 'storage')
+_TMP_DIR = pathlib.Path("/tmp/cdedb-test-ldap")
 
 CDB_DATABASE_NAME = "cdb_test_ldap"
 
 CDEDB_TEST = True
 
-STORAGE_DIR = pathlib.Path("/tmp/cdedb-test-ldap")
+STORAGE_DIR = _TMP_DIR / "storage"
 
 if pathlib.Path('/CONTAINER').is_file():
     # ldap host server differs for vms and docker containers
@@ -34,8 +35,8 @@ if pathlib.Path('/CONTAINER').is_file():
 # Log stuff #
 #############
 
-#_LOG_ROOT = pathlib.Path(os.environ['CDEDB_TEST_TMP_DIR'], 'logs')
-_LOG_ROOT = pathlib.Path("/tmp/cdedb-test-ldap/logs")
+# _LOG_ROOT = pathlib.Path(os.environ['CDEDB_TEST_TMP_DIR'], 'logs')
+_LOG_ROOT = _TMP_DIR / "logs"  # May not be inside STORAGE_DIR
 
 GLOBAL_LOG = _LOG_ROOT / "global.log"
 
