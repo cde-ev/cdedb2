@@ -234,16 +234,17 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
 
 class BasicTest(unittest.TestCase):
     """Provide some basic useful test functionalities."""
+    needs_storage_marker = "_needs_storage"
+
     storage_dir: ClassVar[pathlib.Path]
     testfile_dir: ClassVar[pathlib.Path]
-    needs_storage_marker = "_needs_storage"
-    conf: ClassVar[Config]
+    configpath: ClassVar[str]
+    conf: ClassVar[TestConfig]
 
     @classmethod
     def setUpClass(cls) -> None:
-        configpath = os.environ['CDEDB_TEST_CONFIGPATH']
-        # TODO replace with TestConfig
-        cls.conf = Config(configpath)
+        cls.configpath = os.environ['CDEDB_TEST_CONFIGPATH']
+        cls.conf = TestConfig(cls.configpath)
         cls.storage_dir = cls.conf['STORAGE_DIR']
         cls.testfile_dir = cls.storage_dir / "testfiles"
 
@@ -316,6 +317,14 @@ class BasicTest(unittest.TestCase):
 class CdEDBTest(BasicTest):
     """Reset the DB for every test."""
     longMessage = False
+    _clean_data: ClassVar[str]
+    _sample_data: ClassVar[str]
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        sample_data_dir = pathlib.Path("tests/ancillary_files")
+        cls._clean_data = (sample_data_dir / "clean_data.sql").read_text()
+        cls._sample_data = (sample_data_dir / "sample_data.sql").read_text()
 
     def setUp(self) -> None:
         with Script(
@@ -326,12 +335,8 @@ class CdEDBTest(BasicTest):
         ).rs().conn as conn:
             conn.set_session(autocommit=True)
             with conn.cursor() as curr:
-                with open("tests/ancillary_files/clean_data.sql") as f:
-                    sql_input = f.read()
-                curr.execute(sql_input)
-                with open("tests/ancillary_files/sample_data.sql") as f:
-                    sql_input = f.read()
-                curr.execute(sql_input)
+                curr.execute(self._clean_data)
+                curr.execute(self._sample_data)
 
         super().setUp()
 
@@ -429,11 +434,11 @@ class BackendTest(CdEDBTest):
     @classmethod
     def initialize_raw_backend(cls, backendcls: Type[SessionBackend]
                                ) -> SessionBackend:
-        return backendcls(configpath=cls.conf._configpath)
+        return backendcls(configpath=cls.configpath)
 
     @classmethod
     def initialize_backend(cls, backendcls: Type[B]) -> B:
-        return _make_backend_shim(backendcls(configpath=cls.conf._configpath), internal=True)
+        return _make_backend_shim(backendcls(configpath=cls.configpath), internal=True)
 
 
 # A reference of the most important attributes for all users. This is used for
@@ -1645,7 +1650,7 @@ class CronTest(CdEDBTest):
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
-        cls.cron = CronFrontend(configpath=cls.conf._configpath)
+        cls.cron = CronFrontend(configpath=cls.configpath)
         cls.core = make_cron_backend_proxy(cls.cron, cls.cron.core.coreproxy)
         cls.cde = make_cron_backend_proxy(cls.cron, cls.cron.core.cdeproxy)
         cls.event = make_cron_backend_proxy(cls.cron, cls.cron.core.eventproxy)
