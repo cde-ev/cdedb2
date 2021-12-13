@@ -45,7 +45,7 @@ from cdedb.common import (
     PathLike, PrivilegeError, RequestState, merge_dicts, nearly_now, now,
     roles_to_db_role,
 )
-from cdedb.config import BasicConfig, Config, SecretsConfig
+from cdedb.config import BasicConfig, Config, SecretsConfig, TestConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.application import Application
@@ -761,8 +761,9 @@ def storage(fun: F) -> F:
 
 def execsql(sql: AnyStr) -> None:
     """Execute arbitrary SQL-code on the test database."""
+    conf = TestConfig(os.environ['CDEDB_TEST_CONFIGPATH'])
     psql = ("/cdedb2/bin/execute_sql_script.py",
-            "--username", "cdb", "--dbname", os.environ['CDEDB_TEST_DATABASE'])
+            "--username", "cdb", "--dbname", conf["CDB_DATABASE_NAME"])
     mode = 'wb' if isinstance(sql, bytes) else 'w'
     with tempfile.NamedTemporaryFile(mode=mode, suffix='.sql') as sql_file:
         sql_file.write(sql)
