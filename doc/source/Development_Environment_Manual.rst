@@ -90,6 +90,8 @@ This will create the database users and tables. Now configure pgbouncer in
   cdb_test_2 =
   cdb_test_3 =
   cdb_test_4 =
+  cdb_test_ldap =
+  cdb_test_xss =
 
   [pgbouncer]
   logfile = /var/log/postgresql/pgbouncer.log

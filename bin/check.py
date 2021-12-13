@@ -18,7 +18,7 @@ sys.path.append(str(root))
 os.chdir(root)
 
 from bin.test_runner_helpers import MyTextTestResult, MyTextTestRunner, check_test_setup
-from tests.prepare_tests import prepare_environment
+from tests.prepare_tests import prepare_environment, prepare_storage
 
 # import all TestCases which should be tested
 import tests.backend_tests as backend_tests
@@ -106,36 +106,6 @@ class CdEDBTestLock:
         self.release()
 
 
-def _prepare_check(thread_id: int = 1) -> None:
-    """Set the stage for running tests."""
-    os.environ['CDEDB_TEST'] = "True"
-    os.environ['CDEDB_TEST_DATABASE'] = f'cdb_test_{thread_id}'
-    os.environ['CDEDB_TEST_TMP_DIR'] = f'/tmp/cdedb-test-{thread_id}'
-    # TODO implement the following directly, don't use Makefile
-    subprocess.run(('make', 'prepare-check'), check=True, stdout=subprocess.DEVNULL)
-
-
-def check_xss(payload: str, thread_id: int = 1, verbose: bool = False,
-              manual_preparation: bool = False) -> int:
-    """Check for XSS vulnerabilites"""
-    if not manual_preparation:
-        os.environ['CDEDB_TEST_XSS_PAYLOAD'] = payload
-        _prepare_check(thread_id=thread_id)
-        subprocess.run(('make', 'storage-test'), check=True, stdout=subprocess.DEVNULL)
-        subprocess.run(('make', 'sql-xss'), check=True, stdout=subprocess.DEVNULL)
-    check_test_setup()
-
-    command: Tuple[str, ...] = (
-        'python3', '-m', 'bin.escape_fuzzing', '--payload', payload,
-        '--dbname', os.environ['CDEDB_TEST_DATABASE'],
-        '--storage-dir', os.environ['CDEDB_TEST_TMP_DIR'] + '/storage'
-    )
-    if verbose:
-        command = command + ('--verbose', )
-    ret = subprocess.run(command)
-    return ret.returncode
-
-
 def _load_tests(testpatterns: List[str], test_modules=None, test_cases=None) -> TestSuite:
     """Load all tests from test_modules and test_cases matching one of testpatterns."""
     test_loader = TestLoader()
@@ -176,8 +146,20 @@ def run_regular_tests(configpath: pathlib.Path, testpatterns: List[str] = None, 
     return 0 if ran_tests.wasSuccessful() else 1
 
 
-def run_xss_tests():
-    pass
+def run_xss_tests(*, verbose: bool = False) -> int:
+    configpath = root / "tests/config/test_xss.py"
+    conf = prepare_environment(configpath, prepare_xss=True)
+    prepare_storage(conf)
+    os.environ['CDEDB_TEST_CONFIGPATH'] = str(configpath)
+
+    command: Tuple[str, ...] = (
+        'python3', '-m', 'bin.escape_fuzzing', '--payload', conf["XSS_PAYLOAD"],
+        '--dbname', conf["CDB_DATABASE_NAME"], '--storage-dir', conf["STORAGE_DIR"]
+    )
+    if verbose:
+        command = command + ('--verbose',)
+    ret = subprocess.run(command)
+    return ret.returncode
 
 
 def run_ldap_tests(testpatterns: List[str] = None, *, verbose: bool = False) -> int:

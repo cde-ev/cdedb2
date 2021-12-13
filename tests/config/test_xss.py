@@ -60,4 +60,4 @@ TIMING_LOG = _LOG_ROOT / "timing.log"
 # Test-only config #
 ####################
 
-PAYLOAD = ...
+XSS_PAYLOAD = "<script>abcdef</script>"

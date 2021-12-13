@@ -19,11 +19,11 @@ CONSOLE_LOG_LEVEL = None
 # CDB_DATABASE_NAME = os.environ['CDEDB_TEST_DATABASE']
 # STORAGE_DIR = pathlib.Path(os.environ['CDEDB_TEST_TMP_DIR'], 'storage')
 
-CDB_DATABASE_NAME = "cdb_test_1"
+CDB_DATABASE_NAME = "cdb_test_ldap"
 
 CDEDB_TEST = True
 
-STORAGE_DIR = pathlib.Path("/tmp/cdedb-test-1")
+STORAGE_DIR = pathlib.Path("/tmp/cdedb-test-ldap")
 
 
 #############
@@ -31,7 +31,7 @@ STORAGE_DIR = pathlib.Path("/tmp/cdedb-test-1")
 #############
 
 #_LOG_ROOT = pathlib.Path(os.environ['CDEDB_TEST_TMP_DIR'], 'logs')
-_LOG_ROOT = pathlib.Path("/tmp/cdedb-test-1/logs")
+_LOG_ROOT = pathlib.Path("/tmp/cdedb-test-ldap/logs")
 
 GLOBAL_LOG = _LOG_ROOT / "global.log"
 
