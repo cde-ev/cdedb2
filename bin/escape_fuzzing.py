@@ -25,12 +25,10 @@ import itertools
 import pathlib
 import queue
 import sys
-import tempfile
 import time
-from typing import TYPE_CHECKING, Collection, List, NamedTuple, Optional, Set
+from typing import TYPE_CHECKING, Collection, List, NamedTuple, Optional, Tuple, Set
 
 import webtest
-from bin.test_runner_helpers import check_test_setup
 
 from cdedb.frontend.application import Application
 
@@ -45,42 +43,20 @@ visited_urls: Set[str] = set()
 posted_urls: Set[str] = set()
 
 
-def setup(dbname: str, storage_dir: str) -> webtest.TestApp:
-    """Prepare the application."""
-    check_test_setup()
-    with tempfile.NamedTemporaryFile("w", suffix=".py") as f:
-        f.write(f"import pathlib\n"
-                f"STORAGE_DIR = pathlib.Path('{storage_dir}')\n"
-                f"CDB_DATABASE_NAME = '{dbname}'")
-        f.flush()
-        return Application(f.name)
-
-
-def main() -> int:
+def work(
+    configpath: pathlib.Path,
+    outdir: pathlib.Path,
+    *,
+    verbose: bool = False,
+    payload: str = "<script>abcdef</script>",
+    secondary_payload: Tuple[str, ...] = ("&amp;lt;", "&amp;gt;")
+) -> int:
     """Iterate over all visible page links and check them for the xss payload."""
-    parser = argparse.ArgumentParser(
-        description="Insert XSS payload into database, then traverse all sites to make"
-                    " sure it is escaped properly.")
-
-    general = parser.add_argument_group("General options")
-    general.add_argument("--dbname", "-d")
-    general.add_argument("--storage-dir", "-s", default="/tmp/cdedb-store")
-    general.add_argument("--outdir", "-o", default="./out")
-
-    config = parser.add_argument_group("Ccnfiguration")
-    config.add_argument("--verbose", "-v", action="store_true")
-    config.add_argument("--payload", "-p", default="<script>abcdef</script>")
-    config.add_argument("--secondary", "-sp", nargs='*',
-                        default=["&amp;lt;", "&amp;gt;"])
-
-    args = parser.parse_args()
-
-    app = setup(args.dbname, args.storage_dir)
+    app = Application(configpath)
     wt_app = webtest.TestApp(app, extra_environ={
         'REMOTE_ADDR': "127.0.0.0",
         'SERVER_PROTOCOL': "HTTP/1.1",
         'wsgi.url_scheme': 'https'})
-    outdir = pathlib.Path(args.outdir)
     if not outdir.exists():
         print(f"Target directory {outdir!r} doesn't exist."
               f" Nothing will be written to file.")
@@ -112,8 +88,8 @@ def main() -> int:
             response_data = response_queue.get(False)
         except queue.Empty:
             break
-        e, q = check(response_data, outdir=outdir, verbose=args.verbose,
-                     payload=args.payload, secondary_payloads=args.secondary)
+        e, q = check(response_data, outdir=outdir, verbose=verbose,
+                     payload=payload, secondary_payloads=secondary_payload)
         errors.extend(e)
         for rd in q:
             response_queue.put(rd)
@@ -251,5 +227,23 @@ def check(response_data: ResponseData, *, payload: str,
 
 
 if __name__ == "__main__":
-    ret = main()
+    parser = argparse.ArgumentParser(
+        description="Insert XSS payload into database, then traverse all sites to make"
+                    " sure it is escaped properly.")
+
+    general = parser.add_argument_group("General options")
+    general.add_argument("--configpath", "-c")
+    general.add_argument("--outdir", "-o", default="./out")
+
+    config = parser.add_argument_group("Configuration")
+    config.add_argument("--verbose", "-v", action="store_true")
+    config.add_argument("--payload", "-p", default="<script>abcdef</script>")
+    config.add_argument("--secondary", "-sp", nargs='*',
+                        default=["&amp;lt;", "&amp;gt;"])
+
+    args = parser.parse_args()
+
+    ret = work(
+        pathlib.Path(args.configpath), pathlib.Path(args.outdir), verbose=args.verbose,
+        payload=args.payload,secondary_payload=args.secondary)
     sys.exit(ret)
