@@ -18,6 +18,7 @@ sys.path.append(str(root))
 os.chdir(root)
 
 from bin.test_runner_helpers import MyTextTestResult, MyTextTestRunner, check_test_setup
+from bin.escape_fuzzing import work as xss_check
 from tests.prepare_tests import prepare_environment, prepare_storage
 
 # import all TestCases which should be tested
@@ -155,14 +156,12 @@ def run_xss_tests(*, verbose: bool = False) -> int:
     prepare_storage(conf)
     os.environ['CDEDB_TEST_CONFIGPATH'] = str(configpath)
 
-    command: Tuple[str, ...] = (
-        'python3', '-m', 'bin.escape_fuzzing', '--payload', conf["XSS_PAYLOAD"],
-        '--dbname', conf["CDB_DATABASE_NAME"], '--storage-dir', conf["STORAGE_DIR"]
+    ret = xss_check(
+        configpath, conf["XSS_OUTDIR"], verbose=verbose, payload=conf["XSS_PAYLOAD"],
+        secondary_payload=conf["XSS_PAYLOAD_SECONDARY"]
     )
-    if verbose:
-        command = command + ('--verbose',)
-    ret = subprocess.run(command)
-    return ret.returncode
+
+    return ret
 
 
 def run_ldap_tests(testpatterns: List[str] = None, *, verbose: bool = False) -> int:

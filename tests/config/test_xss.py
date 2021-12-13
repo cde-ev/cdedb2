@@ -60,4 +60,8 @@ TIMING_LOG = _LOG_ROOT / "timing.log"
 # Test-only config #
 ####################
 
+XSS_OUTDIR = pathlib.Path("./out")
 XSS_PAYLOAD = "<script>abcdef</script>"
+XSS_PAYLOAD_SECONDARY = [
+    "&amp;lt;", "&amp;gt;"
+]

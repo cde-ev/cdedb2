@@ -170,7 +170,7 @@ steps:
   - name: tmp_dir
     path: /tmp
   commands:
-    - python3 bin/check.py --xss-check --verbose
+    - python3 bin/check.py --verbose --part=xss
 - name: check for merge conflicts
   image: docker:20.10-git
   pull: never # do not try to pull image from docker hub
