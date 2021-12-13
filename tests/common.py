@@ -322,6 +322,7 @@ class CdEDBTest(BasicTest):
 
     @classmethod
     def setUpClass(cls) -> None:
+        super().setUpClass()
         sample_data_dir = pathlib.Path("tests/ancillary_files")
         cls._clean_data = (sample_data_dir / "clean_data.sql").read_text()
         cls._sample_data = (sample_data_dir / "sample_data.sql").read_text()
