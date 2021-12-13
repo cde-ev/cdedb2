@@ -174,38 +174,62 @@ if __name__ == '__main__':
                                   help="run third part of test suite (everything except"
                                        " for the frontend tests)")
     parallel_options.add_argument('--ldap', action='store_true',
-                                  help="run ldap tests")
+                                  help="also run ldap tests")
+    parallel_options.add_argument('--ldap-only', action='store_true',
+                                  help="run ldap tests, but not regular tests.")
     parallel_options.add_argument('--xss', action='store_true',
-                                  help="run xss check")
+                                  help="also run xss check")
     parallel_options.add_argument('--all', action='store_true',
+                                  help="run _all_ tests.")
+    parallel_options.add_argument('--all-tests', action='store_true',
                                   help="run all regular tests.")
+    parallel_options.add_argument('--all-ldap', action='store_true',
+                                  help="run all ldap tests.")
 
     parser.add_argument('--verbose', '-v', action='store_true',
                         help="more detailed output")
     args = parser.parse_args()
 
     # Split regular tests into three parts with similar runtime
-    if args.first or args.all:
+    if args.first:
         args.testpatterns.append('tests.frontend_tests.[abcd]*')
-    if args.second or args.all:
+    if args.second:
         args.testpatterns.append('tests.frontend_tests.[!abcd]*')
-    if args.third or args.all:
+    if args.third:
         args.testpatterns.append('tests.backend_tests.*')
         args.testpatterns.append('tests.other_tests.*')
 
     return_code = 0
-    # If xss and/or ldap is selected, don't run all tests. If ldap is selected and
-    # patterns given, it will be used for both regular and ldap tests.
-    if args.testpatterns and not (args.xss or args.ldap):
+
+    # Run tests in case of `all` or `all_tests` or if
+    # `testpatterns` are given and `ldap_only` is not.
+    if args.all or args.all_tests or args.testpatterns and not args.ldap_only:
         with CdEDBTestLock(args.thread_id) as Lock:
             assert Lock.thread_id is not None
             print(f"Using thread {Lock.thread_id}", file=sys.stderr)
+
+            # Override testpatterns to run all tests.
+            if args.all or args.all_tests:
+                testpatterns = None
+            else:
+                testpatterns = args.testpatterns
+
             return_code += run_regular_tests(
-                configpath=Lock.configpath, testpatterns=args.testpatterns,
+                configpath=Lock.configpath, testpatterns=testpatterns,
                 verbose=args.verbose)
-    if args.ldap:
-        return_code += run_ldap_tests(args.testpatterns, verbose=args.verbose)
-    if args.xss:
+
+    # Run ldap if `ldap`, `ldap_only`, `all_ldap` or `all` is set.
+    if args.ldap or args.ldap_only or args.all_ldap or args.all:
+        # Override testpatterns to run all tests.
+        if args.all or args.all_ldap:
+            testpatterns = None
+        else:
+            testpatterns = args.testpatterns
+
+        return_code += run_ldap_tests(testpatterns, verbose=args.verbose)
+
+    # Run xss if `xss` or `all` is set.
+    if args.xss or args.all:
         return_code += run_xss_tests(verbose=args.verbose)
 
     sys.exit(return_code)
