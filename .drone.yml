@@ -156,7 +156,7 @@ steps:
     path: /tmp
   commands:
   - sleep 10
-  - bin/check.py --verbose --third --part=regular
+  - bin/check.py --verbose --third
 - name: ldap tests
   image: cdedb:20210705
   pull: never # do not try to pull image from docker hub
@@ -172,7 +172,7 @@ steps:
     path: /tmp
   commands:
   - sleep 10
-  - bin/check.py --verbose --part=ldap
+  - bin/check.py --verbose --all-ldap
 - name: xss
   image: cdedb:20210705
   pull: never
@@ -186,7 +186,7 @@ steps:
   - name: tmp_dir
     path: /tmp
   commands:
-    - python3 bin/check.py --verbose --part=xss
+    - bin/check.py --verbose --xss
 - name: check for merge conflicts
   image: docker:20.10-git
   pull: never # do not try to pull image from docker hub
@@ -194,6 +194,7 @@ steps:
   - frontend tests a-d
   - frontend tests e-z
   - non-frontend tests
+  - ldap tests
   - xss
   when:
     status:
