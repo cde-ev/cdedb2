@@ -3,25 +3,16 @@
 """Sample configuration for development instances."""
 
 import logging
-import os
 import pathlib
-
-# check for test environment
-CDEDB_TEST = os.environ.get('CDEDB_TEST')
 
 # BasicConfig
 
-_LOG_ROOT = (pathlib.Path(os.environ['CDEDB_TEST_TMP_DIR'], 'logs') if CDEDB_TEST
-             else pathlib.Path("/var/log/cdedb"))
+_LOG_ROOT = pathlib.Path("/var/log/cdedb")
 
 LOG_LEVEL = logging.DEBUG
 SYSLOG_LEVEL = logging.INFO
 CONSOLE_LOG_LEVEL = logging.INFO
 GLOBAL_LOG = _LOG_ROOT / "global.log"
-
-if CDEDB_TEST:
-    SYSLOG_LEVEL = None  # type: ignore
-    CONSOLE_LOG_LEVEL = None  # type: ignore
 
 # Config
 
@@ -48,9 +39,3 @@ MAILMAN_LOG = _LOG_ROOT / "frontend-mailman.log"
 if pathlib.Path('/CONTAINER').is_file():
     # ldap host server differs for vms and docker containers
     LDAP_HOST = "ldap"
-
-if CDEDB_TEST:
-    CDB_DATABASE_NAME = os.environ['CDEDB_TEST_DATABASE']
-    SERVER_NAME_TEMPLATE = "test_{}_server"
-    STORAGE_DIR = pathlib.Path(os.environ['CDEDB_TEST_TMP_DIR'], 'storage')
-    TIMING_LOG = _LOG_ROOT / "timing.log"
