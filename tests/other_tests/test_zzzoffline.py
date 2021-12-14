@@ -43,7 +43,7 @@ class TestOffline(FrontendTest):
                 del sys.modules['cdedb.localconfig']
             except AttributeError:
                 pass
-            new_app = Application()
+            new_app = Application(self.configpath)
             self.app = webtest.TestApp(  # type: ignore
                 new_app, extra_environ=self.app_extra_environ)
             self.app.reset()
