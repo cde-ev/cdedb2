@@ -1,3 +1,4 @@
+# pylint: disable=missing-module-docstring
 from tests.backend_tests.assembly import TestAssemblyBackend
 from tests.backend_tests.cde import TestCdEBackend
 from tests.backend_tests.common import TestBackendCommon

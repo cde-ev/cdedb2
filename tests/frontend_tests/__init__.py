@@ -1,3 +1,4 @@
+# pylint: disable=missing-module-docstring
 from tests.frontend_tests.application import TestApplication
 from tests.frontend_tests.assembly import (
     TestAssemblyFrontend, TestMultiAssemblyFrontend,

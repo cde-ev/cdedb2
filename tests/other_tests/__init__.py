@@ -1,3 +1,4 @@
+# pylint: disable=missing-module-docstring
 from tests.other_tests.test_common import TestCommon
 from tests.other_tests.test_config import TestConfig
 from tests.other_tests.test_database import TestDatabase
