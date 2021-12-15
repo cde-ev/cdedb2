@@ -803,7 +803,7 @@ class FrontendTest(BackendTest):
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
-        app = Application(configpath=os.environ['CDEDB_TEST_CONFIGPATH'])
+        app = Application(cls.configpath)
         cls.gettext = app.translations[cls.lang].gettext
         cls.app = webtest.TestApp(app, extra_environ=cls.app_extra_environ)
 
@@ -1570,9 +1570,13 @@ class MultiAppFrontendTest(FrontendTest):
     def setUpClass(cls) -> None:
         """Create n new apps, overwrite cls.app with a reference."""
         super().setUpClass()
-        cls.apps = [webtest.TestApp(Application(),
-                                    extra_environ=cls.app_extra_environ)
-                    for _ in range(cls.n)]
+        cls.apps = [
+            webtest.TestApp(
+                Application(cls.configpath),
+                extra_environ=cls.app_extra_environ,
+            )
+            for _ in range(cls.n)
+        ]
         # The super().setUpClass overwrites the property, so reset it here.
         cls.app = property(fget=cls.get_app, fset=cls.set_app)
         cls.responses = [None for _ in range(cls.n)]
