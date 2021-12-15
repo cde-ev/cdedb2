@@ -23,6 +23,7 @@ def check_test_setup(conf: TestConfig) -> None:
 
 
 class MyTextTestRunner(unittest.TextTestRunner):
+    """Subclass the TextTestRunner to provide a short command to re-run failed tests."""
     stream: TextIO
 
     def run(

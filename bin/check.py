@@ -16,15 +16,16 @@ sys.path.append(str(root))
 # this is necessary for calling make as subprocess
 os.chdir(root)
 
+# import helpers to prepare and execute the tests
 from bin.escape_fuzzing import work as xss_check
-from bin.test_runner_helpers import MyTextTestResult, MyTextTestRunner
+from tests.custom_testrunners import MyTextTestResult, MyTextTestRunner
+from tests.prepare_tests import prepare_environment, prepare_storage
 
 # import all TestCases which should be tested
 import tests.backend_tests as backend_tests
 import tests.frontend_tests as frontend_tests
 import tests.ldap_tests as ldap_tests
 import tests.other_tests as other_tests
-from tests.prepare_tests import prepare_environment, prepare_storage
 
 
 class CdEDBTestLock:
