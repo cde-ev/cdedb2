@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 # pylint: disable=missing-module-docstring
 
-# FIXME: For some reason this test affect the configuration of later tests.
-#  Thus we need to ensure it is run last.
-
 import shutil
 import subprocess
 import sys
@@ -109,7 +106,10 @@ class TestOffline(FrontendTest):
                 subprocess.run(
                     ["cp", repopath / "related/auto-build/files/stage3/localconfig.py",
                      repopath / "cdedb/localconfig.py"], check=True)
+
+            # Force the localconfig to be reloaded
+            try:
+                del sys.modules['cdedb.localconfig']
+            except AttributeError:
+                pass
             subprocess.run(["sudo", "rm", "-f", "/OFFLINEVM"], check=True)
-            subprocess.run(
-                ["make", "reload"], check=True,
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
