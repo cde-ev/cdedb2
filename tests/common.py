@@ -45,7 +45,7 @@ from cdedb.common import (
     PathLike, PrivilegeError, RequestState, merge_dicts, nearly_now, now,
     roles_to_db_role,
 )
-from cdedb.config import BasicConfig, Config, SecretsConfig, TestConfig
+from cdedb.config import BasicConfig, SecretsConfig, TestConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.application import Application

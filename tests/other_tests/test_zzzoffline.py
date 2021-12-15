@@ -4,8 +4,6 @@
 # FIXME: For some reason this test affect the configuration of later tests.
 #  Thus we need to ensure it is run last.
 
-import os
-import pathlib
 import shutil
 import subprocess
 import sys

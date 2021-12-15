@@ -10,4 +10,8 @@ extend-ignore =
     E252
     E501
     E731
-per-file-ignores = validation.py:F405
+per-file-ignores =
+    validation.py:F405
+    tests/backend_tests/__init__.py:F401
+    tests/other_tests/__init__.py:F401
+    tests/frontend_tests/__init__.py:F401
