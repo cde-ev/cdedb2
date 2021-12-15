@@ -50,14 +50,18 @@ _BASIC_DEFAULTS = {
     "SYSLOG_LEVEL": logging.WARNING,
     # Logging level for stdout
     "CONSOLE_LOG_LEVEL": None,
+    # Directory in which all logs will be saved. The name of the specific log file will
+    # be determined by the instance generating the log.
+    "LOG_DIR": pathlib.Path("/tmp/"),
     # Global log for messages unrelated to specific components
-    "GLOBAL_LOG": pathlib.Path("/tmp/cdedb.log"),
+    "GLOBAL_LOG_FILE": "cdedb.log",
     # file system path to this repository
     "REPOSITORY_PATH": _repopath,
     # default timezone for input and output
     "DEFAULT_TIMEZONE": pytz.timezone('CET'),
+    # TODO this is only needed in the testsuite, maybe move to config
     # path to log file for recording performance information during test runs
-    "TIMING_LOG": pathlib.Path("/tmp/cdedb-timing.log"),
+    "TIMING_LOG_FILE": "cdedb-timing.log",
 }
 
 
@@ -268,8 +272,6 @@ _DEFAULTS = {
     # Frontend stuff #
     ##################
 
-    # log for frontend issues
-    "FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend.log"),
     # timeout for protected url parameters to prevent replay
     "PARAMETER_TIMEOUT": datetime.timedelta(hours=1),
     # timeout for protected parameters, that are not security related
@@ -345,30 +347,13 @@ _DEFAULTS = {
     # user for mailman to retrieve templates
     "MAILMAN_BASIC_AUTH_USER": "mailman",
 
-    # logs
-    "CORE_FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend-core.log"),
-    "CDE_FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend-cde.log"),
-    "EVENT_FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend-event.log"),
-    "ML_FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend-ml.log"),
-    "ASSEMBLY_FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend-assembly.log"),
-    "CRON_FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend-cron.log"),
-    "WORKER_LOG": pathlib.Path("/tmp/cdedb-frontend-worker.log"),
-    "MAILMAN_LOG": pathlib.Path("/tmp/cdedb-frontend-mailman.log"),
-
-
     #################
     # Backend stuff #
     #################
 
-    # log for backend issues
-    "BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend.log"),
-
     #
     # Core stuff
     #
-
-    # log
-    "CORE_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-core.log"),
 
     # amount of time after which an inactive account may be archived.
     "AUTOMATED_ARCHIVAL_CUTOFF": datetime.timedelta(days=365*2),
@@ -376,9 +361,6 @@ _DEFAULTS = {
     #
     # Session stuff
     #
-
-    # log
-    "SESSION_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-session.log"),
 
     # session parameters
     "SESSION_TIMEOUT": datetime.timedelta(days=2),
@@ -390,9 +372,6 @@ _DEFAULTS = {
     #
     # CdE stuff
     #
-
-    # log
-    "CDE_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-cde.log"),
 
     # maximal number of data sets a normal user is allowed to view per day
     "QUOTA_VIEWS_PER_DAY": 42,
@@ -426,8 +405,6 @@ _DEFAULTS = {
     # event stuff
     #
 
-    # log
-    "EVENT_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-event.log"),
     # Bank accounts. First is shown to participants,
     # second is a web label for orgas
     "EVENT_BANK_ACCOUNTS": (
@@ -436,27 +413,6 @@ _DEFAULTS = {
     # Rate limit for orgas adding persons to their event
     # number of persons per day
     "ORGA_ADD_LIMIT": 10,
-
-    #
-    # past event stuff
-    #
-
-    # log
-    "PAST_EVENT_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-past-event.log"),
-
-    #
-    # ml stuff
-    #
-
-    # log
-    "ML_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-ml.log"),
-
-    #
-    # assembly stuff
-    #
-
-    # log
-    "ASSEMBLY_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-assembly.log"),
 
     ###############
     # Query stuff #

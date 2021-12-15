@@ -852,8 +852,9 @@ class FrontendTest(BackendTest):
     def _log_generation_time(self, response: webtest.TestResponse = None) -> None:
         if response is None:
             response = self.response
-        if _BASICCONF["TIMING_LOG"]:
-            with open(_BASICCONF["TIMING_LOG"], 'a') as f:
+        # TODO use self.conf
+        if _BASICCONF["TIMING_LOG_FILE"]:
+            with open(_BASICCONF["LOG_DIR"] / _BASICCONF["TIMING_LOG_FILE"], 'a') as f:
                 output = "{} {} {} {}\n".format(
                     response.request.path, response.request.method,
                     response.headers.get('X-Generation-Time'),

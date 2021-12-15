@@ -61,7 +61,7 @@ class Application(BaseApp):
         self.ml = MlFrontend(configpath)
         # Set up a logger for all Worker instances.
         make_root_logger(
-            "cdedb.frontend.worker", self.conf["WORKER_LOG"],
+            "cdedb.frontend.worker", self.conf["LOG_DIR"] / "cdedb-frontend-worker.log",
             self.conf["LOG_LEVEL"], syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         self.urlmap = CDEDB_PATHS
