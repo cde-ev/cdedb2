@@ -4,9 +4,8 @@ import argparse
 import os
 import pathlib
 import sys
-import types
 import unittest
-from types import TracebackType
+from types import ModuleType, TracebackType
 from typing import List, Optional, TextIO, Type
 from unittest import TestLoader, TestSuite
 
@@ -87,7 +86,7 @@ class CdEDBTestLock:
 
 
 def _load_tests(testpatterns: Optional[List[str]],
-                test_modules: List[types.ModuleType] = None) -> TestSuite:
+                test_modules: List[ModuleType] = None) -> TestSuite:
     """Load all tests from test_modules and test_cases matching one of testpatterns."""
     test_modules = test_modules or list()
 
