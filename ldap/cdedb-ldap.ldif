@@ -91,11 +91,8 @@ olcRootPW: OLC_ROOT_PASSWORD
 olcDatabase: sql
 olcDbHost: OLC_DB_HOST
 olcDbName: OLC_DB_NAME
-# the credentials are irrelevant as we use odbc,
-# but the parameters mustn't be empty
-# TODO test if the statement above is true and if so remove the credentials
 olcDbUser: cdb_admin
-olcDbPass: 9876543210abcdefghijklmnopqrst
+olcDbPass: DATABASE_USER_PASSWORD
 #
 # SQL-backend configuration options (unused commented out)
 olcSqlConcatPattern: ?||?

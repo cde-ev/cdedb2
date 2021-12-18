@@ -3,8 +3,8 @@
 The passwords should be overridden in productions secret config.
 """
 
-from cdedb.script import Script
 from cdedb.backend.core import CoreBackend
+from cdedb.script import Script
 
 script = Script(dbuser="cdb_admin")
 
