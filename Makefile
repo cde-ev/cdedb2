@@ -227,8 +227,6 @@ cron:
 # use command-line arguments of make to override
 DATABASE_NAME ?= cdb
 DATABASE_USER_PASSWORD ?= 9876543210abcdefghijklmnopqrst # database user is cdb_admin
-SLAPD_PASSWORD ?= secret
-SLAPD_ADMIN_PASSWORD ?= secret
 
 ldap-odbc:
 	# prepare odbc.ini file to enable database connection for ldap
