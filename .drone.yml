@@ -112,7 +112,7 @@ steps:
     # and this will work regardless of the id the testing container gets
     DATABASE_NAME: cdb_test
     SERVER_NAME: cdb # server on which ldap will listen
-    USER_PASSWORD: 9876543210abcdefghijklmnopqrst # password of cdb_admin in dev
+    DATABASE_USER_PASSWORD: 9876543210abcdefghijklmnopqrst # password of cdb_admin in dev
 - name: frontend tests a-d
   image: cdedb:20210705
   pull: never # do not try to pull image from docker hub

@@ -38,7 +38,7 @@ services:
     environment:
         DATABASE_NAME: cdb # database on which ldap will run
         SERVER_NAME: cdb # server on which ldap will listen
-        USER_PASSWORD: 9876543210abcdefghijklmnopqrst # password of cdb_admin in dev
+        DATABASE_USER_PASSWORD: 9876543210abcdefghijklmnopqrst # password of cdb_admin in dev
     depends_on:
       - cdb
       - app # not really necessary but app creates the sample-data
