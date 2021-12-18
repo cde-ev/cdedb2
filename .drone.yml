@@ -111,7 +111,7 @@ steps:
     # we use the database without a name as only readonly access is required
     # and this will work regardless of the id the testing container gets
     DATABASE_NAME: cdb_test
-    SERVER_NAME: cdb # server on which ldap will listen
+    DATABASE_HOST: cdb # server on which ldap will listen
     DATABASE_USER_PASSWORD: 9876543210abcdefghijklmnopqrst # password of cdb_admin in dev
 - name: frontend tests a-d
   image: cdedb:20210705

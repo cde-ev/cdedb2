@@ -22,12 +22,12 @@ RUN cat /tmp/ldap/slapd-debconf.txt | debconf-set-selections \
 
 # prepare odbc.ini file to enable database connection for ldap
 RUN sed -i -r "s/DATABASE_NAME/${DATABASE_NAME}/" /tmp/ldap/odbc.ini \
-    && sed -i -r "s/SERVER_NAME/${SERVER_NAME}/" /tmp/ldap/odbc.ini \
+    && sed -i -r "s/DATABASE_HOST/${DATABASE_HOST}/" /tmp/ldap/odbc.ini \
     && sed -i -r "s/DATABASE_USER_PASSWORD/${DATABASE_USER_PASSWORD}/" /tmp/ldap/odbc.ini \
     && mv /tmp/ldap/odbc.ini /etc/odbc.ini
 
 # Prepare the ldif files, which are applied during first startup
-RUN sed -i -r "s/OLC_DB_HOST/${SERVER_NAME}/" /tmp/ldap/cdedb-ldap.ldif \
+RUN sed -i -r "s/OLC_DB_HOST/${DATABASE_HOST}/" /tmp/ldap/cdedb-ldap.ldif \
     && sed -i -r "s/OLC_DB_NAME/${DATABASE_NAME}/" /tmp/ldap/cdedb-ldap.ldif \
     && sed -i -r "s/OLC_ROOT_PASSWORD/${OLC_ROOT_PASSWORD:-secret}/" /tmp/ldap/cdedb-ldap.ldif
 
