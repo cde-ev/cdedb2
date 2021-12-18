@@ -3,13 +3,13 @@
 # - If a line begins with a single space, it is considered a continuation of the previous line (even if the previous line is a comment) and the single leading space is removed.
 # - Entries are separated by blank lines.
 
-{% if config["CDEDB_DEV"] %}
-# set log level to debug
-dn: cn=config
-changetype: modify
-replace: olcLogLevel
-olcLogLevel: -1
-{% endif %}
+# {% if config["CDEDB_DEV"] %}
+# # set log level to debug
+# dn: cn=config
+# changetype: modify
+# replace: olcLogLevel
+# olcLogLevel: -1
+# {% endif %}
 
 # load sql-backend module
 dn: cn=module{0},cn=config

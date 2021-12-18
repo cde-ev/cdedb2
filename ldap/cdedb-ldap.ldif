@@ -85,15 +85,17 @@ olcAccess:
   by * none
 #
 # this user better exist or else there be dragons
+# TODO it seems like this is not necessary - maybe we remove it?
 olcRootDN: cn=admin,ou=dua,dc=cde-ev,dc=de
-olcRootPW: {{ secrets["LDAP_OLC_ROOT_PW"] }}
+olcRootPW: OLC_ROOT_PASSWORD
 olcDatabase: sql
-olcDbHost: localhost
-olcDbName: cdb
+olcDbHost: OLC_DB_HOST
+olcDbName: OLC_DB_NAME
 # the credentials are irrelevant as we use odbc,
 # but the parameters mustn't be empty
+# TODO test if the statement above is true and if so remove the credentials
 olcDbUser: cdb_admin
-olcDbPass: {{ secrets["CDB_DATABASE_ROLES"]["cdb_admin"] }}
+olcDbPass: 9876543210abcdefghijklmnopqrst
 #
 # SQL-backend configuration options (unused commented out)
 olcSqlConcatPattern: ?||?
