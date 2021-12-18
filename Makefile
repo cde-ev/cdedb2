@@ -255,34 +255,12 @@ ldap-create:
 	# Apply the overall ldap configuration (load modules, add backends etc)
 	sudo ldapmodify -Y EXTERNAL -H ldapi:/// -f ldap/config-ldap.ldif
 
-check-var-defined = $(if $(strip $($1)),,$(error "$1" is not defined))
-
-# TODO find a better solution
-ldap-duas:
-	# prepare the new dua passwords for production
-	$(call check-var-defined,ADMIN_DUA_PASSWORD)
-	$(call check-var-defined,APACHE_DUA_PASSWORD)
-	$(call check-var-defined,CLOUD_DUA_PASSWORD)
-	$(call check-var-defined,CYBERAKA_DUA_PASSWORD)
-	$(call check-var-defined,DOKUWIKI_DUA_PASSWORD)
-	cp -r ldap/add-duas.sql ldap/add-duas-applied.sql \
-		&& sed -i -r "s/ADMIN_DUA_PASSWORD/${ADMIN_DUA_PASSWORD}/" ldap/add-duas-applied.sql \
-		&& sed -i -r "s/APACHE_DUA_PASSWORD/${APACHE_DUA_PASSWORD}/" ldap/add-duas-applied.sql \
-		&& sed -i -r "s/CLOUD_DUA_PASSWORD/${CLOUD_DUA_PASSWORD}/" ldap/add-duas-applied.sql \
-		&& sed -i -r "s/CYBERAKA_DUA_PASSWORD/${CYBERAKA_DUA_PASSWORD}/" ldap/add-duas-applied.sql \
-		&& sed -i -r "s/DOKUWIKI_DUA_PASSWORD/${DOKUWIKI_DUA_PASSWORD}/" ldap/add-duas-applied.sql
-	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=${DATABASE_NAME}
-
 ldap-update:
 	# prepare the new ldap configuration
 	cp -f ldap/cdedb-ldap.ldif ldap/cdedb-ldap-applied.ldif \
 		&& sed -i -r "s/OLC_DB_HOST/localhost/" ldap/cdedb-ldap-applied.ldif \
 		&& sed -i -r "s/OLC_DB_NAME/${DATABASE_NAME}/" ldap/cdedb-ldap-applied.ldif \
 		&& sed -i -r "s/OLC_ROOT_PASSWORD/${OLC_ROOT_PASSWORD}/" ldap/cdedb-ldap-applied.ldif
-	# readd all duas in production. In dev, they are inside the sample-data
-ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
-	$(MAKE) ldap-duas
-endif
 	# remove the old one and apply the new one
 	sudo systemctl stop slapd
 	# TODO is there any nice solution to do this from within ldap?
