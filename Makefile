@@ -236,7 +236,7 @@ ldap-odbc:
 	sudo cp -f ldap/odbc.ini /etc/odbc.ini \
 		&& sudo sed -i -r "s/DATABASE_NAME/${DATABASE_NAME}/" /etc/odbc.ini \
 		&& sudo sed -i -r "s/DATABASE_HOST/localhost/" /etc/odbc.ini \
-		&& sudo sed -i -r "s/DATABASE_USER_PASSWORD/${DATABASE_USER_PASSWORD}/" /etc/odbc.ini \
+		&& sudo sed -i -r "s/DATABASE_USER_PASSWORD/${DATABASE_USER_PASSWORD}/" /etc/odbc.ini
 
 ldap-create:
 	# the only way to remove all ldap settings for sure is currently to uninstall it.
