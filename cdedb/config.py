@@ -604,10 +604,6 @@ _SECRECTS_DEFAULTS = {
     },
 
     # ldap related stuff
-    "LDAP_SLAPD": {
-        "ADMIN_PASSWORD": "secret",
-        "PASSWORD": "secret",
-    },
     "LDAP_OLC_ROOT_PW": "secret",
     "LDAP_DUA_PW": {
         "admin": "secret",

@@ -238,21 +238,13 @@ ldap-odbc:
 		&& sudo sed -i -r "s/DATABASE_HOST/localhost/" /etc/odbc.ini \
 		&& sudo sed -i -r "s/DATABASE_USER_PASSWORD/${DATABASE_USER_PASSWORD}/" /etc/odbc.ini \
 
-ldap-slapd:
-	# apply a custom slapd-debconf before installing slapd
-	cp -f ldap/slapd-debconf.txt ldap/slapd-debconf-applied.txt \
-		&& sed -i -r "s/SLAPD_ADMIN_PASSWORD/${SLAPD_ADMIN_PASSWORD}/" ldap/slapd-debconf-applied.txt \
-		&& sed -i -r "s/SLAPD_PASSWORD/${SLAPD_PASSWORD}/" ldap/slapd-debconf-applied.txt
-	sudo debconf-set-selections ldap/slapd-debconf-applied.txt
-	sudo apt-get install -y slapd
-
 ldap-create:
 	# the only way to remove all ldap settings for sure is currently to uninstall it.
 	# therefore, we need to re-install slapd here.
 	sudo apt-get update
 	# TODO move this to autobuild!
 	sudo apt-get install -y unixodbc odbc-postgresql
-	$(MAKE) ldap-slapd
+	sudo DEBIAN_FRONTEND=noninteractive apt-get install --yes slapd
 	$(MAKE) ldap-odbc
 	# remove the predefined mdb-database from ldap
 	sudo systemctl stop slapd

@@ -7,14 +7,8 @@ COPY ./ldap/ ./related/docker/ldap-entrypoint.sh /tmp/ldap/
 RUN mkdir /var/log/cdedb \
     && touch /CONTAINER
 
-# Prepare the slapd debconfig
-RUN sed -i -r "s/SLAPD_ADMIN_PASSWORD/${SLAPD_ADMIN_PASSWORD:-secret}/" /tmp/ldap/slapd-debconf.txt \
-    && sed -i -r "s/SLAPD_PASSWORD/${SLAPD_PASSWORD:-secret}/" /tmp/ldap/slapd-debconf.txt
-
 # Install the ldap specific packages with our custom slapd config
-RUN cat /tmp/ldap/slapd-debconf.txt | debconf-set-selections \
-    \
-    && apt-get update && apt-get install --yes --no-install-recommends \
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends \
     slapd \
     ldap-utils \
     unixodbc \
@@ -24,7 +18,7 @@ RUN cat /tmp/ldap/slapd-debconf.txt | debconf-set-selections \
 RUN sed -i -r "s/DATABASE_NAME/${DATABASE_NAME}/" /tmp/ldap/odbc.ini \
     && sed -i -r "s/DATABASE_HOST/${DATABASE_HOST}/" /tmp/ldap/odbc.ini \
     && sed -i -r "s/DATABASE_USER_PASSWORD/${DATABASE_USER_PASSWORD}/" /tmp/ldap/odbc.ini \
-    && mv /tmp/ldap/odbc.ini /etc/odbc.ini
+    && mv -f /tmp/ldap/odbc.ini /etc/odbc.ini
 
 # Prepare the ldif files, which are applied during first startup
 RUN sed -i -r "s/OLC_DB_HOST/${DATABASE_HOST}/" /tmp/ldap/cdedb-ldap.ldif \
