@@ -21,7 +21,6 @@ RUN sed -i -r "s/DATABASE_NAME/${DATABASE_NAME}/" /tmp/ldap/odbc.ini \
 # Prepare the ldif files, which are applied during first startup
 RUN sed -i -r "s/OLC_DB_HOST/${DATABASE_HOST}/" /tmp/ldap/cdedb-ldap.ldif \
     && sed -i -r "s/OLC_DB_NAME/${DATABASE_NAME}/" /tmp/ldap/cdedb-ldap.ldif \
-    && sed -i -r "s/OLC_ROOT_PASSWORD/${OLC_ROOT_PASSWORD:-secret}/" /tmp/ldap/cdedb-ldap.ldif \
     && sed -i -r "s/DATABASE_USER_PASSWORD/${DATABASE_USER_PASSWORD}/" /tmp/ldap/cdedb-ldap.ldif
 
 # Copy all relevant files into the /app directory, the ldap entrypoint in root

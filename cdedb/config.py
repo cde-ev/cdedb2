@@ -604,7 +604,6 @@ _SECRECTS_DEFAULTS = {
     },
 
     # ldap related stuff
-    "LDAP_OLC_ROOT_PW": "secret",
     "LDAP_DUA_PW": {
         "admin": "secret",
         "apache": "secret",

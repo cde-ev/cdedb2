@@ -52,6 +52,7 @@ olcAccess:
 # grant group access to some duas, only if they need them
 olcAccess:
   to dn.subtree="ou=groups,dc=cde-ev,dc=de"
+  by dn.base="cn=admin,ou=dua,dc=cde-ev,dc=de" read
   by dn.base="cn=cloud,ou=dua,dc=cde-ev,dc=de" read
 # grant users and all duas access to some user attributes
 # access to objectClass and entry (the entry itself) are mandatory to access an user
@@ -59,10 +60,11 @@ olcAccess:
   to dn.subtree="ou=users,dc=cde-ev,dc=de" attrs=objectClass,entry,uid,mail,cn,sn,displayName,givenName
   by self read break
   by dn.subtree="ou=dua,dc=cde-ev,dc=de" read
-# grant users full access to their own data
+# grant users full access to their own data, also the admin dua
 olcAccess:
   to dn.subtree="ou=users,dc=cde-ev,dc=de"
   by self read
+  by dn.subtree="cn=admin,ou=dua,dc=cde-ev,dc=de" read
 #
 # In theory, it should be possible to give more fine granular access to duas.
 # This would allow specific duas access to only users which are members of
@@ -75,19 +77,20 @@ olcAccess:
 #  to filter=(memberOf=cn=is_active,ou=status,ou=groups,dc=cde-ev,dc=de)
 #  by dn.subtree="ou=dua,dc=cde-ev,dc=de" read
 #
-# grant duas access to their own data
+# grant duas access to their own data and the admin dua to all duas
 olcAccess:
   to dn.subtree="ou=dua,dc=cde-ev,dc=de"
   by self read
+  by dn.subtree="cn=admin,ou=dua,dc=cde-ev,dc=de" read
 # prevent all other requests
 olcAccess:
   to *
   by * none
 #
-# this user better exist or else there be dragons
-# TODO it seems like this is not necessary - maybe we remove it?
-olcRootDN: cn=admin,ou=dua,dc=cde-ev,dc=de
-olcRootPW: OLC_ROOT_PASSWORD
+# we do not set a RootDN, but give all rights to the cn=admin dua by hand
+# using the olcAccess clauses above
+# olcRootDN: cn=admin,ou=dua,dc=cde-ev,dc=de
+# olcRootPW: secret
 olcDatabase: sql
 olcDbHost: OLC_DB_HOST
 olcDbName: OLC_DB_NAME

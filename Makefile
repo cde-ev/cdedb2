@@ -229,7 +229,6 @@ DATABASE_NAME ?= cdb
 DATABASE_USER_PASSWORD ?= 9876543210abcdefghijklmnopqrst # database user is cdb_admin
 SLAPD_PASSWORD ?= secret
 SLAPD_ADMIN_PASSWORD ?= secret
-OLC_ROOT_PASSWORD ?= secret
 
 ldap-odbc:
 	# prepare odbc.ini file to enable database connection for ldap
@@ -260,7 +259,6 @@ ldap-update:
 	cp -f ldap/cdedb-ldap.ldif ldap/cdedb-ldap-applied.ldif \
 		&& sed -i -r "s/OLC_DB_HOST/localhost/" ldap/cdedb-ldap-applied.ldif \
 		&& sed -i -r "s/OLC_DB_NAME/${DATABASE_NAME}/" ldap/cdedb-ldap-applied.ldif \
-		&& sed -i -r "s/OLC_ROOT_PASSWORD/${OLC_ROOT_PASSWORD}/" ldap/cdedb-ldap-applied.ldif \
 		&& sed -i -r "s/DATABASE_USER_PASSWORD/${DATABASE_USER_PASSWORD}/" ldap/cdedb-ldap-applied.ldif
 	# remove the old one and apply the new one
 	sudo systemctl stop slapd
