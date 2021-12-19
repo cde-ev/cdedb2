@@ -1401,6 +1401,22 @@ class TestAssemblyBackend(BackendTest):
             log, realm="assembly", offset=log_offset, assembly_id=assembly_id)
 
     @as_users("werner")
+    def test_2289(self) -> None:
+        ballot_id = 2
+        old_candidates = self.assembly.get_ballot(self.key, ballot_id)['candidates']
+        for candidate in old_candidates.values():
+            del candidate['ballot_id']
+            del candidate['id']
+        bdata = {
+            'id': ballot_id,
+            'candidates': {
+                6: None,
+                -1: old_candidates[6]
+            }
+        }
+        self.assembly.set_ballot(self.key, bdata)
+
+    @as_users("werner")
     @prepsql("""INSERT INTO assembly.assemblies
         (title, shortname, description, presider_address, signup_end) VALUES
         ('Umfrage', 'umfrage', 'sagt eure Meinung!', 'umfrage@example.cde',
