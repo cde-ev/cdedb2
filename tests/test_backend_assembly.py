@@ -375,7 +375,7 @@ class TestAssemblyBackend(BackendTest):
             'id': ballot_id,
             'use_bar': True,
             'candidates': {
-                6: {'title': 'Teracotta', 'shortname': 'terra', 'id': 6},
+                6: {'title': 'Teracotta', 'shortname': 'terra'},
                 7: None,
                 -1: {'title': 'Aquamarin', 'shortname': 'aqua'},
             },
