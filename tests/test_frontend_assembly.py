@@ -1211,6 +1211,47 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.assertEqual(json.load(f), json.loads(self.response.body))
 
     @storage
+    @as_users("kalif")
+    def test_late_voting(self) -> None:
+        # create a ballot shortly before its voting end
+        base_time = now()
+        delta = datetime.timedelta(seconds=42)
+        btitle = "Ganz kurzfristige Entscheidung"
+        bdata = {
+            'title': btitle,
+            'vote_begin': base_time + delta,
+            'vote_end': base_time + 3 * delta,
+            'votes': "2",
+        }
+        candidates = [
+            {'shortname': "y", 'title': "Ja!"},
+            {'shortname': "n", 'title': "Nein!"},
+        ]
+        with freezegun.freeze_time(base_time) as frozen_time:
+            # only presiders can create ballots
+            user = self.user
+            self.logout()
+            self.login("werner")
+            self.traverse("Versammlungen", "Internationaler Kongress")
+            self._create_ballot(bdata, candidates)
+            self.logout()
+            self.login(user)
+
+            # wait for voting to start then get vote form.
+            frozen_time.tick(delta=2 * delta)
+            self.traverse("Versammlungen", "Internationaler Kongress",
+                          "Abstimmungen", btitle)
+            f = self.response.forms["voteform"]
+            f["vote"] = ["y"]
+
+            # submit after voting period ended
+            frozen_time.tick(delta=2 * delta)
+            self.submit(f, check_notification=False)
+            self.assertPresence("Fehler! Abstimmung ist außerhalb"
+                                " des Abstimmungszeitraums",
+                                div='notifications')
+
+    @storage
     @as_users("werner")
     def test_comment(self) -> None:
         self.get('/assembly/assembly/3/ballot/6/show')
