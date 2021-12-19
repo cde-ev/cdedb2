@@ -1414,7 +1414,19 @@ class TestAssemblyBackend(BackendTest):
                 -1: old_candidates[6]
             }
         }
-        self.assembly.set_ballot(self.key, bdata)
+        self.assertTrue(self.assembly.set_ballot(self.key, bdata))
+        candidates = self.assembly.get_ballot(self.key, ballot_id)['candidates']
+        self.assertNotIn(6, candidates)
+        self.assertEqual(candidates[1001]['shortname'], old_candidates[6]['shortname'])
+
+        bdata['candidates'] = {
+            7: old_candidates[8],
+            8: old_candidates[7],
+        }
+        self.assertTrue(self.assembly.set_ballot(self.key, bdata))
+        candidates = self.assembly.get_ballot(self.key, ballot_id)['candidates']
+        self.assertEqual(candidates[7]['shortname'], old_candidates[8]['shortname'])
+        self.assertEqual(candidates[8]['shortname'], old_candidates[7]['shortname'])
 
     @as_users("werner")
     @prepsql("""INSERT INTO assembly.assemblies
