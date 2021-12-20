@@ -251,8 +251,9 @@ class BasicTest(unittest.TestCase):
     def setUp(self) -> None:
         test_method = getattr(self, self._testMethodName)
         if getattr(test_method, self.needs_storage_marker, False):
-            subprocess.run(("make", "storage-test"), stdout=subprocess.DEVNULL,
-                           check=True, start_new_session=True)
+            subprocess.run(
+                ("make", "storage", f"STORAGE_DIR={self.storage_dir}", "CDEDB_TEST=true"),
+                stdout=subprocess.DEVNULL, check=True, start_new_session=True)
 
     def tearDown(self) -> None:
         test_method = getattr(self, self._testMethodName)
