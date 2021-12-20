@@ -53,6 +53,8 @@ CDEDB_TEST =
 DATABASE_NAME = cdb
 # Directory where the python application stores additional files. This will be overridden in the test suite.
 STORAGE_DIR = /var/lib/cdedb
+# Direcotry where the application stores its log files. This will be overriden in the test suite.
+LOG_DIR = /var/log/cdedb
 TESTPREPARATION ?= automatic
 TESTDATABASENAME ?= $(or ${CDEDB_TEST_DATABASE}, cdb_test)
 TESTTMPDIR ?= $(or ${CDEDB_TEST_TMP_DIR}, /tmp/cdedb-test-default )
@@ -162,6 +164,23 @@ TESTFILES := picture.pdf,picture.png,picture.jpg,form.pdf,rechen.pdf,ballot_resu
 		,event_export.json,batch_admission.csv,money_transfers.csv,money_transfers_valid.csv$\
 		,partial_event_import.json,TestAka_partial_export_event.json,statement.csv$\
 		,questionnaire_import.json
+
+log:
+  ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
+	$(error Refusing to touch live instance)
+  endif
+  ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
+	$(error Refusing to touch orga instance)
+  endif
+	sudo rm -rf -- $(LOG_DIR)/*
+	sudo mkdir -p $(LOG_DIR)
+  # TODO is this intendet?
+  # the tests are runned by the cdedb user, but the normal system by www-data
+  ifdef CDEDB_TEST
+	sudo chown cdedb:cdedb $(LOG_DIR)
+  else
+	sudo chown www-data:www-data $(LOG_DIR)
+  endif
 
 sql: tests/ancillary_files/sample_data.sql
   ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
