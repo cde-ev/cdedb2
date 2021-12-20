@@ -324,7 +324,7 @@ coverage: .coverage
 # Sample Data Generation #
 ##########################
 
-sample-data: storage sql
+sample-data: storage sql-initial sql
 	cp -f related/auto-build/files/stage3/localconfig.py cdedb/localconfig.py
 
 sample-data-dump:
