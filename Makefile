@@ -15,11 +15,7 @@ help:
 	@echo "sample-data      -- initialize database structures (DESTROYS DATA!)"
 	@echo "sample-data-dump -- dump current database state into json file in tests directory"
 	@echo "sql              -- initialize postgres (use sample-data instead)"
-	@echo "storage          -- (re)create storage directory in /var/lib/cdedb"
-	@echo "storage-test     -- create storage directory inside /tmp for tests needing this for"
-	@echo "                    attachments, photos etc."
-	@echo "                    (this should not be called by hand, but every test needing this"
-	@echo "                        should get the @storage decorator)"
+	@echo "storage          -- (re)create storage directory, defaults to /var/lib/cdedb"
 	@echo "cron             -- trigger cronjob execution (as user www-data)"
 	@echo ""
 	@echo "Code testing:"
@@ -55,6 +51,8 @@ SAMPLE_DATA_SQL ?= bin/create_sample_data_sql.py
 CDEDB_TEST =
 # The database name on which we operate. This will be overridden in the test suite.
 DATABASE_NAME = cdb
+# Directory where the python application stores additional files. This will be overridden in the test suite.
+STORAGE_DIR = /var/lib/cdedb
 TESTPREPARATION ?= automatic
 TESTDATABASENAME ?= $(or ${CDEDB_TEST_DATABASE}, cdb_test)
 TESTTMPDIR ?= $(or ${CDEDB_TEST_TMP_DIR}, /tmp/cdedb-test-default )
@@ -130,50 +128,40 @@ TESTFOTONAME := e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbe
 		33cc17797fc29b047c437ef5beb33ac0f570c6589d64f9
 
 storage:
-ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
+  ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
 	$(error Refusing to touch live instance)
-endif
-ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
+  endif
+  ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
 	$(error Refusing to touch orga instance)
-endif
-	sudo rm -rf -- /var/lib/cdedb/*
-	sudo mkdir /var/lib/cdedb/foto/
-	sudo mkdir /var/lib/cdedb/minor_form/
-	sudo mkdir /var/lib/cdedb/event_logo/
-	sudo mkdir /var/lib/cdedb/course_logo/
-	sudo mkdir /var/lib/cdedb/ballot_result/
-	sudo mkdir /var/lib/cdedb/assembly_attachment/
-	sudo mkdir /var/lib/cdedb/mailman_templates/
-	sudo mkdir /var/lib/cdedb/genesis_attachment/
-	sudo cp tests/ancillary_files/$(TESTFOTONAME) /var/lib/cdedb/foto/
-	sudo cp tests/ancillary_files/rechen.pdf /var/lib/cdedb/assembly_attachment/1_v1
-	sudo cp tests/ancillary_files/kassen.pdf /var/lib/cdedb/assembly_attachment/2_v1
-	sudo cp tests/ancillary_files/kassen2.pdf /var/lib/cdedb/assembly_attachment/2_v3
-	sudo cp tests/ancillary_files/kandidaten.pdf /var/lib/cdedb/assembly_attachment/3_v1
-	sudo chown --recursive www-data:www-data /var/lib/cdedb
+  endif
+	sudo rm -rf -- $(STORAGE_DIR)/*
+	sudo mkdir -p $(STORAGE_DIR)/foto/
+	sudo mkdir -p $(STORAGE_DIR)/minor_form/
+	sudo mkdir -p $(STORAGE_DIR)/event_logo/
+	sudo mkdir -p $(STORAGE_DIR)/course_logo/
+	sudo mkdir -p $(STORAGE_DIR)/ballot_result/
+	sudo mkdir -p $(STORAGE_DIR)/assembly_attachment/
+	sudo mkdir -p $(STORAGE_DIR)/genesis_attachment/
+	sudo mkdir -p $(STORAGE_DIR)/mailman_templates/
+	sudo mkdir -p $(STORAGE_DIR)/testfiles/
+	sudo cp tests/ancillary_files/$(TESTFOTONAME) $(STORAGE_DIR)/foto/
+	sudo cp tests/ancillary_files/rechen.pdf $(STORAGE_DIR)/assembly_attachment/1_v1
+	sudo cp tests/ancillary_files/kassen.pdf $(STORAGE_DIR)/assembly_attachment/2_v1
+	sudo cp tests/ancillary_files/kassen2.pdf $(STORAGE_DIR)/assembly_attachment/2_v3
+	sudo cp tests/ancillary_files/kandidaten.pdf $(STORAGE_DIR)/assembly_attachment/3_v1
+	sudo cp -t $(STORAGE_DIR)/testfiles/ tests/ancillary_files/{$(TESTFILES)}
+  # TODO is this intendet?
+  # the tests are called by the cdedb user, but the normal system by www-data
+  ifdef CDEDB_TEST
+	sudo chown --recursive cdedb:cdedb $(STORAGE_DIR)
+  else
+	sudo chown --recursive www-data:www-data $(STORAGE_DIR)
+  endif
 
 TESTFILES := picture.pdf,picture.png,picture.jpg,form.pdf,rechen.pdf,ballot_result.json,sepapain.xml$\
 		,event_export.json,batch_admission.csv,money_transfers.csv,money_transfers_valid.csv$\
 		,partial_event_import.json,TestAka_partial_export_event.json,statement.csv$\
 		,questionnaire_import.json
-
-storage-test:
-	rm -rf -- ${TESTSTORAGEPATH}/*
-	mkdir -p ${TESTSTORAGEPATH}/foto/
-	mkdir -p ${TESTSTORAGEPATH}/minor_form/
-	mkdir -p ${TESTSTORAGEPATH}/event_logo/
-	mkdir -p ${TESTSTORAGEPATH}/course_logo/
-	mkdir -p ${TESTSTORAGEPATH}/ballot_result/
-	mkdir -p ${TESTSTORAGEPATH}/assembly_attachment/
-	mkdir -p ${TESTSTORAGEPATH}/genesis_attachment/
-	mkdir -p ${TESTSTORAGEPATH}/mailman_templates/
-	mkdir -p ${TESTSTORAGEPATH}/testfiles/
-	cp tests/ancillary_files/$(TESTFOTONAME) ${TESTSTORAGEPATH}/foto/
-	cp tests/ancillary_files/rechen.pdf ${TESTSTORAGEPATH}/assembly_attachment/1_v1
-	cp tests/ancillary_files/kassen.pdf ${TESTSTORAGEPATH}/assembly_attachment/2_v1
-	cp tests/ancillary_files/kassen2.pdf ${TESTSTORAGEPATH}/assembly_attachment/2_v3
-	cp tests/ancillary_files/kandidaten.pdf ${TESTSTORAGEPATH}/assembly_attachment/3_v1
-	cp -t ${TESTSTORAGEPATH}/testfiles/ tests/ancillary_files/{$(TESTFILES)}
 
 sql: tests/ancillary_files/sample_data.sql
   ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
