@@ -179,35 +179,53 @@ log: sanity-check
 	sudo chown www-data:www-data $(LOG_DIR)
   endif
 
-sql: tests/ancillary_files/sample_data.sql
-  ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
-	$(error Refusing to touch live instance)
-  endif
-  ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
-	$(error Refusing to touch orga instance)
-  endif
+# drop all existent databases and add the database users. Must be called only once. Resets everything.
+sql-initial: sanity-check
   # we cannot use systemctl in docker
   ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl stop pgbouncer
 	sudo systemctl stop slapd
   endif
-  # execute only if we are not running in test mode
-  ifndef CDEDB_TEST
 	$(PSQL_ADMIN) -f cdedb/database/cdedb-users.sql > /dev/null
+  ifneq ($(wildcard /CONTAINER),/CONTAINER)
+	sudo systemctl start pgbouncer
+	# we need actual data before we can restart slapd, so we deferr this to later
+	# sudo systemctl start slapd
+  endif
+
+# setup a new database, specified by DATABASE_NAME. Does not yet populate it with actual data.
+sql-setup: sanity-check
+  # we cannot use systemctl in docker
+  ifneq ($(wildcard /CONTAINER),/CONTAINER)
+	sudo systemctl stop pgbouncer
+	sudo systemctl stop slapd
   endif
 	$(PSQL_ADMIN) -f cdedb/database/cdedb-db.sql -v cdb_database_name=$(DATABASE_NAME)
   ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl start pgbouncer
+	# we need actual data before we can restart slapd, so we deferr this to later
+	# sudo systemctl start slapd
   endif
 	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=$(DATABASE_NAME)
 	$(PSQL) -f cdedb/database/cdedb-ldap.sql --dbname=$(DATABASE_NAME)
+
+# setup a new database and populate it with the sample data.
+sql: sql-setup tests/ancillary_files/sample_data.sql
 	$(PSQL) -f tests/ancillary_files/sample_data.sql --dbname=$(DATABASE_NAME)
+  # finally restart slapd
   ifneq ($(wildcard /CONTAINER),/CONTAINER)
-	sudo systemctl start slapd
+	sudo systemctl restart slapd
   endif
 
-sql-test: tests/ancillary_files/sample_data.sql
-	$(MAKE) sql
+# setup a new database and populate it with special sample data to perform xss checks.
+sql-xss: sql-setup tests/ancillary_files/sample_data_xss.sql
+	$(PSQL) -f tests/ancillary_files/sample_data_xss.sql --dbname=$(DATABASE_NAME)
+  # finally restart slapd
+  ifneq ($(wildcard /CONTAINER),/CONTAINER)
+	sudo systemctl restart slapd
+  endif
+
+sql-test: sql
 
 cron:
 	sudo -u www-data /cdedb2/bin/cron_execute.py
@@ -270,18 +288,6 @@ lint: isort flake8 pylint
 
 check:
 	$(PYTHONBIN) bin/check.py --verbose $(or $(TESTPATTERNS), )
-
-sql-xss: tests/ancillary_files/sample_data_xss.sql
-ifneq ($(wildcard /CONTAINER),/CONTAINER)
-	sudo systemctl stop pgbouncer
-endif
-	$(PSQL_ADMIN) -f cdedb/database/cdedb-db.sql -v cdb_database_name=${TESTDATABASENAME}
-ifneq ($(wildcard /CONTAINER),/CONTAINER)
-	sudo systemctl start pgbouncer
-endif
-	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=${TESTDATABASENAME}
-	$(PSQL) -f cdedb/database/cdedb-ldap.sql --dbname=${TESTDATABASENAME}
-	$(PSQL) -f tests/ancillary_files/sample_data_xss.sql --dbname=${TESTDATABASENAME}
 
 xss-check:
 	$(PYTHONBIN) bin/check.py --xss-check --verbose
