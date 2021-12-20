@@ -3,7 +3,7 @@ SHELL := /bin/bash
 .PHONY: help doc reload i18n-refresh i18n-extract i18n-update i18n-compile sample-data \
 	sample-data-dump storage storage-test sql sql-test sql-test-shallow cron mypy flake8 pylint \
 	template-line-length lint prepare-check check check-parallel sql-xss xss-check dump-html \
-	validate-html .coverage coverage
+	validate-html .coverage coverage sanity-check
 
 help:
 	@echo "General:"
@@ -80,6 +80,15 @@ else
 	sudo systemctl restart apache2
 endif
 
+# ensure we do not modify a production or offline vm. Add as prerequisite to each target which could destroy data.
+sanity-check:
+  ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
+	$(error Refusing to touch live instance)
+  endif
+  ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
+	$(error Refusing to touch orga instance)
+  endif
+
 i18n-refresh:
 	$(MAKE) i18n-extract
 	$(MAKE) i18n-update
@@ -129,13 +138,7 @@ sample-data-dump:
 TESTFOTONAME := e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea243$\
 		33cc17797fc29b047c437ef5beb33ac0f570c6589d64f9
 
-storage:
-  ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
-	$(error Refusing to touch live instance)
-  endif
-  ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
-	$(error Refusing to touch orga instance)
-  endif
+storage: sanity-check
 	sudo rm -rf -- $(STORAGE_DIR)/*
 	sudo mkdir -p $(STORAGE_DIR)/foto/
 	sudo mkdir -p $(STORAGE_DIR)/minor_form/
@@ -165,13 +168,7 @@ TESTFILES := picture.pdf,picture.png,picture.jpg,form.pdf,rechen.pdf,ballot_resu
 		,partial_event_import.json,TestAka_partial_export_event.json,statement.csv$\
 		,questionnaire_import.json
 
-log:
-  ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
-	$(error Refusing to touch live instance)
-  endif
-  ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
-	$(error Refusing to touch orga instance)
-  endif
+log: sanity-check
 	sudo rm -rf -- $(LOG_DIR)/*
 	sudo mkdir -p $(LOG_DIR)
   # TODO is this intendet?
@@ -233,7 +230,7 @@ ldap-remove:
 # Code testing and formatting #
 ###############################
 
-format:
+format: sanity-check
 	$(ISORT) bin/*.py cdedb tests
 
 mypy:
