@@ -350,6 +350,24 @@
         });
         return this;
     };
+
+    /**
+     * Replace the link to vcard QR code with a popup modal showing the QR code.
+     *
+     * @param translations Label texts for the modal. Must contain keys "title", "loading" and "close".
+     */
+    $.fn.cdedbQRCodeModal = function (translations) {
+        let qr_button = this;
+        let qr_link = qr_button[0].href;
+        qr_button.removeAttr("href");
+        qr_button.click(function () {
+            cdedb_show_modal(translations);
+            $.get(qr_link, function (data) {
+                $("#cdedb-modal-content").html('<div class="text-center" id="cdedb-contact-qr"></div>');
+                $("#cdedb-contact-qr").html(data.activeElement);
+            });
+        });
+    }
 })(jQuery);
 
 

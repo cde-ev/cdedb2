@@ -142,10 +142,15 @@
             {% if data['show_vcard'] %}
                 <div id="vcard">
                     {% set confirm_id = encode_parameter("core/qr_vcard", "confirm_id", ambience['persona']['id'], persona_id=user.persona_id, timeout=None) %}
-                    <a href="{{ cdedblink('core/qr_vcard', {'persona_id': ambience['persona']['id'], 'confirm_id': confirm_id}) }}" class="btn btn-default mosp">
+                    <a id="show-vcard-qr" href="{{ cdedblink('core/qr_vcard', {'persona_id': ambience['persona']['id'], 'confirm_id': confirm_id}) }}" class="btn btn-default mosp">
                         {{ util.make_icon('qrcode') }}
                         {% trans %}QR{% endtrans %}
                     </a>
+                    <script nonce="{{ csp_nonce }}">
+                        $("#show-vcard-qr").cdedbQRCodeModal({{ {'title': util.persona_name(data),
+                                                                 'loading': gettext("Loading..."),
+                                                                 'close': gettext("Close") }|tojson }})
+                    </script>
                     {% set confirm_id = encode_parameter("core/download_vcard", "confirm_id", ambience['persona']['id'], persona_id=user.persona_id, timeout=None) %}
                     <a href="{{ cdedblink("core/download_vcard", {'persona_id': ambience['persona']['id'], 'confirm_id': confirm_id}) }}" class="btn btn-default mosp">
                         {{ util.make_icon('download') }}
