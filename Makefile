@@ -68,6 +68,9 @@ I18NDIR ?= ./i18n
 # General #
 ###########
 
+cron:
+	sudo -u www-data /cdedb2/bin/cron_execute.py
+
 doc:
 	bin/create_email_template_list.sh .
 	$(MAKE) -C doc html
@@ -88,6 +91,11 @@ sanity-check:
   ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
 	$(error Refusing to touch orga instance)
   endif
+
+
+################
+# Translations #
+################
 
 i18n-refresh:
 	$(MAKE) i18n-extract
@@ -119,21 +127,9 @@ i18n-compile:
 		$(I18NDIR)/la/LC_MESSAGES/cdedb.po
 
 
-########################
-# Database and storage #
-########################
-
-sample-data:
-	cp -f related/auto-build/files/stage3/localconfig.py cdedb/localconfig.py
-	$(MAKE) storage > /dev/null
-	$(MAKE) sql > /dev/null
-
-sample-data-dump:
-	JSONTEMPFILE=`sudo -u www-data mktemp` \
-		&& sudo -u www-data chmod +r "$${JSONTEMPFILE}" \
-		&& sudo -u www-data $(PYTHONBIN) bin/create_sample_data_json.py -o "$${JSONTEMPFILE}" \
-		&& cp "$${JSONTEMPFILE}" tests/ancillary_files/sample_data.json \
-		&& sudo -u www-data rm "$${JSONTEMPFILE}"
+###########
+# Storage #
+###########
 
 TESTFOTONAME := e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea243$\
 		33cc17797fc29b047c437ef5beb33ac0f570c6589d64f9
@@ -178,6 +174,11 @@ log: sanity-check
   else
 	sudo chown www-data:www-data $(LOG_DIR)
   endif
+
+
+############
+# Database #
+############
 
 # drop all existent databases and add the database users. Must be called only once. Resets everything.
 sql-initial: sanity-check
@@ -227,9 +228,6 @@ sql-xss: sql-setup tests/ancillary_files/sample_data_xss.sql
 
 sql-test: sql
 
-cron:
-	sudo -u www-data /cdedb2/bin/cron_execute.py
-
 
 ########
 # LDAP #
@@ -244,9 +242,9 @@ ldap-update:
 ldap-remove:
 	sudo SCRIPT_DRY_RUN="" $(PYTHONBIN) ldap/remove-ldap.py
 
-###############################
-# Code testing and formatting #
-###############################
+###################
+# Code formatting #
+###################
 
 format: sanity-check
 	$(ISORT) bin/*.py cdedb tests
@@ -285,6 +283,11 @@ template-line-length:
 	grep -E -R '^.{121,}' cdedb/frontend/templates/ | grep 'tmpl:'
 
 lint: isort flake8 pylint
+
+
+################
+# Code testing #
+################
 
 check:
 	$(PYTHONBIN) bin/check.py --verbose $(or $(TESTPATTERNS), )
@@ -328,6 +331,23 @@ coverage: .coverage
 	$(COVERAGE) report --include 'cdedb/*' --show-missing
 	$(COVERAGE) html --include 'cdedb/*'
 	@echo "HTML reports for easier inspection are in ./htmlcov"
+
+
+##########################
+# Sample Data Generation #
+##########################
+
+sample-data:
+	cp -f related/auto-build/files/stage3/localconfig.py cdedb/localconfig.py
+	$(MAKE) storage > /dev/null
+	$(MAKE) sql > /dev/null
+
+sample-data-dump:
+	JSONTEMPFILE=`sudo -u www-data mktemp` \
+		&& sudo -u www-data chmod +r "$${JSONTEMPFILE}" \
+		&& sudo -u www-data $(PYTHONBIN) bin/create_sample_data_json.py -o "$${JSONTEMPFILE}" \
+		&& cp "$${JSONTEMPFILE}" tests/ancillary_files/sample_data.json \
+		&& sudo -u www-data rm "$${JSONTEMPFILE}"
 
 tests/ancillary_files/sample_data.sql: tests/ancillary_files/sample_data.json \
 		$(SAMPLE_DATA_SQL) cdedb/database/cdedb-tables.sql cdedb/database/cdedb-ldap.sql
