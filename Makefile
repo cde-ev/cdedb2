@@ -75,8 +75,7 @@ doc:
 	bin/create_email_template_list.sh .
 	$(MAKE) -C doc html
 
-reload:
-	$(MAKE) i18n-compile
+reload: i18n-compile
 ifeq ($(wildcard /CONTAINER),/CONTAINER)
 	apachectl restart
 else
@@ -97,9 +96,7 @@ sanity-check:
 # Translations #
 ################
 
-i18n-refresh:
-	$(MAKE) i18n-extract
-	$(MAKE) i18n-update
+i18n-refresh: i18n-extract i18n-update
 
 i18n-extract:
 	pybabel extract --msgid-bugs-address="cdedb@lists.cde-ev.de" \
@@ -337,10 +334,8 @@ coverage: .coverage
 # Sample Data Generation #
 ##########################
 
-sample-data:
+sample-data: storage sql
 	cp -f related/auto-build/files/stage3/localconfig.py cdedb/localconfig.py
-	$(MAKE) storage > /dev/null
-	$(MAKE) sql > /dev/null
 
 sample-data-dump:
 	JSONTEMPFILE=`sudo -u www-data mktemp` \
