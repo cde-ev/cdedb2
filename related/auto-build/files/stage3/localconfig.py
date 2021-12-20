@@ -17,8 +17,6 @@ LOG_DIR = (pathlib.Path(os.environ['CDEDB_TEST_TMP_DIR'], 'logs') if CDEDB_TEST
 LOG_LEVEL = logging.DEBUG
 SYSLOG_LEVEL = logging.INFO
 CONSOLE_LOG_LEVEL = logging.INFO
-# TODO why is this named different fromt the default?
-GLOBAL_LOG_FILE = "global.log"
 
 if CDEDB_TEST:
     SYSLOG_LEVEL = None  # type: ignore

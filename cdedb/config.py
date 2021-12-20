@@ -51,10 +51,8 @@ _BASIC_DEFAULTS = {
     # Logging level for stdout
     "CONSOLE_LOG_LEVEL": None,
     # Directory in which all logs will be saved. The name of the specific log file will
-    # be determined by the instance generating the log.
+    # be determined by the instance generating the log. The global log is in 'cdedb.log'
     "LOG_DIR": pathlib.Path("/tmp/"),
-    # Global log for messages unrelated to specific components
-    "GLOBAL_LOG_FILE": "cdedb.log",
     # file system path to this repository
     "REPOSITORY_PATH": _repopath,
     # default timezone for input and output
