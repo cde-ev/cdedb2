@@ -2,7 +2,7 @@ SHELL := /bin/bash
 
 .PHONY: help doc reload i18n-refresh i18n-extract i18n-update i18n-compile sample-data \
 	sample-data-dump storage storage-test sql sql-test sql-test-shallow cron mypy flake8 pylint \
-	template-line-length lint prepare-check check check-parallel sql-xss xss-check dump-html \
+	template-line-length lint check check-parallel sql-xss xss-check dump-html \
 	validate-html .coverage coverage sanity-check
 
 help:
@@ -267,18 +267,6 @@ template-line-length:
 	grep -E -R '^.{121,}' cdedb/frontend/templates/ | grep 'tmpl:'
 
 lint: isort flake8 pylint
-
-prepare-check:
-ifneq ($(TESTPREPARATION), manual)
-	mkdir -p $(TESTTMPDIR)
-	sudo rm -rf $(TESTLOGPATH)  /tmp/cdedb-mail-* \
-		|| true
-	mkdir $(TESTLOGPATH)
-	$(MAKE) i18n-compile
-	$(MAKE) sql-test
-else
-	@echo "Omitting test preparation."
-endif
 
 check:
 	$(PYTHONBIN) bin/check.py --verbose $(or $(TESTPATTERNS), )
