@@ -29,7 +29,11 @@ help:
 	@echo "                  (dump-html is executed before if they do not exist yet)"
 	@echo "coverage       -- run coverage to determine test suite coverage"
 
-# Executables
+
+###############
+# Executables #
+###############
+
 PYTHONBIN ?= python3
 ISORT ?= $(PYTHONBIN) -m isort
 FLAKE8 ?= $(PYTHONBIN) -m flake8
@@ -46,9 +50,12 @@ else
 endif
 SAMPLE_DATA_SQL ?= bin/create_sample_data_sql.py
 
+
+#####################
+# Default Variables #
+#####################
+
 # Use makes command-line arguments to override the following default variables
-# This is set to a non-empty value if we are currently running a test.
-CDEDB_TEST =
 # The database name on which we operate. This will be overridden in the test suite.
 DATABASE_NAME = cdb
 # Directory where the python application stores additional files. This will be overridden in the test suite.
@@ -57,11 +64,6 @@ STORAGE_DIR = /var/lib/cdedb
 LOG_DIR = /var/log/cdedb
 # User who runs the application and has access to storage and log dir. This will be overridden in the test suite.
 DATA_USER = www-data
-TESTPREPARATION ?= automatic
-TESTDATABASENAME ?= $(or ${CDEDB_TEST_DATABASE}, cdb_test)
-TESTTMPDIR ?= $(or ${CDEDB_TEST_TMP_DIR}, /tmp/cdedb-test-default )
-TESTSTORAGEPATH ?= $(TESTTMPDIR)/storage
-TESTLOGPATH ?= $(TESTTMPDIR)/logs
 # Payload to be injected in the sample_data_xss.sql file.
 XSS_PAYLOAD = <script>abcdef</script>
 I18NDIR ?= ./i18n
