@@ -3,6 +3,7 @@
 import argparse
 import os
 import pathlib
+import subprocess
 import sys
 import unittest
 from types import ModuleType, TracebackType
@@ -18,8 +19,8 @@ os.chdir(root)
 
 # import helpers to prepare and execute the tests
 from bin.escape_fuzzing import work as xss_check
+from cdedb.config import TestConfig
 from tests.custom_testrunners import MyTextTestResult, MyTextTestRunner
-from tests.prepare_tests import prepare_environment, prepare_storage
 
 # import all TestCases which should be tested
 import tests.backend_tests as backend_tests
@@ -108,7 +109,17 @@ def _load_tests(testpatterns: Optional[List[str]],
 
 def run_regular_tests(configpath: pathlib.Path, testpatterns: List[str] = None, *,
                       verbose: bool = False) -> int:
-    prepare_environment(configpath)
+    conf = TestConfig(configpath)
+    # prepare the translations
+    subprocess.run(["make", "i18n-compile"], check=True)
+    # create the log directory
+    subprocess.run(["make", "log", f"LOG_DIR={conf['_LOG_ROOT']}", "CDEDB_TEST=true"],
+                   check=True)
+    # setup the database
+    subprocess.run(["make", "sql", f"DATABASE_NAME={conf['CDB_DATABASE_NAME']}",
+                    "CDEDB_TEST=true"], check=True, stdout=subprocess.DEVNULL)
+    # add the configpath to environment to access the configuration inside the tests
+    os.environ['CDEDB_TEST_CONFIGPATH'] = str(configpath)
 
     # load all tests which are not meant to be run separately (f.e. the ldap tests)
     test_modules = [backend_tests, frontend_tests, other_tests]
@@ -122,6 +133,7 @@ def run_regular_tests(configpath: pathlib.Path, testpatterns: List[str] = None, 
 
 
 def run_xss_tests(*, verbose: bool = False) -> int:
+    return 1
     configpath = root / "tests/config/test_xss.py"
     conf = prepare_environment(configpath, prepare_xss=True)
     prepare_storage(conf)
@@ -135,6 +147,7 @@ def run_xss_tests(*, verbose: bool = False) -> int:
 
 
 def run_ldap_tests(testpatterns: List[str] = None, *, verbose: bool = False) -> int:
+    return 1
     configpath = root / "tests/config/test_ldap.py"
     prepare_environment(configpath)
 
