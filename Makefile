@@ -62,7 +62,8 @@ TESTDATABASENAME ?= $(or ${CDEDB_TEST_DATABASE}, cdb_test)
 TESTTMPDIR ?= $(or ${CDEDB_TEST_TMP_DIR}, /tmp/cdedb-test-default )
 TESTSTORAGEPATH ?= $(TESTTMPDIR)/storage
 TESTLOGPATH ?= $(TESTTMPDIR)/logs
-XSS_PAYLOAD ?= $(or ${CDEDB_TEST_XSS_PAYLOAD}, <script>abcdef</script>)
+# Payload to be injected in the sample_data_xss.sql file.
+XSS_PAYLOAD = <script>abcdef</script>
 I18NDIR ?= ./i18n
 
 
@@ -208,12 +209,6 @@ sql: sql-setup tests/ancillary_files/sample_data.sql
 # setup a new database and populate it with special sample data to perform xss checks.
 sql-xss: sql-setup tests/ancillary_files/sample_data_xss.sql
 	$(PSQL) -f tests/ancillary_files/sample_data_xss.sql --dbname=$(DATABASE_NAME)
-  # finally restart slapd
-  ifneq ($(wildcard /CONTAINER),/CONTAINER)
-	sudo systemctl restart slapd
-  endif
-
-sql-test: sql
 
 
 ########

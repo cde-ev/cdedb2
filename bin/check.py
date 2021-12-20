@@ -137,10 +137,25 @@ def run_regular_tests(configpath: pathlib.Path, testpatterns: List[str] = None, 
 
 
 def run_xss_tests(*, verbose: bool = False) -> int:
-    return 1
     configpath = root / "tests/config/test_xss.py"
-    conf = prepare_environment(configpath, prepare_xss=True)
-    prepare_storage(conf)
+    conf = TestConfig(configpath)
+    # get the user running the current process, so the access rights for log directory
+    # are set correctly
+    user = getpass.getuser()
+    # prepare the translations
+    subprocess.run(["make", "i18n-compile"], check=True)
+    # create the log directory
+    subprocess.run(["make", "log", f"LOG_DIR={conf['_LOG_ROOT']}", f"DATA_USER={user}"],
+                   check=True)
+    # setup the database
+    subprocess.run(["make", "sql-xss", f"DATABASE_NAME={conf['CDB_DATABASE_NAME']}",
+                    f"XSS_PAYLOAD={conf['XSS_PAYLOAD']}"],
+                   check=True, stdout=subprocess.DEVNULL)
+    # create the storage directory
+    subprocess.run(["make", "storage", f"STORAGE_DIR={conf['STORAGE_DIR']}",
+                    f"DATA_USER={user}"], check=True)
+    # add the configpath to environment to access the configuration inside the tests
+    os.environ['CDEDB_TEST_CONFIGPATH'] = str(configpath)
 
     ret = xss_check(
         configpath, conf["XSS_OUTDIR"], verbose=verbose, payload=conf["XSS_PAYLOAD"],
