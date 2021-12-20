@@ -96,7 +96,7 @@ steps:
   - pg_isready --host=cdb --timeout=10 # wait for database to come online
   - make i18n-compile # required for sample-data target
   - make sample-data # this creates the sql schema and copies the localconfig.py
-  - make TESTDATABASENAME=cdb_test sql-test # create the test database for ldap
+  - make sql DATABASE_NAME=cdb_test # create the test database for ldap
 - name: ldap # is used as the hostname for the container
   image: ldap:20210705
   pull: never # do not try to pull image from docker hub

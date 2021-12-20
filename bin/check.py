@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
 import argparse
+import getpass
 import os
 import pathlib
 import subprocess
@@ -110,14 +111,17 @@ def _load_tests(testpatterns: Optional[List[str]],
 def run_regular_tests(configpath: pathlib.Path, testpatterns: List[str] = None, *,
                       verbose: bool = False) -> int:
     conf = TestConfig(configpath)
+    # get the user running the current process, so the access rights for log directory
+    # are set correctly
+    user = getpass.getuser()
     # prepare the translations
     subprocess.run(["make", "i18n-compile"], check=True)
     # create the log directory
-    subprocess.run(["make", "log", f"LOG_DIR={conf['_LOG_ROOT']}", "CDEDB_TEST=true"],
+    subprocess.run(["make", "log", f"LOG_DIR={conf['_LOG_ROOT']}", f"DATA_USER={user}"],
                    check=True)
     # setup the database
-    subprocess.run(["make", "sql", f"DATABASE_NAME={conf['CDB_DATABASE_NAME']}",
-                    "CDEDB_TEST=true"], check=True, stdout=subprocess.DEVNULL)
+    subprocess.run(["make", "sql", f"DATABASE_NAME={conf['CDB_DATABASE_NAME']}"],
+                   check=True, stdout=subprocess.DEVNULL)
     # add the configpath to environment to access the configuration inside the tests
     os.environ['CDEDB_TEST_CONFIGPATH'] = str(configpath)
 

@@ -7,7 +7,6 @@ OLDREVISION=$1
 NEWREVISION=$2
 
 
-export TESTDATABASENAME=$DATABASE_NAME
 cd /cdedb2
 
 # old revision
@@ -16,7 +15,7 @@ echo "Checkout $OLDREVISION"
 git checkout $OLDREVISION
 ls cdedb/database/evolutions > /tmp/oldevolutions.txt
 make -B tests/ancillary_files/sample_data.sql &> /dev/null
-make sql-test &> /dev/null
+make sql DATABASE_NAME=$DATABASE_NAME &> /dev/null
 
 # new revision
 echo ""
@@ -62,7 +61,7 @@ make -B tests/ancillary_files/sample_data.sql &> /dev/null
 # new db
 echo ""
 echo "Resetting and creating database description again."
-make sql-test &> /dev/null
+make sql DATABASE_NAME=$DATABASE_NAME &> /dev/null
 python3 bin/execute_sql_script.py -d $DATABASE_NAME -v \
      -f bin/describe_database.sql > /tmp/pristine-description.txt
 

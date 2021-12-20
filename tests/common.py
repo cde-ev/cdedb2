@@ -10,6 +10,7 @@ import email.parser
 import email.policy
 import enum
 import functools
+import getpass
 import gettext
 import io
 import json
@@ -251,8 +252,12 @@ class BasicTest(unittest.TestCase):
     def setUp(self) -> None:
         test_method = getattr(self, self._testMethodName)
         if getattr(test_method, self.needs_storage_marker, False):
+            # get the user running the current process, so the access rights for the
+            # storage directory are set correctly
+            user = getpass.getuser()
             subprocess.run(
-                ("make", "storage", f"STORAGE_DIR={self.storage_dir}", "CDEDB_TEST=true"),
+                ("make", "storage", f"STORAGE_DIR={self.storage_dir}",
+                 f"DATA_USER={user}"),
                 stdout=subprocess.DEVNULL, check=True, start_new_session=True)
 
     def tearDown(self) -> None:
