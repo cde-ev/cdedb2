@@ -55,6 +55,8 @@ DATABASE_NAME = cdb
 STORAGE_DIR = /var/lib/cdedb
 # Direcotry where the application stores its log files. This will be overriden in the test suite.
 LOG_DIR = /var/log/cdedb
+# User who runs the application and has access to storage and log dir. This will be overridden in the test suite.
+DATA_USER = www-data
 TESTPREPARATION ?= automatic
 TESTDATABASENAME ?= $(or ${CDEDB_TEST_DATABASE}, cdb_test)
 TESTTMPDIR ?= $(or ${CDEDB_TEST_TMP_DIR}, /tmp/cdedb-test-default )
@@ -148,13 +150,7 @@ storage: sanity-check
 	sudo cp tests/ancillary_files/kassen2.pdf $(STORAGE_DIR)/assembly_attachment/2_v3
 	sudo cp tests/ancillary_files/kandidaten.pdf $(STORAGE_DIR)/assembly_attachment/3_v1
 	sudo cp -t $(STORAGE_DIR)/testfiles/ tests/ancillary_files/{$(TESTFILES)}
-  # TODO is this intendet?
-  # the tests are called by the cdedb user, but the normal system by www-data
-  ifdef CDEDB_TEST
-	sudo chown --recursive cdedb:cdedb $(STORAGE_DIR)
-  else
-	sudo chown --recursive www-data:www-data $(STORAGE_DIR)
-  endif
+	sudo chown --recursive $(DATA_USER):$(DATA_USER) $(STORAGE_DIR)
 
 TESTFILES := picture.pdf,picture.png,picture.jpg,form.pdf,rechen.pdf,ballot_result.json,sepapain.xml$\
 		,event_export.json,batch_admission.csv,money_transfers.csv,money_transfers_valid.csv$\
@@ -164,13 +160,7 @@ TESTFILES := picture.pdf,picture.png,picture.jpg,form.pdf,rechen.pdf,ballot_resu
 log: sanity-check
 	sudo rm -rf -- $(LOG_DIR)/*
 	sudo mkdir -p $(LOG_DIR)
-  # TODO is this intendet?
-  # the tests are runned by the cdedb user, but the normal system by www-data
-  ifdef CDEDB_TEST
-	sudo chown cdedb:cdedb $(LOG_DIR)
-  else
-	sudo chown www-data:www-data $(LOG_DIR)
-  endif
+	sudo chown $(DATA_USER):$(DATA_USER) $(LOG_DIR)
 
 
 ############
