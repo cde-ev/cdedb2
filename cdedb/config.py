@@ -57,9 +57,6 @@ _BASIC_DEFAULTS = {
     "REPOSITORY_PATH": _repopath,
     # default timezone for input and output
     "DEFAULT_TIMEZONE": pytz.timezone('CET'),
-    # TODO this is only needed in the testsuite, maybe move to config
-    # path to log file for recording performance information during test runs
-    "TIMING_LOG_FILE": "cdedb-timing.log",
 }
 
 
