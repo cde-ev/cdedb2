@@ -15,10 +15,6 @@ help:
 	@echo "sample-data      -- initialize database structures (DESTROYS DATA!)"
 	@echo "sample-data-dump -- dump current database state into json file in tests directory"
 	@echo "sql              -- initialize postgres (use sample-data instead)"
-	@echo "sql-test         -- initialize database structures for test suite"
-	@echo "sql-test-shallow -- reset database structures for test suite"
-	@echo "                    (this is a fast version of sql-test, can be substituted after that"
-	@echo "                        was executed)"
 	@echo "storage          -- (re)create storage directory in /var/lib/cdedb"
 	@echo "storage-test     -- create storage directory inside /tmp for tests needing this for"
 	@echo "                    attachments, photos etc."
@@ -54,7 +50,11 @@ else
 endif
 SAMPLE_DATA_SQL ?= bin/create_sample_data_sql.py
 
-# Others
+# Use makes command-line arguments to override the following default variables
+# This is set to a non-empty value if we are currently running a test.
+CDEDB_TEST =
+# The database name on which we operate. This will be overridden in the test suite.
+DATABASE_NAME = cdb
 TESTPREPARATION ?= automatic
 TESTDATABASENAME ?= $(or ${CDEDB_TEST_DATABASE}, cdb_test)
 TESTTMPDIR ?= $(or ${CDEDB_TEST_TMP_DIR}, /tmp/cdedb-test-default )
@@ -176,43 +176,34 @@ storage-test:
 	cp -t ${TESTSTORAGEPATH}/testfiles/ tests/ancillary_files/{$(TESTFILES)}
 
 sql: tests/ancillary_files/sample_data.sql
-ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
+  ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
 	$(error Refusing to touch live instance)
-endif
-ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
+  endif
+  ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
 	$(error Refusing to touch orga instance)
-endif
-ifneq ($(wildcard /CONTAINER),/CONTAINER)
+  endif
+  # we cannot use systemctl in docker
+  ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl stop pgbouncer
 	sudo systemctl stop slapd
-endif
-	$(PSQL_ADMIN) -f cdedb/database/cdedb-users.sql
-	$(PSQL_ADMIN) -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb
-ifneq ($(wildcard /CONTAINER),/CONTAINER)
+  endif
+  # execute only if we are not running in test mode
+  ifndef CDEDB_TEST
+	$(PSQL_ADMIN) -f cdedb/database/cdedb-users.sql > /dev/null
+  endif
+	$(PSQL_ADMIN) -f cdedb/database/cdedb-db.sql -v cdb_database_name=$(DATABASE_NAME)
+  ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl start pgbouncer
-endif
-	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=cdb
-	$(PSQL) -f cdedb/database/cdedb-ldap.sql --dbname=cdb
-	$(PSQL) -f tests/ancillary_files/sample_data.sql --dbname=cdb
-ifneq ($(wildcard /CONTAINER),/CONTAINER)
+  endif
+	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=$(DATABASE_NAME)
+	$(PSQL) -f cdedb/database/cdedb-ldap.sql --dbname=$(DATABASE_NAME)
+	$(PSQL) -f tests/ancillary_files/sample_data.sql --dbname=$(DATABASE_NAME)
+  ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl start slapd
-endif
+  endif
 
 sql-test: tests/ancillary_files/sample_data.sql
-ifneq ($(wildcard /CONTAINER),/CONTAINER)
-	sudo systemctl stop pgbouncer
-endif
-	$(PSQL_ADMIN) -f cdedb/database/cdedb-db.sql -v cdb_database_name=${TESTDATABASENAME}
-ifneq ($(wildcard /CONTAINER),/CONTAINER)
-	sudo systemctl start pgbouncer
-endif
-	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=${TESTDATABASENAME}
-	$(PSQL) -f cdedb/database/cdedb-ldap.sql --dbname=${TESTDATABASENAME}
-	$(PSQL) -f tests/ancillary_files/sample_data.sql --dbname=${TESTDATABASENAME}
-
-sql-test-shallow: tests/ancillary_files/sample_data.sql
-	$(PSQL) -f tests/ancillary_files/clean_data.sql --dbname=${TESTDATABASENAME}
-	$(PSQL) -f tests/ancillary_files/sample_data.sql --dbname=${TESTDATABASENAME}
+	$(MAKE) sql
 
 cron:
 	sudo -u www-data /cdedb2/bin/cron_execute.py
