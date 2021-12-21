@@ -852,7 +852,7 @@ class FrontendTest(BackendTest):
     def _log_generation_time(self, response: webtest.TestResponse = None) -> None:
         if response is None:
             response = self.response
-        # recorde performance information during test runs
+        # record performance information during test runs
         with open(_BASICCONF["LOG_DIR"] / "cdedb-timing.log", 'a') as f:
             output = "{} {} {} {}\n".format(
                 response.request.path, response.request.method,
