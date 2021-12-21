@@ -20,14 +20,14 @@ os.chdir(root)
 
 # import helpers to prepare and execute the tests
 from bin.escape_fuzzing import work as xss_check
-from cdedb.config import TestConfig
-from tests.custom_testrunners import MyTextTestResult, MyTextTestRunner
 
 # import all TestCases which should be tested
 import tests.backend_tests as backend_tests
 import tests.frontend_tests as frontend_tests
 import tests.ldap_tests as ldap_tests
 import tests.other_tests as other_tests
+from cdedb.config import TestConfig
+from tests.custom_testrunners import MyTextTestResult, MyTextTestRunner
 
 
 class CdEDBTestLock:
