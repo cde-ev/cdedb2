@@ -614,17 +614,31 @@ class AssemblyFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/show_assembly")
 
-    @staticmethod
-    def group_ballots(ballots: Dict[int, Dict[str, Any]]
-                      ) -> Tuple[CdEDBObjectMap, CdEDBObjectMap,
-                                 CdEDBObjectMap, CdEDBObjectMap]:
+    def _group_ballots(self, rs: RequestState, ballots: Dict[int, Dict[str, Any]]
+                       ) -> Optional[Tuple[CdEDBObjectMap, CdEDBObjectMap,
+                                           CdEDBObjectMap, CdEDBObjectMap]]:
         """Helper to group ballots by status.
 
-        Before calling this function, ensure that all ballots have updated state.
+        This calls `_update_ballot_state` on all ballots to ensure data
+        integrity before grouping them. If this performed a state update,
+        None will be returned and the calling function should perform
+        a redirect to the calling page, so the typical usage looks like::
 
-        :returns: Four dicts mapping ballot ids to ballots grouped by status
-          in the order done, extended, current, future.
+            if grouped := self.group_ballots(rs, ballots):
+                done, extended, current, future = grouped
+            else:
+                return self.redirect(rs, "assembly/dummy_page")
+
+        :returns: None if any ballot updated state, else
+            four dicts mapping ballot ids to ballots grouped by status
+            in the order done, extended, current, future.
         """
+        # Check for extensions before grouping ballots.
+        # Converting to list is needed to ensure updating all ballots.
+        if any([self._update_ballot_state(rs, ballot)  # pylint: disable=use-a-generator
+                for anid, ballot in ballots.items()]):
+            return None
+
         ref = now()
 
         future = {k: v for k, v in ballots.items()
@@ -657,14 +671,12 @@ class AssemblyFrontend(AbstractUserFrontend):
         ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
         ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
 
-        # Check for extensions before grouping ballots.
-        # Converting to list is needed to ensure updating all ballots.
-        if any([self._update_ballot_state(rs, ballot)  # pylint: disable=use-a-generator
-                for anid, ballot in ballots.items()]):
+        if grouped := self._group_ballots(rs, ballots):
+            done, extended, current, future = grouped
+        else:
+            # some ballots updated state
             return self.redirect(rs, "assembly/list_ballots")
-
-        done, extended, current, future = self.group_ballots(ballots)
-        # Currently we don't distinguish between current and extended ballots
+        # Currently, we don't distinguish between current and extended ballots
         current.update(extended)
 
         votes = {}
@@ -924,12 +936,14 @@ class AssemblyFrontend(AbstractUserFrontend):
         if not self.assemblyproxy.may_assemble(rs, ballot_id=ballot_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
 
-        # We need to update all ballots in order to group them later for navigation.
+        # We need to group the ballots for navigation later anyway,
+        # and as grouping them updates their state we do it already here
         ballots_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
         ballots = self.assemblyproxy.get_ballots(rs, ballots_ids)
-        # Converting to list is needed to ensure updating all ballots.
-        if any([self._update_ballot_state(rs, ballot)  # pylint: disable=use-a-generator
-                for _, ballot in ballots.items()]):
+        if grouped := self._group_ballots(rs, ballots):
+            done, extended, current, future = grouped
+        else:
+            # some ballots updated state
             return self.redirect(rs, "assembly/show_ballot")
 
         # get associated attachments
@@ -954,19 +968,17 @@ class AssemblyFrontend(AbstractUserFrontend):
             merge_dicts(rs.values, {'vote': vote_dict['own_vote']})
 
         # this is used for the dynamic row candidate table
-        current = {
+        current_candidates = {
             drow_name(field_name=key, entity_id=candidate_id): value
             for candidate_id, candidate in ballot['candidates'].items()
             for key, value in candidate.items() if key != 'id'}
         sorted_candidate_ids = [
             e["id"] for e in xsorted(ballot["candidates"].values(),
                                      key=EntitySorter.candidates)]
-        merge_dicts(rs.values, current)
+        merge_dicts(rs.values, current_candidates)
 
-        # group ballots for navigation buttons
-        done, extended, current, future = self.group_ballots(ballots)
-
-        # Currently we don't distinguish between current and extended ballots
+        # now, process the grouped ballots from above for the navigation buttons.
+        # Currently, we don't distinguish between current and extended ballots
         current.update(extended)
         ballot_list: List[int] = sum((
             xsorted(bdict, key=lambda key: bdict[key]["title"])  # pylint: disable=cell-var-from-loop;
@@ -1063,7 +1075,11 @@ class AssemblyFrontend(AbstractUserFrontend):
         # show links to next and previous ballots
         ballots_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
         ballots = self.assemblyproxy.get_ballots(rs, ballots_ids)
-        done, _, _, _ = self.group_ballots(ballots)
+        if grouped := self._group_ballots(rs, ballots):
+            done, _, _, _ = grouped
+        else:
+            # some ballots updated state
+            return self.redirect(rs, "assembly/show_ballot_result")
 
         # we are only interested in done ballots
         ballot_list: List[int] = xsorted(done, key=lambda key: done[key]["title"])
@@ -1272,13 +1288,11 @@ class AssemblyFrontend(AbstractUserFrontend):
         ballot_ids = [k for k, v in assembly_ballots.items()]
         ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
 
-        # Check for extensions before grouping ballots.
-        # Converting to list is needed to ensure updating all ballots.
-        if any([self._update_ballot_state(rs, ballot)  # pylint: disable=use-a-generator
-                for anid, ballot in ballots.items()]):
+        if grouped := self._group_ballots(rs, ballots):
+            done, _, _, _ = grouped
+        else:
+            # some ballots updated state
             return self.redirect(rs, "assembly/summary_ballots")
-
-        done, extended, current, future = self.group_ballots(ballots)
 
         result = {k: self.get_online_result(rs, v) for k, v in done.items()}
 
