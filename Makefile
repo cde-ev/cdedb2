@@ -1,33 +1,66 @@
 SHELL := /bin/bash
 
-.PHONY: help doc reload i18n-refresh i18n-extract i18n-update i18n-compile sample-data \
-	sample-data-dump storage storage-test sql sql-test sql-test-shallow cron mypy flake8 pylint \
-	template-line-length lint check check-parallel sql-xss xss-check dump-html \
-	validate-html .coverage coverage sanity-check
+.PHONY: \
+	help cron doc reload sanity-check \
+	\
+	i18n-refresh i18n-extract i18n-update i18n-compile \
+	\
+	storage log \
+	\
+	sql-initial sql-setup sql sql-xss \
+	\
+	ldap-create ldap-update ldap-remove \
+	\
+	format mypy isort flake8 pylint template-line-length lint \
+	\
+	check xss-check dump-html validate-html .coverage coverage \
+	\
+	sample-data sample-data-dump
 
 help:
-	@echo "General:"
-	@echo "doc          -- build documentation"
-	@echo "reload       -- re-compile GNU gettext data and trigger WSGI worker reload"
-	@echo "i18n-refresh -- extract translatable strings from code and update translation catalogs"
+	@echo "Default Variables:"
+	@echo "DATABASE_NAME       -- name of a postgres database. Default: cdb"
+	@echo "STORAGE_DIR         -- location where the cdedb stores files. Default: /var/lib/cdedb"
+	@echo "LOG_DIR             -- location of the logs. Default: /var/log/cdedb"
+	@echo "DATA_USER           -- system user who will own STORAGE_DIR and LOG_DIR. Default: www-data"
+	@echo "XSS_PAYLOAD         -- payload to insert in sample_data_xss.sql. Default: <script>abcdef</script>"
+	@echo "I18NDIR             -- directory of the translation files. Default: ./i18n"
 	@echo ""
-	@echo "Database and storage:"
-	@echo "sample-data      -- initialize database structures (DESTROYS DATA!)"
-	@echo "sample-data-dump -- dump current database state into json file in tests directory"
-	@echo "sql              -- initialize postgres (use sample-data instead)"
-	@echo "storage          -- (re)create storage directory, defaults to /var/lib/cdedb"
-	@echo "cron             -- trigger cronjob execution (as user www-data)"
+	@echo "General:"
+	@echo "cron                -- trigger cronjob execution (as user www-data)"
+	@echo "doc                 -- build documentation"
+	@echo "reload              -- re-compile GNU gettext data and trigger WSGI worker reload"
+	@echo ""
+	@echo "Translations"
+	@echo "i18n-refresh        -- extract translatable strings from code and update translation catalogs in I18NDIR"
+	@echo ""
+	@echo "Storage:"
+	@echo "storage             -- recreate STORAGE_DIR owned by DATA_USER and populate it with sample files"
+	@echo "log                 -- recreate LOG_DIR owned by DATA_USER"
+	@echo ""
+	@echo "Database"
+	@echo "sql-initial         -- Drops all databases and create default postgres users."
+	@echo "sql-setup           -- Create new database DATABASE_NAME"
+	@echo "sql                 -- populates database DATABASE_NAME with sample content (use sample-data instead)"
+	@echo ""
+	@echo "LDAP:"
+	@echo "TODO add description"
+	@echo ""
+	@echo "Code formatting:"
+	@echo "mypy                -- let mypy run over our codebase (bin, cdedb, tests)"
+	@echo "lint                -- run linters (isort, flake8 and pylint)"
 	@echo ""
 	@echo "Code testing:"
-	@echo "mypy           -- let mypy run over our codebase (bin, cdedb, tests)"
-	@echo "lint           -- run linters (isort, flake8 and pylint)"
-	@echo "check          -- run (parts of the) test suite"
-	@echo "xss-check      -- check for xss vulnerabilities"
-	@echo "dump-html      -- run frontend tests and store all encountered pages inside"
-	@echo "                  /tmp/cdedb-dump/"
-	@echo "validate-html  -- run html validator over the dumped frontend pages "
-	@echo "                  (dump-html is executed before if they do not exist yet)"
-	@echo "coverage       -- run coverage to determine test suite coverage"
+	@echo "check               -- run (parts of the) test suite"
+	@echo "xss-check           -- check for xss vulnerabilities"
+	@echo "dump-html           -- run frontend tests and store all encountered pages inside /tmp/cdedb-dump/"
+	@echo "validate-html       -- run html validator over the dumped frontend pages "
+	@echo "                       (dump-html is executed before if they do not exist yet)"
+	@echo "coverage            -- run coverage to determine test suite coverage"
+	@echo ""
+	@echo "Sample Data:"
+	@echo "sample-data         -- initialize database structures (DESTROYS DATA!)"
+	@echo "sample-data-dump    -- dump current database state into json file in tests directory"
 
 
 ###############
