@@ -167,8 +167,8 @@ def run_xss_tests(*, verbose: bool = False) -> int:
 
 def run_ldap_tests(testpatterns: List[str] = None, *, verbose: bool = False) -> int:
     return 1
-    configpath = root / "tests/config/test_ldap.py"
-    prepare_environment(configpath)
+    configpath = root / "tests/config/test_ldap.py"  # type: ignore[unreachable]
+    prepare_environment(configpath)  # type: ignore[name-defined]
 
     test_suite = _load_tests(testpatterns, [ldap_tests])
 
