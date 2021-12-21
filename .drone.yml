@@ -56,9 +56,8 @@ steps:
     - cdb
   commands:
     - sleep 5
-    - make i18n-compile # needed for sample-data step.
-    - make sample-data # perform basic setup.
-    - make sql-test # create the necessary test database.
+    - make i18n-compile # needed for sample-data creation in evolution-trial.sh
+    - make sql-initial # add the postgres user
     - bin/evolution-trial.sh origin/$DRONE_TARGET_BRANCH $DRONE_COMMIT
 - name: mypy
   image: cdedb:20210705
@@ -155,7 +154,6 @@ steps:
   - name: tmp_dir
     path: /tmp
   commands:
-  - sleep 10
   - bin/check.py --verbose --third
 - name: ldap tests
   image: cdedb:20210705
