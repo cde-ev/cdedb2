@@ -620,6 +620,8 @@ class AssemblyFrontend(AbstractUserFrontend):
                                  CdEDBObjectMap, CdEDBObjectMap]:
         """Helper to group ballots by status.
 
+        Before calling this function, ensure that all ballots have updated state.
+
         :returns: Four dicts mapping ballot ids to ballots grouped by status
           in the order done, extended, current, future.
         """
@@ -921,8 +923,13 @@ class AssemblyFrontend(AbstractUserFrontend):
         """
         if not self.assemblyproxy.may_assemble(rs, ballot_id=ballot_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        ballot = rs.ambience['ballot']
-        if self._update_ballot_state(rs, ballot):
+
+        # We need to update all ballots in order to group them later for navigation.
+        ballots_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
+        ballots = self.assemblyproxy.get_ballots(rs, ballots_ids)
+        # Converting to list is needed to ensure updating all ballots.
+        if any([self._update_ballot_state(rs, ballot)  # pylint: disable=use-a-generator
+                for _, ballot in ballots.items()]):
             return self.redirect(rs, "assembly/show_ballot")
 
         # get associated attachments
@@ -932,6 +939,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             rs, definitive_versions.keys())
 
         # initial checks done, present the ballot
+        ballot = rs.ambience['ballot']
         ballot['vote_count'] = self.assemblyproxy.count_votes(rs, ballot_id)
         result = self.get_online_result(rs, ballot)
         attends = self.assemblyproxy.does_attend(rs, ballot_id=ballot_id)
@@ -955,8 +963,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                                      key=EntitySorter.candidates)]
         merge_dicts(rs.values, current)
 
-        ballots_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
-        ballots = self.assemblyproxy.get_ballots(rs, ballots_ids)
+        # group ballots for navigation buttons
         done, extended, current, future = self.group_ballots(ballots)
 
         # Currently we don't distinguish between current and extended ballots
