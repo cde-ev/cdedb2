@@ -194,35 +194,40 @@ if __name__ == '__main__':
         help="ID of thread to use for run (optional, if not given, choose free thread"
              " automatically)")
 
-    parallel_options = parser.add_argument_group(
+    presets = parser.add_argument_group(
         "options for running suite in parallel (all together cover full suite)")
-    parallel_options.add_argument('--first', '-1', action='store_true',
-                                  help="run first half of the frontend tests"
-                                       " (everything before event tests)")
-    parallel_options.add_argument('--second', '-2', action='store_true',
-                                  help="run second half of the frontend tests (event"
-                                       " tests and following)")
-    parallel_options.add_argument('--third', '-3', action='store_true',
-                                  help="run third part of test suite (everything except"
-                                       " for the frontend tests)")
-    parallel_options.add_argument('--ldap', action='store_true',
-                                  help="also run ldap tests")
-    parallel_options.add_argument('--ldap-only', action='store_true',
-                                  help="run ldap tests, but not regular tests.")
-    parallel_options.add_argument('--xss', action='store_true',
-                                  help="also run xss check")
-    parallel_options.add_argument('--all', action='store_true',
-                                  help="run _all_ tests.")
-    parallel_options.add_argument('--all-tests', action='store_true',
-                                  help="run all regular tests.")
-    parallel_options.add_argument('--all-ldap', action='store_true',
-                                  help="run all ldap tests.")
+    presets.add_argument('--first', '-1', action='store_true',
+                         help="run first half of the frontend tests"
+                              " (everything before event tests)")
+    presets.add_argument('--second', '-2', action='store_true',
+                         help="run second half of the frontend tests (event"
+                              " tests and following)")
+    presets.add_argument('--third', '-3', action='store_true',
+                         help="run third part of test suite (everything except"
+                              " for the frontend tests)")
+
+    parts = parser.add_argument_group("choose which parts of the testsuite to run")
+    parts.add_argument('--ldap', action='store_true',
+                       help="run ldap tests")
+    parts.add_argument('--xss', action='store_true',
+                       help="run xss check")
+    parts.add_argument('--no-unittests', action='store_true',
+                       help="do not run unittests")
+
+    pattern_overrides = parser.add_argument_group(
+        "override given testpatterns for parts of the testsuite")
+    pattern_overrides.add_argument('--all', action='store_true',
+                                   help="run _all_ tests regardless of testpatterns")
+    pattern_overrides.add_argument('--all-ldap', action='store_true',
+                                   help="run all ldap tests regardless of testpatterns")
+    pattern_overrides.add_argument('--all-unittests', action='store_true',
+                                   help="run all unittests regardless of testpatterns")
 
     parser.add_argument('--verbose', '-v', action='store_true',
                         help="more detailed output")
     args = parser.parse_args()
 
-    # Split regular tests into three parts with similar runtime
+    # Set args for presets.
     if args.first:
         args.testpatterns.append('tests.frontend_tests.[abcd]*')
     if args.second:
@@ -230,18 +235,30 @@ if __name__ == '__main__':
     if args.third:
         args.testpatterns.append('tests.backend_tests.*')
         args.testpatterns.append('tests.other_tests.*')
+    if args.first or args.second or args.third:
+        args.all = False
+        args.all_unittests = False
+        args.no_unittests = False
+        args.all_ldap = False
+        args.ldap = False
+        args.xss = False
 
     return_code = 0
 
-    # Run tests in case of `all` or `all_tests` or if
-    # `testpatterns` are given and `ldap_only` is not.
-    if args.all or args.all_tests or args.testpatterns and not args.ldap_only:
+    # Always run inittest unless explicitly deactivated.
+    do_unittests = args.all or not args.no_unittests
+    # Only run ldap if specified or all tests are run.
+    do_ldap = args.all or args.all_ldap or args.ldap
+    # Only run xss check if specified or all tests are run.
+    do_xss = args.all or args.xss
+
+    if do_unittests:
         with CdEDBTestLock(args.thread_id) as Lock:
             assert Lock.thread_id is not None
             print(f"Using thread {Lock.thread_id}", file=sys.stderr)
 
             # Override testpatterns to run all tests.
-            if args.all or args.all_tests:
+            if args.all or args.all_unittests:
                 testpatterns = None
             else:
                 testpatterns = args.testpatterns
@@ -250,8 +267,7 @@ if __name__ == '__main__':
                 configpath=Lock.configpath, testpatterns=testpatterns,
                 verbose=args.verbose)
 
-    # Run ldap if `ldap`, `ldap_only`, `all_ldap` or `all` is set.
-    if args.ldap or args.ldap_only or args.all_ldap or args.all:
+    if do_ldap:
         # Override testpatterns to run all tests.
         if args.all or args.all_ldap:
             testpatterns = None
@@ -260,8 +276,7 @@ if __name__ == '__main__':
 
         return_code += run_ldap_tests(testpatterns, verbose=args.verbose)
 
-    # Run xss if `xss` or `all` is set.
-    if args.xss or args.all:
+    if do_xss:
         return_code += run_xss_tests(verbose=args.verbose)
 
     sys.exit(return_code)
