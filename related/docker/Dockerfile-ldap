@@ -6,32 +6,20 @@ COPY ./ldap/ ./related/docker/ldap-entrypoint.sh /tmp/ldap/
 # touch the CONTAINER file
 RUN touch /CONTAINER
 
-# Install the ldap specific packages with our custom slapd config
+# Install the ldap specific packages
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends \
     slapd \
     ldap-utils \
     unixodbc \
     odbc-postgresql
 
-# prepare odbc.ini file to enable database connection for ldap
-RUN sed -i -r "s/DATABASE_NAME/${DATABASE_NAME}/" /tmp/ldap/odbc.ini \
-    && sed -i -r "s/DATABASE_HOST/${DATABASE_HOST}/" /tmp/ldap/odbc.ini \
-    && sed -i -r "s/DATABASE_USER_PASSWORD/${DATABASE_USER_PASSWORD}/" /tmp/ldap/odbc.ini
-
-# Prepare the ldif files, which are applied during first startup
-RUN sed -i -r "s/OLC_DB_HOST/${DATABASE_HOST}/" /tmp/ldap/cdedb-ldap.ldif \
-    && sed -i -r "s/OLC_DB_NAME/${DATABASE_NAME}/" /tmp/ldap/cdedb-ldap.ldif \
-    && sed -i -r "s/DATABASE_USER_PASSWORD/${DATABASE_USER_PASSWORD}/" /tmp/ldap/cdedb-ldap.ldif
-
-# Copy all relevant files into the /app directory, the ldap entrypoint in root
-# and the odbc.ini file in /etc
+# Copy all relevant files into the /app directory & the ldap entrypoint in root
 RUN mkdir /app \
+    && cp /tmp/ldap/odbc.ini /app/ \
     && cp /tmp/ldap/config-ldap.ldif /app/ \
     && cp /tmp/ldap/cdedb-ldap.ldif /app/ \
     \
-    && mv /tmp/ldap/ldap-entrypoint.sh /ldap-entrypoint.sh \
-    \
-    && mv -f /tmp/ldap/odbc.ini /etc/odbc.ini
+    && mv /tmp/ldap/ldap-entrypoint.sh /ldap-entrypoint.sh
 
 # Set custom entrypoint to perform additional work on first run.
 ENTRYPOINT ["/ldap-entrypoint.sh"]
