@@ -1,25 +1,11 @@
-import os
-import pathlib
 import unittest
 from types import TracebackType
 from typing import List, Optional, TextIO, Tuple, Type, Union
-
-from cdedb.config import TestConfig
 
 ExceptionInfo = Union[
     Tuple[Type[BaseException], BaseException, TracebackType],
     Tuple[None, None, None]
 ]
-
-
-def check_test_setup(conf: TestConfig) -> None:
-    """Raise a RuntimeError if the vm is ill-equipped for performing tests."""
-    if pathlib.Path("/OFFLINEVM").exists():
-        raise RuntimeError("Cannot run tests in an Offline-VM.")
-    if pathlib.Path("/PRODUCTIONVM").exists():
-        raise RuntimeError("Cannot run tests in Production-VM.")
-    if not conf['CDEDB_TEST']:
-        raise RuntimeError("Not configured for test (CDEDB_TEST unset).")
 
 
 class MyTextTestRunner(unittest.TextTestRunner):
