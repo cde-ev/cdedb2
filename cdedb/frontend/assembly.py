@@ -614,17 +614,17 @@ class AssemblyFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/show_assembly")
 
-    def _group_ballots(self, rs: RequestState, ballots: Dict[int, Dict[str, Any]]
+    def _group_ballots(self, rs: RequestState, assembly_id: int
                        ) -> Optional[Tuple[CdEDBObjectMap, CdEDBObjectMap,
                                            CdEDBObjectMap, CdEDBObjectMap]]:
-        """Helper to group ballots by status.
+        """Helper to group all ballots of an assembly by status.
 
         This calls `_update_ballot_state` on all ballots to ensure data
         integrity before grouping them. If this performed a state update,
         None will be returned and the calling function should perform
-        a redirect to the calling page, so the typical usage looks like::
+        a redirect to the calling page, so the typical usage looks like:
 
-            if grouped := self.group_ballots(rs, ballots):
+            if grouped := self.group_ballots(rs, assembly_id):
                 done, extended, current, future = grouped
             else:
                 return self.redirect(rs, "assembly/dummy_page")
@@ -633,6 +633,9 @@ class AssemblyFrontend(AbstractUserFrontend):
             four dicts mapping ballot ids to ballots grouped by status
             in the order done, extended, current, future.
         """
+        ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
+        ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
+
         # Check for extensions before grouping ballots.
         # Converting to list is needed to ensure updating all ballots.
         if any([self._update_ballot_state(rs, ballot)  # pylint: disable=use-a-generator
@@ -668,11 +671,9 @@ class AssemblyFrontend(AbstractUserFrontend):
         if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
 
-        ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
-        ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
-
-        if grouped := self._group_ballots(rs, ballots):
+        if grouped := self._group_ballots(rs, assembly_id):
             done, extended, current, future = grouped
+            ballots = {**done, **extended, **current, **future}
         else:
             # some ballots updated state
             return self.redirect(rs, "assembly/list_ballots")
@@ -681,7 +682,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         votes = {}
         if self.assemblyproxy.does_attend(rs, assembly_id=assembly_id):
-            for ballot_id in ballot_ids:
+            for ballot_id in ballots:
                 votes[ballot_id] = self.assemblyproxy.get_vote(
                     rs, ballot_id, secret=None)
 
@@ -938,10 +939,9 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         # We need to group the ballots for navigation later anyway,
         # and as grouping them updates their state we do it already here
-        ballots_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
-        ballots = self.assemblyproxy.get_ballots(rs, ballots_ids)
-        if grouped := self._group_ballots(rs, ballots):
+        if grouped := self._group_ballots(rs, assembly_id):
             done, extended, current, future = grouped
+            ballots = {**done, **extended, **current, **future}
         else:
             # some ballots updated state
             return self.redirect(rs, "assembly/show_ballot")
@@ -1021,10 +1021,9 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         # We need to group the ballots for navigation later anyway,
         # and as grouping them updates their state we do it already here
-        ballots_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
-        ballots = self.assemblyproxy.get_ballots(rs, ballots_ids)
-        if grouped := self._group_ballots(rs, ballots):
+        if grouped := self._group_ballots(rs, assembly_id):
             done, _, _, _ = grouped
+            ballots = {k: v for d in grouped for k, v in d.items()}
         else:
             # some ballots updated state
             return self.redirect(rs, "assembly/show_ballot_result")
@@ -1284,11 +1283,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         """Give an online summary of all tallied ballots of an assembly."""
         if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        assembly_ballots = self.assemblyproxy.list_ballots(rs, assembly_id)
-        ballot_ids = [k for k, v in assembly_ballots.items()]
-        ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
 
-        if grouped := self._group_ballots(rs, ballots):
+        if grouped := self._group_ballots(rs, assembly_id):
             done, _, _, _ = grouped
         else:
             # some ballots updated state
