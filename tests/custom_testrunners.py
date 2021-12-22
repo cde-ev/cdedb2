@@ -1,3 +1,5 @@
+"""Contains some custom classes to run and display the tests on the command line."""
+
 import unittest
 from types import TracebackType
 from typing import List, Optional, TextIO, Tuple, Type, Union

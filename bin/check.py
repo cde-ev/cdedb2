@@ -1,4 +1,5 @@
 #! /usr/bin/env python3
+"""Calling this script is the canonical way to run the test suite."""
 
 import argparse
 import getpass

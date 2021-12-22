@@ -1,4 +1,8 @@
-# pylint: disable=missing-module-docstring
+"""Module containing all CdEDB frontend tests, one file per frontend.
+
+Parse (parsing of bank statements) and privacy tests have their own file, to group this
+test of functionality at one place.
+"""
 from tests.frontend_tests.application import TestApplication
 from tests.frontend_tests.assembly import (
     TestAssemblyFrontend, TestMultiAssemblyFrontend,
