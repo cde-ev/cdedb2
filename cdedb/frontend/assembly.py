@@ -1153,8 +1153,12 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         # check for extension
         if ballot['extended'] is None and timestamp > ballot['vote_end']:
-            self.assemblyproxy.check_voting_period_extension(rs, ballot['id'])
-            return -1
+            if self.assemblyproxy.check_voting_period_extension(rs, ballot['id']):
+                return -1
+            else:
+                # we do not need the full updated ballot here, so just update
+                # the relevant piece of information
+                ballot['extended'] = False
 
         finished = (
                 timestamp > ballot['vote_end']
@@ -1267,10 +1271,6 @@ class AssemblyFrontend(AbstractUserFrontend):
                 code = self._update_ballot_state(rs, ballot)
                 if code < 0:
                     extension_count += 1
-                    ballot = self.assemblyproxy.get_ballot(rs, ballot_id)
-                    code = self._update_ballot_state(rs, ballot)
-                    if code > 0:
-                        tally_count += 1
                 elif code > 0:
                     tally_count += 1
         if extension_count or tally_count:
