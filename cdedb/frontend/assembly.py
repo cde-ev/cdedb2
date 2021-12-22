@@ -1019,7 +1019,14 @@ class AssemblyFrontend(AbstractUserFrontend):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         ballot = rs.ambience['ballot']
 
-        if self._update_ballot_state(rs, ballot):
+        # We need to group the ballots for navigation later anyway,
+        # and as grouping them updates their state we do it already here
+        ballots_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
+        ballots = self.assemblyproxy.get_ballots(rs, ballots_ids)
+        if grouped := self._group_ballots(rs, ballots):
+            done, _, _, _ = grouped
+        else:
+            # some ballots updated state
             return self.redirect(rs, "assembly/show_ballot_result")
 
         if not ballot['is_tallied']:
@@ -1072,15 +1079,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         assert result_bytes is not None
         result_hash = get_hash(result_bytes)
 
-        # show links to next and previous ballots
-        ballots_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
-        ballots = self.assemblyproxy.get_ballots(rs, ballots_ids)
-        if grouped := self._group_ballots(rs, ballots):
-            done, _, _, _ = grouped
-        else:
-            # some ballots updated state
-            return self.redirect(rs, "assembly/show_ballot_result")
 
+        # show links to next and previous ballots
         # we are only interested in done ballots
         ballot_list: List[int] = xsorted(done, key=lambda key: done[key]["title"])
 
