@@ -203,14 +203,14 @@ log: sanity-check
 # Database #
 ############
 
-# drop all existent databases and add the database users. Must be called only once. Resets everything.
+# drop all existent databases and add the database users. Acts globally and is idempotent.
 sql-initial: sanity-check
   # we cannot use systemctl in docker
   ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl stop pgbouncer
 	sudo systemctl stop slapd
   endif
-	$(PSQL_ADMIN) -f cdedb/database/cdedb-users.sql > /dev/null
+	$(PSQL_ADMIN) -f cdedb/database/cdedb-users.sql
   ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl start pgbouncer
 	# we need actual data before we can restart slapd, so we deferr this to later
@@ -263,7 +263,7 @@ ldap-remove:
 # Code formatting #
 ###################
 
-format: sanity-check
+format:
 	$(ISORT) bin/*.py cdedb tests
 
 mypy:
