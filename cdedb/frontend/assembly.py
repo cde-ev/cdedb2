@@ -619,8 +619,8 @@ class AssemblyFrontend(AbstractUserFrontend):
                                            CdEDBObjectMap, CdEDBObjectMap]]:
         """Helper to group all ballots of an assembly by status.
 
-        This calls `_update_ballot_state` on all ballots to ensure data
-        integrity before grouping them. If this performed a state update,
+        This calls `_update_ballots` to ensure data integrity before
+        grouping the ballots. If this performed a state update,
         None will be returned and the calling function should perform
         a redirect to the calling page, so the typical usage looks like:
 
@@ -1076,7 +1076,6 @@ class AssemblyFrontend(AbstractUserFrontend):
         result_bytes = self.assemblyproxy.get_ballot_result(rs, ballot['id'])
         assert result_bytes is not None
         result_hash = get_hash(result_bytes)
-
 
         # show links to next and previous ballots
         # we are only interested in done ballots
