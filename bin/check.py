@@ -115,7 +115,7 @@ def run_regular_tests(configpath: pathlib.Path, testpatterns: List[str] = None, 
     # prepare the translations
     subprocess.run(["make", "i18n-compile"], check=True)
     # create the log directory
-    subprocess.run(["make", "log", f"LOG_DIR={conf['_LOG_ROOT']}", f"DATA_USER={user}"],
+    subprocess.run(["make", "log", f"LOG_DIR={conf['LOG_DIR']}", f"DATA_USER={user}"],
                    check=True)
     # setup the database
     subprocess.run(["make", "sql", f"DATABASE_NAME={conf['CDB_DATABASE_NAME']}"],
@@ -143,7 +143,7 @@ def run_xss_tests(*, verbose: bool = False) -> int:
     # prepare the translations
     subprocess.run(["make", "i18n-compile"], check=True)
     # create the log directory
-    subprocess.run(["make", "log", f"LOG_DIR={conf['_LOG_ROOT']}", f"DATA_USER={user}"],
+    subprocess.run(["make", "log", f"LOG_DIR={conf['LOG_DIR']}", f"DATA_USER={user}"],
                    check=True)
     # setup the database
     subprocess.run(["make", "sql-xss", f"DATABASE_NAME={conf['CDB_DATABASE_NAME']}",
