@@ -95,7 +95,7 @@ olcDatabase: sql
 olcDbHost: OLC_DB_HOST
 olcDbName: OLC_DB_NAME
 olcDbUser: cdb_admin
-olcDbPass: DATABASE_USER_PASSWORD
+olcDbPass: DATABASE_CDB_ADMIN_PASSWORD
 #
 # SQL-backend configuration options (unused commented out)
 olcSqlConcatPattern: ?||?
