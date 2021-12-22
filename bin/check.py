@@ -18,10 +18,8 @@ sys.path.append(str(root))
 # this is necessary for calling make as subprocess
 os.chdir(root)
 
-# import helpers to prepare and execute the tests
 from bin.escape_fuzzing import work as xss_check
 
-# import all TestCases which should be tested
 import tests.backend_tests as backend_tests
 import tests.frontend_tests as frontend_tests
 import tests.ldap_tests as ldap_tests
@@ -35,9 +33,9 @@ class CdEDBTestLock:
     Simple lock mechanism to prevent multiple tests accessing the same
     test database and files simultaneously.
     """
-    # Identifiers of existing test threads. Only truthy values allowed.
-    # Take care that the database setup is configured accordingly.
-    # TODO: improve this in #1948
+    # Identifiers of existing test threads. Only truthy values allowed, and a
+    # corresponding config file in tests/config/ must exist.
+    # Use the returned configpath to prepare the test environment properly.
     THREADS = (1, 2, 3, 4)
 
     configpath: pathlib.Path
@@ -90,7 +88,7 @@ class CdEDBTestLock:
 
 def _load_tests(testpatterns: Optional[List[str]],
                 test_modules: List[ModuleType] = None) -> TestSuite:
-    """Load all tests from test_modules and test_cases matching one of testpatterns."""
+    """Load all tests from test_modules matching one of testpatterns."""
     test_modules = test_modules or list()
 
     test_loader = TestLoader()
@@ -185,15 +183,6 @@ if __name__ == '__main__':
         description="Entry point to CdEDB's testing facilities.")
     parser.add_argument('testpatterns', default=[], nargs="*")
 
-    test_options = parser.add_argument_group("general options")
-    test_options.add_argument('--manual-preparation', action='store_true',
-                              help="don't do test preparation")
-    # TODO is this necessary?
-    test_options.add_argument(
-        '--thread-id', type=int, choices=(1, 2, 3, 4), metavar="INT",
-        help="ID of thread to use for run (optional, if not given, choose free thread"
-             " automatically)")
-
     presets = parser.add_argument_group(
         "options for running suite in parallel (all together cover full suite)")
     presets.add_argument('--first', '-1', action='store_true',
@@ -253,7 +242,7 @@ if __name__ == '__main__':
     do_xss = args.all or args.xss
 
     if do_unittests:
-        with CdEDBTestLock(args.thread_id) as Lock:
+        with CdEDBTestLock(None) as Lock:
             assert Lock.thread_id is not None
             print(f"Using thread {Lock.thread_id}", file=sys.stderr)
 
