@@ -122,11 +122,11 @@ class BaseApp(metaclass=abc.ABCMeta):
         secrets = SecretsConfig(configpath)
         # initialize logging
         if hasattr(self, 'realm') and self.realm:
-            logger_name = "cdedb.frontend.{}".format(self.realm)
-            logger_file = self.conf[f"{self.realm.upper()}_FRONTEND_LOG"]
+            logger_name = f"cdedb.frontend.{self.realm}"
+            logger_file = self.conf["LOG_DIR"] / f"cdedb-frontend-{self.realm}.log"
         else:
             logger_name = "cdedb.frontend"
-            logger_file = self.conf["FRONTEND_LOG"]
+            logger_file = self.conf["LOG_DIR"] / "cdedb-frontend.log"
         make_root_logger(
             logger_name, logger_file, self.conf["LOG_LEVEL"],
             syslog_level=self.conf["SYSLOG_LEVEL"],
@@ -1219,8 +1219,8 @@ class CdEMailmanClient(mailmanclient.Client):
         # Initialize logger. This needs the base class initialization to be done.
         logger_name = "cdedb.frontend.mailmanclient"
         make_root_logger(
-            logger_name, self.conf["MAILMAN_LOG"], self.conf["LOG_LEVEL"],
-            syslog_level=self.conf["SYSLOG_LEVEL"],
+            logger_name, self.conf["LOG_DIR"] / "cdedb-frontend-mailman.log",
+            self.conf["LOG_LEVEL"], syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         self.logger = logging.getLogger(logger_name)
         self.logger.debug(f"Instantiated {self} with configpath {conf._configpath}.")
@@ -2303,7 +2303,7 @@ def process_dynamic_input(
         else:
             entry = ret[anid]
             assert entry is not None
-            if type_ is not vtypes.EventTrack:
+            if type_ not in {vtypes.EventTrack, vtypes.BallotCandidate}:
                 entry["id"] = anid
             entry.update(additional)
             # apply the promised validation
