@@ -633,14 +633,12 @@ class AssemblyFrontend(AbstractUserFrontend):
             four dicts mapping ballot ids to ballots grouped by status
             in the order done, extended, current, future.
         """
+        # Check for extensions before grouping ballots.
+        if any(self._update_ballots(rs, assembly_id).values()):
+            return None
+
         ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
         ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
-
-        # Check for extensions before grouping ballots.
-        # Converting to list is needed to ensure updating all ballots.
-        if any([self._update_ballot_state(rs, ballot)  # pylint: disable=use-a-generator
-                for anid, ballot in ballots.items()]):
-            return None
 
         ref = now()
 
@@ -1137,59 +1135,68 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         return {'attends': attends, 'has_voted': has_voted, 'own_vote': own_vote}
 
-    def _update_ballot_state(self, rs: RequestState,
-                             ballot: Dict[str, Any]) -> DefaultReturnCode:
-        """Helper to automatically update a ballots state.
+    def _update_ballots(self, rs: RequestState, assembly_id: int
+                        ) -> Dict[int, DefaultReturnCode]:
+        """Helper to automatically update all ballots of an assembly.
 
         State updates are necessary for extending and tallying a ballot.
         If this function performs a state update, the calling function should
         redirect to the calling page.
 
-        :returns: 1 if the ballot was tallied, -1 if it was extended,
-            0 otherwise.
+        :returns: ballot ids mapped to their state: 1 if the ballot was tallied,
+            -1 if it was extended, 0 otherwise.
         """
+        ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
+        ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
+        ret = dict()
 
         timestamp = now()
+        for ballot_id, ballot in ballots.items():
+            # check for extension
+            if ballot['extended'] is None and timestamp > ballot['vote_end']:
+                if self.assemblyproxy.check_voting_period_extension(rs, ballot['id']):
+                    ret[ballot_id] = -1
+                    continue
+                else:
+                    # we do not need the full updated ballot here, so just update
+                    # the relevant piece of information
+                    ballot['extended'] = False
 
-        # check for extension
-        if ballot['extended'] is None and timestamp > ballot['vote_end']:
-            if self.assemblyproxy.check_voting_period_extension(rs, ballot['id']):
-                return -1
-            else:
-                # we do not need the full updated ballot here, so just update
-                # the relevant piece of information
-                ballot['extended'] = False
+            finished = (
+                    timestamp > ballot['vote_end']
+                    and (not ballot['extended']
+                         or timestamp > ballot['vote_extension_end']))
+            # check whether we need to initiate tallying
+            if finished and not ballot['is_tallied']:
+                result = self.assemblyproxy.tally_ballot(rs, ballot['id'])
+                if result:
+                    afile = io.BytesIO(result)
+                    my_hash = get_hash(result)
+                    attachment_result: Dict[str, str] = {
+                        'file': afile,  # type: ignore
+                        'filename': 'result.json',
+                        'mimetype': 'application/json'}
+                    to = [self.conf["BALLOT_TALLY_ADDRESS"]]
+                    if rs.ambience['assembly']['presider_address']:
+                        to.append(rs.ambience['assembly']['presider_address'])
+                    reply_to = (rs.ambience['assembly']['presider_address'] or
+                                self.conf["ASSEMBLY_ADMIN_ADDRESS"])
+                    subject = f"Abstimmung '{ballot['title']}' ausgezählt"
+                    self.do_mail(
+                        rs, "ballot_tallied", {
+                            'To': to,
+                            'Subject': subject,
+                            'Reply-To': reply_to
+                        },
+                        attachments=(attachment_result,),
+                        params={'sha': my_hash, 'title': ballot['title']})
+                    ret[ballot_id] = 1
+                    continue
+            ret[ballot_id] = 0
 
-        finished = (
-                timestamp > ballot['vote_end']
-                and (not ballot['extended']
-                     or timestamp > ballot['vote_extension_end']))
-        # check whether we need to initiate tallying
-        if finished and not ballot['is_tallied']:
-            result = self.assemblyproxy.tally_ballot(rs, ballot['id'])
-            if result:
-                afile = io.BytesIO(result)
-                my_hash = get_hash(result)
-                attachment_result: Dict[str, str] = {
-                    'file': afile,  # type: ignore
-                    'filename': 'result.json',
-                    'mimetype': 'application/json'}
-                to = [self.conf["BALLOT_TALLY_ADDRESS"]]
-                if rs.ambience['assembly']['presider_address']:
-                    to.append(rs.ambience['assembly']['presider_address'])
-                reply_to = (rs.ambience['assembly']['presider_address'] or
-                            self.conf["ASSEMBLY_ADMIN_ADDRESS"])
-                subject = f"Abstimmung '{ballot['title']}' ausgezählt"
-                self.do_mail(
-                    rs, "ballot_tallied", {
-                        'To': to,
-                        'Subject': subject,
-                        'Reply-To': reply_to
-                    },
-                    attachments=(attachment_result,),
-                    params={'sha': my_hash, 'title': ballot['title']})
-                return 1
-        return 0
+        if len(ret) != len(ballots):
+            raise RuntimeError(n_("Updating ballots failed."))
+        return ret
 
     def get_online_result(self, rs: RequestState, ballot: Dict[str, Any]
                           ) -> Optional[CdEDBObject]:
@@ -1265,14 +1272,9 @@ class AssemblyFrontend(AbstractUserFrontend):
         assemblies = self.assemblyproxy.get_assemblies(rs, assembly_ids)
         for assembly_id, assembly in assemblies.items():
             rs.ambience['assembly'] = assembly
-            ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
-            ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
-            for ballot_id, ballot in ballots.items():
-                code = self._update_ballot_state(rs, ballot)
-                if code < 0:
-                    extension_count += 1
-                elif code > 0:
-                    tally_count += 1
+            stati = self._update_ballots(rs, assembly_id).values()
+            extension_count += sum(1 for s in stati if s < 0)
+            tally_count += sum(1 for s in stati if s > 0)
         if extension_count or tally_count:
             self.logger.info(f"Extended {extension_count} and tallied"
                              f" {tally_count} ballots via cron job.")
