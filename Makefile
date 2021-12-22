@@ -268,6 +268,9 @@ ldap-update:
 ldap-remove:
 	sudo apt-get remove --purge -y slapd
 
+ldap-reset: ldap-remove ldap-create ldap-update
+	sudo -u www-data $(PYTHONBIN) bin/ldap_add_duas.py
+
 ###############################
 # Code testing and formatting #
 ###############################
