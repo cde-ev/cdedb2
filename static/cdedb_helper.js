@@ -285,10 +285,11 @@
      * Display a bootstrap modal showing a loading spinner
      * in its content section ("#cdedb-modal-content").
      *
-     * @param translations Translation texts for the modal. Must contain keys
-     *                     "title", "loading" and "close".
+     * @param translations (abject) Translation texts for the modal. Must contain keys
+     *                              "title", "loading" and "close".
+     * @param small (boolean) optionally reduce the width of the modal
      */
-    function cdedb_show_modal(translations) {
+    function cdedb_show_modal(translations, small=false) {
         const loading_spinner = `
 <div class="text-center">
     <span class="fas fa-sync fa-spin" aria-hidden="true"></span>
@@ -297,7 +298,7 @@
         `;
         const modal = `
 <div class="modal fade" id="cdedb-modal" tabindex="-1" role="dialog" aria-labelledby="mdpreview-modal-title">
-    <div class="modal-dialog" role="document">
+    <div class="modal-dialog${ small ? ' modal-sm' : '' }" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -361,10 +362,17 @@
         let qr_link = qr_button[0].href;
         qr_button.removeAttr("href");
         qr_button.click(function () {
-            cdedb_show_modal(translations);
+            cdedb_show_modal(translations, true);
             $.get(qr_link, function (data) {
-                $("#cdedb-modal-content").html('<div class="text-center" id="cdedb-contact-qr"></div>');
-                $("#cdedb-contact-qr").html(data.activeElement);
+                let modal_content = $("#cdedb-modal-content");
+                // size qr code (quadratic) to the full modal, but not exceeding small screens
+                let width = Math.min(modal_content.width(), window.innerHeight, window.innerWidth) + "px";
+                let svg = data.activeElement;
+                svg.setAttribute("width", width);
+                svg.setAttribute("height", width);
+                // now display it, also shrink the inner div around qr code
+                modal_content.html('<div class="text-center" id="cdedb-contact-qr"></div>');
+                $("#cdedb-contact-qr").html(svg).width(width).height(width);
             });
         });
     }
