@@ -171,6 +171,8 @@ TESTFOTONAME := e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbe
 
 storage: sanity-check
 	sudo rm -rf -- $(STORAGE_DIR)/*
+	# this takes care the DATA_USER also owns the directories containing STORAGE_DIR
+	sudo -u $(DATA_USER) mkdir -p $(STORAGE_DIR)
 	sudo mkdir -p $(STORAGE_DIR)/foto/
 	sudo mkdir -p $(STORAGE_DIR)/minor_form/
 	sudo mkdir -p $(STORAGE_DIR)/event_logo/
@@ -195,7 +197,8 @@ TESTFILES := picture.pdf,picture.png,picture.jpg,form.pdf,rechen.pdf,ballot_resu
 
 log: sanity-check
 	sudo rm -rf -- $(LOG_DIR)/*
-	sudo mkdir -p $(LOG_DIR)
+	# this takes care the DATA_USER also owns the directories containing LOG_DIR
+	sudo -u $(DATA_USER) mkdir -p $(LOG_DIR)
 	sudo chown $(DATA_USER):$(DATA_USER) $(LOG_DIR)
 
 
