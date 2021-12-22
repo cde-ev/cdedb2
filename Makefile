@@ -225,8 +225,8 @@ cron:
 # TODO add dependency on sql-test to create the specified database
 
 # use command-line arguments of make to override
-DATABASE_NAME ?= cdb
-DATABASE_CDB_ADMIN_PASSWORD ?= 9876543210abcdefghijklmnopqrst
+DATABASE_NAME = cdb
+DATABASE_CDB_ADMIN_PASSWORD = 9876543210abcdefghijklmnopqrst
 
 ldap-odbc:
 	# prepare odbc.ini file to enable database connection for ldap
