@@ -2773,6 +2773,7 @@ class CoreBackend(AbstractBackend):
                 raise ValueError(n_("Case not to review."))
             if decision.is_create():
                 case_status = const.GenesisStati.approved
+                persona_id = None
             elif decision.is_update():
                 case_status = const.GenesisStati.existing_updated
             else:
@@ -2783,7 +2784,7 @@ class CoreBackend(AbstractBackend):
                 'reviewer': rs.user.persona_id,
                 'realm': case['realm'],
             }
-            if not self.genesis_modify_case(rs, update):
+            if not self.genesis_modify_case(rs, update, persona_id):
                 raise RuntimeError(n_("Genesis modification failed."))
             if decision.is_create():
                 return self.genesis(rs, case_id)
