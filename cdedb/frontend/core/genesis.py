@@ -402,7 +402,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
 
         # Apply the decision.
         code = self.coreproxy.genesis_decide(rs, genesis_case_id, decision, persona_id)
-        if not code:  # pragma: no-cover
+        if not code:  # pragma: no cover
             rs.notify("error", n_("Failed."))
             return self.genesis_show_case(rs, genesis_case_id)
 
@@ -411,7 +411,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
             code = self.pasteventproxy.add_participant(
                 rs, pevent_id=case['pevent_id'], pcourse_id=case['pcourse_id'],
                 persona_id=persona_id)
-            if not code:
+            if not code:  # pragma: no cover
                 rs.notify(
                     "error", n_("Past event attendance could not be established."))
                 return self.genesis_show_case(rs, genesis_case_id)
