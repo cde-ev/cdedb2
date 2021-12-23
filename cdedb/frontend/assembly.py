@@ -661,7 +661,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         if not (len(future) + len(current) + len(extended) + len(done)
                 == len(ballots)):
-            raise RuntimeError(n_("Grouping ballots by status failed."))
+            raise RuntimeError(n_("Impossible."))
 
         return done, extended, current, future
 
@@ -1200,7 +1200,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         ret = (extended, tallied, unchanged)
         if sum(ret) != len(ballots):
-            raise RuntimeError(n_("Updating ballots failed."))
+            raise RuntimeError(n_("Impossible."))
         return ret
 
     def get_online_result(self, rs: RequestState, ballot: Dict[str, Any]
