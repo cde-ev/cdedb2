@@ -1807,9 +1807,7 @@ class TestCoreFrontend(FrontendTest):
         link = self.fetch_link()
         self.get(link)
 
-        self.traverse({'description': 'Accountanfragen'},
-                      {'description': 'Details'},
-                      {'description': 'Bearbeiten'})
+        self.traverse('Accountanfragen', 'Details', 'Accountanfrage bearbeiten')
         f = self.response.forms['genesismodifyform']
         self.assertNonPresence("Warnungen ignorieren")
         self.submit(f, check_notification=False)
@@ -2204,13 +2202,13 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'Accountanfrage'},
                       {'description': 'Details'})
         self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
-        self.traverse({'description': 'Bearbeiten'})
+        self.traverse('Accountanfrage bearbeiten')
         f = self.response.forms['genesismodifyform']
         f['family_name'] = "Zeruda"
         self.submit(f)
         self.assertTitle("Accountanfrage von Zelda Zeruda")
 
-        self.traverse({'description': 'Bearbeiten'})
+        self.traverse('Accountanfrage bearbeiten')
         f = self.response.forms['genesismodifyform']
         f['realm'] = "event"
         f['gender'] = const.Genders.female
@@ -2223,7 +2221,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("An der Eiche", div='address')
         self.assertPresence("Antarktis", div='address')
 
-        self.traverse({'description': 'Bearbeiten'})
+        self.traverse('Accountanfrage bearbeiten')
         f = self.response.forms['genesismodifyform']
         f['birthday'] = "1987-06-05"
         self.submit(f)
