@@ -2631,9 +2631,8 @@ class CoreBackend(AbstractBackend):
             return unwrap(data)
         params = (email, const.GenesisStati.to_review)
         data = self.query_one(rs, query, params)
-        if not (ret := unwrap(data)):
-            return None
-        return -ret
+        # Pylint does not understand, that unwrap(data) cannot be None here.
+        return -unwrap(data) if data else None  # pylint: disable=invalid_unary_operand_type
 
     @access("anonymous")
     def genesis_verify(self, rs: RequestState, case_id: int
