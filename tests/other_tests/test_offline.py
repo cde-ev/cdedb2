@@ -34,10 +34,7 @@ class TestOffline(FrontendTest):
                  repopath / 'tests/ancillary_files/event_export.json'],
                 check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             # Reset web test app for changed configuration
-            try:
-                del sys.modules['cdedb.localconfig']
-            except AttributeError:
-                pass
+            sys.modules.pop('cdedb.localconfig', None)
             new_app = Application(self.configpath)
             self.app = webtest.TestApp(  # type: ignore
                 new_app, extra_environ=self.app_extra_environ)
@@ -108,8 +105,5 @@ class TestOffline(FrontendTest):
                      repopath / "cdedb/localconfig.py"], check=True)
 
             # Force the localconfig to be reloaded
-            try:
-                del sys.modules['cdedb.localconfig']
-            except AttributeError:
-                pass
+            sys.modules.pop('cdedb.localconfig', None)
             subprocess.run(["sudo", "rm", "-f", "/OFFLINEVM"], check=True)
