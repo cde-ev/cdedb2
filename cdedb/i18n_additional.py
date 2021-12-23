@@ -153,6 +153,7 @@ I18N_STRINGS = (
     n_("GenesisStati.to_review"),
     n_("GenesisStati.approved"),
     n_("GenesisStati.successful"),
+    n_("GenesisStati.existing_updated"),
     n_("GenesisStati.rejected"),
 
     n_("LineResolutions.none"),

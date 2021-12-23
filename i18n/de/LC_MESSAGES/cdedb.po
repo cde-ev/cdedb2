@@ -14005,6 +14005,9 @@ msgstr "genehmigt"
 msgid "GenesisStati.successful"
 msgstr "erfolgreich"
 
+msgid "GenesisStati.existing_updated"
+msgstr "bestehender Account aktualisiert"
+
 #: cdedb/i18n_additional.py:156
 msgid "GenesisStati.rejected"
 msgstr "abgelehnt"

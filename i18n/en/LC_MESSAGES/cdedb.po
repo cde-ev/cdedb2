@@ -13215,6 +13215,9 @@ msgstr "approved"
 msgid "GenesisStati.successful"
 msgstr "successful"
 
+msgid "GenesisStati.existing_updated"
+msgstr "existing account updated"
+
 #: cdedb/i18n_additional.py:156
 msgid "GenesisStati.rejected"
 msgstr "rejected"
