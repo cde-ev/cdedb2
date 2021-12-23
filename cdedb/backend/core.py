@@ -2766,9 +2766,6 @@ class CoreBackend(AbstractBackend):
         decision = affirm(GenesisDecision, decision)
         persona_id = affirm_optional(vtypes.ID, persona_id)
 
-        if not (decision.is_create() or decision.is_update()):
-            return 0
-
         ret = 1
         with Atomizer(rs):
             case = self.genesis_get_case(rs, case_id)
@@ -2780,6 +2777,7 @@ class CoreBackend(AbstractBackend):
                     const.GenesisStati.approved if decision.is_create()
                     else const.GenesisStati.rejected,
                 'reviewer': rs.user.persona_id,
+                'realm': case['realm'],
             }
             if not self.genesis_modify_case(rs, update):
                 raise RuntimeError(n_("Genesis modification failed."))
@@ -2814,6 +2812,7 @@ class CoreBackend(AbstractBackend):
                 update = {
                     'id': case_id,
                     'case_status': const.GenesisStati.existing_updated,
+                    'realm': case['realm'],
                 }
                 ret *= self.genesis_modify_case(rs, update)
         return ret
