@@ -401,7 +401,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
 
         # Apply the decision.
         code = self.coreproxy.genesis_decide(rs, genesis_case_id, decision, persona_id)
-        if not code:
+        if not code:  # pragma: no-cover
             rs.notify("error", n_("Failed."))
             return self.genesis_show_case(rs, genesis_case_id)
 
