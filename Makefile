@@ -228,12 +228,19 @@ cron:
 DATABASE_NAME = cdb
 DATABASE_CDB_ADMIN_PASSWORD = 9876543210abcdefghijklmnopqrst
 
-ldap-odbc:
+ldap-prepare-odbc:
 	# prepare odbc.ini file to enable database connection for ldap
 	sudo cp -f ldap/odbc.ini /etc/odbc.ini \
 		&& sudo sed -i -r "s/DATABASE_NAME/${DATABASE_NAME}/" /etc/odbc.ini \
 		&& sudo sed -i -r "s/DATABASE_HOST/localhost/" /etc/odbc.ini \
 		&& sudo sed -i -r "s/DATABASE_CDB_ADMIN_PASSWORD/${DATABASE_CDB_ADMIN_PASSWORD}/" /etc/odbc.ini
+
+ldap-prepare-ldif:
+	# prepare the new cdedb-specific ldap configuration
+	cp -f ldap/cdedb-ldap.ldif ldap/cdedb-ldap-applied.ldif \
+		&& sed -i -r "s/OLC_DB_HOST/localhost/" ldap/cdedb-ldap-applied.ldif \
+		&& sed -i -r "s/OLC_DB_NAME/${DATABASE_NAME}/" ldap/cdedb-ldap-applied.ldif \
+		&& sed -i -r "s/DATABASE_CDB_ADMIN_PASSWORD/${DATABASE_CDB_ADMIN_PASSWORD}/" ldap/cdedb-ldap-applied.ldif
 
 ldap-create:
 	# the only way to remove all ldap settings for sure is currently to uninstall it.
@@ -242,7 +249,7 @@ ldap-create:
 	# TODO move this to autobuild!
 	sudo apt-get install -y unixodbc odbc-postgresql
 	sudo DEBIAN_FRONTEND=noninteractive apt-get install --yes slapd
-	$(MAKE) ldap-odbc
+	$(MAKE) ldap-prepare-odbc
 	# remove the predefined mdb-database from ldap
 	sudo systemctl stop slapd
 	sudo rm -f /etc/ldap/slapd.d/cn=config/olcDatabase=\{1\}mdb.ldif
@@ -252,13 +259,8 @@ ldap-create:
 	# Apply the overall ldap configuration (load modules, add backends etc)
 	sudo ldapmodify -Y EXTERNAL -H ldapi:/// -f ldap/config-ldap.ldif
 
-ldap-update:
-	# prepare the new ldap configuration
-	cp -f ldap/cdedb-ldap.ldif ldap/cdedb-ldap-applied.ldif \
-		&& sed -i -r "s/OLC_DB_HOST/localhost/" ldap/cdedb-ldap-applied.ldif \
-		&& sed -i -r "s/OLC_DB_NAME/${DATABASE_NAME}/" ldap/cdedb-ldap-applied.ldif \
-		&& sed -i -r "s/DATABASE_CDB_ADMIN_PASSWORD/${DATABASE_CDB_ADMIN_PASSWORD}/" ldap/cdedb-ldap-applied.ldif
-	# remove the old one and apply the new one
+ldap-update: ldap-prepare-odbc ldap-prepare-ldif
+	# remove the old cdedb-specific configuration and apply the new one
 	sudo systemctl stop slapd
 	# TODO is there any nice solution to do this from within ldap?
 	sudo rm -f /etc/ldap/slapd.d/cn=config/olcDatabase={1}sql.ldif
