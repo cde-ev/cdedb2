@@ -2771,11 +2771,15 @@ class CoreBackend(AbstractBackend):
             case = self.genesis_get_case(rs, case_id)
             if case['case_status'] != const.GenesisStati.to_review:
                 raise ValueError(n_("Case not to review."))
+            if decision.is_create():
+                case_status = const.GenesisStati.approved
+            elif decision.is_update():
+                case_status = const.GenesisStati.existing_updated
+            else:
+                case_status = const.GenesisStati.rejected
             update = {
                 'id': case_id,
-                'case_status':
-                    const.GenesisStati.approved if decision.is_create()
-                    else const.GenesisStati.rejected,
+                'case_status': case_status,
                 'reviewer': rs.user.persona_id,
                 'realm': case['realm'],
             }
@@ -2787,9 +2791,14 @@ class CoreBackend(AbstractBackend):
                 assert persona_id is not None
                 persona = self.get_persona(rs, persona_id)
                 if persona['is_archived']:
-                    ret *= self.dearchive_persona(rs, persona_id, case['username'])
+                    code = self.dearchive_persona(rs, persona_id, case['username'])
+                    if not code:  # pragma: no cover
+                        raise RuntimeError(n_("Dearchival failed."))
                 elif case['username'] != persona['username']:
-                    self.change_username(rs, persona_id, case['username'], None)
+                    code, _ = self.change_username(
+                        rs, persona_id, case['username'], None)
+                    if not code:  # pragma: no cover
+                        raise RuntimeError(n_("Username change failed."))
 
                 # Determine the keys of the persona that should be updated.
                 update_keys = set(GENESIS_CASE_FIELDS) & set(PERSONA_CORE_FIELDS)
@@ -2810,12 +2819,6 @@ class CoreBackend(AbstractBackend):
                 ret *= self.change_persona(
                     rs, update, change_note="Daten aus Accountanfrage übernommen.",
                     force_review=True)
-                update = {
-                    'id': case_id,
-                    'case_status': const.GenesisStati.existing_updated,
-                    'realm': case['realm'],
-                }
-                ret *= self.genesis_modify_case(rs, update, persona_id)
         return ret
 
     @internal
