@@ -2249,7 +2249,17 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("vera")
     def test_genesis_doppelganger(self) -> None:
-        self._create_genesis_doppelganger()
+        dg_data = self._create_genesis_doppelganger()
+        log_expectation = [
+            {
+                'code': const.CoreLogCodes.genesis_request,
+                'change_note': dg_data['username'],
+            },
+            {
+                'code': const.CoreLogCodes.genesis_verified,
+                'change_note': dg_data['username'],
+            },
+        ]
 
         self.traverse("Accountanfragen", "Details")
         self.assertTitle(f"Accountanfrage von {self.user['given_names']}"
@@ -2261,13 +2271,37 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f, button="decision", value=str(GenesisDecision.deny),
                     check_notification=False, verbose=True)
         self.assertPresence("Anfrage abgewiesen", div="notifications")
+        log_expectation.append({
+            'code': const.CoreLogCodes.genesis_rejected,
+            'change_note': dg_data['username'],
+        })
 
         # Create two almost identical requests, approve one and check that the second
         # one finds a doppelgänger.
         self._genesis_request(self.EVENT_GENESIS_DATA)
+        log_expectation.extend([
+            {
+                'code': const.CoreLogCodes.genesis_request,
+                'change_note': self.EVENT_GENESIS_DATA['username'],
+            },
+            {
+                'code': const.CoreLogCodes.genesis_verified,
+                'change_note': self.EVENT_GENESIS_DATA['username'],
+            },
+        ])
         alternate_username = "notzelda@example.cde"
         self._genesis_request(
             dict(self.EVENT_GENESIS_DATA, username=alternate_username))
+        log_expectation.extend([
+            {
+                'code': const.CoreLogCodes.genesis_request,
+                'change_note': alternate_username,
+            },
+            {
+                'code': const.CoreLogCodes.genesis_verified,
+                'change_note': alternate_username,
+            },
+        ])
 
         # Approve the first request.
         self.traverse("Accountanfragen", "Details")
@@ -2278,6 +2312,22 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesisdecisionform']
         self.submit(f, button="decision", value=str(GenesisDecision.approve),
                     check_notification=False)
+        new_persona_id = 1001
+        log_expectation.extend([
+            {
+                'code': const.CoreLogCodes.persona_creation,
+                'persona_id': new_persona_id,
+            },
+            {
+                'code': const.CoreLogCodes.genesis_approved,
+                'change_note': self.EVENT_GENESIS_DATA['username'],
+                'persona_id': new_persona_id,
+            },
+            {
+                'code': const.CoreLogCodes.password_reset_cookie,
+                'persona_id': new_persona_id,
+            }
+        ])
 
         # Check that the first username exists and the alternate one does not.
         self.assertTrue(self.core.verify_existence(
@@ -2317,9 +2367,28 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f, button="decision", value=str(GenesisDecision.update),
                     check_notification=False)
         self.assertPresence("Kein Account ausgewählt.", div="notifications")
+        # Now for real.
         f['persona_id'] = f['persona_id'].options[1][0]
         self.submit(f, button="decision", value=str(GenesisDecision.update))
         self.assertPresence("Benutzer aktualisiert", div="notifications")
+        log_expectation.extend([
+            {
+                'code': const.CoreLogCodes.genesis_merged,
+                'persona_id': new_persona_id,
+            },
+            {
+                'code': const.CoreLogCodes.username_change,
+                'change_note': alternate_username,
+                'persona_id': new_persona_id,
+            },
+            {
+                'code': const.CoreLogCodes.password_reset_cookie,
+                'persona_id': new_persona_id,
+            }
+        ])
+
+        self.assertLogEqual(
+            log_expectation, realm="core", offset=len(self.get_sample_data("core.log")))
 
         # Check that the first username no longer exists, but the alternate one does.
         self.assertFalse(self.core.verify_existence(
