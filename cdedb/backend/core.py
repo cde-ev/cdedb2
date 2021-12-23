@@ -2819,6 +2819,7 @@ class CoreBackend(AbstractBackend):
         return ret
 
     @internal
+    @access(*REALM_ADMINS)
     def genesis(self, rs: RequestState, case_id: int) -> DefaultReturnCode:
         """Create a new user account upon request.
 
