@@ -2768,6 +2768,7 @@ class CoreBackend(AbstractBackend):
 
         ret = 1
         with Atomizer(rs):
+            # Privilege check is done in genesis_get_case, since it requires the case.
             case = self.genesis_get_case(rs, case_id)
             if case['case_status'] != const.GenesisStati.to_review:
                 raise ValueError(n_("Case not to review."))
