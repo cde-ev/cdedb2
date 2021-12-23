@@ -1168,36 +1168,34 @@ class AssemblyFrontend(AbstractUserFrontend):
                     # the relevant piece of information
                     ballot['extended'] = False
 
-            finished = (
-                    timestamp > ballot['vote_end']
-                    and (not ballot['extended']
-                         or timestamp > ballot['vote_extension_end']))
+            finished = (timestamp > ballot['vote_end']
+                        and (not ballot['extended']
+                             or timestamp > ballot['vote_extension_end']))
             # check whether we need to initiate tallying
-            if finished and not ballot['is_tallied']:
-                result = self.assemblyproxy.tally_ballot(rs, ballot['id'])
-                if result:
-                    afile = io.BytesIO(result)
-                    my_hash = get_hash(result)
-                    attachment_result: Dict[str, str] = {
-                        'file': afile,  # type: ignore
-                        'filename': 'result.json',
-                        'mimetype': 'application/json'}
-                    to = [self.conf["BALLOT_TALLY_ADDRESS"]]
-                    if rs.ambience['assembly']['presider_address']:
-                        to.append(rs.ambience['assembly']['presider_address'])
-                    reply_to = (rs.ambience['assembly']['presider_address'] or
-                                self.conf["ASSEMBLY_ADMIN_ADDRESS"])
-                    subject = f"Abstimmung '{ballot['title']}' ausgezählt"
-                    self.do_mail(
-                        rs, "ballot_tallied", {
-                            'To': to,
-                            'Subject': subject,
-                            'Reply-To': reply_to
-                        },
-                        attachments=(attachment_result,),
-                        params={'sha': my_hash, 'title': ballot['title']})
-                    tallied += 1
-                    continue
+            # tally_ballot returns None if ballot was already tallied
+            if finished and (result := self.assemblyproxy.tally_ballot(rs, ballot_id)):
+                afile = io.BytesIO(result)
+                my_hash = get_hash(result)
+                attachment_result: Dict[str, str] = {
+                    'file': afile,  # type: ignore
+                    'filename': 'result.json',
+                    'mimetype': 'application/json'}
+                to = [self.conf["BALLOT_TALLY_ADDRESS"]]
+                if rs.ambience['assembly']['presider_address']:
+                    to.append(rs.ambience['assembly']['presider_address'])
+                reply_to = (rs.ambience['assembly']['presider_address'] or
+                            self.conf["ASSEMBLY_ADMIN_ADDRESS"])
+                subject = f"Abstimmung '{ballot['title']}' ausgezählt"
+                self.do_mail(
+                    rs, "ballot_tallied", {
+                        'To': to,
+                        'Subject': subject,
+                        'Reply-To': reply_to
+                    },
+                    attachments=(attachment_result,),
+                    params={'sha': my_hash, 'title': ballot['title']})
+                tallied += 1
+                continue
             unchanged += 1
 
         ret = (extended, tallied, unchanged)
