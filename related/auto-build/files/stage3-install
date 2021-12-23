@@ -109,6 +109,11 @@ mkdir /var/log/cdedb
 chown www-data:www-data /var/log/cdedb
 
 echo ""
+echo "Setting up cdedb-specific ldap..."
+echo "--------------------------------------------"
+sudo -u cdedb make ldap-update
+
+echo ""
 echo "Set up the apache2..."
 echo "--------------------------------------------"
 
@@ -147,7 +152,7 @@ if [ -e /media/cdrom0/vdi ]; then
     echo "cdedb - sandbox system: STAGE VDI"
     echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     echo ""
-    echo "Adjusting grup.cfg..."
+    echo "Adjusting grub.cfg..."
     echo "--------------------------------------------"
 
     sed -i -e 's=/dev/vda1=/dev/sda1=g' /boot/grub/grub.cfg
