@@ -123,8 +123,9 @@ class GenesisStati(enum.IntEnum):
     #: reviewed and rejected (also a final state)
     rejected = 10
 
-    def finalized_stati(self) -> Set["GenesisStati"]:
-        return {self.successful, self.existing_updated, self.rejected}
+    @classmethod
+    def finalized_stati(cls) -> Set["GenesisStati"]:
+        return {cls.successful, cls.existing_updated, cls.rejected}
 
     def is_finalized(self) -> bool:
         return self in self.finalized_stati()

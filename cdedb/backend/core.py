@@ -2255,9 +2255,7 @@ class CoreBackend(AbstractBackend):
             query = glue("SELECT COUNT(*) AS num FROM core.genesis_cases",
                          "WHERE username = %s AND case_status = ANY(%s)")
             # This should be all stati which are not final.
-            stati = (const.GenesisStati.unconfirmed,
-                     const.GenesisStati.to_review,
-                     const.GenesisStati.approved)  # approved is a temporary state.
+            stati = set(const.GenesisStati) - const.GenesisStati.finalized_stati()
             num += unwrap(self.query_one(rs, query, (email, stati))) or 0
         return bool(num)
 
