@@ -15,7 +15,7 @@ echo "Checkout $OLDREVISION"
 git checkout $OLDREVISION
 ls cdedb/database/evolutions > /tmp/oldevolutions.txt
 make -B tests/ancillary_files/sample_data.sql &> /dev/null
-make sql DATABASE_NAME=$DATABASE_NAME &> /dev/null
+make sql DATABASE_NAME=$DATABASE_NAME &> /dev/null || make sql-test
 
 # new revision
 echo ""
