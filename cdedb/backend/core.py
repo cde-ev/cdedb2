@@ -2733,13 +2733,9 @@ class CoreBackend(AbstractBackend):
         persona_id = affirm_optional(vtypes.ID, persona_id)
 
         with Atomizer(rs):
-            current = self.sql_select_one(
-                rs, "core.genesis_cases", ("case_status", "username", "realm"),
-                data['id'])
-            if current is None:
-                raise ValueError(n_("Genesis case does not exist."))
-            if not rs.user.roles & {"core_admin", f"{data['realm']}_admin",
-                                    f"{current['realm']}_admin"}:
+            current = self.genesis_get_case(rs, data['id'])
+            # Get case already checks privilege and existance for the current data set.
+            if not {"core_admin", f"{data['realm']}_admin"} & rs.user.roles:
                 raise PrivilegeError(n_("Not privileged."))
             if current['case_status'].is_finalized():
                 raise ValueError(n_("Genesis case already finalized."))
