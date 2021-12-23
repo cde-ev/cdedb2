@@ -624,7 +624,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         None will be returned and the calling function should perform
         a redirect to the calling page, so the typical usage looks like:
 
-            if grouped := self.group_ballots(rs, assembly_id):
+            if grouped := self._group_ballots(rs, assembly_id):
                 done, extended, current, future = grouped
             else:
                 return self.redirect(rs, "assembly/dummy_page")
@@ -632,6 +632,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         :returns: None if any ballot updated state, else
             four dicts mapping ballot ids to ballots grouped by status
             in the order done, extended, current, future.
+            Every ballot of the assembly is present in exactly one dict.
         """
         # Check for state changes before grouping ballots.
         extended, tallied, _ = self._update_ballots(rs, assembly_id)
@@ -672,6 +673,8 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         if grouped := self._group_ballots(rs, assembly_id):
             done, extended, current, future = grouped
+            # _group_ballots returns all ballots of the assembly in four disjunct dicts
+            # TODO: python3.9: ballots = done | extended | current | future
             ballots = {**done, **extended, **current, **future}
         else:
             # some ballots updated state
@@ -940,6 +943,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         # and as grouping them updates their state we do it already here
         if grouped := self._group_ballots(rs, assembly_id):
             done, extended, current, future = grouped
+            # _group_ballots returns all ballots of the assembly in four disjunct dicts
+            # TODO: python3.9: ballots = done | extended | current | future
             ballots = {**done, **extended, **current, **future}
         else:
             # some ballots updated state
@@ -1022,6 +1027,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         # and as grouping them updates their state we do it already here
         if grouped := self._group_ballots(rs, assembly_id):
             done, _, _, _ = grouped
+            # _group_ballots returns all ballots of the assembly in four disjunct dicts
             ballots = {k: v for d in grouped for k, v in d.items()}
         else:
             # some ballots updated state
