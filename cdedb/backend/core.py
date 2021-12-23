@@ -2719,14 +2719,20 @@ class CoreBackend(AbstractBackend):
 
     class _GenesisGetCaseProtocol(Protocol):
         def __call__(self, rs: RequestState, genesis_case_id: int) -> CdEDBObject: ...
+
     genesis_get_case: _GenesisGetCaseProtocol = singularize(
         genesis_get_cases, "genesis_case_ids", "genesis_case_id")
 
     @access(*REALM_ADMINS)
-    def genesis_modify_case(self, rs: RequestState, data: CdEDBObject
-                            ) -> DefaultReturnCode:
-        """Modify a persona creation case."""
+    def genesis_modify_case(self, rs: RequestState, data: CdEDBObject,
+                            persona_id: int = None) -> DefaultReturnCode:
+        """Modify a persona creation case.
+
+        :param persona_id: The account, this modification related to. Especially
+            relevant if a new account was created or an existing account was updated.
+        """
         data = affirm(vtypes.GenesisCase, data)
+        persona_id = affirm_optional(vtypes.ID, persona_id)
 
         with Atomizer(rs):
             current = self.sql_select_one(
@@ -2734,24 +2740,24 @@ class CoreBackend(AbstractBackend):
                 data['id'])
             if current is None:
                 raise ValueError(n_("Genesis case does not exist."))
-            if not ({"core_admin", "{}_admin".format(current['realm'])}
-                    & rs.user.roles):
+            if not rs.user.roles & {"core_admin", f"{data['realm']}_admin",
+                                    f"{current['realm']}_admin"}:
                 raise PrivilegeError(n_("Not privileged."))
-            if ('realm' in data
-                    and not ({"core_admin", "{}_admin".format(data['realm'])}
-                             & rs.user.roles)):
-                raise PrivilegeError(n_("Not privileged."))
+            if current['case_status'].is_finalized():
+                raise ValueError(n_("Genesis case already finalized."))
             ret = self.sql_update(rs, "core.genesis_cases", data)
-            if (data.get('case_status')
-                    and data['case_status'] != current['case_status']):
-                if data['case_status'] == const.GenesisStati.approved:
+            if 'case_status' in data and data['case_status'] != current['case_status']:
+                if data['case_status'] == const.GenesisStati.successful:
                     self.core_log(
-                        rs, const.CoreLogCodes.genesis_approved, persona_id=None,
+                        rs, const.CoreLogCodes.genesis_approved, persona_id=persona_id,
                         change_note=current['username'])
                 elif data['case_status'] == const.GenesisStati.rejected:
                     self.core_log(
-                        rs, const.CoreLogCodes.genesis_rejected, persona_id=None,
+                        rs, const.CoreLogCodes.genesis_rejected, persona_id=persona_id,
                         change_note=current['username'])
+                elif data['case_status'] == const.GenesisStati.existing_updated:
+                    self.core_log(
+                        rs, const.CoreLogCodes.genesis_merged, persona_id=persona_id)
         return ret
 
     @access(*REALM_ADMINS)
@@ -2815,7 +2821,7 @@ class CoreBackend(AbstractBackend):
                     'case_status': const.GenesisStati.existing_updated,
                     'realm': case['realm'],
                 }
-                ret *= self.genesis_modify_case(rs, update)
+                ret *= self.genesis_modify_case(rs, update, persona_id)
         return ret
 
     @internal
@@ -2844,13 +2850,14 @@ class CoreBackend(AbstractBackend):
             if extract_realms(roles) != \
                     ({case['realm']} | implied_realms(case['realm'])):
                 raise PrivilegeError(n_("Wrong target realm."))
-            ret = self.create_persona(rs, data, submitted_by=case['reviewer'])
+            new_id = self.create_persona(rs, data, submitted_by=case['reviewer'])
             update = {
                 'id': case_id,
                 'case_status': const.GenesisStati.successful,
+                'realm': case['realm'],
             }
-            self.sql_update(rs, "core.genesis_cases", update)
-        return ret
+            self.genesis_modify_case(rs, update, persona_id=new_id)
+        return new_id
 
     @access("core_admin")
     def find_doppelgangers(self, rs: RequestState,

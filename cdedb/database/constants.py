@@ -8,7 +8,7 @@ their symbolic names provided by this module should be used.
 """
 
 import enum
-from typing import Dict
+from typing import Dict, Set
 
 from cdedb.subman.machine import (  # pylint: disable=unused-import # noqa: F401
     SubscriptionAction, SubscriptionState,
@@ -122,6 +122,12 @@ class GenesisStati(enum.IntEnum):
     existing_updated = 5
     #: reviewed and rejected (also a final state)
     rejected = 10
+
+    def finalized_stati(self) -> Set["GenesisStati"]:
+        return {self.successful, self.existing_updated, self.rejected}
+
+    def is_finalized(self) -> bool:
+        return self in self.finalized_stati()
 
 
 @enum.unique
@@ -259,6 +265,7 @@ class CoreLogCodes(enum.IntEnum):
     genesis_rejected = 22  #:
     genesis_deleted = 23  #:
     genesis_verified = 24  #:
+    genesis_merged = 25  #:
     privilege_change_pending = 30  #:
     privilege_change_approved = 31  #:
     privilege_change_rejected = 32  #:

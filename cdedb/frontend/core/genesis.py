@@ -229,10 +229,8 @@ class CoreGenesisMixin(CoreBaseFrontend):
 
         This allows the username to be used once more.
         """
-        stati = (const.GenesisStati.successful, const.GenesisStati.unconfirmed,
-                 const.GenesisStati.rejected)
-        cases = self.coreproxy.genesis_list_cases(
-            rs, stati=stati)
+        stati = const.GenesisStati.finalized_stati() | {const.GenesisStati.unconfirmed}
+        cases = self.coreproxy.genesis_list_cases(rs, stati=stati)
 
         delete = tuple(case["id"] for case in cases.values() if
                        case["ctime"] < now() - self.conf["PARAMETER_TIMEOUT"])
