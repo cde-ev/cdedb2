@@ -1674,8 +1674,6 @@ class CronTest(CdEDBTest):
             for job in cls.cron.find_periodics(frontend)
         }
         cls._remaining_tests = {x for x in dir(cls) if x.startswith("test_")}
-        cls.stores = []
-        cls.mails = []
 
     @classmethod
     def tearDownClass(cls) -> None:
