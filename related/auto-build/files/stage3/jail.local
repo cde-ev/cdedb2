@@ -18,3 +18,10 @@ port    = http,https
 filter  = cdedb-apitoken
 logpath  = /var/log/cdedb/backend-session.log
 maxretry = 5
+
+[cdedb-password-reset]
+enabled = true
+port    = http,https
+filer   = cdedb-password-reset
+logpath = /var/log/cdedb/frontend-core.log
+maxretry = 10
