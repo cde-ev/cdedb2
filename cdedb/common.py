@@ -1168,18 +1168,15 @@ class LineResolutions(enum.IntEnum):
 class GenesisDecision(enum.IntEnum):
     """Possible decisions during review of a genesis request."""
     approve = 1  #: Approve the request and create a new account.
-    deny = 2  #: Deny the request. Do not create an account.
-    dearchive = 3  #: Deny the request but dearchive an existing account.
-    update = 4  #: Deny the request but update an existing non-archived account.
+    deny = 2  #: Deny the request. Do not create or update an account.
+    #: Deny the request but update an existing account, dearchiving it if necessary.
+    update = 3
 
     def is_create(self) -> bool:
         return self == GenesisDecision.approve
 
     def is_update(self) -> bool:
-        return self in {GenesisDecision.dearchive, GenesisDecision.update}
-
-    def is_dearchive(self) -> bool:
-        return self == GenesisDecision.dearchive
+        return self == GenesisDecision.update
 
 
 #: magic number which signals our makeshift algebraic data type

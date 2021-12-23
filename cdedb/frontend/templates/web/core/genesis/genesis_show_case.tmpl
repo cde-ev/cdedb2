@@ -163,11 +163,8 @@
                     label=gettext("Reject"), aclass="btn btn-danger", icon="ban") }}
                 {% if doppelgangers %}
                     {{ util.input_submit(
-                        name="decision", value = enums['GenesisDecision'].dearchive,
-                        label=gettext("Dearchive"), aclass="btn btn-success") }}
-                    {{ util.input_submit(
                         name="decision", value = enums['GenesisDecision'].update,
-                        label=gettext("Update_[[genesis case]]"), aclass="btn btn-success") }}
+                        label=gettext("Update_[[genesis case]]"), aclass="btn btn-success", icon="user-edit") }}
                 {% endif %}
                 {{ util.href(cdedblink('core/genesis_modify_form'), gettext("Edit"),
                     aclass="btn btn-warning", icon="pen") }}

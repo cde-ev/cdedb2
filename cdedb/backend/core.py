@@ -27,12 +27,14 @@ from cdedb.backend.common import (
 from cdedb.common import (
     ADMIN_KEYS, ALL_ROLES, GENESIS_CASE_FIELDS, GENESIS_REALM_OVERRIDE,
     PERSONA_ALL_FIELDS, PERSONA_ASSEMBLY_FIELDS, PERSONA_CDE_FIELDS,
-    PERSONA_CORE_FIELDS, PERSONA_DEFAULTS, PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS,
-    PERSONA_STATUS_FIELDS, PRIVILEGE_CHANGE_FIELDS, REALM_ADMINS, ArchiveError,
+    PERSONA_CORE_FIELDS, PERSONA_DEFAULTS, PERSONA_EVENT_FIELDS,
+    PERSONA_FIELDS_BY_REALM, PERSONA_ML_FIELDS, PERSONA_STATUS_FIELDS,
+    PRIVILEGE_CHANGE_FIELDS, REALM_ADMINS, REALM_SPECIFIC_GENESIS_FIELDS, ArchiveError,
     CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, Error,
-    PathLike, PrivilegeError, PsycoJson, QuotaException, Realm, RequestState, Role,
-    User, decode_parameter, encode_parameter, extract_realms, extract_roles, get_hash,
-    glue, implied_realms, merge_dicts, n_, now, privilege_tier, unwrap, xsorted,
+    GenesisDecision, PathLike, PrivilegeError, PsycoJson, QuotaException, Realm,
+    RequestState, Role, User, decode_parameter, encode_parameter, extract_realms,
+    extract_roles, get_hash, glue, implied_realms, merge_dicts, n_, now, privilege_tier,
+    unwrap, xsorted,
 )
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -2768,6 +2770,69 @@ class CoreBackend(AbstractBackend):
         return ret
 
     @access(*REALM_ADMINS)
+    def genesis_decide(self, rs: RequestState, case_id: int, decision: GenesisDecision,
+                       persona_id: int = None) -> DefaultReturnCode:
+        """Final step in the genesis process. Create or modify an account or do nothing.
+
+        :returns: Default return code. The id of the newly created user if any.
+        """
+        case_id = affirm(vtypes.ID, case_id)
+        decision = affirm(GenesisDecision, decision)
+        persona_id = affirm_optional(vtypes.ID, persona_id)
+
+        if not (decision.is_create() or decision.is_update()):
+            return 0
+
+        with Atomizer(rs):
+            case = self.genesis_get_case(rs, case_id)
+            if case['case_status'] != const.GenesisStati.to_review:
+                raise ValueError(n_("Case not to review."))
+            update = {
+                'id': case_id,
+                'case_status':
+                    const.GenesisStati.approved if decision.is_create()
+                    else const.GenesisStati.rejected,
+                'reviewer': rs.user.persona_id,
+            }
+            if not self.genesis_modify_case(rs, update):
+                raise RuntimeError(n_("Genesis modification failed."))
+            if decision.is_create():
+                return self.genesis(rs, case_id)
+            if decision.is_update():
+                assert persona_id is not None
+                persona = self.get_persona(rs, persona_id)
+                ret = 1
+                if persona['is_archived']:
+                    ret *= self.dearchive_persona(rs, persona_id, case['username'])
+                elif case['username'] != persona['username']:
+                    ret *= self.change_username(rs, persona_id, case['username'], None)
+
+                # Determine the keys of the persona that should be updated.
+                update_keys = {'given_names', 'family_name'}
+                roles = extract_roles(persona)
+                for realm, fields in REALM_SPECIFIC_GENESIS_FIELDS.items():
+                    # For every realm that the persona has, update the fields implied
+                    # by that realm if they are also genesis fields.
+                    if realm in roles:
+                        update_keys.update(set(fields) & PERSONA_FIELDS_BY_REALM[realm])
+                update = {
+                    k: case[k] for k in update_keys if case[k]
+                }
+                update['display_name'] = update['given_names']
+                update['id'] = persona_id
+                # Set force_review, so that all changes can be reviewed and adjusted
+                # manually and we don't just overwrite existing data blindly.
+                ret *= self.change_persona(
+                    rs, update, change_note="Daten aus Accountanfrage übernommen.",
+                    force_review=True)
+                update = {
+                    'id': case_id,
+                    'case_status': const.GenesisStati.existing_updated,
+                }
+                ret *= self.genesis_modify_case(rs, update)
+                return ret
+
+    @internal
     def genesis(self, rs: RequestState, case_id: int) -> DefaultReturnCode:
         """Create a new user account upon request.
 

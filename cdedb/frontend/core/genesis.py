@@ -13,12 +13,12 @@ from werkzeug import Response
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    PERSONA_FIELDS_BY_REALM, REALM_SPECIFIC_GENESIS_FIELDS, CdEDBObject,
-    GenesisDecision, RequestState, extract_roles, merge_dicts, n_, now,
+    REALM_SPECIFIC_GENESIS_FIELDS, CdEDBObject, GenesisDecision, RequestState,
+    merge_dicts, n_, now,
 )
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, REQUESTfile, TransactionObserver, access,
-    check_validation as check, periodic,
+    REQUESTdata, REQUESTdatadict, REQUESTfile, access, check_validation as check,
+    periodic,
 )
 from cdedb.frontend.core.base import CoreBaseFrontend
 from cdedb.validation import GENESIS_CASE_EXPOSED_FIELDS, PERSONA_COMMON_FIELDS
@@ -379,82 +379,31 @@ class CoreGenesisMixin(CoreBaseFrontend):
         if rs.has_validation_errors():
             return self.genesis_show_case(rs, genesis_case_id)
         case = rs.ambience['genesis_case']
-        if (not self.is_admin(rs)
-                and "{}_admin".format(case['realm']) not in rs.user.roles):
+
+        # Do privilege and sanity checks.
+        if not self.is_admin(rs) and f"{case['realm']}_admin" not in rs.user.roles:
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         if decision.is_create():
             if self.coreproxy.verify_existence(
                     rs, case['username'], include_genesis=False):
                 rs.notify("error", n_("Email address already taken."))
                 return self.redirect(rs, "core/genesis_show_case")
-        if decision.is_dearchive() or decision.is_update():
+        if decision.is_update():
             if not persona_id or not self.coreproxy.verify_persona(
                     rs, persona_id, (case['realm'],)):
                 rs.notify("error", n_("Invalid persona for update."))
                 return self.redirect(rs, "core/genesis_show_case")
-            persona = self.coreproxy.get_persona(rs, persona_id)
-            if decision.is_dearchive() != persona['is_archived']:
-                if decision.is_dearchive():
-                    rs.notify("error", n_("Cannot dearchive non-archived persona."))
-                else:
-                    rs.notify("error", n_("User is archived."))
-                return self.redirect(rs, "core/genesis_show_case")
         if case['case_status'] != const.GenesisStati.to_review:
             rs.notify("error", n_("Case not to review."))
             return self.redirect(rs, "core/genesis_show_case")
-        data = {
-            'id': genesis_case_id,
-            'case_status':
-                const.GenesisStati.approved if decision.is_create()
-                else const.GenesisStati.rejected,
-            'reviewer': rs.user.persona_id,
-            'realm': case['realm'],
-        }
-        with TransactionObserver(rs, self, "genesis_decide"):
-            code = self.coreproxy.genesis_modify_case(rs, data)
-            success = bool(code)
-            new_id = None
-            pcode = 1
-            if success and decision.is_create():
-                new_id = self.coreproxy.genesis(rs, genesis_case_id)
-                if case['pevent_id']:
-                    pcode = self.pasteventproxy.add_participant(
-                        rs, pevent_id=case['pevent_id'], pcourse_id=case['pcourse_id'],
-                        persona_id=new_id)
-                success = bool(new_id)
-            elif success and decision.is_dearchive():
-                assert persona_id is not None
-                success = bool(
-                    self.coreproxy.dearchive_persona(rs, persona_id, case['username']))
-            # Note that dearchival also includes updating.
-            if success and decision.is_update():
-                assert persona_id is not None
-                persona = self.coreproxy.get_persona(rs, persona_id)
-                roles = extract_roles(persona)
-                if case['username'] != persona['username']:
-                    success = bool(self.coreproxy.change_username(
-                        rs, persona_id, case['username'], None))
-                update_keys = {'given_names', 'family_name'}
-                for realm, fields in REALM_SPECIFIC_GENESIS_FIELDS.items():
-                    if realm in roles:
-                        update_keys.update(set(fields) & PERSONA_FIELDS_BY_REALM[realm])
-                update = {
-                    k: case[k] for k in update_keys if case[k]
-                }
-                update['display_name'] = update['given_names']
-                update['id'] = persona_id
-                success &= bool(self.coreproxy.change_persona(
-                    rs, update, change_note="Daten aus Accountanfrage übernommen.",
-                    force_review=True))
-        if not pcode and success:
-            rs.notify("error", n_("Past event attendance could not be established."))
-            return self.genesis_list_cases(rs)
-        if not success:
+
+        # Apply the
+        code = self.coreproxy.genesis_decide(rs, genesis_case_id, decision)
+        if not code:
             rs.notify("error", n_("Failed."))
             return self.genesis_list_cases(rs)
         if decision.is_create():
-            assert new_id is not None
-            persona = self.coreproxy.get_persona(rs, new_id)
+            persona = self.coreproxy.get_persona(rs, code)
             meta_info = self.coreproxy.get_meta_info(rs)
             success, cookie = self.coreproxy.make_reset_cookie(
                 rs, persona['username'],
@@ -468,7 +417,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
                 {'data': persona, 'email': email, 'cookie': cookie,
                  'fee': self.conf['MEMBERSHIP_FEE'], 'meta_info': meta_info})
             rs.notify("success", n_("Case approved."))
-        elif decision.is_dearchive() or decision.is_update():
+        elif decision.is_update():
             assert persona_id is not None
             persona = self.coreproxy.get_persona(rs, persona_id)
             success, cookie = self.coreproxy.make_reset_cookie(

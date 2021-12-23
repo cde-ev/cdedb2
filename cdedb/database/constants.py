@@ -125,6 +125,8 @@ class GenesisStati(enum.IntEnum):
     approved = 3
     #: finished (persona created, challenge archived)
     successful = 4
+    #: finished (existing persona updated, challenge archived)
+    existing_updated = 5
     #: reviewed and rejected (also a final state)
     rejected = 10
 
