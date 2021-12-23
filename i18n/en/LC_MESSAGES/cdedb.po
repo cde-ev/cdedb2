@@ -12805,6 +12805,9 @@ msgstr "Account Request deleted"
 msgid "CoreLogCodes.genesis_verified"
 msgstr "Account Request verified"
 
+msgid "CoreLogCodes.genesis_merged"
+msgstr "Account Request merged"
+
 #: cdedb/i18n_additional.py:69
 msgid "CoreLogCodes.privilege_change_pending"
 msgstr "Privilege Change pending"
