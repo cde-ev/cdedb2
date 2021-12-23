@@ -246,18 +246,13 @@ ldap-create:
 	# the only way to remove all ldap settings for sure is currently to uninstall it.
 	# therefore, we need to re-install slapd here.
 	sudo apt-get update
-	# TODO move this to autobuild!
-	sudo apt-get install -y unixodbc odbc-postgresql
 	sudo DEBIAN_FRONTEND=noninteractive apt-get install --yes slapd
-	$(MAKE) ldap-prepare-odbc
 	# remove the predefined mdb-database from ldap
 	sudo systemctl stop slapd
 	sudo rm -f /etc/ldap/slapd.d/cn=config/olcDatabase=\{1\}mdb.ldif
-	# TODO is this necessary?
-	# sudo rm -rf /var/lib/ldap
 	sudo systemctl start slapd
 	# Apply the overall ldap configuration (load modules, add backends etc)
-	sudo ldapmodify -Y EXTERNAL -H ldapi:/// -f ldap/config-ldap.ldif
+	sudo ldapmodify -Y EXTERNAL -H ldapi:/// -f related/auto-build/files/stage2/ldap-config.ldif
 
 ldap-update: ldap-prepare-odbc ldap-prepare-ldif
 	# remove the old cdedb-specific configuration and apply the new one

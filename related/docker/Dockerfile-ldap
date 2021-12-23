@@ -1,7 +1,7 @@
 FROM debian:bullseye-20210816
 
 # copy the ldap files and the ldap entrypoint into the container
-COPY ./ldap/ ./related/docker/ldap-entrypoint.sh /tmp/ldap/
+COPY ./ldap/ ./related/docker/ldap-entrypoint.sh ./related/auto-build/files/stage2/ldap-config.ldif /tmp/ldap/
 
 # touch the CONTAINER file
 RUN touch /CONTAINER
@@ -16,7 +16,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-
 # Copy all relevant files into the /app directory & the ldap entrypoint in root
 RUN mkdir /app \
     && cp /tmp/ldap/odbc.ini /app/ \
-    && cp /tmp/ldap/config-ldap.ldif /app/ \
+    && cp /tmp/ldap-config.ldif /app/ \
     && cp /tmp/ldap/cdedb-ldap.ldif /app/ \
     \
     && mv /tmp/ldap/ldap-entrypoint.sh /ldap-entrypoint.sh
