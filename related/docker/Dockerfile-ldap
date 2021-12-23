@@ -16,7 +16,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-
 # Copy all relevant files into the /app directory & the ldap entrypoint in root
 RUN mkdir /app \
     && cp /tmp/ldap/odbc.ini /app/ \
-    && cp /tmp/ldap-config.ldif /app/ \
+    && cp /tmp/ldap/ldap-config.ldif /app/ \
     && cp /tmp/ldap/cdedb-ldap.ldif /app/ \
     \
     && mv /tmp/ldap/ldap-entrypoint.sh /ldap-entrypoint.sh
