@@ -400,10 +400,10 @@ class CoreGenesisMixin(CoreBaseFrontend):
             return self.redirect(rs, "core/genesis_show_case")
 
         # Apply the decision.
-        code = self.coreproxy.genesis_decide(rs, genesis_case_id, decision)
+        code = self.coreproxy.genesis_decide(rs, genesis_case_id, decision, persona_id)
         if not code:
             rs.notify("error", n_("Failed."))
-            return self.genesis_show_case(rs)
+            return self.genesis_show_case(rs, genesis_case_id)
 
         if (decision.is_create() or decision.is_update()) and case['pevent_id']:
             persona_id = persona_id or code
@@ -413,7 +413,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
             if not code:
                 rs.notify(
                     "error", n_("Past event attendance could not be established."))
-                return self.genesis_show_case(rs)
+                return self.genesis_show_case(rs, genesis_case_id)
 
         # Send notification to the user, depending on decision.
         if decision.is_create():
@@ -443,10 +443,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
                 rs, "genesis/genesis_updated",
                 {'To': (persona['username'],), 'Subject': "CdEDB Account reaktiviert"},
                 {'persona': persona, 'email': email, 'cookie': cookie})
-            if decision.is_dearchive():
-                rs.notify("success", n_("User dearchived and updated."))
-            else:
-                rs.notify("success", n_("User updated."))
+            rs.notify("success", n_("User updated."))
         else:
             self.do_mail(
                 rs, "genesis/genesis_declined",

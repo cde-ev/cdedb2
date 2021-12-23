@@ -2619,7 +2619,7 @@ class CoreBackend(AbstractBackend):
                               email: str) -> Optional[int]:
         """Get the id of an unconfirmed or unreviewed genesis case for a given email.
 
-        :returns: The case id if the case is uncofirmed, the negative id if the case
+        :returns: The case id if the case is unconfirmed, the negative id if the case
             is pending review, None if no such case exists.
         """
         email = affirm(str, email)
@@ -2631,7 +2631,9 @@ class CoreBackend(AbstractBackend):
             return unwrap(data)
         params = (email, const.GenesisStati.to_review)
         data = self.query_one(rs, query, params)
-        return -unwrap(data) if data else None
+        if not data:
+            return None
+        return -unwrap(data)
 
     @access("anonymous")
     def genesis_verify(self, rs: RequestState, case_id: int
@@ -2767,6 +2769,7 @@ class CoreBackend(AbstractBackend):
         if not (decision.is_create() or decision.is_update()):
             return 0
 
+        ret = 1
         with Atomizer(rs):
             case = self.genesis_get_case(rs, case_id)
             if case['case_status'] != const.GenesisStati.to_review:
@@ -2785,11 +2788,10 @@ class CoreBackend(AbstractBackend):
             if decision.is_update():
                 assert persona_id is not None
                 persona = self.get_persona(rs, persona_id)
-                ret = 1
                 if persona['is_archived']:
                     ret *= self.dearchive_persona(rs, persona_id, case['username'])
                 elif case['username'] != persona['username']:
-                    ret *= self.change_username(rs, persona_id, case['username'], None)
+                    self.change_username(rs, persona_id, case['username'], None)
 
                 # Determine the keys of the persona that should be updated.
                 update_keys = {'given_names', 'family_name'}
@@ -2814,7 +2816,7 @@ class CoreBackend(AbstractBackend):
                     'case_status': const.GenesisStati.existing_updated,
                 }
                 ret *= self.genesis_modify_case(rs, update)
-                return ret
+        return ret
 
     @internal
     def genesis(self, rs: RequestState, case_id: int) -> DefaultReturnCode:

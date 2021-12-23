@@ -2318,9 +2318,8 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("(archiviert)", div="doppelgangers")
         f = self.response.forms['genesisdecisionform']
         f['persona_id'] = hades['id']
-        self.submit(f, button="decision", value=str(GenesisDecision.dearchive))
-        self.assertPresence("Benutzer wiederhergestellt und aktualisiert.",
-                            div="notifications")
+        self.submit(f, button="decision", value=str(GenesisDecision.update))
+        self.assertPresence("Benutzer aktualisiert.", div="notifications")
 
     def test_resolve_api(self) -> None:
         at = urllib.parse.quote_plus('@')
