@@ -2631,9 +2631,9 @@ class CoreBackend(AbstractBackend):
             return unwrap(data)
         params = (email, const.GenesisStati.to_review)
         data = self.query_one(rs, query, params)
-        if not data:
+        if not (ret := unwrap(data)):
             return None
-        return -unwrap(data)
+        return -ret
 
     @access("anonymous")
     def genesis_verify(self, rs: RequestState, case_id: int
