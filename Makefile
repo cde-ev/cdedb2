@@ -267,11 +267,13 @@ ldap-update: ldap-prepare-odbc ldap-prepare-ldif
 	sudo systemctl start slapd
 	sudo ldapmodify -Y EXTERNAL -H ldapi:/// -f ldap/cdedb-ldap-applied.ldif
 
+ldap-update-full: ldap-update
+	sudo -u www-data $(PYTHONBIN) bin/ldap_add_duas.py
+
 ldap-remove:
 	sudo apt-get remove --purge -y slapd
 
-ldap-reset: ldap-remove ldap-create ldap-update
-	sudo -u www-data $(PYTHONBIN) bin/ldap_add_duas.py
+ldap-reset: ldap-remove ldap-create ldap-update-full
 
 ###############################
 # Code testing and formatting #
