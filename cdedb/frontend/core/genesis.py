@@ -391,7 +391,9 @@ class CoreGenesisMixin(CoreBaseFrontend):
         if decision.is_update():
             if not persona_id or not self.coreproxy.verify_persona(
                     rs, persona_id, (case['realm'],)):
-                rs.notify("error", n_("Invalid persona for update."))
+                rs.notify("error", n_("Invalid persona for update."
+                                      " Add additional realm first: %(realm)s."),
+                          {'realm': case['realm']})
                 return self.redirect(rs, "core/genesis_show_case")
         if case['case_status'] != const.GenesisStati.to_review:
             rs.notify("error", n_("Case not to review."))
