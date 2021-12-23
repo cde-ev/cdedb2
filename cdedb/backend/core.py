@@ -2793,13 +2793,14 @@ class CoreBackend(AbstractBackend):
                     self.change_username(rs, persona_id, case['username'], None)
 
                 # Determine the keys of the persona that should be updated.
-                update_keys = {'given_names', 'family_name'}
+                update_keys = set(GENESIS_CASE_FIELDS) & set(PERSONA_CORE_FIELDS)
                 roles = extract_roles(persona)
                 for realm, fields in REALM_SPECIFIC_GENESIS_FIELDS.items():
                     # For every realm that the persona has, update the fields implied
                     # by that realm if they are also genesis fields.
                     if realm in roles:
                         update_keys.update(set(fields) & PERSONA_FIELDS_BY_REALM[realm])
+                update_keys -= {'username', 'id'}
                 update = {
                     k: case[k] for k in update_keys if case[k]
                 }
