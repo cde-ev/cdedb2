@@ -4,7 +4,7 @@
 import copy
 import datetime
 import decimal
-from typing import Optional, cast
+from typing import List, Optional, cast
 
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
@@ -1324,13 +1324,14 @@ class TestCoreBackend(BackendTest):
             "notes": "Some blah",
         }
         case_id = self.core.genesis_request(ANONYMOUS, genesis_data)
+        assert case_id is not None
         self.core.genesis_verify(ANONYMOUS, case_id)
         new_genesis_persona_id = self.core.genesis_decide(
             self.key, case_id, GenesisDecision.approve)
         newpass = "er3NQ_5bkrc#"
         self.core.change_password(self.key, self.user['password'], newpass)
 
-        log_expectation = [
+        log_expectation: List[CdEDBObject] = [
             {
                 'code': const.CoreLogCodes.persona_creation,
                 'persona_id': new_persona_id,
@@ -1357,7 +1358,7 @@ class TestCoreBackend(BackendTest):
             {
                 'code': const.CoreLogCodes.password_change,
                 'persona_id': self.user['id'],
-            }
+            },
         ]
 
         self.assertLogEqual(log_expectation, realm="core")
