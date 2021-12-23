@@ -1502,7 +1502,7 @@ def _genesis_case(
                 k: v for k, v in GENESIS_CASE_ADDITIONAL_FIELDS.items()
                 if k in REALM_SPECIFIC_GENESIS_FIELDS[val['realm']]}
     else:
-        raise ValidationSummary(ValueError(n_("Must specify realm.")))
+        raise ValidationSummary(ValueError(n_('realm', "Must specify realm.")))
 
     if creation:
         mandatory_fields = dict(GENESIS_CASE_COMMON_FIELDS,
