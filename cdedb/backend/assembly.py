@@ -969,6 +969,11 @@ class AssemblyBackend(AbstractBackend):
                            if x > 0 and data['candidates'][x] is not None}
                 deleted = {x for x in data['candidates']
                            if x > 0 and data['candidates'][x] is None}
+
+                # Defer check of shortname uniqueness until later.
+                q = "SET CONSTRAINTS assembly.candidate_shortname_constraint DEFERRED"
+                self.query_exec(rs, q, ())
+
                 # new
                 for x in mixed_existence_sorter(new):
                     new_candidate = copy.deepcopy(data['candidates'][x])

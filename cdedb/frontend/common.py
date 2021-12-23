@@ -122,11 +122,11 @@ class BaseApp(metaclass=abc.ABCMeta):
         secrets = SecretsConfig(configpath)
         # initialize logging
         if hasattr(self, 'realm') and self.realm:
-            logger_name = "cdedb.frontend.{}".format(self.realm)
-            logger_file = self.conf[f"{self.realm.upper()}_FRONTEND_LOG"]
+            logger_name = f"cdedb.frontend.{self.realm}"
+            logger_file = self.conf["LOG_DIR"] / f"cdedb-frontend-{self.realm}.log"
         else:
             logger_name = "cdedb.frontend"
-            logger_file = self.conf["FRONTEND_LOG"]
+            logger_file = self.conf["LOG_DIR"] / "cdedb-frontend.log"
         make_root_logger(
             logger_name, logger_file, self.conf["LOG_LEVEL"],
             syslog_level=self.conf["SYSLOG_LEVEL"],
@@ -270,8 +270,7 @@ PeriodicMethod = Callable[[Any, RequestState, CdEDBObject], CdEDBObject]
 class PeriodicJob(Protocol):
     cron: CdEDBObject
 
-    def __call__(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject:
-        ...
+    def __call__(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject: ...
 
 
 def periodic(name: str, period: int = 1
@@ -899,7 +898,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if not msg["To"] and not msg["Cc"] and not msg["Bcc"]:
             self.logger.warning("No recipients for mail. Dropping it.")
             return None
-        if not self.conf["CDEDB_DEV"]:
+        if not self.conf["CDEDB_DEV"]:  # pragma: no cover
             s = smtplib.SMTP(self.conf["MAIL_HOST"])
             s.send_message(msg)
             s.quit()
@@ -1220,8 +1219,8 @@ class CdEMailmanClient(mailmanclient.Client):
         # Initialize logger. This needs the base class initialization to be done.
         logger_name = "cdedb.frontend.mailmanclient"
         make_root_logger(
-            logger_name, self.conf["MAILMAN_LOG"], self.conf["LOG_LEVEL"],
-            syslog_level=self.conf["SYSLOG_LEVEL"],
+            logger_name, self.conf["LOG_DIR"] / "cdedb-frontend-mailman.log",
+            self.conf["LOG_LEVEL"], syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         self.logger = logging.getLogger(logger_name)
         self.logger.debug(f"Instantiated {self} with configpath {conf._configpath}.")
@@ -2304,7 +2303,7 @@ def process_dynamic_input(
         else:
             entry = ret[anid]
             assert entry is not None
-            if type_ is not vtypes.EventTrack:
+            if type_ not in {vtypes.EventTrack, vtypes.BallotCandidate}:
                 entry["id"] = anid
             entry.update(additional)
             # apply the promised validation

@@ -609,7 +609,6 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
     @as_users("anton")
     def test_preferential_vote_result(self) -> None:
         self.get('/assembly/assembly/1/ballot/1/show')
-        self.follow()  # Redirect because ballot has not been tallied yet.
         self.assertTitle("Antwort auf die letzte aller Fragen "
                          "(Internationaler Kongress)")
         self.assertPresence("Nach dem Leben, dem Universum und dem ganzen Rest")
@@ -625,7 +624,6 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f = self.response.forms['signupform']
         self.submit(f)
         self.get('/assembly/assembly/1/ballot/1/show')
-        self.follow()  # Redirect because ballot has not been tallied yet.
         self.assertTitle("Antwort auf die letzte aller Fragen "
                          "(Internationaler Kongress)")
         self.assertPresence("Nach dem Leben, dem Universum und dem ganzen Rest")
@@ -647,8 +645,6 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             with self.subTest(ballot=ballot_id):
                 assembly = assemblies[ballot['assembly_id']]
                 self.get(f"/assembly/assembly/{assembly['id']}/ballot/{ballot_id}/show")
-                # redirect in case of tallying, extending etc
-                self.follow()
                 self.assertTitle(f"{ballot['title']} ({assembly['title']})")
 
                 # Check display of regular voting period.
@@ -694,7 +690,6 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
     @as_users("garcia")
     def test_show_ballot_without_attendance(self) -> None:
         self.get('/assembly/assembly/1/ballot/1/show')
-        self.follow()  # Redirect because ballot has not been tallied yet.
         self.assertTitle("Antwort auf die letzte aller Fragen "
                          "(Internationaler Kongress)")
         self.assertPresence("Nach dem Leben, dem Universum und dem ganzen Rest")
@@ -1211,10 +1206,50 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.assertEqual(json.load(f), json.loads(self.response.body))
 
     @storage
+    @as_users("kalif")
+    def test_late_voting(self) -> None:
+        # create a ballot shortly before its voting end
+        base_time = now()
+        delta = datetime.timedelta(seconds=42)
+        btitle = "Ganz kurzfristige Entscheidung"
+        bdata = {
+            'title': btitle,
+            'vote_begin': base_time + delta,
+            'vote_end': base_time + 3 * delta,
+            'votes': "2",
+        }
+        candidates = [
+            {'shortname': "y", 'title': "Ja!"},
+            {'shortname': "n", 'title': "Nein!"},
+        ]
+        with freezegun.freeze_time(base_time) as frozen_time:
+            # only presiders can create ballots
+            user = self.user
+            self.logout()
+            self.login("werner")
+            self.traverse("Versammlungen", "Internationaler Kongress")
+            self._create_ballot(bdata, candidates)
+            self.logout()
+            self.login(user)
+
+            # wait for voting to start then get vote form.
+            frozen_time.tick(delta=2 * delta)
+            self.traverse("Versammlungen", "Internationaler Kongress",
+                          "Abstimmungen", btitle)
+            f = self.response.forms["voteform"]
+            f["vote"] = ["y"]
+
+            # submit after voting period ended
+            frozen_time.tick(delta=2 * delta)
+            self.submit(f, check_notification=False)
+            self.assertPresence("Fehler! Abstimmung ist außerhalb"
+                                " des Abstimmungszeitraums",
+                                div='notifications')
+
+    @storage
     @as_users("werner")
     def test_comment(self) -> None:
         self.get('/assembly/assembly/3/ballot/6/show')
-        self.follow()
         self.assertNonPresence("Abstimmungskommentar")
         self.traverse("Kommentieren")
         f = self.response.forms['changeballotform']
@@ -1241,8 +1276,6 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             assembly = self.get_sample_datum(
                 'assembly.assemblies', ballot['assembly_id'])
             self.get(f'/assembly/assembly/{assembly["id"]}/ballot/{ballot_id}/result')
-            # redirect in case of tallying, extending etc
-            self.follow()
 
             # redirect to show_ballot if the ballot has not been tallied yet
             if ballot_id in self.BALLOT_STATES['tallied']:

@@ -824,28 +824,6 @@ def _printable_ascii(
 
 
 @_add_typed_validator
-def _alphanumeric(
-    val: Any, argname: str = None, **kwargs: Any
-) -> Alphanumeric:
-    val = _printable_ascii(val, argname, **kwargs)
-    if not re.search(r'^[a-zA-Z0-9]+$', val):
-        raise ValidationSummary(ValueError(
-            argname, n_("Must be alphanumeric.")))
-    return Alphanumeric(val)
-
-
-@_add_typed_validator
-def _csv_alphanumeric(
-    val: Any, argname: str = None, **kwargs: Any
-) -> CSVAlphanumeric:
-    val = _printable_ascii(val, argname, **kwargs)
-    if not re.search(r'^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$', val):
-        raise ValidationSummary(ValueError(argname, n_(
-            "Must be comma separated alphanumeric.")))
-    return CSVAlphanumeric(val)
-
-
-@_add_typed_validator
 def _identifier(
     val: Any, argname: str = None, **kwargs: Any
 ) -> Identifier:
@@ -4061,7 +4039,7 @@ def _ballot_candidate(
         mandatory_fields = {**BALLOT_CANDIDATE_COMMON_FIELDS}
         optional_fields: TypeMapping = {}
     else:
-        mandatory_fields = {'id': ID}
+        mandatory_fields = {}
         optional_fields = {**BALLOT_CANDIDATE_COMMON_FIELDS}
 
     val = _examine_dictionary_fields(val, mandatory_fields, optional_fields,

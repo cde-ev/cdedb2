@@ -171,7 +171,7 @@ class EventRegistrationPartStatistic(enum.Enum):
         elif self == self.total:
             return part['status'] != RPS.not_applied
         else:
-            raise RuntimeError
+            raise RuntimeError(n_("Impossible."))
 
     def _get_query_aux(self, event: CdEDBObject, part_id: int) -> StatQueryAux:
         part = event['parts'][part_id]
@@ -307,7 +307,7 @@ class EventRegistrationPartStatistic(enum.Enum):
                 []
             )
         else:
-            raise RuntimeError
+            raise RuntimeError(n_("Impossible."))
 
     def get_query(self, event: CdEDBObject, part_id: int) -> Query:
         query = Query(
@@ -338,7 +338,7 @@ class EventCourseStatistic(enum.Enum):
             return (track_id in course['segments']
                     and track_id not in course['active_segments'])
         else:
-            raise RuntimeError
+            raise RuntimeError(n_("Impossible."))
 
     def _get_query_aux(self, track_id: int) -> StatQueryAux:
         if self == self.offered:
@@ -357,7 +357,7 @@ class EventCourseStatistic(enum.Enum):
                 []
             )
         else:
-            raise RuntimeError
+            raise RuntimeError(n_("Impossible."))
 
     def get_query(self, event: CdEDBObject, track_id: int) -> Query:
         query = Query(
@@ -401,7 +401,7 @@ class EventRegistrationTrackStatistic(enum.Enum):
         elif self == self.no_course:
             return not track['course_id'] and reg['persona_id'] not in event['orgas']
         else:
-            raise RuntimeError
+            raise RuntimeError(n_("Impossible."))
 
     def _get_query_aux(self, event: CdEDBObject, track_id: int) -> StatQueryAux:
         track = event['tracks'][track_id]
@@ -448,7 +448,7 @@ class EventRegistrationTrackStatistic(enum.Enum):
                 []
             )
         else:
-            raise RuntimeError
+            raise RuntimeError(n_("Impossible."))
 
     def get_query(self, event: CdEDBObject, track_id: int) -> Query:
         query = Query(

@@ -127,7 +127,8 @@ echo "" >> /home/cdedb/.bash_profile
 echo "%cdedb ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers
 
 # apply our ldap schema
-ldapmodify -Y EXTERNAL -H ldapi:/// -f /cdedb2/sql-ldap.ldif
+echo "FIXME LDAP is currently not provided by the auto-build"
+#ldapmodify -Y EXTERNAL -H ldapi:/// -f /cdedb2/sql-ldap.ldif
 
 cat > /etc/motd <<EOF
 

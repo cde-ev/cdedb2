@@ -194,6 +194,37 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Kampfbrief-Kommentare (geblockt)")
         self.assertNonPresence("Witz des Tages")
 
+    @as_users("anton")
+    def test_user_archived(self) -> None:
+        def _check_redirected_profile() -> None:
+            self.follow()
+            self.assertTitle("Hades Hell")
+            self.assertPresence("Account ist archiviert.", div='notifications')
+
+        self.get('/core/persona/8/events')
+        _check_redirected_profile()
+        self.get('/core/persona/8/mailinglists')
+        _check_redirected_profile()
+        self.get('/core/persona/8/history')
+        _check_redirected_profile()
+        self.get('/core/persona/8/adminchange')
+        _check_redirected_profile()
+        self.get('/core/persona/8/privileges')
+        _check_redirected_profile()
+        self.get('/core/persona/8/promote')
+        _check_redirected_profile()
+        self.get('/core/persona/8/membership/change')
+        _check_redirected_profile()
+        self.get('/core/persona/8/balance/change')
+        _check_redirected_profile()
+        self.get('/core/persona/8/foto/change')
+        _check_redirected_profile()
+        self.get('/core/persona/8/username/adminchange')
+        _check_redirected_profile()
+        # post needs anti-csrf token
+        # self.post('/core/persona/8/activity/change', {'activity': False})
+        # _check_redirected_profile()
+
     @as_users("emilia", "janis")
     def test_showuser_self(self) -> None:
         name = f"{self.user['given_names']} {self.user['family_name']}"
@@ -234,6 +265,10 @@ class TestCoreFrontend(FrontendTest):
                  "END:VCARD"]
         for line in vcard:
             self.assertIn(line, self.response.text)
+
+        self.get("/core/self/show")
+        self.follow()
+        self.traverse("QR")
 
     @as_users("vera")
     def test_vcard_cde_admin(self) -> None:
@@ -353,6 +388,10 @@ class TestCoreFrontend(FrontendTest):
         expectation = (11,)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
+        self.get('/core/persona/select?kind=other&phrase=@exam')
+        self.assertEqual({}, self.response.json)
+        self.get('/core/persona/select?kind=ml_user&phrase=@exam&aux=other')
+        self.assertEqual({}, self.response.json)
 
     @as_users("quintus")
     def test_selectpersona_two(self) -> None:
@@ -362,14 +401,21 @@ class TestCoreFrontend(FrontendTest):
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
 
-    @as_users("berta", "martin", "nina", "rowena", "vera", "viktor", "werner", "annika")
+    @as_users("berta", "martin", "nina", "rowena", "vera", "viktor", "werner", "annika",
+              "katarina")
     def test_selectpersona_403(self) -> None:
-        # These can not be done by Berta no matter what.
-        if not self.user_in("vera"):
+        if not self.user_in("vera", "katarina"):
             self.get('/core/persona/select?kind=admin_persona&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
+            self.get('/core/persona/select?kind=cde_user&phrase=@exam',
+                     status=403)
+            self.assertTitle('403: Forbidden')
             self.get('/core/persona/select?kind=past_event_user&phrase=@exam',
+                     status=403)
+            self.assertTitle('403: Forbidden')
+        if not self.user_in("katarina", "viktor", "werner"):
+            self.get('/core/persona/select?kind=assembly_user&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
         if not self.user_in("viktor", "werner"):
@@ -384,7 +430,7 @@ class TestCoreFrontend(FrontendTest):
             self.get('/core/persona/select?kind=pure_ml_user&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
-        if not self.user_in("annika", "berta"):
+        if not self.user_in("annika", "berta", "katarina"):
             self.get('/core/persona/select?kind=event_user&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
@@ -432,6 +478,8 @@ class TestCoreFrontend(FrontendTest):
         expectation = (1, 2, 5)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
+        self.get('/core/persona/select'
+                '?kind=ml_subscriber&phrase=@exam', status=400)
         self.get('/core/persona/select'
                  '?kind=ml_subscriber&phrase=inga&aux=9')
         expectation = (9,)
@@ -528,6 +576,25 @@ class TestCoreFrontend(FrontendTest):
         for ml_id in self.ml.list_mailinglists(self.key):
             self.get(f'/core/persona/select?kind=ml_subscriber'
                      f'&phrase=@exam&aux={ml_id}', status=403)
+
+    @as_users("paul")
+    def test_selectpersona_ids(self) -> None:
+        self.get('/core/persona/select?kind=admin_persona&phrase=DB-2-7')
+        expectation = (2,)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(expectation, reality)
+        self.get('/core/persona/select?kind=ml_user&phrase=14')
+        expectation = (14,)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(expectation, reality)
+
+    @as_users("quintus")
+    def test_selectpersona_ids_unprivileged(self) -> None:
+        self.get('/core/persona/select?kind=admin_persona&phrase=DB-2-7')
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(tuple(), reality)
+        self.get('/core/persona/select?kind=cde_user&phrase=14')
+        self.assertEqual({}, self.response.json)
 
     @as_users("vera")
     def test_adminshowuser_advanced(self) -> None:
@@ -732,11 +799,34 @@ class TestCoreFrontend(FrontendTest):
         new_password = 'krce84#(=kNO3xb'
         self.traverse({'description': self.user['display_name']},
                       {'description': 'Passwort ändern'})
+
+        # non-matching password
+        f = self.response.forms['passwordchangeform']
+        f['old_password'] = 'wrongpassword'
+        f['new_password'] = new_password
+        f['new_password2'] = 'something else'
+        self.submit(f, check_notification=False)
+        self.assertValidationError('new_password', "Passwörter stimmen nicht überein.",
+                                   notification="Passwörter stimmen nicht überein.")
+        self.assertValidationError('new_password2', "Passwörter stimmen nicht überein.",
+                                   notification="Passwörter stimmen nicht überein.")
+
+        # wrong old password
+        f = self.response.forms['passwordchangeform']
+        f['old_password'] = 'wrongpassword'
+        f['new_password'] = new_password
+        f['new_password2'] = new_password
+        self.submit(f, check_notification=False)
+        self.assertValidationError('old_password', "Passwort falsch.",
+                                   notification="Passwort ist falsch.")
+
+        # everything correct
         f = self.response.forms['passwordchangeform']
         f['old_password'] = self.user['password']
         f['new_password'] = new_password
         f['new_password2'] = new_password
         self.submit(f)
+
         self.logout()
         self.assertNonPresence(self.user['display_name'])
         self.login(self.user)
@@ -771,7 +861,6 @@ class TestCoreFrontend(FrontendTest):
                         continue
                     link = self.fetch_link()
                     self.get(link)
-                    self.follow()
                     self.assertTitle("Neues Passwort setzen")
                     f = self.response.forms['passwordresetform']
                     f['new_password'] = val
@@ -804,15 +893,22 @@ class TestCoreFrontend(FrontendTest):
         link = self.fetch_link()
         # First reset should work
         self.get(link)
-        self.follow()
         self.assertTitle("Neues Passwort setzen")
+        f = self.response.forms['passwordresetform']
+        f['new_password'] = new_password
+        f['new_password2'] = 'something else'
+        self.submit(f, check_notification=False)
+        self.assertPresence("Passwörter stimmen nicht überein.", div='notifications')
+        self.assertValidationError('new_password', "Passwörter stimmen nicht überein.",
+                                   notification="Passwörter stimmen nicht überein.")
+        self.assertValidationError('new_password2', "Passwörter stimmen nicht überein.",
+                                   notification="Passwörter stimmen nicht überein.")
         f = self.response.forms['passwordresetform']
         f['new_password'] = new_password
         f['new_password2'] = new_password
         self.submit(f)
         # Second reset with same link should fail
         self.get(link)
-        self.follow()
         self.assertTitle("Neues Passwort setzen")
         f = self.response.forms['passwordresetform']
         f['new_password'] = new_password
@@ -832,7 +928,6 @@ class TestCoreFrontend(FrontendTest):
         link = self.fetch_link()
         self.logout()
         self.get(link)
-        self.follow()
         self.assertTitle("Neues Passwort setzen")
         f = self.response.forms['passwordresetform']
         f['new_password'] = new_password
@@ -878,6 +973,10 @@ class TestCoreFrontend(FrontendTest):
         self.assertValidationError(
             "new_username", "Muss sich von der aktuellen E-Mail-Adresse unterscheiden.")
         self.assertNonPresence("E-Mail abgeschickt!", div="notifications")
+        # Now with taken username
+        f['new_username'] = "charly@example.cde"
+        self.submit(f, check_notification=False)
+        self.assertValidationError("new_username", "E-Mail-Adresse bereits vorhanden.")
         # Now with new username
         new_username = "zelda@example.cde"
         f = self.response.forms['usernamechangeform']
@@ -1064,6 +1163,10 @@ class TestCoreFrontend(FrontendTest):
         other_user_name = "berta"
         self.admin_view_profile(other_user_name)
         f = self.response.forms["invalidatepasswordform"]
+        f["confirm_username"] = "something else"
+        self.submit(f, check_notification=False)
+        self.assertValidationError('confirm_username',
+                                   "Bitte gib die Emailadresse des Nutzers an.")
         f["confirm_username"] = USER_DICT[other_user_name]["username"]
         self.submit(f)
         self.logout()
@@ -1224,6 +1327,8 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': self.user['display_name']},
                       {'description': 'Profilbild ändern'})
         f = self.response.forms['setfotoform']
+        self.submit(f, check_notification=False)
+        self.assertValidationError('foto', "Darf nicht leer sein.")
         with open(self.testfile_dir / "picture.png", 'rb') as datafile:
             data = datafile.read()
         my_hash = get_hash(data)
@@ -1343,6 +1448,9 @@ class TestCoreFrontend(FrontendTest):
         self.assertNonPresence("Der Benutzer ist archiviert.")
         self.assertPresence("Zirkusstadt", div='address')
         f = self.response.forms['archivepersonaform']
+        f['ack_delete'].checked = False
+        self.submit(f, check_notification=False)
+        f = self.response.forms['archivepersonaform']
         f['ack_delete'].checked = True
         f['note'] = "Archived for testing."
         self.submit(f)
@@ -1361,6 +1469,8 @@ class TestCoreFrontend(FrontendTest):
         self.admin_view_profile('hades', check=False)
         self.assertTitle("Hades Hell")
         self.assertPresence("Der Benutzer ist archiviert.", div='archived')
+        f = self.response.forms['purgepersonaform']
+        self.submit(f, check_notification=False)
         f = self.response.forms['purgepersonaform']
         f['ack_delete'].checked = True
         self.submit(f)
@@ -1555,6 +1665,9 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Bereichsänderung für Emilia E. Eventis")
         f = self.response.forms['realmselectionform']
         self.assertNotIn("event", f['target_realm'].options)
+        f['target_realm'].force_value("event")
+        self.submit(f)
+        self.assertPresence("Keine Änderung erforderlich.", div='notifications')
         f['target_realm'] = "cde"
         self.submit(f)
         self.assertTitle("Bereichsänderung für Emilia E. Eventis")
@@ -1693,7 +1806,6 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         link = self.fetch_link()
         self.get(link)
-        self.follow()
 
         self.traverse({'description': 'Accountanfragen'},
                       {'description': 'Details'},
@@ -1724,7 +1836,6 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         link = self.fetch_link()
         self.get(link)
-        self.follow()
 
     ML_GENESIS_DATA_NO_REALM: CdEDBObject = {
         'given_names': "Zelda", 'family_name': "Zeruda-Hime",
@@ -1878,7 +1989,6 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         link = self.fetch_link()
         self.get(link)
-        self.follow()
         self.login(USER_DICT["vera"])
         self.traverse({'href': '/core'},
                       {'href': '/core/genesis/list'})
@@ -2233,6 +2343,12 @@ class TestCoreFrontend(FrontendTest):
             "is_member": True,
             "id": 1,
             "username": "anton@example.cde",
+        })
+        self.get(
+            '/core/api/resolve?username=antonatexample.cde',
+            headers={'X-CdEDB-API-token': 'a1o2e3u4i5d6h7t8n9s0'})
+        self.assertEqual(self.response.json, {
+            'error':  ["('username', ValueError('Must be a valid email address.'))"]
         })
         self.get('/core/api/resolve', status=403)
 

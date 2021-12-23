@@ -20,7 +20,7 @@ QEMUOPTIONS ?= -m 1G -enable-kvm -net nic,model=virtio -net user,hostfwd=tcp:127
 
 QEMUCACHING ?= writethrough
 
-DEBVERSION = 11.0.0
+DEBVERSION = 11.1.0
 NETINSTISO = debian-${DEBVERSION}-amd64-netinst.iso
 
 DISTINFO_DATA?= ${AWK} -v alg=$$algo -v file=$${file} \
@@ -143,7 +143,7 @@ endif
 build-stage2:${WORKDIR}/.done_stage2
 ${WORKDIR}/.done_stage2:${WORKDIR}/.done_stage2cd ${IMAGEDIR}/stage1.qcow2 | ${WORKDIR}
 	rm -f ${WORKDIR}/stage2.qcow2
-	${QEMUIMG} create -b `readlink -f ${IMAGEDIR}/stage1.qcow2` -f qcow2 ${WORKDIR}/stage2.qcow2
+	${QEMUIMG} create -b `readlink -f ${IMAGEDIR}/stage1.qcow2` -F qcow2 -f qcow2 ${WORKDIR}/stage2.qcow2
 	(cd ${WORKDIR} && ${QEMU} ${QEMUOPTIONS} -no-reboot -boot order=c -drive file=stage2.qcow2,if=virtio,cache=${QEMUCACHING} -drive file=stage2cd.iso,media=cdrom,index=2)
 	touch $@
 
@@ -169,7 +169,7 @@ ${WORKDIR}/.done_stage3cd:${WORKDIR}/.done_checksum files/stage3-install ${FILES
 build-stage3:${WORKDIR}/.done_stage3-${PORT}
 ${WORKDIR}/.done_stage3-${PORT}:${WORKDIR}/.done_stage3cd ${IMAGEDIR}/stage2.qcow2 | ${WORKDIR}
 	rm -f ${WORKDIR}/stage3.qcow2
-	${QEMUIMG} create -b `readlink -f ${IMAGEDIR}/stage2.qcow2` -f qcow2 ${WORKDIR}/stage3.qcow2
+	${QEMUIMG} create -b `readlink -f ${IMAGEDIR}/stage2.qcow2` -F qcow2 -f qcow2 ${WORKDIR}/stage3.qcow2
 	(cd ${WORKDIR} && ${QEMU} ${QEMUOPTIONS} -no-reboot -boot order=c -drive file=stage3.qcow2,if=virtio,cache=${QEMUCACHING} -drive file=stage3cd.iso,media=cdrom,index=2)
 	touch $@
 
@@ -179,7 +179,7 @@ ${WORKDIR}/.done_install-stage3-${PORT}:${WORKDIR}/.done_stage3-${PORT}
 	[ -d ${IMAGEDIR} ] || (mkdir -p ${IMAGEDIR} && chmod 755 ${IMAGEDIR})
 	${QEMUIMG} convert -c -f qcow2 -O qcow2 ${WORKDIR}/stage3.qcow2 ${IMAGEDIR}/stage3.qcow2
 	rm -f ${WORKDIR}/cdedb-run-${PORT}.qcow2
-	${QEMUIMG} create -b `readlink -f ${IMAGEDIR}/stage3.qcow2` -f qcow2 ${WORKDIR}/cdedb-run-${PORT}.qcow2
+	${QEMUIMG} create -b `readlink -f ${IMAGEDIR}/stage3.qcow2` -F qcow2 -f qcow2 ${WORKDIR}/cdedb-run-${PORT}.qcow2
 	rm -f ${WORKDIR}/cdedb-run-this.qcow2
 	ln -s `readlink -f ${WORKDIR}/cdedb-run-${PORT}.qcow2` ${WORKDIR}/cdedb-run-this.qcow2
 	touch ${WORKDIR}/.done_install-stage3
@@ -206,7 +206,7 @@ ${WORKDIR}/.done_stagevdicd:${WORKDIR}/.done_checksum files/stage3-install ${FIL
 build-stagevdi:${WORKDIR}/.done_stagevdi-${PORT}
 ${WORKDIR}/.done_stagevdi-${PORT}:${WORKDIR}/.done_stagevdicd ${IMAGEDIR}/stage2.qcow2 | ${WORKDIR}
 	rm -f ${WORKDIR}/stagevdi.qcow2
-	${QEMUIMG} create -b `readlink -f ${IMAGEDIR}/stage2.qcow2` -f qcow2 ${WORKDIR}/stagevdi.qcow2
+	${QEMUIMG} create -b `readlink -f ${IMAGEDIR}/stage2.qcow2` -F qcow2 -f qcow2 ${WORKDIR}/stagevdi.qcow2
 	(cd ${WORKDIR} && ${QEMU} ${QEMUOPTIONS} -no-reboot -boot order=c -drive file=stagevdi.qcow2,if=virtio,cache=${QEMUCACHING} -drive file=stagevdicd.iso,media=cdrom,index=2)
 	touch $@
 

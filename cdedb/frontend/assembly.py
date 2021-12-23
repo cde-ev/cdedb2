@@ -1081,6 +1081,12 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         This handles the personalised information of the current viewer interacting with
         the ballot.
+
+        :return: one of the following strings:
+            * your full preference, if the ballot was a preferential vote, otherwise
+            * MAGIC_ABSTAIN, if you abstained in the ballot
+            * all candidates you voted for, seperated by '=', if the ballot was a
+              classical vote
         """
         ballot_id = ballot['id']
 
@@ -1098,12 +1104,12 @@ class AssemblyFrontend(AbstractUserFrontend):
                         ("secret", ValueError(n_("Entered invalid secret"))))
                     own_vote = None
 
-        if own_vote:
+        if own_vote and ballot['votes']:
             split_vote = own_vote.split('>')
             if len(split_vote) == 1:
                 # abstention
                 own_vote = MAGIC_ABSTAIN
-            elif ballot['votes']:
+            else:
                 # select voted options in classical voting
                 own_vote = split_vote[0]
 
@@ -1367,7 +1373,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                             ballot_id: int) -> Response:
         """Immediately start voting period of a ballot.
         Only possible in CDEDB_DEV mode."""
-        if not self.conf["CDEDB_DEV"]:
+        if not self.conf["CDEDB_DEV"]:  # pragma: no cover
             raise RuntimeError(
                 n_("Force starting a ballot is only possible in dev mode."))
 
@@ -1417,6 +1423,9 @@ class AssemblyFrontend(AbstractUserFrontend):
         """
         if not self.assemblyproxy.may_assemble(rs, ballot_id=ballot_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+        if not self.assemblyproxy.is_ballot_voting(rs, ballot_id):
+            rs.notify("error", n_("Ballot is outside its voting period."))
+            return self.redirect(rs, "assembly/show_ballot", {'ballot_id': ballot_id})
         ballot = rs.ambience['ballot']
         candidates = tuple(e['shortname']
                            for e in ballot['candidates'].values())

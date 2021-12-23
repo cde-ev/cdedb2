@@ -15,7 +15,7 @@ from cdedb.subman.machine import (  # pylint: disable=unused-import # noqa: F401
 )
 
 
-def n_(x: str) -> str:
+def n_(x: str) -> str:  # pragma: no cover
     """Clone of :py:func:`cdedb.common.n_` for marking translatable strings."""
     return x
 
@@ -106,13 +106,6 @@ class QuestionnaireUsages(enum.IntEnum):
         """Whether or not rows with this usage may use fee modifier fields."""
         return self == QuestionnaireUsages.registration
 
-    def get_icon(self) -> str:
-        icons = {
-            QuestionnaireUsages.registration: "sign-in-alt",
-            QuestionnaireUsages.additional: "pen",
-        }
-        return icons.get(self, repr(self))
-
 
 @enum.unique
 class GenesisStati(enum.IntEnum):
@@ -191,7 +184,7 @@ class MailinglistDomain(enum.IntEnum):
 
     def get_domain(self) -> str:
         """Return the actual domain for this enum member."""
-        if self not in _DOMAIN_STR_MAP:
+        if self not in _DOMAIN_STR_MAP:  # pragma: no cover
             raise NotImplementedError(n_("This domain is not supported."))
         return _DOMAIN_STR_MAP[self]
 
