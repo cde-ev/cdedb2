@@ -1773,9 +1773,6 @@ class CoreBaseFrontend(AbstractFrontend):
                         timeout=self.conf["PARAMETER_TIMEOUT"]),
                         'cookie': message})
                 # log message to be picked up by fail2ban
-                self.logger.warning(
-                    f"CdEDB password reset requested from"
-                    f" {rs.request.remote_addr} for {email}")
                 self.logger.info(f"Sent password reset mail to {email}"
                                  f" for IP {rs.request.remote_addr}.")
                 rs.notify("success", n_("Email sent."))
