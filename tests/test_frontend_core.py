@@ -2294,8 +2294,31 @@ class TestCoreFrontend(FrontendTest):
                          f" {self.EVENT_GENESIS_DATA['family_name']}")
         self.assertPresence("Ähnliche Accounts")
         self.assertPresence(self.EVENT_GENESIS_DATA['username'], div="doppelgangers")
+
+        # Check that a cde genesis request cannot be merged into a non-cde account.
+        self.traverse("Accountanfrage bearbeiten")
+        f = self.response.forms['genesismodifyform']
+        f['realm'] = "cde"
+        self.submit(f)
         f = self.response.forms['genesisdecisionform']
         # Set persona_id to the value of the second radio button.
+        f['persona_id'] = f['persona_id'].options[1][0]
+        self.submit(f, button="decision", value=str(GenesisDecision.update),
+                    check_notification=False)
+        self.assertPresence("Ungültiger Benutzer für Aktualisierung."
+                            " Füge zunächst folgenden Bereich hinzu: cde.",
+                            div="notifications")
+
+        # Now merge the genesis request into the existing account.
+        self.traverse("Accountanfrage bearbeiten")
+        f = self.response.forms['genesismodifyform']
+        f['realm'] = "event"
+        self.submit(f)
+        # Submit without selecting doppelganger.
+        f = self.response.forms['genesisdecisionform']
+        self.submit(f, button="decision", value=str(GenesisDecision.update),
+                    check_notification=False)
+        self.assertPresence("Kein Account ausgewählt.", div="notifications")
         f['persona_id'] = f['persona_id'].options[1][0]
         self.submit(f, button="decision", value=str(GenesisDecision.update))
         self.assertPresence("Benutzer aktualisiert", div="notifications")

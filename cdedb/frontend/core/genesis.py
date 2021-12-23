@@ -389,7 +389,10 @@ class CoreGenesisMixin(CoreBaseFrontend):
                 rs.notify("error", n_("Email address already taken."))
                 return self.redirect(rs, "core/genesis_show_case")
         if decision.is_update():
-            if not persona_id or not self.coreproxy.verify_persona(
+            if not persona_id:
+                rs.notify("error", n_("No persona selected."))
+                return self.redirect(rs, "core/genesis_show_case")
+            elif not self.coreproxy.verify_persona(
                     rs, persona_id, (case['realm'],)):
                 rs.notify("error", n_("Invalid persona for update."
                                       " Add additional realm first: %(realm)s."),
