@@ -2467,15 +2467,15 @@ class TestCoreFrontend(FrontendTest):
         self.traverse("Accountanfragen", "Details")
         f = self.response.forms['genesisdecisionform']
         self.submit(f, button="decision", value=str(GenesisDecision.approve))
-        logs.append((1005, const.CoreLogCodes.genesis_approved))
-        logs.append((1006, const.CoreLogCodes.persona_creation))
+        logs.append((1005, const.CoreLogCodes.persona_creation))
+        logs.append((1006, const.CoreLogCodes.genesis_approved))
         logs.append((1007, const.CoreLogCodes.password_reset_cookie))
 
         self.traverse("Details")
         f = self.response.forms['genesisdecisionform']
         self.submit(f, button="decision", value=str(GenesisDecision.approve))
-        logs.append((1008, const.CoreLogCodes.genesis_approved))
-        logs.append((1009, const.CoreLogCodes.persona_creation))
+        logs.append((1008, const.CoreLogCodes.persona_creation))
+        logs.append((1009, const.CoreLogCodes.genesis_approved))
         logs.append((1010, const.CoreLogCodes.password_reset_cookie))
 
         # make janis assembly user
