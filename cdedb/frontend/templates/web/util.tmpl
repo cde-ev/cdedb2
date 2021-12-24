@@ -10,14 +10,10 @@
 {% set script_files = [] %}
 {% macro cdedb_script(script) %}
     {%- if not script in script_files %}
-        {%- if script == 'cdedb_queryform.js' %}
+        {%- if script in ('cdedb_queryform.js', 'cdedb_searchpersona.js', 'cdedb_multiselect.js') %}
             {{- cdedb_script('selectize/selectize.min.js') }}
         {%- elif script == 'selectize/selectize.min.js' %}
             <link rel="stylesheet" href="{{ staticurl("selectize/selectize.bootstrap3.css") }}" />
-        {%- elif script == 'cdedb_searchpersona.js' %}
-            {{- cdedb_script('selectize/selectize.min.js') }}
-        {%- elif script == 'cdedb_multiselect.js' %}
-            {{- cdedb_script('selectize/selectize.min.js') }}
         {%- endif %}
         <script  src="{{ staticurl(script) }}"></script>
         {%- do script_files.append(script) %}
