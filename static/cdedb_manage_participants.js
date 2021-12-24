@@ -1,20 +1,23 @@
 /**
- * Some jQuery helpers for the event/manage_inhabitants and event/manage_attendees pages. The jQuery plugins defined
- * below can be used for a better user experience when adding or deleting participants to courses or lodgements.
+ * Some jQuery helpers for the assembly/change_ballot, event/manage_inhabitants and event/manage_attendees pages.
+ * The jQuery plugins defined below can be used for a better user experience when having multiselects with many
+ * entries, e.g. adding participants to courses or lodgements or specifying attachments for ballots.
  */
 (function($){
     /**
-     * Custom wrapper for selectize.js to search for event participants in a given list.
+     * Custom wrapper for selectize.js to search for entries in a given list.
      *
-     * Adds selecizes to the given DOM elements to search event participants in the given list of all participants. This
-     * should be used for the add attendee multiselect on event/manage_attendees for courses or the add inhabitant
-     * multiselect on event/manage_inhabitants for lodgements.
+     * Adds selecizes to the given DOM elements to search entries in the given list of all participants/attachments.
+     * This should be used for the add attendee multiselect on event/manage_attendees for courses or the add inhabitant
+     * multiselect on event/manage_inhabitants for lodgements. Also, it is useful for adding attachments to ballots; for
+     * this usecase the current and group functionality is not used, i.e. the corresponding arguments are left empty.
      *
-     * The `options` parameter should contain a list of objects where each object represents a participant of the event,
-     * that is not already part of the course/lodgement in the relevant event part. Each object must contain the
-     * following fields:
-     * id: registration_id of the participant to be used as option value
-     * name: full name of the participant to be displayed
+     * The `options` parameter should contain a list of objects where each object
+     * represents an attachment / a participant of the event, that is not already part of
+     * the course/lodgement in the relevant event part.
+     * Each object must contain the following fields:
+     * id: registration_id of the attachment/participant to be used as option value
+     * name: full name of the attachment/participant to be displayed
      * current: the id of the current course/lodgement to show it's name in the rendering. null if currently not
      *          assigned to a course/lodgement
      *
@@ -25,7 +28,7 @@
      * `current_label` is inserted in the rendered option in front of the name of the current course/lodgement. Should
      * be something like "current course: " or similar.
      */
-    $.fn.cdedbSearchParticipant = function(options, group_names, current_label) {
+    $.fn.cdedbMultiSelect = function(options, group_names = {}, current_label = "") {
         $(this).selectize({
             'valueField' : 'id',
             'labelField' : 'name',

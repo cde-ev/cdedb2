@@ -37,7 +37,7 @@
             {{ util.form_input_multi_select("linked_attachments", attachment_entries, label=gettext("Linked Attachments"),
                                             nulloption=gettext("– none –"), sort=True, anid="input-attachments") }}
             <script nonce="{{ csp_nonce }}">
-                $("#input-attachments").cdedbSearchParticipant({{ selectize_data|tojson }}, {}, "");
+                $("#input-attachments").cdedbMultiSelect({{ selectize_data|tojson }});
             </script>
         {% else %}
             {{ util.form_input_static(label=gettext("Linked Attachments"),

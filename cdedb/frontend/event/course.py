@@ -666,7 +666,7 @@ class EventCourseMixin(EventBaseFrontend):
         }
 
         # Generate data to be encoded to json and used by the
-        # cdedbSearchParticipant() javascript function
+        # cdedbMultiSelect() javascript function
         def _check_not_this_course(registration_id: int, track_id: int) -> bool:
             """Un-inlined check for registration with different course."""
             reg = registrations[registration_id]
