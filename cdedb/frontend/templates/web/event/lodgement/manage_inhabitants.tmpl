@@ -1,7 +1,7 @@
 {% set sidenav_active='event_lodgements' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block scripts %}{{ util.cdedb_script('cdedb_manage_participants.js') }}{% endblock %}
+{% block scripts %}{{ util.cdedb_script('cdedb_multiselect.js') }}{% endblock %}
 {% set jshint='strong' %}
 {% block title %}
     {% trans lodgement=ambience['lodgement']['title'], title=ambience['event']['title'] %}

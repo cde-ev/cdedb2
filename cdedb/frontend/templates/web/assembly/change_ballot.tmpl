@@ -3,7 +3,7 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}
     {{ util.cdedb_script('cdedb_helper.js') }}
-    {{ util.cdedb_script('cdedb_manage_participants.js') }}
+    {{ util.cdedb_script('cdedb_multiselect.js') }}
 {% endblock %}
 {% set jshint='weak' %}
 {% block title %}{{ gettext("Edit %(ballot)s %(assembly)s")|
