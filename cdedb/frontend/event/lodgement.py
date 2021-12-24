@@ -551,7 +551,7 @@ class EventLodgementMxin(EventBaseFrontend):
         }
 
         # Generate data to be encoded to json and used by the
-        # cdedbSearchParticipant() javascript function
+        # cdedbMultiSelect() javascript function
         def _check_not_this_lodgement(registration_id: int, part_id: int) -> bool:
             """Un-inlined check for registration with different lodgement."""
             part = registrations[registration_id]['parts'][part_id]

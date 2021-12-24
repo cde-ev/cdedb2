@@ -71,7 +71,7 @@
         <script nonce="{{ csp_nonce }}">
             var lodgement_names = {{ lodgement_names|tojson }};
             {% for part_id in ambience['event']['parts'] %}
-                $('#input_new_{{ part_id }}').cdedbSearchParticipant(
+                $('#input_new_{{ part_id }}').cdedbMultiSelect(
                     {{ selectize_data[part_id]|tojson }}, lodgement_names, "{{ gettext("currently") }}: ");
             {% endfor %}
             $('.del-box').cdedbRemoveParticipantButton('{{ gettext("Remove Inhabitant") }}');
