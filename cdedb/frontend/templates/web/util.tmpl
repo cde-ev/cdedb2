@@ -16,7 +16,7 @@
             <link rel="stylesheet" href="{{ staticurl("selectize/selectize.bootstrap3.css") }}" />
         {%- elif script == 'cdedb_searchpersona.js' %}
             {{- cdedb_script('selectize/selectize.min.js') }}
-        {%- elif script == 'cdedb_manage_participants.js' %}
+        {%- elif script == 'cdedb_multiselect.js' %}
             {{- cdedb_script('selectize/selectize.min.js') }}
         {%- endif %}
         <script  src="{{ staticurl(script) }}"></script>
