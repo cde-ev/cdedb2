@@ -19,7 +19,7 @@ from cdedb.common import (
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, check_validation as check, drow_name,
-    event_guard, process_dynamic_input, request_extractor,
+    event_guard, make_persona_name, process_dynamic_input, request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
 from cdedb.frontend.event.lodgement_wishes import (
@@ -540,13 +540,11 @@ class EventLodgementMxin(EventBaseFrontend):
                     and not part['lodgement_id'])
 
         without_lodgement = {
-            part_id: xsorted(
-                (registration_id
-                 for registration_id in registrations
-                 if _check_without_lodgement(registration_id, part_id)),
-                key=lambda anid: EntitySorter.persona(
-                    personas[registrations[anid]['persona_id']])
-            )
+            part_id: [
+                (registration_id, make_persona_name(
+                    personas[registrations[registration_id]['persona_id']]))
+                for registration_id in registrations
+                if _check_without_lodgement(registration_id, part_id)]
             for part_id in rs.ambience['event']['parts']
         }
 

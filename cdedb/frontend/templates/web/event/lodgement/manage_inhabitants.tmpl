@@ -50,18 +50,9 @@
                             </tbody>
                         </table>
 
-                        <label for="input_new_{{ part_id }}">
-                            {{ util.make_icon('plus') }} {% trans %}Add Inhabitant{% endtrans %}
-                        </label>
-                        <select multiple id="input_new_{{ part_id }}" class="form-control"
-                                name="new_{{ part_id }}">
-                            <option value="">{% trans %}– none –{% endtrans %}</option>
-                            {% for registration_id in without_lodgement[part_id] %}
-                                <option id="{{ registration_id }}_{{ part_id }}" value="{{ registration_id }}">
-                                    {{ util.persona_name(personas[registrations[registration_id]['persona_id']]) }}
-                                </option>
-                            {% endfor %}
-                        </select>
+                        {{ util.form_input_multi_select(name="new_" + part_id|string, entries=without_lodgement[part_id],
+                                                        label=(util.make_icon('plus') + " " + gettext("Add Inhabitant")),
+                                                        nulloption=gettext("– none –"), sort=True, horizontal=False) }}
                     {% endcall %}
                 </div>
             {% endfor %}
@@ -71,7 +62,7 @@
         <script nonce="{{ csp_nonce }}">
             var lodgement_names = {{ lodgement_names|tojson }};
             {% for part_id in ambience['event']['parts'] %}
-                $('#input_new_{{ part_id }}').cdedbMultiSelect(
+                $('#input-multi-select-new_{{ part_id }}').cdedbMultiSelect(
                     {{ selectize_data[part_id]|tojson }}, lodgement_names, "{{ gettext("currently") }}: ");
             {% endfor %}
             $('.del-box').cdedbRemoveParticipantButton('{{ gettext("Remove Inhabitant") }}');
