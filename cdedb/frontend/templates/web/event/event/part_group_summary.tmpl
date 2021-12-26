@@ -70,11 +70,15 @@
                             {{ util.deko_checkbox(part_id in part_group['part_ids'], titles=['', part['shortname']]) }}
                         </td>
                     {% endfor %}
-                    <td>
+                    <td class="text-nowrap">
                         {{ util.href(cdedblink("event/change_part_group", {'part_group_id': part_group_id}),
                                      title=gettext("Change part group %(shortname)s")|format(shortname=part_group['shortname']),
                                      label=util.make_icon("pen"),
                                      aclass="btn btn-sm btn-warning") }}
+                        {{ util.href(cdedblink("event/delete_part_group", {'part_group_id': part_group_id}),
+                                     title=gettext("Delete part group %(shortname)s")|format(shortname=part_group['shortname']),
+                                     label=util.make_icon("trash-alt"),
+                                     aclass="btn btn-sm btn-danger") }}
                     </td>
                 </tr>
             {% endfor %}
