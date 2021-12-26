@@ -2140,8 +2140,8 @@ class AssemblyBackend(AbstractBackend):
         else:
             assert ballot_id is not None
             data = self.sql_select(
-                rs, "assembly.attachment_ballot_links",("attachment_id",), (ballot_id,),
-                entity_key="ballot_id")
+                rs, "assembly.attachment_ballot_links", ("attachment_id",),
+                (ballot_id,), entity_key="ballot_id")
 
         return {unwrap(e) for e in data}
 
