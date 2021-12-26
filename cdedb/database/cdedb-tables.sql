@@ -357,6 +357,7 @@ CREATE TABLE core.changelog (
         -- data fields
         --
         persona_id              integer NOT NULL REFERENCES core.personas(id),
+        UNIQUE (persona_id, generation),
         username                varchar,
         is_active               boolean,
         notes                   varchar,
@@ -408,8 +409,7 @@ CREATE TABLE core.changelog (
         trial_member            boolean,
         bub_search              boolean,
         foto                    varchar,
-        paper_expuls            boolean,
-        CONSTRAINT changelog_persona_id_generation_key UNIQUE (persona_id, generation)
+        paper_expuls            boolean
 );
 CREATE INDEX changelog_code_idx ON core.changelog(code);
 CREATE INDEX changelog_persona_id_idx ON core.changelog(persona_id);
@@ -777,8 +777,8 @@ CREATE TABLE event.fee_modifiers (
         amount                  numeric(8, 2) NOT NULL,
         -- in which field do we save the information whether the modifier has been selected:
         field_id                integer NOT NULL REFERENCES event.field_definitions(id),
-        CONSTRAINT fee_modifiers_part_id_modifier_name_key UNIQUE (part_id, modifier_name),
-        CONSTRAINT fee_modifiers_part_id_field_id_key UNIQUE (part_id, field_id)
+        UNIQUE (part_id, modifier_name),
+        UNIQUE (part_id, field_id)
 );
 GRANT INSERT, UPDATE, DELETE ON event.fee_modifiers TO cdb_persona;
 GRANT SELECT ON event.fee_modifiers TO cdb_anonymous;
@@ -814,7 +814,7 @@ CREATE TABLE event.course_segments (
         course_id               integer NOT NULL REFERENCES event.courses(id),
         track_id                integer NOT NULL REFERENCES event.course_tracks(id),
         is_active               boolean NOT NULL DEFAULT True,
-        CONSTRAINT course_segments_track_id_course_id_key UNIQUE (track_id, course_id)
+        UNIQUE (track_id, course_id)
 );
 CREATE INDEX course_segments_course_id_idx ON event.course_segments(course_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.course_segments TO cdb_persona;
@@ -825,7 +825,7 @@ CREATE TABLE event.orgas (
         id                      serial PRIMARY KEY,
         persona_id              integer NOT NULL REFERENCES core.personas(id),
         event_id                integer NOT NULL REFERENCES event.events(id),
-        UNIQUE(persona_id, event_id)
+        UNIQUE (persona_id, event_id)
 );
 CREATE INDEX orgas_event_id_idx ON event.orgas(event_id);
 GRANT INSERT, UPDATE, DELETE ON event.orgas TO cdb_admin;
