@@ -143,7 +143,7 @@
                     {% trans %}Merge with Account{% endtrans %}
                 </label>
                 <div role="radiogroup" aria-labelledby="doppelgangers-label" id="doppelgangers">
-                    {% set entries = [(None, "–")] %}
+                    {% set entries = [("", "–")] %}
                     {% for key, value in doppelgangers|keydictsort(EntitySorter.persona) %}
                         {% do entries.append((key, util.print_doppelganger(value))) %}
                     {% endfor %}

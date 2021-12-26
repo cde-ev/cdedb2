@@ -2373,6 +2373,7 @@ class TestCoreFrontend(FrontendTest):
         # Now merge the genesis request into the existing account.
         # Submit without selecting doppelganger.
         f = self.response.forms['genesisdecisionform']
+        f['persona_id'] = ""
         self.submit(f, button="decision", value=str(GenesisDecision.update),
                     check_notification=False)
         self.assertPresence("Kein Account ausgewählt.", div="notifications")
