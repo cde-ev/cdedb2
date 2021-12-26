@@ -1439,6 +1439,10 @@ def reconnoitre_ambience(obj: AbstractFrontend,
         Scout(None, 'field_id', None,
               ((lambda a: do_assert(rs.requestargs['field_id']
                                     in a['event']['fields'])),)),
+        Scout(lambda anid: ambience['event']['part_groups'][anid],  # type: ignore[has-type]
+              'part_group_id', 'part_group',
+              ((lambda a: do_assert(a['part_group']['event_id']
+                                    == a['event']['id'])),)),
         Scout(lambda anid: obj.assemblyproxy.get_attachment(rs, anid),
               'attachment_id', 'attachment',
               ((lambda a: do_assert(a['attachment']['assembly_id']
