@@ -11,7 +11,8 @@ from typing import Tuple, Type
 import cdedb.database.constants as const
 from cdedb.common import (
     Accounts, AgeClasses, ConfidenceLevel, CourseChoiceToolActions,
-    CourseFilterPositions, LineResolutions, LodgementsSortkeys, TransactionType,
+    CourseFilterPositions, GenesisDecision, LineResolutions, LodgementsSortkeys,
+    TransactionType,
 )
 from cdedb.query import QueryOperators, QueryScope
 from cdedb.subman.machine import SubscriptionAction, SubscriptionPolicy
@@ -44,6 +45,7 @@ ALL_ENUMS: Tuple[Type[Enum], ...] = (
     QueryScope,
     AgeClasses,
     LineResolutions,
+    GenesisDecision,
     SubscriptionAction,
     SubscriptionPolicy,
     LodgementsSortkeys,
