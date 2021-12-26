@@ -568,21 +568,7 @@ class EventEventMixin(EventBaseFrontend):
     @access("event")
     @event_guard()
     def part_group_summary(self, rs: RequestState, event_id: int) -> Response:
-        sorted_part_group_ids = [
-            e["id"] for e in xsorted(rs.ambience['event']['part_groups'].values(),
-                                     key=EntitySorter.event_part_group)]
-
-        current = {
-            drow_name(key, entity_id=part_group_id): value
-            for part_group_id, part_group in rs.ambience['event']['part_groups'].items()
-            for key, value in part_group.items()
-            if key != 'id'
-        }
-        merge_dicts(rs.values, current)
-
-        return self.render(rs, "event/part_group_summary", {
-            'sorted_part_group_ids': sorted_part_group_ids,
-        })
+        return self.render(rs, "event/part_group_summary")
 
     @access("event")
     @event_guard()
