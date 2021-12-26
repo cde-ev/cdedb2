@@ -43,9 +43,9 @@ from cdedb.backend.common import (
 )
 from cdedb.common import (
     ASSEMBLY_ATTACHMENT_FIELDS, ASSEMBLY_ATTACHMENT_VERSION_FIELDS,
-    ASSEMBLY_BAR_SHORTNAME, ASSEMBLY_FIELDS, BALLOT_FIELDS, FUTURE_TIMESTAMP, CdEDBLog,
-    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, EntitySorter,
-    PrivilegeError, RequestState, get_hash, glue, implying_realms, json_serialize,
+    ASSEMBLY_BAR_SHORTNAME, ASSEMBLY_FIELDS, BALLOT_FIELDS, CdEDBLog, CdEDBObject,
+    CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, EntitySorter, PrivilegeError,
+    RequestState, get_hash, glue, implying_realms, json_serialize,
     mixed_existence_sorter, n_, now, schulze_evaluate, unwrap, xsorted,
 )
 from cdedb.database.connection import Atomizer
@@ -818,16 +818,34 @@ class AssemblyBackend(AbstractBackend):
                            ) -> Dict[int, bool]:
         """Helper to check whether the given ballots are (partially) open for voting.
 
+        This uses non-obvious logic to catch some edge cases, since extended is None
+        until  check_voting_period_extension  is called.
+
         :returns: True if any of the given ballots is open for voting.
         """
         ballot_ids = affirm_set(vtypes.ID, ballot_ids)
-        q = """
-        SELECT id, (vote_end > %s OR (extended = True AND vote_extension_end > %s))
-                    AND vote_begin < %s AS is_voting
+        # This conditional looks complicated since extended may be None and
+        # (True/False = None) = None.
+        # Therefore, this returns None iff the ballot has not been checked for extension
+        # yet, but is between vote_end and vote_extension_end.
+        # The third part of the statement makes sure this returns False instead of None
+        # if the ballot is definitely over.
+        q = """SELECT id, (
+            vote_begin < %s
+            AND (vote_end > %s OR (vote_extension_end > %s AND extended = True))
+            AND NOT COALESCE(vote_extension_end, vote_end) < %s
+            ) AS is_voting
         FROM assembly.ballots WHERE id = ANY(%s)"""
         reference_time = now()
-        params = (reference_time, reference_time, reference_time, ballot_ids)
-        return {e["id"]: e['is_voting'] for e in self.query_all(rs, q, params)}
+        params = (reference_time, reference_time, reference_time, reference_time,
+                  ballot_ids)
+
+        # If is_voting is no bool, the voting period extension has not been checked yet.
+        # The result of this check equals whether the ballot is still voting.
+        with Atomizer(rs):
+            return {e["id"]: e['is_voting'] if e['is_voting'] is not None
+                    else self.check_voting_period_extension(rs, e["id"])
+                    for e in self.query_all(rs, q, params)}
 
     class _IsBallotVotingProtocol(Protocol):
         def __call__(self, rs: RequestState, anid: int) -> bool: ...
@@ -835,8 +853,15 @@ class AssemblyBackend(AbstractBackend):
         are_ballots_voting, "ballot_ids", "ballot_id")
 
     @access("assembly")
-    def get_ballots(self, rs: RequestState, ballot_ids: Collection[int]
-                    ) -> CdEDBObjectMap:
+    def is_ballot_concluded(self, rs: RequestState, ballot_id: int) -> bool:
+        """Helper to check whether the given ballot has been concluded."""
+        with Atomizer(rs):
+            return (self.is_ballot_locked(rs, ballot_id)
+                and not self.is_ballot_voting(rs, ballot_id))
+
+    @access("assembly")
+    def get_ballots(self, rs: RequestState, ballot_ids: Collection[int], *,
+                    include_is_voting: bool = True) -> CdEDBObjectMap:
         """Retrieve data for some ballots,
 
         They do not need to be associated to the same assembly. This has an
@@ -847,13 +872,18 @@ class AssemblyBackend(AbstractBackend):
         will be `None` and the correct value will be calculated on the fly here.
         Once regular voting ends, the quorum value at that point will be stored and
         afterwards this specific value will be used from there on.
+
+        :param include_is_voting: If False, do not include is_voting key to prevent
+            infinite recursions.
         """
         ballot_ids = affirm_set(vtypes.ID, ballot_ids)
         timestamp = now()
 
         with Atomizer(rs):
-            data = self.sql_select(rs, "assembly.ballots", BALLOT_FIELDS, ballot_ids)
-            are_voting = self.are_ballots_voting(rs, ballot_ids)
+            data = self.sql_select(rs, "assembly.ballots", BALLOT_FIELDS + ('comment',),
+                                   ballot_ids)
+            if include_is_voting:
+                are_voting = self.are_ballots_voting(rs, ballot_ids)
             ret = {}
             for e in data:
                 if e["quorum"] is None:
@@ -874,7 +904,8 @@ class AssemblyBackend(AbstractBackend):
                     else:
                         e["quorum"] = 0
                 e["is_locked"] = timestamp > e["vote_begin"]
-                e["is_voting"] = are_voting[e["id"]]
+                if include_is_voting:
+                    e["is_voting"] = are_voting[e["id"]]
                 ret[e['id']] = e
             data = self.sql_select(
                 rs, "assembly.candidates",
@@ -911,7 +942,8 @@ class AssemblyBackend(AbstractBackend):
         complete data set which will be used to create a new candidate.
 
         .. note:: It is forbidden to modify a ballot after voting has
-          started.
+          started. In contrast, the comment can not be set here, but only after
+          the ballot has ended using `comment_concluded_ballot`.
         """
         data = affirm(vtypes.Ballot, data)
         ret = 1
@@ -937,6 +969,11 @@ class AssemblyBackend(AbstractBackend):
                            if x > 0 and data['candidates'][x] is not None}
                 deleted = {x for x in data['candidates']
                            if x > 0 and data['candidates'][x] is None}
+
+                # Defer check of shortname uniqueness until later.
+                q = "SET CONSTRAINTS assembly.candidate_shortname_constraint DEFERRED"
+                self.query_exec(rs, q, ())
+
                 # new
                 for x in mixed_existence_sorter(new):
                     new_candidate = copy.deepcopy(data['candidates'][x])
@@ -985,10 +1022,6 @@ class AssemblyBackend(AbstractBackend):
             if not assembly['is_active']:
                 raise ValueError(n_("Assembly already concluded."))
             bdata = {k: v for k, v in data.items() if k in BALLOT_FIELDS}
-            # TODO: Do we want to allow creating a running ballot???
-            # do a little dance, so that creating a running ballot does not
-            # throw an error
-            begin, bdata['vote_begin'] = bdata['vote_begin'], FUTURE_TIMESTAMP
             new_id = self.sql_insert(rs, "assembly.ballots", bdata)
             self.assembly_log(rs, const.AssemblyLogCodes.ballot_created,
                               data['assembly_id'], change_note=data['title'])
@@ -1008,14 +1041,37 @@ class AssemblyBackend(AbstractBackend):
                     'ballot_id': new_id,
                 }
                 self.sql_insert(rs, "assembly.voter_register", entry)
-            # fix vote_begin stashed above
-            update = {
-                'id': new_id,
-                'vote_begin': begin,
-            }
-            with Silencer(rs):
-                self.set_ballot(rs, update)
         return new_id
+
+    @access("assembly")
+    def comment_concluded_ballot(self, rs: RequestState, ballot_id: int,
+                                 comment: str = None) -> DefaultReturnCode:
+        """Add a comment to a concluded ballot.
+
+        This is intended to note comments regarding tallying, for exmaple tie breakers
+        or special preferential votes.
+
+        It is the only operation on a ballot allowed after it has started, and it is
+        only allowed after it has ended.
+        """
+        ballot_id = affirm(vtypes.ID, ballot_id)
+        comment = affirm_optional(str, comment)
+
+        if not self.is_presider(rs, ballot_id=ballot_id):
+            raise PrivilegeError(n_("Must have privileged access to comment ballot."))
+
+        with Atomizer(rs):
+            if not self.is_ballot_concluded(rs, ballot_id):
+                raise ValueError(n_("Comments are only allowed for concluded ballots."))
+            # TODO Check whether assembly has been archived.
+            # For now, we would like to use this to clean up archived assmblies.
+            current = self.get_ballot(rs, ballot_id)
+            data = {'id': ballot_id, 'comment': comment}
+            ret = self.sql_update(rs, "assembly.ballots", data)
+            self.assembly_log(
+                rs, const.AssemblyLogCodes.ballot_changed,
+                current['assembly_id'], change_note=current['title'])
+        return ret
 
     @access("assembly")
     def delete_ballot_blockers(self, rs: RequestState,
@@ -1150,7 +1206,7 @@ class AssemblyBackend(AbstractBackend):
         ballot_id = affirm(vtypes.ID, ballot_id)
 
         with Atomizer(rs):
-            ballot = unwrap(self.get_ballots(rs, (ballot_id,)))
+            ballot = unwrap(self.get_ballots(rs, (ballot_id,), include_is_voting=False))
             if ballot['extended'] is not None:
                 return ballot['extended']
             if now() < ballot['vote_end']:

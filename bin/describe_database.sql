@@ -62,6 +62,7 @@ UNION
 (
     SELECT 'TABLE CONSTRAINT: ' || table_schema || ' | ' || table_name
                || ' | ' || constraint_type
+               || ' | ' || is_deferrable || ' | ' || initially_deferred
                || ' | ' || COALESCE(check_clause::text, '-') AS description
     FROM information_schema.table_constraints AS tc
              LEFT OUTER JOIN information_schema.check_constraints AS cc

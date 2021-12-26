@@ -18,8 +18,8 @@ import cdedb.ml_type_aux as ml_type
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, LOG_FIELDS_COMMON, CdEDBObject, CdEDBObjectMap,
-    DefaultReturnCode, EntitySorter, RequestState, get_hash, merge_dicts, n_, now,
-    schulze_evaluate, unwrap, xsorted,
+    EntitySorter, RequestState, get_hash, merge_dicts, n_, now, schulze_evaluate,
+    unwrap, xsorted,
 )
 from cdedb.frontend.common import (
     AbstractUserFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, access,
@@ -614,21 +614,40 @@ class AssemblyFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/show_assembly")
 
-    @staticmethod
-    def group_ballots(ballots: Dict[int, Dict[str, Any]]
-                      ) -> Tuple[CdEDBObjectMap, CdEDBObjectMap,
-                                 CdEDBObjectMap, CdEDBObjectMap]:
-        """Helper to group ballots by status.
+    def _group_ballots(self, rs: RequestState, assembly_id: int
+                       ) -> Optional[Tuple[CdEDBObjectMap, CdEDBObjectMap,
+                                           CdEDBObjectMap, CdEDBObjectMap]]:
+        """Helper to group all ballots of an assembly by status.
 
-        :returns: Four dicts mapping ballot ids to ballots grouped by status
-          in the order done, extended, current, future.
+        This calls `_update_ballots` to ensure data integrity before
+        grouping the ballots. If this performed a state update,
+        None will be returned and the calling function should perform
+        a redirect to the calling page, so the typical usage looks like:
+
+            if grouped := self._group_ballots(rs, assembly_id):
+                done, extended, current, future = grouped
+            else:
+                return self.redirect(rs, "assembly/dummy_page")
+
+        :returns: None if any ballot updated state, else
+            four dicts mapping ballot ids to ballots grouped by status
+            in the order done, extended, current, future.
+            Every ballot of the assembly is present in exactly one dict.
         """
+        # Check for state changes before grouping ballots.
+        extended, tallied, _ = self._update_ballots(rs, assembly_id)
+        if extended or tallied:
+            return None
+
+        ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
+        ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
+
         ref = now()
 
         future = {k: v for k, v in ballots.items()
                   if v['vote_begin'] > ref}
         # `current` also contains ballots which wait for
-        # check_voting_priod_extension() being called on them
+        # check_voting_period_extension() being called on them
         current = {k: v for k, v in ballots.items()
                    if (v['vote_begin'] <= ref < v['vote_end']
                        or (v['vote_end'] <= ref and v['extended'] is None))}
@@ -642,7 +661,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         if not (len(future) + len(current) + len(extended) + len(done)
                 == len(ballots)):
-            raise RuntimeError(n_("Grouping ballots by status failed."))
+            raise RuntimeError(n_("Impossible."))
 
         return done, extended, current, future
 
@@ -652,22 +671,20 @@ class AssemblyFrontend(AbstractUserFrontend):
         if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
 
-        ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
-        ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
-
-        # Check for extensions before grouping ballots.
-        # Converting to list is needed to ensure updating all ballots.
-        if any([self._update_ballot_state(rs, ballot)  # pylint: disable=use-a-generator
-                for anid, ballot in ballots.items()]):
+        if grouped := self._group_ballots(rs, assembly_id):
+            done, extended, current, future = grouped
+            # _group_ballots returns all ballots of the assembly in four disjunct dicts
+            # TODO: python3.9: ballots = done | extended | current | future
+            ballots = {**done, **extended, **current, **future}
+        else:
+            # some ballots updated state
             return self.redirect(rs, "assembly/list_ballots")
-
-        done, extended, current, future = self.group_ballots(ballots)
-        # Currently we don't distinguish between current and extended ballots
+        # Currently, we don't distinguish between current and extended ballots
         current.update(extended)
 
         votes = {}
         if self.assemblyproxy.does_attend(rs, assembly_id=assembly_id):
-            for ballot_id in ballot_ids:
+            for ballot_id in ballots:
                 votes[ballot_id] = self.assemblyproxy.get_vote(
                     rs, ballot_id, secret=None)
 
@@ -921,8 +938,16 @@ class AssemblyFrontend(AbstractUserFrontend):
         """
         if not self.assemblyproxy.may_assemble(rs, ballot_id=ballot_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        ballot = rs.ambience['ballot']
-        if self._update_ballot_state(rs, ballot):
+
+        # We need to group the ballots for navigation later anyway,
+        # and as grouping them updates their state we do it already here
+        if grouped := self._group_ballots(rs, assembly_id):
+            done, extended, current, future = grouped
+            # _group_ballots returns all ballots of the assembly in four disjunct dicts
+            # TODO: python3.9: ballots = done | extended | current | future
+            ballots = {**done, **extended, **current, **future}
+        else:
+            # some ballots updated state
             return self.redirect(rs, "assembly/show_ballot")
 
         # get associated attachments
@@ -932,6 +957,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             rs, definitive_versions.keys())
 
         # initial checks done, present the ballot
+        ballot = rs.ambience['ballot']
         ballot['vote_count'] = self.assemblyproxy.count_votes(rs, ballot_id)
         result = self.get_online_result(rs, ballot)
         attends = self.assemblyproxy.does_attend(rs, ballot_id=ballot_id)
@@ -946,20 +972,17 @@ class AssemblyFrontend(AbstractUserFrontend):
             merge_dicts(rs.values, {'vote': vote_dict['own_vote']})
 
         # this is used for the dynamic row candidate table
-        current = {
+        current_candidates = {
             drow_name(field_name=key, entity_id=candidate_id): value
             for candidate_id, candidate in ballot['candidates'].items()
             for key, value in candidate.items() if key != 'id'}
         sorted_candidate_ids = [
             e["id"] for e in xsorted(ballot["candidates"].values(),
                                      key=EntitySorter.candidates)]
-        merge_dicts(rs.values, current)
+        merge_dicts(rs.values, current_candidates)
 
-        ballots_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
-        ballots = self.assemblyproxy.get_ballots(rs, ballots_ids)
-        done, extended, current, future = self.group_ballots(ballots)
-
-        # Currently we don't distinguish between current and extended ballots
+        # now, process the grouped ballots from above for the navigation buttons.
+        # Currently, we don't distinguish between current and extended ballots
         current.update(extended)
         ballot_list: List[int] = sum((
             xsorted(bdict, key=lambda key: bdict[key]["title"])  # pylint: disable=cell-var-from-loop;
@@ -1000,7 +1023,14 @@ class AssemblyFrontend(AbstractUserFrontend):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         ballot = rs.ambience['ballot']
 
-        if self._update_ballot_state(rs, ballot):
+        # We need to group the ballots for navigation later anyway,
+        # and as grouping them updates their state we do it already here
+        if grouped := self._group_ballots(rs, assembly_id):
+            done, _, _, _ = grouped
+            # _group_ballots returns all ballots of the assembly in four disjunct dicts
+            ballots = {k: v for d in grouped for k, v in d.items()}
+        else:
+            # some ballots updated state
             return self.redirect(rs, "assembly/show_ballot_result")
 
         if not ballot['is_tallied']:
@@ -1054,10 +1084,6 @@ class AssemblyFrontend(AbstractUserFrontend):
         result_hash = get_hash(result_bytes)
 
         # show links to next and previous ballots
-        ballots_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
-        ballots = self.assemblyproxy.get_ballots(rs, ballots_ids)
-        done, _, _, _ = self.group_ballots(ballots)
-
         # we are only interested in done ballots
         ballot_list: List[int] = xsorted(done, key=lambda key: done[key]["title"])
 
@@ -1081,6 +1107,12 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         This handles the personalised information of the current viewer interacting with
         the ballot.
+
+        :return: one of the following strings:
+            * your full preference, if the ballot was a preferential vote, otherwise
+            * MAGIC_ABSTAIN, if you abstained in the ballot
+            * all candidates you voted for, seperated by '=', if the ballot was a
+              classical vote
         """
         ballot_id = ballot['id']
 
@@ -1098,44 +1130,50 @@ class AssemblyFrontend(AbstractUserFrontend):
                         ("secret", ValueError(n_("Entered invalid secret"))))
                     own_vote = None
 
-        if own_vote:
+        if own_vote and ballot['votes']:
             split_vote = own_vote.split('>')
             if len(split_vote) == 1:
                 # abstention
                 own_vote = MAGIC_ABSTAIN
-            elif ballot['votes']:
+            else:
                 # select voted options in classical voting
                 own_vote = split_vote[0]
 
         return {'attends': attends, 'has_voted': has_voted, 'own_vote': own_vote}
 
-    def _update_ballot_state(self, rs: RequestState,
-                             ballot: Dict[str, Any]) -> DefaultReturnCode:
-        """Helper to automatically update a ballots state.
+    def _update_ballots(self, rs: RequestState, assembly_id: int
+                        ) -> Tuple[int, int, int]:
+        """Helper to automatically update all ballots of an assembly.
 
         State updates are necessary for extending and tallying a ballot.
         If this function performs a state update, the calling function should
         redirect to the calling page.
 
-        :returns: 1 if the ballot was tallied, -1 if it was extended,
-            0 otherwise.
+        :returns: how many state changes of which kind were performed
+            in order extended, tallied, unchanged
         """
+        ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
+        ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
+        extended = tallied = unchanged = 0
 
         timestamp = now()
+        for ballot_id, ballot in ballots.items():
+            # check for extension
+            if ballot['extended'] is None and timestamp > ballot['vote_end']:
+                if self.assemblyproxy.check_voting_period_extension(rs, ballot['id']):
+                    extended += 1
+                    continue
+                else:
+                    # we do not need the full updated ballot here, so just update
+                    # the relevant piece of information
+                    ballot['extended'] = False
 
-        # check for extension
-        if ballot['extended'] is None and timestamp > ballot['vote_end']:
-            self.assemblyproxy.check_voting_period_extension(rs, ballot['id'])
-            return -1
-
-        finished = (
-                timestamp > ballot['vote_end']
-                and (not ballot['extended']
-                     or timestamp > ballot['vote_extension_end']))
-        # check whether we need to initiate tallying
-        if finished and not ballot['is_tallied']:
-            result = self.assemblyproxy.tally_ballot(rs, ballot['id'])
-            if result:
+            finished = (timestamp > ballot['vote_end']
+                        and (not ballot['extended']
+                             or timestamp > ballot['vote_extension_end']))
+            # check whether we need to initiate tallying
+            # tally_ballot returns None if ballot was already tallied
+            if finished and (result := self.assemblyproxy.tally_ballot(rs, ballot_id)):
                 afile = io.BytesIO(result)
                 my_hash = get_hash(result)
                 attachment_result: Dict[str, str] = {
@@ -1156,8 +1194,14 @@ class AssemblyFrontend(AbstractUserFrontend):
                     },
                     attachments=(attachment_result,),
                     params={'sha': my_hash, 'title': ballot['title']})
-                return 1
-        return 0
+                tallied += 1
+                continue
+            unchanged += 1
+
+        ret = (extended, tallied, unchanged)
+        if sum(ret) != len(ballots):
+            raise RuntimeError(n_("Impossible."))
+        return ret
 
     def get_online_result(self, rs: RequestState, ballot: Dict[str, Any]
                           ) -> Optional[CdEDBObject]:
@@ -1233,18 +1277,9 @@ class AssemblyFrontend(AbstractUserFrontend):
         assemblies = self.assemblyproxy.get_assemblies(rs, assembly_ids)
         for assembly_id, assembly in assemblies.items():
             rs.ambience['assembly'] = assembly
-            ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
-            ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
-            for ballot_id, ballot in ballots.items():
-                code = self._update_ballot_state(rs, ballot)
-                if code < 0:
-                    extension_count += 1
-                    ballot = self.assemblyproxy.get_ballot(rs, ballot_id)
-                    code = self._update_ballot_state(rs, ballot)
-                    if code > 0:
-                        tally_count += 1
-                elif code > 0:
-                    tally_count += 1
+            extended, tallied, _ = self._update_ballots(rs, assembly_id)
+            extension_count += extended
+            tally_count += tallied
         if extension_count or tally_count:
             self.logger.info(f"Extended {extension_count} and tallied"
                              f" {tally_count} ballots via cron job.")
@@ -1255,17 +1290,12 @@ class AssemblyFrontend(AbstractUserFrontend):
         """Give an online summary of all tallied ballots of an assembly."""
         if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        assembly_ballots = self.assemblyproxy.list_ballots(rs, assembly_id)
-        ballot_ids = [k for k, v in assembly_ballots.items()]
-        ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
 
-        # Check for extensions before grouping ballots.
-        # Converting to list is needed to ensure updating all ballots.
-        if any([self._update_ballot_state(rs, ballot)  # pylint: disable=use-a-generator
-                for anid, ballot in ballots.items()]):
+        if grouped := self._group_ballots(rs, assembly_id):
+            done, _, _, _ = grouped
+        else:
+            # some ballots updated state
             return self.redirect(rs, "assembly/summary_ballots")
-
-        done, extended, current, future = self.group_ballots(ballots)
 
         result = {k: self.get_online_result(rs, v) for k, v in done.items()}
 
@@ -1333,13 +1363,41 @@ class AssemblyFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/show_ballot")
 
+    @access("assembly")
+    @assembly_guard
+    @REQUESTdata("comment")
+    def comment_concluded_ballot_form(self, rs: RequestState, assembly_id: int,
+                                      ballot_id: int, comment: Optional[str]
+                                      ) -> Response:
+        rs.ignore_validation_errors()
+        if not rs.ambience['ballot']['is_tallied']:
+            rs.notify("error", n_("Comments are only allowed for concluded ballots."))
+            return self.redirect(rs, "assembly/show_ballot")
+        rs.values['comment'] = comment or rs.ambience['ballot']['comment']
+        return self.render(rs, "comment_ballot")
+
+    @access("assembly", modi={"POST"})
+    @assembly_guard
+    @REQUESTdata("comment")
+    def comment_concluded_ballot(self, rs: RequestState, assembly_id: int,
+                                 ballot_id: int, comment: Optional[str]) -> Response:
+        if rs.has_validation_errors():
+            return self.comment_concluded_ballot_form(rs, assembly_id, ballot_id,
+                                                      comment)
+        if not self.assemblyproxy.is_ballot_concluded(rs, ballot_id):
+            rs.notify("error", n_("Comments are only allowed for concluded ballots."))
+            return self.redirect(rs, "assembly/show_ballot")
+        code = self.assemblyproxy.comment_concluded_ballot(rs, ballot_id, comment)
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "assembly/show_ballot")
+
     @access("assembly", modi={"POST"})
     @assembly_guard
     def ballot_start_voting(self, rs: RequestState, assembly_id: int,
                             ballot_id: int) -> Response:
         """Immediately start voting period of a ballot.
         Only possible in CDEDB_DEV mode."""
-        if not self.conf["CDEDB_DEV"]:
+        if not self.conf["CDEDB_DEV"]:  # pragma: no cover
             raise RuntimeError(
                 n_("Force starting a ballot is only possible in dev mode."))
 
@@ -1389,6 +1447,9 @@ class AssemblyFrontend(AbstractUserFrontend):
         """
         if not self.assemblyproxy.may_assemble(rs, ballot_id=ballot_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+        if not self.assemblyproxy.is_ballot_voting(rs, ballot_id):
+            rs.notify("error", n_("Ballot is outside its voting period."))
+            return self.redirect(rs, "assembly/show_ballot", {'ballot_id': ballot_id})
         ballot = rs.ambience['ballot']
         candidates = tuple(e['shortname']
                            for e in ballot['candidates'].values())

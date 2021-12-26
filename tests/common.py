@@ -852,13 +852,13 @@ class FrontendTest(BackendTest):
     def _log_generation_time(self, response: webtest.TestResponse = None) -> None:
         if response is None:
             response = self.response
-        if _BASICCONF["TIMING_LOG"]:
-            with open(_BASICCONF["TIMING_LOG"], 'a') as f:
-                output = "{} {} {} {}\n".format(
-                    response.request.path, response.request.method,
-                    response.headers.get('X-Generation-Time'),
-                    response.request.query_string)
-                f.write(output)
+        # record performance information during test runs
+        with open(_BASICCONF["LOG_DIR"] / "cdedb-timing.log", 'a') as f:
+            output = "{} {} {} {}\n".format(
+                response.request.path, response.request.method,
+                response.headers.get('X-Generation-Time'),
+                response.request.query_string)
+            f.write(output)
 
     def get(self, url: str, *args: Any, verbose: bool = False, **kwargs: Any) -> None:
         """Navigate directly to a given URL using GET."""
@@ -1064,6 +1064,7 @@ class FrontendTest(BackendTest):
         return body.get_content()
 
     def fetch_link(self, index: int = 0, num: int = 1) -> str:
+        """Extract the <num>th link out of the <index>th mail just sent."""
         for line in self.fetch_mail_content(index).splitlines():
             if line.startswith(f'[{num}] '):
                 return line.split(maxsplit=1)[-1]

@@ -340,7 +340,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         elif aspect == 'parts':
             sub_ids = event['parts'].keys()
         else:
-            raise RuntimeError("Impossible.")
+            raise RuntimeError(n_("Impossible."))
         return {
             (entity_id, sub_id): xsorted(
                 (registration_id for registration_id in registrations

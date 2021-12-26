@@ -1,6 +1,6 @@
 slapd slapd/internal/adminpw password {{ secrets["LDAP_SLAPD"]["ADMIN_PASSWORD"] }}
 slapd slapd/internal/generated_adminpw password {{ secrets["LDAP_SLAPD"]["ADMIN_PASSWORD"] }}
-slapd slapd/password1 password {{ secrets["LDAP_SLAPD"]["PASSWORD1"] }}
-slapd slapd/password2 password {{ secrets["LDAP_SLAPD"]["PASSWORD2"] }}
+slapd slapd/password1 password {{ secrets["LDAP_SLAPD"]["PASSWORD"] }}
+slapd slapd/password2 password {{ secrets["LDAP_SLAPD"]["PASSWORD"] }}
 slapd slapd/domain string cde-ev.de
 slapd shared/organization string CdEDB

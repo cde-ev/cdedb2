@@ -111,15 +111,19 @@ class TestEventBackend(BackendTest):
             },
             'fields': {
                 -1: {
-                    'association': 1,
+                    'association': const.FieldAssociations.registration,
                     'field_name': "instrument",
+                    'title': "Instrument",
+                    'sortkey': 0,
                     'kind': const.FieldDatatypes.str,
                     'entries': None,
                     'checkin': False,
                 },
                 -2: {
-                    'association': 1,
+                    'association': const.FieldAssociations.registration,
                     'field_name': "preferred_excursion_date",
+                    'title': "Bevorzugtes Ausflugsdatum",
+                    'sortkey': 0,
                     'kind': const.FieldDatatypes.date,
                     'entries': [["2109-08-16", "In the first coming"],
                                 ["2110-08-16", "During the second coming"]],
@@ -128,6 +132,8 @@ class TestEventBackend(BackendTest):
                 -3: {
                     'association': const.FieldAssociations.registration,
                     'field_name': "is_child",
+                    'title': "Ist Kind",
+                    'sortkey': 5,
                     'kind': const.FieldDatatypes.bool,
                     'entries': None,
                     'checkin': False,
@@ -198,8 +204,7 @@ class TestEventBackend(BackendTest):
                     del data['fields'][oldfield]
                     break
 
-        self.assertEqual(data,
-                         self.event.get_event(self.key, new_id))
+        self.assertEqual(data, self.event.get_event(self.key, new_id))
         data['title'] = "Alternate Universe Academy"
         newpart = {
             'tracks': {
@@ -242,12 +247,14 @@ class TestEventBackend(BackendTest):
         newfield = {
             'association': const.FieldAssociations.lodgement,
             'field_name': "kuea",
+            'title': "KäA",
+            'sortkey': -7,
             'kind': const.FieldDatatypes.str,
             'entries': None,
             'checkin': False,
         }
         changed_field = {
-            'association': const.FieldAssociations.course,
+            'association': const.FieldAssociations.registration,
             'kind': const.FieldDatatypes.date,
             'entries': [
                 ["2110-08-15", "early second coming"],
@@ -302,7 +309,7 @@ class TestEventBackend(BackendTest):
         changed_field['id'] = field_map["preferred_excursion_date"]
         changed_field['event_id'] = new_id
         changed_field['field_name'] = "preferred_excursion_date"
-        data['fields'][field_map["preferred_excursion_date"]] = changed_field
+        data['fields'][field_map["preferred_excursion_date"]].update(changed_field)
         data['begin'] = datetime.date(2110, 9, 8)
         data['end'] = datetime.date(2111, 8, 20)
         # TODO dynamically adapt ids from the database result
@@ -2327,12 +2334,13 @@ class TestEventBackend(BackendTest):
         # field definitions
         new_data['event.field_definitions'].update({
             11000: {
-                'association': 1,
+                'association': const.FieldAssociations.registration,
                 'entries': [['good', 'good'],
                             ['neutral', 'so so'],
                             ['bad', 'not good']],
                 'event_id': 1,
-                'field_name': 'behaviour',
+                'field_name': "behaviour",
+                'title': "Benehmen",
                 'id': 11000,
                 'kind': const.FieldDatatypes.str,
                 'checkin': False,
@@ -2342,6 +2350,7 @@ class TestEventBackend(BackendTest):
                 'entries': None,
                 'event_id': 1,
                 'field_name': "solidarity",
+                'title': "Solidarität",
                 'id': 11001,
                 'kind': const.FieldDatatypes.bool,
                 'checkin': False,
@@ -2358,6 +2367,7 @@ class TestEventBackend(BackendTest):
             'readonly': True,
             'title': 'Vorsätze',
             'kind': const.QuestionnaireUsages.additional,
+            'default_value': None,
         }
         new_data['event.fee_modifiers'][13000] = {
             'id': 13000,
@@ -2543,7 +2553,9 @@ class TestEventBackend(BackendTest):
                             ['neutral', 'so so'],
                             ['bad', 'not good']],
                 'event_id': 1,
-                'field_name': 'behaviour',
+                'field_name': "behaviour",
+                'title': "Benehmen",
+                'sortkey': 0,
                 'id': 1001,
                 'kind': const.FieldDatatypes.str,
                 'checkin': False,
@@ -2552,7 +2564,9 @@ class TestEventBackend(BackendTest):
                 'association': const.FieldAssociations.registration,
                 'entries': None,
                 'event_id': 1,
-                'field_name': 'solidarity',
+                'field_name': "solidarity",
+                'title': "Solidarität",
+                'sortkey': 0,
                 'id': 1002,
                 'kind': const.FieldDatatypes.bool,
                 'checkin': False,
@@ -2575,6 +2589,7 @@ class TestEventBackend(BackendTest):
             'readonly': True,
             'title': 'Vorsätze',
             'kind': const.QuestionnaireUsages.additional,
+            'default_value': None,
         }
 
         result = self.event.export_event(self.key, 1)
@@ -3727,7 +3742,7 @@ class TestEventBackend(BackendTest):
         self.event.set_questionnaire(self.key, 1, data)
 
         # now check it
-        expectation = (35, (
+        expectation = (
             {'id': 1001,
              'change_note': None,
              'code': const.EventLogCodes.event_created,
@@ -3812,23 +3827,20 @@ class TestEventBackend(BackendTest):
              'event_id': 1001,
              'persona_id': None,
              'submitted_by': self.user['id']},
-            {'id': 1013,
-             'change_note': 'kuea',
+            {'change_note': 'instrument',
+             'code': const.EventLogCodes.field_removed,
+             'ctime': nearly_now(),
+             'event_id': 1001,
+             'persona_id': None,
+             'submitted_by': self.user['id']},
+            {'change_note': 'kuea',
              'code': const.EventLogCodes.field_added,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
              'submitted_by': self.user['id']},
-            {'id': 1014,
-             'change_note': 'preferred_excursion_date',
+            {'change_note': 'preferred_excursion_date',
              'code': const.EventLogCodes.field_updated,
-             'ctime': nearly_now(),
-             'event_id': 1001,
-             'persona_id': None,
-             'submitted_by': self.user['id']},
-            {'id': 1015,
-             'change_note': 'instrument',
-             'code': const.EventLogCodes.field_removed,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
@@ -3944,10 +3956,10 @@ class TestEventBackend(BackendTest):
              'ctime': nearly_now(),
              'event_id': 1,
              'persona_id': None,
-             'submitted_by': self.user['id'], }))
+             'submitted_by': self.user['id']},
+        )
 
-        result = self.event.retrieve_log(self.key, offset=offset)
-        self.assertEqual(expectation, result)
+        self.assertLogEqual(expectation, realm="event", offset=offset)
 
     def _create_registration(self, persona_id: int, event_id: int) -> int:
         event = self.event.get_event(self.key, event_id)

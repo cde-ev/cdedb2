@@ -141,7 +141,7 @@ class CdESemesterMixin(CdEBaseFrontend):
     @access("finance_admin", modi={"POST"})
     def semester_eject(self, rs: RequestState) -> Response:
         """Eject members without enough credit and archive inactive users."""
-        if rs.has_validation_errors():
+        if rs.has_validation_errors():  # pragma: no cover
             self.redirect(rs, "cde/show_semester")
         period_id = self.cdeproxy.current_period(rs)
         if not self.cdeproxy.may_start_semester_ejection(rs):
@@ -195,7 +195,7 @@ class CdESemesterMixin(CdEBaseFrontend):
     @access("finance_admin", modi={"POST"})
     def semester_balance_update(self, rs: RequestState) -> Response:
         """Deduct membership fees from all member accounts."""
-        if rs.has_validation_errors():
+        if rs.has_validation_errors():  # pragma: no cover
             self.redirect(rs, "cde/show_semester")
         period_id = self.cdeproxy.current_period(rs)
         if not self.cdeproxy.may_start_semester_balance_update(rs):
@@ -217,7 +217,7 @@ class CdESemesterMixin(CdEBaseFrontend):
     @access("finance_admin", modi={"POST"})
     def semester_advance(self, rs: RequestState) -> Response:
         """Proceed to next period."""
-        if rs.has_validation_errors():
+        if rs.has_validation_errors():  # pragma: no cover
             self.redirect(rs, "cde/show_semester")
         period_id = self.cdeproxy.current_period(rs)
         period = self.cdeproxy.get_period(rs, period_id)
@@ -275,7 +275,7 @@ class CdESemesterMixin(CdEBaseFrontend):
         """Proceed to next expuls."""
         expuls_id = self.cdeproxy.current_expuls(rs)
         expuls = self.cdeproxy.get_expuls(rs, expuls_id)
-        if rs.has_validation_errors():
+        if rs.has_validation_errors():  # pragma: no cover
             return self.show_semester(rs)
         if not expuls['addresscheck_done']:
             rs.notify("error", n_("Addresscheck not done."))

@@ -647,7 +647,7 @@ class Transaction:
             return
 
         else:
-            raise RuntimeError("Impossible!")
+            raise RuntimeError(n_("Impossible."))
 
     def get_data(self, *, get_persona: BackendGetter = None,
                  events: CdEDBObjectMap = None) -> None:

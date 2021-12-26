@@ -197,7 +197,7 @@ class CoreBaseFrontend(AbstractFrontend):
         }
         data = request_extractor(rs, data_params)
         data = check(rs, vtypes.MetaInfo, data, keys=info.keys())
-        if rs.has_validation_errors():
+        if rs.has_validation_errors():  # pragma: no cover
             return self.meta_info_form(rs)
         assert data is not None
         code = self.coreproxy.set_meta_info(rs, data)
@@ -250,7 +250,7 @@ class CoreBaseFrontend(AbstractFrontend):
     @access("persona", modi={"POST"})
     def logout_all(self, rs: RequestState) -> Response:
         """Invalidate all sessions for the current user."""
-        if rs.has_validation_errors():
+        if rs.has_validation_errors():  # pragma: no cover
             return self.index(rs)
         count = self.coreproxy.logout(rs, other_sessions=True)
         rs.notify(
@@ -671,7 +671,7 @@ class CoreBaseFrontend(AbstractFrontend):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
             # reconnoitre_ambience leads to 404 if user does not exist at all.
-            rs.notify("error", n_("User is archived."))
+            rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
 
         registrations = self.eventproxy.list_persona_registrations(rs, persona_id)
@@ -700,7 +700,7 @@ class CoreBaseFrontend(AbstractFrontend):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
             # reconnoitre_ambience leads to 404 if user does not exist at all.
-            rs.notify("error", n_("User is archived."))
+            rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
 
         subscriptions = self.mlproxy.get_user_subscriptions(rs, persona_id)
@@ -1218,6 +1218,7 @@ class CoreBaseFrontend(AbstractFrontend):
         display_realms = rs.user.roles.intersection(REALM_INHERITANCE)
         if "cde" in display_realms:
             display_realms.add("finance")
+            display_realms.add("auditor")
         if "ml" in display_realms:
             display_realms.add("cdelokal")
         for realm in display_realms:
@@ -1609,8 +1610,6 @@ class CoreBaseFrontend(AbstractFrontend):
         if rs.ambience['persona']['is_archived']:
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
-        if rs.has_validation_errors():
-            return self.modify_balance_form(rs, persona_id)
         code = self.coreproxy.change_persona_balance(
             rs, persona_id, new_balance,
             const.FinanceLogCodes.manual_balance_correction,
@@ -1672,7 +1671,7 @@ class CoreBaseFrontend(AbstractFrontend):
         code = self.coreproxy.invalidate_password(rs, persona_id)
         self.notify_return_code(rs, code, success=n_("Password invalidated."))
 
-        if not code:
+        if not code:  # pragma: no cover
             return self.show_user(
                 rs, persona_id, confirm_id=persona_id, internal=True,
                 quote_me=False, event_id=None, ml_id=None)
@@ -1773,6 +1772,7 @@ class CoreBaseFrontend(AbstractFrontend):
                         persona_id=None,
                         timeout=self.conf["PARAMETER_TIMEOUT"]),
                         'cookie': message})
+                # log message to be picked up by fail2ban
                 self.logger.info(f"Sent password reset mail to {email}"
                                  f" for IP {rs.request.remote_addr}.")
                 rs.notify("success", n_("Email sent."))
@@ -1862,7 +1862,8 @@ class CoreBaseFrontend(AbstractFrontend):
                  ("new_password2", ValueError(n_("Passwords don’t match."))),))
             rs.ignore_validation_errors()
             rs.notify("error", n_("Passwords don’t match."))
-            return self.change_password_form(rs)
+            return self.do_password_reset_form(rs, email=email, cookie=cookie,
+                                               internal=True)
         new_password, errs = self.coreproxy.check_password_strength(
             rs, new_password, email=email, argname="new_password")
 
@@ -2077,6 +2078,8 @@ class CoreBaseFrontend(AbstractFrontend):
     def archive_persona(self, rs: RequestState, persona_id: int,
                         ack_delete: bool, note: str) -> Response:
         """Move a persona to the attic."""
+        if not self.coreproxy.is_relative_admin(rs, persona_id):
+            raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
         if not ack_delete:
             rs.append_validation_error(
                 ("ack_delete", ValueError(n_("Must be checked."))))
@@ -2213,7 +2216,7 @@ class CoreBaseFrontend(AbstractFrontend):
         The token parameter cannot contain slashes as this is prevented by
         werkzeug.
         """
-        if not self.conf["CDEDB_DEV"]:
+        if not self.conf["CDEDB_DEV"]:  # pragma: no cover
             return self.redirect(rs, "core/index")
         filename = pathlib.Path(tempfile.gettempdir(),
                                 "cdedb-mail-{}.txt".format(token))

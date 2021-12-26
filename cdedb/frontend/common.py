@@ -122,11 +122,11 @@ class BaseApp(metaclass=abc.ABCMeta):
         secrets = SecretsConfig(configpath)
         # initialize logging
         if hasattr(self, 'realm') and self.realm:
-            logger_name = "cdedb.frontend.{}".format(self.realm)
-            logger_file = self.conf[f"{self.realm.upper()}_FRONTEND_LOG"]
+            logger_name = f"cdedb.frontend.{self.realm}"
+            logger_file = self.conf["LOG_DIR"] / f"cdedb-frontend-{self.realm}.log"
         else:
             logger_name = "cdedb.frontend"
-            logger_file = self.conf["FRONTEND_LOG"]
+            logger_file = self.conf["LOG_DIR"] / "cdedb-frontend.log"
         make_root_logger(
             logger_name, logger_file, self.conf["LOG_LEVEL"],
             syslog_level=self.conf["SYSLOG_LEVEL"],
@@ -270,8 +270,7 @@ PeriodicMethod = Callable[[Any, RequestState, CdEDBObject], CdEDBObject]
 class PeriodicJob(Protocol):
     cron: CdEDBObject
 
-    def __call__(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject:
-        ...
+    def __call__(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject: ...
 
 
 def periodic(name: str, period: int = 1
@@ -899,7 +898,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if not msg["To"] and not msg["Cc"] and not msg["Bcc"]:
             self.logger.warning("No recipients for mail. Dropping it.")
             return None
-        if not self.conf["CDEDB_DEV"]:
+        if not self.conf["CDEDB_DEV"]:  # pragma: no cover
             s = smtplib.SMTP(self.conf["MAIL_HOST"])
             s.send_message(msg)
             s.quit()
@@ -1220,8 +1219,8 @@ class CdEMailmanClient(mailmanclient.Client):
         # Initialize logger. This needs the base class initialization to be done.
         logger_name = "cdedb.frontend.mailmanclient"
         make_root_logger(
-            logger_name, self.conf["MAILMAN_LOG"], self.conf["LOG_LEVEL"],
-            syslog_level=self.conf["SYSLOG_LEVEL"],
+            logger_name, self.conf["LOG_DIR"] / "cdedb-frontend-mailman.log",
+            self.conf["LOG_LEVEL"], syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         self.logger = logging.getLogger(logger_name)
         self.logger.debug(f"Instantiated {self} with configpath {conf._configpath}.")
@@ -1250,7 +1249,11 @@ class CdEMailmanClient(mailmanclient.Client):
         if self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or self.conf["CDEDB_DEV"]:
             self.logger.info("Skipping mailman query in dev/offline mode.")
             if self.conf["CDEDB_DEV"]:
-                return HELD_MESSAGE_SAMPLE
+                # Some diversity regarding moderation.
+                if dblist['id'] % 2 == 0:
+                    return HELD_MESSAGE_SAMPLE
+                else:
+                    return []
             return None
         else:
             mmlist = self.get_list_safe(dblist['address'])
@@ -1527,6 +1530,10 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
                 expects_persona = any('droid' not in role
                                       for role in access_list)
                 if rs.user.roles == {"anonymous"} and expects_persona:
+                    # Validation errors do not matter on session expiration,
+                    # since we redirect to get anyway.
+                    # In practice, this is mostly relevant for the anti csrf error.
+                    rs.ignore_validation_errors()
                     params = {
                         'wants': obj.encode_parameter(
                             "core/index", "wants", rs.request.url,
@@ -2240,6 +2247,7 @@ def process_dynamic_input(
     spec: vtypes.TypeMapping,
     *,
     additional: CdEDBObject = None,
+    creation_spec: vtypes.TypeMapping = None,
     prefix: str = "",
 ) -> Dict[int, Optional[CdEDBObject]]:
     """Retrieve data from rs provided by 'dynamic_row_meta' macros.
@@ -2267,10 +2275,12 @@ def process_dynamic_input(
     :param spec: name of input fields, mapped to their validation. This uses the same
         format as the `request_extractor`, but adds the 'prefix' to each key if present.
     :param additional: additional keys added to each output object
+    :param creation_spec: alternative spec used for new entries. Defaults to spec.
     :param prefix: prefix in front of all concerned fields. Should be used when more
         then one dynamic input table is present on the same page.
     """
     additional = additional or dict()
+    creation_spec = creation_spec or spec
     # this is the used prefix for the validation
     field_prefix = f"{prefix}_" if prefix else ""
 
@@ -2298,7 +2308,8 @@ def process_dynamic_input(
         else:
             entry = ret[anid]
             assert entry is not None
-            if type_ is not vtypes.EventTrack and type_ is not vtypes.EventPartGroup:
+            if type_ not in {vtypes.EventTrack, vtypes.BallotCandidate,
+                             vtypes.EventPartGroup}:
                 entry["id"] = anid
             entry.update(additional)
             # apply the promised validation
@@ -2311,11 +2322,11 @@ def process_dynamic_input(
         will_create = unwrap(
             request_extractor(rs, {drow_create(-marker, prefix): bool}))
         if will_create:
-            params = {
-                drow_name(key, -marker, prefix): value for key, value in spec.items()}
+            params = {drow_name(key, -marker, prefix): value
+                      for key, value in creation_spec.items()}
             data = request_extractor(rs, params, postpone_validation=True)
             entry = {
-                key: data[drow_name(key, -marker, prefix)] for key in spec}
+                key: data[drow_name(key, -marker, prefix)] for key in creation_spec}
             entry.update(additional)
             ret[-marker] = check_validation(
                 rs, type_, entry, field_prefix=field_prefix,

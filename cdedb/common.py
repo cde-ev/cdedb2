@@ -682,7 +682,7 @@ class EntitySorter:
 
     @staticmethod
     def event_field(event_field: CdEDBObject) -> Sortkey:
-        return (event_field['field_name'], event_field['id'])
+        return (event_field['sortkey'], event_field['field_name'], event_field['id'])
 
     @staticmethod
     def candidates(candidates: CdEDBObject) -> Sortkey:
@@ -2197,7 +2197,8 @@ COURSE_TRACK_FIELDS = ("id", "part_id", "title", "shortname", "num_choices",
 
 #: Fields of an extended attribute associated to an event entity
 FIELD_DEFINITION_FIELDS = (
-    "id", "event_id", "field_name", "kind", "association", "entries", "checkin",
+    "id", "event_id", "field_name", "title", "sortkey", "kind", "association",
+    "checkin", "entries",
 )
 
 #: Fields of a modifier for an event_parts fee.
@@ -2211,7 +2212,7 @@ COURSE_FIELDS = ("id", "event_id", "title", "description", "nr", "shortname",
                  "instructors", "max_size", "min_size", "notes", "fields")
 
 #: Fields specifying in which part a course is available
-COURSE_SEGMENT_FIELDS = ("course_id", "track_id", "is_active")
+COURSE_SEGMENT_FIELDS = ("id", "course_id", "track_id", "is_active")
 
 #: Fields of a registration to an event organized via the CdEDB
 REGISTRATION_FIELDS = (
@@ -2236,7 +2237,7 @@ LODGEMENT_FIELDS = ("id", "event_id", "title", "regular_capacity",
 
 # Fields of a row in a questionnaire.
 # (This can be displayed in different places according to `kind`).
-QUESTIONNAIRE_ROW_FIELDS = ("field_id", "pos", "title", "info",
+QUESTIONNAIRE_ROW_FIELDS = ("event_id", "field_id", "pos", "title", "info",
                             "input_size", "readonly", "default_value", "kind")
 
 #: Fields for a stored event query.
@@ -2319,10 +2320,6 @@ LOG_FIELDS_COMMON = ("codes", "persona_id", "submitted_by", "change_note", "offs
                      "length", "time_start", "time_stop")
 
 EPSILON = 10 ** (-6)  #:
-
-#: Timestamp which lies in the future. Make a constant so we do not have to
-#: hardcode the value otherwere
-FUTURE_TIMESTAMP = datetime.datetime(9996, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
 
 #: Specification for the output date format of money transfers.
 #: Note how this differs from the input in that we use 4 digit years.

@@ -222,11 +222,12 @@ class CoreGenesisMixin(CoreBaseFrontend):
     @periodic("genesis_forget", period=96)
     def genesis_forget(self, rs: RequestState, store: CdEDBObject
                        ) -> CdEDBObject:
-        """Cron job for deleting unconfirmed or rejected genesis cases.
+        """Cron job for deleting successful, unconfirmed or rejected genesis cases.
 
         This allows the username to be used once more.
         """
-        stati = (const.GenesisStati.unconfirmed, const.GenesisStati.rejected)
+        stati = (const.GenesisStati.successful, const.GenesisStati.unconfirmed,
+                 const.GenesisStati.rejected)
         cases = self.coreproxy.genesis_list_cases(
             rs, stati=stati)
 
@@ -375,9 +376,15 @@ class CoreGenesisMixin(CoreBaseFrontend):
         if (not self.is_admin(rs)
                 and "{}_admin".format(case['realm']) not in rs.user.roles):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        if self.coreproxy.verify_existence(rs, case['username'], include_genesis=False):
-            rs.notify("error", n_("Email address already taken."))
+        if case_status not in {const.GenesisStati.approved,
+                               const.GenesisStati.rejected}:
+            rs.notify("error", n_("Invalid genesis state."))
             return self.genesis_show_case(rs, genesis_case_id)
+        if case_status == const.GenesisStati.approved:
+            if self.coreproxy.verify_existence(
+                    rs, case['username'], include_genesis=False):
+                rs.notify("error", n_("Email address already taken."))
+                return self.genesis_show_case(rs, genesis_case_id)
         if case['case_status'] != const.GenesisStati.to_review:
             rs.notify("error", n_("Case not to review."))
             return self.genesis_show_case(rs, genesis_case_id)
