@@ -576,24 +576,32 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             f['signup_end'] = "2002-4-1 00:00:00"
             self.submit(f)
 
-            bdata = {
-                'title': 'Maximale Länge der Satzung',
-                'description': "Dann muss man halt eine alte Regel rauswerfen,"
-                               " wenn man eine neue will.",
-                'vote_begin': base_time + delta,
-                'vote_end': base_time + 3*delta,
-                'abs_quorum': "0",
-                'rel_quorum': "0",
-                'votes': "",
-                'notes': "Kein Aprilscherz!",
-            }
-            self._create_ballot(bdata, candidates=None)
-            self.assertTitle("Maximale Länge der Satzung (Drittes CdE-Konzil)")
+            for ballot_nr in (1, 2):
+                bdata = {
+                    'title': f'Maximale Länge der {ballot_nr}. Satzung',
+                    'description': "Dann muss man halt eine alte Regel rauswerfen,"
+                                   " wenn man eine neue will.",
+                    'vote_begin': base_time + delta,
+                    'vote_end': base_time + delta + 2*ballot_nr*delta,
+                    'abs_quorum': "0",
+                    'rel_quorum': "0",
+                    'votes': "",
+                    'notes': "Kein Aprilscherz!",
+                }
+                self._create_ballot(bdata, candidates=None)
+                self.assertTitle(f"{bdata['title']} (Drittes CdE-Konzil)")
 
-            frozen_time.tick(delta=4*delta)
-            self.traverse({'description': 'Abstimmungen'},
-                          {'description': 'Maximale Länge der Satzung'},
-                          {'description': 'Drittes CdE-Konzil'},)
+            # regression test for #2310
+            frozen_time.tick(delta=2 * delta)
+            self.traverse("Abstimmungen", "Maximale Länge der 1. Satzung")
+            frozen_time.tick(delta=2 * delta)
+            # First ballot is concluded now, second still running. Ensure viewing
+            # the second concludes the first and navigation works
+            self.traverse("Nächste")
+            frozen_time.tick(delta=2 * delta)
+            self.traverse("Nächste", "Drittes CdE-Konzil")
+
+            # now the actual conclusion test
             self.assertTitle("Drittes CdE-Konzil")
             f = self.response.forms['concludeassemblyform']
             f['ack_conclude'].checked = True

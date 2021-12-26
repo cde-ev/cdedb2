@@ -1772,6 +1772,7 @@ class CoreBaseFrontend(AbstractFrontend):
                         persona_id=None,
                         timeout=self.conf["PARAMETER_TIMEOUT"]),
                         'cookie': message})
+                # log message to be picked up by fail2ban
                 self.logger.info(f"Sent password reset mail to {email}"
                                  f" for IP {rs.request.remote_addr}.")
                 rs.notify("success", n_("Email sent."))
