@@ -142,14 +142,12 @@
                 <label id="doppelgangers-label">
                     {% trans %}Merge with Account{% endtrans %}
                 </label>
-                <div class="p strip-space" id="doppelgangers">
-                    <div role="radiogroup" aria-labelledby="doppelgangers-label">
-                        {% set entries = [(None, "–")] %}
-                        {% for key, value in doppelgangers|keydictsort(EntitySorter.persona) %}
-                            {% do entries.append((key, util.print_doppelganger(value))) %}
-                        {% endfor %}
-                        {{ util.input_checkboxes("persona_id", entries, radio=True) }}
-                    </div>
+                <div role="radiogroup" aria-labelledby="doppelgangers-label" id="doppelgangers">
+                    {% set entries = [(None, "–")] %}
+                    {% for key, value in doppelgangers|keydictsort(EntitySorter.persona) %}
+                        {% do entries.append((key, util.print_doppelganger(value))) %}
+                    {% endfor %}
+                    {{ util.input_checkboxes("persona_id", entries, radio=True) }}
                 </div>
 
             {% endif %}
