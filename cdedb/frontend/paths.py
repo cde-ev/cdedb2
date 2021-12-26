@@ -491,10 +491,12 @@ CDEDB_PATHS = werkzeug.routing.Map((
                              endpoint="delete_part"),)),
                     sub('/group', (
                         rule("/summary", methods=_GET,
-                             endpoint="part_group_summary_form"),
-                        rule("/summary", methods=_POST,
                              endpoint="part_group_summary"),
-                        sub('/int:part_group_id', (
+                        rule("/add", methods=_GET,
+                             endpoint="add_part_group_form"),
+                        rule("/add", methods=_POST,
+                             endpoint="add_part_group"),
+                        sub('/<int:part_group_id>', (
                             rule("/change", methods=_GET,
                                  endpoint="change_part_group_form"),
                             rule("/change", methods=_POST,

@@ -8,7 +8,7 @@
 {% set jshint = 'weak' %}
 {% block title %}
     {% trans title=ambience['event']['title'] %}
-    	Configure Part Groups ({{ title }})
+        Part Groups ({{ title }})
     {% endtrans %}
 {% endblock %}
 {% block heading %}
@@ -18,78 +18,9 @@
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
-    {{ util.breadcrumb_link(cdedblink("event/part_group_summary"), gettext("Event-Parts")) }}
+    {{ util.breadcrumb_link(cdedblink("event/part_summary"), gettext("Event-Parts")) }}
     {{ util.breadcrumb_link(cdedblink("event/part_group_summary"), gettext("Part Groups"), active=True) }}
 {% endblock %}
-
-{% macro print_part_group(part_group_id, aclass="", newrow=False) %}
-    <div class="panel panel-info {{ aclass }}" id="part_group{{ part_group_id }}">
-        <div class="panel-heading {{ util.has_errors(drow_name('title', part_group_id)) }}">
-            {{ util.input_text(name=drow_name('title', part_group_id),
-                               placeholder=gettext("Title of the Part Group"),
-                               arialabel=gettext("Title of the Part Group"),
-                               aclass='drow-input form-control',
-                               attributes=util.drow_basename('title') if newrow else '') }}
-            {{ util.output_errors(drow_name('title', part_group_id)) }}
-        </div>
-        <div class="panel-body">
-            {# Shortname #}
-            <div class="form-group">
-                <label class="col-sm-4 control-label" for="{{ drow_name('input-text-shortname', part_group_id) }}">
-                    {% trans %}Shortname{% endtrans %}
-                </label>
-                <div class="col-sm-8 {{ util.has_errors(drow_name('shortname', part_group_id)) }}">
-                    {{ util.input_text(name=drow_name('shortname', part_group_id), aclass='drow-input form-control',
-                                       anid=drow_name('input-text-shortname', part_group_id),
-                                       attributes=util.drow_basename('shortname')|s if newrow else '') }}
-                    {{ util.output_errors(drow_name('shortname', part_group_id)) }}
-                </div>
-            </div>
-            {# Type #}
-            <div class="form-group">
-                <label class="col-sm-4 control-label" for="{{ drow_name('input-select-constrant_type', part_group_id) }}">
-                    {% trans %}Type{% endtrans %}
-                </label>
-                <div class="col-sm-8 {{ util.has_errors(drow_name('constraint_type', part_group_id)) }}">
-                    {{ util.input_select(name=drow_name('constraint_type', part_group_id),
-                                         entries=enums['EventPartGroupType']|enum_entries(processing=gettext),
-                                         defaultvalue='EventPartGroupType.Statistic',
-                                         aclass='drow-input form-control', actualreadonly=not newrow,
-                                         anid=drow_name('input-text-constraint_type', part_group_id),
-                                         attributes=util.drow_basename('constaint_type')|s if newrow else '') }}
-                    {{ util.output_errors(drow_name('constraint_type', part_group_id)) }}
-                </div>
-            </div>
-            {# Notes #}
-            <div class="form-group">
-                <label class="col-sm-4 control-label" for="{{ drow_name('input-text-notes', part_group_id) }}">
-                    {% trans %}Notes{% endtrans %}
-                </label>
-                <div class="col-sm-8 {{ util.has_errors(drow_name('notes', part_group_id)) }}">
-                    {{ util.input_text(name=drow_name('notes', part_group_id), aclass='drow-input form-control',
-                                       anid=drow_name('input-text-notes', part_group_id),
-                                       attributes=util.drow_basename('notes')|s if newrow else '') }}
-                    {{ util.output_errors(drow_name('notes', part_group_id)) }}
-                </div>
-            </div>
-            <span class="drow-buttonspace">
-                {% if newrow %}
-                    {{ util.input_checkbox(drow_create(part_group_id), label=gettext("Add"),
-                                           attributes=util.drow_basename("create"), aclass='drow-indicator') }}
-                {% else %}
-                    {{ util.input_checkbox(drow_delete(part_group_id), label=gettext("Delete"), aclass='drow-indicator') }}
-                {% endif %}
-            </span>
-
-            <hr class="info"/>
-
-            {{ util.input_checkboxes(
-                name=drow_name('part_ids', part_group_id), slice=2, actualreadonly=not newrow,
-                entries=ambience['event']['parts']|keydictsort(EntitySorter.event_part)|dict_entries('id', 'title')) }}
-{#                attributes=util.drow_basename('part_ids') if newrow else '',#}
-        </div>
-    </div>
-{% endmacro %}
 
 {% block content %}
     <p class="text-danger">{{ util.make_icon('exclamation-triangle') }}
@@ -98,23 +29,55 @@
             You have been warned!
         {% endtrans %}
     </p>
-    <form action="{{ cdedblink("event/part_group_summary") }}" method="POST" id="partgroupsummaryform">
-        {{ util.anti_csrf_token("event/part_group_summary") }}
-        {% call(id, row_class, is_new_row) util.dynamic_row_meta(sorted_part_group_ids) %}
-            {{ print_part_group(id, row_class, is_new_row) }}
-        {% endcall %}
-        <p>
-            <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">
-                {{ util.make_icon('plus') }} {% trans %}Add Part Group{% endtrans %}
-            </button>
-            {{ util.input_submit(label=gettext("Save"), readonly=is_locked) }}
-        </p>
-    </form>
-
-    <script nonce="{{ csp_nonce }}">
-        $('#partgroupsummaryform').cdedbDynamicRow({
-            addButton: $('#drow-addbutton'),
-            delButtonTitle: "{{ gettext("Delete Part Group") }}",
-        });
-    </script>
+    <p>
+        {{ util.href(cdedblink('event/add_part_group_form'), gettext("Add part group"),
+                               icon='plus', aclass='btn btn-success pull-right') }}
+    </p>
+    <table id="part-group-summary" class="table table-stats">
+        <thead>
+            <tr>
+                <th>{% trans %}Type{% endtrans %}</th>
+                <th>{% trans %}Title{% endtrans %}</th>
+                <th>{% trans %}Shortname{% endtrans %}</th>
+                <th>{% trans %}Notes{% endtrans %}</th>
+                {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+                    <th {% if loop.first %}class="b-left"{% endif %}>
+                        {{ part['shortname'] }}
+                    </th>
+                {% endfor %}
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for part_group_id, part_group in ambience['event']['part_groups']|keydictsort(EntitySorter.event_part_group) %}
+                <tr>
+                    <td>
+                        {% if part_group['constraint_type'] == enums['EventPartGroupType'].Statistic %}
+                            {{ util.make_icon('chart-bar', title=gettext(part_group['constraint_type']|string)) }}
+                        {% endif %}
+                    </td>
+                    <th>
+                        {{ part_group['title'] }}
+                    </th>
+                    <th>
+                        {{ part_group['shortname'] }}
+                    </th>
+                    <td>
+                        {{ part_group['notes'] }}
+                    </td>
+                    {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+                        <td class="{% if loop.first %} b-left {% endif %} {% if loop.last %}b-right{% endif %}">
+                            {{ util.deko_checkbox(part_id in part_group['part_ids'], titles=['', part['shortname']]) }}
+                        </td>
+                    {% endfor %}
+                    <td>
+                        {{ util.href(cdedblink("event/change_part_group", {'part_group_id': part_group_id}),
+                                     title=gettext("Change part group %(shortname)s")|format(shortname=part_group['shortname']),
+                                     label=util.make_icon("pen"),
+                                     aclass="btn btn-sm btn-warning") }}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 {% endblock %}

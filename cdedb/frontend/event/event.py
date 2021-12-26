@@ -11,7 +11,7 @@ import copy
 import datetime
 import decimal
 from collections import OrderedDict
-from typing import Set
+from typing import Collection, Optional, Set
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -32,7 +32,7 @@ from cdedb.frontend.event.base import EventBaseFrontend
 from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.validation import (
     EVENT_EXPOSED_FIELDS, EVENT_PART_COMMON_FIELDS,
-    EVENT_PART_CREATION_MANDATORY_FIELDS, EVENT_PART_GROUP_COMMON_FIELDS,
+    EVENT_PART_CREATION_MANDATORY_FIELDS,
 )
 
 
@@ -567,35 +567,73 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard()
-    def part_group_summary_form(self, rs: RequestState, event_id: int) -> Response:
+    def part_group_summary(self, rs: RequestState, event_id: int) -> Response:
         sorted_part_group_ids = [
             e["id"] for e in xsorted(rs.ambience['event']['part_groups'].values(),
                                      key=EntitySorter.event_part_group)]
 
-        current = {}
-        for part_group_id, part_group in rs.ambience['event']['part_groups'].items():
-            for key, value in part_group.items():
-                if key == 'id':
-                    continue
-                k = drow_name(key, entity_id=part_group_id)
-                current[k] = value
+        current = {
+            drow_name(key, entity_id=part_group_id): value
+            for part_group_id, part_group in rs.ambience['event']['part_groups'].items()
+            for key, value in part_group.items()
+            if key != 'id'
+        }
         merge_dicts(rs.values, current)
 
         return self.render(rs, "event/part_group_summary", {
             'sorted_part_group_ids': sorted_part_group_ids,
         })
 
+    @access("event")
+    @event_guard()
+    def add_part_group_form(self, rs: RequestState, event_id: int) -> Response:
+        return self.render(rs, "event/add_part_group")
+
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    def part_group_summary(self, rs: RequestState, event_id: int) -> Response:
-        data = process_dynamic_input(
-            rs, vtypes.EventPartGroup, rs.ambience['event']['part_groups'],
-            EVENT_PART_GROUP_COMMON_FIELDS)
+    @REQUESTdata("title", "shortname", "notes", "constraint_type", "part_ids")
+    def add_part_group(self, rs: RequestState, event_id: int, title: str,
+                       shortname: str, notes: Optional[str],
+                       constraint_type: const.EventPartGroupType,
+                       part_ids: Collection[int]) -> Response:
+        if part_ids and not set(part_ids) <= rs.ambience['event']['parts'].keys():
+            rs.append_validation_error(("part_ids", ValueError(n_("Unknown part."))))
         if rs.has_validation_errors():
-            return self.part_group_summary_form(rs, event_id)
-        code = self.eventproxy.set_part_groups(rs, event_id, data)
+            return self.add_part_group_form(rs, event_id)
+        data = {
+            'title': title,
+            'shortname': shortname,
+            'notes': notes,
+            'constraint_type': constraint_type,
+            'part_ids': part_ids,
+        }
+        code = self.eventproxy.set_part_groups(rs, event_id, {-1: data})
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/part_group_summary_form")
+        return self.redirect(rs, "event/part_group_summary")
+
+    @access("event")
+    @event_guard()
+    def change_part_group_form(self, rs: RequestState, event_id: int,
+                               part_group_id: int) -> Response:
+        merge_dicts(rs.values, rs.ambience['part_group'])
+        return self.render(rs, "event/change_part_group")
+
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
+    @REQUESTdata("title", "shortname", "notes")
+    def change_part_group(self, rs: RequestState, event_id: int,
+                          part_group_id: int, title: str, shortname: str,
+                          notes: Optional[str]) -> Response:
+        if rs.has_validation_errors():
+            return self.change_part_group_form(rs, event_id, part_group_id)
+        data: CdEDBObject = {
+            'title': title,
+            'shortname': shortname,
+            'notes': notes,
+        }
+        code = self.eventproxy.set_part_groups(rs, event_id, {part_group_id: data})
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "event/part_group_summary")
 
     @staticmethod
     def _get_mailinglist_setter(event: CdEDBObject, orgalist: bool = False
