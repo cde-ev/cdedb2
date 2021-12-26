@@ -386,6 +386,9 @@ class CoreGenesisMixin(CoreBaseFrontend):
                     rs, case['username'], include_genesis=False):
                 rs.notify("error", n_("Email address already taken."))
                 return self.redirect(rs, "core/genesis_show_case")
+            if persona_id:
+                rs.notify("error", n_("Persona selected, but genesis case approved."))
+                return self.redirect(rs, "core/genesis_show_case")
         if decision.is_update():
             if not persona_id:
                 rs.notify("error", n_("No persona selected."))

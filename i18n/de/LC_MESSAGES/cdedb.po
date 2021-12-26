@@ -2393,6 +2393,9 @@ msgstr ""
 msgid "This account request was already verified."
 msgstr "Diese Accountanfrage wurde bereits bestätigt."
 
+msgid "Persona selected, but genesis case approved."
+msgstr "Existierender Account ausgewählt, aber Accountanfrage bestätigt."
+
 #: cdedb/frontend/core/genesis.py:391
 msgid "No persona selected."
 msgstr "Kein Account ausgewählt."

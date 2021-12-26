@@ -2356,12 +2356,21 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Ungültiger Benutzer für Aktualisierung."
                             " Füge zunächst folgenden Bereich hinzu: cde.",
                             div="notifications")
-
-        # Now merge the genesis request into the existing account.
+        # Repair the request.
         self.traverse("Accountanfrage bearbeiten")
         f = self.response.forms['genesismodifyform']
         f['realm'] = "event"
         self.submit(f)
+
+        # Check that approving the request fails if a persona is selected.
+        f = self.response.forms['genesisdecisionform']
+        f['persona_id'] = f['persona_id'].options[1][0]
+        self.submit(f, button="decision", value=str(GenesisDecision.approve),
+                    check_notification=False)
+        self.assertPresence("Existierender Account ausgewählt,"
+                            " aber Accountanfrage bestätigt.", div="notifications")
+
+        # Now merge the genesis request into the existing account.
         # Submit without selecting doppelganger.
         f = self.response.forms['genesisdecisionform']
         self.submit(f, button="decision", value=str(GenesisDecision.update),
