@@ -621,6 +621,16 @@ class EventEventMixin(EventBaseFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/part_group_summary")
 
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
+    def delete_part_group(self, rs: RequestState, event_id: int,
+                          part_group_id: int) -> Response:
+        if rs.has_validation_errors():
+            return self.part_group_summary(rs, event_id)
+        code = self.eventproxy.set_part_groups(rs, event_id, {part_group_id: None})
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "event/part_group_summary")
+
     @staticmethod
     def _get_mailinglist_setter(event: CdEDBObject, orgalist: bool = False
                                 ) -> CdEDBObject:
