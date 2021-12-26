@@ -16,9 +16,6 @@ BEGIN;
     DROP INDEX core.idx_quota_persona_id_qdate;
     ALTER TABLE core.quota ADD UNIQUE (persona_id, qdate);
 
-    -- Add unique constraint to past event institutions.
-    ALTER TABLE past_event.institutions ADD UNIQUE (shortname);
-
     ---------
     -- cde --
     ---------
@@ -78,6 +75,7 @@ BEGIN;
     -- Drop superfluous index, rename constraint.
     DROP INDEX event.idx_stored_queries_event_id;
     ALTER TABLE event.stored_queries RENAME CONSTRAINT event_unique_query TO stored_queries_event_id_query_name_key;
+
     --------------
     -- assembly --
     --------------
