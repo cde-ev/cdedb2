@@ -42,9 +42,9 @@ from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.common import (
-    ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, CdEDBLog, CdEDBObject, CdEDBObjectMap,
-    PathLike, PrivilegeError, RequestState, merge_dicts, nearly_now, now,
-    roles_to_db_role,
+    ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, ANTI_CSRF_TOKEN_NAME,
+    ANTI_CSRF_TOKEN_PAYLOAD, CdEDBLog, CdEDBObject, CdEDBObjectMap, PathLike,
+    PrivilegeError, RequestState, merge_dicts, nearly_now, now, roles_to_db_role,
 )
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -52,6 +52,7 @@ from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.application import Application
 from cdedb.frontend.common import AbstractFrontend, Worker, setup_translations
 from cdedb.frontend.cron import CronFrontend
+from cdedb.frontend.paths import CDEDB_PATHS
 from cdedb.query import QueryOperators
 from cdedb.script import Script
 
@@ -892,11 +893,28 @@ class FrontendTest(BackendTest):
         self.assertIn(target_url, response)
         return response
 
-    def post(self, url: str, *args: Any, verbose: bool = False, **kwargs: Any) -> None:
+    def post(self, url: str, params: Dict[str, Any], *args: Any, verbose: bool = False,
+             do_csrf: bool = True, csrf_token_name: str = ANTI_CSRF_TOKEN_NAME,
+             csrf_token_payload: str = ANTI_CSRF_TOKEN_PAYLOAD, **kwargs: Any) -> None:
         """Directly send a POST-request.
 
-        Note that most of our POST-handlers require a CSRF-token."""
-        self.response = self.app.post(url, *args, **kwargs)
+        Note that most of our POST-handlers require a Anti-CSRF token,
+        which is forged here by default.
+
+        :param params: This is a restriction of self.app.post, but enforces a general
+            style and simplifies processing here.
+        :param do_csrf: Do CSRF, forging the Anti-CSRF token.
+        """
+        if do_csrf:
+            urlmap = CDEDB_PATHS
+            urls = urlmap.bind(self.app_extra_environ["HTTP_HOST"])
+            endpoint, _ = urls.match(url, method="POST")
+            _, action = endpoint.split('/')
+            print(self.user['id'])
+            token = self.app.app.encode_anti_csrf_token(
+               action, csrf_token_name, csrf_token_payload, persona_id=self.user['id'])
+            params[csrf_token_name] = token
+        self.response = self.app.post(url, params, *args, **kwargs)
         self.follow()
         self.basic_validate(verbose=verbose)
 
