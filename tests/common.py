@@ -2,6 +2,7 @@
 """General testing utilities for CdEDB2 testsuite"""
 
 import collections.abc
+import contextlib
 import copy
 import datetime
 import decimal
@@ -23,9 +24,9 @@ import tempfile
 import unittest
 import urllib.parse
 from typing import (
-    Any, AnyStr, Callable, ClassVar, Dict, Iterable, List, Mapping, MutableMapping,
-    NamedTuple, Optional, Pattern, Sequence, Set, Tuple, Type, TypeVar, Union, cast,
-    no_type_check,
+    Any, AnyStr, Callable, ClassVar, Dict, Generator, Iterable, List, Mapping,
+    MutableMapping, NamedTuple, Optional, Pattern, Sequence, Set, Tuple, Type, TypeVar,
+    Union, cast, no_type_check,
 )
 
 import PIL.Image
@@ -388,6 +389,14 @@ class BackendTest(CdEDBTest):
         self.core.logout(self.key)
         self.key = ANONYMOUS
         self.user = USER_DICT["anonymous"]
+
+    @contextlib.contextmanager
+    def switch_user(self, new_user: UserIdentifier) -> Generator[None, None, None]:
+        """This method can be used as a context manager to temporarily switch users."""
+        old_user = self.user
+        self.login(new_user)
+        yield
+        self.login(old_user)
 
     def user_in(self, *identifiers: UserIdentifier) -> bool:
         """Check whether the current user is any of the given users."""
