@@ -4510,34 +4510,32 @@
     ],
     "event.orgas": [
         {
-            "id": 1,
             "persona_id": 7,
             "event_id": 1
         },
         {
-            "id": 2,
             "persona_id": 1,
             "event_id": 2
         },
         {
-            "id": 3,
             "persona_id": 2,
             "event_id": 2
         },
         {
-            "id": 4,
             "persona_id": 100,
             "event_id": 2
         },
         {
-            "id": 5,
             "persona_id": 1,
             "event_id": 3
         },
         {
-            "id": 6,
             "persona_id": 7,
             "event_id": 3
+        },
+        {
+            "persona_id": 5,
+            "event_id": 4
         }
     ],
     "event.lodgement_groups": [

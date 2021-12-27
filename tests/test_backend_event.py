@@ -10,6 +10,8 @@ from typing import Any, Dict, List
 
 import freezegun
 import psycopg2
+import psycopg2.errorcodes
+import psycopg2.errors
 import pytz
 
 import cdedb.database.constants as const
@@ -19,7 +21,11 @@ from cdedb.common import (
     PartialImportError, PrivilegeError, nearly_now, now,
 )
 from cdedb.query import Query, QueryOperators, QueryScope
-from tests.common import USER_DICT, BackendTest, as_users, json_keys_to_int, storage
+from tests.common import (
+    ANONYMOUS, USER_DICT, BackendTest, as_users, json_keys_to_int, storage,
+)
+
+UNIQUE_VIOLATION = psycopg2.errors.lookup(psycopg2.errorcodes.UNIQUE_VIOLATION)
 
 
 class TestEventBackend(BackendTest):
@@ -3998,3 +4004,98 @@ class TestEventBackend(BackendTest):
                 reg = self.event.get_registration(self.key, reg_id)
                 self.assertEqual(reg['ctime'], base_time + 2 * i * delta)
                 self.assertEqual(reg['mtime'], base_time + (2 * i + 1) * delta)
+
+    @as_users("emilia")
+    def test_part_groups(self) -> None:
+        event_id = 4
+        event = self.event.get_event(self.key, event_id)
+
+        # Load expected sample part groups.
+        part_group_parts_data = self.get_sample_data("event.part_group_parts")
+        part_group_expectation = {
+            part_group_id: part_group
+            for part_group_id, part_group
+            in self.get_sample_data("event.part_groups").items()
+            if part_group['event_id'] == event_id
+        }
+        # Add dynamic data and convert enum.
+        for part_group in part_group_expectation.values():
+            part_group['part_ids'] = {
+                e['part_id'] for e in part_group_parts_data.values()
+                if e['part_group_id'] == part_group['id']
+            }
+            part_group['constraint_type'] = const.EventPartGroupType(
+                part_group['constraint_type'])
+        # Compare to retrieved data.
+        self.assertEqual(event['part_groups'], part_group_expectation)
+
+        # Check setting of part groups.
+
+        # Setting is not allowed for non-privileged users.
+        with self.assertRaises(PrivilegeError):
+            self.event.set_part_groups(ANONYMOUS, event_id, {})
+
+        # Empty setter just returns 1.
+        self.assertEqual(self.event.set_part_groups(self.key, event_id, {}), 1)
+
+        new_part_group = {
+            'title': "Everything",
+            'shortname': "all",
+            'notes': "Let's see what happens",
+            'part_ids': set(event['parts']),
+            'constraint_type': const.EventPartGroupType.Statistic,
+        }
+        new_part_group_id = self.event.set_part_groups(
+            self.key, event_id, {-1: new_part_group})
+        self.assertTrue(new_part_group_id)
+
+        with self.assertRaises(UNIQUE_VIOLATION):
+            self.event.set_part_groups(self.key, event_id, {-1: new_part_group})
+
+        data = new_part_group.copy()
+        data['shortname'] = "ALL"
+        with self.assertRaises(UNIQUE_VIOLATION):
+            self.event.set_part_groups(self.key, event_id, {-1: data})
+
+        data = new_part_group.copy()
+        data['title'] = "All"
+        with self.assertRaises(UNIQUE_VIOLATION):
+            self.event.set_part_groups(self.key, event_id, {-1: data})
+
+        data = new_part_group.copy()
+        data['shortname'] = "ALL"
+        data['title'] = "All"
+        self.event.set_part_groups(self.key, event_id, {-1: data})  # id 1005
+
+        # Simultaneous deletion and recreation of part group with same name works.
+        self.event.set_part_groups(
+            self.key, event_id, {1001: None, -1: new_part_group}  # id 1006
+        )
+
+        # Switching of shortnames for exisitng groups is also possible.
+        setter = {
+            1005: {'shortname': new_part_group['shortname']},
+            1006: {'shortname': data['shortname']},
+        }
+        self.assertTrue(self.event.set_part_groups(self.key, event_id, setter))
+        part_group_expectation.update({
+            1005: {**data, **setter[1005], **{'event_id': event_id, 'id': 1005}},
+            1006: {**new_part_group, **setter[1006],
+                   **{'event_id': event_id, 'id': 1006}}
+        })
+
+        # Update and delete an existing group.
+        update = {
+            1: {
+                'notes': "Pack explosives for New Years!",
+            },
+            4: None,
+        }
+        self.assertTrue(self.event.set_part_groups(self.key, event_id, update))
+        part_group_expectation[1].update(update[1])
+        del part_group_expectation[4]
+
+        self.assertEqual(
+            self.event.get_event(self.key, event_id)['part_groups'],
+            part_group_expectation
+        )
