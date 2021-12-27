@@ -16,8 +16,8 @@
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
     {{ util.breadcrumb_link(cdedblink("event/part_summary"), gettext("Event-Parts")) }}
-    {{ util.breadcrumb_link(cdedblink("event/part_group_summary"), gettext("Parts Groups")) }}
-    {{ util.breadcrumb_link(cdedblink("event/add_part_form"), gettext("Add part group"), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("event/part_group_summary"), gettext("Part Groups")) }}
+    {{ util.breadcrumb_link(cdedblink("event/add_part_group_form"), gettext("Add part group"), active=True) }}
 {% endblock %}
 
 {% block content %}
