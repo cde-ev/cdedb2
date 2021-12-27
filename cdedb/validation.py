@@ -2406,7 +2406,8 @@ def _event_part_group_setter(
             errs.extend(e)
         else:
             new_part_groups[anid] = part_group
-
+    if errs:
+        raise errs
     return EventPartGroupSetter(new_part_groups)
 
 
