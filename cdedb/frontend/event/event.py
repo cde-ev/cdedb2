@@ -32,7 +32,7 @@ from cdedb.frontend.event.base import EventBaseFrontend
 from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.validation import (
     EVENT_EXPOSED_FIELDS, EVENT_PART_COMMON_FIELDS,
-    EVENT_PART_CREATION_MANDATORY_FIELDS,
+    EVENT_PART_CREATION_MANDATORY_FIELDS, EVENT_PART_GROUP_COMMON_FIELDS,
 )
 
 
@@ -577,7 +577,7 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdata("title", "shortname", "notes", "constraint_type", "part_ids")
+    @REQUESTdata(*EVENT_PART_GROUP_COMMON_FIELDS)
     def add_part_group(self, rs: RequestState, event_id: int, title: str,
                        shortname: str, notes: Optional[str],
                        constraint_type: const.EventPartGroupType,
