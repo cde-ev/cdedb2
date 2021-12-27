@@ -26,9 +26,9 @@
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
         {{ util.form_input_text(name="notes", label=gettext("Notes")) }}
-        {{ util.form_input_select(name="constraint_type", entries=enums['EventPartGroupType']|enum_entries(processing=gettext)) }}
+        {{ util.form_input_select(name="constraint_type", label=gettext("Type"), entries=enums['EventPartGroupType']|enum_entries(processing=gettext), info=gettext("Note: This cannot be changed later.")) }}
         {{ util.form_input_checkboxes(
-                name="part_ids", slice=2,
+                name="part_ids", slice=2, info=gettext("Note: This cannot be changed later."),
                 entries=ambience['event']['parts']|keydictsort(EntitySorter.event_part)|dict_entries('id', 'title')) }}
         {{ util.form_input_submit(label=gettext("Save")) }}
     </form>
