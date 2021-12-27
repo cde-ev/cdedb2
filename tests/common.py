@@ -391,6 +391,14 @@ class BackendTest(CdEDBTest):
         self.key = ANONYMOUS
         self.user = USER_DICT["anonymous"]
 
+    @contextlib.contextmanager
+    def switch_user(self, new_user: UserIdentifier) -> Generator[None, None, None]:
+        """This method can be used as a context manager to temporarily switch users."""
+        old_user = self.user
+        self.login(new_user)
+        yield
+        self.login(old_user)
+
     def user_in(self, *identifiers: UserIdentifier) -> bool:
         """Check whether the current user is any of the given users."""
         users = {get_user(i)["id"] for i in identifiers}
