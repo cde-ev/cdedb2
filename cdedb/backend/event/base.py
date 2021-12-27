@@ -502,6 +502,13 @@ class EventBaseBackend(EventLowLevelBackend):
             if not (updated_part_groups | deleted_part_groups) <= existing_part_groups:
                 raise ValueError(n_("Unknown part group."))
 
+            # Defer unique constraints until end of transaction to avoid errors when
+            # updating multiple groups at once or deleting and recreating them.
+            q = ("SET CONSTRAINTS event.part_groups_event_id_shortname_key,"
+                 " event.part_groups_event_id_title_key,"
+                 " event.part_group_parts_part_id_part_group_id_key DEFERRED")
+            self.query_exec(rs, q, ())
+
             # new
             for x in mixed_existence_sorter(new_part_groups):
                 new_part_group = copy.copy(part_groups[x])

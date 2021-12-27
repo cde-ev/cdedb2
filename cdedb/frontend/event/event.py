@@ -584,8 +584,6 @@ class EventEventMixin(EventBaseFrontend):
                        part_ids: Collection[int]) -> Response:
         if part_ids and not set(part_ids) <= rs.ambience['event']['parts'].keys():
             rs.append_validation_error(("part_ids", ValueError(n_("Unknown part."))))
-        if rs.has_validation_errors():
-            return self.add_part_group_form(rs, event_id)
         data = {
             'title': title,
             'shortname': shortname,
@@ -593,6 +591,13 @@ class EventEventMixin(EventBaseFrontend):
             'constraint_type': constraint_type,
             'part_ids': part_ids,
         }
+        for key in ('title', 'shortname'):
+            existing = {pg[key] for pg in rs.ambience['event']['part_groups'].values()}
+            if data[key] in existing:
+                rs.append_validation_error((key, ValueError(n_(
+                    "A part group with this name already exists."))))
+        if rs.has_validation_errors():
+            return self.add_part_group_form(rs, event_id)
         code = self.eventproxy.set_part_groups(rs, event_id, {-1: data})
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/part_group_summary")
