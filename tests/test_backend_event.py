@@ -4077,7 +4077,7 @@ class TestEventBackend(BackendTest):
             1005: {'shortname': new_part_group['shortname']},
             1006: {'shortname': data['shortname']},
         }
-        self.assertTrue(self.event.set_part_groups(self.key, event_id, setter))
+        self.assertTrue(self.event.set_part_groups(self.key, event_id, setter))  # type: ignore[arg-type]
         part_group_expectation.update({
             1005: {**data, **setter[1005], **{'event_id': event_id, 'id': 1005}},
             1006: {**new_part_group, **setter[1006],
@@ -4092,7 +4092,7 @@ class TestEventBackend(BackendTest):
             4: None,
         }
         self.assertTrue(self.event.set_part_groups(self.key, event_id, update))
-        part_group_expectation[1].update(update[1])
+        part_group_expectation[1].update(update[1])  # type: ignore[arg-type]
         del part_group_expectation[4]
 
         self.assertEqual(

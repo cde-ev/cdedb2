@@ -15,8 +15,7 @@ import webtest
 
 import cdedb.database.constants as const
 from cdedb.common import (
-    ADMIN_VIEWS_COOKIE_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, EntitySorter, now,
-    unwrap, xsorted,
+    ADMIN_VIEWS_COOKIE_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, now, unwrap, xsorted,
 )
 from cdedb.filter import iban_filter
 from cdedb.frontend.common import CustomCSVDialect
@@ -4708,7 +4707,8 @@ etc;anything else""", f['entries_2'].value)
             self.assertNonPresence(new_shortname, div=div)
             self.assertNonPresence(new_shortname[::-1], div=div)
 
-        self.assertLogEqual(log_expectation, realm="event", event_id=event_id, offset=offset)
+        self.assertLogEqual(
+            log_expectation, realm="event", event_id=event_id, offset=offset)
 
     @unittest.skip("deprecated test")
     def test_log(self) -> None:
