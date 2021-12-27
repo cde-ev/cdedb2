@@ -10705,7 +10705,7 @@ msgid "Note: This cannot be changed later."
 msgstr "Achtung: Diese Einstellung kann später nicht mehr geändert werden."
 
 msgid "A part group with this name already exists."
-msgstr "Ex existiert bereits eine Veranstaltungsteilgruppe mit diesem Namen."
+msgstr "Es existiert bereits eine Veranstaltungsteilgruppe mit diesem Namen."
 
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:9
 #, python-format
