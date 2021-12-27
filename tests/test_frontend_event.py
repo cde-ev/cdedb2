@@ -4674,12 +4674,26 @@ etc;anything else""", f['entries_2'].value)
                 else:
                     self.assertNonPresence(pg['shortname'], div=div)
 
+        # Change the new part group.
         self.traverse("Veranstaltungsteilgruppen",
                       {'linkid': f'partgroup{new_id}_change'})
         f = self.response.forms['changepartgroupform']
+
+        # Check that constraint_type and part_ids fields are disabled.
         self.assertEqual(f['constraint_type'].attrs, {'type': 'hidden'})
         for field in f.fields.get('part_ids'):
             self.assertEqual(field.attrs, {'type': 'hidden'})
+
+        # Submit garbage.
+        f['title'] = ""
+        f['shortname'] = list(event['part_groups'].values())[0]['shortname']
+        self.submit(f, check_notification=False)
+        self.assertValidationError('title', "Darf nicht leer sein.")
+        self.assertValidationError(
+            'shortname',
+            "Es existiert bereits eine Veranstaltungsteilgruppe mit diesem Namen.")
+
+        # Submit real stuff.
         f['title'] = new_title[::-1]
         f['shortname'] = new_shortname[::-1]
         self.submit(f)
@@ -4692,6 +4706,11 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence(new_shortname, div=f"partgroup_{new_id}")
         self.assertPresence(new_shortname[::-1], div=f"partgroup_{new_id}")
 
+        self.traverse("Stats")
+        self.assertPresence(new_shortname[::-1], div="participant_stats")
+
+        # Delete the new part group.
+        self.traverse("Veranstaltungsteile", "Veranstaltungsteilgruppen")
         f = self.response.forms[f'deletepartgroupform{new_id}']
         self.submit(f)
         log_expectation.append({

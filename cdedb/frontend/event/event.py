@@ -615,13 +615,18 @@ class EventEventMixin(EventBaseFrontend):
     def change_part_group(self, rs: RequestState, event_id: int,
                           part_group_id: int, title: str, shortname: str,
                           notes: Optional[str]) -> Response:
-        if rs.has_validation_errors():
-            return self.change_part_group_form(rs, event_id, part_group_id)
         data: CdEDBObject = {
             'title': title,
             'shortname': shortname,
             'notes': notes,
         }
+        for key in ('title', 'shortname'):
+            existing = {pg[key] for pg in rs.ambience['event']['part_groups'].values()}
+            if data[key] in existing:
+                rs.append_validation_error((key, ValueError(n_(
+                    "A part group with this name already exists."))))
+        if rs.has_validation_errors():
+            return self.change_part_group_form(rs, event_id, part_group_id)
         code = self.eventproxy.set_part_groups(rs, event_id, {part_group_id: data})
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/part_group_summary")
@@ -631,7 +636,7 @@ class EventEventMixin(EventBaseFrontend):
     def delete_part_group(self, rs: RequestState, event_id: int,
                           part_group_id: int) -> Response:
         if rs.has_validation_errors():
-            return self.part_group_summary(rs, event_id)
+            return self.part_group_summary(rs, event_id)  # pragma: no cover
         code = self.eventproxy.set_part_groups(rs, event_id, {part_group_id: None})
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/part_group_summary")

@@ -558,7 +558,7 @@ class EventLowLevelBackend(AbstractBackend):
         blockers = self._delete_part_group_blockers(rs, part_group_id)
         cascade = affirm_set(str, cascade or set()) & blockers.keys()
         if blockers.keys() - cascade:
-            raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
+            raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),  # pragma: no cover
                              {
                                  "type": "part group",
                                  "block": blockers.keys() - cascade,
@@ -576,7 +576,7 @@ class EventLowLevelBackend(AbstractBackend):
         if not blockers:
             part_group = self.sql_select_one(
                 rs, "event.part_groups", PART_GROUP_FIELDS, part_group_id)
-            if part_group is None:
+            if part_group is None:  # pragma: no cover
                 return 0
             type_ = const.EventPartGroupType(part_group['constraint_type'])
             ret *= self.sql_delete_one(rs, "event.part_groups", part_group_id)
@@ -584,7 +584,7 @@ class EventLowLevelBackend(AbstractBackend):
                            event_id=part_group["event_id"],
                            change_note=f"{part_group['title']} ({type_.name})")
         else:
-            raise ValueError(
+            raise ValueError(  # pragma: no cover
                 n_("Deletion of %(type)s blocked by %(block)s."),
                 {"type": "part group", "block": blockers.keys()})
         return ret

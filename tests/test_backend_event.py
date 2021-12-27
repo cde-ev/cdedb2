@@ -26,6 +26,7 @@ from tests.common import (
 )
 
 UNIQUE_VIOLATION = psycopg2.errors.lookup(psycopg2.errorcodes.UNIQUE_VIOLATION)
+NON_EXISTING_ID = 2 ** 30
 
 
 class TestEventBackend(BackendTest):
@@ -4031,13 +4032,6 @@ class TestEventBackend(BackendTest):
 
         # Check setting of part groups.
 
-        # Setting is not allowed for non-privileged users.
-        with self.assertRaises(PrivilegeError):
-            self.event.set_part_groups(ANONYMOUS, event_id, {})
-
-        # Empty setter just returns 1.
-        self.assertEqual(self.event.set_part_groups(self.key, event_id, {}), 1)
-
         new_part_group = {
             'title': "Everything",
             'shortname': "all",
@@ -4045,6 +4039,17 @@ class TestEventBackend(BackendTest):
             'part_ids': set(event['parts']),
             'constraint_type': const.EventPartGroupType.Statistic,
         }
+
+        # Setting is not allowed for non-privileged users.
+        with self.assertRaises(PrivilegeError):
+            self.event.set_part_groups(ANONYMOUS, event_id, {})
+        with self.switch_user("garcia"):
+            with self.assertRaises(PrivilegeError):
+                self.event.set_part_groups(self.key, event_id, {})
+
+        # Empty setter just returns 1.
+        self.assertEqual(self.event.set_part_groups(self.key, event_id, {}), 1)
+
         new_part_group_id = self.event.set_part_groups(
             self.key, event_id, {-1: new_part_group})
         self.assertTrue(new_part_group_id)
@@ -4090,12 +4095,42 @@ class TestEventBackend(BackendTest):
                 'notes': "Pack explosives for New Years!",
             },
             4: None,
+            1006: {
+                'part_ids': set(list(event['parts'])[:len(event['parts']) // 2])
+            }
         }
         self.assertTrue(self.event.set_part_groups(self.key, event_id, update))
         part_group_expectation[1].update(update[1])  # type: ignore[arg-type]
         del part_group_expectation[4]
+        part_group_expectation[1006].update(update[1006])  # type: ignore[arg-type]
 
         self.assertEqual(
             self.event.get_event(self.key, event_id)['part_groups'],
             part_group_expectation
         )
+
+        # ValueError is raised when trying to update or delete a nonexisting part group.
+        with self.assertRaises(ValueError):
+            self.event.set_part_groups(self.key, event_id, {NON_EXISTING_ID: None})
+        # ValueError when creating or updating a part group with a non existing part.
+        with self.assertRaises(ValueError):
+            self.event.set_part_groups(
+                self.key, event_id,
+                {-1: {**new_part_group, **{'part_ids': [NON_EXISTING_ID]}}})
+        with self.assertRaises(ValueError):
+            self.event.set_part_groups(
+                self.key, event_id, {1: {'part_ids': [NON_EXISTING_ID]}})
+
+        # Delete a part still linked to a part group.
+        self.assertTrue(self.event.set_event(
+            self.key, {'id': event_id, 'parts': {min(event['parts']): None}}))
+
+        # Delete the entire event. Requires admin.
+        with self.switch_user("annika"):
+            blockers = self.event.delete_event_blockers(self.key, event_id)
+            self.assertEqual(
+                set(blockers),
+                {"orgas", "event_parts", "course_tracks", "part_groups",
+                 "part_group_parts", "log"}
+            )
+            self.assertTrue(self.event.delete_event(self.key, event_id, blockers))
