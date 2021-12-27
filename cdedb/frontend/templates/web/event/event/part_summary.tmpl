@@ -34,10 +34,17 @@
         {% endtrans %}
     </p>
 
+    {% set sorted_part_groups = ambience['event']['part_groups']|keydictsort(EntitySorter.event_part_group) %}
+
     {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
         <div class="panel panel-info" id="part{{ part_id }}">
             <div class="panel-heading">
                 {{ part['title'] }}
+                {% for part_group_id, part_group in sorted_part_groups if part_id in part_group['part_ids'] %}
+                    {{ util.href(cdedblink("event/part_group_summary") + ("#partgroup_" + part_group_id|string)|s,
+                                 part_group['shortname'], aclass="badge badge-danger", icon="chart-bar",
+                                 title=gettext(part_group['constraint_type']|string) + ": " + part_group['shortname']) }}
+                {% endfor %}
             </div>
 
             <div class="panel-body">
