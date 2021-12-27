@@ -73,12 +73,16 @@
                     <td class="text-nowrap">
                         {{ util.href(cdedblink("event/change_part_group", {'part_group_id': part_group_id}),
                                      title=gettext("Change part group %(shortname)s")|format(shortname=part_group['shortname']),
-                                     label=util.make_icon("pen"),
+                                     label=util.make_icon("pen"), anid="partgroup{}_change".format(part_group_id),
                                      aclass="btn btn-sm btn-warning") }}
-                        {{ util.href(cdedblink("event/delete_part_group", {'part_group_id': part_group_id}),
-                                     title=gettext("Delete part group %(shortname)s")|format(shortname=part_group['shortname']),
-                                     label=util.make_icon("trash-alt"),
-                                     aclass="btn btn-sm btn-danger") }}
+                        <form action="{{ cdedblink("event/delete_part_group", {'part_group_id': part_group_id}) }}"
+                              method="POST" id="deletepartgroupform{{ part_group_id }}"
+                              class="display-inline">
+                            {{ util.anti_csrf_token("event/delete_part_group") }}
+                            {{ util.input_submit(
+                                label=util.make_icon("trash-alt"), aclass="btn btn-sm btn-danger", icon=None,
+                                title=gettext("Delete part group %(shortname)s")|format(shortname=part_group['shortname'])) }}
+                        </form>
                     </td>
                 </tr>
             {% endfor %}
