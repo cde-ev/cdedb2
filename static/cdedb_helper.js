@@ -285,7 +285,7 @@
      * Display a bootstrap modal showing a loading spinner
      * in its content section ("#cdedb-modal-content").
      *
-     * @param translations (abject) Translation texts for the modal. Must contain keys
+     * @param translations (object) Translation texts for the modal. Must contain keys
      *                              "title", "loading" and "close".
      * @param small (boolean) optionally reduce the width of the modal
      */
