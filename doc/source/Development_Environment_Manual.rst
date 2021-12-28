@@ -1,8 +1,6 @@
 Manual Setup
 ============
 
-.. todo:: update this page, see #1941
-
 This describes the steps necessary to get the project running on a
 machine.
 
@@ -78,9 +76,12 @@ user xy). First execute as user with enough permissions (that is the ability
 to run ``sudo -u postgres ...`` and ``sudo -u cdb ...``) and with running
 postgres::
 
+  make sql-initial
   make sql
 
-This will create the database users and tables. Now configure pgbouncer in
+The first one will create the database users, the second one the actual tables,
+seeded with sample data. To create an unseeded database, call ``make sql-setup``
+instead. Now configure pgbouncer in
 ``pgbouncer.ini`` (in ``/etc``) with the following::
 
   [databases]
@@ -140,18 +141,24 @@ and then insert the following close to the end of
 
 note, that this is syntax for apache-2.4 (which differs from apache-2.2).
 
-Finally we need to create the directory for uploaded data (where
+Next we need to create the directory for uploaded data (where
 ``www-data`` is the user running Apache)::
 
   mkdir /var/lib/cdedb/
   chown www-data:www-data /var/lib/cdedb/
 
-.. note:: For optimal experience you should run::
+To make the stored sample data available (f.e. in development instances), you
+can call alternatively::
 
-    make storage-test
+  make storage
 
-  and copy the resulting uploaded data from ``/tmp/cdedb-test-default/storage`` to
-  ``/var/lib/cdedb`` and make it owned by the apache user.
+Finally we need a directory where logging files resist. Take care that this is
+consistent with the ``LOG_DIR`` config option which can be changed accordingly
+to the next section (the default location is ``var/log/cdedb``). The directory
+needs to be writable by the user running Apache (default ``www-data``). To
+create the default log directory, you can call::
+
+  make log
 
 Configure the application
 -------------------------
