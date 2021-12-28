@@ -566,12 +566,12 @@ class EventLodgementMxin(EventBaseFrontend):
                 [{'name': (personas[registration['persona_id']]['given_names']
                            + " " + personas[registration['persona_id']]
                            ['family_name']),
-                  'current': registration['parts'][part_id]['lodgement_id'],
+                  'group_id': registration['parts'][part_id]['lodgement_id'],
                   'id': registration_id}
                  for registration_id, registration in registrations.items()
                  if _check_not_this_lodgement(registration_id, part_id)],
                 key=lambda x: (
-                    x['current'] is not None,
+                    x['group_id'] is not None,
                     EntitySorter.persona(
                         personas[registrations[x['id']]['persona_id']]))
             )
