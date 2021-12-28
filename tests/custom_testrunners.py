@@ -94,5 +94,5 @@ class MyTextTestResult(unittest.TextTestResult):
 
     def addSkip(self, test: unittest.TestCase, reason: str) -> None:
         # Purposely override the parents method, to not print the skip here.
-        super(unittest.TextTestResult).addSkip(test, reason)  # pylint: disable=bad-super-call
+        super(unittest.TextTestResult, self).addSkip(test, reason)  # pylint: disable=bad-super-call
         self._subTestSkips.append(reason)
