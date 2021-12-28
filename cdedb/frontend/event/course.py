@@ -655,12 +655,16 @@ class EventCourseMixin(EventBaseFrontend):
                     and not track['course_id'])
 
         without_course = {
-            track_id: [
-                (registration_id, make_persona_name(
-                    personas[registrations[registration_id]['persona_id']]))
-                for registration_id in registrations
-                if _check_without_course(registration_id, track_id)
-            ]
+            track_id: xsorted(
+                (
+                    (registration_id, make_persona_name(
+                        personas[registrations[registration_id]['persona_id']]))
+                    for registration_id in registrations
+                    if _check_without_course(registration_id, track_id)
+                ),
+                key=lambda tpl: EntitySorter.persona(
+                    personas[registrations[tpl[0]]['persona_id']])
+            )
             for track_id in tracks
         }
 
