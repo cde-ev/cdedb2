@@ -86,7 +86,8 @@
             {% elif ambience['ballot']['is_voting'] %}
                 <strong>{% trans %}This ballot is currently open for voting.{% endtrans %}</strong><br />
                 {% if own_vote %}
-                    {% if own_vote == MAGIC_ABSTAIN %}
+                    {# If there are no > in a preferential vote, you abstained #}
+                    {% if own_vote == MAGIC_ABSTAIN or ">" not in own_vote and not ambience['ballot']['votes'] %}
                         <span class='text-warning'>{% trans %}You have abstained.{% endtrans %}</span>
                         {% trans %}You can make your choice below, during the voting period.{% endtrans %}
                     {% else %}

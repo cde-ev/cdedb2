@@ -1070,9 +1070,9 @@ CREATE TABLE assembly.candidates (
         id                      serial PRIMARY KEY,
         ballot_id               integer NOT NULL REFERENCES assembly.ballots(id),
         title                   varchar NOT NULL,
-        shortname               varchar NOT NULL
+        shortname               varchar NOT NULL,
+        CONSTRAINT candidate_shortname_constraint UNIQUE (ballot_id, shortname) DEFERRABLE INITIALLY IMMEDIATE
 );
-CREATE UNIQUE INDEX idx_shortname_constraint ON assembly.candidates(ballot_id, shortname);
 GRANT SELECT ON assembly.candidates TO cdb_member;
 GRANT INSERT, UPDATE, DELETE ON assembly.candidates TO cdb_member;
 GRANT SELECT, UPDATE ON assembly.candidates_id_seq TO cdb_member;
