@@ -367,13 +367,14 @@
                 let modal_content = $("#cdedb-modal-content");
                 // size qr code (quadratic) to the full modal, but not exceeding small screens
                 let width = Math.min(modal_content.width(), window.innerHeight, window.innerWidth) + "px";
-                let svg = data.activeElement;
+                let svg = $(data).find("svg")[0];  // find the svg in the returned XML document, then get
+                                        // plain DOM element since jQuery operations may be incompatible with SVG DOM
                 svg.setAttribute("width", width);
                 svg.setAttribute("height", width);
                 // now display it, also shrink the inner div around qr code
                 modal_content.html('<div class="text-center" id="cdedb-contact-qr"></div>');
                 $("#cdedb-contact-qr").html(svg).width(width).height(width);
-            });
+            }, "xml");
         });
     }
 })(jQuery);
