@@ -46,7 +46,7 @@ from cdedb.common import (
     PathLike, PrivilegeError, RequestState, merge_dicts, nearly_now, now,
     roles_to_db_role,
 )
-from cdedb.config import BasicConfig, SecretsConfig, TestConfig
+from cdedb.config import SecretsConfig, TestConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.application import Application
@@ -54,8 +54,6 @@ from cdedb.frontend.common import AbstractFrontend, Worker, setup_translations
 from cdedb.frontend.cron import CronFrontend
 from cdedb.query import QueryOperators
 from cdedb.script import Script
-
-_BASICCONF = BasicConfig()
 
 # TODO: use TypedDict to specify UserObject.
 UserObject = Mapping[str, Any]
@@ -868,7 +866,7 @@ class FrontendTest(BackendTest):
         if response is None:
             response = self.response
         # record performance information during test runs
-        with open(_BASICCONF["LOG_DIR"] / "cdedb-timing.log", 'a') as f:
+        with open(self.conf["LOG_DIR"] / "cdedb-timing.log", 'a') as f:
             output = "{} {} {} {}\n".format(
                 response.request.path, response.request.method,
                 response.headers.get('X-Generation-Time'),
