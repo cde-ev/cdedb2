@@ -636,7 +636,7 @@
         {% set entries = entries|sort(attribute=1) if sort else entries %}
         {# This is necessary to convert the values to strings so we can check if they are currently selected #}
         {% set current_values = [] %}
-        {% for value in (values.get(name) or []) %}
+        {% for value in values.get(name, [])%}
             {% do current_values.append(value|string) %}
         {% endfor %}
         {%- for value, label in entries %}
