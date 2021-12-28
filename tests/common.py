@@ -931,6 +931,9 @@ class FrontendTest(BackendTest):
             if "formmethod" in tmp_button.attrs:
                 form.method = tmp_button.attrs["formmethod"]
         method = form.method
+        if value and not button:
+            raise ValueError(
+                "Cannot specify button value without specifying button name.")
         self.response = form.submit(button, value=value)
         self.follow()
         self.basic_validate(verbose=verbose)
@@ -1241,7 +1244,7 @@ class FrontendTest(BackendTest):
             self.assertPresence(notification, div="notifications", regex=True)
 
         nodes = self.response.lxml.xpath(
-            '(//input|//select|//textarea)[@name="{}"]'.format(fieldname))
+            f'(//input|//select|//textarea)[@name="{fieldname}"]')
         f = fieldname
         if index is None:
             if len(nodes) == 1:

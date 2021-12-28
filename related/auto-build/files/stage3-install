@@ -136,6 +136,8 @@ echo "--------------------------------------------"
 
 cp /media/cdrom0/fail2ban-filter-cdedb-login.conf \
    /etc/fail2ban/filter.d/cdedb-login.conf
+cp /media/cdrom0/fail2ban-filter-cdedb-password-reset.conf \
+   /etc/fail2ban/filter.d/cdedb-password-reset.conf
 cp /media/cdrom0/fail2ban-filter-cdedb-sessionkey.conf \
    /etc/fail2ban/filter.d/cdedb-sessionkey.conf
 cp /media/cdrom0/fail2ban-filter-cdedb-apitoken.conf \

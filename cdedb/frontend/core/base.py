@@ -1772,6 +1772,7 @@ class CoreBaseFrontend(AbstractFrontend):
                         persona_id=None,
                         timeout=self.conf["PARAMETER_TIMEOUT"]),
                         'cookie': message})
+                # log message to be picked up by fail2ban
                 self.logger.info(f"Sent password reset mail to {email}"
                                  f" for IP {rs.request.remote_addr}.")
                 rs.notify("success", n_("Email sent."))
@@ -2110,6 +2111,10 @@ class CoreBaseFrontend(AbstractFrontend):
         """Reinstate a persona from the attic."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
+        if new_username and self.coreproxy.verify_existence(rs, new_username):
+            rs.append_validation_error(
+                ("new_username",
+                 ValueError(n_("User with this E-Mail exists already."))))
         if rs.has_validation_errors():
             return self.dearchive_persona_form(rs, persona_id)
 

@@ -375,7 +375,7 @@ class TestAssemblyBackend(BackendTest):
             'id': ballot_id,
             'use_bar': True,
             'candidates': {
-                6: {'title': 'Teracotta', 'shortname': 'terra', 'id': 6},
+                6: {'title': 'Teracotta', 'shortname': 'terra'},
                 7: None,
                 -1: {'title': 'Aquamarin', 'shortname': 'aqua'},
             },
@@ -1399,6 +1399,34 @@ class TestAssemblyBackend(BackendTest):
                 )
         self.assertLogEqual(
             log, realm="assembly", offset=log_offset, assembly_id=assembly_id)
+
+    @as_users("werner")
+    def test_2289(self) -> None:
+        ballot_id = 2
+        old_candidates = self.assembly.get_ballot(self.key, ballot_id)['candidates']
+        for candidate in old_candidates.values():
+            del candidate['ballot_id']
+            del candidate['id']
+        bdata = {
+            'id': ballot_id,
+            'candidates': {
+                6: None,
+                -1: old_candidates[6]
+            }
+        }
+        self.assertTrue(self.assembly.set_ballot(self.key, bdata))
+        candidates = self.assembly.get_ballot(self.key, ballot_id)['candidates']
+        self.assertNotIn(6, candidates)
+        self.assertEqual(candidates[1001]['shortname'], old_candidates[6]['shortname'])
+
+        bdata['candidates'] = {
+            7: old_candidates[8],
+            8: old_candidates[7],
+        }
+        self.assertTrue(self.assembly.set_ballot(self.key, bdata))
+        candidates = self.assembly.get_ballot(self.key, ballot_id)['candidates']
+        self.assertEqual(candidates[7]['shortname'], old_candidates[8]['shortname'])
+        self.assertEqual(candidates[8]['shortname'], old_candidates[7]['shortname'])
 
     @as_users("werner")
     @prepsql("""INSERT INTO assembly.assemblies

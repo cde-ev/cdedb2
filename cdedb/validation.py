@@ -1502,7 +1502,7 @@ def _genesis_case(
                 k: v for k, v in GENESIS_CASE_ADDITIONAL_FIELDS.items()
                 if k in REALM_SPECIFIC_GENESIS_FIELDS[val['realm']]}
     else:
-        raise ValidationSummary(ValueError(n_("Must specify realm.")))
+        raise ValidationSummary(ValueError('realm', n_("Must specify realm.")))
 
     if creation:
         mandatory_fields = dict(GENESIS_CASE_COMMON_FIELDS,
@@ -4039,7 +4039,7 @@ def _ballot_candidate(
         mandatory_fields = {**BALLOT_CANDIDATE_COMMON_FIELDS}
         optional_fields: TypeMapping = {}
     else:
-        mandatory_fields = {'id': ID}
+        mandatory_fields = {}
         optional_fields = {**BALLOT_CANDIDATE_COMMON_FIELDS}
 
     val = _examine_dictionary_fields(val, mandatory_fields, optional_fields,

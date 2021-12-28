@@ -141,6 +141,7 @@ class TestFrontendCommon(FrontendTest):
             cdedb.enums.CourseFilterPositions,
             cdedb.enums.QueryScope,
             cdedb.enums.ConfidenceLevel,
+            cdedb.enums.GenesisDecision,
         }
         for lang, translation in self.app.app.translations.items():
             # Not all Latin enum members are translated yet

@@ -39,25 +39,6 @@
                             aclass="btn btn-primary btn-sm", icon="user") }}
                         {{ util.href(cdedblink('core/genesis_modify_form', {'genesis_case_id': genesis_case_id}), gettext("Edit"),
                             aclass="btn btn-warning btn-sm", icon="pen") }}
-                        {% if realm == 'ml' %}
-                            {# For mailinglist genesis requrests, there is no additional information to review (apart from
-                              that shown on this page. So we allow admins to accept these requests directly. #}
-                            <form action="{{ cdedblink('core/genesis_decide', {'genesis_case_id': genesis_case_id}) }}" method="POST"
-                             id="genesismlapprovalform{{ loop.index }}" style="display: inline;">
-                                {{ util.anti_csrf_token('core/genesis_decide') }}
-                                {{ util.input_hidden(name="genesis_case_id", value=genesis_case_id) }}
-                                {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].approved.value) }}
-                                {{ util.input_submit(label=gettext("Approve"), aclass="btn btn-sm btn-success") }}
-                            </form>
-                            <form action="{{ cdedblink('core/genesis_decide', {'genesis_case_id': genesis_case_id}) }}" method="POST"
-                             id="genesismlrejectionform{{ loop.index }}" class="rejection-form" style="display: inline;">
-                                {{ util.anti_csrf_token('core/genesis_decide') }}
-                                {{ util.input_hidden(name="genesis_case_id", value=genesis_case_id) }}
-                                {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].rejected.value) }}
-                                {{ util.input_submit(label=gettext("Reject"), icon="times-circle",
-                                    aclass="btn btn-sm btn-danger") }}
-                            </form>
-                        {% endif %}
                     </div>
                 </div>
                 {% if not loop.last %}
