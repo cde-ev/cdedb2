@@ -52,7 +52,7 @@
 
                         {{ util.form_input_multi_select(name="new_" + part_id|string, entries=without_lodgement[part_id],
                                                         label=(util.make_icon('plus') + " " + gettext("Add Inhabitant")),
-                                                        nulloption=gettext("– none –"), sort=True, horizontal=False) }}
+                                                        nulloption=gettext("– none –"), horizontal=False) }}
                     {% endcall %}
                 </div>
             {% endfor %}

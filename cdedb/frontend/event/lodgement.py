@@ -540,11 +540,16 @@ class EventLodgementMxin(EventBaseFrontend):
                     and not part['lodgement_id'])
 
         without_lodgement = {
-            part_id: [
-                (registration_id, make_persona_name(
-                    personas[registrations[registration_id]['persona_id']]))
-                for registration_id in registrations
-                if _check_without_lodgement(registration_id, part_id)]
+            part_id: xsorted(
+                (
+                    (registration_id, make_persona_name(
+                        personas[registrations[registration_id]['persona_id']]))
+                    for registration_id in registrations
+                    if _check_without_lodgement(registration_id, part_id)
+                ),
+                key=lambda tpl: EntitySorter.persona(
+                    personas[registrations[tpl[0]]['persona_id']])
+            )
             for part_id in rs.ambience['event']['parts']
         }
 

@@ -50,7 +50,7 @@
 
                         {{ util.form_input_multi_select(name="new_" + track_id|string, entries=without_course[track_id],
                                                         label=(util.make_icon('plus') + gettext("Add Attendee")),
-                                                        nulloption=gettext("– none –"), sort=True, horizontal=False) }}
+                                                        nulloption=gettext("– none –"), horizontal=False) }}
                     {% endcall %}
                 </div>
             {% endfor %}
