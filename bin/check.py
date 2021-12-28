@@ -107,8 +107,8 @@ def _load_tests(testpatterns: Optional[List[str]],
     return test_suite
 
 
-def run_regular_tests(configpath: pathlib.Path, testpatterns: List[str] = None, *,
-                      verbose: bool = False) -> int:
+def run_application_tests(configpath: pathlib.Path, testpatterns: List[str] = None, *,
+                          verbose: bool = False) -> int:
     conf = TestConfig(configpath)
     # get the user running the current process, so the access rights for log directory
     # are set correctly
@@ -182,10 +182,13 @@ if __name__ == '__main__':
     # parse arguments
     parser = argparse.ArgumentParser(
         description="Entry point to CdEDB's testing facilities.")
-    parser.add_argument('testpatterns', default=[], nargs="*")
+    parser.add_argument('testpatterns', default=[], nargs="*",
+                        help="patterns matched against full qualified test name")
+    parser.add_argument('--verbose', '-v', action='store_true',
+                        help="more detailed output")
 
     presets = parser.add_argument_group(
-        "options for running suite in parallel (all together cover full suite)")
+        "pattern presets for running application tests in parallel")
     presets.add_argument('--first', '-1', action='store_true',
                          help="run first half of the frontend tests"
                               " (everything before event tests)")
@@ -193,16 +196,17 @@ if __name__ == '__main__':
                          help="run second half of the frontend tests (event"
                               " tests and following)")
     presets.add_argument('--third', '-3', action='store_true',
-                         help="run third part of test suite (everything except"
+                         help="run third part of application tests (everything except"
                               " for the frontend tests)")
 
-    parts = parser.add_argument_group("choose which parts of the testsuite to run")
+    parts = parser.add_argument_group(
+        "choose which parts of the testsuite to run (application tests are default)")
     parts.add_argument('--ldap', action='store_true',
                        help="run ldap tests")
     parts.add_argument('--xss', action='store_true',
                        help="run xss check")
-    parts.add_argument('--no-unittests', action='store_true',
-                       help="do not run unittests")
+    parts.add_argument('--no-application', action='store_true',
+                       help="do not run application tests")
 
     pattern_overrides = parser.add_argument_group(
         "override given testpatterns for parts of the testsuite")
@@ -210,11 +214,10 @@ if __name__ == '__main__':
                                    help="run _all_ tests regardless of testpatterns")
     pattern_overrides.add_argument('--all-ldap', action='store_true',
                                    help="run all ldap tests regardless of testpatterns")
-    pattern_overrides.add_argument('--all-unittests', action='store_true',
-                                   help="run all unittests regardless of testpatterns")
+    pattern_overrides.add_argument('--all-application', action='store_true',
+                                   help="run all application tests regardless of"
+                                        " testpatterns")
 
-    parser.add_argument('--verbose', '-v', action='store_true',
-                        help="more detailed output")
     args = parser.parse_args()
 
     # Set args for presets.
@@ -227,33 +230,33 @@ if __name__ == '__main__':
         args.testpatterns.append('tests.other_tests.*')
     if args.first or args.second or args.third:
         args.all = False
-        args.all_unittests = False
-        args.no_unittests = False
+        args.all_application = False
+        args.no_application = False
         args.all_ldap = False
         args.ldap = False
         args.xss = False
 
     return_code = 0
 
-    # Always run inittest unless explicitly deactivated.
-    do_unittests = args.all or not args.no_unittests
+    # Always run application tests unless explicitly deactivated.
+    do_application = args.all or not args.no_application
     # Only run ldap if specified or all tests are run.
     do_ldap = args.all or args.all_ldap or args.ldap
     # Only run xss check if specified or all tests are run.
     do_xss = args.all or args.xss
 
-    if do_unittests:
+    if do_application:
         with CdEDBTestLock(None) as Lock:
             assert Lock.thread_id is not None
             print(f"Using thread {Lock.thread_id}", file=sys.stderr)
 
             # Override testpatterns to run all tests.
-            if args.all or args.all_unittests:
+            if args.all or args.all_application:
                 testpatterns = None
             else:
                 testpatterns = args.testpatterns
 
-            return_code += run_regular_tests(
+            return_code += run_application_tests(
                 configpath=Lock.configpath, testpatterns=testpatterns,
                 verbose=args.verbose)
 
