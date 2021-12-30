@@ -1009,7 +1009,7 @@ class AssemblyBackend(AbstractBackend):
 
         This has to take care to keep the voter register consistent.
 
-        :returns: the id of the new event
+        :returns: the id of the new ballot
         """
         data = affirm(vtypes.Ballot, data, creation=True)
 

@@ -124,14 +124,17 @@ msgstr "Nicht berechtigt auf Veranstaltungstabellen zuzugreifen"
 #: cdedb/frontend/assembly.py:572 cdedb/frontend/assembly.py:653
 #: cdedb/frontend/assembly.py:671 cdedb/frontend/assembly.py:672
 #: cdedb/frontend/assembly.py:719 cdedb/frontend/assembly.py:733
-#: cdedb/frontend/assembly.py:736 cdedb/frontend/assembly.py:923
-#: cdedb/frontend/assembly.py:937 cdedb/frontend/assembly.py:940
+#: cdedb/frontend/assembly.py:736 cdedb/frontend/assembly.py:770
+#: cdedb/frontend/assembly.py:923 cdedb/frontend/assembly.py:937
+#: cdedb/frontend/assembly.py:940 cdedb/frontend/assembly.py:974
 #: cdedb/frontend/assembly.py:1000 cdedb/frontend/assembly.py:1018
-#: cdedb/frontend/assembly.py:1023 cdedb/frontend/assembly.py:1263
-#: cdedb/frontend/assembly.py:1288 cdedb/frontend/assembly.py:1292
+#: cdedb/frontend/assembly.py:1023 cdedb/frontend/assembly.py:1057
+#: cdedb/frontend/assembly.py:1263 cdedb/frontend/assembly.py:1288
+#: cdedb/frontend/assembly.py:1292 cdedb/frontend/assembly.py:1326
 #: cdedb/frontend/assembly.py:1425 cdedb/frontend/assembly.py:1445
-#: cdedb/frontend/assembly.py:1449 cdedb/frontend/assembly.py:1484
-#: cdedb/frontend/assembly.py:1504 cdedb/frontend/assembly.py:1508
+#: cdedb/frontend/assembly.py:1449 cdedb/frontend/assembly.py:1470
+#: cdedb/frontend/assembly.py:1484 cdedb/frontend/assembly.py:1504
+#: cdedb/frontend/assembly.py:1508 cdedb/frontend/assembly.py:1529
 #: cdedb/frontend/core/base.py:671 cdedb/frontend/core/base.py:700
 #: cdedb/frontend/core/base.py:912 cdedb/frontend/core/base.py:915
 #: cdedb/frontend/core/base.py:920 cdedb/frontend/core/base.py:926
@@ -184,7 +187,7 @@ msgstr "Einige dieser Nutzer sind keine Versammlungsnutzer."
 
 #: cdedb/backend/assembly.py:712 cdedb/frontend/assembly.py:446
 #: cdedb/frontend/assembly.py:1405 cdedb/frontend/assembly.py:1425
-#: cdedb/frontend/assembly.py:1429
+#: cdedb/frontend/assembly.py:1429 cdedb/frontend/assembly.py:1450
 msgid "Unable to remove active ballot."
 msgstr "Eine aktive Abstimmung kann nicht gelöscht werden."
 
@@ -220,6 +223,7 @@ msgstr "Fehlende Zugriffsrechte zur Änderung der Abstimmung."
 
 #: cdedb/backend/assembly.py:956 cdedb/frontend/assembly.py:1288
 #: cdedb/frontend/assembly.py:1308 cdedb/frontend/assembly.py:1312
+#: cdedb/frontend/assembly.py:1346
 msgid "Unable to modify active ballot."
 msgstr "Eine aktive Abstimmung kann nicht mehr verändert werden."
 
@@ -239,6 +243,7 @@ msgstr "Fehlende Zugriffsrechte zum Kommentieren von Abstimmungen."
 #: cdedb/frontend/assembly.py:1350 cdedb/frontend/assembly.py:1364
 #: cdedb/frontend/assembly.py:1370 cdedb/frontend/assembly.py:1374
 #: cdedb/frontend/assembly.py:1384 cdedb/frontend/assembly.py:1388
+#: cdedb/frontend/assembly.py:1395 cdedb/frontend/assembly.py:1409
 msgid "Comments are only allowed for concluded ballots."
 msgstr "Kommentare sind nur für beendete Abstimmungen erlaubt."
 
@@ -410,19 +415,19 @@ msgstr ""
 
 #: cdedb/backend/assembly.py:2065 cdedb/backend/assembly.py:2070
 #: cdedb/frontend/assembly.py:886 cdedb/frontend/assembly.py:900
-#: cdedb/frontend/assembly.py:903
+#: cdedb/frontend/assembly.py:903 cdedb/frontend/assembly.py:937
 msgid "This version does not exist."
 msgstr "Diese Version der Datei existiert nicht."
 
 #: cdedb/backend/assembly.py:2067 cdedb/backend/assembly.py:2072
 #: cdedb/frontend/assembly.py:889 cdedb/frontend/assembly.py:903
-#: cdedb/frontend/assembly.py:906
+#: cdedb/frontend/assembly.py:906 cdedb/frontend/assembly.py:940
 msgid "This version has already been deleted."
 msgstr "Diese Version der Datei wurde beireits gelöscht."
 
 #: cdedb/backend/assembly.py:2070 cdedb/backend/assembly.py:2075
 #: cdedb/frontend/assembly.py:880 cdedb/frontend/assembly.py:894
-#: cdedb/frontend/assembly.py:897
+#: cdedb/frontend/assembly.py:897 cdedb/frontend/assembly.py:931
 msgid "Cannot remove the last remaining version of an attachment."
 msgstr ""
 "Die letzte verbleibende Version einer Datei kann nicht gelöscht werden."
@@ -468,7 +473,8 @@ msgstr "Kein Saldo für fehlgeschlagene Transaktion angegeben."
 #: cdedb/backend/core.py:2054 cdedb/backend/core.py:2058
 #: cdedb/backend/event/base.py:637 cdedb/backend/event/base.py:735
 #: cdedb/frontend/assembly.py:664 cdedb/frontend/assembly.py:1203
-#: cdedb/frontend/cde/base.py:694 cdedb/frontend/cde/lastschrift.py:478
+#: cdedb/frontend/assembly.py:1237 cdedb/frontend/cde/base.py:694
+#: cdedb/frontend/cde/lastschrift.py:478
 #: cdedb/frontend/cde/parse_statement.py:649
 #: cdedb/frontend/cde/parse_statement.py:650 cdedb/frontend/common.py:596
 #: cdedb/frontend/common.py:952 cdedb/frontend/event/base.py:343
@@ -1574,11 +1580,13 @@ msgstr "Versammlung angelegt."
 
 #: cdedb/frontend/assembly.py:441 cdedb/frontend/assembly.py:600
 #: cdedb/frontend/assembly.py:774 cdedb/frontend/assembly.py:788
-#: cdedb/frontend/assembly.py:791 cdedb/frontend/assembly.py:836
-#: cdedb/frontend/assembly.py:850 cdedb/frontend/assembly.py:853
-#: cdedb/frontend/assembly.py:867 cdedb/frontend/assembly.py:881
-#: cdedb/frontend/assembly.py:884 cdedb/frontend/assembly.py:1400
-#: cdedb/frontend/assembly.py:1420 cdedb/frontend/assembly.py:1424
+#: cdedb/frontend/assembly.py:791 cdedb/frontend/assembly.py:825
+#: cdedb/frontend/assembly.py:836 cdedb/frontend/assembly.py:850
+#: cdedb/frontend/assembly.py:853 cdedb/frontend/assembly.py:867
+#: cdedb/frontend/assembly.py:881 cdedb/frontend/assembly.py:884
+#: cdedb/frontend/assembly.py:887 cdedb/frontend/assembly.py:918
+#: cdedb/frontend/assembly.py:1400 cdedb/frontend/assembly.py:1420
+#: cdedb/frontend/assembly.py:1424 cdedb/frontend/assembly.py:1445
 #: cdedb/frontend/cde/past_event.py:400 cdedb/frontend/cde/past_event.py:460
 #: cdedb/frontend/core/base.py:2084 cdedb/frontend/core/base.py:2085
 #: cdedb/frontend/core/base.py:2127 cdedb/frontend/core/base.py:2131
@@ -1626,68 +1634,69 @@ msgid "Grouping ballots by status failed."
 msgstr "Gruppierung der Abstimmungen nach Status fehlgeschlagen."
 
 #: cdedb/frontend/assembly.py:728 cdedb/frontend/assembly.py:742
-#: cdedb/frontend/assembly.py:745
+#: cdedb/frontend/assembly.py:745 cdedb/frontend/assembly.py:779
 msgid "File not found."
 msgstr "Datei wurde nicht gefunden."
 
 #: cdedb/frontend/assembly.py:763 cdedb/frontend/assembly.py:777
-#: cdedb/frontend/assembly.py:780 cdedb/frontend/assembly.py:855
-#: cdedb/frontend/assembly.py:869 cdedb/frontend/assembly.py:872
+#: cdedb/frontend/assembly.py:780 cdedb/frontend/assembly.py:814
+#: cdedb/frontend/assembly.py:855 cdedb/frontend/assembly.py:869
+#: cdedb/frontend/assembly.py:872 cdedb/frontend/assembly.py:906
 msgid "Attachment added."
 msgstr "Anhang hinzugefügt."
 
 #: cdedb/frontend/assembly.py:779 cdedb/frontend/assembly.py:793
-#: cdedb/frontend/assembly.py:796
+#: cdedb/frontend/assembly.py:796 cdedb/frontend/assembly.py:830
 msgid "Attachment can not be deleted."
 msgstr "Datei kann nicht gelöscht werden."
 
 #: cdedb/frontend/assembly.py:785 cdedb/frontend/assembly.py:799
-#: cdedb/frontend/assembly.py:802
+#: cdedb/frontend/assembly.py:802 cdedb/frontend/assembly.py:836
 msgid "Remove all but the last version before deleting the attachment."
 msgstr ""
 "Entferne erst alle bis auf eine Dateiversion, bevor Du die gesamte Datei "
 "entfernst."
 
 #: cdedb/frontend/assembly.py:801 cdedb/frontend/assembly.py:815
-#: cdedb/frontend/assembly.py:818
+#: cdedb/frontend/assembly.py:818 cdedb/frontend/assembly.py:852
 msgid "Invalid attachment specified."
 msgstr "Ungpltige Datei angefordert."
 
 #: cdedb/frontend/assembly.py:874 cdedb/frontend/assembly.py:888
-#: cdedb/frontend/assembly.py:891
+#: cdedb/frontend/assembly.py:891 cdedb/frontend/assembly.py:925
 msgid "Attachment version can not be deleted."
 msgstr "Dateiversion kann nicht gelöscht werden."
 
 #: cdedb/frontend/assembly.py:894 cdedb/frontend/assembly.py:908
-#: cdedb/frontend/assembly.py:911
+#: cdedb/frontend/assembly.py:911 cdedb/frontend/assembly.py:945
 msgid "Unknown version."
 msgstr "Unbekannte Version angegeben."
 
 #: cdedb/frontend/assembly.py:1007 cdedb/frontend/assembly.py:1031
-#: cdedb/frontend/assembly.py:1037
+#: cdedb/frontend/assembly.py:1037 cdedb/frontend/assembly.py:1071
 msgid "Ballot has not been tallied."
 msgstr "Abstimmung wurde noch nicht ausgezählt."
 
 #: cdedb/frontend/assembly.py:1043 cdedb/frontend/assembly.py:1067
-#: cdedb/frontend/assembly.py:1073
+#: cdedb/frontend/assembly.py:1073 cdedb/frontend/assembly.py:1107
 #: cdedb/frontend/templates/web/assembly/list_ballots.tmpl:40
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:157
 msgid "Abstained"
 msgstr "Enthalten"
 
 #: cdedb/frontend/assembly.py:1046 cdedb/frontend/assembly.py:1070
-#: cdedb/frontend/assembly.py:1076
+#: cdedb/frontend/assembly.py:1076 cdedb/frontend/assembly.py:1110
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:28
 msgid "Against all Candidates"
 msgstr "Gegen alle Kandidaten"
 
 #: cdedb/frontend/assembly.py:1049 cdedb/frontend/assembly.py:1073
-#: cdedb/frontend/assembly.py:1079
+#: cdedb/frontend/assembly.py:1079 cdedb/frontend/assembly.py:1113
 msgid "Rejection limit"
 msgstr "Ablehnungsgrenze"
 
 #: cdedb/frontend/assembly.py:1104 cdedb/frontend/assembly.py:1124
-#: cdedb/frontend/assembly.py:1130
+#: cdedb/frontend/assembly.py:1130 cdedb/frontend/assembly.py:1164
 msgid "Entered invalid secret"
 msgstr "Ungültiges Geheimniss eingegeben."
 
@@ -1696,32 +1705,32 @@ msgid "Updating ballots failed."
 msgstr "Aktualisieren der Abstimmungen fehlgeschlagen."
 
 #: cdedb/frontend/assembly.py:1378 cdedb/frontend/assembly.py:1398
-#: cdedb/frontend/assembly.py:1402
+#: cdedb/frontend/assembly.py:1402 cdedb/frontend/assembly.py:1423
 msgid "Force starting a ballot is only possible in dev mode."
 msgstr "Forcieren eines Abstimmungsstarts ist nur im Entwicklermodus möglich."
 
 #: cdedb/frontend/assembly.py:1427 cdedb/frontend/assembly.py:1447
-#: cdedb/frontend/assembly.py:1451
+#: cdedb/frontend/assembly.py:1451 cdedb/frontend/assembly.py:1472
 msgid "Ballot is outside its voting period."
 msgstr "Abstimmung ist außerhalb des Abstimmungszeitraums."
 
 #: cdedb/frontend/assembly.py:1439 cdedb/frontend/assembly.py:1459
-#: cdedb/frontend/assembly.py:1463
+#: cdedb/frontend/assembly.py:1463 cdedb/frontend/assembly.py:1484
 msgid "Option not available."
 msgstr "Option nicht verfügbar."
 
 #: cdedb/frontend/assembly.py:1448 cdedb/frontend/assembly.py:1468
-#: cdedb/frontend/assembly.py:1472
+#: cdedb/frontend/assembly.py:1472 cdedb/frontend/assembly.py:1493
 msgid "Rejection is exclusive."
 msgstr "Ablehnung kann nur exklusiv gewählt werden."
 
 #: cdedb/frontend/assembly.py:1487 cdedb/frontend/assembly.py:1507
-#: cdedb/frontend/assembly.py:1511
+#: cdedb/frontend/assembly.py:1511 cdedb/frontend/assembly.py:1532
 msgid "Ballot not yet tallied."
 msgstr "Abstimmung noch nicht ausgezählt."
 
 #: cdedb/frontend/assembly.py:1513 cdedb/frontend/assembly.py:1533
-#: cdedb/frontend/assembly.py:1537
+#: cdedb/frontend/assembly.py:1537 cdedb/frontend/assembly.py:1558
 msgid "Duplicate shortname."
 msgstr "Option doppelt gefunden."
 
@@ -3736,6 +3745,7 @@ msgstr "Bis jetzt haben %(count)s Teilnehmer über diesen Punkt abgestimmt."
 
 #: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:159
 #: cdedb/frontend/templates/web/assembly/assembly_data.tmpl:55
+#: cdedb/frontend/templates/web/assembly/ballot_data.tmpl:59
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:34
 #: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:32
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:103
@@ -3857,6 +3867,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:19
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:223
+#: cdedb/frontend/templates/web/assembly/ballot_data.tmpl:29
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:17
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:14
 msgid "Ballot"
@@ -4159,6 +4170,7 @@ msgstr "Kurzname"
 
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:328
 #: cdedb/frontend/templates/web/assembly/assembly_data.tmpl:49
+#: cdedb/frontend/templates/web/assembly/ballot_data.tmpl:48
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:23
 #: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:22
 #: cdedb/frontend/templates/web/cde/past_event/change_past_course.tmpl:37
@@ -4222,6 +4234,7 @@ msgstr "Kandidaten hinzufügen"
 
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:367
 #: cdedb/frontend/templates/web/assembly/assembly_data.tmpl:63
+#: cdedb/frontend/templates/web/assembly/ballot_data.tmpl:63
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:38
 #: cdedb/frontend/templates/web/assembly/comment_ballot.tmpl:7
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_change.tmpl:40
@@ -4280,6 +4293,7 @@ msgstr "Datei hinzufügen"
 #: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:11
 #: cdedb/frontend/templates/web/assembly/add_attachment_version.tmpl:18
 #: cdedb/frontend/templates/web/assembly/assembly_data.tmpl:29
+#: cdedb/frontend/templates/web/assembly/ballot_data.tmpl:32
 #: cdedb/frontend/templates/web/assembly/base.tmpl:45
 #: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:16
 #: cdedb/frontend/templates/web/assembly/list_attachments.tmpl:15
@@ -4412,6 +4426,7 @@ msgid "Configuration"
 msgstr "Konfiguration"
 
 #: cdedb/frontend/templates/web/assembly/assembly_data.tmpl:51
+#: cdedb/frontend/templates/web/assembly/ballot_data.tmpl:49
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:24
 #: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:23
 #: cdedb/frontend/templates/web/cde/past_event/change_past_course.tmpl:38
@@ -4447,6 +4462,7 @@ msgid "Application Deadline"
 msgstr "Anmeldeschluss"
 
 #: cdedb/frontend/templates/web/assembly/assembly_data.tmpl:61
+#: cdedb/frontend/templates/web/assembly/ballot_data.tmpl:61
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:36
 msgid ""
 "Warning: All changes will be immediately visible to all CdE-Members and "
@@ -4496,6 +4512,130 @@ msgstr "Achtung: Die Versammlung ist sofort für alle CdE-Mitglieder sichtbar."
 msgid "Create"
 msgstr "Anlegen"
 
+#: cdedb/frontend/templates/web/assembly/ballot_data.tmpl:8
+#, python-format
+msgid "Edit %(ballot)s"
+msgstr "%(ballot)s bearbeiten"
+
+#: cdedb/frontend/templates/web/assembly/ballot_data.tmpl:10
+#: cdedb/frontend/templates/web/assembly/ballot_data.tmpl:23
+#: cdedb/frontend/templates/web/assembly/ballot_data.tmpl:31
+#: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:7
+#: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:12
+#: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:16
+#: cdedb/frontend/templates/web/assembly/list_ballots.tmpl:20
+msgid "Create Ballot"
+msgstr "Abstimmung anlegen"
+
+#: cdedb/frontend/templates/web/assembly/ballot_data.tmpl:18
+#: cdedb/frontend/templates/web/assembly/base.tmpl:13
+#: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:12
+#: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:11
+#: cdedb/frontend/templates/web/assembly/index.tmpl:51
+#: cdedb/frontend/templates/web/assembly/list_ballots.tmpl:9
+#: cdedb/frontend/templates/web/assembly/list_ballots.tmpl:14
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:28
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:21
+msgid "Ballots"
+msgstr "Abstimmungen"
+
+#: cdedb/frontend/templates/web/assembly/ballot_data.tmpl:21
+#: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:14
+#: cdedb/frontend/templates/web/assembly/list_ballots.tmpl:48
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:43
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_change.tmpl:13
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:50
+#: cdedb/frontend/templates/web/cde/past_event/change_past_course.tmpl:19
+#: cdedb/frontend/templates/web/cde/past_event/change_past_event.tmpl:16
+#: cdedb/frontend/templates/web/cde/past_event/show_past_course.tmpl:27
+#: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:23
+#: cdedb/frontend/templates/web/core/genesis/genesis_list_cases.tmpl:40
+#: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:157
+#: cdedb/frontend/templates/web/core/show_user.tmpl:66
+#: cdedb/frontend/templates/web/core/show_user.tmpl:70
+#: cdedb/frontend/templates/web/core/show_user.tmpl:237
+#: cdedb/frontend/templates/web/core/show_user.tmpl:341
+#: cdedb/frontend/templates/web/core/show_user.tmpl:344
+#: cdedb/frontend/templates/web/event/course/change_course.tmpl:16
+#: cdedb/frontend/templates/web/event/course/course_list.tmpl:68
+#: cdedb/frontend/templates/web/event/course/course_stats.tmpl:144
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:32
+#: cdedb/frontend/templates/web/event/lodgement/change_lodgement.tmpl:16
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:137
+#: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:25
+#: cdedb/frontend/templates/web/event/query/registration_query.tmpl:76
+#: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:16
+#: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:15
+#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:119
+#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:23
+msgid "Edit"
+msgstr "Bearbeiten"
+
+#: cdedb/frontend/templates/web/assembly/ballot_data.tmpl:29
+#: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:17
+msgid "Edit Ballot"
+msgstr "Abstimmung bearbeiten"
+
+#: cdedb/frontend/templates/web/assembly/ballot_data.tmpl:50
+#: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:25
+#: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:24
+msgid "Start of voting period"
+msgstr "Beginn der Abstimmung"
+
+#: cdedb/frontend/templates/web/assembly/ballot_data.tmpl:51
+#: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:26
+#: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:25
+msgid "End of voting period"
+msgstr "Ende der Abstimmung"
+
+#: cdedb/frontend/templates/web/assembly/ballot_data.tmpl:52
+#: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:27
+#: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:26
+msgid "Absolute Quorum"
+msgstr "Absolutes Quorum"
+
+#: cdedb/frontend/templates/web/assembly/ballot_data.tmpl:53
+#: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:28
+#: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:27
+msgid "Relative Quorum"
+msgstr "Relatives Quorum"
+
+#: cdedb/frontend/templates/web/assembly/ballot_data.tmpl:54
+#: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:29
+#: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:28
+msgid "End of extension"
+msgstr "Ende der Verlängerung"
+
+#: cdedb/frontend/templates/web/assembly/ballot_data.tmpl:55
+#: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:30
+#: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:29
+msgid "Number of votes"
+msgstr "Anzahl der Stimmen"
+
+#: cdedb/frontend/templates/web/assembly/ballot_data.tmpl:56
+#: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:31
+#: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:30
+msgid "Leave empty for Preferential Vote."
+msgstr "Leer lassen für vollständige Präferenzwahl."
+
+#: cdedb/frontend/templates/web/assembly/ballot_data.tmpl:57
+#: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:32
+#: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:31
+msgid "Allow rejection"
+msgstr "Erlaube Ablehnungen"
+
+#: cdedb/frontend/templates/web/assembly/ballot_data.tmpl:58
+#: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:33
+msgid "Linked Attachments"
+msgstr "Verknüpfte Dateien"
+
+#: cdedb/frontend/templates/web/assembly/ballot_data.tmpl:58
+#: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:33
+#: cdedb/frontend/templates/web/event/course/manage_attendees.tmpl:56
+#: cdedb/frontend/templates/web/event/lodgement/manage_inhabitants.tmpl:58
+msgid "– none –"
+msgstr "– keine –"
+
 #: cdedb/frontend/templates/web/assembly/base.tmpl:7
 #: cdedb/frontend/templates/web/assembly/base.tmpl:51
 #: cdedb/frontend/templates/web/cde/base.tmpl:11
@@ -4510,17 +4650,6 @@ msgstr "Anlegen"
 #: cdedb/frontend/templates/web/ml/base.tmpl:57
 msgid "Overview"
 msgstr "Übersicht"
-
-#: cdedb/frontend/templates/web/assembly/base.tmpl:13
-#: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:12
-#: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:11
-#: cdedb/frontend/templates/web/assembly/index.tmpl:51
-#: cdedb/frontend/templates/web/assembly/list_ballots.tmpl:9
-#: cdedb/frontend/templates/web/assembly/list_ballots.tmpl:14
-#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:28
-#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:21
-msgid "Ballots"
-msgstr "Abstimmungen"
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:16
 #: cdedb/frontend/templates/web/assembly/summary_ballots.tmpl:5
@@ -4621,102 +4750,10 @@ msgstr "Kassenprüfer"
 msgid "Edit %(ballot)s %(assembly)s"
 msgstr "%(ballot)s bearbeiten %(assembly)s"
 
-#: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:14
-#: cdedb/frontend/templates/web/assembly/list_ballots.tmpl:48
-#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:43
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_change.tmpl:13
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:50
-#: cdedb/frontend/templates/web/cde/past_event/change_past_course.tmpl:19
-#: cdedb/frontend/templates/web/cde/past_event/change_past_event.tmpl:16
-#: cdedb/frontend/templates/web/cde/past_event/show_past_course.tmpl:27
-#: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:23
-#: cdedb/frontend/templates/web/core/genesis/genesis_list_cases.tmpl:40
-#: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:157
-#: cdedb/frontend/templates/web/core/show_user.tmpl:66
-#: cdedb/frontend/templates/web/core/show_user.tmpl:70
-#: cdedb/frontend/templates/web/core/show_user.tmpl:237
-#: cdedb/frontend/templates/web/core/show_user.tmpl:341
-#: cdedb/frontend/templates/web/core/show_user.tmpl:344
-#: cdedb/frontend/templates/web/event/course/change_course.tmpl:16
-#: cdedb/frontend/templates/web/event/course/course_list.tmpl:68
-#: cdedb/frontend/templates/web/event/course/course_stats.tmpl:144
-#: cdedb/frontend/templates/web/event/course/show_course.tmpl:32
-#: cdedb/frontend/templates/web/event/lodgement/change_lodgement.tmpl:16
-#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:137
-#: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:25
-#: cdedb/frontend/templates/web/event/query/registration_query.tmpl:76
-#: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:16
-#: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:15
-#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:119
-#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:23
-msgid "Edit"
-msgstr "Bearbeiten"
-
-#: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:17
-msgid "Edit Ballot"
-msgstr "Abstimmung bearbeiten"
-
-#: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:25
-#: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:24
-msgid "Start of voting period"
-msgstr "Beginn der Abstimmung"
-
-#: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:26
-#: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:25
-msgid "End of voting period"
-msgstr "Ende der Abstimmung"
-
-#: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:27
-#: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:26
-msgid "Absolute Quorum"
-msgstr "Absolutes Quorum"
-
-#: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:28
-#: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:27
-msgid "Relative Quorum"
-msgstr "Relatives Quorum"
-
-#: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:29
-#: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:28
-msgid "End of extension"
-msgstr "Ende der Verlängerung"
-
-#: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:30
-#: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:29
-msgid "Number of votes"
-msgstr "Anzahl der Stimmen"
-
-#: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:31
-#: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:30
-msgid "Leave empty for Preferential Vote."
-msgstr "Leer lassen für vollständige Präferenzwahl."
-
-#: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:32
-#: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:31
-msgid "Allow rejection"
-msgstr "Erlaube Ablehnungen"
-
-#: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:33
-msgid "Linked Attachments"
-msgstr "Verknüpfte Dateien"
-
-#: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:33
-#: cdedb/frontend/templates/web/event/course/manage_attendees.tmpl:56
-#: cdedb/frontend/templates/web/event/lodgement/manage_inhabitants.tmpl:58
-msgid "– none –"
-msgstr "– keine –"
-
 #: cdedb/frontend/templates/web/assembly/comment_ballot.tmpl:6
 #: cdedb/frontend/templates/web/cde/parse/money_transfers.tmpl:37
 msgid "Comment"
 msgstr "Kommentar"
-
-#: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:7
-#: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:12
-#: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:16
-#: cdedb/frontend/templates/web/assembly/list_ballots.tmpl:20
-msgid "Create Ballot"
-msgstr "Abstimmung anlegen"
 
 #: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:34
 msgid ""
