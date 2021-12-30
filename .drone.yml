@@ -170,6 +170,10 @@ steps:
   - frontend tests a-d
   - frontend tests e-z
   - non-frontend tests
+  when:
+    status:
+      - failure
+      - success
   volumes:
   - name: coverage
     path: /coverage
