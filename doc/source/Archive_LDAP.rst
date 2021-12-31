@@ -1,6 +1,9 @@
 LDAP
 ====
 
+LDAP is working. This page is mainly preserved for historical reasons, and to
+contain some of the sources of troubles we encountered.
+
 Current state of getting LDAP with the SQL-backend to run. The major
 complication is that all sources (see :ref:`sec-ldap-references`) work with
 the old-style slapd.conf mechanism whereas newer ldap has switched to the
@@ -12,7 +15,7 @@ First we install odbc::
 
 And configure it via /etc/odbc.ini
 
-.. literalinclude:: ../../ldap/templates/odbc.tmpl
+.. literalinclude:: ../../ldap/odbc.ini
 
 The ``Driver`` must be as specified in /etc/odbcinst.ini (which should be
 prefilled by the Debian package). To check odbc functionality we use the
@@ -21,22 +24,24 @@ following command::
     isql cdb
 
 We need some additional info inside the SQL database. The ldap specific
-additions reside in cdedb/database/cdedb-ldap.sql.
+additions reside in ``cdedb/database/cdedb-ldap.sql``.
 All data which is prefilled here is static and needed for ldap to work.
 We use sql query views to 'insert' data from other existent tables in the needed
 format into the ldap tables.
 Currently, there is only one table (``ldap.duas``) which is filled with test
 specific sample data.
 
-We now configure the SQL-backend for LDAP via a corresponding LDIF file (as
-is necessary according to the cn=config mechanism). Current state of the
-content of our sql-ldap.ldif
-
-.. literalinclude:: ../../sql-ldap.ldif
+We now configure the SQL-backend for LDAP via two corresponding LDIF files (as
+is necessary according to the cn=config mechanism). The first file at
+``related/auto-build/files/stage2/ldap-config.ldif`` contains all
+adjustments for the ldap setup process, which are mainly loading ldap modules
+like the sql-backend.
+The second file at ``ldap/cdedb-ldap.ldif`` contains the actual definition of
+the cdedb ldap interface.
 
 To apply the LDIF configuration file we issue the following command::
 
-    sudo ldapmodify -Y EXTERNAL -H ldapi:/// -f /cdedb2/sql-ldap.ldif
+    sudo ldapmodify -Y EXTERNAL -H ldapi:/// -f /path/to/file
 
 Now, one can apply the database schemas as usual by calling::
 
@@ -106,17 +111,11 @@ results)::
     sudo ldapsearch  -Y EXTERNAL -H ldapi:/// -b "dc=cde-ev,dc=de"
 
 
-To drop all LDAP SQL databases the following workaround seems necessary
+To drop all LDAP SQL databases, a purged reinstallation of slapd seems necessary
 (using an LDIF file with a delete instruction errors with ``ldap_delete:
 Server is unwilling to perform (53)``)::
 
-    make ldap-reset-sql
-
-To reset the whole ldap stuff, a purged reinstall should be done::
-
     make ldap-reset
-
-After reinstalling, a ldap admin passwort has to be specified.
 
 .. _sec-ldap-references:
 
@@ -133,3 +132,4 @@ References
 * https://www.digitalocean.com/community/tutorials/how-to-configure-openldap-and-perform-administrative-ldap-tasks
 * https://stackoverflow.com/questions/30898397/creating-second-database-domain-in-openldap
 * ``man slapd-sql``
+* https://manpages.debian.org/buster/slapd/slapd-config.5.en.html
