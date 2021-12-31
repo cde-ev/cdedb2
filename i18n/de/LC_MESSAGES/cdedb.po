@@ -16272,7 +16272,7 @@ msgstr "Ungültige Eingabe für einen Zeitpunkt."
 
 #: cdedb/validation.py:1375
 msgid "Must be a datetime.datetime."
-msgstr "Muss eine valides Datum mit Uhrzeit sein."
+msgstr "Muss ein valides Datum mit Uhrzeit sein."
 
 #: cdedb/validation.py:1387
 msgid "More than one digit."
