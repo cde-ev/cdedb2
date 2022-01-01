@@ -40,9 +40,10 @@ msgid "Bad scope."
 msgstr ""
 
 #: cdedb/backend/assembly.py:363 cdedb/backend/assembly.py:386
-#: cdedb/backend/assembly.py:2129 cdedb/backend/event/base.py:65
-#: cdedb/backend/event/base.py:66 cdedb/backend/event/lowlevel.py:49
-#: cdedb/backend/past_event.py:580 cdedb/frontend/common.py:578
+#: cdedb/backend/assembly.py:2129 cdedb/backend/assembly.py:2131
+#: cdedb/backend/event/base.py:65 cdedb/backend/event/base.py:66
+#: cdedb/backend/event/lowlevel.py:49 cdedb/backend/past_event.py:580
+#: cdedb/frontend/common.py:578
 msgid "No input specified."
 msgstr ""
 
@@ -51,8 +52,9 @@ msgid "Can only retrieve id for exactly one assembly."
 msgstr ""
 
 #: cdedb/backend/assembly.py:388 cdedb/backend/assembly.py:2131
-#: cdedb/backend/event/base.py:54 cdedb/backend/event/base.py:55
-#: cdedb/backend/event/lowlevel.py:51 cdedb/backend/past_event.py:572
+#: cdedb/backend/assembly.py:2133 cdedb/backend/event/base.py:54
+#: cdedb/backend/event/base.py:55 cdedb/backend/event/lowlevel.py:51
+#: cdedb/backend/past_event.py:572
 msgid "Too many inputs specified."
 msgstr ""
 
@@ -62,9 +64,12 @@ msgstr ""
 
 #: cdedb/backend/assembly.py:457 cdedb/backend/assembly.py:505
 #: cdedb/backend/assembly.py:786 cdedb/backend/assembly.py:1480
-#: cdedb/backend/assembly.py:1954 cdedb/backend/assembly.py:1980
-#: cdedb/backend/assembly.py:2110 cdedb/backend/assembly.py:2135
-#: cdedb/backend/assembly.py:2189 cdedb/backend/cde.py:175
+#: cdedb/backend/assembly.py:1482 cdedb/backend/assembly.py:1954
+#: cdedb/backend/assembly.py:1956 cdedb/backend/assembly.py:1980
+#: cdedb/backend/assembly.py:1982 cdedb/backend/assembly.py:2110
+#: cdedb/backend/assembly.py:2112 cdedb/backend/assembly.py:2135
+#: cdedb/backend/assembly.py:2137 cdedb/backend/assembly.py:2189
+#: cdedb/backend/assembly.py:2191 cdedb/backend/cde.py:175
 #: cdedb/backend/cde.py:200 cdedb/backend/cde.py:351 cdedb/backend/core.py:523
 #: cdedb/backend/core.py:748 cdedb/backend/core.py:2682
 #: cdedb/backend/core.py:2685 cdedb/backend/core.py:2713
@@ -125,6 +130,7 @@ msgid "Not privileged."
 msgstr ""
 
 #: cdedb/backend/assembly.py:513 cdedb/backend/assembly.py:1681
+#: cdedb/backend/assembly.py:1683
 msgid "Something went wrong."
 msgstr ""
 
@@ -160,8 +166,10 @@ msgid "Unable to remove active ballot."
 msgstr ""
 
 #: cdedb/backend/assembly.py:716 cdedb/backend/assembly.py:772
-#: cdedb/backend/assembly.py:1153 cdedb/backend/assembly.py:1189
-#: cdedb/backend/assembly.py:1739 cdedb/backend/assembly.py:1775
+#: cdedb/backend/assembly.py:1153 cdedb/backend/assembly.py:1155
+#: cdedb/backend/assembly.py:1189 cdedb/backend/assembly.py:1191
+#: cdedb/backend/assembly.py:1739 cdedb/backend/assembly.py:1741
+#: cdedb/backend/assembly.py:1775 cdedb/backend/assembly.py:1777
 #: cdedb/backend/cde.py:303 cdedb/backend/cde.py:329 cdedb/backend/core.py:2587
 #: cdedb/backend/core.py:2610 cdedb/backend/event/__init__.py:146
 #: cdedb/backend/event/__init__.py:164 cdedb/backend/event/__init__.py:225
@@ -199,172 +207,182 @@ msgstr ""
 msgid "Must have privileged access to create ballot."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1061
+#: cdedb/backend/assembly.py:1027
+#, fuzzy
+msgid "Ballot creation failed."
+msgstr "epistula electronica ad verificandum mitte"
+
+#: cdedb/backend/assembly.py:1061 cdedb/backend/assembly.py:1063
 msgid "Must have privileged access to comment ballot."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1065 cdedb/frontend/assembly.py:1374
-#: cdedb/frontend/assembly.py:1388 cdedb/frontend/assembly.py:1395
-#: cdedb/frontend/assembly.py:1409
+#: cdedb/backend/assembly.py:1065 cdedb/backend/assembly.py:1067
+#: cdedb/frontend/assembly.py:1374 cdedb/frontend/assembly.py:1388
+#: cdedb/frontend/assembly.py:1395 cdedb/frontend/assembly.py:1409
 msgid "Comments are only allowed for concluded ballots."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1099 cdedb/backend/assembly.py:1163
+#: cdedb/backend/assembly.py:1099 cdedb/backend/assembly.py:1101
+#: cdedb/backend/assembly.py:1163 cdedb/backend/assembly.py:1165
 msgid "Must have privileged access to delete ballot."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1144
+#: cdedb/backend/assembly.py:1144 cdedb/backend/assembly.py:1146
 msgid "Cannot delete ballot once it has been locked."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1146
+#: cdedb/backend/assembly.py:1146 cdedb/backend/assembly.py:1148
 msgid "Cannot delete ballot once the assembly has been locked."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1149
+#: cdedb/backend/assembly.py:1149 cdedb/backend/assembly.py:1151
 msgid "Cannot delete ballot that has votes."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1213
+#: cdedb/backend/assembly.py:1213 cdedb/backend/assembly.py:1215
 msgid "Normal voting still going on."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1245 cdedb/frontend/assembly.py:524
-#: cdedb/frontend/assembly.py:539
+#: cdedb/backend/assembly.py:1245 cdedb/backend/assembly.py:1247
+#: cdedb/frontend/assembly.py:524 cdedb/frontend/assembly.py:539
 msgid "Signup already ended."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1281
+#: cdedb/backend/assembly.py:1281 cdedb/backend/assembly.py:1283
 msgid "Must have privileged access to add an external assembly participant."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1286
+#: cdedb/backend/assembly.py:1286 cdedb/backend/assembly.py:1288
 msgid "Not allowed for members."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1288
+#: cdedb/backend/assembly.py:1288 cdedb/backend/assembly.py:1290
 msgid "Only allowed for assembly users."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1324
+#: cdedb/backend/assembly.py:1324 cdedb/backend/assembly.py:1326
 msgid "Must attend to vote."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1330
+#: cdedb/backend/assembly.py:1330 cdedb/backend/assembly.py:1332
 msgid "Ballot already closed."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1332
+#: cdedb/backend/assembly.py:1332 cdedb/backend/assembly.py:1334
 msgid "Ballot not yet open."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1344
+#: cdedb/backend/assembly.py:1344 cdedb/backend/assembly.py:1346
 msgid "Could not determine secret."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1378 cdedb/backend/assembly.py:1415
+#: cdedb/backend/assembly.py:1378 cdedb/backend/assembly.py:1380
+#: cdedb/backend/assembly.py:1415 cdedb/backend/assembly.py:1417
 msgid "Must attend the ballot."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1441
+#: cdedb/backend/assembly.py:1441 cdedb/backend/assembly.py:1443
 msgid "May not access result for this ballot."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1487
+#: cdedb/backend/assembly.py:1487 cdedb/backend/assembly.py:1489
 msgid "Extension unchecked."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1493
+#: cdedb/backend/assembly.py:1493 cdedb/backend/assembly.py:1495
 msgid "Voting still going on."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1594
+#: cdedb/backend/assembly.py:1594 cdedb/backend/assembly.py:1596
 msgid "Assembly is not active."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1596
+#: cdedb/backend/assembly.py:1596 cdedb/backend/assembly.py:1598
 msgid "Assembly has open ballots."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1599 cdedb/backend/assembly.py:1632
+#: cdedb/backend/assembly.py:1599 cdedb/backend/assembly.py:1601
+#: cdedb/backend/assembly.py:1632 cdedb/backend/assembly.py:1634
 #, python-format
 msgid "Conclusion of assembly blocked by %(block)s."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1646
+#: cdedb/backend/assembly.py:1646 cdedb/backend/assembly.py:1648
 msgid "Can only access attachments from exactly one assembly at a time."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1663
+#: cdedb/backend/assembly.py:1663 cdedb/backend/assembly.py:1665
 msgid "Must have privileged access to add attachment."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1665 cdedb/backend/assembly.py:1731
+#: cdedb/backend/assembly.py:1665 cdedb/backend/assembly.py:1667
+#: cdedb/backend/assembly.py:1731 cdedb/backend/assembly.py:1733
 msgid "Cannot delete attachment once the assembly has been locked."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1684 cdedb/backend/assembly.py:2042
+#: cdedb/backend/assembly.py:1684 cdedb/backend/assembly.py:1686
+#: cdedb/backend/assembly.py:2042 cdedb/backend/assembly.py:2044
 msgid "File already exists."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1734
+#: cdedb/backend/assembly.py:1734 cdedb/backend/assembly.py:1736
 msgid "Cannot delete attachment once any linked ballot has been locked."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1751
+#: cdedb/backend/assembly.py:1751 cdedb/backend/assembly.py:1753
 msgid "Must have privileged access to delete attachment."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1818
+#: cdedb/backend/assembly.py:1818 cdedb/backend/assembly.py:1820
 msgid "Must have privileged access to add attachment link."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1822
+#: cdedb/backend/assembly.py:1822 cdedb/backend/assembly.py:1824
 msgid "Cannot link attachment to ballot that has been locked."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1850
+#: cdedb/backend/assembly.py:1850 cdedb/backend/assembly.py:1852
 msgid "Must have privileged access to delete attachment link."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1854
+#: cdedb/backend/assembly.py:1854 cdedb/backend/assembly.py:1856
 msgid "Cannot unlink attachment from ballot that has been locked."
 msgstr ""
 
-#: cdedb/backend/assembly.py:2027
+#: cdedb/backend/assembly.py:2027 cdedb/backend/assembly.py:2029
 msgid "Cannot add attachment version once the assembly has been locked."
 msgstr ""
 
-#: cdedb/backend/assembly.py:2034
+#: cdedb/backend/assembly.py:2034 cdedb/backend/assembly.py:2036
 msgid "Attachment does not exist."
 msgstr ""
 
-#: cdedb/backend/assembly.py:2047
+#: cdedb/backend/assembly.py:2047 cdedb/backend/assembly.py:2049
 msgid "Must have privileged access to add attachment version."
 msgstr ""
 
-#: cdedb/backend/assembly.py:2062
+#: cdedb/backend/assembly.py:2062 cdedb/backend/assembly.py:2064
 msgid "Must have privileged access to remove attachment version."
 msgstr ""
 
-#: cdedb/backend/assembly.py:2065
+#: cdedb/backend/assembly.py:2065 cdedb/backend/assembly.py:2067
 msgid ""
 "Cannot remove attachment version once the assembly or any linked ballots "
 "have been locked."
 msgstr ""
 
-#: cdedb/backend/assembly.py:2070 cdedb/frontend/assembly.py:903
-#: cdedb/frontend/assembly.py:937
+#: cdedb/backend/assembly.py:2070 cdedb/backend/assembly.py:2072
+#: cdedb/frontend/assembly.py:903 cdedb/frontend/assembly.py:937
 msgid "This version does not exist."
 msgstr ""
 
-#: cdedb/backend/assembly.py:2072 cdedb/frontend/assembly.py:906
-#: cdedb/frontend/assembly.py:940
+#: cdedb/backend/assembly.py:2072 cdedb/backend/assembly.py:2074
+#: cdedb/frontend/assembly.py:906 cdedb/frontend/assembly.py:940
 msgid "This version has already been deleted."
 msgstr ""
 
-#: cdedb/backend/assembly.py:2075 cdedb/frontend/assembly.py:897
-#: cdedb/frontend/assembly.py:931
+#: cdedb/backend/assembly.py:2075 cdedb/backend/assembly.py:2077
+#: cdedb/frontend/assembly.py:897 cdedb/frontend/assembly.py:931
 msgid "Cannot remove the last remaining version of an attachment."
 msgstr ""
 

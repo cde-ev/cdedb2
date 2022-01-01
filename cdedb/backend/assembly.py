@@ -1023,6 +1023,8 @@ class AssemblyBackend(AbstractBackend):
                 raise ValueError(n_("Assembly already concluded."))
             bdata = {k: v for k, v in data.items() if k in BALLOT_FIELDS}
             new_id = self.sql_insert(rs, "assembly.ballots", bdata)
+            if new_id <= 0:  # pragma: no cover
+                raise RuntimeError(n_("Ballot creation failed."))
             self.assembly_log(rs, const.AssemblyLogCodes.ballot_created,
                               data['assembly_id'], change_note=data['title'])
             if 'candidates' in data:
