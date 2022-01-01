@@ -1317,6 +1317,13 @@ class AssemblyFrontend(AbstractUserFrontend):
             rs, attachment_ids)
         attachment_entries = [(attachment_id, version["title"])
                               for attachment_id, version in attachment_versions.items()]
+        selectize_data = [
+            {'id': attachment_id, 'name': version['title']}
+            for attachment_id, version in xsorted(
+                attachment_versions.items(),
+                key=(lambda att: EntitySorter.attachment(att[1]))
+            )
+        ]
 
         # add the current attachment to the values dict, since they are no part of them
         # by default
@@ -1326,7 +1333,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         merge_dicts(rs.values, rs.ambience['ballot'])
 
         return self.render(rs, "change_ballot", {
-            "attachment_entries": attachment_entries
+            "attachment_entries": attachment_entries,
+            "selectize_data": selectize_data,
         })
 
     @access("assembly", modi={"POST"})

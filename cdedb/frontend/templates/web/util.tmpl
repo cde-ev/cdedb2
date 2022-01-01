@@ -10,14 +10,10 @@
 {% set script_files = [] %}
 {% macro cdedb_script(script) %}
     {%- if not script in script_files %}
-        {%- if script == 'cdedb_queryform.js' %}
+        {%- if script in ('cdedb_queryform.js', 'cdedb_searchpersona.js', 'cdedb_multiselect.js') %}
             {{- cdedb_script('selectize/selectize.min.js') }}
         {%- elif script == 'selectize/selectize.min.js' %}
             <link rel="stylesheet" href="{{ staticurl("selectize/selectize.bootstrap3.css") }}" />
-        {%- elif script == 'cdedb_searchpersona.js' %}
-            {{- cdedb_script('selectize/selectize.min.js') }}
-        {%- elif script == 'cdedb_manage_participants.js' %}
-            {{- cdedb_script('selectize/selectize.min.js') }}
         {%- endif %}
         <script  src="{{ staticurl(script) }}"></script>
         {%- do script_files.append(script) %}
@@ -640,7 +636,7 @@
         {% set entries = entries|sort(attribute=1) if sort else entries %}
         {# This is necessary to convert the values to strings so we can check if they are currently selected #}
         {% set current_values = [] %}
-        {% for value in values.get(name) %}
+        {% for value in values.get(name, []) %}
             {% do current_values.append(value|string) %}
         {% endfor %}
         {%- for value, label in entries %}
