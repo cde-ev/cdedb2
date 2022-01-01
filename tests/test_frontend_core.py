@@ -221,9 +221,8 @@ class TestCoreFrontend(FrontendTest):
         _check_redirected_profile()
         self.get('/core/persona/8/username/adminchange')
         _check_redirected_profile()
-        # post needs anti-csrf token
-        # self.post('/core/persona/8/activity/change', {'activity': False})
-        # _check_redirected_profile()
+        self.post('/core/persona/8/activity/change', {'activity': False})
+        _check_redirected_profile()
 
     @as_users("emilia", "janis")
     def test_showuser_self(self) -> None:
