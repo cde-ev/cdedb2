@@ -732,8 +732,6 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.create_ballot_form(rs, assembly_id)
         assert data is not None
         new_id = self.assemblyproxy.create_ballot(rs, data)
-        # TODO: Can this return a non-positive value (i.e. fail but not raise an
-        #  Exception)? Should we catch and redirect?
 
         # filter the None value – unset all attachments by selecting None option only
         attachments: Set[int] = set(filter(None, data["linked_attachments"]))
