@@ -325,13 +325,10 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.assertNonPresence("Internationaler Kongress")
 
             # now, sign them up
-            self.logout()
-            self.login('werner')
-            self.traverse({'description': 'Versammlungen'},
-                          {'description': 'Internationaler Kongress'})
-            self._external_signup(user)
-            self.logout()
-            self.login(user)
+            with self.switch_user('werner'):
+                self.traverse({'description': 'Versammlungen'},
+                              {'description': 'Internationaler Kongress'})
+                self._external_signup(user)
             self.traverse({'description': 'Versammlungen'})
 
         self.traverse({'description': 'Internationaler Kongress'})
@@ -1232,13 +1229,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         ]
         with freezegun.freeze_time(base_time) as frozen_time:
             # only presiders can create ballots
-            user = self.user
-            self.logout()
-            self.login("werner")
-            self.traverse("Versammlungen", "Internationaler Kongress")
-            self._create_ballot(bdata, candidates)
-            self.logout()
-            self.login(user)
+            with self.switch_user('werner'):
+                self.traverse("Versammlungen", "Internationaler Kongress")
+                self._create_ballot(bdata, candidates)
 
             # wait for voting to start then get vote form.
             frozen_time.tick(delta=2 * delta)
@@ -1524,18 +1517,15 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
 
     @storage
     def test_provide_secret(self) -> None:
-        self.login("anton")
-        self.logout()
         base_time = now()
         delta = datetime.timedelta(seconds=42)
         with freezegun.freeze_time(base_time,
                                    ignore=['cdedb.filter', 'icu']) as frozen_time:
-            user = USER_DICT["werner"]
-            self.login(user)
+            self.login('werner')
             self.traverse({'description': 'Versammlungen'},
                           {'description': 'Archiv-Sammlung'})
             # werner is no member, so he must signup external
-            secret = self._external_signup(user)
+            secret = self._external_signup('werner')
             # Create new ballot.
             bdata = {
                 'title': 'Maximale Länge der Verfassung',
@@ -1584,23 +1574,17 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             f['ack_delete'].checked = True
             self.submit(f)
 
-            self.logout()
-            self.login("anton")
             # Conclude assembly.
-            self.traverse({'description': "Versammlung"},
-                          {'description': "Archiv-Sammlung"})
-            self.assertTitle("Archiv-Sammlung")
-            f = self.response.forms['concludeassemblyform']
-            f['ack_conclude'].checked = True
-            self.submit(f)
+            with self.switch_user('viktor'):
+                self.traverse({'description': "Versammlung"},
+                              {'description': "Archiv-Sammlung"})
+                self.assertTitle("Archiv-Sammlung")
+                f = self.response.forms['concludeassemblyform']
+                f['ack_conclude'].checked = True
+                self.submit(f)
 
-            self.logout()
-            self.login(user)
             # Own vote should be hidden now.
-            self.traverse({'description': "Versammlung"},
-                          {'description': 'Archiv-Sammlung'},
-                          {'description': 'Abstimmungen'},
-                          {'description': 'Maximale Länge der Verfassung'},
+            self.traverse({'description': 'Maximale Länge der Verfassung'},
                           {'description': 'Ergebnisdetails'})
             s = ("Die Versammlung wurde beendet. Das Abstimmungsverhalten einzelner"
                  " Nutzer ist nicht mehr aus der Datenbank auslesbar.")

@@ -2,6 +2,7 @@
 """General testing utilities for CdEDB2 testsuite"""
 
 import collections.abc
+import contextlib
 import copy
 import datetime
 import decimal
@@ -23,9 +24,9 @@ import tempfile
 import unittest
 import urllib.parse
 from typing import (
-    Any, AnyStr, Callable, ClassVar, Dict, Iterable, List, Mapping, MutableMapping,
-    NamedTuple, Optional, Pattern, Sequence, Set, Tuple, Type, TypeVar, Union, cast,
-    no_type_check,
+    Any, AnyStr, Callable, ClassVar, Dict, Generator, Iterable, List, Mapping,
+    MutableMapping, NamedTuple, Optional, Pattern, Sequence, Set, Tuple, Type, TypeVar,
+    Union, cast, no_type_check,
 )
 
 import PIL.Image
@@ -1008,6 +1009,20 @@ class FrontendTest(BackendTest):
         self.submit(f, check_notification=False, verbose=verbose)
         self.key = ANONYMOUS
         self.user = USER_DICT["anonymous"]
+
+    @contextlib.contextmanager
+    def switch_user(self, new_user: UserIdentifier) -> Generator[None, None, None]:
+        """context manager to temporarily switch users - frontend variant
+
+        This restores the original response after the original user logged in again"""
+        old_user = self.user
+        saved_response = self.response
+        self.logout()
+        self.login(new_user)
+        yield
+        self.logout()
+        self.login(old_user)
+        self.response = saved_response
 
     def admin_view_profile(self, user: UserIdentifier, check: bool = True,
                            verbose: bool = False) -> None:
