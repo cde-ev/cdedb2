@@ -889,7 +889,7 @@ class FrontendTest(BackendTest):
              csrf_token_payload: str = ANTI_CSRF_TOKEN_PAYLOAD, **kwargs: Any) -> None:
         """Directly send a POST-request.
 
-        Note that most of our POST-handlers require a Anti-CSRF token,
+        Note that most of our POST-handlers require an Anti-CSRF token,
         which is forged here by default.
 
         :param params: This is a restriction of self.app.post, but enforces a general
