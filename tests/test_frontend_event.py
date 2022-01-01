@@ -4706,8 +4706,8 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence(new_shortname, div=f"partgroup_{new_id}")
         self.assertPresence(new_shortname[::-1], div=f"partgroup_{new_id}")
 
-        self.traverse("Stats")
-        self.assertPresence(new_shortname[::-1], div="participant_stats")
+        self.traverse("Statistik")
+        self.assertPresence(new_shortname[::-1], div="participant-stats")
 
         # Delete the new part group.
         self.traverse("Veranstaltungsteile", "Veranstaltungsteilgruppen")
