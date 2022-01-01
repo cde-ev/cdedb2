@@ -1122,27 +1122,21 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['addsubscriberform']
         f['subscriber_ids'] = USER_DICT["inga"]["DB-ID"]
         self.submit(f, check_notification=False)
-        self.assertIn("alert alert-danger", self.response.text)
-        self.assertPresence(
-            "Der Nutzer hat aktuell eine Abonnement-Anfrage gestellt.",
-            div="notifications")
+        self.assertNotification(
+            'error', "Der Nutzer hat aktuell eine Abonnement-Anfrage gestellt.")
         # as mod subscriber
         self.traverse({'href': '/ml/mailinglist/4/management/advanced'}, )
         f = self.response.forms['addmodsubscriberform']
         f['modsubscriber_ids'] = USER_DICT["inga"]["DB-ID"]
         self.submit(f, check_notification=False)
-        self.assertIn("alert alert-danger", self.response.text)
-        self.assertPresence(
-            "Der Nutzer hat aktuell eine Abonnement-Anfrage gestellt.",
-            div="notifications")
+        self.assertNotification(
+            'error', "Der Nutzer hat aktuell eine Abonnement-Anfrage gestellt.")
         # as mod unsubscribe
         f = self.response.forms['addmodunsubscriberform']
         f['modunsubscriber_ids'] = USER_DICT["inga"]["DB-ID"]
         self.submit(f, check_notification=False)
-        self.assertIn("alert alert-danger", self.response.text)
-        self.assertPresence(
-            "Der Nutzer hat aktuell eine Abonnement-Anfrage gestellt.",
-            div="notifications")
+        self.assertNotification(
+            'error', "Der Nutzer hat aktuell eine Abonnement-Anfrage gestellt.")
 
         # testing: mod subscribe and unsubscribe
         # add already subscribed user as mod subscribe
@@ -1157,15 +1151,12 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/ml/mailinglist/4/management'}, )
         f = self.response.forms['removesubscriberform1']
         self.submit(f, check_notification=False)
-        self.assertIn("alert alert-danger", self.response.text)
-        self.assertPresence("Der Nutzer ist aktuell fixierter Abonnent.",
-                            div="notifications")
+        self.assertNotification('error', "Der Nutzer ist aktuell fixierter Abonnent.")
         # try to add a mod unsubscribed user
         f = self.response.forms['addsubscriberform']
         f['subscriber_ids'] = USER_DICT["garcia"]["DB-ID"]
         self.submit(f, check_notification=False)
-        self.assertIn("alert alert-danger", self.response.text)
-        self.assertPresence("Der Nutzer ist aktuell blockiert.", div="notifications")
+        self.assertNotification('error', "Der Nutzer ist aktuell blockiert.")
 
     @as_users("berta", "janis")
     def test_moderator_access(self) -> None:
