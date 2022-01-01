@@ -450,7 +450,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.show_assembly(rs, assembly_id)
         blockers = self.assemblyproxy.delete_assembly_blockers(rs, assembly_id)
         if "ballot_is_locked" in blockers:
-            rs.notify("error", n_("Unable to remove active ballot."))
+            rs.notify("error", n_("Assemblies with active ballots cannot be deleted."))
             return self.show_assembly(rs, assembly_id)
 
         # Specify what to cascade

@@ -1599,6 +1599,10 @@ msgstr "Versammlung angelegt."
 msgid "Must be checked."
 msgstr "Muss markiert sein."
 
+#: cdedb/frontend/assembly.py:453
+msgid "Assemblies with active ballots cannot be deleted."
+msgstr "Versammlungen mit aktiven Abstimmungen können nicht gelöscht werden."
+
 #: cdedb/frontend/assembly.py:462
 msgid "May not access attachments for this assembly."
 msgstr "Keine Berechtigung auf die Dateien dieser Versammlung zuzugreifen."

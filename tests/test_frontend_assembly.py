@@ -67,7 +67,7 @@ class AssemblyTestHelpers(FrontendTest):
                 'signup_end': "2222-4-1 00:00:00",
                 'description': "Wir werden alle Häretiker exkommunizieren.",
                 'notes': "Nur ein Aprilscherz",
-                'presider_ids': "DB-23-X",
+                'presider_ids': USER_DICT['werner']['DB-ID'],
             }
         else:
             adata = adata.copy()
@@ -383,11 +383,71 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertNonPresence("22.02.2000, 01:00:00")
         self.assertPresence("(Anmeldung nicht mehr möglich)")
 
-    # Use ferdinand since viktor is not a member and may not signup.
     @storage
-    @as_users("ferdinand")
+    @as_users("viktor")
     def test_create_delete_assembly(self) -> None:
         presider_address = "presider@lists.cde-ev.de"
+        self._create_assembly(delta={'presider_address': presider_address,
+                                     'create_presider_list': True,
+                                     'create_attendee_list': True})
+        self.assertNotification('success',
+                                "Versammlungsleitungs-Mailingliste angelegt.")
+        self.assertNotification('success',
+                                "Versammlungsteilnehmer-Mailingliste angelegt.")
+        self.assertNotification('info',
+                                "Angegebene Versammlungsleitungs-E-Mail-Adresse durch"
+                                " Adresse der neuen Mailingliste ersetzt.")
+
+        # create another assembly to test input validation
+        self.traverse("Versammlungen", "Versammlung anlegen")
+        f = self.response.forms['configureassemblyform']
+        f['title'] = "Drittes CdE-Konzil reloaded"
+        f['description'] = "Weil's so schön war."
+        f['notes'] = "Nicht schon wieder..."
+        f['shortname'] = "konzil3"  # same as before, to test ml address conflict
+        f['create_attendee_list'].checked = True
+        f['create_presider_list'].checked = True
+        self.submit(f, check_notification=False)
+        self.assertValidationError('signup_end',
+                                   "Muss ein valides Datum mit Uhrzeit sein.")
+        f['signup_end'] = "2222-9-1 00:00"
+        self.submit(f, check_notification=False)
+        self.assertValidationError(
+            'presider_ids',
+            "Darf nicht leer sein, damit eine Mailingliste erstellt werden kann")
+        user_archived = "Einige dieser Nutzer existieren nicht oder sind archiviert."
+        user_no_realm = "Einige dieser Nutzer sind keine Versammlungsnutzer."
+        f['presider_ids'] = USER_DICT['hades']['DB-ID']  # archived
+        self.submit(f, check_notification=False)
+        self.assertValidationError('presider_ids', user_archived)
+        self.assertNonPresence(user_no_realm)
+        f['presider_ids'] = USER_DICT['emilia']['DB-ID']  # event user
+        self.submit(f, check_notification=False)
+        self.assertValidationError('presider_ids', user_no_realm)
+        self.assertNonPresence(user_archived)
+        f['presider_ids'] = USER_DICT['werner']['DB-ID']
+        self.submit(f)
+        self.assertNotification(
+            'info',
+            "Mailingliste konzil3@lists.cde-ev.de existiert bereits.")
+        self.assertNotification(
+            'info',
+            "Mailingliste konzil3-leitung@lists.cde-ev.de existiert bereits.")
+        self.assertNotIn('createpresiderlistform', self.response.forms)
+        self.assertNotIn('createattendeelistform', self.response.forms)
+        # log contains links
+        self.traverse("Versammlungs-Übersicht", "Log", "Drittes CdE-Konzil$")
+        self.traverse("Versammlungs-Übersicht", "Log", "Drittes CdE-Konzil reloaded$")
+
+        # delete one assembly
+        f = self.response.forms['deleteassemblyform']
+        self.submit(f, check_notification=False)
+        # TODO: there is no validation error near the checkbox
+        self.assertNotification('error', "Validierung fehlgeschlagen.")
+        f['ack_delete'].checked = True
+        self.submit(f)
+
+        # test deletion of other created assembly wtih some potential blockers
         with open(self.testfile_dir / "form.pdf", 'rb') as datafile:
             attachment = datafile.read()
         bdata = {
@@ -398,29 +458,12 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             'rel_quorum': "0",
             'votes': "",
         }
-
-        self._create_assembly(delta={'create_presider_list': True,
-                                     'presider_address': presider_address})
-        self.assertPresence("Häretiker", div='description')
-        self.assertPresence("Aprilscherz", div='notes')
-        self.assertPresence("Versammlungsleitungs-Mailingliste angelegt.",
-                            div="notifications")
-        self.assertPresence("Versammlungsleitungs-E-Mail-Adresse durch Adresse der"
-                            " neuen Mailingliste ersetzt.", div="notifications")
-        self.assertNotIn('createpresiderlistform', self.response.forms)
-        # Make sure assemblies with mailinglists can be deleted
-        f = self.response.forms['createattendeelistform']
-        self.submit(f)
-        self.assertPresence("Versammlungsteilnehmer-Mailingliste angelegt.",
-                            div="notifications")
-
         # Assemblies with ballots which started voting can not be deleted.
         # Other ballots are ok
-        self.traverse({'description': "Abstimmungen"})
+        self.traverse("Drittes CdE-Konzil", "Abstimmungen")
         self.assertPresence("Es wurden noch keine Abstimmungen angelegt.")
         self._create_ballot(bdata, candidates=None)
         self.assertTitle("Müssen wir wirklich regeln... (Drittes CdE-Konzil)")
-
         # Make sure assemblies with attachments can be deleted
         self.traverse("Dateien", "Datei hinzufügen")
         f = self.response.forms['addattachmentform']
@@ -429,18 +472,26 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f['filename'] = "beschluss.pdf"
         self.submit(f)
         self.assertPresence("Vorläufige Beschlussvorlage")
-
         # Make sure assemblies with attendees can be deleted
-        self.traverse({'description': r"\sÜbersicht"})
-        f = self.response.forms['signupform']
-        self.submit(f)
+        with self.switch_user("ferdinand"):
+            self.traverse("Versammlungen", "Drittes CdE-Konzil")
+            self.submit(self.response.forms['signupform'])
+            self.assertNotification('success', "Angemeldet.")
+        # now delete
+        self.traverse({'href': "/show", 'description': "Übersicht"})
         f = self.response.forms['deleteassemblyform']
         f['ack_delete'].checked = True
         self.submit(f)
         self.assertTitle("Versammlungen")
         self.assertNonPresence("Drittes CdE-Konzil")
+        # log does not contain links anymore
+        self.traverse("Log")
+        self.assertPresence("Drittes CdE-Konzil")
+        self.assertNoLink(content="Drittes CdE-Konzil")
 
-        self._create_assembly(delta={'presider_address': presider_address})
+        # no preiders are needed if no ml was requested
+        self._create_assembly(delta={'presider_address': presider_address,
+                                     'presider_ids': ""})
         self.traverse("Konfiguration")
         f = self.response.forms['configureassemblyform']
         self.assertEqual(f['presider_address'].value, presider_address)
