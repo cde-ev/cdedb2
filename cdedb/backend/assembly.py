@@ -1868,6 +1868,29 @@ class AssemblyBackend(AbstractBackend):
             return ret
 
     @access("assembly")
+    def set_ballot_attachments(self, rs: RequestState, ballot_id: int,
+                               attachment_ids: Collection[int]) -> DefaultReturnCode:
+        """Set the attachments linked to an assembly.
+
+        This helper takes care about which attachment links are present, to add or
+        to remove compared to the attachment links this ballot previously had.
+        """
+        ballot_id = affirm(vtypes.ID, ballot_id)
+        attachment_ids = affirm_set(vtypes.ID, attachment_ids)
+        with Atomizer(rs):
+            ret = 1
+            current_attachments = self.list_attachments(rs, ballot_id=ballot_id)
+            new_attachments = attachment_ids - current_attachments
+            for attachment_id in new_attachments:
+                ret *= self.add_attachment_ballot_link(
+                    rs, attachment_id=attachment_id, ballot_id=ballot_id)
+            deleted_attachments = current_attachments - attachment_ids
+            for attachment_id in deleted_attachments:
+                ret *= self.remove_attachment_ballot_link(
+                    rs, attachment_id=attachment_id, ballot_id=ballot_id)
+            return ret
+
+    @access("assembly")
     def are_attachment_versions_creatable(self, rs: RequestState,
                                           attachment_ids: Collection[int]
                                           ) -> Dict[int, bool]:

@@ -523,10 +523,11 @@ class TestAssemblyBackend(BackendTest):
 
         attachment_id2 = self.assembly.add_attachment(self.key, attachment_data, b'123')
         self.assertTrue(
-            self.assembly.add_attachment_ballot_link(self.key, attachment_id2, new_id))
+            self.assembly.set_ballot_attachments(
+                self.key, new_id, [attachment_id, attachment_id2]))
         self.assertTrue(
-            self.assembly.add_attachment_ballot_link(
-                self.key, attachment_id2, old_ballot_id))
+            self.assembly.set_ballot_attachments(
+                self.key, old_ballot_id, [attachment_id, attachment_id2]))
         log.append({
             "code": const.AssemblyLogCodes.attachment_added,
             "assembly_id": assembly_id,
@@ -553,6 +554,52 @@ class TestAssemblyBackend(BackendTest):
             {attachment_id, attachment_id2},
             self.assembly.list_attachments(self.key, ballot_id=old_ballot_id))
 
+        attachment_id3 = self.assembly.add_attachment(self.key, attachment_data, b'123')
+        self.assertTrue(
+            self.assembly.set_ballot_attachments(
+                self.key, new_id, {attachment_id2, attachment_id3}))
+        self.assertTrue(
+            self.assembly.set_ballot_attachments(
+                self.key, old_ballot_id, {attachment_id2, attachment_id3}))
+        log.append({
+            "code": const.AssemblyLogCodes.attachment_added,
+            "assembly_id": assembly_id,
+            "change_note": attachment_data['title'],
+        })
+        log.append({
+            "code": const.AssemblyLogCodes.attachment_ballot_link_created,
+            "assembly_id": assembly_id,
+            "change_note": f"{attachment_data['title']} ({data['title']})",
+        })
+        log.append({
+            "code": const.AssemblyLogCodes.attachment_ballot_link_deleted,
+            "assembly_id": assembly_id,
+            "change_note": f"{attachment_data['title']} ({data['title']})",
+        })
+        log.append({
+            "code": const.AssemblyLogCodes.attachment_ballot_link_created,
+            "assembly_id": assembly_id,
+            "change_note": f"{attachment_data['title']} ({old_ballot_data['title']})",
+        })
+        log.append({
+            "code": const.AssemblyLogCodes.attachment_ballot_link_deleted,
+            "assembly_id": assembly_id,
+            "change_note": f"{attachment_data['title']} ({old_ballot_data['title']})",
+        })
+
+        self.assertEqual(
+            [],
+            self.assembly.get_attachment(self.key, attachment_id)['ballot_ids'])
+        self.assertEqual(
+            [old_ballot_id, new_id],
+            self.assembly.get_attachment(self.key, attachment_id3)['ballot_ids'])
+        self.assertEqual(
+            {attachment_id2, attachment_id3},
+            self.assembly.list_attachments(self.key, ballot_id=new_id))
+        self.assertEqual(
+            {attachment_id2, attachment_id3},
+            self.assembly.list_attachments(self.key, ballot_id=old_ballot_id))
+
         cascade = {"attachments", "candidates", "voters"}
         self.assertEqual(
             cascade,
@@ -570,7 +617,10 @@ class TestAssemblyBackend(BackendTest):
         })
         self.assertEqual(
             [new_id],
-            self.assembly.get_attachment(self.key, attachment_id)['ballot_ids'])
+            self.assembly.get_attachment(self.key, attachment_id2)['ballot_ids'])
+        self.assertEqual(
+            [new_id],
+            self.assembly.get_attachment(self.key, attachment_id3)['ballot_ids'])
         expectation = {
             1: 'Antwort auf die letzte aller Fragen',
             3: 'Bester Hof',
