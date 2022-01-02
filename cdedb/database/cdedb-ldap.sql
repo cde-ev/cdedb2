@@ -171,14 +171,28 @@ CREATE FUNCTION ldap.make_assembly_presiders_entity_id(assembly_id INT)
 $$ SELECT CAST (8 * 2^32 + $1 AS BIGINT); $$ ;
 
 ---
---- create dn
---- Some dn's are used at multiple places. To ensure consistency, we define a
---- function for them here. Other dn's are specified in 'ldap_entries'.
+--- create cn and dn
+--- Some dns are used at multiple places. To ensure consistency, we define a
+--- function for them here. Other dns are specified in 'ldap_entries'.
 ---
 
 CREATE FUNCTION ldap.make_persona_dn(persona_id INT)
   RETURNS varchar LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
 $$ SELECT 'uid=' || $1 || ',ou=users,dc=cde-ev,dc=de'; $$ ;
+
+-- create the owner address of a given mailinglist
+-- since we save the domain of a mailinglist as int and map them in python, this is a bit hacky
+CREATE FUNCTION ldap.make_ml_moderators_cn(address VARCHAR)
+  RETURNS varchar LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+$$ SELECT REPLACE($1, '@', '-owner@'); $$ ;
+
+CREATE FUNCTION ldap.make_event_orgas_cn(event_id INT)
+  RETURNS varchar LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+$$ SELECT 'orgas-' || $1; $$ ;
+
+CREATE FUNCTION ldap.make_assembly_presider_cn(assembly_id INT)
+  RETURNS varchar LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+$$ SELECT 'presiders-' || $1; $$ ;
 
 CREATE FUNCTION ldap.make_persona_display_name(display_name VARCHAR, given_names VARCHAR, family_name VARCHAR)
   RETURNS varchar LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
@@ -292,15 +306,15 @@ CREATE VIEW ldap.groups (id, cn, description) AS
            ldap.make_ml_moderators_entity_id(id),
            -- This seems to be allowed, see
            -- https://datatracker.ietf.org/doc/html/rfc4512#section-2.3.2
-           address AS cn,
-           title || ' <' || address || '>' AS description
+           ldap.make_ml_moderators_cn(address) AS cn,
+           title || ' <' || ldap.make_ml_moderators_cn(address) || '>' AS description
         FROM ml.mailinglists
     )
     -- event orgas
     UNION (
         SELECT
            ldap.make_event_orgas_entity_id(id),
-           CAST (id as VARCHAR) AS cn,
+           ldap.make_event_orgas_cn(id) AS cn,
            title || ' (' || shortname || ')' AS description
         FROM event.events
     )
@@ -308,14 +322,14 @@ CREATE VIEW ldap.groups (id, cn, description) AS
     UNION (
         SELECT
            ldap.make_assembly_presiders_entity_id(id),
-           CAST (id as VARCHAR) AS cn,
+           ldap.make_assembly_presider_cn(id) AS cn,
            title || ' (' || shortname || ')' AS description
         FROM assembly.assemblies
     )
 ;
 
 -- A view containing all members of all ldap.groups. Since each group can have
--- mulitple members, we need an extra query view to track them.
+-- multiple members, we need an extra query view to track them.
 -- This is also honored in 'ldap_attr_mapping'.
 CREATE VIEW ldap.group_members (group_id, group_dn, member_id, member_dn) AS
     -- static groups
@@ -477,7 +491,7 @@ CREATE VIEW ldap.group_members (group_id, group_dn, member_id, member_dn) AS
     UNION (
         SELECT
            ldap.make_ml_moderators_entity_id(mailinglist_id) AS group_id,
-           'cn=' || address || ',ou=ml-moderators,ou=groups,dc=cde-ev,dc=de' AS group_dn,
+           'cn=' || ldap.make_ml_moderators_cn(address) || ',ou=ml-moderators,ou=groups,dc=cde-ev,dc=de' AS group_dn,
            persona_id AS member_id,
            ldap.make_persona_dn(persona_id) AS member_dn
         FROM ml.moderators, ml.mailinglists
@@ -487,7 +501,7 @@ CREATE VIEW ldap.group_members (group_id, group_dn, member_id, member_dn) AS
     UNION (
         SELECT
            ldap.make_event_orgas_entity_id(event_id) AS group_id,
-           'cn=' || event_id || ',ou=event-orgas,ou=groups,dc=cde-ev,dc=de' AS group_dn,
+           'cn=' || ldap.make_event_orgas_cn(event_id) || ',ou=event-orgas,ou=groups,dc=cde-ev,dc=de' AS group_dn,
            persona_id AS member_id,
            ldap.make_persona_dn(persona_id) AS member_dn
         FROM event.orgas
@@ -496,7 +510,7 @@ CREATE VIEW ldap.group_members (group_id, group_dn, member_id, member_dn) AS
     UNION (
         SELECT
            ldap.make_assembly_presiders_entity_id(assembly_id) AS group_id,
-           'cn=' || assembly_id || ',ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de' AS group_dn,
+           'cn=' || ldap.make_assembly_presider_cn(assembly_id) || ',ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de' AS group_dn,
            persona_id AS member_id,
            ldap.make_persona_dn(persona_id) AS member_dn
         FROM assembly.presiders
@@ -651,7 +665,7 @@ CREATE VIEW ldap_entries (id, dn, oc_map_id, parent, keyval) AS
         UNION (
             SELECT
                ldap.make_ml_moderators_entity_id(id),
-               'cn=' || address || ',ou=ml-moderators,ou=groups,dc=cde-ev,dc=de' AS dn,
+               'cn=' || ldap.make_ml_moderators_cn(address) || ',ou=ml-moderators,ou=groups,dc=cde-ev,dc=de' AS dn,
                ldap.oc_groupOfUniqueNames_id() AS oc_map_id,
                ldap.make_organization_entity_id(ldap.node_ml_moderators_group_id()) AS parent,
                ldap.make_ml_moderators_entity_id(id) as keyval
@@ -661,7 +675,7 @@ CREATE VIEW ldap_entries (id, dn, oc_map_id, parent, keyval) AS
         UNION (
             SELECT
                ldap.make_event_orgas_entity_id(id),
-               'cn=' || id || ',ou=event-orgas,ou=groups,dc=cde-ev,dc=de' AS dn,
+               'cn=' || ldap.make_event_orgas_cn(id) || ',ou=event-orgas,ou=groups,dc=cde-ev,dc=de' AS dn,
                ldap.oc_groupOfUniqueNames_id() AS oc_map_id,
                ldap.make_organization_entity_id(ldap.node_event_orgas_group_id()) AS parent,
                ldap.make_event_orgas_entity_id(id) as keyval
@@ -671,7 +685,7 @@ CREATE VIEW ldap_entries (id, dn, oc_map_id, parent, keyval) AS
         UNION (
             SELECT
                ldap.make_assembly_presiders_entity_id(id),
-               'cn=' || id || ',ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de' AS dn,
+               'cn=' || ldap.make_assembly_presider_cn(id) || ',ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de' AS dn,
                ldap.oc_groupOfUniqueNames_id() AS oc_map_id,
                ldap.make_organization_entity_id(ldap.node_assembly_presiders_group_id()) AS parent,
                ldap.make_assembly_presiders_entity_id(id) as keyval
