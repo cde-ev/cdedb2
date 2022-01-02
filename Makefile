@@ -116,6 +116,10 @@ i18n-compile:
 
 sample-data:
 	cp -f related/auto-build/files/stage3/localconfig.py cdedb/localconfig.py
+ifeq ($(wildcard /CONTAINER),/CONTAINER)
+	echo 'DB_HOST = "cdb"' >> cdedb/localconfig.py
+	echo 'DB_PORT = 5432' >> cdedb/localconfig.py
+endif
 	$(MAKE) storage > /dev/null
 	$(MAKE) sql > /dev/null
 
