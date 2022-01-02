@@ -57,7 +57,7 @@ class SessionBackend:
         # since the competing write will be pretty similar).
         self.connpool = connection_pool_factory(
             self.conf["CDB_DATABASE_NAME"], ("cdb_anonymous", "cdb_persona"),
-            secrets, self.conf["DB_PORT"],
+            secrets, self.conf["DB_HOST"], self.conf["DB_PORT"],
             isolation_level=psycopg2.extensions.ISOLATION_LEVEL_READ_COMMITTED)
 
     def lookupsession(self, sessionkey: Optional[str], ip: str) -> User:
