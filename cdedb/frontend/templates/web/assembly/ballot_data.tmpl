@@ -8,9 +8,11 @@
 {% set jshint='weak' %}
 {% block title %}
     {% if ambience['ballot'] %}
-        {{ gettext("Edit %(ballot)s")|format(ballot=ambience['ballot']['title']) }}
+        {% trans ballot=ambience['ballot']['title'] %}
+            Edit {{ ballot }}
+        {% endtrans %}
     {% else %}
-        {{ gettext("Create Ballot") }}
+        {% trans %}Create Ballot{% endtrans %}
     {% endif %}
     ({{ ambience['assembly']['title'] }})
 {% endblock %}
