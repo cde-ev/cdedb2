@@ -732,30 +732,20 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.create_ballot_form(rs, assembly_id)
         assert data is not None
         new_id = self.assemblyproxy.create_ballot(rs, data)
-
-        # filter the None value – unset all attachments by selecting None option only
-        attachments: Set[int] = set(filter(None, data["linked_attachments"]))
-        code = self._set_attachments(rs, new_id, attachments)
-
+        code = self._set_ballot_attachments(rs, new_id, data["linked_attachments"])
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "assembly/show_ballot", {
-            'ballot_id': new_id})
+        return self.redirect(rs, "assembly/show_ballot", {'ballot_id': new_id})
 
-    def _set_attachments(self, rs: RequestState, ballot_id: int,
-                         wished_attachments: Set[int]) -> DefaultReturnCode:
-        """Helper to set the attachments linked to an assembly."""
-        code = 1
-        current_attachments = set(
-            self.assemblyproxy.list_attachments(rs, ballot_id=ballot_id))
-        new_attachments = wished_attachments - current_attachments
-        for attachment_id in new_attachments:
-            code *= self.assemblyproxy.add_attachment_ballot_link(
-                rs, attachment_id=attachment_id, ballot_id=ballot_id)
-        deleted_attachments = current_attachments - wished_attachments
-        for attachment_id in deleted_attachments:
-            code *= self.assemblyproxy.remove_attachment_ballot_link(
-                rs, attachment_id=attachment_id, ballot_id=ballot_id)
-        return code
+    def _set_ballot_attachments(self, rs: RequestState, ballot_id: int,
+                                attachment_ids: Set[Optional[int]]
+                                ) -> DefaultReturnCode:
+        """Wrapper around `AssemblyBackend.set_ballot_attachments` to filter None.
+
+        We filter None from the id list, so that users are able to unset all attachments
+        by selecting only the None option in the form.
+        """
+        attachment_ids = set(filter(None, attachment_ids))
+        return self.assemblyproxy.set_ballot_attachments(rs, ballot_id, attachment_ids)
 
     @access("assembly")
     def get_attachment(self, rs: RequestState, assembly_id: int,
@@ -1388,10 +1378,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.change_ballot_form(rs, assembly_id, ballot_id)
         assert data is not None
 
-        # filter the None value – unset all attachments by selecting None option only
-        attachments: Set[int] = set(filter(None, data["linked_attachments"]))
-        code = self._set_attachments(rs, ballot_id, attachments)
-
+        code = self._set_ballot_attachments(rs, ballot_id, data['linked_attachments'])
         code *= self.assemblyproxy.set_ballot(rs, data)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/show_ballot")
