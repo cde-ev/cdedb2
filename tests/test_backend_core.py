@@ -1267,14 +1267,9 @@ class TestCoreBackend(BackendTest):
                     generation = self.core.changelog_get_generation(key, u["id"])
                     self.core.set_persona(
                         key, {"id": u["id"], "notes": "test"},
-                        change_note="Land auf Ländercode umgestellt.",
+                        change_note="Diese Änderung wurde maschinell erstellt und ist"
+                                    " auch ohne Unterschrift gültig.",
                         automated_change=True)
-                    self.assertEqual(
-                        generation + 1,
-                        self.core.changelog_get_generation(key, u["id"]))
-                    execsql(f"UPDATE core.changelog SET ctime = '2021-03-20T09:42:34'"
-                            f" WHERE persona_id = {u['id']}"
-                            f" AND generation = {generation + 1}")
                     self.assertTrue(
                         self.core.is_persona_automatically_archivable(key, u["id"]))
                     self.assertIsNone(
