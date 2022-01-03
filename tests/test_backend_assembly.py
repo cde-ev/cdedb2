@@ -483,32 +483,38 @@ class TestAssemblyBackend(BackendTest):
         self.assertEqual(data, self.assembly.get_ballot(self.key, new_id))
         old_ballot_id = 2
         old_ballot_data = self.get_sample_datum("assembly.ballots", old_ballot_id)
-        attachment_data = {
+        # differentiate attachments by title to test stable sorting
+        attachment_data = [{
             "assembly_id": assembly_id,
-            "title": "Rechenschaftsbericht",
+            "title": "Rechenschaftsbericht" + str(n),
             "authors": "Farin",
             "filename": "rechen.pdf",
-        }
-        attachment_id = self.assembly.add_attachment(self.key, attachment_data, b'123')
+        } for n in range(4)]
+
+        # first, we'll modify both ballots symmetrically
+
+        # simply add one attachment and link it
+        attachment_id = self.assembly.add_attachment(
+            self.key, attachment_data[0], b'123')
+        log.append({
+            "code": const.AssemblyLogCodes.attachment_added,
+            "assembly_id": assembly_id,
+            "change_note": attachment_data[0]['title'],
+        })
         self.assertTrue(
             self.assembly.add_attachment_ballot_link(self.key, attachment_id, new_id))
         self.assertTrue(
             self.assembly.add_attachment_ballot_link(
                 self.key, attachment_id, old_ballot_id))
         log.append({
-            "code": const.AssemblyLogCodes.attachment_added,
+            "code": const.AssemblyLogCodes.attachment_ballot_link_created,
             "assembly_id": assembly_id,
-            "change_note": attachment_data['title'],
+            "change_note": f"{attachment_data[0]['title']} ({data['title']})",
         })
         log.append({
             "code": const.AssemblyLogCodes.attachment_ballot_link_created,
             "assembly_id": assembly_id,
-            "change_note": f"{attachment_data['title']} ({data['title']})",
-        })
-        log.append({
-            "code": const.AssemblyLogCodes.attachment_ballot_link_created,
-            "assembly_id": assembly_id,
-            "change_note": f"{attachment_data['title']} ({old_ballot_data['title']})",
+            "change_note": f"{attachment_data[0]['title']} ({old_ballot_data['title']})"
         })
 
         self.assertEqual(
@@ -521,8 +527,21 @@ class TestAssemblyBackend(BackendTest):
             {attachment_id},
             self.assembly.list_attachments(self.key, ballot_id=old_ballot_id))
 
-        attachment_id1 = self.assembly.add_attachment(self.key, attachment_data, b'123')
-        attachment_id2 = self.assembly.add_attachment(self.key, attachment_data, b'123')
+        # add and link two more attachments
+        attachment_id1 = self.assembly.add_attachment(
+            self.key, attachment_data[1], b'123')
+        attachment_id2 = self.assembly.add_attachment(
+            self.key, attachment_data[2], b'123')
+        log.append({
+            "code": const.AssemblyLogCodes.attachment_added,
+            "assembly_id": assembly_id,
+            "change_note": attachment_data[1]['title'],
+        })
+        log.append({
+            "code": const.AssemblyLogCodes.attachment_added,
+            "assembly_id": assembly_id,
+            "change_note": attachment_data[2]['title'],
+        })
         self.assertTrue(
             self.assembly.set_ballot_attachments(
                 self.key, new_id, [attachment_id, attachment_id2, attachment_id1]))
@@ -530,35 +549,26 @@ class TestAssemblyBackend(BackendTest):
             self.assembly.set_ballot_attachments(
                 self.key, old_ballot_id,
                 [attachment_id, attachment_id2, attachment_id1]))
+        # Two of three links are new, they were added ordered by their attachment ids.
         log.append({
-            "code": const.AssemblyLogCodes.attachment_added,
+            "code": const.AssemblyLogCodes.attachment_ballot_link_created,
             "assembly_id": assembly_id,
-            "change_note": attachment_data['title'],
-        })
-        log.append({
-            "code": const.AssemblyLogCodes.attachment_added,
-            "assembly_id": assembly_id,
-            "change_note": attachment_data['title'],
+            "change_note": f"{attachment_data[1]['title']} ({data['title']})",
         })
         log.append({
             "code": const.AssemblyLogCodes.attachment_ballot_link_created,
             "assembly_id": assembly_id,
-            "change_note": f"{attachment_data['title']} ({data['title']})",
+            "change_note": f"{attachment_data[2]['title']} ({data['title']})",
         })
         log.append({
             "code": const.AssemblyLogCodes.attachment_ballot_link_created,
             "assembly_id": assembly_id,
-            "change_note": f"{attachment_data['title']} ({data['title']})",
+            "change_note": f"{attachment_data[1]['title']} ({old_ballot_data['title']})"
         })
         log.append({
             "code": const.AssemblyLogCodes.attachment_ballot_link_created,
             "assembly_id": assembly_id,
-            "change_note": f"{attachment_data['title']} ({old_ballot_data['title']})",
-        })
-        log.append({
-            "code": const.AssemblyLogCodes.attachment_ballot_link_created,
-            "assembly_id": assembly_id,
-            "change_note": f"{attachment_data['title']} ({old_ballot_data['title']})",
+            "change_note": f"{attachment_data[2]['title']} ({old_ballot_data['title']})"
         })
 
         self.assertEqual(
@@ -571,47 +581,50 @@ class TestAssemblyBackend(BackendTest):
             {attachment_id, attachment_id1, attachment_id2},
             self.assembly.list_attachments(self.key, ballot_id=old_ballot_id))
 
-        attachment_id3 = self.assembly.add_attachment(self.key, attachment_data, b'123')
+        # add and link another attachment, unlink two attachments
+        attachment_id3 = self.assembly.add_attachment(
+            self.key, attachment_data[3], b'123')
+        log.append({
+            "code": const.AssemblyLogCodes.attachment_added,
+            "assembly_id": assembly_id,
+            "change_note": attachment_data[3]['title'],
+        })
         self.assertTrue(
             self.assembly.set_ballot_attachments(
                 self.key, new_id, {attachment_id1, attachment_id3}))
         self.assertTrue(
             self.assembly.set_ballot_attachments(
                 self.key, old_ballot_id, {attachment_id1, attachment_id3}))
+        # link removal also sorted by attachment_id
         log.append({
-            "code": const.AssemblyLogCodes.attachment_added,
+            "code": const.AssemblyLogCodes.attachment_ballot_link_created,
             "assembly_id": assembly_id,
-            "change_note": attachment_data['title'],
+            "change_note": f"{attachment_data[3]['title']} ({data['title']})",
+        })
+        log.append({
+            "code": const.AssemblyLogCodes.attachment_ballot_link_deleted,
+            "assembly_id": assembly_id,
+            "change_note": f"{attachment_data[0]['title']} ({data['title']})",
+        })
+        log.append({
+            "code": const.AssemblyLogCodes.attachment_ballot_link_deleted,
+            "assembly_id": assembly_id,
+            "change_note": f"{attachment_data[2]['title']} ({data['title']})",
         })
         log.append({
             "code": const.AssemblyLogCodes.attachment_ballot_link_created,
             "assembly_id": assembly_id,
-            "change_note": f"{attachment_data['title']} ({data['title']})",
+            "change_note": f"{attachment_data[3]['title']} ({old_ballot_data['title']})"
         })
         log.append({
             "code": const.AssemblyLogCodes.attachment_ballot_link_deleted,
             "assembly_id": assembly_id,
-            "change_note": f"{attachment_data['title']} ({data['title']})",
+            "change_note": f"{attachment_data[0]['title']} ({old_ballot_data['title']})"
         })
         log.append({
             "code": const.AssemblyLogCodes.attachment_ballot_link_deleted,
             "assembly_id": assembly_id,
-            "change_note": f"{attachment_data['title']} ({data['title']})",
-        })
-        log.append({
-            "code": const.AssemblyLogCodes.attachment_ballot_link_created,
-            "assembly_id": assembly_id,
-            "change_note": f"{attachment_data['title']} ({old_ballot_data['title']})",
-        })
-        log.append({
-            "code": const.AssemblyLogCodes.attachment_ballot_link_deleted,
-            "assembly_id": assembly_id,
-            "change_note": f"{attachment_data['title']} ({old_ballot_data['title']})",
-        })
-        log.append({
-            "code": const.AssemblyLogCodes.attachment_ballot_link_deleted,
-            "assembly_id": assembly_id,
-            "change_note": f"{attachment_data['title']} ({old_ballot_data['title']})",
+            "change_note": f"{attachment_data[2]['title']} ({old_ballot_data['title']})"
         })
 
         self.assertEqual(
@@ -635,6 +648,7 @@ class TestAssemblyBackend(BackendTest):
             cascade,
             self.assembly.delete_ballot_blockers(self.key, old_ballot_id).keys())
 
+        # now the symmetry ends
         self.assertTrue(
             self.assembly.delete_ballot(self.key, old_ballot_id, cascade=cascade))
         log.append({
