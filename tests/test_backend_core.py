@@ -16,8 +16,7 @@ from cdedb.common import (
 )
 from cdedb.validation import PERSONA_CDE_CREATION
 from tests.common import (
-    ANONYMOUS, USER_DICT, BackendTest, as_users, create_mock_image, execsql, prepsql,
-    storage,
+    ANONYMOUS, USER_DICT, BackendTest, as_users, create_mock_image, prepsql, storage,
 )
 
 PERSONA_TEMPLATE = {
@@ -1264,7 +1263,6 @@ class TestCoreBackend(BackendTest):
                 if u["id"] == 18:
                     self.assertTrue(res)
                     key = self.key
-                    generation = self.core.changelog_get_generation(key, u["id"])
                     self.core.set_persona(
                         key, {"id": u["id"], "notes": "test"},
                         change_note="Diese Änderung wurde maschinell erstellt und ist"
