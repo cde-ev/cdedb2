@@ -1881,11 +1881,11 @@ class AssemblyBackend(AbstractBackend):
             ret = 1
             current_attachments = self.list_attachments(rs, ballot_id=ballot_id)
             new_attachments = attachment_ids - current_attachments
-            for attachment_id in new_attachments:
+            for attachment_id in xsorted(new_attachments):
                 ret *= self.add_attachment_ballot_link(
                     rs, attachment_id=attachment_id, ballot_id=ballot_id)
             deleted_attachments = current_attachments - attachment_ids
-            for attachment_id in deleted_attachments:
+            for attachment_id in xsorted(deleted_attachments):
                 ret *= self.remove_attachment_ballot_link(
                     rs, attachment_id=attachment_id, ballot_id=ballot_id)
             return ret
