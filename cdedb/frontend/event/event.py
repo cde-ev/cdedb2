@@ -29,7 +29,7 @@ from cdedb.frontend.common import (
     event_guard, inspect_validation as inspect, process_dynamic_input,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
-from cdedb.query import Query, QueryOperators, QueryScope
+from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.validation import (
     EVENT_EXPOSED_FIELDS, EVENT_PART_COMMON_FIELDS,
     EVENT_PART_CREATION_MANDATORY_FIELDS,
@@ -864,10 +864,10 @@ class EventEventMixin(EventBaseFrontend):
             rs.notify("warning", n_("Active characters found in search."))
             return self.show_event(rs, event_id)
 
-        search = [("username,family_name,given_names,display_name",
-                   QueryOperators.match, t) for t in terms]
+        key = "username,family_name,given_names,display_name"
+        search = [(key, QueryOperators.match, t) for t in terms]
         spec = QueryScope.quick_registration.get_spec()
-        spec["username,family_name,given_names,display_name"] = "str"
+        spec[key] = QuerySpecEntry("str", "")
         query = Query(
             QueryScope.quick_registration, spec,
             ("registrations.id", "username", "family_name",

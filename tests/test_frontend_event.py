@@ -584,7 +584,6 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("Let‘s have a party!")
         self.assertNonPresence("Kursliste", div="sidebar")
         self.get('/event/event/2/course/list')
-        self.follow()
         self.assertPresence("Die Kursliste ist noch nicht öffentlich",
                             div='notifications')
 
@@ -906,28 +905,20 @@ etc;anything else""", f['entries_2'].value)
     def test_event_fields_unique_name(self) -> None:
         self.get("/event/event/1/field/summary")
         f = self.response.forms['fieldsummaryform']
-        f['delete_1'].checked = True
         f['create_-1'].checked = True
-        f['field_name_-1'] = f['field_name_1'].value
+        f['field_name_-1'] = f['field_name_8'].value
         f['association_-1'] = const.FieldAssociations.registration
         f['kind_-1'] = const.FieldDatatypes.str
         self.submit(f, check_notification=False)
         self.assertValidationError('field_name_-1', "Feldname nicht eindeutig.")
+        self.assertValidationError('field_name_8', "Feldname nicht eindeutig.")
         f = self.response.forms['fieldsummaryform']
         self.assertIn('field_name_1', f.fields)
         self.assertNotIn('field_name_9', f.fields)
 
-        f = self.response.forms['fieldsummaryform']
-        # If the form would be valid in the first turn, we would need the
-        # following (hacky) code to add the fields, which are normally added by
-        # Javascript.
-        # for field in (webtest.forms.Checkbox(f, 'input', 'create_-2', 100,
-        #                                      value='True'),
-        #               webtest.forms.Text(f, 'input', 'field_name_-2', 101),
-        #               webtest.forms.Text(f, 'input', 'association_-2', 102),
-        #               webtest.forms.Text(f, 'input', 'kind_-2', 103)):
-        #     f.fields.setdefault(field.name, []).append(field)
-        #     f.field_order.append((field.name, field))
+        # If we delete the old field first, this works.
+        f['delete_8'] = True
+        self.submit(f)
 
         f['create_-1'].checked = True
         f['field_name_-1'] = "food_stuff"
@@ -1361,7 +1352,6 @@ etc;anything else""", f['entries_2'].value)
         # check participant info page for unregistered users
         participant_info_url = '/event/event/1/notes'
         self.get(participant_info_url)
-        self.follow()
         self.assertTitle("Große Testakademie 2222")
         self.assertPresence("Kein Teilnehmer der Veranstaltung.", div='notifications')
 
@@ -1463,7 +1453,6 @@ etc;anything else""", f['entries_2'].value)
         with self.assertRaises(IndexError):
             self.traverse({'href': participant_info_url})
         self.get(participant_info_url)
-        self.follow()
         self.assertTitle("Große Testakademie 2222")
         self.assertPresence("Kein Teilnehmer der Veranstaltung", div='notifications')
 
@@ -1926,7 +1915,6 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'})
         self.get('/event/event/1/registration/list')
-        self.follow()
         self.assertTitle("Große Testakademie 2222")
         self.assertPresence("Fehler! Die Teilnehmerliste ist noch nicht "
                             "veröffentlicht.", div='notifications')
@@ -3162,7 +3150,6 @@ etc;anything else""", f['entries_2'].value)
     def test_invalid_course_choices(self) -> None:
         # Check there is no error for without courses
         self.get('/event/event/2/course/choices')
-        self.follow()
         self.basic_validate()
         self.assertTitle("Kurse verwalten (CdE-Party 2050)")
         self.assertPresence("sind nur in Veranstaltungen mit Kursschienen möglich.",
@@ -3498,8 +3485,8 @@ etc;anything else""", f['entries_2'].value)
                                     for row in result))
         self.assertIn(const.RegistrationPartStati.cancelled.name,
                       tuple(row['part2.status'] for row in result))
-        self.response = save.click(href='/event/event/1/download/csv_courses')
 
+        self.response = save.click(href='/event/event/1/download/csv_courses')
         result = list(csv.DictReader(self.response.text.split('\n'),
                                      dialect=CustomCSVDialect))
         self.assertIn('ToFi & Co', tuple(row['course.instructors'] for row in result))
@@ -3508,8 +3495,8 @@ etc;anything else""", f['entries_2'].value)
             and row['track2.takes_place'] == 'False' for row in result))
         self.assertIn('Seminarraum 42', tuple(row['course_fields.xfield_room']
                                               for row in result))
-        self.response = save.click(href='/event/event/1/download/csv_lodgements')
 
+        self.response = save.click(href='/event/event/1/download/csv_lodgements')
         result = list(csv.DictReader(self.response.text.split('\n'),
                                      dialect=CustomCSVDialect))
         self.assertIn(
@@ -4258,7 +4245,6 @@ etc;anything else""", f['entries_2'].value)
         self.traverse("Meine Anmeldung")
         self.assertNonPresence("Bearbeiten")
         self.get("/event/event/1/registration/amend")
-        self.follow()
         self.assertPresence("Veranstaltung ist bereits archiviert.",
                             div="notifications")
 

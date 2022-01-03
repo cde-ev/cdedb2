@@ -59,6 +59,7 @@ import werkzeug.exceptions
 import werkzeug.utils
 import werkzeug.wrappers
 
+import cdedb.database.constants as const
 import cdedb.query as query_mod
 import cdedb.validation as validate
 import cdedb.validationtypes as vtypes
@@ -84,7 +85,9 @@ from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.devsamples import HELD_MESSAGE_SAMPLE
 from cdedb.enums import ENUMS_DICT
-from cdedb.filter import JINJA_FILTERS, cdedbid_filter, safe_filter, sanitize_None
+from cdedb.filter import (
+    JINJA_FILTERS, cdedbid_filter, enum_entries_filter, safe_filter, sanitize_None,
+)
 from cdedb.query import Query
 
 _LOGGER = logging.getLogger(__name__)
@@ -119,11 +122,11 @@ class BaseApp(metaclass=abc.ABCMeta):
         secrets = SecretsConfig(configpath)
         # initialize logging
         if hasattr(self, 'realm') and self.realm:
-            logger_name = "cdedb.frontend.{}".format(self.realm)
-            logger_file = self.conf[f"{self.realm.upper()}_FRONTEND_LOG"]
+            logger_name = f"cdedb.frontend.{self.realm}"
+            logger_file = self.conf["LOG_DIR"] / f"cdedb-frontend-{self.realm}.log"
         else:
             logger_name = "cdedb.frontend"
-            logger_file = self.conf["FRONTEND_LOG"]
+            logger_file = self.conf["LOG_DIR"] / "cdedb-frontend.log"
         make_root_logger(
             logger_name, logger_file, self.conf["LOG_LEVEL"],
             syslog_level=self.conf["SYSLOG_LEVEL"],
@@ -267,8 +270,7 @@ PeriodicMethod = Callable[[Any, RequestState, CdEDBObject], CdEDBObject]
 class PeriodicJob(Protocol):
     cron: CdEDBObject
 
-    def __call__(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject:
-        ...
+    def __call__(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject: ...
 
 
 def periodic(name: str, period: int = 1
@@ -612,25 +614,35 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         response.headers.add('X-Generation-Time', str(now() - rs.begin))
         return response
 
-    def send_query_download(self, rs: RequestState,
-                            result: Collection[CdEDBObject], fields: List[str],
-                            kind: str, filename: str,
-                            substitutions: Mapping[
-                                str, Mapping[Any, Any]] = None
-                            ) -> Response:
+    def send_query_download(self, rs: RequestState, result: Collection[CdEDBObject],
+                            query: Query, kind: str, filename: str) -> Response:
         """Helper to send download of query result.
 
-        :param fields: List of fields the output should have. Commaseparated
-            fields will be split up.
         :param kind: Can be either `'csv'` or `'json'`.
         :param filename: The extension will be added automatically depending on
             the kind specified.
         """
-        if not fields:
-            raise ValueError(n_("Cannot download query result without fields"
-                                " of interest."))
-        fields: List[str] = sum((csvfield.split(',') for csvfield in fields), [])
+        fields: List[str] = sum(
+            (csvfield.split(',') for csvfield in query.fields_of_interest), [])
         filename += f".{kind}"
+
+        # Apply special handling to enums and country codes for downloads.
+        for k, v in query.spec.items():
+            if k.endswith("gender"):
+                query.spec[k] = query.spec[k].replace_choices(
+                    dict(enum_entries_filter(
+                        const.Genders, lambda x: x.name, raw=True)))
+            if k.endswith(".status"):
+                query.spec[k] = query.spec[k].replace_choices(
+                    dict(enum_entries_filter(
+                        const.RegistrationPartStati, lambda x: x.name, raw=True)))
+            if k.endswith(("country", "country2")):
+                query.spec[k] = query.spec[k].replace_choices(
+                    dict(get_localized_country_codes(rs, rs.default_lang)))
+            if "xfield" in k:
+                query.spec[k] = query.spec[k].replace_choices({})
+        substitutions = {k: v.choices for k, v in query.spec.items() if v.choices}
+
         if kind == "csv":
             csv_data = csv_output(result, fields, substitutions=substitutions)
             return self.send_csv_file(
@@ -819,11 +831,15 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             query = check_validation(rs, vtypes.QueryInput, query_input, "query",
                                      spec=spec, allow_empty=False)
         default_queries = self.conf["DEFAULT_QUERIES"][default_scope]
-        if not choices:
+        choices_lists = {}
+        if choices is None:
             choices = {}
-        choices_lists = {k: list(v.items()) for k, v in choices.items()}
+        for k, v in choices.items():
+            choices_lists[k] = list(v.items())
+            if query and k in query.spec:
+                query.spec[k] = query.spec[k].replace_choices(v)
         params = {
-            'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
+            'spec': spec, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'query': query, 'scope': scope,
             'ADMIN_KEYS': ADMIN_KEYS,
         }
@@ -833,8 +849,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             params['result'] = result
             if download:
                 return self.send_query_download(
-                    rs, result, fields=query.fields_of_interest, kind=download,
-                    filename=endpoint + "_result", substitutions=params['choices'])
+                    rs, result, query, kind=download, filename=endpoint + "_result")
         else:
             rs.values['is_search'] = False
         return self.render(rs, endpoint, params)
@@ -883,7 +898,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if not msg["To"] and not msg["Cc"] and not msg["Bcc"]:
             self.logger.warning("No recipients for mail. Dropping it.")
             return None
-        if not self.conf["CDEDB_DEV"]:
+        if not self.conf["CDEDB_DEV"]:  # pragma: no cover
             s = smtplib.SMTP(self.conf["MAIL_HOST"])
             s.send_message(msg)
             s.quit()
@@ -1154,7 +1169,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
             if exists:
                 rs.extend_validation_errors(
                     (("username",
-                      ValueError("User with this E-Mail exists already.")),))
+                      ValueError(n_("User with this E-Mail exists already."))),))
         if rs.has_validation_errors() or not data:
             return self.create_user_form(rs)
         new_id = self.coreproxy.create_persona(rs, data)
@@ -1204,8 +1219,8 @@ class CdEMailmanClient(mailmanclient.Client):
         # Initialize logger. This needs the base class initialization to be done.
         logger_name = "cdedb.frontend.mailmanclient"
         make_root_logger(
-            logger_name, self.conf["MAILMAN_LOG"], self.conf["LOG_LEVEL"],
-            syslog_level=self.conf["SYSLOG_LEVEL"],
+            logger_name, self.conf["LOG_DIR"] / "cdedb-frontend-mailman.log",
+            self.conf["LOG_LEVEL"], syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         self.logger = logging.getLogger(logger_name)
         self.logger.debug(f"Instantiated {self} with configpath {conf._configpath}.")
@@ -1234,7 +1249,11 @@ class CdEMailmanClient(mailmanclient.Client):
         if self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or self.conf["CDEDB_DEV"]:
             self.logger.info("Skipping mailman query in dev/offline mode.")
             if self.conf["CDEDB_DEV"]:
-                return HELD_MESSAGE_SAMPLE
+                # Some diversity regarding moderation.
+                if dblist['id'] % 2 == 0:
+                    return HELD_MESSAGE_SAMPLE
+                else:
+                    return []
             return None
         else:
             mmlist = self.get_list_safe(dblist['address'])
@@ -1507,6 +1526,10 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
                 expects_persona = any('droid' not in role
                                       for role in access_list)
                 if rs.user.roles == {"anonymous"} and expects_persona:
+                    # Validation errors do not matter on session expiration,
+                    # since we redirect to get anyway.
+                    # In practice, this is mostly relevant for the anti csrf error.
+                    rs.ignore_validation_errors()
                     params = {
                         'wants': obj.encode_parameter(
                             "core/index", "wants", rs.request.url,
@@ -2219,6 +2242,7 @@ def process_dynamic_input(
     spec: vtypes.TypeMapping,
     *,
     additional: CdEDBObject = None,
+    creation_spec: vtypes.TypeMapping = None,
     prefix: str = "",
 ) -> Dict[int, Optional[CdEDBObject]]:
     """Retrieve data from rs provided by 'dynamic_row_meta' macros.
@@ -2246,10 +2270,12 @@ def process_dynamic_input(
     :param spec: name of input fields, mapped to their validation. This uses the same
         format as the `request_extractor`, but adds the 'prefix' to each key if present.
     :param additional: additional keys added to each output object
+    :param creation_spec: alternative spec used for new entries. Defaults to spec.
     :param prefix: prefix in front of all concerned fields. Should be used when more
         then one dynamic input table is present on the same page.
     """
     additional = additional or dict()
+    creation_spec = creation_spec or spec
     # this is the used prefix for the validation
     field_prefix = f"{prefix}_" if prefix else ""
 
@@ -2277,7 +2303,7 @@ def process_dynamic_input(
         else:
             entry = ret[anid]
             assert entry is not None
-            if type_ is not vtypes.EventTrack:
+            if type_ not in {vtypes.EventTrack, vtypes.BallotCandidate}:
                 entry["id"] = anid
             entry.update(additional)
             # apply the promised validation
@@ -2290,11 +2316,11 @@ def process_dynamic_input(
         will_create = unwrap(
             request_extractor(rs, {drow_create(-marker, prefix): bool}))
         if will_create:
-            params = {
-                drow_name(key, -marker, prefix): value for key, value in spec.items()}
+            params = {drow_name(key, -marker, prefix): value
+                      for key, value in creation_spec.items()}
             data = request_extractor(rs, params, postpone_validation=True)
             entry = {
-                key: data[drow_name(key, -marker, prefix)] for key in spec}
+                key: data[drow_name(key, -marker, prefix)] for key in creation_spec}
             entry.update(additional)
             ret[-marker] = check_validation(
                 rs, type_, entry, field_prefix=field_prefix,

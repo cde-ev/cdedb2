@@ -13,11 +13,12 @@ from werkzeug import Response
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    REALM_SPECIFIC_GENESIS_FIELDS, CdEDBObject, RequestState, merge_dicts, n_, now,
+    REALM_SPECIFIC_GENESIS_FIELDS, CdEDBObject, GenesisDecision, RequestState,
+    merge_dicts, n_, now,
 )
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, REQUESTfile, TransactionObserver, access,
-    check_validation as check, periodic,
+    REQUESTdata, REQUESTdatadict, REQUESTfile, access, check_validation as check,
+    periodic,
 )
 from cdedb.frontend.core.base import CoreBaseFrontend
 from cdedb.validation import GENESIS_CASE_EXPOSED_FIELDS, PERSONA_COMMON_FIELDS
@@ -113,16 +114,18 @@ class CoreGenesisMixin(CoreBaseFrontend):
         if self.coreproxy.verify_existence(rs, data['username']):
             existing_id = self.coreproxy.genesis_case_by_email(
                 rs, data['username'])
-            if existing_id:
+            if existing_id and existing_id > 0:
                 # TODO this case is kind of a hack since it throws
                 # away the information entered by the user, but in
                 # theory this should not happen too often (reality
                 # notwithstanding)
                 rs.notify("info", n_("Confirmation email has been resent."))
                 case_id = existing_id
+            elif existing_id and existing_id < 0:
+                rs.notify("info", n_("Your request is currently pending review."))
+                return self.redirect(rs, "core/index")
             else:
-                rs.notify("error",
-                          n_("Email address already in DB. Reset password."))
+                rs.notify("error", n_("Email address already in DB. Reset password."))
                 return self.redirect(rs, "core/index")
         else:
             new_id = self.coreproxy.genesis_request(rs, data)
@@ -222,13 +225,12 @@ class CoreGenesisMixin(CoreBaseFrontend):
     @periodic("genesis_forget", period=96)
     def genesis_forget(self, rs: RequestState, store: CdEDBObject
                        ) -> CdEDBObject:
-        """Cron job for deleting unconfirmed or rejected genesis cases.
+        """Cron job for deleting successful, unconfirmed or rejected genesis cases.
 
         This allows the username to be used once more.
         """
-        stati = (const.GenesisStati.unconfirmed, const.GenesisStati.rejected)
-        cases = self.coreproxy.genesis_list_cases(
-            rs, stati=stati)
+        stati = const.GenesisStati.finalized_stati() | {const.GenesisStati.unconfirmed}
+        cases = self.coreproxy.genesis_list_cases(rs, stati=stati)
 
         delete = tuple(case["id"] for case in cases.values() if
                        case["ctime"] < now() - self.conf["PARAMETER_TIMEOUT"])
@@ -362,64 +364,96 @@ class CoreGenesisMixin(CoreBaseFrontend):
     @access("core_admin", *("{}_admin".format(realm)
                             for realm in REALM_SPECIFIC_GENESIS_FIELDS),
             modi={"POST"})
-    @REQUESTdata("case_status")
+    @REQUESTdata("decision", "persona_id")
     def genesis_decide(self, rs: RequestState, genesis_case_id: int,
-                       case_status: const.GenesisStati) -> Response:
+                       decision: GenesisDecision, persona_id: Optional[int]
+                       ) -> Response:
         """Approve or decline a genensis case.
 
         This either creates a new account or declines account creation.
+        If the request is declined, an existing account can optionally be dearchived
+        and/or updated.
         """
         if rs.has_validation_errors():
             return self.genesis_show_case(rs, genesis_case_id)
         case = rs.ambience['genesis_case']
-        if (not self.is_admin(rs)
-                and "{}_admin".format(case['realm']) not in rs.user.roles):
+
+        # Do privilege and sanity checks.
+        if not self.is_admin(rs) and f"{case['realm']}_admin" not in rs.user.roles:
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        if self.coreproxy.verify_existence(rs, case['username'], include_genesis=False):
-            rs.notify("error", n_("Email address already taken."))
-            return self.genesis_show_case(rs, genesis_case_id)
+        if decision.is_create():
+            if self.coreproxy.verify_existence(
+                    rs, case['username'], include_genesis=False):
+                rs.notify("error", n_("Email address already taken."))
+                return self.redirect(rs, "core/genesis_show_case")
+            if persona_id:
+                rs.notify("error", n_("Persona selected, but genesis case approved."))
+                return self.redirect(rs, "core/genesis_show_case")
+        if decision.is_update():
+            if not persona_id:
+                rs.notify("error", n_("No persona selected."))
+                return self.redirect(rs, "core/genesis_show_case")
+            elif not self.coreproxy.verify_persona(
+                    rs, persona_id, (case['realm'],)):
+                rs.notify("error", n_("Invalid persona for update."
+                                      " Add additional realm first: %(realm)s."),
+                          {'realm': case['realm']})
+                return self.redirect(rs, "core/genesis_show_case")
         if case['case_status'] != const.GenesisStati.to_review:
             rs.notify("error", n_("Case not to review."))
-            return self.genesis_show_case(rs, genesis_case_id)
-        data = {
-            'id': genesis_case_id,
-            'case_status': case_status,
-            'reviewer': rs.user.persona_id,
-            'realm': case['realm'],
-        }
-        with TransactionObserver(rs, self, "genesis_decide"):
-            code = self.coreproxy.genesis_modify_case(rs, data)
-            success = bool(code)
-            new_id = None
-            pcode = 1
-            if success and data['case_status'] == const.GenesisStati.approved:
-                new_id = self.coreproxy.genesis(rs, genesis_case_id)
-                if case['pevent_id']:
-                    pcode = self.pasteventproxy.add_participant(
-                        rs, pevent_id=case['pevent_id'], pcourse_id=case['pcourse_id'],
-                        persona_id=new_id)
-                success = bool(new_id)
-        if not pcode and success:
-            rs.notify("error", n_("Past event attendance could not be established."))
-            return self.genesis_list_cases(rs)
-        if not success:
+            return self.redirect(rs, "core/genesis_show_case")
+
+        # Apply the decision.
+        code = self.coreproxy.genesis_decide(rs, genesis_case_id, decision, persona_id)
+        if not code:  # pragma: no cover
             rs.notify("error", n_("Failed."))
-            return self.genesis_list_cases(rs)
-        if case_status == const.GenesisStati.approved and new_id:
-            persona = self.coreproxy.get_persona(rs, new_id)
-            meta_info = self.coreproxy.get_meta_info(rs)
+            return self.genesis_show_case(rs, genesis_case_id)
+
+        if (decision.is_create() or decision.is_update()) and case['pevent_id']:
+            persona_id = persona_id or code
+            code = self.pasteventproxy.add_participant(
+                rs, pevent_id=case['pevent_id'], pcourse_id=case['pcourse_id'],
+                persona_id=persona_id)
+            if not code:  # pragma: no cover
+                rs.notify(
+                    "error", n_("Past event attendance could not be established."))
+                return self.genesis_show_case(rs, genesis_case_id)
+
+        # Send notification to the user, depending on decision.
+        if decision.is_create():
+            persona = self.coreproxy.get_persona(rs, code)
             success, cookie = self.coreproxy.make_reset_cookie(
                 rs, persona['username'],
                 timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
-            email = self.encode_parameter("core/do_password_reset_form", "email",
-                                          persona['username'], persona_id=None,
-                                          timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
-            self.do_mail(
-                rs, "welcome",
-                {'To': (persona['username'],), 'Subject': "Aufnahme in den CdE"},
-                {'data': persona, 'email': email, 'cookie': cookie,
-                 'fee': self.conf['MEMBERSHIP_FEE'], 'meta_info': meta_info})
+            email = self.encode_parameter(
+                "core/do_password_reset_form", "email", persona['username'],
+                persona_id=None, timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
+            if case['realm'] == "cde":
+                meta_info = self.coreproxy.get_meta_info(rs)
+                self.do_mail(
+                    rs, "welcome",
+                    {'To': (persona['username'],), 'Subject': "Aufnahme in den CdE"},
+                    {'data': persona, 'email': email, 'cookie': cookie,
+                     'fee': self.conf['MEMBERSHIP_FEE'], 'meta_info': meta_info})
+            else:
+                self.do_mail(
+                    rs, "genesis/genesis_approved",
+                    {'To': (persona['username'],), 'Subject': "CdEDB-Account erstellt"},
+                    {'persona': persona, 'email': email, 'cookie': cookie})
             rs.notify("success", n_("Case approved."))
+        elif decision.is_update():
+            assert persona_id is not None
+            persona = self.coreproxy.get_persona(rs, persona_id)
+            success, cookie = self.coreproxy.make_reset_cookie(
+                rs, persona['username'], timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
+            email = self.encode_parameter(
+                "core/do_password_reset_form", "email", persona['username'],
+                persona_id=None, timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
+            self.do_mail(
+                rs, "genesis/genesis_updated",
+                {'To': (persona['username'],), 'Subject': "CdEDB-Account reaktiviert"},
+                {'persona': persona, 'email': email, 'cookie': cookie})
+            rs.notify("success", n_("User updated."))
         else:
             self.do_mail(
                 rs, "genesis/genesis_declined",

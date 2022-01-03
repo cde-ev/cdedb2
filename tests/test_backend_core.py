@@ -4,14 +4,15 @@
 import copy
 import datetime
 import decimal
-from typing import Optional, cast
+from typing import List, Optional, cast
 
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.backend.common import affirm_validation as affirm
 from cdedb.common import (
     PERSONA_CDE_FIELDS, PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, ArchiveError,
-    CdEDBObject, PrivilegeError, RequestState, get_hash, merge_dicts, nearly_now, now,
+    CdEDBObject, GenesisDecision, PrivilegeError, RequestState, get_hash, merge_dicts,
+    nearly_now, now,
 )
 from cdedb.validation import PERSONA_CDE_CREATION
 from tests.common import (
@@ -139,8 +140,7 @@ class TestCoreBackend(BackendTest):
     @as_users("anton", "berta", "janis")
     def test_change_password(self) -> None:
         user = self.user
-        ret, _ = self.core.change_password(self.key, self.user['password'],
-                                           "weakpass")
+        ret, _ = self.core.change_password(self.key, self.user['password'], "weakpass")
         self.assertFalse(ret)
         newpass = "er3NQ_5bkrc#"
         ret, message = self.core.change_password(self.key, self.user['password'],
@@ -1312,52 +1312,52 @@ class TestCoreBackend(BackendTest):
         # first generate some data
         data = copy.deepcopy(PERSONA_TEMPLATE)
         new_persona_id = self.core.create_persona(self.key, data)
-        data = {
+        genesis_data = {
             "family_name": "Zeruda-Hime",
             "given_names": "Zelda",
             "username": 'zeldax@example.cde',
             'realm': "ml",
             "notes": "Some blah",
         }
-        case_id = self.core.genesis_request(ANONYMOUS, data)
-        update = {
-            'id': case_id,
-            'realm': "ml",
-            'case_status': const.GenesisStati.approved,
-            'reviewer': 1,
-        }
-        self.core.genesis_modify_case(self.key, update)
+        case_id = self.core.genesis_request(ANONYMOUS, genesis_data)
+        assert case_id is not None
+        self.core.genesis_verify(ANONYMOUS, case_id)
+        new_genesis_persona_id = self.core.genesis_decide(
+            self.key, case_id, GenesisDecision.approve)
         newpass = "er3NQ_5bkrc#"
         self.core.change_password(self.key, self.user['password'], newpass)
 
-        expectation = (4, (
-            {'id': 1001,
-             'change_note': None,
-             'code': const.CoreLogCodes.persona_creation,
-             'ctime': nearly_now(),
-             'persona_id': new_persona_id,
-             'submitted_by': self.user['id']},
-            {'id': 1002,
-             'change_note': 'zeldax@example.cde',
-             'code': const.CoreLogCodes.genesis_request,
-             'ctime': nearly_now(),
-             'persona_id': None,
-             'submitted_by': None},
-            {'id': 1003,
-             'change_note': 'zeldax@example.cde',
-             'code': const.CoreLogCodes.genesis_approved,
-             'ctime': nearly_now(),
-             'persona_id': None,
-             'submitted_by': self.user['id']},
-            {'id': 1004,
-             'change_note': None,
-             'code': const.CoreLogCodes.password_change,
-             'ctime': nearly_now(),
-             'persona_id': 22,
-             'submitted_by': self.user['id']}
-        ))
+        log_expectation: List[CdEDBObject] = [
+            {
+                'code': const.CoreLogCodes.persona_creation,
+                'persona_id': new_persona_id,
+            },
+            {
+                'code': const.CoreLogCodes.genesis_request,
+                'change_note': genesis_data['username'],
+                'submitted_by': None,
+            },
+            {
+                'code': const.CoreLogCodes.genesis_verified,
+                'change_note': genesis_data['username'],
+                'submitted_by': None,
+            },
+            {
+                'code': const.CoreLogCodes.persona_creation,
+                'persona_id': new_genesis_persona_id,
+            },
+            {
+                'code': const.CoreLogCodes.genesis_approved,
+                'change_note': genesis_data['username'],
+                'persona_id': new_genesis_persona_id,
+            },
+            {
+                'code': const.CoreLogCodes.password_change,
+                'persona_id': self.user['id'],
+            },
+        ]
 
-        self.assertEqual(expectation, self.core.retrieve_log(self.key))
+        self.assertLogEqual(log_expectation, realm="core")
 
     @as_users("vera")
     def test_changelog_meta(self) -> None:

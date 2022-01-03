@@ -41,9 +41,9 @@ from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.common import (
-    ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, CdEDBLog, CdEDBObject, CdEDBObjectMap,
-    PathLike, PrivilegeError, RequestState, merge_dicts, nearly_now, now,
-    roles_to_db_role,
+    ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, ANTI_CSRF_TOKEN_NAME,
+    ANTI_CSRF_TOKEN_PAYLOAD, CdEDBLog, CdEDBObject, CdEDBObjectMap, PathLike,
+    PrivilegeError, RequestState, merge_dicts, nearly_now, now, roles_to_db_role,
 )
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -51,6 +51,7 @@ from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.application import Application
 from cdedb.frontend.common import AbstractFrontend, Worker, setup_translations
 from cdedb.frontend.cron import CronFrontend
+from cdedb.frontend.paths import CDEDB_PATHS
 from cdedb.query import QueryOperators
 from cdedb.script import Script
 
@@ -852,13 +853,13 @@ class FrontendTest(BackendTest):
     def _log_generation_time(self, response: webtest.TestResponse = None) -> None:
         if response is None:
             response = self.response
-        if _BASICCONF["TIMING_LOG"]:
-            with open(_BASICCONF["TIMING_LOG"], 'a') as f:
-                output = "{} {} {} {}\n".format(
-                    response.request.path, response.request.method,
-                    response.headers.get('X-Generation-Time'),
-                    response.request.query_string)
-                f.write(output)
+        # record performance information during test runs
+        with open(_BASICCONF["LOG_DIR"] / "cdedb-timing.log", 'a') as f:
+            output = "{} {} {} {}\n".format(
+                response.request.path, response.request.method,
+                response.headers.get('X-Generation-Time'),
+                response.request.query_string)
+            f.write(output)
 
     def get(self, url: str, *args: Any, verbose: bool = False, **kwargs: Any) -> None:
         """Navigate directly to a given URL using GET."""
@@ -883,11 +884,26 @@ class FrontendTest(BackendTest):
         self.assertIn(target_url, response)
         return response
 
-    def post(self, url: str, *args: Any, verbose: bool = False, **kwargs: Any) -> None:
+    def post(self, url: str, params: Dict[str, Any], *args: Any, verbose: bool = False,
+             evade_anti_csrf: bool = True, csrf_token_name: str = ANTI_CSRF_TOKEN_NAME,
+             csrf_token_payload: str = ANTI_CSRF_TOKEN_PAYLOAD, **kwargs: Any) -> None:
         """Directly send a POST-request.
 
-        Note that most of our POST-handlers require a CSRF-token."""
-        self.response = self.app.post(url, *args, **kwargs)
+        Note that most of our POST-handlers require an Anti-CSRF token,
+        which is forged here by default.
+
+        :param params: This is a restriction of self.app.post, but enforces a general
+            style and simplifies processing here.
+        :param evade_anti_csrf: Do CSRF, forging the Anti-CSRF token.
+        """
+        if evade_anti_csrf:
+            urlmap = CDEDB_PATHS
+            urls = urlmap.bind(self.app_extra_environ["HTTP_HOST"])
+            endpoint, _ = urls.match(url, method="POST")
+            params[csrf_token_name] = self.app.app.encode_anti_csrf_token(
+                endpoint, csrf_token_name, csrf_token_payload,
+                persona_id=self.user['id'])
+        self.response = self.app.post(url, params, *args, **kwargs)
         self.follow()
         self.basic_validate(verbose=verbose)
 
@@ -916,6 +932,9 @@ class FrontendTest(BackendTest):
             if "formmethod" in tmp_button.attrs:
                 form.method = tmp_button.attrs["formmethod"]
         method = form.method
+        if value and not button:
+            raise ValueError(
+                "Cannot specify button value without specifying button name.")
         self.response = form.submit(button, value=value)
         self.follow()
         self.basic_validate(verbose=verbose)
@@ -1064,6 +1083,7 @@ class FrontendTest(BackendTest):
         return body.get_content()
 
     def fetch_link(self, index: int = 0, num: int = 1) -> str:
+        """Extract the <num>th link out of the <index>th mail just sent."""
         for line in self.fetch_mail_content(index).splitlines():
             if line.startswith(f'[{num}] '):
                 return line.split(maxsplit=1)[-1]
@@ -1225,7 +1245,7 @@ class FrontendTest(BackendTest):
             self.assertPresence(notification, div="notifications", regex=True)
 
         nodes = self.response.lxml.xpath(
-            '(//input|//select|//textarea)[@name="{}"]'.format(fieldname))
+            f'(//input|//select|//textarea)[@name="{fieldname}"]')
         f = fieldname
         if index is None:
             if len(nodes) == 1:

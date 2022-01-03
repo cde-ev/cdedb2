@@ -40,7 +40,7 @@ class CronFrontend(BaseApp):
                 'cdedb', languages=[lang],
                 localedir=str(self.conf["REPOSITORY_PATH"] / 'i18n'))
             for lang in self.conf["I18N_LANGUAGES"]}
-        if pathlib.Path("/PRODUCTIONVM").is_file():
+        if pathlib.Path("/PRODUCTIONVM").is_file():  # pragma: no cover
             # Sanity checks for the live instance
             if self.conf["CDEDB_DEV"] or self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
                 raise RuntimeError(
@@ -79,7 +79,7 @@ class CronFrontend(BaseApp):
                 'period': -1,
             }
         if (not self.conf["CDEDB_DEV"]
-                and base_state['tstamp'] + 10*60 > now().timestamp()):
+                and base_state['tstamp'] + 10*60 > now().timestamp()):  # pragma: no cover
             print("Last execution at {} skipping this round.".format(
                 base_state['tstamp']))
             return False

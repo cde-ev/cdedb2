@@ -8,14 +8,14 @@ their symbolic names provided by this module should be used.
 """
 
 import enum
-from typing import Dict
+from typing import Dict, Set
 
 from cdedb.subman.machine import (  # pylint: disable=unused-import # noqa: F401
     SubscriptionAction, SubscriptionState,
 )
 
 
-def n_(x: str) -> str:
+def n_(x: str) -> str:  # pragma: no cover
     """Clone of :py:func:`cdedb.common.n_` for marking translatable strings."""
     return x
 
@@ -106,13 +106,6 @@ class QuestionnaireUsages(enum.IntEnum):
         """Whether or not rows with this usage may use fee modifier fields."""
         return self == QuestionnaireUsages.registration
 
-    def get_icon(self) -> str:
-        icons = {
-            QuestionnaireUsages.registration: "sign-in-alt",
-            QuestionnaireUsages.additional: "pen",
-        }
-        return icons.get(self, repr(self))
-
 
 @enum.unique
 class GenesisStati(enum.IntEnum):
@@ -125,8 +118,17 @@ class GenesisStati(enum.IntEnum):
     approved = 3
     #: finished (persona created, challenge archived)
     successful = 4
+    #: finished (existing persona updated, challenge archived)
+    existing_updated = 5
     #: reviewed and rejected (also a final state)
     rejected = 10
+
+    @classmethod
+    def finalized_stati(cls) -> Set["GenesisStati"]:
+        return {cls.successful, cls.existing_updated, cls.rejected}
+
+    def is_finalized(self) -> bool:
+        return self in self.finalized_stati()
 
 
 @enum.unique
@@ -189,7 +191,7 @@ class MailinglistDomain(enum.IntEnum):
 
     def get_domain(self) -> str:
         """Return the actual domain for this enum member."""
-        if self not in _DOMAIN_STR_MAP:
+        if self not in _DOMAIN_STR_MAP:  # pragma: no cover
             raise NotImplementedError(n_("This domain is not supported."))
         return _DOMAIN_STR_MAP[self]
 
@@ -264,6 +266,7 @@ class CoreLogCodes(enum.IntEnum):
     genesis_rejected = 22  #:
     genesis_deleted = 23  #:
     genesis_verified = 24  #:
+    genesis_merged = 25  #:
     privilege_change_pending = 30  #:
     privilege_change_approved = 31  #:
     privilege_change_rejected = 32  #:

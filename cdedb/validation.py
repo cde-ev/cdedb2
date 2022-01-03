@@ -89,7 +89,7 @@ from cdedb.database.constants import FieldAssociations, FieldDatatypes
 from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS
 from cdedb.query import (
     MULTI_VALUE_OPERATORS, NO_VALUE_OPERATORS, VALID_QUERY_OPERATORS, QueryOperators,
-    QueryOrder, QueryScope,
+    QueryOrder, QueryScope, QuerySpec,
 )
 from cdedb.validationdata import (
     COUNTRY_CODES, FREQUENCY_LISTS, GERMAN_POSTAL_CODES, IBAN_LENGTHS,
@@ -377,7 +377,7 @@ def _augment_dict_validator(
 
         v = None
         try:
-            v = validator(tmp, argname, **kwargs)
+            v = validator(tmp, argname=argname, **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
 
@@ -821,28 +821,6 @@ def _printable_ascii(
     if not val:  # TODO leave strip here?
         raise ValidationSummary(ValueError(argname, n_("Must not be empty.")))
     return PrintableASCII(val)
-
-
-@_add_typed_validator
-def _alphanumeric(
-    val: Any, argname: str = None, **kwargs: Any
-) -> Alphanumeric:
-    val = _printable_ascii(val, argname, **kwargs)
-    if not re.search(r'^[a-zA-Z0-9]+$', val):
-        raise ValidationSummary(ValueError(
-            argname, n_("Must be alphanumeric.")))
-    return Alphanumeric(val)
-
-
-@_add_typed_validator
-def _csv_alphanumeric(
-    val: Any, argname: str = None, **kwargs: Any
-) -> CSVAlphanumeric:
-    val = _printable_ascii(val, argname, **kwargs)
-    if not re.search(r'^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$', val):
-        raise ValidationSummary(ValueError(argname, n_(
-            "Must be comma separated alphanumeric.")))
-    return CSVAlphanumeric(val)
 
 
 @_add_typed_validator
@@ -1524,7 +1502,7 @@ def _genesis_case(
                 k: v for k, v in GENESIS_CASE_ADDITIONAL_FIELDS.items()
                 if k in REALM_SPECIFIC_GENESIS_FIELDS[val['realm']]}
     else:
-        raise ValidationSummary(ValueError(n_("Must specify realm.")))
+        raise ValidationSummary(ValueError('realm', n_("Must specify realm.")))
 
     if creation:
         mandatory_fields = dict(GENESIS_CASE_COMMON_FIELDS,
@@ -2414,16 +2392,23 @@ def _event_track(
 
 def _EVENT_FIELD_COMMON_FIELDS(extra_suffix: str) -> TypeMapping:
     return {
-        'kind{}'.format(extra_suffix): const.FieldDatatypes,
-        'association{}'.format(extra_suffix): const.FieldAssociations,
-        'entries{}'.format(extra_suffix): Any,  # type: ignore
+        f'kind{extra_suffix}': const.FieldDatatypes,
+        f'association{extra_suffix}': const.FieldAssociations,
+        f'entries{extra_suffix}': Any,  # type: ignore[dict-item]
     }
 
 
 def _EVENT_FIELD_OPTIONAL_FIELDS(extra_suffix: str) -> TypeMapping:
     return {
+        f'title{extra_suffix}': str,
+        f'sortkey{extra_suffix}': int,
         f'checkin{extra_suffix}': bool,
     }
+
+
+def _EVENT_FIELD_ALL_FIELDS(extra_suffix: str) -> TypeMapping:
+    return dict(_EVENT_FIELD_COMMON_FIELDS(extra_suffix),
+                **_EVENT_FIELD_OPTIONAL_FIELDS(extra_suffix))
 
 
 @_add_typed_validator
@@ -2441,26 +2426,27 @@ def _event_field(
       necessity of the frontend to create unambiguous names.
     """
     val = _mapping(val, argname, **kwargs)
+    val = dict(val)
 
-    field_name_key = "field_name{}".format(extra_suffix)
+    field_name_key = f"field_name{extra_suffix}"
     if field_name is not None:
-        val = dict(val)
         val[field_name_key] = field_name
     if creation:
+        title_key = f"title{extra_suffix}"
+        if not val.get(title_key):
+            val[title_key] = val.get(field_name_key)
         spec = {**_EVENT_FIELD_COMMON_FIELDS(extra_suffix),
                 field_name_key: RestrictiveIdentifier}
         mandatory_fields = spec
         optional_fields: TypeMapping = _EVENT_FIELD_OPTIONAL_FIELDS(extra_suffix)
     else:
         mandatory_fields = {}
-        optional_fields = dict(_EVENT_FIELD_COMMON_FIELDS(extra_suffix),
-                               **_EVENT_FIELD_OPTIONAL_FIELDS(extra_suffix))
+        optional_fields = {**_EVENT_FIELD_ALL_FIELDS(extra_suffix), 'id': ID}
 
-    val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, argname=argname, **kwargs)
+    val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
 
-    entries_key = "entries{}".format(extra_suffix)
-    kind_key = "kind{}".format(extra_suffix)
+    entries_key = f"entries{extra_suffix}"
+    kind_key = f"kind{extra_suffix}"
 
     errs = ValidationSummary()
     if not val.get(entries_key, True):
@@ -2952,8 +2938,10 @@ QUESTIONNAIRE_ROW_MANDATORY_FIELDS: TypeMapping = {
 
 
 def _questionnaire_row(
-    val: Any, field_definitions: CdEDBObjectMap, fee_modifier_fields: Set[int],
-    kind: const.QuestionnaireUsages, argname: str = "questionnaire_row", **kwargs: Any,
+    val: Any, field_definitions: Optional[CdEDBObjectMap] = None,
+    fee_modifier_fields: Optional[Set[int]] = None,
+    kind: Optional[const.QuestionnaireUsages] = None,
+    argname: str = "questionnaire_row", **kwargs: Any,
 ) -> QuestionnaireRow:
 
     argname_prefix = argname + "." if argname else ""
@@ -2971,14 +2959,22 @@ def _questionnaire_row(
         argname=argname, **kwargs)
 
     errs = ValidationSummary()
-    if 'kind' in value:
-        if value['kind'] != kind:
-            msg = n_("Incorrect kind for this part of the questionnaire")
-            errs.append(ValueError(argname_prefix + 'kind', msg))
+    if kind:
+        if 'kind' in value:
+            if value['kind'] != kind:
+                msg = n_("Incorrect kind for this part of the questionnaire")
+                errs.append(ValueError(argname_prefix + 'kind', msg))
+        else:
+            value['kind'] = kind
+    elif 'kind' in value:
+        kind = value['kind']
     else:
-        value['kind'] = kind
+        errs.append(ValueError(argname_prefix + 'kind', n_("No kind specified.")))
+        raise errs
+    assert kind is not None
 
-    fields_by_name = {f['field_name']: f for f in field_definitions.values()}
+    fields_by_name = ({f['field_name']: f for f in field_definitions.values()}
+                      if field_definitions else {})
     if 'field_name' in value:
         if not value['field_name']:
             del value['field_name']
@@ -2999,7 +2995,7 @@ def _questionnaire_row(
     if 'field_id' not in value:
         value['field_id'] = None
 
-    if value['field_id']:
+    if field_definitions and value['field_id']:
         field = field_definitions.get(value['field_id'], None)
         if not field:
             raise ValidationSummary(
@@ -3012,10 +3008,11 @@ def _questionnaire_row(
 
     field_id = value['field_id']
     value['readonly'] = bool(value['readonly']) if field_id else None
-    if field_id and field_id in fee_modifier_fields:
-        if not kind.allow_fee_modifier():
-            msg = n_("Inappropriate questionnaire usage for fee modifier field.")
-            errs.append(ValueError(argname_prefix + 'kind', msg))
+    if fee_modifier_fields:
+        if field_id and field_id in fee_modifier_fields:
+            if not kind.allow_fee_modifier():
+                msg = n_("Inappropriate questionnaire usage for fee modifier field.")
+                errs.append(ValueError(argname_prefix + 'kind', msg))
     if value['readonly'] and not kind.allow_readonly():
         msg = n_("Registration questionnaire rows may not be readonly.")
         errs.append(ValueError(argname_prefix + 'readonly', msg))
@@ -3183,7 +3180,7 @@ def _serialized_event(
         'event.orgas': _augment_dict_validator(
             _empty_dict, {'id': ID, 'event_id': ID, 'persona_id': ID}),
         'event.field_definitions': _augment_dict_validator(
-            _event_field, {'id': ID, 'event_id': ID,
+            _event_field, {'id': ID, 'event_id': ID, 'title': str,
                            'field_name': RestrictiveIdentifier}),
         'event.lodgement_groups': _augment_dict_validator(
             _lodgement_group, {'event_id': ID}),
@@ -3202,13 +3199,7 @@ def _serialized_event(
             _empty_dict, {'id': ID, 'course_id': ID, 'track_id': ID,
                           'registration_id': ID, 'rank': int}),
         'event.questionnaire_rows': _augment_dict_validator(
-            _empty_dict, {
-                'id': ID, 'event_id': ID, 'pos': int,
-                'field_id': Optional[ID], 'title': Optional[str],  # type: ignore
-                'info': Optional[str], 'input_size': Optional[int],  # type: ignore
-                'readonly': Optional[bool],  # type: ignore
-                'kind': const.QuestionnaireUsages,
-            }),
+            _questionnaire_row, {'id': ID, 'event_id': ID}),
         'event.fee_modifiers': _augment_dict_validator(
             _event_fee_modifier, {'id': ID, 'part_id': ID}),
     }
@@ -3218,8 +3209,8 @@ def _serialized_event(
         new_table = {}
         for key, entry in val[table].items():
             try:
-                new_entry = validator(entry, table, **kwargs)
-                new_key = _int(key, table, **kwargs)
+                new_entry = validator(entry, argname=table, **kwargs)
+                new_key = _int(key, argname=table, **kwargs)
             except ValidationSummary as e:
                 errs.extend(e)
             else:
@@ -4048,7 +4039,7 @@ def _ballot_candidate(
         mandatory_fields = {**BALLOT_CANDIDATE_COMMON_FIELDS}
         optional_fields: TypeMapping = {}
     else:
-        mandatory_fields = {'id': ID}
+        mandatory_fields = {}
         optional_fields = {**BALLOT_CANDIDATE_COMMON_FIELDS}
 
     val = _examine_dictionary_fields(val, mandatory_fields, optional_fields,
@@ -4186,7 +4177,7 @@ def _non_regex(
 @_add_typed_validator
 def _query_input(
     val: Any, argname: str = None, *,
-    spec: Mapping[str, str], allow_empty: bool = False,
+    spec: QuerySpec, allow_empty: bool = False,
     separator: str = ',', escape: str = '\\',
     **kwargs: Any
 ) -> QueryInput:
@@ -4221,7 +4212,8 @@ def _query_input(
     order: List[QueryOrder] = []
     errs = ValidationSummary()
 
-    for field, validator in spec.items():
+    for field, spec_entry in spec.items():
+        validator = spec_entry.type
         # First the selection of fields of interest
         try:
             selected = _bool(val.get("qsel_{}".format(
@@ -4389,14 +4381,14 @@ def _query(
         val.name, "name", **kwargs)
 
     # spec
-    for field, validator in val.spec.items():
+    for field, spec_entry in val.spec.items():
         try:
             _csv_identifier(field, "spec", **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
 
         try:
-            _printable_ascii(validator, "spec", **kwargs)
+            _printable_ascii(spec_entry.type, "spec", **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
 
@@ -4434,7 +4426,7 @@ def _query(
             errs.extend(e)
             continue
 
-        if operator not in VALID_QUERY_OPERATORS[val.spec[field]]:
+        if operator not in VALID_QUERY_OPERATORS[val.spec[field].type]:
             errs.append(ValueError("constraints/{}".format(field),
                                    n_("Invalid operator.")))
             continue
@@ -4444,7 +4436,7 @@ def _query(
 
         elif operator in MULTI_VALUE_OPERATORS:
             validator = _ALL_TYPED[
-                Optional[VALIDATOR_LOOKUP[val.spec[field]]]]  # type: ignore
+                Optional[VALIDATOR_LOOKUP[val.spec[field].type]]]  # type: ignore
             for v in value:
                 try:
                     validator(v, "constraints/{}".format(field), **kwargs)
@@ -4453,7 +4445,7 @@ def _query(
         else:
             try:
                 _ALL_TYPED[
-                    Optional[VALIDATOR_LOOKUP[val.spec[field]]]  # type: ignore
+                    Optional[VALIDATOR_LOOKUP[val.spec[field].type]]  # type: ignore
                 ](
                     value,
                     "constraints/{}".format(field),
@@ -4477,12 +4469,17 @@ def _query(
         except ValueError:
             msg = n_("Invalid ordering condition number %(index)s")
             errs.append(ValueError("order", msg, {'index': idx}))
-        else:
-            try:
-                _csv_identifier(field, "order", **kwargs)
-                _bool(ascending, "order", **kwargs)
-            except ValidationSummary as e:
-                errs.extend(e)
+            continue
+
+        try:
+            field = _csv_identifier(field, "order", **kwargs)
+            ascending = _bool(ascending, "order", **kwargs)
+        except ValidationSummary as e:
+            errs.extend(e)
+
+        if field not in val.spec:
+            errs.append(KeyError("order", n_("Invalid field.")))
+            continue
 
     if errs:
         raise errs

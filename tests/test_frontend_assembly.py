@@ -576,24 +576,32 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             f['signup_end'] = "2002-4-1 00:00:00"
             self.submit(f)
 
-            bdata = {
-                'title': 'Maximale Länge der Satzung',
-                'description': "Dann muss man halt eine alte Regel rauswerfen,"
-                               " wenn man eine neue will.",
-                'vote_begin': base_time + delta,
-                'vote_end': base_time + 3*delta,
-                'abs_quorum': "0",
-                'rel_quorum': "0",
-                'votes': "",
-                'notes': "Kein Aprilscherz!",
-            }
-            self._create_ballot(bdata, candidates=None)
-            self.assertTitle("Maximale Länge der Satzung (Drittes CdE-Konzil)")
+            for ballot_nr in (1, 2):
+                bdata = {
+                    'title': f'Maximale Länge der {ballot_nr}. Satzung',
+                    'description': "Dann muss man halt eine alte Regel rauswerfen,"
+                                   " wenn man eine neue will.",
+                    'vote_begin': base_time + delta,
+                    'vote_end': base_time + delta + 2*ballot_nr*delta,
+                    'abs_quorum': "0",
+                    'rel_quorum': "0",
+                    'votes': "",
+                    'notes': "Kein Aprilscherz!",
+                }
+                self._create_ballot(bdata, candidates=None)
+                self.assertTitle(f"{bdata['title']} (Drittes CdE-Konzil)")
 
-            frozen_time.tick(delta=4*delta)
-            self.traverse({'description': 'Abstimmungen'},
-                          {'description': 'Maximale Länge der Satzung'},
-                          {'description': 'Drittes CdE-Konzil'},)
+            # regression test for #2310
+            frozen_time.tick(delta=2 * delta)
+            self.traverse("Abstimmungen", "Maximale Länge der 1. Satzung")
+            frozen_time.tick(delta=2 * delta)
+            # First ballot is concluded now, second still running. Ensure viewing
+            # the second concludes the first and navigation works
+            self.traverse("Nächste")
+            frozen_time.tick(delta=2 * delta)
+            self.traverse("Nächste", "Drittes CdE-Konzil")
+
+            # now the actual conclusion test
             self.assertTitle("Drittes CdE-Konzil")
             f = self.response.forms['concludeassemblyform']
             f['ack_conclude'].checked = True
@@ -609,7 +617,6 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
     @as_users("anton")
     def test_preferential_vote_result(self) -> None:
         self.get('/assembly/assembly/1/ballot/1/show')
-        self.follow()  # Redirect because ballot has not been tallied yet.
         self.assertTitle("Antwort auf die letzte aller Fragen "
                          "(Internationaler Kongress)")
         self.assertPresence("Nach dem Leben, dem Universum und dem ganzen Rest")
@@ -625,7 +632,6 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f = self.response.forms['signupform']
         self.submit(f)
         self.get('/assembly/assembly/1/ballot/1/show')
-        self.follow()  # Redirect because ballot has not been tallied yet.
         self.assertTitle("Antwort auf die letzte aller Fragen "
                          "(Internationaler Kongress)")
         self.assertPresence("Nach dem Leben, dem Universum und dem ganzen Rest")
@@ -647,8 +653,6 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             with self.subTest(ballot=ballot_id):
                 assembly = assemblies[ballot['assembly_id']]
                 self.get(f"/assembly/assembly/{assembly['id']}/ballot/{ballot_id}/show")
-                # redirect in case of tallying, extending etc
-                self.follow()
                 self.assertTitle(f"{ballot['title']} ({assembly['title']})")
 
                 # Check display of regular voting period.
@@ -694,7 +698,6 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
     @as_users("garcia")
     def test_show_ballot_without_attendance(self) -> None:
         self.get('/assembly/assembly/1/ballot/1/show')
-        self.follow()  # Redirect because ballot has not been tallied yet.
         self.assertTitle("Antwort auf die letzte aller Fragen "
                          "(Internationaler Kongress)")
         self.assertPresence("Nach dem Leben, dem Universum und dem ganzen Rest")
@@ -1211,6 +1214,69 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.assertEqual(json.load(f), json.loads(self.response.body))
 
     @storage
+    @as_users("kalif")
+    def test_late_voting(self) -> None:
+        # create a ballot shortly before its voting end
+        base_time = now()
+        delta = datetime.timedelta(seconds=42)
+        btitle = "Ganz kurzfristige Entscheidung"
+        bdata = {
+            'title': btitle,
+            'vote_begin': base_time + delta,
+            'vote_end': base_time + 3 * delta,
+            'votes': "2",
+        }
+        candidates = [
+            {'shortname': "y", 'title': "Ja!"},
+            {'shortname': "n", 'title': "Nein!"},
+        ]
+        with freezegun.freeze_time(base_time) as frozen_time:
+            # only presiders can create ballots
+            user = self.user
+            self.logout()
+            self.login("werner")
+            self.traverse("Versammlungen", "Internationaler Kongress")
+            self._create_ballot(bdata, candidates)
+            self.logout()
+            self.login(user)
+
+            # wait for voting to start then get vote form.
+            frozen_time.tick(delta=2 * delta)
+            self.traverse("Versammlungen", "Internationaler Kongress",
+                          "Abstimmungen", btitle)
+            f = self.response.forms["voteform"]
+            f["vote"] = ["y"]
+
+            # submit after voting period ended
+            frozen_time.tick(delta=2 * delta)
+            self.submit(f, check_notification=False)
+            self.assertPresence("Fehler! Abstimmung ist außerhalb"
+                                " des Abstimmungszeitraums",
+                                div='notifications')
+
+    @storage
+    @as_users("werner")
+    def test_comment(self) -> None:
+        self.get('/assembly/assembly/3/ballot/6/show')
+        self.assertNonPresence("Abstimmungskommentar")
+        self.traverse("Kommentieren")
+        f = self.response.forms['changeballotform']
+        comment = "War nur ein *Experiment*."
+        f['comment'] = comment
+        self.submit(f)
+        self.assertTitle("Test-Abstimmung – bitte ignorieren (Archiv-Sammlung)")
+        self.assertPresence("Abstimmungskommentar")
+        self.assertPresence("War nur ein Experiment.")
+        self.traverse("Kommentieren")
+        f = self.response.forms['changeballotform']
+        # check that the form is filled with the current comment
+        self.assertEqual(comment, f['comment'].value)
+        f['comment'] = ""
+        self.submit(f)
+        self.assertTitle("Test-Abstimmung – bitte ignorieren (Archiv-Sammlung)")
+        self.assertNonPresence("Abstimmungskommentar")
+
+    @storage
     @as_users("anton")
     def test_ballot_result_page(self) -> None:
         for ballot_id in self.CANONICAL_BALLOTS:
@@ -1218,8 +1284,6 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             assembly = self.get_sample_datum(
                 'assembly.assemblies', ballot['assembly_id'])
             self.get(f'/assembly/assembly/{assembly["id"]}/ballot/{ballot_id}/result')
-            # redirect in case of tallying, extending etc
-            self.follow()
 
             # redirect to show_ballot if the ballot has not been tallied yet
             if ballot_id in self.BALLOT_STATES['tallied']:

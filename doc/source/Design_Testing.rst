@@ -73,7 +73,26 @@ In general, we aim at 100 % test coverage for our Python code. This means that
 ideally, not only every statement, but also every control structure branch
 should be tested.
 
+However, not every statement should in fact be tested. As a rule of thumb:
+If something is expected to potentially happen in practice, it should be tested,
+if strucuturally possible. (We will not start messing with subprocess calls
+manipulating the system to test some failsaves, for example.)
+
+This means the following should not be covered:
+
+* Logical consistency checks, usually in the backend, either due to
+  programmatic logic or due to database consistency.
+* Validation as ``Optional[str]`` in frontend endpoints – it is impossible
+  to fail this as an incoming request.
+
+On the other hand, just because something is hard or annoying to test, or
+requiring mocking, it would not warrant an exception. Nevertheless, it is
+always a trade-off between cost and use: Just because you can imagine a wild
+way to anyway perform a test, this does not mean you should do it.
+
 Regarding statement coverage, we are at about 90 % and aim to increase this
-amount in the future.
+amount in the future. Starting in the end of 2021, we have a mid-term goal to
+significantly increase this number. Achieving at least 95 % should be
+possible without reaching vanishing benefit.
 
 To run coverage checks, take a look at the :ref:`coverage`.

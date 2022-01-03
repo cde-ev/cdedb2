@@ -31,7 +31,7 @@ from cdedb.common import (
 )
 from cdedb.database.connection import Atomizer
 from cdedb.filter import money_filter
-from cdedb.query import Query, QueryOperators, QueryScope
+from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.validation import PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS, is_optional
 
 
@@ -687,7 +687,7 @@ class CdEBackend(AbstractBackend):
             # We perform a rather big transaction, so serialization errors
             # could happen.
             return False, None, None
-        except Exception:
+        except Exception:  # pragma: no cover
             # This blanket catching of all exceptions is a last resort. We try
             # to do enough validation, so that this should never happen, but
             # an opaque error (as would happen without this) would be rather
@@ -1585,7 +1585,7 @@ class CdEBackend(AbstractBackend):
             # We perform a rather big transaction, so serialization errors
             # could happen.
             return False, None, None
-        except Exception:
+        except Exception:  # pragma: no cover
             # This blanket catching of all exceptions is a last resort. We try
             # to do enough validation, so that this should never happen, but
             # an opaque error (as would happen without this) would be rather
@@ -1614,10 +1614,10 @@ class CdEBackend(AbstractBackend):
             query.constraints.append(("is_member", QueryOperators.equal, True))
             query.constraints.append(("is_searchable", QueryOperators.equal, True))
             query.constraints.append(("is_archived", QueryOperators.equal, False))
-            query.spec['is_cde_realm'] = "bool"
-            query.spec['is_member'] = "bool"
-            query.spec['is_searchable'] = "bool"
-            query.spec["is_archived"] = "bool"
+            query.spec['is_cde_realm'] = QuerySpecEntry("bool", "")
+            query.spec['is_member'] = QuerySpecEntry("bool", "")
+            query.spec['is_searchable'] = QuerySpecEntry("bool", "")
+            query.spec["is_archived"] = QuerySpecEntry("bool", "")
         elif query.scope in {QueryScope.cde_user, QueryScope.archived_past_event_user}:
             if not {'core_admin', 'cde_admin'} & rs.user.roles:
                 raise PrivilegeError(n_("Admin only."))
@@ -1625,20 +1625,20 @@ class CdEBackend(AbstractBackend):
             query.constraints.append(
                 ("is_archived", QueryOperators.equal,
                  query.scope == QueryScope.archived_past_event_user))
-            query.spec['is_cde_realm'] = "bool"
-            query.spec["is_archived"] = "bool"
+            query.spec['is_cde_realm'] = QuerySpecEntry("bool", "")
+            query.spec["is_archived"] = QuerySpecEntry("bool", "")
             # Exclude users of any higher realm (implying event)
             for realm in implying_realms('cde'):
                 query.constraints.append(
                     ("is_{}_realm".format(realm), QueryOperators.equal, False))
-                query.spec["is_{}_realm".format(realm)] = "bool"
+                query.spec["is_{}_realm".format(realm)] = QuerySpecEntry("bool", "")
         elif query.scope == QueryScope.past_event_user:
             if not self.is_admin(rs):
                 raise PrivilegeError(n_("Admin only."))
             query.constraints.append(("is_event_realm", QueryOperators.equal, True))
             query.constraints.append(("is_archived", QueryOperators.equal, False))
-            query.spec['is_event_realm'] = "bool"
-            query.spec["is_archived"] = "bool"
+            query.spec['is_event_realm'] = QuerySpecEntry("bool", "")
+            query.spec["is_archived"] = QuerySpecEntry("bool", "")
         else:
             raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query)

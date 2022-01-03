@@ -20,7 +20,7 @@ from cdedb.common import (
     n_,
 )
 from cdedb.database.connection import Atomizer
-from cdedb.query import Query, QueryOperators, QueryScope
+from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 
 
 def _get_field_select_columns(fields: CdEDBObjectMap,
@@ -248,7 +248,7 @@ class EventQueryBackend(EventBaseBackend):
                     and not self.is_admin(rs)):
                 raise PrivilegeError(n_("Not privileged."))
             query.constraints.append(("event_id", QueryOperators.equal, event_id))
-            query.spec['event_id'] = "id"
+            query.spec['event_id'] = QuerySpecEntry("bool", "")
         elif query.scope in {QueryScope.event_user,
                              QueryScope.archived_past_event_user}:
             if not self.is_admin(rs) and "core_admin" not in rs.user.roles:
@@ -256,18 +256,18 @@ class EventQueryBackend(EventBaseBackend):
 
             # Include only event-users
             query.constraints.append(("is_event_realm", QueryOperators.equal, True))
-            query.spec["is_event_realm"] = "bool"
+            query.spec["is_event_realm"] = QuerySpecEntry("bool", "")
 
             # Include only (un)archived users, depending on query scope.
             is_archived = query.scope == QueryScope.archived_past_event_user
             query.constraints.append(("is_archived", QueryOperators.equal, is_archived))
-            query.spec["is_archived"] = "bool"
+            query.spec["is_archived"] = QuerySpecEntry("bool", "")
 
             # Exclude users of any higher realm (implying event)
             for realm in implying_realms('event'):
                 query.constraints.append(
                     (f"is_{realm}_realm", QueryOperators.equal, False))
-                query.spec[f"is_{realm}_realm"] = "bool"
+                query.spec[f"is_{realm}_realm"] = QuerySpecEntry("bool", "")
         elif query.scope == QueryScope.event_course:
             event_id = affirm(vtypes.ID, event_id)
             assert event_id is not None

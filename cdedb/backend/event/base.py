@@ -27,13 +27,13 @@ from cdedb.backend.common import (
 )
 from cdedb.backend.event.lowlevel import EventLowLevelBackend
 from cdedb.common import (
-    COURSE_FIELDS, COURSE_TRACK_FIELDS, EVENT_FIELDS, EVENT_PART_FIELDS,
-    EVENT_SCHEMA_VERSION, FEE_MODIFIER_FIELDS, FIELD_DEFINITION_FIELDS,
-    LODGEMENT_FIELDS, LODGEMENT_GROUP_FIELDS, PERSONA_EVENT_FIELDS,
-    PERSONA_STATUS_FIELDS, QUESTIONNAIRE_ROW_FIELDS, REGISTRATION_FIELDS,
-    REGISTRATION_PART_FIELDS, REGISTRATION_TRACK_FIELDS, CdEDBLog, CdEDBObject,
-    CdEDBObjectMap, DefaultReturnCode, PrivilegeError, RequestState, glue, n_, now,
-    unwrap, xsorted,
+    COURSE_FIELDS, COURSE_SEGMENT_FIELDS, COURSE_TRACK_FIELDS, EVENT_FIELDS,
+    EVENT_PART_FIELDS, EVENT_SCHEMA_VERSION, FEE_MODIFIER_FIELDS,
+    FIELD_DEFINITION_FIELDS, LODGEMENT_FIELDS, LODGEMENT_GROUP_FIELDS,
+    PERSONA_EVENT_FIELDS, PERSONA_STATUS_FIELDS, QUESTIONNAIRE_ROW_FIELDS,
+    REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS, REGISTRATION_TRACK_FIELDS, CdEDBLog,
+    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, PrivilegeError, RequestState, glue,
+    n_, now, unwrap, xsorted,
 )
 from cdedb.database.connection import Atomizer
 
@@ -494,8 +494,8 @@ class EventBaseBackend(EventLowLevelBackend):
         event_id = affirm(vtypes.ID, event_id)
         kinds = kinds or []
         affirm_set(const.QuestionnaireUsages, kinds)
-        query = "SELECT {fields} FROM event.questionnaire_rows".format(
-            fields=", ".join(QUESTIONNAIRE_ROW_FIELDS))
+        columns = ', '.join(k for k in QUESTIONNAIRE_ROW_FIELDS if k != 'event_id')
+        query = f"SELECT {columns} FROM event.questionnaire_rows"
         constraints = ["event_id = %s"]
         params: List[Any] = [event_id]
         if kinds:
@@ -504,7 +504,6 @@ class EventBaseBackend(EventLowLevelBackend):
         query += " WHERE " + " AND ".join(c for c in constraints)
         d = self.query_all(rs, query, params)
         for row in d:
-            # noinspection PyArgumentList
             row['kind'] = const.QuestionnaireUsages(row['kind'])
         ret = {
             k: xsorted([e for e in d if e['kind'] == k], key=lambda x: x['pos'])
@@ -610,25 +609,18 @@ class EventBaseBackend(EventLowLevelBackend):
                 ('event.event_parts', "event_id", EVENT_PART_FIELDS),
                 ('event.course_tracks', "part_id", COURSE_TRACK_FIELDS),
                 ('event.courses', "event_id", COURSE_FIELDS),
-                ('event.course_segments', "track_id", (
-                    'id', 'course_id', 'track_id', 'is_active')),
-                ('event.orgas', "event_id", (
-                    'id', 'persona_id', 'event_id',)),
-                ('event.field_definitions', "event_id",
-                 FIELD_DEFINITION_FIELDS),
+                ('event.course_segments', "track_id", COURSE_SEGMENT_FIELDS),
+                ('event.orgas', "event_id", ('id', 'persona_id', 'event_id',)),
+                ('event.field_definitions', "event_id", FIELD_DEFINITION_FIELDS),
                 ('event.fee_modifiers', "part_id", FEE_MODIFIER_FIELDS),
                 ('event.lodgement_groups', "event_id", LODGEMENT_GROUP_FIELDS),
                 ('event.lodgements', "event_id", LODGEMENT_FIELDS),
                 ('event.registrations', "event_id", REGISTRATION_FIELDS),
-                ('event.registration_parts', "part_id",
-                 REGISTRATION_PART_FIELDS),
-                ('event.registration_tracks', "track_id",
-                 REGISTRATION_TRACK_FIELDS),
+                ('event.registration_parts', "part_id", REGISTRATION_PART_FIELDS),
+                ('event.registration_tracks', "track_id", REGISTRATION_TRACK_FIELDS),
                 ('event.course_choices', "track_id", (
                     'id', 'registration_id', 'track_id', 'course_id', 'rank',)),
-                ('event.questionnaire_rows', "event_id", (
-                    'id', 'event_id', 'field_id', 'pos', 'title', 'info',
-                    'input_size', 'readonly', 'kind')),
+                ('event.questionnaire_rows', "event_id", QUESTIONNAIRE_ROW_FIELDS),
                 ('event.log', "event_id", (
                     'id', 'ctime', 'code', 'submitted_by', 'event_id',
                     'persona_id', 'change_note')),
@@ -642,7 +634,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 elif id_name == "track_id":
                     id_range = set(ret['event.course_tracks'])
                 else:
-                    raise RuntimeError("Impossible.")
+                    raise RuntimeError(n_("Impossible."))
                 if 'id' not in columns:
                     columns += ('id',)
                 ret[table] = list_to_dict(self.sql_select(

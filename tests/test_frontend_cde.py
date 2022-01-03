@@ -911,6 +911,22 @@ class TestCdEFrontend(FrontendTest):
     def test_create_archive_user(self) -> None:
         self.check_create_archive_user('cde', PERSONA_TEMPLATE.copy())
 
+    @as_users("vera")
+    def test_archived_user_search(self) -> None:
+        self.traverse({'href': '/cde/$'}, "Archivsuche")
+        self.assertTitle("Archivsuche")
+        f = self.response.forms['queryform']
+        f['qval_birthday'] = '31.12.2000'
+        f['qop_birthday'] = QueryOperators.less.value
+        for field in f.fields:
+            if field and field.startswith('qsel_'):
+                f[field].checked = True
+        self.submit(f)
+        self.assertTitle("Archivsuche")
+        self.assertPresence("Ergebnis [2]", div='query-results')
+        self.assertPresence("Hell", div='query-result')
+        self.assertPresence("Lost", div='query-result')
+
     @as_users("farin")
     def test_lastschrift_index(self) -> None:
         self.traverse({'description': 'Mitglieder'},

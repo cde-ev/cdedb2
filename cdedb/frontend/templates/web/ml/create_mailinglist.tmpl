@@ -3,7 +3,6 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}
     {{ util.cdedb_script('cdedb_helper.js') }}
-    {{ util.cdedb_script('cdedb_change_mailinglist.js') }}
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
 {% endblock %}
 {% set jshint='weak' %}
@@ -24,7 +23,7 @@
     {% else %}
     <script nonce="{{ csp_nonce }}">
         $(function() {
-            $('#createlistform').cdedbProtectChanges().cdedbChangeMailinglist();
+            $('#createlistform').cdedbProtectChanges();
         });
     </script>
     <form action="{{ cdedblink('ml/create_mailinglist') }}" method="POST" id="createlistform" class="form-horizontal">
