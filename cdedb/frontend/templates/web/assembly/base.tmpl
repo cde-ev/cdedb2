@@ -17,7 +17,7 @@
                     aclass="list-group-item", icon="align-justify", active=(sidenav_active == 'assembly_summary')) }}
 
             {{ util.href(cdedblink("assembly/list_attachments", {'assembly_id': data['id']}),
-                    gettext("Attachment Overview"), aclass="list-group-item", icon="file",
+                    gettext("Attachments"), aclass="list-group-item", icon="file",
                     active=(sidenav_active == 'assembly_attachments')) }}
 
             {% if ("assembly_presider" in user.admin_views or ambience['assembly']['id'] in user.presider) %}
@@ -51,13 +51,15 @@
             {{ util.href(cdedblink("assembly/index"), gettext("Overview"), icon="caret-right",
                     aclass="list-group-item", active=(sidenav_active == 'assembly_index')) }}
         </div>
-        {% if user.admin_views.intersection(('assembly_user', 'assembly_mgmt')) %}
+        {% if user.admin_views.intersection(('assembly_user', 'assembly_mgmt', 'auditor')) %}
             <div class="list-group tear-down">
                 {% if 'assembly_user' in user.admin_views %}
                     {{ util.href(cdedblink("assembly/user_search"), gettext("Manage Users"), icon="users",
                                  aclass="list-group-item", active=(sidenav_active == 'assembly_users')) }}
+                    {{ util.href(cdedblink("assembly/archived_user_search"), gettext("Search Archived Users"), aclass="list-group-item",
+                                 icon="inbox", active=(sidenav_active=='assembly_manage_archive')) }}
                 {% endif %}
-                {% if 'assembly_mgmt' in user.admin_views %}
+                {% if user.admin_views.intersection(('assembly_mgmt', 'auditor')) %}
                     {{ util.href(cdedblink("assembly/view_log"), gettext("Log"), icon="far fa-list-alt",
                                  aclass="list-group-item", active=(sidenav_active == 'assembly_log')) }}
                 {% endif %}
@@ -71,13 +73,20 @@
 {% block adminviews %}
     {% if ambience['assembly'] %}
         {% if user.persona_id in ambience['assembly']['presiders'] %}
-            {{ util.admin_views_toggle(((gettext("Assembly Administration"), ["assembly_mgmt"], None),)) }}
+            {{ util.admin_views_toggle((
+                    (gettext("Assembly Administration"), ["assembly_mgmt"], None),
+                )) }}
         {% else %}
-            {{ util.admin_views_toggle(((gettext("Assembly Administration"), ["assembly_mgmt"], None),
-                                        (gettext("Presider Controls"), ["assembly_presider"], None))) }}
+            {{ util.admin_views_toggle((
+                    (gettext("Assembly Administration"), ["assembly_mgmt"], None),
+                    (gettext("Presider Controls"), ["assembly_presider"], None),
+                )) }}
         {% endif %}
     {% else %}
-        {{ util.admin_views_toggle(((gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], ["assembly_user"]),
-                                    (gettext("Assembly Administration"), ["assembly_mgmt"], None))) }}
+        {{ util.admin_views_toggle((
+                (gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], ["assembly_user"]),
+                (gettext("Assembly Administration"), ["assembly_mgmt"], None),
+                (gettext("Auditor"), ["auditor"], None),
+            )) }}
     {% endif %}
 {% endblock %}

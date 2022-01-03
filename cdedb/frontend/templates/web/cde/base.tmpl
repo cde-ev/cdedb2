@@ -14,21 +14,23 @@
                 {{ util.href(cdedblink("cde/member_search"), gettext("CdE-Member Search"), aclass="list-group-item", icon="search",
                         active=(sidenav_active=='cde_member_search')) }}
             {% endif %}
-            {% if 'member' in user.roles %}
+            {% if "member" in user.roles %}
                 {{ util.href(cdedblink("cde/consent_decision_form"), gettext("Privacy Policy"),
                              aclass="list-group-item", icon="check-square", active=(sidenav_active=='cde_consent_decision')) }}
             {% endif %}
-            {% if "cde_user" in user.admin_views %}
+            {% if "member" in user.roles or "cde_user" in user.admin_views %}
                 {{ util.href(cdedblink("cde/member_stats"), gettext("Member Stats"), aclass="list-group-item",
                              icon="chart-bar", active=(sidenav_active=='cde_member_stats')) }}
             {% endif %}
         </div>
 
-        {% if user.admin_views.intersection(('cde_user', 'finance')|set) %}
+        {% if user.admin_views.intersection(('cde_user', 'finance', 'auditor')) %}
             <div class="list-group tear-down">
                 {% if "cde_user" in user.admin_views %}
                     {{ util.href(cdedblink("cde/user_search"), gettext("Manage Users"), aclass="list-group-item", icon="users",
                             active=(sidenav_active=='cde_manage_users')) }}
+                    {{ util.href(cdedblink("cde/archived_user_search"), gettext("Search Archived Users"), aclass="list-group-item",
+                            icon="inbox", active=(sidenav_active=='cde_manage_archive')) }}
                 {% endif %}
                 {% if "finance" in user.admin_views %}
                     {{ util.href(cdedblink("cde/lastschrift_index"), gettext("Direct Debit Authorizations"), aclass="list-group-item",
@@ -39,6 +41,8 @@
                             icon="euro-sign", active=(sidenav_active=='cde_transfers')) }}
                     {{ util.href(cdedblink("cde/show_semester"), gettext("Semester Management"), aclass="list-group-item",
                             icon="hourglass-half", active=(sidenav_active=='cde_semester')) }}
+                {% endif %}
+                {% if user.admin_views.intersection(('finance', 'auditor')) %}
                     {{ util.href(cdedblink("cde/view_cde_log"), gettext("CdE Log"), aclass="list-group-item", icon="far fa-list-alt",
                             active=(sidenav_active=='cde_log')) }}
                     {{ util.href(cdedblink("cde/view_finance_log"), gettext("Finance Log"), aclass="list-group-item", icon="far fa-list-alt",
@@ -47,17 +51,19 @@
             </div>
         {% endif %}
 
-        {% if "member" in user.roles or "past_event" in user.admin_views %}
+        {% if 'member' in user.roles or user.admin_views.intersection(('past_event', 'auditor')) %}
             <div class="list-group tear-down">
-                {{ util.href(cdedblink("cde/list_past_events"), gettext("Past Events"), icon="calendar-alt",
-                        aclass="list-group-item", active=(sidenav_active=='cde_past_events')) }}
-                {% if "member" in user.roles %}
+                {% if "member" in user.roles or "past_event" in user.admin_views %}
+                    {{ util.href(cdedblink("cde/list_past_events"), gettext("Past Events"), icon="calendar-alt",
+                            aclass="list-group-item", active=(sidenav_active=='cde_past_events')) }}
                     {{ util.href(cdedblink("cde/past_course_search"), gettext("Course Search"), icon="search",
                                  aclass="list-group-item", active=(sidenav_active=='cde_past_course_search')) }}
                 {% endif %}
                 {% if "past_event" in user.admin_views %}
                     {{ util.href(cdedblink("cde/institution_summary"), gettext("Manage Institutions"), icon="briefcase",
                             aclass="list-group-item", active=(sidenav_active=='cde_past_events_org')) }}
+                {% endif %}
+                {% if user.admin_views.intersection(('past_event', 'auditor')) %}
                     {{ util.href(cdedblink("cde/view_past_log"), gettext("Past Events Log"), icon="far fa-list-alt",
                             aclass="list-group-item", active=(sidenav_active=='cde_past_events_log')) }}
                     </div>
@@ -74,7 +80,10 @@
 {% endblock %}
 
 {% block adminviews %}
-    {{ util.admin_views_toggle(((gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], ["cde_user"]),
-                                (gettext("Past Event Administration"), ["past_event"], None),
-                                (gettext("Finance Administration"), ["finance"], None))) }}
+    {{ util.admin_views_toggle((
+            (gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], ["cde_user"]),
+            (gettext("Past Event Administration"), ["past_event"], None),
+            (gettext("Finance Administration"), ["finance"], None),
+            (gettext("Auditor"), ["auditor"], None),
+        )) }}
 {% endblock %}

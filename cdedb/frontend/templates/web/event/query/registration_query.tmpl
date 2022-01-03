@@ -1,0 +1,112 @@
+{% set sidenav_active='event_registration' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/generic.tmpl" as generic with context %}
+{% set jshint='strong' %}
+{% block scripts %}{{ util.cdedb_script('cdedb_queryform.js') }}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% block title %}
+    {% trans title=ambience['event']['title'] %}
+    	Registrations ({{ title }})
+    {% endtrans %}
+{% endblock %}
+{% block heading %}
+    {{ util.context_heading(gettext("Registrations"), ambience['event']['title'],
+                            'chalkboard-teacher', gettext("Event")) }}
+{% endblock %}
+{% block breadcrumb %}
+{{ super() }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+{{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations"), active=True) }}
+{% endblock %}
+{% block content %}
+    <div class="row">
+        <div class="col-md-4">
+            <div class="p button-par">
+                {{ util.href(cdedblink("event/add_registration_form"), gettext("Add Participant"),
+                             readonly=is_locked, icon='plus', aclass='btn btn-sm btn-success') }}
+                {% if ambience['event']['fields'] and has_registrations %}
+                    {{ util.href(cdedblink("event/field_set_select", {'kind': enums['FieldAssociations'].registration.value}), gettext("Set Field"),
+                                  readonly=is_locked, icon='edit', aclass='btn btn-sm btn-warning') }}
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-md-8">
+            {{ generic.place_default_queries("event/registration_query", default_queries) }}
+        </div>
+    </div>
+
+    {{ generic.format_query(enums['QueryScope'].registration, spec,
+                            cdedblink('event/registration_query') + '#query-results',
+                            selection_default=('persona.username', 'persona.family_name', 'persona.given_names')) }}
+
+    {% if values['is_search'] %}
+        <h3 id="query-results">{% trans %}Result{% endtrans %} [{{ result|length }}]</h3>
+        <!-- Additional buttons for the registration_query -->
+
+        <div class="p">
+            {% if "persona.username" in query.fields_of_interest %}
+                    {% set usernames = [] %}
+                {% for entry in result if "persona.username" in entry and entry["persona.username"] %}
+                    {% do usernames.append(entry["persona.username"]) %}
+                {% endfor %}
+                {{ util.href(util.mailto(bcc=";".join(usernames)), gettext("bcc email to all"),
+                             icon="envelope", aclass="btn btn-default",
+                             title=gettext("Send Mail to all registrations listed below as BCC.")) }}
+                {{ util.href(util.mailto(",".join(usernames)), gettext("email to all"),
+                             icon="envelope", aclass="btn btn-default",
+                             title=gettext("Send Mail to all registrations listed below.")) }}
+            {% else %}
+                {{ util.href("#", gettext("bcc email to all"), readonly=True,
+                             icon="envelope", aclass="btn btn-default",
+                             title=gettext("Email button is only available, if the email field is shown.")) }}
+                {{ util.href("#", gettext("email to all"), readonly=True,
+                             icon="envelope", aclass="btn btn-default",
+                             title=gettext("Email button is only available, if the email field is shown.")) }}
+            {% endif %}
+        </div>
+
+        <div class="p pull-right">
+            {% if ambience['event']['tracks'] %}
+                <button type="button" class="btn btn-info btn-sm" id="btn-course-choices">
+                    {{ util.make_icon('crosshairs') }} {% trans %}Course Assignment{% endtrans %}
+                </button>
+            {% endif %}
+            {{ generic.query_button_field_set(enums['FieldAssociations'].registration) }}
+            <button type="button" class="btn btn-warning btn-sm" id="btn-edit">
+                {{ util.make_icon('pen') }} {% trans %}Edit{% endtrans %}
+            </button>
+            <script nonce="{{ csp_nonce }}">
+                $('#btn-course-choices').click(function(){
+                    var list = [];
+                    $('#query-result').find('.ls-selected').each(function(){
+                        list.push($(this).attr('data-id'));
+                    });
+                    if (list.length == 0)
+                        return;
+                    location.href =
+                        "{{ cdedblink('event/course_choices_form', {'include_active': True}, magic_placeholders=['ids'])|safe }}"
+                            .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', list.join(','));
+                });
+                $('#btn-edit').click(function(){
+                    var list = [];
+                    $('#query-result').find('.ls-selected').each(function(){
+                        list.push($(this).attr('data-id'));
+                    });
+                    if (list.length == 0)
+                        return;
+                    if (list.length == 1)
+                        location.href =
+                            "{{ cdedblink('event/change_registration_form', magic_placeholders=['registration_id']) }}"
+                                .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', list.join(','));
+                    else
+                        location.href =
+                            "{{ cdedblink('event/change_registrations_form', magic_placeholders=['reg_ids']) }}"
+                                .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', list.join(','));
+                });
+            </script>
+        </div>
+
+        {{ generic.display_query_result(result, query) }}
+
+    {% endif %}
+{% endblock %}

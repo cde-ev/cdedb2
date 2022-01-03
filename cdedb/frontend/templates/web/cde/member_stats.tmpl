@@ -6,45 +6,97 @@
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("cde/index"), gettext("Members")) }}
-{{ util.breadcrumb_link(cdedblink("cde/member_stats"), gettext("Member Stats"), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("cde/index"), gettext("Members")) }}
+    {{ util.breadcrumb_link(cdedblink("cde/member_stats"), gettext("Member Stats"), active=True) }}
 {% endblock %}
 {% block content %}
     <div id="cde-simple-stats">
-        <table class="table table-hover table-condensed">
-            {% for key, value in stats['simple_stats'].items() %}
+        <table class="table table-slim table-condensed">
+            <thead>
                 <tr>
-                    <td>
-                        {{ gettext(key) }}
-                    </td>
-                    <td id="simple-stats-{{ key }}">
-                        {{ value }}
-                    </td>
+                    <th colspan="2"></th>
+                    <th>{% trans %}Count{% endtrans %}</th>
                 </tr>
-            {% endfor %}
-        </table>
-    </div>
-    <hr>
-    <div id="cde-complex-stats">
-        {% for view, view_stats in stats.items() if view != 'simple_stats' %}
-            <table class="table table-hover table-condensed" id="complex-stats-{{ view }}">
-                <thead>
+            </thead>
+            <tbody>
+                {% for key, value in simple_stats.items() %}
                     <tr>
-                        <td></td>
-                        <td>{{ gettext(view) }}</td>
-                    </tr>
-                </thead>
-                {% for datum, num in view_stats.items() %}
-                    <tr>
-                        <td>
-                            {{ datum }}
-                        </td>
-                        <td id="complex-stats-{{ view }}-{{ datum }}">
-                            {{ num }}
+                        {% if "num_of" in key %}
+                        <td class="indent"></td>
+                        {% endif %}
+                        <th {% if not "num_of" in key %}colspan="2"{% endif %}>
+                            {{ gettext(key) }}
+                        </th>
+                        <td id="simple-stats-{{ key }}" class="text-right">
+                            {{ value }}
                         </td>
                     </tr>
                 {% endfor %}
-            </table>
+            </tbody>
+        </table>
+    </div>
+
+    <h3>{% trans %}Stats by Year{% endtrans %}</h3>
+    <div id="cde-year-stats">
+        <table class="table table-slim table-condensed" id="year-stats">
+            <thead>
+                <tr>
+                    <td></td>
+                    {% for key, value in year_stats.items() %}
+                    <th>{{ gettext(key) }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+            {% for year in all_years|sort if year > 1900 %}
+                <tr>
+                    <th>{{ year }}</th>
+                    {% for key, value in year_stats.items() %}
+                    <td id="year-stats-{{ key }}-{{ year }}" class="text-right">
+                        {{ value.get(year, "–") }}
+                    </td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <h3>{% trans %}Stats by Location{% endtrans %}</h3>
+    <div id="cde-complex-stats">
+        {% for view, view_stats in other_stats.items() %}
+            {% if view == "members_by_country" %}
+                {{ stat_table(view, view_stats, util.gettext_country) }}
+            {% else %}
+                {{ stat_table(view, view_stats) }}
+            {% endif %}
         {% endfor %}
     </div>
 {% endblock %}
+
+{% macro stat_table(view, view_stats, processing="") %}
+    <table class="table table-slim table-condensed" id="complex-stats-{{ view }}">
+        <thead>
+            <tr>
+                <td></td>
+                <th>{{ gettext(view) }}</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for datum, num in view_stats.items() %}
+            <tr>
+                <th>
+                    {% if processing %}
+                        {{ processing(datum) }}
+                    {% else %}
+                        {{ datum }}
+                    {% endif %}
+                </th>
+                <td id="complex-stats-{{ view }}-{{ datum }}" class="text-right">
+                    {{ num }}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endmacro %}

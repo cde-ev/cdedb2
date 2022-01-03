@@ -3,7 +3,6 @@
 """Services for the assembly realm."""
 
 import collections
-import copy
 import datetime
 import io
 import json
@@ -19,16 +18,16 @@ import cdedb.ml_type_aux as ml_type
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, LOG_FIELDS_COMMON, CdEDBObject, CdEDBObjectMap,
-    DefaultReturnCode, EntitySorter, RequestState, get_hash, merge_dicts, n_, now,
-    schulze_evaluate, unwrap, xsorted,
+    EntitySorter, RequestState, get_hash, merge_dicts, n_, now, schulze_evaluate,
+    unwrap, xsorted,
 )
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, REQUESTfile, access, assembly_guard,
-    calculate_db_logparams, calculate_loglinks, cdedburl, check_validation as check,
-    periodic, process_dynamic_input, request_extractor,
+    AbstractUserFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, access,
+    assembly_guard, calculate_db_logparams, calculate_loglinks, cdedburl,
+    check_validation as check, drow_name, periodic, process_dynamic_input,
+    request_extractor,
 )
-from cdedb.frontend.uncommon import AbstractUserFrontend
-from cdedb.query import QUERY_SPECS, Query, mangle_query_input
+from cdedb.query import QueryScope
 from cdedb.validation import (
     ASSEMBLY_COMMON_FIELDS, BALLOT_EXPOSED_FIELDS, PERSONA_FULL_ASSEMBLY_CREATION,
     filter_none,
@@ -48,15 +47,6 @@ class AssemblyFrontend(AbstractUserFrontend):
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
-
-    @staticmethod
-    def is_ballot_voting(ballot: Dict[str, Any]) -> bool:
-        """Determine whether a ballot is open for voting."""
-        timestamp = now()
-        return (timestamp > ballot['vote_begin']
-                and (timestamp < ballot['vote_end']
-                     or (ballot['extended']
-                         and timestamp < ballot['vote_extension_end'])))
 
     @access("assembly")
     def index(self, rs: RequestState) -> Response:
@@ -82,8 +72,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @access("core_admin", "assembly_admin", modi={"POST"})
     @REQUESTdatadict(*filter_none(PERSONA_FULL_ASSEMBLY_CREATION))
-    def create_user(self, rs: RequestState, data: CdEDBObject,
-                    ignore_warnings: bool = False) -> Response:
+    def create_user(self, rs: RequestState, data: CdEDBObject) -> Response:
         defaults = {
             'is_cde_realm': False,
             'is_event_realm': False,
@@ -92,38 +81,33 @@ class AssemblyFrontend(AbstractUserFrontend):
             'is_active': True,
         }
         data.update(defaults)
-        return super().create_user(rs, data, ignore_warnings)
+        return super().create_user(rs, data)
 
     @access("core_admin", "assembly_admin")
     @REQUESTdata("download", "is_search")
     def user_search(self, rs: RequestState, download: Optional[str],
                     is_search: bool) -> Response:
         """Perform search."""
-        spec = copy.deepcopy(QUERY_SPECS['qview_persona'])
-        # mangle the input, so we can prefill the form
-        query_input = mangle_query_input(rs, spec)
-        query: Optional[Query] = None
-        if is_search:
-            query = check(rs, vtypes.QueryInput, query_input, "query",
-                          spec=spec, allow_empty=False)
-        default_queries = self.conf["DEFAULT_QUERIES"]['qview_assembly_user']
-        params = {
-            'spec': spec, 'default_queries': default_queries, 'choices': {},
-            'choices_lists': {}, 'query': query}
-        # Tricky logic: In case of no validation errors we perform a query
-        if not rs.has_validation_errors() and is_search and query:
-            query.scope = "qview_persona"
-            result = self.assemblyproxy.submit_general_query(rs, query)
-            params['result'] = result
-            if download:
-                return self.send_query_download(
-                    rs, result, fields=query.fields_of_interest, kind=download,
-                    filename="user_search_result")
-        else:
-            rs.values['is_search'] = is_search = False
-        return self.render(rs, "user_search", params)
+        return self.generic_user_search(
+            rs, download, is_search, QueryScope.assembly_user, QueryScope.assembly_user,
+            self.assemblyproxy.submit_general_query)
 
-    @access("assembly_admin")
+    @access("core_admin", "assembly_admin")
+    @REQUESTdata("download", "is_search")
+    def archived_user_search(self, rs: RequestState, download: Optional[str],
+                             is_search: bool) -> Response:
+        """Perform search.
+
+        Archived users are somewhat special since they are not visible
+        otherwise.
+        """
+        return self.generic_user_search(
+            rs, download, is_search,
+            QueryScope.archived_persona, QueryScope.archived_persona,
+            self.assemblyproxy.submit_general_query,
+            endpoint="archived_user_search")
+
+    @access("assembly_admin", "auditor")
     @REQUESTdata(*LOG_FIELDS_COMMON, "assembly_id")
     def view_log(self, rs: RequestState,
                  codes: Collection[const.AssemblyLogCodes],
@@ -150,15 +134,14 @@ class AssemblyFrontend(AbstractUserFrontend):
                  entry['submitted_by']}
                 | {entry['persona_id'] for entry in log if entry['persona_id']})
         personas = self.coreproxy.get_personas(rs, personas)
-        assemblies = {entry['assembly_id']
-                      for entry in log if entry['assembly_id']}
-        assemblies = self.assemblyproxy.get_assemblies(rs, assemblies)
         all_assemblies = self.assemblyproxy.list_assemblies(rs)
         loglinks = calculate_loglinks(rs, total, offset, length)
         return self.render(rs, "view_log", {
             'log': log, 'total': total, 'length': _length, 'personas': personas,
-            'assemblies': assemblies, 'all_assemblies': all_assemblies,
-            'loglinks': loglinks})
+            'all_assemblies': all_assemblies, 'loglinks': loglinks,
+            'may_view': lambda assembly_id: self.assemblyproxy.may_assemble(
+                rs, assembly_id=assembly_id),
+        })
 
     @access("assembly")
     @assembly_guard
@@ -204,27 +187,11 @@ class AssemblyFrontend(AbstractUserFrontend):
         attachment_ids = self.assemblyproxy.list_attachments(
             rs, assembly_id=assembly_id)
         attachments = self.assemblyproxy.get_attachments(rs, attachment_ids)
-        attachment_histories = self.assemblyproxy.get_attachment_histories(
+        attachments_version = self.assemblyproxy.get_latest_attachments_version(
             rs, attachment_ids)
         attends = self.assemblyproxy.does_attend(rs, assembly_id=assembly_id)
-        ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
-        ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
         presiders = self.coreproxy.get_personas(
             rs, rs.ambience['assembly']['presiders'])
-
-        has_ballot_attachments = False
-        ballot_attachments = {}
-        for ballot_id in ballot_ids:
-            ballot_attachment_ids = self.assemblyproxy.list_attachments(
-                rs, ballot_id=ballot_id)
-            ballot_attachments[ballot_id] = \
-                self.assemblyproxy.get_attachments(
-                    rs, ballot_attachment_ids)
-            attachment_histories.update(
-                self.assemblyproxy.get_attachment_histories(
-                    rs, ballot_attachment_ids))
-            has_ballot_attachments = has_ballot_attachments or bool(
-                ballot_attachment_ids)
 
         if self.is_admin(rs):
             conclude_blockers = self.assemblyproxy.conclude_assembly_blockers(
@@ -237,12 +204,10 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         params = {
             "attachments": attachments,
-            "attachment_histories": attachment_histories,
-            "attends": attends, "ballots": ballots,
-            "ballot_attachments": ballot_attachments,
+            "attachments_version": attachments_version,
+            "attends": attends,
             "conclude_blockers": conclude_blockers,
             "delete_blockers": delete_blockers,
-            "has_ballot_attachments": has_ballot_attachments,
             "presiders": presiders,
         }
 
@@ -267,10 +232,9 @@ class AssemblyFrontend(AbstractUserFrontend):
                 "Some of these users are not assembly users."))))
         if rs.has_validation_errors():
             return self.show_assembly(rs, assembly_id)
-        presider_ids = set(presider_ids) | rs.ambience['assembly']['presiders']
-        code = self.assemblyproxy.set_assembly_presiders(
+        code = self.assemblyproxy.add_assembly_presiders(
             rs, assembly_id, presider_ids)
-        self.notify_return_code(rs, code, info=n_("Action had no effect."))
+        self.notify_return_code(rs, code, error=n_("Action had no effect."))
         return self.redirect(rs, "assembly/show_assembly")
 
     @access("assembly_admin", modi={"POST"})
@@ -283,9 +247,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             rs.notify("info", n_(
                 "This user is not a presider for this assembly."))
             return self.redirect(rs, "assembly/show")
-        ids = rs.ambience['assembly']['presiders'] - {presider_id}
-        code = self.assemblyproxy.set_assembly_presiders(rs, assembly_id, ids)
-        self.notify_return_code(rs, code, info=n_("Action had no effect."))
+        code = self.assemblyproxy.remove_assembly_presider(rs, assembly_id, presider_id)
+        self.notify_return_code(rs, code, error=n_("Action had no effect."))
         return self.redirect(rs, "assembly/show_assembly")
 
     @access("assembly")
@@ -479,12 +442,12 @@ class AssemblyFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.show_assembly(rs, assembly_id)
         blockers = self.assemblyproxy.delete_assembly_blockers(rs, assembly_id)
-        if "vote_begin" in blockers:
+        if "ballot_is_locked" in blockers:
             rs.notify("error", n_("Unable to remove active ballot."))
             return self.show_assembly(rs, assembly_id)
 
         # Specify what to cascade
-        cascade = {"ballots", "attendees", "attachments", "log",
+        cascade = {"assembly_is_locked", "attachments", "attendees", "ballots", "log",
                    "mailinglists", "presiders"} & blockers.keys()
         code = self.assemblyproxy.delete_assembly(
             rs, assembly_id, cascade=cascade)
@@ -494,36 +457,38 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @access("assembly")
     def list_attachments(self, rs: RequestState, assembly_id: int) -> Response:
+        """Render form."""
         if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):
-            rs.notify(
-                "error", n_("May not access attachments for this assembly."))
+            rs.notify("error", n_("May not access attachments for this assembly."))
             return self.redirect(rs, "assembly/index")
-        assembly_attachments = self.assemblyproxy.list_attachments(
-                rs, assembly_id=assembly_id)
-        count = len(assembly_attachments)
-        all_attachments: Dict[Optional[int], CdEDBObjectMap] = {
-            None: self.assemblyproxy.get_attachments(
-                rs, assembly_attachments)
-        }
-        attachment_histories: Dict[Optional[int], Dict[int, CdEDBObjectMap]] = {
-            None: self.assemblyproxy.get_attachment_histories(
-                rs, assembly_attachments)
-        }
-        ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
-        ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
-        for ballot_id in ballot_ids:
-            attachment_ids = self.assemblyproxy.list_attachments(
-                rs, ballot_id=ballot_id)
-            count += len(attachment_ids)
-            all_attachments[ballot_id] = self.assemblyproxy.get_attachments(
-                rs, attachment_ids)
-            attachment_histories[ballot_id] = (
-                self.assemblyproxy.get_attachment_histories(rs, attachment_ids))
+        attachment_ids = self.assemblyproxy.list_attachments(
+            rs, assembly_id=assembly_id)
+        attachments = self.assemblyproxy.get_attachments(rs, attachment_ids)
+        attachments_versions = self.assemblyproxy.get_attachments_versions(
+            rs, attachment_ids)
+
+        def sortkey(att: CdEDBObject) -> Tuple[str, int]:
+            """This is an inline function and not in EntitySorter since its only used
+            here and needs some extra context."""
+            latest_version = attachments_versions[att["id"]][att["latest_version_nr"]]
+            return latest_version["title"], att["id"]
+
+        sorted_attachments = {
+            att["id"]: att for att in xsorted(attachments.values(), key=sortkey)}
+        are_attachment_versions_creatable = \
+            self.assemblyproxy.are_attachment_versions_creatable(rs, attachment_ids)
+        are_attachment_versions_deletable = \
+            self.assemblyproxy.are_attachment_versions_deletable(rs, attachment_ids)
+        are_attachments_deletable = {
+            attachment_id: (attachment["num_versions"] <= 1
+                            and are_attachment_versions_deletable[attachment_id])
+            for attachment_id, attachment in attachments.items()}
         return self.render(rs, "list_attachments", {
-            "all_attachments": all_attachments,
-            "attachment_histories": attachment_histories,
-            "ballots": ballots,
-            "count": count,
+            "attachments": sorted_attachments,
+            "attachments_versions": attachments_versions,
+            "are_attachment_versions_creatable": are_attachment_versions_creatable,
+            "are_attachment_versions_deletable": are_attachment_versions_deletable,
+            "are_attachments_deletable": are_attachments_deletable,
         })
 
     def process_signup(self, rs: RequestState, assembly_id: int,
@@ -553,11 +518,11 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("member", modi={"POST"})
     def signup(self, rs: RequestState, assembly_id: int) -> Response:
         """Join an assembly."""
+        if rs.has_validation_errors():
+            return self.show_assembly(rs, assembly_id)
         if now() > rs.ambience['assembly']['signup_end']:
             rs.notify("warning", n_("Signup already ended."))
             return self.redirect(rs, "assembly/show_assembly")
-        if rs.has_validation_errors():
-            return self.show_assembly(rs, assembly_id)
         self.process_signup(rs, assembly_id)
         return self.redirect(rs, "assembly/show_assembly")
 
@@ -567,12 +532,12 @@ class AssemblyFrontend(AbstractUserFrontend):
     def external_signup(self, rs: RequestState, assembly_id: int,
                         persona_id: CdedbID) -> Response:
         """Add an external participant to an assembly."""
-        if now() > rs.ambience['assembly']['signup_end']:
-            rs.notify("warning", n_("Signup already ended."))
-            return self.redirect(rs, "assembly/list_attendees")
         if rs.has_validation_errors():
             # Shortcircuit for invalid id
             return self.list_attendees(rs, assembly_id)
+        if now() > rs.ambience['assembly']['signup_end']:
+            rs.notify("warning", n_("Signup already ended."))
+            return self.redirect(rs, "assembly/list_attendees")
         if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
             rs.append_validation_error(
                 ('persona_id',
@@ -649,21 +614,40 @@ class AssemblyFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/show_assembly")
 
-    @staticmethod
-    def group_ballots(ballots: Dict[int, Dict[str, Any]]
-                      ) -> Tuple[CdEDBObjectMap, CdEDBObjectMap,
-                                 CdEDBObjectMap, CdEDBObjectMap]:
-        """Helper to group ballots by status.
+    def _group_ballots(self, rs: RequestState, assembly_id: int
+                       ) -> Optional[Tuple[CdEDBObjectMap, CdEDBObjectMap,
+                                           CdEDBObjectMap, CdEDBObjectMap]]:
+        """Helper to group all ballots of an assembly by status.
 
-        :returns: Four dicts mapping ballot ids to ballots grouped by status
-          in the order done, extended, current, future.
+        This calls `_update_ballots` to ensure data integrity before
+        grouping the ballots. If this performed a state update,
+        None will be returned and the calling function should perform
+        a redirect to the calling page, so the typical usage looks like:
+
+            if grouped := self._group_ballots(rs, assembly_id):
+                done, extended, current, future = grouped
+            else:
+                return self.redirect(rs, "assembly/dummy_page")
+
+        :returns: None if any ballot updated state, else
+            four dicts mapping ballot ids to ballots grouped by status
+            in the order done, extended, current, future.
+            Every ballot of the assembly is present in exactly one dict.
         """
+        # Check for state changes before grouping ballots.
+        extended, tallied, _ = self._update_ballots(rs, assembly_id)
+        if extended or tallied:
+            return None
+
+        ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
+        ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
+
         ref = now()
 
         future = {k: v for k, v in ballots.items()
                   if v['vote_begin'] > ref}
         # `current` also contains ballots which wait for
-        # check_voting_priod_extension() being called on them
+        # check_voting_period_extension() being called on them
         current = {k: v for k, v in ballots.items()
                    if (v['vote_begin'] <= ref < v['vote_end']
                        or (v['vote_end'] <= ref and v['extended'] is None))}
@@ -677,7 +661,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         if not (len(future) + len(current) + len(extended) + len(done)
                 == len(ballots)):
-            raise RuntimeError(n_("Grouping ballots by status failed."))
+            raise RuntimeError(n_("Impossible."))
 
         return done, extended, current, future
 
@@ -687,21 +671,20 @@ class AssemblyFrontend(AbstractUserFrontend):
         if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
 
-        ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
-        ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
-
-        # Check for extensions before grouping ballots.
-        if any([self._update_ballot_state(rs, ballot)
-                for anid, ballot in ballots.items()]):
+        if grouped := self._group_ballots(rs, assembly_id):
+            done, extended, current, future = grouped
+            # _group_ballots returns all ballots of the assembly in four disjunct dicts
+            # TODO: python3.9: ballots = done | extended | current | future
+            ballots = {**done, **extended, **current, **future}
+        else:
+            # some ballots updated state
             return self.redirect(rs, "assembly/list_ballots")
-
-        done, extended, current, future = self.group_ballots(ballots)
-        # Currently we don't distinguish between current and extended ballots
+        # Currently, we don't distinguish between current and extended ballots
         current.update(extended)
 
         votes = {}
         if self.assemblyproxy.does_attend(rs, assembly_id=assembly_id):
-            for ballot_id in ballot_ids:
+            for ballot_id in ballots:
                 votes[ballot_id] = self.assemblyproxy.get_vote(
                     rs, ballot_id, secret=None)
 
@@ -736,335 +719,197 @@ class AssemblyFrontend(AbstractUserFrontend):
             'ballot_id': new_id})
 
     @access("assembly")
-    # ballot_id is optional, but comes semantically before attachment_id
     def get_attachment(self, rs: RequestState, assembly_id: int,
-                       attachment_id: int, ballot_id: int = None,
-                       version: int = None) -> Response:
-        """Retrieve an attachment. Default to most recent version."""
-        if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):
-            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        history = self.assemblyproxy.get_attachment_history(
-            rs, attachment_id)
-        version = version or self.assemblyproxy.get_current_version(
-            rs, attachment_id, include_deleted=False)
-        content = self.assemblyproxy.get_attachment_content(
-            rs, attachment_id, version)
-        if not content:
-            rs.notify("error", n_("File not found."))
-            if ballot_id:
-                return self.redirect(rs, "assembly/show_ballot")
-            else:
-                return self.redirect(rs, "assembly/show_assembly")
-        return self.send_file(rs, data=content, mimetype="application/pdf",
-                              filename=history[version]['filename'])
+                       attachment_id: int) -> Response:
+        """A wrapper around get_attachment_version to retrieve the current version."""
+        attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
+        # Access checking is done inside get_attachment_version
+        return self.redirect(rs, "assembly/get_attachment_version",
+                             params={"version_nr": attachment["latest_version_nr"]})
 
     @access("assembly")
-    def show_attachment(self, rs: RequestState, assembly_id: int,
-                        attachment_id: int, ballot_id: int = None) -> Response:
+    @REQUESTdata("version_nr")
+    def get_attachment_version(self, rs: RequestState, assembly_id: int,
+                               attachment_id: int, version_nr: int) -> Response:
+        """Retrieve the content of a given attachment version."""
         if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        history = self.assemblyproxy.get_attachment_history(
-            rs, attachment_id)
-        edit = not self.assemblyproxy.check_attachment_locked(rs, attachment_id)
-        return self.render(rs, "show_attachment", {
-            'attachment': rs.ambience['attachment'], 'history': history,
-            'edit': edit,
-        })
+        # the check that the attachment belongs to the assembly is already done in
+        # `reconnoitre_ambience`
+        if rs.has_validation_errors():
+            return self.redirect(rs, "assembly/list_attachments")
+        versions = self.assemblyproxy.get_attachment_versions(rs, attachment_id)
+        content = self.assemblyproxy.get_attachment_content(
+            rs, attachment_id, version_nr)
+        if not content:
+            rs.notify("error", n_("File not found."))
+            return self.redirect(rs, "assembly/list_attachments")
+        return self.send_file(rs, data=content, mimetype="application/pdf",
+                              filename=versions[version_nr]['filename'])
 
     @access("assembly")
     @assembly_guard
-    def add_attachment_form(self, rs: RequestState, assembly_id: int,
-                            ballot_id: int = None,
-                            attachment_id: int = None) -> Response:
+    def add_attachment_form(self, rs: RequestState, assembly_id: int) -> Response:
         """Render form."""
-        if ballot_id and now() > rs.ambience['ballot']['vote_begin']:
-            rs.notify("warning", n_("Voting has already begun."))
-            return self.redirect(rs, "assembly/show_ballot")
-        attachment = None
-        history = None
-        if attachment_id:
-            attachment = rs.ambience['attachment']
-            if (attachment['ballot_id'] != ballot_id or
-                    (attachment['assembly_id']
-                     and attachment['assembly_id'] != assembly_id)):
-                rs.notify("error", n_("Invalid attachment specified."))
-                if ballot_id:
-                    return self.redirect(rs, "assembly/show_ballot")
-                else:
-                    return self.redirect(rs, "assembly/show_assembly")
-            history = self.assemblyproxy.get_attachment_history(
-                rs, attachment_id)
-        return self.render(
-            rs, "add_attachment", {
-                'attachment': attachment, 'history': history,
-            })
+        return self.render(rs, "add_attachment")
 
     @access("assembly", modi={"POST"})
     @assembly_guard
     @REQUESTdata("title", "authors", "filename")
     @REQUESTfile("attachment")
-    # ballot_id and attachment_id come semantically after asssembly_id,
-    # but are optional, so need to be at the end.
     def add_attachment(self, rs: RequestState, assembly_id: int,
-                       attachment: werkzeug.FileStorage,
+                       attachment: werkzeug.datastructures.FileStorage,
                        title: str, filename: Optional[vtypes.Identifier],
-                       authors: Optional[str], ballot_id: int = None,
-                       attachment_id: int = None) -> Response:
-        """Create a new attachment.
-
-        It can either be associated to an assembly or a ballot.
-        """
+                       authors: Optional[str]) -> Response:
+        """Create a new attachment."""
         if attachment and not filename:
             assert attachment.filename is not None
             tmp = pathlib.Path(attachment.filename).parts[-1]
             filename = check(rs, vtypes.Identifier, tmp, 'filename')
         attachment = check(rs, vtypes.PDFFile, attachment, 'attachment')
         if rs.has_validation_errors():
-            return self.add_attachment_form(
-                rs, assembly_id=assembly_id, ballot_id=ballot_id,
-                attachment_id=attachment_id)
+            return self.add_attachment_form(rs, assembly_id=assembly_id)
+        assert attachment is not None
+        data: CdEDBObject = {
+            "title": title,
+            "assembly_id": assembly_id,
+            "filename": filename,
+            "authors": authors,
+        }
+        code = self.assemblyproxy.add_attachment(rs, data, attachment)
+        self.notify_return_code(rs, code, success=n_("Attachment added."))
+        return self.redirect(rs, "assembly/list_attachments")
+
+    @access("assembly", modi={"POST"})
+    @assembly_guard
+    @REQUESTdata("attachment_ack_delete")
+    def delete_attachment(self, rs: RequestState, assembly_id: int,
+                          attachment_id: int, attachment_ack_delete: bool) -> Response:
+        """Delete an attachment."""
+        if not attachment_ack_delete:
+            rs.append_validation_error(
+                ("attachment_ack_delete", ValueError(n_("Must be checked."))))
+        if rs.has_validation_errors():
+            return self.redirect(rs, "assembly/list_attachments")
+
+        if not self.assemblyproxy.is_attachment_version_deletable(rs, attachment_id):
+            rs.notify("error", n_("Attachment can not be deleted."))
+            return self.redirect(rs, "assembly/list_attachments")
+
+        attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
+        # This is possible in theory but should not be done to avoid user errors
+        if attachment['num_versions'] > 1:
+            rs.notify("error", n_("Remove all but the last version before deleting the"
+                                  " attachment."))
+            return self.redirect(rs, "assembly/list_attachments")
+
+        cascade = {"ballots", "versions"}
+        code = self.assemblyproxy.delete_attachment(rs, attachment_id, cascade)
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "assembly/list_attachments")
+
+    @access("assembly")
+    @assembly_guard
+    def add_attachment_version_form(self, rs: RequestState, assembly_id: int,
+                                    attachment_id: int) -> Response:
+        """Render form."""
+        attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
+        if attachment['assembly_id'] != assembly_id:
+            rs.notify("error", n_("Invalid attachment specified."))
+            return self.redirect(rs, "assembly/list_attachments")
+        latest_version = self.assemblyproxy.get_latest_attachment_version(
+            rs, attachment_id)
+        is_deletable = self.assemblyproxy.is_attachment_version_deletable(
+            rs, attachment_id)
+        return self.render(
+            rs, "add_attachment_version", {
+                'latest_version': latest_version,
+                'is_deletable': is_deletable
+            })
+
+    @access("assembly", modi={"POST"})
+    @assembly_guard
+    @REQUESTdata("title", "authors", "filename", "ack_creation")
+    @REQUESTfile("attachment")
+    def add_attachment_version(self, rs: RequestState, assembly_id: int,
+                               attachment_id: int,
+                               attachment: werkzeug.datastructures.FileStorage,
+                               title: str, filename: Optional[vtypes.Identifier],
+                               authors: Optional[str],
+                               ack_creation: bool = None) -> Response:
+        """Create a new version of an existing attachment.
+
+        If this version can not be deleted afterwards, the creation must be confirmed.
+        """
+        if attachment and not filename:
+            assert attachment.filename is not None
+            tmp = pathlib.Path(attachment.filename).parts[-1]
+            filename = check(rs, vtypes.Identifier, tmp, 'filename')
+        attachment = check(rs, vtypes.PDFFile, attachment, 'attachment')
+        is_deletable = self.assemblyproxy.is_attachment_version_deletable(rs,
+                                                                          attachment_id)
+        if not is_deletable and not ack_creation:
+            rs.append_validation_error(
+                ("ack_creation", ValueError(n_("Must be checked."))))
+        if rs.has_validation_errors():
+            return self.add_attachment_version_form(
+                rs, assembly_id=assembly_id, attachment_id=attachment_id)
         assert attachment is not None
         data: CdEDBObject = {
             'title': title,
             'filename': filename,
             'authors': authors,
         }
-        if attachment_id:
-            history = self.assemblyproxy.get_attachment_history(
-                rs, attachment_id)
-            file_hash = get_hash(attachment)
-            if any(v["file_hash"] == file_hash for v in history.values()):
-                # TODO maybe display some kind of warning here?
-                # Currently this would mean that you need to reupload the file.
-                pass
+        versions = self.assemblyproxy.get_attachment_versions(rs, attachment_id)
+        file_hash = get_hash(attachment)
+        if any(v["file_hash"] == file_hash for v in versions.values()):
+            # TODO maybe display some kind of warning here?
+            # Currently this would mean that you need to reupload the file.
+            pass
 
-            data['attachment_id'] = attachment_id
-            code = self.assemblyproxy.add_attachment_version(
-                rs, data, attachment)
-        else:
-            if ballot_id:
-                data['ballot_id'] = ballot_id
-            else:
-                data['assembly_id'] = assembly_id
-            code = self.assemblyproxy.add_attachment(rs, data, attachment)
+        data['attachment_id'] = attachment_id
+        code = self.assemblyproxy.add_attachment_version(rs, data, attachment)
         self.notify_return_code(rs, code, success=n_("Attachment added."))
-        return self.redirect(rs, "assembly/show_attachment", {
-            'attachment_id': attachment_id if attachment_id else code,
-        })
-
-    @access("assembly")
-    @assembly_guard
-    def change_attachment_link_form(self, rs: RequestState,
-                                    assembly_id: int, attachment_id: int,
-                                    ballot_id: int = None) -> Response:
-        """Change the association of an existing attachment incl. versions."""
-        attachment = rs.ambience['attachment']
-        if (ballot_id != attachment['ballot_id'] or
-                (attachment['assembly_id']
-                 and attachment['assembly_id'] != assembly_id)):
-            rs.notify("error", n_("Invalid attachment specified."))
-            if attachment['ballot_id']:
-                return self.redirect(rs, "assembly/show_ballot",
-                                     {'ballot_id': attachment['ballot_id']})
-            else:
-                return self.redirect(rs, "assembly/show_assembly")
-        if attachment['ballot_id']:
-            ballot = self.assemblyproxy.get_ballot(rs, attachment['ballot_id'])
-            if now() > ballot['vote_begin']:
-                rs.notify("warning", n_("Voting has already begun."))
-                return self.redirect(rs, "assembly/show_ballot")
-
-        history = self.assemblyproxy.get_attachment_history(rs, attachment_id)
-        ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
-        ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
-        timestamp = now()
-        ballot_entries = [
-            (ballot['id'], ballot['title'])
-            for ballot in xsorted(ballots.values(), key=EntitySorter.ballot)
-            if timestamp < ballot['vote_begin']
-        ]
-        attachment['new_ballot_id'] = attachment['ballot_id']
-        merge_dicts(rs.values, attachment)
-        return self.render(rs, "change_attachment_link", params={
-            'attachment': attachment, 'history': history,
-            'ballot_entries': ballot_entries,
-        })
-
-    @access("assembly", modi={"POST"})
-    @assembly_guard
-    @REQUESTdata("new_ballot_id")
-    def change_attachment_link(self, rs: RequestState, assembly_id: int,
-                               attachment_id: int, new_ballot_id: Optional[vtypes.ID],
-                               ballot_id: int = None) -> Response:
-        """Change the association of an existing attachment incl. versions."""
-        if rs.has_validation_errors():
-            return self.change_attachment_link_form(
-                rs, assembly_id, attachment_id)
-        attachment = rs.ambience['attachment']
-        if (ballot_id != attachment['ballot_id']
-                or (attachment['assembly_id']
-                    and attachment['assembly_id'] != assembly_id)):
-            rs.notify("error", n_("Invalid attachment specified."))
-            return self.redirect(rs, "assembly/show_attachment")
-        if attachment['ballot_id']:
-            ballot = self.assemblyproxy.get_ballot(rs, attachment['ballot_id'])
-            if now() > ballot['vote_begin']:
-                rs.notify("warning", n_("Voting has already begun."))
-                return self.redirect(rs, "assembly/show_ballot")
-
-        data: CdEDBObject = {'id': attachment_id}
-        if new_ballot_id:
-            ballot = self.assemblyproxy.get_ballot(rs, new_ballot_id)
-            if ballot['assembly_id'] != assembly_id:
-                rs.append_validation_error(
-                    ("new_ballot_id",
-                     ValueError(n_("Invalid ballot specified."))))
-            if now() > ballot['vote_begin']:
-                rs.append_validation_error(
-                    ("new_ballot_id",
-                     ValueError(n_("Voting has already begun."))))
-            if rs.has_validation_errors():
-                return self.change_attachment_link_form(
-                    rs, assembly_id, attachment_id, ballot_id)
-            data["assembly_id"] = None
-            data["ballot_id"] = new_ballot_id
-        else:
-            data["assembly_id"] = assembly_id
-            data["ballot_id"] = None
-        code = self.assemblyproxy.change_attachment_link(rs, data)
-        self.notify_return_code(rs, code)
-        return self.redirect(rs, "assembly/show_attachment", {
-            'ballot_id': new_ballot_id,
-        })
-
-    @access("assembly")
-    @assembly_guard
-    # ballot_id comes semantically after assembly_id, but is optional,
-    # so needs to be at the end.
-    def edit_attachment_version_form(
-            self, rs: RequestState, assembly_id: int, attachment_id: int,
-            version: int, ballot_id: int = None) -> Response:
-        """Change an existing version of an attachment."""
-        attachment = rs.ambience['attachment']
-        if (attachment['assembly_id']
-                and attachment['assembly_id'] != assembly_id):
-            rs.notify("error", n_("Invalid attachment specified."))
-            if attachment['ballot_id']:
-                return self.redirect(rs, "assembly/show_ballot",
-                                     {'ballot_id': attachment['ballot_id']})
-            else:
-                return self.redirect(rs, "assembly/show_assembly")
-        if attachment['ballot_id']:
-            ballot = self.assemblyproxy.get_ballot(rs, attachment['ballot_id'])
-            if now() > ballot['vote_begin']:
-                rs.notify("warning", n_("Voting has already begun."))
-                return self.redirect(rs, "assembly/show_ballot")
-        history = self.assemblyproxy.get_attachment_history(
-            rs, attachment_id)
-        if version not in history or history[version]['dtime']:
-            rs.notify("error", "Invalid version specified.")
-            if attachment['ballot_id']:
-                return self.redirect(rs, "assembly/show_ballot",
-                                     {'ballot_id': attachment['ballot_id']})
-            else:
-                return self.redirect(rs, "assembly/show_assembly")
-        merge_dicts(rs.values, history[version])
-        return self.render(rs, "edit_attachment_version", {
-            'attachment': attachment,
-            'history': history,
-            'version': version,
-        })
-
-    @access("assembly", modi={"POST"})
-    @assembly_guard
-    @REQUESTdata("title", "authors", "filename")
-    def edit_attachment_version(self, rs: RequestState, assembly_id: int,
-                                attachment_id: int, version: int, title: str,
-                                authors: Optional[str], filename: str,
-                                ballot_id: int = None) -> Response:
-        """Change an existing version of an attachment."""
-        if rs.has_validation_errors():
-            return self.change_attachment_link_form(
-                rs, assembly_id, attachment_id, version)
-        attachment = rs.ambience['attachment']
-        if attachment['ballot_id']:
-            ballot = self.assemblyproxy.get_ballot(rs, attachment['ballot_id'])
-            if now() > ballot['vote_begin']:
-                rs.notify("warning", n_("Voting has already begun."))
-                return self.redirect(rs, "assembly/show_ballot")
-        if (ballot_id != attachment['ballot_id'] or
-                (attachment['assembly_id']
-                 and attachment['assembly_id'] != assembly_id)):
-            rs.notify("error", n_("Invalid attachment specified."))
-            if attachment['ballot_id']:
-                return self.redirect(rs, "assembly/show_ballot",
-                                     {'ballot_id': attachment['ballot_id']})
-            else:
-                return self.redirect(rs, "assembly/show_assembly")
-        history = self.assemblyproxy.get_attachment_history(
-            rs, attachment_id)
-        if version not in history or history[version]['dtime']:
-            rs.notify("error", "Invalid version specified.")
-            if attachment['ballot_id']:
-                return self.redirect(rs, "assembly/show_ballot",
-                                     {'ballot_id': attachment['ballot_id']})
-            else:
-                return self.redirect(rs, "assembly/show_assembly")
-
-        data = {
-            'attachment_id': attachment_id,
-            'version': version,
-            'title': title,
-            'authors': authors,
-            'filename': filename,
-        }
-        code = self.assemblyproxy.change_attachment_version(rs, data)
-        self.notify_return_code(rs, code)
-        return self.redirect(rs, "assembly/show_attachment")
+        return self.redirect(rs, "assembly/list_attachments")
 
     @access("assembly", modi={"POST"})
     @assembly_guard
     @REQUESTdata("attachment_ack_delete")
-    # ballot_id is optional, but comes semantically before attachment_id
-    def delete_attachment(self, rs: RequestState, assembly_id: int,
-                          attachment_id: int, attachment_ack_delete: bool,
-                          version: int = None,
-                          ballot_id: int = None) -> Response:
-        """Delete an attachment."""
+    def delete_attachment_version(self, rs: RequestState, assembly_id: int,
+                                  attachment_id: int, version_nr: int,
+                                  attachment_ack_delete: bool) -> Response:
+        """Delete a version of an attachment."""
         if not attachment_ack_delete:
             rs.append_validation_error(
                 ("attachment_ack_delete", ValueError(n_("Must be checked."))))
+        # the check that the attachment belongs to the assembly is already done in
+        # `reconnoitre_ambience`
         if rs.has_validation_errors():
-            return self.redirect(rs, "assembly/show_attachment")
-        if version is None:
-            cascade = {"versions"}
-            code = self.assemblyproxy.delete_attachment(
-                rs, attachment_id, cascade)
-            self.notify_return_code(rs, code)
-            if ballot_id:
-                return self.redirect(rs, "assembly/show_ballot")
-            else:
-                return self.redirect(rs, "assembly/show_assembly")
-        else:
-            history = self.assemblyproxy.get_attachment_history(
-                rs, attachment_id)
-            if version not in history:
-                rs.notify("error", n_("This version does not exist."))
-                return self.redirect(rs, "assembly/show_attachment")
-            if history[version]['dtime']:
-                rs.notify("error", n_("This version has already been deleted."))
-                return self.redirect(rs, "assembly/show_attachment")
-            attachment = rs.ambience['attachment']
-            if attachment['num_versions'] <= 1:
-                rs.notify("error", n_("Cannot remove the last remaining "
-                                      "version of an attachment."))
-                return self.redirect(rs, "assembly/show_attachment")
+            return self.redirect(rs, "assembly/list_attachments")
 
-            code = self.assemblyproxy.remove_attachment_version(
-                rs, attachment_id, version)
-            self.notify_return_code(
-                rs, code, error=n_("Unknown version."))
-            return self.redirect(rs, "assembly/show_attachment")
+        if not self.assemblyproxy.is_attachment_version_deletable(rs, attachment_id):
+            rs.notify("error", n_("Attachment version can not be deleted."))
+            return self.redirect(rs, "assembly/list_attachments")
+
+        # This should not happen. Instead, the last attachment_version_delete button
+        # should link directly to delete_attachment
+        if rs.ambience["attachment"]['num_versions'] <= 1:
+            rs.notify("error", n_("Cannot remove the last remaining"
+                                  " version of an attachment."))
+            return self.redirect(rs, "assembly/list_attachments")
+
+        versions = self.assemblyproxy.get_attachment_versions(rs, attachment_id)
+        if version_nr not in versions:
+            rs.notify("error", n_("This version does not exist."))
+            return self.redirect(rs, "assembly/list_attachments")
+        if versions[version_nr]['dtime']:
+            rs.notify("error", n_("This version has already been deleted."))
+            return self.redirect(rs, "assembly/list_attachments")
+
+        code = self.assemblyproxy.remove_attachment_version(
+            rs, attachment_id, version_nr)
+        self.notify_return_code(rs, code, error=n_("Unknown version."))
+        return self.redirect(rs, "assembly/list_attachments")
 
     @access("assembly", modi={"POST"})
     @REQUESTdata("secret")
@@ -1073,6 +918,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         """Show a vote in a ballot of an old assembly by providing secret."""
         if (rs.ambience["assembly"]["is_active"]
                 or not rs.ambience["ballot"]["is_tallied"]):
+            rs.ignore_validation_errors()
             return self.show_ballot(rs, assembly_id, ballot_id)
         if rs.has_validation_errors():
             return self.show_ballot_result(rs, assembly_id, ballot_id)
@@ -1092,17 +938,26 @@ class AssemblyFrontend(AbstractUserFrontend):
         """
         if not self.assemblyproxy.may_assemble(rs, ballot_id=ballot_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        ballot = rs.ambience['ballot']
-        attachment_ids = self.assemblyproxy.list_attachments(
-            rs, ballot_id=ballot_id)
-        attachments = self.assemblyproxy.get_attachments(rs, attachment_ids)
-        attachment_histories = self.assemblyproxy.get_attachment_histories(
-            rs, attachment_ids)
-        if self._update_ballot_state(rs, ballot):
+
+        # We need to group the ballots for navigation later anyway,
+        # and as grouping them updates their state we do it already here
+        if grouped := self._group_ballots(rs, assembly_id):
+            done, extended, current, future = grouped
+            # _group_ballots returns all ballots of the assembly in four disjunct dicts
+            # TODO: python3.9: ballots = done | extended | current | future
+            ballots = {**done, **extended, **current, **future}
+        else:
+            # some ballots updated state
             return self.redirect(rs, "assembly/show_ballot")
 
+        # get associated attachments
+        definitive_versions = self.assemblyproxy.get_definitive_attachments_version(
+            rs, ballot_id)
+        latest_versions = self.assemblyproxy.get_latest_attachments_version(
+            rs, definitive_versions.keys())
+
         # initial checks done, present the ballot
-        ballot['is_voting'] = self.is_ballot_voting(ballot)
+        ballot = rs.ambience['ballot']
         ballot['vote_count'] = self.assemblyproxy.count_votes(rs, ballot_id)
         result = self.get_online_result(rs, ballot)
         attends = self.assemblyproxy.does_attend(rs, ballot_id=ballot_id)
@@ -1116,21 +971,21 @@ class AssemblyFrontend(AbstractUserFrontend):
         else:
             merge_dicts(rs.values, {'vote': vote_dict['own_vote']})
 
-        # this is used for the flux candidate table
-        current = {
-            f"{key}_{candidate_id}": value
+        # this is used for the dynamic row candidate table
+        current_candidates = {
+            drow_name(field_name=key, entity_id=candidate_id): value
             for candidate_id, candidate in ballot['candidates'].items()
             for key, value in candidate.items() if key != 'id'}
-        merge_dicts(rs.values, current)
+        sorted_candidate_ids = [
+            e["id"] for e in xsorted(ballot["candidates"].values(),
+                                     key=EntitySorter.candidates)]
+        merge_dicts(rs.values, current_candidates)
 
-        ballots_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
-        ballots = self.assemblyproxy.get_ballots(rs, ballots_ids)
-        done, extended, current, future = self.group_ballots(ballots)
-
-        # Currently we don't distinguish between current and extended ballots
+        # now, process the grouped ballots from above for the navigation buttons.
+        # Currently, we don't distinguish between current and extended ballots
         current.update(extended)
         ballot_list: List[int] = sum((
-            xsorted(bdict, key=lambda key: bdict[key]["title"])  # pylint: disable=cell-var-from-loop; # noqa
+            xsorted(bdict, key=lambda key: bdict[key]["title"])  # pylint: disable=cell-var-from-loop;
             for bdict in (future, current, done)), [])
 
         i = ballot_list.index(ballot_id)
@@ -1139,10 +994,16 @@ class AssemblyFrontend(AbstractUserFrontend):
         next_ballot = ballots[ballot_list[i+1]] if i + 1 < length else None
 
         return self.render(rs, "show_ballot", {
-            'attachments': attachments, 'MAGIC_ABSTAIN': MAGIC_ABSTAIN,
-            'attachment_histories': attachment_histories, 'result': result,
-            'attends': attends, 'ASSEMBLY_BAR_SHORTNAME': ASSEMBLY_BAR_SHORTNAME,
-            'prev_ballot': prev_ballot, 'next_ballot': next_ballot, **vote_dict
+            "sorted_candidate_ids": sorted_candidate_ids,
+            'latest_versions': latest_versions,
+            'definitive_versions': definitive_versions,
+            'MAGIC_ABSTAIN': MAGIC_ABSTAIN,
+            'ASSEMBLY_BAR_SHORTNAME': ASSEMBLY_BAR_SHORTNAME,
+            'attends': attends,
+            'result': result,
+            'prev_ballot': prev_ballot,
+            'next_ballot': next_ballot,
+            **vote_dict
         })
 
     @access("assembly")
@@ -1162,7 +1023,14 @@ class AssemblyFrontend(AbstractUserFrontend):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         ballot = rs.ambience['ballot']
 
-        if self._update_ballot_state(rs, ballot):
+        # We need to group the ballots for navigation later anyway,
+        # and as grouping them updates their state we do it already here
+        if grouped := self._group_ballots(rs, assembly_id):
+            done, _, _, _ = grouped
+            # _group_ballots returns all ballots of the assembly in four disjunct dicts
+            ballots = {k: v for d in grouped for k, v in d.items()}
+        else:
+            # some ballots updated state
             return self.redirect(rs, "assembly/show_ballot_result")
 
         if not ballot['is_tallied']:
@@ -1216,10 +1084,6 @@ class AssemblyFrontend(AbstractUserFrontend):
         result_hash = get_hash(result_bytes)
 
         # show links to next and previous ballots
-        ballots_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
-        ballots = self.assemblyproxy.get_ballots(rs, ballots_ids)
-        done, _, _, _ = self.group_ballots(ballots)
-
         # we are only interested in done ballots
         ballot_list: List[int] = xsorted(done, key=lambda key: done[key]["title"])
 
@@ -1233,6 +1097,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             'result_hash': result_hash, 'secret': secret, **vote_dict,
             'vote_counts': vote_counts, 'MAGIC_ABSTAIN': MAGIC_ABSTAIN,
             'BALLOT_TALLY_ADDRESS': self.conf["BALLOT_TALLY_ADDRESS"],
+            'BALLOT_TALLY_MAILINGLIST_URL': self.conf["BALLOT_TALLY_MAILINGLIST_URL"],
             'prev_ballot': prev_ballot, 'next_ballot': next_ballot,
             'candidates': candidates})
 
@@ -1242,6 +1107,12 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         This handles the personalised information of the current viewer interacting with
         the ballot.
+
+        :return: one of the following strings:
+            * your full preference, if the ballot was a preferential vote, otherwise
+            * MAGIC_ABSTAIN, if you abstained in the ballot
+            * all candidates you voted for, seperated by '=', if the ballot was a
+              classical vote
         """
         ballot_id = ballot['id']
 
@@ -1259,44 +1130,50 @@ class AssemblyFrontend(AbstractUserFrontend):
                         ("secret", ValueError(n_("Entered invalid secret"))))
                     own_vote = None
 
-        if own_vote:
+        if own_vote and ballot['votes']:
             split_vote = own_vote.split('>')
             if len(split_vote) == 1:
                 # abstention
                 own_vote = MAGIC_ABSTAIN
-            elif ballot['votes']:
+            else:
                 # select voted options in classical voting
                 own_vote = split_vote[0]
 
         return {'attends': attends, 'has_voted': has_voted, 'own_vote': own_vote}
 
-    def _update_ballot_state(self, rs: RequestState,
-                             ballot: Dict[str, Any]) -> DefaultReturnCode:
-        """Helper to automatically update a ballots state.
+    def _update_ballots(self, rs: RequestState, assembly_id: int
+                        ) -> Tuple[int, int, int]:
+        """Helper to automatically update all ballots of an assembly.
 
         State updates are necessary for extending and tallying a ballot.
         If this function performs a state update, the calling function should
         redirect to the calling page.
 
-        :returns: 1 if the ballot was tallied, -1 if it was extended,
-            0 otherwise.
+        :returns: how many state changes of which kind were performed
+            in order extended, tallied, unchanged
         """
+        ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
+        ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
+        extended = tallied = unchanged = 0
 
         timestamp = now()
+        for ballot_id, ballot in ballots.items():
+            # check for extension
+            if ballot['extended'] is None and timestamp > ballot['vote_end']:
+                if self.assemblyproxy.check_voting_period_extension(rs, ballot['id']):
+                    extended += 1
+                    continue
+                else:
+                    # we do not need the full updated ballot here, so just update
+                    # the relevant piece of information
+                    ballot['extended'] = False
 
-        # check for extension
-        if ballot['extended'] is None and timestamp > ballot['vote_end']:
-            self.assemblyproxy.check_voting_period_extension(rs, ballot['id'])
-            return -1
-
-        finished = (
-                timestamp > ballot['vote_end']
-                and (not ballot['extended']
-                     or timestamp > ballot['vote_extension_end']))
-        # check whether we need to initiate tallying
-        if finished and not ballot['is_tallied']:
-            result = self.assemblyproxy.tally_ballot(rs, ballot['id'])
-            if result:
+            finished = (timestamp > ballot['vote_end']
+                        and (not ballot['extended']
+                             or timestamp > ballot['vote_extension_end']))
+            # check whether we need to initiate tallying
+            # tally_ballot returns None if ballot was already tallied
+            if finished and (result := self.assemblyproxy.tally_ballot(rs, ballot_id)):
                 afile = io.BytesIO(result)
                 my_hash = get_hash(result)
                 attachment_result: Dict[str, str] = {
@@ -1317,8 +1194,14 @@ class AssemblyFrontend(AbstractUserFrontend):
                     },
                     attachments=(attachment_result,),
                     params={'sha': my_hash, 'title': ballot['title']})
-                return 1
-        return 0
+                tallied += 1
+                continue
+            unchanged += 1
+
+        ret = (extended, tallied, unchanged)
+        if sum(ret) != len(ballots):
+            raise RuntimeError(n_("Impossible."))
+        return ret
 
     def get_online_result(self, rs: RequestState, ballot: Dict[str, Any]
                           ) -> Optional[CdEDBObject]:
@@ -1394,18 +1277,9 @@ class AssemblyFrontend(AbstractUserFrontend):
         assemblies = self.assemblyproxy.get_assemblies(rs, assembly_ids)
         for assembly_id, assembly in assemblies.items():
             rs.ambience['assembly'] = assembly
-            ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
-            ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
-            for ballot_id, ballot in ballots.items():
-                code = self._update_ballot_state(rs, ballot)
-                if code < 0:
-                    extension_count += 1
-                    ballot = self.assemblyproxy.get_ballot(rs, ballot_id)
-                    code = self._update_ballot_state(rs, ballot)
-                    if code > 0:
-                        tally_count += 1
-                elif code > 0:
-                    tally_count += 1
+            extended, tallied, _ = self._update_ballots(rs, assembly_id)
+            extension_count += extended
+            tally_count += tallied
         if extension_count or tally_count:
             self.logger.info(f"Extended {extension_count} and tallied"
                              f" {tally_count} ballots via cron job.")
@@ -1416,16 +1290,12 @@ class AssemblyFrontend(AbstractUserFrontend):
         """Give an online summary of all tallied ballots of an assembly."""
         if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        assembly_ballots = self.assemblyproxy.list_ballots(rs, assembly_id)
-        ballot_ids = [k for k, v in assembly_ballots.items()]
-        ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
 
-        # Check for extensions before grouping ballots.
-        if any([self._update_ballot_state(rs, ballot)
-                for anid, ballot in ballots.items()]):
+        if grouped := self._group_ballots(rs, assembly_id):
+            done, _, _, _ = grouped
+        else:
+            # some ballots updated state
             return self.redirect(rs, "assembly/summary_ballots")
-
-        done, extended, current, future = self.group_ballots(ballots)
 
         result = {k: self.get_online_result(rs, v) for k, v in done.items()}
 
@@ -1441,12 +1311,36 @@ class AssemblyFrontend(AbstractUserFrontend):
         if now() > rs.ambience['ballot']['vote_begin']:
             rs.notify("warning", n_("Unable to modify active ballot."))
             return self.redirect(rs, "assembly/show_ballot")
+        attachment_ids = self.assemblyproxy.list_attachments(
+            rs, assembly_id=assembly_id)
+        attachment_versions = self.assemblyproxy.get_latest_attachments_version(
+            rs, attachment_ids)
+        attachment_entries = [(attachment_id, version["title"])
+                              for attachment_id, version in attachment_versions.items()]
+        selectize_data = [
+            {'id': attachment_id, 'name': version['title']}
+            for attachment_id, version in xsorted(
+                attachment_versions.items(),
+                key=(lambda att: EntitySorter.attachment(att[1]))
+            )
+        ]
+
+        # add the current attachment to the values dict, since they are no part of them
+        # by default
+        latest_attachments = self.assemblyproxy.list_attachments(
+            rs, ballot_id=ballot_id)
+        rs.values["linked_attachments"] = list(latest_attachments)
         merge_dicts(rs.values, rs.ambience['ballot'])
-        return self.render(rs, "change_ballot")
+
+        return self.render(rs, "change_ballot", {
+            "attachment_entries": attachment_entries,
+            "selectize_data": selectize_data,
+        })
 
     @access("assembly", modi={"POST"})
     @assembly_guard
-    @REQUESTdatadict(*BALLOT_EXPOSED_FIELDS)
+    # the linked_attachments must be passed here since we expect a list
+    @REQUESTdatadict(*BALLOT_EXPOSED_FIELDS, ("linked_attachments", "[str]"))
     def change_ballot(self, rs: RequestState, assembly_id: int,
                       ballot_id: int, data: Dict[str, Any]) -> Response:
         """Modify a ballot."""
@@ -1455,7 +1349,53 @@ class AssemblyFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.change_ballot_form(rs, assembly_id, ballot_id)
         assert data is not None
-        code = self.assemblyproxy.set_ballot(rs, data)
+
+        code = 1
+
+        # handle the linked attachments
+        current_attachments = set(
+            self.assemblyproxy.list_attachments(rs, ballot_id=ballot_id))
+        # filter the None value – unset all attachments by selecting None option only
+        wished_attachments: Set[int] = set(filter(None, data["linked_attachments"]))
+        new_attachments = wished_attachments - current_attachments
+        for attachment_id in new_attachments:
+            code *= self.assemblyproxy.add_attachment_ballot_link(
+                rs, attachment_id=attachment_id, ballot_id=ballot_id)
+        deleted_attachments = current_attachments - wished_attachments
+        for attachment_id in deleted_attachments:
+            code *= self.assemblyproxy.remove_attachment_ballot_link(
+                rs, attachment_id=attachment_id, ballot_id=ballot_id)
+
+        code *= self.assemblyproxy.set_ballot(rs, data)
+
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "assembly/show_ballot")
+
+    @access("assembly")
+    @assembly_guard
+    @REQUESTdata("comment")
+    def comment_concluded_ballot_form(self, rs: RequestState, assembly_id: int,
+                                      ballot_id: int, comment: Optional[str]
+                                      ) -> Response:
+        rs.ignore_validation_errors()
+        if not rs.ambience['ballot']['is_tallied']:
+            rs.notify("error", n_("Comments are only allowed for concluded ballots."))
+            return self.redirect(rs, "assembly/show_ballot")
+        rs.values['comment'] = comment or rs.ambience['ballot']['comment']
+        return self.render(rs, "comment_ballot")
+
+    @access("assembly", modi={"POST"})
+    @assembly_guard
+    @REQUESTdata("comment")
+    def comment_concluded_ballot(self, rs: RequestState, assembly_id: int,
+                                 ballot_id: int, comment: Optional[str]) -> Response:
+        if rs.has_validation_errors():
+            return self.comment_concluded_ballot_form(rs, assembly_id, ballot_id,
+                                                      comment)
+        if not self.assemblyproxy.is_ballot_concluded(rs, ballot_id):
+            rs.notify("error", n_("Comments are only allowed for concluded ballots."))
+            return self.redirect(rs, "assembly/show_ballot")
+        code = self.assemblyproxy.comment_concluded_ballot(rs, ballot_id, comment)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/show_ballot")
 
@@ -1465,18 +1405,20 @@ class AssemblyFrontend(AbstractUserFrontend):
                             ballot_id: int) -> Response:
         """Immediately start voting period of a ballot.
         Only possible in CDEDB_DEV mode."""
-        if not self.conf["CDEDB_DEV"]:
+        if not self.conf["CDEDB_DEV"]:  # pragma: no cover
             raise RuntimeError(
                 n_("Force starting a ballot is only possible in dev mode."))
 
         bdata = {
             "id": ballot_id,
-            "vote_begin": now() + datetime.timedelta(seconds=1),
+            # vote begin must be in the future
+            "vote_begin": now() + datetime.timedelta(milliseconds=100),
             "vote_end": now() + datetime.timedelta(minutes=1),
         }
 
         self.notify_return_code(rs, self.assemblyproxy.set_ballot(rs, bdata))
-        time.sleep(1)
+        # wait for ballot to be votable
+        time.sleep(.1)
         return self.redirect(rs, "assembly/show_ballot")
 
     @access("assembly", modi={"POST"})
@@ -1491,7 +1433,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.show_ballot(rs, assembly_id, ballot_id)
         blockers = self.assemblyproxy.delete_ballot_blockers(rs, ballot_id)
-        if "vote_begin" in blockers:
+        if "ballot_is_locked" in blockers:
             rs.notify("error", n_("Unable to remove active ballot."))
             return self.show_ballot(rs, assembly_id, ballot_id)
 
@@ -1513,6 +1455,9 @@ class AssemblyFrontend(AbstractUserFrontend):
         """
         if not self.assemblyproxy.may_assemble(rs, ballot_id=ballot_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+        if not self.assemblyproxy.is_ballot_voting(rs, ballot_id):
+            rs.notify("error", n_("Ballot is outside its voting period."))
+            return self.redirect(rs, "assembly/show_ballot", {'ballot_id': ballot_id})
         ballot = rs.ambience['ballot']
         candidates = tuple(e['shortname']
                            for e in ballot['candidates'].values())
@@ -1581,20 +1526,22 @@ class AssemblyFrontend(AbstractUserFrontend):
     def edit_candidates(self, rs: RequestState, assembly_id: int,
                         ballot_id: int) -> Response:
         """Create, edit and delete candidates of a ballot."""
+
+        spec = {
+            'shortname': vtypes.ShortnameRestrictiveIdentifier,
+            'title': vtypes.LegacyShortname
+        }
+        existing_candidates = rs.ambience['ballot']['candidates'].keys()
         candidates = process_dynamic_input(
-            rs, rs.ambience['ballot']['candidates'].keys(),
-            {'shortname': vtypes.RestrictiveIdentifier, 'title': str})
+            rs, vtypes.BallotCandidate, existing_candidates, spec)
+        if rs.has_validation_errors():
+            return self.show_ballot(rs, assembly_id, ballot_id)
 
         shortnames: Set[str] = set()
         for candidate_id, candidate in candidates.items():
-            if candidate and candidate['shortname'] == ASSEMBLY_BAR_SHORTNAME:
-                rs.append_validation_error(
-                    (f"shortname_{candidate_id}",
-                     ValueError(n_("Mustn’t be the bar shortname.")))
-                )
             if candidate and candidate['shortname'] in shortnames:
                 rs.append_validation_error(
-                    (f"shortname_{candidate_id}",
+                    (drow_name("shortname", candidate_id),
                      ValueError(n_("Duplicate shortname.")))
                 )
             if candidate:

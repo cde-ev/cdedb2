@@ -1,0 +1,111 @@
+{% set sidenav_active='event_config' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% set jshint='weak' %}
+{% block title %}
+    {% trans title=ambience['event']['title'] %}
+        {{ title }} – Configuration
+    {% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+{{ super() }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+{{ util.breadcrumb_link(cdedblink("event/change_event"), gettext("Configuration"), active=True) }}
+{% endblock %}
+{% block heading %}
+    {{ util.context_heading(gettext("Configuration"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+{% endblock %}
+{% block content %}
+    <form action="{{ cdedblink('event/change_event') }}" method="POST" id="changeeventform" class="form-horizontal">
+        {{ util.anti_csrf_token('event/change_event') }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Orga-Notes"), rows="5", markdown=True) }}
+
+        <h4 class="heading-underline">{% trans %}Event Meta Data{% endtrans %}</h4>
+        {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]")) }}
+        {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5", markdown=True,
+                                    info=gettext("This description is visible to all event users, if “Visibility "
+                                                  "of the Event” is set.")) }}
+        {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
+        {{ util.form_input_text(name="orga_address", label=gettext("Orga Address"),
+                                info=gettext("This address is visible publicly (without login), if “Visibility of the "
+                                             "Event” is set.")) }}
+        {{ util.form_input_select(name="institution", label=gettext("Institution"), entries=institutions|keydictsort(EntitySorter.institution)|dict_entries('id', 'title')) }}
+
+        <h4 class="heading-underline">{% trans %}Visibility and Registration Dates{% endtrans %}</h4>
+        {{ util.form_input_checkbox(name="is_visible", label=gettext("Visibility of the Event"),
+                                info=gettext("If this is checked, all event users can see the event and anyone with the link can access it. "
+                                "If this is unchecked, event users can still register within the "
+                                "registration period by accessing the registration link directly.")) }}
+        {{ util.form_input_checkbox(name="is_course_list_visible", label=gettext("Visibility of the Courselist"),
+                                info=gettext("If this is unchecked, no one can see the courselist. "
+                                "If this is checked, but the event is not visible, anyone with the link can access the "
+                                "courselist.")) }}
+        {{ util.form_input_checkbox(name="is_course_state_visible", label=gettext("Visibility of the cancelled courses"),
+                                info=gettext("If checked, cancelled courses are shown publicly in the course list. "
+                                "Additionally, participants may not chose cancelled courses anymore.")
+                                    + (gettext(" Attention: Activating this before Registration Soft Limit, will force "
+                                               "people to change their course choices for cancelled courses, when "
+                                               "updating their registration.")
+                                       if not (ambience['event']['registration_soft_limit']
+                                               and now() >= ambience['event']['registration_soft_limit'])
+                                       else "")) }}
+        {{ util.form_input_checkbox(name="is_participant_list_visible", label=gettext("Visibility of the Participant List"),
+                                info=gettext("If checked, a participant list containg name, email, postal code and city is "
+                                "shown to all participants.")) }}
+        {{ util.form_input_checkbox(name="is_course_assignment_visible", label=gettext("Visibility of Course Assignment"),
+                                info=gettext("If checked, the course assignment is shown to the participants. "
+                                "In particular, it is shown to each participant on the registration status and on the "
+                                "Participant List.")) }}
+        {{ util.form_input_checkbox(name="is_cancelled", label=gettext("Cancellation of the event"),
+                                info=gettext("If checked, the event is shown as cancelled. This can be undone and has no "
+                                "further effects. Do not do this without consulting the chairmen of the CdE.")) }}
+        {{ util.form_input_text(name="registration_start", label=gettext("Registration Start"), type='datetime-local') }}
+        {{ util.form_input_text(name="registration_soft_limit", label=gettext("Registration Soft Limit"),
+                                type="datetime-local",
+                                info=gettext("Is displayed initially. Changes to registration are only possible until "
+                                "then. If left empty, Changes will be possible indefinitely.")) }}
+        {{ util.form_input_text(name="registration_hard_limit", label=gettext("Registration Hard Limit"),
+                                type="datetime-local",
+                                info=gettext("Final registration end. Until then late registrations are possible. "
+                                "If left empty, late registrations will be possible indefinitely.")) }}
+        {{ util.form_input_checkbox(name="use_additional_questionnaire", label=gettext("Show Questionnaire"),
+                                info=gettext("If this is checked, all registrated users can fill out the Questionnaire. "
+                                "You can configure every part of the questionnaire individually in the questionnaire configuration.")) }}
+
+        <h4 class="heading-underline">{% trans %}Additional Information for Registration{% endtrans %}</h4>
+        {{ util.form_input_select(name="iban", label=gettext("CdE-Account IBAN"), entries=accounts, nulloption=nbsp,
+                                info=gettext("Only leave this empty if payment is going to be handled directly by the orgas."),
+                                sort=True) }}
+        {{ util.form_input_text(name="nonmember_surcharge", label=gettext("Additional Fee for External Participants."), addon='€',
+                                info=gettext("Participants who are not currently members will have to pay this additional fee.")) }}
+        {{ util.form_input_textarea(name="registration_text", label=gettext("Registration page free text"), rows="5",
+                                    markdown=True) }}
+        {{ util.form_input_textarea(name="mail_text", label=gettext("Registration mail free text"), rows="5") }}
+
+        <h4 class="heading-underline">{% trans %}Special Purpose Custom Fields{% endtrans %}</h4>
+        {{ util.form_input_select(name="lodge_field", label=gettext("Field for Rooming Preferences"), entries=lodge_fields,
+                                  nulloption=nbsp, info=gettext("The custom field in which the participants’ "
+                                  "rooming preferences will be saved. It is used for the PDF lodgement puzzle "
+                                  "download. Fieldtype: Text")) }}
+        {{ util.form_input_select(name="camping_mat_field", label=gettext("Field for Camping Mat"), entries=camping_mat_fields,
+                                  nulloption=nbsp, info=gettext("The custom field in which the participants’ "
+                                  "willingness to sleep on a camping mat will be saved. It is used for the PDF "
+                                  "lodgement puzzle download. Fieldtype: Yes/No")) }}
+        {{ util.form_input_select(name="course_room_field", label=gettext("Field for Course Room"), entries=course_room_fields,
+                                  nulloption=nbsp, info=gettext("The custom field in which the course’s "
+                                  "assigned course room will be saved. It is used for PDF participant lists and "
+                                  "nametags. Fieldtype: Text")) }}
+
+        <h4 class="heading-underline">{% trans %}Additional information for participants{% endtrans %}</h4>
+        {{ util.form_input_textarea(
+                name="participant_info", label=gettext("Participant info"), rows="8", markdown=True,
+                info=gettext("This is only for event-internal information. Any public information should be placed on"
+                             " the website.")) }}
+
+        {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink('event/show_event'), readonly=is_locked) }}
+    </form>
+    <script nonce="{{ csp_nonce }}">
+        $('#changeeventform').cdedbProtectChanges();
+    </script>
+{% endblock %}

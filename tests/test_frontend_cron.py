@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
+# pylint: disable=missing-module-docstring
 
 import collections.abc
 import datetime
 import decimal
 import json
 import numbers
-from typing import Any, Dict, Set, Union, cast
 import unittest.mock
+from typing import Any, Dict, Set, Union, cast
 
 import cdedb.database.constants as const
 from cdedb.common import RequestState, now, xsorted
-from tests.common import CronTest, prepsql
+from tests.common import CronTest, prepsql, storage
 
 INSERT_TEMPLATE = """
 INSERT INTO {table} ({columns}) VALUES ({values});
@@ -73,7 +74,7 @@ def changelog_template(**kwargs: Any) -> str:
         'change_note': 'Radical change.',
         'code': const.MemberChangeStati.pending.value,
         'country': None,
-        'country2': 'Further Away',
+        'country2': 'US',
         'ctime': now(),
         'decided_search': True,
         'display_name': 'Zelda',
@@ -133,7 +134,7 @@ def cron_template(**kwargs: Any) -> str:
 
 def subscription_request_template(**kwargs: Any) -> Any:
     defaults: SQL_DATA = {
-        'subscription_state': const.SubscriptionStates.pending
+        'subscription_state': const.SubscriptionState.pending
     }
     data = {**defaults, **kwargs}
     return format_insert_sql("ml.subscription_states", data)
@@ -160,7 +161,7 @@ class TestCron(CronTest):
         ctime=(now() - datetime.timedelta(hours=6))))
     def test_genesis_remind_new(self) -> None:
         self.execute('genesis_remind')
-        self.assertEqual(["genesis_requests_pending"],
+        self.assertEqual(["genesis/genesis_requests_pending"],
                          [mail.template for mail in self.mails])
 
     @prepsql(genesis_template())
@@ -184,17 +185,28 @@ class TestCron(CronTest):
                         store={"tstamp": 1, "ids": [1001]}))
     def test_genesis_remind_older(self) -> None:
         self.execute('genesis_remind')
-        self.assertEqual(["genesis_requests_pending"],
+        self.assertEqual(["genesis/genesis_requests_pending"],
                          [mail.template for mail in self.mails])
 
+    @storage
     def test_genesis_forget_empty(self) -> None:
         self.execute('genesis_forget')
 
+    @storage
     @prepsql(genesis_template())
     def test_genesis_forget_unrelated(self) -> None:
         self.execute('genesis_forget')
         self.assertEqual({1001}, set(self.core.genesis_list_cases(RS)))
 
+    @storage
+    @prepsql(genesis_template(
+        ctime=datetime.datetime(2000, 1, 1),
+        case_status=const.GenesisStati.successful.value))
+    def test_genesis_forget_successful(self) -> None:
+        self.execute('genesis_forget')
+        self.assertEqual({}, self.core.genesis_list_cases(RS))
+
+    @storage
     @prepsql(genesis_template(
         ctime=datetime.datetime(2000, 1, 1),
         case_status=const.GenesisStati.rejected.value))
@@ -202,6 +214,7 @@ class TestCron(CronTest):
         self.execute('genesis_forget')
         self.assertEqual({}, self.core.genesis_list_cases(RS))
 
+    @storage
     @prepsql(genesis_template(
         ctime=datetime.datetime(2000, 1, 1),
         case_status=const.GenesisStati.unconfirmed.value))
@@ -209,6 +222,7 @@ class TestCron(CronTest):
         self.execute('genesis_forget')
         self.assertEqual({}, self.core.genesis_list_cases(RS))
 
+    @storage
     @prepsql(genesis_template(
         case_status=const.GenesisStati.unconfirmed.value))
     def test_genesis_forget_recent_unconfirmed(self) -> None:
@@ -251,7 +265,7 @@ class TestCron(CronTest):
                          [mail.template for mail in self.mails])
 
     @prepsql("DELETE FROM ml.subscription_states WHERE subscription_state = "
-             "{};".format(const.SubscriptionStates.pending))
+             "{};".format(const.SubscriptionState.pending))
     def test_subscription_request_remind_empty(self) -> None:
         self.execute('subscription_request_remind')
         self.assertEqual([], [mail.template for mail in self.mails])
@@ -342,6 +356,7 @@ class TestCron(CronTest):
         )
         self.assertEqual([1], self.core.get_cron_store(RS, name)["deleted"])
 
+    @storage
     def test_tally_ballots(self) -> None:
         ballot_ids: Set[int] = set()
         for assembly_id in self.assembly.list_assemblies(RS):
@@ -362,6 +377,11 @@ class TestCron(CronTest):
         # We just want to test that no exception is raised.
         self.execute('deactivate_old_sessions', 'clean_session_log')
 
+    def test_validate_stored_event_queries(self) -> None:
+        # We just want to test that no exception is raised.
+        self.execute('validate_stored_event_queries')
+
+    @storage
     @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")
     def test_mailman_sync(self, client_class: unittest.mock.Mock) -> None:
         #
@@ -517,7 +537,7 @@ class TestCron(CronTest):
         self.assertEqual(
             mm_lists['witz'].subscribe.call_args_list,
             [umcall('new-anton@example.cde',
-                    display_name='Anton Armin A. Administrator',
+                    display_name='Anton Administrator',
                     pre_approved=True, pre_confirmed=True, pre_verified=True)])
         self.assertEqual(
             mm_lists['witz'].unsubscribe.call_args_list,

@@ -1,7 +1,9 @@
 Test Suite
 ==========
 
-.. todo:: Explanation of our testing principles, sample data, special test functions etc
+This page describes the technical details reagrding the test suite.
+To get a high-level overview of our testing philosophy,
+take a look at :doc:`Design_Testing` instead.
 
 .. _sample-data:
 
@@ -58,6 +60,7 @@ vera@example.cde        DB-22-1   secret     former member, corresponding to Ver
 werner@example.cde      DB-23-X   secret     former member, corresponding to Versammlungsleitung (presider)
 annika@example.cde      DB-27-2   secret     former member, corresponding to Akademieteam
 farin@example.cde       DB-32-9   secret     former member, corresponding to Finanzvorstand
+katarina@example.cde    DB-37-X   secret     auditor (Kassenprüfer)
 viktor@example.cde      DB-48-5   secret     assembly admin
 akira@example.cde       DB-100-7  secret     equal to Anton - to test sorting
 ======================= ========= ========== ================================================
@@ -76,21 +79,108 @@ Assembly User               Secret
 2        Rowena             asdgeargsd
 ======== ================== ==========
 
+LDAP
+^^^^
 
-Running test
-------------
+We expose some information about our users via ldap. This contains some general
+information like name and mail address, and group privileges of the user in particular.
+The data is directly retrieved from the sql tables of the CdEDB and therefore
+needs no syncing.
 
-We provide two scripts to run tests.
-These are ``bin/check.sh`` and ``bin/singlecheck.sh``.
+To locally test our ldap integration, we add some ldap agents to the CdEDB
+sample data. They can be used to connect to and retrieve data from the ldap system.
+To test the permissions of the live duas properly, we also add them in our
+sample-data.
 
-The first script will run all tests if called without arguments.
-It also accepts a filename (without ``.py`` ending and an optional ``test_`` prefix)
-and will then run all tests from that file.
+============= ============== =====================================
+CN            Password       Notes
+============= ============== =====================================
+admin         secret         olcRootDN
+apache        secret
+cloud         secret
+cyberaka      secret
+dokuwiki      secret
+test          secret         does not exist in live instance
+============= ============== =====================================
 
-The ``singlecheck.py`` script allows one to run all tests matching a pattern.
-You can pass an arbitrary amount of patterns to ``singlecheck.sh``
-which will then get matched against the fully qualified test method name.
-Such a specifier looks like ``tests.test_frontend_event.TestEventFrontend.test_create_event``.
+.. _running-tests:
 
-Pattern matching is performed using ``fnmatch.fnmatchcase``.
+Running tests
+-------------
+
+We provide a central script to run (parts of) our testsuite: ``bin/check.py``
+
+Unittest
+^^^^^^^^
+
+You can pass an arbitrary amount of patterns to ``check.py``, which will then get matched
+against the fully qualified test method name.
+Such a full specifier looks like
+``tests.test_frontend_event.TestEventFrontend.test_create_event``, but you can also pass
+an unambiguous part of it, like e.g. just ``create_eve``, for convenience.
+These parts of course can also specify complete test files, like ``test_backend_core``,
+where unambiguous parts suffer too.
+
+Pattern matching is performed by unittest, which uses ``fnmatch.fnmatchcase``
+internally [#fnmatch]_.
 If a pattern without an asterisk is passed it will be wrapped with one on both ends.
+
+
+.. _coverage:
+
+Code coverage
+^^^^^^^^^^^^^
+
+.. todo:: Implement coverage in ``bin/check.py`` script and document this here.
+
+The coverage html reports for easier inspection are accessible on the local dev
+instance via Apache at `localhost:8443/coverage <https://localhost:8443/coverage>`_ for
+docker and `localhost:20443/coverage <https://localhost:20443/coverage>`_ for the VM.
+
+.. _xss-check:
+
+XSS vulnerabilty check
+^^^^^^^^^^^^^^^^^^^^^^
+
+Our test suite also contains a little script which injects a customizable payload into
+every database field and then checks that it is escaped correctly.
+You can run this script by just invoking ``make xss-check`` or specify a custom
+payload using the argparse entrypoint, e.g.::
+
+    bin/check.py --xss-check --payload "<script>mycustompayload</script>"
+
+
+Parallel testing
+----------------
+
+Our test suite is implemented using ``unittest``.
+However, as a web application the CdEDB needs database access.
+To mock the database and allow running multiple test "threads" in parallel, we create
+four test databases, ``cdb_test_1`` to ``cdb_test_4``.
+
+Which thread should be used for a test run is detected automatically by our script,
+using simple lockfiles inside ``/tmp``.
+This prevents multiple test runs from using the same database simultaneously, which
+would break everything.
+You can explicitly specify a thread id by using the ``--thread-id`` flag of
+``bin/check.py``.
+
+Every test ``Application`` stores log files and, if needed, some test files for up- and
+downloading (e.g. assembly attachments) in a temporary directory living inside ``/tmp``,
+whose structure is as follows::
+
+    /tmp/
+    `-- cdedb-test-<thread-id>
+        |-- logs
+        |   `-- [...]
+        `-- storage
+            `-- [subdirectories for attachments, fotos, files for uploading, exports, ...]
+
+.. note::
+    The majority of our tests do not need the test file storage. Thus, every test
+    who needs it has to get the ``@storage`` decorator from ``tests.common`` for the
+    storage directory to be created. After this test has finished, the directory will
+    be deleted.
+
+
+.. [#fnmatch] https://docs.python.org/3/library/unittest.html#unittest.TestLoader.testNamePatterns

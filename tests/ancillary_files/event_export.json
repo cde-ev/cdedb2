@@ -1,7 +1,7 @@
 {
     "event.questionnaire_rows": {
         "1": {
-            "readonly": null,
+            "readonly": false,
             "event_id": 1,
             "info": null,
             "pos": 0,
@@ -9,7 +9,8 @@
             "field_id": 7,
             "id": 1,
             "title": "Ich bin unter 13 Jahre alt.",
-            "kind": 1
+            "kind": 1,
+            "default_value": null
         },
         "3": {
             "readonly": false,
@@ -20,7 +21,8 @@
             "field_id": 1,
             "id": 3,
             "title": "B\u00e4lle",
-            "kind": 2
+            "kind": 2,
+            "default_value": "True"
         },
         "7": {
             "readonly": false,
@@ -31,7 +33,8 @@
             "field_id": 3,
             "id": 7,
             "title": "Hauswunsch",
-            "kind": 2
+            "kind": 2,
+            "default_value": null
         },
         "5": {
             "readonly": null,
@@ -42,7 +45,8 @@
             "field_id": null,
             "id": 5,
             "title": "Weitere \u00dcberschrift",
-            "kind": 2
+            "kind": 2,
+            "default_value": null
         },
         "2": {
             "readonly": null,
@@ -53,7 +57,8 @@
             "field_id": null,
             "id": 2,
             "title": "Unter\u00fcberschrift",
-            "kind": 2
+            "kind": 2,
+            "default_value": null
         },
         "4": {
             "readonly": null,
@@ -64,7 +69,8 @@
             "field_id": null,
             "id": 4,
             "title": null,
-            "kind": 2
+            "kind": 2,
+            "default_value": null
         },
         "6": {
             "readonly": false,
@@ -75,7 +81,8 @@
             "field_id": 2,
             "id": 6,
             "title": "Vehikel",
-            "kind": 2
+            "kind": 2,
+            "default_value": "etc"
         }
     },
     "kind": "full",
@@ -157,7 +164,7 @@
             "persona_id": 1,
             "list_consent": true,
             "fields": {
-                "lodge": "Die \u00fcblichen Verd\u00e4chtigen :)",
+                "lodge": "Die \u00fcblichen Verd\u00e4chtigen, insb. Berta Beispiel und garcia@example.cde :)",
                 "is_child": false,
                 "anzahl_GROSSBUCHSTABEN": 4
             },
@@ -314,7 +321,10 @@
             "kind": 1,
             "id": 2,
             "field_name": "transportation",
-            "association": 1
+            "title": "Reist an mit",
+            "sortkey": 0,
+            "association": 1,
+            "checkin": false
         },
         "6": {
             "event_id": 1,
@@ -339,7 +349,10 @@
             "kind": 1,
             "id": 6,
             "field_name": "contamination",
-            "association": 3
+            "title": "Verseuchung",
+            "sortkey": 0,
+            "association": 3,
+            "checkin": false
         },
         "4": {
             "event_id": 1,
@@ -347,7 +360,10 @@
             "kind": 2,
             "id": 4,
             "field_name": "may_reserve",
-            "association": 1
+            "title": "Würde auf Isomatte schlafen",
+            "sortkey": 0,
+            "association": 1,
+            "checkin": false
         },
         "1": {
             "event_id": 1,
@@ -355,7 +371,10 @@
             "kind": 2,
             "id": 1,
             "field_name": "brings_balls",
-            "association": 1
+            "title": "Bringt Bälle mit",
+            "sortkey": 0,
+            "association": 1,
+            "checkin": true
         },
         "3": {
             "event_id": 1,
@@ -363,7 +382,10 @@
             "kind": 1,
             "id": 3,
             "field_name": "lodge",
-            "association": 1
+            "title": "Zimmerwünsche",
+            "sortkey": 0,
+            "association": 1,
+            "checkin": false
         },
         "5": {
             "event_id": 1,
@@ -371,7 +393,10 @@
             "kind": 1,
             "id": 5,
             "field_name": "room",
-            "association": 2
+            "title": "Kursraum",
+            "sortkey": 0,
+            "association": 2,
+            "checkin": false
         },
         "7": {
             "event_id": 1,
@@ -379,22 +404,27 @@
             "kind": 2,
             "id": 7,
             "field_name": "is_child",
-            "association": 1
+            "title": "Ist U12",
+            "sortkey": 0,
+            "association": 1,
+            "checkin": false
         },
         "8": {
             "association": 1,
             "entries": null,
             "event_id": 1,
             "field_name": "anzahl_GROSSBUCHSTABEN",
+            "title": "Anzahl Großbuchstaben",
+            "sortkey": 0,
             "id": 8,
-            "kind": 3
+            "kind": 3,
+            "checkin": true
         }
     },
     "EVENT_SCHEMA_VERSION": [
         15,
-        1
+        4
     ],
-    "CDEDB_EXPORT_EVENT_VERSION": 13,
     "event.registration_parts": {
         "2": {
             "is_camping_mat": false,
@@ -1092,7 +1122,7 @@
             "is_searchable": false,
             "is_archived": false,
             "is_purged": false,
-            "country": null,
+            "country": "DE",
             "username": "garcia@example.cde",
             "gender": 1,
             "telephone": null,
@@ -1116,6 +1146,7 @@
             "given_names": "Garcia G.",
             "is_ml_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "id": 7,
             "is_cde_realm": true,
             "title": null
@@ -1127,10 +1158,10 @@
             "is_searchable": true,
             "is_archived": false,
             "is_purged": false,
-            "country": null,
+            "country": "DE",
             "username": "anton@example.cde",
             "gender": 2,
-            "telephone": "+49 (234) 98765",
+            "telephone": "+4923498765",
             "is_member": true,
             "is_event_realm": true,
             "family_name": "Administrator",
@@ -1151,6 +1182,7 @@
             "given_names": "Anton Armin A.",
             "is_ml_admin": true,
             "is_cdelokal_admin": true,
+            "is_auditor": true,
             "id": 1,
             "is_cde_realm": true,
             "title": null
@@ -1162,7 +1194,7 @@
             "is_searchable": true,
             "is_archived": false,
             "is_purged": false,
-            "country": null,
+            "country": "DE",
             "username": "inga@example.cde",
             "gender": 1,
             "telephone": null,
@@ -1175,7 +1207,7 @@
             "is_cde_admin": false,
             "is_finance_admin": false,
             "is_assembly_admin": false,
-            "mobile": "0163/456897",
+            "mobile": "+49163456897",
             "is_event_admin": false,
             "is_meta_admin": false,
             "birthday": "2222-01-01",
@@ -1186,6 +1218,7 @@
             "given_names": "Inga",
             "is_ml_admin": false,
             "is_cdelokal_admin": true,
+            "is_auditor": false,
             "id": 9,
             "is_cde_realm": true,
             "title": null
@@ -1197,20 +1230,20 @@
             "is_searchable": false,
             "is_archived": false,
             "is_purged": false,
-            "country": "Deutschland",
+            "country": "DE",
             "username": "emilia@example.cde",
             "gender": 1,
-            "telephone": "+49 (5432) 555666777",
+            "telephone": "+495432555666777",
             "is_member": false,
             "is_event_realm": true,
             "family_name": "Eventis",
-            "display_name": "Emilia",
+            "display_name": "Emmy",
             "address": "Hohle Gasse 13",
             "is_ml_realm": true,
             "is_cde_admin": false,
             "is_finance_admin": false,
             "is_assembly_admin": false,
-            "mobile": "01577/314159",
+            "mobile": "+491577314159",
             "is_event_admin": false,
             "is_meta_admin": false,
             "birthday": "2012-06-02",
@@ -1221,6 +1254,7 @@
             "given_names": "Emilia E.",
             "is_ml_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "id": 5,
             "is_cde_realm": false,
             "title": null
@@ -1229,7 +1263,7 @@
             "address": "Kasumigaseki 1-3-2",
             "address_supplement": null,
             "birthday": "2019-12-28",
-            "country": "Japan",
+            "country": "JP",
             "display_name": "Akira",
             "family_name": "Abukara",
             "gender": 10,
@@ -1251,12 +1285,13 @@
             "is_ml_admin": true,
             "is_ml_realm": true,
             "is_cdelokal_admin": true,
+            "is_auditor": true,
             "is_searchable": true,
             "location": "Tokyo",
             "mobile": null,
             "name_supplement": null,
             "postal_code": null,
-            "telephone": "+81 (314) 159263",
+            "telephone": "+81314159263",
             "title": null,
             "username": "akira@example.cde"
         },
@@ -1264,7 +1299,7 @@
             "address": "Im Garten 77",
             "address_supplement": "bei Spielmanns",
             "birthday": "1981-02-11",
-            "country": null,
+            "country": "DE",
             "display_name": "Bertå",
             "family_name": "Beispiel",
             "gender": 1,
@@ -1286,12 +1321,13 @@
             "is_ml_admin": false,
             "is_ml_realm": true,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_searchable": true,
             "location": "Utopia",
-            "mobile": "0163/123456789",
+            "mobile": "+4916312345678",
             "name_supplement": "MdB",
             "postal_code": "34576",
-            "telephone": "+49 (5432) 987654321",
+            "telephone": "+495432987654321",
             "title": "Dr.",
             "username": "berta@example.cde"}
     },
@@ -1354,6 +1390,7 @@
             "registration_start": "2000-10-30T00:00:00+00:00",
             "registration_text": null,
             "mail_text": "Wir verwenden ein neues Kristallkugel-basiertes Kurszuteilungssystem; bis wir das ordentlich ans Laufen gebracht haben, m\u00fcsst ihr leider etwas auf die Teilnehmerliste warten.",
+            "participant_info": "Die Kristallkugel hat gute Dienste geleistet, nicht wahr?",
             "is_participant_list_visible": false,
             "is_course_assignment_visible": false,
             "is_course_list_visible": true,

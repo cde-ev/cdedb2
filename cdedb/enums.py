@@ -10,10 +10,12 @@ from typing import Tuple, Type
 
 import cdedb.database.constants as const
 from cdedb.common import (
-    Accounts, AgeClasses, CourseChoiceToolActions, CourseFilterPositions,
-    LineResolutions, LodgementsSortkeys, SubscriptionActions, TransactionType,
+    Accounts, AgeClasses, ConfidenceLevel, CourseChoiceToolActions,
+    CourseFilterPositions, GenesisDecision, LineResolutions, LodgementsSortkeys,
+    TransactionType,
 )
-from cdedb.query import QueryOperators
+from cdedb.query import QueryOperators, QueryScope
+from cdedb.subman.machine import SubscriptionAction, SubscriptionPolicy
 
 #: The list of normal enums
 ALL_ENUMS: Tuple[Type[Enum], ...] = (
@@ -22,8 +24,7 @@ ALL_ENUMS: Tuple[Type[Enum], ...] = (
     const.RegistrationPartStati,
     const.PrivilegeChangeStati,
     const.GenesisStati,
-    const.SubscriptionStates,
-    const.MailinglistInteractionPolicy,
+    const.SubscriptionState,
     const.ModerationPolicy,
     const.AttachmentPolicy,
     const.LastschriftTransactionStati,
@@ -40,12 +41,16 @@ ALL_ENUMS: Tuple[Type[Enum], ...] = (
     const.MailinglistDomain,
     const.QuestionnaireUsages,
     QueryOperators,
+    QueryScope,
     AgeClasses,
     LineResolutions,
-    SubscriptionActions,
+    GenesisDecision,
+    SubscriptionAction,
+    SubscriptionPolicy,
     LodgementsSortkeys,
     Accounts,
     TransactionType,
+    ConfidenceLevel,
 )
 
 #: The list of infinite enums

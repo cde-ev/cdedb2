@@ -14,7 +14,7 @@
             {{ util.form_input_text(name="birth_name", label=gettext("Birth Name")) }}
         {% endif %}
         {{ util.form_input_text(name="name_supplement", label=gettext("Name Affix")) }}
-        {{ util.form_input_text(name="display_name", label=gettext("First Given Name")) }}
+        {{ util.form_input_text(name="display_name", label=gettext("Known as (Forename)")) }}
         {% if realm == "cde" %}
             {{ util.form_input_textarea(name="specialisation", label=gettext("Specialisation")) }}
             {{ util.form_input_textarea(name="affiliation", label=gettext("School, University, …")) }}
@@ -35,7 +35,7 @@
             {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone"), type="tel") }}
         {% endif %}
         {% if realm == "cde" %}
-            {{ util.form_input_text(name="weblink", label=gettext("WWW"), info=util.markdownhint) }}
+            {{ util.form_input_text(name="weblink", label=gettext("WWW"), markdown=True) }}
         {% endif %}
 
         {% if realm in ("cde", "event") %}
@@ -44,7 +44,8 @@
             {{ util.form_input_text(name="address_supplement", label=gettext("Address Supplement")) }}
             {{ util.form_input_text(name="postal_code", label=gettext("Zipcode")) }}
             {{ util.form_input_text(name="location", label=gettext("City")) }}
-            {{ util.form_input_text(name="country", label=gettext("Country")) }}
+            {{ util.form_input_select(name="country", label=gettext("Country"), entries=COUNTRY_CODES,
+                                      defaultvalue=DEFAULT_COUNTRY) }}
         {% endif %}
         {% if realm == "cde" %}
             <h4 class="heading-underline">{% trans %}Second Address{% endtrans %}</h4>
@@ -52,7 +53,8 @@
             {{ util.form_input_text(name="address_supplement2", label=gettext("Address Supplement")) }}
             {{ util.form_input_text(name="postal_code2", label=gettext("Zipcode")) }}
             {{ util.form_input_text(name="location2", label=gettext("City")) }}
-            {{ util.form_input_text(name="country2", label=gettext("Country")) }}
+            {{ util.form_input_select(name="country2", label=gettext("Country"), entries=COUNTRY_CODES,
+                                      defaultvalue=DEFAULT_COUNTRY) }}
         {% endif %}
 
         <h4 class="heading-underline">{% trans %}Account & Membership{% endtrans %}</h4>
@@ -66,177 +68,63 @@
             {{ util.form_input_checkbox(name="paper_expuls", label=gettext("Printed exPuls"),
                                    anid="input_checkbox_is_searchable") }}
         {% endif %}
-        {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="7", info=util.markdownhint) }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="7", markdown=True) }}
 
 
-        {{ util.form_input_submit(value=gettext("Create User"), cancellink=cdedblink("{}/user_search".format(realm))) }}
+        {{ util.form_input_submit(label=gettext("Create User"), cancellink=cdedblink("{}/user_search".format(realm))) }}
     </form>
     <script nonce="{{ csp_nonce }}">
         $('#newuserform').cdedbProtectChanges();
     </script>
 {% endmacro %}
 
-{% macro user_search(realm, info="") %}
+{% macro user_search(realm, result, query, info="", archived=False) %}
     <div class="row">
         <div class="col-md-4">
             <div class="p button-par">
-                {{ util.href(cdedblink("{}/create_user".format(realm)), gettext("Create User"),
-                        icon="plus", aclass="btn btn-success btn-sm") }}
+                {% if not archived %}
+                    {{ util.href(cdedblink("{}/create_user_form".format(realm)), gettext("Create User"),
+                            icon="plus", aclass="btn btn-success btn-sm") }}
+                {% endif %}
+                {% if realm == 'cde' %}
+                    {{ util.href(cdedblink('cde/batch_admission'), gettext("Batch Admission"), icon="file-import",
+                             aclass="btn btn-default btn-sm") }}
+                {% endif %}
             </div>
             {% if info %}
                 <p class="text-muted">{{ util.make_icon('info-circle') }} {{ info }}</p>
             {% endif %}
         </div>
         <div class="col-md-8">
-            {{ place_default_queries("{}/user_search".format(realm), default_queries) }}
+            {% if archived %}
+                {{ place_default_queries("{}/archived_user_search".format(realm), default_queries) }}
+            {% else %}
+                {{ place_default_queries("{}/user_search".format(realm), default_queries) }}
+            {% endif %}
         </div>
     </div>
 
-    {{ user_search_mask(realm) }}
+    {{ user_search_mask(realm, archived=archived, selection_blacklist=("pevent_id", "pcourse_id")) }}
 
     {% if values['is_search'] %}
         <h3 id="query-results">{% trans %}Result{% endtrans %} [{{ result|length }}]</h3>
-        {{ user_search_result(result, realm) }}
+        {{ display_query_result(result, query) }}
     {% endif %}
 {% endmacro %}
 
 
-{% macro user_search_mask(realm, selection_blacklist=[]) %}
-    {% with TITLES = {
-        "fulltext": gettext("Fulltext"),
-        "personas.id": gettext("ID"),
-        "username": gettext("E-Mail"),
-        "is_active": gettext("Active Account"),
-        "family_name": gettext("Family Name"),
-        "birth_name": gettext("Birth Name"),
-        "given_names": gettext("Given Names"),
-        "display_name": gettext("First Given Name"),
-        "title": gettext("Title_[[of a persona]]"),
-        "name_supplement": gettext("Name Affix"),
-        "gender": gettext("Gender"),
-        "birthday": gettext("Birthday"),
-        "telephone": gettext("Phone"),
-        "mobile": gettext("Mobile Phone"),
-        "address": gettext("Address"),
-        "address_supplement": gettext("Address Supplement"),
-        "postal_code": gettext("ZIP"),
-        "location": gettext("City"),
-        "country": gettext("Country"),
-        "address2": gettext("Address (2)"),
-        "address_supplement2": gettext("Address Supplement (2)"),
-        "postal_code2": gettext("ZIP (2)"),
-        "location2": gettext("City (2)"),
-        "country2": gettext("Country (2)"),
-        "weblink": gettext("WWW"),
-        "specialisation": gettext("Specialisation"),
-        "affiliation": gettext("School, University, …"),
-        "timeline": gettext("Year(s) of Graduation"),
-        "interests": gettext("Interests"),
-        "free_form": gettext("Miscellaneous"),
-        "pevent_id": gettext("Past Event"),
-        "pcourse_id": gettext("Past Course"),
-        "balance": gettext("Membership-Fee Balance"),
-        "decided_search": gettext("Searchability Decided"),
-        "trial_member": gettext("Trial Member"),
-        "paper_expuls": gettext("Printed exPuls"),
-        "notes": gettext("Admin-Notes"),
-        'is_member': gettext("CdE-Member"),
-        'is_searchable': gettext("Searchable"),
-        'is_ml_realm': gettext("Realm") + ": " + gettext("Mailinglists"),
-        'is_event_realm': gettext("Realm") + ": " + gettext("Events"),
-        'is_assembly_realm': gettext("Realm") + ": " + gettext("Assemblies"),
-        'is_cde_realm': gettext("Realm") + ": " + gettext("cde_realm"),
-        'is_ml_admin': gettext("Admin") + ": " + gettext("Mailinglists"),
-        'is_event_admin': gettext("Admin") + ": " + gettext("Events"),
-        'is_assembly_admin': gettext("Admin") + ": " + gettext("Assemblies"),
-        'is_cde_admin': gettext("Admin") + ": " + gettext("cde_realm"),
-        'is_core_admin': gettext("Admin") + ": " + gettext("Core"),
-        'is_ml_admin,is_event_admin,is_assembly_admin,is_cde_admin,is_core_admin,is_meta_admin':
-            gettext("Admin") + ": " + gettext("Any"),
-        'is_meta_admin': gettext("Admin") + ": " + gettext("Meta"),
-        'lastschrift.granted_at': gettext("Lastschrift Granted"),
-        'lastschrift.revoked_at': gettext("Lastschrift Revoked"),
-        'lastschrift.active_lastschrift': gettext("Active Lastschrift"),
-        'lastschrift.amount': gettext("Lastschrift Amount"),
-    } %}
-
-            {% if realm == "archived" %}
-                {% set target=cdedblink('core/archived_user_search') %}
-            {% else %}
-                {% set target=cdedblink('{}/user_search'.format(realm)) %}
-            {% endif %}
-            {{ format_query(spec, TITLES, choices, target + '#query-results', selection_blacklist=selection_blacklist,
-                            selection_default=('personas.id', 'username', 'family_name', 'given_names')) }}
-
-    {% endwith %}
-{% endmacro %}
-
-{% macro user_search_result(result, realm) %}
-    {# warning: titles will not be escaped! #}
-    {% with TITLES = {
-        "fulltext": gettext("Fulltext"),
-        "personas.id": gettext("ID"),
-        "username": gettext("E-Mail"),
-        "is_active": gettext("Active Account"),
-        "family_name": gettext("Family Name"),
-        "birth_name": gettext("Birth Name"),
-        "given_names": gettext("Given Names"),
-        "display_name": gettext("First Given Name"),
-        "title": gettext("Title_[[of a persona]]"),
-        "name_supplement": gettext("Name Affix"),
-        "gender": gettext("Gender"),
-        "birthday": gettext("Birthday"),
-        "telephone": gettext("Phone"),
-        "mobile": gettext("Mobile Phone"),
-        "address": gettext("Address"),
-        "address_supplement": gettext("Address Supplement"),
-        "postal_code": gettext("ZIP"),
-        "location": gettext("City"),
-        "country": gettext("Country"),
-        "address2": gettext("Address (2)"),
-        "address_supplement2": gettext("Address Supplement (2)"),
-        "postal_code2": gettext("ZIP (2)"),
-        "location2": gettext("City (2)"),
-        "country2": gettext("Country (2)"),
-        "weblink": gettext("WWW"),
-        "specialisation": gettext("Specialisation"),
-        "affiliation": gettext("School, University, …"),
-        "timeline": gettext("Year(s) of Graduation"),
-        "interests": gettext("Interests"),
-        "free_form": gettext("Miscellaneous"),
-        "pevent_id": gettext("Past Event"),
-        "pcourse_id": gettext("Past Course"),
-        "balance": gettext("Membership-Fee Balance"),
-        "decided_search": gettext("Searchability Decided"),
-        "trial_member": gettext("Trial Member"),
-        "paper_expuls": gettext("Printed exPuls"),
-        "notes": gettext("Admin-Notes"),
-        'is_member': gettext("CdE-Member"),
-        'is_searchable': gettext("Searchable"),
-        'is_ml_realm': util.make_icon('envelope', title=gettext("Realm") + ": " + gettext("Mailinglists")),
-        'is_event_realm': util.make_icon('chalkboard-teacher', title=gettext("Realm") + ": " + gettext("Events")),
-        'is_assembly_realm': util.make_icon('bullhorn', title=gettext("Realm") + ": " + gettext("Assemblies")),
-        'is_cde_realm': util.make_icon('graduation-cap', title=gettext("Realm") + ": " + gettext("cde_realm")),
-        'is_ml_admin': "Admin " + util.make_icon('envelope', title=gettext("Admin") + ": " + gettext("Mailinglists")),
-        'is_event_admin': "Admin " + util.make_icon('chalkboard-teacher', title=gettext("Admin") + ": " + gettext("Events")),
-        'is_assembly_admin': "Admin " + util.make_icon('bullhorn', title=gettext("Admin") + ": " + gettext("Assemblies")),
-        'is_cde_admin': "Admin " + util.make_icon('graduation-cap', title=gettext("Admin") + ": " + gettext("cde_realm")),
-        'is_core_admin': "Admin " + util.make_icon('user', title=gettext("Admin") + ": " + gettext("Core")),
-        'is_meta_admin': "Admin " + util.make_icon('wrench', title=gettext("Admin") + ": " + gettext("Meta")),
-        'lastschrift.granted_at': gettext("Lastschrift Granted"),
-        'lastschrift.revoked_at': gettext("Lastschrift Revoked"),
-        'lastschrift.active_lastschrift': gettext("Active Lastschrift"),
-        'lastschrift.amount': gettext("Lastschrift Amount"),
-    } %}
-
-        {{ display_query_result(result, query, TITLES, choices) }}
-    {% endwith %}
+{% macro user_search_mask(realm, archived=False, selection_blacklist=[]) %}
+    {% if archived %}
+        {% set target=cdedblink('{}/archived_user_search'.format(realm)) %}
+    {% else %}
+        {% set target=cdedblink('{}/user_search'.format(realm)) %}
+    {% endif %}
+    {{ format_query(scope, spec, target + '#query-results', selection_blacklist=selection_blacklist,
+                    selection_default=('personas.id', 'username', 'family_name', 'given_names')) }}
 {% endmacro %}
 
 
-
-
-{% macro format_query(spec, titles, choices, target, output_selection=True, selection_blacklist=[],
+{% macro format_query(scope, spec, target, output_selection=True, selection_blacklist=[],
                       selection_default=[]) %}
     <form action="{{ target }}" method="GET" id="queryform" aria-labelledby="qf_title">
         {{ util.input_hidden(name="is_search", value=True) }}
@@ -275,8 +163,8 @@
                             <tbody>
                                 {% for field in spec %}
                                     <tr class="query_field {% if field in errors %}errorInput{% endif %}
-                                               {% if field == query_mod.QUERY_PRIMARIES[query.scope] %}id-field{% endif %}"
-                                            data-type="{{ spec[field] }}" data-id="{{ field }}">
+                                               {% if field == scope.get_primary_key() %}id-field{% endif %}"
+                                            data-type="{{ spec[field].type }}" data-id="{{ field }}">
                                         <td>
                                             {# multi-fields are not reliably selectable, so we disable selection #}
                                             {% if ',' not in field and field not in selection_blacklist %}
@@ -286,21 +174,20 @@
                                                                 value=True,
                                                                 defaultvalue=('True' if field in selection_default
                                                                         and not values['is_search'] else ''),
-                                                                arialabel=(gettext("show %s")
-                                                                           |format(titles.get(field, field)))) }}
+                                                                arialabel=gettext("show %s")|format(spec[field].get_title(gettext))) }}
                                                     {% else %}
                                                         {{ util.input_hidden(name, value=True) }}
                                                     {% endif %}
                                                 {% endwith %}
                                             {% endif %}
                                         </td>
-                                        <td class="name">{{ titles.get(field, field) }}</td>
+                                        <td class="name">{{ spec[field].get_title(gettext) }}</td>
                                         <td>
                                             {% with name = "qop_{}".format(field) %}
                                                 {% with theid = "qop_{}".format(field) %}
                                                     {#- jinja does not support list comprehension ... #}
                                                     {%- set myentries = [] %}
-                                                    {%- for op in query_mod.VALID_QUERY_OPERATORS[spec[field]]
+                                                    {%- for op in query_mod.VALID_QUERY_OPERATORS[spec[field].type]
                                                             if field not in choices
                                                                 or op in query_mod.SELECTION_VALUE_OPERATORS %}
                                                         {%- do myentries.append((op.value,
@@ -309,26 +196,26 @@
                                                     {{ util.input_select(name, entries=myentries, nulloption=nbsp,
                                                             aclass='form-control input-sm filter-op', anid=theid,
                                                             arialabel=(gettext("filter operator for %s")
-                                                                       |format(titles.get(field, field)))) }}
+                                                                       |format(spec[field].get_title(gettext)))) }}
                                                 {% endwith %}
                                             {% endwith %}
                                         </td>
                                         <td {% if field in errors %}class="has-error"{% endif %}>
                                             {% with name = "qval_{}".format(field) %}
-                                                {% if spec[field] == 'bool' %}
+                                                {% if spec[field].type == 'bool' %}
                                                     {# Boolean fields are the only ones that don't need a text input field,
                                                        for none of their filter operators. So we can provide a select box
-                                                       for none-javascript users. #}
+                                                       for non-javascript users. #}
                                                     {{ util.input_select(name, anid="qinput_{}".format(field),
                                                             aclass='form-control input-sm filter-value',
                                                             entries=(('',''),(True, gettext("Yes")),(False, gettext("No"))),
                                                             arialabel=(gettext("compare value for %s")
-                                                                       |format(titles.get(field, field)))) }}
+                                                                       |format(spec[field].get_title(gettext)))) }}
                                                 {% else %}
                                                     {{ util.input_text(name, anid="qinput_{}".format(field),
                                                             aclass='form-control input-sm filter-value',
                                                             arialabel=(gettext("compare value for %s")
-                                                                       |format(titles.get(field, field)))) }}
+                                                                       |format(spec[field].get_title(gettext)))) }}
                                                 {% endif %}
                                                 {{ util.output_errors(field) }}
                                             {% endwith %}
@@ -352,7 +239,7 @@
                                             {#- jinja does not support list comprehension ... #}
                                             {%- set myentries = [] %}
                                             {%- for field in spec if ',' not in field %}
-                                                {%- do myentries.append((field, titles.get(field,field))) %}
+                                                {%- do myentries.append((field, spec[field].get_title(gettext))) %}
                                             {%- endfor %}
                                             {{ util.input_select(name, entries=myentries, nulloption=nbsp,
                                                                  aclass="form-control input-sm sort-field",
@@ -410,24 +297,44 @@
                     </div>
                 </div>
 
-                <p class="pull-right nosp">
-                    <button type="submit" class="btn btn-primary">
-                        {{ util.make_icon('search') }} {% trans %}Search{% endtrans %}</button>
-                    <span class="btn-group">
-                        <button type="submit" class="btn btn-default" name="download" value="csv">
-                            {{ util.make_icon('download') }} {% trans %}CSV file{% endtrans %}
-                        </button>
-                        <button type="submit" class="btn btn-default" name="download" value="json">
-                            {{ util.make_icon('download') }} {% trans %}JSON file{% endtrans %}
-                        </button>
-                    </span>
-                </p>
+                <div class="row">
+                    <div class="col-sm-6">
+                        <h4 class="filter-title">
+                            {{ util.make_icon('search') }} {% trans %}Search{% endtrans %}</h4>
+                        <div class="">
+                            {{ util.input_submit(label=gettext("Search"), icon="search") }}
+                            <div class="btn-group">
+                                {{ util.input_submit(label=gettext("CSV file"), value="csv", name="download", icon="download",
+                                    aclass="btn btn-default") }}
+                                {{ util.input_submit(label=gettext("JSON file"), value="json", name="download", icon="download",
+                                    aclass="btn btn-default") }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        {% if scope.supports_storing() %}
+                            <h4 class="filter-title">
+                                {{ util.make_icon('far fa-bookmark') }} {% trans %}Store query{% endtrans %}</h4>
+                            <div class="input-group">
+                                {{ util.input_text("query_name", placeholder=gettext("query name")) }}
+                                {{ util.input_hidden("query_scope", scope) }}
+                                <div class="input-group-btn">
+                                    {{ util.input_submit(gettext("Save"), name="store_query", formmethod="POST",
+                                        value=encode_anti_csrf("event/store_event_query", "store_query",
+                                                               persona_id=user.persona_id),
+                                        formaction=cdedblink("event/store_event_query"),
+                                        icon="far fa-bookmark", aclass="btn btn-primary") }}
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
                 {{ util.output_errors('query', wrapper=True) }}
                 <script nonce="{{ csp_nonce }}">
                     {
                         $('#qf_tablist').css('display', 'block');
                         var $qf = $('#queryform');
-                        $qf.cdedbQueryForm({"choices" : {{ choices_lists|json|s }},
+                        $qf.cdedbQueryForm({"choices" : {{ choices_lists|tojson }},
                                             "labels": {{ {'add_field': gettext('– add displayed field –'),
                                                           'add_filter': gettext('– add filter –'),
                                                           'add_sort': gettext('– add sort key –'),
@@ -445,7 +352,7 @@
                                                           'range_ids': gettext("<id>,<id>,…"),
                                                           'true': gettext("true"),
                                                           'false': gettext("false"),
-                                                         }|json|s }}});
+                                                         }|tojson }}});
                         $('#tab_link_qf_js')
                             .on('show.bs.tab', function() {
                                 $qf.data('cdedbQueryForm').initFromForm();
@@ -469,16 +376,26 @@
 
 {% macro place_default_queries(target, queries) %}
     {% if queries %}
-        {% call util.bootstrap_panel(title=gettext("Default Queries")) %}
+        {% call util.bootstrap_panel(title=gettext("Default Queries"), anid="default_queries_container") %}
             <div class="row">
                 {% for list in queries | sort | slice(2) %}
                 <div class="col-sm-6">
                     <ul>
                         {% for query_name in list %}
-                            {% with query = queries[query_name] %}<li>
-                                {{ util.href(cdedblink(target, query|querytoparams) + '#query-results',
-                                        query.name if query.name else gettext(query_name), aclass="default-query") }}
-                            </li>{% endwith %}
+                            {% with query = queries[query_name] -%}
+                                <li>
+                                    {{ util.href(cdedblink(target, query.serialize()) + '#query-results',
+                                            query.name if query.name else gettext(query_name), aclass="default-query") }}
+                                    {% if query.query_id %}
+                                        <form action="{{ cdedblink('event/delete_event_query') }}" method="post" class="display-inline" id="deletequeryform{{ query.query_id }}">
+                                            {{ util.anti_csrf_token('event/delete_event_query') }}
+                                            {{ util.input_hidden("query_id", value=query.query_id) }}
+                                            {{ util.input_hidden("query_scope", value=query.scope) }}
+                                            {{ util.input_submit(label="", aclass='btn btn-xs btn-danger', icon="trash-alt", title=gettext('Delete query')) }}
+                                        </form>
+                                    {% endif %}
+                                </li>
+                            {%- endwith %}
                         {% endfor %}
                     </ul>
                 </div>
@@ -503,7 +420,7 @@
     {% endif %}
 {% endmacro %}
 
-{% macro display_query_result(result, query, titles, choices) %}
+{% macro display_query_result(result, query) %}
     {% if not result|length %}
         {% trans %}No search results!{% endtrans %}
     {% else %}
@@ -567,7 +484,7 @@
                     {% for csvfield in query.fields_of_interest %}
                         {% for field in csvfield.split(',') %}
                             <th>
-                                {{ titles.get(field, field) }}
+                                {{ query.spec[field].get_title(gettext) }}
                                 {% if values.get("qop_{}".format(field)) %}
                                     <span class="label label-default" title="{% trans %}filtered column{% endtrans %}">
                                         {{ util.make_icon('filter') }}
@@ -586,7 +503,9 @@
                 </tr>
             </thead>
             <tbody>
-            {% set primary_field = query_mod.QUERY_PRIMARIES[query.scope].split('.')[-1] %}
+            {% set primary_field = query.scope.get_primary_key(short=True) %}
+            {% set QueryScope = enums['QueryScope'] %}
+            {% set ResultFormat = query_mod.QueryResultEntryFormat %}
             {% for row in result %}
                 {% set outerloopindex = loop.index0 %}
                 <tr class="ls-item" data-id="{{ row[primary_field] }}">
@@ -595,13 +514,13 @@
                                                aclass="rowSelector", arialabel=gettext("row %s")|format(outerloopindex)) }}
                     </td>
                     <td>
-                        {%- if query.scope == 'qview_registration' -%}
+                        {%- if query.scope == QueryScope.registration -%}
                             {{ util.href(cdedblink("event/show_registration", {'registration_id': row[primary_field]}),
                                          gettext('Details'), icon='user', aclass='btn btn-xs btn-info', rel='noreferrer') }}
-                        {%- elif query.scope == 'qview_event_course' -%}
+                        {%- elif query.scope == QueryScope.event_course -%}
                             {{ util.href(cdedblink("event/show_course", {'course_id': row[primary_field]}),
                                          gettext('Details'), icon='book', aclass='btn btn-xs btn-info', rel='noreferrer') }}
-                        {%- elif query.scope == 'qview_event_lodgement' -%}
+                        {%- elif query.scope == QueryScope.lodgement -%}
                             {{ util.href(cdedblink("event/show_lodgement", {'lodgement_id': row[primary_field]}),
                                          gettext('Details'), icon='home', aclass='btn btn-xs btn-info', rel='noreferrer') }}
                         {%- else -%}
@@ -614,23 +533,31 @@
                             {# NOTE that we split off any possible schema specification since they're not preserved
                                     by the query #}
                                 <td data-col="{{ field }}">  {# The data-col attribute is mainly used for testing #}
-                                    {% if field in ("personas.id", "persona.id")
-                                            or (query.scope == "qview_persona" and field == "id") %}
-                                        <span class="nowrap">{{ row[field]|cdedbid }}</span>
-                                    {% elif field == "persona.username" %}
-                                        {{ util.username_mailto(row, "persona.") }}
-                                    {% elif field == "username" %}
+                                    {% set format_spec = query.get_field_format_spec(field) %}
+                                    {% set text = query.spec[field].choices.get(row.get(field), row.get(field, "UNDEFINED")) %}
+                                    {% if format_spec == ResultFormat.persona %}
+                                        <span class="nowrap">
+                                            {% if primary_field == "personas.id" %}
+                                                {{ row[field]|cdedbid }}
+                                            {% else %}
+                                                {{ util.href(show_user_link(user, row[field]), row[field]|cdedbid) }}
+                                            {% endif %}
+                                        </span>
+                                    {% elif format_spec == ResultFormat.username %}
                                         {{ util.username_mailto(row) }}
-                                    {% elif query.spec[csvfield] == "date" %}
+                                    {% elif format_spec == ResultFormat.date %}
                                         {{ row.get(field, None)|date(lang=lang) }}
-                                    {% elif query.spec[csvfield] == "datetime" %}
+                                    {% elif format_spec == ResultFormat.datetime %}
                                         {{ row.get(field, None)|datetime(lang=lang) }}
-                                    {% elif query.spec[csvfield] == "bool" %}
+                                    {% elif format_spec == ResultFormat.bool %}
                                         {{ util.deko_checkbox(row.get(field, None), titles=(gettext('false'),
-                                                                                             gettext('true'))) }}
+                                                                                            gettext('true'))) }}
+                                    {% elif format_spec == ResultFormat.event_course and row[field] %}
+                                        {{ util.href(cdedblink("event/show_course", {'course_id': row[field]}), text) }}
+                                    {% elif format_spec == ResultFormat.event_lodgement and row[field] %}
+                                        {{ util.href(cdedblink("event/show_lodgement", {'lodgement_id': row[field]}), text) }}
                                     {% else %}
-                                        {{ choices.get(csvfield, {}).get(row.get(field),
-                                                                         row.get(field, "UNDEFINED")) }}
+                                        {{ text }}
                                     {% endif %}
                                 </td>
                         {% endfor %}

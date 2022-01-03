@@ -1,17 +1,22 @@
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans given_names=ambience['persona']['given_names'], family_name=ambience['persona']['family_name'] %}
-    	Modify Balance for {{ given_names }} {{ family_name }}
+    {% trans name=util.persona_name(ambience['persona'], only_given_names=True) %}
+    	Modify Balance for {{ name }}
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), "{} {}".format(ambience['persona']['given_names'],
-                                                                                  ambience['persona']['family_name']),
+{{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), util.persona_name(ambience['persona']),
         icon="user") }}
 {{ util.breadcrumb_link(cdedblink("core/modify_balance_form"), gettext("Modify Balance"), active="True") }}
 {% endblock %}
+
+{% block heading %}
+    {{ util.context_heading(gettext("Modify Balance"), util.persona_name(ambience['persona'], only_given_names=True),
+                            'user', gettext("User")) }}
+{% endblock %}
+
 {% block content %}
     <p>
         {{ util.make_icon('info-circle') }}
@@ -25,7 +30,7 @@
                     attributes='min="0" step="0.01"'|s, small=True, defaultvalue=old_balance) }}
             {{ util.form_input_checkbox(name="trial_member", label=gettext("Trial Membership"), defaultvalue="True" if trial_member else "", small=True) }}
             {{ util.form_input_textarea(name="change_note", label=gettext("Changenotes"), small=True) }}
-            {{ util.form_input_submit(value=gettext("Save"), small=True,
+            {{ util.form_input_submit(label=gettext("Save"), small=True,
                     cancellink=show_user_link(user, ambience['persona']['id'])) }}
         </div>
     </form>

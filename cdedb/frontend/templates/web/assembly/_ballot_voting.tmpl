@@ -31,7 +31,7 @@
             </div>
 
         {% endif %}
-        {{ util.form_input_submit(value=gettext("Vote_[[to vote in a ballot]]"), small=True) }}
+        {{ util.form_input_submit(label=gettext("Vote_[[to vote in a ballot]]"), small=True) }}
     </form>
     <script nonce="{{ csp_nonce }}">
         {% if ambience['ballot']['votes'] > 1 %}
@@ -50,7 +50,7 @@
                         style="display: inline;">
                     {{ util.anti_csrf_token('assembly/vote') }}
                     {{ util.input_hidden(name="vote", value="special: abstain") }}
-                    {{ util.input_submit(value=gettext("Abstain"), icon="square") }}
+                    {{ util.input_submit(label=gettext("Abstain"), icon="square") }}
                 </form>
             </div>
         </div>
@@ -82,7 +82,7 @@
 {% macro show_manual_for_text_preferential_voting() -%}
     {% call util.bootstrap_panel(title=gettext("Help for voting"), icon='info-circle', aclass='panel-default panel-condensed mosp') %}
         <p>
-            {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>")|s %}
+            {% trans link=gettext("<a href='https://en.wikipedia.org/w/index.php?curid=680729'>Schulze method</a>")|s %}
                 This vote is a preferential vote. You can arrange the candidates in the field above
                 according to your personal preference. The preferences of all participants will be
                 evaluated using the {{ link }}, to determine the option with the most votes.
@@ -173,7 +173,7 @@
 {% macro show_manual_for_js_preferential_voting() -%}
     {% call util.bootstrap_panel(title=gettext("Help for voting"), icon='info-circle', aclass='panel-default panel-condensed mosp') %}
         <p>
-            {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>")|s %}
+            {% trans link=gettext("<a href='https://en.wikipedia.org/w/index.php?curid=680729'>Schulze method</a>")|s %}
                 This vote is a preferential vote. You can arrange the candidates in the field above
                 according to your personal preference. The preferences of all participants will be
                 evaluated using the {{ link }}, to determine the option with the most votes.
@@ -181,16 +181,17 @@
         </p>
         <p>
             {% trans %}
-                To arrange the candidates, move them into one of the shaded boxes. The higher up the box,
+                To arrange the candidates, place them into one of the shaded boxes. The higher up the box,
                 the higher your preference for that candidate. Candidates within the same box will be
-                evaluated with the same preference. Move a candidate between two boxes to create a new box.
+                evaluated with the same preference. Place a candidate in the space between two boxes to
+                create a new box there.
             {% endtrans %}
         </p>
         <p>
             {% trans tab="<kbd>%(key)s</kbd>"|s|format(key=gettext("TAB")),
                      enter="<kbd>%(key)s</kbd>"|s|format(key=gettext("ENTER")),
                      space="<kbd>%(key)s</kbd>"|s|format(key=gettext("Space")) -%}
-                There are three ways of moving candidates: Drag’n’Drop them into a different box or
+                There are three ways of placing candidates: Drag’n’Drop them into a different box or
                 click on a candidate and then on a box. Or you can select a candidate with {{ tab }},
                 confirm it with {{ enter }} or {{ space }}, then select a box with {{ tab }}
                 and confirm the selection with {{ enter }} or {{ space }}.
@@ -245,7 +246,7 @@
                 {{ util.anti_csrf_token('assembly/vote') }}
                 {{ util.form_input_text(name="vote", label=gettext("Preferencelist"), small=True,
                                         anid='input-preferencelist') }}
-                {{ util.form_input_submit(value=gettext("Vote_[[to vote in a ballot]]"), small=True) }}
+                {{ util.form_input_submit(label=gettext("Vote_[[to vote in a ballot]]"), small=True) }}
             </form>
             <script nonce="{{ csp_nonce }}">
                 $('#voteform').cdedbProtectChanges();
@@ -276,7 +277,7 @@
                 $('#tablist-formselect').show();
                 /* Initialize JS Fancy form */
                 $('#prefvote_container').cdedbPrefVote(
-                    {{ ambience['ballot']['candidates']|keydictsort(EntitySorter.candidates)|json|s }},
+                    {{ ambience['ballot']['candidates']|keydictsort(EntitySorter.candidates)|tojson }},
                     {{ "'"|s+ASSEMBLY_BAR_SHORTNAME+"'"|s if ambience['ballot']['use_bar'] else "null" }},
                     $('#input-preferencelist'),
                     {{ {'bar_name': gettext('neutral'),
@@ -286,7 +287,7 @@
                         'spacer': gettext('Between box {0} and {1}'),
                         'spacer_highest': gettext('Above box with highest priority'),
                         'spacer_lowest': gettext('Below box with lowest priority'),
-                        }|json|s }}
+                        }|tojson }}
                 );
                 /* Register callback to refresh fancy form every time the tab is shown.
                  * Additionally register handlers to set or reset 'prefvote_nojs' cookie. */
@@ -317,13 +318,53 @@
 {% macro add_candidate_form() -%}
     <h3>{% trans %}Candidates{% endtrans %}</h3>
 
-    {% set columns =  [dict(name="shortname", label=gettext("Shortname"), func=util.input_text),
-                       dict(name="title", label=gettext("Title_[[name of an entity]]"), func=util.input_text)] %}
-
     <form action="{{ cdedblink('assembly/edit_candidates') }}" method="POST" id="candidatessummaryform">
         {{ util.anti_csrf_token('assembly/edit_candidates') }}
-        {{ util.dynamic_row_table(gettext("Candidates"), columns, ambience['ballot']['candidates'], sortkey=EntitySorter.candidate) }}
-        {{ util.input_submit(value=gettext("Save")) }}
+
+        <table class="table table-condensed" id="drow-table">
+            <thead>
+                <tr>
+                    <th>{% trans %}Shortname{% endtrans %}</th>
+                    <th>{% trans %}Title_[[name of an entity]]{% endtrans %}</th>
+                    <th></th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% call(id, row_class, is_new_row) util.dynamic_row_meta(sorted_candidate_ids) %}
+                    <tr class="{{ row_class }}" role="group" aria-label="Candidate {{ id }}">
+                        <td class={{ util.has_errors(drow_name("shortname", id)) }}>
+                            {{ util.input_text(drow_name("shortname", id), aclass='drow-input form-control',
+                                    attributes=util.drow_basename("shortname"), arialabel=gettext("Shortname")) }}
+                            {{ util.output_errors(drow_name("shortname", id)) }}
+                        </td>
+                        <td class={{ util.has_errors(drow_name("title", id)) }}>
+                            {{ util.input_text(drow_name("title", id), aclass='drow-input form-control',
+                                    attributes=util.drow_basename("title"), arialabel=gettext("Name")) }}
+                            {{ util.output_errors(drow_name("title", id)) }}
+                        </td>
+                        <td>
+                            <span class="drow-buttonspace">
+                                {% if is_new_row %}
+                                    {{ util.input_checkbox(drow_create(id), label=gettext("Add"),
+                                            attributes=util.drow_basename("create"), aclass='drow-indicator') }}
+                                {% else %}
+                                    {{ util.input_checkbox(drow_delete(id), label=gettext("Delete"),
+                                            aclass='drow-indicator') }}
+                                {% endif %}
+                            </span>
+                        </td>
+                    </tr>
+                {% endcall %}
+            </tbody>
+        </table>
+
+        <p>
+            <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">
+                {{ util.make_icon('plus') }} {% trans %}Add Candidate{% endtrans %}
+            </button>
+        </p>
+        {{ util.input_submit(label=gettext("Save")) }}
     </form>
 
     <script nonce="{{ csp_nonce }}">

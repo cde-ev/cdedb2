@@ -20,19 +20,15 @@
     {{ util.breadcrumb_link(cdedblink("ml/change_mailinglist"), gettext("Configuration"), active=True) }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Configuration{% endtrans %}
-        <small>
-            {{- util.make_icon('envelope', arialabel=gettext("Mailinglist")) }} {{ ambience['mailinglist']['title'] -}}
-        </small>
-    </h1>
+    {{ util.context_heading(gettext("Configuration"), ambience['mailinglist']['title'],
+                            'envelope', gettext("Mailinglist")) }}
 {% endblock %}
 {% block static_notifications %}
-    {% if not privileged %}
+    {% if restricted %}
         {% call util.notification('info') %}
-            {% trans link = util.href(docurl("Handbuch_Moderator", anchor="privilegierte-moderatoren"),
-                                      gettext("privileged moderator access"))|s %}
-                You do not have %(link)s and may not change subscriptions.
+            {% trans link = util.href(docurl("Handbuch_Moderator", anchor="eingeschränkte-moderatoren"),
+                                      gettext("restricted moderator access"))|s %}
+                You only have %(link)s and may not change subscriptions.
             {% endtrans %}
             {% trans %}
                 Some fields may only be changed by admins.
@@ -59,9 +55,11 @@
         {{ util.form_input_checkbox(name="is_active", label=gettext("Active"), readonly=readonly) }}
         {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]"), actualreadonly=readonly) }}
         {{ util.form_input_text(name="local_part", label=gettext("Address"), actualreadonly=readonly,
-                                addon='@' + enums['MailinglistDomain'](ambience['mailinglist']['domain'])|string) }}
-        {{ util.form_input_select(name="domain", label=gettext("Domain"), actualreadonly=readonly, defaultvalue=ambience['mailinglist']['domain'].value,
-                    entries=available_domains|enum_entries(processing=gettext, prefix="@")) }}
+                                addon='@' + enums['MailinglistDomain'](ambience['mailinglist']['domain']).display_str()) }}
+        {{ util.form_input_select(
+                name="domain", label=gettext("Domain"), actualreadonly=readonly,
+                defaultvalue=ambience['mailinglist']['domain'].value,
+                entries=available_domains|enum_entries(prefix="@")) }}
         <script nonce="{{ csp_nonce }}">
             domain_inp = $("#changelistform [name='domain']");
             function update_domain() {
@@ -71,9 +69,8 @@
             domain_inp.on('input', update_domain);
             update_domain();
         </script>
-        {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
-                                    info=util.markdownhint) }}
-        {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="5", info=util.markdownhint) }}
+        {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5", markdown=True) }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="5", markdown=True) }}
 
     <h4 class="heading-underline">{% trans %}Moderation & Subscribers{% endtrans %}</h4>
         {{ util.form_input_select(name="mod_policy", label=gettext("Moderation"),
@@ -95,7 +92,7 @@
         {% endif %}
         {% if 'registration_stati' in additional_fields %}
             {{ util.form_input_checkboxes(name="registration_stati", label=gettext("Event Audience"),
-                    entries=enums['RegistrationPartStati']|enum_entries(processing=gettext), readonly=not privileged) }}
+                    entries=enums['RegistrationPartStati']|enum_entries(processing=gettext), readonly=restricted) }}
         {% endif %}
         {% if 'assembly_id' in additional_fields %}
             {{ util.form_input_select(name="assembly_id", label=gettext("Assembly"), nulloption=nbsp,
@@ -126,6 +123,6 @@
                     "This setting currently has no effect. By default, mailinglists accept PDF attachments only. "
                     "Other attachment policy can be changed by the Admin-Team.")) }}
         {{ util.form_input_text(name="maxsize", label=gettext("max. message size (in kB)"), type="number") }}
-        {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink('ml/show_mailinglist')) }}
+        {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink('ml/show_mailinglist')) }}
     </form>
 {% endblock %}

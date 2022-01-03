@@ -89,13 +89,16 @@ body{
 .input-slim {
     display: inline-block;
 }
+.table-stats>tbody>tr>td, .table-stats>tfoot>tr>td, .table-stats>thead>tr>td {
+    min-width: 4em;
+}
 .table-superdense>tbody>tr>td, .table-superdense>tbody>tr>th, .table-superdense>tfoot>tr>td,
 .table-superdense>tfoot>tr>th, .table-superdense>thead>tr>td, .table-superdense>thead>tr>th {
     padding: 3px;
 }
 .table>tbody>tr>td.indent, .table>tbody>tr>th.indent {
     border-top-style: none;
-    min-width: 20px;
+    width: 20px;
 }
 table>tbody>tr.no-upper-border>td {
     padding-top: 0 ;
@@ -130,6 +133,9 @@ ul.slim {
     padding-left: 0;
     padding-right: 0;
 }
+.list-group-item dl {
+    margin-bottom: 0;
+}
 .list-group-hover .list-group-item:hover{
     background-color: #f5f5f5;
 }
@@ -144,6 +150,9 @@ ul.slim {
 }
 hr.strong {
     border-top: 1px solid #ddd;
+}
+hr.info {
+    border-top: 2px solid #d9edf7;
 }
 h4, .h4, h5, .h5, h6, .h6 {
     font-weight: bold;
@@ -184,7 +193,8 @@ h4.heading-underline, h5.heading-underline, h6.heading-underline {
     padding: 10px;
 }
 
-.checkbox input[type="checkbox"],.radio input[type="radio"] {
+.checkbox input[type="checkbox"], .checkbox, input[type="checkbox"],
+.radio input[type="radio"], .radio, input[type="radio"] {
     vertical-align: middle;
     position: relative;
     bottom: 3.5px;
@@ -244,6 +254,10 @@ h2.mosp {
 }
 h3.mosp {
     margin-top: 24px;
+}
+hr.nosp {
+    margin-top: 5px;
+    margin-bottom: 5px;
 }
 label.nosp {
     margin-bottom: 0;
@@ -508,7 +522,8 @@ a.headerlink {
 .btn-lang-change {
     border: none;
     background: none;
-    padding: 0 5px;
+    padding: 0;
+    margin: 0 2px;
 }
 
 .profilepic {
@@ -573,9 +588,14 @@ span.result-separator, code.result-separator {
     margin: -10px 0 10px 0;
 }
 
+table {
+    background: #fff;
+}
+
 /* Wide table container */
 .table-container {
     padding: 5px 10px 5px 0;
+    margin-right: -5px;
     background: #fff;
     display: inline-block;
     min-width: 100%;
@@ -713,8 +733,8 @@ tr.drow-delete>td, tr.drow-delete1>td {
 
 /* Batch import */
 .batch-line-body {
-    padding-left: 20px;
-    margin-bottom: 20px;
+    padding-left: 10px;
+    margin-bottom: 30px;
     border-left: solid 4px #ddd;
 }
 
@@ -1051,13 +1071,13 @@ span.color-legend {
 }
 .button-par {
     /* A div containing buttons, which may be wrapped with nice spacing in between */
-    margin-bottom: -8px;
+    margin-bottom: -5px;
 }
 .button-par.p {
-    margin-bottom: 2px;
+    margin-bottom: 5px;
 }
 .button-par .btn {
-    margin-bottom: 8px;
+    margin-bottom: 5px;
 }
 .clickable {
     cursor: pointer;
@@ -1094,4 +1114,22 @@ ul.styleless {
 
 .button-group-below-text {
     margin-top: 5px
+}
+
+.clear-both {
+    clear: both;
+}
+
+/*
+ * the following should be replaced with
+ * display: inline-flex; width: auto;
+ * in Bootstrap 5
+ */
+.input-group-inline {
+    display: inline-table !important;
+    vertical-align: middle !important;
+}
+
+.input-group-inline .form-control, .input-group-inline .input-group-btn {
+    width: auto !important;
 }

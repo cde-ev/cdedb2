@@ -1,6 +1,8 @@
 Manual Setup
 ============
 
+.. todo:: update this page, see #1941
+
 This describes the steps necessary to get the project running on a
 machine.
 
@@ -16,7 +18,7 @@ Prerequisites
 
 We need some dependencies:
 
-* python (at least 3.6)
+* python (at least 3.8)
 * PostgreSQL (at least 9.4, for jsonb)
 * Apache (with mod_wsgi)
 * git
@@ -27,7 +29,7 @@ Further we depend on a number of python packages:
 
 * passlib
 * psycopg2 (at least 2.5.4, for jsonb support)
-* werkzeug (at least 0.14, for same-site flag for setcookie)
+* werkzeug (at least 0.15, for correct multi-params in urls)
 * dateutil (only needed for dev script, namely analyze_timing.py)
 * babel
 * docutils
@@ -84,6 +86,10 @@ This will create the database users and tables. Now configure pgbouncer in
   [databases]
   cdb =
   cdb_test =
+  cdb_test_1 =
+  cdb_test_2 =
+  cdb_test_3 =
+  cdb_test_4 =
 
   [pgbouncer]
   logfile = /var/log/postgresql/pgbouncer.log
@@ -138,8 +144,11 @@ Finally we need to create the directory for uploaded data (where
   mkdir /var/lib/cdedb/
   chown www-data:www-data /var/lib/cdedb/
 
-.. note:: For optimal experience you should run ``make storage-test`` and
-  copy the resulting uploaded data from ``/tmp/cdedb-store`` to
+.. note:: For optimal experience you should run::
+
+    make storage-test
+
+  and copy the resulting uploaded data from ``/tmp/cdedb-test-default/storage`` to
   ``/var/lib/cdedb`` and make it owned by the apache user.
 
 Configure the application

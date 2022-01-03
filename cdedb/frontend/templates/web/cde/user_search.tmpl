@@ -6,31 +6,9 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_queryform.js') }}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% block title %}{% trans %}CdE-User Management{% endtrans %}{% endblock %}
 {% block breadcrumb %}
-{{ super() }}
-{{ util.breadcrumb_link(cdedblink("cde/user_search"), gettext("Manage Users"), active="True") }}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("cde/user_search"), gettext("Manage Users"), active="True") }}
 {% endblock %}
 {% block content %}
-    <div class="row">
-        <div class="col-md-4">
-            <div class="p button-par">
-                {{ util.href(cdedblink('cde/create_user'), gettext("Create User"), icon="plus",
-                             aclass="btn btn-success btn-sm") }}
-                {{ util.href(cdedblink('cde/batch_admission'), gettext("Batch Admission"), icon="file-import",
-                             aclass="btn btn-default btn-sm") }}
-            </div>
-            <p class="text-muted">{{ util.make_icon('info-circle') }}
-                {% trans %}Only CdE-Members (and ex-Members) can be found here. {% endtrans %}
-            </p>
-        </div>
-        <div class="col-md-8">
-            {{ generic.place_default_queries("cde/user_search", default_queries) }}
-        </div>
-    </div>
-
-    {{ generic.user_search_mask("cde", ("pevent_id", "pcourse_id")) }}
-
-    {% if values['is_search'] %}
-        <h3 id="query-results">{% trans %}Result{% endtrans %} [{{ result|length }}]</h3>
-        {{ generic.user_search_result(result, "cde") }}
-    {% endif %}
+    {{ generic.user_search("cde", result, query) }}
 {% endblock %}

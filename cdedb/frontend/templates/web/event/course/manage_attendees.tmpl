@@ -1,0 +1,70 @@
+{% extends "web/event/base.tmpl" %}
+{% set sidenav_active='event_course_stats' %}
+{% import "web/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('cdedb_multiselect.js') }}{% endblock %}
+{% set jshint='strong' %}
+{% block title %}
+    {% trans course=ambience['course']['title'], title=ambience['event']['title'] %}
+    	Manage Attendees of Course {{ course }} ({{ title }})
+    {% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+    {{ util.breadcrumb_link(cdedblink("event/course_stats"), gettext("Courses")) }}
+    {{ util.breadcrumb_link(cdedblink("event/show_course"), ambience['course']['shortname'], icon='book') }}
+    {{ util.breadcrumb_link(cdedblink("event/manage_attendees"), gettext("Manage Attendees"), active=True) }}
+{% endblock %}
+{% block heading %}
+    {{ util.context_heading(gettext("Attendees of %(course)s")|format(course=ambience['course']['shortname']),
+                            ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+{% endblock %}
+{% block content %}
+    <form action="{{ cdedblink('event/manage_attendees') }}" method="POST" id="manageattendeesform">
+        {{ util.anti_csrf_token('event/manage_attendees') }}
+        {% set relevant_tracks = [] %}
+        {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track)
+                if track_id in ambience['course']['segments'] %}
+            {% do relevant_tracks.append((track_id, track)) %}
+        {% endfor %}
+        {% for batch in relevant_tracks|batch(3) %}
+            <div class="row">
+            {% for track_id, track in batch %}
+                <div class="col-md-6">
+                    {% call util.bootstrap_panel(title=(track['title'] if ambience['event']['tracks']|length > 1
+                                                                       else gettext("Assigned Attendees")),
+                                                 aclass="panel-info") %}
+                        <ul class="slim">
+                            {% for registration_id in attendees[(ambience['course']['id'], track_id)] %}
+                                <li>
+                                    {{ util.persona_name(personas[registrations[registration_id]['persona_id']]) }}
+                                    &ensp;{{ util.input_checkbox('delete_%s_%s'|format(track_id, registration_id),
+                                            gettext("Remove"), aclass="del-box") }}
+                                </li>
+                            {% else %}
+                                <li class="text-muted">
+                                    {% trans %}There are currently no attendees assigned.{% endtrans %}
+                                </li>
+                            {% endfor %}
+                        </ul>
+
+                        {{ util.form_input_multi_select(name="new_" + track_id|string, entries=without_course[track_id],
+                                                        label=(util.make_icon('plus') + gettext("Add Attendee")),
+                                                        nulloption=gettext("– none –"), horizontal=False) }}
+                    {% endcall %}
+                </div>
+            {% endfor %}
+            <script nonce="{{ csp_nonce }}">
+                var course_names = {{ course_names|tojson }};
+                {% for track_id in ambience['event']['tracks'] %}
+                    $('#input-multi-select-new_{{ track_id }}').cdedbMultiSelect(
+                        {{ selectize_data[track_id]|tojson }}, course_names, "{{ gettext("currently")|s }}: ");
+                {% endfor %}
+                $('.del-box').cdedbRemoveParticipantButton('{{ gettext("Remove Attendee") }}');
+            </script>
+            </div>
+        {% endfor %}
+        {{ util.input_submit(label=gettext("Save")) }}&emsp;
+        {{ util.href(cdedblink('event/show_course'), gettext("Cancel"), icon='times-circle', aclass="btn btn-default") }}
+    </form>
+{% endblock %}

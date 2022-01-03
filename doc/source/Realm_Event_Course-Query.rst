@@ -31,6 +31,7 @@ The final view will be constructed as follows. ::
 The following columns will be available in this view:
 
 * ``course.id``
+* ``course.course_id`` *This is magically replaced by "{nr}. {shortname}" linking to the course.*
 * ``course.event_id``
 * ``course.nr``
 * ``course.title``
@@ -43,9 +44,9 @@ The following columns will be available in this view:
 * ``course_fields.xfield_{field_name}`` *This is available for every custom data field with course association.*
 * ``track{track_id}.is_offered``
 * ``track{track_id}.takes_place``
-* ``track[track_id}.attendees``
-* ``track[track_id}.intructors``
-* ``track{track_id].num_choices{rank}`` *This is available for every available rank in that track.*
+* ``track{track_id}.attendees``
+* ``track{track_id}.intructors``
+* ``track{track_id}.num_choices{rank}`` *This is available for every available rank in that track.*
 
 *Note that some additional columns are present but omitted here, since they are not really useful like ``track{track_id}.base_id``.*
 

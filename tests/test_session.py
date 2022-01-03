@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
+# pylint: disable=missing-module-docstring
+
 import datetime
 import secrets
-from typing import List, NamedTuple, Sequence, Optional, cast
+from typing import List, NamedTuple, Optional, Sequence, cast
 
 from cdedb.common import RequestState, User, now
 from tests.common import (
-    UserIdentifier, USER_DICT, BackendTest, MultiAppFrontendTest, execsql, get_user,
+    USER_DICT, BackendTest, FrontendTest, MultiAppFrontendTest, UserIdentifier, execsql,
+    get_user,
 )
 
 SessionEntry = NamedTuple(
@@ -115,7 +118,7 @@ class TestSessionBackend(BackendTest):
 
         # Create some sessions for some different users.
         keys = {u: self.login(u, ip=ip) for u in USER_DICT
-                if u not in {"hades", "lisa", "olaf"}}
+                if u not in {"hades", "lisa", "olaf", "anonymous"}}
         for u, key in keys.items():
             with self.subTest(user=u, key=key):
                 user = self.session.lookupsession(key, ip)
@@ -167,6 +170,25 @@ class TestSessionBackend(BackendTest):
         self.assertEqual(u.persona_id, user["id"])
 
 
+class TestSessionFrontend(FrontendTest):
+    def test_2285(self) -> None:
+        self.login("anton")
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Kurse",
+                      "Kurs hinzufügen")
+        f = self.response.forms['createcourseform']
+        f['nr'] = "1"
+        f['title'] = "Test"
+        f['shortname'] = "test"
+        self.submit(f)
+        # Delete sessionkey and submit again.
+        self.app.reset()
+        try:
+            self.submit(f, check_notification=False)
+        except RuntimeError:
+            self.fail("Input validation not checked when submitting csrf-protected"
+                      " form withput sessionkey.")
+
+
 class TestMultiSessionFrontend(MultiAppFrontendTest):
     n = 3  # Needs to be at least 3 for the following test to work correctly.
 
@@ -183,7 +205,7 @@ class TestMultiSessionFrontend(MultiAppFrontendTest):
             keys.append(self.app.cookies[session_cookie])
             # Check that we are correctly logged in.
             self.get("/core/self/show")
-            self.assertTitle(f"{user['given_names']} {user['family_name']}")
+            self.assertTitle(user['default_name_format'])
             self.assertNotIn('loginform', self.response.forms)
         self.assertEqual(len(set(keys)), len(keys))
 
@@ -205,7 +227,8 @@ class TestMultiSessionFrontend(MultiAppFrontendTest):
             self.switch_app(i)
             with self.subTest(app_index=i):
                 self.get("/core/self/show")
-                self.assertTitle(f"{user['given_names']} {user['family_name']}")
+                self.assertTitle(user['default_name_format'])
+                self.assertPresence(f"Von allen ({self.n - 1}) Geräten abmelden")
                 self.assertNotIn('loginform', self.response.forms)
 
         # Now terminate all sessions and check that they are all inactive.

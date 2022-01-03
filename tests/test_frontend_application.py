@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
+# pylint: disable=missing-module-docstring
 
 import unittest.mock
 from typing import Any
 
-from cdedb.common import CdEDBObject
 from tests.common import FrontendTest, as_users
 
 
@@ -19,7 +19,7 @@ class TestApplication(FrontendTest):
         self.assertNonPresence("", div="displayname", check_div=False)
 
     @as_users("berta")
-    def test_404(self, user: CdEDBObject) -> None:
+    def test_404(self) -> None:
         self.get("/nonexistentpath", status=404)
         self.assertTitle("404: Not Found")
         self.assertPresence("Index", div="navbar-collapse-1")
@@ -27,10 +27,10 @@ class TestApplication(FrontendTest):
         self.assertPresence("Veranstaltungen", div="navbar-collapse-1")
         self.assertPresence("Mailinglisten", div="navbar-collapse-1")
         self.assertPresence("Versammlungen", div="navbar-collapse-1")
-        self.assertPresence(user["display_name"], div="displayname")
+        self.assertPresence(self.user["display_name"], div="displayname")
 
     @as_users("berta")
-    def test_403(self, user: CdEDBObject) -> None:
+    def test_403(self) -> None:
         self.get("/cde/semester/show", status=403)
         self.assertTitle('403: Forbidden')
 
@@ -39,7 +39,7 @@ class TestApplication(FrontendTest):
         self.assertTitle('405: Method Not Allowed')
 
     @as_users("berta")
-    def test_500_before_user_lookup(self, user: CdEDBObject) -> None:
+    def test_500_before_user_lookup(self) -> None:
         with unittest.mock.patch(
             'cdedb.backend.session.SessionBackend.lookupsession'
         ) as lookup_mock, unittest.mock.patch(
@@ -53,7 +53,7 @@ class TestApplication(FrontendTest):
             def config_mock_getitem(key: str) -> Any:
                 if key in ["CDEDB_DEV", "CDEDB_TEST"]:
                     return False
-                return self.app.app.conf._configchain[key]
+                return self.app.app.conf._configchain[key]  # pylint: disable=protected-access
             config_mock.side_effect = config_mock_getitem
 
             self.get('/', status=500)
@@ -68,7 +68,7 @@ class TestApplication(FrontendTest):
         self.assertNonPresence("", div="displayname", check_div=False)
 
     @as_users("berta")
-    def test_500(self, user: CdEDBObject) -> None:
+    def test_500(self) -> None:
         with unittest.mock.patch(
             'cdedb.frontend.core.CoreFrontend.index'
         ) as index_mock, unittest.mock.patch(
@@ -83,7 +83,7 @@ class TestApplication(FrontendTest):
             def config_mock_getitem(key: str) -> Any:
                 if key in ["CDEDB_DEV", "CDEDB_TEST"]:
                     return False
-                return self.app.app.conf._configchain[key]
+                return self.app.app.conf._configchain[key]  # pylint: disable=protected-access
             config_mock.side_effect = config_mock_getitem
 
             self.get('/', status=500)
@@ -95,7 +95,7 @@ class TestApplication(FrontendTest):
         self.assertPresence("Mitglieder", div="navbar-collapse-1")
         self.assertPresence("Mailinglisten", div="navbar-collapse-1")
         self.assertPresence("Versammlungen", div="navbar-collapse-1")
-        self.assertPresence(user["display_name"], div="displayname")
+        self.assertPresence(self.user["display_name"], div="displayname")
 
     def test_error_catching(self) -> None:
         """
@@ -122,7 +122,7 @@ class TestApplication(FrontendTest):
         self.get("/")
 
     @as_users("anton")
-    def test_csrf_mitigation(self, user: CdEDBObject) -> None:
+    def test_csrf_mitigation(self) -> None:
         self.get("/core/self/change")
         f = self.response.forms['changedataform']
         # Try submitting with missing anti CSRF token
@@ -132,7 +132,6 @@ class TestApplication(FrontendTest):
         self.assertPresence("Dieses Formular benötigt einen Anti-CSRF-Token.",
                             div='notifications')
         self.get("/core/self/show")
-        self.follow()
         self.assertNonPresence("22337")
 
         # Try submitting with invalid anti CSRF token hash

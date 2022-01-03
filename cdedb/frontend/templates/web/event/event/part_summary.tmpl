@@ -1,0 +1,139 @@
+{% set sidenav_active='event_parts' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+{% endblock %}
+{% set jshint = 'weak' %}
+{% block title %}
+    {% trans title=ambience['event']['title'] %}
+    	Configure Event-Parts ({{ title }})
+    {% endtrans %}
+{% endblock %}
+{% block heading %}
+    {{ util.context_heading(gettext("Configure Event-Parts"), ambience['event']['title'],
+                            'chalkboard-teacher', gettext("Event")) }}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+    {{ util.breadcrumb_link(cdedblink("event/part_summary"), gettext("Event-Parts"), active=True) }}
+{% endblock %}
+
+
+{% block content %}
+    <p class="text-warning">{{ util.make_icon('exclamation-triangle') }}
+        {% trans %}
+            Event parts and course tracks can only be created or deleted if no
+            registrations are present yet. Course tracks can only be deleted, if
+            there are no courses associated with them.
+        {% endtrans %}
+    </p>
+
+    {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+        <div class="panel panel-info" id="part{{ part_id }}">
+            <div class="panel-heading">
+                {{ part['title'] }}
+            </div>
+
+            <div class="panel-body">
+                <div class="p button-par">
+                    {% if not has_registrations and part_id not in referenced_parts %}
+                        <form action="{{ cdedblink('event/delete_part', {'part_id' : part_id}) }}"
+                              method="POST"
+                              id="deletepartform{{ part_id }}"
+                              class="display-inline">
+                            {{ util.anti_csrf_token('event/delete_part') }}
+                            {{ util.output_errors("ack_delete", wrapper=True) }}
+                            {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
+                            {{ util.input_submit(label=gettext("Delete Part"), aclass="btn btn-sm btn-danger", icon="trash") }}
+                        </form>
+                        <script nonce="{{ csp_nonce }}">
+                            $('#deletepartform{{ part_id }}').cdedbProtectAction("{{ gettext("The event part will be permanently deleted.") }}");
+                            $('#deletepartform{{ part_id }}').find('[name="ack_delete"]').prop('checked', true).parent().hide();
+                        </script>
+                    {% endif %}
+                    {{ util.href(cdedblink('event/change_part_form', {'part_id' : part_id}), gettext("Change Part"),
+                                           icon='pen', aclass='btn btn-sm btn-warning') }}
+                </div>
+                <div class="row">
+                    <dl class="dl-horizontal col-md-6">
+                        <dt>{% trans %}Shortname{% endtrans %}</dt>
+                        <dd id="part{{ part_id }}_shortname">{{ part['shortname'] }}</dd>
+
+                        <dt>{% trans %}Begin{% endtrans %}</dt>
+                        <dd id="part{{ part_id }}_begin">{{ part['part_begin']|date(lang=lang) }}</dd>
+
+                        <dt>{% trans %}End{% endtrans %}</dt>
+                        <dd id="part{{ part_id }}_end">{{ part['part_end']|date(lang=lang) }}</dd>
+                    </dl>
+
+                    <dl class="dl-horizontal col-md-6">
+                        <dt>{% trans %}Event-Part Fee{% endtrans %}</dt>
+                        <dd>{{ part['fee']|money }}</dd>
+
+                        <dt>{% trans %}Field for Waitlist{% endtrans %}</dt>
+                        <dd>
+                            {% if part['waitlist_field'] %}
+                                {{ ambience['event']['fields'][part['waitlist_field']]['field_name'] }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </dd>
+                    </dl>
+                </div>
+
+                <hr class="info"/>
+
+                <table class="table table-condensed">
+                    <thead>
+                        <tr>
+                            <th>{% trans %}Fee Modifier{% endtrans %}</th>
+                            <th>{% trans %}Amount{% endtrans %}</th>
+                            <th>{% trans %}Linked Field{% endtrans %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fee_modifier in fee_modifiers_by_part[part_id].values() %}
+                            <tr id="feemodifierrow_{{ part_id }}_{{ fee_modifier['id'] }}">
+                                <td>{{ fee_modifier['modifier_name'] }}</td>
+                                <td>{{ fee_modifier['amount']|money }}</td>
+                                <td>{{ ambience['event']['fields'][fee_modifier['field_id']]['field_name'] }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <hr class="info"/>
+
+                <table class="table table-condensed">
+                    <thead>
+                        <tr>
+                            <th>{% trans %}Coursetrack{% endtrans %}</th>
+                            <th>{% trans %}Shortname{% endtrans %}</th>
+                            <th>{% trans %}Course Choices{% endtrans %}</th>
+                            <th>{% trans %}Req. Choices{% endtrans %}</th>
+                            <th>{% trans %}Sortkey{% endtrans %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for track_id, track in part['tracks']|keydictsort(EntitySorter.course_track) %}
+                            <tr id="trackrow{{ part_id }}_{{ track_id }}">
+                                <td>{{ track['title'] }}</td>
+                                <td>{{ track['shortname'] }}</td>
+                                <td>{{ track['num_choices'] }}</td>
+                                <td>{{ track['min_choices'] }}</td>
+                                <td>{{ track['sortkey'] }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endfor %}
+
+    {% if not has_registrations %}
+        {{ util.href(cdedblink('event/add_part_form'), gettext("Add Part"),
+                               icon='plus', aclass='btn btn-success pull-right') }}
+    {% endif %}
+{% endblock %}

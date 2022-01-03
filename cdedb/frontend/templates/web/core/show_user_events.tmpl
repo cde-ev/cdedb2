@@ -1,0 +1,49 @@
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block title %}
+    {% trans name=util.persona_name(ambience['persona']) %}
+        {{ name }} – Event Data
+    {% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), util.persona_name(ambience['persona']),
+                            icon="user") }}
+    {{ util.breadcrumb_link(cdedblink("core/show_user_events"), gettext("Events"), active=True) }}
+{% endblock %}
+{% block heading %}
+    {{ util.context_heading(gettext("Event Data"), util.persona_name(ambience['persona']), 'user', gettext("User")) }}
+{% endblock %}
+
+{% block content %}
+    <p>
+        {% trans %}
+            This lists all events which have not been deleted yet and this user has a registration for.
+        {% endtrans %}
+    </p>
+    <ul>
+        {% for event_id, event in events|keydictsort(EntitySorter.event) %}
+            <li>
+                {% if 'event_admin' in user.roles %}
+                    {{ util.href(cdedblink("event/show_registration",
+                                           {'event_id': event_id, 'registration_id': registration_ids[event_id]}),
+                                 event['title']) }}
+                {% else %}
+                    {{ util.href(cdedblink("event/registration_status", {'event_id': event_id}), event['title']) }}
+                {% endif %}
+                <br />
+                <small class="text-muted">
+                {% for part_id, part in event['parts']|keydictsort(EntitySorter.event_part) %}
+                    {% if registration_parts[event_id]|length != 1 %}
+                        {{ event['parts'][part_id]['title'] }}:
+                    {% endif %}
+                    {{ gettext(registration_parts[event_id][part_id]|enum(enums['RegistrationPartStati'])) }}
+                    {%- if not loop.last %}, {% endif -%}
+                {% endfor %}
+                </small>
+            </li>
+        {% else %}
+            <p class="text-muted">{% trans %}This user has no registrations.{% endtrans %}</p>
+        {% endfor %}
+    </ul>
+{% endblock %}

@@ -32,6 +32,9 @@ The final view will be constructed as follows. ::
       lodgement_tableX
   ) AS lodgementX ON partX.lodgement_id = lodgementX.id
   LEFT OUTER JOIN (
+      lodgement_group_tableX
+  ) AS lodgement_groupX ON lodgementX.group_id = lodgement_groupX.id
+  LEFT OUTER JOIN (
       track_tableX
   ) AS trackX ON reg.id = trackX.registration_id
   LEFT OUTER JOIN (
@@ -49,13 +52,15 @@ The following fields are avalable in the dynamic tables:
 
 * ``reg_fields.xfield_{field_name}`` *For every custom registration datafield.*
 * ``part{part_id}.status``
-* ``part{part_id}.lodgement_id``
+* ``part{part_id}.lodgement_id`` *This is magically replaced by "{title}" linking to the lodgement.*
 * ``part{part_id}.is_camping_mat``
 * ``lodgement{part_id}.xfield_{field_name}`` *For every part and every custom lodgement datafield.*
 * ``lodgement{part_id}.title``
 * ``lodgement{part_id}.notes``
-* ``track{track_id}.course_id``
-* ``track{track_id}.course_instructor``
+* ``lodgement{part_id}.group_id``
+* ``lodgement_group{part_id}.title``
+* ``track{track_id}.course_id`` *This is magically replaced by "{nr}. {shortname}" linking to the course.*
+* ``track{track_id}.course_instructor`` *This is magically replaced by "{nr}. {shortname}" linking to the course.*
 * ``track{track_id}.is_course_instructor``
 * ``course{track_id}.xfield_{field_name}`` *For every track and every custom course datafield.*
 * ``course{track_id}.nr``
@@ -163,6 +168,14 @@ The final view for regisration queries looks something like this: ::
   ) AS lodgement1 ON part1.lodgement_id = lodgement1.id
   LEFT OUTER JOIN (
       SELECT
+          title, id
+      FROM
+          event.lodgement_groups
+      WHERE
+          event_id = 1
+  ) AS lodgement_group1 ON lodgement1.group_id = lodgement_group1.id
+  LEFT OUTER JOIN (
+      SELECT
           registration_id, status, lodgement_id, is_camping_mat
       FROM
           event.registration_parts
@@ -180,6 +193,14 @@ The final view for regisration queries looks something like this: ::
   ) AS lodgement2 ON part2.lodgement_id = lodgement2.id
   LEFT OUTER JOIN (
       SELECT
+          title, id
+      FROM
+          event.lodgement_groups
+      WHERE
+          event_id = 1
+  ) AS lodgement_group2 ON lodgement2.group_id = lodgement_group2.id
+  LEFT OUTER JOIN (
+      SELECT
           registration_id, status, lodgement_id, is_camping_mat
       FROM
           event.registration_parts
@@ -195,6 +216,14 @@ The final view for regisration queries looks something like this: ::
       WHERE
           event_id = 1
   ) AS lodgement3 ON part3.lodgement_id = lodgement3.id
+  LEFT OUTER JOIN (
+      SELECT
+          title, id
+      FROM
+          event.lodgement_groups
+      WHERE
+          event_id = 1
+  ) AS lodgement_group3 ON lodgement3.group_id = lodgement_group3.id
   LEFT OUTER JOIN (
       SELECT
           registration_id, course_id, course_instructor,

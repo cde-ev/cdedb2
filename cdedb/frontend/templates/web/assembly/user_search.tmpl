@@ -6,10 +6,10 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_queryform.js') }}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% block title %}{% trans %}Assembly-User Management{%  endtrans %}{% endblock %}
 {% block breadcrumb %}
-{{ super() }}
-{{ util.breadcrumb_link(cdedblink("assembly/create_assembly"), gettext("Manage Users"), active=True) }}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("assembly/create_assembly"), gettext("Manage Users"), active=True) }}
 {% endblock %}
 {% block content %}
-    {{ generic.user_search('assembly', info=gettext("This User Management finds Assembly-Users only, "
-                                                    "not CdE-Members, not even past members.")) }}
+    {{ generic.user_search('assembly', result, query, info=gettext(
+            "This search will only show pure assembly users. This does not include members, not even past members.")) }}
 {% endblock %}

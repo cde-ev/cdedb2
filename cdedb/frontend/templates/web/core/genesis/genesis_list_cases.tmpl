@@ -1,0 +1,58 @@
+{% set sidenav_active='core_genesis_list' %}
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% set jshint='weak' %}
+{% block title %}
+    {% trans %}
+    	Account Requests
+    {% endtrans %}{% endblock %}
+{% block breadcrumb %}
+{{ super() }}
+{{ util.breadcrumb_link(cdedblink("core/genesis_list_cases"), gettext("Account Requests"), active="True") }}
+{% endblock %}
+{% block content %}
+    <script nonce="{{ csp_nonce }}">
+        $(function() {
+            $('.rejection-form').cdedbProtectAction("{{ gettext("The Account Request will be permanently deleted.") }}");
+        });
+    </script>
+    {% with REALM_REQUEST_TITLES={'event': gettext('Event Account Requests'),
+                                  'cde': gettext('CdE Account Requests'),
+                                  'assembly': gettext('Assembly Account Requests'),
+                                  'ml': gettext('Mailinglist Account Requests')} %}
+        {% for realm, cases in cases_by_realm.items() %}
+            <h3>{{ REALM_REQUEST_TITLES[realm] }}</h3>
+            {% for genesis_case_id, entry in cases|keydictsort(EntitySorter.genesis_case) %}
+                <div class="row" id="request-{{ genesis_case_id }}">
+                    <div class="col-sm-3">
+                        <p>
+                            {{ util.persona_name(entry, only_given_names=True) }}
+                            &lt;{{ util.href(util.mailto(entry['username']), entry['username']) }}&gt;
+                        </p>
+                    </div>
+                    <div class="col-sm-5">
+                        {% if entry['notes'] %}<p class="textbox">{{ entry['notes'] }}</p>{% endif %}
+                    </div>
+                    <div class="col-sm-4 button-par">
+                        {{ util.href(cdedblink('core/genesis_show_case', {'genesis_case_id': genesis_case_id}), gettext("Details"),
+                            aclass="btn btn-primary btn-sm", icon="user") }}
+                        {{ util.href(cdedblink('core/genesis_modify_form', {'genesis_case_id': genesis_case_id}), gettext("Edit"),
+                            aclass="btn btn-warning btn-sm", icon="pen") }}
+                    </div>
+                </div>
+                {% if not loop.last %}
+                    <hr />
+                {% endif %}
+            {% else %}
+                <div id="no-{{realm}}-request">
+                    <p class="text-muted">
+                        {% trans realm=REALM_REQUEST_TITLES[realm] %}
+                            There are currently no {{ realm }} pending for approval.
+                        {% endtrans %}
+                    </p>
+                </div>
+            {% endfor %}
+        {% endfor %}
+    {% endwith %}
+{% endblock %}

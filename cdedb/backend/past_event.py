@@ -5,16 +5,14 @@ concluded events.
 """
 
 import datetime
-from typing import Any, Collection, Dict, List, Optional, Set, Tuple, Union
-
-from typing_extensions import Protocol
+from typing import Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, Union
 
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     AbstractBackend, Silencer, access, affirm_set_validation as affirm_set,
-    affirm_validation_typed as affirm,
-    affirm_validation_typed_optional as affirm_optional, singularize,
+    affirm_validation as affirm, affirm_validation_optional as affirm_optional,
+    read_conditional_write_composer, singularize,
 )
 from cdedb.backend.event import EventBackend
 from cdedb.common import (
@@ -23,7 +21,7 @@ from cdedb.common import (
     PrivilegeError, RequestState, glue, make_proxy, n_, now, unwrap, xsorted,
 )
 from cdedb.database.connection import Atomizer
-from cdedb.query import Query
+from cdedb.query import Query, QueryScope
 
 
 class PastEventBackend(AbstractBackend):
@@ -102,7 +100,7 @@ class PastEventBackend(AbstractBackend):
         }
         return self.sql_insert(rs, "past_event.log", data)
 
-    @access("cde_admin", "event_admin")
+    @access("cde_admin", "event_admin", "auditor")
     def retrieve_past_log(self, rs: RequestState,
                           codes: Collection[const.PastEventLogCodes] = None,
                           pevent_id: int = None, offset: int = None,
@@ -159,6 +157,12 @@ class PastEventBackend(AbstractBackend):
             self.past_event_log(rs, const.PastEventLogCodes.institution_changed,
                                 pevent_id=None, change_note=current['title'])
         return ret
+
+    class _RCWInstitutionProtocol(Protocol):
+        def __call__(self, rs: RequestState, data: CdEDBObject
+                     ) -> DefaultReturnCode: ...
+    rcw_institution: _RCWInstitutionProtocol = read_conditional_write_composer(
+        get_institution, set_institution, id_param_name='institution_id')
 
     @access("cde_admin", "event_admin")
     def create_institution(self, rs: RequestState, data: CdEDBObject
@@ -373,15 +377,22 @@ class PastEventBackend(AbstractBackend):
         return ret
 
     @access("persona")
-    def list_past_courses(self, rs: RequestState, pevent_id: int
+    def list_past_courses(self, rs: RequestState, pevent_id: Optional[int] = None
                           ) -> Dict[int, str]:
-        """List all courses of a concluded event.
+        """List all relevant past courses.
+
+        If a `pevent_id` is given, list only courses from a concluded event,
+        otherwise, return the full list.
 
         :returns: Mapping of course ids to titles.
         """
-        pevent_id = affirm(vtypes.ID, pevent_id)
-        data = self.sql_select(rs, "past_event.courses", ("id", "title"),
-                               (pevent_id,), entity_key="pevent_id")
+        pevent_id = affirm_optional(vtypes.ID, pevent_id)
+        if pevent_id:
+            data = self.sql_select(rs, "past_event.courses", ("id", "title"),
+                                   (pevent_id,), entity_key="pevent_id")
+        else:
+            query = "SELECT id, title FROM past_event.courses"
+            data = self.query_all(rs, query, tuple())
         return {e['id']: e['title'] for e in data}
 
     @access("cde", "event")
@@ -490,7 +501,7 @@ class PastEventBackend(AbstractBackend):
                     pcourse['pevent_id'], change_note=pcourse['title'])
         return ret
 
-    @access("cde_admin", "event_admin")
+    @access("core_admin", "cde_admin", "event_admin")
     def add_participant(self, rs: RequestState, pevent_id: int,
                         pcourse_id: Optional[int], persona_id: int,
                         is_instructor: bool = False, is_orga: bool = False
@@ -516,14 +527,15 @@ class PastEventBackend(AbstractBackend):
                     self.remove_participant(rs, pevent_id, pcourse_id=None,
                                             persona_id=persona_id)
                 else:
-                    rs.notify("error", n_("User is already pure event participant."))
                     return 0
-            ret = self.sql_insert(rs, "past_event.participants", data)
-            self.past_event_log(rs, const.PastEventLogCodes.participant_added,
-                                pevent_id, persona_id=persona_id)
+            ret = self.sql_insert(rs, "past_event.participants", data,
+                                  drop_on_conflict=True)
+            if ret:
+                self.past_event_log(rs, const.PastEventLogCodes.participant_added,
+                                    pevent_id, persona_id=persona_id)
         return ret
 
-    @access("cde_admin", "event_admin")
+    @access("core_admin", "cde_admin", "event_admin")
     def remove_participant(self, rs: RequestState, pevent_id: int,
                            pcourse_id: Optional[int], persona_id: int
                            ) -> DefaultReturnCode:
@@ -672,10 +684,9 @@ class PastEventBackend(AbstractBackend):
         pevent = {k: v for k, v in event.items()
                   if k in PAST_EVENT_FIELDS}
         pevent['tempus'] = part['part_begin']
-        # The event field 'notes' has nothing to do with the past event
-        # field 'notes' -- the first is for orgas and the second for
-        # participants
-        pevent['notes'] = None
+        # The event field 'participant_info' usually contains information
+        # no longer relevant, so we do not keep it here
+        pevent['participant_info'] = None
         if len(event['parts']) > 1:
             # Add part designation in case of events with multiple parts
             pevent['title'] += " ({})".format(part['title'])
@@ -728,9 +739,7 @@ class PastEventBackend(AbstractBackend):
             if course_id not in courses_seen:
                 self.delete_past_course(rs, course_map[course_id])
             elif not courses[course_id]['active_segments']:
-                self.logger.warning(
-                    "Course {} remains without active parts.".format(
-                        course_id))
+                self.logger.warning(f"Course {course_id} remains without active parts.")
         return new_id
 
     @access("cde_admin", "event_admin")
@@ -775,14 +784,14 @@ class PastEventBackend(AbstractBackend):
                                 for part_id in xsorted(event['parts']))
         return new_ids, None
 
-    @access("member")
+    @access("member", "cde_admin")
     def submit_general_query(self, rs: RequestState,
                              query: Query) -> Tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
         """
         query = affirm(Query, query)
-        if query.scope == "qview_pevent_course":
+        if query.scope == QueryScope.past_event_course:
             pass
         else:
             raise RuntimeError(n_("Bad scope."))

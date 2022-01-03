@@ -3,7 +3,6 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}
     {{ util.cdedb_script('cdedb_helper.js') }}
-    {{ util.cdedb_script('cdedb_change_mailinglist.js') }}
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
 {% endblock %}
 {% set jshint='weak' %}
@@ -19,12 +18,12 @@
         <form action="{{ cdedblink('ml/create_mailinglist_form') }}" method="GET" id="selectmltypeform"
               class="form-horizontal">
             {{ util.form_input_select(name="ml_type", label=gettext("Mailinglist Type"), entries=available_types|enum_entries(processing=gettext)) }}
-            {{ util.form_input_submit(value=gettext("Continue"), cancellink=cdedblink("ml/index"), icon="pen") }}
+            {{ util.form_input_submit(label=gettext("Continue"), cancellink=cdedblink("ml/index"), icon="pen") }}
         </form>
     {% else %}
     <script nonce="{{ csp_nonce }}">
         $(function() {
-            $('#createlistform').cdedbProtectChanges().cdedbChangeMailinglist();
+            $('#createlistform').cdedbProtectChanges();
         });
     </script>
     <form action="{{ cdedblink('ml/create_mailinglist') }}" method="POST" id="createlistform" class="form-horizontal">
@@ -33,8 +32,9 @@
         {{ util.form_input_checkbox(name="is_active", label=gettext("Active"), defaultvalue='True') }}
         {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]")) }}
         {{ util.form_input_text(name="local_part", label=gettext("Address")) }}
-        {{ util.form_input_select(name="domain", entries=available_domains|enum_entries(processing=gettext, prefix="@"),
-                                  label=gettext("Domain")) }}
+        {{ util.form_input_select(
+                name="domain", label=gettext("Domain"),
+                entries=available_domains|enum_entries(prefix="@")) }}
             <script nonce="{{ csp_nonce }}">
                 $("#createlistform [name='local_part']").parents('.form-group')
                     .replaceWith(`{{ util.form_input_text(name="local_part", label=gettext("Address"), addon=" ") }}`);
@@ -46,9 +46,8 @@
                 domain_inp.on('input', update_domain);
                 update_domain();
             </script>
-        {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
-                                    info=util.markdownhint) }}
-        {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="5", info=util.markdownhint) }}
+        {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5", markdown=True) }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="5", markdown=True) }}
 
         <h4 class="heading-underline">{% trans %}Moderation & Subscribers{% endtrans %}</h4>
         {{ util.form_input_select(name="mod_policy", label=gettext("Moderation"),
@@ -110,7 +109,7 @@
                     "Other attachment policy can be changed by the Admin-Team.")) }}
         {{ util.form_input_text(name="maxsize", label=gettext("max. message size (in kB)"), type="number",
                                 defaultvalue=maxsize_default) }}
-        {{ util.form_input_submit(value=gettext("Create"), cancellink=cdedblink('ml/index')) }}
+        {{ util.form_input_submit(label=gettext("Create"), cancellink=cdedblink('ml/index')) }}
     </form>
     {% endif %}
 {% endblock %}

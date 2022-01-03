@@ -4,7 +4,7 @@ import json
 from typing import Dict
 
 import cdedb.database.constants as const
-from cdedb.common import SubscriptionActions
+from cdedb.common import SubscriptionAction
 from cdedb.script import make_backend, setup, Script
 
 # Configuration
@@ -219,7 +219,7 @@ with Script(rs(), dry_run=DRY_RUN):
                 print(f"Omitting {persona_id} with address {sub_address}"
                       " (already subscribed)")
                 continue
-            ml.do_subscription_action(rs(), SubscriptionActions.add_subscriber,
+            ml.do_subscription_action(rs(), SubscriptionAction.add_subscriber,
                                       new_ml_id, persona_id)
             subscribed.add(persona_id)
             if sub_address not in semi_default_addresses:

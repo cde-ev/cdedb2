@@ -4,17 +4,22 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans given_names=ambience['persona']['given_names'], family_name=ambience['persona']['family_name'] %}
-    	Set Profile Picture for {{ given_names }} {{ family_name }}
+    {% trans name=util.persona_name(ambience['persona']) %}
+        Set Profile Picture for {{ name }}
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), "{} {}".format(ambience['persona']['given_names'],
-                                                                                  ambience['persona']['family_name']),
+{{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), util.persona_name(ambience['persona']),
         icon="user") }}
 {{ util.breadcrumb_link(cdedblink('core/set_foto_form'), gettext("Set Profile Picture"), active="True") }}
 {% endblock %}
+
+{% block heading %}
+    {{ util.context_heading(gettext("Set Profile Picture"), util.persona_name(ambience['persona']),
+                            'user', gettext("User")) }}
+{% endblock %}
+
 {% block content %}
 
     <div class="row">
@@ -34,7 +39,7 @@
                     {{ util.anti_csrf_token('core/set_foto') }}
                     {{ util.input_hidden(name="delete", value=True) }}
                     <div class="form-group">
-                        {{ util.input_submit(value=gettext("Delete Picture"), aclass="btn btn-danger", icon="trash-alt") }}
+                        {{ util.input_submit(label=gettext("Delete Picture"), aclass="btn btn-danger", icon="trash-alt") }}
                     </div>
                 </form>
             </div>
@@ -60,7 +65,7 @@
                     <div class="input-group">
                         {{ util.input_file(name="foto", accept="image/*", arialabel=gettext("Picture-File")) }}
                         <div class="input-group-btn">
-                            {{ util.input_submit(value=gettext("Upload")) }}
+                            {{ util.input_submit(label=gettext("Upload")) }}
                         </div>
                     </div>
                     {{ util.output_errors('foto') }}

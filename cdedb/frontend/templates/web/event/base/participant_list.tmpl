@@ -1,0 +1,204 @@
+{% set sidenav_active='event_participant_list' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block title %}
+    {% trans title=ambience['event']['title'] %}
+        Participant List {{ title }}
+    {% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+{{ super() }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher",
+                        readonly=not (ambience['event']['is_visible']
+                                      or ambience['event']['id'] in user.orga
+                                      or user.admin_views.intersection(('event_orga', 'event_mgmt')))) }}
+{{ util.breadcrumb_link(cdedblink("event/participant_list"), gettext("Participant List"), active=True) }}
+{% endblock %}
+{% block heading %}
+    {{ util.context_heading(gettext("Participant List"), ambience['event']['title'],
+                            'chalkboard-teacher', gettext("Event")) }}
+{% endblock %}
+
+
+{% macro list_courses(registration) %}
+    {% for track_id in parts[part_id]['tracks'] -%}
+        {% with course_id = registration['tracks'][track_id]['course_id'] %}
+            {% if course_id %}
+                {{ courses[course_id]['nr']+ "." + nbsp + courses[course_id]['shortname'] }}
+                {% if registration['tracks'][track_id]['course_instructor'] == course_id %}
+                    {{ "(KL)" }}
+                {% endif %}
+                {% if not loop.last %}
+                    <br />
+                {% endif %}
+            {% endif %}
+        {% endwith %}
+    {%- endfor %}
+{% endmacro %}
+
+
+{% macro display_sorting_header(part_id, sortkey, label) %}
+    {% if sortkey == last_sortkey %}
+        {{ util.href(cdedblink('event/participant_list',
+                               {'part_id': part_id, 'sortkey': sortkey, 'reverse': not last_reverse}),
+                     label,
+                     icon="sort-down" if last_reverse else "sort-up",
+                     title=gettext("Sort ascending.") if last_reverse else gettext("Sort descending."),
+                     aclass="link-hidden") }}
+    {% else %}
+        {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': sortkey, 'reverse': False}),
+                     label,
+                     icon="sort",
+                     title=gettext("Sort ascending."),
+                     aclass="link-hidden") }}
+    {% endif %}
+{% endmacro %}
+
+
+{% macro profile_link(persona, display) %}
+    {{ util.href(show_user_link(user, persona['id'], quote_me=not is_admin, event_id=ambience['event']['id']), display) }}
+{% endmacro %}
+
+{% block static_notifications %}
+    {{ super() }}
+    {% if not ambience['event']['is_participant_list_visible'] %}
+        {% call util.notification('info') %}
+            {% trans %}The Participant List is currently only visible to Orgas and Admins.{% endtrans %}
+        {% endcall %}
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+    {% if registrations and list_consent %}
+        {% if ambience['event']['parts']|length > 1 %}
+            <nav>
+                <ul class="nav nav-tabs mosp">
+                    <li role="presentation" {% if part_id is none %}class="active" aria-current="page" {% endif %}>
+                        {{ util.href(cdedblink('event/participant_list', {'part_id': None}), gettext("Overview")) }}
+                    </li>
+                    {% for p_id, p in ambience['event']['parts'].items() %}
+                        <li role="presentation" {% if p_id == part_id %}class="active" aria-current="page" {% endif %}>
+                            {{ util.href(cdedblink('event/participant_list', {'part_id': p_id}), p['title']) }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            </nav>
+        {% endif %}
+
+
+        {# This makes a list per part. If the event has only one part, part_id is set by the frontend on this part_id by default. #}
+        {% if part_id %}
+            <div class="table-container">
+            <table class="table table-condensed">
+                <thead>
+                    <tr>
+                        <th>{{ display_sorting_header(part_id, "given_names", gettext("Given Names")) }}</th>
+                        <th>{{ display_sorting_header(part_id, "family_name", gettext("Family Name")) }}</th>
+                        <th>{{ display_sorting_header(part_id, "email", gettext("Email Address")) }}</th>
+                        <th>{{ display_sorting_header(part_id, "address", gettext("Postal Code, City")) }}</th>
+                        {% if parts[part_id]['tracks']|length > 1 and ambience['event']['is_course_assignment_visible'] %}
+                            <th>{{ display_sorting_header(part_id, "course", gettext("Courses")) }}</th>
+                        {% elif parts[part_id]['tracks'] and ambience['event']['is_course_assignment_visible'] %}
+                            <th>{{ display_sorting_header(part_id, "course", gettext("Course")) }}</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                {% for registration_id in ordered if registrations[registration_id]['list_consent'] %}
+                    {% with persona = personas[registrations[registration_id]['persona_id']] %}
+                    <tr id="row-{{ loop.index }}">
+                        {% if persona['is_searchable'] and persona['is_member'] %}
+                            <td>{{ profile_link(persona, util.persona_name(persona, with_family_name=False)) }}</td>
+                            <td>{{ profile_link(persona, persona['family_name']) }}</td>
+                        {% else %}
+                            <td>{{ util.persona_name(persona, with_family_name=False) }}</td>
+                            <td>{{ persona['family_name'] }}</td>
+                        {% endif %}
+                        <td>{{ util.username_mailto(persona) }}</td>
+                        <td>
+                            {{ persona['postal_code'] }}
+                            {{ persona['location'] -}}
+                            {%- if persona['country'] and persona['country'] != DEFAULT_COUNTRY -%}
+                                {{- ", " + util.gettext_country(persona['country']) -}}
+                            {% endif %}
+                        </td>
+                        {% if parts[part_id]['tracks'] and ambience['event']['is_course_assignment_visible'] %}
+                            <td>{{ list_courses(registrations[registration_id]) }}</td>
+                        {% endif %}
+                    </tr>
+                    {% endwith %}
+                {% endfor %}
+                </tbody>
+            </table>
+            </div>
+
+
+        {# this makes an overview over all event parts #}
+        {% else %}
+            <div class="table-container">
+            <table class="table table-condensed">
+                <thead>
+                    <tr>
+                        <th>{{ display_sorting_header(None, "given_names", gettext("Given Names")) }}</th>
+                        <th>{{ display_sorting_header(None, "family_name", gettext("Family Name")) }}</th>
+                        <th>{{ display_sorting_header(None, "email", gettext("Email Address")) }}</th>
+                        <th>{{ display_sorting_header(None, "address", gettext("Postal Code, City")) }}</th>
+                        <th>{% trans %}Event Parts{% endtrans %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for registration_id in ordered if registrations[registration_id]['list_consent'] %}
+                    {% with persona = personas[registrations[registration_id]['persona_id']] %}
+                    <tr id="row-{{ loop.index }}">
+                        {% if persona['is_searchable'] and persona['is_member'] %}
+                            <td>{{ profile_link(persona, util.persona_name(persona, with_family_name=False)) }}</td>
+                            <td>{{ profile_link(persona, persona['family_name']) }}</td>
+                        {% else %}
+                            <td>{{ util.persona_name(persona, with_family_name=False) }}</td>
+                            <td>{{ persona['family_name'] }}</td>
+                        {% endif %}
+                        <td>{{ util.username_mailto(persona) }}</td>
+                        <td>
+                            {{ persona['postal_code'] }}
+                            {{ persona['location'] -}}
+                            {%- if persona['country'] and persona['country'] != DEFAULT_COUNTRY -%}
+                                {{- ", " + util.gettext_country(persona['country']) -}}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part)
+                                   if registrations[registration_id]['parts'][part_id]['status'] == enums['RegistrationPartStati']['participant'] -%}
+                                {% if not loop.first %}
+                                    {%- if loop.last %}
+                                        {% trans %}and{% endtrans %}
+                                    {% else -%}
+                                        ,
+                                    {% endif %}
+                                {%- endif %}
+                                {{ part['shortname'] }}
+                            {%- endfor %}
+                        </td>
+                    </tr>
+                    {% endwith %}
+                {% endfor %}
+                </tbody>
+            </table>
+            </div>
+        {% endif %}
+        <p>
+            {% trans count=registrations|length %}There are {{ count }} participants in total.{% endtrans %}
+        </p>
+
+    {% elif not list_consent %}
+        <p class="text-info">
+            {{ util.make_icon('info-circle') }}
+            {% trans %}
+                You can not access the Participant List as you have not agreed to have your own data
+                sent to other participants before the event.
+            {% endtrans %}
+        </p>
+
+    {% else %}
+        {% trans %}There are no participants yet.{% endtrans %}
+    {% endif %}
+{% endblock %}

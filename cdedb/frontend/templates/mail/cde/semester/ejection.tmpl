@@ -1,0 +1,43 @@
+Hallo {{ persona['display_name'] }},
+
+Schade, dass Du Deine Mitgliedschaft im CdE nicht verlängert hast,
+denn der Club der Ehemaligen der Deutschen SchülerAkademien e.V.
+möchte Dich nicht als Mitglied verlieren! Dein Guthaben hat
+leider nicht mehr gereicht, um für ein weiteres halbes Jahr den
+Mitgliedsbeitrag von {{ fee|money }} zu bezahlen. Somit mussten wir Dich
+nun von der Mitgliederliste setzen.
+
+Es würde uns aber sehr freuen, wenn Du wieder in den CdE eintrittst, sei
+es, um der Idee SchülerAkademie verbunden zu bleiben, sei es, um die
+vielseitigen Aktivitäten im CdE zu nutzen - von den Lokalgruppen über
+die Akademien und Seminare bis hin zu den Freizeiten.
+
+Du kannst jetzt oder auch jederzeit später einfach wieder Mitglied
+werden, indem Du auf das CdE-Konto den halbjährlichen Mitgliedsbeitrag
+von {{ fee|money }} oder (noch lieber ob des geringeren
+Verwaltungsaufwands) ein Vielfaches davon überweist.
+
+Kontoinhaber:     {{ meta_info['CdE_Konto_Inhaber'] }}
+IBAN:             {{ meta_info['CdE_Konto_IBAN'] }}
+BIC:              {{ meta_info['CdE_Konto_BIC'] }}
+Kreditinstitut:   {{ meta_info['CdE_Konto_Institut'] }}
+Verwendungszweck: {{ transaction_subject }}
+
+Alternativ könntest Du dem CdE auch die Erlaubnis erteilen, jährlich
+per Lastschrift von Deinem Konto den Mitgliedsbeitrag und eine Spende
+einzuziehen (Initiative 25+). Um Dich hieran zu beteiligen, rufe bitte
+{{ cdedblink("cde/i25p_index") }}
+auf und folge den dort angegebenen Hinweisen.
+
+Wenn Du Fragen zur Mitgliedschaft und Deinem Guthaben hast, so erreichst
+Du uns unter <{{ MANAGEMENT_ADDRESS }}>.
+
+Solltest Du nicht länger an einer Mitgliedschaft im CdE interessiert
+sein, so würden wir gerne wissen, was der CdE in Zukunft besser machen
+könnte, um auch für Ehemalige wie Dich interessant zu bleiben. Daher
+wären wir über entsprechende Hinweise an <vorstand@cde-ev.de> sehr
+dankbar.
+
+
+Viele Grüße
+das Verwaltungsteam

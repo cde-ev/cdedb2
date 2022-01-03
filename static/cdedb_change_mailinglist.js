@@ -13,12 +13,15 @@
          */
         function update_view() {
             // Calculate visibility of event/assembly select boxes
-            // numeric values from cdedb.database.constants.MailinglistTypes
-            // 20 = participant list; 21 = orga list; 30 = participant list
+            // from cdedb.database.constants.MailinglistTypes
             var visible = {
-                'event_id':     (fields['ml_type'].val() == 20 || fields['ml_type'].val() == 21),
-                'assembly_id':  (fields['ml_type'].val() == 30 || fields['ml_type'].val() == 32)
-                                            // ml type 31 (assembly_opt_in) is not bound to a
+                'event_id':     (
+                    fields['ml_type'].val() == "MailinglistTypes.event_associated" ||
+                    fields['ml_type'].val() == "MailinglistTypes.event_orga"),
+                'assembly_id':  (
+                    fields['ml_type'].val() == "MailinglistTypes.assembly_associated" ||
+                    fields['ml_type'].val() == "MailinglistTypes.assembly_presider")
+                                            // "MailinglistTypes.assembly_opt_in" is not bound to a
                                             // concrete assembly, so an assembly_id must not be specified for this type
             };
 

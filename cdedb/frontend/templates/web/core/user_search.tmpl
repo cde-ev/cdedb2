@@ -18,22 +18,5 @@
 {{ util.breadcrumb_link(cdedblink("core/user_search"), gettext("Manage Users"), active="True") }}
 {% endblock %}
 {% block content %}
-    <div class="row">
-        <div class="col-md-4">
-            <div class="p button-par">
-                {{ util.href(cdedblink('core/create_user_form'), gettext("Create User"), icon="plus",
-                             aclass="btn btn-success btn-sm") }}
-            </div>
-        </div>
-        <div class="col-md-8">
-            {{ generic.place_default_queries("core/user_search", default_queries) }}
-        </div>
-    </div>
-
-    {{ generic.user_search_mask("core", ("pevent_id",)) }}
-
-    {% if values['is_search'] %}
-        <h3 id="query-results">{% trans %}Result{% endtrans %} [{{ result|length }}]</h3>
-        {{ generic.user_search_result(result, "core") }}
-    {% endif %}
+    {{ generic.user_search('core', result, query) }}
 {% endblock %}

@@ -15,7 +15,7 @@
         {% for persona_id, entry in pending|keydictsort(EntitySorter.changelog) %}
            <li>
                {{ util.href(cdedblink('core/inspect_change', {'persona_id': persona_id}),
-                            "{} {}".format(entry['given_names'], entry['family_name'])) }}
+                            util.persona_name(entry, given_and_display_names=True)) }}
            </li>
         {% endfor %}
    </ul>

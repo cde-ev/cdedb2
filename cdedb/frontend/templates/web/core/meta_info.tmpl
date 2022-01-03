@@ -2,6 +2,7 @@
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% set jshint='weak' %}
 {% block title %}
     {% trans %}
     	Metadata
@@ -23,13 +24,13 @@
                        "Finanzvorstand_Adresse_Einzeiler", "Finanzvorstand_Adresse_Zeile2",
                        "Finanzvorstand_Adresse_Zeile3", "Finanzvorstand_Adresse_Zeile4",
                        "CdE_Konto_Inhaber", "CdE_Konto_IBAN", "CdE_Konto_BIC", "CdE_Konto_Institut", "Vorstand", ) %}
-            {{ util.form_input_text(name=key, label=gettext(key)) }}
+            {{ util.form_input_text(name=key, label=gettext(key), type="iban" if key == "CdE_Konto_IBAN" else "text") }}
         {% endfor %}
         {% for key in ("banner_before_login", "banner_after_login", "banner_genesis", "cde_misc") %}
-            {{ util.form_input_textarea(name=key, label=gettext(key), rows=5, info=util.markdownhint) }}
+            {{ util.form_input_textarea(name=key, label=gettext(key), rows=5, markdown=True) }}
         {% endfor %}
         <div>
-            {{ util.form_input_submit(value=gettext("Save")) }}
+            {{ util.form_input_submit(label=gettext("Save")) }}
         </div>
     </form>
 {% endblock %}

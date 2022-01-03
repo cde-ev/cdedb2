@@ -1,0 +1,25 @@
+{% set sidenav_active='cde_log' %}
+{% extends "web/cde/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/logging.tmpl" as logging with context %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_searchpersona.js') }}
+{% endblock %}
+{% block title %}
+    {% trans %}CdE Log{% endtrans %}
+    {{ logging.counter(total, values['offset'] or '', length) }}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("cde/view_cde_log"), gettext("CdE Log"), active="True") }}
+{% endblock %}
+{% block content %}
+    {% call logging.table(log) %}
+        {% for entry in log %}
+            {{ logging.row(entry, enums['CdeLogCodes'], loop.index) }}
+        {% endfor %}
+    {% endcall %}
+
+    {{ logging.navigation('cde/view_cde_log', total, length, loglinks) }}
+    {{ logging.filter('cde/view_cde_log', enums['CdeLogCodes'], 'cde_user') }}
+{% endblock %}

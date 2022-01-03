@@ -8,8 +8,7 @@
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(show_user_link(user, user['persona_id']), user['given_names'] + " " + user['family_name'],
-                            icon="user") }}
+    {{ util.breadcrumb_link(show_user_link(user, user['persona_id']), util.persona_name(user), icon="user") }}
     {{ util.breadcrumb_link(cdedblink("core/change_username_form"), gettext("Change Email Address"), active=True) }}
 {% endblock %}
 {% block content %}
@@ -24,6 +23,6 @@
             class="form-horizontal">
         {{ util.form_input_text(name="new_username", label=gettext("New Email Address"), type="email",
                                 attributes='autocomplete="email"'|s) }}
-        {{ util.form_input_submit(value=gettext("Send verification mail")) }}
+        {{ util.form_input_submit(label=gettext("Send verification mail")) }}
     </form>
 {% endblock %}

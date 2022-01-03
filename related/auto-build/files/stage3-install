@@ -37,8 +37,8 @@ sudo -u cdedb echo '        driver = i18n/git-merge-po.sh %O %A %B' >> /cdedb2/.
 sudo -u cdedb echo '[pull]' >> /cdedb2/.git/config
 sudo -u cdedb echo '        rebase = merges' >> /cdedb2/.git/config
 # add cdedb to python path
-mkdir -p /usr/local/lib/python3.7/dist-packages
-sudo ln -s /cdedb2/cdedb/ /usr/local/lib/python3.7/dist-packages/cdedb
+mkdir -p /usr/local/lib/python3.9/dist-packages
+sudo ln -s /cdedb2/cdedb/ /usr/local/lib/python3.9/dist-packages/cdedb
 # build the documentation
 sudo -u cdedb make doc
 # build the i18n files
@@ -62,8 +62,8 @@ echo "--------------------------------------------"
 
 # This is a bit heavy-handed on stopping/restarting stuff to debug some obscure hangs
 systemctl stop pgbouncer
-cp /cdedb2/related/auto-build/files/stage3/postgresql.conf /etc/postgresql/11/main/
-cp /cdedb2/related/auto-build/files/stage3/pg_hba.conf /etc/postgresql/11/main/
+cp /media/cdrom0/postgresql.conf /etc/postgresql/13/main/
+cp /media/cdrom0/pg_hba.conf /etc/postgresql/13/main/
 
 systemctl restart postgresql
 sleep 10
@@ -81,12 +81,12 @@ sudo -u cdedb make sql
 
 systemctl stop pgbouncer
 
-cp /cdedb2/related/auto-build/files/stage3/pgbouncer.ini /etc/pgbouncer/
-cp /cdedb2/related/pgbouncer_users.txt /etc/pgbouncer/userlist.txt
+cp /media/cdrom0/pgbouncer.ini /etc/pgbouncer/
+cp /media/cdrom0/pgbouncer_users.txt /etc/pgbouncer/userlist.txt
 chmod 640 /etc/pgbouncer/userlist.txt
 chown postgres:postgres /etc/pgbouncer/userlist.txt
 
-cp /cdedb2/related/auto-build/files/stage3/pgbouncer /etc/default/
+cp /media/cdrom0/pgbouncer /etc/default/
 
 systemctl start pgbouncer
 
@@ -94,11 +94,10 @@ echo ""
 echo "Create local config files..."
 echo "--------------------------------------------"
 
-cp /cdedb2/related/auto-build/files/stage3/localconfig.py /cdedb2/cdedb/
+cp /media/cdrom0/localconfig.py /cdedb2/cdedb/
 chown cdedb:cdedb /cdedb2/cdedb/localconfig.py
 chmod 644 /cdedb2/cdedb/localconfig.py
-cp /cdedb2/related/auto-build/files/stage3/mailman-htpasswd \
-   /etc/cdedb-mailman-htpasswd
+cp /media/cdrom0/mailman-htpasswd /etc/cdedb-mailman-htpasswd
 chown www-data:www-data /etc/cdedb-mailman-htpasswd
 chmod 640 /etc/cdedb-mailman-htpasswd
 
@@ -119,9 +118,11 @@ done;
 
 a2dissite 000-default
 
-cp /cdedb2/related/auto-build/files/stage3/cdedb-site.conf /etc/apache2/sites-available
-cp /cdedb2/related/auto-build/files/stage3/index.html /var/www/html/
+cp /media/cdrom0/cdedb-site.conf /etc/apache2/sites-available
+cp /media/cdrom0/index.html /var/www/html/
 chown www-data:www-data /var/www/html/index.html
+ln -s ../mods-available/http2.conf
+ln -s ../mods-available/http2.load
 a2ensite cdedb-site
 
 echo "" > /etc/apache2/ports.conf
@@ -132,13 +133,15 @@ echo ""
 echo "Set up the fail2ban..."
 echo "--------------------------------------------"
 
-cp /cdedb2/related/auto-build/files/stage3/fail2ban-filter-cdedb-login.conf \
+cp /media/cdrom0/fail2ban-filter-cdedb-login.conf \
    /etc/fail2ban/filter.d/cdedb-login.conf
-cp /cdedb2/related/auto-build/files/stage3/fail2ban-filter-cdedb-sessionkey.conf \
+cp /media/cdrom0/fail2ban-filter-cdedb-password-reset.conf \
+   /etc/fail2ban/filter.d/cdedb-password-reset.conf
+cp /media/cdrom0/fail2ban-filter-cdedb-sessionkey.conf \
    /etc/fail2ban/filter.d/cdedb-sessionkey.conf
-cp /cdedb2/related/auto-build/files/stage3/fail2ban-filter-cdedb-apitoken.conf \
+cp /media/cdrom0/fail2ban-filter-cdedb-apitoken.conf \
    /etc/fail2ban/filter.d/cdedb-apitoken.conf
-cp /cdedb2/related/auto-build/files/stage3/jail.local /etc/fail2ban/
+cp /media/cdrom0/jail.local /etc/fail2ban/
 
 if [ -e /media/cdrom0/vdi ]; then
 
@@ -167,7 +170,7 @@ echo "--------------------------------------------"
 cd /home/cdedb
 sudo -u cdedb git clone ssh://gitea@tracker.cde-ev.de:20009/orgas/cde_template_renderer_v3.git \
     || sudo -u cdedb git clone ssh://gitea@10.9.0.2:63332//orgas/cde_template_renderer_v3.git
-sudo -u cdedb cp /cdedb2/related/auto-build/files/stage3/refresh_template_renderer_data.py .
+sudo -u cdedb cp /media/cdrom0/refresh_template_renderer_data.py .
 chmod +x refresh_template_renderer_data.py
 
 echo ""

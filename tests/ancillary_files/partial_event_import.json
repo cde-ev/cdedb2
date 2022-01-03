@@ -1,5 +1,6 @@
 {
 	"kind": "partial",
+	"summary": "Sehr wichtiger Import",
 	"courses": {
 		"1": {
 			"segments": {
@@ -14,7 +15,7 @@
 			},
 			"max_size": 20,
 			"notes": "Planaenderung!",
-			"shortname": "GanzKurz",
+			"shortname": "DieserKurznameIstNunAberWirklichNichtGanzKurz",
 			"nr": "\u03b2",
 			"description": "mit extrem hoher Leistung."
 		},
@@ -254,6 +255,6 @@
 	},
         "EVENT_SCHEMA_VERSION": [
 			15,
-			1
+			4
 		]
 }

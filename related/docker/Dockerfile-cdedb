@@ -1,4 +1,4 @@
-FROM debian:buster-20200607
+FROM debian:bullseye-20210816
 
 # TODO replace with mount from host, snakeoil or first-run script?
 RUN apt-get update && apt-get install --yes --no-install-recommends openssl \
@@ -14,26 +14,20 @@ RUN apt-get update && apt-get install --yes --no-install-recommends openssl \
     && apt-get purge --yes --autoremove openssl \
     && rm -rf /var/lib/apt/lists/*
 
-# texlive-plain-generic is needed for iftex - can be removed in next debian
-RUN echo 'slapd slapd/password1 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0' | debconf-set-selections \
-    && echo 'slapd slapd/password2 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0' | debconf-set-selections \
-    \
-    && apt-get update && apt-get install --yes --no-install-recommends \
+RUN apt-get update && apt-get install --yes --no-install-recommends \
     sudo \
     make \
     gettext \
+    git \
     \
+    openssl \
     apache2 \
     python3 \
     libapache2-mod-wsgi-py3 \
     \
     postgresql-client \
     \
-    slapd \
-    ldap-utils \
-    \
     texlive \
-    texlive-plain-generic \
     texlive-latex-extra \
     texlive-lang-german \
     texlive-luatex \
@@ -60,21 +54,33 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3-markdown \
     python3-mailmanclient \
     python3-requests \
-    python3-typing-extensions \
     python3-qrcode \
     python3-vobject \
+    python3-graphviz \
+    python3-phonenumbers \
     \
     python3-pip \
     \
     flake8 \
     isort \
-    pylint3 \
-    python3-coverage \
+    pylint \
+    python3-freezegun \
+    wget \
+    unzip \
+    \
+    && apt-get install --yes python3-coverage \
     \
     && rm -rf /var/lib/apt/lists/* \
     \
     && python3 -m pip --no-cache-dir install \
-    mypy==0.790
+    mypy==0.910 \
+    types-werkzeug \
+    types-pytz \
+    types-jinja2 \
+    types-python-dateutil \
+    types-freezegun \
+    types-bleach \
+    types-Markdown
 
 # TODO check wether it is sensible to lower privileges to cdedb user
 # create and configure directories for the apache user
@@ -97,11 +103,12 @@ RUN mkdir /var/lib/cdedb \
 # make storage persistent
 VOLUME /var/lib/cdedb
 
-COPY ./related/auto-build/files/stage3 /tmp/autobuild
+COPY ./related/docker/cdedb-entrypoint.sh ./related/auto-build/files/stage3 /tmp/autobuild/
 
 # put configuration files into correct positions
 # and add symlink to /cdedb2/cdedb directory so python can find it
-RUN a2enmod ssl wsgi headers \
+RUN cp /tmp/autobuild/cdedb-entrypoint.sh /cdedb-entrypoint.sh \
+    && a2enmod ssl wsgi headers \
     && a2dissite 000-default \
     && echo "" > /etc/apache2/ports.conf \
     && cp /tmp/autobuild/cdedb-site.conf /etc/apache2/sites-available \
@@ -121,4 +128,6 @@ EXPOSE 443
 # mount the code here
 WORKDIR /cdedb2
 
-CMD ["apachectl", "-DFOREGROUND"]
+STOPSIGNAL SIGWINCH
+ENTRYPOINT ["/cdedb-entrypoint.sh"]
+CMD ["sh", "-c", "APACHE_HTTPD='exec /usr/sbin/apache2' exec apachectl -DFOREGROUND"]

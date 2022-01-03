@@ -8,10 +8,8 @@
     {% endtrans %}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {{ gettext("Participantlist") }}
-        <small>{{ util.make_icon('bullhorn') }} {{ ambience['assembly']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Participantlist"), ambience['assembly']['title'],
+                            'bullhorn', gettext("Assembly")) }}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
@@ -39,7 +37,7 @@
                         {{ util.output_errors('persona_id') }}
                     </div>
                     <div class="col-sm-3">
-                        {{ util.input_submit(value=gettext("Add"), icon="plus", aclass="btn btn-primary btn-sm") }}
+                        {{ util.input_submit(label=gettext("Add"), icon="plus", aclass="btn btn-primary btn-sm") }}
                     </div>
                 </div>
             </form>
@@ -48,7 +46,7 @@
                     "{{ gettext("The user will be added as a participant. This cannot be undone.") }}");
                 $('#input-add-attendee').cdedbSearchPerson(
                     '{{ (cdedblink('core/select_persona')|e) + ('?kind=pure_assembly_user&phrase=%s'|s) }}',
-                    {{ attendees|list|json|s }}, false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
+                    {{ attendees|list|tojson }}, false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                 );
             </script>
         {% endcall %}
@@ -64,7 +62,7 @@
             <div class="col-sm-4">
                 <ul class="slim nosp">
                     {% for persona in list %}
-                        <li>{{ persona['given_names'] }} {{ persona['family_name'] }}</li>
+                        <li>{{ util.persona_name(persona, only_given_names=True, with_titles=True) }}</li>
                     {% endfor %}
                 </ul>
             </div>

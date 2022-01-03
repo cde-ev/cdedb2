@@ -32,6 +32,7 @@
 {% block breadcrumb %}
     {{ util.breadcrumb_link(cdedblink("ml/index"), gettext("Mailinglists")) }}
 {% endblock %}
+
 {% block navigation %}
     {% if ambience['mailinglist'] %}
         <p>
@@ -69,15 +70,24 @@
                 {{ util.href(cdedblink("ml/moderated_mailinglists"), gettext("Moderated Mailinglists"), icon="list",
                              aclass="list-group-item", active=(sidenav_active == 'ml_moderated')) }}
             {% endif %}
-
         </div>
-        {% if user.moderator or user.admin_views.intersection(ALL_MGMT_ADMIN_VIEWS) or 'ml_user' in user.admin_views %}
+        {# This functionality is only available for true mailinglist admins. #}
+        {% if 'ml_user' in user.admin_views and 'ml_admin' in user.roles %}
+            <div class="list-group tear-down">
+                {{ util.href(cdedblink("ml/merge_accounts_form"), gettext("Merge Accounts"),
+                        icon="user-friends", aclass="list-group-item", active=(sidenav_active == 'ml_merger')) }}
+            </div>
+        {% endif %}
+        {% if user.moderator or user.admin_views.intersection(ALL_MGMT_ADMIN_VIEWS)
+                or user.admin_views.intersection(('ml_user', 'auditor')) %}
             <div class="list-group tear-down">
                 {% if 'ml_user' in user.admin_views %}
                     {{ util.href(cdedblink("ml/user_search"), gettext("Manage Users"),
                             icon="users", aclass="list-group-item", active=(sidenav_active == 'ml_users')) }}
+                    {{ util.href(cdedblink("ml/archived_user_search"), gettext("Search Archived Users"), aclass="list-group-item",
+                                 icon="inbox", active=(sidenav_active=='ml_manage_archive')) }}
                 {% endif %}
-                {% if user.moderator or user.admin_views.intersection(ALL_MGMT_ADMIN_VIEWS) %}
+                {% if user.moderator or user.admin_views.intersection(ALL_MGMT_ADMIN_VIEWS|list + ['auditor']) %}
                     {{ util.href(cdedblink("ml/view_log"), gettext("Log"), icon="far fa-list-alt", aclass="list-group-item",
                             active=(sidenav_active == 'ml_log')) }}
                 {% endif %}
@@ -91,16 +101,23 @@
 {% block adminviews %}
     {% if ambience['mailinglist'] %}
         {% if user.persona_id in ambience['mailinglist']['moderators'] %}
-            {{ util.admin_views_toggle([(gettext("Mailinglist Administration"), ALL_MGMT_ADMIN_VIEWS,
-                                         ambience['mailinglist']['ml_type_class'].management_admin_views()|list)]) }}
+            {{ util.admin_views_toggle([
+                    (gettext("Mailinglist Administration"), ALL_MGMT_ADMIN_VIEWS,
+                    ambience['mailinglist']['ml_type_class'].management_admin_views()|list),
+                ]) }}
         {% else %}
-            {{ util.admin_views_toggle(((gettext("Mailinglist Administration"), ALL_MGMT_ADMIN_VIEWS,
-                                         ambience['mailinglist']['ml_type_class'].management_admin_views()|list),
-                                        (gettext("Moderator Controls"), ALL_MOD_ADMIN_VIEWS,
-                                         ambience['mailinglist']['ml_type_class'].moderator_admin_views()|list))) }}
+            {{ util.admin_views_toggle((
+                    (gettext("Mailinglist Administration"), ALL_MGMT_ADMIN_VIEWS,
+                     ambience['mailinglist']['ml_type_class'].management_admin_views()|list),
+                    (gettext("Moderator Controls"), ALL_MOD_ADMIN_VIEWS,
+                     ambience['mailinglist']['ml_type_class'].moderator_admin_views()|list),
+                )) }}
         {% endif %}
     {% else %}
-        {{ util.admin_views_toggle(((gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], ["ml_user"]),
-                                    (gettext("Mailinglist Administration"), ALL_MGMT_ADMIN_VIEWS, None))) }}
+        {{ util.admin_views_toggle((
+                (gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], ["ml_user"]),
+                (gettext("Mailinglist Administration"), ALL_MGMT_ADMIN_VIEWS, None),
+                (gettext("Auditor"), ["auditor"], None),
+            )) }}
     {% endif %}
 {% endblock %}

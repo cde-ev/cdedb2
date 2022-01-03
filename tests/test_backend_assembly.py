@@ -1,49 +1,72 @@
 #!/usr/bin/env python3
+# pylint: disable=missing-module-docstring
 
 import datetime
 import json
-import time
-from typing import Collection, Optional, NamedTuple
+from typing import Collection, NamedTuple, Optional
 
+import freezegun
 import pytz
 
 import cdedb.database.constants as const
-from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, FUTURE_TIMESTAMP, get_hash, now, nearly_now,
-)
+from cdedb.common import CdEDBObject, CdEDBObjectMap, get_hash, nearly_now, now
 from tests.common import (
-    BackendTest, UserIdentifier, USER_DICT, as_users, prepsql,
+    USER_DICT, BackendTest, UserIdentifier, as_users, prepsql, storage,
 )
 
 
 class TestAssemblyBackend(BackendTest):
     used_backends = ("core", "assembly")
 
+    def _get_sample_quorum(self, assembly_id: int) -> int:
+        attendees = {
+            e['persona_id'] for e in self.get_sample_data('assembly.attendees').values()
+            if e['assembly_id'] == assembly_id}
+        return sum(
+            1 for e in self.get_sample_data('core.personas').values()
+            if e['is_member'] or e['id'] in attendees)
+
     @as_users("kalif")
-    def test_basics(self, user: CdEDBObject) -> None:
-        data = self.core.get_assembly_user(self.key, user['id'])
+    def test_basics(self) -> None:
+        data = self.core.get_assembly_user(self.key, self.user['id'])
         data['display_name'] = "Zelda"
         data['family_name'] = "Lord von und zu Hylia"
         setter = {k: v for k, v in data.items() if k in
                   {'id', 'display_name', 'given_names', 'family_name'}}
         self.core.change_persona(self.key, setter)
-        new_data = self.core.get_assembly_user(self.key, user['id'])
+        new_data = self.core.get_assembly_user(self.key, self.user['id'])
         self.assertEqual(data, new_data)
 
     @as_users("anton", "berta", "charly", "kalif")
-    def test_does_attend(self, user: CdEDBObject) -> None:
-        self.assertEqual(user['id'] != 3, self.assembly.does_attend(
+    def test_does_attend(self) -> None:
+        self.assertEqual(self.user['id'] != 3, self.assembly.does_attend(
             self.key, assembly_id=1))
-        self.assertEqual(user['id'] != 3, self.assembly.does_attend(
+        self.assertEqual(self.user['id'] != 3, self.assembly.does_attend(
             self.key, ballot_id=3))
 
     @as_users("charly")
-    def test_list_attendees(self, user: CdEDBObject) -> None:
+    def test_list_attendees(self) -> None:
+        assembly_id = 1
         expectation = {1, 2, 9, 11, 23, 100}
-        self.assertEqual(expectation, self.assembly.list_attendees(self.key, 1))
+        self.assertEqual(
+            expectation,
+            self.assembly.list_attendees(self.key, assembly_id))
+        self.assertNotIn(self.user['id'], expectation)
+        self.assertTrue(self.assembly.signup(self.key, assembly_id))
+        expectation.add(self.user['id'])
+        self.assertEqual(
+            expectation,
+            self.assembly.list_attendees(self.key, assembly_id))
 
+    @storage
     def test_entity_assembly(self) -> None:
+        assembly_id = 1
+        presider_id = 23
+        log = []
+        self.login("anton")
+        log_offset, _ = self.assembly.retrieve_log(self.key)
         self.login("werner")
+
         expectation = {
             1: {
                 'id': 1,
@@ -65,27 +88,23 @@ class TestAssemblyBackend(BackendTest):
             },
         }
         self.assertEqual(expectation, self.assembly.list_assemblies(self.key))
-        expectation = {
-            'description': 'Proletarier aller Länder vereinigt Euch!',
-            'id': 1,
-            'is_active': True,
-            'presider_address': 'kongress@example.cde',
-            'notes': None,
-            'presiders': {23},
-            'signup_end': datetime.datetime(2111, 11, 11, 0, 0, tzinfo=pytz.utc),
-            'title': 'Internationaler Kongress',
-            'shortname': 'kongress',
-        }
+        expectation = self.get_sample_datum("assembly.assemblies", assembly_id)
+        expectation['presiders'] = {presider_id}
         self.assertEqual(expectation, self.assembly.get_assembly(
-            self.key, 1))
+            self.key, assembly_id))
         data = {
-            'id': 1,
+            'id': assembly_id,
             'notes': "More fun for everybody",
             'signup_end': datetime.datetime(2111, 11, 11, 23, 0, tzinfo=pytz.utc),
             'title': "Allumfassendes Konklave",
             'shortname': 'konklave',
         }
         self.assertLess(0, self.assembly.set_assembly(self.key, data))
+        log.append({
+            "code": const.AssemblyLogCodes.assembly_changed,
+            "submitted_by": self.user['id'],
+            "assembly_id": assembly_id,
+        })
         expectation.update(data)
         self.assertEqual(expectation, self.assembly.get_assembly(
             self.key, 1))
@@ -95,33 +114,85 @@ class TestAssemblyBackend(BackendTest):
             'signup_end': now(),
             'title': 'Außerordentliche Mitgliederversammlung',
             'shortname': 'amgv',
-            'presiders': {1, 23},
+            'presiders': {1, presider_id},
         }
         self.login("viktor")
         new_id = self.assembly.create_assembly(self.key, new_assembly)
+        log.append({
+            "code": const.AssemblyLogCodes.assembly_created,
+            "submitted_by": self.user['id'],
+            "assembly_id": new_id,
+        })
+        for p_id in new_assembly['presiders']:  # type: ignore[union-attr]
+            log.append({
+                "code": const.AssemblyLogCodes.assembly_presider_added,
+                "submitted_by": self.user['id'],
+                "assembly_id": new_id,
+                "persona_id": p_id,
+            })
         expectation: CdEDBObject = new_assembly
         expectation['id'] = new_id
         expectation['presider_address'] = None
         expectation['is_active'] = True
         self.assertEqual(expectation, self.assembly.get_assembly(
             self.key, new_id))
-        data = {
-            'id': new_id,
-            'presiders': {1},
-        }
-        self.assertLess(0, self.assembly.set_assembly(self.key, data))
-        self.assertTrue(self.assembly.set_assembly_presiders(self.key, new_id, {23}))
+        self.assertTrue(
+            self.assembly.remove_assembly_presider(self.key, new_id, presider_id))
+        log.append({
+            "code": const.AssemblyLogCodes.assembly_presider_removed,
+            "submitted_by": self.user['id'],
+            "assembly_id": new_id,
+            "persona_id": presider_id,
+        })
+        self.assertTrue(
+            self.assembly.add_assembly_presiders(self.key, new_id, {presider_id}))
+        log.append({
+            "code": const.AssemblyLogCodes.assembly_presider_added,
+            "submitted_by": self.user['id'],
+            "assembly_id": new_id,
+            "persona_id": presider_id,
+        })
         # Check return of setting presiders to the same thing.
         self.assertEqual(
-            -1, self.assembly.set_assembly_presiders(self.key, new_id, {23}))
-        expectation['presiders'] = {23}
+            0, self.assembly.add_assembly_presiders(self.key, new_id, {presider_id}))
+        expectation['presiders'] = {1, presider_id}
         self.assertEqual(expectation, self.assembly.get_assembly(self.key, new_id))
-        self.assertLess(0, self.assembly.delete_assembly(
-            self.key, new_id, ("ballots", "attendees", "attachments",
-                               "presiders", "log", "mailinglists")))
+        attachment_data = {
+            "assembly_id": new_id,
+            "title": "Rechenschaftsbericht",
+            "authors": "Farin",
+            "filename": "rechen.pdf",
+        }
+        self.assertTrue(self.assembly.add_attachment(self.key, attachment_data, b'123'))
+        log.append({
+            "code": const.AssemblyLogCodes.attachment_added,
+            "submitted_by": self.user['id'],
+            "assembly_id": new_id,
+            "change_note": attachment_data['title'],
+        })
+        self.assertEqual({}, self.assembly.conclude_assembly_blockers(self.key, new_id))
+        self.assertTrue(self.assembly.conclude_assembly(self.key, new_id))
+        log.append({
+            "code": const.AssemblyLogCodes.assembly_concluded,
+            "submitted_by": self.user['id'],
+            "assembly_id": new_id,
+        })
+        self.assertLogEqual(log, realm="assembly", offset=log_offset)
+
+        cascade = {"assembly_is_locked", "log", "presiders", "attachments"}
+        self.assertEqual(
+            cascade, self.assembly.delete_assembly_blockers(self.key, new_id).keys())
+        self.assertLess(0, self.assembly.delete_assembly(self.key, new_id, cascade))
+        log = log[:1] + [{
+            "assembly_id": None,
+            "code": const.AssemblyLogCodes.assembly_deleted,
+            "submitted_by": self.user['id'],
+            "change_note": expectation["title"],
+        }]
+        self.assertLogEqual(log, realm="assembly", offset=log_offset)
 
     @as_users("viktor")
-    def test_ticket_176(self, user: CdEDBObject) -> None:
+    def test_ticket_176(self) -> None:
         data = {
             'description': None,
             'notes': None,
@@ -132,9 +203,12 @@ class TestAssemblyBackend(BackendTest):
         new_id = self.assembly.create_assembly(self.key, data)
         self.assertLess(0, self.assembly.conclude_assembly(self.key, new_id))
 
+    @storage
     @as_users("werner")
-    def test_entity_ballot(self, user: CdEDBObject) -> None:
+    def test_entity_ballot(self) -> None:
         assembly_id = 1
+        log_offset, _ = self.assembly.retrieve_log(self.key, assembly_id=assembly_id)
+        log = []
         expectation = {1: 'Antwort auf die letzte aller Fragen',
                        2: 'Farbe des Logos',
                        3: 'Bester Hof',
@@ -146,8 +220,7 @@ class TestAssemblyBackend(BackendTest):
                        14: 'Wie sollen Akademien sich in Zukunft finanzieren',
                        15: 'Welche Sprache ist die Beste?',
                        }
-        self.assertEqual(expectation, self.assembly.list_ballots(self.key,
-                                                                 assembly_id))
+        self.assertEqual(expectation, self.assembly.list_ballots(self.key, assembly_id))
         expectation = {
             1: {
                 'assembly_id': 1,
@@ -178,9 +251,12 @@ class TestAssemblyBackend(BackendTest):
                         'shortname': '4',
                     },
                 },
+                'comment': None,
                 'description': 'Nach dem Leben, dem Universum und dem ganzen Rest.',
                 'extended': True,
                 'id': 1,
+                'is_locked': True,
+                'is_voting': False,
                 'is_tallied': False,
                 'notes': None,
                 'abs_quorum': 2,
@@ -229,9 +305,12 @@ class TestAssemblyBackend(BackendTest):
                         'shortname': 'N',
                     },
                 },
+                'comment': None,
                 'description': 'denkt an die Frutaner',
                 'extended': None,
                 'id': 4,
+                'is_locked': True,
+                'is_voting': True,
                 'is_tallied': False,
                 'notes': None,
                 'abs_quorum': 0,
@@ -253,28 +332,32 @@ class TestAssemblyBackend(BackendTest):
         }
         with self.assertRaises(ValueError):
             self.assembly.set_ballot(self.key, data)
+        ballot_id = 2
         expectation: CdEDBObject = {
-            'assembly_id': 1,
+            'assembly_id': assembly_id,
             'use_bar': False,
-            'candidates': {6: {'ballot_id': 2,
+            'candidates': {6: {'ballot_id': ballot_id,
                                'title': 'Rot',
                                'id': 6,
                                'shortname': 'rot'},
-                           7: {'ballot_id': 2,
+                           7: {'ballot_id': ballot_id,
                                'title': 'Gelb',
                                'id': 7,
                                'shortname': 'gelb'},
-                           8: {'ballot_id': 2,
+                           8: {'ballot_id': ballot_id,
                                'title': 'Grün',
                                'id': 8,
                                'shortname': 'gruen'},
-                           9: {'ballot_id': 2,
+                           9: {'ballot_id': ballot_id,
                                'title': 'Blau',
                                'id': 9,
                                'shortname': 'blau'}},
+            'comment': None,
             'description': 'Ulitmativ letzte Entscheidung',
             'extended': None,
-            'id': 2,
+            'id': ballot_id,
+            'is_locked': False,
+            'is_voting': False,
             'is_tallied': False,
             'notes': 'Nochmal alle auf diese wichtige Entscheidung hinweisen.',
             'abs_quorum': 0,
@@ -287,12 +370,12 @@ class TestAssemblyBackend(BackendTest):
                                           tzinfo=pytz.utc),
             'vote_extension_end': None,
             'votes': None}
-        self.assertEqual(expectation, self.assembly.get_ballot(self.key, 2))
+        self.assertEqual(expectation, self.assembly.get_ballot(self.key, ballot_id))
         data: CdEDBObject = {
-            'id': 2,
+            'id': ballot_id,
             'use_bar': True,
             'candidates': {
-                6: {'title': 'Teracotta', 'shortname': 'terra', 'id': 6},
+                6: {'title': 'Teracotta', 'shortname': 'terra'},
                 7: None,
                 -1: {'title': 'Aquamarin', 'shortname': 'aqua'},
             },
@@ -302,10 +385,31 @@ class TestAssemblyBackend(BackendTest):
             'rel_quorum': 100,
         }
         self.assertLess(0, self.assembly.set_ballot(self.key, data))
+        log.append({
+            "code": const.AssemblyLogCodes.ballot_changed,
+            "assembly_id": assembly_id,
+            "change_note": self.get_sample_datum(
+                "assembly.ballots", ballot_id)['title'],
+        })
+        log.append({
+            "code": const.AssemblyLogCodes.candidate_added,
+            "assembly_id": assembly_id,
+            "change_note": data['candidates'][-1]['shortname'],
+        })
+        log.append({
+            "code": const.AssemblyLogCodes.candidate_updated,
+            "assembly_id": assembly_id,
+            "change_note": expectation['candidates'][6]['shortname'],
+        })
+        log.append({
+            "code": const.AssemblyLogCodes.candidate_removed,
+            "assembly_id": assembly_id,
+            "change_note": expectation['candidates'][7]['shortname'],
+        })
         for key in ('use_bar', 'notes', 'vote_extension_end', 'rel_quorum'):
             expectation[key] = data[key]
         expectation['abs_quorum'] = 0
-        expectation['quorum'] = 11
+        expectation['quorum'] = self._get_sample_quorum(assembly_id)
         expectation['candidates'][6]['title'] = data['candidates'][6]['title']
         expectation['candidates'][6]['shortname'] = data['candidates'][6]['shortname']
         del expectation['candidates'][7]
@@ -316,7 +420,7 @@ class TestAssemblyBackend(BackendTest):
             'shortname': 'aqua'}
         self.assertEqual(expectation, self.assembly.get_ballot(self.key, 2))
 
-        data = {
+        data: CdEDBObject = {
             'assembly_id': assembly_id,
             'use_bar': False,
             'candidates': {
@@ -337,11 +441,29 @@ class TestAssemblyBackend(BackendTest):
             'votes': None,
         }
         new_id = self.assembly.create_ballot(self.key, data)
+        log.append({
+            "code": const.AssemblyLogCodes.ballot_created,
+            "assembly_id": assembly_id,
+            "change_note": data['title'],
+        })
+        log.append({
+            "code": const.AssemblyLogCodes.candidate_added,
+            "assembly_id": assembly_id,
+            "change_note": data['candidates'][-1]['shortname'],
+        })
+        log.append({
+            "code": const.AssemblyLogCodes.candidate_added,
+            "assembly_id": assembly_id,
+            "change_note": data['candidates'][-2]['shortname'],
+        })
         self.assertLess(0, new_id)
         data.update({
+            'comment': None,
             'extended': None,
             'quorum': 10,
             'id': new_id,
+            'is_locked': False,
+            'is_voting': False,
             'is_tallied': False,
             'candidates': {
                 1002: {
@@ -359,9 +481,96 @@ class TestAssemblyBackend(BackendTest):
             },
         })
         self.assertEqual(data, self.assembly.get_ballot(self.key, new_id))
+        old_ballot_id = 2
+        old_ballot_data = self.get_sample_datum("assembly.ballots", old_ballot_id)
+        attachment_data = {
+            "assembly_id": assembly_id,
+            "title": "Rechenschaftsbericht",
+            "authors": "Farin",
+            "filename": "rechen.pdf",
+        }
+        attachment_id = self.assembly.add_attachment(self.key, attachment_data, b'123')
+        self.assertTrue(
+            self.assembly.add_attachment_ballot_link(self.key, attachment_id, new_id))
+        self.assertTrue(
+            self.assembly.add_attachment_ballot_link(
+                self.key, attachment_id, old_ballot_id))
+        log.append({
+            "code": const.AssemblyLogCodes.attachment_added,
+            "assembly_id": assembly_id,
+            "change_note": attachment_data['title'],
+        })
+        log.append({
+            "code": const.AssemblyLogCodes.attachment_ballot_link_created,
+            "assembly_id": assembly_id,
+            "change_note": f"{attachment_data['title']} ({data['title']})",
+        })
+        log.append({
+            "code": const.AssemblyLogCodes.attachment_ballot_link_created,
+            "assembly_id": assembly_id,
+            "change_note": f"{attachment_data['title']} ({old_ballot_data['title']})",
+        })
 
-        self.assertLess(0, self.assembly.delete_ballot(
-            self.key, 2, cascade=("candidates", "attachments", "voters")))
+        self.assertEqual(
+            [old_ballot_id, new_id],
+            self.assembly.get_attachment(self.key, attachment_id)['ballot_ids'])
+        self.assertEqual(
+            {attachment_id},
+            self.assembly.list_attachments(self.key, ballot_id=new_id))
+        self.assertEqual(
+            {attachment_id},
+            self.assembly.list_attachments(self.key, ballot_id=old_ballot_id))
+
+        attachment_id2 = self.assembly.add_attachment(self.key, attachment_data, b'123')
+        self.assertTrue(
+            self.assembly.add_attachment_ballot_link(self.key, attachment_id2, new_id))
+        self.assertTrue(
+            self.assembly.add_attachment_ballot_link(
+                self.key, attachment_id2, old_ballot_id))
+        log.append({
+            "code": const.AssemblyLogCodes.attachment_added,
+            "assembly_id": assembly_id,
+            "change_note": attachment_data['title'],
+        })
+        log.append({
+            "code": const.AssemblyLogCodes.attachment_ballot_link_created,
+            "assembly_id": assembly_id,
+            "change_note": f"{attachment_data['title']} ({data['title']})",
+        })
+        log.append({
+            "code": const.AssemblyLogCodes.attachment_ballot_link_created,
+            "assembly_id": assembly_id,
+            "change_note": f"{attachment_data['title']} ({old_ballot_data['title']})",
+        })
+
+        self.assertEqual(
+            [old_ballot_id, new_id],
+            self.assembly.get_attachment(self.key, attachment_id2)['ballot_ids'])
+        self.assertEqual(
+            {attachment_id, attachment_id2},
+            self.assembly.list_attachments(self.key, ballot_id=new_id))
+        self.assertEqual(
+            {attachment_id, attachment_id2},
+            self.assembly.list_attachments(self.key, ballot_id=old_ballot_id))
+
+        cascade = {"attachments", "candidates", "voters"}
+        self.assertEqual(
+            cascade,
+            self.assembly.delete_ballot_blockers(self.key, new_id).keys())
+        self.assertEqual(
+            cascade,
+            self.assembly.delete_ballot_blockers(self.key, old_ballot_id).keys())
+
+        self.assertTrue(
+            self.assembly.delete_ballot(self.key, old_ballot_id, cascade=cascade))
+        log.append({
+            "code": const.AssemblyLogCodes.ballot_deleted,
+            "assembly_id": assembly_id,
+            "change_note": old_ballot_data['title'],
+        })
+        self.assertEqual(
+            [new_id],
+            self.assembly.get_attachment(self.key, attachment_id)['ballot_ids'])
         expectation = {
             1: 'Antwort auf die letzte aller Fragen',
             3: 'Bester Hof',
@@ -374,9 +583,11 @@ class TestAssemblyBackend(BackendTest):
             15: 'Welche Sprache ist die Beste?',
             new_id: 'Verstehen wir Spaß'}
         self.assertEqual(expectation, self.assembly.list_ballots(self.key, assembly_id))
+        self.assertLogEqual(
+            log, realm="assembly", offset=log_offset, assembly_id=assembly_id)
 
     @as_users("werner")
-    def test_quorum(self, user: CdEDBObject) -> None:
+    def test_quorum(self) -> None:
         data = {
             'assembly_id': 1,
             'use_bar': False,
@@ -386,7 +597,7 @@ class TestAssemblyBackend(BackendTest):
             },
             'description': 'Sind sie sich sicher?',
             'notes': None,
-            'abs_quorum': 11,
+            'abs_quorum': 10,
             'title': 'Verstehen wir Spaß',
             'vote_begin': datetime.datetime(2222, 2, 5, 13, 22, 22, 222222,
                                             tzinfo=pytz.utc),
@@ -404,7 +615,7 @@ class TestAssemblyBackend(BackendTest):
             self.assembly.create_ballot(self.key, data)
 
         # now create the ballot
-        data['abs_quorum'] = 11
+        data['abs_quorum'] = 10
         new_id = self.assembly.create_ballot(self.key, data)
 
         data = {
@@ -429,94 +640,108 @@ class TestAssemblyBackend(BackendTest):
         self.assembly.set_ballot(self.key, data)
 
     @as_users("viktor")
-    def test_relative_quorum(self, user: CdEDBObject) -> None:
-        delta = 0.3
-        future = now() + datetime.timedelta(seconds=delta)
+    def test_relative_quorum(self) -> None:
+        base_time = now()
+        delta = datetime.timedelta(seconds=42)
+        with freezegun.freeze_time(base_time) as frozen_time:
+            NUMBER_OF_MEMBERS = self._get_sample_quorum(0)
+            assembly_data = {
+                'description': None,
+                'notes': None,
+                'signup_end': datetime.datetime(2222, 2, 22),
+                'title': "MGV 2222",
+                'shortname': "mgv2222",
+            }
+            assembly_id = self.assembly.create_assembly(self.key, assembly_data)
+            ballot_data = {
+                'assembly_id': assembly_id,
+                'use_bar': False,
+                'candidates': {
+                    -1: {'title': 'Ja', 'shortname': 'j'},
+                    -2: {'title': 'Nein', 'shortname': 'n'},
+                },
+                'description': 'Sind sie sich sicher?',
+                'notes': None,
+                'rel_quorum': 100,
+                'title': 'Verstehen wir Spaß',
+                'vote_begin': base_time + delta,
+                'vote_end': base_time + 3*delta,
+                'vote_extension_end': base_time + 5*delta,
+            }
+            ballot_id = self.assembly.create_ballot(self.key, ballot_data)
 
-        assembly_data = {
-            'description': None,
-            'notes': None,
-            'signup_end': datetime.datetime(2222, 2, 22),
-            'title': "MGV 2222",
-            'shortname': "mgv2222",
-        }
-        assembly_id = self.assembly.create_assembly(self.key, assembly_data)
-        ballot_data = {
-            'assembly_id': assembly_id,
-            'use_bar': False,
-            'candidates': {
-                -1: {'title': 'Ja', 'shortname': 'j'},
-                -2: {'title': 'Nein', 'shortname': 'n'},
-            },
-            'description': 'Sind sie sich sicher?',
-            'notes': None,
-            'rel_quorum': 100,
-            'title': 'Verstehen wir Spaß',
-            'vote_begin': future,
-            'vote_end': future + datetime.timedelta(seconds=delta),
-            'vote_extension_end': future + 2 * datetime.timedelta(seconds=delta),
-        }
-        ballot_id = self.assembly.create_ballot(self.key, ballot_data)
+            # noinspection PyTypedDict
+            ballot_data['rel_quorum'] = 3.141
+            with self.assertRaises(ValueError) as cm:
+                self.assembly.create_ballot(self.key, ballot_data)
+            self.assertIn("Precision loss.", cm.exception.args[0])
+            ballot_data['rel_quorum'] = -5
+            with self.assertRaises(ValueError) as cm:
+                self.assembly.create_ballot(self.key, ballot_data)
+            self.assertIn("Relative quorum must be between 0 and 100.",
+                          cm.exception.args[0])
+            ballot_data['rel_quorum'] = 168
+            with self.assertRaises(ValueError) as cm:
+                self.assembly.create_ballot(self.key, ballot_data)
+            self.assertIn("Relative quorum must be between 0 and 100.",
+                          cm.exception.args[0])
 
-        ballot_data['rel_quorum'] = 3.141
-        with self.assertRaises(ValueError) as cm:
-            self.assembly.create_ballot(self.key, ballot_data)
-        self.assertIn("Precision loss.", cm.exception.args[0])
-        ballot_data['rel_quorum'] = -5
-        with self.assertRaises(ValueError) as cm:
-            self.assembly.create_ballot(self.key, ballot_data)
-        self.assertIn("Relative quorum must be between 0 and 100.",
-                      cm.exception.args[0])
-        ballot_data['rel_quorum'] = 168
-        with self.assertRaises(ValueError) as cm:
-            self.assembly.create_ballot(self.key, ballot_data)
-        self.assertIn("Relative quorum must be between 0 and 100.",
-                      cm.exception.args[0])
+            # Initial quorum should be number of members.
+            self.assertEqual(
+                self.assembly.get_ballot(self.key, ballot_id)["quorum"],
+                NUMBER_OF_MEMBERS
+            )
 
-        # Initial quorum should be number of members.
-        self.assertEqual(9, self.assembly.get_ballot(self.key, ballot_id)["quorum"])
+            # Adding a non-member attendee increases the quorum.
+            self.assembly.external_signup(self.key, assembly_id, 4)
+            self.assertEqual(
+                self.assembly.get_ballot(self.key, ballot_id)["quorum"],
+                NUMBER_OF_MEMBERS + 1
+            )
 
-        # Adding a non-member attendee increases the quorum.
-        self.assembly.external_signup(self.key, assembly_id, 4)
-        self.assertEqual(10, self.assembly.get_ballot(self.key, ballot_id)["quorum"])
-
-        # Conclude the ballot.
-        time.sleep(2 * delta)
-        self.assembly.check_voting_period_extension(self.key, ballot_id)
-        # Now adding an attendee does not change the quorum.
-        self.assembly.external_signup(self.key, assembly_id, 11)
-        self.assertEqual(10, self.assembly.get_ballot(self.key, ballot_id)["quorum"])
+            frozen_time.tick(delta=4*delta)
+            self.assembly.check_voting_period_extension(self.key, ballot_id)
+            # Now adding an attendee does not change the quorum.
+            self.assembly.external_signup(self.key, assembly_id, 11)
+            self.assertEqual(
+                self.assembly.get_ballot(self.key, ballot_id)["quorum"],
+                NUMBER_OF_MEMBERS + 1
+            )
 
     def test_extension(self) -> None:
-        self.login(USER_DICT['werner'])
-        future = now() + datetime.timedelta(seconds=.5)
-        farfuture = now() + datetime.timedelta(seconds=1)
-        data = {
-            'assembly_id': 1,
-            'use_bar': False,
-            'candidates': {
-                -1: {'title': 'Ja', 'shortname': 'j'},
-                -2: {'title': 'Nein', 'shortname': 'n'},
-            },
-            'description': 'Sind sie sich sicher?',
-            'notes': None,
-            'abs_quorum': 10,
-            'title': 'Verstehen wir Spaß',
-            'vote_begin': future,
-            'vote_end': farfuture,
-            'vote_extension_end': datetime.datetime(2222, 2, 6, 13, 22, 22, 222222,
-                                                    tzinfo=pytz.utc),
-            'votes': None,
-        }
-        new_id = self.assembly.create_ballot(self.key, data)
-        self.assertEqual(None, self.assembly.get_ballot(self.key, new_id)['extended'])
-        self.login(USER_DICT['kalif'])
-        time.sleep(1)
-        self.assertTrue(self.assembly.check_voting_period_extension(self.key, new_id))
-        self.assertEqual(True, self.assembly.get_ballot(self.key, new_id)['extended'])
+        base_time = now()
+        delta = datetime.timedelta(seconds=42)
+        with freezegun.freeze_time(base_time) as frozen_time:
+            self.login(USER_DICT['werner'])
+            data = {
+                'assembly_id': 1,
+                'use_bar': False,
+                'candidates': {
+                    -1: {'title': 'Ja', 'shortname': 'j'},
+                    -2: {'title': 'Nein', 'shortname': 'n'},
+                },
+                'description': 'Sind sie sich sicher?',
+                'notes': None,
+                'abs_quorum': 10,
+                'title': 'Verstehen wir Spaß',
+                'vote_begin': base_time + delta,
+                'vote_end': base_time + 3*delta,
+                'vote_extension_end': base_time + 5*delta,
+                'votes': None,
+            }
+            new_id = self.assembly.create_ballot(self.key, data)
+            self.assertEqual(None,
+                             self.assembly.get_ballot(self.key, new_id)['extended'])
+
+            frozen_time.tick(delta=4*delta)
+            self.login(USER_DICT['kalif'])
+            self.assertTrue(
+                self.assembly.check_voting_period_extension(self.key, new_id))
+            self.assertEqual(True,
+                             self.assembly.get_ballot(self.key, new_id)['extended'])
 
     @as_users("charly")
-    def test_signup(self, user: CdEDBObject) -> None:
+    def test_signup(self) -> None:
         self.assertEqual(False, self.assembly.does_attend(
             self.key, assembly_id=1))
         secret = self.assembly.signup(self.key, 1)
@@ -565,138 +790,175 @@ class TestAssemblyBackend(BackendTest):
         self.assertEqual(
             'St>Li=Go=Fi=Bu=Lo=_bar_', self.assembly.get_vote(self.key, 3, secret=None))
 
+    @storage
     @as_users("kalif")
-    def test_tally(self, user: CdEDBObject) -> None:
+    def test_tally(self) -> None:
         self.assertEqual(False, self.assembly.get_ballot(self.key, 1)['is_tallied'])
         self.assertTrue(self.assembly.tally_ballot(self.key, 1))
-        with open("/tmp/cdedb-store/testfiles/ballot_result.json", 'rb') as f:
-            with open("/tmp/cdedb-store/ballot_result/1", 'rb') as g:
+        with open(self.testfile_dir / "ballot_result.json", 'rb') as f:
+            with open(self.conf['STORAGE_DIR'] / "ballot_result/1", 'rb') as g:
                 self.assertEqual(json.load(f), json.load(g))
 
+    @storage
     def test_conclusion(self) -> None:
-        self.login("viktor")
-        data = {
-            'description': 'Beschluss über die Anzahl anzuschaffender Schachsets',
-            'notes': None,
-            'signup_end': FUTURE_TIMESTAMP,
-            'title': 'Außerordentliche Mitgliederversammlung',
-            'shortname': 'amgv',
-        }
-        new_id = self.assembly.create_assembly(self.key, data)
-        non_member_id = USER_DICT["werner"]["id"]
-        assert isinstance(non_member_id, int)
-        self.assertTrue(self.assembly.set_assembly_presiders(
-            self.key, new_id, {non_member_id}))
-        self.login(non_member_id)
-        # werner is no member, so he must use the external signup function
-        self.assembly.external_signup(self.key, new_id, non_member_id)
-        future = now() + datetime.timedelta(seconds=.5)
-        farfuture = now() + datetime.timedelta(seconds=1)
-        data = {
-            'assembly_id': new_id,
-            'use_bar': False,
-            'candidates': {
-                -1: {'title': 'Ja', 'shortname': 'j'},
-                -2: {'title': 'Nein', 'shortname': 'n'},
-            },
-            'description': 'Sind sie sich sicher?',
-            'notes': None,
-            'abs_quorum': 0,
-            'title': 'Verstehen wir Spaß',
-            'vote_begin': future,
-            'vote_end': farfuture,
-            'vote_extension_end': None,
-            'votes': None,
-        }
-        ballot_id = self.assembly.create_ballot(self.key, data)
-        time.sleep(1)
-        self.assembly.check_voting_period_extension(self.key, ballot_id)
-        self.assertTrue(self.assembly.tally_ballot(self.key, ballot_id))
-        self.assembly.external_signup(self.key, new_id,
-                                      persona_id=USER_DICT['kalif']['id'])
-        update = {
-            'id': new_id,
-            'signup_end': now(),
-        }
-        self.assembly.set_assembly(self.key, update)
-        self.assertEqual({23, 11}, self.assembly.list_attendees(self.key, new_id))
-        self.login("anton")
-        self.assertLess(0, self.assembly.conclude_assembly(self.key, new_id))
+        base_time = now()
+        delta = datetime.timedelta(seconds=42)
+        with freezegun.freeze_time(base_time) as frozen_time:
+            self.login("viktor")
+            data = {
+                'description': 'Beschluss über die Anzahl anzuschaffender Schachsets',
+                'notes': None,
+                'signup_end': base_time + 10*delta,
+                'title': 'Außerordentliche Mitgliederversammlung',
+                'shortname': 'amgv',
+            }
+            new_id = self.assembly.create_assembly(self.key, data)
+            non_member_id = USER_DICT["werner"]["id"]
+            assert isinstance(non_member_id, int)
+            self.assertTrue(self.assembly.add_assembly_presiders(
+                self.key, new_id, {non_member_id}))
+            self.login(non_member_id)
+            # werner is no member, so he must use the external signup function
+            self.assembly.external_signup(self.key, new_id, non_member_id)
+            data = {
+                'assembly_id': new_id,
+                'use_bar': False,
+                'candidates': {
+                    -1: {'title': 'Ja', 'shortname': 'j'},
+                    -2: {'title': 'Nein', 'shortname': 'n'},
+                },
+                'description': 'Sind sie sich sicher?',
+                'notes': None,
+                'abs_quorum': 0,
+                'title': 'Verstehen wir Spaß',
+                'vote_begin': base_time + delta,
+                'vote_end': base_time + 3*delta,
+                'vote_extension_end': None,
+                'votes': None,
+            }
+            ballot_id = self.assembly.create_ballot(self.key, data)
+
+            frozen_time.tick(delta=4*delta)
+            self.assembly.check_voting_period_extension(self.key, ballot_id)
+            self.assertTrue(self.assembly.tally_ballot(self.key, ballot_id))
+            self.assembly.external_signup(self.key, new_id,
+                                          persona_id=USER_DICT['kalif']['id'])
+            update = {
+                'id': new_id,
+                'signup_end': now(),
+            }
+            self.assembly.set_assembly(self.key, update)
+            self.assertEqual({23, 11}, self.assembly.list_attendees(self.key, new_id))
+            self.login("anton")
+            self.assertLess(0, self.assembly.conclude_assembly(self.key, new_id))
 
     @as_users("werner")
-    def test_entity_attachments(self, user: CdEDBObject) -> None:
+    def test_comment(self) -> None:
+        comment = "Ein Kommentar."
+
+        # Comment not possible for future and running ballots
+        for ballot_id in {2, 14, 15}:
+            with self.assertRaises(ValueError) as cm:
+                self.assembly.comment_concluded_ballot(self.key, ballot_id, comment)
+            self.assertIn("Comments are only allowed for concluded ballots.",
+                          cm.exception.args[0])
+
+        # Comment is possible for tallied ballots
+        self.assembly.comment_concluded_ballot(self.key, 1, comment)
+        self.assertEqual(self.assembly.get_ballot(self.key, 1)['comment'], comment)
+        self.assembly.comment_concluded_ballot(self.key, 1, "")
+        self.assertEqual(self.assembly.get_ballot(self.key, 1)['comment'], None)
+
+        # Test log
+        entry = {'change_note': 'Antwort auf die letzte aller Fragen',
+                 'code': const.AssemblyLogCodes.ballot_changed}
+        expectation = (entry, entry)
+        self.assertLogEqual(expectation, realm="assembly", assembly_id=1)
+
+    @storage
+    @as_users("werner")
+    def test_entity_attachments(self) -> None:
+        # Set some default ids.
+        assembly_id = 1
+        ballot_id = 2
+        attachment_id = 1
+        log_offset, _ = self.assembly.retrieve_log(self.key, assembly_id=assembly_id)
+        log = []
+
+        # Check the default entities.
         with open("/cdedb2/tests/ancillary_files/rechen.pdf", "rb") as f:
             self.assertEqual(
                 f.read(),
-                self.assembly.get_attachment_content(self.key, attachment_id=1))
-        self.assertEqual(set(), self.assembly.list_attachments(self.key, assembly_id=1))
-        self.assertEqual(set(), self.assembly.list_attachments(self.key, ballot_id=2))
+                self.assembly.get_attachment_content(
+                    self.key, attachment_id=attachment_id))
+        self.assertEqual(
+            set(), self.assembly.list_attachments(self.key, assembly_id=assembly_id))
+        self.assertEqual(
+            set(), self.assembly.list_attachments(self.key, ballot_id=ballot_id))
+
+        # Create a new attachment.
         data = {
-            "ballot_id": 2,
+            "assembly_id": assembly_id,
             "title": "Rechenschaftsbericht",
             "authors": "Farin",
             "filename": "rechen.pdf",
         }
         new_id = self.assembly.add_attachment(self.key, data, b'123')
-        self.assertGreater(new_id, 0)
+        attachment_ids = [new_id]
+        log.append({
+            "code": const.AssemblyLogCodes.attachment_added,
+            "assembly_id": assembly_id,
+            "change_note": data['title'],
+        })
+
+        # Check that everything can be retrieved correctly.
         self.assertEqual(
             b'123', self.assembly.get_attachment_content(self.key, new_id, 1))
-        expectation = {
+        expectation: CdEDBObject = {
             "id": new_id,
-            "assembly_id": None,
-            "ballot_id": 2,
+            "assembly_id": assembly_id,
+            "ballot_ids": [],
             "num_versions": 1,
-            "current_version": 1,
+            "latest_version_nr": 1,
         }
+        ballot_data = self.get_sample_datum("assembly.ballots", ballot_id)
         self.assertEqual(
             expectation, self.assembly.get_attachment(self.key, attachment_id=new_id))
-        data = {
-            "id": new_id,
-            "ballot_id": None,
-            "assembly_id": 1,
-        }
-        self.assertTrue(self.assembly.change_attachment_link(self.key, data))
-        data.update({'num_versions': 1, 'current_version': 1})
-        self.assertEqual(data, self.assembly.get_attachment(self.key, new_id))
-        with self.assertRaises(ValueError):
-            data = {
-                "id": new_id,
-                "ballot_id": 1,
-                "assembly_id": None,
-            }
-            self.assembly.change_attachment_link(self.key, data)
-        with self.assertRaises(ValueError):
-            data = {
-                "id": new_id,
-                "ballot_id": 1,
-                "assembly_id": 1,
-            }
-            self.assembly.change_attachment_link(self.key, data)
-        with self.assertRaises(ValueError):
-            data = {
-                "id": new_id,
-                "ballot_id": None,
-                "assembly_id": None,
-            }
-            self.assembly.change_attachment_link(self.key, data)
-        with self.assertRaises(ValueError):
-            data = {
-                "id": new_id,
-                "ballot_id": None,
-                "assembly_id": 2,
-            }
-            self.assembly.change_attachment_link(self.key, data)
-        with self.assertRaises(ValueError):
-            data = {
-                "id": new_id,
-                "ballot_id": 6,
-                "assembly_id": None,
-            }
-            self.assembly.change_attachment_link(self.key, data)
+        self.assertTrue(
+            self.assembly.add_attachment_ballot_link(self.key, new_id, ballot_id))
+        expectation["ballot_ids"] = [ballot_id]
+        log.append({
+            "code": const.AssemblyLogCodes.attachment_ballot_link_created,
+            "assembly_id": assembly_id,
+            "change_note": f"{data['title']} ({ballot_data['title']})",
+        })
+        self.assertEqual(expectation, self.assembly.get_attachment(self.key, new_id))
+
+        # Check success of adding and removing ballot links.
+        with self.assertRaises(ValueError) as e:
+            self.assembly.add_attachment_ballot_link(self.key, new_id, ballot_id=6)
+        self.assertIn(
+            "Can only retrieve id for exactly one assembly.", e.exception.args)
+        with self.assertRaises(ValueError) as e:
+            self.assembly.add_attachment_ballot_link(self.key, new_id, ballot_id=1)
+        self.assertIn("Cannot link attachment to ballot that has been locked.",
+                      e.exception.args)
+        self.assertTrue(
+            self.assembly.remove_attachment_ballot_link(self.key, new_id, ballot_id))
+        log.append({
+            "code": const.AssemblyLogCodes.attachment_ballot_link_deleted,
+            "assembly_id": assembly_id,
+            "change_note": f"{data['title']} ({ballot_data['title']})",
+        })
+        # Removing a nonexistant link should not raise an error, but return 0.
+        self.assertEqual(
+            0, self.assembly.remove_attachment_ballot_link(self.key, new_id, ballot_id))
+
+        # Check version data.
         expectation = {
             1: {
                 "attachment_id": new_id,
-                "version": 1,
+                "version_nr": 1,
                 "title": "Rechenschaftsbericht",
                 "authors": "Farin",
                 "filename": "rechen.pdf",
@@ -706,144 +968,472 @@ class TestAssemblyBackend(BackendTest):
             },
         }
         self.assertEqual(
-            expectation, self.assembly.get_attachment_history(self.key, new_id))
-        with self.assertRaises(ValueError):
-            self.assembly.remove_attachment_version(self.key, new_id, 1)
+            expectation, self.assembly.get_attachment_versions(self.key, new_id))
+        with self.assertRaises(ValueError) as e:
+            self.assembly.remove_attachment_version(self.key, new_id, version_nr=1)
+        self.assertIn("Cannot remove the last remaining version of an attachment.",
+                      e.exception.args)
+
+        # Add more versions and check that the correct content is returned.
         data = {
             "attachment_id": new_id,
-            "title": "Rechensaftsbericht",
+            "title": "Rechenschaftsbericht",
             "authors": "Farin",
             "filename": "rechen_v2.pdf",
         }
+        self.assertTrue(self.assembly.add_attachment_version(self.key, data, b'1234'))
+        self.assertTrue(self.assembly.add_attachment_version(self.key, data, b'12345'))
+        log.append({
+            "code": const.AssemblyLogCodes.attachment_version_added,
+            "assembly_id": assembly_id,
+            "change_note": f"{data['title']}: Version 2",
+        })
+        log.append({
+            "code": const.AssemblyLogCodes.attachment_version_added,
+            "assembly_id": assembly_id,
+            "change_note": f"{data['title']}: Version 3",
+        })
         self.assertEqual(
-            b'123', self.assembly.get_attachment_content(self.key, new_id))
-        self.assertLess(
-            0, self.assembly.add_attachment_version(self.key, data, b'1234'))
+            b'123', self.assembly.get_attachment_content(
+                self.key, attachment_id=new_id, version_nr=1))
         self.assertEqual(
-            b'123', self.assembly.get_attachment_content(self.key, new_id, 1))
+            b'1234', self.assembly.get_attachment_content(
+                self.key, attachment_id=new_id, version_nr=2))
         self.assertEqual(
-            b'1234', self.assembly.get_attachment_content(self.key, new_id))
+            b'12345', self.assembly.get_attachment_content(
+                self.key, attachment_id=new_id, version_nr=3))
         self.assertEqual(
-            b'1234', self.assembly.get_attachment_content(self.key, new_id, 2))
+            b'12345', self.assembly.get_attachment_content(
+                self.key, attachment_id=new_id))
+
+        # Remove the some versions and check the resulting returns.
+        self.assertTrue(
+            self.assembly.remove_attachment_version(
+                self.key, attachment_id=new_id, version_nr=3))
+        log.append({
+            "code": const.AssemblyLogCodes.attachment_version_removed,
+            "assembly_id": assembly_id,
+            "change_note": f"{data['title']}: Version 3",
+        })
         expectation = {
             "id": new_id,
-            "assembly_id": 1,
-            "ballot_id": None,
+            "assembly_id": assembly_id,
+            "ballot_ids": [],
             "num_versions": 2,
-            "current_version": 2,
+            "latest_version_nr": 2,
         }
-        self.assertEqual(expectation, self.assembly.get_attachment(self.key, new_id))
-        self.assertLess(0, self.assembly.remove_attachment_version(self.key, new_id, 1))
-        expectation.update({"num_versions": 1})
-        self.assertEqual(expectation, self.assembly.get_attachment(self.key, new_id))
-        self.assertIsNone(self.assembly.get_attachment_content(self.key, new_id, 1))
+        self.assertEqual(
+            expectation, self.assembly.get_attachment(self.key, attachment_id=new_id))
+
+        self.assertTrue(
+            self.assembly.remove_attachment_version(
+                self.key, attachment_id=new_id, version_nr=1))
+        log.append({
+            "code": const.AssemblyLogCodes.attachment_version_removed,
+            "assembly_id": assembly_id,
+            "change_note": f"{data['title']}: Version 1",
+        })
+        expectation["num_versions"] = 1
+        self.assertEqual(
+            expectation, self.assembly.get_attachment(self.key, attachment_id=new_id))
+
+        self.assertIsNone(
+            self.assembly.get_attachment_content(
+                self.key, attachment_id=new_id, version_nr=1))
+        self.assertIsNone(
+            self.assembly.get_attachment_content(
+                self.key, attachment_id=new_id, version_nr=3))
+        self.assertEqual(
+            b'1234', self.assembly.get_attachment_content(
+                self.key, attachment_id=new_id, version_nr=2))
+        self.assertEqual(
+            b'1234', self.assembly.get_attachment_content(
+                self.key, attachment_id=new_id))
+
+        # Check that adding a new version is still possible
+        self.assertTrue(self.assembly.add_attachment_version(self.key, data, b'123456'))
+        log.append({
+            "code": const.AssemblyLogCodes.attachment_version_added,
+            "assembly_id": assembly_id,
+            "change_note": f"{data['title']}: Version 4",
+        })
+        self.assertEqual(
+            b'123456', self.assembly.get_attachment_content(
+                self.key, attachment_id=new_id, version_nr=4))
+        self.assertEqual(
+            b'123456', self.assembly.get_attachment_content(
+                self.key, attachment_id=new_id))
+
+        # Check the attachments history.
         data.update({
-            "version": 2,
+            "version_nr": 2,
             "ctime": nearly_now(),
             "dtime": None,
             "file_hash": get_hash(b'1234'),
         })
-        history_expectation: CdEDBObjectMap = {
-            1: {
-                "attachment_id": new_id,
-                "version": 1,
-                "title": None,
-                "authors": None,
-                "filename": None,
-                "ctime": nearly_now(),
-                "dtime": nearly_now(),
-                "file_hash": get_hash(b'123'),
-            },
-            2: data,
-        }
-        self.assertEqual(
-            history_expectation, self.assembly.get_attachment_history(self.key, new_id))
-        with self.assertRaises(ValueError):
-            self.assembly.delete_attachment(self.key, new_id)
-
-        data = {
+        deleted_version = {
             "attachment_id": new_id,
-            "version": 2,
-            "title": "Rechenschaftsbericht",
+            "version_nr": 1,
+            "title": None,
+            "authors": None,
+            "filename": None,
+            "ctime": nearly_now(),
+            "dtime": nearly_now(),
+            "file_hash": get_hash(b'123'),
         }
-        self.assertTrue(self.assembly.change_attachment_version(self.key, data))
-        history_expectation[2].update(data)
+        history_expectation: CdEDBObjectMap = {
+            1: deleted_version,
+            2: data,
+            3: deleted_version.copy(),
+            4: data.copy(),
+        }
+        history_expectation[3]['version_nr'] = 3
+        history_expectation[3]['file_hash'] = get_hash(b'12345')
+        history_expectation[4]['version_nr'] = 4
+        history_expectation[4]['file_hash'] = get_hash(b'123456')
+        self.assertEqual(
+            history_expectation,
+            self.assembly.get_attachment_versions(self.key, new_id))
 
+        # Create more attachments and check the histories of all attachments.
+        history_expectation = {
+            new_id: history_expectation,
+        }
         data = {
-            "assembly_id": 1,
+            "assembly_id": assembly_id,
             "title": "Verfassung des Staates der CdEler",
             "authors": "Anton",
             "filename": "verf.pdf",
         }
-        self.assertLess(0, self.assembly.add_attachment(self.key, data, b'abc'))
+        new_id = self.assembly.add_attachment(self.key, data, b'abc')
+        attachment_ids.append(new_id)
+        log.append({
+            "code": const.AssemblyLogCodes.attachment_added,
+            "assembly_id": assembly_id,
+            "change_note": data['title'],
+        })
         del data["assembly_id"]
-        history_expectation = {1001: history_expectation, 1002: {1: data}}
-        history_expectation[1002][1].update({
+        data.update({
             "attachment_id": 1002,
-            "version": 1,
+            "version_nr": 1,
             "ctime": nearly_now(),
             "dtime": None,
             "file_hash": get_hash(b'abc'),
         })
+        history_expectation[new_id] = {1: data}
+
         data = {
-            "ballot_id": 2,
+            "assembly_id": assembly_id,
             "title": "Beschlussvorlage",
             "authors": "Berta",
             "filename": "beschluss.pdf",
         }
-        self.assertLess(
-            0, self.assembly.add_attachment(self.key, data, b'super secret'))
-        del data["ballot_id"]
-        history_expectation[1003] = {1: data}
-        history_expectation[1003][1].update({
-            "attachment_id": 1003,
-            "version": 1,
+        new_id = self.assembly.add_attachment(self.key, data, b'super secret')
+        attachment_ids.append(new_id)
+        log.append({
+            "code": const.AssemblyLogCodes.attachment_added,
+            "assembly_id": assembly_id,
+            "change_note": data['title'],
+        })
+        self.assertTrue(
+            self.assembly.add_attachment_ballot_link(self.key, new_id, ballot_id))
+        log.append({
+            "code": const.AssemblyLogCodes.attachment_ballot_link_created,
+            "assembly_id": assembly_id,
+            "change_note": f"{data['title']} ({ballot_data['title']})",
+        })
+        del data['assembly_id']
+        data.update({
+            "attachment_id": new_id,
+            "version_nr": 1,
             "ctime": nearly_now(),
             "dtime": None,
             "file_hash": get_hash(b'super secret'),
         })
+        history_expectation[new_id] = {1: data}
+
         self.assertEqual(
-            {1001, 1002}, self.assembly.list_attachments(self.key, assembly_id=1))
-        self.assertEqual({1003}, self.assembly.list_attachments(self.key, ballot_id=2))
+            set(attachment_ids),
+            self.assembly.list_attachments(self.key, assembly_id=assembly_id))
+        self.assertEqual(
+            {new_id},
+            self.assembly.list_attachments(self.key, ballot_id=ballot_id))
+
         expectation = {
-            1001: {
-                'assembly_id': 1,
-                'ballot_id': None,
-                'id': 1001,
-                'num_versions': 1,
-                'current_version': 2,
+            attachment_ids[0]: {
+                'assembly_id': assembly_id,
+                'ballot_ids': [],
+                'id': attachment_ids[0],
+                'num_versions': 2,
+                'latest_version_nr': 4,
             },
-            1002: {
-                'assembly_id': 1,
-                'ballot_id': None,
-                'id': 1002,
+            attachment_ids[1]: {
+                'assembly_id': assembly_id,
+                'ballot_ids': [],
+                'id': attachment_ids[1],
                 'num_versions': 1,
-                'current_version': 1,
+                'latest_version_nr': 1,
            },
-            1003: {
-                'assembly_id': None,
-                'ballot_id': 2,
-                'id': 1003,
+            attachment_ids[2]: {
+                'assembly_id': assembly_id,
+                'ballot_ids': [ballot_id],
+                'id': attachment_ids[2],
                 'num_versions': 1,
-                'current_version': 1,
+                'latest_version_nr': 1,
             },
         }
         self.assertEqual(
-            expectation, self.assembly.get_attachments(self.key, (1001, 1002, 1003)))
+            expectation, self.assembly.get_attachments(self.key, attachment_ids))
         self.assertEqual(
             history_expectation,
-            self.assembly.get_attachment_histories(self.key, (1001, 1002, 1003)))
-        self.assertTrue(self.assembly.delete_attachment(self.key, 1001, {"versions"}))
-        del expectation[1001]
+            self.assembly.get_attachments_versions(self.key, attachment_ids))
+        history_expectation = {
+            attachment_ids[0]: {
+                1: {
+                    'attachment_id': attachment_ids[0],
+                    'authors': None,
+                    'ctime': nearly_now(),
+                    'dtime': nearly_now(),
+                    'file_hash': get_hash(b'123'),
+                    'filename': None,
+                    'title': None,
+                    'version_nr': 1,
+                },
+                2: {
+                    'attachment_id': attachment_ids[0],
+                    'authors': 'Farin',
+                    'ctime': nearly_now(),
+                    'dtime': None,
+                    'file_hash': get_hash(b'1234'),
+                    'filename': 'rechen_v2.pdf',
+                    'title': 'Rechenschaftsbericht',
+                    'version_nr': 2,
+                },
+                3: {
+                    'attachment_id': attachment_ids[0],
+                    'authors': None,
+                    'ctime': nearly_now(),
+                    'dtime': nearly_now(),
+                    'file_hash': get_hash(b'12345'),
+                    'filename': None,
+                    'title': None,
+                    'version_nr': 3,
+                },
+                4: {
+                    'attachment_id': attachment_ids[0],
+                    'authors': 'Farin',
+                    'ctime': nearly_now(),
+                    'dtime': None,
+                    'file_hash': get_hash(b'123456'),
+                    'filename': 'rechen_v2.pdf',
+                    'title': 'Rechenschaftsbericht',
+                    'version_nr': 4,
+                },
+            },
+            attachment_ids[1]: {
+                1: {
+                    'attachment_id': attachment_ids[1],
+                    'authors': 'Anton',
+                    'ctime': nearly_now(),
+                    'dtime': None,
+                    'file_hash': get_hash(b'abc'),
+                    'filename': 'verf.pdf',
+                    'title': 'Verfassung des Staates der CdEler',
+                    'version_nr': 1,
+                }
+            },
+            attachment_ids[2]: {
+                1: {
+                    'attachment_id': attachment_ids[2],
+                    'authors': 'Berta',
+                    'ctime': nearly_now(),
+                    'dtime': None,
+                    'file_hash': get_hash(b'super secret'),
+                    'filename': 'beschluss.pdf',
+                    'title': 'Beschlussvorlage',
+                    'version_nr': 1,
+                },
+            },
+        }
         self.assertEqual(
-            expectation, self.assembly.get_attachments(self.key, (1001, 1002, 1003)))
+            history_expectation, self.assembly.get_attachments_versions(
+                self.key, attachment_ids))
+        cascade = {"versions", "ballots"}
+        self.assertEqual(
+            cascade, self.assembly.delete_attachment_blockers(self.key, new_id).keys())
+        self.assertTrue(self.assembly.delete_attachment(self.key, new_id, cascade))
+        log.append({
+            "code": const.AssemblyLogCodes.attachment_removed,
+            "assembly_id": assembly_id,
+            "change_note": data['title'],
+        })
+        del expectation[new_id]
+        self.assertEqual(
+            expectation, self.assembly.get_attachments(self.key, attachment_ids))
+        self.assertLogEqual(
+            log, realm="assembly", offset=log_offset, assembly_id=assembly_id)
+
+    @storage
+    @as_users("werner")
+    def test_ballot_attachment_links(self) -> None:
+        assembly_id = 3
+        n = 3
+        log_offset, _ = self.assembly.retrieve_log(self.key, assembly_id=assembly_id)
+        log = []
+        base_time = now()
+        delta = datetime.timedelta(seconds=10)
+        with freezegun.freeze_time(base_time) as frozen_time:
+            # Create new attachment.
+            attachment_data = {
+                "assembly_id": assembly_id,
+                "title": "Unabhängigkeitserklärung des Freistaates CdE",
+                "authors": "AbCdE",
+                "filename": "Freiheit.pdf",
+            }
+            attachment_id = self.assembly.add_attachment(self.key, attachment_data, b'')
+            log.append({
+                "code": const.AssemblyLogCodes.attachment_added,
+                "assembly_id": assembly_id,
+                "change_note": attachment_data['title'],
+            })
+            attachment_expectation: CdEDBObject = {
+                "assembly_id": assembly_id,
+                "ballot_ids": [],
+                "id": attachment_id,
+                "num_versions": 1,
+                "latest_version_nr": 1,
+            }
+            self.assertEqual(
+                attachment_expectation,
+                self.assembly.get_attachment(self.key, attachment_id))
+            version_expectation = {
+                "attachment_id": attachment_id,
+                "authors": attachment_data["authors"],
+                "title": attachment_data["title"],
+                "filename": attachment_data["filename"],
+                "ctime": base_time,
+                "dtime": None,
+                "file_hash": get_hash(b''),
+                "version_nr": 1,
+            }
+            self.assertEqual(
+                {version_expectation["version_nr"]: version_expectation},
+                self.assembly.get_attachment_versions(self.key, attachment_id))
+
+            # Create some new ballots and link the attachment to them.
+            ballot_ids = []
+            for i in range(n):
+                ballot_data = {
+                    "assembly_id": assembly_id,
+                    "description": None,
+                    "notes": None,
+                    "title": "TestAbstimmung" + str(i),
+                    "use_bar": True,
+                    "abs_quorum": 0,
+                    "rel_quorum": 0,
+                    "vote_begin": base_time + (2 * i + 1) * delta,
+                    "vote_end": base_time + (2 * (i + n) + 1) * delta,
+                    "vote_extension_end": None,
+                }
+                ballot_ids.append(
+                    ballot_id := self.assembly.create_ballot(self.key, ballot_data))
+                log.append({
+                    "code": const.AssemblyLogCodes.ballot_created,
+                    "assembly_id": assembly_id,
+                    "change_note": ballot_data['title'],
+                })
+                self.assertTrue(
+                    self.assembly.add_attachment_ballot_link(
+                        self.key, attachment_id, ballot_id))
+                log.append({
+                    "code": const.AssemblyLogCodes.attachment_ballot_link_created,
+                    "assembly_id": assembly_id,
+                    "change_note":
+                        f"{attachment_data['title']} ({ballot_data['title']})",
+                })
+                self.assertEqual(
+                    {attachment_id: version_expectation},
+                    self.assembly.get_definitive_attachments_version(
+                        self.key, ballot_id)
+                )
+            attachment_expectation["ballot_ids"] = ballot_ids
+            self.assertEqual(
+                attachment_expectation,
+                self.assembly.get_attachment(self.key, attachment_id))
+
+            # Advanve time and add new versions.
+            for i in range(n):
+                frozen_time.tick(delta=2*delta)
+                version_data = {
+                    "attachment_id": attachment_id,
+                    "title": attachment_data["title"],
+                    "authors": attachment_data["authors"],
+                    "filename": attachment_data["filename"],
+                }
+                self.assertTrue(
+                    self.assembly.add_attachment_version(
+                        self.key, version_data, bytes(i+1)))
+                log.append({
+                    "code": const.AssemblyLogCodes.attachment_version_added,
+                    "assembly_id": assembly_id,
+                    "change_note": f"{attachment_data['title']}: Version {i+2}",
+                })
+
+            attachment_expectation["num_versions"] = \
+                attachment_expectation["latest_version_nr"] = n + 1
+            attachment_expectation["ballot_ids"] = ballot_ids
+            self.assertEqual(
+                attachment_expectation,
+                self.assembly.get_attachment(self.key, attachment_id))
+
+            for i, ballot_id in enumerate(ballot_ids):
+                version_expectation.update({
+                    "version_nr": i + 1,
+                    "file_hash": get_hash(bytes(i)),
+                    "ctime": base_time + (2 * i) * delta,
+                })
+                self.assertEqual(
+                    {attachment_id: version_expectation},
+                    self.assembly.get_definitive_attachments_version(
+                        self.key, ballot_id)
+                )
+        self.assertLogEqual(
+            log, realm="assembly", offset=log_offset, assembly_id=assembly_id)
+
+    @as_users("werner")
+    def test_2289(self) -> None:
+        ballot_id = 2
+        old_candidates = self.assembly.get_ballot(self.key, ballot_id)['candidates']
+        for candidate in old_candidates.values():
+            del candidate['ballot_id']
+            del candidate['id']
+        bdata = {
+            'id': ballot_id,
+            'candidates': {
+                6: None,
+                -1: old_candidates[6]
+            }
+        }
+        self.assertTrue(self.assembly.set_ballot(self.key, bdata))
+        candidates = self.assembly.get_ballot(self.key, ballot_id)['candidates']
+        self.assertNotIn(6, candidates)
+        self.assertEqual(candidates[1001]['shortname'], old_candidates[6]['shortname'])
+
+        bdata['candidates'] = {
+            7: old_candidates[8],
+            8: old_candidates[7],
+        }
+        self.assertTrue(self.assembly.set_ballot(self.key, bdata))
+        candidates = self.assembly.get_ballot(self.key, ballot_id)['candidates']
+        self.assertEqual(candidates[7]['shortname'], old_candidates[8]['shortname'])
+        self.assertEqual(candidates[8]['shortname'], old_candidates[7]['shortname'])
 
     @as_users("werner")
     @prepsql("""INSERT INTO assembly.assemblies
         (title, shortname, description, presider_address, signup_end) VALUES
         ('Umfrage', 'umfrage', 'sagt eure Meinung!', 'umfrage@example.cde',
          date '2111-11-11');""")
-    def test_prepsql(self, user: CdEDBObject) -> None:
+    def test_prepsql(self) -> None:
         expectation = {
             1: {'id': 1, 'is_active': True,
                 'signup_end': datetime.datetime(2111, 11, 11, 0, 0, tzinfo=pytz.utc),
@@ -859,160 +1449,3 @@ class TestAssemblyBackend(BackendTest):
                    'title': 'Umfrage'}
         }
         self.assertEqual(expectation, self.assembly.list_assemblies(self.key))
-
-    def test_log(self) -> None:
-        # first check the already existing log
-        offset = 8
-        expectation = (offset, (
-            {"id": 1,
-             "ctime": nearly_now(),
-             "code": const.AssemblyLogCodes.new_attendee,
-             "submitted_by": 1,
-             "assembly_id": 2,
-             "persona_id": 18,
-             "change_note": None},
-            {"id": 2,
-             "ctime": nearly_now(),
-             "code": const.AssemblyLogCodes.new_attendee,
-             "submitted_by": 1,
-             "assembly_id": 2,
-             "persona_id": 1,
-             "change_note": None},
-            {"id": 3,
-             "ctime": nearly_now(),
-             "code": const.AssemblyLogCodes.new_attendee,
-             "submitted_by": 3,
-             "assembly_id": 2,
-             "persona_id": 3,
-             "change_note": None},
-            {"id": 4,
-             "ctime": nearly_now(),
-             "code": const.AssemblyLogCodes.new_attendee,
-             "submitted_by": 32,
-             "assembly_id": 2,
-             "persona_id": 32,
-             "change_note": None},
-            {"id": 5,
-             "ctime": nearly_now(),
-             "code": const.AssemblyLogCodes.new_attendee,
-             "submitted_by": 7,
-             "assembly_id": 2,
-             "persona_id": 7,
-             "change_note": None},
-            {"id": 6,
-             "ctime": nearly_now(),
-             "code": const.AssemblyLogCodes.new_attendee,
-             "submitted_by": 9,
-             "assembly_id": 2,
-             "persona_id": 9,
-             "change_note": None},
-            {"id": 7,
-             "ctime": nearly_now(),
-             "code": const.AssemblyLogCodes.new_attendee,
-             "submitted_by": 1,
-             "assembly_id": 2,
-             "persona_id": 17,
-             "change_note": None},
-            {"id": 8,
-             "ctime": nearly_now(),
-             "code": const.AssemblyLogCodes.new_attendee,
-             "submitted_by": 1,
-             "assembly_id": 2,
-             "persona_id": 22,
-             "change_note": None},
-        ))
-        self.login("viktor")
-        result = self.assembly.retrieve_log(self.key)
-        self.assertEqual(expectation, result)
-        self.core.logout(self.key)
-
-        # now generate some data
-        self.test_entity_assembly()
-        self.test_vote()
-        self.test_entity_ballot()
-
-        self.login("viktor")
-        # check the new data
-        sub_id = USER_DICT['werner']['id']
-        expectation = (11+offset, (
-            {'id': 1001,
-             'change_note': None,
-             'assembly_id': 1,
-             'code': const.AssemblyLogCodes.assembly_changed,
-             'ctime': nearly_now(),
-             'persona_id': None,
-             'submitted_by': sub_id},
-            # we delete all log entries related to an entity when deleting it
-            {'id': 1009,
-             'change_note': "Außerordentliche Mitgliederversammlung",
-             'assembly_id': None,
-             'code': const.AssemblyLogCodes.assembly_deleted,
-             'ctime': nearly_now(),
-             'persona_id': None,
-             'submitted_by': 48},
-            {'id': 1010,
-             'change_note': 'Farbe des Logos',
-             'assembly_id': 1,
-             'code': const.AssemblyLogCodes.ballot_changed,
-             'ctime': nearly_now(),
-             'persona_id': None,
-             'submitted_by': sub_id},
-            {'id': 1011,
-             'change_note': 'aqua',
-             'assembly_id': 1,
-             'code': const.AssemblyLogCodes.candidate_added,
-             'ctime': nearly_now(),
-             'persona_id': None,
-             'submitted_by': sub_id},
-            {'id': 1012,
-             'change_note': 'rot',
-             'assembly_id': 1,
-             'code': const.AssemblyLogCodes.candidate_updated,
-             'ctime': nearly_now(),
-             'persona_id': None,
-             'submitted_by': sub_id},
-            {'id': 1013,
-             'change_note': 'gelb',
-             'assembly_id': 1,
-             'code': const.AssemblyLogCodes.candidate_removed,
-             'ctime': nearly_now(),
-             'persona_id': None,
-             'submitted_by': sub_id},
-            {'id': 1014,
-             'change_note': 'j',
-             'assembly_id': 1,
-             'code': const.AssemblyLogCodes.candidate_added,
-             'ctime': nearly_now(),
-             'persona_id': None,
-             'submitted_by': sub_id},
-            {'id': 1015,
-             'change_note': 'n',
-             'assembly_id': 1,
-             'code': const.AssemblyLogCodes.candidate_added,
-             'ctime': nearly_now(),
-             'persona_id': None,
-             'submitted_by': sub_id},
-            {'id': 1016,
-             'change_note': 'Verstehen wir Spaß',
-             'assembly_id': 1,
-             'code': const.AssemblyLogCodes.ballot_changed,
-             'ctime': nearly_now(),
-             'persona_id': None,
-             'submitted_by': sub_id},
-            {'id': 1017,
-             'change_note': 'Verstehen wir Spaß',
-             'assembly_id': 1,
-             'code': const.AssemblyLogCodes.ballot_created,
-             'ctime': nearly_now(),
-             'persona_id': None,
-             'submitted_by': sub_id},
-            {'id': 1018,
-             'change_note': 'Farbe des Logos',
-             'assembly_id': 1,
-             'code': const.AssemblyLogCodes.ballot_deleted,
-             'ctime': nearly_now(),
-             'persona_id': None,
-             'submitted_by': sub_id},
-        ))
-        result = self.assembly.retrieve_log(self.key, offset=offset)
-        self.assertEqual(expectation, result)

@@ -45,6 +45,7 @@ Wesentlichen enthält der Export die folgenden Elemente::
       "id": <numeric event id>,
       "kind": "partial",
       "timestamp": <ISO 8601 encoded timestamp>,
+      "summary": <String summarizing your changes>,
       "courses": {<numeric course id stringified>:
                       <dict with course properties>},
       "event": {<event attribute>: <associated value>},
@@ -67,7 +68,7 @@ Anmeldung vorhanden ist, dürfen beim Import nicht vorkommen. Sie stellen
 Informationen zur Verfügung, die durch den partiellen Import nicht verändert
 werden können.
 
-Prinzipiell sind alle Elemente außer ``CDEDB_EXPORT_EVENT_VERSION``, ``id``
+Prinzipiell sind alle Elemente außer ``EVENT_SCHEMA_VERSION``, ``id``
 ``kind`` und ``timestamp`` optional, können also weggelassen werden. Es ist
 sogar explizit empfehlenswert nur die für die gewünschte Änderung nötigen
 Informationen einzutragen um nicht in Konflikt mit möglicherweise
@@ -75,6 +76,11 @@ gleichzeitig stattfindenden manuellen Änderungen anderer Orgas zu
 kommen. Das einzige was sich nicht granular ändern lässt sind die
 Kurswünsche, hier ersetzt die übermittelte Liste immer die kompletten
 Kurswünsche.
+
+Die Angabe einer ``summary`` ist optional, wird jedoch empfohlen. Sie wird
+im Log als Anmerkung zum Logeintrag des Partiellen Imports hinterlegt.
+Darüber hinaus erhalten Anmeldungen, die durch den Partiellen Import
+bearbeitet wurden, automatisch diese Lognachricht.
 
 Die möglichen Operationen sind wie folgt.
 
@@ -159,6 +165,11 @@ Hier sind die Änderungen gelistet, die in den jeweiligen Inkrementierungen der
 Export-Version neu eingeführt wurden. Für jede Version ist angegeben, ob die
 Version für den partiellen Import strikt abwärtskompatibel sind oder nicht.
 
+* Version (15, 4): Der gesamte Fragebogen ist jetzt unter ``questionnaire`` im
+  partiellen Export enthalten.
+* Version (15, 3): Hinzufügen von ``fee_modifiers`` pro Part. Alte Versionsnummer
+  entfernt.
+* Version (15, 2): Hinzufügen des Feldes ``participant_info`` für die Teilnehmer-Infos.
 * Version (15, 1): Umbenennung von ``courses_in_participant_list`` zu
   ``is_course_assignment_visible``.
 * Version (14, 1): Umbenennung von ``moniker``. Infolge dessen wurden zwei

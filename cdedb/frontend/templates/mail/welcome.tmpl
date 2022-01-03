@@ -8,37 +8,39 @@ kannst Du Deine persönlichen Zugangsdaten erstellen.
 Viele Grüße
 das Verwaltungsteam
 {% else %}
-Ein herzliches Willkommen im
-Club der Ehemaligen der Deutschen SchülerAkademien (CdE)!
+Ein herzliches Willkommen im Club der Ehemaligen der Deutschen
+SchülerAkademien (CdE)!
 
-Du hast vor Kurzem an einer Akademie teilgenommen und dort viele Tage
+Du hast vor kurzem an einer Akademie teilgenommen und dort viele Tage
 intensiv gelernt, dabei aber auch sehr viel Spaß gehabt. Würdest Du
 gerne wieder mit anderen motivierten und interessierten Menschen am
 Lagerfeuer sitzen und über Gott und die Welt diskutieren und lachen?
-Dafür gibt es den CdE - den Club der Ehemaligen der Deutschen
-SchülerAkademien e. V. Der CdE besteht aus circa 3.000 Leuten, aus
+Dafür gibt es den CdE – den Club der Ehemaligen der Deutschen
+SchülerAkademien e. V. Der CdE besteht aus circa 4.000 Leuten, aus
 Studenten, Berufstätigen und Schülern, aus Biologen und Philosophen,
 aus Leuten aus Deutschland und aus aller Welt, aus 40-jährigen und
 13-jährigen, die alle eins gemeinsam haben: Sie waren alle mal auf
 einer DSA oder DJA.
 
-Der Verein veranstaltet mehrere Akademien, die ähnlich wie Deine
-Akademie aufgebaut sind. Darüber hinaus kann man im CdE an Ski- und
-Segelfreizeiten, Bergtouren, Bällen, Seminaren und vielen weiteren
-Veranstaltungen teilnehmen. Viele Mitglieder treffen sich auch einfach
-so: In einer Bar, fürs Kino, zum Spieleabend, aber auch zum
-wissenschaftlichen Arbeiten oder zum Diskutieren. Wie das alles
-abläuft, wie Du dabei mitmachen kannst und wie es weiter geht, soll
-Dir diese Mail zeigen.
+Der Verein veranstaltet jedes Jahr mehrere Akademien, die ähnlich wie
+Deine Akademie aufgebaut sind. Einige davon haben einen besonderen
+thematischen Fokus, beispielsweise Nachhaltigkeit oder Musik, die
+meisten haben vielfältige Themen.
+
+Darüber hinaus kann man im CdE an Ski- und Segelfreizeiten, Bergtouren,
+Bällen, Seminaren und vielen weiteren Veranstaltungen teilnehmen.
+Viele Mitglieder treffen sich auch einfach so: In einer Bar, für’s
+Kino, zum Spieleabend, aber auch zum wissenschaftlichen Arbeiten
+oder Diskutieren. Wie das alles abläuft, wie Du dabei mitmachen
+kannst und wie es weiter geht, soll Dir diese E-Mail zeigen.
 
 Vieles wird über die Vereinsdatenbank organisiert. Unter [1]
 kannst Du Deine persönlichen Zugangsdaten zur CdE-Datenbank erstellen.
 {% if not data['is_searchable'] %}
-
 Wenn Du Dich zum ersten Mal in unserer Datenbank anmeldest, kannst Du
 entscheiden, ob andere Ehemalige Deine Kontaktdaten einsehen dürfen oder
 nicht.
-{%- endif %}
+{% endif %}
 
 Für einen Überblick über alle CdE-Aktivitäten ist der schnelle Blick
 auf https://www.cde-ev.de ausreichend, aber auch nachstehend findest Du
@@ -53,14 +55,14 @@ Halbjahr ist die Mitgliedschaft (inklusive eines "exPuls") für Dich
 kostenlos, und Du hast so Gelegenheit, den CdE auszuprobieren. Danach
 musst Du den Mitgliedsbeitrag bezahlen, um Mitglied zu bleiben. Nähere
 Informationen dazu findest Du unter https://www.cde-ev.de/faq/mitglied/ .
-Bei weiteren Fragen schreib eine E-Mail an <verwaltung@cde-ev.de>.
-{%- else %}
+Bei weiteren Fragen schreib eine E-Mail an <{{ MANAGEMENT_ADDRESS }}>.
+{% else %}
 Wie bleibt man Mitglied im CdE? Da z.B. durch den Druck der
 Vereinszeitschrift "exPuls" Kosten entstehen, wird eine
 Mitgliedsgebühr von {{ fee|money }} pro Halbjahr erhoben. Nähere
 Informationen dazu findest Du unter https://www.cde-ev.de/faq/mitglied/ .
-Bei weiteren Fragen schreib eine E-Mail an <verwaltung@cde-ev.de>.
-{%- endif %}
+Bei weiteren Fragen schreib eine E-Mail an <{{ MANAGEMENT_ADDRESS }}>.
+{% endif %}
 
 Der CdE ist seit 2006 ein eingetragener Verein. Die
 Mitgliederversammlung, auf der alle wesentlichen Entscheidungen, die
@@ -83,68 +85,76 @@ Vorstand des CdE e. V.
 Die CdE-Aktivitäten:
 --------------------
 
-Der CdE bietet traditionell viermal im Jahr Akademien an, die sehr der
-Akademie ähneln, auf der Du warst.
+Der CdE bietet traditionell etwa fünfmal im Jahr Akademien an,
+die sehr der Akademie ähneln, auf der Du warst.
 
-Zunächst die PfingstAkademie, die vier Tage dauert. Man wählt wie auf
-einer DSA- oder DJA-Akademie einen Kurs mit insgesamt 9 Stunden
-Kursarbeit. Die Kurse rangieren von "Traumhaft - ein verschlafener
-Kurs" über "Sprachphilosophie", "Zahlentheorie" und "Altgriechisch"
-bis hin zu "Das neue Lieblingsspielzeug der Teilchenphysiker - der
-Large Hadron Collider" oder "BGB für Unverseuchte". Außerhalb der
-Kurszeit kann man in KüAs so Unterschiedliches unternehmen wie Tanzen
-lernen, Rugby spielen, Musizieren oder einen Vortrag über
+Dort wählt man wie auf einer DSA oder DJA einen Kurs mit täglich
+6 Stunden Kursarbeit. Die Kurse rangieren von "Traumhaft – ein
+verschlafener Kurs" über "Sprachphilosophie", "Zahlentheorie" und
+"Altgriechisch" bis hin zu "Das neue Lieblingsspielzeug der
+Teilchenphysiker – der Large Hadron Collider" oder "BGB für Unverseuchte".
+Außerhalb der Kurszeit kann man in KüAs so Unterschiedliches unternehmen
+wie Tanzen lernen, Rugby spielen, Musizieren oder einen Vortrag über
 Unternehmensgründungen hören. Auch wenn man nur andere CdEler kennen
-lernen möchte, Kontakte knüpfen oder Rat bei der Studienwahl sucht -
-die PfingstAkademie ist dafür ideal!  Oder lieber jemanden hinterrücks
+lernen möchte, Kontakte knüpfen oder Rat bei der Studienwahl sucht –
+die Akademien sind dafür ideal!  Oder lieber jemanden hinterrücks
 beim "Mafia"-Spiel "ermorden"?  Alles ist möglich! Unmöglich ist es
 aber, die einzigartige Atmosphäre zu beschreiben.
 
-Eine zweite Akademie ist die SommerAkademie. Sie findet im August
-statt und dauert neun Tage. Ähnlich aufgebaut wie die PfingstAkademie,
-gab es dort zum Beispiel schon Kurse wie "Pflanzen und ihre
-Heilwirkung", "Einführung in die allgemeine Relativitätstheorie", oder
-"Lösungsstrategien globaler Krisen". Auch hier wird zwischen den
+Die größte Veranstaltung ist die PfingstAkademie, die vier Tage dauert,
+von denen 9 Stunden Kurszeit zur Verfügung stehen. Dort nehmen inzwischen
+jährlich etwa 400 CdEler teil.
+
+Eine zweite Akademie ist die SommerAkademie. Sie findet meist Anfang
+August statt und dauert in der Regel neun Tage. Ähnlich wie auf der
+PfingstAkademie gab es dort zum Beispiel schon Kurse wie "Pflanzen und
+ihre Heilwirkung", "Einführung in die allgemeine Relativitätstheorie",
+oder "Lösungsstrategien globaler Krisen". Auch hier wird zwischen den
 Kursen Volleyball und Kicker gespielt, es gibt Rock'n'Roll-KüAs,
 Wanderungen, Vorträge und über eine Woche lang viel Spaß.
 
 Zum Ausklang des Jahres gibt es, wiederum im gleichen Format, die
-WinterAkademie. Diese dauert knapp eine Woche. Das Besondere: Du
-kannst dort mit vielen anderen CdElern Silvester feiern.
+WinterAkademie. Diese dauert insgesamt 11 Tage, kann aber auch nur
+zur Hälfte besucht werden. Die erste Hälfte klingt dabei mit einer
+großen Silvesterfeier mit vielen anderen CdElern aus.
 
-Seit 2009 gibt es, ebenfalls im Sommer, in ähnlichem Format eine
-"Multinationale Akademie", die in einem osteuropäischen Land
-stattfindet, und an die multinationalen SchülerAkademien von Bildung
-und Begabung angelehnt ist. Das Besondere: Rund die Hälfte der
-Teilnehmer stammt aus osteuropäischen Ländern - die Kurssprache ist
-deutsch.
+Seit 2018 gibt es in der Regel auch im Frühjahr meist eine Akademie,
+die sich auf ein bestimmtes Thema fokussiert. So finden in diesem
+Zeitraum regelmäßig Musik- oder NachhaltigkeitsAkademien statt.
+
+Darüber hinaus gibt es im Spätsommer häufig eine "Multinationale Akademie",
+die in einem osteuropäischen Land stattfindet, und an die multinationalen
+SchülerAkademien von Bildung und Begabung angelehnt ist. Das Besondere:
+Recht viele Teilnehmer stammen aus mittel-osteuropäischen Ländern. Die
+Kurssprache ist normalerweise deutsch.
 
 Du willst nicht bis zu den Akademien warten, sondern den CdE jetzt
 erleben? In fast jeder Universitätsstadt gibt es eine CdE-Lokalgruppe,
 wo sich einheimische oder zugereiste CdEler treffen. Die Lokalgruppen
 veranstalten Stammtische, gehen zu Vorträgen, ins Konzert oder Theater
 und machen Ausflüge. Vorschläge sind jederzeit sehr willkommen! Wo die
-nächste Lokalgruppe ist, findet Ihr auf der Homepage.
+nächste Lokalgruppe ist, findest Du auf der Homepage unter
+https://www.cde-ev.de/cdelokal/gruppen/ .
 
-Keine Lokalgruppe in eurer Nähe? Es gibt auch noch das Internet: Ihr
-könnt in der Online-Datenbank nachschauen, ob doch noch jemand bei
-Euch in der Nähe wohnt ( {{ cdedblink("core/index") }} ), oder Ihr könnt
-Euch aktiv im CdE beteiligen, in dem ihr an den Diskussionen auf der
-Mailingliste teilnehmt. Diese findet ihr unter
+Keine Lokalgruppe in Deiner Nähe? Es gibt auch noch das Internet: Du
+kannst in der Online-Datenbank nachschauen, ob doch noch jemand bei
+Dir in der Nähe wohnt ( {{ cdedblink("cde/member_search") }} ),
+oder Dich im CdE beteiligen, indem Du auf den Mailinglisten
+mitlest oder an den Diskussionen teilnehmt. Diese findest Du unter
 https://www.cde-ev.de/vereinsleben/mailinglisten/ .
 
 Kann man auch selbst etwas veranstalten? Klar! Der CdE lebt
 ausschließlich von Eigeninitiative! Wenn Du also dringend jemanden
 suchst, der mit dir den Mount Everest besteigt oder die 1000. Stelle
-von Pi berechnet - die Chancen stehen gut, dass sich immer jemand
+von Pi berechnet – die Chancen stehen gut, dass sich immer jemand
 findet, der mitmacht. Frag in Deiner Lokalgruppe nach, oder schreibe
-an die Mailingliste: Denn der CdE ist das, was Du daraus machst!
+an die DSA-Mailingliste: Denn der CdE ist das, was Du daraus machst!
 {% endif %}
 
 {% if email and cookie %}
 [1] {{ cdedblink('core/do_password_reset_form', {'email': email, 'cookie': cookie}) }}
     Der Link ist 48 Stunden gültig, danach führt er auf die allgemeine
-    Passwortrücksetzseite wo Du einen neuen Link erzeugen kannst.
+    Passwortrücksetzseite, auf der Du einen neuen Link erzeugen kannst.
 {% else %}
 [1] {{ cdedblink('core/reset_password_form') }}
 {% endif %}

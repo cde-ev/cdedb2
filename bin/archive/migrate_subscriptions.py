@@ -25,10 +25,10 @@ with Atomizer(rs()):
              "WHERE is_subscribed = %s AND is_override = %s")
 
     # This covers every possible case, because both these bools cannot be NULL.
-    ml.query_exec(rs(), query, (const.SubscriptionStates.subscribed, True, False))
-    ml.query_exec(rs(), query, (const.SubscriptionStates.unsubscribed, False, False))
-    ml.query_exec(rs(), query, (const.SubscriptionStates.subscription_override, True, True))
-    ml.query_exec(rs(), query, (const.SubscriptionStates.unsubscribed, False, True))
+    ml.query_exec(rs(), query, (const.SubscriptionState.subscribed, True, False))
+    ml.query_exec(rs(), query, (const.SubscriptionState.unsubscribed, False, False))
+    ml.query_exec(rs(), query, (const.SubscriptionState.subscription_override, True, True))
+    ml.query_exec(rs(), query, (const.SubscriptionState.unsubscribed, False, True))
 
     query = ("ALTER TABLE ml.subscription_states "
              "ALTER COLUMN subscription_state SET NOT NULL")
@@ -67,7 +67,7 @@ with Atomizer(rs()):
     data = ml.query_all(rs(), query, tuple())
 
     for datum in data:
-        datum["subscription_state"] = const.SubscriptionStates.pending
+        datum["subscription_state"] = const.SubscriptionState.pending
 
     if data:
         ml._set_subscriptions(rs(), data)
@@ -79,8 +79,8 @@ with Atomizer(rs()):
     from pprint import pprint
 
     ml_ids = ml.list_mailinglists(rs(), active_only=False)
+    ml.write_subscription_states(rs(), ml_ids)
     for ml_id in ml_ids:
-        ml.write_subscription_states(rs(), ml_id)
 
         # Some debug output.
         pprint(ml_id)

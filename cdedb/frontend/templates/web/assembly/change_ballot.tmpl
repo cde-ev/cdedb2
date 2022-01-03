@@ -1,7 +1,10 @@
 {% set sidenav_active='assembly_ballots' %}
 {% extends "web/assembly/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+    {{ util.cdedb_script('cdedb_multiselect.js') }}
+{% endblock %}
 {% set jshint='weak' %}
 {% block title %}{{ gettext("Edit %(ballot)s %(assembly)s")|
                     format(ballot=ambience['ballot']['title'],
@@ -14,34 +17,37 @@
     {{ util.breadcrumb_link(cdedblink("assembly/change_ballot"), gettext("Edit"), active=True) }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {{ gettext("Edit Ballot") }}
-        <small>{{ util.make_icon('thumbs-up') }} {{ ambience['ballot']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Edit Ballot"), ambience['ballot']['title'], 'thumbs-up', gettext("Ballot")) }}
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('assembly/change_ballot') }}" method="POST" id="changeballotform"
             class="form-horizontal">
         {{ util.anti_csrf_token('assembly/change_ballot') }}
         {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]")) }}
-        {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
-                                    info=util.markdownhint) }}
-        {{ util.form_input_text(name="vote_begin", label=gettext("Start of voting period"), type="datetime-local",
-                                placeholder="YYYY-MM-DD hh:ii:ss") }}
-        {{ util.form_input_text(name="vote_end", label=gettext("End of voting period"), type="datetime-local",
-                                placeholder="YYYY-MM-DD hh:ii:ss") }}
+        {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5", markdown=True) }}
+        {{ util.form_input_text(name="vote_begin", label=gettext("Start of voting period"), type="datetime-local") }}
+        {{ util.form_input_text(name="vote_end", label=gettext("End of voting period"), type="datetime-local") }}
         {{ util.form_input_text(name="abs_quorum", label=gettext("Absolute Quorum"), type="number", defaultvalue="0") }}
         {{ util.form_input_text(name="rel_quorum", label=gettext("Relative Quorum"), type="number", defaultvalue="0", addon="%") }}
-        {{ util.form_input_text(name="vote_extension_end", label=gettext("End of extension"), type="datetime-local",
-                                placeholder="YYYY-MM-DD hh:ii:ss") }}
+        {{ util.form_input_text(name="vote_extension_end", label=gettext("End of extension"), type="datetime-local") }}
         {{ util.form_input_text(name="votes", label=gettext("Number of votes"), type="number",
                                info=gettext("Leave empty for Preferential Vote.")) }}
         {{ util.form_input_checkbox(name="use_bar", label=gettext("Allow rejection")) }}
-        {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="5", info=util.markdownhint) }}
+        {% if attachment_entries %}
+            {{ util.form_input_multi_select("linked_attachments", attachment_entries, label=gettext("Linked Attachments"),
+                                            nulloption=gettext("– none –"), sort=True, anid="input-attachments") }}
+            <script nonce="{{ csp_nonce }}">
+                $("#input-attachments").cdedbMultiSelect({{ selectize_data|tojson }});
+            </script>
+        {% else %}
+            {{ util.form_input_static(label=gettext("Linked Attachments"),
+                                      value=gettext("No attachments have been uploaded yet.")) }}
+        {% endif %}
+        {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="5", markdown=True) }}
         {{ util.form_input_static(aclass='text-info', icon='info-circle',
                                   value=gettext("Warning: All changes will be immediately "
                                                 "visible to all CdE-Members and Assembly-Participants.")) }}
-        {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink('assembly/show_ballot')) }}
+        {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink('assembly/show_ballot')) }}
     </form>
     <script nonce="{{ csp_nonce }}">
         $('#changeballotform').cdedbProtectChanges();

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pylint: disable=missing-module-docstring
 
 import datetime
 import random
@@ -6,11 +7,13 @@ import string
 
 import pytz
 
+import cdedb.database.constants as const
 import cdedb.enums
+from cdedb.filter import date_filter, enum_entries_filter, tex_escape_filter
 from cdedb.frontend.common import (
-    cdedbid_filter, date_filter, datetime_filter, decode_parameter, encode_parameter,
-    tex_escape_filter,
+    cdedbid_filter, datetime_filter, decode_parameter, encode_parameter,
 )
+from cdedb.ml_type_aux import TYPE_MAP
 from tests.common import FrontendTest
 
 
@@ -128,18 +131,35 @@ class TestFrontendCommon(FrontendTest):
     def test_enum_member_translations(self) -> None:
         ignored_enums = {
             cdedb.enums.TransactionType,
-            cdedb.enums.const.SubscriptionStates,
+            cdedb.enums.const.SubscriptionState,
             cdedb.enums.const.MailinglistDomain,
-            cdedb.enums.const.MailinglistInteractionPolicy,
-            cdedb.enums.SubscriptionActions,
+            cdedb.enums.SubscriptionPolicy,
+            cdedb.enums.SubscriptionAction,
             cdedb.enums.LodgementsSortkeys,
             cdedb.enums.Accounts,
             cdedb.enums.CourseChoiceToolActions,
             cdedb.enums.CourseFilterPositions,
+            cdedb.enums.QueryScope,
+            cdedb.enums.ConfidenceLevel,
+            cdedb.enums.GenesisDecision,
         }
         for lang, translation in self.app.app.translations.items():
+            # Not all Latin enum members are translated yet
+            if lang == "la":
+                continue
             for enum in set(cdedb.enums.ENUMS_DICT.values()).difference(ignored_enums):
                 with self.subTest(lang=lang, enum=enum):
                     for member in enum:
                         self.assertNotEqual(
                             translation.gettext(str(member)), str(member))
+
+    def test_mltype_domain_enum_entries(self) -> None:
+        for type_ in TYPE_MAP.values():
+            self.assertEqual(
+                [(e, e.display_str()) for e in type_.domains],
+                enum_entries_filter(type_.domains)
+            )
+        self.assertEqual(
+            [(e, e.display_str()) for e in const.MailinglistDomain],
+            enum_entries_filter(const.MailinglistDomain)
+        )

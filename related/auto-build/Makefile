@@ -5,6 +5,7 @@ DISTDIR ?= distfiles
 WORKDIR ?= work
 IMAGEDIR ?= images
 PORT ?= $(shell git --no-pager log -1 --format='%H')
+# DEPLOYMENT_KEY_PATH has to be provided
 
 FETCH ?= wget
 AR ?= ar
@@ -19,7 +20,7 @@ QEMUOPTIONS ?= -m 1G -enable-kvm -net nic,model=virtio -net user,hostfwd=tcp:127
 
 QEMUCACHING ?= writethrough
 
-DEBVERSION = 10.8.0
+DEBVERSION = 11.1.0
 NETINSTISO = debian-${DEBVERSION}-amd64-netinst.iso
 
 DISTINFO_DATA?= ${AWK} -v alg=$$algo -v file=$${file} \
@@ -61,7 +62,7 @@ checksum:${WORKDIR}/.done_checksum
 ${WORKDIR}/.done_checksum: ${WORKDIR}/.done_fetch
 	chmod u+x bin/*/*
 	PATH=$$PATH:./bin/`uname`; \
-	for algo in md5 sha256; \
+	for algo in sha256 sha512; \
 		do MKSUM=`$$algo < ${DISTDIR}/${NETINSTISO}`; \
 		CKSUM=`file=${NETINSTISO}; ${DISTINFO_DATA}`; \
 		echo ${NETINSTISO} "has real  " $$algo "sum" $$MKSUM; \
@@ -128,6 +129,11 @@ ${WORKDIR}/.done_stage2cd:${WORKDIR}/.done_checksum files/stage2-install
 	cp files/call-cdedbinstall ${WORKDIR}/stage2cd/init
 	cp files/stage2/* ${WORKDIR}/stage2cd/
 	cp ../../doc/source/motd.txt ${WORKDIR}/stage2cd/
+ifndef DEPLOYMENT_KEY_PATH
+	$(error Must provide deployment key (i.e. ssh key for user with access to Gitea))
+endif
+	cp "${DEPLOYMENT_KEY_PATH}" ${WORKDIR}/stage2cd/ssh_user_rsa_key
+	cp "${DEPLOYMENT_KEY_PATH}.pub" ${WORKDIR}/stage2cd/ssh_user_rsa_key.pub
 	chmod 755 ${WORKDIR}/stage2cd/init
 	chmod u+x bin/*/*
 	PATH=$$PATH:./bin/`uname`; \
@@ -137,7 +143,7 @@ ${WORKDIR}/.done_stage2cd:${WORKDIR}/.done_checksum files/stage2-install
 build-stage2:${WORKDIR}/.done_stage2
 ${WORKDIR}/.done_stage2:${WORKDIR}/.done_stage2cd ${IMAGEDIR}/stage1.qcow2 | ${WORKDIR}
 	rm -f ${WORKDIR}/stage2.qcow2
-	${QEMUIMG} create -b `readlink -f ${IMAGEDIR}/stage1.qcow2` -f qcow2 ${WORKDIR}/stage2.qcow2
+	${QEMUIMG} create -b `readlink -f ${IMAGEDIR}/stage1.qcow2` -F qcow2 -f qcow2 ${WORKDIR}/stage2.qcow2
 	(cd ${WORKDIR} && ${QEMU} ${QEMUOPTIONS} -no-reboot -boot order=c -drive file=stage2.qcow2,if=virtio,cache=${QEMUCACHING} -drive file=stage2cd.iso,media=cdrom,index=2)
 	touch $@
 
@@ -156,13 +162,14 @@ ${WORKDIR}/.done_stage3cd:${WORKDIR}/.done_checksum files/stage3-install ${FILES
 	cp files/stage3-install ${WORKDIR}/stage3cd/cdedb-install
 	chmod 755 ${WORKDIR}/stage3cd/cdedb-install
 	cp files/call-cdedbinstall ${WORKDIR}/stage3cd/init
+	cp files/stage3/* ${WORKDIR}/stage3cd/
 	${MKISOFS} -R -o ${WORKDIR}/stage3cd.iso ${WORKDIR}/stage3cd
 	touch $@
 
 build-stage3:${WORKDIR}/.done_stage3-${PORT}
 ${WORKDIR}/.done_stage3-${PORT}:${WORKDIR}/.done_stage3cd ${IMAGEDIR}/stage2.qcow2 | ${WORKDIR}
 	rm -f ${WORKDIR}/stage3.qcow2
-	${QEMUIMG} create -b `readlink -f ${IMAGEDIR}/stage2.qcow2` -f qcow2 ${WORKDIR}/stage3.qcow2
+	${QEMUIMG} create -b `readlink -f ${IMAGEDIR}/stage2.qcow2` -F qcow2 -f qcow2 ${WORKDIR}/stage3.qcow2
 	(cd ${WORKDIR} && ${QEMU} ${QEMUOPTIONS} -no-reboot -boot order=c -drive file=stage3.qcow2,if=virtio,cache=${QEMUCACHING} -drive file=stage3cd.iso,media=cdrom,index=2)
 	touch $@
 
@@ -172,7 +179,7 @@ ${WORKDIR}/.done_install-stage3-${PORT}:${WORKDIR}/.done_stage3-${PORT}
 	[ -d ${IMAGEDIR} ] || (mkdir -p ${IMAGEDIR} && chmod 755 ${IMAGEDIR})
 	${QEMUIMG} convert -c -f qcow2 -O qcow2 ${WORKDIR}/stage3.qcow2 ${IMAGEDIR}/stage3.qcow2
 	rm -f ${WORKDIR}/cdedb-run-${PORT}.qcow2
-	${QEMUIMG} create -b `readlink -f ${IMAGEDIR}/stage3.qcow2` -f qcow2 ${WORKDIR}/cdedb-run-${PORT}.qcow2
+	${QEMUIMG} create -b `readlink -f ${IMAGEDIR}/stage3.qcow2` -F qcow2 -f qcow2 ${WORKDIR}/cdedb-run-${PORT}.qcow2
 	rm -f ${WORKDIR}/cdedb-run-this.qcow2
 	ln -s `readlink -f ${WORKDIR}/cdedb-run-${PORT}.qcow2` ${WORKDIR}/cdedb-run-this.qcow2
 	touch ${WORKDIR}/.done_install-stage3
@@ -191,6 +198,7 @@ ${WORKDIR}/.done_stagevdicd:${WORKDIR}/.done_checksum files/stage3-install ${FIL
 	cp files/stage3-install ${WORKDIR}/stagevdicd/cdedb-install
 	chmod 755 ${WORKDIR}/stagevdicd/cdedb-install
 	cp files/call-cdedbinstall ${WORKDIR}/stagevdicd/init
+	cp files/stage3/* ${WORKDIR}/stagevdicd/
 	touch ${WORKDIR}/stagevdicd/vdi
 	${MKISOFS} -R -o ${WORKDIR}/stagevdicd.iso ${WORKDIR}/stagevdicd
 	touch $@
@@ -198,7 +206,7 @@ ${WORKDIR}/.done_stagevdicd:${WORKDIR}/.done_checksum files/stage3-install ${FIL
 build-stagevdi:${WORKDIR}/.done_stagevdi-${PORT}
 ${WORKDIR}/.done_stagevdi-${PORT}:${WORKDIR}/.done_stagevdicd ${IMAGEDIR}/stage2.qcow2 | ${WORKDIR}
 	rm -f ${WORKDIR}/stagevdi.qcow2
-	${QEMUIMG} create -b `readlink -f ${IMAGEDIR}/stage2.qcow2` -f qcow2 ${WORKDIR}/stagevdi.qcow2
+	${QEMUIMG} create -b `readlink -f ${IMAGEDIR}/stage2.qcow2` -F qcow2 -f qcow2 ${WORKDIR}/stagevdi.qcow2
 	(cd ${WORKDIR} && ${QEMU} ${QEMUOPTIONS} -no-reboot -boot order=c -drive file=stagevdi.qcow2,if=virtio,cache=${QEMUCACHING} -drive file=stagevdicd.iso,media=cdrom,index=2)
 	touch $@
 
@@ -216,7 +224,7 @@ run: ${WORKDIR}/.done_install-stage3
 makesum: ${WORKDIR}/.done_fetch
 	rm -f distinfo && touch distinfo;
 	PATH=$$PATH:./bin/`uname`; \
-	for algo in md5 sha256; \
+	for algo in sha256 sha512; \
 		do MKSUM=`$$algo < ${DISTDIR}/${NETINSTISO}`; \
 		echo "$$algo (${NETINSTISO}) = $$MKSUM" >> distinfo; \
 	done

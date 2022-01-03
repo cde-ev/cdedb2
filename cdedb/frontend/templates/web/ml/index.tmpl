@@ -10,8 +10,8 @@
 {% endblock %}
 
 {% macro format_entry(mailinglist_id, title) %}
-    <li class="hide-hover-container clearfix-after">
-        {{ util.deko_checkbox(mailinglist_id in subscriptions, titles=[gettext("not subscribed"), gettext("subscribed")]) }}
+    <li class="hide-hover-container clearfix-after" id="mailinglist{{ mailinglist_id }}">
+        {{ util.state_checkbox(subscriptions[mailinglist_id]) }}
         {{ util.href(cdedblink("ml/show_mailinglist", {'mailinglist_id': mailinglist_id}), title) }}
         {% if user.persona_id in mailinglist_infos[mailinglist_id]['moderators'] %}
             {{ util.href(cdedblink('ml/management',{'mailinglist_id' : mailinglist_id}), gettext("Manage"), icon='list',
@@ -22,14 +22,14 @@
 
 {% block content %}
     {% if user.admin_views.intersection(ALL_MGMT_ADMIN_VIEWS) %}
-        <div class="p">
+        <div class="p button-par">
             {{ util.href(cdedblink("ml/create_mailinglist_form"), gettext("Create Mailinglist"), icon="plus",
                     aclass="btn btn-sm btn-success") }}
             {% if "ml_admin" in user.roles %}
                 <form action="{{ cdedblink("ml/manually_write_subscription_states") }}" method="POST"
                       id="writesubscriptionstates" style="display: inline;">
                     {{ util.anti_csrf_token("ml/manually_write_subscription_states") }}
-                    {{ util.input_submit(value=gettext("Write Subscription States"), aclass="btn btn-sm btn-success",
+                    {{ util.input_submit(label=gettext("Write Subscription States"), aclass="btn btn-sm btn-success",
                             icon="sync-alt") }}
                 </form>
             {% endif %}

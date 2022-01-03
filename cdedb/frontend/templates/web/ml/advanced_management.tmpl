@@ -2,12 +2,12 @@
 {% extends "web/ml/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}
-    {% if privileged %}
+    {% if not restricted %}
         {{ util.cdedb_script('cdedb_searchpersona.js') }}
         {{ util.cdedb_script('cdedb_helper.js') }}
     {% endif %}
 {% endblock %}
-{% if privileged %}
+{% if not restricted %}
     {% set jshint='strong' %}
 {% endif %}
 {% block title %}
@@ -23,17 +23,15 @@
     {{ util.breadcrumb_link(cdedblink("ml/advanced_management"), gettext("Advanced Management"), active=True) }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Advanced Management{% endtrans %}
-        <small>{{ util.make_icon('envelope') }} {{ ambience['mailinglist']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Advanced Management"), ambience['mailinglist']['title'],
+                            'envelope', gettext("Mailinglist")) }}
 {% endblock %}
 {% block static_notifications %}
-    {% if not privileged %}
+    {% if restricted %}
         {% call util.notification('info') %}
-            {% trans link = util.href(docurl("Handbuch_Moderator", anchor="privilegierte-moderatoren"),
-                                      gettext("privileged moderator access"))|s %}
-                You do not have %(link)s and may not change subscriptions.
+            {% trans link = util.href(docurl("Handbuch_Moderator", anchor="eingeschränkte-moderatoren"),
+                                      gettext("restricted moderator access"))|s %}
+                You only have %(link)s and may not change subscriptions.
             {% endtrans %}
         {% endcall %}
     {% endif %}
@@ -48,7 +46,7 @@
                         Subscribed users who are protected from automatic unsubscription when loosing their means to acces the list.
                     {% endtrans %}
                 </p>
-            {% if privileged %}
+            {% if not restricted %}
             <form action="{{ cdedblink('ml/add_subscription_overrides') }}" method="POST"
                   id="addmodsubscriberform" class="p">
                 {{ util.anti_csrf_token('ml/add_subscription_overrides') }}
@@ -58,12 +56,12 @@
                                        arialabel=gettext("ID of the new forced subscriber")) }}
                     <script nonce="{{ csp_nonce }}">
                         $('#input-add-forced').cdedbSearchPerson(
-                            '{{ (cdedblink('core/select_persona')|e) + ('?kind=ml_user&phrase=%s'|s) }}', {{ subscription_overrides|list|json|s }},
+                            '{{ (cdedblink('core/select_persona')|e) + ('?kind=ml_user&phrase=%s'|s) }}', {{ subscription_overrides|list|tojson }},
                             false, true, "{{ gettext("ID, name, email") }}"
                         );
                     </script>
                     <div class="input-group-btn">
-                        {{ util.input_submit(value=gettext("Add"), aclass="btn btn-success") }}
+                        {{ util.input_submit(label=gettext("Add"), aclass="btn btn-success") }}
                     </div>
                 </div>
                 {{ util.output_errors('modsubscriber_ids', wrapper=True) }}
@@ -74,17 +72,16 @@
                 {% for subscription_override, persona in subscription_overrides.items() %} {# This is already sorted. #}
                     <li class="hide-hover-container clearfix-after">
                         {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
-                        {% if privileged %}
+                        {% if not restricted %}
                             <form action="{{ cdedblink('ml/remove_subscription_override') }}"
                                   method="POST"
                                   id="removemodsubscriberform{{ subscription_override }}"
                                   class="hide-hover display-inline">
                                 {{ util.anti_csrf_token('ml/remove_subscription_override') }}
                                 {{ util.input_hidden(name="modsubscriber_id", value=subscription_override) }}
-                                {{ util.input_submit(value='', aclass="btn btn-xs btn-danger list-button-float", icon="minus",
-                                        title=gettext("Remove %(given_names)s %(family_name)s as forced subscriber")|format(
-                                            given_names=persona['given_names'],
-                                            family_name=persona['family_name'])) }}
+                                {{ util.input_submit(label='', aclass="btn btn-xs btn-danger list-button-float", icon="minus",
+                                        title=gettext("Remove %(name)s as forced subscriber")|format(
+                                            name=util.persona_name(persona))|s) }}
                             </form>
                         {% endif %}
                     </li>
@@ -100,7 +97,7 @@
                         Users who are blocked from subscribing and requesting subscription. They can see that they are blocked.
                     {% endtrans %}
                 </p>
-            {% if privileged %}
+            {% if not restricted %}
             <form action="{{ cdedblink('ml/add_unsubscription_overrides') }}" method="POST"
                   id="addmodunsubscriberform" class="p">
                 {{ util.anti_csrf_token('ml/add_unsubscription_overrides') }}
@@ -110,12 +107,12 @@
                                        arialabel=gettext("ID of the new blocked subscriber")) }}
                     <script nonce="{{ csp_nonce }}">
                         $('#input-add-blocked').cdedbSearchPerson(
-                           '{{ (cdedblink('core/select_persona')|e) + ('?kind=ml_user&phrase=%s'|s) }}', {{ unsubscription_overrides|list|json|s }},
+                           '{{ (cdedblink('core/select_persona')|e) + ('?kind=ml_user&phrase=%s'|s) }}', {{ unsubscription_overrides|list|tojson }},
                             false, true, "{{ gettext("ID, name, email") }}"
                         );
                     </script>
                     <div class="input-group-btn">
-                        {{ util.input_submit(value=gettext("Add"), aclass="btn btn-success") }}
+                        {{ util.input_submit(label=gettext("Add"), aclass="btn btn-success") }}
                     </div>
                 </div>
                 {{ util.output_errors('modunsubscriber_ids', wrapper=True) }}
@@ -126,17 +123,16 @@
                 {% for unsubscription_override, persona in unsubscription_overrides.items() %} {# This is already sorted. #}
                     <li class="hide-hover-container clearfix-after">
                         {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
-                        {% if privileged %}
+                        {% if not restricted %}
                             <form action="{{ cdedblink('ml/remove_unsubscription_override') }}"
                                   method="POST" style="display: inline;"
                                   id="removemodunsubscriberform{{ unsubscription_override }}"
                                   class="hide-hover display-inline">
                                 {{ util.anti_csrf_token('ml/remove_unsubscription_override') }}
                                 {{ util.input_hidden(name="modunsubscriber_id", value=unsubscription_override) }}
-                                {{ util.input_submit(value='', aclass="btn btn-xs btn-danger list-button-float", icon="minus",
-                                        title=gettext("Remove %(given_names)s %(family_name)s as blocked subscriber")|format(
-                                            given_names=persona['given_names'],
-                                            family_name=persona['family_name'])) }}
+                                {{ util.input_submit(label='', aclass="btn btn-xs btn-danger list-button-float", icon="minus",
+                                        title=gettext("Remove %(name)s as blocked subscriber")|format(
+                                            name=util.persona_name(persona))|s) }}
                             </form>
                         {% endif %}
                     </li>
@@ -160,7 +156,7 @@
             {{ util.input_text(name="email", type="email", placeholder="mail@example.com",
                                arialabel=gettext("Email Address to whitelist")) }}
             <div class="input-group-btn">
-                {{ util.input_submit(value=gettext("Add"), aclass="btn btn-success") }}
+                {{ util.input_submit(label=gettext("Add"), aclass="btn btn-success") }}
             </div>
         </div>
         {{ util.output_errors('email', wrapper=True) }}
@@ -180,7 +176,7 @@
                                 class="hide-hover display-inline">
                                 {{ util.anti_csrf_token('ml/remove_whitelist') }}
                                 {{ util.input_hidden(name="email", value=email) }}
-                                {{ util.input_submit(value="", aclass="btn btn-xs btn-danger list-button-float", icon="minus",
+                                {{ util.input_submit(label="", aclass="btn btn-xs btn-danger list-button-float", icon="minus",
                                         title=gettext("Remove %s from Whitelist")|format(email)) }}
                             </form>
                         </li>
@@ -226,10 +222,9 @@
                                           class="hide-hover display-inline">
                                         {{ util.anti_csrf_token('ml/reset_unsubscription') }}
                                         {{ util.input_hidden(name="unsubscription_id", value=unsubscription) }}
-                                        {{ util.input_submit(value='', aclass="btn btn-xs btn-danger list-button-float", icon="trash-alt",
-                                                title=gettext("Reset %(given_names)s %(family_name)s explicit unsubscription")|format(
-                                                    given_names=all_unsubscriptions[unsubscription]['given_names'],
-                                                    family_name=all_unsubscriptions[unsubscription]['family_name'])) }}
+                                        {{ util.input_submit(label='', aclass="btn btn-xs btn-danger list-button-float", icon="trash-alt",
+                                                title=gettext("Reset %(name)s explicit unsubscription")|format(
+                                                    name=util.persona_name(all_unsubscriptions[unsubscription]))|s) }}
                                     </form>
                                 {% else %}
                                     <form action="{{ cdedblink('ml/readd_subscriber') }}"
@@ -238,10 +233,9 @@
                                           class="hide-hover display-inline">
                                         {{ util.anti_csrf_token('ml/readd_subscriber') }}
                                         {{ util.input_hidden(name="subscriber_id", value=unsubscription) }}
-                                        {{ util.input_submit(value='', aclass="btn btn-xs btn-success list-button-float", icon="plus",
-                                                title=gettext("Subscribe %(given_names)s %(family_name)s")|format(
-                                                    given_names=all_unsubscriptions[unsubscription]['given_names'],
-                                                    family_name=all_unsubscriptions[unsubscription]['family_name'])) }}
+                                        {{ util.input_submit(label='', aclass="btn btn-xs btn-success list-button-float", icon="plus",
+                                                title=gettext("Subscribe %(name)s")|format(
+                                                    name=util.persona_name(all_unsubscriptions[unsubscription]))|s) }}
                                     </form>
                                 {% endif %}
                             {% else %}

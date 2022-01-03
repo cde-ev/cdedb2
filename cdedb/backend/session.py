@@ -15,13 +15,13 @@ from typing import Optional
 import psycopg2.extensions
 
 import cdedb.validationtypes as vtypes
+from cdedb.backend.common import inspect_validation as inspect
 from cdedb.common import (
-    PERSONA_STATUS_FIELDS, PathLike, User, droid_roles, extract_roles,
-    make_root_logger, now,
+    PERSONA_STATUS_FIELDS, PathLike, User, droid_roles, extract_roles, make_root_logger,
+    now,
 )
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import connection_pool_factory
-from cdedb.validation import validate_is
 
 
 class SessionBackend:
@@ -42,7 +42,7 @@ class SessionBackend:
         self.api_token_lookup = lookup.get
 
         make_root_logger(
-            "cdedb.backend.session", self.conf["SESSION_BACKEND_LOG"],
+            "cdedb.backend.session", self.conf["LOG_DIR"] / "cdedb-backend-session.log",
             self.conf["LOG_LEVEL"], syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         # logger are thread-safe!
@@ -70,8 +70,9 @@ class SessionBackend:
         """
         persona_id = None
         data = None
-        if (validate_is(vtypes.PrintableASCII, sessionkey)
-                and validate_is(vtypes.PrintableASCII, ip) and sessionkey):
+        sessionkey, sessionkey_errs = inspect(vtypes.PrintableASCII, sessionkey)
+        ip, ip_errs = inspect(vtypes.PrintableASCII, ip)
+        if not sessionkey_errs and not ip_errs:
             query = ("SELECT persona_id, ip, is_active, atime, ctime"
                      " FROM core.sessions WHERE sessionkey = %s")
             with self.connpool["cdb_anonymous"] as conn:

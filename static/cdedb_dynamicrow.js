@@ -10,16 +10,8 @@
  * `drow-input`, as well as the `drow-indicator` are automatically updated to "<basename><no>", where <basename> is
  * taken from the `data-basename` attribute and <no> are descending negative integers, unique for each new row.
  *
- * To allow unique input names for nested dynamic row forms (one row of the outer form contains a full dynamic row
- * block), the container element of the inner dynamic row must have the class '.drow-container' and the cdedbDynmicRow
- * function must be initialized with the nestingLevel option. The generated 'name' of nested row inputs will have the
- * form "<basename><no0>_<no1>_<no>".
- *
  * All new rows and rows marked to be deleted (`drow-delete`) get their `.drow-indicator` (which is hidden
  * automatically) checked.
- *
- * For nested dynamic rows all above described classes (except for those of the outer dynamic row form) must be
- * suffixed with the appropriate nestingLevel.
  */
 (function($) {
     var DynamicRow = function(element, options) {
@@ -30,15 +22,13 @@
             addButton : $(),
             callback : function () {},
             delButtonTitle: "delete row",
-            nestingLevel : 0
         }, options || {});
-        var class_sfx = settings['nestingLevel'] ? String(settings['nestingLevel']) : '';
 
 
         /**
          * Private function to generate delete button with appropriate onclick handler and append to a given row.
          * Also corrects the visual delete state of the row.
-         * 
+         *
          * @param $row jQuery object of row.
          * @param newrow boolean, indicating if this is a new row. In this case the delete button will detach the row
          *               instead of toggling the indicator.
@@ -50,86 +40,86 @@
                                                  'aria-pressed': 'false',
                                                  'class': 'btn btn-danger btn-sm' })
                     .append($('<span></span>', {'class': 'fas fa-trash-alt'}));
-                    
+
             if (newrow) {
                 $deleteButton.click(function() {
                     $row.detach();
                     obj.refreshInputNames();
                 });
             } else {
-                var $indicator = $row.find('.drow-indicator' + class_sfx);
+                var $indicator = $row.find('.drow-indicator');
                 if ($indicator.prop('disabled'))
                     return;
-                    
+
                 if ($indicator.prop("checked")) {
-                    $row.addClass('drow-delete' + class_sfx);
+                    $row.addClass('drow-delete');
                     $deleteButton.addClass('active')
                         .attr('aria-pressed','true');
                 }
-                    
+
                 $deleteButton.click(function() {
                     var check = $indicator.prop("checked");
                     $indicator.prop("checked", !check);
                     if (check) {
-                        $row.removeClass('drow-delete' + class_sfx);
+                        $row.removeClass('drow-delete');
                         $(this).removeClass('active')
                             .attr('aria-pressed','false');
                     } else {
-                        $row.addClass('drow-delete' + class_sfx);
+                        $row.addClass('drow-delete');
                         $(this).addClass('active')
                             .attr('aria-pressed','true');
                     }
                 });
             }
-            $row.find('.drow-buttonspace' + class_sfx).after($deleteButton);
+            $row.find('.drow-buttonspace').after($deleteButton);
         };
-        
+
         /**
          * Init function.
-         * 
+         *
          * Hides prototype row and indicator checkboxes and adds delete buttons. Shows the add button and adds event
          * handler.
          */
         this.init = function() {
-            $element.find('.drow-prototype' + class_sfx).hide();
-            $element.find('.drow-buttonspace' + class_sfx).hide();
-            
+            $element.find('.drow-prototype').hide();
+            $element.find('.drow-buttonspace').hide();
+
             settings.addButton
                     .click(function() {
                         obj.addRow();
                     })
                     .css('display', 'block');
-            
-            $element.find('.drow-row' + class_sfx).each(function() {
+
+            $element.find('.drow-row').each(function() {
                 var $row = $(this);
                 addDeleteButton($row, false);
             });
-            $element.find('.drow-new' + class_sfx).each(function() {
+            $element.find('.drow-new').each(function() {
                 var $row = $(this);
                 addDeleteButton($row, true);
             });
             /* Remove names from prototype row to avoid interference with new rows */
-            $element.find('.drow-prototype' + class_sfx + ' .drow-input' + class_sfx).removeAttr('name');
+            $element.find('.drow-prototype .drow-input').removeAttr('name');
         };
-        
+
         /**
          * Add a new row to formular based on the prototype row.
          */
         this.addRow = function() {
-            var $prototype = $element.find('.drow-prototype' + class_sfx);
+            var $prototype = $element.find('.drow-prototype');
             var $row = $prototype.clone(false);
-            $row.addClass('drow-new' + class_sfx)
-                .removeClass('drow-prototype' + class_sfx);
-            $row.find('.drow-indicator' + class_sfx).prop("checked", true);
-            
-            addDeleteButton($row, true);            
+            $row.addClass('drow-new')
+                .removeClass('drow-prototype');
+            $row.find('.drow-indicator').prop("checked", true);
+
+            addDeleteButton($row, true);
             $row.css('display', ''); /* instead of show() to preserve display attribute and be faster */
             $prototype.before($row);
-            $row.find('.drow-input' + class_sfx).first().focus();
+            $row.find('.drow-input').first().focus();
             settings.callback.call($row);
             obj.refreshInputNames();
         };
-        
+
         /**
          * Refresh the names of inputs of new rows based on their basename and their position in the list.
          *
@@ -138,13 +128,10 @@
          */
         this.refreshInputNames = function() {
             var i=-1;
-            $element.find('.drow-new' + class_sfx).each(function() {
+            $element.find('.drow-new').each(function() {
                 var $row = $(this);
-                $(this).find('.drow-input'  + class_sfx + ',.drow-indicator' + class_sfx).each(function() {
+                $(this).find('.drow-input,.drow-indicator').each(function() {
                     var name = $(this).attr('data-basename');
-                    for (var j = 1; j <= settings['nestingLevel']; j++) {
-                        name += $element.attr('data-outerid' + String(j-1)) + '_';
-                    }
                     name += String(i);
                     $(this).attr('name', name);
 
@@ -155,19 +142,11 @@
                         $row.find('label[for="' + id + '"]').attr('for', new_id);
                     }
                 });
-                /* Set outer ids and update input names of nested dynamic rows recursively */
-                $(this).find('.drow-container' + String(settings['nestingLevel'] + 1)).each(function() {
-                    for (var j = 0; j < settings['nestingLevel']; j++) {
-                        $(this).attr('data-outerid' + String(j), $element.attr('data-outerid' + String(j)));
-                    }
-                    $(this).attr('data-outerid' + settings['nestingLevel'], String(i));
-                    $(this).data('cdedbDynamicRow').refreshInputNames();
-                });
                 i--;
             });
         };
     };
-    
+
     /**
      * The actual "jQuery plugin" - a function to be used on the jQuery object of form table or list.
      * It constructs and initializes the above defined object which does everything neccessary for the fancy js form.
@@ -177,17 +156,16 @@
      * callback: A callback method to be called after adding a new row. It will be bound to a jQuery object wrapping the
      *           new row. It may be used to initialize inner dynamic row blocks.
      * delButtonTitle: A string to be used as title attribute on the delete row button. Defaults to "delete row".
-     * nestingLevel: If this is a nested dynamic row object,
      */
     $.fn.cdedbDynamicRow = function(options) {
         $(this).each(function() {
             if ($(this).data('cdedbDynamicRow'))
                 return;
-            
+
             var obj = new DynamicRow(this, options);
             $(this).data('cdedbDynamicRow',obj);
-            
-            
+
+
             obj.init();
         });
         return this;

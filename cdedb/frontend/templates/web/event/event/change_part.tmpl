@@ -1,0 +1,220 @@
+{% set sidenav_active='event_parts' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% set jshint='strong' %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+    {{ util.cdedb_script('cdedb_dynamicrow.js') }}
+{% endblock %}
+
+{% block title %}
+    {% trans part_title=ambience['event']['parts'][part_id]['title'], event_title=ambience['event']['title'] %}
+        Edit part {{ part_title }} ({{ event_title }})
+    {% endtrans %}
+{% endblock %}
+
+{% block heading %}
+    {{ util.context_heading(gettext("Edit part %(part_title)s")|format(part_title=ambience['event']['parts'][part_id]['title']),
+                            ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+{% endblock %}
+
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+    {{ util.breadcrumb_link(cdedblink("event/part_summary"), gettext("Event-Parts")) }}
+    {{ util.breadcrumb_link("", ambience['event']['parts'][part_id]['title'], icon="clock", active=True) }}
+    {{ util.breadcrumb_link(cdedblink("event/change_part"), gettext("Change"), active=True) }}
+{% endblock %}
+
+{% block content %}
+    <p class="text-warning">{{ util.make_icon('exclamation-triangle') }}
+        {% trans %}
+            Event parts and course tracks can only be created or deleted if no
+            registrations are present yet. Course tracks can only be deleted, if
+            there are no courses associated with them.
+        {% endtrans %}
+    </p>
+
+    <form action="{{ cdedblink('event/change_part') }}" method="POST" id="changepartform" class="form-horizontal">
+        {{ util.anti_csrf_token('event/change_part') }}
+        {{ util.form_input_text(name="title", label=gettext("Title")) }}
+        {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
+        {{ util.form_input_text(name="part_begin", label=gettext("Begin"), type='date', placeholder="YYYY-MM-DD") }}
+        {{ util.form_input_text(name="part_end", label=gettext("End"), type='date', placeholder="YYYY-MM-DD") }}
+        {{ util.form_input_text(name="fee", label=gettext("Event-Part Fee"), anid="input-text-fee", addon='€') }}
+        {{ util.form_input_select(name="waitlist_field", entries=waitlist_fields,
+                                  label=gettext("Field for Waitlist"), nulloption=nbsp,
+                                  info=gettext("Field to store the %(link)s ranking of this part."
+                                               " Fieldtype: Integer")|format(
+                                               link=util.href(docurl("Handbuch_Orga_Warteliste"),
+                                                              gettext("Waitlist")))|s
+                                  ) }}
+
+        <h3 class="mosp heading-underline">{% trans %}Fee Modifiers{% endtrans %}</h3>
+        <table class="table table-condensed" id="fee_modifier-drow-table">
+            <thead>
+                <tr>
+                    <th>{% trans %}Fee Modifier{% endtrans %}</th>
+                    <th>{% trans %}Amount{% endtrans %}</th>
+                    <th>{% trans %}Linked Field{% endtrans %}</th>
+                    <th></th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% call(id, row_class, is_new_row) util.dynamic_row_meta(sorted_fee_modifier_ids, prefix="fee_modifier",
+                                                                         add_prototype_row=not has_registrations) %}
+                    <tr class="{{ row_class }}" role="group" aria-label="Institution {{ id }}">
+                        <td class={{ util.has_errors(drow_name("modifier_name", id, prefix="fee_modifier")) }}>
+                            {{ util.input_text(drow_name("modifier_name", id, prefix="fee_modifier"),
+                                    aclass='drow-input form-control',
+                                    attributes=util.drow_basename("modifier_name", prefix="fee_modifier"),
+                                    arialabel=gettext("Fee Modifier"), readonly=has_registrations) }}
+                            {{ util.output_errors(drow_name("modifier_name", id, prefix="fee_modifier")) }}
+                        </td>
+                        <td class={{ util.has_errors(drow_name("amount", id, prefix="fee_modifier")) }}>
+                            {{ util.input_text(drow_name("amount", id, prefix="fee_modifier"),
+                                    aclass='drow-input form-control',
+                                    attributes=util.drow_basename("amount", prefix="fee_modifier"),
+                                    arialabel=gettext("Amount"), readonly=has_registrations) }}
+                            {{ util.output_errors(drow_name("amount", id, prefix="fee_modifier")) }}
+                        </td>
+                        <td class={{ util.has_errors(drow_name("field_id", id, prefix="fee_modifier")) }}>
+                            {{ util.input_select(drow_name("field_id", id, prefix="fee_modifier"),
+                                    aclass='drow-input form-control',
+                                    attributes=util.drow_basename("field_id", prefix="fee_modifier"),
+                                    arialabel=gettext("Linked Field"), readonly=has_registrations,
+                                    entries=fee_modifier_fields) }}
+                            {{ util.output_errors(drow_name("field_id", id, prefix="fee_modifier")) }}
+                        </td>
+                        <td>
+                            <span class="drow-buttonspace">
+                                {% if is_new_row %}
+                                    {{ util.input_checkbox(drow_create(id, prefix="fee_modifier"), label=gettext("Add"),
+                                            attributes=util.drow_basename("create", prefix="fee_modifier"),
+                                            aclass='drow-indicator') }}
+                                {% else %}
+                                    {{ util.input_checkbox(drow_delete(id, prefix="fee_modifier"), label=gettext("Delete"),
+                                            readonly=has_registrations, aclass='drow-indicator') }}
+                                {% endif %}
+                            </span>
+                        </td>
+                    </tr>
+                {% endcall %}
+            </tbody>
+        </table>
+
+        {% if not has_registrations %}
+            <p>
+                <button type="button" class="btn btn-success softhide pull-right" id="fee_modifier-drow-addbutton">
+                    {{ util.make_icon('plus') }} {% trans %}Add Fee Modifier{% endtrans %}
+                </button>
+            </p>
+        {% endif %}
+
+        <h3 class="mosp heading-underline clear-both">{% trans %}Coursetracks{% endtrans %}</h3>
+        <table class="table table-condensed" id="track-drow-table">
+            <thead>
+                <tr>
+                    <th>{% trans %}Coursetrack{% endtrans %}</th>
+                    <th>{% trans %}Shortname{% endtrans %}</th>
+                    <th>{% trans %}Course Choices{% endtrans %}</th>
+                    <th>{% trans %}Req. Choices{% endtrans %}</th>
+                    <th>{% trans %}Sortkey{% endtrans %}</th>
+                    <th></th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% call(id, row_class, is_new_row) util.dynamic_row_meta(sorted_track_ids, prefix="track",
+                                                                         add_prototype_row=not has_registrations) %}
+                    <tr class="{{ row_class }}" role="group" aria-label="Institution {{ id }}">
+                        <td class={{ util.has_errors(drow_name("title", id, prefix="track")) }}>
+                            {{ util.input_text(drow_name("title", id, prefix="track"),
+                                    aclass='drow-input form-control',
+                                    attributes=util.drow_basename("title", prefix="track"),
+                                    arialabel=gettext("Coursetrack")) }}
+                            {{ util.output_errors(drow_name("title", id, prefix="track")) }}
+                        </td>
+                        <td class={{ util.has_errors(drow_name("shortname", id, prefix="track")) }}>
+                            {{ util.input_text(drow_name("shortname", id, prefix="track"),
+                                    aclass='drow-input form-control',
+                                    attributes=util.drow_basename("shortname", prefix="track"),
+                                    arialabel=gettext("Shortname")) }}
+                            {{ util.output_errors(drow_name("shortname", id, prefix="track")) }}
+                        </td>
+                        <td class={{ util.has_errors(drow_name("num_choices", id, prefix="track")) }}>
+                            {{ util.input_text(drow_name("num_choices", id, prefix="track"),
+                                    aclass='drow-input form-control input-num-choices',
+                                    attributes=util.drow_basename("num_choices", prefix="track"),
+                                    defaultvalue=DEFAULT_NUM_COURSE_CHOICES,
+                                    arialabel=gettext("Course Choices")) }}
+                            {{ util.output_errors(drow_name("num_choices", id, prefix="track")) }}
+                        </td>
+                        <td class={{ util.has_errors(drow_name("min_choices", id, prefix="track")) }}>
+                            {{ util.input_text(drow_name("min_choices", id, prefix="track"),
+                                    aclass='drow-input form-control input-min-choices',
+                                    attributes=util.drow_basename("min_choices", prefix="track"),
+                                    defaultvalue=DEFAULT_NUM_COURSE_CHOICES,
+                                    arialabel=gettext("Req. Choices")) }}
+                            {{ util.output_errors(drow_name("min_choices", id, prefix="track")) }}
+                        </td>
+                        <td class={{ util.has_errors(drow_name("sortkey", id, prefix="track")) }}>
+                            {{ util.input_text(drow_name("sortkey", id, prefix="track"),
+                                    aclass='drow-input form-control',
+                                    attributes=util.drow_basename("sortkey", prefix="track"),
+                                    arialabel=gettext("Sortkey")) }}
+                            {{ util.output_errors(drow_name("sortkey", id, prefix="track")) }}
+                        </td>
+                        <td>
+                            <span class="drow-buttonspace">
+                                {% if is_new_row %}
+                                    {{ util.input_checkbox(drow_create(id, prefix="track"), label=gettext("Add"),
+                                            attributes=util.drow_basename("create", prefix="track"),
+                                            aclass='drow-indicator') }}
+                                {% else %}
+                                    {{ util.input_checkbox(drow_delete(id, prefix="track"), label=gettext("Delete"),
+                                            readonly=has_registrations or id in referenced_tracks,
+                                            aclass='drow-indicator') }}
+                                {% endif %}
+                            </span>
+                        </td>
+                    </tr>
+                {% endcall %}
+            </tbody>
+        </table>
+
+        {% if not has_registrations %}
+            <p>
+                <button type="button" class="btn btn-success softhide pull-right" id="track-drow-addbutton">
+                    {{ util.make_icon('plus') }} {% trans %}Add Coursetrack{% endtrans %}
+                </button>
+            </p>
+        {% endif %}
+
+        {{ util.input_submit(label=gettext("Save")) }}
+    </form>
+
+    <script nonce="{{ csp_nonce }}">
+        $(function() {
+            $('#fee_modifier-drow-table').cdedbDynamicRow({
+                addButton: $('#fee_modifier-drow-addbutton'),
+                delButtonTitle: "{{ gettext("Delete line") }}"});
+            $('#track-drow-table').cdedbDynamicRow({
+                addButton: $('#track-drow-addbutton'),
+                delButtonTitle: "{{ gettext("Delete line") }}"});
+            $('#changepartform').cdedbProtectChanges();
+        });
+        /* Update maximum number of required choices with total number of choices */
+        function update_min_choices_max() {
+            var $input_min_choices = $(this).closest('tr').find('.input-min-choices');
+            $input_min_choices.attr('max', $(this).val());
+            if (parseInt($(this).val()) < parseInt($input_min_choices.val())) {
+                $input_min_choices.val($(this).val());
+            }
+        }
+        $('.input-num-choices')
+            .change(update_min_choices_max)
+            .each(update_min_choices_max);
+    </script>
+{% endblock %}

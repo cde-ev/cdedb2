@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""General testing utilities for CdEDB2 testsuite"""
 
 import collections.abc
 import copy
@@ -15,17 +16,16 @@ import json
 import os
 import pathlib
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
-import time
 import unittest
 import urllib.parse
-from types import TracebackType
 from typing import (
-    Any, AnyStr, Callable, ClassVar, Collection, Dict, Iterable, List, MutableMapping,
-    NamedTuple, Optional, Pattern, Sequence, Set, TextIO, Tuple, Type, TypeVar, Union,
-    cast, no_type_check,
+    Any, AnyStr, Callable, ClassVar, Dict, Iterable, List, Mapping, MutableMapping,
+    NamedTuple, Optional, Pattern, Sequence, Set, Tuple, Type, TypeVar, Union, cast,
+    no_type_check,
 )
 
 import PIL.Image
@@ -41,37 +41,29 @@ from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.common import (
-    ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, CdEDBObject, CdEDBObjectMap, PathLike,
-    PrivilegeError, RequestState, n_, nearly_now, now, roles_to_db_role,
+    ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, ANTI_CSRF_TOKEN_NAME,
+    ANTI_CSRF_TOKEN_PAYLOAD, CdEDBLog, CdEDBObject, CdEDBObjectMap, PathLike,
+    PrivilegeError, RequestState, merge_dicts, nearly_now, now, roles_to_db_role,
 )
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.application import Application
-from cdedb.frontend.common import AbstractFrontend
+from cdedb.frontend.common import AbstractFrontend, Worker, setup_translations
 from cdedb.frontend.cron import CronFrontend
+from cdedb.frontend.paths import CDEDB_PATHS
 from cdedb.query import QueryOperators
-from cdedb.script import setup
+from cdedb.script import Script
 
 _BASICCONF = BasicConfig()
-_SECRETSCONF = SecretsConfig()
 
-ExceptionInfo = Union[
-    Tuple[Type[BaseException], BaseException, TracebackType],
-    Tuple[None, None, None]
-]
+# TODO: use TypedDict to specify UserObject.
+UserObject = Mapping[str, Any]
+UserIdentifier = Union[UserObject, str, int]
+LinkIdentifier = Union[MutableMapping[str, Any], str]
 
 # This is to be used in place of `self.key` for anonymous requests. It makes mypy happy.
 ANONYMOUS = cast(RequestState, None)
-
-def check_test_setup() -> None:
-    """Raise a RuntimeError if the vm is ill-equipped for performing tests."""
-    if pathlib.Path("/OFFLINEVM").exists():
-        raise RuntimeError("Cannot run tests in an Offline-VM.")
-    if pathlib.Path("/PRODUCTIONVM").exists():
-        raise RuntimeError("Cannot run tests in Production-VM.")
-    if not os.environ.get('CDEDB_TEST'):
-        raise RuntimeError("Not configured for test (CDEDB_TEST unset).")
 
 
 def create_mock_image(file_type: str = "png") -> bytes:
@@ -113,9 +105,9 @@ def json_keys_to_int(obj: T) -> T:
     return ret
 
 
-def read_sample_data(filename: PathLike = "/cdedb2/tests/ancillary_files/"
-                                          "sample_data.json"
-                     ) -> Dict[str, CdEDBObjectMap]:
+def _read_sample_data(filename: PathLike = "/cdedb2/tests/ancillary_files/"
+                                           "sample_data.json"
+                      ) -> Dict[str, CdEDBObjectMap]:
     """Helper to turn the sample data from the JSON file into usable format."""
     with open(filename, "r", encoding="utf8") as f:
         sample_data: Dict[str, List[CdEDBObject]] = json.load(f)
@@ -132,12 +124,13 @@ def read_sample_data(filename: PathLike = "/cdedb2/tests/ancillary_files/"
         ret[table] = data
     return ret
 
-SAMPLE_DATA = read_sample_data()
+
+_SAMPLE_DATA = _read_sample_data()
 
 B = TypeVar("B", bound=AbstractBackend)
 
 
-def make_backend_shim(backend: B, internal: bool = False) -> B:
+def _make_backend_shim(backend: B, internal: bool = False) -> B:
     """Wrap a backend to only expose functions with an access decorator.
 
     If we used an actual RPC mechanism, this would do some additional
@@ -149,15 +142,14 @@ def make_backend_shim(backend: B, internal: bool = False) -> B:
     This is similar to the normal make_proxy but encorporates a different
     wrapper.
     """
+    # pylint: disable=protected-access
 
     sessionproxy = SessionBackend(backend.conf._configpath)
     secrets = SecretsConfig(backend.conf._configpath)
     connpool = connection_pool_factory(
         backend.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
         secrets, backend.conf["DB_PORT"])
-    translator = gettext.translation(
-        'cdedb', languages=['de'],
-        localedir=str(backend.conf["REPOSITORY_PATH"] / 'i18n'))
+    translations = setup_translations(backend.conf)
 
     def setup_requeststate(key: Optional[str], ip: str = "127.0.0.0"
                            ) -> RequestState:
@@ -181,11 +173,19 @@ def make_backend_shim(backend: B, internal: bool = False) -> B:
             apitoken = key
 
         rs = RequestState(
-            sessionkey=sessionkey, apitoken=apitoken, user=user,
-            request=None, notifications=[], mapadapter=None,  # type: ignore
-            requestargs=None, errors=[], values=None, lang="de",
-            gettext=translator.gettext, ngettext=translator.ngettext,
-            coders=None, begin=now())
+            sessionkey=sessionkey,
+            apitoken=apitoken,
+            user=user,
+            request=None,  # type: ignore[arg-type]
+            notifications=[],
+            mapadapter=None,  # type: ignore[arg-type]
+            requestargs=None,
+            errors=[],
+            values=None,
+            begin=now(),
+            lang="de",
+            translations=translations,
+        )
         rs._conn = connpool[roles_to_db_role(rs.user.roles)]
         rs.conn = rs._conn
         if "event" in rs.user.roles and hasattr(backend, "orga_info"):
@@ -206,18 +206,24 @@ def make_backend_shim(backend: B, internal: bool = False) -> B:
 
         def __getattr__(self, name: str) -> Callable[..., Any]:
             attr = getattr(backend, name)
+            # Special case for the `subman.SubscriptionManager`.
+            if name == "subman":
+                return attr
             if any([
                 not getattr(attr, "access", False),
                 getattr(attr, "internal", False) and not internal,
                 not callable(attr)
             ]):
-                raise PrivilegeError(
-                    n_("Attribute %(name)s not public"), {"name": name})
+                raise PrivilegeError(f"Attribute {name} not public")
 
             @functools.wraps(attr)
             def wrapper(key: Optional[str], *args: Any, **kwargs: Any) -> Any:
                 rs = setup_requeststate(key)
-                return attr(rs, *args, **kwargs)
+                try:
+                    return attr(rs, *args, **kwargs)
+                except FileNotFoundError as e:
+                    raise RuntimeError("Did you forget to add a `@storage` decorator to"
+                                       " the test?") from e
 
             return wrapper
 
@@ -227,106 +233,42 @@ def make_backend_shim(backend: B, internal: bool = False) -> B:
     return cast(B, Proxy())
 
 
-class MyTextTestRunner(unittest.TextTestRunner):
-    stream: TextIO
-
-    def run(
-        self, test: Union[unittest.TestSuite, unittest.TestCase]
-    ) -> unittest.TestResult:
-        result = super().run(test)
-        failed = map(
-            lambda error: error[0].id().split()[0],  # split to strip subtest paramters
-            result.errors + result.failures + result.unexpectedSuccesses  # type: ignore
-        )
-        if not result.wasSuccessful():
-            print("To rerun failed tests execute the following:", file=self.stream)
-            print(f"/cdedb2/bin/singlecheck.sh {' '.join(failed)}", file=self.stream)
-        return result
-
-
-class MyTextTestResult(unittest.TextTestResult):
-    """Subclass the TextTestResult object to fix the CLI reporting.
-
-    We keep track of the errors, failures and skips occurring in SubTests,
-    and print a summary at the end of the TestCase itself.
-    """
-
-    def __init__(self, stream: TextIO, descriptions: bool, verbosity: int) -> None:
-        self.showAll: bool
-        self.stream: TextIO
-        super().__init__(stream, descriptions, verbosity)
-        self._subTestErrors: List[ExceptionInfo] = []
-        self._subTestFailures: List[ExceptionInfo] = []
-        self._subTestSkips: List[str] = []
-
-    def startTest(self, test: unittest.TestCase) -> None:
-        super().startTest(test)
-        self._subTestErrors = []
-        self._subTestFailures = []
-        self._subTestSkips = []
-
-    def addSubTest(self, test: unittest.TestCase, subtest: unittest.TestCase,
-                   err: Optional[ExceptionInfo]) -> None:
-        super().addSubTest(test, subtest, err)
-        if err is not None and err[0] is not None:
-            if issubclass(err[0], subtest.failureException):
-                errors = self._subTestFailures
-            else:
-                errors = self._subTestErrors
-            errors.append(err)
-
-    def stopTest(self, test: unittest.TestCase) -> None:
-        super().stopTest(test)
-        # Print a comprehensive list of failures and errors in subTests.
-        output = []
-        if self._subTestErrors:
-            length = len(self._subTestErrors)
-            if self.showAll:
-                s = "ERROR" + (f"({length})" if length > 1 else "")
-            else:
-                s = "E" * length
-            output.append(s)
-        if self._subTestFailures:
-            length = len(self._subTestFailures)
-            if self.showAll:
-                s = "FAIL" + (f"({length})" if length > 1 else "")
-            else:
-                s = "F" * length
-            output.append(s)
-        if self._subTestSkips:
-            if self.showAll:
-                s = "skipped {}".format(", ".join(
-                    "{0!r}".format(r) for r in self._subTestSkips))
-            else:
-                s = "s" * len(self._subTestSkips)
-            output.append(s)
-        if output:
-            if self.showAll:
-                self.stream.writeln(", ".join(output))  # type: ignore
-            else:
-                self.stream.write("".join(output))
-                self.stream.flush()
-
-    def addSkip(self, test: unittest.TestCase, reason: str) -> None:
-        # Purposely override the parents method, to not print the skip here.
-        super(unittest.TextTestResult, self).addSkip(test, reason)
-        self._subTestSkips.append(reason)
-
-
 class BasicTest(unittest.TestCase):
     """Provide some basic useful test functionalities."""
-    testfile_dir = pathlib.Path("/tmp/cdedb-store/testfiles")
+    storage_dir: ClassVar[pathlib.Path]
+    testfile_dir: ClassVar[pathlib.Path]
+    needs_storage_marker = "_needs_storage"
     conf: ClassVar[Config]
 
     @classmethod
     def setUpClass(cls) -> None:
         cls.conf = Config()
+        cls.storage_dir = cls.conf['STORAGE_DIR']
+        cls.testfile_dir = cls.storage_dir / "testfiles"
 
-    def get_sample_data(self, table: str, ids: Iterable[int],
-                        keys: Iterable[str]) -> CdEDBObjectMap:
+    def setUp(self) -> None:
+        test_method = getattr(self, self._testMethodName)
+        if getattr(test_method, self.needs_storage_marker, False):
+            subprocess.run(("make", "storage-test"), stdout=subprocess.DEVNULL,
+                           check=True, start_new_session=True)
+
+    def tearDown(self) -> None:
+        test_method = getattr(self, self._testMethodName)
+        if getattr(test_method, self.needs_storage_marker, False):
+            shutil.rmtree(self.storage_dir)
+
+    @staticmethod
+    def get_sample_data(table: str, ids: Iterable[int] = None,
+                        keys: Iterable[str] = None) -> CdEDBObjectMap:
         """This mocks a select request against the sample data.
 
         "SELECT <keys> FROM <table> WHERE id = ANY(<ids>)"
+
+        if `keys` is None:
+        "SELECT * FROM <table> WHERE id = ANY(<ids>)"
+
+        if `ids` is None:
+        "SELECT <keys> FROM <table>"
 
         For some fields of some tables we perform a type conversion. These
         should be added as necessary to ease comparison against backend results.
@@ -341,48 +283,46 @@ class BasicTest(unittest.TestCase):
                 return nearly_now()
             return datetime.datetime.fromisoformat(s)
 
+        if keys is None:
+            try:
+                keys = next(iter(_SAMPLE_DATA[table].values())).keys()
+            except StopIteration:
+                return {}
+        if ids is None:
+            ids = _SAMPLE_DATA[table].keys()
         # Turn Iterator into Collection and ensure consistent order.
         keys = tuple(keys)
         ret = {}
         for anid in ids:
-            if keys:
-                r = {}
-                for k in keys:
-                    r[k] = copy.deepcopy(SAMPLE_DATA[table][anid][k])
-                    if table == 'core.personas':
-                        if k == 'balance':
-                            r[k] = decimal.Decimal(r[k])
-                        if k == 'birthday':
-                            r[k] = datetime.date.fromisoformat(r[k])
-                    if k in {'ctime', 'atime', 'vote_begin', 'vote_end',
-                             'vote_extension_end'}:
-                        r[k] = parse_datetime(r[k])
-                ret[anid] = r
-            else:
-                ret[anid] = copy.deepcopy(SAMPLE_DATA[table][anid])
+            r = {}
+            for k in keys:
+                r[k] = copy.deepcopy(_SAMPLE_DATA[table][anid][k])
+                if table == 'core.personas':
+                    if k == 'balance' and r[k]:
+                        r[k] = decimal.Decimal(r[k])
+                    if k == 'birthday' and r[k]:
+                        r[k] = datetime.date.fromisoformat(r[k])
+                if k in {'ctime', 'atime', 'vote_begin', 'vote_end',
+                         'vote_extension_end', 'signup_end'} and r[k]:
+                    r[k] = parse_datetime(r[k])
+            ret[anid] = r
         return ret
-    
+
     def get_sample_datum(self, table: str, id_: int) -> CdEDBObject:
-        return self.get_sample_data(table, [id_], [])[id_]
+        return self.get_sample_data(table, [id_])[id_]
 
 
 class CdEDBTest(BasicTest):
     """Reset the DB for every test."""
-    testfile_dir = pathlib.Path("/tmp/cdedb-store/testfiles")
+    longMessage = False
 
     def setUp(self) -> None:
-        # Start the call in a new session, so that a SIGINT does not interrupt this.
-        subprocess.check_call(("make", "storage-test"),
-                              stdout=subprocess.DEVNULL,
-                              stderr=subprocess.DEVNULL,
-                              start_new_session=True)
-        with setup(
+        with Script(
             persona_id=-1,
             dbuser="cdb",
-            dbpassword=_SECRETSCONF["CDB_DATABASE_ROLES"]["cdb"],
             dbname=self.conf["CDB_DATABASE_NAME"],
             check_system_user=False,
-        )().conn as conn:
+        ).rs().conn as conn:
             conn.set_session(autocommit=True)
             with conn.cursor() as curr:
                 with open("tests/ancillary_files/clean_data.sql") as f:
@@ -393,9 +333,6 @@ class CdEDBTest(BasicTest):
                 curr.execute(sql_input)
 
         super().setUp()
-
-
-UserIdentifier = Union[CdEDBObject, str, int]
 
 
 class BackendTest(CdEDBTest):
@@ -410,6 +347,8 @@ class BackendTest(CdEDBTest):
     pastevent: ClassVar[PastEventBackend]
     ml: ClassVar[MlBackend]
     assembly: ClassVar[AssemblyBackend]
+    translations: ClassVar[Mapping[str, gettext.NullTranslations]]
+    user: UserObject
     key: RequestState
 
     @classmethod
@@ -425,22 +364,66 @@ class BackendTest(CdEDBTest):
         # Workaround to make orga info available for calls into the MLBackend.
         cls.ml.orga_info = lambda rs, persona_id: cls.event.orga_info(  # type: ignore
             rs.sessionkey, persona_id)
+        cls.translations = setup_translations(cls.conf)
 
     def setUp(self) -> None:
         """Reset login state."""
         super().setUp()
+        self.user = USER_DICT["anonymous"]
         self.key = ANONYMOUS
 
     def login(self, user: UserIdentifier, *, ip: str = "127.0.0.0") -> Optional[str]:
         user = get_user(user)
+        if user["id"] is None:
+            raise RuntimeError("Anonymous users not supported for backend tests."
+                               " Pass `ANONYMOUS` in place of `self.key` instead.")
         self.key = cast(RequestState, self.core.login(
             ANONYMOUS, user['username'], user['password'], ip))
+        if self.key:
+            self.user = user
+        else:
+            self.user = USER_DICT["anonymous"]
         return self.key  # type: ignore
 
-    @staticmethod
-    def is_user(user: UserIdentifier, identifier: UserIdentifier) -> bool:
-        # TODO: go through all tests and make use of this
-        return get_user(user)["id"] == get_user(identifier)["id"]
+    def logout(self) -> None:
+        self.core.logout(self.key)
+        self.key = ANONYMOUS
+        self.user = USER_DICT["anonymous"]
+
+    def user_in(self, *identifiers: UserIdentifier) -> bool:
+        """Check whether the current user is any of the given users."""
+        users = {get_user(i)["id"] for i in identifiers}
+        return self.user.get("id", -1) in users
+
+    def assertLogEqual(self, log_expectation: Sequence[CdEDBObject], *,
+                       realm: str = None,
+                       log_retriever: Callable[..., CdEDBLog] = None,
+                       **kwargs: Any) -> None:
+        """Helper to compare a log expectation to the actual thing."""
+        if realm and not log_retriever:
+            log_retriever = getattr(self, realm).retrieve_log
+        if log_retriever:
+            _, log = log_retriever(self.key, **kwargs)
+        else:
+            raise ValueError("No method of log retrieval provided.")
+
+        for real, exp in zip(log, log_expectation):
+            if 'id' not in exp:
+                del real['id']
+            if 'ctime' not in exp:
+                exp['ctime'] = nearly_now()
+            if 'submitted_by' not in exp:
+                exp['submitted_by'] = self.user['id']
+            for k in ('event_id', 'assembly_id', 'mailinglist_id'):
+                if k in kwargs and k not in exp:
+                    exp[k] = kwargs[k]
+            for k in ('persona_id', 'change_note'):
+                if k not in exp:
+                    exp[k] = None
+            for k in ('total', 'delta', 'new_balance'):
+                if exp.get(k):
+                    exp[k] = decimal.Decimal(exp[k])
+        self.assertEqual(log, tuple(log_expectation))
 
     @staticmethod
     def initialize_raw_backend(backendcls: Type[SessionBackend]
@@ -449,13 +432,13 @@ class BackendTest(CdEDBTest):
 
     @classmethod
     def initialize_backend(cls, backendcls: Type[B]) -> B:
-        return make_backend_shim(backendcls(), internal=True)
+        return _make_backend_shim(backendcls(), internal=True)
 
 
 # A reference of the most important attributes for all users. This is used for
 # logging in and the `as_user` decorator.
 # Make sure not to alter this during testing.
-USER_DICT: Dict[str, CdEDBObject] = {
+USER_DICT: Dict[str, UserObject] = {
     "anton": {
         'id': 1,
         'DB-ID': "DB-1-9",
@@ -464,6 +447,7 @@ USER_DICT: Dict[str, CdEDBObject] = {
         'display_name': "Anton",
         'given_names': "Anton Armin A.",
         'family_name': "Administrator",
+        'default_name_format': "Anton Administrator",
     },
     "berta": {
         'id': 2,
@@ -473,6 +457,7 @@ USER_DICT: Dict[str, CdEDBObject] = {
         'display_name': "Bertå",
         'given_names': "Bertålotta",
         'family_name': "Beispiel",
+        'default_name_format': "Bertå Beispiel",
     },
     "charly": {
         'id': 3,
@@ -482,6 +467,7 @@ USER_DICT: Dict[str, CdEDBObject] = {
         'display_name': "Charly",
         'given_names': "Charly C.",
         'family_name': "Clown",
+        'default_name_format': "Charly Clown",
     },
     "daniel": {
         'id': 4,
@@ -491,15 +477,17 @@ USER_DICT: Dict[str, CdEDBObject] = {
         'display_name': "Daniel",
         'given_names': "Daniel D.",
         'family_name': "Dino",
+        'default_name_format': "Daniel Dino",
     },
     "emilia": {
         'id': 5,
         'DB-ID': "DB-5-1",
         'username': "emilia@example.cde",
         'password': "secret",
-        'display_name': "Emilia",
+        'display_name': "Emmy",
         'given_names': "Emilia E.",
         'family_name': "Eventis",
+        'default_name_format': "Emilia E. Eventis",
     },
     "ferdinand": {
         'id': 6,
@@ -509,6 +497,7 @@ USER_DICT: Dict[str, CdEDBObject] = {
         'display_name': "Ferdinand",
         'given_names': "Ferdinand F.",
         'family_name': "Findus",
+        'default_name_format': "Ferdinand Findus",
     },
     "garcia": {
         'id': 7,
@@ -518,6 +507,7 @@ USER_DICT: Dict[str, CdEDBObject] = {
         'display_name': "Garcia",
         'given_names': "Garcia G.",
         'family_name': "Generalis",
+        'default_name_format': "Garcia Generalis",
     },
     "hades": {
         'id': 8,
@@ -527,6 +517,7 @@ USER_DICT: Dict[str, CdEDBObject] = {
         'display_name': None,
         'given_names': "Hades",
         'family_name': "Hell",
+        'default_name_format': "Hades Hell",
     },
     "inga": {
         'id': 9,
@@ -536,6 +527,7 @@ USER_DICT: Dict[str, CdEDBObject] = {
         'display_name': "Inga",
         'given_names': "Inga",
         'family_name': "Iota",
+        'default_name_format': "Inga Iota",
     },
     "janis": {
         'id': 10,
@@ -545,6 +537,7 @@ USER_DICT: Dict[str, CdEDBObject] = {
         'display_name': "Janis",
         'given_names': "Janis",
         'family_name': "Jalapeño",
+        'default_name_format': "Janis Jalapeño",
     },
     "kalif": {
         'id': 11,
@@ -554,6 +547,7 @@ USER_DICT: Dict[str, CdEDBObject] = {
         'display_name': "Kalif",
         'given_names': "Kalif ibn al-Ḥasan",
         'family_name': "Karabatschi",
+        'default_name_format': "Kalif Karabatschi",
     },
     "lisa": {
         'id': 12,
@@ -563,6 +557,7 @@ USER_DICT: Dict[str, CdEDBObject] = {
         'display_name': "Lisa",
         'given_names': "Lisa",
         'family_name': "Lost",
+        'default_name_format': "Lisa Lost",
     },
     "martin": {
         'id': 13,
@@ -572,6 +567,7 @@ USER_DICT: Dict[str, CdEDBObject] = {
         'display_name': "Martin",
         'given_names': "Martin",
         'family_name': "Meister",
+        'default_name_format': "Martin Meister",
     },
     "nina": {
         'id': 14,
@@ -581,6 +577,7 @@ USER_DICT: Dict[str, CdEDBObject] = {
         'display_name': "Nina",
         'given_names': "Nina",
         'family_name': "Neubauer",
+        'default_name_format': "Nina Neubauer",
     },
     "olaf": {
         'id': 15,
@@ -590,6 +587,7 @@ USER_DICT: Dict[str, CdEDBObject] = {
         'display_name': "Olaf",
         'given_names': "Olaf",
         'family_name': "Olafson",
+        'default_name_format': "Olaf Olafson",
     },
     "paul": {
         'id': 16,
@@ -599,6 +597,7 @@ USER_DICT: Dict[str, CdEDBObject] = {
         'display_name': "Paul",
         'given_names': "Paulchen",
         'family_name': "Panther",
+        'default_name_format': "Paul Panther",
     },
     "quintus": {
         'id': 17,
@@ -608,6 +607,7 @@ USER_DICT: Dict[str, CdEDBObject] = {
         'display_name': "Quintus",
         'given_names': "Quintus",
         'family_name': "da Quirm",
+        'default_name_format': "Quintus da Quirm",
     },
     "rowena": {
         'id': 18,
@@ -617,6 +617,7 @@ USER_DICT: Dict[str, CdEDBObject] = {
         'display_name': "Rowena",
         'given_names': "Rowena",
         'family_name': "Ravenclaw",
+        'default_name_format': "Rowena Ravenclaw",
     },
     "vera": {
         'id': 22,
@@ -626,6 +627,7 @@ USER_DICT: Dict[str, CdEDBObject] = {
         'display_name': "Vera",
         'given_names': "Vera",
         'family_name': "Verwaltung",
+        'default_name_format': "Vera Verwaltung",
     },
     "werner": {
         'id': 23,
@@ -635,6 +637,7 @@ USER_DICT: Dict[str, CdEDBObject] = {
         'display_name': "Werner",
         'given_names': "Werner",
         'family_name': "Wahlleitung",
+        'default_name_format': "Werner Wahlleitung",
     },
     "annika": {
         'id': 27,
@@ -644,6 +647,7 @@ USER_DICT: Dict[str, CdEDBObject] = {
         'display_name': "Annika",
         'given_names': "Annika",
         'family_name': "Akademieteam",
+        'default_name_format': "Annika Akademieteam",
     },
     "farin": {
         'id': 32,
@@ -653,6 +657,17 @@ USER_DICT: Dict[str, CdEDBObject] = {
         'display_name': "Farin",
         'given_names': "Farin",
         'family_name': "Finanzvorstand",
+        'default_name_format': "Farin Finanzvorstand",
+    },
+    "katarina": {
+        'id': 37,
+        'DB-ID': "DB-37-X",
+        'username': "katarina@example.cde",
+        'password': "secret",
+        'diplay_name': "Katarina",
+        'given_names': "Katarina",
+        'family_name': "Kassenprüfer",
+        'default_name_format': "Katarina Kassenprüfer",
     },
     "viktor": {
         'id': 48,
@@ -662,6 +677,7 @@ USER_DICT: Dict[str, CdEDBObject] = {
         'display_name': "Viktor",
         'given_names': "Viktor",
         'family_name': "Versammlungsadmin",
+        'default_name_format': "Viktor Versammlungsadmin",
     },
     "akira": {
         'id': 100,
@@ -671,12 +687,22 @@ USER_DICT: Dict[str, CdEDBObject] = {
         'display_name': "Akira",
         'given_names': "Akira",
         'family_name': "Abukara",
+        'default_name_format': "Akira Abukara",
+    },
+    "anonymous": {
+        'id': None,
+        'DB-ID': None,
+        'username': None,
+        'password': None,
+        'display_name': None,
+        'given_names': None,
+        'family_name': None,
     },
 }
 _PERSONA_ID_TO_USER = {user["id"]: user for user in USER_DICT.values()}
 
 
-def get_user(user: UserIdentifier) -> CdEDBObject:
+def get_user(user: UserIdentifier) -> UserObject:
     if isinstance(user, str):
         user = USER_DICT[user]
     elif isinstance(user, int):
@@ -698,16 +724,7 @@ def as_users(*users: UserIdentifier) -> Callable[[Callable[..., None]],
                 with self.subTest(user=user):
                     if i > 0:
                         self.setUp()
-                    if user == "anonymous":
-                        if not isinstance(self, FrontendTest):
-                            raise RuntimeError(
-                                "Anonymous testing not supported for backend tests."
-                                " Use `key=None` instead.")
-                        kwargs['user'] = None
-                        self.get('/')
-                    else:
-                        kwargs['user'] = get_user(user)
-                        self.login(user)
+                    self.login(user)
                     fun(self, *args, **kwargs)
         return new_fun
     return wrapper
@@ -735,18 +752,22 @@ def prepsql(sql: AnyStr) -> Callable[[F], F]:
     return decorator
 
 
+def storage(fun: F) -> F:
+    """Decorate a test which needs some of the test files on the local drive."""
+    setattr(fun, BasicTest.needs_storage_marker, True)
+    return fun
+
+
 def execsql(sql: AnyStr) -> None:
     """Execute arbitrary SQL-code on the test database."""
-    path = pathlib.Path("/tmp/test-cdedb-sql-commands.sql")
     psql = ("/cdedb2/bin/execute_sql_script.py",
-            "--username", "cdb", "--dbname", "cdb_test")
-    null = subprocess.DEVNULL
-    mode = "w"
-    if isinstance(sql, bytes):
-        mode = "wb"
-    with open(path, mode) as f:
-        f.write(sql)
-    subprocess.check_call(psql + ("--file", str(path)), stdout=null)
+            "--username", "cdb", "--dbname", os.environ['CDEDB_TEST_DATABASE'])
+    mode = 'wb' if isinstance(sql, bytes) else 'w'
+    with tempfile.NamedTemporaryFile(mode=mode, suffix='.sql') as sql_file:
+        sql_file.write(sql)
+        sql_file.flush()
+        subprocess.run(psql + ("--file", sql_file.name), stdout=subprocess.DEVNULL,
+                       start_new_session=True, check=True)
 
 
 class FrontendTest(BackendTest):
@@ -767,6 +788,7 @@ class FrontendTest(BackendTest):
     response: webtest.TestResponse
     app_extra_environ = {
         'REMOTE_ADDR': "127.0.0.0",
+        'HTTP_HOST': "localhost",
         'SERVER_PROTOCOL': "HTTP/1.1",
         'wsgi.url_scheme': 'https'}
 
@@ -778,11 +800,14 @@ class FrontendTest(BackendTest):
         cls.app = webtest.TestApp(app, extra_environ=cls.app_extra_environ)
 
         # set `do_scrap` to True to capture a snapshot of all visited pages
-        cls.do_scrap = "SCRAP_ENCOUNTERED_PAGES" in os.environ
+        cls.do_scrap = 'CDEDB_TEST_DUMP_DIR' in os.environ
         if cls.do_scrap:
+            # create a parent directory for all dumps
+            dump_root = pathlib.Path(os.environ['CDEDB_TEST_DUMP_DIR'])
+            dump_root.mkdir(exist_ok=True)
             # create a temporary directory and print it
-            cls.scrap_path = tempfile.mkdtemp()
-            print(cls.scrap_path, file=sys.stderr)
+            cls.scrap_path = tempfile.mkdtemp(dir=dump_root, prefix=f'{cls.__name__}.')
+            print(f'\n\n{cls.scrap_path}\n', file=sys.stderr)
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -807,29 +832,34 @@ class FrontendTest(BackendTest):
             texts = self.response.lxml.xpath('/html/head/title/text()')
             self.assertNotEqual(0, len(texts))
             self.assertNotEqual('CdEDB – Fehler', texts[0])
-            self.scrap()
-        self.log_generation_time()
+            self._scrap()
+        self._log_generation_time()
 
-    def scrap(self) -> None:
+    def _scrap(self) -> None:
         if self.do_scrap and self.response.status_int // 100 == 2:
             # path without host but with query string - capped at 64 chars
-            url = urllib.parse.quote_plus(self.response.request.path_qs)[:64]
-            with tempfile.NamedTemporaryFile(dir=self.scrap_path, suffix=url,
+            # To enhance readability, we mark most chars as safe. All special chars are
+            # allowed in linux file paths, but sadly windows is more restrictive...
+            url = urllib.parse.quote(
+                self.response.request.path_qs, safe='/;@&=+$,~')[:64]
+            # since / chars are forbidden in file paths, we replace them by _
+            url = url.replace('/', '_')
+            # create a temporary file in scrap_path with url as a prefix
+            # persisting after process completion and dump the response.
+            with tempfile.NamedTemporaryFile(dir=self.scrap_path, prefix=f'{url}.',
                                              delete=False) as f:
-                # create a temporary file in scrap_path with url as a suffix
-                # persisting after process completion and dump the response.
                 f.write(self.response.body)
 
-    def log_generation_time(self, response: webtest.TestResponse = None) -> None:
+    def _log_generation_time(self, response: webtest.TestResponse = None) -> None:
         if response is None:
             response = self.response
-        if _BASICCONF["TIMING_LOG"]:
-            with open(_BASICCONF["TIMING_LOG"], 'a') as f:
-                output = "{} {} {} {}\n".format(
-                    response.request.path, response.request.method,
-                    response.headers.get('X-Generation-Time'),
-                    response.request.query_string)
-                f.write(output)
+        # record performance information during test runs
+        with open(_BASICCONF["LOG_DIR"] / "cdedb-timing.log", 'a') as f:
+            output = "{} {} {} {}\n".format(
+                response.request.path, response.request.method,
+                response.headers.get('X-Generation-Time'),
+                response.request.query_string)
+            f.write(output)
 
     def get(self, url: str, *args: Any, verbose: bool = False, **kwargs: Any) -> None:
         """Navigate directly to a given URL using GET."""
@@ -842,19 +872,44 @@ class FrontendTest(BackendTest):
         oldresponse = self.response
         self.response = self.response.maybe_follow(**kwargs)
         if self.response != oldresponse:
-            self.log_generation_time(oldresponse)
+            self._log_generation_time(oldresponse)
 
-    def post(self, url: str, *args: Any, verbose: bool = False, **kwargs: Any) -> None:
+    def assertRedirect(self, url: str, *args: Any, target_url: str,
+                       verbose: bool = False, **kwargs: Any) -> webtest.TestResponse:
+        """Checck that a GET-request to the url returns a redirect to the target url."""
+        response: webtest.TestResponse = self.app.get(url, *args, **kwargs)
+        self.assertLessEqual(300, response.status_int)
+        self.assertGreater(400, response.status_int)
+        self.assertIn("You should be redirected", response)
+        self.assertIn(target_url, response)
+        return response
+
+    def post(self, url: str, params: Dict[str, Any], *args: Any, verbose: bool = False,
+             evade_anti_csrf: bool = True, csrf_token_name: str = ANTI_CSRF_TOKEN_NAME,
+             csrf_token_payload: str = ANTI_CSRF_TOKEN_PAYLOAD, **kwargs: Any) -> None:
         """Directly send a POST-request.
 
-        Note that most of our POST-handlers require a CSRF-token."""
-        self.response = self.app.post(url, *args, **kwargs)
+        Note that most of our POST-handlers require an Anti-CSRF token,
+        which is forged here by default.
+
+        :param params: This is a restriction of self.app.post, but enforces a general
+            style and simplifies processing here.
+        :param evade_anti_csrf: Do CSRF, forging the Anti-CSRF token.
+        """
+        if evade_anti_csrf:
+            urlmap = CDEDB_PATHS
+            urls = urlmap.bind(self.app_extra_environ["HTTP_HOST"])
+            endpoint, _ = urls.match(url, method="POST")
+            params[csrf_token_name] = self.app.app.encode_anti_csrf_token(
+                endpoint, csrf_token_name, csrf_token_payload,
+                persona_id=self.user['id'])
+        self.response = self.app.post(url, params, *args, **kwargs)
         self.follow()
         self.basic_validate(verbose=verbose)
 
-    def submit(self, form: webtest.Form, button: Optional[str] = "submitform",
-               check_notification: bool = True, verbose: bool = False,
-               value: str = None) -> None:
+    def submit(self, form: webtest.Form, button: str = "", *,
+               check_notification: bool = True, check_button_attrs: bool = False,
+               verbose: bool = False, value: str = None) -> None:
         """Submit a form.
 
         If the form has multiple submit buttons, they can be differentiated
@@ -862,11 +917,24 @@ class FrontendTest(BackendTest):
 
         :param check_notification: If True and this is a POST-request, check
             that the submission produces a notification indicating success.
+        :param check_button_attrs: If True and button is given, check whether the
+            button specifies a different form action and/or method.
         :param verbose: If True, offer additional debug output.
         :param button: The name of the button to use.
         :param value: The value of the button to use.
         """
+        # This is a workaround for the fact, that webtest does not care about the
+        # `formaction` and `formmethod` atributes on submit buttons.
+        if check_button_attrs and button:
+            tmp_button: webtest.forms.Submit = form[button]
+            if "formaction" in tmp_button.attrs:
+                form.action = tmp_button.attrs["formaction"]
+            if "formmethod" in tmp_button.attrs:
+                form.method = tmp_button.attrs["formmethod"]
         method = form.method
+        if value and not button:
+            raise ValueError(
+                "Cannot specify button value without specifying button name.")
         self.response = form.submit(button, value=value)
         self.follow()
         self.basic_validate(verbose=verbose)
@@ -880,8 +948,7 @@ class FrontendTest(BackendTest):
                 raise AssertionError(
                     "Post request did not produce success notification.")
 
-    def traverse(self, *links: Union[MutableMapping[str, Any], str],
-                 verbose: bool = False) -> None:
+    def traverse(self, *links: LinkIdentifier, verbose: bool = False) -> None:
         """Follow a sequence of links, described by their kwargs.
 
         A link can also be just a string, in which case that string is assumed
@@ -913,22 +980,26 @@ class FrontendTest(BackendTest):
             self.follow()
             self.basic_validate(verbose=verbose)
 
-    def login(self, user: UserIdentifier, *, ip: str = "", verbose: bool = False
-              ) -> Optional[str]:
+    def login(self, user: UserIdentifier, *,  # pylint: disable=arguments-differ
+              ip: str = "", verbose: bool = False) -> Optional[str]:
         """Log in as the given user.
 
         :param verbose: If True display additional debug information.
         """
         user = get_user(user)
+        self.user = user
         self.get("/", verbose=verbose)
-        f = self.response.forms['loginform']
-        f['username'] = user['username']
-        f['password'] = user['password']
-        self.submit(f, check_notification=False, verbose=verbose)
+        if not self.user_in("anonymous"):
+            f = self.response.forms['loginform']
+            f['username'] = user['username']
+            f['password'] = user['password']
+            self.submit(f, check_notification=False, verbose=verbose)
         self.key = self.app.cookies.get('sessionkey', None)
+        if not self.key:
+            self.user = USER_DICT["anonymous"]
         return self.key  # type: ignore
 
-    def logout(self, verbose: bool = False) -> None:
+    def logout(self, verbose: bool = False) -> None:  # pylint: disable=arguments-differ
         """Log out. Raises a KeyError if not currently logged in.
 
         :param verbose: If True display additional debug information.
@@ -936,6 +1007,7 @@ class FrontendTest(BackendTest):
         f = self.response.forms['logoutform']
         self.submit(f, check_notification=False, verbose=verbose)
         self.key = ANONYMOUS
+        self.user = USER_DICT["anonymous"]
 
     def admin_view_profile(self, user: UserIdentifier, check: bool = True,
                            verbose: bool = False) -> None:
@@ -953,8 +1025,7 @@ class FrontendTest(BackendTest):
         f['phrase'] = u["DB-ID"]
         self.submit(f)
         if check:
-            self.assertTitle("{} {}".format(u['given_names'],
-                                            u['family_name']))
+            self.assertTitle(u['default_name_format'])
 
     def realm_admin_view_profile(self, user: str, realm: str,
                                  check: bool = True, verbose: bool = False
@@ -979,10 +1050,9 @@ class FrontendTest(BackendTest):
         self.submit(f, verbose=verbose)
         self.traverse({'description': 'Profil'}, verbose=verbose)
         if check:
-            self.assertTitle("{} {}".format(u['given_names'],
-                                            u['family_name']))
+            self.assertTitle(u['default_name_format'])
 
-    def fetch_mail(self) -> List[email.message.EmailMessage]:
+    def _fetch_mail(self) -> List[email.message.EmailMessage]:
         """
         Get the content of mails that were sent, using the E-Mail-notification.
         """
@@ -1007,20 +1077,17 @@ class FrontendTest(BackendTest):
         return ret
 
     def fetch_mail_content(self, index: int = 0) -> str:
-        mail = self.fetch_mail()[index]
+        mail = self._fetch_mail()[index]
         body = mail.get_body()
         assert isinstance(body, email.message.EmailMessage)
         return body.get_content()
 
-    @staticmethod
-    def fetch_link(msg: email.message.EmailMessage, num: int = 1) -> Optional[str]:
-        ret = None
-        body = msg.get_body()
-        assert isinstance(body, email.message.EmailMessage)
-        for line in body.get_content().splitlines():
-            if line.startswith('[{}] '.format(num)):
-                ret = line.split(maxsplit=1)[-1]
-        return ret
+    def fetch_link(self, index: int = 0, num: int = 1) -> str:
+        """Extract the <num>th link out of the <index>th mail just sent."""
+        for line in self.fetch_mail_content(index).splitlines():
+            if line.startswith(f'[{num}] '):
+                return line.split(maxsplit=1)[-1]
+        raise ValueError(f"Link [{num}] not found in mail [{index}].")
 
     def assertTitle(self, title: str) -> None:
         """
@@ -1044,17 +1111,32 @@ class FrontendTest(BackendTest):
         content = tmp[0]
         return content.text_content()
 
+    def assertDivNotExists(self, div: str) -> None:
+        """Assert that the given id is not used by any element on the page.
+
+        This element is not required to be a div.
+        """
+        if not self.response.content_type == "text/html":
+            self.fail("No valid html document.")
+        if self.response.lxml.xpath("//*[@id='{}']".format(div)):
+            self.fail("Element with id {} found".format(div))
+
     def assertCheckbox(self, status: bool, anid: str) -> None:
         """Assert that the checkbox with the given id is checked (or not)."""
-        tmp = self.response.html.find_all(id=anid)
+        tmp = (self.response.html.find_all(id=anid)
+               or self.response.html.find_all(attrs={'name': anid}))
         if not tmp:
-            raise AssertionError("Id not found.", id)
+            raise AssertionError("Id not found.", anid)
         if len(tmp) != 1:
             raise AssertionError("More or less then one hit.", anid)
         checkbox = tmp[0]
-        if "data-checked" not in checkbox.attrs:
+        if "data-checked" in checkbox.attrs:
+            self.assertEqual(str(status), checkbox['data-checked'])
+        elif "type" in checkbox.attrs:
+            self.assertEqual("checkbox", checkbox['type'])
+            self.assertEqual(status, checkbox.get('checked') == 'checked')
+        else:
             raise ValueError("Id doesnt belong to a checkbox", anid)
-        self.assertEqual(str(status), checkbox['data-checked'])
 
     def assertPresence(self, s: str, *, div: str = "content", regex: bool = False,
                        exact: bool = False) -> None:
@@ -1074,18 +1156,21 @@ class FrontendTest(BackendTest):
         else:
             self.assertIn(s.strip(), normalized)
 
-    def assertNonPresence(self, s: str, *, div: str = "content",
+    def assertNonPresence(self, s: Optional[str], *, div: str = "content",
                           check_div: bool = True) -> None:
         """Assert that a string is not present in the element with the given id.
 
         :param check_div: If True, this assertion fails if the div is not found.
         """
+        if s is None:
+            # Allow short-circuiting via dict.get()
+            return
         if self.response.content_type == "text/plain":
             self.assertNotIn(s.strip(), self.response.text)
         else:
             try:
                 content = self.response.lxml.xpath(f"//*[@id='{div}']")[0]
-            except IndexError as e:
+            except IndexError:
                 if check_div:
                     raise AssertionError(
                         f"Specified div {div!r} not found.") from None
@@ -1117,18 +1202,55 @@ class FrontendTest(BackendTest):
         :raise AssertionError: If field is not found, field is not within
             .has-error container or error message is not found
         """
+        self._assertValidationComplaint(
+            kind="error", fieldname=fieldname, message=message, index=index,
+            notification=notification)
+
+    def assertValidationWarning(
+            self, fieldname: str, message: str = "", index: int = None,
+            notification: Optional[str] = "Eingaben scheinen fehlerhaft") -> None:
+        """
+        Check for a specific form input field to be highlighted as .has-warning
+        and a specific warning message to be shown near the field. Also check that an
+        .alert-warning notification (with the given text) is indicating validation
+        warning.
+
+        :param fieldname: The field's 'name' attribute
+        :param index: If more than one field with the given name exists,
+            specify which one should be checked.
+        :param message: The expected warning message displayed below the input
+        :param notification: The expected notification displayed at the top of the page
+            This can be a regex. If this is None, skip the notification check.
+        :raise AssertionError: If field is not found, field is not within
+            .has-warning container or error message is not found
+        """
+        self._assertValidationComplaint(
+            kind="warning", fieldname=fieldname, message=message, index=index,
+            notification=notification)
+
+    def _assertValidationComplaint(
+            self, kind: str, fieldname: str, message: str, index: Optional[int],
+            notification: Optional[str]) -> None:
+        """Common helper for assertValidationError and assertValidationWarning."""
+        if kind == "error":
+            alert_type = "danger"
+        elif kind == "warning":
+            alert_type = "warning"
+        else:
+            raise NotImplementedError
+
         if notification is not None:
-            self.assertIn("alert alert-danger", self.response.text)
-            self.assertPresence(notification, div="notifications",
-                                regex=True)
+            self.assertIn(f"alert alert-{alert_type}", self.response.text,
+                          f"No Notification of type {kind!r} found.")
+            self.assertPresence(notification, div="notifications", regex=True)
 
         nodes = self.response.lxml.xpath(
-            '(//input|//select|//textarea)[@name="{}"]'.format(fieldname))
+            f'(//input|//select|//textarea)[@name="{fieldname}"]')
         f = fieldname
         if index is None:
             if len(nodes) == 1:
                 node = nodes[0]
-            elif len(nodes) == 0:
+            elif not nodes:
                 raise AssertionError(f"No input with name {f!r} found.")
             else:
                 raise AssertionError(f"More than one input with name {f!r}"
@@ -1144,10 +1266,10 @@ class FrontendTest(BackendTest):
         # From https://devhints.io/xpath#class-check
         container = node.xpath(
             "ancestor::*[contains(concat(' ',normalize-space(@class),' '),"
-            "' has-error ')]")
+            f"' has-{kind} ')]")
         if not container:
             raise AssertionError(
-                f"Input with name {f!r} is not contained in an .has-error box")
+                f"Input with name {f!r} is not contained in an .has-{kind} box")
         msg = f"Expected error message not found near input with name {f!r}."
         self.assertIn(message, container[0].text_content(), msg)
 
@@ -1273,7 +1395,7 @@ class FrontendTest(BackendTest):
         f = self.response.forms['logshowform']
         # use internal value property as I don't see a way to get the
         # checkbox value otherwise
-        codes = [field._value for field in f.fields['codes']]
+        codes = [field._value for field in f.fields['codes']]  # pylint: disable=protected-access
         f['codes'] = codes
         self.assertGreater(len(codes), 1)
         self.submit(f)
@@ -1298,10 +1420,11 @@ class FrontendTest(BackendTest):
             log_code_str = self.gettext(str(log_code))  # type: ignore
             self.assertPresence(log_code_str, div=f"{index}-{log_id}")
 
-    def check_sidebar(self, ins: Collection[str], out: Collection[str]) -> None:
+    def check_sidebar(self, ins: Set[str], out: Set[str]) -> None:
         """Helper function to check the (in)visibility of sidebar elements.
 
-        Raise an error if an element is in the sidebar and not in ins.
+        Raise an error if an element is in the sidebar and not in ins or
+        if an element is in the sidebar and in out.
 
         :param ins: elements which are in the sidebar
         :param out: elements which are not in the sidebar
@@ -1318,6 +1441,80 @@ class FrontendTest(BackendTest):
         if present:
             raise AssertionError(
                 f"Unexpected sidebar elements '{present}' found.")
+
+    def check_create_archive_user(self, realm: str, data: CdEDBObject = None) -> None:
+        """Basic check for the user creation and archival functionality of each realm.
+
+        :param data: realm-dependent data to use for the persona to be created
+        """
+        if data is None:
+            data = {}
+
+        def _check_deleted_data() -> None:
+            assert data is not None
+            self.assertNonPresence(data['username'])
+            self.assertNonPresence(data.get('location'))
+            self.assertNonPresence(data.get('address'))
+            self.assertNonPresence(data.get('postal_code'))
+            self.assertNonPresence(data.get('telephone'))
+            self.assertNonPresence(data.get('country'))
+
+        self.traverse({'href': '/' + realm + '/$'},
+                      {'href': '/search/user'},
+                      {'href': '/user/create'})
+        merge_dicts(data, {
+            "username": 'zelda@example.cde',
+            "given_names": "Zelda",
+            "family_name": "Zeruda-Hime",
+            "display_name": 'Zelda',
+            "notes": "some fancy talk",
+        })
+        f = self.response.forms['newuserform']
+        if f.get('country', default=None):
+            self.assertEqual(f['country'].value, self.conf["DEFAULT_COUNTRY"])
+        for key, value in data.items():
+            f.set(key, value)
+        self.submit(f)
+        self.assertTitle("Zelda Zeruda-Hime")
+        for key, value in data.items():
+            if key not in {'birthday', 'telephone', 'mobile', 'country', 'country2',
+                           'gender'}:
+                # Omit values with heavy formatting in the frontend here
+                self.assertPresence(value)
+        # Now test archival
+        # 1. Archive user
+        f = self.response.forms['archivepersonaform']
+        f['ack_delete'].checked = True
+        f['note'] = "Archived for testing."
+        self.submit(f)
+        self.assertTitle("Zelda Zeruda-Hime")
+        self.assertPresence("Der Benutzer ist archiviert.", div='archived')
+        _check_deleted_data()
+        # 2. Find user via archived search
+        self.traverse({'href': '/' + realm + '/$'})
+        self.traverse({'description': 'Archivsuche'})
+        self.assertTitle("Archivsuche")
+        f = self.response.forms['queryform']
+        f['qop_given_names'] = QueryOperators.match.value
+        f['qval_given_names'] = 'Zelda'
+        self.submit(f)
+        self.assertTitle("Archivsuche")
+        self.assertPresence("Ergebnis [1]", div='query-results')
+        self.assertPresence("Zeruda", div='query-result')
+        self.traverse({'description': 'Profil', 'href': '/core/persona/1001/show'})
+        # 3: Dearchive user
+        self.assertTitle("Zelda Zeruda-Hime")
+        self.assertPresence("Der Benutzer ist archiviert.", div='archived')
+        self.traverse({'description': "Account wiederherstellen"})
+        f = self.response.forms['dearchivepersonaform']
+        self.submit(f, check_notification=False)
+        self.assertValidationError('new_username', "Darf nicht leer sein.")
+        f = self.response.forms['dearchivepersonaform']
+        f['new_username'] = "zeruda@example.cde"
+        self.submit(f)
+        self.assertTitle("Zelda Zeruda-Hime")
+        self.assertPresence('zeruda@example.cde')
+        _check_deleted_data()
 
     def _click_admin_view_button(self, label: Union[str, Pattern[str]],
                                  current_state: bool = None) -> None:
@@ -1336,36 +1533,40 @@ class FrontendTest(BackendTest):
         :return: The button element to perform further checks.
             Is actually of type `bs4.BeautifulSoup`.
         """
+        if isinstance(label, str):
+            label = re.compile(label)
         f = self.response.forms['adminviewstoggleform']
-        button = self.response.html\
-            .find(id="adminviewstoggleform")\
-            .find(text=label)\
-            .parent
+        button = self.response.html.find(id="adminviewstoggleform").find(text=label)
+        if not button:
+            raise KeyError(f"Admin view toggle with label {label!r} not found.")
+        button = button.parent
         if current_state is not None:
             if current_state:
                 self.assertIn("active", button['class'])
             else:
                 self.assertNotIn("active", button['class'])
-        self.submit(f, 'view_specifier', False, value=button['value'])
+        self.submit(f, button='view_specifier', check_button_attrs=False,
+                    value=button['value'])
         return button
 
-    def reload_and_check_form(self, form: webtest.Form, link: Union[CdEDBObject, str],
-                              max_tries: int = 42, waittime: float = 0.1,
-                              fail: bool = True) -> None:
-        """Helper to repeatedly reload a page until a certain form is present.
+    def join_worker_thread(self, worker_name: str, link: LinkIdentifier, *,
+                           realm: str = "cde", timeout: float = 2) -> None:
+        """Wait for the specified Worker thread to finish.
 
-        This is mostly required for the "Semesterverwaltung".
+        :param realm: specify to which realm the Worker belongs. Currently only the
+            CdEFrontend uses Workers.
+        :param timeout: pecificy a maximum wait time for the thread to end. In our
+            testing environment Worker threads should not take longer than a couple
+            seconds.
         """
-        count = 0
-        while count < max_tries:
-            time.sleep(waittime)
-            self.traverse(link)
-            if form in self.response.forms:
-                break
-            count += 1
-        else:
-            if fail:
-                self.fail(f"Form {form} not found after {count} reloads.")
+        ref = Worker.active_workers[worker_name]
+        worker = ref()
+        if worker:
+            worker.join(timeout)
+            if worker.is_alive():
+                self.fail(f"Worker {realm}/{worker_name} still active after {timeout}"
+                          f" seconds.")
+        self.traverse(link)
 
 
 class MultiAppFrontendTest(FrontendTest):

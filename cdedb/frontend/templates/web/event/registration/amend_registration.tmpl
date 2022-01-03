@@ -1,0 +1,51 @@
+{% set sidenav_active='event_register' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/event/generic.tmpl" as generic_event with context %}
+{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% set jshint='weak' %}
+{% block title %}
+    {% trans title=ambience['event']['title'] %}
+        Edit Registration for {{ title }}
+    {% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+{{ super() }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher",
+                        readonly=not (ambience['event']['is_visible']
+                                      or ambience['event']['id'] in user.orga
+                                      or user.admin_views.intersection(('event_orga', 'event_mgmt')))) }}
+{{ util.breadcrumb_link(cdedblink("event/registration_status"), gettext("My Registration")) }}
+{{ util.breadcrumb_link(cdedblink("event/amend_registration"), gettext("Change"), active=True) }}
+{% endblock %}
+
+{% block heading %}
+    {{ util.context_heading(gettext("Edit Registration"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+{% endblock %}
+
+{% block content %}
+    <form action="{{ cdedblink('event/amend_registration') }}" method="POST" id="amendregistrationform"
+          class="form-horizontal">
+        {{ util.anti_csrf_token('event/amend_registration') }}
+
+        {% if ambience['event']['registration_text'] %}
+            {% call util.bootstrap_panel(title=gettext("Note of the Orga Team"), icon="info-circle", aclass="panel-info") %}
+                {{ ambience['event']['registration_text']|md }}
+            {% endcall %}
+        {% endif %}
+
+        <h3 class="sr-only">{% trans %}Course Choices{% endtrans %}</h3>
+        {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) if track_id in involved_tracks and track['num_choices'] %}
+            {{ generic_event.select_course_choice(track, courses, course_choices) }}
+        {% endfor %}
+
+        <h3 class="heading-underline">{% trans %}Additional Information{% endtrans %}</h3>
+        {{ generic_event.additional_registration_choices(age, reg_questionnaire) }}
+
+        {{ util.form_input_submit(label=gettext("Save"), readonly=readonly,
+                                  cancellink=cdedblink("event/registration_status")) }}
+    </form>
+    <script nonce="{{ csp_nonce }}">
+        $('#amendregistrationform').cdedbProtectChanges();
+    </script>
+{% endblock %}

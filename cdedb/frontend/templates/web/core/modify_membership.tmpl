@@ -1,17 +1,22 @@
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans given_names=ambience['persona']['given_names'], family_name=ambience['persona']['family_name'] %}
-    	Modify Memberhip for {{ given_names }} {{ family_name }}
+    {% trans name=util.persona_name(ambience['persona']) %}
+    	Modify Memberhip for {{ name }}
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), "{} {}".format(ambience['persona']['given_names'],
-                                                                                  ambience['persona']['family_name']),
-        icon="user") }}
+{{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), util.persona_name(ambience['persona']),
+                        icon="user") }}
 {{ util.breadcrumb_link(cdedblink("core/modify_membership"), gettext("Modify Membership"), active="True") }}
 {% endblock %}
+
+{% block heading %}
+    {{ util.context_heading(gettext("Modify Membership"), util.persona_name(ambience['persona']),
+                            'user', gettext("User")) }}
+{% endblock %}
+
 {% block content %}
    {% if ambience['persona']['is_member'] %}
         <p>
@@ -29,7 +34,7 @@
             {{ util.anti_csrf_token('core/modify_membership') }}
             <div>
                 {{ util.input_hidden(name="is_member", value=False) }}
-                {{ util.input_submit(value=gettext("Terminate Membership"), aclass="btn btn-warning") }}&emsp;
+                {{ util.input_submit(label=gettext("Terminate Membership"), aclass="btn btn-warning") }}&emsp;
                 {{ util.href(show_user_link(user, ambience['persona']['id']), gettext("Cancel"), icon="times-circle",
                         aclass="btn btn-default") }}
             </div>
@@ -39,7 +44,7 @@
             {{ util.anti_csrf_token('core/modify_membership') }}
             <div>
                 {{ util.input_hidden(name="is_member", value=True) }}
-                {{ util.input_submit(value=gettext("Make a Member")) }}&emsp;
+                {{ util.input_submit(label=gettext("Make a Member")) }}&emsp;
                 {{ util.href(show_user_link(user, ambience['persona']['id']), "Abbrechen", icon="times-circle",
                         aclass="btn btn-default") }}
             </div>
