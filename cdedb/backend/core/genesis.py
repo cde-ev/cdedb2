@@ -19,7 +19,7 @@ from cdedb.common import (
     PERSONA_CORE_FIELDS, PERSONA_DEFAULTS, PERSONA_FIELDS_BY_REALM, REALM_ADMINS,
     REALM_SPECIFIC_GENESIS_FIELDS, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
     DeletionBlockers, GenesisDecision, PrivilegeError, RequestState, extract_realms,
-    extract_roles, glue, implied_realms, merge_dicts, n_, now, unwrap,
+    extract_roles, get_hash, glue, implied_realms, merge_dicts, n_, now, unwrap,
 )
 from cdedb.database.connection import Atomizer
 
