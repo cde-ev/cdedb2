@@ -3,7 +3,7 @@
 
 import datetime
 import json
-from typing import Collection, NamedTuple, Optional
+from typing import Collection, List, NamedTuple, Optional
 
 import freezegun
 import pytz
@@ -208,7 +208,7 @@ class TestAssemblyBackend(BackendTest):
     def test_entity_ballot(self) -> None:
         assembly_id = 1
         log_offset, _ = self.assembly.retrieve_log(self.key, assembly_id=assembly_id)
-        log = []
+        log: List[CdEDBObject] = []
         expectation = {1: 'Antwort auf die letzte aller Fragen',
                        2: 'Farbe des Logos',
                        3: 'Bester Hof',
@@ -385,27 +385,26 @@ class TestAssemblyBackend(BackendTest):
             'rel_quorum': 100,
         }
         self.assertLess(0, self.assembly.set_ballot(self.key, data))
-        log.append({
-            "code": const.AssemblyLogCodes.ballot_changed,
-            "assembly_id": assembly_id,
-            "change_note": self.get_sample_datum(
-                "assembly.ballots", ballot_id)['title'],
-        })
-        log.append({
-            "code": const.AssemblyLogCodes.candidate_added,
-            "assembly_id": assembly_id,
-            "change_note": data['candidates'][-1]['shortname'],
-        })
-        log.append({
-            "code": const.AssemblyLogCodes.candidate_updated,
-            "assembly_id": assembly_id,
-            "change_note": expectation['candidates'][6]['shortname'],
-        })
-        log.append({
-            "code": const.AssemblyLogCodes.candidate_removed,
-            "assembly_id": assembly_id,
-            "change_note": expectation['candidates'][7]['shortname'],
-        })
+        log.extend((
+            {
+                "code": const.AssemblyLogCodes.ballot_changed,
+                "assembly_id": assembly_id,
+                "change_note": self.get_sample_datum(
+                    "assembly.ballots", ballot_id)['title'],
+            }, {
+                "code": const.AssemblyLogCodes.candidate_added,
+                "assembly_id": assembly_id,
+                "change_note": data['candidates'][-1]['shortname'],
+            }, {
+                "code": const.AssemblyLogCodes.candidate_updated,
+                "assembly_id": assembly_id,
+                "change_note": expectation['candidates'][6]['shortname'],
+            }, {
+                "code": const.AssemblyLogCodes.candidate_removed,
+                "assembly_id": assembly_id,
+                "change_note": expectation['candidates'][7]['shortname'],
+            }
+        ))
         for key in ('use_bar', 'notes', 'vote_extension_end', 'rel_quorum'):
             expectation[key] = data[key]
         expectation['abs_quorum'] = 0
@@ -441,21 +440,18 @@ class TestAssemblyBackend(BackendTest):
             'votes': None,
         }
         new_id = self.assembly.create_ballot(self.key, data)
-        log.append({
-            "code": const.AssemblyLogCodes.ballot_created,
-            "assembly_id": assembly_id,
-            "change_note": data['title'],
-        })
-        log.append({
-            "code": const.AssemblyLogCodes.candidate_added,
-            "assembly_id": assembly_id,
-            "change_note": data['candidates'][-1]['shortname'],
-        })
-        log.append({
-            "code": const.AssemblyLogCodes.candidate_added,
-            "assembly_id": assembly_id,
-            "change_note": data['candidates'][-2]['shortname'],
-        })
+        log.extend((
+            {
+                "code": const.AssemblyLogCodes.ballot_created,
+                "assembly_id": assembly_id,
+                "change_note": data['title'],
+            },
+            *({
+                "code": const.AssemblyLogCodes.candidate_added,
+                "assembly_id": assembly_id,
+                "change_note": data['candidates'][cid]['shortname'],
+            } for cid in (-1, -2))
+        ))
         self.assertLess(0, new_id)
         data.update({
             'comment': None,
