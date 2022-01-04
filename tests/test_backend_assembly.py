@@ -483,6 +483,7 @@ class TestAssemblyBackend(BackendTest):
         self.assertEqual(data, self.assembly.get_ballot(self.key, new_id))
         old_ballot_id = 2
         old_ballot_data = self.get_sample_datum("assembly.ballots", old_ballot_id)
+
         # differentiate attachments by title to test stable sorting
         attachment_data = [{
             "assembly_id": assembly_id,
@@ -491,7 +492,12 @@ class TestAssemblyBackend(BackendTest):
             "filename": "rechen.pdf",
         } for n in range(4)]
 
-        # first, we'll modify both ballots symmetrically
+        # First, we'll modify both ballots symmetrically.
+        # dict order is stable, i.e. list(ballots) == [old_ballot_id, new_id]
+        ballots = {
+            old_ballot_id: old_ballot_data,
+            new_id: data,
+        }
 
         # simply add one attachment and link it
         attachment_id = self.assembly.add_attachment(
@@ -501,85 +507,52 @@ class TestAssemblyBackend(BackendTest):
             "assembly_id": assembly_id,
             "change_note": attachment_data[0]['title'],
         })
-        self.assertTrue(
-            self.assembly.add_attachment_ballot_link(self.key, attachment_id, new_id))
-        self.assertTrue(
-            self.assembly.add_attachment_ballot_link(
-                self.key, attachment_id, old_ballot_id))
-        log.append({
-            "code": const.AssemblyLogCodes.attachment_ballot_link_created,
-            "assembly_id": assembly_id,
-            "change_note": f"{attachment_data[0]['title']} ({data['title']})",
-        })
-        log.append({
-            "code": const.AssemblyLogCodes.attachment_ballot_link_created,
-            "assembly_id": assembly_id,
-            "change_note": f"{attachment_data[0]['title']} ({old_ballot_data['title']})"
-        })
+        for bid, bdata in ballots.items():
+            self.assertTrue(
+                self.assembly.add_attachment_ballot_link(self.key, attachment_id, bid))
+            log.append({
+                "code": const.AssemblyLogCodes.attachment_ballot_link_created,
+                "assembly_id": assembly_id,
+                "change_note": f"{attachment_data[0]['title']} ({bdata['title']})",
+            })
 
         self.assertEqual(
-            [old_ballot_id, new_id],
+            list(ballots),
             self.assembly.get_attachment(self.key, attachment_id)['ballot_ids'])
-        self.assertEqual(
-            {attachment_id},
-            self.assembly.list_attachments(self.key, ballot_id=new_id))
-        self.assertEqual(
-            {attachment_id},
-            self.assembly.list_attachments(self.key, ballot_id=old_ballot_id))
+        for bid in ballots:
+            self.assertEqual(
+                {attachment_id},
+                self.assembly.list_attachments(self.key, ballot_id=bid))
 
         # add and link two more attachments
         attachment_id1 = self.assembly.add_attachment(
             self.key, attachment_data[1], b'123')
         attachment_id2 = self.assembly.add_attachment(
             self.key, attachment_data[2], b'123')
-        log.append({
+        log.extend({
             "code": const.AssemblyLogCodes.attachment_added,
             "assembly_id": assembly_id,
-            "change_note": attachment_data[1]['title'],
-        })
-        log.append({
-            "code": const.AssemblyLogCodes.attachment_added,
-            "assembly_id": assembly_id,
-            "change_note": attachment_data[2]['title'],
-        })
-        self.assertTrue(
-            self.assembly.set_ballot_attachments(
-                self.key, new_id, [attachment_id, attachment_id2, attachment_id1]))
-        self.assertTrue(
-            self.assembly.set_ballot_attachments(
-                self.key, old_ballot_id,
-                [attachment_id, attachment_id2, attachment_id1]))
-        # Two of three links are new, they were added ordered by their attachment ids.
-        log.append({
-            "code": const.AssemblyLogCodes.attachment_ballot_link_created,
-            "assembly_id": assembly_id,
-            "change_note": f"{attachment_data[1]['title']} ({data['title']})",
-        })
-        log.append({
-            "code": const.AssemblyLogCodes.attachment_ballot_link_created,
-            "assembly_id": assembly_id,
-            "change_note": f"{attachment_data[2]['title']} ({data['title']})",
-        })
-        log.append({
-            "code": const.AssemblyLogCodes.attachment_ballot_link_created,
-            "assembly_id": assembly_id,
-            "change_note": f"{attachment_data[1]['title']} ({old_ballot_data['title']})"
-        })
-        log.append({
-            "code": const.AssemblyLogCodes.attachment_ballot_link_created,
-            "assembly_id": assembly_id,
-            "change_note": f"{attachment_data[2]['title']} ({old_ballot_data['title']})"
-        })
+            "change_note": attachment_data[n]['title'],
+        } for n in (1, 2))
+        for bid, bdata in ballots.items():
+            self.assertTrue(
+                self.assembly.set_ballot_attachments(
+                    self.key, bid, [attachment_id, attachment_id2, attachment_id1]))
+            # Two of three links are new, they were added ordered by their ids.
+            log.extend({
+                "code": const.AssemblyLogCodes.attachment_ballot_link_created,
+                "assembly_id": assembly_id,
+                "change_note": f"{attachment_data[n]['title']} ({bdata['title']})",
+            } for n in (1, 2))
 
-        self.assertEqual(
-            [old_ballot_id, new_id],
-            self.assembly.get_attachment(self.key, attachment_id1)['ballot_ids'])
-        self.assertEqual(
-            {attachment_id, attachment_id1, attachment_id2},
-            self.assembly.list_attachments(self.key, ballot_id=new_id))
-        self.assertEqual(
-            {attachment_id, attachment_id1, attachment_id2},
-            self.assembly.list_attachments(self.key, ballot_id=old_ballot_id))
+        for aid in (attachment_id, attachment_id1, attachment_id2):
+            self.assertEqual(
+                list(ballots),
+                self.assembly.get_attachment(self.key, aid)['ballot_ids'])
+        for bid in ballots:
+            self.assertEqual(
+                {attachment_id, attachment_id1, attachment_id2},
+                self.assembly.list_attachments(self.key, ballot_id=bid))
 
         # add and link another attachment, unlink two attachments
         attachment_id3 = self.assembly.add_attachment(
@@ -589,64 +562,42 @@ class TestAssemblyBackend(BackendTest):
             "assembly_id": assembly_id,
             "change_note": attachment_data[3]['title'],
         })
-        self.assertTrue(
-            self.assembly.set_ballot_attachments(
-                self.key, new_id, {attachment_id1, attachment_id3}))
-        self.assertTrue(
-            self.assembly.set_ballot_attachments(
-                self.key, old_ballot_id, {attachment_id1, attachment_id3}))
-        # link removal also sorted by attachment_id
-        log.append({
-            "code": const.AssemblyLogCodes.attachment_ballot_link_created,
-            "assembly_id": assembly_id,
-            "change_note": f"{attachment_data[3]['title']} ({data['title']})",
-        })
-        log.append({
-            "code": const.AssemblyLogCodes.attachment_ballot_link_deleted,
-            "assembly_id": assembly_id,
-            "change_note": f"{attachment_data[0]['title']} ({data['title']})",
-        })
-        log.append({
-            "code": const.AssemblyLogCodes.attachment_ballot_link_deleted,
-            "assembly_id": assembly_id,
-            "change_note": f"{attachment_data[2]['title']} ({data['title']})",
-        })
-        log.append({
-            "code": const.AssemblyLogCodes.attachment_ballot_link_created,
-            "assembly_id": assembly_id,
-            "change_note": f"{attachment_data[3]['title']} ({old_ballot_data['title']})"
-        })
-        log.append({
-            "code": const.AssemblyLogCodes.attachment_ballot_link_deleted,
-            "assembly_id": assembly_id,
-            "change_note": f"{attachment_data[0]['title']} ({old_ballot_data['title']})"
-        })
-        log.append({
-            "code": const.AssemblyLogCodes.attachment_ballot_link_deleted,
-            "assembly_id": assembly_id,
-            "change_note": f"{attachment_data[2]['title']} ({old_ballot_data['title']})"
-        })
+        for bid, bdata in ballots.items():
+            self.assertTrue(
+                self.assembly.set_ballot_attachments(
+                    self.key, bid, {attachment_id1, attachment_id3}))
+            # link removal also sorted by attachment_id
+            log.extend((
+                {
+                    "code": const.AssemblyLogCodes.attachment_ballot_link_created,
+                    "assembly_id": assembly_id,
+                    "change_note": f"{attachment_data[3]['title']} ({bdata['title']})",
+                },
+                *({
+                    "code": const.AssemblyLogCodes.attachment_ballot_link_deleted,
+                    "assembly_id": assembly_id,
+                    "change_note": f"{attachment_data[n]['title']} ({bdata['title']})",
+                } for n in (0, 2))
+            ))
 
-        self.assertEqual(
-            [],
-            self.assembly.get_attachment(self.key, attachment_id)['ballot_ids'])
-        self.assertEqual(
-            [old_ballot_id, new_id],
-            self.assembly.get_attachment(self.key, attachment_id3)['ballot_ids'])
-        self.assertEqual(
-            {attachment_id1, attachment_id3},
-            self.assembly.list_attachments(self.key, ballot_id=new_id))
-        self.assertEqual(
-            {attachment_id1, attachment_id3},
-            self.assembly.list_attachments(self.key, ballot_id=old_ballot_id))
+        for aid in (attachment_id, attachment_id2):
+            self.assertEqual(
+                [],
+                self.assembly.get_attachment(self.key, aid)['ballot_ids'])
+        for aid in (attachment_id1, attachment_id3):
+            self.assertEqual(
+                list(ballots),
+                self.assembly.get_attachment(self.key, aid)['ballot_ids'])
+        for bid in ballots:
+            self.assertEqual(
+                {attachment_id1, attachment_id3},
+                self.assembly.list_attachments(self.key, ballot_id=bid))
 
         cascade = {"attachments", "candidates", "voters"}
-        self.assertEqual(
-            cascade,
-            self.assembly.delete_ballot_blockers(self.key, new_id).keys())
-        self.assertEqual(
-            cascade,
-            self.assembly.delete_ballot_blockers(self.key, old_ballot_id).keys())
+        for bid in ballots:
+            self.assertEqual(
+                cascade,
+                self.assembly.delete_ballot_blockers(self.key, bid).keys())
 
         # now the symmetry ends
         self.assertTrue(
@@ -656,12 +607,10 @@ class TestAssemblyBackend(BackendTest):
             "assembly_id": assembly_id,
             "change_note": old_ballot_data['title'],
         })
-        self.assertEqual(
-            [new_id],
-            self.assembly.get_attachment(self.key, attachment_id1)['ballot_ids'])
-        self.assertEqual(
-            [new_id],
-            self.assembly.get_attachment(self.key, attachment_id3)['ballot_ids'])
+        for aid in (attachment_id1, attachment_id3):
+            self.assertEqual(
+                [new_id],
+                self.assembly.get_attachment(self.key, aid)['ballot_ids'])
         expectation = {
             1: 'Antwort auf die letzte aller Fragen',
             3: 'Bester Hof',
