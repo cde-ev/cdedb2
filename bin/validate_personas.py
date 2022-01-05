@@ -15,6 +15,7 @@ core = script.make_backend("core")
 
 with script:
     persona_id: Optional[int] = -1
+    errors = 0
     while True:
         persona_id = core.next_persona(
             rs, persona_id=persona_id, is_member=None, is_archived=False)
@@ -31,6 +32,7 @@ with script:
             print(f"Error for persona {persona_id}:")
             print(e.__class__)
             print(e)
+            errors += 1
             continue
 
         # Validate event data if applicable
@@ -45,6 +47,7 @@ with script:
             print(f"Error for persona {persona_id}:")
             print(e.__class__)
             print(e)
+            errors += 1
             continue
 
         # Validate cde/total data if applicable
@@ -59,4 +62,8 @@ with script:
             print(f"Error for persona {persona_id}:")
             print(e.__class__)
             print(e)
+            errors += 1
             continue
+
+    if not errors:
+        print("All personas were validated successfully.")
