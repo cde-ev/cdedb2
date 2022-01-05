@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 
-"""The core backend provides services which are common for all
-users/personas independent of their realm. Thus we have no user role
-since the basic division is between known accounts and anonymous
-accesses.
+"""
+The `CoreGenesisBackend` subclasses the `CoreBaseBackend` and provides functionality
+for "genesis", that is for account creation via anonymous account requests.
 """
 from typing import Any, Collection, List, Optional, Protocol, Tuple
 

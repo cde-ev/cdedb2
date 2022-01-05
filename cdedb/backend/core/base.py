@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 
-"""The core backend provides services which are common for all
-users/personas independent of their realm. Thus we have no user role
-since the basic division is between known accounts and anonymous
-accesses.
+"""
+The `CoreBaseBackend` provides backend functionality related to general user management.
+
+There are several subclasses in separate files which provide additional functionality
+related to more specific aspects or user management.
+
+All parts are combined together in the `CoreBackend` class via multiple inheritance,
+together with a handful of high-level methods, that use functionalities of multple
+backend parts.
 """
 import collections
 import copy
