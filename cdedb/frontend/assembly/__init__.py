@@ -260,7 +260,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             rs.notify("warning", n_("Assembly already concluded."))
             return self.redirect(rs, "assembly/show_assembly")
         merge_dicts(rs.values, rs.ambience['assembly'])
-        return self.render(rs, "assembly_data")
+        return self.render(rs, "configure_assembly")
 
     @access("assembly", modi={"POST"})
     @assembly_guard
@@ -283,7 +283,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly_admin")
     def create_assembly_form(self, rs: RequestState) -> Response:
         """Render form."""
-        return self.render(rs, "assembly_data")
+        return self.render(rs, "configure_assembly")
 
     @staticmethod
     def _get_mailinglist_setter(assembly: CdEDBObject, presider: bool = False
@@ -714,7 +714,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 key=EntitySorter.attachment)
         ]
 
-        return self.render(rs, "ballot_data", {
+        return self.render(rs, "configure_ballot", {
             'attachment_entries': attachment_entries,
             'selectize_data': selectize_data,
         })
@@ -1360,7 +1360,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         rs.values["linked_attachments"] = list(latest_attachments)
         merge_dicts(rs.values, rs.ambience['ballot'])
 
-        return self.render(rs, "ballot_data", {
+        return self.render(rs, "configure_ballot", {
             "attachment_entries": attachment_entries,
             "selectize_data": selectize_data,
         })
