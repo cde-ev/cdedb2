@@ -1633,6 +1633,19 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
 
     @storage
     @as_users("werner")
+    def test_start_voting_button(self) -> None:
+        if not self.conf['CDEDB_DEV']:
+            self.skipTest("Not in development mode.")
+        link = '/assembly/assembly/1/ballot/2/show'
+        self.get(link)
+        self.submit(self.response.forms['startvotingform'])
+        self.assertPresence("Die Abstimmung läuft")
+        with freezegun.freeze_time(now() + datetime.timedelta(seconds=60)):
+            self.get(link)
+            self.assertPresence("Die Abstimmung ist beendet.")
+
+    @storage
+    @as_users("werner")
     def test_has_voted(self) -> None:
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Archiv-Sammlung'},
