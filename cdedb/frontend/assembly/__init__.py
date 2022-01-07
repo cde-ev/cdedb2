@@ -181,7 +181,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly")
     def show_assembly(self, rs: RequestState, assembly_id: int) -> Response:
         """Present an assembly."""
-        if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):
+        if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):  # pragma: no cover
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
 
         attachment_ids = self.assemblyproxy.list_attachments(
@@ -477,7 +477,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly")
     def list_attachments(self, rs: RequestState, assembly_id: int) -> Response:
         """Render form."""
-        if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):
+        if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):  # pragma: no cover
             rs.notify("error", n_("May not access attachments for this assembly."))
             return self.redirect(rs, "assembly/index")
         attachment_ids = self.assemblyproxy.list_attachments(
@@ -587,7 +587,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly")
     def list_attendees(self, rs: RequestState, assembly_id: int) -> Response:
         """Provide a online list of who is/was present."""
-        if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):
+        if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):  # pragma: no cover
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         attendees = self._get_list_attendees_data(rs, assembly_id)
         return self.render(rs, "list_attendees", {"attendees": attendees})
@@ -689,7 +689,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly")
     def list_ballots(self, rs: RequestState, assembly_id: int) -> Response:
         """View available ballots for an assembly."""
-        if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):
+        if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):  # pragma: no cover
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
 
         if grouped := self._group_ballots(rs, assembly_id):
@@ -786,7 +786,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     def get_attachment_version(self, rs: RequestState, assembly_id: int,
                                attachment_id: int, version_nr: int) -> Response:
         """Retrieve the content of a given attachment version."""
-        if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):
+        if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):  # pragma: no cover
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         # the check that the attachment belongs to the assembly is already done in
         # `reconnoitre_ambience`, which raises a "400 Bad Request" in this case
@@ -1008,7 +1008,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         for classical voting (i.e. with a fixed number of equally weighted
         votes).
         """
-        if not self.assemblyproxy.may_assemble(rs, ballot_id=ballot_id):
+        if not self.assemblyproxy.may_assemble(rs, ballot_id=ballot_id):  # pragma: no cover
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
 
         # We need to group the ballots for navigation later anyway,
@@ -1091,7 +1091,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.redirect(rs, "assembly/show_ballot_result")
 
-        if not self.assemblyproxy.may_assemble(rs, ballot_id=ballot_id):
+        if not self.assemblyproxy.may_assemble(rs, ballot_id=ballot_id):  # pragma: no cover
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         ballot = rs.ambience['ballot']
 
@@ -1360,7 +1360,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly")
     def summary_ballots(self, rs: RequestState, assembly_id: int) -> Response:
         """Give an online summary of all tallied ballots of an assembly."""
-        if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):
+        if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):  # pragma: no cover
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
 
         if grouped := self._group_ballots(rs, assembly_id):
@@ -1508,7 +1508,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         for classical voting (i.e. with a fixed number of equally weighted
         votes).
         """
-        if not self.assemblyproxy.may_assemble(rs, ballot_id=ballot_id):
+        if not self.assemblyproxy.may_assemble(rs, ballot_id=ballot_id):  # pragma: no cover
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         if not self.assemblyproxy.is_ballot_voting(rs, ballot_id):
             rs.notify("error", n_("Ballot is outside its voting period."))
@@ -1567,7 +1567,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     def get_result(self, rs: RequestState, assembly_id: int,
                    ballot_id: int) -> Response:
         """Download the tallied stats of a ballot."""
-        if not self.assemblyproxy.may_assemble(rs, ballot_id=ballot_id):
+        if not self.assemblyproxy.may_assemble(rs, ballot_id=ballot_id):  # pragma: no cover
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         if not (result := self.assemblyproxy.get_ballot_result(rs, ballot_id)):
             rs.notify("warning", n_("Ballot not yet tallied."))
