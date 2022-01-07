@@ -254,7 +254,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         if presider_id not in rs.ambience['assembly']['presiders']:
             rs.notify("info", n_(
                 "This user is not a presider for this assembly."))
-            return self.redirect(rs, "assembly/show")
+            return self.redirect(rs, "assembly/show_assembly")
         code = self.assemblyproxy.remove_assembly_presider(rs, assembly_id, presider_id)
         self.notify_return_code(rs, code, error=n_("Action had no effect."))
         return self.redirect(rs, "assembly/show_assembly")
@@ -1555,8 +1555,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         """Download the tallied stats of a ballot."""
         if not self.assemblyproxy.may_assemble(rs, ballot_id=ballot_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        result = self.assemblyproxy.get_ballot_result(rs, ballot_id)
-        if not rs.ambience['ballot']['is_tallied'] or not result:
+        if not (result := self.assemblyproxy.get_ballot_result(rs, ballot_id)):
             rs.notify("warning", n_("Ballot not yet tallied."))
             return self.show_ballot(rs, assembly_id, ballot_id)
         return self.send_file(rs, data=result, inline=False,

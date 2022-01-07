@@ -512,7 +512,11 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f = self.response.forms['addpresidersform']
         f['presider_ids'] = USER_DICT['werner']['DB-ID']
         self.submit(f)
-        self.submit(self.response.forms['createattendeelistform'])
+        f = self.response.forms['createattendeelistform']
+        self.submit(f)
+        self.submit(f, check_notification=False)
+        self.assertNotification(
+            'info', "Mailingliste archiv@lists.cde-ev.de existiert bereits.")
         self.submit(self.response.forms['createpresiderlistform'])
 
     @as_users("werner")
@@ -541,6 +545,14 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.submit(f)
         self.assertTitle("Internationaler Kongress")
         self.assertNotIn('signupform', self.response.forms)
+        self.submit(f, check_notification=False)
+        self.assertNotification('info', "Bereits angemeldet.")
+        # assembly with running ballots
+        self.traverse("Versammlungs-Übersicht", "Kanonische Beispielversammlung")
+        self.assertNotIn('signupform', self.response.forms)
+        self.post('/assembly/assembly/2/signup', {})
+        self.assertTitle("Kanonische Beispielversammlung")
+        self.assertNotification('warning', "Der Anmeldezeitraum ist vorbei.")
 
     @as_users("kalif")
     def test_no_signup(self) -> None:
@@ -557,31 +569,44 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertNonPresence("Kalif", div='attendees-list')
         # Valid request
         f = self.response.forms['addattendeeform']
-        f['persona_id'] = "DB-11-6"
+        f['persona_id'] = USER_DICT['kalif']['DB-ID']
         self.submit(f)
         self.assertTitle('Anwesenheitsliste (Archiv-Sammlung)')
         self.assertPresence("Kalif", div='attendees-list')
         # Archived user
-        f = self.response.forms['addattendeeform']
-        f['persona_id'] = "DB-8-6"
+        f['persona_id'] = USER_DICT['hades']['DB-ID']
         self.submit(f, check_notification=False)
         self.assertValidationError(
             "persona_id", "Dieser Benutzer existiert nicht oder ist archiviert.")
         # Member
-        f = self.response.forms['addattendeeform']
-        f['persona_id'] = "DB-2-7"
+        f['persona_id'] = USER_DICT['berta']['DB-ID']
         self.submit(f, check_notification=False)
         self.assertValidationError(
             "persona_id", "Mitglieder müssen sich selbst anmelden.")
         # Event user
-        f = self.response.forms['addattendeeform']
-        f['persona_id'] = "DB-5-1"
+        f['persona_id'] = USER_DICT['emilia']['DB-ID']
         self.submit(f, check_notification=False)
         self.assertValidationError(
             "persona_id", "Dieser Nutzer ist kein Versammlungsnutzer.")
-        # TODO: add a check for a non-existant user and an invalid DB-ID.
+        # Nonexistent user
+        f['persona_id'] = "DB-1000-6"
+        self.submit(f, check_notification=False)
+        self.assertValidationError(
+            'persona_id', "Dieser Benutzer existiert nicht oder ist archiviert.")
+        # Invalid DB-ID
+        f['persona_id'] = "DB-1000-X"
+        self.submit(f, check_notification=False)
+        self.assertValidationError('persona_id', "Checksumme stimmt nicht.")
+        # signup impossible for assembly with running ballots
+        if self.user_in("ferdinand"):
+            self.get('/assembly/assembly/2/attendees')
+            self.assertNotIn('addattendeeform', self.response.forms)
+            self.post('/assembly/assembly/2/signup/external',
+                      {'persona_id': USER_DICT['kalif']['DB-ID']})
+            self.assertTitle("Anwesenheitsliste (Kanonische Beispielversammlung)")
+            self.assertNotification('warning', "Der Anmeldezeitraum ist vorbei.")
 
-    @as_users("werner", "viktor", "kalif")
+    @as_users("werner", "kalif")
     def test_list_attendees(self) -> None:
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Internationaler Kongress'},
@@ -595,11 +620,17 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertNonPresence("Charly")
         if self.user_in('kalif'):
             self.assertNonPresence("Download")
-        elif self.user_in('viktor', 'werner'):
+        else:
             self.assertPresence("Download")
             self.traverse("TeX-Liste")
             for attendee in attendees:
                 self.assertIn(attendee, self.response.text)
+            self.get('/assembly/assembly/3/attendees')
+            self.assertTitle("Anwesenheitsliste (Archiv-Sammlung)")
+            self.assertPresence("Insgesamt 0 Anwesende", div='attendees-count')
+            self.traverse("TeX-Liste")
+            self.assertTitle("Anwesenheitsliste (Archiv-Sammlung)")
+            self.assertNotification('info', "Leere Datei.")
 
     @storage
     @as_users("rowena")
@@ -675,7 +706,8 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.post(link + 'add', {'presider_ids': USER_DICT['werner']['DB-ID']})
             self.assertTitle("Drittes CdE-Konzil")
             self.assertNotification('warning', msg)
-            self.assertNotIn("removepresiderform1", self.response.forms)
+            self.assertNotIn(f"removepresiderform{USER_DICT['werner']['id']}",
+                             self.response.forms)
             self.post(link + 'remove', {'presider_id': USER_DICT['werner']['id']})
             self.assertTitle("Drittes CdE-Konzil")
             self.assertNotification('warning', msg)
@@ -1336,6 +1368,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                       {'description': 'Ergebnisdatei herunterladen'},)
         with open(self.testfile_dir / "ballot_result.json", 'rb') as f:
             self.assertEqual(json.load(f), json.loads(self.response.body))
+        self.get('/assembly/assembly/1/ballot/3/result/download')  # running ballot
+        self.assertTitle("Bester Hof (Internationaler Kongress)")
+        self.assertNotification('warning', "Abstimmung noch nicht ausgezählt.")
 
     @storage
     @as_users("kalif")
@@ -1710,11 +1745,12 @@ class TestMultiAssemblyFrontend(MultiAppFrontendTest, AssemblyTestHelpers):
     n = 2
 
     def test_presiders(self) -> None:
-        self.login("anton")
+        self.login("viktor")
         self._create_assembly()
         self._external_signup(USER_DICT["werner"])
         self.traverse(r"\sÜbersicht")
         self.assertPresence("Werner Wahlleitung", div='assembly-presiders')
+
         self.switch_app(1)
         self.login("werner")
         self.traverse("Versammlung", "Drittes CdE-Konzil", "Konfiguration")
@@ -1723,22 +1759,43 @@ class TestMultiAssemblyFrontend(MultiAppFrontendTest, AssemblyTestHelpers):
         self.submit(f)
         self.assertTitle("Drittes CdE-Konzil")
         self.assertPresence("Werner war hier!", div='notes')
-        self.assertNotIn('removepresiderform23', self.response.forms)
+        self.assertNotIn(f"removepresiderform{USER_DICT['werner']['id']}",
+                         self.response.forms)
         self.traverse("Log")
+
         self.switch_app(0)
         self.traverse(r"\sÜbersicht")
         self.assertPresence("Werner war hier!", div='notes')
-        f = self.response.forms['removepresiderform23']
-        self.submit(f, verbose=True)
+        f = self.response.forms[f"removepresiderform{USER_DICT['werner']['id']}"]
+        f['presider_id'] = "ThisIsNoID"
+        self.submit(f, check_notification=False)
+        self.assertNotification('error', "Validierung fehlgeschlagen.")
+        f = self.response.forms[f"removepresiderform{USER_DICT['werner']['id']}"]
+        self.submit(f)
+        self.assertNotIn(f"removepresiderform{USER_DICT['werner']['id']}",
+                         self.response.forms)
+        self.submit(f, check_notification=False)
+        self.assertNotification(
+            'info', "Dieser Nutzer ist kein Wahlleiter für diese Versammlung.")
         self.assertNonPresence("Werner Wahlleitung", div='assembly-presiders',
                                check_div=False)
+
         self.switch_app(1)
         self.traverse(r"\sÜbersicht")
         self.assertNonPresence("Werner war hier!")
         self.assertNoLink("Konfiguration")
         self.assertNoLink("Log")
+
         self.switch_app(0)
         f = self.response.forms['addpresidersform']
+        # wrong format
+        f['presider_ids'] = "DB-1000-X...DB-0-abc"
+        self.submit(f, check_notification=False)
+        self.assertValidationError("presider_ids", "Falsches Format.")
+        # invalid id
+        f['presider_ids'] = "DB-1000-X"
+        self.submit(f, check_notification=False)
+        self.assertValidationError("presider_ids", "Checksumme stimmt nicht.")
         # Try non-existing user.
         f['presider_ids'] = "DB-1000-6"
         self.submit(f, check_notification=False)
@@ -1761,6 +1818,7 @@ class TestMultiAssemblyFrontend(MultiAppFrontendTest, AssemblyTestHelpers):
         f['presider_ids'] = USER_DICT["werner"]['DB-ID']
         self.submit(f)
         self.assertPresence("Werner Wahlleitung", div='assembly-presiders')
+
         self.switch_app(1)
         self.traverse(r"\sÜbersicht")
         self.assertPresence("Werner war hier!", div='notes')
