@@ -1764,12 +1764,25 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
 
             # Provide the secret to retrieve the vote.
             f = self.response.forms['showoldvoteform']
+            f[ANTI_CSRF_TOKEN_NAME] = "evil"
+            self.submit(f, check_notification=False)
+            self.assertNotification('error', "Der Anti-CSRF-Token wurde gefälscht.")
+            f = self.response.forms['showoldvoteform']
+            f['secret'] = "IForgotMySecret"
+            self.submit(f, check_notification=False)
+            self.assertValidationError('secret', "Ungültiges Geheimnis eingegeben.")
             f['secret'] = secret
             self.submit(f, check_notification=False)
             self.assertNonPresence("Die Versammlung wurde beendet und die "
                                    "Stimmen sind nun verschlüsselt.")
             self.assertPresence("Du hast für die folgenden Kandidaten gestimmt: Ja",
                                 div='own-vote', exact=True)
+
+            # providing secret for running ballot not possible
+            self.post('/assembly/assembly/1/ballot/3/result',
+                      {'secret': "-YZN1KWDfMLQ5Y8Q"})
+            self.assertTitle("Bester Hof (Internationaler Kongress)")
+            self.assertNotification('error', "Abstimmung wurde noch nicht ausgezählt.")
 
 
 class TestMultiAssemblyFrontend(MultiAppFrontendTest, AssemblyTestHelpers):

@@ -970,10 +970,10 @@ class AssemblyFrontend(AbstractUserFrontend):
     def show_old_vote(self, rs: RequestState, assembly_id: int, ballot_id: int,
                       secret: str) -> Response:
         """Show a vote in a ballot of an old assembly by providing secret."""
-        if (rs.ambience["assembly"]["is_active"]
-                or not rs.ambience["ballot"]["is_tallied"]):
+        if not rs.ambience["ballot"]["is_tallied"]:
             rs.ignore_validation_errors()
-            return self.show_ballot(rs, assembly_id, ballot_id)
+            rs.notify("error", n_("Ballot has not been tallied."))
+            return self.redirect(rs, "assembly/show_ballot")
         if rs.has_validation_errors():
             return self.show_ballot_result(rs, assembly_id, ballot_id)
         return self.show_ballot_result(rs, assembly_id, ballot_id, secret.strip())

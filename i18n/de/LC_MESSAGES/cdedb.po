@@ -1702,7 +1702,7 @@ msgstr "Ablehnungsgrenze"
 #: cdedb/frontend/assembly.py:1104 cdedb/frontend/assembly.py:1124
 #: cdedb/frontend/assembly.py:1164
 msgid "Entered invalid secret"
-msgstr "Ungültiges Geheimniss eingegeben."
+msgstr "Ungültiges Geheimnis eingegeben."
 
 #: cdedb/frontend/assembly.py:1199
 msgid "Updating ballots failed."
