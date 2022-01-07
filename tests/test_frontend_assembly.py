@@ -1229,6 +1229,22 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertTitle("Lieblingszahl (Internationaler Kongress)")
         f = self.response.forms['voteform']
         self.assertEqual("1=i>pi>e=0", f['vote'].value)
+        # test abstaining, with and without bar
+        f['vote'] = ""
+        self.submit(f)
+        self.assertPresence("Du hast Dich enthalten.", div='status')
+        f = self.response.forms['voteform']
+        self.assertEqual("e=pi=i=1=0", f['vote'].value)
+        self.traverse("Abstimmungen", "Wahl des Innenvorstand")
+        self.assertTitle("Wahl des Innenvorstand (Internationaler Kongress)")
+        self.submit(self.response.forms['voteform'])
+        f = self.response.forms['voteform']
+        self.assertEqual(f"Anton=Berta=Akira={ASSEMBLY_BAR_SHORTNAME}", f['vote'].value)
+        # invalid candidates - test validation errors
+        f['vote'] = "Werner>Anton"
+        self.submit(f, check_notification=False)
+        self.assertValidationError('vote', "Unerwartete Kandidaten gefunden.")
+        self.assertValidationError('vote', "Nicht alle Kandidaten vorhanden.")
 
     @storage
     @as_users("werner", "inga", "kalif")
@@ -1298,6 +1314,24 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertEqual("E", f.get('vote', index=0).value)
         self.assertEqual(None, f.get('vote', index=1).value)
         self.assertEqual(None, f.get('vote', index=2).value)
+        # test error cases
+        f = self.response.forms['voteform']
+        f['vote'] = ["E", ASSEMBLY_BAR_SHORTNAME]
+        self.submit(f, check_notification=False)
+        self.assertNotification(
+            'error', "Ablehnung kann nur exklusiv gewählt werden.")
+        f['vote'] = []
+        f.get('vote', index=0).force_value("")
+        f.get('vote', index=0).checked = True
+        self.submit(f, check_notification=False)
+        self.assertValidationError('vote', "Darf nicht leer sein.", index=0)
+        # ballot without _bar_
+        self.traverse("Abstimmungen", "Antrag zur DSGVO 2.0")
+        f = self.response.forms["voteform"]
+        f.get('vote', index=0).force_value(ASSEMBLY_BAR_SHORTNAME)
+        f.get('vote', index=0).checked = True
+        with self.assertRaisesRegex(ValueError, "Option not available"):
+            self.submit(f)
 
     @storage
     @as_users("werner")
@@ -1614,7 +1648,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertEqual("rot", f['shortname_6'].value)
         self.assertEqual("gelb", f['shortname_7'].value)
         self.assertEqual("gruen", f['shortname_8'].value)
-        self.assertNotIn("Dunkelaquamarin", f.fields)
+        self.assertNotIn(
+            "Dunkelaquamarin",
+            (field.value for field_list in f.fields.values() for field in field_list))
         f['create_-1'].checked = True
         f['shortname_-1'] = "aqua"
         f['title_-1'] = "Dunkelaquamarin"
@@ -1630,7 +1666,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
         f = self.response.forms['candidatessummaryform']
         f['shortname_7'] = "gelb"
-        f['shortname_8'] = "_bar_"
+        f['shortname_8'] = ASSEMBLY_BAR_SHORTNAME
         self.submit(f, check_notification=False)
         self.assertValidationError(
             "shortname_8", "Darf nicht der Bezeichner der Ablehnungsoption sein")
@@ -1643,11 +1679,14 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.submit(f)
 
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
+        f = self.response.forms['candidatessummaryform']
         self.assertEqual("rot", f['shortname_6'].value)
         self.assertEqual("lila", f['title_6'].value)
         self.assertEqual("farbe", f['shortname_8'].value)
         self.assertEqual("aqua", f['shortname_1001'].value)
-        self.assertNotIn("gelb", f.fields)
+        self.assertNotIn(
+            "gelb",
+            (field.value for field_list in f.fields.values() for field in field_list))
 
     @storage
     @as_users("werner")
