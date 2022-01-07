@@ -2462,7 +2462,7 @@ EVENT_FIELD_COMMON_FIELDS: TypeMapping = {
 }
 
 
-EVENT_FIELD_COMMON_FIELDS: TypeMapping = {
+EVENT_FIELD_OPTIONAL_FIELDS: TypeMapping = {
     f'title': str,
     f'sortkey': int,
     f'checkin': bool,
@@ -2470,7 +2470,7 @@ EVENT_FIELD_COMMON_FIELDS: TypeMapping = {
 
 
 EVENT_FIELD_ALL_FIELDS: TypeMapping = {
-    **EVENT_FIELD_COMMON_FIELDS, **EVENT_FIELD_COMMON_FIELDS
+    **EVENT_FIELD_COMMON_FIELDS, **EVENT_FIELD_OPTIONAL_FIELDS
 }
 
 
@@ -2496,7 +2496,7 @@ def _event_field(
             val["title"] = val.get("field_name")
         mandatory_fields = {**EVENT_FIELD_COMMON_FIELDS,
                             "field_name": RestrictiveIdentifier}
-        optional_fields = EVENT_FIELD_COMMON_FIELDS
+        optional_fields = EVENT_FIELD_OPTIONAL_FIELDS
     else:
         mandatory_fields = {}
         optional_fields = {**EVENT_FIELD_ALL_FIELDS, 'id': ID}
