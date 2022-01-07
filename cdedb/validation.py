@@ -2391,16 +2391,16 @@ def _event_track(
 
 
 EVENT_FIELD_COMMON_FIELDS: TypeMapping = {
-    f'kind': const.FieldDatatypes,
-    f'association': const.FieldAssociations,
-    f'entries': Any,  # type: ignore[dict-item]
+    'kind': const.FieldDatatypes,
+    'association': const.FieldAssociations,
+    'entries': Any,  # type: ignore[dict-item]
 }
 
 
 EVENT_FIELD_OPTIONAL_FIELDS: TypeMapping = {
-    f'title': str,
-    f'sortkey': int,
-    f'checkin': bool,
+    'title': str,
+    'sortkey': int,
+    'checkin': bool,
 }
 
 
