@@ -639,8 +639,15 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                 self._create_ballot(bdata, candidates=None)
                 self.assertTitle(f"{bdata['title']} (Drittes CdE-Konzil)")
 
-            # regression test for #2310
             frozen_time.tick(delta=2 * delta)
+            self.traverse({'href': "/show", 'description': "Übersicht"})
+            self.assertInputHasAttr(
+                self.response.forms['concludeassemblyform']['submitform'], 'disabled')
+            self.post('/assembly/assembly/1001/conclude', {'ack_conclude': True})
+            self.assertNotification(
+                'error', "Kann Versammlung mit offenen Abstimmungen nicht abschließen.")
+
+            # regression test for #2310
             self.traverse("Abstimmungen", "Maximale Länge der 1. Satzung")
             frozen_time.tick(delta=2 * delta)
             # First ballot is concluded now, second still running. Ensure viewing
@@ -652,14 +659,43 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             # now the actual conclusion test
             self.assertTitle("Drittes CdE-Konzil")
             f = self.response.forms['concludeassemblyform']
+            self.submit(f, check_notification=False)
+            # TODO: there is no validation error near the checkbox
+            self.assertNotification('error', "Validierung fehlgeschlagen.")
             f['ack_conclude'].checked = True
             self.submit(f)
+            self.assertNotIn('concludeassemblyform', self.response.forms)
+            self.submit(f, check_notification=False)
+            msg = "Die Versammlung ist bereits beendet."
+            self.assertNotification('info', msg)
             self.assertTitle("Drittes CdE-Konzil")
             # Presiders can no longer be changed
+            link = '/assembly/assembly/1001/presider/'
             self.assertNotIn("addpresidersform", self.response.forms)
+            self.post(link + 'add', {'presider_ids': USER_DICT['werner']['DB-ID']})
+            self.assertTitle("Drittes CdE-Konzil")
+            self.assertNotification('warning', msg)
             self.assertNotIn("removepresiderform1", self.response.forms)
+            self.post(link + 'remove', {'presider_id': USER_DICT['werner']['id']})
+            self.assertTitle("Drittes CdE-Konzil")
+            self.assertNotification('warning', msg)
             # deletion is not possible
-            self.assertNotIn("deleteassemblyform", self.response.forms)
+            self.assertNotIn('deleteassemblyform', self.response.forms)
+            self.post('/assembly/assembly/1001/delete', {'ack_delete': True})
+            self.assertNotification(
+                'error',
+                "Versammlungen mit aktiven Abstimmungen können nicht gelöscht werden.")
+            # modification not possible anymore
+            self.traverse("Abstimmungen")  # first iteration starts at this page
+            for link in ('/assembly/assembly/1001/ballot/create',
+                         '/assembly/assembly/1001/change'):
+                self.assertNoLink(link)
+                self.get(link)
+                self.assertTitle("Drittes CdE-Konzil")
+                self.assertNotification('warning', msg)
+                self.post(link, {'title': "Jetzt ist Schluss!"})
+                self.assertTitle("Drittes CdE-Konzil")
+                self.assertNotification('warning', msg)
 
     @storage
     @as_users("anton")

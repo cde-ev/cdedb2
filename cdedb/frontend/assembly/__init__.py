@@ -222,6 +222,10 @@ class AssemblyFrontend(AbstractUserFrontend):
     @REQUESTdata("presider_ids")
     def add_presiders(self, rs: RequestState, assembly_id: int,
                       presider_ids: vtypes.CdedbIDList) -> Response:
+        if not rs.ambience['assembly']['is_active']:
+            rs.ignore_validation_errors()
+            rs.notify("warning", n_("Assembly already concluded."))
+            return self.redirect(rs, "assembly/show_assembly")
         if rs.has_validation_errors():
             return self.show_assembly(rs, assembly_id)
         if not self.coreproxy.verify_ids(rs, presider_ids, is_archived=False):
@@ -241,6 +245,10 @@ class AssemblyFrontend(AbstractUserFrontend):
     @REQUESTdata("presider_id")
     def remove_presider(self, rs: RequestState, assembly_id: int,
                         presider_id: vtypes.ID) -> Response:
+        if not rs.ambience['assembly']['is_active']:
+            rs.ignore_validation_errors()
+            rs.notify("warning", n_("Assembly already concluded."))
+            return self.redirect(rs, "assembly/show_assembly")
         if rs.has_validation_errors():
             return self.show_assembly(rs, assembly_id)
         if presider_id not in rs.ambience['assembly']['presiders']:
@@ -270,6 +278,10 @@ class AssemblyFrontend(AbstractUserFrontend):
                         presider_address: Optional[str], data: Dict[str, Any]
                         ) -> Response:
         """Modify an assembly."""
+        if not rs.ambience['assembly']['is_active']:
+            rs.ignore_validation_errors()
+            rs.notify("warning", n_("Assembly already concluded."))
+            return self.redirect(rs, "assembly/show_assembly")
         data['id'] = assembly_id
         data['presider_address'] = presider_address
         data = check(rs, vtypes.Assembly, data)
@@ -602,6 +614,10 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         This purges stored voting secret.
         """
+        if not rs.ambience['assembly']['is_active']:
+            rs.ignore_validation_errors()
+            rs.notify("info", n_("Assembly already concluded."))
+            return self.redirect(rs, "assembly/show_assembly")
         if not ack_conclude:
             rs.append_validation_error(
                 ("ack_conclude", ValueError(n_("Must be checked."))))
@@ -610,10 +626,8 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         blockers = self.assemblyproxy.conclude_assembly_blockers(
             rs, assembly_id)
-
         if "ballot" in blockers:
-            rs.notify("error",
-                      n_("Unable to conclude assembly with open ballot."))
+            rs.notify("error", n_("Unable to conclude assembly with open ballot."))
             return self.show_assembly(rs, assembly_id)
 
         cascade = {"signup_end"}
@@ -733,6 +747,10 @@ class AssemblyFrontend(AbstractUserFrontend):
     def create_ballot(self, rs: RequestState, assembly_id: int,
                       data: Dict[str, Any]) -> Response:
         """Make a new ballot."""
+        if not rs.ambience['assembly']['is_active']:
+            rs.ignore_validation_errors()
+            rs.notify("warning", n_("Assembly already concluded."))
+            return self.redirect(rs, "assembly/show_assembly")
         data['assembly_id'] = assembly_id
         data = check(rs, vtypes.Ballot, data, creation=True)
         if rs.has_validation_errors():
