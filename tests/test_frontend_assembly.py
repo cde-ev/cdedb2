@@ -10,7 +10,8 @@ import freezegun
 import webtest
 
 from cdedb.common import (
-    ADMIN_VIEWS_COOKIE_NAME, ASSEMBLY_BAR_SHORTNAME, CdEDBObject, NearlyNow, now,
+    ADMIN_VIEWS_COOKIE_NAME, ANTI_CSRF_TOKEN_NAME, ASSEMBLY_BAR_SHORTNAME, CdEDBObject,
+    NearlyNow, now,
 )
 from cdedb.frontend.common import datetime_filter
 from cdedb.query import QueryOperators
@@ -505,10 +506,13 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.response.forms[f"removepresiderform{ USER_DICT['werner']['id'] }"])
         f = self.response.forms['createpresiderlistform']
         self.assertInputHasAttr(f['submitform'], 'disabled')
+        f[ANTI_CSRF_TOKEN_NAME] = "evil"
         self.submit(f, check_notification=False)
-        self.assertPresence(
-            "Mailingliste kann nur mit Versammlungsleitern erstellt werden.",
-            div='notifications')
+        self.assertNotification('error', "Der Anti-CSRF-Token wurde gefälscht.")
+        self.submit(self.response.forms['createpresiderlistform'],
+                    check_notification=False)
+        self.assertNotification(
+            'error', "Mailingliste kann nur mit Versammlungsleitern erstellt werden.")
         f = self.response.forms['addpresidersform']
         f['presider_ids'] = USER_DICT['werner']['DB-ID']
         self.submit(f)
@@ -541,6 +545,10 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Internationaler Kongress'},)
         self.assertTitle("Internationaler Kongress")
+        f = self.response.forms['signupform']
+        f[ANTI_CSRF_TOKEN_NAME] = "evil"
+        self.submit(f, check_notification=False)
+        self.assertNotification('error', "Der Anti-CSRF-Token wurde gefälscht.")
         f = self.response.forms['signupform']
         self.submit(f)
         self.assertTitle("Internationaler Kongress")
@@ -878,6 +886,16 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                     f = self.response.forms['commentballotform']
                     # check that the form is filled with the current comment
                     self.assertEqual(comment, f['comment'].value)
+                    evil_comment = "Evil Eve war hier!"
+                    f['comment'] = evil_comment
+                    f[ANTI_CSRF_TOKEN_NAME] = "evil"
+                    self.submit(f, check_notification=False)
+                    self.assertTitle(f"{ballot_title} bearbeiten"
+                                     " (Internationaler Kongress)")
+                    self.assertNotification('error',
+                                            "Der Anti-CSRF-Token wurde gefälscht.")
+                    f = self.response.forms['commentballotform']
+                    self.assertEqual(evil_comment, f['comment'].value)
                     f['comment'] = ""
                     self.submit(f)
                     self.assertTitle(page_title)

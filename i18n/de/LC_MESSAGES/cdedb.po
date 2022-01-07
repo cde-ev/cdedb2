@@ -2194,7 +2194,7 @@ msgstr "Der Anti-CSRF-Token wurde gefälscht."
 
 #: cdedb/frontend/common.py:1139
 msgid "Anti CSRF token is invalid."
-msgstr "Der Anti-CSRF-Token is ungültig."
+msgstr "Der Anti-CSRF-Token ist ungültig."
 
 #: cdedb/frontend/common.py:1194
 msgid "User created."
