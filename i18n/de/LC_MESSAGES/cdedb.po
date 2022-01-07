@@ -364,6 +364,12 @@ msgstr ""
 "Eine Datei kann nicht mehr gelöscht werden, nachdem die Versammlung gesperrt "
 "wurde."
 
+#: cdedb/backend/assembly.py:1667
+msgid "Cannot add attachment once the assembly has been locked."
+msgstr ""
+"Es kann keine Datei mehr hinzugefügt werden, nachdem die Versammlung "
+"gesperrt wurde."
+
 #: cdedb/backend/assembly.py:1679 cdedb/backend/assembly.py:1684
 #: cdedb/backend/assembly.py:1686 cdedb/backend/assembly.py:2037
 #: cdedb/backend/assembly.py:2042 cdedb/backend/assembly.py:2044

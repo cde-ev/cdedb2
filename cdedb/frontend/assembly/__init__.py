@@ -789,9 +789,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         # the check that the attachment belongs to the assembly is already done in
-        # `reconnoitre_ambience`
-        if rs.has_validation_errors():
-            return self.redirect(rs, "assembly/list_attachments")
+        # `reconnoitre_ambience`, which raises a "400 Bad Request" in this case
         versions = self.assemblyproxy.get_attachment_versions(rs, attachment_id)
         content = self.assemblyproxy.get_attachment_content(
             rs, attachment_id, version_nr)
@@ -805,6 +803,10 @@ class AssemblyFrontend(AbstractUserFrontend):
     @assembly_guard
     def add_attachment_form(self, rs: RequestState, assembly_id: int) -> Response:
         """Render form."""
+        if not rs.ambience['assembly']['is_active']:
+            rs.notify('error',
+                      n_("Cannot add attachment once the assembly has been locked."))
+            return self.redirect(rs, 'assembly/list_attachments')
         return self.render(rs, "add_attachment")
 
     @access("assembly", modi={"POST"})
@@ -816,6 +818,11 @@ class AssemblyFrontend(AbstractUserFrontend):
                        title: str, filename: Optional[vtypes.Identifier],
                        authors: Optional[str]) -> Response:
         """Create a new attachment."""
+        if not rs.ambience['assembly']['is_active']:
+            rs.ignore_validation_errors()
+            rs.notify('error',
+                      n_("Cannot add attachment once the assembly has been locked."))
+            return self.redirect(rs, 'assembly/list_attachments')
         if attachment and not filename:
             assert attachment.filename is not None
             tmp = pathlib.Path(attachment.filename).parts[-1]
@@ -867,10 +874,13 @@ class AssemblyFrontend(AbstractUserFrontend):
     def add_attachment_version_form(self, rs: RequestState, assembly_id: int,
                                     attachment_id: int) -> Response:
         """Render form."""
-        attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
-        if attachment['assembly_id'] != assembly_id:
-            rs.notify("error", n_("Invalid attachment specified."))
-            return self.redirect(rs, "assembly/list_attachments")
+        # the check that the attachment belongs to the assembly is already done in
+        # `reconnoitre_ambience`, which raises a "400 Bad Request" in this case
+        if not self.assemblyproxy.is_attachment_version_creatable(rs, attachment_id):
+            rs.notify('error',
+                      n_("Cannot add attachment version once the assembly has been"
+                         " locked."))
+            return self.redirect(rs, 'assembly/list_attachments')
         latest_version = self.assemblyproxy.get_latest_attachment_version(
             rs, attachment_id)
         is_deletable = self.assemblyproxy.is_attachment_version_deletable(
@@ -895,6 +905,14 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         If this version can not be deleted afterwards, the creation must be confirmed.
         """
+        # the check that the attachment belongs to the assembly is already done in
+        # `reconnoitre_ambience`, which raises a "400 Bad Request" in this case
+        if not self.assemblyproxy.is_attachment_version_creatable(rs, attachment_id):
+            rs.ignore_validation_errors()
+            rs.notify('error',
+                      n_("Cannot add attachment version once the assembly has been"
+                         " locked."))
+            return self.redirect(rs, 'assembly/list_attachments')
         if attachment and not filename:
             assert attachment.filename is not None
             tmp = pathlib.Path(attachment.filename).parts[-1]

@@ -686,6 +686,16 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.assertNotification(
                 'error', "Kann Versammlung mit offenen Abstimmungen nicht abschließen.")
 
+            # upload an attachment to test after conclusion
+            with open(self.testfile_dir / "rechen.pdf", 'rb') as datafile:
+                attachment = datafile.read()
+            self.traverse("Dateien", "Datei hinzufügen")
+            f = self.response.forms['addattachmentform']
+            f['title'] = "Satzung mit weniger Paragrafen"
+            f['attachment'] = webtest.Upload("kurz.pdf", attachment,
+                                             "application/octet-stream")
+            self.submit(f)
+
             # regression test for #2310
             self.traverse("Abstimmungen", "Maximale Länge der 1. Satzung")
             frozen_time.tick(delta=2 * delta)
@@ -736,6 +746,27 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                 self.post(link, {'title': "Jetzt ist Schluss!"})
                 self.assertTitle("Drittes CdE-Konzil")
                 self.assertNotification('warning', msg)
+            # attachments can no longer be changed
+            self.traverse("Dateien")
+            self.assertNotIn('addattachmentform', self.response.forms)
+            self.assertNotIn('addattachmentversionform', self.response.forms)
+            base_link = '/assembly/assembly/1001/attachment/'
+            for suffix, atype in (('add', "Datei"), ('1001/add', "Dateiversion")):
+                url = base_link + suffix
+                self.get(url)
+                self.assertNotification('error',
+                                        f"Es kann keine {atype} mehr hinzugefügt werden"
+                                        f", nachdem die Versammlung gesperrt wurde.")
+                self.post(url, {'title': "Datei mit Verspätung"})
+                self.assertNotification('error',
+                                        f"Es kann keine {atype} mehr hinzugefügt werden"
+                                        ", nachdem die Versammlung gesperrt wurde.")
+            base_link += '1001/'
+            for suffix, atype in (('delete', "Datei"),
+                                  ('version/1/delete', "Dateiversion")):
+                url = base_link + suffix
+                self.post(url, {'attachment_ack_delete': True})
+                self.assertNotification('error', f"{atype} kann nicht gelöscht werden.")
 
     @storage
     @as_users("anton")
@@ -1048,12 +1079,41 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence("Liste der Kandidaten (Version 1)",
                             div="attachment3_version1")
 
-        # remove Kassenprüferbericht
+        # remove Kassenprüferbericht:
+        base_link = '/assembly/assembly/3/attachment/2/'
+        # all-in-one is prohibited
+        self.post(base_link + 'delete', {'attachment_ack_delete': True})
+        self.assertNotification("error",
+                                "Entferne erst alle bis auf eine Dateiversion,"
+                                " bevor Du die gesamte Datei entfernst.")
+        # version 4 never existed
+        self.post(base_link + 'version/4/delete', {'attachment_ack_delete': True})
+        self.assertNotification("error", "Diese Version der Datei existiert nicht.")
+        # version 2 is already deleted
+        self.post(base_link + 'version/2/delete', {'attachment_ack_delete': True})
+        self.assertNotification(
+            "error", "Diese Version der Datei wurde beireits gelöscht.")
+        # version 3 can be deleted
         f = self.response.forms["removeattachmentversionform2_3"]
+        self.submit(f, check_notification=False)
+        # TODO: there is no validation error near the checkbox
+        self.assertNotification('error', "Validierung fehlgeschlagen.")
         f["attachment_ack_delete"] = True
         self.submit(f)
         self.assertPresence("Version 3 wurde gelöscht", div="attachment2_version3")
+        # version 3 is removed now
+        self.get(base_link + 'version/3/')
+        self.assertTitle("Dateien (Archiv-Sammlung)")
+        self.assertNotification('error', "Datei wurde nicht gefunden.")
+        # deleting last version specifically is neither possible nor reachable via UI...
+        self.post(base_link + 'version/1/delete', {'attachment_ack_delete': True})
+        self.assertNotification(
+            "error",
+            "Die letzte verbleibende Version einer Datei kann nicht gelöscht werden.")
+        # ... since the button links to deletion of the whole attachment:
         f = self.response.forms["deleteattachmentform2"]
+        self.submit(f, check_notification=False)
+        self.assertNotification('error', "Validierung fehlgeschlagen.")
         f["attachment_ack_delete"] = True
         self.submit(f)
         self.assertNonPresence("Kassenprüferbericht")
@@ -1103,7 +1163,8 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
 
         # Add a new version
         self.traverse({"href": "/assembly/assembly/1/attachment/1001/add"})
-        # TODO assert there is no warning text about a locked ballot
+        self.assertNonPresence("Eine verknüpfte Abstimmung wurde bereits gesperrt",
+                               div='static-notifications', check_div=True)
         f = self.response.forms['addattachmentversionform']
         f['title'] = "Maßgebliche Beschlussvorlage"
         f['authors'] = "Der Vorstand"
@@ -1165,7 +1226,14 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
 
             # add a new version
             self.traverse({"href": "/assembly/assembly/1/attachment/1001/add"})
-            # TODO assert there is a warning text about a locked ballot
+            self.assertNotification(
+                'warning',
+                "Eine verknüpfte Abstimmung wurde bereits gesperrt, daher sollten nur"
+                " noch formale Korrekturen an dieser Datei vorgenommen werden. Die"
+                " maßgebliche Version bleibt für alle bereits begeonnen Abstimmungen"
+                " maßgeblich.",
+                static=True
+            )
             f = self.response.forms['addattachmentversionform']
             f['title'] = "Formal geänderte Beschlussvorlage"
             f['attachment'] = webtest.Upload("form.pdf", data,
