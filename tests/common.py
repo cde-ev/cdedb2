@@ -1132,6 +1132,14 @@ class FrontendTest(BackendTest):
         if self.response.lxml.xpath("//*[@id='{}']".format(div)):
             self.fail("Element with id {} found".format(div))
 
+    def assertInputHasAttr(self, input_field: webtest.forms.Field, attr: str) -> None:
+        """Assert that the form input has a specific HTML DOM attribute.
+
+        This is no big logic, but should make this slightly internal feature of webtest
+        more easy to use.
+        """
+        self.assertIn(attr, input_field.attrs)
+
     def assertCheckbox(self, status: bool, anid: str) -> None:
         """Assert that the checkbox with the given id is checked (or not)."""
         tmp = (self.response.html.find_all(id=anid)

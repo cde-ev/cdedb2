@@ -453,7 +453,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.submit(
             self.response.forms[f"removepresiderform{ USER_DICT['werner']['id'] }"])
         f = self.response.forms['createpresiderlistform']
-        self.assertIn('disabled', f.fields['submitform'][0].attrs)
+        self.assertInputHasAttr(f['submitform'], 'disabled')
         self.submit(f, check_notification=False)
         self.assertPresence(
             "Mailingliste kann nur mit Versammlungsleitern erstellt werden.",

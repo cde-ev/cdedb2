@@ -331,7 +331,7 @@ class TestEventFrontend(FrontendTest):
         f = self.response.forms[f"removeorgaform{ USER_DICT['garcia']['id'] }"]
         self.submit(f)
         f = self.response.forms['createparticipantlistform']
-        self.assertIn('disabled', f.fields['submitform'][0].attrs)
+        self.assertInputHasAttr(f['submitform'], 'disabled')
         self.submit(f, check_notification=False)
         self.assertPresence("Mailingliste kann nur mit Orgas erstellt werden.",
                             div='notifications')
