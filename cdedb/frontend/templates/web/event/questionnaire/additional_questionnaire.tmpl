@@ -1,6 +1,7 @@
 {% set sidenav_active = 'event_configure_additional_questionnaire' if preview else 'event_quest' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/event/generic.tmpl" as generic_event with context %}
 {% set jshint='weak' %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% block title %}
@@ -43,7 +44,7 @@
         {{ util.anti_csrf_token('event/additional_questionnaire') }}
     {% endif %}
         {% for entry in add_questionnaire %}
-            {{ util.print_questionnaire_entry(entry) }}
+            {{ generic_event.print_questionnaire_entry(entry) }}
         {% endfor %}
         {% if not preview %}
             {{ util.form_input_submit(label="Abschicken", cancellink=cdedblink("event/registration_status"),

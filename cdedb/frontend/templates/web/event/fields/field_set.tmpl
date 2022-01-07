@@ -9,6 +9,7 @@
 
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/event/generic.tmpl" as generic_event with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 
@@ -44,7 +45,7 @@
         <form action="{{ cdedblink('event/field_set') }}" method="POST" id="fieldform" class="form-horizontal">
             {{ util.anti_csrf_token('event/field_set') }}
             {% for anid in ordered %}
-                {{ util.form_event_field_input(
+                {{ generic_event.form_field_input(
                     ambience['event']['fields'][values['field_id']|int], name="input{}".format(anid),
                     label=labels[anid],
                     force_label=True) }}
