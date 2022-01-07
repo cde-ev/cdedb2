@@ -792,78 +792,118 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
     @storage
     @as_users("werner")
     def test_entity_ballot_simple(self) -> None:
-        self.traverse({'description': 'Versammlungen$'},
-                      {'description': 'Internationaler Kongress'},
-                      {'description': 'Abstimmungen'},)
-        self.assertTitle("Abstimmungen (Internationaler Kongress)")
-        self.assertNonPresence("Maximale Länge der Satzung")
-        self.assertNonPresence("Es wurden noch keine Abstimmungen angelegt")
-        bdata = {
-            'title': 'Maximale Länge der Satzung',
-            'description': "Dann muss man halt eine alte Regel rauswerfen,"
-                           " wenn man eine neue will.",
-            'vote_begin': "2222-4-1 00:00:00",
-            'vote_end': "2222-5-1 00:00:00",
-            'votes': "",
-            'notes': "Kein Aprilscherz!",
-        }
-        self._create_ballot(bdata, atitle="Internationaler Kongress")
-        self.traverse({'description': 'Bearbeiten'},)
+        """This test covers all around creation, modification and deletion.
+        Everything related to voting and tallying is covered in own tests."""
+        # create ballot
+        self.traverse("Versammlungen", "Internationaler Kongress", "Abstimmungen",
+                      "Abstimmung anlegen")
+        self.assertTitle("Abstimmung anlegen (Internationaler Kongress)")
         f = self.response.forms['configureballotform']
-        self.assertEqual("Kein Aprilscherz!", f['notes'].value)
-        f['notes'] = "April, April!"
+        f['title'] = "Maximale Länge der Satzung"
+        f['description'] = ("Dann muss man halt eine alte Regel rauswerfen,"
+                            " wenn man eine neue will.")
         f['vote_begin'] = "2222-4-1 00:00:00"
-        f['vote_end'] = "2222-4-1 00:00:01"
-        self.submit(f)
-        # votes must be empty or a positive int
-        self.traverse({'description': 'Bearbeiten'}, )
-        f = self.response.forms['configureballotform']
-        f['votes'] = 0
+        f['vote_end'] = "2222-3-1 00:00:00"
+        f['notes'] = "_Kein_ Aprilscherz!"
         self.submit(f, check_notification=False)
-        self.assertValidationError('votes', message="Muss positiv sein.")
-        f['votes'] = 1
+        self.assertValidationError(
+            'vote_end',  "Darf nicht vor Abstimmungsbeginn liegen.")
+        f['vote_end'] = "2222-5-1 00:00:00"
         self.submit(f)
-        self.assertTitle("Maximale Länge der Satzung (Internationaler Kongress)")
-        self.traverse({'description': 'Bearbeiten'},)
-        f = self.response.forms['configureballotform']
-        self.assertEqual("April, April!", f['notes'].value)
-        self.traverse({'description': 'Abstimmungen'},)
-        self.assertTitle("Abstimmungen (Internationaler Kongress)")
-        self.assertPresence("Maximale Länge der Satzung")
-        self.traverse({'description': 'Maximale Länge der Satzung'},)
-        self.assertTitle("Maximale Länge der Satzung (Internationaler Kongress)")
-        f = self.response.forms['deleteballotform']
-        f['ack_delete'].checked = True
-        self.submit(f)
-        self.traverse({'description': 'Abstimmungen'},)
-        self.assertTitle("Abstimmungen (Internationaler Kongress)")
-        self.assertNonPresence("Maximale Länge der Satzung")
 
-    @storage
-    @as_users("werner")
-    def test_delete_ballot(self) -> None:
-        self.get("/assembly/assembly/1/ballot/2/show")
-        self.assertTitle("Farbe des Logos (Internationaler Kongress)")
-        self.assertPresence("Diese Abstimmung hat noch nicht begonnen.",
-                            div='status')
-        f = self.response.forms['deleteballotform']
-        f['ack_delete'].checked = True
-        self.submit(f)
-        self.assertTitle("Abstimmungen (Internationaler Kongress)")
-        self.assertNonPresence("Farbe des Logos")
-        self.assertNonPresence("Zukünftige Abstimmungen")
-        self.traverse({"description": "Lieblingszahl"})
-        self.assertTitle("Lieblingszahl (Internationaler Kongress)")
-        self.assertPresence("Die Abstimmung läuft.", div='status')
-        self.assertNonPresence("Löschen")
-        self.assertNotIn("deleteballotform", self.response.forms)
-        self.get("/assembly/assembly/1/ballot/list")
-        self.traverse({"description": "Antwort auf die letzte aller Fragen"})
-        self.assertTitle(
-            "Antwort auf die letzte aller Fragen (Internationaler Kongress)")
-        self.assertPresence("Die Abstimmung ist beendet.", div='status')
-        self.assertNonPresence("Löschen")
-        self.assertNotIn("deleteballotform", self.response.forms)
+        ballot_states = {
+            1: "Abstimmung ist beendet",
+            5: "Abstimmung läuft",
+            1001: "Abstimmung hat noch nicht begonnen",
+        }
+        comment_failed = "Kommentare sind nur für beendete Abstimmungen erlaubt."
+        change_failed = "Eine aktive Abstimmung kann nicht mehr verändert werden."
+        for ballot_id in ballot_states:
+            with self.subTest(ballot_states[ballot_id]):
+                ballot_title = (
+                    "Maximale Länge der Satzung"
+                    if ballot_id == 1001 else self.get_sample_datum(
+                        'assembly.ballots', ballot_id)['title'])
+                page_title = f"{ballot_title} (Internationaler Kongress)"
+                self.get(f'/assembly/assembly/1/ballot/{ballot_id}/show')
+                self.assertTitle(page_title)
+                self.assertPresence(ballot_states[ballot_id], div='status')
+
+                # commenting - only possible for past ballots
+                comment_url = f'/assembly/assembly/1/ballot/{ballot_id}/comment'
+                if ballot_id == 1:
+                    self.traverse({'href': comment_url, 'description': "Kommentieren"})
+                    self.assertTitle(f"{ballot_title} bearbeiten"
+                                     f" (Internationaler Kongress)")
+                    f = self.response.forms['commentballotform']
+                    comment = "War nur ein *Experiment*."
+                    f['comment'] = comment
+                    self.submit(f)
+                    self.assertTitle(page_title)
+                    self.assertPresence("Abstimmungskommentar")
+                    self.assertPresence("War nur ein Experiment.", div='comment')
+                    self.traverse("Kommentieren")
+                    f = self.response.forms['commentballotform']
+                    # check that the form is filled with the current comment
+                    self.assertEqual(comment, f['comment'].value)
+                    f['comment'] = ""
+                    self.submit(f)
+                    self.assertTitle(page_title)
+                    self.assertNonPresence("Abstimmungskommentar")
+                else:
+                    self.assertNoLink(comment_url)
+                    self.get(comment_url)
+                    self.assertTitle(page_title)
+                    self.assertNotification('error', comment_failed)
+                    self.post(comment_url, {'comment': "Testkommentar"})
+                    self.assertTitle(page_title)
+                    self.assertNotification('error', comment_failed)
+
+                # modification and deletion - only possible for future ballots
+                self.assertTitle(page_title)
+                change_url = f'/assembly/assembly/1/ballot/{ballot_id}/change'
+                if ballot_id == 1001:
+                    # modification
+                    self.traverse({'href': change_url, 'description': "Bearbeiten"})
+                    f = self.response.forms['configureballotform']
+                    self.assertEqual("_Kein_ Aprilscherz!", f['notes'].value)
+                    f['notes'] = "April, April!"
+                    f['vote_begin'] = "2222-4-1 00:00:00"
+                    f['vote_end'] = "2222-4-1 00:00:01"
+                    # votes must be empty or a positive int
+                    f['votes'] = 0
+                    self.submit(f, check_notification=False)
+                    self.assertValidationError('votes', message="Muss positiv sein.")
+                    f['votes'] = 1
+                    self.submit(f)
+                    self.assertTitle(
+                        "Maximale Länge der Satzung (Internationaler Kongress)")
+                    self.assertPresence("April, April!", div='notes')
+                    # deletion
+                    f = self.response.forms['deleteballotform']
+                    self.submit(f, check_notification=False)
+                    # TODO: there is no validation error near the checkbox
+                    self.assertNotification('error', "Validierung fehlgeschlagen.")
+                    f['ack_delete'].checked = True
+                    self.submit(f)
+                    self.assertTitle("Abstimmungen (Internationaler Kongress)")
+                    self.assertNonPresence("Maximale Länge der Satzung")
+                else:
+                    # modification
+                    self.assertNoLink(change_url)
+                    self.get(change_url)
+                    self.assertTitle(page_title)
+                    self.assertNotification('warning', change_failed)
+                    self.post(change_url, {'notes': "Störenfried war hier!"})
+                    self.assertTitle(page_title)
+                    self.assertNotification('warning', change_failed)
+                    # deletion
+                    self.assertNonPresence("Löschen")
+                    self.assertNotIn("deleteballotform", self.response.forms)
+                    self.post(f'/assembly/assembly/1/ballot/{ballot_id}/delete',
+                              {'ack_delete': True})
+                    self.assertNotification(
+                        'error', "Eine aktive Abstimmung kann nicht gelöscht werden.")
 
     @storage
     @as_users("charly", "viktor")
@@ -1333,28 +1373,6 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.assertPresence("Fehler! Abstimmung ist außerhalb"
                                 " des Abstimmungszeitraums",
                                 div='notifications')
-
-    @storage
-    @as_users("werner")
-    def test_comment(self) -> None:
-        self.get('/assembly/assembly/3/ballot/6/show')
-        self.assertNonPresence("Abstimmungskommentar")
-        self.traverse("Kommentieren")
-        f = self.response.forms['commentballotform']
-        comment = "War nur ein *Experiment*."
-        f['comment'] = comment
-        self.submit(f)
-        self.assertTitle("Test-Abstimmung – bitte ignorieren (Archiv-Sammlung)")
-        self.assertPresence("Abstimmungskommentar")
-        self.assertPresence("War nur ein Experiment.")
-        self.traverse("Kommentieren")
-        f = self.response.forms['commentballotform']
-        # check that the form is filled with the current comment
-        self.assertEqual(comment, f['comment'].value)
-        f['comment'] = ""
-        self.submit(f)
-        self.assertTitle("Test-Abstimmung – bitte ignorieren (Archiv-Sammlung)")
-        self.assertNonPresence("Abstimmungskommentar")
 
     @storage
     @as_users("anton")

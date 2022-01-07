@@ -1397,6 +1397,10 @@ class AssemblyFrontend(AbstractUserFrontend):
     def change_ballot(self, rs: RequestState, assembly_id: int,
                       ballot_id: int, data: Dict[str, Any]) -> Response:
         """Modify a ballot."""
+        if now() > rs.ambience['ballot']['vote_begin']:
+            rs.ignore_validation_errors()
+            rs.notify("warning", n_("Unable to modify active ballot."))
+            return self.redirect(rs, "assembly/show_ballot")
         data['id'] = ballot_id
         data = check(rs, vtypes.Ballot, data)
         if rs.has_validation_errors():
