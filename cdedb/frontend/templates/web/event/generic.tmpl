@@ -227,13 +227,15 @@
                     {{ util.form_input_text(name="title_{}".format(part_id), label=gettext("Title_[[name of an entity]]"),
                                             attributes=('data-basename="title_"'|s if newrow else ''),
                                             aclass='input-title drow-input', horizontal=false) }}
-                    {{ util.form_input_textarea(name="info_{}".format(part_id), label=gettext("Text"),
-                                                attributes=('data-basename="info_"'|s if newrow else ''),
-                                                aclass='input-info drow-input', horizontal=false,
-                                                info=gettext("Supports %(infolink)s for “Text-Only” fields.")|format(
-                                                    infolink=util.href(docurl("Handbuch_Markdown"),
-                                                                       gettext("Markdown"),
-                                                                       title=gettext("Short Markdown summary")))|s) }}
+                    {% set textarea_id = "input-textarea-info_{}".format(part_id) %}
+                    {# This can not use form_input_textarea, since we support markdown just for text-only fields. #}
+                    {%- call util.form_input_general(name="info_{}".format(part_id), label=gettext("Text"),
+                                                     horizontal=false, anid=textarea_id)  %}
+                        {{ util.input_textarea(name="info_{}".format(part_id), anid=textarea_id,
+                                               attributes=('data-basename="info_"'|s if newrow else ''),
+                                               aclass='form-control input-info drow-input') }}
+                        {{ util.markdown_preview(textarea_id, "Supports Markdown for “Text-Only” fields.") }}
+                    {%- endcall %}
                 </div>
                 <div class="col-md-6">
                     {{ util.form_input_select("field_id_{}".format(part_id), label=gettext("Query"),
