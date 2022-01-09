@@ -233,38 +233,6 @@
     {% endif %}
 {% endmacro %}
 
-{% macro print_questionnaire_result(entry, registration) %}
-    {% if entry['field_id'] %}
-        {% with FIELD = ambience['event']['fields'][entry['field_id']] %}
-            <div id="questionnaire_field_result_{{ FIELD['field_name'] }}">
-                <dt>{{ entry['title'] }}</dt>
-                <dd>
-                    {% if FIELD['entries'] %}
-                        {% set chosen = registration['fields'].get(FIELD['field_name'])|string %}
-                        {% for option, display_name in FIELD['entries'] %}
-                            {% if chosen == option %}
-                                {{ display_name }}
-                            {% endif %}
-                         {% endfor %}
-                    {% elif FIELD['kind'] == enums['FieldDatatypes'].bool %}
-                        {{ util.deko_checkbox(
-                            checked=registration['fields'].get(FIELD['field_name'])) }}
-                    {% elif FIELD['kind'] == enums['FieldDatatypes'].date %}
-                        {{ registration['fields'].get(FIELD['field_name'])
-                           |date(lang=lang, passthrough=True) }}
-                    {% elif FIELD['kind'] == enums['FieldDatatypes'].datetime %}
-                        {{ registration['fields'].get(FIELD['field_name'])
-                           |datetime(lang=lang, passthrough=True) }}
-                    {% elif FIELD['kind'] == enums['FieldDatatypes'].float %}
-                        {{ registration['fields'].get(FIELD['field_name'])|decimal(lang=lang) }}
-                    {% else %}
-                        {{ registration['fields'].get(FIELD['field_name'])|linebreaks }}
-                    {% endif %}
-                </dd>
-            </div>
-        {% endwith %}
-    {% endif %}
-{% endmacro %}
 
 {# Macro for a general questionnaire part, that can have each role in the DynamicRow workflow.
    aclass is used to pass classes to the row, such as drow-row, drow-prototype, drow-new
