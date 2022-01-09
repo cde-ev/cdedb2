@@ -1238,7 +1238,7 @@ class CoreBaseBackend(AbstractBackend):
             * The persona being a member.
             * The persona already being archived.
             * The persona having logged in in the last two years.
-            * The persona having been changed/created in the last two years.
+            * The persona having been manually changed/created in the last two years.
             * The persona being involved (orga/registration) with any recent event.
             * The persona being involved (presider/attendee) with an active assembly.
             * The persona being explicitly subscribed to any mailinglist.
@@ -1264,17 +1264,10 @@ class CoreBaseBackend(AbstractBackend):
 
             # Check that the latest update to the persona was before the cutoff date.
             # Normally we would utilize self.changelog_get_generation() to retrieve
-            # `generation`, but here we take special care to exclude a global change
-            # to all personas regarding country codes, so that that change is not
-            # taken into account.
+            # `generation`, but we exclude automated script changes here.
             query = ("SELECT MAX(generation) FROM core.changelog"
-                     " WHERE persona_id = %s AND"
-                     " NOT (change_note = %s AND ctime >= %s AND ctime < %s)")
-            country_code_timestamp = datetime.datetime(2021, 3, 20, 9, 42, 34)
-            params = (persona_id, "Land auf Ländercode umgestellt.",
-                      country_code_timestamp,
-                      country_code_timestamp + datetime.timedelta(seconds=1))
-            generation = unwrap(self.query_one(rs, query, params))
+                     " WHERE persona_id = %s AND automated_change = FALSE")
+            generation = unwrap(self.query_one(rs, query, (persona_id,)))
             if not generation:
                 # Something strange is going on, so better not do anything.
                 self.logger.error(f"No valid generation seems to exist for persona"
