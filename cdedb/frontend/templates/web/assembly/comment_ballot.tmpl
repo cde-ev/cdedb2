@@ -1,12 +1,12 @@
-{% extends "web/assembly/change_ballot.tmpl" %}
+{% extends "web/assembly/configure_ballot.tmpl" %}
 {% block content %}
-    <form action="{{ cdedblink('assembly/comment_concluded_ballot') }}" method="POST" id="changeballotform"
+    <form action="{{ cdedblink('assembly/comment_concluded_ballot') }}" method="POST" id="commentballotform"
             class="form-horizontal">
         {{ util.anti_csrf_token('assembly/comment_concluded_ballot') }}
         {{ util.form_input_textarea(name="comment", label=gettext("Comment"), markdown=True) }}
         {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink('assembly/show_ballot')) }}
     </form>
     <script nonce="{{ csp_nonce }}">
-        $('#changeballotform').cdedbProtectChanges();
+        $('#commentballotform').cdedbProtectChanges();
     </script>
 {% endblock %}
