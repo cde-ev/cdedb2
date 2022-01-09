@@ -35,7 +35,7 @@ Should you see the need to manually rebuild them you can do so using
 Starting the containers
 -----------------------
 
-To start the containers you can simply run ``docker-copmpose up``.
+To start the containers you can simply run ``docker-compose up``.
 This will let the containers run in the foreground and block your terminal.
 If you wish to run the containers in a detached mode you can append a ``-d``.
 For the LDAP container to properly work you have to start it after seeding the database.
@@ -74,8 +74,7 @@ To do this you can run the following:
     $ # navigate to the repository root
     $ make i18n-compile
     $ make doc
-    $ cd related/docker
-    $ docker-compose exec app make sample-data
+    $ docker-compose --file related/docker/docker-compose.yaml exec app make sample-data
 
 .. warning::
 

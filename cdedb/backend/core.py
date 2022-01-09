@@ -52,7 +52,7 @@ class CoreBackend(AbstractBackend):
         secrets = SecretsConfig(configpath)
         self.connpool = connection_pool_factory(
             self.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
-            secrets, self.conf["DB_PORT"])
+            secrets, self.conf["DB_HOST"], self.conf["DB_PORT"])
         # local variable to prevent closure over secrets
         reset_salt = secrets["RESET_SALT"]
         self.generate_reset_cookie = (
