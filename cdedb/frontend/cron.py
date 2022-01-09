@@ -34,7 +34,7 @@ class CronFrontend(BaseApp):
         secrets = SecretsConfig(configpath)
         self.connpool = connection_pool_factory(
             self.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
-            secrets, self.conf["DB_PORT"])
+            secrets, self.conf["DB_HOST"], self.conf["DB_PORT"])
         self.translations = {
             lang: gettext.translation(
                 'cdedb', languages=[lang],
