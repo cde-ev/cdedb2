@@ -1,10 +1,8 @@
 {% if ambience["assembly"] %}
     {% set action_target = "assembly/change_assembly" %}
-    {% set form_name = "changeassemblyform" %}
     {% set sidenav_active='assembly_config' %}
 {% else %}
     {% set action_target = "assembly/create_assembly" %}
-    {% set form_name = "createassemblyform" %}
     {% set sidenav_active='assembly_index' %}
 {% endif %}
 {% extends "web/assembly/base.tmpl" %}
@@ -42,7 +40,7 @@
 {% endblock %}
 {% block content %}
 
-    <form action="{{ cdedblink(action_target) }}" method="POST" id="{{ form_name }}" class="form-horizontal">
+    <form action="{{ cdedblink(action_target) }}" method="POST" id="configureassemblyform" class="form-horizontal">
         {{ util.anti_csrf_token(action_target) }}
 
         {# Data field definitions. #}
@@ -81,6 +79,6 @@
     </form>
 
     <script nonce="{{ csp_nonce }}">
-        $('#{{ form_name }}').cdedbProtectChanges();
+        $('#configureassemblyform').cdedbProtectChanges();
     </script>
 {% endblock %}

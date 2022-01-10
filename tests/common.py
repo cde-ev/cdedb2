@@ -148,7 +148,7 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
     secrets = SecretsConfig(backend.conf._configpath)
     connpool = connection_pool_factory(
         backend.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
-        secrets, backend.conf["DB_PORT"])
+        secrets, backend.conf["DB_HOST"], backend.conf["DB_PORT"])
     translations = setup_translations(backend.conf)
 
     def setup_requeststate(key: Optional[str], ip: str = "127.0.0.0"

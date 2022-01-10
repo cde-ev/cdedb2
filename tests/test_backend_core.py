@@ -16,8 +16,7 @@ from cdedb.common import (
 )
 from cdedb.validation import PERSONA_CDE_CREATION
 from tests.common import (
-    ANONYMOUS, USER_DICT, BackendTest, as_users, create_mock_image, execsql, prepsql,
-    storage,
+    ANONYMOUS, USER_DICT, BackendTest, as_users, create_mock_image, prepsql, storage,
 )
 
 PERSONA_TEMPLATE = {
@@ -1264,16 +1263,11 @@ class TestCoreBackend(BackendTest):
                 if u["id"] == 18:
                     self.assertTrue(res)
                     key = self.key
-                    generation = self.core.changelog_get_generation(key, u["id"])
-                    self.core.change_persona(
+                    self.core.set_persona(
                         key, {"id": u["id"], "notes": "test"},
-                        change_note="Land auf Ländercode umgestellt.")
-                    self.assertEqual(
-                        generation + 1,
-                        self.core.changelog_get_generation(key, u["id"]))
-                    execsql(f"UPDATE core.changelog SET ctime = '2021-03-20T09:42:34'"
-                            f" WHERE persona_id = {u['id']}"
-                            f" AND generation = {generation + 1}")
+                        change_note="Diese Änderung wurde maschinell erstellt und ist"
+                                    " auch ohne Unterschrift gültig.",
+                        automated_change=True)
                     self.assertTrue(
                         self.core.is_persona_automatically_archivable(key, u["id"]))
                     self.assertIsNone(
