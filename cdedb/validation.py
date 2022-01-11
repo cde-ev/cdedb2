@@ -2385,6 +2385,12 @@ def _event_part_group_setter(
     val: Any, argname: str = "part_groups",
     **kwargs: Any
 ) -> EventPartGroupSetter:
+    """Validate a `CdEDBOptionalMap` of part groups.
+
+    This is basically identical to the validation of the `fields` and `parts` keys of
+    the `vtypes.Event` validator, but is separate because this has a separate backend
+    setter.
+    """
     val = _mapping(val, argname)
 
     errs = ValidationSummary()
