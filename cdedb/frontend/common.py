@@ -1762,7 +1762,7 @@ def REQUESTdata(
                             rs.notify("warning", n_("Link invalid."))
 
                     origin = typing.get_origin(type_)
-                    if origin is collections.abc.Collection or origin is list:
+                    if origin is collections.abc.Collection:
                         type_ = unwrap(type_.__args__)
                         vals = tuple(rs.request.values.getlist(name))
                         if vals:
