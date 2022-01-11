@@ -622,7 +622,7 @@ class EventEventMixin(EventBaseFrontend):
         }
         for key in ('title', 'shortname'):
             existing = {pg[key] for pg in rs.ambience['event']['part_groups'].values()}
-            if data[key] in existing:
+            if data[key] in existing - {rs.ambience['part_group'][key]}:
                 rs.append_validation_error((key, ValueError(n_(
                     "A part group with this name already exists."))))
         if rs.has_validation_errors():

@@ -4706,6 +4706,9 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence(new_shortname, div=f"partgroup_{new_id}")
         self.assertPresence(new_shortname[::-1], div=f"partgroup_{new_id}")
 
+        # Check that resubmitting works but changes nothing.
+        self.submit(f)
+
         self.traverse("Statistik")
         self.assertPresence(new_shortname[::-1], div="participant-stats")
 
