@@ -504,6 +504,12 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         query = f"DELETE FROM {table} WHERE {entity_key} = %s"
         return self.query_exec(rs, query, (entity,))
 
+    def sql_defer_constraints(self, rs: RequestState, constraints: Sequence[str]
+                              ) -> DefaultReturnCode:
+        """Helper for deferring the given constraints for the current transaction."""
+        query = f"SET CONSTRAINTS {', '.join(constraints)} DEFERRED"
+        return self.query_exec(rs, query, ())
+
     def cgitb_log(self) -> None:
         """Log the current exception.
 
