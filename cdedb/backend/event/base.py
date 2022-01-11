@@ -511,7 +511,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
             # new
             for x in mixed_existence_sorter(new_part_groups):
-                new_part_group = copy.copy(part_groups[x])
+                new_part_group = part_groups[x]
                 assert new_part_group is not None
                 new_part_group['event_id'] = event_id
                 part_ids = affirm_set(vtypes.ID, new_part_group.pop('part_ids'))
@@ -532,7 +532,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 current_part_group_data = {e['id']: e for e in self.sql_select(
                     rs, "event.part_groups", PART_GROUP_FIELDS, updated_part_groups)}
                 for x in mixed_existence_sorter(updated_part_groups):
-                    updated = copy.copy(part_groups[x])
+                    updated = part_groups[x]
                     assert updated is not None
                     updated['id'] = x
                     # Changing the constraint type is not allowed.
@@ -541,7 +541,6 @@ class EventBaseBackend(EventLowLevelBackend):
                     title = updated.get('title', current_part_group_data[x]['title'])
                     if any(updated[k] != current_part_group_data[x][k]
                            for k in updated):
-                        self.logger.debug(updated)
                         ret *= self.sql_update(rs, "event.part_groups", updated)
                         self.event_log(
                             rs, const.EventLogCodes.part_group_changed, event_id,
