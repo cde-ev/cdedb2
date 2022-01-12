@@ -9,7 +9,8 @@ import webtest
 
 import cdedb.database.constants as const
 from cdedb.common import (
-    ADMIN_VIEWS_COOKIE_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, get_hash,
+    ADMIN_VIEWS_COOKIE_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, GenesisDecision,
+    get_hash,
 )
 from cdedb.query import QueryOperators
 from tests.common import (
@@ -220,9 +221,8 @@ class TestCoreFrontend(FrontendTest):
         _check_redirected_profile()
         self.get('/core/persona/8/username/adminchange')
         _check_redirected_profile()
-        # post needs anti-csrf token
-        # self.post('/core/persona/8/activity/change', {'activity': False})
-        # _check_redirected_profile()
+        self.post('/core/persona/8/activity/change', {'activity': False})
+        _check_redirected_profile()
 
     @as_users("emilia", "janis")
     def test_showuser_self(self) -> None:
@@ -1806,9 +1806,7 @@ class TestCoreFrontend(FrontendTest):
         link = self.fetch_link()
         self.get(link)
 
-        self.traverse({'description': 'Accountanfragen'},
-                      {'description': 'Details'},
-                      {'description': 'Bearbeiten'})
+        self.traverse('Accountanfragen', 'Details', 'Accountanfrage bearbeiten')
         f = self.response.forms['genesismodifyform']
         self.assertNonPresence("Warnungen ignorieren")
         self.submit(f, check_notification=False)
@@ -1817,8 +1815,8 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesismodifyform']
         f[IGNORE_WARNINGS_NAME].checked = True
         self.submit(f)
-        f = self.response.forms['genesisapprovalform']
-        self.submit(f)
+        f = self.response.forms['genesisdecisionform']
+        self.submit(f, button="decision", value=str(GenesisDecision.approve))
 
     def _genesis_request(self, data: CdEDBObject, realm: Optional[str] = None) -> None:
         if realm:
@@ -1895,10 +1893,11 @@ class TestCoreFrontend(FrontendTest):
             div='no-ml-request')
         self.traverse({'href': '/core/genesis/1001/show'})
         self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
-        f = self.response.forms['genesisapprovalform']
-        self.submit(f)
+        f = self.response.forms['genesisdecisionform']
+        self.submit(f, button="decision", value=str(GenesisDecision.approve))
         link = self.fetch_link()
-        self.submit(f, check_notification=False)
+        self.submit(f, button="decision", value=str(GenesisDecision.approve),
+                    check_notification=False)
         self.assertPresence("Emailadresse bereits vergeben.", div="notifications")
         self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
         self.logout()
@@ -1926,7 +1925,7 @@ class TestCoreFrontend(FrontendTest):
         user = USER_DICT['vera']
         self._genesis_request(self.ML_GENESIS_DATA_NO_REALM, realm='ml')
         self.login(user)
-        self.traverse({'description': 'Accountanfrage'})
+        self.traverse('Accountanfragen')
         self.assertTitle("Accountanfragen")
         self.assertPresence("zelda@example.cde", div='request-1001')
         self.assertPresence(
@@ -1934,8 +1933,9 @@ class TestCoreFrontend(FrontendTest):
             div='no-event-request')
         self.assertNonPresence(
             "Aktuell stehen keine Mailinglisten-Account-Anfragen zur Bestätigung aus.")
-        f = self.response.forms['genesismlapprovalform1']
-        self.submit(f)
+        self.traverse("Details")
+        f = self.response.forms['genesisdecisionform']
+        self.submit(f, button="decision", value=str(GenesisDecision.approve))
         link = self.fetch_link()
         self.logout()
         self.get(link)
@@ -2056,8 +2056,8 @@ class TestCoreFrontend(FrontendTest):
             "Aktuell stehen keine CdE-Mitglieds-Account-Anfragen zur Bestätigung aus.")
         self.traverse({'href': '/core/genesis/1001/show'})
         self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
-        f = self.response.forms['genesisapprovalform']
-        self.submit(f)
+        f = self.response.forms['genesisdecisionform']
+        self.submit(f, button="decision", value=str(GenesisDecision.approve))
         link = self.fetch_link()
         self.traverse({'href': '^/$'})
         f = self.response.forms['adminshowuserform']
@@ -2108,6 +2108,13 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertPresence("Bestätigungsmail erneut versendet.",
                             div="notifications")
+        link = self.fetch_link()
+        self.get(link)
+        self.follow()
+        # Submit thrice
+        self.submit(f, check_notification=False)
+        self.assertPresence("Deine Anfrage wartet derzeit auf Bestätigung.",
+                            div="notifications")
         self.get('/')
         self.traverse({'description': 'Account anfordern'})
         self.assertTitle("Account anfordern")
@@ -2125,9 +2132,16 @@ class TestCoreFrontend(FrontendTest):
         self.login(user)
         self.traverse({'description': 'Account-Log'})
         f = self.response.forms['logshowform']
-        f['codes'] = [20]
+        f['codes'] = [const.CoreLogCodes.genesis_request]
         self.submit(f)
         self.assertTitle("Account-Log [1–1 von 1]")
+        self.admin_view_profile("hades")
+        self.traverse("Account wiederherstellen")
+        f = self.response.forms['dearchivepersonaform']
+        f['new_username'] = self.ML_GENESIS_DATA_NO_REALM['username']
+        self.submit(f, check_notification=False)
+        self.assertValidationError(
+            'new_username', "Ein Benutzer mit dieser E-Mail-Adresse existiert bereits.")
 
     def test_genesis_verification_mail_resend(self) -> None:
         self.get('/')
@@ -2187,13 +2201,13 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'Accountanfrage'},
                       {'description': 'Details'})
         self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
-        self.traverse({'description': 'Bearbeiten'})
+        self.traverse('Accountanfrage bearbeiten')
         f = self.response.forms['genesismodifyform']
         f['family_name'] = "Zeruda"
         self.submit(f)
         self.assertTitle("Accountanfrage von Zelda Zeruda")
 
-        self.traverse({'description': 'Bearbeiten'})
+        self.traverse('Accountanfrage bearbeiten')
         f = self.response.forms['genesismodifyform']
         f['realm'] = "event"
         f['gender'] = const.Genders.female
@@ -2206,7 +2220,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("An der Eiche", div='address')
         self.assertPresence("Antarktis", div='address')
 
-        self.traverse({'description': 'Bearbeiten'})
+        self.traverse('Accountanfrage bearbeiten')
         f = self.response.forms['genesismodifyform']
         f['birthday'] = "1987-06-05"
         self.submit(f)
@@ -2218,8 +2232,9 @@ class TestCoreFrontend(FrontendTest):
         self.traverse("Abbrechen")
 
         self.assertTitle("Accountanfrage von Zelda Zeruda")
-        f = self.response.forms['genesisapprovalform']
-        self.submit(f)
+        f = self.response.forms['genesisdecisionform']
+        self.submit(f, button="decision", value=str(GenesisDecision.approve),
+                    check_notification=False)
 
     def _create_genesis_doppelganger(self, user: UserIdentifier = None) -> UserObject:
         user = get_user(user or self.user)
@@ -2233,62 +2248,177 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("vera")
     def test_genesis_doppelganger(self) -> None:
-        self._create_genesis_doppelganger()
+        dg_data = self._create_genesis_doppelganger()
+        log_expectation = [
+            {
+                'code': const.CoreLogCodes.genesis_request,
+                'change_note': dg_data['username'],
+            },
+            {
+                'code': const.CoreLogCodes.genesis_verified,
+                'change_note': dg_data['username'],
+            },
+        ]
 
         self.traverse("Accountanfragen", "Details")
         self.assertTitle(f"Accountanfrage von {self.user['given_names']}"
                          f" {self.user['family_name']}")
         self.assertPresence("Ähnliche Accounts")
         self.assertPresence(self.user['username'], div="doppelgangers")
-        self.assertPresence(self.user['username'], div="doppelganger0")
-        f = self.response.forms['genesisrejectionform']
+        f = self.response.forms['genesisdecisionform']
         # Rejection causes info not success notification.
-        self.submit(f, check_notification=False)
+        self.submit(f, button="decision", value=str(GenesisDecision.deny),
+                    check_notification=False, verbose=True)
         self.assertPresence("Anfrage abgewiesen", div="notifications")
+        log_expectation.append({
+            'code': const.CoreLogCodes.genesis_rejected,
+            'change_note': dg_data['username'],
+        })
 
         # Create two almost identical requests, approve one and check that the second
         # one finds a doppelgänger.
         self._genesis_request(self.EVENT_GENESIS_DATA)
+        log_expectation.extend([
+            {
+                'code': const.CoreLogCodes.genesis_request,
+                'change_note': self.EVENT_GENESIS_DATA['username'],
+            },
+            {
+                'code': const.CoreLogCodes.genesis_verified,
+                'change_note': self.EVENT_GENESIS_DATA['username'],
+            },
+        ])
+        alternate_username = "notzelda@example.cde"
         self._genesis_request(
-            dict(self.EVENT_GENESIS_DATA, username="notzelda@example.cde"))
+            dict(self.EVENT_GENESIS_DATA, username=alternate_username))
+        log_expectation.extend([
+            {
+                'code': const.CoreLogCodes.genesis_request,
+                'change_note': alternate_username,
+            },
+            {
+                'code': const.CoreLogCodes.genesis_verified,
+                'change_note': alternate_username,
+            },
+        ])
 
+        # Approve the first request.
         self.traverse("Accountanfragen", "Details")
         self.assertTitle(f"Accountanfrage von {self.EVENT_GENESIS_DATA['given_names']}"
                          f" {self.EVENT_GENESIS_DATA['family_name']}")
         self.assertNonPresence("Ähnliche Accounts")
-        f = self.response.forms['genesisapprovalform']
-        self.submit(f)
+        self.assertNonPresence("Wiederherstellen", div="genesisdecisionform")
+        f = self.response.forms['genesisdecisionform']
+        self.submit(f, button="decision", value=str(GenesisDecision.approve),
+                    check_notification=False)
+        new_persona_id = 1001
+        log_expectation.extend([
+            {
+                'code': const.CoreLogCodes.persona_creation,
+                'persona_id': new_persona_id,
+            },
+            {
+                'code': const.CoreLogCodes.genesis_approved,
+                'change_note': self.EVENT_GENESIS_DATA['username'],
+                'persona_id': new_persona_id,
+            },
+            {
+                'code': const.CoreLogCodes.password_reset_cookie,
+                'persona_id': new_persona_id,
+            }
+        ])
+
+        # Check that the first username exists and the alternate one does not.
+        self.assertTrue(self.core.verify_existence(
+            self.key, self.EVENT_GENESIS_DATA['username']))
+        self.assertFalse(self.core.verify_existence(
+            self.key, alternate_username, include_genesis=False))
+
+        # Check that the second request finds the new account as a doppelgänger and
+        # update that account to the alternate username.
         self.traverse("Accountanfragen", "Details")
         self.assertTitle(f"Accountanfrage von {self.EVENT_GENESIS_DATA['given_names']}"
                          f" {self.EVENT_GENESIS_DATA['family_name']}")
         self.assertPresence("Ähnliche Accounts")
         self.assertPresence(self.EVENT_GENESIS_DATA['username'], div="doppelgangers")
-        self.assertPresence(self.EVENT_GENESIS_DATA['username'], div="doppelganger0")
-        f = self.response.forms['genesisrejectionform']
-        self.submit(f, check_notification=False)
-        self.assertPresence("Anfrage abgewiesen", div="notifications")
+
+        # Check that a cde genesis request cannot be merged into a non-cde account.
+        self.traverse("Accountanfrage bearbeiten")
+        f = self.response.forms['genesismodifyform']
+        f['realm'] = "cde"
+        self.submit(f)
+        f = self.response.forms['genesisdecisionform']
+        # Set persona_id to the value of the second radio button.
+        f['persona_id'] = f['persona_id'].options[1][0]
+        self.submit(f, button="decision", value=str(GenesisDecision.update),
+                    check_notification=False)
+        self.assertPresence("Ungültiger Benutzer für Aktualisierung."
+                            " Füge zunächst folgenden Bereich hinzu: cde.",
+                            div="notifications")
+        # Repair the request.
+        self.traverse("Accountanfrage bearbeiten")
+        f = self.response.forms['genesismodifyform']
+        f['realm'] = "event"
+        self.submit(f)
+
+        # Check that approving the request fails if a persona is selected.
+        f = self.response.forms['genesisdecisionform']
+        f['persona_id'] = f['persona_id'].options[1][0]
+        self.submit(f, button="decision", value=str(GenesisDecision.approve),
+                    check_notification=False)
+        self.assertPresence("Existierender Account ausgewählt,"
+                            " aber Accountanfrage bestätigt.", div="notifications")
+
+        # Now merge the genesis request into the existing account.
+        # Submit without selecting doppelganger.
+        f = self.response.forms['genesisdecisionform']
+        f['persona_id'] = ""
+        self.submit(f, button="decision", value=str(GenesisDecision.update),
+                    check_notification=False)
+        self.assertPresence("Kein Account ausgewählt.", div="notifications")
+        # Now for real.
+        f['persona_id'] = f['persona_id'].options[1][0]
+        self.submit(f, button="decision", value=str(GenesisDecision.update))
+        self.assertPresence("Benutzer aktualisiert", div="notifications")
+        log_expectation.extend([
+            {
+                'code': const.CoreLogCodes.genesis_merged,
+                'persona_id': new_persona_id,
+            },
+            {
+                'code': const.CoreLogCodes.username_change,
+                'change_note': alternate_username,
+                'persona_id': new_persona_id,
+            },
+            {
+                'code': const.CoreLogCodes.password_reset_cookie,
+                'persona_id': new_persona_id,
+            }
+        ])
+
+        self.assertLogEqual(
+            log_expectation, realm="core", offset=len(self.get_sample_data("core.log")))
+
+        # Check that the first username no longer exists, but the alternate one does.
+        self.assertFalse(self.core.verify_existence(
+            self.key, self.EVENT_GENESIS_DATA['username']))
+        self.assertTrue(self.core.verify_existence(
+            self.key, alternate_username))
 
     @as_users("vera")
     def test_genesis_dearchive_doppelganger(self) -> None:
         hades = get_user("hades")
-        genesis_data = self._create_genesis_doppelganger(hades)
+        self._create_genesis_doppelganger(hades)
         self.traverse("Accountanfragen", "Details")
         self.assertTitle(f"Accountanfrage von {hades['given_names']}"
                          f" {hades['family_name']}")
         self.assertPresence(f"{hades['given_names']} {hades['family_name']}",
                             div="doppelgangers")
         self.assertPresence("(archiviert)", div="doppelgangers")
-        self.core.dearchive_persona(self.key, hades['id'], genesis_data['username'])
-        self.traverse("Accountanfragen", "Details")
-        self.assertTitle(f"Accountanfrage von {hades['given_names']}"
-                         f" {hades['family_name']}")
-        self.assertPresence(f"{hades['given_names']} {hades['family_name']}",
-                            div="doppelgangers")
-        self.assertPresence(f"<{genesis_data['username']}>", div="doppelgangers")
-        self.assertNonPresence("(archiviert)", div="doppelgangers")
-        f = self.response.forms['genesisrejectionform']
-        self.submit(f, check_notification=False)
-        self.assertPresence("Anfrage abgewiesen", div="notifications")
+        f = self.response.forms['genesisdecisionform']
+        f['persona_id'] = hades['id']
+        self.submit(f, button="decision", value=str(GenesisDecision.update))
+        self.assertPresence("Benutzer aktualisiert.", div="notifications")
 
     def test_resolve_api(self) -> None:
         at = urllib.parse.quote_plus('@')
@@ -2343,18 +2473,18 @@ class TestCoreFrontend(FrontendTest):
 
         # approve the account requests
         self.login(user)
-        self.traverse({'description': 'Accountanfragen'})
-        f = self.response.forms['genesismlapprovalform1']
-        self.submit(f)
-        logs.append((1005, const.CoreLogCodes.genesis_approved))
-        logs.append((1006, const.CoreLogCodes.persona_creation))
+        self.traverse("Accountanfragen", "Details")
+        f = self.response.forms['genesisdecisionform']
+        self.submit(f, button="decision", value=str(GenesisDecision.approve))
+        logs.append((1005, const.CoreLogCodes.persona_creation))
+        logs.append((1006, const.CoreLogCodes.genesis_approved))
         logs.append((1007, const.CoreLogCodes.password_reset_cookie))
 
-        self.traverse({'href': 'core/genesis/1002/show'})
-        f = self.response.forms['genesisapprovalform']
-        self.submit(f)
-        logs.append((1008, const.CoreLogCodes.genesis_approved))
-        logs.append((1009, const.CoreLogCodes.persona_creation))
+        self.traverse("Details")
+        f = self.response.forms['genesisdecisionform']
+        self.submit(f, button="decision", value=str(GenesisDecision.approve))
+        logs.append((1008, const.CoreLogCodes.persona_creation))
+        logs.append((1009, const.CoreLogCodes.genesis_approved))
         logs.append((1010, const.CoreLogCodes.password_reset_cookie))
 
         # make janis assembly user

@@ -1169,7 +1169,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
             if exists:
                 rs.extend_validation_errors(
                     (("username",
-                      ValueError("User with this E-Mail exists already.")),))
+                      ValueError(n_("User with this E-Mail exists already."))),))
         if rs.has_validation_errors() or not data:
             return self.create_user_form(rs)
         new_id = self.coreproxy.create_persona(rs, data)
@@ -1296,7 +1296,8 @@ class Worker(threading.Thread):
         # noinspection PyProtectedMember
         secrets = SecretsConfig(conf._configpath)
         connpool = connection_pool_factory(
-            conf["CDB_DATABASE_NAME"], DATABASE_ROLES, secrets, conf["DB_PORT"])
+            conf["CDB_DATABASE_NAME"], DATABASE_ROLES, secrets,
+            conf["DB_HOST"], conf["DB_PORT"])
         rrs._conn = connpool[roles_to_db_role(rs.user.roles)]
         logger = logging.getLogger("cdedb.frontend.worker")
 

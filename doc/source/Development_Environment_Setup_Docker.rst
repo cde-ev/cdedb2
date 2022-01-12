@@ -72,8 +72,7 @@ To do this you can run the following:
     $ # navigate to the repository root
     $ make i18n-compile
     $ make doc
-    $ cd related/docker
-    $ docker-compose exec app make sample-data
+    $ docker-compose --file related/docker/docker-compose.yaml exec app make sample-data
 
 .. warning::
 

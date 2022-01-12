@@ -1,7 +1,7 @@
 {% extends "web/event/base.tmpl" %}
 {% set sidenav_active='event_course_stats' %}
 {% import "web/util.tmpl" as util with context %}
-{% block scripts %}{{ util.cdedb_script('cdedb_manage_participants.js') }}{% endblock %}
+{% block scripts %}{{ util.cdedb_script('cdedb_multiselect.js') }}{% endblock %}
 {% set jshint='strong' %}
 {% block title %}
     {% trans course=ambience['course']['title'], title=ambience['event']['title'] %}
@@ -48,25 +48,16 @@
                             {% endfor %}
                         </ul>
 
-                        <label for="input_new_{{ track_id }}">
-                            {{ util.make_icon('plus') }} {% trans %}Add Attendee{% endtrans %}
-                        </label>
-                        <select multiple id="input_new_{{ track_id }}" class="form-control"
-                                name="new_{{ track_id }}">
-                            <option value="">{% trans %}– none –{% endtrans %}</option>
-                            {% for registration_id in without_course[track_id] %}
-                                <option id="{{ registration_id }}_{{ track_id }}" value="{{ registration_id }}">
-                                    {{ util.persona_name(personas[registrations[registration_id]['persona_id']]) }}
-                                </option>
-                            {% endfor %}
-                        </select>
+                        {{ util.form_input_multi_select(name="new_" + track_id|string, entries=without_course[track_id],
+                                                        label=(util.make_icon('plus') + gettext("Add Attendee")),
+                                                        nulloption=gettext("– none –"), horizontal=False) }}
                     {% endcall %}
                 </div>
             {% endfor %}
             <script nonce="{{ csp_nonce }}">
                 var course_names = {{ course_names|tojson }};
                 {% for track_id in ambience['event']['tracks'] %}
-                    $('#input_new_{{ track_id }}').cdedbSearchParticipant(
+                    $('#input-multi-select-new_{{ track_id }}').cdedbMultiSelect(
                         {{ selectize_data[track_id]|tojson }}, course_names, "{{ gettext("currently")|s }}: ");
                 {% endfor %}
                 $('.del-box').cdedbRemoveParticipantButton('{{ gettext("Remove Attendee") }}');
