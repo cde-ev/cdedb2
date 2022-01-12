@@ -535,7 +535,7 @@ GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA ldap TO cdb_admin;
 -- Back-sql requires this to be a 1:1 relation. If we store the same ldap object
 -- in multiple sql tables (f.e. groupOfUniqueNames), we have to create a helper
 -- Query View to collect them all together.
-DROP TABLE IF EXISTS ldap_oc_mappings;
+DROP TABLE IF EXISTS ldap_oc_mappings CASCADE;
 CREATE TABLE ldap_oc_mappings (
 	id bigserial PRIMARY KEY,
 	name varchar(64) NOT NULL,
@@ -560,7 +560,7 @@ INSERT INTO ldap_oc_mappings (id, name, keytbl, keycol, create_proc, delete_proc
 
 
 -- Map ldap object class attributes to sql queries to extract them.
-DROP TABLE IF EXISTS ldap_attr_mappings;
+DROP TABLE IF EXISTS ldap_attr_mappings CASCADE;
 CREATE TABLE ldap_attr_mappings (
 	id bigserial PRIMARY KEY,
 	oc_map_id integer NOT NULL REFERENCES ldap_oc_mappings(id),
@@ -608,6 +608,7 @@ INSERT INTO ldap_attr_mappings (oc_map_id, name, sel_expr, from_tbls, join_where
 -- This is a SQL View collecting all entries which shall be inserted in ldap
 -- togehter. Keyval is the primary identifier specified in 'ldap_oc_mappings'
 -- for the given ldap object class
+DROP VIEW IF EXISTS ldap_entries CASCADE;
 CREATE VIEW ldap_entries (id, dn, oc_map_id, parent, keyval) AS
     -- organizations and organizationalUnits
     (
@@ -696,6 +697,7 @@ GRANT ALL ON ldap_entries TO cdb_admin;
 
 -- Add additional ldap object classes to an entry with 'entry_id' in
 -- 'ldap_entries'.
+DROP VIEW IF EXISTS ldap_entry_objclasses CASCADE;
 CREATE VIEW ldap_entry_objclasses (entry_id, oc_name) AS
     -- organizations part 1
     (
