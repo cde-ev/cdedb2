@@ -145,7 +145,7 @@ class Script:
             "user": dbuser,
             "password": self._secrets["CDB_DATABASE_ROLES"][dbuser],
             "host": self.config["DB_HOST"],
-            "port": self.config["DB_PORT"],
+            "port": 5432,
             "connection_factory": IrradiatedConnection,
             "cursor_factory": cursor,
         }
