@@ -3202,6 +3202,8 @@ def _serialized_event(
     }
     optional_fields = {
         'core.personas': Mapping,
+        'event.part_groups': Mapping,
+        'event.part_group_parts': Mapping,
     }
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
