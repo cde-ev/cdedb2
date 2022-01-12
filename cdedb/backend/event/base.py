@@ -505,9 +505,9 @@ class EventBaseBackend(EventLowLevelBackend):
             # Defer unique constraints until end of transaction to avoid errors when
             # updating multiple groups at once or deleting and recreating them.
             self.sql_defer_constraints(
-                rs, ("event.part_groups_event_id_shortname_key",
-                     "event.part_groups_event_id_title_key",
-                     "event.part_group_parts_part_id_part_group_id_key"))
+                rs, "event.part_groups_event_id_shortname_key",
+                "event.part_groups_event_id_title_key",
+                "event.part_group_parts_part_id_part_group_id_key")
 
             # new
             for x in mixed_existence_sorter(new_part_groups):
