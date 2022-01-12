@@ -221,31 +221,30 @@ cron:
 ########
 # LDAP #
 ########
-# TODO use more intelligent dependencies when to re-create the individual files
 # TODO add dependency on sql-test to create the specified database
 
 # use command-line arguments of make to override
 DATABASE_NAME = cdb
+DATABASE_HOST = localhost
 DATABASE_CDB_ADMIN_PASSWORD = 9876543210abcdefghijklmnopqrst
 
 ldap-prepare-odbc:
 	# prepare odbc.ini file to enable database connection for ldap
 	sudo cp -f ldap/odbc.ini /etc/odbc.ini \
-		&& sudo sed -i -r "s/DATABASE_NAME/${DATABASE_NAME}/" /etc/odbc.ini \
-		&& sudo sed -i -r "s/DATABASE_HOST/localhost/" /etc/odbc.ini \
-		&& sudo sed -i -r "s/DATABASE_CDB_ADMIN_PASSWORD/${DATABASE_CDB_ADMIN_PASSWORD}/" /etc/odbc.ini
+		&& sudo sed -i -r -e "s/DATABASE_CDB_ADMIN_PASSWORD/${DATABASE_CDB_ADMIN_PASSWORD}/g" \
+		                  -e "s/DATABASE_NAME/${DATABASE_NAME}/g" \
+		                  -e "s/DATABASE_HOST/${DATABASE_HOST}/g" /etc/odbc.ini
 
 ldap-prepare-ldif:
 	# prepare the new cdedb-specific ldap configuration
 	cp -f ldap/cdedb-ldap.ldif ldap/cdedb-ldap-applied.ldif \
-		&& sed -i -r "s/OLC_DB_HOST/localhost/" ldap/cdedb-ldap-applied.ldif \
-		&& sed -i -r "s/OLC_DB_NAME/${DATABASE_NAME}/" ldap/cdedb-ldap-applied.ldif \
-		&& sed -i -r "s/DATABASE_CDB_ADMIN_PASSWORD/${DATABASE_CDB_ADMIN_PASSWORD}/" ldap/cdedb-ldap-applied.ldif
+		&& sed -i -r -e "s/DATABASE_CDB_ADMIN_PASSWORD/${DATABASE_CDB_ADMIN_PASSWORD}/g" \
+		             -e "s/OLC_DB_NAME/${DATABASE_NAME}/g" \
+		             -e "s/OLC_DB_HOST/${DATABASE_HOST}/g" ldap/cdedb-ldap-applied.ldif
 
 ldap-create:
 	# the only way to remove all ldap settings for sure is currently to uninstall it.
 	# therefore, we need to re-install slapd here.
-	sudo apt-get update
 	sudo DEBIAN_FRONTEND=noninteractive apt-get install --yes slapd
 	# remove the predefined mdb-database from ldap
 	sudo systemctl stop slapd

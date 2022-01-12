@@ -10,17 +10,17 @@ if [ ! -e /var/lib/ldap/container_already_initalized ]; then
     sleep 20
 
     # prepare odbc.ini file to enable database connection for ldap
-    sed -i -r "s/DATABASE_NAME/${DATABASE_NAME}/" /app/odbc.ini
-    sed -i -r "s/DATABASE_HOST/${DATABASE_HOST}/" /app/odbc.ini
-    sed -i -r "s/DATABASE_CDB_ADMIN_PASSWORD/${DATABASE_CDB_ADMIN_PASSWORD}/" /app/odbc.ini
+    sed -i -r -e "s/DATABASE_CDB_ADMIN_PASSWORD/${DATABASE_CDB_ADMIN_PASSWORD}/g" \
+              -e "s/DATABASE_NAME/${DATABASE_NAME}/g" \
+              -e "s/DATABASE_HOST/${DATABASE_HOST}/g" /app/odbc.ini
 
     # copy the odbc.ini file at the right place
     cp -f /app/odbc.ini /etc/odbc.ini
 
     # Prepare the cdedb-ldap.ldif file
-    sed -i -r "s/OLC_DB_HOST/${DATABASE_HOST}/" /app/cdedb-ldap.ldif
-    sed -i -r "s/OLC_DB_NAME/${DATABASE_NAME}/" /app/cdedb-ldap.ldif
-    sed -i -r "s/DATABASE_CDB_ADMIN_PASSWORD/${DATABASE_CDB_ADMIN_PASSWORD}/" /app/cdedb-ldap.ldif
+    sed -i -r -e "s/DATABASE_CDB_ADMIN_PASSWORD/${DATABASE_CDB_ADMIN_PASSWORD}/g" \
+              -e "s/OLC_DB_NAME/${DATABASE_NAME}/g" \
+              -e "s/OLC_DB_HOST/${DATABASE_HOST}/g" /app/cdedb-ldap.ldif
 
     # the duas must be manually added by invoking bin/ldap_add_duas.py.
     # in dev and test instances, they are included in the sample-data.
