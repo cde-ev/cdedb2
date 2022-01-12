@@ -52,9 +52,7 @@
             {% for part_group_id, part_group in ambience['event']['part_groups']|keydictsort(EntitySorter.event_part_group) %}
                 <tr id="partgroup_{{ part_group_id }}">
                     <td>
-                        {% if part_group['constraint_type'] == enums['EventPartGroupType'].Statistic %}
-                            {{ util.make_icon('chart-bar', title=gettext(part_group['constraint_type']|string)) }}
-                        {% endif %}
+                        {{ util.make_icon(part_group['constraint_type'].get_icon(), title=gettext(part_group['constraint_type']|string)) }}
                     </td>
                     <th>
                         {{ part_group['title'] }}

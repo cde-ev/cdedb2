@@ -111,6 +111,11 @@ class QuestionnaireUsages(enum.IntEnum):
 class EventPartGroupType(enum.IntEnum):
     Statistic = 100
 
+    def get_icon(self) -> str:
+        return {
+            EventPartGroupType.Statistic: "chart-bar",
+        }[self]
+
 
 @enum.unique
 class GenesisStati(enum.IntEnum):
