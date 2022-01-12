@@ -4,7 +4,7 @@
 # Furthermore we adjust some values in the config depending on environment variables.
 set -x
 
-if [ ! -e /var/lib/ldap/container_already_initalized ]; then
+if [ ! -e /etc/ldap/container_already_initalized ]; then
     # we assume this is the first start and therefore also the db is uninitialized
     # consequently we give the app container time to create the sample-data
     sleep 20
@@ -41,7 +41,7 @@ if [ ! -e /var/lib/ldap/container_already_initalized ]; then
     kill -INT "$(cat /run/slapd/slapd.pid)"
 
     # Touch the firstrun file so that we only perform the above once.
-    touch /var/lib/ldap/container_already_initalized
+    touch /etc/ldap/container_already_initalized
 fi
 
 exec "$@"
