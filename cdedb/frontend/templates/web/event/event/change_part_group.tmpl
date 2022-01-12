@@ -9,7 +9,9 @@
 {% endblock %}
 
 {% block heading %}
-    {{ util.context_heading(gettext("Change part group"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event"), icon=ambience['part_group']['constraint_type'].get_icon()) }}
+    {{ util.context_heading(gettext("Change part group"), ambience['event']['title'], 'chalkboard-teacher',
+                            gettext("Event"), title_icon=ambience['part_group']['constraint_type'].get_icon(),
+                            title_title=gettext(ambience['part_group']['constraint_type']|string)) }}
 {% endblock %}
 
 {% block breadcrumb %}

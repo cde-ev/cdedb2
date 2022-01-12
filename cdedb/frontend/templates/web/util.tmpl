@@ -885,11 +885,14 @@ mailto:
 
 
 {# Macro to unify the style of headings with context (events, personas, assemblies, ...) #}
-{% macro context_heading(title, subtitle=none, icon=none, icon_arialabel=none, doclink=none, doclink_anchor=none) %}
+{% macro context_heading(title, subtitle=none, icon=none, icon_arialabel=none, doclink=none, doclink_anchor=none, title_icon=none, title_title=none) %}
     {% if doclink %}
         {{ _doclink(doclink, anchor=doclink_anchor) }}
     {% endif %}
     <h1 class="title">
+        {% if title_icon %}
+            {{ make_icon(title_icon, title=title_title) }}{{ nbsp }}
+        {%- endif -%}
         {{ title }}
         {% if subtitle %}
             <small>
