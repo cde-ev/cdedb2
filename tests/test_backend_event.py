@@ -4125,6 +4125,41 @@ class TestEventBackend(BackendTest):
         self.assertTrue(self.event.set_event(
             self.key, {'id': event_id, 'parts': {min(event['parts']): None}}))
 
+        export_expectation = {
+            1: {'constraint_type': const.EventPartGroupType.Statistic,
+                'notes': 'Pack explosives for New Years!',
+                'part_ids': [7, 8],
+                'shortname': '1.H.',
+                'title': '1. Hälfte'},
+            2: {'constraint_type': const.EventPartGroupType.Statistic,
+                'notes': None,
+                'part_ids': [9, 10, 11],
+                'shortname': '2.H.',
+                'title': '2. Hälfte'},
+            3: {'constraint_type': const.EventPartGroupType.Statistic,
+                'notes': None,
+                'part_ids': [9],
+                'shortname': 'OW',
+                'title': 'Oberwesel'},
+            5: {'constraint_type': const.EventPartGroupType.Statistic,
+                'notes': None,
+                'part_ids': [8, 11],
+                'shortname': 'KA',
+                'title': 'Kaub'},
+            1005: {'constraint_type': const.EventPartGroupType.Statistic,
+                   'notes': "Let's see what happens",
+                   'part_ids': [7, 8, 9, 10, 11],
+                   'shortname': 'all',
+                   'title': 'All'},
+            1006: {'constraint_type': const.EventPartGroupType.Statistic,
+                   'notes': "Let's see what happens",
+                   'part_ids': [7, 8],
+                   'shortname': 'ALL',
+                   'title': 'Everything'},
+        }
+        export = self.event.partial_export_event(self.key, event_id)
+        self.assertEqual(export['event']['part_groups'], export_expectation)
+
         # Delete the entire event. Requires admin.
         with self.switch_user("annika"):
             blockers = self.event.delete_event_blockers(self.key, event_id)

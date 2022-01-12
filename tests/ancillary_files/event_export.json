@@ -1432,5 +1432,9 @@
             "waitlist_field": null
         }
     },
+    "event.part_groups": {
+    },
+    "event.part_group_parts": {
+    },
     "timestamp": "2018-12-15T09:58:04.241360+00:00"
 }

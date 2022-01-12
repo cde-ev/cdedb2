@@ -711,6 +711,8 @@ class EventBaseBackend(EventLowLevelBackend):
             # Table name; column to scan; fields to extract
             tables: List[Tuple[str, str, Tuple[str, ...]]] = [
                 ('event.event_parts', "event_id", EVENT_PART_FIELDS),
+                ('event.part_groups', "event_id", PART_GROUP_FIELDS),
+                ('event.part_group_parts', "part_id", ("part_group_id", "part_id")),
                 ('event.course_tracks', "part_id", COURSE_TRACK_FIELDS),
                 ('event.courses', "event_id", COURSE_FIELDS),
                 ('event.course_segments', "track_id", COURSE_SEGMENT_FIELDS),
@@ -885,7 +887,6 @@ class EventBaseBackend(EventLowLevelBackend):
         del export_event['orgas']
         del export_event['tracks']
         del export_event['fee_modifiers']
-        del export_event['part_groups']
         for part in export_event['parts'].values():
             del part['id']
             del part['event_id']
@@ -903,6 +904,11 @@ class EventBaseBackend(EventLowLevelBackend):
                 del fm['part_id']
                 fm['field_name'] = event['fields'][fm['field_id']]['field_name']
                 del fm['field_id']
+        for pg in export_event['part_groups'].values():
+            del pg['id']
+            del pg['event_id']
+            pg['constraint_type'] = const.EventPartGroupType(pg['constraint_type'])
+            pg['part_ids'] = xsorted(pg['part_ids'])
         for f in ('lodge_field', 'camping_mat_field', 'course_room_field'):
             if export_event[f]:
                 export_event[f] = event['fields'][event[f]]['field_name']
