@@ -1,8 +1,5 @@
 FROM debian:bullseye-20210816
 
-# copy the ldap files and the ldap entrypoint into the container
-COPY ./ldap/ ./related/docker/ldap-entrypoint.sh ./related/auto-build/files/stage2/ldap-config.ldif /tmp/ldap/
-
 # touch the CONTAINER file
 RUN touch /CONTAINER
 
@@ -12,6 +9,9 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-
     ldap-utils \
     unixodbc \
     odbc-postgresql
+
+# copy the ldap files and the ldap entrypoint into the container
+COPY ./ldap/ ./related/docker/ldap-entrypoint.sh ./related/auto-build/files/stage2/ldap-config.ldif /tmp/ldap/
 
 # Copy all relevant files into the /app directory & the ldap entrypoint in root
 RUN mkdir /app \
