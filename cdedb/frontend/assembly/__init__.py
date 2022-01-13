@@ -11,6 +11,8 @@ import time
 from typing import Any, Collection, Dict, List, Optional, Set, Tuple, Union
 
 import werkzeug.exceptions
+from schulze_condorcet import schulze_evaluate_detailed
+from schulze_condorcet.types import DetailedResultLevel
 from werkzeug import Response
 
 import cdedb.database.constants as const
@@ -19,7 +21,7 @@ import cdedb.validationtypes as vtypes
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, LOG_FIELDS_COMMON, CdEDBObject, CdEDBObjectMap,
     DefaultReturnCode, EntitySorter, RequestState, get_hash, merge_dicts, n_, now,
-    schulze_evaluate, unwrap, xsorted,
+    unwrap, xsorted,
 )
 from cdedb.frontend.common import (
     AbstractUserFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, access,
@@ -1256,8 +1258,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             result['losers'] = losers
 
             # vote count for classical vote ballots
-            counts: Union[Dict[str, int],
-                          List[Dict[str, Union[int, List[str]]]]]
+            counts: Union[Dict[str, int], List[DetailedResultLevel]]
+            # TODO use helper function
             if ballot['votes']:
                 counts = {e['shortname']: 0
                           for e in ballot['candidates'].values()}
@@ -1276,7 +1278,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 candidates = [k for k, v in result['candidates'].items()]
                 if ballot['use_bar']:
                     candidates += (ASSEMBLY_BAR_SHORTNAME,)
-                condensed, counts = schulze_evaluate(votes, candidates)
+                counts = schulze_evaluate_detailed(votes, candidates)
 
             result['counts'] = counts
 

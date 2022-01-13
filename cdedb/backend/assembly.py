@@ -34,6 +34,8 @@ from pathlib import Path
 from secrets import token_urlsafe
 from typing import Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, Union
 
+from schulze_condorcet import schulze_evaluate
+
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
@@ -46,7 +48,7 @@ from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, ASSEMBLY_FIELDS, BALLOT_FIELDS, CdEDBLog, CdEDBObject,
     CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, EntitySorter, PrivilegeError,
     RequestState, get_hash, glue, implying_realms, json_serialize,
-    mixed_existence_sorter, n_, now, schulze_evaluate, unwrap, xsorted,
+    mixed_existence_sorter, n_, now, unwrap, xsorted,
 )
 from cdedb.database.connection import Atomizer
 from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
@@ -1470,8 +1472,8 @@ class AssemblyBackend(AbstractBackend):
         automatically by everybody when viewing a ballot. It is not
         allowed to call this before voting has actually ended.
 
-        We use the Schulze method as documented in
-        :py:func:`cdedb.common.schulze_evaluate`.
+        We use the Schulze method as documented in the schulze-condorcet
+        pypi package.
 
         :returns: The content of the file if a new result file was created,
             otherwise None.
@@ -1501,7 +1503,7 @@ class AssemblyBackend(AbstractBackend):
                 x['shortname'] for x in ballot['candidates'].values())
             if ballot['use_bar'] or ballot['votes']:
                 shortnames += (ASSEMBLY_BAR_SHORTNAME,)
-            condensed, _ = schulze_evaluate([e['vote'] for e in votes], shortnames)
+            vote_result = schulze_evaluate([e['vote'] for e in votes], shortnames)
             update = {
                 'id': ballot_id,
                 'is_tallied': True,
@@ -1532,7 +1534,7 @@ class AssemblyBackend(AbstractBackend):
             result = {
                 "assembly": assembly['title'],
                 "ballot": ballot['title'],
-                "result": condensed,
+                "result": vote_result,
                 "candidates": candidates,
                 "use_bar": ballot['use_bar'],
                 "voters": voter_names,
