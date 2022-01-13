@@ -1,8 +1,7 @@
 SHELL := /bin/bash
 
-.PHONY:
-
-help: .PHONY
+.PHONY: help
+help:
 	@echo "Default Variables:"
 	@echo "DATABASE_NAME       -- name of a postgres database. Default: cdb"
 	@echo "STORAGE_DIR         -- location where the cdedb stores files. Default: /var/lib/cdedb"
@@ -91,14 +90,17 @@ I18NDIR ?= ./i18n
 # General #
 ###########
 
-cron: .PHONY
+.PHONY: cron
+cron:
 	sudo -u www-data /cdedb2/bin/cron_execute.py
 
-doc: .PHONY
+.PHONY: doc
+doc:
 	bin/create_email_template_list.sh .
 	$(MAKE) -C doc html
 
-reload: .PHONY i18n-compile
+.PHONY: reload
+reload: i18n-compile
 ifeq ($(wildcard /CONTAINER),/CONTAINER)
 	apachectl restart
 else
@@ -106,7 +108,8 @@ else
 endif
 
 # ensure we do not modify a production or offline vm. Add as prerequisite to each target which could destroy data.
-sanity-check: .PHONY
+.PHONY: sanity-check
+sanity-check:
   ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
 	$(error Refusing to touch live instance)
   endif
@@ -119,14 +122,17 @@ sanity-check: .PHONY
 # Translations #
 ################
 
-i18n-refresh: .PHONY i18n-extract i18n-update
+.PHONY: i18n-refresh
+i18n-refresh: i18n-extract i18n-update
 
-i18n-extract: .PHONY
+.PHONY: i18n-extract
+i18n-extract:
 	pybabel extract --msgid-bugs-address="cdedb@lists.cde-ev.de" \
 		--mapping=./babel.cfg --keywords="rs.gettext rs.ngettext n_" \
 		--output=$(I18NDIR)/cdedb.pot --input-dirs="bin,cdedb"
 
-i18n-update: .PHONY
+.PHONY: i18n-update
+i18n-update:
 	msgmerge --lang=de --update $(I18NDIR)/de/LC_MESSAGES/cdedb.po $(I18NDIR)/cdedb.pot
 	msgmerge --lang=en --update $(I18NDIR)/en/LC_MESSAGES/cdedb.po $(I18NDIR)/cdedb.pot
 	msgmerge --lang=la --update $(I18NDIR)/la/LC_MESSAGES/cdedb.po $(I18NDIR)/cdedb.pot
@@ -138,7 +144,8 @@ i18n-update: .PHONY
 		$(I18NDIR)/la/LC_MESSAGES/cdedb.po
 	# TODO: do we want to use msgattribs --indent option for prettier po files?
 
-i18n-compile: .PHONY
+.PHONY: i18n-compile
+i18n-compile:
 	msgfmt --verbose --check --statistics -o $(I18NDIR)/de/LC_MESSAGES/cdedb.mo \
 		$(I18NDIR)/de/LC_MESSAGES/cdedb.po
 	msgfmt --verbose --check --statistics -o $(I18NDIR)/en/LC_MESSAGES/cdedb.mo \
@@ -154,7 +161,8 @@ i18n-compile: .PHONY
 TESTFOTONAME := e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea243$\
 		33cc17797fc29b047c437ef5beb33ac0f570c6589d64f9
 
-storage: .PHONY sanity-check
+.PHONY: storage
+storage: sanity-check
 	sudo rm -rf -- $(STORAGE_DIR)/*
 	# this takes care the DATA_USER also owns the directories containing STORAGE_DIR
 	sudo -u $(DATA_USER) mkdir -p $(STORAGE_DIR)
@@ -180,7 +188,8 @@ TESTFILES := picture.pdf,picture.png,picture.jpg,form.pdf,rechen.pdf,ballot_resu
 		,partial_event_import.json,TestAka_partial_export_event.json,statement.csv$\
 		,questionnaire_import.json
 
-log: .PHONY sanity-check
+.PHONY: log
+log: sanity-check
 	sudo rm -rf -- $(LOG_DIR)/*
 	# this takes care the DATA_USER also owns the directories containing LOG_DIR
 	sudo -u $(DATA_USER) mkdir -p $(LOG_DIR)
@@ -192,7 +201,8 @@ log: .PHONY sanity-check
 ############
 
 # drop all existent databases and add the database users. Acts globally and is idempotent.
-sql-initial: .PHONY sanity-check
+.PHONY: sql-initial
+sql-initial: sanity-check
   # we cannot use systemctl in docker
   ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl stop pgbouncer
@@ -206,7 +216,8 @@ sql-initial: .PHONY sanity-check
   endif
 
 # setup a new database, specified by DATABASE_NAME. Does not yet populate it with actual data.
-sql-setup: .PHONY sanity-check
+.PHONY: sql-setup
+sql-setup: sanity-check
   # we cannot use systemctl in docker
   ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl stop pgbouncer
@@ -222,7 +233,8 @@ sql-setup: .PHONY sanity-check
 	$(PSQL) -f cdedb/database/cdedb-ldap.sql --dbname=$(DATABASE_NAME)
 
 # setup a new database and populate it with the sample data.
-sql: .PHONY sql-setup tests/ancillary_files/sample_data.sql
+.PHONY: sql
+sql: sql-setup tests/ancillary_files/sample_data.sql
 	$(PSQL) -f tests/ancillary_files/sample_data.sql --dbname=$(DATABASE_NAME)
   # finally restart slapd
   ifneq ($(wildcard /CONTAINER),/CONTAINER)
@@ -230,7 +242,8 @@ sql: .PHONY sql-setup tests/ancillary_files/sample_data.sql
   endif
 
 # setup a new database and populate it with special sample data to perform xss checks.
-sql-xss: .PHONY sql-setup tests/ancillary_files/sample_data_xss.sql
+.PHONY: sql-xss
+sql-xss: sql-setup tests/ancillary_files/sample_data_xss.sql
 	$(PSQL) -f tests/ancillary_files/sample_data_xss.sql --dbname=$(DATABASE_NAME)
 
 
@@ -251,63 +264,74 @@ ldap-remove:
 # Code formatting #
 ###################
 
-format: .PHONY
+.PHONY: format
+format:
 	$(ISORT) bin/*.py cdedb tests
 
-mypy: .PHONY
+.PHONY: mypy
+mypy:
 	$(MYPY) bin/*.py cdedb tests
 
 BANNERLINE := "================================================================================"
 
-isort: .PHONY
+.PHONY: isort
+isort:
 	@echo $(BANNERLINE)
 	@echo "All of isort"
 	@echo $(BANNERLINE)
 	@echo ""
 	$(ISORT) --check-only bin/*.py cdedb tests
 
-flake8: .PHONY
+.PHONY: flake8
+flake8:
 	@echo $(BANNERLINE)
 	@echo "All of flake8"
 	@echo $(BANNERLINE)
 	@echo ""
 	$(FLAKE8) cdedb tests
 
-pylint: .PHONY
+.PHONY: pylint
+pylint:
 	@echo $(BANNERLINE)
 	@echo "All of pylint"
 	@echo $(BANNERLINE)
 	@echo ""
 	$(PYLINT) cdedb tests
 
-template-line-length: .PHONY
+.PHONY: template-line-length
+template-line-length:
 	@echo $(BANNERLINE)
 	@echo "Lines too long in templates"
 	@echo $(BANNERLINE)
 	@echo ""
 	grep -E -R '^.{121,}' cdedb/frontend/templates/ | grep 'tmpl:'
 
-lint: .PHONY isort flake8 pylint
+.PHONY: lint
+lint: isort flake8 pylint
 
 
 ################
 # Code testing #
 ################
 
-check: .PHONY
+.PHONY: check
+check:
 	$(PYTHONBIN) bin/check.py --verbose $(or $(TESTPATTERNS), )
 
-xss-check: .PHONY
+.PHONY: xss-check
+xss-check:
 	$(PYTHONBIN) bin/check.py --xss-check --verbose
 
-dump-html: .PHONY
+.PHONY: dump-html
+dump-html:
 	$(MAKE) -B /tmp/cdedb-dump/
 
 /tmp/cdedb-dump/: export CDEDB_TEST_DUMP_DIR=/tmp/cdedb-dump/
 /tmp/cdedb-dump/:
 	$(PYTHONBIN) -m bin.check --verbose tests.test_frontend*
 
-validate-html: .PHONY /tmp/cdedb-dump/ /opt/validator/vnu-runtime-image/bin/vnu
+.PHONY: validate-html
+validate-html: /tmp/cdedb-dump/ /opt/validator/vnu-runtime-image/bin/vnu
 	/opt/validator/vnu-runtime-image/bin/vnu --no-langdetect --stdout \
 		--filterpattern '(.*)input type is not supported in all browsers(.*)' /tmp/cdedb-dump/* \
 		> /cdedb2/validate-html.txt
@@ -332,7 +356,8 @@ VALIDATORCHECKSUM := "f56d95448fba4015ec75cfc9546e3063e8d66390 /opt/validator/vn
 		$(wildcard cdedb/backend/*.py) $(wildcard tests/*.py)
 	$(COVERAGE) run -m bin.check
 
-coverage: .PHONY .coverage
+.PHONY: coverage
+coverage: .coverage
 	$(COVERAGE) report --include 'cdedb/*' --show-missing
 	$(COVERAGE) html --include 'cdedb/*'
 	@echo "HTML reports for easier inspection are in ./htmlcov"
@@ -342,10 +367,12 @@ coverage: .PHONY .coverage
 # Sample Data Generation #
 ##########################
 
-sample-data: .PHONY storage sql-initial sql
+.PHONY: sample-data
+sample-data: storage sql-initial sql
 	cp -f related/auto-build/files/stage3/localconfig.py cdedb/localconfig.py
 
-sample-data-dump: .PHONY
+.PHONY: sample-data-dump
+sample-data-dump:
 	JSONTEMPFILE=`sudo -u www-data mktemp` \
 		&& sudo -u www-data chmod +r "$${JSONTEMPFILE}" \
 		&& sudo -u www-data $(PYTHONBIN) bin/create_sample_data_json.py -o "$${JSONTEMPFILE}" \
