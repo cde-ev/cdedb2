@@ -87,6 +87,11 @@ apt-get install --yes --no-install-recommends                       \
 # some packages interpret "recommends" very narrowly, breaking if they are missing
 apt-get install --yes python3-coverage
 
+# runtime dependencies
+python3 -m pip install --no-cache-dir \
+    schulze_condorcet==2.0.0
+
+# devtools
 python3 -m pip install --no-cache-dir \
     mypy==0.910 \
     flake8==3.8.4 \
