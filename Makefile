@@ -77,13 +77,14 @@ SAMPLE_DATA_SQL ?= bin/create_sample_data_sql.py
 DATABASE_NAME = cdb
 # Directory where the python application stores additional files. This will be overridden in the test suite.
 STORAGE_DIR = /var/lib/cdedb
-# Direcotry where the application stores its log files. This will be overriden in the test suite.
+# Directory where the application stores its log files. This will be overridden in the test suite.
 LOG_DIR = /var/log/cdedb
 # User who runs the application and has access to storage and log dir. This will be overridden in the test suite.
 DATA_USER = www-data
 # Payload to be injected in the sample_data_xss.sql file.
 XSS_PAYLOAD = <script>abcdef</script>
-I18NDIR ?= ./i18n
+# Directory where the translation files are stored. Especially used by the i18n-targets.
+I18NDIR = ./i18n
 
 
 ###########
