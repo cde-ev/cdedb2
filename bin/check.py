@@ -19,6 +19,7 @@ sys.path.append(str(root))
 # this is necessary for calling make as subprocess
 os.chdir(root)
 
+from bin.check_utils import MyTextTestResult, MyTextTestRunner
 from bin.escape_fuzzing import work as xss_check
 
 import tests.backend_tests as backend_tests
@@ -26,7 +27,6 @@ import tests.frontend_tests as frontend_tests
 import tests.ldap_tests as ldap_tests
 import tests.other_tests as other_tests
 from cdedb.config import TestConfig
-from tests.custom_testrunners import MyTextTestResult, MyTextTestRunner
 
 
 class CdEDBTestLock:
