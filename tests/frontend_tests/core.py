@@ -221,9 +221,8 @@ class TestCoreFrontend(FrontendTest):
         _check_redirected_profile()
         self.get('/core/persona/8/username/adminchange')
         _check_redirected_profile()
-        # post needs anti-csrf token
-        # self.post('/core/persona/8/activity/change', {'activity': False})
-        # _check_redirected_profile()
+        self.post('/core/persona/8/activity/change', {'activity': False})
+        _check_redirected_profile()
 
     @as_users("emilia", "janis")
     def test_showuser_self(self) -> None:
@@ -269,6 +268,8 @@ class TestCoreFrontend(FrontendTest):
         self.get("/core/self/show")
         self.follow()
         self.traverse("QR")
+        # our modal javascript in cdedb_helper.js relies on xml content type
+        self.assertEqual(self.response.content_type, "image/svg+xml")
 
     @as_users("vera")
     def test_vcard_cde_admin(self) -> None:

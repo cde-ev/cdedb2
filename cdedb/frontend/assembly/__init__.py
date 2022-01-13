@@ -18,8 +18,8 @@ import cdedb.ml_type_aux as ml_type
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, LOG_FIELDS_COMMON, CdEDBObject, CdEDBObjectMap,
-    EntitySorter, RequestState, get_hash, merge_dicts, n_, now, schulze_evaluate,
-    unwrap, xsorted,
+    DefaultReturnCode, EntitySorter, RequestState, get_hash, merge_dicts, n_, now,
+    schulze_evaluate, unwrap, xsorted,
 )
 from cdedb.frontend.common import (
     AbstractUserFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, access,
@@ -260,7 +260,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             rs.notify("warning", n_("Assembly already concluded."))
             return self.redirect(rs, "assembly/show_assembly")
         merge_dicts(rs.values, rs.ambience['assembly'])
-        return self.render(rs, "assembly_data")
+        return self.render(rs, "configure_assembly")
 
     @access("assembly", modi={"POST"})
     @assembly_guard
@@ -283,7 +283,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly_admin")
     def create_assembly_form(self, rs: RequestState) -> Response:
         """Render form."""
-        return self.render(rs, "assembly_data")
+        return self.render(rs, "configure_assembly")
 
     @staticmethod
     def _get_mailinglist_setter(assembly: CdEDBObject, presider: bool = False
@@ -700,11 +700,29 @@ class AssemblyFrontend(AbstractUserFrontend):
         if not rs.ambience['assembly']['is_active']:
             rs.notify("warning", n_("Assembly already concluded."))
             return self.redirect(rs, "assembly/show_assembly")
-        return self.render(rs, "create_ballot")
+
+        attachment_ids = self.assemblyproxy.list_attachments(
+            rs, assembly_id=assembly_id)
+        attachment_versions = self.assemblyproxy.get_latest_attachments_version(
+            rs, attachment_ids)
+        attachment_entries = [(attachment_id, version["title"])
+                              for attachment_id, version in attachment_versions.items()]
+        selectize_data = [
+            {'id': version['attachment_id'], 'name': version['title']}
+            for version in xsorted(
+                attachment_versions.values(),
+                key=EntitySorter.attachment)
+        ]
+
+        return self.render(rs, "configure_ballot", {
+            'attachment_entries': attachment_entries,
+            'selectize_data': selectize_data,
+        })
 
     @access("assembly", modi={"POST"})
     @assembly_guard
-    @REQUESTdatadict(*BALLOT_EXPOSED_FIELDS)
+    # the linked_attachments must be passed here since we expect a list
+    @REQUESTdatadict(*BALLOT_EXPOSED_FIELDS, ("linked_attachments", "[str]"))
     def create_ballot(self, rs: RequestState, assembly_id: int,
                       data: Dict[str, Any]) -> Response:
         """Make a new ballot."""
@@ -714,9 +732,20 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.create_ballot_form(rs, assembly_id)
         assert data is not None
         new_id = self.assemblyproxy.create_ballot(rs, data)
-        self.notify_return_code(rs, new_id)
-        return self.redirect(rs, "assembly/show_ballot", {
-            'ballot_id': new_id})
+        code = self._set_ballot_attachments(rs, new_id, data["linked_attachments"])
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "assembly/show_ballot", {'ballot_id': new_id})
+
+    def _set_ballot_attachments(self, rs: RequestState, ballot_id: int,
+                                attachment_ids: Set[Optional[int]]
+                                ) -> DefaultReturnCode:
+        """Wrapper around `AssemblyBackend.set_ballot_attachments` to filter None.
+
+        We filter None from the id list, so that users are able to unset all attachments
+        by selecting only the None option in the form.
+        """
+        attachment_ids = set(filter(None, attachment_ids))
+        return self.assemblyproxy.set_ballot_attachments(rs, ballot_id, attachment_ids)
 
     @access("assembly")
     def get_attachment(self, rs: RequestState, assembly_id: int,
@@ -1317,6 +1346,12 @@ class AssemblyFrontend(AbstractUserFrontend):
             rs, attachment_ids)
         attachment_entries = [(attachment_id, version["title"])
                               for attachment_id, version in attachment_versions.items()]
+        selectize_data = [
+            {'id': version['attachment_id'], 'name': version['title']}
+            for version in xsorted(
+                attachment_versions.values(),
+                key=EntitySorter.attachment)
+        ]
 
         # add the current attachment to the values dict, since they are no part of them
         # by default
@@ -1325,8 +1360,9 @@ class AssemblyFrontend(AbstractUserFrontend):
         rs.values["linked_attachments"] = list(latest_attachments)
         merge_dicts(rs.values, rs.ambience['ballot'])
 
-        return self.render(rs, "change_ballot", {
-            "attachment_entries": attachment_entries
+        return self.render(rs, "configure_ballot", {
+            "attachment_entries": attachment_entries,
+            "selectize_data": selectize_data,
         })
 
     @access("assembly", modi={"POST"})
@@ -1342,24 +1378,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.change_ballot_form(rs, assembly_id, ballot_id)
         assert data is not None
 
-        code = 1
-
-        # handle the linked attachments
-        current_attachments = set(
-            self.assemblyproxy.list_attachments(rs, ballot_id=ballot_id))
-        # filter the None value – unset all attachments by selecting None option only
-        wished_attachments: Set[int] = set(filter(None, data["linked_attachments"]))
-        new_attachments = wished_attachments - current_attachments
-        for attachment_id in new_attachments:
-            code *= self.assemblyproxy.add_attachment_ballot_link(
-                rs, attachment_id=attachment_id, ballot_id=ballot_id)
-        deleted_attachments = current_attachments - wished_attachments
-        for attachment_id in deleted_attachments:
-            code *= self.assemblyproxy.remove_attachment_ballot_link(
-                rs, attachment_id=attachment_id, ballot_id=ballot_id)
-
+        code = self._set_ballot_attachments(rs, ballot_id, data['linked_attachments'])
         code *= self.assemblyproxy.set_ballot(rs, data)
-
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/show_ballot")
 

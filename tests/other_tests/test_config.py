@@ -11,21 +11,21 @@ from cdedb.config import BasicConfig, Config, SecretsConfig
 class TestConfig(unittest.TestCase):
     def test_override(self) -> None:
         basic = BasicConfig()
-        self.assertEqual(pytz.timezone('CET'), basic["DEFAULT_TIMEZONE"])
+        self.assertEqual(basic["DEFAULT_TIMEZONE"], pytz.timezone('CET'))
         config = Config(None)
-        self.assertEqual(6432, config["DB_PORT"])
+        self.assertIn(config["DB_PORT"], {6432, 5432})
         extraconfig = Config("tests/ancillary_files/extra_config.py")
-        self.assertEqual(42, extraconfig["DB_PORT"])
-        self.assertEqual("skynet", extraconfig["CDB_DATABASE_NAME"])
+        self.assertEqual(extraconfig["DB_PORT"], 42)
+        self.assertEqual(extraconfig["CDB_DATABASE_NAME"], "skynet")
         secret = SecretsConfig(None)
-        self.assertEqual("aoeuidhtns9KT6AOR2kNjq2zO", secret["URL_PARAMETER_SALT"])
+        self.assertEqual(secret["URL_PARAMETER_SALT"], "aoeuidhtns9KT6AOR2kNjq2zO")
         extrasecret = SecretsConfig("tests/ancillary_files/extra_config.py")
-        self.assertEqual("matrix", extrasecret["URL_PARAMETER_SALT"])
+        self.assertEqual(extrasecret["URL_PARAMETER_SALT"], "matrix")
 
     def test_caching(self) -> None:
         # this is a regression test
         BasicConfig()
         extrasecret = SecretsConfig("tests/ancillary_files/extra_config.py")
-        self.assertEqual("matrix", extrasecret["URL_PARAMETER_SALT"])
+        self.assertEqual(extrasecret["URL_PARAMETER_SALT"], "matrix")
         testsecret = SecretsConfig()
-        self.assertEqual("aoeuidhtns9KT6AOR2kNjq2zO", testsecret["URL_PARAMETER_SALT"])
+        self.assertEqual(testsecret["URL_PARAMETER_SALT"], "aoeuidhtns9KT6AOR2kNjq2zO")

@@ -18,5 +18,8 @@ CONSOLE_LOG_LEVEL = logging.INFO
 CDEDB_DEV = True
 
 if pathlib.Path('/CONTAINER').is_file():
-    # ldap host server differs for vms and docker containers
+    # postgres and ldap are reachable under their own hostname instead of localhost
+    DB_HOST = "cdb"
     LDAP_HOST = "ldap"
+    # there is no pgbouncer so the postgres port is the original one
+    DB_PORT = 5432

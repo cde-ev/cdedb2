@@ -25,6 +25,7 @@ steps:
   - git checkout $DRONE_TARGET_BRANCH
   - git fetch origin $DRONE_COMMIT
   - git merge $DRONE_COMMIT || (git merge --abort && git checkout $DRONE_COMMIT)
+  - git tag --message "Git state upon which all ci steps work." ci/workdir
 - name: build images
   image: docker:20.10
   volumes:
@@ -59,6 +60,7 @@ steps:
     - make i18n-compile # needed for sample-data creation in evolution-trial.sh
     - make sql-initial # add the postgres user
     - bin/evolution-trial.sh origin/$DRONE_TARGET_BRANCH $DRONE_COMMIT
+    - git checkout ci/workdir
 - name: mypy
   image: cdedb:20210705
   pull: never # do not try to pull image from docker hub
@@ -185,6 +187,10 @@ steps:
   - frontend tests a-d
   - frontend tests e-z
   - non-frontend tests
+  when:
+    status:
+      - failure
+      - success
   volumes:
   - name: coverage
     path: /coverage
