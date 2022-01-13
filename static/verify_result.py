@@ -26,19 +26,18 @@ if __name__ == "__main__":
     for path in args.results:
         path = pathlib.Path(path)
         if not path.exists():
-            print("Datei {} nicht gefunden".format(path))
+            print(f"Datei {path} nicht gefunden")
             continue
         with open(path, encoding='UTF-8') as f:
             data = json.load(f)
         if not first:
             print("\n")
         first = False
-        print("Versammlung: {}".format(data['assembly']))
-        print("Abstimmung: {}".format(data['ballot']))
+        print(f"Versammlung: {data['assembly']}")
+        print(f"Abstimmung: {data['ballot']}")
         candidates = "\n          ".join(
-            "{} ({})".format(value, key)
-            for key, value in sorted(data['candidates'].items()))
-        print("Optionen: {}".format(candidates))
+            f"{value} ({key})" for key, value in sorted(data['candidates'].items()))
+        print(f"Optionen: {candidates}")
 
         # ... und zähle neu aus
         votes = [entry['vote'] for entry in data['votes']]
@@ -56,8 +55,8 @@ if __name__ == "__main__":
                   f" {level['opposition']} Contra Stimmen.")
             announce = "       "
 
-        print("Ergebnis: {}".format(condensed))
-        if condensed != data['result']:
-            print("Übereinstimmung: NEIN ({})".format(data['result']))
+        print(f"Ergebnis: {condensed_result}")
+        if condensed_result != data['result']:
+            print(f"Übereinstimmung: NEIN ({data['result']})")
         else:
             print("Übereinstimmung: ja")
