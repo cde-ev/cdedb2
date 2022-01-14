@@ -254,7 +254,7 @@ ldap-create:
 	sudo rm -f /etc/ldap/slapd.d/cn=config/olcDatabase=\{1\}mdb.ldif
 	sudo systemctl start slapd
 	# Apply the overall ldap configuration (load modules, add backends etc)
-	sudo ldapmodify -Y EXTERNAL -H ldapi:/// -f related/auto-build/files/stage2/ldap-config.ldif
+	sudo ldapmodify -Y EXTERNAL -H ldapi:/// -f related/auto-build/files/stage3/ldap-config.ldif
 
 .PHONY: ldap-update
 ldap-update: ldap-prepare-odbc ldap-prepare-ldif

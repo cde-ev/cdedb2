@@ -11,7 +11,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-
     odbc-postgresql
 
 # copy the ldap files and the ldap entrypoint into the container
-COPY ./ldap/ ./related/docker/ldap-entrypoint.sh ./related/auto-build/files/stage2/ldap-config.ldif /tmp/ldap/
+COPY ./ldap/ ./related/docker/ldap-entrypoint.sh ./related/auto-build/files/stage3/ldap-config.ldif /tmp/ldap/
 
 # Move all relevant files into the /app directory & the ldap entrypoint in root
 RUN mkdir /app \

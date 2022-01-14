@@ -33,7 +33,7 @@ specific sample data.
 
 We now configure the SQL-backend for LDAP via two corresponding LDIF files (as
 is necessary according to the cn=config mechanism). The first file at
-``related/auto-build/files/stage2/ldap-config.ldif`` contains all
+``related/auto-build/files/stage3/ldap-config.ldif`` contains all
 adjustments for the ldap setup process, which are mainly loading ldap modules
 like the sql-backend.
 The second file at ``ldap/cdedb-ldap.ldif`` contains the actual definition of

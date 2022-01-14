@@ -104,16 +104,6 @@ echo "--------------------------------------------"
 sed -i -e 's/PrivateTmp=true/PrivateTmp=false/' /lib/systemd/system/apache2.service
 
 echo ""
-echo "Setting up basic ldap..."
-echo "--------------------------------------------"
-# remove the predefined mdb-database from ldap
-systemctl stop slapd
-rm -f /etc/ldap/slapd.d/cn=config/olcDatabase=\{1\}mdb.ldif
-systemctl start slapd
-# Apply the overall ldap configuration (load modules, add backends etc)
-ldapmodify -Y EXTERNAL -H ldapi:/// -f /media/cdrom0/ldap-config.ldif
-
-echo ""
 echo "Setting up system..."
 echo "--------------------------------------------"
 
