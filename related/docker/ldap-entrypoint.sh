@@ -34,9 +34,9 @@ if [ ! -e /etc/ldap/container_already_initalized ]; then
     # Wait for slapd to come up.
     sleep 5
     # Run ldapmodify to initialize the ldap-sql backend and config.
-    ldapmodify -Y EXTERNAL -H ldapi:// -f /app/ldap-config.ldif
+    ldapmodify -Y EXTERNAL -H ldapi:/// -f /app/ldap-config.ldif
     # Now apply our custom ldap configuration
-    ldapmodify -Y EXTERNAL -H ldapi:// -f /app/cdedb-ldap.ldif
+    ldapmodify -Y EXTERNAL -H ldapi:/// -f /app/cdedb-ldap.ldif
     # Stop the slapd process we started first.
     kill -INT "$(cat /run/slapd/slapd.pid)"
 

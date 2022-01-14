@@ -13,11 +13,11 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-
 # copy the ldap files and the ldap entrypoint into the container
 COPY ./ldap/ ./related/docker/ldap-entrypoint.sh ./related/auto-build/files/stage2/ldap-config.ldif /tmp/ldap/
 
-# Copy all relevant files into the /app directory & the ldap entrypoint in root
+# Move all relevant files into the /app directory & the ldap entrypoint in root
 RUN mkdir /app \
-    && cp /tmp/ldap/odbc.ini /app/ \
-    && cp /tmp/ldap/ldap-config.ldif /app/ \
-    && cp /tmp/ldap/cdedb-ldap.ldif /app/ \
+    && mv /tmp/ldap/odbc.ini /app/ \
+    && mv /tmp/ldap/ldap-config.ldif /app/ \
+    && mv /tmp/ldap/cdedb-ldap.ldif /app/ \
     \
     && mv /tmp/ldap/ldap-entrypoint.sh /ldap-entrypoint.sh
 
