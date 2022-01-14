@@ -13,7 +13,6 @@ import pathlib
 # TODO use zipapp so the user is not forced to install a package from pip
 from schulze_condorcet import schulze_evaluate, schulze_evaluate_detailed
 
-
 if __name__ == "__main__":
     # Analysiere Kommandozeilenargumente
     parser = argparse.ArgumentParser(
@@ -51,9 +50,12 @@ if __name__ == "__main__":
         announce = "Detail:"
         for level in detailed_result:
             print(f"{announce} Optionen {level['preferred']} bekamen mehr Stimmen als"
-                  f" {level['rejected']} mit {level['support']} Pro und"
-                  f" {level['opposition']} Contra Stimmen.")
+                  f" {level['rejected']}")
             announce = "       "
+            pro = [f"{key}: {value}" for key, value in level['support'].items()]
+            con = [f"{key}: {value}" for key, value in level['opposition'].items()]
+            print(f"{announce}   mit {', '.join(pro)} Pro")
+            print(f"{announce}   und {', '.join(con)} Contra Stimmen.")
 
         print(f"Ergebnis: {condensed_result}")
         if condensed_result != data['result']:
