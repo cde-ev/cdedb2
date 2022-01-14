@@ -8,9 +8,6 @@ import re
 import shutil
 import subprocess
 import tempfile
-from typing import Dict, List, Optional, Tuple
-
-import pytz
 
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
