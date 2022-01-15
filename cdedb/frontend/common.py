@@ -1443,6 +1443,7 @@ def reconnoitre_ambience(obj: AbstractFrontend,
         Scout(None, 'field_id', None,
               ((lambda a: do_assert(rs.requestargs['field_id']
                                     in a['event']['fields'])),)),
+        # Dirty hack, that relies on the event being retrieved into ambience first.
         Scout(lambda anid: ambience['event']['part_groups'][anid],  # type: ignore[has-type]
               'part_group_id', 'part_group',
               ((lambda a: do_assert(a['part_group']['event_id']
