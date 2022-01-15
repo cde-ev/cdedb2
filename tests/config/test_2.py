@@ -19,3 +19,8 @@ LOG_DIR = _TMP_DIR / "logs"  # May not be inside STORAGE_DIR
 CDB_DATABASE_NAME = "cdb_test_2"
 CDEDB_TEST = True
 STORAGE_DIR = _TMP_DIR / "storage"
+
+# docker specific
+if pathlib.Path('/CONTAINER').is_file():
+    DB_HOST = "cdb"
+    DB_PORT = 5432

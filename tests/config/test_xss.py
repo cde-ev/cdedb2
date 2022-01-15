@@ -20,6 +20,11 @@ CDB_DATABASE_NAME = "cdb_test_xss"
 CDEDB_TEST = True
 STORAGE_DIR = _TMP_DIR / "storage"
 
+# docker specific
+if pathlib.Path('/CONTAINER').is_file():
+    DB_HOST = "cdb"
+    DB_PORT = 5432
+
 
 # test config
 XSS_OUTDIR = pathlib.Path("./out")

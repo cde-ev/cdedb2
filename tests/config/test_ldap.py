@@ -20,6 +20,8 @@ CDB_DATABASE_NAME = "cdb_test_ldap"
 CDEDB_TEST = True
 STORAGE_DIR = _TMP_DIR / "storage"
 
+# docker specific
 if pathlib.Path('/CONTAINER').is_file():
-    # ldap host server differs for vms and docker containers
+    DB_HOST = "cdb"
+    DB_PORT = 5432
     LDAP_HOST = "ldap"
