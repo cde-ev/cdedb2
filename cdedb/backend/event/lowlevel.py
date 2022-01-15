@@ -57,6 +57,7 @@ class EventLowLevelBackend(AbstractBackend):
                 rs, "event.registrations", ("event_id",), registration_id))
         return event_id in rs.user.orga
 
+    @internal
     def event_log(self, rs: RequestState, code: const.EventLogCodes,
                   event_id: Optional[int], persona_id: int = None,
                   change_note: str = None, atomized: bool = True) -> DefaultReturnCode:
@@ -84,6 +85,7 @@ class EventLowLevelBackend(AbstractBackend):
         }
         return self.sql_insert(rs, "event.log", data)
 
+    @internal
     def _get_events_fields(self, rs: RequestState, event_ids: Collection[int],
                            field_ids: Optional[Collection[int]] = None,
                            ) -> Dict[int, CdEDBObjectMap]:
@@ -110,9 +112,10 @@ class EventLowLevelBackend(AbstractBackend):
     class _GetEventFieldsProtocol(Protocol):
         def __call__(self, rs: RequestState, event_id: int,
                      field_ids: Optional[Collection[int]] = None) -> CdEDBObjectMap: ...
-    _get_event_fields: _GetEventFieldsProtocol = singularize(
-        _get_events_fields, "event_ids", "event_id")
+    _get_event_fields: _GetEventFieldsProtocol = internal(singularize(
+        _get_events_fields, "event_ids", "event_id"))
 
+    @internal
     def _delete_course_track_blockers(self, rs: RequestState,
                                       track_id: int) -> DeletionBlockers:
         """Determine what keeps a course track from being deleted.
@@ -150,6 +153,7 @@ class EventLowLevelBackend(AbstractBackend):
 
         return blockers
 
+    @internal
     def _delete_course_track(self, rs: RequestState, track_id: int,
                              cascade: Collection[str] = None
                              ) -> DefaultReturnCode:
@@ -209,6 +213,7 @@ class EventLowLevelBackend(AbstractBackend):
                 {"type": "course track", "block": blockers.keys()})
         return ret
 
+    @internal
     def _set_tracks(self, rs: RequestState, event_id: int, part_id: int,
                     data: CdEDBOptionalMap) -> DefaultReturnCode:
         """Helper for creating, updating and/or deleting of tracks for one event part.
@@ -273,6 +278,7 @@ class EventLowLevelBackend(AbstractBackend):
                 self._delete_course_track(rs, track_id, cascade=cascade)
         return ret
 
+    @internal
     def _delete_field_values(self, rs: RequestState,
                              field_data: CdEDBObject) -> None:
         """Helper function for deleting the data stored in a custom data field.
@@ -295,6 +301,7 @@ class EventLowLevelBackend(AbstractBackend):
         self.query_exec(rs, query, (field_data['field_name'],
                                     field_data['event_id']))
 
+    @internal
     def _cast_field_values(self, rs: RequestState, field_data: CdEDBObject,
                            new_kind: const.FieldDatatypes) -> None:
         """Helper to cast existing field data to a new type.
@@ -346,6 +353,7 @@ class EventLowLevelBackend(AbstractBackend):
             }
             self.sql_update(rs, table, new)
 
+    @internal
     def _delete_event_part_blockers(self, rs: RequestState,
                                     part_id: int) -> DeletionBlockers:
         """Determine what keeps an event part from being deleted.
@@ -390,6 +398,7 @@ class EventLowLevelBackend(AbstractBackend):
 
         return blockers
 
+    @internal
     def _delete_event_part(self, rs: RequestState, part_id: int,
                            cascade: Collection[str] = None
                            ) -> DefaultReturnCode:
@@ -523,6 +532,7 @@ class EventLowLevelBackend(AbstractBackend):
 
         return ret
 
+    @internal
     def _delete_part_group_blockers(self, rs: RequestState,
                                     part_group_id: int) -> DeletionBlockers:
         """Determine what keeps a part group from being deleted.
@@ -545,6 +555,7 @@ class EventLowLevelBackend(AbstractBackend):
 
         return blockers
 
+    @internal
     def _delete_part_group(self, rs: RequestState, part_group_id: int,
                            cascade: Collection[str] = None) -> DefaultReturnCode:
         """Helper to delete one part group.
