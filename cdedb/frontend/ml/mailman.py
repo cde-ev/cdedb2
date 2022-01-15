@@ -53,6 +53,13 @@ class MlMailmanMixin(MlBaseFrontend):
             'subscription_policy': 'moderate',
             # Available only in mailman-3.3
             # 'unsubscription_policy': 'moderate',
+            # QUICKFIX we set 'open' here to avoid bombarding moderators
+            # with unsubscription moderation emails they cannot process
+            # This is a hack and should probably be replaced by a solution
+            # that makes the CdEDB grant the approval automatically
+            # We would like the 'moderate' setting so that users cannot
+            # interact with mailman behind our backs.
+            'unsubscription_policy': 'open',
             'archive_policy': 'private',
             'convert_html_to_plaintext': True,
             'dmarc_mitigate_action': 'wrap_message',
