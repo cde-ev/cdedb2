@@ -165,6 +165,9 @@ Hier sind die Änderungen gelistet, die in den jeweiligen Inkrementierungen der
 Export-Version neu eingeführt wurden. Für jede Version ist angegeben, ob die
 Version für den partiellen Import strikt abwärtskompatibel sind oder nicht.
 
+* Version (16, 0): Veranstaltungsteilgruppen sind nun im vollen und im partiellen Export
+  enthalten. Sie können derzeit __nicht__ importiert werden und werden, falls vorhanden,
+  beim Import ignoriert.
 * Version (15, 4): Der gesamte Fragebogen ist jetzt unter ``questionnaire`` im
   partiellen Export enthalten.
 * Version (15, 3): Hinzufügen von ``fee_modifiers`` pro Part. Alte Versionsnummer

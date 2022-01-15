@@ -118,7 +118,7 @@ def work(args: argparse.Namespace) -> None:
     with open(args.data_path, encoding='UTF-8') as infile:
         data = json.load(infile)
 
-    if data.get("EVENT_SCHEMA_VERSION") != [15, 4]:
+    if data.get("EVENT_SCHEMA_VERSION") != [16, 0]:
         raise RuntimeError("Version mismatch -- aborting.")
     if data["kind"] != "full":
         raise RuntimeError("Not a full export -- aborting.")
