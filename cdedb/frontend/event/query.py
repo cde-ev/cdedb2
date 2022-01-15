@@ -150,6 +150,9 @@ class EventRegistrationPartStatistic(enum.Enum):
         return self.name.startswith("_")
 
     def test(self, event: CdEDBObject, reg: CdEDBObject, part_id: int) -> bool:
+        """
+        Test wether the given registration fits into this statistic for the given part.
+        """
         part = reg['parts'][part_id]
         if self == self.pending:
             return part['status'] == RPS.applied
@@ -197,10 +200,17 @@ class EventRegistrationPartStatistic(enum.Enum):
 
     def test_part_group(self, event: CdEDBObject, reg: CdEDBObject, part_group_id: int
                         ) -> bool:
+        """
+        Similar to the `test` method, but for determining whether the registration fits
+        this statistic for any of the parts in the given part group.
+        """
         part_group = event['part_groups'][part_group_id]
         return any(self.test(event, reg, part_id) for part_id in part_group['part_ids'])
 
     def _get_query_aux(self, event: CdEDBObject, part_id: int) -> StatQueryAux:
+        """
+        Return fields of interest, constraints and order for this statistic for a part.
+        """
         part = event['parts'][part_id]
         if self == self.pending:
             return ([], [_status_constraint(part, RPS.applied)], [])
@@ -337,6 +347,7 @@ class EventRegistrationPartStatistic(enum.Enum):
             raise RuntimeError(n_("Impossible."))
 
     def get_query(self, event: CdEDBObject, part_id: int) -> Query:
+        """Return a `Query` object for this statistic for the given part."""
         query = Query(
             QueryScope.registration,
             QueryScope.registration.get_spec(event=event),
@@ -354,6 +365,15 @@ class EventRegistrationPartStatistic(enum.Enum):
 
     def get_query_part_group(self, event: CdEDBObject, part_group_id: int
                              ) -> Optional[Query]:
+        """
+        Similar to `get_query`, but return q `Query` object for this statistics for the
+        given part group.
+
+        This means that all the individual constraints for the individual parts need to
+        be merged together. This is not always possible. For example the constraints
+        for determining minor participants might differ between parts if these parts
+        begin at different dates.
+        """
         query = Query(
             QueryScope.registration,
             QueryScope.registration.get_spec(event=event),
@@ -369,6 +389,8 @@ class EventRegistrationPartStatistic(enum.Enum):
             all_constraints.append(constraints)
         for i in range(len(all_constraints[0])):
             new_constraint = merge_constraints(*(clist[i] for clist in all_constraints))
+            # Make sure that the constraints could be merged and that the new constraint
+            # is part of the spec.
             if new_constraint is None or new_constraint[0] not in query.spec:
                 return None
             query.constraints.append(new_constraint)
