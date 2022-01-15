@@ -43,7 +43,7 @@ i18n/*/LC_MESSAGES/cdedb.spellcheck
 messages.mo
 
 # local ldap config files
-ldap/output
+ldap/cdedb-ldap-applied.ldif
 
 # virtual environment
 .venv
