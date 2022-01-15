@@ -387,14 +387,10 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.create_assembly_form(rs)
         assert data is not None
         presider_ml_data = None
-        # we need to wait with info notifications until the last validation error check,
-        # for the "Failed validation" error notification to be shown
-        info_notifications: List[Tuple[str, Dict[str, Any]]] = []
         if create_presider_list:
             if presider_address:
-                info_notifications.append((n_("Given presider address ignored in favor"
-                                              " of newly created mailinglist."),
-                                           {}))
+                rs.notify("info", n_("Given presider address ignored in favor of"
+                                     " newly created mailinglist."))
             presider_ml_data = self._get_mailinglist_setter(data, presider=True)
             presider_address = ml_type.get_full_address(  # type: ignore
                 presider_ml_data)
@@ -402,9 +398,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             data["presider_address"] = presider_address
             if self.mlproxy.verify_existence(rs, presider_address):
                 presider_ml_data = None
-                info_notifications.append(
-                    (n_("Mailinglist %(address)s already exists."),
-                     {'address': presider_address}))
+                rs.notify("info", n_("Mailinglist %(address)s already exists."),
+                          {'address': presider_address})
         else:
             data["presider_address"] = presider_address
         if presider_ids:
@@ -424,11 +419,11 @@ class AssemblyFrontend(AbstractUserFrontend):
                     ('presider_ids', ValueError(
                         n_("Must not be empty in order to create a mailinglist."))))
         if rs.has_validation_errors():
+            # as there may be other notifications already, notify errors explicitly
+            rs.notify_validation_errors_default()
             return self.create_assembly_form(rs)
         assert data is not None
         new_id = self.assemblyproxy.create_assembly(rs, data)
-        for msg, params in info_notifications:
-            rs.notify('info', msg, params)
         if presider_ml_data:
             presider_ml_data['assembly_id'] = new_id
             code = self.mlproxy.create_mailinglist(rs, presider_ml_data)
