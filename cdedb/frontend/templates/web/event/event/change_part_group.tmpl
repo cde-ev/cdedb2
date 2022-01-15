@@ -19,7 +19,8 @@
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
     {{ util.breadcrumb_link(cdedblink("event/part_summary"), gettext("Event-Parts")) }}
     {{ util.breadcrumb_link(cdedblink("event/part_group_summary"), gettext("Part Groups")) }}
-    {{ util.breadcrumb_link(cdedblink("event/change_part_group_form"), gettext("Change part group %(shortname)s")|format(shortname=ambience['part_group']['shortname']), active=True) }}
+    {{ util.breadcrumb_link("", ambience['part_group']['title'], icon="bullseye", active=True) }}
+    {{ util.breadcrumb_link(cdedblink("event/change_part_group_form"), gettext("Change"), active=True) }}
 {% endblock %}
 
 {% block content %}
