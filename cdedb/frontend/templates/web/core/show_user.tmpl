@@ -141,13 +141,24 @@
 
             {% if data['show_vcard'] %}
                 <div id="vcard">
-                    {% set confirm_id = encode_parameter("core/qr_vcard", "confirm_id", ambience['persona']['id'], persona_id=user.persona_id, timeout=None) %}
-                    <a href="{{ cdedblink('core/qr_vcard', {'persona_id': ambience['persona']['id'], 'confirm_id': confirm_id}) }}" class="btn btn-default mosp">
+                    {% set confirm_id = encode_parameter("core/qr_vcard", "confirm_id", ambience['persona']['id'],
+                                                         persona_id=user.persona_id, timeout=None) %}
+                    <a id="show-vcard-qr" class="btn btn-default mosp"
+                       href="{{ cdedblink('core/qr_vcard',
+                                          {'persona_id': ambience['persona']['id'], 'confirm_id': confirm_id}) }}">
                         {{ util.make_icon('qrcode') }}
                         {% trans %}QR{% endtrans %}
                     </a>
-                    {% set confirm_id = encode_parameter("core/download_vcard", "confirm_id", ambience['persona']['id'], persona_id=user.persona_id, timeout=None) %}
-                    <a href="{{ cdedblink("core/download_vcard", {'persona_id': ambience['persona']['id'], 'confirm_id': confirm_id}) }}" class="btn btn-default mosp">
+                    <script nonce="{{ csp_nonce }}">
+                        $("#show-vcard-qr").cdedbQRCodeModal({{ {'title': util.persona_name(data),
+                                                                 'loading': gettext("Loading..."),
+                                                                 'close': gettext("Close") }|tojson }})
+                    </script>
+                    {% set confirm_id = encode_parameter("core/download_vcard", "confirm_id", ambience['persona']['id'],
+                                                         persona_id=user.persona_id, timeout=None) %}
+                    <a class="btn btn-default mosp"
+                       href="{{ cdedblink("core/download_vcard",
+                                          {'persona_id': ambience['persona']['id'], 'confirm_id': confirm_id}) }}">
                         {{ util.make_icon('download') }}
                         {% trans %}VCard{% endtrans %}
                     </a>
