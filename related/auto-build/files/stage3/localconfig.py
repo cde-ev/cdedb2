@@ -27,8 +27,11 @@ if CDEDB_TEST:
 CDEDB_DEV = True
 
 if pathlib.Path('/CONTAINER').is_file():
-    # ldap host server differs for vms and docker containers
+    # postgres and ldap are reachable under their own hostname instead of localhost
+    DB_HOST = "cdb"
     LDAP_HOST = "ldap"
+    # there is no pgbouncer so the postgres port is the original one
+    DB_PORT = 5432
 
 if CDEDB_TEST:
     CDB_DATABASE_NAME = os.environ['CDEDB_TEST_DATABASE']

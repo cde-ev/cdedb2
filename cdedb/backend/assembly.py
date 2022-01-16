@@ -1009,7 +1009,7 @@ class AssemblyBackend(AbstractBackend):
 
         This has to take care to keep the voter register consistent.
 
-        :returns: the id of the new event
+        :returns: the id of the new ballot
         """
         data = affirm(vtypes.Ballot, data, creation=True)
 
@@ -1023,6 +1023,8 @@ class AssemblyBackend(AbstractBackend):
                 raise ValueError(n_("Assembly already concluded."))
             bdata = {k: v for k, v in data.items() if k in BALLOT_FIELDS}
             new_id = self.sql_insert(rs, "assembly.ballots", bdata)
+            if new_id <= 0:  # pragma: no cover
+                raise RuntimeError(n_("Ballot creation failed."))
             self.assembly_log(rs, const.AssemblyLogCodes.ballot_created,
                               data['assembly_id'], change_note=data['title'])
             if 'candidates' in data:
@@ -1863,6 +1865,29 @@ class AssemblyBackend(AbstractBackend):
                     rs, const.AssemblyLogCodes.attachment_ballot_link_deleted,
                     assembly_id, persona_id=None,
                     change_note=f"{version['title']} ({ballot['title']})")
+            return ret
+
+    @access("assembly")
+    def set_ballot_attachments(self, rs: RequestState, ballot_id: int,
+                               attachment_ids: Collection[int]) -> DefaultReturnCode:
+        """Set the attachments linked to an assembly.
+
+        This helper takes care about which attachment links are present, to add or
+        to remove compared to the attachment links this ballot previously had.
+        """
+        ballot_id = affirm(vtypes.ID, ballot_id)
+        attachment_ids = affirm_set(vtypes.ID, attachment_ids)
+        with Atomizer(rs):
+            ret = 1
+            current_attachments = self.list_attachments(rs, ballot_id=ballot_id)
+            new_attachments = attachment_ids - current_attachments
+            for attachment_id in xsorted(new_attachments):
+                ret *= self.add_attachment_ballot_link(
+                    rs, attachment_id=attachment_id, ballot_id=ballot_id)
+            deleted_attachments = current_attachments - attachment_ids
+            for attachment_id in xsorted(deleted_attachments):
+                ret *= self.remove_attachment_ballot_link(
+                    rs, attachment_id=attachment_id, ballot_id=ballot_id)
             return ret
 
     @access("assembly")

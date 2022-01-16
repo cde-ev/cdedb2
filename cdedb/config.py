@@ -235,6 +235,9 @@ _DEFAULTS = {
     # name of database to use
     "CDB_DATABASE_NAME": "cdb",
 
+    # host (name or ip) on which the database listens
+    "DB_HOST": "localhost",
+
     # port on which the database listens, preferably a pooler like pgbouncer
     "DB_PORT": 6432,
 
@@ -555,11 +558,6 @@ _SECRECTS_DEFAULTS = {
     },
 
     # ldap related stuff
-    "LDAP_SLAPD": {
-        "ADMIN_PASSWORD": "secret",
-        "PASSWORD": "secret",
-    },
-    "LDAP_OLC_ROOT_PW": "secret",
     "LDAP_DUA_PW": {
         "admin": "secret",
         "apache": "secret",

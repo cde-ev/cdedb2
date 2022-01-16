@@ -76,7 +76,7 @@ class AssemblyTestHelpers(FrontendTest):
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Versammlung anlegen'})
         self.assertTitle("Versammlung anlegen")
-        f = self.response.forms['createassemblyform']
+        f = self.response.forms['configureassemblyform']
         for k, v in adata.items():
             if isinstance(f[k], webtest.forms.Checkbox):
                 f[k].checked = bool(v)
@@ -117,7 +117,7 @@ class AssemblyTestHelpers(FrontendTest):
         """
         self.traverse({"description": "Abstimmungen"},
                       {"description": "Abstimmung anlegen"})
-        f = self.response.forms["createballotform"]
+        f = self.response.forms["configureballotform"]
         for k, v in bdata.items():
             f[k] = v
         self.submit(f)
@@ -358,7 +358,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                       {'description': 'Internationaler Kongress'},)
         self.assertTitle("Internationaler Kongress")
         self.traverse({'description': 'Konfiguration'},)
-        f = self.response.forms['changeassemblyform']
+        f = self.response.forms['configureassemblyform']
         f['title'] = 'Drittes CdE-Konzil'
         f['description'] = "Wir werden alle Häretiker exkommunizieren."
         f['presider_address'] = "drittes konzil@example.cde"
@@ -370,7 +370,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertTitle("Drittes CdE-Konzil")
         self.assertPresence("Häretiker", div='description')
         self.traverse({'description': 'Konfiguration'},)
-        f = self.response.forms['changeassemblyform']
+        f = self.response.forms['configureassemblyform']
         self.assertEqual(f['presider_address'].value, 'konzil@example.cde')
 
     @as_users("werner")
@@ -378,7 +378,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Archiv-Sammlung'},
                       {'description': 'Konfiguration'}, )
-        f = self.response.forms['changeassemblyform']
+        f = self.response.forms['configureassemblyform']
         f['signup_end'] = '2000-02-22T01:00:00'
         self.submit(f)
         self.assertPresence("22.02.2000, 01:00:00")
@@ -445,7 +445,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
 
         self._create_assembly(delta={'presider_address': presider_address})
         self.traverse("Konfiguration")
-        f = self.response.forms['changeassemblyform']
+        f = self.response.forms['configureassemblyform']
         self.assertEqual(f['presider_address'].value, presider_address)
 
     @as_users("viktor")
@@ -572,7 +572,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self._create_assembly()
             self._signup()
             self.traverse({'description': 'Konfiguration'})
-            f = self.response.forms['changeassemblyform']
+            f = self.response.forms['configureassemblyform']
             f['signup_end'] = "2002-4-1 00:00:00"
             self.submit(f)
 
@@ -725,7 +725,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         }
         self._create_ballot(bdata, atitle="Internationaler Kongress")
         self.traverse({'description': 'Bearbeiten'},)
-        f = self.response.forms['changeballotform']
+        f = self.response.forms['configureballotform']
         self.assertEqual("Kein Aprilscherz!", f['notes'].value)
         f['notes'] = "April, April!"
         f['vote_begin'] = "2222-4-1 00:00:00"
@@ -733,7 +733,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.submit(f)
         # votes must be empty or a positive int
         self.traverse({'description': 'Bearbeiten'}, )
-        f = self.response.forms['changeballotform']
+        f = self.response.forms['configureballotform']
         f['votes'] = 0
         self.submit(f, check_notification=False)
         self.assertValidationError('votes', message="Muss positiv sein.")
@@ -741,7 +741,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.submit(f)
         self.assertTitle("Maximale Länge der Satzung (Internationaler Kongress)")
         self.traverse({'description': 'Bearbeiten'},)
-        f = self.response.forms['changeballotform']
+        f = self.response.forms['configureballotform']
         self.assertEqual("April, April!", f['notes'].value)
         self.traverse({'description': 'Abstimmungen'},)
         self.assertTitle("Abstimmungen (Internationaler Kongress)")
@@ -950,7 +950,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence("Zu dieser Abstimmung gibt es noch keine Dateien.",
                             div="attachments")
         self.traverse("Bearbeiten")
-        f = self.response.forms["changeballotform"]
+        f = self.response.forms["configureballotform"]
         f["linked_attachments"] = ["1001"]
         self.submit(f)
 
@@ -967,7 +967,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         delta = datetime.timedelta(days=1)
         with freezegun.freeze_time(base_time) as frozen_time:
             self.traverse("Bearbeiten")
-            f = self.response.forms['changeballotform']
+            f = self.response.forms['configureballotform']
             f['vote_begin'] = base_time + delta
             f['vote_end'] = base_time + 3*delta
             f['vote_extension_end'] = base_time + 5*delta
@@ -1260,7 +1260,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.get('/assembly/assembly/3/ballot/6/show')
         self.assertNonPresence("Abstimmungskommentar")
         self.traverse("Kommentieren")
-        f = self.response.forms['changeballotform']
+        f = self.response.forms['commentballotform']
         comment = "War nur ein *Experiment*."
         f['comment'] = comment
         self.submit(f)
@@ -1268,7 +1268,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence("Abstimmungskommentar")
         self.assertPresence("War nur ein Experiment.")
         self.traverse("Kommentieren")
-        f = self.response.forms['changeballotform']
+        f = self.response.forms['commentballotform']
         # check that the form is filled with the current comment
         self.assertEqual(comment, f['comment'].value)
         f['comment'] = ""
@@ -1428,7 +1428,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                           {'description': 'Internationaler Kongress'},
                           {'description': 'Abstimmungen'},
                           {'description': 'Abstimmung anlegen'},)
-            f = self.response.forms['createballotform']
+            f = self.response.forms['configureballotform']
             f['title'] = 'Maximale Länge der Verfassung'
             f['vote_begin'] = base_time + delta
             f['vote_end'] = base_time + 3*delta
@@ -1629,7 +1629,7 @@ class TestMultiAssemblyFrontend(MultiAppFrontendTest, AssemblyTestHelpers):
         self.switch_app(1)
         self.login("werner")
         self.traverse("Versammlung", "Drittes CdE-Konzil", "Konfiguration")
-        f = self.response.forms['changeassemblyform']
+        f = self.response.forms['configureassemblyform']
         f['notes'] = "Werner war hier!"
         self.submit(f)
         self.assertTitle("Drittes CdE-Konzil")

@@ -32,9 +32,13 @@ services:
       context: ../..
       dockerfile: ./related/docker/Dockerfile-ldap
     volumes:
-      - ldap:/var/lib/slapd/data # ldap data and first run flag/file
+      - ldap:/etc/ldap # ldap data and first run flag/file
     ports:
       - 127.0.0.1:8389:389
+    environment:
+        DATABASE_NAME: cdb # database on which ldap will run
+        DATABASE_HOST: cdb # server on which ldap will listen
+        DATABASE_CDB_ADMIN_PASSWORD: 9876543210abcdefghijklmnopqrst
     depends_on:
       - cdb
       - app # not really necessary but app creates the sample-data

@@ -6,7 +6,8 @@ from cdedb.common import CdEDBObject
 from cdedb.script import Script
 from cdedb.validation import validate_assert_optional
 
-script = Script(persona_id=1, dbuser="cdb_admin")
+# persona_id should be set via the `SCRIPT_PERSONA_ID` environment variable.
+script = Script(dbuser="cdb_admin")
 rs = script.rs()
 
 core = script.make_backend("core", proxy=False)
