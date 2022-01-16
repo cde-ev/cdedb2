@@ -397,7 +397,7 @@ class TestCron(CronTest):
             'send_welcome_message': False,
             # 'send_goodbye_message': False,
             'subscription_policy': 'moderate',
-            # 'unsubscription_policy': 'moderate',
+            'unsubscription_policy': 'open',
             'archive_policy': 'private',
             # 'filter_content': True,
             # 'filter_action': 'forward',
