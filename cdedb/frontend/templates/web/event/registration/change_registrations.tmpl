@@ -1,6 +1,7 @@
 {% set sidenav_active='event_registration' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/event/generic.tmpl" as generic_event with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
@@ -192,7 +193,7 @@
                 {% call form_input_optional("fields.{}".format(field['field_name']),
                                             anid="input_fields_{}".format(field['field_name']),
                                             label=field['field_name'] if field['kind'] != enums['FieldDatatypes'].bool else '') %}
-                    {{ util.event_field_input(field, anid="input_fields_{}".format(field['field_name'])) }}
+                    {{ generic_event.field_input(field, anid="input_fields_{}".format(field['field_name'])) }}
                 {% endcall %}
             {% endfor %}
         {% endif %}

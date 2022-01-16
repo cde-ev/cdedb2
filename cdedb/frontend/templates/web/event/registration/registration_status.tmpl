@@ -1,6 +1,7 @@
 {% set sidenav_active='event_register' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/event/generic.tmpl" as generic_event with context %}
 {% block title %}
     {% trans title=ambience['event']['title'] %}
     	Your Registration ({{ title }})
@@ -217,7 +218,7 @@
         <dl class="dl-horizontal" id="questionnaire_results">
         {% for entry in reg_questionnaire %}
             {% if entry['field_id'] %}
-                {{ util.print_questionnaire_result(entry, registration) }}
+                {{ generic_event.print_questionnaire_result(entry, registration) }}
             {% endif %}
         {% endfor %}
         </dl>
