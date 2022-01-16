@@ -391,13 +391,11 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self._create_assembly(delta={'presider_address': presider_address,
                                      'create_presider_list': True,
                                      'create_attendee_list': True})
-        self.assertNotification('success',
-                                "Versammlungsleitungs-Mailingliste angelegt.")
-        self.assertNotification('success',
-                                "Versammlungsteilnehmer-Mailingliste angelegt.")
-        self.assertNotification('info',
-                                "Angegebene Versammlungsleitungs-E-Mail-Adresse durch"
-                                " Adresse der neuen Mailingliste ersetzt.")
+        self.assertNotification("Versammlungsleitungs-Mailingliste angelegt.")
+        self.assertNotification("Versammlungsteilnehmer-Mailingliste angelegt.")
+        self.assertNotification("Angegebene Versammlungsleitungs-E-Mail-Adresse durch"
+                                " Adresse der neuen Mailingliste ersetzt.",
+                                ntype='info')
 
         # create another assembly to test input validation
         self.traverse("Versammlungen", "Versammlung anlegen")
@@ -429,11 +427,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f['presider_ids'] = USER_DICT['werner']['DB-ID']
         self.submit(f)
         self.assertNotification(
-            'info',
-            "Mailingliste konzil3@lists.cde-ev.de existiert bereits.")
+            "Mailingliste konzil3@lists.cde-ev.de existiert bereits.", 'info')
         self.assertNotification(
-            'info',
-            "Mailingliste konzil3-leitung@lists.cde-ev.de existiert bereits.")
+            "Mailingliste konzil3-leitung@lists.cde-ev.de existiert bereits.", 'info')
         self.assertNotIn('createpresiderlistform', self.response.forms)
         self.assertNotIn('createattendeelistform', self.response.forms)
         # log contains links
@@ -444,7 +440,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f = self.response.forms['deleteassemblyform']
         self.submit(f, check_notification=False)
         # TODO: there is no validation error near the checkbox
-        self.assertNotification('error', "Validierung fehlgeschlagen.")
+        self.assertNotification("Validierung fehlgeschlagen.", 'error')
         f['ack_delete'].checked = True
         self.submit(f)
 
@@ -477,7 +473,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         with self.switch_user("ferdinand"):
             self.traverse("Versammlungen", "Drittes CdE-Konzil")
             self.submit(self.response.forms['signupform'])
-            self.assertNotification('success', "Angemeldet.")
+            self.assertNotification("Angemeldet.")
         # now delete
         self.traverse({'href': "/show", 'description': "Übersicht"})
         f = self.response.forms['deleteassemblyform']
@@ -508,11 +504,11 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertInputHasAttr(f['submitform'], 'disabled')
         f[ANTI_CSRF_TOKEN_NAME] = "evil"
         self.submit(f, check_notification=False)
-        self.assertNotification('error', "Der Anti-CSRF-Token wurde gefälscht.")
+        self.assertNotification("Der Anti-CSRF-Token wurde gefälscht.", 'error')
         self.submit(self.response.forms['createpresiderlistform'],
                     check_notification=False)
         self.assertNotification(
-            'error', "Mailingliste kann nur mit Versammlungsleitern erstellt werden.")
+            "Mailingliste kann nur mit Versammlungsleitern erstellt werden.", 'error')
         f = self.response.forms['addpresidersform']
         f['presider_ids'] = USER_DICT['werner']['DB-ID']
         self.submit(f)
@@ -520,7 +516,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.submit(f)
         self.submit(f, check_notification=False)
         self.assertNotification(
-            'info', "Mailingliste archiv@lists.cde-ev.de existiert bereits.")
+            "Mailingliste archiv@lists.cde-ev.de existiert bereits.", 'info')
         self.submit(self.response.forms['createpresiderlistform'])
 
     @as_users("werner")
@@ -548,19 +544,19 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f = self.response.forms['signupform']
         f[ANTI_CSRF_TOKEN_NAME] = "evil"
         self.submit(f, check_notification=False)
-        self.assertNotification('error', "Der Anti-CSRF-Token wurde gefälscht.")
+        self.assertNotification("Der Anti-CSRF-Token wurde gefälscht.", 'error')
         f = self.response.forms['signupform']
         self.submit(f)
         self.assertTitle("Internationaler Kongress")
         self.assertNotIn('signupform', self.response.forms)
         self.submit(f, check_notification=False)
-        self.assertNotification('info', "Bereits angemeldet.")
+        self.assertNotification("Bereits angemeldet.")
         # assembly with running ballots
         self.traverse("Versammlungs-Übersicht", "Kanonische Beispielversammlung")
         self.assertNotIn('signupform', self.response.forms)
         self.post('/assembly/assembly/2/signup', {})
         self.assertTitle("Kanonische Beispielversammlung")
-        self.assertNotification('warning', "Der Anmeldezeitraum ist vorbei.")
+        self.assertNotification("Der Anmeldezeitraum ist vorbei.", 'warning')
 
     @as_users("kalif")
     def test_no_signup(self) -> None:
@@ -612,7 +608,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.post('/assembly/assembly/2/signup/external',
                       {'persona_id': USER_DICT['kalif']['DB-ID']})
             self.assertTitle("Anwesenheitsliste (Kanonische Beispielversammlung)")
-            self.assertNotification('warning', "Der Anmeldezeitraum ist vorbei.")
+            self.assertNotification("Der Anmeldezeitraum ist vorbei.", 'warning')
 
     @as_users("werner", "kalif")
     def test_list_attendees(self) -> None:
@@ -638,7 +634,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.assertPresence("Insgesamt 0 Anwesende", div='attendees-count')
             self.traverse("TeX-Liste")
             self.assertTitle("Anwesenheitsliste (Archiv-Sammlung)")
-            self.assertNotification('info', "Leere Datei.")
+            self.assertNotification("Leere Datei.")
 
     @storage
     @as_users("rowena")
@@ -684,7 +680,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                 self.response.forms['concludeassemblyform']['submitform'], 'disabled')
             self.post('/assembly/assembly/1001/conclude', {'ack_conclude': True})
             self.assertNotification(
-                'error', "Kann Versammlung mit offenen Abstimmungen nicht abschließen.")
+                "Kann Versammlung mit offenen Abstimmungen nicht abschließen.", 'error')
 
             # upload an attachment to test after conclusion
             with open(self.testfile_dir / "rechen.pdf", 'rb') as datafile:
@@ -710,31 +706,31 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             f = self.response.forms['concludeassemblyform']
             self.submit(f, check_notification=False)
             # TODO: there is no validation error near the checkbox
-            self.assertNotification('error', "Validierung fehlgeschlagen.")
+            self.assertNotification("Validierung fehlgeschlagen.", 'error')
             f['ack_conclude'].checked = True
             self.submit(f)
             self.assertNotIn('concludeassemblyform', self.response.forms)
             self.submit(f, check_notification=False)
             msg = "Die Versammlung ist bereits beendet."
-            self.assertNotification('info', msg)
+            self.assertNotification(msg, 'info')
             self.assertTitle("Drittes CdE-Konzil")
             # Presiders can no longer be changed
             link = '/assembly/assembly/1001/presider/'
             self.assertNotIn("addpresidersform", self.response.forms)
             self.post(link + 'add', {'presider_ids': USER_DICT['werner']['DB-ID']})
             self.assertTitle("Drittes CdE-Konzil")
-            self.assertNotification('warning', msg)
+            self.assertNotification(msg, 'warning')
             self.assertNotIn(f"removepresiderform{USER_DICT['werner']['id']}",
                              self.response.forms)
             self.post(link + 'remove', {'presider_id': USER_DICT['werner']['id']})
             self.assertTitle("Drittes CdE-Konzil")
-            self.assertNotification('warning', msg)
+            self.assertNotification(msg, 'warning')
             # deletion is not possible
             self.assertNotIn('deleteassemblyform', self.response.forms)
             self.post('/assembly/assembly/1001/delete', {'ack_delete': True})
             self.assertNotification(
-                'error',
-                "Versammlungen mit aktiven Abstimmungen können nicht gelöscht werden.")
+                "Versammlungen mit aktiven Abstimmungen können nicht gelöscht werden.",
+                'error')
             # modification not possible anymore
             self.traverse("Abstimmungen")  # first iteration starts at this page
             for link in ('/assembly/assembly/1001/ballot/create',
@@ -742,10 +738,10 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                 self.assertNoLink(link)
                 self.get(link)
                 self.assertTitle("Drittes CdE-Konzil")
-                self.assertNotification('warning', msg)
+                self.assertNotification(msg, 'warning')
                 self.post(link, {'title': "Jetzt ist Schluss!"})
                 self.assertTitle("Drittes CdE-Konzil")
-                self.assertNotification('warning', msg)
+                self.assertNotification(msg, 'warning')
             # attachments can no longer be changed
             self.traverse("Dateien")
             self.assertNotIn('addattachmentform', self.response.forms)
@@ -753,20 +749,18 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             base_link = '/assembly/assembly/1001/attachment/'
             for suffix, atype in (('add', "Datei"), ('1001/add', "Dateiversion")):
                 url = base_link + suffix
+                msg = f"Es kann keine {atype} mehr hinzugefügt werden, nachdem" \
+                      " die Versammlung gesperrt wurde."
                 self.get(url)
-                self.assertNotification('error',
-                                        f"Es kann keine {atype} mehr hinzugefügt werden"
-                                        f", nachdem die Versammlung gesperrt wurde.")
+                self.assertNotification(msg, 'error')
                 self.post(url, {'title': "Datei mit Verspätung"})
-                self.assertNotification('error',
-                                        f"Es kann keine {atype} mehr hinzugefügt werden"
-                                        ", nachdem die Versammlung gesperrt wurde.")
+                self.assertNotification(msg, 'error')
             base_link += '1001/'
             for suffix, atype in (('delete', "Datei"),
                                   ('version/1/delete', "Dateiversion")):
                 url = base_link + suffix
                 self.post(url, {'attachment_ack_delete': True})
-                self.assertNotification('error', f"{atype} kann nicht gelöscht werden.")
+                self.assertNotification(f"{atype} kann nicht gelöscht werden.", 'error')
 
     @storage
     @as_users("anton")
@@ -923,8 +917,8 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                     self.submit(f, check_notification=False)
                     self.assertTitle(f"{ballot_title} bearbeiten"
                                      " (Internationaler Kongress)")
-                    self.assertNotification('error',
-                                            "Der Anti-CSRF-Token wurde gefälscht.")
+                    self.assertNotification("Der Anti-CSRF-Token wurde gefälscht.",
+                                            'error')
                     f = self.response.forms['commentballotform']
                     self.assertEqual(evil_comment, f['comment'].value)
                     f['comment'] = ""
@@ -935,10 +929,10 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                     self.assertNoLink(comment_url)
                     self.get(comment_url)
                     self.assertTitle(page_title)
-                    self.assertNotification('error', comment_failed)
+                    self.assertNotification(comment_failed, 'error')
                     self.post(comment_url, {'comment': "Testkommentar"})
                     self.assertTitle(page_title)
-                    self.assertNotification('error', comment_failed)
+                    self.assertNotification(comment_failed, 'error')
 
                 # modification and deletion - only possible for future ballots
                 self.assertTitle(page_title)
@@ -964,7 +958,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                     f = self.response.forms['deleteballotform']
                     self.submit(f, check_notification=False)
                     # TODO: there is no validation error near the checkbox
-                    self.assertNotification('error', "Validierung fehlgeschlagen.")
+                    self.assertNotification("Validierung fehlgeschlagen.", 'error')
                     f['ack_delete'].checked = True
                     self.submit(f)
                     self.assertTitle("Abstimmungen (Internationaler Kongress)")
@@ -974,17 +968,17 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                     self.assertNoLink(change_url)
                     self.get(change_url)
                     self.assertTitle(page_title)
-                    self.assertNotification('warning', change_failed)
+                    self.assertNotification(change_failed, 'warning')
                     self.post(change_url, {'notes': "Störenfried war hier!"})
                     self.assertTitle(page_title)
-                    self.assertNotification('warning', change_failed)
+                    self.assertNotification(change_failed, 'warning')
                     # deletion
                     self.assertNonPresence("Löschen")
                     self.assertNotIn("deleteballotform", self.response.forms)
                     self.post(f'/assembly/assembly/1/ballot/{ballot_id}/delete',
                               {'ack_delete': True})
                     self.assertNotification(
-                        'error', "Eine aktive Abstimmung kann nicht gelöscht werden.")
+                        "Eine aktive Abstimmung kann nicht gelöscht werden.", 'error')
 
     @storage
     @as_users("charly", "viktor")
@@ -1083,37 +1077,37 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         base_link = '/assembly/assembly/3/attachment/2/'
         # all-in-one is prohibited
         self.post(base_link + 'delete', {'attachment_ack_delete': True})
-        self.assertNotification("error",
-                                "Entferne erst alle bis auf eine Dateiversion,"
-                                " bevor Du die gesamte Datei entfernst.")
+        self.assertNotification("Entferne erst alle bis auf eine Dateiversion,"
+                                " bevor Du die gesamte Datei entfernst.",
+                                'error')
         # version 4 never existed
         self.post(base_link + 'version/4/delete', {'attachment_ack_delete': True})
-        self.assertNotification("error", "Diese Version der Datei existiert nicht.")
+        self.assertNotification("Diese Version der Datei existiert nicht.", 'error')
         # version 2 is already deleted
         self.post(base_link + 'version/2/delete', {'attachment_ack_delete': True})
-        self.assertNotification(
-            "error", "Diese Version der Datei wurde beireits gelöscht.")
+        self.assertNotification("Diese Version der Datei wurde bereits gelöscht.",
+                                'error')
         # version 3 can be deleted
         f = self.response.forms["removeattachmentversionform2_3"]
         self.submit(f, check_notification=False)
         # TODO: there is no validation error near the checkbox
-        self.assertNotification('error', "Validierung fehlgeschlagen.")
+        self.assertNotification("Validierung fehlgeschlagen.", 'error')
         f["attachment_ack_delete"] = True
         self.submit(f)
         self.assertPresence("Version 3 wurde gelöscht", div="attachment2_version3")
         # version 3 is removed now
         self.get(base_link + 'version/3/')
         self.assertTitle("Dateien (Archiv-Sammlung)")
-        self.assertNotification('error', "Datei wurde nicht gefunden.")
+        self.assertNotification("Datei wurde nicht gefunden.", 'error')
         # deleting last version specifically is neither possible nor reachable via UI...
         self.post(base_link + 'version/1/delete', {'attachment_ack_delete': True})
         self.assertNotification(
-            "error",
-            "Die letzte verbleibende Version einer Datei kann nicht gelöscht werden.")
+            "Die letzte verbleibende Version einer Datei kann nicht gelöscht werden.",
+            'error')
         # ... since the button links to deletion of the whole attachment:
         f = self.response.forms["deleteattachmentform2"]
         self.submit(f, check_notification=False)
-        self.assertNotification('error', "Validierung fehlgeschlagen.")
+        self.assertNotification("Validierung fehlgeschlagen.", 'error')
         f["attachment_ack_delete"] = True
         self.submit(f)
         self.assertNonPresence("Kassenprüferbericht")
@@ -1227,11 +1221,11 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             # add a new version
             self.traverse({"href": "/assembly/assembly/1/attachment/1001/add"})
             self.assertNotification(
-                'warning',
                 "Eine verknüpfte Abstimmung wurde bereits gesperrt, daher sollten nur"
                 " noch formale Korrekturen an dieser Datei vorgenommen werden. Die"
                 " maßgebliche Version bleibt für alle bereits begeonnen Abstimmungen"
                 " maßgeblich.",
+                ntype='warning',
                 static=True
             )
             f = self.response.forms['addattachmentversionform']
@@ -1386,8 +1380,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f = self.response.forms['voteform']
         f['vote'] = ["E", ASSEMBLY_BAR_SHORTNAME]
         self.submit(f, check_notification=False)
-        self.assertNotification(
-            'error', "Ablehnung kann nur exklusiv gewählt werden.")
+        self.assertNotification("Ablehnung kann nur exklusiv gewählt werden.", 'error')
         f['vote'] = []
         f.get('vote', index=0).force_value("")
         f.get('vote', index=0).checked = True
@@ -1490,7 +1483,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.assertEqual(json.load(f), json.loads(self.response.body))
         self.get('/assembly/assembly/1/ballot/3/result/download')  # running ballot
         self.assertTitle("Bester Hof (Internationaler Kongress)")
-        self.assertNotification('warning', "Abstimmung noch nicht ausgezählt.")
+        self.assertNotification("Abstimmung noch nicht ausgezählt.", 'warning')
 
     @storage
     @as_users("kalif")
@@ -1873,7 +1866,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             f = self.response.forms['showoldvoteform']
             f[ANTI_CSRF_TOKEN_NAME] = "evil"
             self.submit(f, check_notification=False)
-            self.assertNotification('error', "Der Anti-CSRF-Token wurde gefälscht.")
+            self.assertNotification("Der Anti-CSRF-Token wurde gefälscht.", 'error')
             f = self.response.forms['showoldvoteform']
             f['secret'] = "IForgotMySecret"
             self.submit(f, check_notification=False)
@@ -1889,7 +1882,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.post('/assembly/assembly/1/ballot/3/result',
                       {'secret': "-YZN1KWDfMLQ5Y8Q"})
             self.assertTitle("Bester Hof (Internationaler Kongress)")
-            self.assertNotification('error', "Abstimmung wurde noch nicht ausgezählt.")
+            self.assertNotification("Abstimmung wurde noch nicht ausgezählt.", 'error')
 
 
 class TestMultiAssemblyFrontend(MultiAppFrontendTest, AssemblyTestHelpers):
@@ -1920,14 +1913,14 @@ class TestMultiAssemblyFrontend(MultiAppFrontendTest, AssemblyTestHelpers):
         f = self.response.forms[f"removepresiderform{USER_DICT['werner']['id']}"]
         f['presider_id'] = "ThisIsNoID"
         self.submit(f, check_notification=False)
-        self.assertNotification('error', "Validierung fehlgeschlagen.")
+        self.assertNotification("Validierung fehlgeschlagen.", 'error')
         f = self.response.forms[f"removepresiderform{USER_DICT['werner']['id']}"]
         self.submit(f)
         self.assertNotIn(f"removepresiderform{USER_DICT['werner']['id']}",
                          self.response.forms)
         self.submit(f, check_notification=False)
         self.assertNotification(
-            'info', "Dieser Nutzer ist kein Wahlleiter für diese Versammlung.")
+            "Dieser Nutzer ist kein Wahlleiter für diese Versammlung.")
         self.assertNonPresence("Werner Wahlleitung", div='assembly-presiders',
                                check_div=False)
 

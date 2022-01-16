@@ -951,7 +951,7 @@ class FrontendTest(BackendTest):
         self.basic_validate(verbose=verbose)
         if method == "POST" and check_notification:
             # check that we acknowledged the POST with a notification
-            self.assertNotification('success',
+            self.assertNotification(ntype='success',
                                     msg=("No success notification found in"
                                          + self.response.text if verbose else None))
 
@@ -1204,14 +1204,14 @@ class FrontendTest(BackendTest):
             else:
                 self.assertNotIn(s.strip(), content.text_content())
 
-    def assertNotification(self, ntype: str, ntext: str = None, *, static: bool = False,
-                           msg: str = None) -> None:
+    def assertNotification(self, ntext: str = None, ntype: str = None, *,
+                           static: bool = False, msg: str = None) -> None:
         """Check for a notification containing `ntext` under all `ntype` notifications.
 
-        :param ntype: type of notification. Can be any of bootstraps possible alert
-            contextes or 'error', which will expect a 'danger' alert.
         :param ntext: Substring to be present in the notification's message.
             If not given, only check for notification type.
+        :param ntype: type of notification. Can be any of bootstraps possible alert
+            contextes or 'error', which will expect a 'danger' alert.
         :param static: whether to search for a static notification
         :param msg: Custom message on assertion failure.
         """
@@ -1219,11 +1219,14 @@ class FrontendTest(BackendTest):
             ntype = 'danger'
 
         div = 'static-notifications' if static else 'notifications'
+        alert_type_class = f" alert-{ntype}" if ntype is not None else ""
+        # source: https://devhints.io/xpath#string-functions
         notifications = self.response.lxml.xpath(
-                f"//div[@id='{div}']/div[@class='alert alert-{ntype}']"
+                f"//div[@id='{div}']/div[starts-with(@class,'alert{alert_type_class}')]"
                 "/span[@class='notificationMessage']")
         self.assertTrue(notifications,
-                        msg=(f"No {ntype} notification found." if msg is None else msg))
+                        msg=(f"No{alert_type_class} notification found."
+                             if msg is None else msg))
         if ntext is not None:
             # joining them this way is useful for meaningful failure message
             all_texts = " | ".join(n.text_content().strip() for n in notifications)
@@ -1290,7 +1293,7 @@ class FrontendTest(BackendTest):
             raise NotImplementedError
 
         if notification is not None:
-            self.assertNotification(alert_type, notification)
+            self.assertNotification(notification, alert_type)
 
         nodes = self.response.lxml.xpath(
             f'(//input|//select|//textarea)[@name="{fieldname}"]')

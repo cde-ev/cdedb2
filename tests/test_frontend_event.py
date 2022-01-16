@@ -3227,8 +3227,7 @@ etc;anything else""", f['entries_2'].value)
         f['assign_track_ids'] = [3]
         f['assign_action'] = 2
         self.submit(f, check_notification=False)
-        self.assertNotification(
-            'warning', "Emilia E. Eventis hat keine 3. Kurswahl")
+        self.assertNotification("Emilia E. Eventis hat keine 3. Kurswahl", 'warning')
         self.assertPresence("0 von 2 Anmeldungen gespeichert",
                             div="notifications")
 
@@ -3246,7 +3245,7 @@ etc;anything else""", f['entries_2'].value)
         f['assign_track_ids'] = [3]
         f['assign_action'] = -5
         self.submit(f, check_notification=False)
-        self.assertNotification('warning', "Keine Kurswahlen für Anton Administrator")
+        self.assertNotification("Keine Kurswahlen für Anton Administrator", 'warning')
         self.assertPresence("1 von 2 Anmeldungen gespeichert",
                             div="notifications")
 

@@ -452,7 +452,7 @@ msgstr "Diese Version der Datei existiert nicht."
 #: cdedb/backend/assembly.py:2074 cdedb/frontend/assembly.py:889
 #: cdedb/frontend/assembly.py:903 cdedb/frontend/assembly.py:940
 msgid "This version has already been deleted."
-msgstr "Diese Version der Datei wurde beireits gelöscht."
+msgstr "Diese Version der Datei wurde bereits gelöscht."
 
 #: cdedb/backend/assembly.py:2070 cdedb/backend/assembly.py:2075
 #: cdedb/backend/assembly.py:2077 cdedb/frontend/assembly.py:880

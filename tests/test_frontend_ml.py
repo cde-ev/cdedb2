@@ -1123,20 +1123,20 @@ class TestMlFrontend(FrontendTest):
         f['subscriber_ids'] = USER_DICT["inga"]["DB-ID"]
         self.submit(f, check_notification=False)
         self.assertNotification(
-            'error', "Der Nutzer hat aktuell eine Abonnement-Anfrage gestellt.")
+            "Der Nutzer hat aktuell eine Abonnement-Anfrage gestellt.", 'error')
         # as mod subscriber
         self.traverse({'href': '/ml/mailinglist/4/management/advanced'}, )
         f = self.response.forms['addmodsubscriberform']
         f['modsubscriber_ids'] = USER_DICT["inga"]["DB-ID"]
         self.submit(f, check_notification=False)
         self.assertNotification(
-            'error', "Der Nutzer hat aktuell eine Abonnement-Anfrage gestellt.")
+            "Der Nutzer hat aktuell eine Abonnement-Anfrage gestellt.", 'error')
         # as mod unsubscribe
         f = self.response.forms['addmodunsubscriberform']
         f['modunsubscriber_ids'] = USER_DICT["inga"]["DB-ID"]
         self.submit(f, check_notification=False)
         self.assertNotification(
-            'error', "Der Nutzer hat aktuell eine Abonnement-Anfrage gestellt.")
+            "Der Nutzer hat aktuell eine Abonnement-Anfrage gestellt.", 'error')
 
         # testing: mod subscribe and unsubscribe
         # add already subscribed user as mod subscribe
@@ -1151,12 +1151,12 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/ml/mailinglist/4/management'}, )
         f = self.response.forms['removesubscriberform1']
         self.submit(f, check_notification=False)
-        self.assertNotification('error', "Der Nutzer ist aktuell fixierter Abonnent.")
+        self.assertNotification("Der Nutzer ist aktuell fixierter Abonnent.", 'error')
         # try to add a mod unsubscribed user
         f = self.response.forms['addsubscriberform']
         f['subscriber_ids'] = USER_DICT["garcia"]["DB-ID"]
         self.submit(f, check_notification=False)
-        self.assertNotification('error', "Der Nutzer ist aktuell blockiert.")
+        self.assertNotification("Der Nutzer ist aktuell blockiert.", 'error')
 
     @as_users("berta", "janis")
     def test_moderator_access(self) -> None:
