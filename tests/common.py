@@ -395,8 +395,10 @@ class BackendTest(CdEDBTest):
     def switch_user(self, new_user: UserIdentifier) -> Generator[None, None, None]:
         """This method can be used as a context manager to temporarily switch users."""
         old_user = self.user
+        self.logout()
         self.login(new_user)
         yield
+        self.logout()
         self.login(old_user)
 
     def user_in(self, *identifiers: UserIdentifier) -> bool:
@@ -1019,13 +1021,9 @@ class FrontendTest(BackendTest):
         """context manager to temporarily switch users - frontend variant
 
         This restores the original response after the original user logged in again"""
-        old_user = self.user
         saved_response = self.response
-        self.logout()
-        self.login(new_user)
-        yield
-        self.logout()
-        self.login(old_user)
+        with super().switch_user(new_user):
+            yield
         self.response = saved_response
 
     def admin_view_profile(self, user: UserIdentifier, check: bool = True,
