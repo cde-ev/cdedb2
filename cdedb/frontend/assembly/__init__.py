@@ -1375,7 +1375,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     def change_ballot_form(self, rs: RequestState, assembly_id: int,
                            ballot_id: int) -> Response:
         """Render form"""
-        if now() > rs.ambience['ballot']['vote_begin']:
+        if rs.ambience['ballot']['is_locked']:
             rs.notify("warning", n_("Unable to modify active ballot."))
             return self.redirect(rs, "assembly/show_ballot")
         attachment_ids = self.assemblyproxy.list_attachments(
@@ -1410,7 +1410,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     def change_ballot(self, rs: RequestState, assembly_id: int,
                       ballot_id: int, data: Dict[str, Any]) -> Response:
         """Modify a ballot."""
-        if now() > rs.ambience['ballot']['vote_begin']:
+        if rs.ambience['ballot']['is_locked']:
             rs.ignore_validation_errors()
             rs.notify("warning", n_("Unable to modify active ballot."))
             return self.redirect(rs, "assembly/show_ballot")

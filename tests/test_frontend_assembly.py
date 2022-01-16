@@ -605,7 +605,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f['persona_id'] = "DB-1000-X"
         self.submit(f, check_notification=False)
         self.assertValidationError('persona_id', "Checksumme stimmt nicht.")
-        # signup impossible for assembly with running ballots
+        # signup impossible after signup end
         if self.user_in("ferdinand"):
             self.get('/assembly/assembly/2/attendees')
             self.assertNotIn('addattendeeform', self.response.forms)
