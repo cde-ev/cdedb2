@@ -75,6 +75,10 @@ SAMPLE_DATA_SQL ?= bin/create_sample_data_sql.py
 # Use makes command-line arguments to override the following default variables
 # The database name on which we operate. This will be overridden in the test suite.
 DATABASE_NAME = cdb
+# The host where the database is available. This is mostly needed to setup ldap correctly.
+DATABASE_HOST = localhost
+# The password of the cdb_admin user. This is currently needed to setup ldap correctly.
+DATABASE_CDB_ADMIN_PASSWORD = 9876543210abcdefghijklmnopqrst
 # Directory where the python application stores additional files. This will be overridden in the test suite.
 STORAGE_DIR = /var/lib/cdedb
 # Directory where the application stores its log files. This will be overridden in the test suite.
@@ -251,12 +255,6 @@ sql-xss: sql-setup tests/ancillary_files/sample_data_xss.sql
 ########
 # LDAP #
 ########
-# TODO add dependency on sql-test to create the specified database
-
-# use command-line arguments of make to override
-DATABASE_NAME = cdb
-DATABASE_HOST = localhost
-DATABASE_CDB_ADMIN_PASSWORD = 9876543210abcdefghijklmnopqrst
 
 .PHONY: ldap-prepare-odbc
 ldap-prepare-odbc:
@@ -305,6 +303,7 @@ ldap-remove:
 
 .PHONY: ldap-reset
 ldap-reset: ldap-remove ldap-create ldap-update-full
+
 
 ###################
 # Code formatting #
