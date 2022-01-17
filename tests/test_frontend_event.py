@@ -4624,7 +4624,7 @@ etc;anything else""", f['entries_2'].value)
         # Create new part group:
         self.traverse("Veranstaltungsteilgruppe hinzufügen")
         self.assertTitle("Veranstaltungsteilgruppe hinzufügen (TripelAkademie)")
-        f = self.response.forms['addpartgroupform']
+        f = self.response.forms['configurepartgroupform']
         f['title'] = ""
         f['shortname'] = ""
         f['constraint_type'] = const.EventPartGroupType.Statistic
@@ -4677,7 +4677,7 @@ etc;anything else""", f['entries_2'].value)
         # Change the new part group.
         self.traverse("Veranstaltungsteilgruppen",
                       {'linkid': f'partgroup{new_id}_change'})
-        f = self.response.forms['changepartgroupform']
+        f = self.response.forms['configurepartgroupform']
 
         # Check that constraint_type and part_ids fields are disabled.
         self.assertEqual(f['constraint_type'].attrs, {'type': 'hidden'})

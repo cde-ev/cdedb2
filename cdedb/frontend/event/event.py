@@ -573,7 +573,7 @@ class EventEventMixin(EventBaseFrontend):
     @access("event")
     @event_guard()
     def add_part_group_form(self, rs: RequestState, event_id: int) -> Response:
-        return self.render(rs, "event/add_part_group")
+        return self.render(rs, "event/configure_part_group")
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
@@ -607,7 +607,7 @@ class EventEventMixin(EventBaseFrontend):
     def change_part_group_form(self, rs: RequestState, event_id: int,
                                part_group_id: int) -> Response:
         merge_dicts(rs.values, rs.ambience['part_group'])
-        return self.render(rs, "event/change_part_group")
+        return self.render(rs, "event/configure_part_group")
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
