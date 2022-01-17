@@ -21,7 +21,9 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Any, Collection, Dict, Iterable, List, Optional, Protocol, Set, Tuple
+from typing import (
+    Any, Collection, Dict, Iterable, List, Optional, Protocol, Set, Tuple, Union
+)
 
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
@@ -916,7 +918,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
     @access("event")
     def event_keeper_commit(self, rs: RequestState, event_id: int,
-                            commit_msg: str, *, is_marker=False) -> CdEDBObject:
+                            commit_msg: str, *, is_marker: bool = False) -> CdEDBObject:
         """Commit the current state of the event to it'S git repository.
 
         :param is_marker: Marks an important operation with explicit event keeper call.
@@ -942,6 +944,7 @@ class EventBaseBackend(EventLowLevelBackend):
             subprocess.run(["git", f"--work-tree={td}", "add", td / filename],
                            cwd=event_keeper_dir, check=True)
             # Then commit everything as if we were in the repository directory.
+            commit: List[Union[PathLike, bytes]]
             commit = ["git", "-C", event_keeper_dir, "commit", "-m",
                       commit_msg.encode("utf8")]
             if rs.user.persona_id:
