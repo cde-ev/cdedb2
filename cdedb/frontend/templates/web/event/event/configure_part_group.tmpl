@@ -51,7 +51,7 @@
                     name="constraint_type", label=gettext("Type"),
                     entries=enums['EventPartGroupType']|enum_entries(processing=gettext), actualreadonly=True) }}
             {{ util.form_input_checkboxes(
-                    name="part_ids", label=gettext("Parts"), slice=2, actualreadonly=True,
+                    name="part_ids", label=gettext("Event Parts"), slice=2, actualreadonly=True,
                     entries=ambience['event']['parts']|keydictsort(EntitySorter.event_part)|dict_entries('id', 'title')) }}
         {% else %}
             {{ util.form_input_select(name="constraint_type", label=gettext("Type"), entries=enums['EventPartGroupType']|enum_entries(processing=gettext), info=gettext("Note: This cannot be changed later.")) }}
