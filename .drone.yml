@@ -100,7 +100,7 @@ steps:
   - pg_isready --host=cdb --timeout=10 # wait for database to come online
   - make i18n-compile # required for sample-data target
   - make sample-data # this creates the sql schema and copies the localconfig.py
-  - make sql DATABASE_NAME=cdb_test # create the test database for ldap
+  - make sql DATABASE_NAME=cdb_test_ldap # create the test database for ldap
 - name: ldap # is used as the hostname for the container
   image: ldap:20211218
   pull: never # do not try to pull image from docker hub
@@ -114,7 +114,7 @@ steps:
   environment:
     # we use the database without a name as only readonly access is required
     # and this will work regardless of the id the testing container gets
-    DATABASE_NAME: cdb_test
+    DATABASE_NAME: cdb_test_ldap
     DATABASE_HOST: cdb # server on which ldap will listen
     DATABASE_CDB_ADMIN_PASSWORD: 9876543210abcdefghijklmnopqrst
 - name: frontend tests a-d

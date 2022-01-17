@@ -165,9 +165,32 @@ def run_xss_tests(*, verbose: bool = False) -> int:
 
 
 def run_ldap_tests(testpatterns: List[str] = None, *, verbose: bool = False) -> int:
-    return 1
-    configpath = root / "tests/config/test_ldap.py"  # type: ignore[unreachable]
-    prepare_environment(configpath)  # type: ignore[name-defined]
+    configpath = root / "tests/config/test_ldap.py"
+    conf = TestConfig(configpath)
+    # get the user running the current process, so the access rights for log directory
+    # are set correctly
+    user = getpass.getuser()
+    # prepare the translations
+    subprocess.run(["make", "i18n-compile"], check=True)
+    # create the log directory
+    subprocess.run(["make", "log", f"LOG_DIR={conf['LOG_DIR']}", f"DATA_USER={user}"],
+                   check=True)
+    if pathlib.Path("/CONTAINER").is_file():
+        # the database is already initialized, since it is needed to start the
+        # ldap container in the first place
+        print(f"Database {conf['CDB_DATABASE_NAME']} must already been set up.")
+        # TODO verify this somehow
+    else:
+        # setup the database
+        subprocess.run(["make", "sql", f"DATABASE_NAME={conf['CDB_DATABASE_NAME']}"],
+                       check=True, stdout=subprocess.DEVNULL)
+        # update the current ldap setting
+        # TODO either run ldap-reset or only ldap-update-full
+        # subprocess.run(["make", "ldap-create"], check=True)
+        subprocess.run(["make", "ldap-update-full",
+                        f"DATABASE_NAME={conf['CDB_DATABASE_NAME']}"], check=True)
+    # add the configpath to environment to access the configuration inside the tests
+    os.environ['CDEDB_TEST_CONFIGPATH'] = str(configpath)
 
     test_suite = _load_tests(testpatterns, [ldap_tests])
 
