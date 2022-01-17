@@ -924,7 +924,7 @@ class EventBaseBackend(EventLowLevelBackend):
             for the second commit. If True, commit even if there has been no change.
         """
         event_id = affirm(vtypes.ID, event_id)
-        commit_msg = affirm_optional(str, commit_msg) or ""
+        commit_msg = affirm(str, commit_msg)
         export = self.partial_export_event(rs, event_id)
         event_keeper_dir = self.event_keeper_dir / str(event_id)
         # TODO: this should never happen in practice, but is a nice safeguard.
