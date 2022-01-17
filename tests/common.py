@@ -395,8 +395,10 @@ class BackendTest(CdEDBTest):
     def switch_user(self, new_user: UserIdentifier) -> Generator[None, None, None]:
         """This method can be used as a context manager to temporarily switch users."""
         old_user = self.user
+        self.logout()
         self.login(new_user)
         yield
+        self.logout()
         self.login(old_user)
 
     def user_in(self, *identifiers: UserIdentifier) -> bool:
@@ -949,13 +951,9 @@ class FrontendTest(BackendTest):
         self.basic_validate(verbose=verbose)
         if method == "POST" and check_notification:
             # check that we acknowledged the POST with a notification
-            success_str = "alert alert-success"
-            target = self.response.text
-            if verbose:
-                self.assertIn(success_str, target)
-            elif success_str not in target:
-                raise AssertionError(
-                    "Post request did not produce success notification.")
+            self.assertNotification(ntype='success',
+                                    msg=("No success notification found in"
+                                         + self.response.text if verbose else None))
 
     def traverse(self, *links: LinkIdentifier, verbose: bool = False) -> None:
         """Follow a sequence of links, described by their kwargs.
@@ -1017,6 +1015,16 @@ class FrontendTest(BackendTest):
         self.submit(f, check_notification=False, verbose=verbose)
         self.key = ANONYMOUS
         self.user = USER_DICT["anonymous"]
+
+    @contextlib.contextmanager
+    def switch_user(self, new_user: UserIdentifier) -> Generator[None, None, None]:
+        """context manager to temporarily switch users - frontend variant
+
+        This restores the original response after the original user logged in again"""
+        saved_response = self.response
+        with super().switch_user(new_user):
+            yield
+        self.response = saved_response
 
     def admin_view_profile(self, user: UserIdentifier, check: bool = True,
                            verbose: bool = False) -> None:
@@ -1130,6 +1138,14 @@ class FrontendTest(BackendTest):
         if self.response.lxml.xpath("//*[@id='{}']".format(div)):
             self.fail("Element with id {} found".format(div))
 
+    def assertInputHasAttr(self, input_field: webtest.forms.Field, attr: str) -> None:
+        """Assert that the form input has a specific HTML DOM attribute.
+
+        This is no big logic, but should make this slightly internal feature of webtest
+        more easy to use.
+        """
+        self.assertIn(attr, input_field.attrs)
+
     def assertCheckbox(self, status: bool, anid: str) -> None:
         """Assert that the checkbox with the given id is checked (or not)."""
         tmp = (self.response.html.find_all(id=anid)
@@ -1188,6 +1204,34 @@ class FrontendTest(BackendTest):
             else:
                 self.assertNotIn(s.strip(), content.text_content())
 
+    def assertNotification(self, ntext: str = None, ntype: str = None, *,
+                           static: bool = False, msg: str = None) -> None:
+        """Check for a notification containing `ntext` under all `ntype` notifications.
+
+        :param ntext: Substring to be present in the notification's message.
+            If not given, only check for notification type.
+        :param ntype: type of notification. Can be any of bootstraps possible alert
+            contextes or 'error', which will expect a 'danger' alert.
+        :param static: whether to search for a static notification
+        :param msg: Custom message on assertion failure.
+        """
+        if ntype == 'error':  # allow this for convenience
+            ntype = 'danger'
+
+        div = 'static-notifications' if static else 'notifications'
+        alert_type_class = f" alert-{ntype}" if ntype is not None else ""
+        # source: https://devhints.io/xpath#string-functions
+        notifications = self.response.lxml.xpath(
+                f"//div[@id='{div}']/div[starts-with(@class,'alert{alert_type_class}')]"
+                "/span[@class='notificationMessage']")
+        self.assertTrue(notifications,
+                        msg=(f"No{alert_type_class} notification found."
+                             if msg is None else msg))
+        if ntext is not None:
+            # joining them this way is useful for meaningful failure message
+            all_texts = " | ".join(n.text_content().strip() for n in notifications)
+            self.assertIn(ntext, all_texts, msg=msg)
+
     def assertLogin(self, name: str) -> None:
         """Assert that a user is logged in by checking their display name."""
         span = self.response.lxml.xpath("//span[@id='displayname']")[0]
@@ -1207,7 +1251,7 @@ class FrontendTest(BackendTest):
             specify which one should be checked.
         :param message: The expected error message displayed below the input
         :param notification: The expected notification displayed at the top of the page
-            This can be a regex. If this is None, skip the notification check.
+            If this is None, skip the notification check.
         :raise AssertionError: If field is not found, field is not within
             .has-error container or error message is not found
         """
@@ -1229,7 +1273,7 @@ class FrontendTest(BackendTest):
             specify which one should be checked.
         :param message: The expected warning message displayed below the input
         :param notification: The expected notification displayed at the top of the page
-            This can be a regex. If this is None, skip the notification check.
+            If this is None, skip the notification check.
         :raise AssertionError: If field is not found, field is not within
             .has-warning container or error message is not found
         """
@@ -1249,9 +1293,7 @@ class FrontendTest(BackendTest):
             raise NotImplementedError
 
         if notification is not None:
-            self.assertIn(f"alert alert-{alert_type}", self.response.text,
-                          f"No Notification of type {kind!r} found.")
-            self.assertPresence(notification, div="notifications", regex=True)
+            self.assertNotification(notification, alert_type)
 
         nodes = self.response.lxml.xpath(
             f'(//input|//select|//textarea)[@name="{fieldname}"]')

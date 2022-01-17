@@ -206,14 +206,13 @@ class BaseApp(metaclass=abc.ABCMeta):
         """
         params = params or {}
         if rs.retrieve_validation_errors() and not rs.notifications:
-            rs.notify("error", n_("Failed validation."))
+            rs.notify_validation_errors_default()
         url = cdedburl(rs, target, params, force_external=True)
         if anchor is not None:
             url += "#" + anchor
         ret = basic_redirect(rs, url)
         if rs.notifications:
-            notifications = [self.encode_notification(rs, ntype, nmessage,
-                                                      nparams)
+            notifications = [self.encode_notification(rs, ntype, nmessage, nparams)
                              for ntype, nmessage, nparams in rs.notifications]
             ret.set_cookie("displaynote", json_serialize(notifications))
         return ret
@@ -680,7 +679,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 rs.notify("warning", n_("Input seems faulty. Please double-check if"
                                         " you really want to save it."))
             else:
-                rs.notify("error", n_("Failed validation."))
+                rs.notify_validation_errors_default()
         if self.conf["LOCKDOWN"]:
             rs.notify("info", n_("The database currently undergoes "
                                  "maintenance and is unavailable."))

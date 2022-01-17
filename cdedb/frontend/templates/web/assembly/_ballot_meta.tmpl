@@ -156,7 +156,8 @@
 
     {% if ("assembly_presider" in user.admin_views or ambience['assembly']['id'] in user.presider)
            and ambience['ballot']['notes'] %}
-        {% call util.bootstrap_panel(title=gettext("Admin-Notes"), icon="tag", aclass="panel-default panel-condensed") %}
+        {% call util.bootstrap_panel(title=gettext("Admin-Notes"), icon="tag", aclass="panel-default panel-condensed",
+                                     anid='notes') %}
             {{ ambience['ballot']['notes']|md }}
         {% endcall %}
     {% endif %}
