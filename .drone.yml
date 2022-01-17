@@ -167,7 +167,6 @@ steps:
   - name: coverage
     path: /coverage
   commands:
-  - sleep 10
   - COVERAGE_FILE=/coverage/.coverage.3 python3 -m coverage run -p bin/check.py --verbose --third
 - name: ldap tests
   image: cdedb:20210705
@@ -183,7 +182,7 @@ steps:
   - name: tmp_dir
     path: /tmp
   commands:
-  - sleep 10
+  - sleep 40 # wait until the ldap server comes online
   - bin/check.py --verbose --no-application --all-ldap
 - name: coverage
   image: cdedb:20210705
