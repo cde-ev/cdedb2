@@ -220,6 +220,13 @@ class RequestState:
         params = params or {}
         self.notifications.append((ntype, message, params))
 
+    def notify_validation_errors_default(self) -> None:
+        """Helper to put notification about validation errors.
+
+        This is placed centrally here so the message is always the same.
+        """
+        self.notify("error", n_("Failed validation."))
+
     def append_validation_error(self, error: Error) -> None:
         """Register a new  error.
 

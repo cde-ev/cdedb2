@@ -72,7 +72,7 @@
         {{ ballot_tallied.show_result(ambience['ballot'], result) }}
         {% if ambience['ballot']['comment'] %}
             {% call util.bootstrap_panel(title=gettext("Ballot Comment"), icon="tag",
-                                         aclass="panel-warning panel-condensed") %}
+                                         aclass="panel-warning panel-condensed", anid='comment') %}
                 {{ ambience['ballot']['comment']|md }}
             {% endcall %}
         {% endif %}

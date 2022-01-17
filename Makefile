@@ -251,15 +251,60 @@ sql-xss: sql-setup tests/ancillary_files/sample_data_xss.sql
 ########
 # LDAP #
 ########
+# TODO add dependency on sql-test to create the specified database
 
+# use command-line arguments of make to override
+DATABASE_NAME = cdb
+DATABASE_HOST = localhost
+DATABASE_CDB_ADMIN_PASSWORD = 9876543210abcdefghijklmnopqrst
+
+.PHONY: ldap-prepare-odbc
+ldap-prepare-odbc:
+	# prepare odbc.ini file to enable database connection for ldap
+	sudo cp -f ldap/odbc.ini /etc/odbc.ini \
+		&& sudo sed -i -r -e "s/DATABASE_CDB_ADMIN_PASSWORD/${DATABASE_CDB_ADMIN_PASSWORD}/g" \
+		                  -e "s/DATABASE_NAME/${DATABASE_NAME}/g" \
+		                  -e "s/DATABASE_HOST/${DATABASE_HOST}/g" /etc/odbc.ini
+
+.PHONY: ldap-prepare-ldif
+ldap-prepare-ldif:
+	# prepare the new cdedb-specific ldap configuration
+	cp -f ldap/cdedb-ldap.ldif ldap/cdedb-ldap-applied.ldif \
+		&& sed -i -r -e "s/DATABASE_CDB_ADMIN_PASSWORD/${DATABASE_CDB_ADMIN_PASSWORD}/g" \
+		             -e "s/OLC_DB_NAME/${DATABASE_NAME}/g" \
+		             -e "s/OLC_DB_HOST/${DATABASE_HOST}/g" ldap/cdedb-ldap-applied.ldif
+
+.PHONY: ldap-create
 ldap-create:
-	sudo SCRIPT_DRY_RUN="" $(PYTHONBIN) ldap/create-ldap.py
+	# the only way to remove all ldap settings for sure is currently to uninstall it.
+	# therefore, we need to re-install slapd here.
+	sudo DEBIAN_FRONTEND=noninteractive apt-get install --yes slapd
+	# remove the predefined mdb-database from ldap
+	sudo systemctl stop slapd
+	sudo rm -f /etc/ldap/slapd.d/cn=config/olcDatabase=\{1\}mdb.ldif
+	sudo systemctl start slapd
+	# Apply the overall ldap configuration (load modules, add backends etc)
+	sudo ldapmodify -Y EXTERNAL -H ldapi:/// -f related/auto-build/files/stage3/ldap-config.ldif
 
-ldap-update:
-	sudo SCRIPT_DRY_RUN="" $(PYTHONBIN) ldap/update-ldap.py
+.PHONY: ldap-update
+ldap-update: ldap-prepare-odbc ldap-prepare-ldif
+	# remove the old cdedb-specific configuration and apply the new one
+	sudo systemctl stop slapd
+	# TODO is there any nice solution to do this from within ldap?
+	sudo rm -f /etc/ldap/slapd.d/cn=config/olcDatabase={1}sql.ldif
+	sudo systemctl start slapd
+	sudo ldapmodify -Y EXTERNAL -H ldapi:/// -f ldap/cdedb-ldap-applied.ldif
 
+.PHONY: ldap-update-full
+ldap-update-full: ldap-update
+	sudo -u www-data $(PYTHONBIN) bin/ldap_add_duas.py
+
+.PHONY: ldap-remove
 ldap-remove:
-	sudo SCRIPT_DRY_RUN="" $(PYTHONBIN) ldap/remove-ldap.py
+	sudo apt-get remove --purge -y slapd
+
+.PHONY: ldap-reset
+ldap-reset: ldap-remove ldap-create ldap-update-full
 
 ###################
 # Code formatting #

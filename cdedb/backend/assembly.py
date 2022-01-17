@@ -1664,7 +1664,7 @@ class AssemblyBackend(AbstractBackend):
                                 ballot_id=data.get('ballot_id')):
             raise PrivilegeError(n_("Must have privileged access to add"
                                     " attachment."))
-        locked_msg = n_("Cannot delete attachment once the assembly has been locked.")
+        locked_msg = n_("Cannot add attachment once the assembly has been locked.")
         attachment = {k: v for k, v in data.items()
                       if k in ASSEMBLY_ATTACHMENT_FIELDS}
         assembly_id = attachment['assembly_id']

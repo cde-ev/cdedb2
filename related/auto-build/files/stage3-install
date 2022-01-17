@@ -110,6 +110,21 @@ mkdir /var/log/cdedb
 chown www-data:www-data /var/log/cdedb
 
 echo ""
+echo "Setting up ldap..."
+echo "--------------------------------------------"
+# The following lines mirror the ldap-create make target.
+# We can not call the target directly, since ldap-create installs slapd
+# by itself, but in the auto-build all packages are installed in stage2.
+systemctl stop slapd
+# remove the predefined mdb-database from ldap
+rm -f /etc/ldap/slapd.d/cn=config/olcDatabase=\{1\}mdb.ldif
+systemctl start slapd
+# Apply the overall ldap configuration (load modules, add backends etc)
+ldapmodify -Y EXTERNAL -H ldapi:/// -f /media/cdrom0/ldap-config.ldif
+# Apply the cdedb specific ldap configuration
+sudo -u cdedb make ldap-update
+
+echo ""
 echo "Set up the apache2..."
 echo "--------------------------------------------"
 
@@ -150,7 +165,7 @@ if [ -e /media/cdrom0/vdi ]; then
     echo "cdedb - sandbox system: STAGE VDI"
     echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     echo ""
-    echo "Adjusting grup.cfg..."
+    echo "Adjusting grub.cfg..."
     echo "--------------------------------------------"
 
     sed -i -e 's=/dev/vda1=/dev/sda1=g' /boot/grub/grub.cfg

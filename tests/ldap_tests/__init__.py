@@ -167,14 +167,12 @@ class TestLDAP(BasicTest):
         expectation = {
             'memberOf': [
                 # pylint: disable=line-too-long
-                'cn=2,ou=event-orgas,ou=groups,dc=cde-ev,dc=de',
-                'cn=3,ou=event-orgas,ou=groups,dc=cde-ev,dc=de',
-                'cn=42@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
+                'cn=42-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
                 'cn=aktivenforum2000@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
                 'cn=all@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
                 'cn=announce@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
-                'cn=everyone@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
                 'cn=everyone@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+                'cn=everyone-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
                 'cn=info@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
                 'cn=is_active,ou=status,ou=groups,dc=cde-ev,dc=de',
                 'cn=is_assembly_admin,ou=status,ou=groups,dc=cde-ev,dc=de',
@@ -193,17 +191,19 @@ class TestLDAP(BasicTest):
                 'cn=kanonisch@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
                 'cn=klatsch@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
                 'cn=kongress@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
-                'cn=lokalgruppen@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
-                'cn=migration@testmail.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
+                'cn=lokalgruppen-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
+                'cn=migration-owner@testmail.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
                 'cn=mitgestaltung@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
-                'cn=moderatoren@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
                 'cn=moderatoren@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+                'cn=moderatoren-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
+                'cn=orgas-2,ou=event-orgas,ou=groups,dc=cde-ev,dc=de',
+                'cn=orgas-3,ou=event-orgas,ou=groups,dc=cde-ev,dc=de',
                 'cn=participants@aka.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
-                'cn=party50@aka.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
                 'cn=party50@aka.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
-                'cn=party50-all@aka.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
-                'cn=platin@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
+                'cn=party50-all-owner@aka.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
+                'cn=party50-owner@aka.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
                 'cn=platin@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+                'cn=platin-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
                 'cn=werbung@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
                 'cn=witz@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de'
             ]
@@ -326,11 +326,11 @@ class TestLDAP(BasicTest):
 
     def test_ml_moderator_group_entity(self) -> None:
         """Check if all attributes of ml-moderator groups are correctly present."""
-        group_cn = "gutscheine@lists.cde-ev.de"
+        group_cn = "gutscheine-owner@lists.cde-ev.de"
         search_base = "ou=ml-moderators,ou=groups,dc=cde-ev,dc=de"
         expectation = {
-            'cn': ['gutscheine@lists.cde-ev.de'],
-            'description': ['Gutscheine <gutscheine@lists.cde-ev.de>'],
+            'cn': ['gutscheine-owner@lists.cde-ev.de'],
+            'description': ['Gutscheine <gutscheine-owner@lists.cde-ev.de>'],
             'uniqueMember': [
                 'uid=9,ou=users,dc=cde-ev,dc=de'
             ],
@@ -349,10 +349,10 @@ class TestLDAP(BasicTest):
 
     def test_event_orgas_group_entity(self) -> None:
         """Check if all attributes of event-orga groups are correctly present."""
-        group_cn = "1"
+        group_cn = "orgas-1"
         search_base = "ou=event-orgas,ou=groups,dc=cde-ev,dc=de"
         expectation = {
-            'cn': ['1'],
+            'cn': [group_cn],
             'description': ['Große Testakademie 2222 (TestAka)'],
             'uniqueMember': [
                 'uid=7,ou=users,dc=cde-ev,dc=de'
@@ -372,10 +372,10 @@ class TestLDAP(BasicTest):
 
     def test_assembly_presiders_group_entity(self) -> None:
         """Check if all attributes of assembly-presider groups are correctly present."""
-        group_cn = "1"
+        group_cn = "presiders-1"
         search_base = "ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de"
         expectation = {
-            'cn': ['1'],
+            'cn': [group_cn],
             'description': ['Internationaler Kongress (kongress)'],
             'uniqueMember': [
                 'uid=23,ou=users,dc=cde-ev,dc=de'
@@ -416,13 +416,14 @@ class TestLDAP(BasicTest):
         user_id = 7
         expectation = {
             # pylint: disable=line-too-long
+            # status
             'cn=is_active,ou=status,ou=groups,dc=cde-ev,dc=de',
             'cn=is_assembly_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
             'cn=is_cde_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
             'cn=is_event_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
             'cn=is_ml_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
             'cn=is_member,ou=status,ou=groups,dc=cde-ev,dc=de',
-
+            # subscriber
             'cn=aka@aka.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=all@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=announce@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
@@ -433,14 +434,14 @@ class TestLDAP(BasicTest):
             'cn=moderatoren@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=participants@aka.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=werbung@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
-
-            'cn=aka@aka.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
-            'cn=test-gast@aka.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
-            'cn=participants@aka.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
-            'cn=wait@aka.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
-
-            'cn=1,ou=event-orgas,ou=groups,dc=cde-ev,dc=de',
-            'cn=3,ou=event-orgas,ou=groups,dc=cde-ev,dc=de',
+            # moderator
+            'cn=aka-owner@aka.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
+            'cn=test-gast-owner@aka.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
+            'cn=participants-owner@aka.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
+            'cn=wait-owner@aka.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
+            # orga
+            'cn=orgas-1,ou=event-orgas,ou=groups,dc=cde-ev,dc=de',
+            'cn=orgas-3,ou=event-orgas,ou=groups,dc=cde-ev,dc=de',
         }
         search_filter = (
             "(&"
@@ -460,25 +461,26 @@ class TestLDAP(BasicTest):
         user_id = 23
         expectation = {
             # pylint: disable=line-too-long
+            # status
             'cn=everyone@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=is_active,ou=status,ou=groups,dc=cde-ev,dc=de',
             'cn=is_assembly_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
             'cn=is_cde_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
             'cn=is_event_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
             'cn=is_ml_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
-
+            # subscriber
             'cn=kongress@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=kongress-leitung@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=moderatoren@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=opt@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=wal@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
-
-            'cn=kanonisch@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
-            'cn=kongress-leitung@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
-            'cn=kongress@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
-
-            'cn=1,ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de',
-            'cn=3,ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de',
+            # moderators
+            'cn=kanonisch-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
+            'cn=kongress-leitung-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
+            'cn=kongress-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
+            # presider
+            'cn=presiders-1,ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de',
+            'cn=presiders-3,ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de',
         }
         search_filter = (
             "(&"

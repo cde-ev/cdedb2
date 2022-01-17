@@ -364,6 +364,12 @@ msgstr ""
 "Eine Datei kann nicht mehr gelöscht werden, nachdem die Versammlung gesperrt "
 "wurde."
 
+#: cdedb/backend/assembly.py:1667
+msgid "Cannot add attachment once the assembly has been locked."
+msgstr ""
+"Es kann keine Datei mehr hinzugefügt werden, nachdem die Versammlung "
+"gesperrt wurde."
+
 #: cdedb/backend/assembly.py:1679 cdedb/backend/assembly.py:1684
 #: cdedb/backend/assembly.py:1686 cdedb/backend/assembly.py:2037
 #: cdedb/backend/assembly.py:2042 cdedb/backend/assembly.py:2044
@@ -446,7 +452,7 @@ msgstr "Diese Version der Datei existiert nicht."
 #: cdedb/backend/assembly.py:2074 cdedb/frontend/assembly.py:889
 #: cdedb/frontend/assembly.py:903 cdedb/frontend/assembly.py:940
 msgid "This version has already been deleted."
-msgstr "Diese Version der Datei wurde beireits gelöscht."
+msgstr "Diese Version der Datei wurde bereits gelöscht."
 
 #: cdedb/backend/assembly.py:2070 cdedb/backend/assembly.py:2075
 #: cdedb/backend/assembly.py:2077 cdedb/frontend/assembly.py:880
@@ -1599,6 +1605,10 @@ msgstr "Versammlung angelegt."
 msgid "Must be checked."
 msgstr "Muss markiert sein."
 
+#: cdedb/frontend/assembly.py:453
+msgid "Assemblies with active ballots cannot be deleted."
+msgstr "Versammlungen mit aktiven Abstimmungen können nicht gelöscht werden."
+
 #: cdedb/frontend/assembly.py:462
 msgid "May not access attachments for this assembly."
 msgstr "Keine Berechtigung auf die Dateien dieser Versammlung zuzugreifen."
@@ -1698,7 +1708,7 @@ msgstr "Ablehnungsgrenze"
 #: cdedb/frontend/assembly.py:1104 cdedb/frontend/assembly.py:1124
 #: cdedb/frontend/assembly.py:1164
 msgid "Entered invalid secret"
-msgstr "Ungültiges Geheimniss eingegeben."
+msgstr "Ungültiges Geheimnis eingegeben."
 
 #: cdedb/frontend/assembly.py:1199
 msgid "Updating ballots failed."
@@ -2190,7 +2200,7 @@ msgstr "Der Anti-CSRF-Token wurde gefälscht."
 
 #: cdedb/frontend/common.py:1139
 msgid "Anti CSRF token is invalid."
-msgstr "Der Anti-CSRF-Token is ungültig."
+msgstr "Der Anti-CSRF-Token ist ungültig."
 
 #: cdedb/frontend/common.py:1194
 msgid "User created."

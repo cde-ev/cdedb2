@@ -25,9 +25,6 @@ cp /media/cdrom0/server* /etc/ssl/apache2/
 chmod 600 /etc/ssl/apache2/server.key
 chmod 644 /etc/ssl/apache2/server.pem
 
-# TODO run the python scripts in /cdedb2/ldap ?
-# install --mode=640 --group=openldap /media/cdrom0/odbc.ini /etc/odbc.ini
-
 echo ""
 echo "Getting the system up to date..."
 echo "--------------------------------------------"
@@ -55,9 +52,6 @@ apt-get -y upgrade
 echo ""
 echo "Setting up packets..."
 echo "--------------------------------------------"
-
-echo 'slapd slapd/password1 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0' | debconf-set-selections
-echo 'slapd slapd/password2 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0' | debconf-set-selections
 
 # this is categorized into
 # - devtools
@@ -125,10 +119,6 @@ sudo -u cdedb touch /home/cdedb/.bash_profile
 echo "cd /cdedb2" >> /home/cdedb/.bash_profile
 echo "" >> /home/cdedb/.bash_profile
 echo "%cdedb ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers
-
-# apply our ldap schema
-echo "FIXME LDAP is currently not provided by the auto-build"
-#ldapmodify -Y EXTERNAL -H ldapi:/// -f /cdedb2/sql-ldap.ldif
 
 cat > /etc/motd <<EOF
 

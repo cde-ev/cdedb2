@@ -195,16 +195,17 @@
             </p>
             <form action="{{ cdedblink("assembly/show_old_vote") }}" id="showoldvoteform" method="POST">
                 {{ util.anti_csrf_token("assembly/show_old_vote") }}
-                <div class="input-group">
-                    <span class="input-group-addon"><label for="input-secret">
-                        {% trans %}Secret{% endtrans %}
-                    </label></span>
-                    {{ util.input_text(name="secret", anid="input-secret") }}
-                    <div class="input-group-btn">
-                        {{ util.input_submit(label=gettext("Show Vote"), aclass="btn btn-success", icon="lock") }}
+                {% call util.output_errors('secret', wrapper=True) %}
+                    <div class="input-group">
+                        <span class="input-group-addon"><label for="input-secret">
+                            {% trans %}Secret{% endtrans %}
+                        </label></span>
+                        {{ util.input_text(name="secret", anid="input-secret") }}
+                        <div class="input-group-btn">
+                            {{ util.input_submit(label=gettext("Show Vote"), aclass="btn btn-success", icon="lock") }}
+                        </div>
                     </div>
-                </div>
-                {{ util.output_errors('secret', wrapper=True) }}
+                {% endcall %}
             </form>
         {% endif %}
     </div>
