@@ -83,7 +83,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         mailinglist_ids = self.mlproxy.list_mailinglists(rs)
 
         code = self.mlproxy.write_subscription_states(rs, mailinglist_ids)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
 
         return self.redirect(rs, "ml/index")
 
@@ -267,7 +267,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         assert data is not None
 
         new_id = self.mlproxy.create_mailinglist(rs, data)
-        self.notify_return_code(rs, new_id)
+        rs.notify_return_code(new_id)
         return self.redirect(rs, "ml/show_mailinglist", {
             'mailinglist_id': new_id})
 
@@ -315,7 +315,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs, source_persona_id, target_persona_id, clone_addresses)
         if not code:
             return self.merge_accounts_form(rs)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "ml/merge_accounts")
 
     @access("ml")
@@ -487,7 +487,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.change_mailinglist_form(rs, mailinglist_id)
         code = self.mlproxy.set_mailinglist(rs, data)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "ml/show_mailinglist")
 
     @access("ml")
@@ -525,7 +525,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         assert data is not None
 
         code = self.mlproxy.set_mailinglist(rs, data)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "ml/change_mailinglist")
 
     @access("ml", modi={"POST"})
@@ -544,7 +544,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs, mailinglist_id, cascade={"subscriptions", "log", "addresses",
                                          "whitelist", "moderators"})
 
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "ml/list_mailinglists")
 
     @access("ml")
@@ -720,7 +720,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             return self.management(rs, mailinglist_id)
 
         code = self.mlproxy.add_moderators(rs, mailinglist_id, moderators)
-        self.notify_return_code(rs, code, error=n_("Action had no effect."))
+        rs.notify_return_code(code, error=n_("Action had no effect."))
         return self.redirect(rs, "ml/management")
 
     @access("ml", modi={"POST"})
@@ -745,7 +745,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs.notify("error", n_("Cannot remove last moderator."))
         else:
             code = self.mlproxy.remove_moderator(rs, mailinglist_id, moderator_id)
-            self.notify_return_code(rs, code)
+            rs.notify_return_code(code)
         return self.redirect(rs, "ml/management")
 
     @access("ml", modi={"POST"})
@@ -758,7 +758,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             return self.advanced_management(rs, mailinglist_id)
 
         code = self.mlproxy.add_whitelist_entry(rs, mailinglist_id, email)
-        self.notify_return_code(rs, code, error=n_("Action had no effect."))
+        rs.notify_return_code(code, error=n_("Action had no effect."))
         return self.redirect(rs, "ml/advanced_management")
 
     @access("ml", modi={"POST"})
@@ -771,7 +771,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             return self.advanced_management(rs, mailinglist_id)
 
         code = self.mlproxy.remove_whitelist_entry(rs, mailinglist_id, email)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "ml/advanced_management")
 
     def _subscription_action_handler(self, rs: RequestState,
@@ -785,7 +785,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         except PrivilegeError:
             rs.notify("error", n_("Not privileged to change subscriptions."))
         else:
-            self.notify_return_code(rs, code)
+            rs.notify_return_code(code)
 
     def _subscription_multi_action_handler(self, rs: RequestState,
                                            field: str,
@@ -800,7 +800,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs.append_validation_error(
                 (field, ValueError(n_(
                     "Some of these users do not exist or are archived."))))
-            self.notify_return_code(rs, 0)
+            rs.notify_return_code(0)
             return
 
         # Use different error pattern if only one action is done
@@ -826,9 +826,9 @@ class MlBaseFrontend(AbstractUserFrontend):
                 infos_only = False
                 rs.notify("error", n_("Not privileged to change subscriptions."))
         if infos_only:
-            self.notify_return_code(rs, -1, info=n_("Action had no effect."))
+            rs.notify_return_code(-1, info=n_("Action had no effect."))
         else:
-            self.notify_return_code(rs, code)
+            rs.notify_return_code(code)
 
     @access("ml", modi={"POST"})
     @mailinglist_guard(requires_privilege=True)
@@ -1061,12 +1061,12 @@ class MlBaseFrontend(AbstractUserFrontend):
             code = self.mlproxy.remove_subscription_address(
                 rs, mailinglist_id=mailinglist_id,
                 persona_id=rs.user.persona_id)
-            self.notify_return_code(rs, code)
+            rs.notify_return_code(code)
         elif email in known_addresses:
             code = self.mlproxy.set_subscription_address(
                 rs, mailinglist_id=mailinglist_id,
                 persona_id=rs.user.persona_id, email=email)
-            self.notify_return_code(rs, code)
+            rs.notify_return_code(code)
         else:
             self.do_mail(
                 rs, "confirm_address",
@@ -1096,7 +1096,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         code = self.mlproxy.set_subscription_address(
             rs, mailinglist_id=mailinglist_id, persona_id=rs.user.persona_id,
             email=email)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "ml/show_mailinglist")
 
     def _check_address_change_requirements(self, rs: RequestState,

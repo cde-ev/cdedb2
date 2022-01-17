@@ -1161,7 +1161,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
                           'meta_info': meta_info,
                           })
 
-            self.notify_return_code(rs, new_id, success=n_("User created."))
+            rs.notify_return_code(new_id, success=n_("User created."))
             return self.redirect_show_user(rs, new_id)
         else:
             return self.create_user_form(rs)

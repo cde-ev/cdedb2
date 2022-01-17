@@ -655,7 +655,7 @@ class EventQueryMixin(EventBaseFrontend):
         if not rs.has_validation_errors() and query:
             query_id = self.eventproxy.store_event_query(
                 rs, rs.ambience["event"]["id"], query)
-            self.notify_return_code(rs, query_id)
+            rs.notify_return_code(query_id)
             if query_id:
                 query.query_id = query_id
                 del query_input["query_name"]
@@ -675,7 +675,7 @@ class EventQueryMixin(EventBaseFrontend):
             if stored_query:
                 query_input = stored_query.serialize()
             code = self.eventproxy.delete_event_query(rs, query_id)
-            self.notify_return_code(rs, code)
+            rs.notify_return_code(code)
         if query_scope and query_scope.get_target():
             return self.redirect(rs, query_scope.get_target(), query_input)
         return self.redirect(rs, "event/show_event", query_input)

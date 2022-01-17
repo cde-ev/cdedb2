@@ -163,8 +163,8 @@ class CoreGenesisMixin(CoreBaseFrontend):
         if rs.has_validation_errors():
             return self.genesis_request_form(rs)
         code, realm = self.coreproxy.genesis_verify(rs, genesis_case_id)
-        self.notify_return_code(
-            rs, code,
+        rs.notify_return_code(
+            code,
             error=n_("Verification failed. Please contact the administrators."),
             success=n_("Email verified. Wait for moderation. "
                        "You will be notified by mail."),
@@ -358,7 +358,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
             rs.notify("error", n_("Case not to review."))
             return self.genesis_list_cases(rs)
         code = self.coreproxy.genesis_modify_case(rs, data)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "core/genesis_show_case")
 
     @access("core_admin", *("{}_admin".format(realm)
