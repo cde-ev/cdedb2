@@ -94,6 +94,9 @@ steps:
       - success
   commands:
   - sleep 5
+  # Dirty hack to circumvent config instantiation problems, since docker uses
+  # the script.py to setup databases. TODO remove
+  - cp related/auto-build/files/stage3/localconfig.py cdedb/localconfig.py
   - pg_isready --host=cdb --timeout=10 # wait for database to come online
   - make i18n-compile # required for sample-data target
   - make sample-data # this creates the sql schema and copies the localconfig.py
