@@ -420,7 +420,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                         n_("Must not be empty in order to create a mailinglist."))))
         if rs.has_validation_errors():
             # as there may be other notifications already, notify errors explicitly
-            rs.notify_validation_errors_default()
+            rs.notify_validation()
             return self.create_assembly_form(rs)
         assert data is not None
         new_id = self.assemblyproxy.create_assembly(rs, data)

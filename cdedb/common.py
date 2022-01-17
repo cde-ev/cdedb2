@@ -220,12 +220,19 @@ class RequestState:
         params = params or {}
         self.notifications.append((ntype, message, params))
 
-    def notify_validation_errors_default(self) -> None:
-        """Helper to put notification about validation errors.
+    def notify_validation(self) -> None:
+        """Puts a notification about validation complaints, if there are some.
 
-        This is placed centrally here so the message is always the same.
+        This takes care of the distinction between validation errors and
+        warnings, but does not cause the validation tracking to register
+        a successful check.
         """
-        self.notify("error", n_("Failed validation."))
+        if errors := self.retrieve_validation_errors():
+            if all(isinstance(kind, ValidationWarning) for param, kind in errors):
+                self.notify("warning", n_("Input seems faulty. Please double-check if"
+                                          " you really want to save it."))
+            else:
+                self.notify("error", n_("Failed validation."))
 
     def append_validation_error(self, error: Error) -> None:
         """Register a new  error.

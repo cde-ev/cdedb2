@@ -205,8 +205,8 @@ class BaseApp(metaclass=abc.ABCMeta):
         taken not to lose any notifications.
         """
         params = params or {}
-        if rs.retrieve_validation_errors() and not rs.notifications:
-            rs.notify_validation_errors_default()
+        if not rs.notifications:
+            rs.notify_validation()
         url = cdedburl(rs, target, params, force_external=True)
         if anchor is not None:
             url += "#" + anchor
@@ -674,12 +674,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
             _LOGGER.debug(debugstring)
             params['debugstring'] = debugstring
-        if (errors := rs.retrieve_validation_errors()) and not rs.notifications:
-            if all(isinstance(kind, ValidationWarning) for param, kind in errors):
-                rs.notify("warning", n_("Input seems faulty. Please double-check if"
-                                        " you really want to save it."))
-            else:
-                rs.notify_validation_errors_default()
+        if not rs.notifications:
+            rs.notify_validation()
         if self.conf["LOCKDOWN"]:
             rs.notify("info", n_("The database currently undergoes "
                                  "maintenance and is unavailable."))
