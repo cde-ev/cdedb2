@@ -921,31 +921,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             params['quote_me'] = True
         return self.redirect(rs, 'core/show_user', params=params)
 
-    @staticmethod
-    def notify_return_code(rs: RequestState, code: Union[int, bool, None],
-                           success: str = n_("Change committed."),
-                           info: str = n_("Change pending."),
-                           error: str = n_("Change failed.")) -> None:
-        """Small helper to issue a notification based on a return code.
-
-        We allow some flexibility in what type of return code we accept. It
-        may be a boolean (with the obvious meanings), an integer (specifying
-        the number of changed entries, and negative numbers for entries with
-        pending review) or None (signalling failure to acquire something).
-
-        :param success: Affirmative message for positive return codes.
-        :param info: Message for negative return codes signalling review.
-        :param error: Exception message for zero return codes.
-        """
-        if not code:
-            rs.notify("error", error)
-        elif code is True or code > 0:
-            rs.notify("success", success)
-        elif code < 0:
-            rs.notify("info", info)
-        else:
-            raise RuntimeError(n_("Impossible."))
-
     def safe_compile(self, rs: RequestState, target_file: str, cwd: PathLike,
                      runs: int, errormsg: Optional[str]) -> pathlib.Path:
         """Helper to compile latex documents in a safe way.
