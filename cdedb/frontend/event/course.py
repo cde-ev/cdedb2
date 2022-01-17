@@ -190,7 +190,8 @@ class EventCourseMixin(EventBaseFrontend):
                                   "has attendees."))
             return self.redirect(rs, "event/show_course")
         self.eventproxy.event_keeper_commit(
-            rs, event_id, f"Vor Löschen von Kurs {rs.ambience['course']['shortname']}.")
+            rs, event_id, f"Vor Löschen von Kurs {rs.ambience['course']['shortname']}.",
+            is_marker=True)
         code = self.eventproxy.delete_course(
             rs, course_id, {"instructors", "course_choices", "course_segments"})
         self.notify_return_code(rs, code)

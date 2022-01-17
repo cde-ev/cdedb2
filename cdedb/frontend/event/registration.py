@@ -947,7 +947,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         # maybe exclude some blockers
         db_id = cdedbid_filter(rs.ambience['registration']['persona_id'])
         self.eventproxy.event_keeper_commit(
-            rs, event_id, f"Vor Löschen von Anmeldung {db_id}.")
+            rs, event_id, f"Vor Löschen von Anmeldung {db_id}.", is_marker=True)
         code = self.eventproxy.delete_registration(
             rs, registration_id, {"registration_parts", "registration_tracks",
                                   "course_choices"})
@@ -1068,7 +1068,8 @@ class EventRegistrationMixin(EventBaseFrontend):
         for reg_id in reg_ids:
             registration['id'] = reg_id
             code *= self.eventproxy.set_registration(rs, registration, change_note)
-        self.eventproxy.event_keeper_commit(rs, event_id, "Nach " + change_note)
+        self.eventproxy.event_keeper_commit(rs, event_id, "Nach " + change_note,
+                                            is_marker=True)
         self.notify_return_code(rs, code)
 
         # redirect to query filtered by reg_ids

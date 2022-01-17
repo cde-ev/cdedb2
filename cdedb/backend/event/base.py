@@ -916,8 +916,13 @@ class EventBaseBackend(EventLowLevelBackend):
 
     @access("event")
     def event_keeper_commit(self, rs: RequestState, event_id: int,
-                            commit_msg: str) -> CdEDBObject:
-        """Commit the current state of the event to it'S git repository."""
+                            commit_msg: str, *, is_marker=False) -> CdEDBObject:
+        """Commit the current state of the event to it'S git repository.
+
+        :param is_marker: Marks an important operation with explicit event keeper call.
+            If there is a commit before and after an operation, only True
+            for the second commit. If True, commit even if there has been no change.
+        """
         event_id = affirm(vtypes.ID, event_id)
         commit_msg = affirm_optional(str, commit_msg) or ""
         export = self.partial_export_event(rs, event_id)
@@ -937,16 +942,13 @@ class EventBaseBackend(EventLowLevelBackend):
             subprocess.run(["git", f"--work-tree={td}", "add", td / filename],
                            cwd=event_keeper_dir, check=True)
             # Then commit everything as if we were in the repository directory.
+            commit = ["git", "-C", event_keeper_dir, "commit", "-m",
+                      commit_msg.encode("utf8")]
             if rs.user.persona_id:
-                subprocess.run(
-                    [
-                        "git", "-C", event_keeper_dir, "commit", "-m",
-                        commit_msg.encode('utf8'),
-                        "--author", (f"{rs.user.given_names} {rs.user.family_name}"
-                                     f"<{rs.user.username}>").encode("utf8")
-                    ],
-                    check=True)
-            else:
-                subprocess.run(["git", "-C", event_keeper_dir, "commit", "-m",
-                                commit_msg.encode("utf8")], check=True)
+                commit.append("--author")
+                commit.append((f"{rs.user.given_names} {rs.user.family_name}"
+                               f"<{rs.user.username}>").encode("utf8"))
+            if is_marker:
+                commit.append("--allow-empty")
+            subprocess.run(commit, check=True)
         return export
