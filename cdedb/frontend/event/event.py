@@ -596,6 +596,7 @@ class EventEventMixin(EventBaseFrontend):
             if data[key] in existing:
                 rs.append_validation_error((key, ValueError(n_(
                     "A part group with this name already exists."))))
+        data = check(rs, vtypes.EventPartGroup, data)
         if rs.has_validation_errors():
             return self.add_part_group_form(rs, event_id)
         code = self.eventproxy.set_part_groups(rs, event_id, {-1: data})
@@ -625,6 +626,7 @@ class EventEventMixin(EventBaseFrontend):
             if data[key] in existing - {rs.ambience['part_group'][key]}:
                 rs.append_validation_error((key, ValueError(n_(
                     "A part group with this name already exists."))))
+        data = check(rs, vtypes.EventPartGroup, data)
         if rs.has_validation_errors():
             return self.change_part_group_form(rs, event_id, part_group_id)
         code = self.eventproxy.set_part_groups(rs, event_id, {part_group_id: data})
