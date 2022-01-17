@@ -1442,6 +1442,11 @@ def reconnoitre_ambience(obj: AbstractFrontend,
         Scout(None, 'field_id', None,
               ((lambda a: do_assert(rs.requestargs['field_id']
                                     in a['event']['fields'])),)),
+        # Dirty hack, that relies on the event being retrieved into ambience first.
+        Scout(lambda anid: ambience['event']['part_groups'][anid],  # type: ignore[has-type]
+              'part_group_id', 'part_group',
+              ((lambda a: do_assert(a['part_group']['event_id']
+                                    == a['event']['id'])),)),
         Scout(lambda anid: obj.assemblyproxy.get_attachment(rs, anid),
               'attachment_id', 'attachment',
               ((lambda a: do_assert(a['attachment']['assembly_id']
@@ -1757,7 +1762,8 @@ def REQUESTdata(
                         if timeout is False:
                             rs.notify("warning", n_("Link invalid."))
 
-                    if typing.get_origin(type_) is collections.abc.Collection:
+                    origin = typing.get_origin(type_)
+                    if origin is collections.abc.Collection:
                         type_ = unwrap(type_.__args__)
                         vals = tuple(rs.request.values.getlist(name))
                         if vals:
@@ -2303,7 +2309,8 @@ def process_dynamic_input(
         else:
             entry = ret[anid]
             assert entry is not None
-            if type_ not in {vtypes.EventTrack, vtypes.BallotCandidate}:
+            if type_ not in {vtypes.EventTrack, vtypes.BallotCandidate,
+                             vtypes.EventPartGroup}:
                 entry["id"] = anid
             entry.update(additional)
             # apply the promised validation

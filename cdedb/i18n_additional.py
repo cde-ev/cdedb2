@@ -114,6 +114,11 @@ I18N_STRINGS = (
     n_("EventLogCodes.minor_form_removed"),
     n_("EventLogCodes.query_stored"),
     n_("EventLogCodes.query_deleted"),
+    n_("EventLogCodes.part_group_created"),
+    n_("EventLogCodes.part_group_changed"),
+    n_("EventLogCodes.part_group_deleted"),
+    n_("EventLogCodes.part_group_link_created"),
+    n_("EventLogCodes.part_group_link_deleted"),
 
     n_("FinanceLogCodes.new_member"),
     n_("FinanceLogCodes.gain_membership"),
@@ -217,6 +222,8 @@ I18N_STRINGS = (
 
     n_("QuestionnaireUsages.registration"),
     n_("QuestionnaireUsages.additional"),
+
+    n_("EventPartGroupType.Statistic"),
 
     n_("RegistrationPartStati.not_applied"),
     n_("RegistrationPartStati.applied"),
