@@ -114,10 +114,10 @@ def run_application_tests(configpath: pathlib.Path, testpatterns: List[str] = No
     # are set correctly
     user = getpass.getuser()
     # prepare the translations
-    subprocess.run(["make", "i18n-compile"], check=True)
+    subprocess.run(["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL)
     # create the log directory
     subprocess.run(["make", "log", f"LOG_DIR={conf['LOG_DIR']}", f"DATA_USER={user}"],
-                   check=True)
+                   check=True, stdout=subprocess.DEVNULL)
     # setup the database
     subprocess.run(["make", "sql", f"DATABASE_NAME={conf['CDB_DATABASE_NAME']}"],
                    check=True, stdout=subprocess.DEVNULL)
@@ -142,17 +142,17 @@ def run_xss_tests(*, verbose: bool = False) -> int:
     # are set correctly
     user = getpass.getuser()
     # prepare the translations
-    subprocess.run(["make", "i18n-compile"], check=True)
+    subprocess.run(["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL)
     # create the log directory
     subprocess.run(["make", "log", f"LOG_DIR={conf['LOG_DIR']}", f"DATA_USER={user}"],
-                   check=True)
+                   check=True, stdout=subprocess.DEVNULL)
     # setup the database
     subprocess.run(["make", "sql-xss", f"DATABASE_NAME={conf['CDB_DATABASE_NAME']}",
                     f"XSS_PAYLOAD={conf['XSS_PAYLOAD']}"],
                    check=True, stdout=subprocess.DEVNULL)
     # create the storage directory
     subprocess.run(["make", "storage", f"STORAGE_DIR={conf['STORAGE_DIR']}",
-                    f"DATA_USER={user}"], check=True)
+                    f"DATA_USER={user}"], check=True, stdout=subprocess.DEVNULL)
     # add the configpath to environment to access the configuration inside the tests
     os.environ['CDEDB_TEST_CONFIGPATH'] = str(configpath)
 
@@ -171,10 +171,10 @@ def run_ldap_tests(testpatterns: List[str] = None, *, verbose: bool = False) -> 
     # are set correctly
     user = getpass.getuser()
     # prepare the translations
-    subprocess.run(["make", "i18n-compile"], check=True)
+    subprocess.run(["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL)
     # create the log directory
     subprocess.run(["make", "log", f"LOG_DIR={conf['LOG_DIR']}", f"DATA_USER={user}"],
-                   check=True)
+                   check=True, stdout=subprocess.DEVNULL)
     if pathlib.Path("/CONTAINER").is_file():
         # the database is already initialized, since it is needed to start the
         # ldap container in the first place
@@ -187,8 +187,9 @@ def run_ldap_tests(testpatterns: List[str] = None, *, verbose: bool = False) -> 
         # update the current ldap setting
         # TODO either run ldap-reset or only ldap-update-full
         # subprocess.run(["make", "ldap-create"], check=True)
-        subprocess.run(["make", "ldap-update-full",
-                        f"DATABASE_NAME={conf['CDB_DATABASE_NAME']}"], check=True)
+        subprocess.run(
+            ["make", "ldap-update-full", f"DATABASE_NAME={conf['CDB_DATABASE_NAME']}"],
+            check=True, stdout=subprocess.DEVNULL)
     # add the configpath to environment to access the configuration inside the tests
     os.environ['CDEDB_TEST_CONFIGPATH'] = str(configpath)
 
