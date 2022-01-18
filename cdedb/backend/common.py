@@ -28,8 +28,8 @@ import cdedb.validation as validate
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
     LOCALE, CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Error, PathLike,
-    PrivilegeError, PsycoJson, Realm, RequestState, Role, diacritic_patterns, glue,
-    make_proxy, make_root_logger, n_, unwrap,
+    PrivilegeError, PsycoJson, RequestState, Role, diacritic_patterns, glue, make_proxy,
+    make_root_logger, n_, unwrap,
 )
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
@@ -244,12 +244,14 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         self.conf = Config(configpath)
         # initialize logging
         make_root_logger(
-            "cdedb.backend", self.conf["BACKEND_LOG"], self.conf["LOG_LEVEL"],
+            "cdedb.backend",
+            self.conf["LOG_DIR"] / "cdedb-backend.log",
+            self.conf["LOG_LEVEL"],
             syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         make_root_logger(
-            "cdedb.backend.{}".format(self.realm),
-            self.conf[f"{self.realm.upper()}_BACKEND_LOG"],
+            f"cdedb.backend.{self.realm}",
+            self.conf["LOG_DIR"] / f"cdedb-backend-{self.realm}.log",
             self.conf["LOG_LEVEL"],
             syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
@@ -270,19 +272,6 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             self.core = make_proxy(CoreBackend(configpath), internal=True)
 
     affirm_atomized_context = staticmethod(_affirm_atomized_context)
-
-    def affirm_realm(self, rs: RequestState, ids: Collection[int],
-                     realms: Set[Realm] = None) -> None:
-        """Check that all personas corresponding to the ids are in the
-        appropriate realm.
-
-        :param realms: Set of realms to check for. By default this is
-          the set containing only the realm of this class.
-        """
-        realms = realms or {self.realm}
-        actual_realms = self.core.get_realms_multi(rs, ids)
-        if any(not x >= realms for x in actual_realms.values()):
-            raise ValueError(n_("Wrong realm for personas."))
 
     @classmethod
     @abc.abstractmethod
@@ -514,6 +503,12 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         """
         query = f"DELETE FROM {table} WHERE {entity_key} = %s"
         return self.query_exec(rs, query, (entity,))
+
+    def sql_defer_constraints(self, rs: RequestState, *constraints: str
+                              ) -> DefaultReturnCode:
+        """Helper for deferring the given constraints for the current transaction."""
+        query = f"SET CONSTRAINTS {', '.join(constraints)} DEFERRED"
+        return self.query_exec(rs, query, ())
 
     def cgitb_log(self) -> None:
         """Log the current exception.

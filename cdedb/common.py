@@ -220,6 +220,13 @@ class RequestState:
         params = params or {}
         self.notifications.append((ntype, message, params))
 
+    def notify_validation_errors_default(self) -> None:
+        """Helper to put notification about validation errors.
+
+        This is placed centrally here so the message is always the same.
+        """
+        self.notify("error", n_("Failed validation."))
+
     def append_validation_error(self, error: Error) -> None:
         """Register a new  error.
 
@@ -410,7 +417,7 @@ def merge_dicts(targetdict: Union[MutableMapping[T, S], CdEDBMultiDict],
     for adict in dicts:
         for key in adict:
             if key not in targetdict:
-                if (isinstance(adict[key], collections.abc.Sequence)
+                if (isinstance(adict[key], collections.abc.Collection)
                         and not isinstance(adict[key], str)
                         and isinstance(targetdict, werkzeug.datastructures.MultiDict)):
                     targetdict.setlist(key, adict[key])
@@ -667,6 +674,10 @@ class EntitySorter:
     def event_part(event_part: CdEDBObject) -> Sortkey:
         return (event_part['part_begin'], event_part['part_end'],
                 event_part['shortname'], event_part['id'])
+
+    @staticmethod
+    def event_part_group(part_group: CdEDBObject) -> Sortkey:
+        return (part_group['title'], part_group['id'])
 
     @staticmethod
     def course_track(course_track: CdEDBObject) -> Sortkey:
@@ -1162,6 +1173,21 @@ class LineResolutions(enum.IntEnum):
         return self in {LineResolutions.renew_trial,
                         LineResolutions.update,
                         LineResolutions.renew_and_update}
+
+
+@enum.unique
+class GenesisDecision(enum.IntEnum):
+    """Possible decisions during review of a genesis request."""
+    approve = 1  #: Approve the request and create a new account.
+    deny = 2  #: Deny the request. Do not create or update an account.
+    #: Deny the request but update an existing account, dearchiving it if necessary.
+    update = 3
+
+    def is_create(self) -> bool:
+        return self == GenesisDecision.approve
+
+    def is_update(self) -> bool:
+        return self == GenesisDecision.update
 
 
 #: magic number which signals our makeshift algebraic data type
@@ -2005,7 +2031,7 @@ def roles_to_admin_views(roles: Set[Role]) -> Set[AdminView]:
 #: If the partial export and import are unaffected the minor version may be
 #: incremented.
 #: If you increment this, it must be incremented in make_offline_vm.py as well.
-EVENT_SCHEMA_VERSION = (15, 4)
+EVENT_SCHEMA_VERSION = (15, 5)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3
@@ -2185,6 +2211,8 @@ EVENT_FIELDS = (
 EVENT_PART_FIELDS = ("id", "event_id", "title", "shortname", "part_begin",
                      "part_end", "fee", "waitlist_field")
 
+PART_GROUP_FIELDS = ("id", "event_id", "title", "shortname", "notes", "constraint_type")
+
 #: Fields of a track where courses can happen
 COURSE_TRACK_FIELDS = ("id", "part_id", "title", "shortname", "num_choices",
                        "min_choices", "sortkey")
@@ -2314,10 +2342,6 @@ LOG_FIELDS_COMMON = ("codes", "persona_id", "submitted_by", "change_note", "offs
                      "length", "time_start", "time_stop")
 
 EPSILON = 10 ** (-6)  #:
-
-#: Timestamp which lies in the future. Make a constant so we do not have to
-#: hardcode the value otherwere
-FUTURE_TIMESTAMP = datetime.datetime(9996, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
 
 #: Specification for the output date format of money transfers.
 #: Note how this differs from the input in that we use 4 digit years.

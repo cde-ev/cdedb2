@@ -1,0 +1,11 @@
+[run]
+omit =
+    cdedb/subman/tests/*
+
+[report]
+exclude_lines =
+    pragma: no cover
+    raise RuntimeError\(n_\(\"Impossible.\"\)\)
+    raise NotImplementedError
+    return NotImplemented
+    if TYPE_CHECKING:

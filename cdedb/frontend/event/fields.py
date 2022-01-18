@@ -23,7 +23,7 @@ from cdedb.frontend.common import (
 )
 from cdedb.frontend.event.base import EventBaseFrontend
 from cdedb.query import Query, QueryOperators, QueryScope
-from cdedb.validation import _EVENT_FIELD_ALL_FIELDS
+from cdedb.validation import EVENT_FIELD_ALL_FIELDS
 from cdedb.validationtypes import VALIDATOR_LOOKUP
 
 EntitySetter = Callable[[RequestState, Dict[str, Any]], int]
@@ -69,7 +69,7 @@ class EventFieldMixin(EventBaseFrontend):
     def field_summary(self, rs: RequestState, event_id: int, active_tab: Optional[str]
                       ) -> Response:
         """Manipulate the fields of an event."""
-        spec = _EVENT_FIELD_ALL_FIELDS("")
+        spec = EVENT_FIELD_ALL_FIELDS
         creation_spec: vtypes.TypeMapping = {**spec, 'field_name': str}
         existing_fields = rs.ambience['event']['fields'].keys()
         fields = process_dynamic_input(

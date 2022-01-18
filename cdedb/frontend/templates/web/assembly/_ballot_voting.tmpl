@@ -181,16 +181,17 @@
         </p>
         <p>
             {% trans %}
-                To arrange the candidates, move them into one of the shaded boxes. The higher up the box,
+                To arrange the candidates, place them into one of the shaded boxes. The higher up the box,
                 the higher your preference for that candidate. Candidates within the same box will be
-                evaluated with the same preference. Move a candidate between two boxes to create a new box.
+                evaluated with the same preference. Place a candidate in the space between two boxes to
+                create a new box there.
             {% endtrans %}
         </p>
         <p>
             {% trans tab="<kbd>%(key)s</kbd>"|s|format(key=gettext("TAB")),
                      enter="<kbd>%(key)s</kbd>"|s|format(key=gettext("ENTER")),
                      space="<kbd>%(key)s</kbd>"|s|format(key=gettext("Space")) -%}
-                There are three ways of moving candidates: Drag’n’Drop them into a different box or
+                There are three ways of placing candidates: Drag’n’Drop them into a different box or
                 click on a candidate and then on a box. Or you can select a candidate with {{ tab }},
                 confirm it with {{ enter }} or {{ space }}, then select a box with {{ tab }}
                 and confirm the selection with {{ enter }} or {{ space }}.

@@ -122,11 +122,11 @@ class BaseApp(metaclass=abc.ABCMeta):
         secrets = SecretsConfig(configpath)
         # initialize logging
         if hasattr(self, 'realm') and self.realm:
-            logger_name = "cdedb.frontend.{}".format(self.realm)
-            logger_file = self.conf[f"{self.realm.upper()}_FRONTEND_LOG"]
+            logger_name = f"cdedb.frontend.{self.realm}"
+            logger_file = self.conf["LOG_DIR"] / f"cdedb-frontend-{self.realm}.log"
         else:
             logger_name = "cdedb.frontend"
-            logger_file = self.conf["FRONTEND_LOG"]
+            logger_file = self.conf["LOG_DIR"] / "cdedb-frontend.log"
         make_root_logger(
             logger_name, logger_file, self.conf["LOG_LEVEL"],
             syslog_level=self.conf["SYSLOG_LEVEL"],
@@ -206,14 +206,13 @@ class BaseApp(metaclass=abc.ABCMeta):
         """
         params = params or {}
         if rs.retrieve_validation_errors() and not rs.notifications:
-            rs.notify("error", n_("Failed validation."))
+            rs.notify_validation_errors_default()
         url = cdedburl(rs, target, params, force_external=True)
         if anchor is not None:
             url += "#" + anchor
         ret = basic_redirect(rs, url)
         if rs.notifications:
-            notifications = [self.encode_notification(rs, ntype, nmessage,
-                                                      nparams)
+            notifications = [self.encode_notification(rs, ntype, nmessage, nparams)
                              for ntype, nmessage, nparams in rs.notifications]
             ret.set_cookie("displaynote", json_serialize(notifications))
         return ret
@@ -270,8 +269,7 @@ PeriodicMethod = Callable[[Any, RequestState, CdEDBObject], CdEDBObject]
 class PeriodicJob(Protocol):
     cron: CdEDBObject
 
-    def __call__(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject:
-        ...
+    def __call__(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject: ...
 
 
 def periodic(name: str, period: int = 1
@@ -681,7 +679,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 rs.notify("warning", n_("Input seems faulty. Please double-check if"
                                         " you really want to save it."))
             else:
-                rs.notify("error", n_("Failed validation."))
+                rs.notify_validation_errors_default()
         if self.conf["LOCKDOWN"]:
             rs.notify("info", n_("The database currently undergoes "
                                  "maintenance and is unavailable."))
@@ -899,7 +897,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if not msg["To"] and not msg["Cc"] and not msg["Bcc"]:
             self.logger.warning("No recipients for mail. Dropping it.")
             return None
-        if not self.conf["CDEDB_DEV"]:
+        if not self.conf["CDEDB_DEV"]:  # pragma: no cover
             s = smtplib.SMTP(self.conf["MAIL_HOST"])
             s.send_message(msg)
             s.quit()
@@ -1170,7 +1168,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
             if exists:
                 rs.extend_validation_errors(
                     (("username",
-                      ValueError("User with this E-Mail exists already.")),))
+                      ValueError(n_("User with this E-Mail exists already."))),))
         if rs.has_validation_errors() or not data:
             return self.create_user_form(rs)
         new_id = self.coreproxy.create_persona(rs, data)
@@ -1220,8 +1218,8 @@ class CdEMailmanClient(mailmanclient.Client):
         # Initialize logger. This needs the base class initialization to be done.
         logger_name = "cdedb.frontend.mailmanclient"
         make_root_logger(
-            logger_name, self.conf["MAILMAN_LOG"], self.conf["LOG_LEVEL"],
-            syslog_level=self.conf["SYSLOG_LEVEL"],
+            logger_name, self.conf["LOG_DIR"] / "cdedb-frontend-mailman.log",
+            self.conf["LOG_LEVEL"], syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         self.logger = logging.getLogger(logger_name)
         self.logger.debug(f"Instantiated {self} with configpath {conf._configpath}.")
@@ -1297,7 +1295,8 @@ class Worker(threading.Thread):
         # noinspection PyProtectedMember
         secrets = SecretsConfig(conf._configpath)
         connpool = connection_pool_factory(
-            conf["CDB_DATABASE_NAME"], DATABASE_ROLES, secrets, conf["DB_PORT"])
+            conf["CDB_DATABASE_NAME"], DATABASE_ROLES, secrets,
+            conf["DB_HOST"], conf["DB_PORT"])
         rrs._conn = connpool[roles_to_db_role(rs.user.roles)]
         logger = logging.getLogger("cdedb.frontend.worker")
 
@@ -1443,6 +1442,11 @@ def reconnoitre_ambience(obj: AbstractFrontend,
         Scout(None, 'field_id', None,
               ((lambda a: do_assert(rs.requestargs['field_id']
                                     in a['event']['fields'])),)),
+        # Dirty hack, that relies on the event being retrieved into ambience first.
+        Scout(lambda anid: ambience['event']['part_groups'][anid],  # type: ignore[has-type]
+              'part_group_id', 'part_group',
+              ((lambda a: do_assert(a['part_group']['event_id']
+                                    == a['event']['id'])),)),
         Scout(lambda anid: obj.assemblyproxy.get_attachment(rs, anid),
               'attachment_id', 'attachment',
               ((lambda a: do_assert(a['attachment']['assembly_id']
@@ -1758,7 +1762,8 @@ def REQUESTdata(
                         if timeout is False:
                             rs.notify("warning", n_("Link invalid."))
 
-                    if typing.get_origin(type_) is collections.abc.Collection:
+                    origin = typing.get_origin(type_)
+                    if origin is collections.abc.Collection:
                         type_ = unwrap(type_.__args__)
                         vals = tuple(rs.request.values.getlist(name))
                         if vals:
@@ -2304,7 +2309,8 @@ def process_dynamic_input(
         else:
             entry = ret[anid]
             assert entry is not None
-            if type_ is not vtypes.EventTrack:
+            if type_ not in {vtypes.EventTrack, vtypes.BallotCandidate,
+                             vtypes.EventPartGroup}:
                 entry["id"] = anid
             entry.update(additional)
             # apply the promised validation

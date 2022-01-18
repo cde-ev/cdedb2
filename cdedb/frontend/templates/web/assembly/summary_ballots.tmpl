@@ -18,7 +18,13 @@
                                  ballot['title']) %}
         {% call util.bootstrap_panel(title=title, icon='thumbs-up') %}
         <div class="row">
-            <div class="col-md-7">{{ ballot['description']|md }}</div>
+            <div class="col-md-7">
+                {{ ballot['description']|md }}
+                {% if ballot['comment'] %}
+                    <strong>{{ gettext("Comment:") }}</strong>
+                    {{ ballot['comment']|md }}
+                {% endif %}
+            </div>
             <div class="col-md-5">{{ ballot_tallied.show_result(ballot, result[ballot_id], short=True) }}</div>
         </div>
         {% endcall %}

@@ -1,6 +1,7 @@
 {% set sidenav_active='event_course_stats' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/event/generic.tmpl" as generic_event with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
@@ -45,7 +46,7 @@
         <h4 class="heading-underline">{% trans %}Fields{% endtrans %}</h4>
         {% for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field)
                 if field['association'] == enums['FieldAssociations'].course %}
-            {{ util.form_event_field_input(field) }}
+            {{ generic_event.form_field_input(field) }}
         {% else %}
             <p class="text-muted">{% trans %}No custom fields for courses available.{% endtrans %}</p>
         {% endfor %}

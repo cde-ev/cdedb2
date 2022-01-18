@@ -78,7 +78,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         This will usually be done by a cron job, but sometimes it can be nice to trigger
         this immediately.
         """
-        if rs.has_validation_errors():
+        if rs.has_validation_errors():  # pragma: no cover
             return self.index(rs)
         mailinglist_ids = self.mlproxy.list_mailinglists(rs)
 

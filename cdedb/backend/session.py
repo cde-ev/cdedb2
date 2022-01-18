@@ -42,7 +42,7 @@ class SessionBackend:
         self.api_token_lookup = lookup.get
 
         make_root_logger(
-            "cdedb.backend.session", self.conf["SESSION_BACKEND_LOG"],
+            "cdedb.backend.session", self.conf["LOG_DIR"] / "cdedb-backend-session.log",
             self.conf["LOG_LEVEL"], syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         # logger are thread-safe!
@@ -57,7 +57,7 @@ class SessionBackend:
         # since the competing write will be pretty similar).
         self.connpool = connection_pool_factory(
             self.conf["CDB_DATABASE_NAME"], ("cdb_anonymous", "cdb_persona"),
-            secrets, self.conf["DB_PORT"],
+            secrets, self.conf["DB_HOST"], self.conf["DB_PORT"],
             isolation_level=psycopg2.extensions.ISOLATION_LEVEL_READ_COMMITTED)
 
     def lookupsession(self, sessionkey: Optional[str], ip: str) -> User:

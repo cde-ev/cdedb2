@@ -25,7 +25,7 @@ import psycopg2.extensions
 import psycopg2.extras
 
 from cdedb.common import (
-    ALL_ROLES, AbstractBackend, PathLike, RequestState, User, make_proxy,
+    ALL_ROLES, AbstractBackend, PathLike, RequestState, User, make_proxy, n_,
 )
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import Atomizer, IrradiatedConnection
@@ -144,18 +144,12 @@ class Script:
             "dbname": dbname,
             "user": dbuser,
             "password": self._secrets["CDB_DATABASE_ROLES"][dbuser],
+            "host": self.config["DB_HOST"],
             "port": 5432,
             "connection_factory": IrradiatedConnection,
             "cursor_factory": cursor,
         }
-        try:
-            self._conn = psycopg2.connect(**connection_parameters, host="localhost")
-        except psycopg2.OperationalError as e:  # DB inside Docker listens on "cdb"
-            if "Passwort-Authentifizierung" in e.args[0]:
-                raise  # fail fast if wrong password is the problem
-            if "Password-Authentication" in e.args[0]:
-                raise
-            self._conn = psycopg2.connect(**connection_parameters, host="cdb")
+        self._conn = psycopg2.connect(**connection_parameters)
         self._conn.set_client_encoding("UTF8")
 
     def make_backend(self, realm: str, *, proxy: bool = True):  # type: ignore[no-untyped-def]
@@ -213,7 +207,7 @@ class Script:
                  exc_tb: Optional[TracebackType]) -> bool:
         """Thin wrapper around `ScriptAtomizer`."""
         if self._atomizer is None:
-            raise RuntimeError("Impossible.")
+            raise RuntimeError(n_("Impossible."))
         return self._atomizer.__exit__(exc_type, exc_val, exc_tb)
 
 

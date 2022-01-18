@@ -166,9 +166,11 @@
         {% endif %}
     </tbody>
     </table>
-    {% trans abstentions=result['abstentions'] %}
-        {{ abstentions }} voters had abstained.
-    {% endtrans %}
+    <p>
+        {% trans abstentions=result['abstentions'] %}
+            {{ abstentions }} voters had abstained.
+        {% endtrans %}
+    </p>
 {%- endmacro %}
 
 
