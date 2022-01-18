@@ -52,7 +52,6 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3-sphinx-rtd-theme \
     python3-zxcvbn \
     python3-markdown \
-    python3-mailmanclient \
     python3-requests \
     python3-qrcode \
     python3-vobject \
@@ -73,6 +72,8 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
     \
     && python3 -m pip --no-cache-dir install \
+    mailmanclient==3.3.3 \
+    \
     mypy==0.910 \
     types-werkzeug \
     types-pytz \
