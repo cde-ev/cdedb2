@@ -37,39 +37,47 @@ class CdEDBTestLock:
     # Identifiers of existing test threads. Only truthy values allowed, and a
     # corresponding config file in tests/config/ must exist.
     # Use the returned configpath to prepare the test environment properly.
-    THREADS = (1, 2, 3, 4)
 
-    configpath: pathlib.Path
-    thread_id: Optional[int]
+    # interchangeable threads to run application tests, are acquired by default
+    APPLICATION_THREADS = ("1", "2", "3", "4")
+    # special threads to run the ldap or xss tests, must be acquired directly
+    SPECIAL_THREADS = ("ldap", "xss")
+    ALL_THREADS = tuple(thread for thread in [*APPLICATION_THREADS, *SPECIAL_THREADS])
+
+    thread: Optional[str]
     lockfile: TextIO
 
-    def __init__(self, thread_id: Optional[int] = None):
-        if not ((thread_id is None) or (thread_id in self.THREADS)):
-            raise RuntimeError("Invalid thread id")
-        self.thread_id = thread_id
+    def __init__(self, thread: str = None):
+        if not ((thread is None) or (thread in self.ALL_THREADS)):
+            raise RuntimeError("Invalid thread name.")
+        self.thread = thread
 
     @property
     def lockfile_path(self) -> pathlib.Path:
-        return pathlib.Path('/tmp') / f'cdedb-test-{self.thread_id}.lock'
+        return pathlib.Path('/tmp') / f'cdedb-test-{self.thread}.lock'
+
+    @property
+    def configpath(self) -> pathlib.Path:
+        return root / f"tests/config/test_{self.thread}.py"
 
     def acquire(self) -> None:
         """Lock the thread"""
-        if self.thread_id is not None:
+        if self.thread is not None:
             try:
                 self.lockfile = open(self.lockfile_path, 'x')
                 return
             except FileExistsError:
-                raise RuntimeError(f"Thread {self.thread_id} is currently in use.")
+                raise RuntimeError(f"Thread {self.thread} is currently in use.")
         else:
-            for thread_id in self.THREADS:
+            # as promised, only choose one of the application test threads automatically
+            for thread in self.APPLICATION_THREADS:
                 try:
-                    self.thread_id = thread_id
+                    self.thread = thread
                     self.lockfile = open(self.lockfile_path, 'x')
-                    self.configpath = root / f"tests/config/test_{self.thread_id}.py"
                     return
                 except FileExistsError:
                     continue
-            self.thread_id = None
+            self.thread = None
             raise RuntimeError("All threads are currently in use.")
 
     def release(self) -> None:
@@ -135,8 +143,7 @@ def run_application_tests(configpath: pathlib.Path, testpatterns: List[str] = No
     return 0 if ran_tests.wasSuccessful() else 1
 
 
-def run_xss_tests(*, verbose: bool = False) -> int:
-    configpath = root / "tests/config/test_xss.py"
+def run_xss_tests(configpath: pathlib.Path, *, verbose: bool = False) -> int:
     conf = TestConfig(configpath)
     # get the user running the current process, so the access rights for log directory
     # are set correctly
@@ -164,8 +171,8 @@ def run_xss_tests(*, verbose: bool = False) -> int:
     return ret
 
 
-def run_ldap_tests(testpatterns: List[str] = None, *, verbose: bool = False) -> int:
-    configpath = root / "tests/config/test_ldap.py"
+def run_ldap_tests(configpath: pathlib.Path, testpatterns: List[str] = None, *,
+                   verbose: bool = False) -> int:
     conf = TestConfig(configpath)
     # get the user running the current process, so the access rights for log directory
     # are set correctly
@@ -270,16 +277,15 @@ if __name__ == '__main__':
     do_xss = args.all or args.xss
 
     if do_application:
-        with CdEDBTestLock(None) as Lock:
-            assert Lock.thread_id is not None
-            print(f"Using thread {Lock.thread_id}", file=sys.stderr)
+        # Override testpatterns to run all tests.
+        if args.all or args.all_application:
+            testpatterns = None
+        else:
+            testpatterns = args.testpatterns
 
-            # Override testpatterns to run all tests.
-            if args.all or args.all_application:
-                testpatterns = None
-            else:
-                testpatterns = args.testpatterns
-
+        with CdEDBTestLock() as Lock:
+            assert Lock.thread is not None
+            print(f"Using thread {Lock.thread}", file=sys.stderr)
             return_code += run_application_tests(
                 configpath=Lock.configpath, testpatterns=testpatterns,
                 verbose=args.verbose)
@@ -291,9 +297,18 @@ if __name__ == '__main__':
         else:
             testpatterns = args.testpatterns
 
-        return_code += run_ldap_tests(testpatterns, verbose=args.verbose)
+        with CdEDBTestLock("ldap") as Lock:
+            assert Lock.thread is not None
+            print(f"Using thread {Lock.thread}", file=sys.stderr)
+            return_code += run_ldap_tests(
+                configpath=Lock.configpath, testpatterns=testpatterns,
+                verbose=args.verbose)
 
     if do_xss:
-        return_code += run_xss_tests(verbose=args.verbose)
+        with CdEDBTestLock("xss") as Lock:
+            assert Lock.thread is not None
+            print(f"Using thread {Lock.thread}", file=sys.stderr)
+            return_code += run_xss_tests(
+                configpath=Lock.configpath, verbose=args.verbose)
 
     sys.exit(return_code)
