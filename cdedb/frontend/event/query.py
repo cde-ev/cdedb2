@@ -30,6 +30,9 @@ from cdedb.query import (
     Query, QueryConstraint, QueryOperators, QueryOrder, QueryScope, QuerySpec,
     QuerySpecEntry,
 )
+from cdedb.query_defaults import (
+    generate_event_course_default_queries, generate_event_registration_default_queries,
+)
 
 RPS = const.RegistrationPartStati
 
@@ -688,7 +691,7 @@ class EventQueryMixin(EventBaseFrontend):
                           query_input, "query", spec=spec, allow_empty=False)
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
 
-        default_queries = self.conf["DEFAULT_QUERIES_REGISTRATION"](
+        default_queries = generate_event_registration_default_queries(
             rs.gettext, rs.ambience['event'], spec)
         stored_queries = self.eventproxy.get_event_queries(
             rs, event_id, scopes=(scope,))
@@ -802,7 +805,7 @@ class EventQueryMixin(EventBaseFrontend):
                                       for t_id in tracks)
         stored_queries = self.eventproxy.get_event_queries(
             rs, event_id, scopes=(scope,))
-        default_queries = self.conf["DEFAULT_QUERIES_COURSE"](
+        default_queries = generate_event_course_default_queries(
             rs.gettext, rs.ambience['event'], spec)
         default_queries.update(stored_queries)
 

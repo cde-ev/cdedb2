@@ -250,6 +250,8 @@ _DEFAULTS = {
     # Query stuff #
     ###############
 
+    # this can be found and overridden in cdedb2/query_defaults.py
+
 }
 
 #: defaults for :py:class:`SecretsConfig`

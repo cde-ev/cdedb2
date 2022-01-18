@@ -89,6 +89,7 @@ from cdedb.filter import (
     JINJA_FILTERS, cdedbid_filter, enum_entries_filter, safe_filter, sanitize_None,
 )
 from cdedb.query import Query
+from cdedb.query_defaults import DEFAULT_QUERIES
 
 _LOGGER = logging.getLogger(__name__)
 _BASICCONF = BasicConfig()
@@ -829,7 +830,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             query_input = scope.mangle_query_input(rs)
             query = check_validation(rs, vtypes.QueryInput, query_input, "query",
                                      spec=spec, allow_empty=False)
-        default_queries = self.conf["DEFAULT_QUERIES"][default_scope]
+        default_queries = DEFAULT_QUERIES[default_scope]
         choices_lists = {}
         if choices is None:
             choices = {}
