@@ -9,7 +9,7 @@ Only exception are the per-event-queries, since they need some dynamic informati
 about the event to be created. They can be obtained by calling the respective functions.
 """
 
-from typing import Callable, Dict
+from typing import Dict
 
 import cdedb.database.constants as const
 from cdedb.common import ADMIN_KEYS, CdEDBObject, deduct_years, n_, now
@@ -17,8 +17,7 @@ from cdedb.query import Query, QueryOperators, QueryScope, QuerySpec
 
 
 def generate_event_registration_default_queries(
-        gettext: Callable[[str], str], event: CdEDBObject,
-        spec: QuerySpec) -> Dict[str, Query]:
+        event: CdEDBObject, spec: QuerySpec) -> Dict[str, Query]:
     """
     Generate default queries for registration_query.
 
@@ -155,8 +154,7 @@ def generate_event_registration_default_queries(
 
 
 def generate_event_course_default_queries(
-        gettext: Callable[[str], str], event: CdEDBObject,
-        spec: QuerySpec) -> Dict[str, Query]:
+        event: CdEDBObject, spec: QuerySpec) -> Dict[str, Query]:
     """
     Generate default queries for course_queries.
 
