@@ -230,14 +230,12 @@ if __name__ == '__main__':
                          help="run third part of application tests (everything except"
                               " for the frontend tests)")
 
-    parts = parser.add_argument_group(
-        "choose which parts of the testsuite to run (application tests are default)")
-    parts.add_argument('--ldap', action='store_true',
-                       help="run ldap tests")
-    parts.add_argument('--xss', action='store_true',
-                       help="run xss check")
-    parts.add_argument('--no-application', action='store_true',
-                       help="do not run application tests")
+    # if we specify 'default=["application"]', the application tests are always in parts
+    # therefore, we defer the default handling after the args have been parsed
+    parser.add_argument("--parts", action="extend", nargs="*", default=list(),
+                        choices=["application", "ldap", "xss"],
+                        help="choose which parts of the testsuite to run"
+                             " (application tests are default)")
 
     pattern_overrides = parser.add_argument_group(
         "override given testpatterns for parts of the testsuite")
@@ -251,6 +249,10 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    # Set the promised default value if no parts were specified
+    if not args.parts and not args.all_ldap:
+        args.parts = ["application"]
+
     # Set args for presets.
     if args.first:
         args.testpatterns.append('tests.frontend_tests.[abcd]*')
@@ -259,22 +261,19 @@ if __name__ == '__main__':
     if args.third:
         args.testpatterns.append('tests.backend_tests.*')
         args.testpatterns.append('tests.other_tests.*')
+    # run the application tests only if there are presets
     if args.first or args.second or args.third:
         args.all = False
         args.all_application = False
-        args.no_application = False
         args.all_ldap = False
-        args.ldap = False
-        args.xss = False
+        args.parts = ["application"]
 
     return_code = 0
 
-    # Always run application tests unless explicitly deactivated.
-    do_application = args.all or not args.no_application
-    # Only run ldap if specified or all tests are run.
-    do_ldap = args.all or args.all_ldap or args.ldap
-    # Only run xss check if specified or all tests are run.
-    do_xss = args.all or args.xss
+    # Run requested parts of the test suite.
+    do_application = args.all or args.all_application or "application" in args.parts
+    do_ldap = args.all or args.all_ldap or "ldap" in args.parts
+    do_xss = args.all or "xss" in args.parts
 
     if do_application:
         # Override testpatterns to run all tests.

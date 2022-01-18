@@ -183,7 +183,7 @@ steps:
     path: /tmp
   commands:
   - sleep 40 # wait until the ldap server comes online
-  - bin/check.py --verbose --no-application --all-ldap
+  - bin/check.py --verbose --all-ldap
 - name: coverage
   image: cdedb:20210705
   pull: never
@@ -214,7 +214,7 @@ steps:
   - name: tmp_dir
     path: /tmp
   commands:
-    - bin/check.py --verbose --no-application --xss
+    - bin/check.py --verbose --parts xss
 - name: check for merge conflicts
   image: docker:20.10-git
   pull: never # do not try to pull image from docker hub
