@@ -525,7 +525,16 @@ class EventOrgaMailinglist(EventAssociatedMeta, ImplicitsSubscribableMeta,
 
 
 class AssemblyAssociatedMailinglist(ImplicitsSubscribableMeta, AssemblyMailinglist):
-    mandatory_validation_fields = {"assembly_id": vtypes.ID}
+    # Allow empty assembly_id to mark legacy assembly-lists.
+    mandatory_validation_fields: vtypes.TypeMapping = {
+        "assembly_id": Optional[vtypes.ID]  # type: ignore
+    }
+
+    @classmethod
+    def periodic_cleanup(cls, rs: RequestState, mailinglist: CdEDBObject) -> bool:
+        """Disable periodic cleanup to freeze legacy assembly-lists."""
+        check_appropriate_type(mailinglist, cls)
+        return mailinglist["assembly_id"] is not None
 
     @classmethod
     def is_restricted_moderator(cls, rs: RequestState, bc: BackendContainer,
@@ -544,6 +553,25 @@ class AssemblyAssociatedMailinglist(ImplicitsSubscribableMeta, AssemblyMailingli
         return basic_restriction or additional_restriction
 
     @classmethod
+    def get_subscription_policies(cls, rs: RequestState, bc: BackendContainer,
+                                  mailinglist: CdEDBObject,
+                                  persona_ids: Collection[int],
+                                  ) -> SubscriptionPolicyMap:
+        """Determine the SubscriptionPolicy for each given persona with the mailinglist.
+
+        For the `AssemblyAssociatedMailinglist` this means subscribable for attendees.
+
+        See `get_implicit_subscribers`.
+        """
+        check_appropriate_type(mailinglist, cls)
+
+        # Make assembly-lists without assembly link static.
+        if mailinglist['assembly_id'] is None:
+            return {anid: SubscriptionPolicy.invitation_only for anid in persona_ids}
+
+        return super().get_subscription_policies(rs, bc, mailinglist, persona_ids)
+
+    @classmethod
     def get_implicit_subscribers(cls, rs: RequestState, bc: BackendContainer,
                                  mailinglist: CdEDBObject) -> Set[int]:
         """Get a list of people that should be on this mailinglist.
@@ -552,11 +580,34 @@ class AssemblyAssociatedMailinglist(ImplicitsSubscribableMeta, AssemblyMailingli
         linked assembly.
         """
         check_appropriate_type(mailinglist, cls)
+
+        if mailinglist['assembly_id'] is None:
+            return set()
+
         return bc.assembly.list_attendees(rs, mailinglist["assembly_id"])
 
 
 class AssemblyPresiderMailinglist(AssemblyAssociatedMailinglist):
     maxsize_default = 8192
+
+    @classmethod
+    def get_subscription_policies(cls, rs: RequestState, bc: BackendContainer,
+                                  mailinglist: CdEDBObject,
+                                  persona_ids: Collection[int],
+                                  ) -> SubscriptionPolicyMap:
+        """Determine the SubscriptionPolicy for each given persona with the mailinglist.
+
+        For the `AssemblyPresiderMailinglist` this means subscribable for presiders.
+
+        See `get_implicit_subscribers`.
+        """
+        check_appropriate_type(mailinglist, cls)
+
+        # Make assembly-lists without assembly link static.
+        if mailinglist['assembly_id'] is None:
+            return {anid: SubscriptionPolicy.invitation_only for anid in persona_ids}
+
+        return super().get_subscription_policies(rs, bc, mailinglist, persona_ids)
 
     @classmethod
     def get_implicit_subscribers(cls, rs: RequestState, bc: BackendContainer,
