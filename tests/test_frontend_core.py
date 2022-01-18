@@ -268,6 +268,8 @@ class TestCoreFrontend(FrontendTest):
         self.get("/core/self/show")
         self.follow()
         self.traverse("QR")
+        # our modal javascript in cdedb_helper.js relies on xml content type
+        self.assertEqual(self.response.content_type, "image/svg+xml")
 
     @as_users("vera")
     def test_vcard_cde_admin(self) -> None:

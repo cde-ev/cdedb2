@@ -15,7 +15,7 @@ import webtest
 
 import cdedb.database.constants as const
 from cdedb.common import (
-    ADMIN_VIEWS_COOKIE_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, now, unwrap,
+    ADMIN_VIEWS_COOKIE_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, now, unwrap, xsorted,
 )
 from cdedb.filter import iban_filter
 from cdedb.frontend.common import CustomCSVDialect
@@ -331,7 +331,7 @@ class TestEventFrontend(FrontendTest):
         f = self.response.forms[f"removeorgaform{ USER_DICT['garcia']['id'] }"]
         self.submit(f)
         f = self.response.forms['createparticipantlistform']
-        self.assertIn('disabled', f.fields['submitform'][0].attrs)
+        self.assertInputHasAttr(f['submitform'], 'disabled')
         self.submit(f, check_notification=False)
         self.assertPresence("Mailingliste kann nur mit Orgas erstellt werden.",
                             div='notifications')
@@ -3227,9 +3227,7 @@ etc;anything else""", f['entries_2'].value)
         f['assign_track_ids'] = [3]
         f['assign_action'] = 2
         self.submit(f, check_notification=False)
-        self.assertIn("alert alert-warning", self.response.text)
-        self.assertPresence("Emilia E. Eventis hat keine 3. Kurswahl",
-                            div="notifications")
+        self.assertNotification("Emilia E. Eventis hat keine 3. Kurswahl", 'warning')
         self.assertPresence("0 von 2 Anmeldungen gespeichert",
                             div="notifications")
 
@@ -3247,9 +3245,7 @@ etc;anything else""", f['entries_2'].value)
         f['assign_track_ids'] = [3]
         f['assign_action'] = -5
         self.submit(f, check_notification=False)
-        self.assertIn("alert alert-warning", self.response.text)
-        self.assertPresence("Keine Kurswahlen für Anton Administrator",
-                            div="notifications")
+        self.assertNotification("Keine Kurswahlen für Anton Administrator", 'warning')
         self.assertPresence("1 von 2 Anmeldungen gespeichert",
                             div="notifications")
 
@@ -4598,6 +4594,139 @@ etc;anything else""", f['entries_2'].value)
             })
 
         self.submit(f)
+
+    @as_users("emilia")
+    def test_part_groups(self) -> None:
+        event_id = 4
+        event = self.event.get_event(self.key, event_id)
+        log_expectation = []
+        offset = self.event.retrieve_log(self.key, event_id=event_id)[0]
+
+        self.traverse("Veranstaltungen", event['title'], "Veranstaltungsteile",
+                      "Veranstaltungsteilgruppen")
+        self.assertTitle("Veranstaltungsteilgruppen (TripelAkademie)")
+
+        # Check summary display.
+        for pg_id, pg in event['part_groups'].items():
+            div = f"partgroup_{pg_id}"
+            self.assertPresence(pg['title'], div=div)
+            self.assertPresence(pg['shortname'], div=div)
+            for part_id, part in event['parts'].items():
+                if part_id in pg['part_ids']:
+                    self.assertPresence(part['shortname'], div=div)
+                else:
+                    self.assertNonPresence(part['shortname'], div=div)
+
+        # Create new part group:
+        self.traverse("Veranstaltungsteilgruppe hinzufügen")
+        self.assertTitle("Veranstaltungsteilgruppe hinzufügen (TripelAkademie)")
+        f = self.response.forms['configurepartgroupform']
+        f['title'] = ""
+        f['shortname'] = ""
+        f['constraint_type'] = const.EventPartGroupType.Statistic
+        f['part_ids'] = []
+        f['part_ids'] = list(event['parts'])
+        self.submit(f, check_notification=False)
+        self.assertValidationError('title', "Darf nicht leer sein.")
+        self.assertValidationError('shortname', "Darf nicht leer sein.")
+        f['title'] = new_title = "Everything"
+        f['shortname'] = new_shortname = "all"
+        self.submit(f)
+        log_expectation.append({
+            'code': const.EventLogCodes.part_group_created,
+            'change_note': new_title,
+        })
+        log_expectation.extend([
+            {
+                'code': const.EventLogCodes.part_group_link_created,
+                'change_note': part['title'] + " -> " + new_title,
+            }
+            for part_id, part in xsorted(event['parts'].items())
+        ])
+        # TODO: How to force value into multiple checkboxes?
+        # f['part_ids'].force_value([10 ** 10])
+        self.submit(f, check_notification=False)
+        self.assertValidationError(
+            'title',
+            "Es existiert bereits eine Veranstaltungsteilgruppe mit diesem Namen.")
+        self.assertValidationError(
+            'shortname',
+            "Es existiert bereits eine Veranstaltungsteilgruppe mit diesem Namen.")
+        # self.assertValidationError('part_ids', "Unbekannter Veranstaltungsteil")
+
+        new_id = max(self.event.get_event(self.key, event_id)['part_groups'])
+        self.traverse("Veranstaltungsteilgruppen")
+        self.assertPresence(new_title, div=f"partgroup_{new_id}")
+        self.assertPresence(new_shortname, div=f"partgroup_{new_id}")
+
+        # Check part group badges.
+        self.traverse("Veranstaltungsteile")
+        for part_id, part in event['parts'].items():
+            div = f"part{part_id}_partgroups"
+            self.assertPresence(new_shortname, div=div)
+            for pg_id, pg in event['part_groups'].items():
+                if part_id in pg['part_ids']:
+                    self.assertPresence(pg['shortname'], div=div)
+                else:
+                    self.assertNonPresence(pg['shortname'], div=div)
+
+        # Change the new part group.
+        self.traverse("Veranstaltungsteilgruppen",
+                      {'linkid': f'partgroup{new_id}_change'})
+        f = self.response.forms['configurepartgroupform']
+
+        # Check that constraint_type and part_ids fields are disabled.
+        self.assertEqual(f['constraint_type'].attrs, {'type': 'hidden'})
+        for field in f.fields.get('part_ids'):
+            self.assertEqual(field.attrs, {'type': 'hidden'})
+
+        # Submit garbage.
+        f['title'] = ""
+        f['shortname'] = list(event['part_groups'].values())[0]['shortname']
+        self.submit(f, check_notification=False)
+        self.assertValidationError('title', "Darf nicht leer sein.")
+        self.assertValidationError(
+            'shortname',
+            "Es existiert bereits eine Veranstaltungsteilgruppe mit diesem Namen.")
+
+        # Submit real stuff.
+        f['title'] = new_title[::-1]
+        f['shortname'] = new_shortname[::-1]
+        self.submit(f)
+        log_expectation.append({
+            'code': const.EventLogCodes.part_group_changed,
+            'change_note': new_title[::-1],
+        })
+        self.assertNonPresence(new_title, div=f"partgroup_{new_id}")
+        self.assertPresence(new_title[::-1], div=f"partgroup_{new_id}")
+        self.assertNonPresence(new_shortname, div=f"partgroup_{new_id}")
+        self.assertPresence(new_shortname[::-1], div=f"partgroup_{new_id}")
+
+        # Check that resubmitting works but changes nothing.
+        self.submit(f)
+
+        self.traverse("Statistik")
+        self.assertPresence(new_shortname[::-1], div="participant-stats")
+
+        # Delete the new part group.
+        self.traverse("Veranstaltungsteile", "Veranstaltungsteilgruppen")
+        f = self.response.forms[f'deletepartgroupform{new_id}']
+        self.submit(f)
+        log_expectation.append({
+            'code': const.EventLogCodes.part_group_deleted,
+            'change_note':
+                new_title[::-1] + f" ({const.EventPartGroupType.Statistic.name})",
+        })
+        self.assertNonPresence(new_title[::-1], div="part-group-summary")
+
+        self.traverse("Veranstaltungsteile")
+        for part_id, part in event['parts'].items():
+            div = f"part{part_id}_partgroups"
+            self.assertNonPresence(new_shortname, div=div)
+            self.assertNonPresence(new_shortname[::-1], div=div)
+
+        self.assertLogEqual(
+            log_expectation, realm="event", event_id=event_id, offset=offset)
 
     @unittest.skip("deprecated test")
     def test_log(self) -> None:
