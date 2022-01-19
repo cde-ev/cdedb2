@@ -9,7 +9,7 @@ import collections
 import datetime
 import enum
 import pprint
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -701,7 +701,7 @@ class EventQueryMixin(EventBaseFrontend):
                          for k, spec_entry in spec.items()
                          if spec_entry.choices}
 
-        params = {
+        params: Dict[str, Any] = {
             'spec': spec, 'query': query, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'has_registrations': has_registrations,
         }
@@ -813,7 +813,7 @@ class EventQueryMixin(EventBaseFrontend):
                          for k, spec_entry in spec.items()
                          if spec_entry.choices}
 
-        params = {
+        params: Dict[str, Any] = {
             'spec': spec, 'query': query, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'selection_default': selection_default,
         }
