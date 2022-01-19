@@ -24,7 +24,6 @@ def generate_event_registration_default_queries(
     Some of these contain dynamic information about the event's Parts,
     Tracks, etc.
 
-    :param gettext: The translation function for the current locale.
     :param event: The Event for which to generate the queries
     :param spec: The Query Spec, dynamically generated for the event
     :return: Dict of default queries
@@ -161,7 +160,6 @@ def generate_event_course_default_queries(
     Some of these contain dynamic information about the event's Parts,
     Tracks, etc.
 
-    :param gettext: The translation function for the current locale.
     :param event: The event for which to generate the queries
     :param spec: The Query Spec, dynamically generated for the event
     :return: Dict of default queries
