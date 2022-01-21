@@ -317,7 +317,7 @@
     {%- endif %}
 {%- endmacro %}
 
-{% macro markdown_preview(anid, infotext="Supports Markdown.") %}
+{% macro markdown_preview(anid, infotext=_("Supports Markdown.")) %}
     <p class="help-block no-color">
         {{ make_icon('fab fa-markdown') }} {{ gettext(infotext) }}
         <span class="mdjs" style="display: none;">
