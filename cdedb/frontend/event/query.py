@@ -18,16 +18,17 @@ import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
     AgeClasses, CdEDBObject, CdEDBObjectMap, EntitySorter, RequestState, deduct_years,
-    determine_age_class, n_, unwrap, xsorted,
+    determine_age_class, get_localized_country_codes, n_, unwrap, xsorted,
 )
+from cdedb.filter import enum_entries_filter
 from cdedb.frontend.common import (
     REQUESTdata, access, check_validation as check, event_guard,
     inspect_validation as inspect, periodic,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
 from cdedb.query import (
-    Query, QueryConstraint, QueryOperators, QueryOrder, QueryScope,
-    make_course_query_aux, make_lodgement_query_aux, make_registration_query_aux,
+    Query, QueryConstraint, QueryOperators, QueryOrder, QueryScope, QuerySpec,
+    QuerySpecEntry,
 )
 
 RPS = const.RegistrationPartStati
@@ -85,6 +86,28 @@ def _waitlist_order(event: CdEDBObject, part: CdEDBObject) -> List[QueryOrder]:
     return ret + [('reg.payment', True), ('ctime.creation_time', True)]
 
 
+def merge_constraints(*constraints: QueryConstraint) -> Optional[QueryConstraint]:
+    """
+    Helper function to try to merge a collection of query constraints into a single one.
+
+    In order to be mergable all constraints must have the same `QueryOperator` and the
+    same value. All differing constraint fields are joined together, respecting order.
+
+    The fields are collected in a dict, with ensures uniqueness, while preserving the
+    original order, which sets don't.
+    """
+    fields: Dict[str, None] = {}
+    operators, values = set(), set()
+    for con in constraints:
+        field, op, value = con
+        fields[field] = None
+        operators.add(op)
+        values.add(value)
+    if len(operators) != 1 or len(values) != 1:
+        return None
+    return (",".join(fields), unwrap(operators), unwrap(values))
+
+
 # These enums each offer a collection of statistics for the stats page.
 # They implement a test and query building interface:
 # A `.test` method that takes the event data and a registrations, returning
@@ -126,7 +149,10 @@ class EventRegistrationPartStatistic(enum.Enum):
     def indent(self) -> bool:
         return self.name.startswith("_")
 
-    def test(self, event: CdEDBObject, reg: CdEDBObject, part_id: CdEDBObject) -> bool:
+    def test(self, event: CdEDBObject, reg: CdEDBObject, part_id: int) -> bool:
+        """
+        Test wether the given registration fits into this statistic for the given part.
+        """
         part = reg['parts'][part_id]
         if self == self.pending:
             return part['status'] == RPS.applied
@@ -170,9 +196,21 @@ class EventRegistrationPartStatistic(enum.Enum):
         elif self == self.total:
             return part['status'] != RPS.not_applied
         else:
-            raise RuntimeError
+            raise RuntimeError(n_("Impossible."))
+
+    def test_part_group(self, event: CdEDBObject, reg: CdEDBObject, part_group_id: int
+                        ) -> bool:
+        """
+        Similar to the `test` method, but for determining whether the registration fits
+        this statistic for any of the parts in the given part group.
+        """
+        part_group = event['part_groups'][part_group_id]
+        return any(self.test(event, reg, part_id) for part_id in part_group['part_ids'])
 
     def _get_query_aux(self, event: CdEDBObject, part_id: int) -> StatQueryAux:
+        """
+        Return fields of interest, constraints and order for this statistic for a part.
+        """
         part = event['parts'][part_id]
         if self == self.pending:
             return ([], [_status_constraint(part, RPS.applied)], [])
@@ -306,9 +344,10 @@ class EventRegistrationPartStatistic(enum.Enum):
                 []
             )
         else:
-            raise RuntimeError
+            raise RuntimeError(n_("Impossible."))
 
     def get_query(self, event: CdEDBObject, part_id: int) -> Query:
+        """Return a `Query` object for this statistic for the given part."""
         query = Query(
             QueryScope.registration,
             QueryScope.registration.get_spec(event=event),
@@ -324,6 +363,39 @@ class EventRegistrationPartStatistic(enum.Enum):
         query.order = order + query.order
         return query
 
+    def get_query_part_group(self, event: CdEDBObject, part_group_id: int
+                             ) -> Optional[Query]:
+        """
+        Similar to `get_query`, but return q `Query` object for this statistics for the
+        given part group.
+
+        This means that all the individual constraints for the individual parts need to
+        be merged together. This is not always possible. For example the constraints
+        for determining minor participants might differ between parts if these parts
+        begin at different dates.
+        """
+        query = Query(
+            QueryScope.registration,
+            QueryScope.registration.get_spec(event=event),
+            fields_of_interest=['reg.id', 'persona.given_names', 'persona.family_name',
+                                'persona.username'],
+            constraints=[],
+            order=[('persona.family_name', True), ('persona.given_names', True)]
+        )
+        all_fields, all_constraints = [], []
+        for part_id in xsorted(event['part_groups'][part_group_id]['part_ids']):
+            fields, constraints, _ = self._get_query_aux(event, part_id)
+            all_fields.extend(fields)
+            all_constraints.append(constraints)
+        for i in range(len(all_constraints[0])):
+            new_constraint = merge_constraints(*(clist[i] for clist in all_constraints))
+            # Make sure that the constraints could be merged and that the new constraint
+            # is part of the spec.
+            if new_constraint is None or new_constraint[0] not in query.spec:
+                return None
+            query.constraints.append(new_constraint)
+        return query
+
 
 class EventCourseStatistic(enum.Enum):
     """This enum implements statistics for courses in course tracks."""
@@ -337,7 +409,7 @@ class EventCourseStatistic(enum.Enum):
             return (track_id in course['segments']
                     and track_id not in course['active_segments'])
         else:
-            raise RuntimeError
+            raise RuntimeError(n_("Impossible."))
 
     def _get_query_aux(self, track_id: int) -> StatQueryAux:
         if self == self.offered:
@@ -356,7 +428,7 @@ class EventCourseStatistic(enum.Enum):
                 []
             )
         else:
-            raise RuntimeError
+            raise RuntimeError(n_("Impossible."))
 
     def get_query(self, event: CdEDBObject, track_id: int) -> Query:
         query = Query(
@@ -400,7 +472,7 @@ class EventRegistrationTrackStatistic(enum.Enum):
         elif self == self.no_course:
             return not track['course_id'] and reg['persona_id'] not in event['orgas']
         else:
-            raise RuntimeError
+            raise RuntimeError(n_("Impossible."))
 
     def _get_query_aux(self, event: CdEDBObject, track_id: int) -> StatQueryAux:
         track = event['tracks'][track_id]
@@ -447,7 +519,7 @@ class EventRegistrationTrackStatistic(enum.Enum):
                 []
             )
         else:
-            raise RuntimeError
+            raise RuntimeError(n_("Impossible."))
 
     def get_query(self, event: CdEDBObject, track_id: int) -> Query:
         query = Query(
@@ -549,6 +621,13 @@ class EventQueryMixin(EventBaseFrontend):
                     if reg_stat.test(rs.ambience['event'], reg, part_id))
                 for part_id in event_parts
             }
+            per_part_statistics[reg_stat].update({
+                -part_group_id: sum(
+                    1 for reg in registrations.values()
+                    if reg_stat.test_part_group(
+                        rs.ambience['event'], reg, part_group_id))
+                for part_group_id in rs.ambience['event']['part_groups']
+            })
 
         per_track_statistics: Dict[
             Union[EventRegistrationTrackStatistic, EventCourseStatistic],
@@ -590,25 +669,23 @@ class EventQueryMixin(EventBaseFrontend):
 
         This is a pretty versatile method building on the query module.
         """
-        scope = QueryScope.registration
-        spec = scope.get_spec(event=rs.ambience["event"])
-        # mangle the input, so we can prefill the form
-        query_input = scope.mangle_query_input(rs)
-        query: Optional[Query] = None
-        if is_search:
-            query = check(rs, vtypes.QueryInput,
-                          query_input, "query", spec=spec, allow_empty=False)
-
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         lodgement_group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
         lodgement_groups = self.eventproxy.get_lodgement_groups(rs, lodgement_group_ids)
-        choices, titles = make_registration_query_aux(
-            rs, rs.ambience['event'], courses, lodgements, lodgement_groups,
-            fixed_gettext=download is not None)
-        choices_lists = {k: list(v.items()) for k, v in choices.items()}
+        scope = QueryScope.registration
+        spec = scope.get_spec(event=rs.ambience["event"], courses=courses,
+                              lodgements=lodgements, lodgement_groups=lodgement_groups)
+        self._fix_query_choices(rs, spec)
+
+        # mangle the input, so we can prefill the form
+        query_input = scope.mangle_query_input(rs)
+        query: Optional[Query] = None
+        if is_search:
+            query = check(rs, vtypes.QueryInput,
+                          query_input, "query", spec=spec, allow_empty=False)
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
 
         default_queries = self.conf["DEFAULT_QUERIES_REGISTRATION"](
@@ -617,10 +694,13 @@ class EventQueryMixin(EventBaseFrontend):
             rs, event_id, scopes=(scope,))
         default_queries.update(stored_queries)
 
+        choices_lists = {k: list(spec_entry.choices.items())
+                         for k, spec_entry in spec.items()
+                         if spec_entry.choices}
+
         params = {
-            'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
-            'query': query, 'default_queries': default_queries, 'titles': titles,
-            'has_registrations': has_registrations,
+            'spec': spec, 'query': query, 'choices_lists': choices_lists,
+            'default_queries': default_queries, 'has_registrations': has_registrations,
         }
         # Tricky logic: In case of no validation errors we perform a query
         if not rs.has_validation_errors() and is_search and query:
@@ -704,20 +784,16 @@ class EventQueryMixin(EventBaseFrontend):
                      download: Optional[str], is_search: bool,
                      ) -> Response:
 
+        course_ids = self.eventproxy.list_courses(rs, event_id)
+        courses = self.eventproxy.get_courses(rs, course_ids.keys())
         scope = QueryScope.event_course
-        spec = scope.get_spec(event=rs.ambience['event'])
+        spec = scope.get_spec(event=rs.ambience['event'], courses=courses)
+        self._fix_query_choices(rs, spec)
         query_input = scope.mangle_query_input(rs)
         query: Optional[Query] = None
         if is_search:
             query = check(rs, vtypes.QueryInput, query_input,
                           "query", spec=spec, allow_empty=False)
-
-        course_ids = self.eventproxy.list_courses(rs, event_id)
-        courses = self.eventproxy.get_courses(rs, course_ids.keys())
-        choices, titles = make_course_query_aux(
-            rs, rs.ambience['event'], courses,
-            fixed_gettext=download is not None)
-        choices_lists = {k: list(v.items()) for k, v in choices.items()}
 
         tracks = rs.ambience['event']['tracks']
         selection_default = ["course.shortname", ]
@@ -730,10 +806,13 @@ class EventQueryMixin(EventBaseFrontend):
             rs.gettext, rs.ambience['event'], spec)
         default_queries.update(stored_queries)
 
+        choices_lists = {k: list(spec_entry.choices.items())
+                         for k, spec_entry in spec.items()
+                         if spec_entry.choices}
+
         params = {
-            'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
-            'query': query, 'default_queries': default_queries, 'titles': titles,
-            'selection_default': selection_default,
+            'spec': spec, 'query': query, 'choices_lists': choices_lists,
+            'default_queries': default_queries, 'selection_default': selection_default,
         }
 
         if not rs.has_validation_errors() and is_search and query:
@@ -754,23 +833,20 @@ class EventQueryMixin(EventBaseFrontend):
                         ) -> Response:
 
         scope = QueryScope.lodgement
-        spec = scope.get_spec(event=rs.ambience["event"])
-        query_input = scope.mangle_query_input(rs)
-        query: Optional[Query] = None
-        if is_search:
-            query = check(rs, vtypes.QueryInput,
-                          query_input, "query", spec=spec, allow_empty=False)
-
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         lodgement_group_ids = self.eventproxy.list_lodgement_groups(
             rs, event_id)
         lodgement_groups = self.eventproxy.get_lodgement_groups(
             rs, lodgement_group_ids)
-        choices, titles = make_lodgement_query_aux(
-            rs, rs.ambience['event'], lodgements, lodgement_groups,
-            fixed_gettext=download is not None)
-        choices_lists = {k: list(v.items()) for k, v in choices.items()}
+        spec = scope.get_spec(event=rs.ambience["event"], lodgements=lodgements,
+                              lodgement_groups=lodgement_groups)
+        self._fix_query_choices(rs, spec)
+        query_input = scope.mangle_query_input(rs)
+        query: Optional[Query] = None
+        if is_search:
+            query = check(rs, vtypes.QueryInput,
+                          query_input, "query", spec=spec, allow_empty=False)
 
         parts = rs.ambience['event']['parts']
         selection_default = ["lodgement.title"] + [
@@ -785,10 +861,13 @@ class EventQueryMixin(EventBaseFrontend):
             rs, event_id, scopes=(scope,))
         default_queries.update(stored_queries)
 
-        params = {
-            'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
-            'query': query, 'default_queries': default_queries, 'titles': titles,
-            'selection_default': selection_default,
+        choices_lists = {k: list(spec_entry.choices.items())
+                         for k, spec_entry in spec.items()
+                         if spec_entry.choices}
+
+        params: CdEDBObject = {
+            'spec': spec, 'query': query, 'choices_lists': choices_lists,
+            'default_queries': default_queries, 'selection_default': selection_default,
         }
 
         if not rs.has_validation_errors() and is_search and query:
@@ -801,15 +880,29 @@ class EventQueryMixin(EventBaseFrontend):
             rs.values['is_search'] = is_search = False
             return self.render(rs, "query/lodgement_query", params)
 
+    @staticmethod
+    def _fix_query_choices(rs: RequestState, spec: QuerySpec) -> None:
+        # Add choices that could not be automatically applied before.
+        for k, v in spec.items():
+            if k.endswith("gender"):
+                spec[k] = spec[k].replace_choices(
+                    dict(enum_entries_filter(const.Genders, rs.gettext)))
+            if k.endswith(".status"):
+                spec[k] = spec[k].replace_choices(
+                    dict(enum_entries_filter(
+                        const.RegistrationPartStati, rs.gettext)))
+            if k.endswith(("country", "country2")):
+                spec[k] = spec[k].replace_choices(
+                    dict(get_localized_country_codes(rs)))
+
     def _send_query_result(self, rs: RequestState, download: Optional[str],
                            filename: str, scope: QueryScope, query: Query,
                            params: CdEDBObject) -> Response:
         if download:
             shortname = rs.ambience['event']['shortname']
             return self.send_query_download(
-                rs, params['result'], query.fields_of_interest, kind=download,
-                filename=f"{shortname}_{filename}",
-                substitutions=params['choices'])
+                rs, params['result'], query, kind=download,
+                filename=f"{shortname}_{filename}")
         else:
             return self.render(rs, scope.get_target(redirect=False), params)
 
@@ -842,7 +935,6 @@ class EventQueryMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.send_json(rs, {})
 
-        spec_additions: Dict[str, str] = {}
         search_additions: List[QueryConstraint] = []
         event = None
         num_preview_personas = (self.conf["NUM_PREVIEW_PERSONAS_CORE_ADMIN"]
@@ -884,12 +976,11 @@ class EventQueryMixin(EventBaseFrontend):
             if not valid:
                 data = []
             else:
-                search = [("username,family_name,given_names,display_name",
-                           QueryOperators.match, t) for t in terms]
+                key = "username,family_name,given_names,display_name"
+                search = [(key, QueryOperators.match, t) for t in terms]
                 search.extend(search_additions)
                 spec = QueryScope.quick_registration.get_spec()
-                spec["username,family_name,given_names,display_name"] = "str"
-                spec.update(spec_additions)
+                spec[key] = QuerySpecEntry("str", "")
                 query = Query(
                     QueryScope.quick_registration, spec,
                     ("registrations.id", "username", "family_name",

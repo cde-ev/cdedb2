@@ -45,7 +45,6 @@
             <div id="extension-period">
                 {% if ambience['ballot']['extended'] is none %}
                     {% if ambience['ballot']['quorum'] %}
-                        <br />
                         {% trans extension=ambience['ballot']['vote_extension_end']|datetime(lang=lang),
                                  quorum=ambience['ballot']['quorum'] -%}
                         Extension until {{ extension }} if {{ quorum }} votes are not reached.
@@ -53,13 +52,11 @@
                     {% endif %}
                 {% else %}
                     {% if ambience['ballot']['extended'] %}
-                        <br />
                         {% trans extension=ambience['ballot']['vote_extension_end']|datetime(lang=lang),
                                  quorum=ambience['ballot']['quorum'] -%}
                         Extended until {{ extension }} because {{ quorum }} votes were not reached.
                         {% endtrans %}
                     {% elif ambience['ballot']['quorum'] %}
-                        <br />
                         {% trans quorum=anbience['ballot']['quorum'] %}
                         No extension neccessary, because {{ quorum }} votes were reached.
                         {% endtrans %}
@@ -89,7 +86,8 @@
             {% elif ambience['ballot']['is_voting'] %}
                 <strong>{% trans %}This ballot is currently open for voting.{% endtrans %}</strong><br />
                 {% if own_vote %}
-                    {% if own_vote == MAGIC_ABSTAIN %}
+                    {# If there are no > in a preferential vote, you abstained #}
+                    {% if own_vote == MAGIC_ABSTAIN or ">" not in own_vote and not ambience['ballot']['votes'] %}
                         <span class='text-warning'>{% trans %}You have abstained.{% endtrans %}</span>
                         {% trans %}You can make your choice below, during the voting period.{% endtrans %}
                     {% else %}
@@ -158,7 +156,8 @@
 
     {% if ("assembly_presider" in user.admin_views or ambience['assembly']['id'] in user.presider)
            and ambience['ballot']['notes'] %}
-        {% call util.bootstrap_panel(title=gettext("Admin-Notes"), icon="tag", aclass="panel-default panel-condensed") %}
+        {% call util.bootstrap_panel(title=gettext("Admin-Notes"), icon="tag", aclass="panel-default panel-condensed",
+                                     anid='notes') %}
             {{ ambience['ballot']['notes']|md }}
         {% endcall %}
     {% endif %}

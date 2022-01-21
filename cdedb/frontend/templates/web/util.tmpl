@@ -10,14 +10,10 @@
 {% set script_files = [] %}
 {% macro cdedb_script(script) %}
     {%- if not script in script_files %}
-        {%- if script == 'cdedb_queryform.js' %}
+        {%- if script in ('cdedb_queryform.js', 'cdedb_searchpersona.js', 'cdedb_multiselect.js') %}
             {{- cdedb_script('selectize/selectize.min.js') }}
         {%- elif script == 'selectize/selectize.min.js' %}
             <link rel="stylesheet" href="{{ staticurl("selectize/selectize.bootstrap3.css") }}" />
-        {%- elif script == 'cdedb_searchpersona.js' %}
-            {{- cdedb_script('selectize/selectize.min.js') }}
-        {%- elif script == 'cdedb_manage_participants.js' %}
-            {{- cdedb_script('selectize/selectize.min.js') }}
         {%- endif %}
         <script  src="{{ staticurl(script) }}"></script>
         {%- do script_files.append(script) %}
@@ -467,7 +463,7 @@
 {%- endmacro %}
 
 {% macro input_textarea(name, readonly=False, defaultvalue='', anid=none, aclass='form-control', maxlength=none, rows=3,
-                        arialabel=none, attributes='') %}
+                        arialabel=none, attributes='', actualreadonly=False) %}
     <textarea{{ dict(
         name=name,
         id=anid,
@@ -475,6 +471,7 @@
         rows=rows,
         maxlength=maxlength,
         disabled="disabled" if readonly,
+        readonly="readonly" if actualreadonly,
         **{ 'aria-label': arialabel }
     )|xmlattr }} {{ attributes }}>
     {#- TODO sort if this is a list -#}
@@ -483,7 +480,7 @@
 {%- endmacro %}
 
 {% macro form_input_textarea(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid=none,
-        aclass=none, small=False, maxlength=none, rows=3, horizontal=True, attributes='', markdown=False) %}
+        aclass=none, small=False, maxlength=none, rows=3, horizontal=True, attributes='', markdown=False, actualreadonly=False) %}
     {%- set anid = anid or "input-textarea-{}".format(name) %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, markdown=markdown) %}
         {{- input_textarea(name, readonly, defaultvalue, anid, maxlength=maxlength, rows=rows, attributes=attributes,
@@ -494,6 +491,7 @@
 {# list as default value is not supported yet #}
 {% macro input_checkbox(name, label='', value=True, defaultvalue='', readonly=False, actualreadonly=False, anid=none,
         aclass=none, inline=False, radio=False, arialabel=none, attributes='') -%}
+    {% set selected = value|stringIn(values.getlist(name)) or (not name in values and value|string == defaultvalue) %}
     <label{% if inline %} class="{{"radio" if radio else "checkbox"}}-inline"{% endif %}>
         <input{{ dict(
             type="radio" if radio else "checkbox",
@@ -501,15 +499,15 @@
             id=anid,
             class=aclass,
             value=value,
-            checked="checked" if value|stringIn(values.getlist(name)) or (not name in values and value|string == defaultvalue),
+            checked="checked" if selected,
             disabled="disabled" if readonly or actualreadonly,
             **{ 'aria-label': arialabel }
         )|xmlattr }} {{ attributes }}/>
         {{ label -}}
     </label>
     {# checkboxes do not support the readonly attribute, so we emulate it with a disabled select and a hidden input. #}
-    {% if actualreadonly %}
-        {{ input_hidden(name) }}
+    {% if actualreadonly and selected %}
+        {{ input_hidden(name, value) }}
     {% endif %}
 {%- endmacro %}
 
@@ -530,13 +528,10 @@
                         <div class="{{ "radio" if radio else "checkbox"}}{{" disabled" if readonly}}
                                     {{ " " + checkboxclass if checkboxclass }}">
                     {%- endif -%}
-                        {{ input_checkbox(name, entry_label, entry_value, defaultvalue, readonly, inline=inline, radio=radio,
-                                          aclass=aclass) }}
+                        {{ input_checkbox(name, entry_label, entry_value, defaultvalue,
+                                          readonly=readonly, actualreadonly=actualreadonly,
+                                          inline=inline, radio=radio, aclass=aclass) }}
                     {%- if not inline %}</div>{% endif %}
-                    {# checkboxes do not support the readonly attribute, so we emulate it with a disabled select and a hidden input. #}
-                    {%- if actualreadonly -%}
-                        {{ input_hidden(name) }}
-                    {%- endif -%}
                 {%- endfor %}
             </div>
         {%- endfor %}
@@ -544,7 +539,7 @@
 {%- endmacro %}
 
 {% macro form_input_checkbox(name, label="", value=True, info='', displayerrors=True, readonly=False,
-        actualreadonly=False, defaultvalue='', anid=none, horizontal=True, small=False, attributes='') %}
+        actualreadonly=False, defaultvalue='', anid=none, horizontal=True, small=False, attributes='', aclass='') %}
     {#- This is the version for a single checkbox as opposed to form_input_checkboxes(). #}
     {%- set anid = anid or "input-checkbox-{}".format(name) %}
     <div class="form-group
@@ -555,7 +550,7 @@
         "{% endif %}>
             <div class="checkbox{{ " disabled" if readonly }}">
                 {{ input_checkbox(name, label, value, defaultvalue, readonly, actualreadonly, anid,
-                                  attributes=attributes) }}
+                                  attributes=attributes, aclass=aclass) }}
             </div>
             {{- output_errors(name, displayerrors) }}
             {{- output_info(info) }}
@@ -639,7 +634,7 @@
         {% set entries = entries|sort(attribute=1) if sort else entries %}
         {# This is necessary to convert the values to strings so we can check if they are currently selected #}
         {% set current_values = [] %}
-        {% for value in values.get(name) %}
+        {% for value in values.get(name, []) %}
             {% do current_values.append(value|string) %}
         {% endfor %}
         {%- for value, label in entries %}
@@ -743,46 +738,6 @@
     </div>
 {% endmacro %}
 
-{% macro event_field_input(fields, name=none, readonly=False, defaultvalue='', anid=none) %}
-    {%- set name = name or "fields.{}".format(fields['field_name']) %}
-    {%- if fields['entries'] %}
-        {{- input_select(name=name, entries=fields['entries'], nulloption=nbsp,
-                        readonly=readonly, defaultvalue=defaultvalue, anid=anid, sort=True) }}
-    {%- else %}
-        {% set datatypes = enums['FieldDatatypes'] %}
-        {%- if fields['kind'] == datatypes.bool %}
-            <div class="checkbox">
-                {{- input_checkbox(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, label=fields['field_name']) -}}
-            </div>
-        {%- elif fields['kind'] == datatypes.str %}
-            {{- input_textarea(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, rows=3) }}
-        {%- elif fields['kind'] == datatypes.int %}
-            {{- input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, type="number",
-                          placeholder="0") }}
-        {%- elif fields['kind'] == datatypes.float %}
-            {{- input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, placeholder="0.0") }}
-        {%- elif fields['kind'] == datatypes.date %}
-            {{- input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, type="date",
-                          placeholder="YYYY-MM-DD") }}
-        {%- elif fields['kind'] == datatypes.datetime %}
-            {{- input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, type="datetime-local") }}
-        {%- else %}
-            {{- input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid) }}
-        {%- endif %}
-    {%- endif %}
-{%- endmacro %}
-
-{% macro form_event_field_input(fields, name=none, label=none, info='', displayerrors=True, readonly=False,
-                                defaultvalue='', anid=none, force_label=False) %}
-    {%- set name = name or "fields.{}".format(fields['field_name']) %}
-    {%- set label = label or fields['field_name'] %}
-    {%- set anid = anid or "event-input-{}".format(name) %}
-    {%- call form_input_general(name, (none if fields['kind'] == enums['FieldDatatypes'].bool and not force_label else label), anid, False,
-                               info, displayerrors, True) %}
-        {{- event_field_input(fields, name, readonly, defaultvalue, anid) }}
-    {%- endcall %}
-{%- endmacro %}
-
 {# Macro to take care of all the meta dynamic row stuff.
 
 This macro must be called, and the call body have to provide a generic row. The calling macro must take
@@ -830,156 +785,6 @@ attribute to each field of a dynamic row. #}
     {{ input_hidden(token_name, encode_anti_csrf(target, token_name, token_payload, persona_id=user.persona_id)) }}
 {% endmacro %}
 
-
-{% macro print_questionnaire_entry(entry) %}
-    {# Field entry #}
-    {% if entry['field_id'] %}
-        {% with FIELD = ambience['event']['fields'][entry['field_id']],
-                readonly = entry['readonly'] or is_locked or ambience['event']['is_archived'] %}
-            <div id="questionnaire_field_entry_{{ FIELD['field_name'] }}">
-            {% if FIELD['entries'] %}
-                {{ form_input_select(name=FIELD['field_name'], entries=FIELD['entries'],
-                                          label=entry['title'], info=entry['info'],
-                                          readonly=readonly,
-                                          defaultvalue=entry['default_value'] if not readonly else "") }}
-            {% else %}
-                {% set datatypes = enums['FieldDatatypes'] %}
-                {% if FIELD['kind'] == datatypes.bool %}
-                    {{ form_input_checkbox(
-                        name=FIELD['field_name'], label=entry['title'], info=entry['info'],
-                        readonly=readonly, defaultvalue=entry['default_value'] if not readonly else "") }}
-                {% elif FIELD['kind'] == datatypes.str  %}
-                    {% if entry['input_size'] %}
-                        {{ form_input_textarea(
-                            name=FIELD['field_name'], label=entry['title'], info=entry['info'],
-                            readonly=readonly, defaultvalue=entry['default_value'] if not readonly else "",
-                            rows=(1+entry['input_size']*2)) }}
-                    {% else %}
-                        {{ form_input_text(
-                            name=FIELD['field_name'], label=entry['title'], info=entry['info'],
-                            readonly=readonly, defaultvalue=entry['default_value'] if not readonly else "") }}
-                    {% endif %}
-                {% else %}
-                    {{ form_event_field_input(
-                        FIELD, name=FIELD['field_name'], label=entry['title'], info=entry['info'],
-                        readonly=readonly, defaultvalue=entry['default_value'] if not readonly else "") }}
-                {% endif %}
-            {% endif %}
-            </div>
-        {% endwith %}
-
-    {# Text-only entry #}
-    {% else %}
-        {% if entry['title'] %}
-            {% if entry['kind'] == enums['QuestionnaireUsages'].additional %}
-                <h3 class="heading-underline">{{ entry['title'] }}</h3>
-            {% else %}
-                <h4 class="heading-underline">{{ entry['title'] }}</h4>
-            {% endif %}
-        {% endif %}
-        {% if entry['info'] %}
-            {{ entry['info']|md }}
-        {% endif %}
-    {% endif %}
-{% endmacro %}
-
-{% macro print_questionnaire_result(entry, registration) %}
-    {% if entry['field_id'] %}
-        {% with FIELD = ambience['event']['fields'][entry['field_id']] %}
-            <div id="questionnaire_field_result_{{ FIELD['field_name'] }}">
-                <dt>{{ entry['title'] }}</dt>
-                <dd>
-                    {% if FIELD['entries'] %}
-                        {% set chosen = registration['fields'].get(FIELD['field_name'])|string %}
-                        {% for option, display_name in FIELD['entries'] %}
-                            {% if chosen == option %}
-                                {{ display_name }}
-                            {% endif %}
-                         {% endfor %}
-                    {% elif FIELD['kind'] == enums['FieldDatatypes'].bool %}
-                        {{ deko_checkbox(
-                            checked=registration['fields'].get(FIELD['field_name'])) }}
-                    {% elif FIELD['kind'] == enums['FieldDatatypes'].date %}
-                        {{ registration['fields'].get(FIELD['field_name'])
-                           |date(lang=lang, passthrough=True) }}
-                    {% elif FIELD['kind'] == enums['FieldDatatypes'].datetime %}
-                        {{ registration['fields'].get(FIELD['field_name'])
-                           |datetime(lang=lang, passthrough=True) }}
-                    {% elif FIELD['kind'] == enums['FieldDatatypes'].float %}
-                        {{ registration['fields'].get(FIELD['field_name'])|decimal(lang=lang) }}
-                    {% else %}
-                        {{ registration['fields'].get(FIELD['field_name'])|linebreaks }}
-                    {% endif %}
-                </dd>
-            </div>
-        {% endwith %}
-    {% endif %}
-{% endmacro %}
-
-{# Macro for a general questionnaire part, that can have each role in the DynamicRow workflow.
-   aclass is used to pass classes to the row, such as drow-row, drow-prototype, drow-new
-   newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes #}
-{% macro print_questionnaire_config(part_id, kind, aclass="", newrow=False) %}
-    <div class="panel panel-default {{ aclass }}">
-        <div class="panel-body">
-            <div class="row">
-                <div class="col-md-6">
-                    {{ form_input_text(name="title_{}".format(part_id), label=gettext("Title_[[name of an entity]]"),
-                                            attributes=('data-basename="title_"'|s if newrow else ''),
-                                            aclass='input-title drow-input', horizontal=false) }}
-                    {{ form_input_textarea(name="info_{}".format(part_id), label=gettext("Text"),
-                                                attributes=('data-basename="info_"'|s if newrow else ''),
-                                                aclass='input-info drow-input', horizontal=false,
-                                                info=gettext("Supports %(infolink)s for “Text-Only” fields.")|format(
-                                                    infolink=href(docurl("Handbuch_Markdown"),
-                                                                       gettext("Markdown"),
-                                                                       title=gettext("Short Markdown summary")))|s) }}
-                </div>
-                <div class="col-md-6">
-                    {{ form_input_select("field_id_{}".format(part_id), label=gettext("Query"),
-                                              entries=registration_fields|keydictsort(EntitySorter.event_field)|dict_entries('id', 'field_name'),
-                                              nulloption=gettext("— Only Text —"),
-                                              attributes=('data-basename="field_id_"'|s if newrow else ''),
-                                              aclass='input-field drow-input', horizontal=False) }}
-                    {{ form_input_select(
-                        "input_size_{}".format(part_id), label=gettext("Input Size"), entries=(
-                            (0, gettext("singleline")), (1, gettext("multiline")),
-                            (2, gettext("multiline") + "+"), (3, gettext("multiline") + "++")),
-                        attributes=('data-basename="input_size_"'|s if newrow else ''),
-                        aclass='input-inputsize drow-input', horizontal=False) }}
-                    {{ form_input_textarea(
-                        "default_value_{}".format(part_id), label=gettext("Default Value"), rows=2,
-                        attributes=('data-basename="default_value_"'|s if newrow else ''),
-                        aclass='input-defaultvalue drow-input', horizontal=False) }}
-                    <div class="form-group row">
-                        <div class="col-sm-8">
-                            <div class="checkbox">
-                                {{ input_checkbox("readonly_{}".format(part_id), label=gettext("read-only"),
-                                                       attributes=('data-basename="readonly_"'|s if newrow else ''),
-                                                       aclass='input-readonly drow-input',
-                                                       readonly=(not values["readonly_{}".format(part_id)]
-                                                                 and (kind and not kind.allow_readonly()))) }}
-                                {{ output_errors("readonly_{}".format(part_id), wrapper=True) }}
-                            </div>
-                        </div>
-                        <div class="col-sm-4 text-right">
-                            <span class="drow-buttonspace">
-                                {% if newrow %}
-                                    {{ input_checkbox("create_{}".format(part_id), label=gettext("Add"),
-                                                           attributes='data-basename="create_"'|s,
-                                                           aclass='drow-indicator') }}
-                                {% else %}
-                                    {{ input_checkbox("delete_{}".format(part_id), label=gettext("Remove"),
-                                                           aclass='drow-indicator') }}
-                                {% endif %}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-{% endmacro %}
 
 {# Generate a list of admin view toggle buttons. Should be used in the navigation sidebar.
 

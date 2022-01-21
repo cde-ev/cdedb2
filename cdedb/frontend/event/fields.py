@@ -14,16 +14,16 @@ from werkzeug import Response
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap, EntitySorter, RequestState,
-    merge_dicts, n_, unwrap, xsorted,
+    CdEDBObject, CdEDBObjectMap, EntitySorter, RequestState, merge_dicts, n_, xsorted,
 )
 from cdedb.filter import safe_filter
 from cdedb.frontend.common import (
-    REQUESTdata, access, check_validation as check, event_guard, make_persona_name,
-    request_extractor,
+    REQUESTdata, access, drow_name, event_guard, make_persona_name,
+    process_dynamic_input, request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
 from cdedb.query import Query, QueryOperators, QueryScope
+from cdedb.validation import EVENT_FIELD_ALL_FIELDS
 from cdedb.validationtypes import VALIDATOR_LOOKUP
 
 EntitySetter = Callable[[RequestState, Dict[str, Any]], int]
@@ -63,98 +63,31 @@ class EventFieldMixin(EventBaseFrontend):
         return self.render(rs, "fields/field_summary", {
             'referenced': referenced, 'fee_modifiers': fee_modifiers})
 
-    @staticmethod
-    def process_field_input(rs: RequestState, fields: CdEDBObjectMap
-                            ) -> CdEDBOptionalMap:
-        """This handles input to configure the fields.
-
-        Since this covers a variable number of rows, we cannot do this
-        statically. This takes care of validation too.
-        """
-        delete_flags = request_extractor(
-            rs, {f"delete_{field_id}": bool for field_id in fields})
-        deletes = {field_id for field_id in fields
-                   if delete_flags['delete_{}'.format(field_id)]}
-        ret: CdEDBOptionalMap = {}
-
-        def params_change(anid: int) -> vtypes.TypeMapping:
-            """Return specification of parameters for changing an existing field."""
-            return {
-                f"kind_{anid}": const.FieldDatatypes,
-                f"association_{anid}": const.FieldAssociations,
-                f"entries_{anid}": Optional[str],  # type: ignore
-                f"checkin_{anid}": bool,
-            }
-        tmp: Optional[CdEDBObject]
-        for field_id in fields:
-            if field_id not in deletes:
-                tmp = request_extractor(rs, params_change(field_id))
-                if rs.has_validation_errors():
-                    break
-                tmp = check(rs, vtypes.EventField, tmp, extra_suffix=f"_{field_id}")
-                if tmp:
-                    temp = {
-                        'kind': tmp[f"kind_{field_id}"],
-                        'association': tmp[f"association_{field_id}"],
-                        'entries': tmp[f"entries_{field_id}"],
-                        'checkin': tmp[f"checkin_{field_id}"],
-                    }
-                    ret[field_id] = temp
-        for field_id in deletes:
-            ret[field_id] = None
-        marker = 1
-
-        def params_creation(anid: int) -> vtypes.TypeMapping:
-            """Return specification of parameters for creating a new field."""
-            return {
-                f"field_name_-{anid}": str,
-                f"kind_-{anid}": const.FieldDatatypes,
-                f"association_-{anid}": const.FieldAssociations,
-                f"entries_-{anid}": Optional[str],  # type: ignore
-                f"checkin_-{anid}": bool,
-            }
-        while marker < 2 ** 10:
-            will_create = unwrap(request_extractor(rs, {f"create_-{marker}": bool}))
-            if will_create:
-                tmp = request_extractor(rs, params_creation(marker))
-                if rs.has_validation_errors():
-                    marker += 1
-                    break
-                tmp = check(rs, vtypes.EventField, tmp, creation=True,
-                            extra_suffix=f"_-{marker}")
-                if tmp:
-                    temp = {
-                        'field_name': tmp[f"field_name_-{marker}"],
-                        'kind': tmp[f"kind_-{marker}"],
-                        'association': tmp[f"association_-{marker}"],
-                        'entries': tmp[f"entries_-{marker}"],
-                        'checkin': tmp[f"checkin_-{marker}"],
-                    }
-                    ret[-marker] = temp
-            else:
-                break
-            marker += 1
-
-        def field_name(field_id: int, field: Optional[CdEDBObject]) -> str:
-            return (field['field_name'] if field and 'field_name' in field
-                    else fields[field_id]['field_name'])
-        count = Counter(field_name(f_id, field) for f_id, field in ret.items())
-        for field_id, field in ret.items():
-            if field and count.get(field_name(field_id, field), 0) > 1:
-                rs.append_validation_error(
-                    ("field_name_{}".format(field_id),
-                      ValueError(n_("Field name not unique."))))
-        rs.values['create_last_index'] = marker - 1
-        return ret
-
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
     @REQUESTdata("active_tab")
     def field_summary(self, rs: RequestState, event_id: int, active_tab: Optional[str]
                       ) -> Response:
         """Manipulate the fields of an event."""
-        fields = self.process_field_input(
-            rs, rs.ambience['event']['fields'])
+        spec = EVENT_FIELD_ALL_FIELDS
+        creation_spec: vtypes.TypeMapping = {**spec, 'field_name': str}
+        existing_fields = rs.ambience['event']['fields'].keys()
+        fields = process_dynamic_input(
+            rs, vtypes.EventField, existing_fields, spec, creation_spec=creation_spec)
+
+        def field_name(field_id: int, field: Optional[CdEDBObject]) -> str:
+            """Helper to get the name of a (new or existing) field."""
+            return (field['field_name'] if field and 'field_name' in field
+                    else rs.ambience['event']['fields'][field_id]['field_name'])
+
+        count = Counter(
+            field_name(f_id, field) for f_id, field in fields.items() if field)
+        for field_id, field in fields.items():
+            if field and count.get(field_name(field_id, field), 0) > 1:
+                rs.append_validation_error(
+                    (drow_name("field_name", field_id),
+                     ValueError(n_("Field name not unique."))))
+
         if rs.has_validation_errors():
             return self.field_summary_form(rs, event_id)
         for field_id, field in rs.ambience['event']['fields'].items():
@@ -268,7 +201,7 @@ class EventFieldMixin(EventBaseFrontend):
                     'field_id': field_id, 'kind': kind.value})
         _, ordered_ids, labels, _ = self.field_set_aux(rs, event_id, field_id, ids,
                                                        kind)
-        fields = [(field['id'], field['field_name'])
+        fields = [(field['id'], field['title'])
                   for field in xsorted(rs.ambience['event']['fields'].values(),
                                        key=EntitySorter.event_field)
                   if field['association'] == kind]

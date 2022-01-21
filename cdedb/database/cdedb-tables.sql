@@ -717,6 +717,31 @@ GRANT INSERT, SELECT, UPDATE, DELETE ON event.event_parts TO cdb_persona;
 GRANT SELECT, UPDATE ON event.event_parts_id_seq TO cdb_persona;
 GRANT SELECT ON event.event_parts TO cdb_anonymous;
 
+CREATE TABLE event.part_groups (
+        id                      serial PRIMARY KEY,
+        event_id                integer REFERENCES event.events(id) NOT NULL,
+        title                   varchar NOT NULL,
+        shortname               varchar NOT NULL,
+        notes                   varchar,
+        constraint_type         integer NOT NULL,
+        UNIQUE (event_id, shortname) DEFERRABLE INITIALLY IMMEDIATE,
+        UNIQUE (event_id, title) DEFERRABLE INITIALLY IMMEDIATE
+);
+GRANT INSERT, SELECT, DELETE ON event.part_groups TO cdb_persona;
+GRANT UPDATE (title, shortname, notes) ON event.part_groups TO cdb_persona;
+GRANT SELECT, UPDATE ON event.part_groups_id_seq TO cdb_persona;
+GRANT SELECT ON event.part_groups TO cdb_anonymous;
+
+CREATE TABLE event.part_group_parts (
+        id                      serial PRIMARY KEY,
+        part_group_id           integer REFERENCES event.part_groups(id),
+        part_id                 integer REFERENCES event.event_parts(id),
+        UNIQUE (part_id, part_group_id) DEFERRABLE INITIALLY IMMEDIATE
+);
+GRANT INSERT, SELECT, DELETE ON event.part_group_parts TO cdb_persona;
+GRANT SELECT, UPDATE ON event.part_group_parts_id_seq TO cdb_persona;
+GRANT SELECT ON event.part_group_parts TO cdb_anonymous;
+
 -- each course can take place in an arbitrary number of tracks
 CREATE TABLE event.course_tracks (
         id                      serial PRIMARY KEY,
@@ -735,12 +760,16 @@ GRANT SELECT ON event.course_tracks TO cdb_anonymous;
 CREATE TABLE event.field_definitions (
         id                      serial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
+        -- the field_name is an identifier and may not be changed.
         field_name              varchar NOT NULL,
+        -- the title is displayed to the user, may contain any string and can be changed.
+        title                   varchar NOT NULL,
+        sortkey                 integer NOT NULL DEFAULT 0,
         -- anything allowed as type in a query spec, see cdedb.database.constants.FieldDatatypes
         kind                    integer NOT NULL,
         -- see cdedb.database.constants.FieldAssociations
         association             integer NOT NULL,
-        -- whether or not to display this field during checking
+        -- whether or not to display this field during checkin.
         checkin                 boolean NOT NULL DEFAULT FALSE,
         -- the following array describes the available selections
         -- first entry of each tuple is the value, second entry the description
@@ -1054,21 +1083,21 @@ CREATE TABLE assembly.ballots (
         -- True after creation of the result summary file
         is_tallied              boolean NOT NULL DEFAULT False,
         -- administrative comments
-        notes                   varchar
+        notes                   varchar,
+        -- comment to be added after the ballot has finished
+        comment                 varchar
 );
 CREATE INDEX idx_ballots_assembly_id ON assembly.ballots(assembly_id);
-GRANT SELECT ON assembly.ballots TO cdb_member;
-GRANT UPDATE (extended, is_tallied) ON assembly.ballots TO cdb_member;
-GRANT INSERT, UPDATE, DELETE ON assembly.ballots TO cdb_member;
+GRANT SELECT, INSERT, UPDATE, DELETE ON assembly.ballots TO cdb_member;
 GRANT SELECT, UPDATE ON assembly.ballots_id_seq TO cdb_member;
 
 CREATE TABLE assembly.candidates (
         id                      serial PRIMARY KEY,
         ballot_id               integer NOT NULL REFERENCES assembly.ballots(id),
         title                   varchar NOT NULL,
-        shortname               varchar NOT NULL
+        shortname               varchar NOT NULL,
+        CONSTRAINT candidate_shortname_constraint UNIQUE (ballot_id, shortname) DEFERRABLE INITIALLY IMMEDIATE
 );
-CREATE UNIQUE INDEX idx_shortname_constraint ON assembly.candidates(ballot_id, shortname);
 GRANT SELECT ON assembly.candidates TO cdb_member;
 GRANT INSERT, UPDATE, DELETE ON assembly.candidates TO cdb_member;
 GRANT SELECT, UPDATE ON assembly.candidates_id_seq TO cdb_member;

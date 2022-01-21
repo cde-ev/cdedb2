@@ -18,9 +18,9 @@ from cdedb.backend.common import (
 )
 from cdedb.common import (
     COURSE_TRACK_FIELDS, EVENT_FIELD_SPEC, EVENT_PART_FIELDS, FEE_MODIFIER_FIELDS,
-    FIELD_DEFINITION_FIELDS, CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap,
-    DefaultReturnCode, DeletionBlockers, PathLike, PrivilegeError, PsycoJson,
-    RequestState, mixed_existence_sorter, n_, now, unwrap,
+    FIELD_DEFINITION_FIELDS, PART_GROUP_FIELDS, CdEDBObject, CdEDBObjectMap,
+    CdEDBOptionalMap, DefaultReturnCode, DeletionBlockers, PathLike, PrivilegeError,
+    PsycoJson, RequestState, mixed_existence_sorter, n_, now, unwrap,
 )
 from cdedb.validation import parse_date, parse_datetime
 
@@ -56,6 +56,7 @@ class EventLowLevelBackend(AbstractBackend):
                 rs, "event.registrations", ("event_id",), registration_id))
         return event_id in rs.user.orga
 
+    @internal
     def event_log(self, rs: RequestState, code: const.EventLogCodes,
                   event_id: Optional[int], persona_id: int = None,
                   change_note: str = None, atomized: bool = True) -> DefaultReturnCode:
@@ -83,6 +84,7 @@ class EventLowLevelBackend(AbstractBackend):
         }
         return self.sql_insert(rs, "event.log", data)
 
+    @internal
     def _get_events_fields(self, rs: RequestState, event_ids: Collection[int],
                            field_ids: Optional[Collection[int]] = None,
                            ) -> Dict[int, CdEDBObjectMap]:
@@ -109,9 +111,10 @@ class EventLowLevelBackend(AbstractBackend):
     class _GetEventFieldsProtocol(Protocol):
         def __call__(self, rs: RequestState, event_id: int,
                      field_ids: Optional[Collection[int]] = None) -> CdEDBObjectMap: ...
-    _get_event_fields: _GetEventFieldsProtocol = singularize(
-        _get_events_fields, "event_ids", "event_id")
+    _get_event_fields: _GetEventFieldsProtocol = internal(singularize(
+        _get_events_fields, "event_ids", "event_id"))
 
+    @internal
     def _delete_course_track_blockers(self, rs: RequestState,
                                       track_id: int) -> DeletionBlockers:
         """Determine what keeps a course track from being deleted.
@@ -149,6 +152,7 @@ class EventLowLevelBackend(AbstractBackend):
 
         return blockers
 
+    @internal
     def _delete_course_track(self, rs: RequestState, track_id: int,
                              cascade: Collection[str] = None
                              ) -> DefaultReturnCode:
@@ -208,6 +212,7 @@ class EventLowLevelBackend(AbstractBackend):
                 {"type": "course track", "block": blockers.keys()})
         return ret
 
+    @internal
     def _set_tracks(self, rs: RequestState, event_id: int, part_id: int,
                     data: CdEDBOptionalMap) -> DefaultReturnCode:
         """Helper for creating, updating and/or deleting of tracks for one event part.
@@ -272,6 +277,7 @@ class EventLowLevelBackend(AbstractBackend):
                 self._delete_course_track(rs, track_id, cascade=cascade)
         return ret
 
+    @internal
     def _delete_field_values(self, rs: RequestState,
                              field_data: CdEDBObject) -> None:
         """Helper function for deleting the data stored in a custom data field.
@@ -294,6 +300,7 @@ class EventLowLevelBackend(AbstractBackend):
         self.query_exec(rs, query, (field_data['field_name'],
                                     field_data['event_id']))
 
+    @internal
     def _cast_field_values(self, rs: RequestState, field_data: CdEDBObject,
                            new_kind: const.FieldDatatypes) -> None:
         """Helper to cast existing field data to a new type.
@@ -345,6 +352,7 @@ class EventLowLevelBackend(AbstractBackend):
             }
             self.sql_update(rs, table, new)
 
+    @internal
     def _delete_event_part_blockers(self, rs: RequestState,
                                     part_id: int) -> DeletionBlockers:
         """Determine what keeps an event part from being deleted.
@@ -355,6 +363,7 @@ class EventLowLevelBackend(AbstractBackend):
                          registration fields.
         * course_tracks: A course track in this part.
         * registration_part: A registration part for this part.
+        * part_group_parts: A link to a part group.
 
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
@@ -381,8 +390,14 @@ class EventLowLevelBackend(AbstractBackend):
             blockers["registration_parts"] = [
                 e["id"] for e in registration_parts]
 
+        part_group_parts = self.sql_select(
+            rs, "event.part_group_parts", ("id",), (part_id,), entity_key="part_id")
+        if part_group_parts:
+            blockers["part_group_parts"] = [e["id"] for e in part_group_parts]
+
         return blockers
 
+    @internal
     def _delete_event_part(self, rs: RequestState, part_id: int,
                            cascade: Collection[str] = None
                            ) -> DefaultReturnCode:
@@ -422,6 +437,9 @@ class EventLowLevelBackend(AbstractBackend):
             if "registration_parts" in cascade:
                 ret *= self.sql_delete(rs, "event.registration_parts",
                                        blockers["registration_parts"])
+            if "part_group_parts" in cascade:
+                ret *= self.sql_delete(rs, "event.part_group_parts",
+                                       blockers["part_group_parts"])
             blockers = self._delete_event_part_blockers(rs, part_id)
 
         if not blockers:
@@ -507,10 +525,109 @@ class EventLowLevelBackend(AbstractBackend):
         if deleted_parts:
             # Recursively delete fee modifiers and tracks, but not registrations, since
             # this is only allowed if no registrations exist anyway.
-            cascade = ("fee_modifiers", "course_tracks")
+            cascade = ("fee_modifiers", "course_tracks", "part_group_parts")
             for x in mixed_existence_sorter(deleted_parts):
                 ret *= self._delete_event_part(rs, part_id=x, cascade=cascade)
 
+        return ret
+
+    @internal
+    def _delete_part_group_blockers(self, rs: RequestState,
+                                    part_group_id: int) -> DeletionBlockers:
+        """Determine what keeps a part group from being deleted.
+
+        Possible blockers:
+
+        * part_group_parts: A link between an event part and the part group.
+
+        :return: List of blockers, separated by type. The values of the dict
+            are the ids of the blockers.
+        """
+        part_group_id = affirm(vtypes.ID, part_group_id)
+        blockers = {}
+
+        part_group_parts = self.sql_select(
+            rs, "event.part_group_parts", ("id",), (part_group_id,),
+            entity_key="part_group_id")
+        if part_group_parts:
+            blockers["part_group_parts"] = [e["id"] for e in part_group_parts]
+
+        return blockers
+
+    @internal
+    def _delete_part_group(self, rs: RequestState, part_group_id: int,
+                           cascade: Collection[str] = None) -> DefaultReturnCode:
+        """Helper to delete one part group.
+
+        :note: This has to be called inside an atomized context.
+
+        :param cascade: Specify which deletion blockers to cascadingly
+            remove or ignore. If None or empty, cascade none.
+        """
+        part_group_id = affirm(vtypes.ID, part_group_id)
+        blockers = self._delete_part_group_blockers(rs, part_group_id)
+        cascade = affirm_set(str, cascade or set()) & blockers.keys()
+        if blockers.keys() - cascade:
+            raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),  # pragma: no cover
+                             {
+                                 "type": "part group",
+                                 "block": blockers.keys() - cascade,
+                             })
+
+        ret = 1
+        self.affirm_atomized_context(rs)
+        if cascade:
+            if "part_group_parts" in cascade:
+                ret *= self.sql_delete(
+                    rs, "event.part_group_parts", blockers["part_group_parts"])
+
+            blockers = self._delete_part_group_blockers(rs, part_group_id)
+
+        if not blockers:
+            part_group = self.sql_select_one(
+                rs, "event.part_groups", PART_GROUP_FIELDS, part_group_id)
+            if part_group is None:  # pragma: no cover
+                return 0
+            type_ = const.EventPartGroupType(part_group['constraint_type'])
+            ret *= self.sql_delete_one(rs, "event.part_groups", part_group_id)
+            self.event_log(rs, const.EventLogCodes.part_group_deleted,
+                           event_id=part_group["event_id"],
+                           change_note=f"{part_group['title']} ({type_.name})")
+        else:
+            raise ValueError(  # pragma: no cover
+                n_("Deletion of %(type)s blocked by %(block)s."),
+                {"type": "part group", "block": blockers.keys()})
+        return ret
+
+    @internal
+    def _set_part_group_parts(self, rs: RequestState, event_id: int, part_group_id: int,
+                              part_group_title: str, part_ids: Set[int],
+                              parts: CdEDBObjectMap) -> DefaultReturnCode:
+        """Helper to link the given event parts to the given part group."""
+        ret = 1
+        self.affirm_atomized_context(rs)
+
+        current_part_ids = {e['part_id'] for e in self.sql_select(
+            rs, "event.part_group_parts", ("part_id",), (part_group_id,),
+            entity_key="part_group_id")}
+
+        if deleted_part_ids := current_part_ids - part_ids:
+            query = ("DELETE FROM event.part_group_parts"
+                     " WHERE part_group_id = %s AND part_id = ANY(%s)")
+            ret *= self.query_exec(rs, query, (part_group_id, deleted_part_ids))
+            for x in mixed_existence_sorter(deleted_part_ids):
+                self.event_log(
+                    rs, const.EventLogCodes.part_group_link_deleted, event_id,
+                    change_note=f"{parts[x]['title']} -> {part_group_title}")
+
+        if new_part_ids := part_ids - current_part_ids:
+            inserter = []
+            for x in mixed_existence_sorter(new_part_ids):
+                inserter.append({'part_group_id': part_group_id, 'part_id': x})
+                self.event_log(
+                    rs, const.EventLogCodes.part_group_link_created, event_id,
+                    change_note=f"{parts[x]['title']} -> {part_group_title}")
+            ret *= self.sql_insert_many(rs, "event.part_group_parts", inserter)
         return ret
 
     def _delete_event_field_blockers(self, rs: RequestState,
@@ -683,6 +800,11 @@ class EventLowLevelBackend(AbstractBackend):
         if not updated_fields | deleted_fields <= existing_fields:
             raise ValueError(n_("Non-existing fields specified."))
 
+        # Do deletion first to avoid error due to duplicate field names.
+        for x in mixed_existence_sorter(deleted_fields):
+            # Only allow deletion of unused fields.
+            self._delete_event_field(rs, x, cascade=None)
+
         for x in mixed_existence_sorter(new_fields):
             new_field = copy.deepcopy(fields[x])
             assert new_field is not None
@@ -714,10 +836,6 @@ class EventLowLevelBackend(AbstractBackend):
                     ret *= self.sql_update(rs, "event.field_definitions", updated_field)
                     self.event_log(rs, const.EventLogCodes.field_updated, event_id,
                                    change_note=current_field_data[x]['field_name'])
-
-        for x in mixed_existence_sorter(deleted_fields):
-            # Only allow deletion of unused fields.
-            self._delete_event_field(rs, x, cascade=None)
 
         return ret
 

@@ -11,7 +11,7 @@ import copy
 import datetime
 import decimal
 from collections import OrderedDict
-from typing import Set
+from typing import Collection, Optional, Set
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -29,10 +29,10 @@ from cdedb.frontend.common import (
     event_guard, inspect_validation as inspect, process_dynamic_input,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
-from cdedb.query import Query, QueryOperators, QueryScope
+from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.validation import (
     EVENT_EXPOSED_FIELDS, EVENT_PART_COMMON_FIELDS,
-    EVENT_PART_CREATION_MANDATORY_FIELDS,
+    EVENT_PART_CREATION_MANDATORY_FIELDS, EVENT_PART_GROUP_COMMON_FIELDS,
 )
 
 
@@ -565,6 +565,84 @@ class EventEventMixin(EventBaseFrontend):
 
         return self.redirect(rs, "event/part_summary")
 
+    @access("event")
+    @event_guard()
+    def part_group_summary(self, rs: RequestState, event_id: int) -> Response:
+        return self.render(rs, "event/part_group_summary")
+
+    @access("event")
+    @event_guard()
+    def add_part_group_form(self, rs: RequestState, event_id: int) -> Response:
+        return self.render(rs, "event/configure_part_group")
+
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
+    @REQUESTdata(*EVENT_PART_GROUP_COMMON_FIELDS)
+    def add_part_group(self, rs: RequestState, event_id: int, title: str,
+                       shortname: str, notes: Optional[str],
+                       constraint_type: const.EventPartGroupType,
+                       part_ids: Collection[int]) -> Response:
+        if part_ids and not set(part_ids) <= rs.ambience['event']['parts'].keys():
+            rs.append_validation_error(("part_ids", ValueError(n_("Unknown part."))))
+        data = {
+            'title': title,
+            'shortname': shortname,
+            'notes': notes,
+            'constraint_type': constraint_type,
+            'part_ids': part_ids,
+        }
+        for key in ('title', 'shortname'):
+            existing = {pg[key] for pg in rs.ambience['event']['part_groups'].values()}
+            if data[key] in existing:
+                rs.append_validation_error((key, ValueError(n_(
+                    "A part group with this name already exists."))))
+        data = check(rs, vtypes.EventPartGroup, data)
+        if rs.has_validation_errors():
+            return self.add_part_group_form(rs, event_id)
+        code = self.eventproxy.set_part_groups(rs, event_id, {-1: data})
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "event/part_group_summary")
+
+    @access("event")
+    @event_guard()
+    def change_part_group_form(self, rs: RequestState, event_id: int,
+                               part_group_id: int) -> Response:
+        merge_dicts(rs.values, rs.ambience['part_group'])
+        return self.render(rs, "event/configure_part_group")
+
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
+    @REQUESTdata("title", "shortname", "notes")
+    def change_part_group(self, rs: RequestState, event_id: int,
+                          part_group_id: int, title: str, shortname: str,
+                          notes: Optional[str]) -> Response:
+        data: CdEDBObject = {
+            'title': title,
+            'shortname': shortname,
+            'notes': notes,
+        }
+        for key in ('title', 'shortname'):
+            existing = {pg[key] for pg in rs.ambience['event']['part_groups'].values()}
+            if data[key] in existing - {rs.ambience['part_group'][key]}:
+                rs.append_validation_error((key, ValueError(n_(
+                    "A part group with this name already exists."))))
+        data = check(rs, vtypes.EventPartGroup, data)
+        if rs.has_validation_errors():
+            return self.change_part_group_form(rs, event_id, part_group_id)
+        code = self.eventproxy.set_part_groups(rs, event_id, {part_group_id: data})
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "event/part_group_summary")
+
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
+    def delete_part_group(self, rs: RequestState, event_id: int,
+                          part_group_id: int) -> Response:
+        if rs.has_validation_errors():
+            return self.part_group_summary(rs, event_id)  # pragma: no cover
+        code = self.eventproxy.set_part_groups(rs, event_id, {part_group_id: None})
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "event/part_group_summary")
+
     @staticmethod
     def _get_mailinglist_setter(event: CdEDBObject, orgalist: bool = False
                                 ) -> CdEDBObject:
@@ -816,9 +894,12 @@ class EventEventMixin(EventBaseFrontend):
             return self.redirect(rs, "event/show_event")
 
         blockers = self.eventproxy.delete_event_blockers(rs, event_id)
-        cascade = {"registrations", "courses", "lodgement_groups", "lodgements",
-                   "field_definitions", "course_tracks", "event_parts", "orgas",
-                   "questionnaire", "stored_queries", "log", "mailinglists"}
+        cascade = {
+            "registrations", "courses", "lodgement_groups", "lodgements",
+            "field_definitions", "course_tracks", "event_parts", "fee_modifiers",
+            "orgas", "questionnaire", "stored_queries", "log", "mailinglists",
+            "part_groups"
+        }
 
         code = self.eventproxy.delete_event(rs, event_id, cascade & blockers.keys())
         if not code:
@@ -873,10 +954,10 @@ class EventEventMixin(EventBaseFrontend):
             rs.notify("warning", n_("Active characters found in search."))
             return self.show_event(rs, event_id)
 
-        search = [("username,family_name,given_names,display_name",
-                   QueryOperators.match, t) for t in terms]
+        key = "username,family_name,given_names,display_name"
+        search = [(key, QueryOperators.match, t) for t in terms]
         spec = QueryScope.quick_registration.get_spec()
-        spec["username,family_name,given_names,display_name"] = "str"
+        spec[key] = QuerySpecEntry("str", "")
         query = Query(
             QueryScope.quick_registration, spec,
             ("registrations.id", "username", "family_name",

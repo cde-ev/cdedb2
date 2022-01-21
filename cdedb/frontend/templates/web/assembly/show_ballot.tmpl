@@ -31,9 +31,9 @@
 {% endblock %}
 
 {% block content %}
-    {% set edit_mode = now() < ambience['ballot']['vote_begin']
-                       and ("assembly_presider" in user.admin_views
+    {% set is_privileged = ("assembly_presider" in user.admin_views
                             or ambience['assembly']['id'] in user.presider) %}
+    {% set edit_mode = now() < ambience['ballot']['vote_begin'] and is_privileged %}
     {% set is_classical = ambience['ballot']['votes'] %}
     {% set is_preferential = not ambience['ballot']['votes'] %}
 
@@ -51,6 +51,11 @@
                 </form>
             {% endif %}
         </div>
+    {% elif ambience['ballot']['is_tallied'] and is_privileged %}
+        <div class="p">
+            {{ util.href(cdedblink("assembly/comment_concluded_ballot_form"), gettext("Comment_[[verb]]"), icon="comment",
+                    aclass="btn btn-sm btn-warning") }}
+        </div>
     {% endif %}
 
     {# General information about ballot and personalized state info #}
@@ -65,6 +70,12 @@
                          aclass="btn btn-info btn-sm pull-right", icon="book") }}
         </h3>
         {{ ballot_tallied.show_result(ambience['ballot'], result) }}
+        {% if ambience['ballot']['comment'] %}
+            {% call util.bootstrap_panel(title=gettext("Ballot Comment"), icon="tag",
+                                         aclass="panel-warning panel-condensed", anid='comment') %}
+                {{ ambience['ballot']['comment']|md }}
+            {% endcall %}
+        {% endif %}
         {{ ballot_tallied.explain_result(classical=is_classical, preferential=is_preferential,
                                         use_bar=ambience['ballot']['use_bar']) }}
     {% else %}

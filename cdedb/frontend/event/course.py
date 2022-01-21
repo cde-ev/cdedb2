@@ -659,17 +659,20 @@ class EventCourseMixin(EventBaseFrontend):
 
         without_course = {
             track_id: xsorted(
-                (registration_id
-                 for registration_id in registrations
-                 if _check_without_course(registration_id, track_id)),
-                key=lambda anid: EntitySorter.persona(
-                    personas[registrations[anid]['persona_id']])
+                (
+                    (registration_id, make_persona_name(
+                        personas[registrations[registration_id]['persona_id']]))
+                    for registration_id in registrations
+                    if _check_without_course(registration_id, track_id)
+                ),
+                key=lambda tpl: EntitySorter.persona(
+                    personas[registrations[tpl[0]]['persona_id']])
             )
             for track_id in tracks
         }
 
         # Generate data to be encoded to json and used by the
-        # cdedbSearchParticipant() javascript function
+        # cdedbMultiSelect() javascript function
         def _check_not_this_course(registration_id: int, track_id: int) -> bool:
             """Un-inlined check for registration with different course."""
             reg = registrations[registration_id]
@@ -681,12 +684,12 @@ class EventCourseMixin(EventBaseFrontend):
         selectize_data = {
             track_id: xsorted(
                 ({'name': make_persona_name(personas[registration['persona_id']]),
-                  'current': registration['tracks'][track_id]['course_id'],
+                  'group_id': registration['tracks'][track_id]['course_id'],
                   'id': registration_id}
                  for registration_id, registration in registrations.items()
                  if _check_not_this_course(registration_id, track_id)),
                 key=lambda x: (
-                    x['current'] is not None,
+                    x['group_id'] is not None,
                     EntitySorter.persona(
                         personas[registrations[x['id']]['persona_id']]))
             )

@@ -78,7 +78,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         This will usually be done by a cron job, but sometimes it can be nice to trigger
         this immediately.
         """
-        if rs.has_validation_errors():
+        if rs.has_validation_errors():  # pragma: no cover
             return self.index(rs)
         mailinglist_ids = self.mlproxy.list_mailinglists(rs)
 
@@ -170,25 +170,19 @@ class MlBaseFrontend(AbstractUserFrontend):
         event_ids = self.eventproxy.list_events(rs)
         events = self.eventproxy.get_events(rs, event_ids)
         for event in events.values():
-            visible = (
-                    "event_admin" in rs.user.roles
-                    or rs.user.persona_id in event['orgas']
-                    or event['is_visible'])
-            event['is_visible'] = visible
+            event['is_visible'] = ("event_admin" in rs.user.roles
+                                   or rs.user.persona_id in event['orgas']
+                                   or event['is_visible'])
         assemblies = self.assemblyproxy.list_assemblies(rs)
-        for assembly_id in assemblies:
-            assemblies[assembly_id]['is_visible'] = \
-                self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id)
+        for assembly_id, assembly in assemblies.items():
+            assembly['is_visible'] = self.assemblyproxy.may_assemble(
+                rs, assembly_id=assembly_id)
         subs = self.mlproxy.get_many_subscription_states(
             rs, mailinglist_ids=mailinglists, states=sub_states)
         mailman = self.get_mailman()
-        for ml_id in mailinglists:
-            mailinglist_infos[ml_id]['num_subscribers'] = len(subs[ml_id])
-            held_mails = mailman.get_held_messages(mailinglist_infos[ml_id])
-            if held_mails is None:
-                mailinglist_infos[ml_id]['held_mails'] = None
-            else:
-                mailinglist_infos[ml_id]['held_mails'] = len(held_mails)
+        for ml_id, ml in mailinglist_infos.items():
+            ml['num_subscribers'] = len(subs[ml_id])
+            ml['held_mails'] = mailman.get_held_message_count(ml)
 
         return self.render(rs, endpoint, {
             'groups': MailinglistGroup,

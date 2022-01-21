@@ -36,7 +36,7 @@ from cdedb.frontend.common import (
     periodic, request_dict_extractor, request_extractor,
 )
 from cdedb.ml_type_aux import MailinglistGroup
-from cdedb.query import Query, QueryOperators, QueryScope
+from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.subman.machine import SubscriptionPolicy
 from cdedb.validation import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
@@ -127,12 +127,11 @@ class CoreBaseFrontend(AbstractFrontend):
                 moderator = self.mlproxy.get_mailinglists(rs, moderator_info)
                 sub_request = const.SubscriptionState.pending
                 mailman = self.get_mailman()
-                for mailinglist_id, mailinglist in moderator.items():
+                for mailinglist_id, ml in moderator.items():
                     requests = self.mlproxy.get_subscription_states(
                         rs, mailinglist_id, states=(sub_request,))
-                    held_mails = mailman.get_held_messages(mailinglist)
-                    mailinglist['requests'] = len(requests)
-                    mailinglist['held_mails'] = len(held_mails or [])
+                    ml['requests'] = len(requests)
+                    ml['held_mails'] = mailman.get_held_message_count(ml)
                 dashboard['moderator'] = {k: v for k, v in moderator.items()
                                           if v['is_active']}
             # visible and open events
@@ -197,7 +196,7 @@ class CoreBaseFrontend(AbstractFrontend):
         }
         data = request_extractor(rs, data_params)
         data = check(rs, vtypes.MetaInfo, data, keys=info.keys())
-        if rs.has_validation_errors():
+        if rs.has_validation_errors():  # pragma: no cover
             return self.meta_info_form(rs)
         assert data is not None
         code = self.coreproxy.set_meta_info(rs, data)
@@ -250,7 +249,7 @@ class CoreBaseFrontend(AbstractFrontend):
     @access("persona", modi={"POST"})
     def logout_all(self, rs: RequestState) -> Response:
         """Invalidate all sessions for the current user."""
-        if rs.has_validation_errors():
+        if rs.has_validation_errors():  # pragma: no cover
             return self.index(rs)
         count = self.coreproxy.logout(rs, other_sessions=True)
         rs.notify(
@@ -671,7 +670,7 @@ class CoreBaseFrontend(AbstractFrontend):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
             # reconnoitre_ambience leads to 404 if user does not exist at all.
-            rs.notify("error", n_("User is archived."))
+            rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
 
         registrations = self.eventproxy.list_persona_registrations(rs, persona_id)
@@ -700,7 +699,7 @@ class CoreBaseFrontend(AbstractFrontend):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
             # reconnoitre_ambience leads to 404 if user does not exist at all.
-            rs.notify("error", n_("User is archived."))
+            rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
 
         subscriptions = self.mlproxy.get_user_subscriptions(rs, persona_id)
@@ -827,10 +826,10 @@ class CoreBaseFrontend(AbstractFrontend):
             if self.coreproxy.verify_id(rs, anid, is_archived=None):
                 return self.redirect_show_user(rs, anid)
         terms = tuple(t.strip() for t in phrase.split(' ') if t)
-        search = [("username,family_name,given_names,display_name",
-                   QueryOperators.match, t) for t in terms]
+        key = "username,family_name,given_names,display_name"
+        search = [(key, QueryOperators.match, t) for t in terms]
         spec = QueryScope.core_user.get_spec()
-        spec["username,family_name,given_names,display_name"] = "str"
+        spec[key] = QuerySpecEntry("str", "")
         query = Query(
             QueryScope.core_user,
             spec,
@@ -902,7 +901,6 @@ class CoreBaseFrontend(AbstractFrontend):
         if rs.has_validation_errors():
             return self.send_json(rs, {})
 
-        spec_additions: Dict[str, str] = {}
         search_additions = []
         mailinglist = None
         num_preview_personas = (self.conf["NUM_PREVIEW_PERSONAS_CORE_ADMIN"]
@@ -1004,12 +1002,11 @@ class CoreBaseFrontend(AbstractFrontend):
                 data = tuple()
             else:
                 search: List[Tuple[str, QueryOperators, Any]]
-                search = [("username,family_name,given_names,display_name",
-                           QueryOperators.match, t) for t in terms]
+                key = "username,family_name,given_names,display_name"
+                search = [(key, QueryOperators.match, t) for t in terms]
                 search.extend(search_additions)
                 spec = QueryScope.core_user.get_spec()
-                spec["username,family_name,given_names,display_name"] = "str"
-                spec.update(spec_additions)
+                spec[key] = QuerySpecEntry("str", "")
                 query = Query(
                     QueryScope.core_user, spec,
                     ("personas.id", "username", "family_name", "given_names",
@@ -1103,7 +1100,7 @@ class CoreBaseFrontend(AbstractFrontend):
             'gender': collections.OrderedDict(
                 enum_entries_filter(
                     const.Genders,
-                    rs.gettext if download is None else rs.default_gettext))
+                    rs.gettext if download is None else rs.default_gettext)),
         }
         return self.generic_user_search(
             rs, download, is_search, QueryScope.core_user, QueryScope.core_user,
@@ -1136,14 +1133,11 @@ class CoreBaseFrontend(AbstractFrontend):
         Archived users are somewhat special since they are not visible
         otherwise.
         """
-        events = self.pasteventproxy.list_past_events(rs)
         choices: Dict[str, Dict[Any, str]] = {
-            'pevent_id': collections.OrderedDict(
-                xsorted(events.items(), key=operator.itemgetter(1))),
             'gender': collections.OrderedDict(
                 enum_entries_filter(
                     const.Genders,
-                    rs.gettext if download is None else rs.default_gettext))
+                    rs.gettext if download is None else rs.default_gettext)),
         }
         return self.generic_user_search(
             rs, download, is_search,
@@ -1223,6 +1217,7 @@ class CoreBaseFrontend(AbstractFrontend):
         display_realms = rs.user.roles.intersection(REALM_INHERITANCE)
         if "cde" in display_realms:
             display_realms.add("finance")
+            display_realms.add("auditor")
         if "ml" in display_realms:
             display_realms.add("cdelokal")
         for realm in display_realms:
@@ -1614,8 +1609,6 @@ class CoreBaseFrontend(AbstractFrontend):
         if rs.ambience['persona']['is_archived']:
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
-        if rs.has_validation_errors():
-            return self.modify_balance_form(rs, persona_id)
         code = self.coreproxy.change_persona_balance(
             rs, persona_id, new_balance,
             const.FinanceLogCodes.manual_balance_correction,
@@ -1677,7 +1670,7 @@ class CoreBaseFrontend(AbstractFrontend):
         code = self.coreproxy.invalidate_password(rs, persona_id)
         self.notify_return_code(rs, code, success=n_("Password invalidated."))
 
-        if not code:
+        if not code:  # pragma: no cover
             return self.show_user(
                 rs, persona_id, confirm_id=persona_id, internal=True,
                 quote_me=False, event_id=None, ml_id=None)
@@ -1778,6 +1771,7 @@ class CoreBaseFrontend(AbstractFrontend):
                         persona_id=None,
                         timeout=self.conf["PARAMETER_TIMEOUT"]),
                         'cookie': message})
+                # log message to be picked up by fail2ban
                 self.logger.info(f"Sent password reset mail to {email}"
                                  f" for IP {rs.request.remote_addr}.")
                 rs.notify("success", n_("Email sent."))
@@ -1867,7 +1861,8 @@ class CoreBaseFrontend(AbstractFrontend):
                  ("new_password2", ValueError(n_("Passwords don’t match."))),))
             rs.ignore_validation_errors()
             rs.notify("error", n_("Passwords don’t match."))
-            return self.change_password_form(rs)
+            return self.do_password_reset_form(rs, email=email, cookie=cookie,
+                                               internal=True)
         new_password, errs = self.coreproxy.check_password_strength(
             rs, new_password, email=email, argname="new_password")
 
@@ -2082,6 +2077,8 @@ class CoreBaseFrontend(AbstractFrontend):
     def archive_persona(self, rs: RequestState, persona_id: int,
                         ack_delete: bool, note: str) -> Response:
         """Move a persona to the attic."""
+        if not self.coreproxy.is_relative_admin(rs, persona_id):
+            raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
         if not ack_delete:
             rs.append_validation_error(
                 ("ack_delete", ValueError(n_("Must be checked."))))
@@ -2113,6 +2110,10 @@ class CoreBaseFrontend(AbstractFrontend):
         """Reinstate a persona from the attic."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
+        if new_username and self.coreproxy.verify_existence(rs, new_username):
+            rs.append_validation_error(
+                ("new_username",
+                 ValueError(n_("User with this E-Mail exists already."))))
         if rs.has_validation_errors():
             return self.dearchive_persona_form(rs, persona_id)
 
@@ -2218,7 +2219,7 @@ class CoreBaseFrontend(AbstractFrontend):
         The token parameter cannot contain slashes as this is prevented by
         werkzeug.
         """
-        if not self.conf["CDEDB_DEV"]:
+        if not self.conf["CDEDB_DEV"]:  # pragma: no cover
             return self.redirect(rs, "core/index")
         filename = pathlib.Path(tempfile.gettempdir(),
                                 "cdedb-mail-{}.txt".format(token))
@@ -2243,17 +2244,12 @@ class CoreBaseFrontend(AbstractFrontend):
             err = {'error': tuple(map(str, rs.retrieve_validation_errors()))}
             return self.send_json(rs, err)
 
-        spec = {
-            "id": "id",
-            "username": "str",
-            "is_event_realm": "bool",
-        }
         constraints = (
             ('username', QueryOperators.equal, username),
             ('is_event_realm', QueryOperators.equal, True),
         )
-        query = Query(QueryScope.persona, spec,
+        query = Query(QueryScope.persona, QueryScope.persona.get_spec(),
                       ("given_names", "family_name", "is_member", "username"),
-                      constraints, (('id', True),))
+                      constraints, (('personas.id', True),))
         result = self.coreproxy.submit_resolve_api_query(rs, query)
         return self.send_json(rs, unwrap(result) if result else {})

@@ -51,8 +51,7 @@ class MlMailmanMixin(MlBaseFrontend):
             # block the usage of the self-service facilities which should
             # not be used to prevent synchronisation issues
             'subscription_policy': 'moderate',
-            # Available only in mailman-3.3
-            # 'unsubscription_policy': 'moderate',
+            'unsubscription_policy': 'moderate',
             'archive_policy': 'private',
             'convert_html_to_plaintext': True,
             'dmarc_mitigate_action': 'wrap_message',
@@ -198,10 +197,8 @@ The original message as received by Mailman is attached.
             mm_list.subscribe(address, display_name=db_subscribers[address],
                               pre_verified=True, pre_confirmed=True,
                               pre_approved=True)
-        # The batch variant is only available in mailman 3.3
-        # mm_list.mass_unsubscribe(delete_subs)
         for address in delete_subs:
-            mm_list.unsubscribe(address)
+            mm_list.unsubscribe(address, pre_confirmed=True, pre_approved=True)
 
     def mailman_sync_list_mods(self, rs: RequestState, mailman: Client,
                                db_list: CdEDBObject,
@@ -231,12 +228,14 @@ The original message as received by Mailman is attached.
         for address in delete_owners:
             mm_list.remove_owner(address)
 
-    @staticmethod
-    def mailman_sync_list_whites(rs: RequestState, mailman: Client,
-                                 db_list: CdEDBObject,
-                                 mm_list: MailingList) -> None:
+    def mailman_sync_list_whites(self, rs: RequestState, mailman: Client,
+                                 db_list: CdEDBObject, mm_list: MailingList) -> None:
         db_whitelist = db_list['whitelist']
         mm_whitelist = {n.email: n for n in mm_list.nonmembers}
+
+        # implicitly whitelist username for personas with custom address
+        if db_list['mod_policy'] == const.ModerationPolicy.non_subscribers:
+            db_whitelist |= self.mlproxy.get_implicit_whitelist(rs, db_list['id'])
 
         new_whites = set(db_whitelist) - set(mm_whitelist)
         current_whites = set(mm_whitelist) - new_whites
@@ -277,7 +276,7 @@ The original message as received by Mailman is attached.
         This has an @periodic decorator in the frontend.
         """
         if (self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or (
-                self.conf["CDEDB_DEV"] and not self.conf["CDEDB_TEST"])):
+                self.conf["CDEDB_DEV"] and not self.conf["CDEDB_TEST"])):  # pragma: no cover
             self.logger.debug("Skipping mailman sync in dev/offline mode.")
             return store
         mailman = self.get_mailman()

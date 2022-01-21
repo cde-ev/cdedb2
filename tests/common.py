@@ -2,6 +2,7 @@
 """General testing utilities for CdEDB2 testsuite"""
 
 import collections.abc
+import contextlib
 import copy
 import datetime
 import decimal
@@ -23,9 +24,9 @@ import tempfile
 import unittest
 import urllib.parse
 from typing import (
-    Any, AnyStr, Callable, ClassVar, Dict, Iterable, List, Mapping, MutableMapping,
-    NamedTuple, Optional, Pattern, Sequence, Set, Tuple, Type, TypeVar, Union, cast,
-    no_type_check,
+    Any, AnyStr, Callable, ClassVar, Dict, Generator, Iterable, List, Mapping,
+    MutableMapping, NamedTuple, Optional, Pattern, Sequence, Set, Tuple, Type, TypeVar,
+    Union, cast, no_type_check,
 )
 
 import PIL.Image
@@ -41,9 +42,9 @@ from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.common import (
-    ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, CdEDBLog, CdEDBObject, CdEDBObjectMap,
-    PathLike, PrivilegeError, RequestState, merge_dicts, nearly_now, now,
-    roles_to_db_role,
+    ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, ANTI_CSRF_TOKEN_NAME,
+    ANTI_CSRF_TOKEN_PAYLOAD, CdEDBLog, CdEDBObject, CdEDBObjectMap, PathLike,
+    PrivilegeError, RequestState, merge_dicts, nearly_now, now, roles_to_db_role,
 )
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -51,6 +52,7 @@ from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.application import Application
 from cdedb.frontend.common import AbstractFrontend, Worker, setup_translations
 from cdedb.frontend.cron import CronFrontend
+from cdedb.frontend.paths import CDEDB_PATHS
 from cdedb.query import QueryOperators
 from cdedb.script import Script
 
@@ -147,7 +149,7 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
     secrets = SecretsConfig(backend.conf._configpath)
     connpool = connection_pool_factory(
         backend.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
-        secrets, backend.conf["DB_PORT"])
+        secrets, backend.conf["DB_HOST"], backend.conf["DB_PORT"])
     translations = setup_translations(backend.conf)
 
     def setup_requeststate(key: Optional[str], ip: str = "127.0.0.0"
@@ -388,6 +390,16 @@ class BackendTest(CdEDBTest):
         self.core.logout(self.key)
         self.key = ANONYMOUS
         self.user = USER_DICT["anonymous"]
+
+    @contextlib.contextmanager
+    def switch_user(self, new_user: UserIdentifier) -> Generator[None, None, None]:
+        """This method can be used as a context manager to temporarily switch users."""
+        old_user = self.user
+        self.logout()
+        self.login(new_user)
+        yield
+        self.logout()
+        self.login(old_user)
 
     def user_in(self, *identifiers: UserIdentifier) -> bool:
         """Check whether the current user is any of the given users."""
@@ -852,13 +864,13 @@ class FrontendTest(BackendTest):
     def _log_generation_time(self, response: webtest.TestResponse = None) -> None:
         if response is None:
             response = self.response
-        if _BASICCONF["TIMING_LOG"]:
-            with open(_BASICCONF["TIMING_LOG"], 'a') as f:
-                output = "{} {} {} {}\n".format(
-                    response.request.path, response.request.method,
-                    response.headers.get('X-Generation-Time'),
-                    response.request.query_string)
-                f.write(output)
+        # record performance information during test runs
+        with open(_BASICCONF["LOG_DIR"] / "cdedb-timing.log", 'a') as f:
+            output = "{} {} {} {}\n".format(
+                response.request.path, response.request.method,
+                response.headers.get('X-Generation-Time'),
+                response.request.query_string)
+            f.write(output)
 
     def get(self, url: str, *args: Any, verbose: bool = False, **kwargs: Any) -> None:
         """Navigate directly to a given URL using GET."""
@@ -883,11 +895,26 @@ class FrontendTest(BackendTest):
         self.assertIn(target_url, response)
         return response
 
-    def post(self, url: str, *args: Any, verbose: bool = False, **kwargs: Any) -> None:
+    def post(self, url: str, params: Dict[str, Any], *args: Any, verbose: bool = False,
+             evade_anti_csrf: bool = True, csrf_token_name: str = ANTI_CSRF_TOKEN_NAME,
+             csrf_token_payload: str = ANTI_CSRF_TOKEN_PAYLOAD, **kwargs: Any) -> None:
         """Directly send a POST-request.
 
-        Note that most of our POST-handlers require a CSRF-token."""
-        self.response = self.app.post(url, *args, **kwargs)
+        Note that most of our POST-handlers require an Anti-CSRF token,
+        which is forged here by default.
+
+        :param params: This is a restriction of self.app.post, but enforces a general
+            style and simplifies processing here.
+        :param evade_anti_csrf: Do CSRF, forging the Anti-CSRF token.
+        """
+        if evade_anti_csrf:
+            urlmap = CDEDB_PATHS
+            urls = urlmap.bind(self.app_extra_environ["HTTP_HOST"])
+            endpoint, _ = urls.match(url, method="POST")
+            params[csrf_token_name] = self.app.app.encode_anti_csrf_token(
+                endpoint, csrf_token_name, csrf_token_payload,
+                persona_id=self.user['id'])
+        self.response = self.app.post(url, params, *args, **kwargs)
         self.follow()
         self.basic_validate(verbose=verbose)
 
@@ -916,18 +943,17 @@ class FrontendTest(BackendTest):
             if "formmethod" in tmp_button.attrs:
                 form.method = tmp_button.attrs["formmethod"]
         method = form.method
+        if value and not button:
+            raise ValueError(
+                "Cannot specify button value without specifying button name.")
         self.response = form.submit(button, value=value)
         self.follow()
         self.basic_validate(verbose=verbose)
         if method == "POST" and check_notification:
             # check that we acknowledged the POST with a notification
-            success_str = "alert alert-success"
-            target = self.response.text
-            if verbose:
-                self.assertIn(success_str, target)
-            elif success_str not in target:
-                raise AssertionError(
-                    "Post request did not produce success notification.")
+            self.assertNotification(ntype='success',
+                                    msg=("No success notification found in"
+                                         + self.response.text if verbose else None))
 
     def traverse(self, *links: LinkIdentifier, verbose: bool = False) -> None:
         """Follow a sequence of links, described by their kwargs.
@@ -989,6 +1015,16 @@ class FrontendTest(BackendTest):
         self.submit(f, check_notification=False, verbose=verbose)
         self.key = ANONYMOUS
         self.user = USER_DICT["anonymous"]
+
+    @contextlib.contextmanager
+    def switch_user(self, new_user: UserIdentifier) -> Generator[None, None, None]:
+        """context manager to temporarily switch users - frontend variant
+
+        This restores the original response after the original user logged in again"""
+        saved_response = self.response
+        with super().switch_user(new_user):
+            yield
+        self.response = saved_response
 
     def admin_view_profile(self, user: UserIdentifier, check: bool = True,
                            verbose: bool = False) -> None:
@@ -1064,6 +1100,7 @@ class FrontendTest(BackendTest):
         return body.get_content()
 
     def fetch_link(self, index: int = 0, num: int = 1) -> str:
+        """Extract the <num>th link out of the <index>th mail just sent."""
         for line in self.fetch_mail_content(index).splitlines():
             if line.startswith(f'[{num}] '):
                 return line.split(maxsplit=1)[-1]
@@ -1100,6 +1137,14 @@ class FrontendTest(BackendTest):
             self.fail("No valid html document.")
         if self.response.lxml.xpath("//*[@id='{}']".format(div)):
             self.fail("Element with id {} found".format(div))
+
+    def assertInputHasAttr(self, input_field: webtest.forms.Field, attr: str) -> None:
+        """Assert that the form input has a specific HTML DOM attribute.
+
+        This is no big logic, but should make this slightly internal feature of webtest
+        more easy to use.
+        """
+        self.assertIn(attr, input_field.attrs)
 
     def assertCheckbox(self, status: bool, anid: str) -> None:
         """Assert that the checkbox with the given id is checked (or not)."""
@@ -1159,6 +1204,34 @@ class FrontendTest(BackendTest):
             else:
                 self.assertNotIn(s.strip(), content.text_content())
 
+    def assertNotification(self, ntext: str = None, ntype: str = None, *,
+                           static: bool = False, msg: str = None) -> None:
+        """Check for a notification containing `ntext` under all `ntype` notifications.
+
+        :param ntext: Substring to be present in the notification's message.
+            If not given, only check for notification type.
+        :param ntype: type of notification. Can be any of bootstraps possible alert
+            contextes or 'error', which will expect a 'danger' alert.
+        :param static: whether to search for a static notification
+        :param msg: Custom message on assertion failure.
+        """
+        if ntype == 'error':  # allow this for convenience
+            ntype = 'danger'
+
+        div = 'static-notifications' if static else 'notifications'
+        alert_type_class = f" alert-{ntype}" if ntype is not None else ""
+        # source: https://devhints.io/xpath#string-functions
+        notifications = self.response.lxml.xpath(
+                f"//div[@id='{div}']/div[starts-with(@class,'alert{alert_type_class}')]"
+                "/span[@class='notificationMessage']")
+        self.assertTrue(notifications,
+                        msg=(f"No{alert_type_class} notification found."
+                             if msg is None else msg))
+        if ntext is not None:
+            # joining them this way is useful for meaningful failure message
+            all_texts = " | ".join(n.text_content().strip() for n in notifications)
+            self.assertIn(ntext, all_texts, msg=msg)
+
     def assertLogin(self, name: str) -> None:
         """Assert that a user is logged in by checking their display name."""
         span = self.response.lxml.xpath("//span[@id='displayname']")[0]
@@ -1178,7 +1251,7 @@ class FrontendTest(BackendTest):
             specify which one should be checked.
         :param message: The expected error message displayed below the input
         :param notification: The expected notification displayed at the top of the page
-            This can be a regex. If this is None, skip the notification check.
+            If this is None, skip the notification check.
         :raise AssertionError: If field is not found, field is not within
             .has-error container or error message is not found
         """
@@ -1200,7 +1273,7 @@ class FrontendTest(BackendTest):
             specify which one should be checked.
         :param message: The expected warning message displayed below the input
         :param notification: The expected notification displayed at the top of the page
-            This can be a regex. If this is None, skip the notification check.
+            If this is None, skip the notification check.
         :raise AssertionError: If field is not found, field is not within
             .has-warning container or error message is not found
         """
@@ -1220,12 +1293,10 @@ class FrontendTest(BackendTest):
             raise NotImplementedError
 
         if notification is not None:
-            self.assertIn(f"alert alert-{alert_type}", self.response.text,
-                          f"No Notification of type {kind!r} found.")
-            self.assertPresence(notification, div="notifications", regex=True)
+            self.assertNotification(notification, alert_type)
 
         nodes = self.response.lxml.xpath(
-            '(//input|//select|//textarea)[@name="{}"]'.format(fieldname))
+            f'(//input|//select|//textarea)[@name="{fieldname}"]')
         f = fieldname
         if index is None:
             if len(nodes) == 1:

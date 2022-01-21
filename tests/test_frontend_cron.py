@@ -201,6 +201,14 @@ class TestCron(CronTest):
     @storage
     @prepsql(genesis_template(
         ctime=datetime.datetime(2000, 1, 1),
+        case_status=const.GenesisStati.successful.value))
+    def test_genesis_forget_successful(self) -> None:
+        self.execute('genesis_forget')
+        self.assertEqual({}, self.core.genesis_list_cases(RS))
+
+    @storage
+    @prepsql(genesis_template(
+        ctime=datetime.datetime(2000, 1, 1),
         case_status=const.GenesisStati.rejected.value))
     def test_genesis_forget_rejected(self) -> None:
         self.execute('genesis_forget')
@@ -393,7 +401,7 @@ class TestCron(CronTest):
             'send_welcome_message': False,
             # 'send_goodbye_message': False,
             'subscription_policy': 'moderate',
-            # 'unsubscription_policy': 'moderate',
+            'unsubscription_policy': 'moderate',
             'archive_policy': 'private',
             # 'filter_content': True,
             # 'filter_action': 'forward',
@@ -537,7 +545,7 @@ class TestCron(CronTest):
                     pre_approved=True, pre_confirmed=True, pre_verified=True)])
         self.assertEqual(
             mm_lists['witz'].unsubscribe.call_args_list,
-            [umcall('undead@example.cde')])
+            [umcall('undead@example.cde', pre_confirmed=True, pre_approved=True)])
         self.assertEqual(mm_lists['klatsch'].subscribe.call_count, 4)
         # Moderator update
         self.assertEqual(

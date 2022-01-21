@@ -391,7 +391,7 @@ class TestMlFrontend(FrontendTest):
         # Test if moderation hints work
         self.assertPresence("Mailman-Migration", div="mailinglist-99-row")
         self.assertPresence("Mitglieder (Opt-in)", div="mailinglist-99-row")
-        self.assertPresence("3", div="mailinglist-99-row")
+        self.assertPresence("0", div="mailinglist-99-row")
         self.assertPresence("0 Abonnenten. 1 Moderator.", div="mailinglist-99-row")
         # Test that events are shown
         self.assertPresence("Große Testakademie 2222")
@@ -428,7 +428,7 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("Mitgliedermailinglisten")
         self.assertPresence("Aktivenforum 2001", div="mailinglist-7-row")
         self.assertPresence("Mitglieder (Opt-in)", div="mailinglist-7-row")
-        self.assertPresence("3", div="mailinglist-7-row")
+        self.assertPresence("0", div="mailinglist-7-row")
         self.assertPresence("1 Abonnent. 2 Moderatoren.", div="mailinglist-7-row")
         if self.user_in('berta'):
             self.assertPresence("Veranstaltungslisten")
@@ -1090,7 +1090,6 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Klatsch und Tratsch")
         link = self.fetch_link()
         self.get(link)
-        self.follow()
         self.assertTitle("Klatsch und Tratsch")
         self.assertIn('unsubscribeform', self.response.forms)
         self.assertPresence('pepper@example.cde')
@@ -1123,27 +1122,21 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['addsubscriberform']
         f['subscriber_ids'] = USER_DICT["inga"]["DB-ID"]
         self.submit(f, check_notification=False)
-        self.assertIn("alert alert-danger", self.response.text)
-        self.assertPresence(
-            "Der Nutzer hat aktuell eine Abonnement-Anfrage gestellt.",
-            div="notifications")
+        self.assertNotification(
+            "Der Nutzer hat aktuell eine Abonnement-Anfrage gestellt.", 'error')
         # as mod subscriber
         self.traverse({'href': '/ml/mailinglist/4/management/advanced'}, )
         f = self.response.forms['addmodsubscriberform']
         f['modsubscriber_ids'] = USER_DICT["inga"]["DB-ID"]
         self.submit(f, check_notification=False)
-        self.assertIn("alert alert-danger", self.response.text)
-        self.assertPresence(
-            "Der Nutzer hat aktuell eine Abonnement-Anfrage gestellt.",
-            div="notifications")
+        self.assertNotification(
+            "Der Nutzer hat aktuell eine Abonnement-Anfrage gestellt.", 'error')
         # as mod unsubscribe
         f = self.response.forms['addmodunsubscriberform']
         f['modunsubscriber_ids'] = USER_DICT["inga"]["DB-ID"]
         self.submit(f, check_notification=False)
-        self.assertIn("alert alert-danger", self.response.text)
-        self.assertPresence(
-            "Der Nutzer hat aktuell eine Abonnement-Anfrage gestellt.",
-            div="notifications")
+        self.assertNotification(
+            "Der Nutzer hat aktuell eine Abonnement-Anfrage gestellt.", 'error')
 
         # testing: mod subscribe and unsubscribe
         # add already subscribed user as mod subscribe
@@ -1158,15 +1151,12 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/ml/mailinglist/4/management'}, )
         f = self.response.forms['removesubscriberform1']
         self.submit(f, check_notification=False)
-        self.assertIn("alert alert-danger", self.response.text)
-        self.assertPresence("Der Nutzer ist aktuell fixierter Abonnent.",
-                            div="notifications")
+        self.assertNotification("Der Nutzer ist aktuell fixierter Abonnent.", 'error')
         # try to add a mod unsubscribed user
         f = self.response.forms['addsubscriberform']
         f['subscriber_ids'] = USER_DICT["garcia"]["DB-ID"]
         self.submit(f, check_notification=False)
-        self.assertIn("alert alert-danger", self.response.text)
-        self.assertPresence("Der Nutzer ist aktuell blockiert.", div="notifications")
+        self.assertNotification("Der Nutzer ist aktuell blockiert.", 'error')
 
     @as_users("berta", "janis")
     def test_moderator_access(self) -> None:
@@ -1388,6 +1378,7 @@ class TestMlFrontend(FrontendTest):
         mmlist.moderate_message.return_value = moderation_response
         client = client_class.return_value
         client.get_held_messages.return_value = messages
+        client.get_held_message_count.return_value = len(messages)
         client.get_list_safe.return_value = mmlist
 
         return messages, mmlist, client
@@ -1410,19 +1401,25 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("Finanzbericht")
         self.assertPresence("Verschwurbelung")
         self.assertPresence("unerwartetes Erbe")
+        mmlist.get_held_message.return_value = messages[0]
         client.get_held_messages.return_value = messages[1:]
+        client.get_held_message_count.return_value = len(messages[1:])
         f = self.response.forms['msg1']
         self.submit(f, button='action', value='accept')
         self.assertNonPresence("Finanzbericht")
         self.assertPresence("Verschwurbelung")
         self.assertPresence("unerwartetes Erbe")
+        mmlist.get_held_message.return_value = messages[1]
         client.get_held_messages.return_value = messages[2:]
+        client.get_held_message_count.return_value = len(messages[2:])
         f = self.response.forms['msg2']
         self.submit(f, button='action', value='reject')
         self.assertNonPresence("Finanzbericht")
         self.assertNonPresence("Verschwurbelung")
         self.assertPresence("unerwartetes Erbe")
+        mmlist.get_held_message.return_value = messages[2]
         client.get_held_messages.return_value = messages[3:]
+        client.get_held_message_count.return_value = len(messages[3:])
         f = self.response.forms['msg3']
         self.submit(f, button='action', value='discard')
         self.assertNonPresence("Finanzbericht")
@@ -1437,6 +1434,17 @@ class TestMlFrontend(FrontendTest):
         self.assertEqual(
             mmlist.moderate_message.call_args_list,
             [umcall(1, 'accept'), umcall(2, 'reject'), umcall(3, 'discard')])
+
+        self.traverse("Log")
+        self.assertPresence("Nachricht akzeptiert", div="1-1001")
+        self.assertPresence("Nachricht zurückgewiesen", div="2-1002")
+        self.assertPresence("Nachricht verworfen", div="3-1003")
+        self.assertPresence("kassenwart@example.cde / Finanzbericht / Spam score: —",
+                            div="1-1001")
+        self.assertPresence("illuminati@example.cde / Verschwurbelung"
+                            " / Spam score: 1.108", div="2-1002")
+        self.assertPresence("nigerian_prince@example.cde / unerwartetes Erbe"
+                            " / Spam score: 2.725", div="3-1003")
 
     @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")
     @as_users("anton")
@@ -1457,6 +1465,8 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("Finanzbericht")
         self.assertPresence("Verschwurbelung")
         self.assertPresence("unerwartetes Erbe")
+        # placeholder
+        mmlist.get_held_message.return_value = messages[0]
         client.get_held_messages.return_value = []
         f = self.response.forms['moderateallform']
         self.submit(f, button='action', value='accept')
@@ -1492,6 +1502,8 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("Finanzbericht")
         self.assertPresence("Verschwurbelung")
         self.assertPresence("unerwartetes Erbe")
+        # placeholder
+        mmlist.get_held_message.return_value = messages[0]
         client.get_held_messages.return_value = []
         f = self.response.forms['moderateallform']
         self.submit(f, button='action', value='discard')
@@ -1525,6 +1537,7 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Mailman-Migration – Nachrichtenmoderation")
         self.assertPresence("Finanzbericht")
         self.assertPresence("kassenwart@example.cde")
+        mmlist.get_held_message.return_value = messages[0]
         client.get_held_messages.return_value = messages[1:]
         f = self.response.forms['msg1']
         self.submit(f, button='action', value='whitelist')

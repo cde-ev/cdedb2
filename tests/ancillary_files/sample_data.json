@@ -3802,6 +3802,35 @@
             "lodge_field": null,
             "camping_mat_field": null,
             "course_room_field": null
+        },
+        {
+            "id": 4,
+            "title": "TripelAkademie",
+            "shortname": "triaka",
+            "institution": 1,
+            "description": "Ich habe gehört, du magst DoppelAkademien, also habe ich eine DoppelAkademie in Deine DoppelAkademie gepackt.",
+            "registration_start": null,
+            "registration_soft_limit": null,
+            "registration_hard_limit": null,
+            "iban": "DE26370205000008068900",
+            "nonmember_surcharge": "0.00",
+            "orga_address": null,
+            "registration_text": null,
+            "mail_text": null,
+            "participant_info": null,
+            "use_additional_questionnaire": false,
+            "notes": null,
+            "offline_lock": false,
+            "is_visible": true,
+            "is_course_list_visible": true,
+            "is_course_state_visible": false,
+            "is_participant_list_visible": false,
+            "is_course_assignment_visible": false,
+            "is_archived": false,
+            "is_cancelled": false,
+            "lodge_field": null,
+            "camping_mat_field": null,
+            "course_room_field": null
         }
     ],
     "event.event_parts": [
@@ -3854,6 +3883,158 @@
             "part_end": "2003-03-04",
             "fee": "0.00",
             "waitlist_field": null
+        },
+        {
+            "id": 6,
+            "event_id": 4,
+            "title": "1. Hälfte Oberwesel",
+            "shortname": "O1",
+            "part_begin": "3000-01-01",
+            "part_end": "3000-02-01",
+            "fee": "0.00",
+            "waitlist_field": null
+        },
+        {
+            "id": 7,
+            "event_id": 4,
+            "title": "1. Hälfte Windischleuba",
+            "shortname": "W1",
+            "part_begin": "3000-01-01",
+            "part_end": "3000-02-01",
+            "fee": "0.00",
+            "waitlist_field": null
+        },
+        {
+            "id": 8,
+            "event_id": 4,
+            "title": "1. Hälfte Kaub",
+            "shortname": "K1",
+            "part_begin": "3000-01-01",
+            "part_end": "3000-02-01",
+            "fee": "0.00",
+            "waitlist_field": null
+        },
+        {
+            "id": 9,
+            "event_id": 4,
+            "title": "2. Hälfte Oberwesel",
+            "shortname": "O2",
+            "part_begin": "3000-02-01",
+            "part_end": "3000-03-01",
+            "fee": "0.00",
+            "waitlist_field": null
+        },
+        {
+            "id": 10,
+            "event_id": 4,
+            "title": "2. Hälfte Windischleuba",
+            "shortname": "W2",
+            "part_begin": "3000-02-01",
+            "part_end": "3000-03-01",
+            "fee": "0.00",
+            "waitlist_field": null
+        },
+        {
+            "id": 11,
+            "event_id": 4,
+            "title": "2. Hälfte Kaub",
+            "shortname": "K2",
+            "part_begin": "3000-02-01",
+            "part_end": "3000-03-01",
+            "fee": "0.00",
+            "waitlist_field": null
+        }
+    ],
+    "event.part_groups": [
+        {
+            "id": 1,
+            "title": "1. Hälfte",
+            "shortname": "1.H.",
+            "notes": null,
+            "event_id": 4,
+            "constraint_type": 100
+        },
+        {
+            "id": 2,
+            "title": "2. Hälfte",
+            "shortname": "2.H.",
+            "notes": null,
+            "event_id": 4,
+            "constraint_type": 100
+        },
+        {
+            "id": 3,
+            "title": "Oberwesel",
+            "shortname": "OW",
+            "notes": null,
+            "event_id": 4,
+            "constraint_type": 100
+        },
+        {
+            "id": 4,
+            "title": "Windischleuba",
+            "shortname": "WS",
+            "notes": null,
+            "event_id": 4,
+            "constraint_type": 100
+        },
+        {
+            "id": 5,
+            "title": "Kaub",
+            "shortname": "KA",
+            "notes": null,
+            "event_id": 4,
+            "constraint_type": 100
+        }
+    ],
+    "event.part_group_parts": [
+        {
+            "part_group_id": 1,
+            "part_id": 6
+        },
+        {
+            "part_group_id": 1,
+            "part_id": 7
+        },
+        {
+            "part_group_id": 1,
+            "part_id": 8
+        },
+        {
+            "part_group_id": 2,
+            "part_id": 9
+        },
+        {
+            "part_group_id": 2,
+            "part_id": 10
+        },
+        {
+            "part_group_id": 2,
+            "part_id": 11
+        },
+        {
+            "part_group_id": 3,
+            "part_id": 6
+        },
+        {
+            "part_group_id": 3,
+            "part_id": 9
+        },
+        {
+            "part_group_id": 4,
+            "part_id": 7
+        },
+        {
+            "part_group_id": 4,
+            "part_id": 10
+        },
+        {
+            "part_group_id": 5,
+            "part_id": 8
+        },
+        {
+            "part_group_id": 5,
+            "part_id": 11
         }
     ],
     "event.course_tracks": [
@@ -3892,6 +4073,96 @@
             "num_choices": 3,
             "min_choices": 2,
             "sortkey": 1
+        },
+        {
+            "id": 6,
+            "part_id": 6,
+            "title": "Oberwesel Kurs 1",
+            "shortname": "OK1",
+            "num_choices": 4,
+            "min_choices": 2,
+            "sortkey": 1
+        },
+        {
+            "id": 7,
+            "part_id": 7,
+            "title": "Windischleuba Kurs 1",
+            "shortname": "WK1",
+            "num_choices": 4,
+            "min_choices": 2,
+            "sortkey": 1
+        },
+        {
+            "id": 8,
+            "part_id": 8,
+            "title": "Kaub Kurs 1",
+            "shortname": "KK1",
+            "num_choices": 4,
+            "min_choices": 2,
+            "sortkey": 1
+        },
+        {
+            "id": 9,
+            "part_id": 9,
+            "title": "Oberwesel Kurs 2 morgens",
+            "shortname": "OK2m",
+            "num_choices": 5,
+            "min_choices": 2,
+            "sortkey": 1
+        },
+        {
+            "id": 10,
+            "part_id": 9,
+            "title": "Oberwesel Kurs 2 nachmittags",
+            "shortname": "OK2n",
+            "num_choices": 5,
+            "min_choices": 2,
+            "sortkey": 1
+        },
+        {
+            "id": 11,
+            "part_id": 10,
+            "title": "Windischleuba Kurs 2 morgens",
+            "shortname": "WK2m",
+            "num_choices": 3,
+            "min_choices": 2,
+            "sortkey": 1
+        },
+        {
+            "id": 12,
+            "part_id": 10,
+            "title": "Windischleuba Kurs 2 nachmittags",
+            "shortname": "WK2n",
+            "num_choices": 3,
+            "min_choices": 2,
+            "sortkey": 1
+        },
+        {
+            "id": 13,
+            "part_id": 11,
+            "title": "Kaub Kurs 2 morgens",
+            "shortname": "KK2m",
+            "num_choices": 4,
+            "min_choices": 2,
+            "sortkey": 1
+        },
+        {
+            "id": 14,
+            "part_id": 11,
+            "title": "Kaub Kurs 2 nachmittags",
+            "shortname": "KK2n",
+            "num_choices": 4,
+            "min_choices": 2,
+            "sortkey": 1
+        },
+        {
+            "id": 15,
+            "part_id": 11,
+            "title": "Kaub Vortäge",
+            "shortname": "KV",
+            "num_choices": 1,
+            "min_choices": 1,
+            "sortkey": 1
         }
     ],
     "event.field_definitions": [
@@ -3899,6 +4170,7 @@
             "id": 1,
             "event_id": 1,
             "field_name": "brings_balls",
+            "title": "Bringt Bälle mit",
             "kind": 2,
             "association": 1,
             "entries": null,
@@ -3908,6 +4180,7 @@
             "id": 2,
             "event_id": 1,
             "field_name": "transportation",
+            "title": "Reist an mit",
             "kind": 1,
             "association": 1,
             "entries": [
@@ -3930,6 +4203,7 @@
             "id": 3,
             "event_id": 1,
             "field_name": "lodge",
+            "title": "Zimmerwünsche",
             "kind": 1,
             "association": 1,
             "entries": null,
@@ -3939,6 +4213,7 @@
             "id": 4,
             "event_id": 1,
             "field_name": "may_reserve",
+            "title": "Würde auf Isomatte schlafen",
             "kind": 2,
             "association": 1,
             "entries": null,
@@ -3948,6 +4223,7 @@
             "id": 5,
             "event_id": 1,
             "field_name": "room",
+            "title": "Kursraum",
             "kind": 1,
             "association": 2,
             "entries": null,
@@ -3957,6 +4233,7 @@
             "id": 6,
             "event_id": 1,
             "field_name": "contamination",
+            "title": "Verseuchung",
             "kind": 1,
             "association": 3,
             "entries": [
@@ -3983,6 +4260,7 @@
             "id": 7,
             "event_id": 1,
             "field_name": "is_child",
+            "title": "Ist U12",
             "kind": 2,
             "association": 1,
             "entries": null,
@@ -3992,6 +4270,7 @@
             "id": 8,
             "event_id": 1,
             "field_name": "anzahl_GROSSBUCHSTABEN",
+            "title": "Anzahl Großbuchstaben",
             "kind": 3,
             "association": 1,
             "entries": null,
@@ -4231,34 +4510,32 @@
     ],
     "event.orgas": [
         {
-            "id": 1,
             "persona_id": 7,
             "event_id": 1
         },
         {
-            "id": 2,
             "persona_id": 1,
             "event_id": 2
         },
         {
-            "id": 3,
             "persona_id": 2,
             "event_id": 2
         },
         {
-            "id": 4,
             "persona_id": 100,
             "event_id": 2
         },
         {
-            "id": 5,
             "persona_id": 1,
             "event_id": 3
         },
         {
-            "id": 6,
             "persona_id": 7,
             "event_id": 3
+        },
+        {
+            "persona_id": 5,
+            "event_id": 4
         }
     ],
     "event.lodgement_groups": [
@@ -5294,7 +5571,8 @@
             "quorum": null,
             "votes": null,
             "is_tallied": false,
-            "notes": null
+            "notes": null,
+            "comment": null
         },
         {
             "id": 2,
@@ -5311,7 +5589,8 @@
             "quorum": null,
             "votes": null,
             "is_tallied": false,
-            "notes": "Nochmal alle auf diese wichtige Entscheidung hinweisen."
+            "notes": "Nochmal alle auf diese wichtige Entscheidung hinweisen.",
+            "comment": null
         },
         {
             "id": 3,
@@ -5328,7 +5607,8 @@
             "quorum": null,
             "votes": 1,
             "is_tallied": false,
-            "notes": null
+            "notes": null,
+            "comment": null
         },
         {
             "id": 4,
@@ -5345,7 +5625,8 @@
             "quorum": null,
             "votes": 2,
             "is_tallied": false,
-            "notes": null
+            "notes": null,
+            "comment": null
         },
         {
             "id": 5,
@@ -5362,7 +5643,8 @@
             "quorum": null,
             "votes": null,
             "is_tallied": false,
-            "notes": null
+            "notes": null,
+            "comment": null
         },
         {
             "id": 6,
@@ -5379,7 +5661,8 @@
             "quorum": null,
             "votes": 1,
             "is_tallied": false,
-            "notes": null
+            "notes": null,
+            "comment": null
         },
         {
             "id": 7,
@@ -5396,7 +5679,8 @@
             "quorum": null,
             "votes": 1,
             "is_tallied": false,
-            "notes": null
+            "notes": null,
+            "comment": null
         },
         {
             "id": 8,
@@ -5413,7 +5697,8 @@
             "quorum": null,
             "votes": 1,
             "is_tallied": false,
-            "notes": null
+            "notes": null,
+            "comment": "Alles bleibt beim alten!"
         },
         {
             "id": 9,
@@ -5430,7 +5715,8 @@
             "quorum": null,
             "votes": 2,
             "is_tallied": false,
-            "notes": null
+            "notes": null,
+            "comment": null
         },
         {
             "id": 10,
@@ -5447,7 +5733,8 @@
             "quorum": null,
             "votes": null,
             "is_tallied": false,
-            "notes": null
+            "notes": null,
+            "comment": null
         },
         {
             "id": 11,
@@ -5464,7 +5751,8 @@
             "quorum": null,
             "votes": 1,
             "is_tallied": false,
-            "notes": null
+            "notes": null,
+            "comment": null
         },
         {
             "id": 12,
@@ -5481,7 +5769,8 @@
             "quorum": null,
             "votes": 1,
             "is_tallied": false,
-            "notes": null
+            "notes": null,
+            "comment": null
         },
         {
             "id": 13,
@@ -5498,7 +5787,8 @@
             "quorum": null,
             "votes": null,
             "is_tallied": false,
-            "notes": null
+            "notes": null,
+            "comment": null
         },
         {
             "id": 14,
@@ -5515,7 +5805,8 @@
             "quorum": null,
             "votes": null,
             "is_tallied": false,
-            "notes": null
+            "notes": null,
+            "comment": null
         },
         {
             "id": 15,
@@ -5532,7 +5823,8 @@
             "quorum": null,
             "votes": null,
             "is_tallied": false,
-            "notes": null
+            "notes": null,
+            "comment": null
         },
         {
             "id": 16,
@@ -5549,7 +5841,8 @@
             "quorum": null,
             "votes": null,
             "is_tallied": false,
-            "notes": null
+            "notes": null,
+            "comment": null
         },
         {
             "id": 17,
@@ -5566,7 +5859,8 @@
             "quorum": null,
             "votes": null,
             "is_tallied": false,
-            "notes": null
+            "notes": null,
+            "comment": null
         }
     ],
     "assembly.candidates": [
