@@ -109,7 +109,7 @@ COPY ./related/docker/cdedb-entrypoint.sh ./related/auto-build/files/stage3 /tmp
 # put configuration files into correct positions
 # and add symlink to /cdedb2/cdedb directory so python can find it
 RUN cp /tmp/autobuild/cdedb-entrypoint.sh /cdedb-entrypoint.sh \
-    && a2enmod ssl wsgi headers \
+    && a2enmod ssl wsgi headers authnz_ldap \
     && a2dissite 000-default \
     && echo "" > /etc/apache2/ports.conf \
     && cp /tmp/autobuild/cdedb-site.conf /etc/apache2/sites-available \

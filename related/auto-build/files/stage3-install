@@ -127,7 +127,7 @@ echo ""
 echo "Set up the apache2..."
 echo "--------------------------------------------"
 
-for i in ssl wsgi headers; do
+for i in ssl wsgi headers authnz_ldap; do
     a2enmod $i
 done;
 
