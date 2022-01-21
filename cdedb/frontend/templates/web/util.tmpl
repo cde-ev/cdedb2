@@ -317,9 +317,9 @@
     {%- endif %}
 {%- endmacro %}
 
-{% macro markdown_preview(anid) %}
+{% macro markdown_preview(anid, infotext="Supports Markdown.") %}
     <p class="help-block no-color">
-        {{ make_icon('fab fa-markdown') }} {% trans %}Supports Markdown.{% endtrans %}
+        {{ make_icon('fab fa-markdown') }} {{ gettext(infotext) }}
         <span class="mdjs" style="display: none;">
             <a id="{{ anid }}-mdpreview" title="{% trans %}Open Markdown Preview{% endtrans %}">
                 {{ gettext("Preview") }}

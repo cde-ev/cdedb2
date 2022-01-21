@@ -13733,8 +13733,8 @@ msgstr "Text"
 #: cdedb/frontend/templates/web/util.tmpl:932
 #: cdedb/frontend/templates/web/util.tmpl:934
 #, python-format
-msgid "Supports %(infolink)s for “Text-Only” fields."
-msgstr "Unterstützt %(infolink)s für „Nur-Text“ Felder."
+msgid "Supports Markdown for “Text-Only” fields."
+msgstr "Unterstützt Markdown für „Nur-Text“ Felder."
 
 #: cdedb/frontend/templates/web/util.tmpl:934
 #: cdedb/frontend/templates/web/util.tmpl:936
