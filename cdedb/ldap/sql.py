@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Optional, Tuple, Union
 
 import ldaptor.entry
 import ldaptor.entryhelpers
@@ -9,62 +9,6 @@ from ldaptor.protocols.ldap import distinguishedname, ldaperrors
 from ldaptor.protocols.ldap.distinguishedname import DistinguishedName
 from twisted.internet import defer, error
 from twisted.python import failure
-
-
-def get_duas():
-    query = "SELECT cn FROM ldap.duas"
-    dua_rdns = ...
-    return dua_rdns
-
-
-def get_assembly_presider_groups():
-    pass
-
-
-def get_event_orga_groups():
-    pass
-
-
-def get_ml_moderator_groups():
-    pass
-
-
-def get_ml_subscriber_groups():
-    pass
-
-
-def get_users():
-    pass
-
-
-LDAP_TREE = {
-    "dc=de": {
-        "dc=cde-ev": {
-            "ou=dua": get_duas,
-            "ou=groups": {
-                "ou=assembly-presiders": get_assembly_presider_groups,
-                "ou=event-orgas": get_event_orga_groups,
-                "ou=ml-moderators": get_ml_moderator_groups,
-                "ou=ml-subscribers": get_ml_subscriber_groups,
-                "ou=status": [
-                    "cn=is_active",
-                    "cn=is_assembly_admin",
-                    "cn=is_assembly_realm",
-                    "cn=is_cdelokal_admin",
-                    "cn=is_core_admin",
-                    "cn=is_event_admin",
-                    "cn=is_event_realm",
-                    "cn=is_finance_admin",
-                    "cn=is_member",
-                    "cn=is_ml_admin",
-                    "cn=is_ml_realm",
-                    "cn=is_searchable"
-                ],
-            },
-            "ou=users": get_users,
-        }
-    }
-}
 
 
 # mimik the implementation of LDAPTreeEntry

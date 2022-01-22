@@ -10,54 +10,6 @@ from twisted.python.components import registerAdapter
 
 from cdedb.ldap.sql import LDAPsqlEntry
 
-# TODO its probably easier to implement all entries using the same class. This means
-#  holding also this static entries in sql. Or specialcasing this?
-ORGANIZATION = {
-    "dc=cde-ev,dc=de": {
-        "objectClass": ["dcObject", "organization", "top"],
-        "o": ["CdE e.V."],
-        "description": ["French country 2 letters iso description"],
-    },
-}
-
-ORGANIZATIONAL_UNIT = {
-    "ou=dua": {
-        "objectClass": ["organizationalUnit"],
-        "o": ["Directory User Agents"]
-    },
-    "ou=groups": {
-        "objectClass": ["organizationalUnit"],
-        "o": ["Groups"]
-    },
-    "ou=users": {
-        "objectClass": ["organizationalUnit"],
-        "o": ["Users"]
-    }
-}
-
-GROUP_TYPES = {
-    "ou=status": {
-        "objectClass": ["organizationalUnit"],
-        "o": ["Status"]
-    },
-    "ou=ml-subscribers": {
-        "objectClass": ["organizationalUnit"],
-        "o": ["Mailinglists Subscribers"]
-    },
-    "ou=ml-moderators": {
-        "objectClass": ["organizationalUnit"],
-        "o": ["Mailinglists Moderators"]
-    },
-    "ou=event-orgas": {
-        "objectClass": ["organizationalUnit"],
-        "o": ["Event Orgas"]
-    },
-    "ou=assembly-presiders": {
-        "objectClass": ["organizationalUnit"],
-        "o": ["Assembly Presiders"]
-    },
-}
-
 
 class LDAPServerFactory(ServerFactory):
     """
