@@ -19,7 +19,7 @@ Eigene Stimme: 3>2=4>_bar_>1
 
     def test_verify_result(self) -> None:
         output = subprocess.check_output(
-            ["bin/verify_result.py", "tests/ancillary_files/ballot_result.json"],
+            ["bin/verify_result.pyz", "tests/ancillary_files/ballot_result.json"],
         )
         expectation = b"""Versammlung: Internationaler Kongress
 Abstimmung: Antwort auf die letzte aller Fragen

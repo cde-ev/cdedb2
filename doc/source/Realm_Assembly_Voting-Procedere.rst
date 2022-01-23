@@ -47,8 +47,12 @@ Zur Verifikation der Ergebnisdatei gibt es außerdem zwei Pythonskripte:
   anfangs per Mail übermittelte Geheimnis benötigt, um die Zuordnung
   herstellen zu können.
 
-Beide Skripte benötigen als einzige Abhängigkeit Python 3.
+Beide Skripte benötigen als einzige Abhängigkeit Python 3. Bei
+[#ergebnisverifizierungsskript]_ handelt es sich um eine Zipapp, dies ist
+ein Pythonprogramm in einem Ziparchiv. Das Ziparchiv bündelt eine
+Abhängigkeit (das Paket schulze-condorcet), sodass diese nicht installiert
+werden muss.
 
 .. [#bekanntmachungsliste] https://db.cde-ev.de/db/ml/mailinglist/91/show
-.. [#ergebnisverifizierungsskript] https://db.cde-ev.de/static/verify_result.py
+.. [#ergebnisverifizierungsskript] https://db.cde-ev.de/static/verify_result.pyz
 .. [#stimmverifizierungsskript] https://db.cde-ev.de/static/verify_vote.py

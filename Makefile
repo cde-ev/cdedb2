@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help doc reload i18n-refresh i18n-extract i18n-update i18n-compile sample-data \
+.PHONY: help doc reload i18n-refresh zipapp i18n-extract i18n-update i18n-compile sample-data \
 	sample-data-dump storage storage-test sql sql-test sql-test-shallow cron mypy flake8 pylint \
 	template-line-length lint prepare-check check check-parallel sql-xss xss-check dump-html \
 	validate-html .coverage coverage
@@ -10,6 +10,7 @@ help:
 	@echo "doc          -- build documentation"
 	@echo "reload       -- re-compile GNU gettext data and trigger WSGI worker reload"
 	@echo "i18n-refresh -- extract translatable strings from code and update translation catalogs"
+	@echo "zipapp       -- create zipapp for verification of vote result files"
 	@echo ""
 	@echo "Database and storage:"
 	@echo "sample-data      -- initialize database structures (DESTROYS DATA!)"
@@ -80,6 +81,9 @@ else
 	sudo systemctl restart apache2
 endif
 
+zipapp:
+	bin/bundle_verify_result_zipapp.py static/verify_result.pyz
+
 i18n-refresh:
 	$(MAKE) i18n-extract
 	$(MAKE) i18n-update
@@ -118,6 +122,7 @@ sample-data:
 	cp -f related/auto-build/files/stage3/localconfig.py cdedb/localconfig.py
 	$(MAKE) storage > /dev/null
 	$(MAKE) sql > /dev/null
+	$(MAKE) zipapp > /dev/null
 
 sample-data-dump:
 	JSONTEMPFILE=`sudo -u www-data mktemp` \
