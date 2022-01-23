@@ -220,6 +220,13 @@ class RequestState:
         params = params or {}
         self.notifications.append((ntype, message, params))
 
+    def notify_validation_errors_default(self) -> None:
+        """Helper to put notification about validation errors.
+
+        This is placed centrally here so the message is always the same.
+        """
+        self.notify("error", n_("Failed validation."))
+
     def append_validation_error(self, error: Error) -> None:
         """Register a new  error.
 
@@ -410,7 +417,7 @@ def merge_dicts(targetdict: Union[MutableMapping[T, S], CdEDBMultiDict],
     for adict in dicts:
         for key in adict:
             if key not in targetdict:
-                if (isinstance(adict[key], collections.abc.Sequence)
+                if (isinstance(adict[key], collections.abc.Collection)
                         and not isinstance(adict[key], str)
                         and isinstance(targetdict, werkzeug.datastructures.MultiDict)):
                     targetdict.setlist(key, adict[key])
@@ -667,6 +674,10 @@ class EntitySorter:
     def event_part(event_part: CdEDBObject) -> Sortkey:
         return (event_part['part_begin'], event_part['part_end'],
                 event_part['shortname'], event_part['id'])
+
+    @staticmethod
+    def event_part_group(part_group: CdEDBObject) -> Sortkey:
+        return (part_group['title'], part_group['id'])
 
     @staticmethod
     def course_track(course_track: CdEDBObject) -> Sortkey:
@@ -1884,7 +1895,7 @@ def roles_to_admin_views(roles: Set[Role]) -> Set[AdminView]:
 #: If the partial export and import are unaffected the minor version may be
 #: incremented.
 #: If you increment this, it must be incremented in make_offline_vm.py as well.
-EVENT_SCHEMA_VERSION = (15, 4)
+EVENT_SCHEMA_VERSION = (15, 5)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3
@@ -2063,6 +2074,8 @@ EVENT_FIELDS = (
 #: Fields of an event part organized via CdEDB
 EVENT_PART_FIELDS = ("id", "event_id", "title", "shortname", "part_begin",
                      "part_end", "fee", "waitlist_field")
+
+PART_GROUP_FIELDS = ("id", "event_id", "title", "shortname", "notes", "constraint_type")
 
 #: Fields of a track where courses can happen
 COURSE_TRACK_FIELDS = ("id", "part_id", "title", "shortname", "num_choices",

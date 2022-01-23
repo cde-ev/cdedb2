@@ -1,9 +1,0 @@
-BEGIN;
-    DELETE FROM ldap.duas;
-    INSERT INTO ldap.duas (cn, password_hash) VALUES
-        ('admin',       '{{ encrypt(secrets["LDAP_DUA_PW"]["admin"]) }}'),
-        ('apache',      '{{ encrypt(secrets["LDAP_DUA_PW"]["apache"]) }}'),
-        ('cloud',       '{{ encrypt(secrets["LDAP_DUA_PW"]["cloud"]) }}'),
-        ('cyberaka',    '{{ encrypt(secrets["LDAP_DUA_PW"]["cyberaka"]) }}'),
-        ('dokuwiki',    '{{ encrypt(secrets["LDAP_DUA_PW"]["dokuwiki"]) }}');
-COMMIT;

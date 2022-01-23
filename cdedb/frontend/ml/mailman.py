@@ -51,8 +51,7 @@ class MlMailmanMixin(MlBaseFrontend):
             # block the usage of the self-service facilities which should
             # not be used to prevent synchronisation issues
             'subscription_policy': 'moderate',
-            # Available only in mailman-3.3
-            # 'unsubscription_policy': 'moderate',
+            'unsubscription_policy': 'moderate',
             'archive_policy': 'private',
             'convert_html_to_plaintext': True,
             'dmarc_mitigate_action': 'wrap_message',
@@ -198,10 +197,8 @@ The original message as received by Mailman is attached.
             mm_list.subscribe(address, display_name=db_subscribers[address],
                               pre_verified=True, pre_confirmed=True,
                               pre_approved=True)
-        # The batch variant is only available in mailman 3.3
-        # mm_list.mass_unsubscribe(delete_subs)
         for address in delete_subs:
-            mm_list.unsubscribe(address)
+            mm_list.unsubscribe(address, pre_confirmed=True, pre_approved=True)
 
     def mailman_sync_list_mods(self, rs: RequestState, mailman: Client,
                                db_list: CdEDBObject,

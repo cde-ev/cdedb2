@@ -38,11 +38,9 @@ Starting the containers
 To start the containers you can simply run ``docker-compose up``.
 This will let the containers run in the foreground and block your terminal.
 If you wish to run the containers in a detached mode you can append a ``-d``.
-For the LDAP container to properly work you have to start it after seeding the database.
-To do so you may use ``docker-compose up app`` and performing the steps
-in the `Initializing the containers`_ section.
-Afterwards you may start all containers using ``docker-compose up`.
-Alternatively you can also comment out the LDAP container in the docker-compose file.
+The LDAP container depends on a properly seeded database. This is already
+honored during the default setup process and needs no further manual
+intervention.
 
 Once the containers are running you can execute ``docker-compose ps``
 to check if everything went well and all containers are still alive.
@@ -91,16 +89,17 @@ Using the containers
 Normally the compose file is configured to automatically mount your code
 at the correct directory inside the application container.
 If you wish to execute commands inside a running container you can either
-pass them one-by-one to exec like above
+pass them one-by-one to ``exec`` like above
 or start an interactive session by executing bash inside a container
 (``docker-compose exec app bash``).
 To run commands in the postgres container
-you have to subtitute ``app`` with ``cdb``.
+you have to substitute ``app`` with ``cdb``.
 
 The web interface is exposed at `localhost:8443 <https://localhost:8443>`_.
 Additionally ``adminer``
 --- a tool which can be used to inspect the database ---
 can be reached using `localhost:8080 <http://localhost:8080>`_.
+The ldap server listens at `localhost:8389 <https://localhost:8389>`_.
 
 Some development commands like ``pylint`` are however not installed
 inside the containers to keep them light and should be run locally.

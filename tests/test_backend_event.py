@@ -10,6 +10,8 @@ from typing import Any, Dict, List
 
 import freezegun
 import psycopg2
+import psycopg2.errorcodes
+import psycopg2.errors
 import pytz
 
 import cdedb.database.constants as const
@@ -19,7 +21,12 @@ from cdedb.common import (
     PartialImportError, PrivilegeError, nearly_now, now,
 )
 from cdedb.query import Query, QueryOperators, QueryScope
-from tests.common import USER_DICT, BackendTest, as_users, json_keys_to_int, storage
+from tests.common import (
+    ANONYMOUS, USER_DICT, BackendTest, as_users, json_keys_to_int, storage,
+)
+
+UNIQUE_VIOLATION = psycopg2.errors.lookup(psycopg2.errorcodes.UNIQUE_VIOLATION)
+NON_EXISTING_ID = 2 ** 30
 
 
 class TestEventBackend(BackendTest):
@@ -168,6 +175,7 @@ class TestEventBackend(BackendTest):
                           1002: data['parts'][-2]['tracks'][-1]}
         data['parts'][-2]['fee_modifiers'][-1].update({'id': 1001, 'part_id': 1002})
         data['fee_modifiers'] = {1001: data['parts'][-2]['fee_modifiers'][-1]}
+        data['part_groups'] = {}
         # correct part and field ids
         tmp = self.event.get_event(self.key, new_id)
         part_map = {}
@@ -333,6 +341,7 @@ class TestEventBackend(BackendTest):
             },
         }
         data['fee_modifiers'] = changed_part['fee_modifiers']
+        data['part_groups'] = {}
 
         self.assertEqual(data, self.event.get_event(self.key, new_id))
 
@@ -446,6 +455,12 @@ class TestEventBackend(BackendTest):
             ("event_parts", "course_tracks", "field_definitions", "courses",
              "orgas", "lodgement_groups", "lodgements", "registrations", "log",
              "questionnaire", "stored_queries", "mailinglists", "fee_modifiers")))
+
+        # Test deletion of event, cascading all blockers.
+        self.assertLess(
+            0,
+            self.event.delete_event(
+                self.key, 1, self.event.delete_event_blockers(self.key, 1)))
 
     @storage
     @as_users("annika", "garcia")
@@ -851,7 +866,8 @@ class TestEventBackend(BackendTest):
 
     @as_users("annika", "garcia")
     def test_visible_events(self) -> None:
-        expectation = {1: 'Große Testakademie 2222', 3: 'CyberTestAkademie'}
+        expectation = {
+            1: 'Große Testakademie 2222', 3: 'CyberTestAkademie', 4: 'TripelAkademie'}
         self.assertEqual(expectation, self.event.list_events(
             self.key, visible=True, archived=False))
 
@@ -3989,3 +4005,167 @@ class TestEventBackend(BackendTest):
                 reg = self.event.get_registration(self.key, reg_id)
                 self.assertEqual(reg['ctime'], base_time + 2 * i * delta)
                 self.assertEqual(reg['mtime'], base_time + (2 * i + 1) * delta)
+
+    @as_users("emilia")
+    def test_part_groups(self) -> None:
+        event_id = 4
+        event = self.event.get_event(self.key, event_id)
+
+        # Load expected sample part groups.
+        part_group_parts_data = self.get_sample_data("event.part_group_parts")
+        part_group_expectation = {
+            part_group_id: part_group
+            for part_group_id, part_group
+            in self.get_sample_data("event.part_groups").items()
+            if part_group['event_id'] == event_id
+        }
+        # Add dynamic data and convert enum.
+        for part_group in part_group_expectation.values():
+            part_group['part_ids'] = {
+                e['part_id'] for e in part_group_parts_data.values()
+                if e['part_group_id'] == part_group['id']
+            }
+            part_group['constraint_type'] = const.EventPartGroupType(
+                part_group['constraint_type'])
+        # Compare to retrieved data.
+        self.assertEqual(event['part_groups'], part_group_expectation)
+
+        # Check setting of part groups.
+
+        new_part_group = {
+            'title': "Everything",
+            'shortname': "all",
+            'notes': "Let's see what happens",
+            'part_ids': set(event['parts']),
+            'constraint_type': const.EventPartGroupType.Statistic,
+        }
+
+        # Setting is not allowed for non-privileged users.
+        with self.assertRaises(PrivilegeError):
+            self.event.set_part_groups(ANONYMOUS, event_id, {})
+        with self.switch_user("garcia"):
+            with self.assertRaises(PrivilegeError):
+                self.event.set_part_groups(self.key, event_id, {})
+
+        # Empty setter just returns 1.
+        self.assertEqual(self.event.set_part_groups(self.key, event_id, {}), 1)
+
+        new_part_group_id = self.event.set_part_groups(
+            self.key, event_id, {-1: new_part_group})
+        self.assertTrue(new_part_group_id)
+
+        with self.assertRaises(UNIQUE_VIOLATION):
+            self.event.set_part_groups(self.key, event_id, {-1: new_part_group})
+
+        data = new_part_group.copy()
+        data['shortname'] = "ALL"
+        with self.assertRaises(UNIQUE_VIOLATION):
+            self.event.set_part_groups(self.key, event_id, {-1: data})
+
+        data = new_part_group.copy()
+        data['title'] = "All"
+        with self.assertRaises(UNIQUE_VIOLATION):
+            self.event.set_part_groups(self.key, event_id, {-1: data})
+
+        data = new_part_group.copy()
+        data['shortname'] = "ALL"
+        data['title'] = "All"
+        self.event.set_part_groups(self.key, event_id, {-1: data})  # id 1005
+
+        # Simultaneous deletion and recreation of part group with same name works.
+        self.event.set_part_groups(
+            self.key, event_id, {1001: None, -1: new_part_group}  # id 1006
+        )
+
+        # Switching of shortnames for exisitng groups is also possible.
+        setter = {
+            1005: {'shortname': new_part_group['shortname']},
+            1006: {'shortname': data['shortname']},
+        }
+        self.assertTrue(self.event.set_part_groups(self.key, event_id, setter))  # type: ignore[arg-type]
+        part_group_expectation.update({
+            1005: {**data, **setter[1005], **{'event_id': event_id, 'id': 1005}},
+            1006: {**new_part_group, **setter[1006],
+                   **{'event_id': event_id, 'id': 1006}}
+        })
+
+        # Update and delete an existing group.
+        update = {
+            1: {
+                'notes': "Pack explosives for New Years!",
+            },
+            4: None,
+            1006: {
+                'part_ids': set(list(event['parts'])[:len(event['parts']) // 2])
+            }
+        }
+        self.assertTrue(self.event.set_part_groups(self.key, event_id, update))
+        part_group_expectation[1].update(update[1])  # type: ignore[arg-type]
+        del part_group_expectation[4]
+        part_group_expectation[1006].update(update[1006])  # type: ignore[arg-type]
+
+        self.assertEqual(
+            self.event.get_event(self.key, event_id)['part_groups'],
+            part_group_expectation
+        )
+
+        # ValueError is raised when trying to update or delete a nonexisting part group.
+        with self.assertRaises(ValueError):
+            self.event.set_part_groups(self.key, event_id, {NON_EXISTING_ID: None})
+        # ValueError when creating or updating a part group with a non existing part.
+        with self.assertRaises(ValueError):
+            self.event.set_part_groups(
+                self.key, event_id,
+                {-1: {**new_part_group, **{'part_ids': [NON_EXISTING_ID]}}})
+        with self.assertRaises(ValueError):
+            self.event.set_part_groups(
+                self.key, event_id, {1: {'part_ids': [NON_EXISTING_ID]}})
+
+        # Delete a part still linked to a part group.
+        self.assertTrue(self.event.set_event(
+            self.key, {'id': event_id, 'parts': {min(event['parts']): None}}))
+
+        export_expectation = {
+            1: {'constraint_type': const.EventPartGroupType.Statistic,
+                'notes': 'Pack explosives for New Years!',
+                'part_ids': [7, 8],
+                'shortname': '1.H.',
+                'title': '1. Hälfte'},
+            2: {'constraint_type': const.EventPartGroupType.Statistic,
+                'notes': None,
+                'part_ids': [9, 10, 11],
+                'shortname': '2.H.',
+                'title': '2. Hälfte'},
+            3: {'constraint_type': const.EventPartGroupType.Statistic,
+                'notes': None,
+                'part_ids': [9],
+                'shortname': 'OW',
+                'title': 'Oberwesel'},
+            5: {'constraint_type': const.EventPartGroupType.Statistic,
+                'notes': None,
+                'part_ids': [8, 11],
+                'shortname': 'KA',
+                'title': 'Kaub'},
+            1005: {'constraint_type': const.EventPartGroupType.Statistic,
+                   'notes': "Let's see what happens",
+                   'part_ids': [7, 8, 9, 10, 11],
+                   'shortname': 'all',
+                   'title': 'All'},
+            1006: {'constraint_type': const.EventPartGroupType.Statistic,
+                   'notes': "Let's see what happens",
+                   'part_ids': [7, 8],
+                   'shortname': 'ALL',
+                   'title': 'Everything'},
+        }
+        export = self.event.partial_export_event(self.key, event_id)
+        self.assertEqual(export['event']['part_groups'], export_expectation)
+
+        # Delete the entire event. Requires admin.
+        with self.switch_user("annika"):
+            blockers = self.event.delete_event_blockers(self.key, event_id)
+            self.assertEqual(
+                set(blockers),
+                {"orgas", "event_parts", "course_tracks", "part_groups",
+                 "part_group_parts", "log"}
+            )
+            self.assertTrue(self.event.delete_event(self.key, event_id, blockers))

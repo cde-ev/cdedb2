@@ -5,7 +5,7 @@ LOGFILE=$(mktemp)
 MAILTO=cdedb@lists.cde-ev.de
 
 echo "Autobuild started at $(date)" > $LOGFILE
-timeout -k 5s 120m flock -n -E 123 $LOCKFILE \
+timeout -k 5s 23h flock -n -E 123 $LOCKFILE \
         $BINDIR/cdedb-autobuild-stage3.sh &>> $LOGFILE
 RETVAL=$?
 echo "Autobuild finished at $(date)" >> $LOGFILE

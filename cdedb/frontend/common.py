@@ -206,14 +206,13 @@ class BaseApp(metaclass=abc.ABCMeta):
         """
         params = params or {}
         if rs.retrieve_validation_errors() and not rs.notifications:
-            rs.notify("error", n_("Failed validation."))
+            rs.notify_validation_errors_default()
         url = cdedburl(rs, target, params, force_external=True)
         if anchor is not None:
             url += "#" + anchor
         ret = basic_redirect(rs, url)
         if rs.notifications:
-            notifications = [self.encode_notification(rs, ntype, nmessage,
-                                                      nparams)
+            notifications = [self.encode_notification(rs, ntype, nmessage, nparams)
                              for ntype, nmessage, nparams in rs.notifications]
             ret.set_cookie("displaynote", json_serialize(notifications))
         return ret
@@ -680,7 +679,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 rs.notify("warning", n_("Input seems faulty. Please double-check if"
                                         " you really want to save it."))
             else:
-                rs.notify("error", n_("Failed validation."))
+                rs.notify_validation_errors_default()
         if self.conf["LOCKDOWN"]:
             rs.notify("info", n_("The database currently undergoes "
                                  "maintenance and is unavailable."))
@@ -1259,6 +1258,24 @@ class CdEMailmanClient(mailmanclient.Client):
             mmlist = self.get_list_safe(dblist['address'])
             return mmlist.held if mmlist else None
 
+    def get_held_message_count(self, dblist: CdEDBObject) -> Optional[int]:
+        """Returns the number of held messages for a mailman list.
+
+        If the list is not managed by mailman, this returns None instead.
+        """
+        if self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or self.conf["CDEDB_DEV"]:
+            self.logger.info("Skipping mailman query in dev/offline mode.")
+            if self.conf["CDEDB_DEV"]:
+                # Add some diversity.
+                if dblist['id'] % 2 == 0:
+                    return len(HELD_MESSAGE_SAMPLE)
+                else:
+                    return 0
+        else:
+            mmlist = self.get_list_safe(dblist['address'])
+            return mmlist.get_held_count() if mmlist else None
+        return None
+
 
 # Type Aliases for the Worker class.
 WorkerTarget = Callable[[RequestState], bool]
@@ -1443,6 +1460,11 @@ def reconnoitre_ambience(obj: AbstractFrontend,
         Scout(None, 'field_id', None,
               ((lambda a: do_assert(rs.requestargs['field_id']
                                     in a['event']['fields'])),)),
+        # Dirty hack, that relies on the event being retrieved into ambience first.
+        Scout(lambda anid: ambience['event']['part_groups'][anid],  # type: ignore[has-type]
+              'part_group_id', 'part_group',
+              ((lambda a: do_assert(a['part_group']['event_id']
+                                    == a['event']['id'])),)),
         Scout(lambda anid: obj.assemblyproxy.get_attachment(rs, anid),
               'attachment_id', 'attachment',
               ((lambda a: do_assert(a['attachment']['assembly_id']
@@ -1758,7 +1780,8 @@ def REQUESTdata(
                         if timeout is False:
                             rs.notify("warning", n_("Link invalid."))
 
-                    if typing.get_origin(type_) is collections.abc.Collection:
+                    origin = typing.get_origin(type_)
+                    if origin is collections.abc.Collection:
                         type_ = unwrap(type_.__args__)
                         vals = tuple(rs.request.values.getlist(name))
                         if vals:
@@ -2304,7 +2327,8 @@ def process_dynamic_input(
         else:
             entry = ret[anid]
             assert entry is not None
-            if type_ not in {vtypes.EventTrack, vtypes.BallotCandidate}:
+            if type_ not in {vtypes.EventTrack, vtypes.BallotCandidate,
+                             vtypes.EventPartGroup}:
                 entry["id"] = anid
             entry.update(additional)
             # apply the promised validation
