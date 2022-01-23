@@ -1,12 +1,13 @@
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Union
 
 import ldaptor.entry
 import ldaptor.entryhelpers
 import ldaptor.interfaces
 import zope.interface
 from ldaptor import attributeset, entry
-from ldaptor.protocols.ldap import distinguishedname, ldaperrors
+from ldaptor.protocols.ldap import distinguishedname
 from ldaptor.protocols.ldap.distinguishedname import DistinguishedName
+from ldaptor.protocols.ldap.ldaperrors import LDAPNoSuchObject, LDAPUnwillingToPerform
 from twisted.internet import defer, error
 from twisted.python import failure
 
@@ -37,7 +38,7 @@ class LDAPsqlEntry(
         # root entry
         if self.dn == "":
             return
-        # TODO where do we catch the error if the dn is invalid?
+        # this also checks whether the given dn corresponds to a valid entry
         self._load(attributes=attributes)
 
     @staticmethod
@@ -55,7 +56,8 @@ class LDAPsqlEntry(
                 siblings = [dn for dn in dns if dn.split()[1:] == parent.split()]
                 getter = LDAP_LEAFS[parent.getText()]["get_entities"]
                 ret.update(getter(siblings))
-        # TODO what should we do if some entries are not found?
+        # initialize all dns which are not found with None, so they don't pass the
+        # validity check inside _load during initialization
         if set(dns) > set(ret):
             missing_dns = set(dns) - set(ret)
             for dn in missing_dns:
@@ -74,7 +76,7 @@ class LDAPsqlEntry(
         """
         attributes = attributes or self._get_entity(self.dn)
         if attributes is None:
-            raise LDAPTreeNoSuchEntry
+            failure.Failure(LDAPTreeNoSuchEntry())
         for k, v in attributes.items():
             self._attributes[k] = attributeset.LDAPAttributeSet(k, v)
 
@@ -126,7 +128,7 @@ class LDAPsqlEntry(
     def lookup(self, dn):
         dn = distinguishedname.DistinguishedName(dn)
         if not self.dn.contains(dn):
-            return defer.fail(ldaperrors.LDAPNoSuchObject(dn.getText()))
+            return defer.fail(LDAPNoSuchObject(dn.getText()))
         if dn == self.dn:
             return defer.succeed(self)
 
@@ -141,17 +143,13 @@ class LDAPsqlEntry(
         return c.lookup(dn)
 
     def addChild(self, rdn, attributes):
-        # TODO fail upon call
-        d = self._addChild(rdn, attributes)
-        return d
+        return defer.fail(LDAPUnwillingToPerform("Not implemented."))
 
     def delete(self):
-        # TODO fail upon call
-        return defer.maybeDeferred(self._delete)
+        return defer.fail(LDAPUnwillingToPerform("Not implemented."))
 
     def deleteChild(self, rdn):
-        # TODO fail upon call
-        return defer.maybeDeferred(self._deleteChild, rdn)
+        return defer.fail(LDAPUnwillingToPerform("Not implemented."))
 
     # TODO where is this used?
     def __lt__(self, other):
@@ -165,9 +163,7 @@ class LDAPsqlEntry(
         return self.dn > other.dn
 
     def commit(self):
-        # TODO fail upon call
-        return None
+        return defer.fail(LDAPUnwillingToPerform("Not implemented."))
 
     def move(self, newDN):
-        # TODO fail upon call
-        return defer.maybeDeferred(self._move, newDN)
+        return defer.fail(LDAPUnwillingToPerform("Not implemented."))
