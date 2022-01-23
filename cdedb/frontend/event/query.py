@@ -9,7 +9,7 @@ import collections
 import datetime
 import enum
 import pprint
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -29,6 +29,9 @@ from cdedb.frontend.event.base import EventBaseFrontend
 from cdedb.query import (
     Query, QueryConstraint, QueryOperators, QueryOrder, QueryScope, QuerySpec,
     QuerySpecEntry,
+)
+from cdedb.query_defaults import (
+    generate_event_course_default_queries, generate_event_registration_default_queries,
 )
 
 RPS = const.RegistrationPartStati
@@ -688,8 +691,8 @@ class EventQueryMixin(EventBaseFrontend):
                           query_input, "query", spec=spec, allow_empty=False)
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
 
-        default_queries = self.conf["DEFAULT_QUERIES_REGISTRATION"](
-            rs.gettext, rs.ambience['event'], spec)
+        default_queries = generate_event_registration_default_queries(
+            rs.ambience['event'], spec)
         stored_queries = self.eventproxy.get_event_queries(
             rs, event_id, scopes=(scope,))
         default_queries.update(stored_queries)
@@ -698,7 +701,7 @@ class EventQueryMixin(EventBaseFrontend):
                          for k, spec_entry in spec.items()
                          if spec_entry.choices}
 
-        params = {
+        params: Dict[str, Any] = {
             'spec': spec, 'query': query, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'has_registrations': has_registrations,
         }
@@ -802,15 +805,15 @@ class EventQueryMixin(EventBaseFrontend):
                                       for t_id in tracks)
         stored_queries = self.eventproxy.get_event_queries(
             rs, event_id, scopes=(scope,))
-        default_queries = self.conf["DEFAULT_QUERIES_COURSE"](
-            rs.gettext, rs.ambience['event'], spec)
+        default_queries = generate_event_course_default_queries(
+            rs.ambience['event'], spec)
         default_queries.update(stored_queries)
 
         choices_lists = {k: list(spec_entry.choices.items())
                          for k, spec_entry in spec.items()
                          if spec_entry.choices}
 
-        params = {
+        params: Dict[str, Any] = {
             'spec': spec, 'query': query, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'selection_default': selection_default,
         }
