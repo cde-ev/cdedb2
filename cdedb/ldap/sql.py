@@ -29,10 +29,20 @@ class LDAPsqlEntry(
     ldaptor.entryhelpers.MatchMixin,
     ldaptor.entryhelpers.SearchByTreeWalkingMixin
 ):
-    # here, implement the methods promised by the interface
-    # TODO maybe we need to implement the IEditableLDAPEntry interface too, since the
-    #  default ldapserver does not take this into account properly. However, we can
-    #  probably simply rise an exception if those methods are used.
+    """Implement a custom LDAPEntry class.
+
+    This can be used for static ldap entries (which are hardcoded in python) and dynamic
+    ldap entries (which are retrieved from a sql database).
+
+    The layout of the ldap tree, the definition of the static entries and the retrieval
+    procedures for the dynamic ldap entries are stored in `tree.py`. This class is
+    mostly a wrapper, to translate our custom ldap schema so ldaptor can understand
+    and serve it.
+
+    Note that this provides just a read-only view on the ldap tree. Each attempt to
+    add, delete or modify an entry will fail immediately. Those endpoints are only
+    contained because the default LDAPServer of ldaptor assumes they are implemented.
+    """
     def __init__(self, dn: Union[DistinguishedName, str], attributes: Attributes = None, *a, **kw):
         entry.BaseLDAPEntry.__init__(self, dn, *a, **kw)
         # root entry
