@@ -53,6 +53,9 @@ echo ""
 echo "Setting up packets..."
 echo "--------------------------------------------"
 
+echo 'slapd slapd/password1 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0' | debconf-set-selections
+echo 'slapd slapd/password2 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0' | debconf-set-selections
+
 # this is categorized into
 # - devtools
 # - runtime dependencies (app, ldap, postgres, latex)
