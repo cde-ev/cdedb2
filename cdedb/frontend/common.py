@@ -206,8 +206,8 @@ class BaseApp(metaclass=abc.ABCMeta):
         taken not to lose any notifications.
         """
         params = params or {}
-        if rs.retrieve_validation_errors() and not rs.notifications:
-            rs.notify_validation_errors_default()
+        if not rs.notifications:
+            rs.notify_validation()
         url = cdedburl(rs, target, params, force_external=True)
         if anchor is not None:
             url += "#" + anchor
@@ -675,12 +675,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
             _LOGGER.debug(debugstring)
             params['debugstring'] = debugstring
-        if (errors := rs.retrieve_validation_errors()) and not rs.notifications:
-            if all(isinstance(kind, ValidationWarning) for param, kind in errors):
-                rs.notify("warning", n_("Input seems faulty. Please double-check if"
-                                        " you really want to save it."))
-            else:
-                rs.notify_validation_errors_default()
+        if not rs.notifications:
+            rs.notify_validation()
         if self.conf["LOCKDOWN"]:
             rs.notify("info", n_("The database currently undergoes "
                                  "maintenance and is unavailable."))
@@ -926,31 +922,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             params['quote_me'] = True
         return self.redirect(rs, 'core/show_user', params=params)
 
-    @staticmethod
-    def notify_return_code(rs: RequestState, code: Union[int, bool, None],
-                           success: str = n_("Change committed."),
-                           info: str = n_("Change pending."),
-                           error: str = n_("Change failed.")) -> None:
-        """Small helper to issue a notification based on a return code.
-
-        We allow some flexibility in what type of return code we accept. It
-        may be a boolean (with the obvious meanings), an integer (specifying
-        the number of changed entries, and negative numbers for entries with
-        pending review) or None (signalling failure to acquire something).
-
-        :param success: Affirmative message for positive return codes.
-        :param info: Message for negative return codes signalling review.
-        :param error: Exception message for zero return codes.
-        """
-        if not code:
-            rs.notify("error", error)
-        elif code is True or code > 0:
-            rs.notify("success", success)
-        elif code < 0:
-            rs.notify("info", info)
-        else:
-            raise RuntimeError(n_("Impossible."))
-
     def safe_compile(self, rs: RequestState, target_file: str, cwd: PathLike,
                      runs: int, errormsg: Optional[str]) -> pathlib.Path:
         """Helper to compile latex documents in a safe way.
@@ -1191,7 +1162,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
                           'meta_info': meta_info,
                           })
 
-            self.notify_return_code(rs, new_id, success=n_("User created."))
+            rs.notify_return_code(new_id, success=n_("User created."))
             return self.redirect_show_user(rs, new_id)
         else:
             return self.create_user_form(rs)

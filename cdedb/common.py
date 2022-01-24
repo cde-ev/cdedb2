@@ -102,6 +102,15 @@ Path = pathlib.Path
 T = TypeVar("T")
 
 
+def n_(x: str) -> str:
+    """
+    Alias of the identity for i18n.
+    Identity function that shadows the gettext alias to trick pybabel into
+    adding string to the translated strings.
+    """
+    return x
+
+
 class User:
     """Container for a persona."""
 
@@ -220,12 +229,43 @@ class RequestState:
         params = params or {}
         self.notifications.append((ntype, message, params))
 
-    def notify_validation_errors_default(self) -> None:
-        """Helper to put notification about validation errors.
+    def notify_return_code(self, code: Union[DefaultReturnCode, bool, None],
+                           success: str = n_("Change committed."),
+                           info: str = n_("Change pending."),
+                           error: str = n_("Change failed.")) -> None:
+        """Small helper to issue a notification based on a return code.
 
-        This is placed centrally here so the message is always the same.
+        We allow some flexibility in what type of return code we accept. It
+        may be a boolean (with the obvious meanings), an integer (specifying
+        the number of changed entries, and negative numbers for entries with
+        pending review) or None (signalling failure to acquire something).
+
+        :param success: Affirmative message for positive return codes.
+        :param info: Message for negative return codes signalling review.
+        :param error: Exception message for zero return codes.
         """
-        self.notify("error", n_("Failed validation."))
+        if not code:
+            self.notify("error", error)
+        elif code is True or code > 0:
+            self.notify("success", success)
+        elif code < 0:
+            self.notify("info", info)
+        else:
+            raise RuntimeError(n_("Impossible."))
+
+    def notify_validation(self) -> None:
+        """Puts a notification about validation complaints, if there are some.
+
+        This takes care of the distinction between validation errors and
+        warnings, but does not cause the validation tracking to register
+        a successful check.
+        """
+        if errors := self.retrieve_validation_errors():
+            if all(isinstance(kind, ValidationWarning) for param, kind in errors):
+                self.notify("warning", n_("Input seems faulty. Please double-check if"
+                                          " you really want to save it."))
+            else:
+                self.notify("error", n_("Failed validation."))
 
     def append_validation_error(self, error: Error) -> None:
         """Register a new  error.
@@ -1442,15 +1482,6 @@ def mixed_existence_sorter(iterable: Union[Collection[int], KeysView[int]]
     for i in reversed(xsorted(iterable)):
         if i < 0:
             yield i
-
-
-def n_(x: str) -> str:
-    """
-    Alias of the identity for i18n.
-    Identity function that shadows the gettext alias to trick pybabel into
-    adding string to the translated strings.
-    """
-    return x
 
 
 UMLAUT_MAP = {
