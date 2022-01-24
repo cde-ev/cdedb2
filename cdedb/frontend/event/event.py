@@ -600,7 +600,7 @@ class EventEventMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.add_part_group_form(rs, event_id)
         code = self.eventproxy.set_part_groups(rs, event_id, {-1: data})
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "event/part_group_summary")
 
     @access("event")
@@ -630,7 +630,7 @@ class EventEventMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.change_part_group_form(rs, event_id, part_group_id)
         code = self.eventproxy.set_part_groups(rs, event_id, {part_group_id: data})
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "event/part_group_summary")
 
     @access("event", modi={"POST"})
@@ -640,7 +640,7 @@ class EventEventMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.part_group_summary(rs, event_id)  # pragma: no cover
         code = self.eventproxy.set_part_groups(rs, event_id, {part_group_id: None})
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "event/part_group_summary")
 
     @staticmethod
