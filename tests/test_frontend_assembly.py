@@ -1893,6 +1893,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.get('/assembly/verify_result.pyz')
             with open(script, 'wb') as f:
                 f.write(self.response.body)
+            script.chmod(0o755)
             output = subprocess.check_output(
                 [str(script), "tests/ancillary_files/ballot_result.json"],
             )
