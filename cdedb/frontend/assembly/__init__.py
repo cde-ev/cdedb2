@@ -11,8 +11,8 @@ import shutil
 import subprocess
 import tempfile
 import time
-from typing import Any, Collection, Dict, List, Optional, Set, Tuple, Union
 import zipapp
+from typing import Any, Collection, Dict, List, Optional, Set, Tuple, Union
 
 import werkzeug.exceptions
 from schulze_condorcet import schulze_evaluate_detailed
