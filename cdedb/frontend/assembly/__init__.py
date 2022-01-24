@@ -1619,7 +1619,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         result = subprocess.run(['python3', '-m', 'pip', 'show', 'schulze-condorcet'],
                                 capture_output=True, check=True)
         version = unwrap([line.split()[-1] for line in result.stdout.split(b'\n')
-                          if line.startswith(b'Version:')])
+                          if line.startswith(b'Version:')]).decode()
 
         with tempfile.TemporaryDirectory() as tmp:
             temp = pathlib.Path(tmp)
