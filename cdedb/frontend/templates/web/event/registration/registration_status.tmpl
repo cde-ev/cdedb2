@@ -218,7 +218,14 @@
         <dl class="dl-horizontal" id="questionnaire_results">
         {% for entry in reg_questionnaire %}
             {% if entry['field_id'] %}
-                {{ generic_event.print_questionnaire_result(entry, registration) }}
+                {% with FIELD = ambience['event']['fields'][entry['field_id']] %}
+                    <div id="questionnaire_field_result_{{ FIELD['field_name'] }}">
+                        <dt>{{ entry['title'] }}</dt>
+                        <dd>
+                            {{ generic_event.display_field(FIELD, registration['fields'].get(FIELD['field_name'])) }}
+                        </dd>
+                    </div>
+                {% endwith %}
             {% endif %}
         {% endfor %}
         </dl>

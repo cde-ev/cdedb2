@@ -128,9 +128,12 @@
 
     field       A dict containing all information of a custom event field.
     name        The name of the field, defaults to 'fields.field_name'
+    text_rows   Passed to the 'rows' attribute of input_textarea
+    bool_label  Special label for the field_input (not the form*!) if the field is of type bool
 #}
-{% macro field_input(field, name=none, readonly=False, defaultvalue='', anid=none) %}
+{% macro field_input(field, name=none, readonly=False, defaultvalue='', anid=none, text_rows=3, bool_label=none) %}
     {%- set name = name or "fields.{}".format(field['field_name']) %}
+    {%- set bool_label = bool_label or field['title'] %}
     {%- if field['entries'] %}
         {{- util.input_select(name=name, entries=field['entries'], nulloption=nbsp,
                               readonly=readonly, defaultvalue=defaultvalue, anid=anid, sort=True) }}
@@ -139,10 +142,15 @@
         {%- if field['kind'] == datatypes.bool %}
             <div class="checkbox">
                 {{- util.input_checkbox(name=name, readonly=readonly, defaultvalue=defaultvalue,
-                                        anid=anid, label=field['title']) -}}
+                                        anid=anid, label=bool_label) -}}
             </div>
         {%- elif field['kind'] == datatypes.str %}
-            {{- util.input_textarea(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, rows=3) }}
+            {% if text_rows %}
+                {{- util.input_textarea(name=name, readonly=readonly, defaultvalue=defaultvalue,
+                                        anid=anid, rows=text_rows) }}
+            {% else %}
+                {{- util.input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid)  }}
+            {% endif %}
         {%- elif field['kind'] == datatypes.int %}
             {{- util.input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid,
                                 type="number", placeholder="0") }}
@@ -167,16 +175,17 @@
 
     field       A dict containing all information of a custom event field.
     name        The name of the field, defaults to 'fields.field_name'
+    force_label Enforce the presentation of the label in the surrounding form_* even if the field is of type bool
 #}
 {% macro form_field_input(field, name=none, label=none, info='', displayerrors=True, readonly=False,
-                          defaultvalue='', anid=none, force_label=False) %}
+                          defaultvalue='', anid=none, force_label=False, text_rows=3, bool_label=none) %}
     {%- set name = name or "fields.{}".format(field['field_name']) %}
     {%- set label = (none if field['kind'] == enums['FieldDatatypes'].bool and not force_label
                      else label or field['title']) %}
     {%- set anid = anid or "event-input-{}".format(name) %}
     {%- call util.form_input_general(name=name, label=label, anid=anid, small=False, info=info,
                                      displayerrors=displayerrors, horizontal=True) %}
-        {{- field_input(field, name, readonly, defaultvalue, anid) }}
+        {{- field_input(field, name, readonly, defaultvalue, anid, text_rows, bool_label) }}
     {%- endcall %}
 {%- endmacro %}
 
@@ -187,37 +196,12 @@
         {% with FIELD = ambience['event']['fields'][entry['field_id']],
                 readonly = entry['readonly'] or is_locked or ambience['event']['is_archived'] %}
             <div id="questionnaire_field_entry_{{ FIELD['field_name'] }}">
-            {% if FIELD['entries'] %}
-                {{ util.form_input_select(name=FIELD['field_name'], entries=FIELD['entries'],
-                                          label=entry['title'], info=entry['info'],
-                                          readonly=readonly,
-                                          defaultvalue=entry['default_value'] if not readonly else "") }}
-            {% else %}
-                {% set datatypes = enums['FieldDatatypes'] %}
-                {% if FIELD['kind'] == datatypes.bool %}
-                    {{ util.form_input_checkbox(
-                        name=FIELD['field_name'], label=entry['title'], info=entry['info'],
-                        readonly=readonly, defaultvalue=entry['default_value'] if not readonly else "") }}
-                {% elif FIELD['kind'] == datatypes.str  %}
-                    {% if entry['input_size'] %}
-                        {{ util.form_input_textarea(
-                            name=FIELD['field_name'], label=entry['title'], info=entry['info'],
-                            readonly=readonly, defaultvalue=entry['default_value'] if not readonly else "",
-                            rows=(1+entry['input_size']*2)) }}
-                    {% else %}
-                        {{ util.form_input_text(
-                            name=FIELD['field_name'], label=entry['title'], info=entry['info'],
-                            readonly=readonly, defaultvalue=entry['default_value'] if not readonly else "") }}
-                    {% endif %}
-                {% else %}
-                    {{ form_field_input(
+                {{ form_field_input(
                         FIELD, name=FIELD['field_name'], label=entry['title'], info=entry['info'],
-                        readonly=readonly, defaultvalue=entry['default_value'] if not readonly else "") }}
-                {% endif %}
-            {% endif %}
+                        readonly=readonly, defaultvalue=entry['default_value'] if not readonly else "",
+                        text_rows=2*(entry['input_size'] or 0), bool_label=entry['title']) }}
             </div>
         {% endwith %}
-
     {# Text-only entry #}
     {% else %}
         {% if entry['title'] %}
@@ -227,44 +211,10 @@
                 <h4 class="heading-underline">{{ entry['title'] }}</h4>
             {% endif %}
         {% endif %}
-        {% if entry['info'] %}
-            {{ entry['info']|md }}
-        {% endif %}
+        {{ entry.get('info', '')|md }}
     {% endif %}
 {% endmacro %}
 
-{% macro print_questionnaire_result(entry, registration) %}
-    {% if entry['field_id'] %}
-        {% with FIELD = ambience['event']['fields'][entry['field_id']] %}
-            <div id="questionnaire_field_result_{{ FIELD['field_name'] }}">
-                <dt>{{ entry['title'] }}</dt>
-                <dd>
-                    {% if FIELD['entries'] %}
-                        {% set chosen = registration['fields'].get(FIELD['field_name'])|string %}
-                        {% for option, display_name in FIELD['entries'] %}
-                            {% if chosen == option %}
-                                {{ display_name }}
-                            {% endif %}
-                         {% endfor %}
-                    {% elif FIELD['kind'] == enums['FieldDatatypes'].bool %}
-                        {{ util.deko_checkbox(
-                            checked=registration['fields'].get(FIELD['field_name'])) }}
-                    {% elif FIELD['kind'] == enums['FieldDatatypes'].date %}
-                        {{ registration['fields'].get(FIELD['field_name'])
-                           |date(lang=lang, passthrough=True) }}
-                    {% elif FIELD['kind'] == enums['FieldDatatypes'].datetime %}
-                        {{ registration['fields'].get(FIELD['field_name'])
-                           |datetime(lang=lang, passthrough=True) }}
-                    {% elif FIELD['kind'] == enums['FieldDatatypes'].float %}
-                        {{ registration['fields'].get(FIELD['field_name'])|decimal(lang=lang) }}
-                    {% else %}
-                        {{ registration['fields'].get(FIELD['field_name'])|linebreaks }}
-                    {% endif %}
-                </dd>
-            </div>
-        {% endwith %}
-    {% endif %}
-{% endmacro %}
 
 {# Macro for a general questionnaire part, that can have each role in the DynamicRow workflow.
    aclass is used to pass classes to the row, such as drow-row, drow-prototype, drow-new
@@ -277,13 +227,15 @@
                     {{ util.form_input_text(name="title_{}".format(part_id), label=gettext("Title_[[name of an entity]]"),
                                             attributes=('data-basename="title_"'|s if newrow else ''),
                                             aclass='input-title drow-input', horizontal=false) }}
-                    {{ util.form_input_textarea(name="info_{}".format(part_id), label=gettext("Text"),
-                                                attributes=('data-basename="info_"'|s if newrow else ''),
-                                                aclass='input-info drow-input', horizontal=false,
-                                                info=gettext("Supports %(infolink)s for “Text-Only” fields.")|format(
-                                                    infolink=util.href(docurl("Handbuch_Markdown"),
-                                                                       gettext("Markdown"),
-                                                                       title=gettext("Short Markdown summary")))|s) }}
+                    {% set textarea_id = "input-textarea-info_{}".format(part_id) %}
+                    {# This can not use form_input_textarea, since we support markdown just for text-only fields. #}
+                    {%- call util.form_input_general(name="info_{}".format(part_id), label=gettext("Text"),
+                                                     horizontal=false, anid=textarea_id)  %}
+                        {{ util.input_textarea(name="info_{}".format(part_id), anid=textarea_id,
+                                               attributes=('data-basename="info_"'|s if newrow else ''),
+                                               aclass='form-control input-info drow-input') }}
+                        {{ util.markdown_preview(textarea_id, "Supports Markdown for “Text-Only” fields.") }}
+                    {%- endcall %}
                 </div>
                 <div class="col-md-6">
                     {{ util.form_input_select("field_id_{}".format(part_id), label=gettext("Query"),
