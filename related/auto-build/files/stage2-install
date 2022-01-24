@@ -90,7 +90,7 @@ apt-get install --yes python3-coverage
 # mailman server funcionality.
 python3 -m pip install --no-cache-dir \
     mailmanclient==3.3.3 \
-    schulze_condorcet==2.0.0  # when updating this: refresh the zipapp
+    schulze_condorcet==2.0.0
 
 # devtools
 python3 -m pip install --no-cache-dir \
