@@ -630,11 +630,11 @@ CDEDB_PATHS = werkzeug.routing.Map((
         )),
     )),
     werkzeug.routing.EndpointPrefix('assembly/', (
-        rule("verify_result.pyz", methods=_GET,
-             endpoint="download_verify_result_script"),
         sub('/assembly', (
             rule("/", methods=_GET,
                  endpoint="index"),
+            rule("/verify_result.pyz", methods=_GET,
+                 endpoint="download_verify_result_script"),
             sub('/search', (
                 rule("/user", methods=_GET,
                      endpoint="user_search"),
