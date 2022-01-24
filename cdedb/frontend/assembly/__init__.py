@@ -1612,6 +1612,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/show_ballot")
 
+    @staticmethod
     def bundle_verify_result_zipapp() -> bytes:
         repopath = pathlib.Path(__file__).parent.parent.parent.parent
 

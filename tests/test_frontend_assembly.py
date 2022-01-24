@@ -1890,7 +1890,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
     def test_verify_result(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             script = pathlib.Path(tmp) / 'verify_result.pyz'
-            self.response = self.get('/assembly/verify_result.pyz')
+            self.get('/assembly/verify_result.pyz')
             with open(script, 'wb') as f:
                 f.write(self.response.body)
             output = subprocess.check_output(
