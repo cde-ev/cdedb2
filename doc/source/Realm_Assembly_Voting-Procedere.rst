@@ -54,5 +54,5 @@ Abhängigkeit (das Paket schulze-condorcet), sodass diese nicht installiert
 werden muss.
 
 .. [#bekanntmachungsliste] https://db.cde-ev.de/db/ml/mailinglist/91/show
-.. [#ergebnisverifizierungsskript] https://db.cde-ev.de/static/verify_result.pyz
+.. [#ergebnisverifizierungsskript] https://db.cde-ev.de/db/assembly/verify_result.pyz
 .. [#stimmverifizierungsskript] https://db.cde-ev.de/static/verify_vote.py

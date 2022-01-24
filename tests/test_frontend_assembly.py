@@ -3,7 +3,10 @@
 
 import datetime
 import json
+import pathlib
 import re
+import subprocess
+import tempfile
 from typing import List
 
 import freezegun
@@ -1883,6 +1886,35 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                       {'secret': "-YZN1KWDfMLQ5Y8Q"})
             self.assertTitle("Bester Hof (Internationaler Kongress)")
             self.assertNotification("Abstimmung wurde noch nicht ausgezählt.", 'error')
+
+    def test_verify_result(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            script = pathlib.Path(tmp) / 'verify_result.pyz'
+            self.response = self.get('/assembly/verify_result.pyz')
+            with open(script, 'wb') as f:
+                f.write(self.response.body)
+            output = subprocess.check_output(
+                [str(script), "tests/ancillary_files/ballot_result.json"],
+            )
+            expectation = b"""Versammlung: Internationaler Kongress
+Abstimmung: Antwort auf die letzte aller Fragen
+Optionen: Ich (1)
+          23 (2)
+          42 (3)
+          Philosophie (4)
+Detail: Optionen ['3'] bekamen mehr Stimmen als ['2', '4']
+          mit ('3', '2'): 2, ('3', '4'): 2 Pro
+          und ('3', '2'): 1, ('3', '4'): 1 Contra Stimmen.
+        Optionen ['2', '4'] bekamen mehr Stimmen als ['_bar_']
+          mit ('2', '_bar_'): 3, ('4', '_bar_'): 2 Pro
+          und ('2', '_bar_'): 1, ('4', '_bar_'): 2 Contra Stimmen.
+        Optionen ['_bar_'] bekamen mehr Stimmen als ['1']
+          mit ('_bar_', '1'): 3 Pro
+          und ('_bar_', '1'): 1 Contra Stimmen.
+Ergebnis: 3>2=4>_bar_>1
+\xc3\x9cbereinstimmung: ja
+"""
+            self.assertEqual(expectation, output)
 
 
 class TestMultiAssemblyFrontend(MultiAppFrontendTest, AssemblyTestHelpers):

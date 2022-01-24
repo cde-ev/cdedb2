@@ -7,8 +7,12 @@ import datetime
 import io
 import json
 import pathlib
+import shutil
+import subprocess
+import tempfile
 import time
 from typing import Any, Collection, Dict, List, Optional, Set, Tuple, Union
+import zipapp
 
 import werkzeug.exceptions
 from schulze_condorcet import schulze_evaluate_detailed
@@ -1607,3 +1611,34 @@ class AssemblyFrontend(AbstractUserFrontend):
         code = self.assemblyproxy.set_ballot(rs, data)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/show_ballot")
+
+    def bundle_verify_result_zipapp() -> bytes:
+        repopath = pathlib.Path(__file__).parent.parent.parent.parent
+
+        result = subprocess.run(['python3', '-m', 'pip', 'show', 'schulze-condorcet'],
+                                capture_output=True, check=True)
+        version = unwrap([line.split()[-1] for line in result.stdout.split(b'\n')
+                          if line.startswith(b'Version:')])
+
+        with tempfile.TemporaryDirectory() as tmp:
+            temp = pathlib.Path(tmp)
+            pkg = temp / 'verify_result'
+            pkg.mkdir()
+            shutil.copy2(repopath / 'static' / 'verify_result.py',
+                         pkg / '__main__.py')
+            subprocess.run(
+                ['python3', '-m', 'pip', 'install',
+                 f'schulze_condorcet=={version}', '--target', 'verify_result'],
+                cwd=tmp, check=True)
+            shutil.rmtree(pkg / f'schulze_condorcet-{version}.dist-info')
+            output = temp / 'verify_result.pyz'
+            zipapp.create_archive(pkg, output, interpreter='/usr/bin/env python3')
+            with open(output, 'rb') as f:
+                return f.read()
+
+    @access("anonymous")
+    def download_verify_result_script(self, rs: RequestState) -> Response:
+        """Download the script to verify the vote result files."""
+        result = self.bundle_verify_result_zipapp()
+        return self.send_file(rs, data=result, inline=False,
+                              filename="verify_result.pyz")

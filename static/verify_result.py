@@ -2,15 +2,16 @@
 
 """Skript um die Auszählung in Ergebnisdateien von Wahlen zu verifizieren.
 
-Dies kann auf keine anderen Dateien der CdEDB zugreifen, weshalb wir
-eine gewisse unvermeidbare Duplikation haben.
+Dieses Skript kann direkt ausgeführt werden, benötigt dann allerdings das
+Paket schulze-condorcet von PyPI. Die CdEDB stellt dieses Skript als Zipapp
+zur Verfügung, die das Paket schulze-condorcet direkt mitbringt und keine
+weiteren Abhängigkeiten hat.
 """
 
 import argparse
 import json
 import pathlib
 
-# TODO use zipapp so the user is not forced to install a package from pip
 from schulze_condorcet import schulze_evaluate, schulze_evaluate_detailed
 
 if __name__ == "__main__":
