@@ -18,4 +18,4 @@ Eigene Stimme: 3>2=4>_bar_>1
         self.assertEqual(expectation, output)
 
     def test_verify_result(self) -> None:
-        "Moved to assembly frontend tests."
+        self.skipTest("Moved to assembly frontend tests.")
