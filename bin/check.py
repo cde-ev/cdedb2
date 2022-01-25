@@ -16,6 +16,10 @@ sys.path.append(str(root))
 # this is necessary for calling make as subprocess
 os.chdir(root)
 
+# this must be defined before the first import from the cdedb module
+configpath = ""
+os.environ["CDEDB_CONFIGPATH"] = configpath
+
 from bin.test_runner_helpers import MyTextTestResult, MyTextTestRunner, check_test_setup
 
 

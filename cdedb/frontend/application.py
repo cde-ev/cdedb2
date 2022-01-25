@@ -45,27 +45,27 @@ class Application(BaseApp):
     """This does state creation upon every request and then hands it on to the
     appropriate frontend."""
 
-    def __init__(self, configpath: PathLike = None) -> None:
-        super().__init__(configpath)
-        self.coreproxy = make_proxy(CoreBackend(configpath))
-        self.eventproxy = make_proxy(EventBackend(configpath))
-        self.mlproxy = make_proxy(MlBackend(configpath))
-        self.assemblyproxy = make_proxy(AssemblyBackend(configpath))
+    def __init__(self) -> None:
+        super().__init__()
+        self.coreproxy = make_proxy(CoreBackend())
+        self.eventproxy = make_proxy(EventBackend())
+        self.mlproxy = make_proxy(MlBackend())
+        self.assemblyproxy = make_proxy(AssemblyBackend())
         # do not use a make_proxy since the only usage here is before the
         # RequestState exists
-        self.sessionproxy = SessionBackend(configpath)
-        self.core = CoreFrontend(configpath)
-        self.cde = CdEFrontend(configpath)
-        self.event = EventFrontend(configpath)
-        self.assembly = AssemblyFrontend(configpath)
-        self.ml = MlFrontend(configpath)
+        self.sessionproxy = SessionBackend()
+        self.core = CoreFrontend()
+        self.cde = CdEFrontend()
+        self.event = EventFrontend()
+        self.assembly = AssemblyFrontend()
+        self.ml = MlFrontend()
         # Set up a logger for all Worker instances.
         make_root_logger(
             "cdedb.frontend.worker", self.conf["LOG_DIR"] / "cdedb-frontend-worker.log",
             self.conf["LOG_LEVEL"], syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         self.urlmap = CDEDB_PATHS
-        secrets = SecretsConfig(configpath)
+        secrets = SecretsConfig()
         self.connpool = connection_pool_factory(
             self.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
             secrets, self.conf["DB_HOST"], self.conf["DB_PORT"])

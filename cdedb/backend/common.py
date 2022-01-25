@@ -240,8 +240,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
     #: abstract str to be specified by children
     realm: ClassVar[str]
 
-    def __init__(self, configpath: PathLike = None) -> None:
-        self.conf = Config(configpath)
+    def __init__(self) -> None:
+        self.conf = Config()
         # initialize logging
         make_root_logger(
             "cdedb.backend",
@@ -257,7 +257,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         # logger are thread-safe!
         self.logger = logging.getLogger("cdedb.backend.{}".format(self.realm))
-        self.logger.debug(f"Instantiated {self} with configpath {configpath}.")
+        self.logger.debug(f"Instantiated {self} with configpath {self.conf._configpath}.")
         # Everybody needs access to the core backend
         # Import here since we otherwise have a cyclic import.
         # I don't see how we can get out of this ...
@@ -269,7 +269,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             # self.core = cast('CoreBackend', self)
             self.core = make_proxy(self, internal=True)
         else:
-            self.core = make_proxy(CoreBackend(configpath), internal=True)
+            self.core = make_proxy(CoreBackend(), internal=True)
 
     affirm_atomized_context = staticmethod(_affirm_atomized_context)
 

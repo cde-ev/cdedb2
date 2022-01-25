@@ -42,9 +42,9 @@ class CdEBackend(AbstractBackend):
     """
     realm = "cde"
 
-    def __init__(self, configpath: PathLike = None):
-        super().__init__(configpath)
-        self.pastevent = make_proxy(PastEventBackend(configpath), internal=True)
+    def __init__(self):
+        super().__init__()
+        self.pastevent = make_proxy(PastEventBackend(), internal=True)
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:

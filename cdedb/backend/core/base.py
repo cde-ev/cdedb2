@@ -49,9 +49,9 @@ class CoreBaseBackend(AbstractBackend):
     ``@internal`` quite often. """
     realm = "core"
 
-    def __init__(self, configpath: PathLike = None) -> None:
-        super().__init__(configpath)
-        secrets = SecretsConfig(configpath)
+    def __init__(self) -> None:
+        super().__init__()
+        secrets = SecretsConfig()
         self.connpool = connection_pool_factory(
             self.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
             secrets, self.conf["DB_HOST"], self.conf["DB_PORT"])

@@ -36,8 +36,8 @@ from cdedb.validation import (
 class MlBaseFrontend(AbstractUserFrontend):
     realm = "ml"
 
-    def __init__(self, configpath: PathLike = None):
-        super().__init__(configpath)
+    def __init__(self):
+        super().__init__()
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:

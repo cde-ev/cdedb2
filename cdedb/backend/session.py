@@ -33,9 +33,9 @@ class SessionBackend:
     """
     realm = "session"
 
-    def __init__(self, configpath: PathLike = None):
-        self.conf = Config(configpath)
-        secrets = SecretsConfig(configpath)
+    def __init__(self):
+        self.conf = Config()
+        secrets = SecretsConfig()
 
         # local variable also to prevent closure over secrets
         lookup = {v: k for k, v in secrets['API_TOKENS'].items()}

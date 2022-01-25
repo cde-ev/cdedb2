@@ -123,8 +123,9 @@ class Script:
         self._conn: psycopg2.extensions.connection = None
         self._tempconfig = TempConfig(configpath, **config)
         with self._tempconfig as p:
-            self.config = Config(p)
-            self._secrets = SecretsConfig(p)
+            os.environ["CDEDB_CONFIGPATH"] = p or ""
+            self.config = Config()
+            self._secrets = SecretsConfig()
         if TYPE_CHECKING:
             import gettext  # pylint: disable=import-outside-toplevel
             self._translations: Optional[Mapping[str, gettext.NullTranslations]]
@@ -157,8 +158,9 @@ class Script:
         if ret := self._backends.get((realm, proxy)):
             return ret
         with self._tempconfig as p:
+            os.environ["CDEDB_CONFIGPATH"] = p or ""
             backend_name = self.backend_map[realm]
-            backend = resolve_name(f"cdedb.backend.{realm}.{backend_name}")(p)
+            backend = resolve_name(f"cdedb.backend.{realm}.{backend_name}")()
         self._backends.update({
             (realm, True): make_proxy(backend),
             (realm, False): backend,

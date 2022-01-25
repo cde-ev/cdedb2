@@ -39,10 +39,10 @@ class MlBackend(AbstractBackend):
     additional actions available."""
     realm = "ml"
 
-    def __init__(self, configpath: PathLike = None):
-        super().__init__(configpath)
-        self.event = make_proxy(EventBackend(configpath), internal=True)
-        self.assembly = make_proxy(AssemblyBackend(configpath), internal=True)
+    def __init__(self):
+        super().__init__()
+        self.event = make_proxy(EventBackend(), internal=True)
+        self.assembly = make_proxy(AssemblyBackend(), internal=True)
         self.backends = ml_type.BackendContainer(
             core=self.core, event=self.event, assembly=self.assembly)
         self.subman = subman.SubscriptionManager(

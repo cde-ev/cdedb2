@@ -32,9 +32,9 @@ class PastEventBackend(AbstractBackend):
     """
     realm = "past_event"
 
-    def __init__(self, configpath: PathLike = None):
-        super().__init__(configpath)
-        self.event = make_proxy(EventBackend(configpath), internal=True)
+    def __init__(self):
+        super().__init__()
+        self.event = make_proxy(EventBackend(), internal=True)
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:

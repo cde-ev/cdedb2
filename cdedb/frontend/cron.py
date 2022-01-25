@@ -27,11 +27,11 @@ class CronFrontend(BaseApp):
     """This takes care of actually doing the periodic work."""
     realm = "cron"
 
-    def __init__(self, configpath: PathLike = None) -> None:
-        super().__init__(configpath)
+    def __init__(self) -> None:
+        super().__init__()
 
         self.urlmap = CDEDB_PATHS
-        secrets = SecretsConfig(configpath)
+        secrets = SecretsConfig()
         self.connpool = connection_pool_factory(
             self.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
             secrets, self.conf["DB_HOST"], self.conf["DB_PORT"])
@@ -46,11 +46,11 @@ class CronFrontend(BaseApp):
                 raise RuntimeError(
                     n_("Refusing to start in debug/offline mode."))
 
-        self.core = CoreFrontend(configpath)
-        self.cde = CdEFrontend(configpath)
-        self.event = EventFrontend(configpath)
-        self.assembly = AssemblyFrontend(configpath)
-        self.ml = MlFrontend(configpath)
+        self.core = CoreFrontend()
+        self.cde = CdEFrontend()
+        self.event = EventFrontend()
+        self.assembly = AssemblyFrontend()
+        self.ml = MlFrontend()
 
     def make_request_state(self) -> RequestState:
         roles = ALL_ROLES

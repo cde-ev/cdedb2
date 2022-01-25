@@ -2,7 +2,7 @@
 
 """Entry script for apache."""
 
-import os.path
+import os
 import sys
 
 currentpath = os.path.dirname(os.path.abspath(__file__))
@@ -12,9 +12,12 @@ repopath = currentpath[:-5]
 
 sys.path.append(repopath)
 
-from cdedb.frontend.application import Application
-
 configpath = "/etc/cdedb-application-config.py"
 if not os.path.isfile(configpath):
-   configpath = None
-application = Application(configpath)
+   pass
+# set the configpath environment variable
+os.environ["CDEDB_CONFIGPATH"] = ""
+
+from cdedb.frontend.application import Application
+
+application = Application()

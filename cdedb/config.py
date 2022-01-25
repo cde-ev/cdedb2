@@ -16,6 +16,7 @@ import datetime
 import decimal
 import importlib.util
 import logging
+import os
 import pathlib
 import subprocess
 from typing import Any, Iterator, Mapping
@@ -341,16 +342,14 @@ class Config(BasicConfig):
     overriding the values inherited from :py:class:`BasicConfig`.
     """
 
-    def __init__(self, configpath: PathLike = None):
-        """
-        :param configpath: path to file with overrides
-        """
+    def __init__(self):
         super().__init__()
+        configpath = os.environ["CDEDB_CONFIGPATH"]
         _LOGGER.debug(f"Initialising Config with path {configpath}")
         self._configpath = configpath
         config_keys = _DEFAULTS.keys() | _BASIC_DEFAULTS.keys()
 
-        if configpath:
+        if configpath and pathlib.Path(configpath).is_file():
             spec = importlib.util.spec_from_file_location(
                 "primaryconf", str(configpath)
             )
@@ -362,6 +361,9 @@ class Config(BasicConfig):
                 key: getattr(primaryconf, key)
                 for key in config_keys & set(dir(primaryconf))
             }
+        elif configpath and not pathlib.Path(configpath).is_file():
+            _LOGGER.error(f"During initialization of Config, config file {configpath} not found!")
+            primaryconf = {}
         else:
             primaryconf = {}
 
@@ -391,9 +393,11 @@ class SecretsConfig(Mapping[str, Any]):
     should not be left in a globally accessible spot.
     """
 
-    def __init__(self, configpath: PathLike = None):
+    def __init__(self):
+        # TODO switch to own config file
+        configpath = os.environ["CDEDB_CONFIGPATH"]
         _LOGGER.debug(f"Initialising SecretsConfig with path {configpath}")
-        if configpath:
+        if configpath and pathlib.Path(configpath).is_file():
             spec = importlib.util.spec_from_file_location(
                 "primaryconf", str(configpath)
             )
@@ -405,6 +409,9 @@ class SecretsConfig(Mapping[str, Any]):
                 key: getattr(primaryconf, key)
                 for key in _SECRECTS_DEFAULTS.keys() & set(dir(primaryconf))
             }
+        elif configpath and not pathlib.Path(configpath).is_file():
+            _LOGGER.error(f"During initialization of SecretsConfig, config file {configpath} not found!")
+            primaryconf = {}
         else:
             primaryconf = {}
 

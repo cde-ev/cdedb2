@@ -117,10 +117,9 @@ class BaseApp(metaclass=abc.ABCMeta):
     """
     realm: ClassVar[str]
 
-    def __init__(self, configpath: PathLike = None, *args: Any,  # pylint: disable=keyword-arg-before-vararg
-                 **kwargs: Any) -> None:
-        self.conf = Config(configpath)
-        secrets = SecretsConfig(configpath)
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        self.conf = Config()
+        secrets = SecretsConfig()
         # initialize logging
         if hasattr(self, 'realm') and self.realm:
             logger_name = f"cdedb.frontend.{self.realm}"
@@ -133,7 +132,7 @@ class BaseApp(metaclass=abc.ABCMeta):
             syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         self.logger = logging.getLogger(logger_name)  # logger are thread-safe!
-        self.logger.debug(f"Instantiated {self} with configpath {configpath}.")
+        self.logger.debug(f"Instantiated {self} with configpath {self.conf._configpath}.")
         # local variable to prevent closure over secrets
         url_parameter_salt = secrets["URL_PARAMETER_SALT"]
         self.decode_parameter = (
@@ -299,9 +298,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     """Common base class for all frontends."""
     #: to be overridden by children
 
-    def __init__(self, configpath: PathLike = None, *args: Any,  # pylint: disable=keyword-arg-before-vararg
-                 **kwargs: Any) -> None:
-        super().__init__(configpath, *args, **kwargs)
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
         self.template_dir = pathlib.Path(self.conf["REPOSITORY_PATH"], "cdedb",
                                          "frontend", "templates")
         self.jinja_env = jinja2.Environment(
@@ -365,14 +363,14 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             lstrip_blocks=True,
         )
         # Always provide all backends -- they are cheap
-        self.assemblyproxy = make_proxy(AssemblyBackend(configpath))
-        self.cdeproxy = make_proxy(CdEBackend(configpath))
-        self.coreproxy = make_proxy(CoreBackend(configpath))
-        self.eventproxy = make_proxy(EventBackend(configpath))
-        self.mlproxy = make_proxy(MlBackend(configpath))
-        self.pasteventproxy = make_proxy(PastEventBackend(configpath))
+        self.assemblyproxy = make_proxy(AssemblyBackend())
+        self.cdeproxy = make_proxy(CdEBackend())
+        self.coreproxy = make_proxy(CoreBackend())
+        self.eventproxy = make_proxy(EventBackend())
+        self.mlproxy = make_proxy(MlBackend())
+        self.pasteventproxy = make_proxy(PastEventBackend())
         # Provide mailman access
-        secrets = SecretsConfig(configpath)
+        secrets = SecretsConfig()
         # local variables to prevent closure over secrets
         mailman_password = secrets["MAILMAN_PASSWORD"]
         mailman_basic_auth_password = secrets["MAILMAN_BASIC_AUTH_PASSWORD"]
@@ -1283,7 +1281,7 @@ class Worker(threading.Thread):
             requestargs=rs.requestargs, errors=[], values=copy.deepcopy(rs.values),
             begin=rs.begin, lang=rs.lang, translations=rs.translations)
         # noinspection PyProtectedMember
-        secrets = SecretsConfig(conf._configpath)
+        secrets = SecretsConfig()
         connpool = connection_pool_factory(
             conf["CDB_DATABASE_NAME"], DATABASE_ROLES, secrets,
             conf["DB_HOST"], conf["DB_PORT"])

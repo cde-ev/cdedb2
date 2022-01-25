@@ -145,8 +145,8 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
     """
     # pylint: disable=protected-access
 
-    sessionproxy = SessionBackend(backend.conf._configpath)
-    secrets = SecretsConfig(backend.conf._configpath)
+    sessionproxy = SessionBackend()
+    secrets = SecretsConfig()
     connpool = connection_pool_factory(
         backend.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
         secrets, backend.conf["DB_HOST"], backend.conf["DB_PORT"])
