@@ -1613,16 +1613,14 @@ class AssemblyFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/show_ballot")
 
-    @staticmethod
-    def bundle_verify_result_zipapp() -> bytes:
-        repopath = pathlib.Path(__file__).parent.parent.parent.parent
+    def bundle_verify_result_zipapp(self) -> bytes:
         version = importlib.metadata.version("schulze_condorcet")
 
         with tempfile.TemporaryDirectory() as tmp:
             temp = pathlib.Path(tmp)
             pkg = temp / 'verify_result'
             pkg.mkdir()
-            shutil.copy2(repopath / 'static' / 'verify_result.py',
+            shutil.copy2(self.conf['REPOSITORY_PATH'] / 'static' / 'verify_result.py',
                          pkg / '__main__.py')
             subprocess.run(
                 ['python3', '-m', 'pip', 'install',
