@@ -1472,7 +1472,7 @@ class AssemblyBackend(AbstractBackend):
         automatically by everybody when viewing a ballot. It is not
         allowed to call this before voting has actually ended.
 
-        We use the Schulze method as documented in the schulze-condorcet
+        We use the Schulze method as documented in the schulze_condorcet
         pypi package.
 
         :returns: The content of the file if a new result file was created,

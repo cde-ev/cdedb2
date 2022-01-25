@@ -3,8 +3,8 @@
 """Skript um die Auszählung in Ergebnisdateien von Wahlen zu verifizieren.
 
 Dieses Skript kann direkt ausgeführt werden, benötigt dann allerdings das
-Paket schulze-condorcet von PyPI. Die CdEDB stellt dieses Skript als Zipapp
-zur Verfügung, die das Paket schulze-condorcet direkt mitbringt und keine
+Paket schulze_condorcet von PyPI. Die CdEDB stellt dieses Skript als Zipapp
+zur Verfügung, die das Paket schulze_condorcet direkt mitbringt und keine
 weiteren Abhängigkeiten hat.
 """
 

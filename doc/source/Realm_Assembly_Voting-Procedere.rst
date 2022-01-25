@@ -50,7 +50,7 @@ Zur Verifikation der Ergebnisdatei gibt es außerdem zwei Pythonskripte:
 Beide Skripte benötigen als einzige Abhängigkeit Python 3. Bei
 [#ergebnisverifizierungsskript]_ handelt es sich um eine Zipapp, dies ist
 ein Pythonprogramm in einem Ziparchiv. Das Ziparchiv bündelt eine
-Abhängigkeit (das Paket schulze-condorcet), sodass diese nicht installiert
+Abhängigkeit (das Paket schulze_condorcet), sodass diese nicht installiert
 werden muss.
 
 .. [#bekanntmachungsliste] https://db.cde-ev.de/db/ml/mailinglist/91/show
