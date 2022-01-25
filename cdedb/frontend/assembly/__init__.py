@@ -4,6 +4,7 @@
 
 import collections
 import datetime
+import importlib.metadata
 import io
 import json
 import pathlib
@@ -1615,11 +1616,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     @staticmethod
     def bundle_verify_result_zipapp() -> bytes:
         repopath = pathlib.Path(__file__).parent.parent.parent.parent
-
-        result = subprocess.run(['python3', '-m', 'pip', 'show', 'schulze-condorcet'],
-                                capture_output=True, check=True)
-        version = unwrap([line.split()[-1] for line in result.stdout.split(b'\n')
-                          if line.startswith(b'Version:')]).decode()
+        version = importlib.metadata.version("schulze_condorcet")
 
         with tempfile.TemporaryDirectory() as tmp:
             temp = pathlib.Path(tmp)
