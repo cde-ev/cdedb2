@@ -56,8 +56,8 @@ class AssemblyBackend(AbstractBackend):
     """This is an entirely unremarkable backend."""
     realm = "assembly"
 
-    def __init__(self, *args: Any, **kwargs: Any):
-        super().__init__(*args, **kwargs)
+    def __init__(self) -> None:
+        super().__init__()
         self.attachment_base_path: Path = (
                 self.conf['STORAGE_DIR'] / "assembly_attachment")
         self.ballot_result_base_path: Path = (

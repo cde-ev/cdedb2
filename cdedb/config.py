@@ -342,7 +342,7 @@ class Config(BasicConfig):
     overriding the values inherited from :py:class:`BasicConfig`.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         configpath = os.environ.get("CDEDB_CONFIGPATH")
         _LOGGER.debug(f"Initialising Config with path {configpath}")
@@ -393,7 +393,7 @@ class SecretsConfig(Mapping[str, Any]):
     should not be left in a globally accessible spot.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         # TODO switch to own config file
         configpath = os.environ.get("CDEDB_CONFIGPATH")
         _LOGGER.debug(f"Initialising SecretsConfig with path {configpath}")

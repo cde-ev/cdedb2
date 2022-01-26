@@ -36,7 +36,7 @@ from cdedb.validation import (
 class MlBaseFrontend(AbstractUserFrontend):
     realm = "ml"
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
     @classmethod

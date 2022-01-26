@@ -28,7 +28,7 @@ from cdedb.validation import parse_date, parse_datetime
 class EventLowLevelBackend(AbstractBackend):
     realm = "event"
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.minor_form_dir: Path
         self.minor_form_dir = self.conf['STORAGE_DIR'] / 'minor_form'

@@ -42,7 +42,7 @@ class CdEBackend(AbstractBackend):
     """
     realm = "cde"
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.pastevent = make_proxy(PastEventBackend(), internal=True)
 

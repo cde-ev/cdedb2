@@ -9,7 +9,9 @@ from werkzeug.serving import run_simple
 configpath = "/etc/cdedb-application-config.py"
 os.environ["CDEDB_CONFIGPATH"] = configpath
 
-from cdedb.frontend.application import Application
+from cdedb.frontend.application import (
+    Application,  # pylint: disable=import-outside-toplevel
+)
 
 static_directory = Path(__file__).resolve().parent.parent / "static"
 
