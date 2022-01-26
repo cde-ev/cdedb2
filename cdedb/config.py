@@ -344,7 +344,7 @@ class Config(BasicConfig):
 
     def __init__(self):
         super().__init__()
-        configpath = os.environ["CDEDB_CONFIGPATH"]
+        configpath = os.environ.get("CDEDB_CONFIGPATH")
         _LOGGER.debug(f"Initialising Config with path {configpath}")
         self._configpath = configpath
         config_keys = _DEFAULTS.keys() | _BASIC_DEFAULTS.keys()
@@ -395,7 +395,7 @@ class SecretsConfig(Mapping[str, Any]):
 
     def __init__(self):
         # TODO switch to own config file
-        configpath = os.environ["CDEDB_CONFIGPATH"]
+        configpath = os.environ.get("CDEDB_CONFIGPATH")
         _LOGGER.debug(f"Initialising SecretsConfig with path {configpath}")
         if configpath and pathlib.Path(configpath).is_file():
             spec = importlib.util.spec_from_file_location(
