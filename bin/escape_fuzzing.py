@@ -22,6 +22,7 @@ example the following things not taken into account:
 """
 import argparse
 import itertools
+import os
 import pathlib
 import queue
 import sys
@@ -53,7 +54,8 @@ def setup(dbname: str, storage_dir: str) -> webtest.TestApp:
                 f"STORAGE_DIR = pathlib.Path('{storage_dir}')\n"
                 f"CDB_DATABASE_NAME = '{dbname}'")
         f.flush()
-        return Application(f.name)
+        os.environ["CDEDB_CONFIGPATH"] = f.name
+        return Application()
 
 
 def main() -> int:
