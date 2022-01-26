@@ -23,7 +23,7 @@ from typing import Any, Iterator, Mapping
 
 import pytz
 
-from cdedb.common import PathLike, n_
+from cdedb.common import n_
 
 _LOGGER = logging.getLogger(__name__)
 

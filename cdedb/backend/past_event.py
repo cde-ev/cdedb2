@@ -17,8 +17,8 @@ from cdedb.backend.common import (
 from cdedb.backend.event import EventBackend
 from cdedb.common import (
     INSTITUTION_FIELDS, PAST_COURSE_FIELDS, PAST_EVENT_FIELDS, CdEDBLog, CdEDBObject,
-    CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, Error, PathLike,
-    PrivilegeError, RequestState, glue, make_proxy, n_, now, unwrap, xsorted,
+    CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, Error, PrivilegeError,
+    RequestState, glue, make_proxy, n_, now, unwrap, xsorted,
 )
 from cdedb.database.connection import Atomizer
 from cdedb.query import Query, QueryScope

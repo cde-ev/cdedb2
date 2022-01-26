@@ -25,7 +25,7 @@ from cdedb.backend.past_event import PastEventBackend
 from cdedb.common import (
     EXPULS_PERIOD_FIELDS, LASTSCHRIFT_FIELDS, LASTSCHRIFT_TRANSACTION_FIELDS,
     ORG_PERIOD_FIELDS, PARSE_OUTPUT_DATEFORMAT, ArchiveError, CdEDBLog, CdEDBObject,
-    CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, LineResolutions, PathLike,
+    CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, LineResolutions,
     PrivilegeError, QuotaException, RequestState, glue, implying_realms, make_proxy,
     merge_dicts, n_, now, unwrap,
 )

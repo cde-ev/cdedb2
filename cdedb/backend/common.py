@@ -27,7 +27,7 @@ import psycopg2.extras
 import cdedb.validation as validate
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    LOCALE, CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Error, PathLike,
+    LOCALE, CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Error,
     PrivilegeError, PsycoJson, RequestState, Role, diacritic_patterns, glue, make_proxy,
     make_root_logger, n_, unwrap,
 )

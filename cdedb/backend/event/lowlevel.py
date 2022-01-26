@@ -19,8 +19,8 @@ from cdedb.backend.common import (
 from cdedb.common import (
     COURSE_TRACK_FIELDS, EVENT_FIELD_SPEC, EVENT_PART_FIELDS, FEE_MODIFIER_FIELDS,
     FIELD_DEFINITION_FIELDS, PART_GROUP_FIELDS, CdEDBObject, CdEDBObjectMap,
-    CdEDBOptionalMap, DefaultReturnCode, DeletionBlockers, PathLike, PrivilegeError,
-    PsycoJson, RequestState, mixed_existence_sorter, n_, now, unwrap,
+    CdEDBOptionalMap, DefaultReturnCode, DeletionBlockers, PrivilegeError, PsycoJson,
+    RequestState, mixed_existence_sorter, n_, now, unwrap,
 )
 from cdedb.validation import parse_date, parse_datetime
 

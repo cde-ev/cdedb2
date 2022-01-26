@@ -21,9 +21,8 @@ from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.common import (
-    ADMIN_VIEWS_COOKIE_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, PathLike,
-    QuotaException, RequestState, User, glue, make_proxy, make_root_logger, n_, now,
-    roles_to_db_role,
+    ADMIN_VIEWS_COOKIE_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, QuotaException,
+    RequestState, User, glue, make_proxy, make_root_logger, n_, now, roles_to_db_role,
 )
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
