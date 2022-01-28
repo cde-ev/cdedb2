@@ -15,13 +15,13 @@ ggf. Deine Teilnahmen an vergangenen Veranstaltungen (CdE, DSA, DJA, etc.)
 werden wir behalten, um diese im Falle einer späteren Wiederaufnahme
 wiederherstellen zu können.
 {%- else -%}
-Lediglich Deinen Namen behalten wir, für den Fall dass Du deinen
-Account später nocheinmal reaktivieren möchtest.
+Lediglich Deinen Namen behalten wir, für den Fall, dass Du Deinen
+Account später noch einmal reaktivieren möchtest.
 {%- endif %}
 
-Wenn Du dies verhindern möchtest reicht es aus, Dich einmal kurz in
+Wenn Du dies verhindern möchtest, reicht es aus, Dich einmal kurz in
 der CdE-Datenbank [1] einzuloggen. Falls Du Dein Passwort nicht (mehr)
-weißt, kannst Du dir unter [2] ein neues geben lassen.
+weißt, kannst Du Dir unter [2] ein neues geben lassen.
 
 {% if persona['is_cde_realm'] -%}
 Du kannst auch dafür sorgen, dass Dein Account erhalten bleibt, indem
@@ -30,16 +30,17 @@ Dafür musst Du lediglich ein beliebiges Vielfaches des aktuellen
 halbjährlichen Mitgliedsbeitrag von {{ fee|money }} an folgendes Konto
 überweisen. Dabei sparen wir Zeit und Geld, wenn Du den Mitgliedsbeitrag
 für mehrere Jahre im Voraus überweist.
-Noch einfacher ist die Teilnahme an der Initiative 25+.
-Damit erlaubst Du uns einmal im Jahr den Mitgliedsbeitrag sowie eine
-zusätzliche Spende per Lastschrift direkt von Deinem Konto einzuziehen.
-Wie Du an der Initiative 25+ teilnehmen kannst erfährst Du unter [3].
 
 Kontoinhaber:     {{ meta_info['CdE_Konto_Inhaber'] }}
 IBAN:             {{ meta_info['CdE_Konto_IBAN'] }}
 BIC:              {{ meta_info['CdE_Konto_BIC'] }}
 Kreditinstitut:   {{ meta_info['CdE_Konto_Institut'] }}
 Verwendungszweck: {{ transaction_subject }}
+
+Noch einfacher ist die Teilnahme an der Initiative 25+.
+Damit erlaubst Du uns einmal im Jahr den Mitgliedsbeitrag sowie eine
+zusätzliche Spende per Lastschrift direkt von Deinem Konto einzuziehen.
+Wie Du an der Initiative 25+ teilnehmen kannst erfährst Du unter [3].
 {%- endif %}
 
 Falls Du möchtest, dass wir Deine Daten vollständig löschen, wende Dich
