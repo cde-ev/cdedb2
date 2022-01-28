@@ -39,27 +39,34 @@ Deine Mitgliedschaft endet dann in wenigen Wochen automatisch. Solltest
 du später wieder Interesse am CdE haben, kannst du jederzeit wieder
 Mitglied werden.
 {% endif %}
-{% if lastschrift and lastschrift['id'] in open_lastschrift %}
+{% if lastschrift %}
 
 
 == Mitgliedsbeitrag per Lastschrift ==
 
 Wir danken Dir, dass Du uns erlaubt hast, jährlich per Lastschrift
-von Deinem Konto den jährlichen Mitgliedsbeitrag und eine Spende
-einzuziehen. Das Lastschriftmandat mit der Mandatsreferenz
+von Deinem Konto den jährlichen Mitgliedsbeitrag von {{ (2*fee)|money }}
+und eine Spende einzuziehen. Das Lastschriftmandat mit der Mandatsreferenz
 {{ lastschrift['reference'] }} kannst Du unter
 {{ cdedblink("cde/lastschrift_show", {'persona_id': persona['id']}) }}
-einsehen. Sollte sich Deine Bankverbindung geändert haben,
-so informiere uns bitte.
+einsehen. Sollte sich Deine Kontoverbindung inzwischen
+geändert haben, informiere uns bitte unter <{{ MANAGEMENT_ADDRESS }}>.
+{% if lastschrift['id'] in open_lastschrift %}
 
 In wenigen Tagen werden wir nun den vereinbarten Betrag
 von Deinem Konto abbuchen. Den genauen Termin werden wir Dir noch
-gesondert mitteilen. Sollte sich Deine Kontoverbindung inzwischen
-geändert haben, informiere uns bitte unter <{{ MANAGEMENT_ADDRESS }}>.
+gesondert mitteilen.
 
-Bitte melde Dich auch bei uns, wenn Du diesen Betrag lieber von Deinem
+Bitte melde Dich bei uns, wenn Du diesen Betrag lieber von Deinem
 CdE-'Guthabenkonto' abgezogen haben möchtest, oder auch, wenn Du dieses
-Jahr mit dem Lastschrifteinzug pausieren möchtest.
+Jahr mit dem Lastschrifteinzug pausieren oder ihn vollständig
+widerrufen möchtest.
+{% else %}
+
+Wir informieren Dich in einer gesonderten E-Mail vor jeder
+Lastschrift. Wenn Du Deine Lastschrift widerrufen möchtest, melde
+Dich bitte bei uns.
+{% endif %}
 {% endif %}
 {% if addresscheck %}
 
@@ -127,20 +134,6 @@ Mitgliedsbeitrag und eine Spende einzuziehen (Initiative 25+). Um
 Dich hieran zu beteiligen, rufe bitte
 {{ cdedblink("cde/i25p_index") }}
 auf und folge den dort angegebenen Hinweisen.
-{% endif %}
-{% if lastschrift and not lastschrift['id'] in open_lastschrift %}
-
-
-== Lastschriftmandat ==
-
-Wir danken Dir, dass Du uns erlaubt hast, jährlich per Lastschrift
-von Deinem Konto den jährlichen Mitgliedsbeitrag und eine Spende
-einzuziehen. Wir informieren Dich in einer gesonderten E-Mail vor
-jeder Lastschrift. Das Lastschriftmandat mit der Mandatsreferenz
-{{ lastschrift['reference'] }} kannst Du unter
-{{ cdedblink("core/index") }}
-widerrufen. Sollte sich Deine Bankverbindung geändert haben,
-so informiere uns bitte.
 {% endif %}
 
 
