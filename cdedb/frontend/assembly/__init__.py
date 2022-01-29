@@ -1636,5 +1636,6 @@ class AssemblyFrontend(AbstractUserFrontend):
     def download_verify_result_script(self, rs: RequestState) -> Response:
         """Download the script to verify the vote result files."""
         result = self.bundle_verify_result_zipapp()
-        return self.send_file(rs, data=result, inline=False,
-                              filename="verify_result.pyz")
+        return self.send_file(
+            rs, data=result, inline=False, filename="verify_result.pyz",
+            mimetype="application/zip")
