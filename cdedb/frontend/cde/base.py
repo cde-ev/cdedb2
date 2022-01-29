@@ -75,11 +75,8 @@ class CdEBaseFrontend(AbstractUserFrontend):
         if not self.conf["PERIODS_PER_YEAR"] == 2:
             msg = (f"{self.conf['PERIODS_PER_YEAR']} periods per year not"
                    f" supported.")
-            if self.conf["CDEDB_DEV"] or self.conf["CDEDB_TEST"]:
-                raise RuntimeError(msg)
-            else:
-                self.logger.error(msg)
-                return now().date()
+            self.logger.error(msg)
+            return now().date()
         periods_left = persona_data['balance'] // self.conf["MEMBERSHIP_FEE"]
         if persona_data['trial_member']:
             periods_left += 1
@@ -160,7 +157,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             rs, new, generation=None, may_wait=False,
             change_note=change_note)
         message = n_("Consent noted.") if ack else n_("Decision noted.")
-        self.notify_return_code(rs, code, success=message)
+        rs.notify_return_code(code, success=message)
         if not code:
             return self.consent_decision_form(rs)
         if not data['decided_search']:

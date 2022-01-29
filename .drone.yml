@@ -25,6 +25,7 @@ steps:
   - git checkout $DRONE_TARGET_BRANCH
   - git fetch origin $DRONE_COMMIT
   - git merge $DRONE_COMMIT || (git merge --abort && git checkout $DRONE_COMMIT)
+  - git tag --message "Git state upon which all ci steps work." ci/workdir
 - name: build images
   image: docker:20.10
   volumes:
@@ -36,8 +37,8 @@ steps:
   # we do not tag a version as this would create many images
   # which would not be cleared from docker cache
   - docker build --file related/docker/Dockerfile-postgres --tag cdepostgres .
-  - docker build --file related/docker/Dockerfile-cdedb --tag cdedb:20210705 .
-  - docker build --file related/docker/Dockerfile-ldap --tag ldap:20210705 .
+  - docker build --file related/docker/Dockerfile-cdedb --tag cdedb:20211218 .
+  - docker build --file related/docker/Dockerfile-ldap --tag ldap:20211218 .
 - name: cdb # is used as the hostname for the container
   image: cdepostgres
   pull: never # do not try to pull image from docker hub
@@ -50,7 +51,7 @@ steps:
   depends_on:
   - build images
 - name: evolution-trial
-  image: cdedb:20210705
+  image: cdedb:20211218
   pull: never # do not try to pull image from docker hub
   depends_on:
     - cdb
@@ -59,9 +60,10 @@ steps:
     - make i18n-compile # needed for sample-data step.
     - make sample-data # perform basic setup.
     - make sql-test # create the necessary test database.
-    - bin/evolution-trial.sh origin/$DRONE_TARGET_BRANCH $DRONE_COMMIT
+    - bin/evolution-trial.sh origin/$DRONE_TARGET_BRANCH $DRONE_COMMIT || (git checkout ci/workdir && exit 1)
+    - git checkout ci/workdir
 - name: mypy
-  image: cdedb:20210705
+  image: cdedb:20211218
   pull: never # do not try to pull image from docker hub
   depends_on:
     - evolution-trial # wait for all git operations to be done
@@ -72,7 +74,7 @@ steps:
   commands:
     - make mypy
 - name: lint
-  image: cdedb:20210705
+  image: cdedb:20211218
   pull: never # do not try to pull image from docker hub
   depends_on:
     - evolution-trial # wait for all git operations to be done
@@ -83,7 +85,7 @@ steps:
   commands:
     - make lint
 - name: testsuite-setup
-  image: cdedb:20210705
+  image: cdedb:20211218
   pull: never # do not try to pull image from docker hub
   depends_on:
     - evolution-trial # wait for all git operations to be done
@@ -98,7 +100,7 @@ steps:
   - make sample-data # this creates the sql schema and copies the localconfig.py
   - make TESTDATABASENAME=cdb_test sql-test # create the test database for ldap
 - name: ldap # is used as the hostname for the container
-  image: ldap:20210705
+  image: ldap:20211218
   pull: never # do not try to pull image from docker hub
   detach: true # detach to keep running for the following steps
   depends_on:
@@ -111,8 +113,10 @@ steps:
     # we use the database without a name as only readonly access is required
     # and this will work regardless of the id the testing container gets
     DATABASE_NAME: cdb_test
+    DATABASE_HOST: cdb # server on which ldap will listen
+    DATABASE_CDB_ADMIN_PASSWORD: 9876543210abcdefghijklmnopqrst
 - name: frontend tests a-d
-  image: cdedb:20210705
+  image: cdedb:20211218
   pull: never # do not try to pull image from docker hub
   depends_on:
   - testsuite-setup
@@ -124,10 +128,12 @@ steps:
   volumes:
   - name: tmp_dir
     path: /tmp
+  - name: coverage
+    path: /coverage
   commands:
-  - bin/check.py --verbose --first # everything before event
+  - COVERAGE_FILE=/coverage/.coverage.1 python3 -m coverage run -p bin/check.py --verbose --first # everything before event
 - name: frontend tests e-z
-  image: cdedb:20210705
+  image: cdedb:20211218
   pull: never # do not try to pull image from docker hub
   depends_on:
   - testsuite-setup
@@ -139,10 +145,12 @@ steps:
   volumes:
   - name: tmp_dir
     path: /tmp
+  - name: coverage
+    path: /coverage
   commands:
-  - bin/check.py --verbose --second # event and following
+  - COVERAGE_FILE=/coverage/.coverage.2 python3 -m coverage run -p bin/check.py --verbose --second # event and following
 - name: non-frontend tests
-  image: cdedb:20210705
+  image: cdedb:20211218
   pull: never # do not try to pull image from docker hub
   depends_on:
   - testsuite-setup
@@ -154,11 +162,30 @@ steps:
   volumes:
   - name: tmp_dir
     path: /tmp
+  - name: coverage
+    path: /coverage
   commands:
   - sleep 10
-  - bin/check.py --verbose --third
-- name: xss
+  - COVERAGE_FILE=/coverage/.coverage.3 python3 -m coverage run -p bin/check.py --verbose --third
+- name: coverage
   image: cdedb:20210705
+  pull: never
+  depends_on:
+  - frontend tests a-d
+  - frontend tests e-z
+  - non-frontend tests
+  when:
+    status:
+      - failure
+      - success
+  volumes:
+  - name: coverage
+    path: /coverage
+  commands:
+  - python3 -m coverage combine /coverage/
+  - python3 -m coverage report --include 'cdedb/*' --show-missing --fail-under=92
+- name: xss
+  image: cdedb:20211218
   pull: never
   depends_on:
     - testsuite-setup
@@ -198,6 +225,9 @@ volumes:
     medium: memory
 - name: tmp_dir
   temp: {}
+- name: coverage
+  temp: {}
+
 
 trigger:
   branch:

@@ -687,7 +687,7 @@ class CdEBackend(AbstractBackend):
             # We perform a rather big transaction, so serialization errors
             # could happen.
             return False, None, None
-        except Exception:
+        except Exception:  # pragma: no cover
             # This blanket catching of all exceptions is a last resort. We try
             # to do enough validation, so that this should never happen, but
             # an opaque error (as would happen without this) would be rather
@@ -1587,7 +1587,7 @@ class CdEBackend(AbstractBackend):
             # We perform a rather big transaction, so serialization errors
             # could happen.
             return False, None, None
-        except Exception:
+        except Exception:  # pragma: no cover
             # This blanket catching of all exceptions is a last resort. We try
             # to do enough validation, so that this should never happen, but
             # an opaque error (as would happen without this) would be rather

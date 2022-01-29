@@ -128,7 +128,7 @@ class EventCourseMixin(EventBaseFrontend):
             return self.change_course_form(rs, event_id, course_id)
         assert data is not None
         code = self.eventproxy.set_course(rs, data)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "event/show_course")
 
     @access("event")
@@ -169,7 +169,7 @@ class EventCourseMixin(EventBaseFrontend):
         assert data is not None
 
         new_id = self.eventproxy.create_course(rs, data)
-        self.notify_return_code(rs, new_id, success=n_("Course created."))
+        rs.notify_return_code(new_id, success=n_("Course created."))
         return self.redirect(rs, "event/show_course", {'course_id': new_id})
 
     @access("event", modi={"POST"})
@@ -191,7 +191,7 @@ class EventCourseMixin(EventBaseFrontend):
             return self.redirect(rs, "event/show_course")
         code = self.eventproxy.delete_course(
             rs, course_id, {"instructors", "course_choices", "course_segments"})
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "event/course_stats")
 
     @access("event")
@@ -656,17 +656,20 @@ class EventCourseMixin(EventBaseFrontend):
 
         without_course = {
             track_id: xsorted(
-                (registration_id
-                 for registration_id in registrations
-                 if _check_without_course(registration_id, track_id)),
-                key=lambda anid: EntitySorter.persona(
-                    personas[registrations[anid]['persona_id']])
+                (
+                    (registration_id, make_persona_name(
+                        personas[registrations[registration_id]['persona_id']]))
+                    for registration_id in registrations
+                    if _check_without_course(registration_id, track_id)
+                ),
+                key=lambda tpl: EntitySorter.persona(
+                    personas[registrations[tpl[0]]['persona_id']])
             )
             for track_id in tracks
         }
 
         # Generate data to be encoded to json and used by the
-        # cdedbSearchParticipant() javascript function
+        # cdedbMultiSelect() javascript function
         def _check_not_this_course(registration_id: int, track_id: int) -> bool:
             """Un-inlined check for registration with different course."""
             reg = registrations[registration_id]
@@ -678,12 +681,12 @@ class EventCourseMixin(EventBaseFrontend):
         selectize_data = {
             track_id: xsorted(
                 ({'name': make_persona_name(personas[registration['persona_id']]),
-                  'current': registration['tracks'][track_id]['course_id'],
+                  'group_id': registration['tracks'][track_id]['course_id'],
                   'id': registration_id}
                  for registration_id, registration in registrations.items()
                  if _check_not_this_course(registration_id, track_id)),
                 key=lambda x: (
-                    x['current'] is not None,
+                    x['group_id'] is not None,
                     EntitySorter.persona(
                         personas[registrations[x['id']]['persona_id']]))
             )
@@ -754,5 +757,5 @@ class EventCourseMixin(EventBaseFrontend):
                     }
             if new_reg['tracks']:
                 code *= self.eventproxy.set_registration(rs, new_reg, change_note)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "event/show_course")

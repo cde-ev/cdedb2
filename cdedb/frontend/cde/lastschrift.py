@@ -126,7 +126,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             return self.lastschrift_change_form(rs, lastschrift_id)
         assert data is not None
         code = self.cdeproxy.set_lastschrift(rs, data)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "cde/lastschrift_show", {
             'persona_id': rs.ambience['lastschrift']['persona_id']})
 
@@ -153,7 +153,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             return self.redirect(rs, "cde/lastschrift_show", {
                 'persona_id': persona_id})
         new_id = self.cdeproxy.create_lastschrift(rs, data)
-        self.notify_return_code(rs, new_id)
+        rs.notify_return_code(new_id)
         return self.redirect(
             rs, "cde/lastschrift_show", {'persona_id': persona_id})
 
@@ -171,7 +171,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         lastschrift = self.cdeproxy.get_lastschrift(rs, lastschrift_id)
         persona_id = lastschrift['persona_id']
         code = self.cdeproxy.set_lastschrift(rs, data)
-        self.notify_return_code(rs, code, success=n_("Permit revoked."))
+        rs.notify_return_code(code, success=n_("Permit revoked."))
         transaction_ids = self.cdeproxy.list_lastschrift_transactions(
             rs, lastschrift_ids=(lastschrift_id,),
             stati=(const.LastschriftTransactionStati.issued,))
@@ -445,7 +445,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         code = self.cdeproxy.finalize_lastschrift_transaction(
             rs, transaction_id, status,
             tally=self.tally_for_lastschrift_status(status))
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         if persona_id:
             return self.redirect(rs, "cde/lastschrift_show",
                                  {'persona_id': persona_id})
@@ -475,7 +475,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         elif failure:
             status = const.LastschriftTransactionStati.failure
         else:
-            raise RuntimeError("Impossible.")
+            raise RuntimeError(n_("Impossible."))
         code = 1
         transactions = [
             {
@@ -485,7 +485,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             }
             for transaction_id in transaction_ids]
         code = self.cdeproxy.finalize_lastschrift_transactions(rs, transactions)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "cde/lastschrift_index")
 
     @access("finance_admin", modi={"POST"})
@@ -503,7 +503,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         tally = -self.conf["SEPA_ROLLBACK_FEE"]
         code = self.cdeproxy.rollback_lastschrift_transaction(
             rs, transaction_id, tally)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         transaction_ids = self.cdeproxy.list_lastschrift_transactions(
             rs, lastschrift_ids=(lastschrift_id,),
             stati=(const.LastschriftTransactionStati.issued,))

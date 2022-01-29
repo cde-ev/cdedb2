@@ -89,6 +89,7 @@ from cdedb.filter import (
     JINJA_FILTERS, cdedbid_filter, enum_entries_filter, safe_filter, sanitize_None,
 )
 from cdedb.query import Query
+from cdedb.query_defaults import DEFAULT_QUERIES
 
 _LOGGER = logging.getLogger(__name__)
 _BASICCONF = BasicConfig()
@@ -122,11 +123,11 @@ class BaseApp(metaclass=abc.ABCMeta):
         secrets = SecretsConfig(configpath)
         # initialize logging
         if hasattr(self, 'realm') and self.realm:
-            logger_name = "cdedb.frontend.{}".format(self.realm)
-            logger_file = self.conf[f"{self.realm.upper()}_FRONTEND_LOG"]
+            logger_name = f"cdedb.frontend.{self.realm}"
+            logger_file = self.conf["LOG_DIR"] / f"cdedb-frontend-{self.realm}.log"
         else:
             logger_name = "cdedb.frontend"
-            logger_file = self.conf["FRONTEND_LOG"]
+            logger_file = self.conf["LOG_DIR"] / "cdedb-frontend.log"
         make_root_logger(
             logger_name, logger_file, self.conf["LOG_LEVEL"],
             syslog_level=self.conf["SYSLOG_LEVEL"],
@@ -205,15 +206,14 @@ class BaseApp(metaclass=abc.ABCMeta):
         taken not to lose any notifications.
         """
         params = params or {}
-        if rs.retrieve_validation_errors() and not rs.notifications:
-            rs.notify("error", n_("Failed validation."))
+        if not rs.notifications:
+            rs.notify_validation()
         url = cdedburl(rs, target, params, force_external=True)
         if anchor is not None:
             url += "#" + anchor
         ret = basic_redirect(rs, url)
         if rs.notifications:
-            notifications = [self.encode_notification(rs, ntype, nmessage,
-                                                      nparams)
+            notifications = [self.encode_notification(rs, ntype, nmessage, nparams)
                              for ntype, nmessage, nparams in rs.notifications]
             ret.set_cookie("displaynote", json_serialize(notifications))
         return ret
@@ -270,8 +270,7 @@ PeriodicMethod = Callable[[Any, RequestState, CdEDBObject], CdEDBObject]
 class PeriodicJob(Protocol):
     cron: CdEDBObject
 
-    def __call__(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject:
-        ...
+    def __call__(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject: ...
 
 
 def periodic(name: str, period: int = 1
@@ -676,12 +675,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
             _LOGGER.debug(debugstring)
             params['debugstring'] = debugstring
-        if (errors := rs.retrieve_validation_errors()) and not rs.notifications:
-            if all(isinstance(kind, ValidationWarning) for param, kind in errors):
-                rs.notify("warning", n_("Input seems faulty. Please double-check if"
-                                        " you really want to save it."))
-            else:
-                rs.notify("error", n_("Failed validation."))
+        if not rs.notifications:
+            rs.notify_validation()
         if self.conf["LOCKDOWN"]:
             rs.notify("info", n_("The database currently undergoes "
                                  "maintenance and is unavailable."))
@@ -831,7 +826,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             query_input = scope.mangle_query_input(rs)
             query = check_validation(rs, vtypes.QueryInput, query_input, "query",
                                      spec=spec, allow_empty=False)
-        default_queries = self.conf["DEFAULT_QUERIES"][default_scope]
+        default_queries = DEFAULT_QUERIES[default_scope]
         choices_lists = {}
         if choices is None:
             choices = {}
@@ -899,7 +894,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if not msg["To"] and not msg["Cc"] and not msg["Bcc"]:
             self.logger.warning("No recipients for mail. Dropping it.")
             return None
-        if not self.conf["CDEDB_DEV"]:
+        if not self.conf["CDEDB_DEV"]:  # pragma: no cover
             s = smtplib.SMTP(self.conf["MAIL_HOST"])
             s.send_message(msg)
             s.quit()
@@ -926,31 +921,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if quote_me is not None:
             params['quote_me'] = True
         return self.redirect(rs, 'core/show_user', params=params)
-
-    @staticmethod
-    def notify_return_code(rs: RequestState, code: Union[int, bool, None],
-                           success: str = n_("Change committed."),
-                           info: str = n_("Change pending."),
-                           error: str = n_("Change failed.")) -> None:
-        """Small helper to issue a notification based on a return code.
-
-        We allow some flexibility in what type of return code we accept. It
-        may be a boolean (with the obvious meanings), an integer (specifying
-        the number of changed entries, and negative numbers for entries with
-        pending review) or None (signalling failure to acquire something).
-
-        :param success: Affirmative message for positive return codes.
-        :param info: Message for negative return codes signalling review.
-        :param error: Exception message for zero return codes.
-        """
-        if not code:
-            rs.notify("error", error)
-        elif code is True or code > 0:
-            rs.notify("success", success)
-        elif code < 0:
-            rs.notify("info", info)
-        else:
-            raise RuntimeError(n_("Impossible."))
 
     def safe_compile(self, rs: RequestState, target_file: str, cwd: PathLike,
                      runs: int, errormsg: Optional[str]) -> pathlib.Path:
@@ -1170,7 +1140,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
             if exists:
                 rs.extend_validation_errors(
                     (("username",
-                      ValueError("User with this E-Mail exists already.")),))
+                      ValueError(n_("User with this E-Mail exists already."))),))
         if rs.has_validation_errors() or not data:
             return self.create_user_form(rs)
         new_id = self.coreproxy.create_persona(rs, data)
@@ -1192,7 +1162,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
                           'meta_info': meta_info,
                           })
 
-            self.notify_return_code(rs, new_id, success=n_("User created."))
+            rs.notify_return_code(new_id, success=n_("User created."))
             return self.redirect_show_user(rs, new_id)
         else:
             return self.create_user_form(rs)
@@ -1220,8 +1190,8 @@ class CdEMailmanClient(mailmanclient.Client):
         # Initialize logger. This needs the base class initialization to be done.
         logger_name = "cdedb.frontend.mailmanclient"
         make_root_logger(
-            logger_name, self.conf["MAILMAN_LOG"], self.conf["LOG_LEVEL"],
-            syslog_level=self.conf["SYSLOG_LEVEL"],
+            logger_name, self.conf["LOG_DIR"] / "cdedb-frontend-mailman.log",
+            self.conf["LOG_LEVEL"], syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         self.logger = logging.getLogger(logger_name)
         self.logger.debug(f"Instantiated {self} with configpath {conf._configpath}.")
@@ -1260,6 +1230,24 @@ class CdEMailmanClient(mailmanclient.Client):
             mmlist = self.get_list_safe(dblist['address'])
             return mmlist.held if mmlist else None
 
+    def get_held_message_count(self, dblist: CdEDBObject) -> Optional[int]:
+        """Returns the number of held messages for a mailman list.
+
+        If the list is not managed by mailman, this returns None instead.
+        """
+        if self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or self.conf["CDEDB_DEV"]:
+            self.logger.info("Skipping mailman query in dev/offline mode.")
+            if self.conf["CDEDB_DEV"]:
+                # Add some diversity.
+                if dblist['id'] % 2 == 0:
+                    return len(HELD_MESSAGE_SAMPLE)
+                else:
+                    return 0
+        else:
+            mmlist = self.get_list_safe(dblist['address'])
+            return mmlist.get_held_count() if mmlist else None
+        return None
+
 
 # Type Aliases for the Worker class.
 WorkerTarget = Callable[[RequestState], bool]
@@ -1297,7 +1285,8 @@ class Worker(threading.Thread):
         # noinspection PyProtectedMember
         secrets = SecretsConfig(conf._configpath)
         connpool = connection_pool_factory(
-            conf["CDB_DATABASE_NAME"], DATABASE_ROLES, secrets, conf["DB_PORT"])
+            conf["CDB_DATABASE_NAME"], DATABASE_ROLES, secrets,
+            conf["DB_HOST"], conf["DB_PORT"])
         rrs._conn = connpool[roles_to_db_role(rs.user.roles)]
         logger = logging.getLogger("cdedb.frontend.worker")
 
@@ -1443,6 +1432,11 @@ def reconnoitre_ambience(obj: AbstractFrontend,
         Scout(None, 'field_id', None,
               ((lambda a: do_assert(rs.requestargs['field_id']
                                     in a['event']['fields'])),)),
+        # Dirty hack, that relies on the event being retrieved into ambience first.
+        Scout(lambda anid: ambience['event']['part_groups'][anid],  # type: ignore[has-type]
+              'part_group_id', 'part_group',
+              ((lambda a: do_assert(a['part_group']['event_id']
+                                    == a['event']['id'])),)),
         Scout(lambda anid: obj.assemblyproxy.get_attachment(rs, anid),
               'attachment_id', 'attachment',
               ((lambda a: do_assert(a['attachment']['assembly_id']
@@ -1758,7 +1752,8 @@ def REQUESTdata(
                         if timeout is False:
                             rs.notify("warning", n_("Link invalid."))
 
-                    if typing.get_origin(type_) is collections.abc.Collection:
+                    origin = typing.get_origin(type_)
+                    if origin is collections.abc.Collection:
                         type_ = unwrap(type_.__args__)
                         vals = tuple(rs.request.values.getlist(name))
                         if vals:
@@ -2304,7 +2299,8 @@ def process_dynamic_input(
         else:
             entry = ret[anid]
             assert entry is not None
-            if type_ is not vtypes.EventTrack:
+            if type_ not in {vtypes.EventTrack, vtypes.BallotCandidate,
+                             vtypes.EventPartGroup}:
                 entry["id"] = anid
             entry.update(additional)
             # apply the promised validation

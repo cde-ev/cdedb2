@@ -399,6 +399,7 @@
     "pagination.less",
     "pager.less",
     "labels.less",
+    "badges.less",
     "thumbnails.less",
     "alerts.less",
     "media.less",

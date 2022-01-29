@@ -19,7 +19,7 @@ from cdedb.common import (
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, check_validation as check, drow_name,
-    event_guard, process_dynamic_input, request_extractor,
+    event_guard, make_persona_name, process_dynamic_input, request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
 from cdedb.frontend.event.lodgement_wishes import (
@@ -331,7 +331,7 @@ class EventLodgementMxin(EventBaseFrontend):
             else:
                 del group['event_id']
                 code *= self.eventproxy.rcw_lodgement_group(rs, group)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "event/lodgement_group_summary")
 
     @access("event")
@@ -453,7 +453,7 @@ class EventLodgementMxin(EventBaseFrontend):
         assert data is not None
 
         new_id = self.eventproxy.create_lodgement(rs, data)
-        self.notify_return_code(rs, new_id)
+        rs.notify_return_code(new_id)
         return self.redirect(rs, "event/show_lodgement",
                              {'lodgement_id': new_id})
 
@@ -494,7 +494,7 @@ class EventLodgementMxin(EventBaseFrontend):
         assert data is not None
 
         code = self.eventproxy.set_lodgement(rs, data)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "event/show_lodgement")
 
     @access("event", modi={"POST"})
@@ -510,7 +510,7 @@ class EventLodgementMxin(EventBaseFrontend):
             return self.show_lodgement(rs, event_id, lodgement_id)
         code = self.eventproxy.delete_lodgement(
             rs, lodgement_id, cascade={"inhabitants"})
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "event/lodgements")
 
     @access("event")
@@ -541,17 +541,20 @@ class EventLodgementMxin(EventBaseFrontend):
 
         without_lodgement = {
             part_id: xsorted(
-                (registration_id
-                 for registration_id in registrations
-                 if _check_without_lodgement(registration_id, part_id)),
-                key=lambda anid: EntitySorter.persona(
-                    personas[registrations[anid]['persona_id']])
+                (
+                    (registration_id, make_persona_name(
+                        personas[registrations[registration_id]['persona_id']]))
+                    for registration_id in registrations
+                    if _check_without_lodgement(registration_id, part_id)
+                ),
+                key=lambda tpl: EntitySorter.persona(
+                    personas[registrations[tpl[0]]['persona_id']])
             )
             for part_id in rs.ambience['event']['parts']
         }
 
         # Generate data to be encoded to json and used by the
-        # cdedbSearchParticipant() javascript function
+        # cdedbMultiSelect() javascript function
         def _check_not_this_lodgement(registration_id: int, part_id: int) -> bool:
             """Un-inlined check for registration with different lodgement."""
             part = registrations[registration_id]['parts'][part_id]
@@ -563,12 +566,12 @@ class EventLodgementMxin(EventBaseFrontend):
                 [{'name': (personas[registration['persona_id']]['given_names']
                            + " " + personas[registration['persona_id']]
                            ['family_name']),
-                  'current': registration['parts'][part_id]['lodgement_id'],
+                  'group_id': registration['parts'][part_id]['lodgement_id'],
                   'id': registration_id}
                  for registration_id, registration in registrations.items()
                  if _check_not_this_lodgement(registration_id, part_id)],
                 key=lambda x: (
-                    x['current'] is not None,
+                    x['group_id'] is not None,
                     EntitySorter.persona(
                         personas[registrations[x['id']]['persona_id']]))
             )
@@ -653,7 +656,7 @@ class EventLodgementMxin(EventBaseFrontend):
                     }
             if new_reg['parts']:
                 code *= self.eventproxy.set_registration(rs, new_reg, change_note)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "event/show_lodgement")
 
     @access("event", modi={"POST"})
@@ -700,5 +703,5 @@ class EventLodgementMxin(EventBaseFrontend):
         change_note = ", ".join(change_notes) + "."
         for new_reg in new_regs.values():
             code *= self.eventproxy.set_registration(rs, new_reg, change_note)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "event/show_lodgement")

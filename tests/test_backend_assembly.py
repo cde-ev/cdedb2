@@ -3,7 +3,7 @@
 
 import datetime
 import json
-from typing import Collection, NamedTuple, Optional
+from typing import Collection, List, NamedTuple, Optional
 
 import freezegun
 import pytz
@@ -208,7 +208,7 @@ class TestAssemblyBackend(BackendTest):
     def test_entity_ballot(self) -> None:
         assembly_id = 1
         log_offset, _ = self.assembly.retrieve_log(self.key, assembly_id=assembly_id)
-        log = []
+        log: List[CdEDBObject] = []
         expectation = {1: 'Antwort auf die letzte aller Fragen',
                        2: 'Farbe des Logos',
                        3: 'Bester Hof',
@@ -251,6 +251,7 @@ class TestAssemblyBackend(BackendTest):
                         'shortname': '4',
                     },
                 },
+                'comment': None,
                 'description': 'Nach dem Leben, dem Universum und dem ganzen Rest.',
                 'extended': True,
                 'id': 1,
@@ -304,6 +305,7 @@ class TestAssemblyBackend(BackendTest):
                         'shortname': 'N',
                     },
                 },
+                'comment': None,
                 'description': 'denkt an die Frutaner',
                 'extended': None,
                 'id': 4,
@@ -350,6 +352,7 @@ class TestAssemblyBackend(BackendTest):
                                'title': 'Blau',
                                'id': 9,
                                'shortname': 'blau'}},
+            'comment': None,
             'description': 'Ulitmativ letzte Entscheidung',
             'extended': None,
             'id': ballot_id,
@@ -372,7 +375,7 @@ class TestAssemblyBackend(BackendTest):
             'id': ballot_id,
             'use_bar': True,
             'candidates': {
-                6: {'title': 'Teracotta', 'shortname': 'terra', 'id': 6},
+                6: {'title': 'Teracotta', 'shortname': 'terra'},
                 7: None,
                 -1: {'title': 'Aquamarin', 'shortname': 'aqua'},
             },
@@ -382,27 +385,26 @@ class TestAssemblyBackend(BackendTest):
             'rel_quorum': 100,
         }
         self.assertLess(0, self.assembly.set_ballot(self.key, data))
-        log.append({
-            "code": const.AssemblyLogCodes.ballot_changed,
-            "assembly_id": assembly_id,
-            "change_note": self.get_sample_datum(
-                "assembly.ballots", ballot_id)['title'],
-        })
-        log.append({
-            "code": const.AssemblyLogCodes.candidate_added,
-            "assembly_id": assembly_id,
-            "change_note": data['candidates'][-1]['shortname'],
-        })
-        log.append({
-            "code": const.AssemblyLogCodes.candidate_updated,
-            "assembly_id": assembly_id,
-            "change_note": expectation['candidates'][6]['shortname'],
-        })
-        log.append({
-            "code": const.AssemblyLogCodes.candidate_removed,
-            "assembly_id": assembly_id,
-            "change_note": expectation['candidates'][7]['shortname'],
-        })
+        log.extend((
+            {
+                "code": const.AssemblyLogCodes.ballot_changed,
+                "assembly_id": assembly_id,
+                "change_note": self.get_sample_datum(
+                    "assembly.ballots", ballot_id)['title'],
+            }, {
+                "code": const.AssemblyLogCodes.candidate_added,
+                "assembly_id": assembly_id,
+                "change_note": data['candidates'][-1]['shortname'],
+            }, {
+                "code": const.AssemblyLogCodes.candidate_updated,
+                "assembly_id": assembly_id,
+                "change_note": expectation['candidates'][6]['shortname'],
+            }, {
+                "code": const.AssemblyLogCodes.candidate_removed,
+                "assembly_id": assembly_id,
+                "change_note": expectation['candidates'][7]['shortname'],
+            }
+        ))
         for key in ('use_bar', 'notes', 'vote_extension_end', 'rel_quorum'):
             expectation[key] = data[key]
         expectation['abs_quorum'] = 0
@@ -438,23 +440,21 @@ class TestAssemblyBackend(BackendTest):
             'votes': None,
         }
         new_id = self.assembly.create_ballot(self.key, data)
-        log.append({
-            "code": const.AssemblyLogCodes.ballot_created,
-            "assembly_id": assembly_id,
-            "change_note": data['title'],
-        })
-        log.append({
-            "code": const.AssemblyLogCodes.candidate_added,
-            "assembly_id": assembly_id,
-            "change_note": data['candidates'][-1]['shortname'],
-        })
-        log.append({
-            "code": const.AssemblyLogCodes.candidate_added,
-            "assembly_id": assembly_id,
-            "change_note": data['candidates'][-2]['shortname'],
-        })
+        log.extend((
+            {
+                "code": const.AssemblyLogCodes.ballot_created,
+                "assembly_id": assembly_id,
+                "change_note": data['title'],
+            },
+            *({
+                "code": const.AssemblyLogCodes.candidate_added,
+                "assembly_id": assembly_id,
+                "change_note": data['candidates'][cid]['shortname'],
+            } for cid in (-1, -2))
+        ))
         self.assertLess(0, new_id)
         data.update({
+            'comment': None,
             'extended': None,
             'quorum': 10,
             'id': new_id,
@@ -479,84 +479,123 @@ class TestAssemblyBackend(BackendTest):
         self.assertEqual(data, self.assembly.get_ballot(self.key, new_id))
         old_ballot_id = 2
         old_ballot_data = self.get_sample_datum("assembly.ballots", old_ballot_id)
-        attachment_data = {
+
+        # differentiate attachments by title to test stable sorting
+        attachment_data = [{
             "assembly_id": assembly_id,
-            "title": "Rechenschaftsbericht",
+            "title": "Rechenschaftsbericht" + str(n),
             "authors": "Farin",
             "filename": "rechen.pdf",
+        } for n in range(4)]
+
+        # First, we'll modify both ballots symmetrically.
+        # dict order is stable, i.e. list(ballots) == [old_ballot_id, new_id]
+        ballots = {
+            old_ballot_id: old_ballot_data,
+            new_id: data,
         }
-        attachment_id = self.assembly.add_attachment(self.key, attachment_data, b'123')
-        self.assertTrue(
-            self.assembly.add_attachment_ballot_link(self.key, attachment_id, new_id))
-        self.assertTrue(
-            self.assembly.add_attachment_ballot_link(
-                self.key, attachment_id, old_ballot_id))
+
+        # simply add one attachment and link it
+        attachment_id = self.assembly.add_attachment(
+            self.key, attachment_data[0], b'123')
         log.append({
             "code": const.AssemblyLogCodes.attachment_added,
             "assembly_id": assembly_id,
-            "change_note": attachment_data['title'],
+            "change_note": attachment_data[0]['title'],
         })
-        log.append({
-            "code": const.AssemblyLogCodes.attachment_ballot_link_created,
-            "assembly_id": assembly_id,
-            "change_note": f"{attachment_data['title']} ({data['title']})",
-        })
-        log.append({
-            "code": const.AssemblyLogCodes.attachment_ballot_link_created,
-            "assembly_id": assembly_id,
-            "change_note": f"{attachment_data['title']} ({old_ballot_data['title']})",
-        })
+        for bid, bdata in ballots.items():
+            self.assertTrue(
+                self.assembly.add_attachment_ballot_link(self.key, attachment_id, bid))
+            log.append({
+                "code": const.AssemblyLogCodes.attachment_ballot_link_created,
+                "assembly_id": assembly_id,
+                "change_note": f"{attachment_data[0]['title']} ({bdata['title']})",
+            })
 
         self.assertEqual(
-            [old_ballot_id, new_id],
+            list(ballots),
             self.assembly.get_attachment(self.key, attachment_id)['ballot_ids'])
-        self.assertEqual(
-            {attachment_id},
-            self.assembly.list_attachments(self.key, ballot_id=new_id))
-        self.assertEqual(
-            {attachment_id},
-            self.assembly.list_attachments(self.key, ballot_id=old_ballot_id))
+        for bid in ballots:
+            self.assertEqual(
+                {attachment_id},
+                self.assembly.list_attachments(self.key, ballot_id=bid))
 
-        attachment_id2 = self.assembly.add_attachment(self.key, attachment_data, b'123')
-        self.assertTrue(
-            self.assembly.add_attachment_ballot_link(self.key, attachment_id2, new_id))
-        self.assertTrue(
-            self.assembly.add_attachment_ballot_link(
-                self.key, attachment_id2, old_ballot_id))
+        # add and link two more attachments
+        attachment_id1 = self.assembly.add_attachment(
+            self.key, attachment_data[1], b'123')
+        attachment_id2 = self.assembly.add_attachment(
+            self.key, attachment_data[2], b'123')
+        log.extend({
+            "code": const.AssemblyLogCodes.attachment_added,
+            "assembly_id": assembly_id,
+            "change_note": attachment_data[n]['title'],
+        } for n in (1, 2))
+        for bid, bdata in ballots.items():
+            self.assertTrue(
+                self.assembly.set_ballot_attachments(
+                    self.key, bid, [attachment_id, attachment_id2, attachment_id1]))
+            # Two of three links are new, they were added ordered by their ids.
+            log.extend({
+                "code": const.AssemblyLogCodes.attachment_ballot_link_created,
+                "assembly_id": assembly_id,
+                "change_note": f"{attachment_data[n]['title']} ({bdata['title']})",
+            } for n in (1, 2))
+
+        for aid in (attachment_id, attachment_id1, attachment_id2):
+            self.assertEqual(
+                list(ballots),
+                self.assembly.get_attachment(self.key, aid)['ballot_ids'])
+        for bid in ballots:
+            self.assertEqual(
+                {attachment_id, attachment_id1, attachment_id2},
+                self.assembly.list_attachments(self.key, ballot_id=bid))
+
+        # add and link another attachment, unlink two attachments
+        attachment_id3 = self.assembly.add_attachment(
+            self.key, attachment_data[3], b'123')
         log.append({
             "code": const.AssemblyLogCodes.attachment_added,
             "assembly_id": assembly_id,
-            "change_note": attachment_data['title'],
+            "change_note": attachment_data[3]['title'],
         })
-        log.append({
-            "code": const.AssemblyLogCodes.attachment_ballot_link_created,
-            "assembly_id": assembly_id,
-            "change_note": f"{attachment_data['title']} ({data['title']})",
-        })
-        log.append({
-            "code": const.AssemblyLogCodes.attachment_ballot_link_created,
-            "assembly_id": assembly_id,
-            "change_note": f"{attachment_data['title']} ({old_ballot_data['title']})",
-        })
+        for bid, bdata in ballots.items():
+            self.assertTrue(
+                self.assembly.set_ballot_attachments(
+                    self.key, bid, {attachment_id1, attachment_id3}))
+            # link removal also sorted by attachment_id
+            log.extend((
+                {
+                    "code": const.AssemblyLogCodes.attachment_ballot_link_created,
+                    "assembly_id": assembly_id,
+                    "change_note": f"{attachment_data[3]['title']} ({bdata['title']})",
+                },
+                *({
+                    "code": const.AssemblyLogCodes.attachment_ballot_link_deleted,
+                    "assembly_id": assembly_id,
+                    "change_note": f"{attachment_data[n]['title']} ({bdata['title']})",
+                } for n in (0, 2))
+            ))
 
-        self.assertEqual(
-            [old_ballot_id, new_id],
-            self.assembly.get_attachment(self.key, attachment_id2)['ballot_ids'])
-        self.assertEqual(
-            {attachment_id, attachment_id2},
-            self.assembly.list_attachments(self.key, ballot_id=new_id))
-        self.assertEqual(
-            {attachment_id, attachment_id2},
-            self.assembly.list_attachments(self.key, ballot_id=old_ballot_id))
+        for aid in (attachment_id, attachment_id2):
+            self.assertEqual(
+                [],
+                self.assembly.get_attachment(self.key, aid)['ballot_ids'])
+        for aid in (attachment_id1, attachment_id3):
+            self.assertEqual(
+                list(ballots),
+                self.assembly.get_attachment(self.key, aid)['ballot_ids'])
+        for bid in ballots:
+            self.assertEqual(
+                {attachment_id1, attachment_id3},
+                self.assembly.list_attachments(self.key, ballot_id=bid))
 
         cascade = {"attachments", "candidates", "voters"}
-        self.assertEqual(
-            cascade,
-            self.assembly.delete_ballot_blockers(self.key, new_id).keys())
-        self.assertEqual(
-            cascade,
-            self.assembly.delete_ballot_blockers(self.key, old_ballot_id).keys())
+        for bid in ballots:
+            self.assertEqual(
+                cascade,
+                self.assembly.delete_ballot_blockers(self.key, bid).keys())
 
+        # now the symmetry ends
         self.assertTrue(
             self.assembly.delete_ballot(self.key, old_ballot_id, cascade=cascade))
         log.append({
@@ -564,9 +603,10 @@ class TestAssemblyBackend(BackendTest):
             "assembly_id": assembly_id,
             "change_note": old_ballot_data['title'],
         })
-        self.assertEqual(
-            [new_id],
-            self.assembly.get_attachment(self.key, attachment_id)['ballot_ids'])
+        for aid in (attachment_id1, attachment_id3):
+            self.assertEqual(
+                [new_id],
+                self.assembly.get_attachment(self.key, aid)['ballot_ids'])
         expectation = {
             1: 'Antwort auf die letzte aller Fragen',
             3: 'Bester Hof',
@@ -847,6 +887,29 @@ class TestAssemblyBackend(BackendTest):
             self.assertEqual({23, 11}, self.assembly.list_attendees(self.key, new_id))
             self.login("anton")
             self.assertLess(0, self.assembly.conclude_assembly(self.key, new_id))
+
+    @as_users("werner")
+    def test_comment(self) -> None:
+        comment = "Ein Kommentar."
+
+        # Comment not possible for future and running ballots
+        for ballot_id in {2, 14, 15}:
+            with self.assertRaises(ValueError) as cm:
+                self.assembly.comment_concluded_ballot(self.key, ballot_id, comment)
+            self.assertIn("Comments are only allowed for concluded ballots.",
+                          cm.exception.args[0])
+
+        # Comment is possible for tallied ballots
+        self.assembly.comment_concluded_ballot(self.key, 1, comment)
+        self.assertEqual(self.assembly.get_ballot(self.key, 1)['comment'], comment)
+        self.assembly.comment_concluded_ballot(self.key, 1, "")
+        self.assertEqual(self.assembly.get_ballot(self.key, 1)['comment'], None)
+
+        # Test log
+        entry = {'change_note': 'Antwort auf die letzte aller Fragen',
+                 'code': const.AssemblyLogCodes.ballot_changed}
+        expectation = (entry, entry)
+        self.assertLogEqual(expectation, realm="assembly", assembly_id=1)
 
     @storage
     @as_users("werner")
@@ -1372,6 +1435,34 @@ class TestAssemblyBackend(BackendTest):
                 )
         self.assertLogEqual(
             log, realm="assembly", offset=log_offset, assembly_id=assembly_id)
+
+    @as_users("werner")
+    def test_2289(self) -> None:
+        ballot_id = 2
+        old_candidates = self.assembly.get_ballot(self.key, ballot_id)['candidates']
+        for candidate in old_candidates.values():
+            del candidate['ballot_id']
+            del candidate['id']
+        bdata = {
+            'id': ballot_id,
+            'candidates': {
+                6: None,
+                -1: old_candidates[6]
+            }
+        }
+        self.assertTrue(self.assembly.set_ballot(self.key, bdata))
+        candidates = self.assembly.get_ballot(self.key, ballot_id)['candidates']
+        self.assertNotIn(6, candidates)
+        self.assertEqual(candidates[1001]['shortname'], old_candidates[6]['shortname'])
+
+        bdata['candidates'] = {
+            7: old_candidates[8],
+            8: old_candidates[7],
+        }
+        self.assertTrue(self.assembly.set_ballot(self.key, bdata))
+        candidates = self.assembly.get_ballot(self.key, ballot_id)['candidates']
+        self.assertEqual(candidates[7]['shortname'], old_candidates[8]['shortname'])
+        self.assertEqual(candidates[8]['shortname'], old_candidates[7]['shortname'])
 
     @as_users("werner")
     @prepsql("""INSERT INTO assembly.assemblies

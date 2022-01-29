@@ -2,7 +2,9 @@
 
 """This provides config objects for the CdEDB, that is: default values and
 a way to override them. Any hardcoded values should be found in
-here. Each config object takes into account the default values found in
+here. An exception are the default queries, which are defined in `query_defaults.py`.
+
+Each config object takes into account the default values found in
 here, the site specific global overrides in
 :py:mod:`cdedb.localconfig` and with exception of
 :py:class:`BasicConfig` an invocation specific override.
@@ -16,25 +18,23 @@ import importlib.util
 import logging
 import pathlib
 import subprocess
-from typing import Any, Callable, Dict, Iterator, Mapping
+from typing import Any, Iterator, Mapping
 
 import pytz
 
-import cdedb.database.constants as const
-from cdedb.common import ADMIN_KEYS, CdEDBObject, PathLike, deduct_years, n_, now
-from cdedb.query import Query, QueryOperators, QueryScope, QuerySpec
+from cdedb.common import PathLike, n_
 
 _LOGGER = logging.getLogger(__name__)
 
 _currentpath = pathlib.Path(__file__).resolve().parent
-if _currentpath.parts[0] != '/' or _currentpath.parts[-1] != 'cdedb':
+if _currentpath.parts[0] != '/' or _currentpath.parts[-1] != 'cdedb':  # pragma: no cover
     raise RuntimeError(n_("Failed to locate repository"))
 _repopath = _currentpath.parent
 
 try:
     _git_commit = subprocess.check_output(
         ("git", "rev-parse", "HEAD"), cwd=str(_repopath)).decode().strip()
-except FileNotFoundError:  # only catch git executable not found
+except FileNotFoundError:  # pragma: no cover, only catch git executable not found
     with pathlib.Path(_repopath, '.git/HEAD').open() as head:
         _git_commit = head.read().strip()
 
@@ -50,181 +50,14 @@ _BASIC_DEFAULTS = {
     "SYSLOG_LEVEL": logging.WARNING,
     # Logging level for stdout
     "CONSOLE_LOG_LEVEL": None,
-    # Global log for messages unrelated to specific components
-    "GLOBAL_LOG": pathlib.Path("/tmp/cdedb.log"),
+    # Directory in which all logs will be saved. The name of the specific log file will
+    # be determined by the instance generating the log. The global log is in 'cdedb.log'
+    "LOG_DIR": pathlib.Path("/tmp/"),
     # file system path to this repository
     "REPOSITORY_PATH": _repopath,
     # default timezone for input and output
     "DEFAULT_TIMEZONE": pytz.timezone('CET'),
-    # path to log file for recording performance information during test runs
-    "TIMING_LOG": pathlib.Path("/tmp/cdedb-timing.log"),
 }
-
-
-def generate_event_registration_default_queries(
-        gettext: Callable[[str], str], event: CdEDBObject,
-        spec: QuerySpec) -> Dict[str, Query]:
-    """
-    Generate default queries for registration_query.
-
-    Some of these contain dynamic information about the event's Parts,
-    Tracks, etc.
-
-    :param gettext: The translation function for the current locale.
-    :param event: The Event for which to generate the queries
-    :param spec: The Query Spec, dynamically generated for the event
-    :return: Dict of default queries
-    """
-    default_sort = (("persona.family_name", True),
-                    ("persona.given_names", True),
-                    ("reg.id", True))
-
-    all_part_stati_column = ",".join(
-        f"part{part_id}.status" for part_id in event['parts'])
-
-    dokuteam_course_picture_fields_of_interest = [
-        "persona.id", "persona.given_names", "persona.family_name"]
-    for track_id in event['tracks']:
-        dokuteam_course_picture_fields_of_interest.append(f"course{track_id}.nr")
-        dokuteam_course_picture_fields_of_interest.append(
-            f"track{track_id}.is_course_instructor")
-
-    dokuteam_dokuforge_fields_of_interest = [
-        "persona.id", "persona.given_names", "persona.family_name", "persona.username"]
-    for track_id in event['tracks']:
-        dokuteam_dokuforge_fields_of_interest.append(f"course{track_id}.nr")
-        dokuteam_dokuforge_fields_of_interest.append(
-            f"track{track_id}.is_course_instructor")
-
-    dokuteam_address_fields_of_interest = [
-        "persona.given_names", "persona.family_name", "persona.address",
-        "persona.address_supplement", "persona.postal_code", "persona.location",
-        "persona.country"]
-
-    queries = {
-        n_("00_query_event_registration_all"): Query(
-            QueryScope.registration, spec,
-            ("persona.given_names", "persona.family_name"),
-            tuple(),
-            (("reg.id", True),)),
-        n_("02_query_event_registration_orgas"): Query(
-            QueryScope.registration, spec,
-            ("persona.given_names", "persona.family_name"),
-            (("persona.id", QueryOperators.oneof, event['orgas']),),
-            default_sort),
-        n_("10_query_event_registration_not_paid"): Query(
-            QueryScope.registration, spec,
-            ("persona.given_names", "persona.family_name"),
-            (("reg.payment", QueryOperators.empty, None),),
-            default_sort),
-        n_("12_query_event_registration_paid"): Query(
-            QueryScope.registration, spec,
-            ("persona.given_names", "persona.family_name", "reg.payment"),
-            (("reg.payment", QueryOperators.nonempty, None),),
-            (("reg.payment", False), ("persona.family_name", True),
-             ("persona.given_names", True),)),
-        n_("14_query_event_registration_participants"): Query(
-            QueryScope.registration, spec,
-            all_part_stati_column.split(",") +
-            ["persona.given_names", "persona.family_name"],
-            ((all_part_stati_column, QueryOperators.equal,
-              const.RegistrationPartStati.participant.value),),
-            default_sort),
-        n_("20_query_event_registration_non_members"): Query(
-            QueryScope.registration, spec,
-            ("persona.given_names", "persona.family_name"),
-            (("persona.is_member", QueryOperators.equal, False),),
-            default_sort),
-        n_("30_query_event_registration_orga_notes"): Query(
-            QueryScope.registration, spec,
-            ("persona.given_names", "persona.family_name", "reg.orga_notes"),
-            (("reg.orga_notes", QueryOperators.nonempty, None),),
-            default_sort),
-        n_("40_query_event_registration_u18"): Query(
-            QueryScope.registration, spec,
-            ("persona.given_names", "persona.family_name", "persona.birthday"),
-            (("persona.birthday", QueryOperators.greater,
-              deduct_years(event['begin'], 18)),),
-            (("persona.birthday", True), ("persona.family_name", True),
-             ("persona.given_names", True),)),
-        n_("42_query_event_registration_u16"): Query(
-            QueryScope.registration, spec,
-            ("persona.given_names", "persona.family_name", "persona.birthday"),
-            (("persona.birthday", QueryOperators.greater,
-              deduct_years(event['begin'], 16)),),
-            (("persona.birthday", True), ("persona.family_name", True),
-             ("persona.given_names", True))),
-        n_("44_query_event_registration_u14"): Query(
-            QueryScope.registration, spec,
-            ("persona.given_names", "persona.family_name", "persona.birthday"),
-            (("persona.birthday", QueryOperators.greater,
-              deduct_years(event['begin'], 14)),),
-            (("persona.birthday", True), ("persona.family_name", True),
-             ("persona.given_names", True))),
-        n_("50_query_event_registration_minors_no_consent"): Query(
-            QueryScope.registration, spec,
-            ("persona.given_names", "persona.family_name", "persona.birthday"),
-            (("persona.birthday", QueryOperators.greater,
-              deduct_years(event['begin'], 18)),
-             ("reg.parental_agreement", QueryOperators.equal, False)),
-            (("persona.birthday", True), ("persona.family_name", True),
-             ("persona.given_names", True))),
-        n_("60_query_dokuteam_course_picture"): Query(
-            QueryScope.registration, spec, dokuteam_course_picture_fields_of_interest,
-            ((all_part_stati_column, QueryOperators.equal,
-              const.RegistrationPartStati.participant.value),), default_sort),
-        n_("61_query_dokuteam_dokuforge"): Query(
-            QueryScope.registration, spec, dokuteam_dokuforge_fields_of_interest,
-            ((all_part_stati_column, QueryOperators.equal,
-              const.RegistrationPartStati.participant.value),
-             ("reg.list_consent", QueryOperators.equal, True),), default_sort),
-        n_("62_query_dokuteam_address_export"): Query(
-            QueryScope.registration, spec, dokuteam_address_fields_of_interest,
-            ((all_part_stati_column, QueryOperators.equal,
-              const.RegistrationPartStati.participant.value),), default_sort),
-    }
-
-    if len(event['parts']) > 1:
-        queries.update({
-            n_("16_query_event_registration_waitlist"): Query(
-                QueryScope.registration, spec,
-                all_part_stati_column.split(",") +
-                ["persona.given_names", "persona.family_name",
-                 "ctime.creation_time", "reg.payment"],
-                ((all_part_stati_column, QueryOperators.equal,
-                  const.RegistrationPartStati.waitlist.value),),
-                (("ctime.creation_time", True),)),
-        })
-
-    return queries
-
-
-def generate_event_course_default_queries(
-        gettext: Callable[[str], str], event: CdEDBObject,
-        spec: QuerySpec) -> Dict[str, Query]:
-    """
-    Generate default queries for course_queries.
-
-    Some of these contain dynamic information about the event's Parts,
-    Tracks, etc.
-
-    :param gettext: The translation function for the current locale.
-    :param event: The event for which to generate the queries
-    :param spec: The Query Spec, dynamically generated for the event
-    :return: Dict of default queries
-    """
-
-    takes_place = ",".join(f"track{anid}.takes_place" for anid in event["tracks"])
-
-    queries = {
-        n_("50_query_dokuteam_courselist"): Query(
-            QueryScope.event_course, spec,
-            ("course.nr", "course.shortname", "course.title"),
-            ((takes_place, QueryOperators.equal, True),),
-            (("course.nr", True),)),
-    }
-
-    return queries
 
 
 #: defaults for :py:class:`Config`
@@ -235,6 +68,9 @@ _DEFAULTS = {
 
     # name of database to use
     "CDB_DATABASE_NAME": "cdb",
+
+    # host (name or ip) on which the database listens
+    "DB_HOST": "localhost",
 
     # port on which the database listens, preferably a pooler like pgbouncer
     "DB_PORT": 6432,
@@ -268,8 +104,6 @@ _DEFAULTS = {
     # Frontend stuff #
     ##################
 
-    # log for frontend issues
-    "FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend.log"),
     # timeout for protected url parameters to prevent replay
     "PARAMETER_TIMEOUT": datetime.timedelta(hours=1),
     # timeout for protected parameters, that are not security related
@@ -345,30 +179,13 @@ _DEFAULTS = {
     # user for mailman to retrieve templates
     "MAILMAN_BASIC_AUTH_USER": "mailman",
 
-    # logs
-    "CORE_FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend-core.log"),
-    "CDE_FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend-cde.log"),
-    "EVENT_FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend-event.log"),
-    "ML_FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend-ml.log"),
-    "ASSEMBLY_FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend-assembly.log"),
-    "CRON_FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend-cron.log"),
-    "WORKER_LOG": pathlib.Path("/tmp/cdedb-frontend-worker.log"),
-    "MAILMAN_LOG": pathlib.Path("/tmp/cdedb-frontend-mailman.log"),
-
-
     #################
     # Backend stuff #
     #################
 
-    # log for backend issues
-    "BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend.log"),
-
     #
     # Core stuff
     #
-
-    # log
-    "CORE_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-core.log"),
 
     # amount of time after which an inactive account may be archived.
     "AUTOMATED_ARCHIVAL_CUTOFF": datetime.timedelta(days=365*2),
@@ -376,9 +193,6 @@ _DEFAULTS = {
     #
     # Session stuff
     #
-
-    # log
-    "SESSION_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-session.log"),
 
     # session parameters
     "SESSION_TIMEOUT": datetime.timedelta(days=2),
@@ -390,9 +204,6 @@ _DEFAULTS = {
     #
     # CdE stuff
     #
-
-    # log
-    "CDE_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-cde.log"),
 
     # maximal number of data sets a normal user is allowed to view per day
     "QUOTA_VIEWS_PER_DAY": 42,
@@ -426,8 +237,6 @@ _DEFAULTS = {
     # event stuff
     #
 
-    # log
-    "EVENT_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-event.log"),
     # Bank accounts. First is shown to participants,
     # second is a web label for orgas
     "EVENT_BANK_ACCOUNTS": (
@@ -437,136 +246,11 @@ _DEFAULTS = {
     # number of persons per day
     "ORGA_ADD_LIMIT": 10,
 
-    #
-    # past event stuff
-    #
-
-    # log
-    "PAST_EVENT_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-past-event.log"),
-
-    #
-    # ml stuff
-    #
-
-    # log
-    "ML_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-ml.log"),
-
-    #
-    # assembly stuff
-    #
-
-    # log
-    "ASSEMBLY_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-assembly.log"),
-
     ###############
     # Query stuff #
     ###############
 
-    # dict where the values are dicts mapping titles to queries for "speed
-    # dialing"
-    "DEFAULT_QUERIES": {
-        QueryScope.cde_user: {
-            n_("00_query_cde_user_all"): Query(
-                QueryScope.cde_user, QueryScope.cde_user.get_spec(),
-                ("personas.id", "given_names", "family_name"),
-                (),
-                (("family_name", True), ("given_names", True),
-                 ("personas.id", True))),
-            n_("02_query_cde_members"): Query(
-                QueryScope.cde_user, QueryScope.cde_user.get_spec(),
-                ("personas.id", "given_names", "family_name"),
-                (("is_member", QueryOperators.equal, True),),
-                (("family_name", True), ("given_names", True),
-                 ("personas.id", True))),
-            n_("10_query_cde_user_trial_members"): Query(
-                QueryScope.cde_user, QueryScope.cde_user.get_spec(),
-                ("personas.id", "given_names", "family_name"),
-                (("trial_member", QueryOperators.equal, True),),
-                (("family_name", True), ("given_names", True),
-                 ("personas.id", True))),
-            n_("20_query_cde_user_expuls"): Query(
-                QueryScope.cde_user, QueryScope.cde_user.get_spec(),
-                ("personas.id", "given_names", "family_name", "address",
-                 "address_supplement", "postal_code", "location", "country"),
-                (("is_member", QueryOperators.equal, True),
-                 ("paper_expuls", QueryOperators.equal, True)),
-                (("family_name", True), ("given_names", True),
-                 ("personas.id", True))),
-        },
-        QueryScope.archived_persona: {
-            n_("00_query_archived_persona_all"): Query(
-                QueryScope.archived_persona,
-                QueryScope.archived_persona.get_spec(),
-                ("personas.id", "given_names", "family_name", "notes"),
-                tuple(),
-                (("family_name", True), ("given_names", True),
-                 ("personas.id", True))),
-        },
-        QueryScope.event_user: {
-            n_("00_query_event_user_all"): Query(
-                QueryScope.event_user, QueryScope.event_user.get_spec(),
-                ("personas.id", "given_names", "family_name", "birth_name"),
-                tuple(),
-                (("family_name", True), ("given_names", True),
-                 ("personas.id", True))),
-            n_("10_query_event_user_minors"): Query(
-                QueryScope.event_user, QueryScope.event_user.get_spec(),
-                ("personas.id", "given_names", "family_name",
-                 "birthday"),
-                (("birthday", QueryOperators.greater,
-                  deduct_years(now().date(), 18)),),
-                (("birthday", True), ("family_name", True),
-                 ("given_names", True))),
-        },
-        QueryScope.core_user: {
-            n_("00_query_core_user_all"): Query(
-                QueryScope.core_user, QueryScope.core_user.get_spec(),
-                ("personas.id", "given_names", "family_name"),
-                tuple(),
-                (("family_name", True), ("given_names", True), ("personas.id", True))),
-            n_("10_query_core_any_admin"): Query(
-                QueryScope.core_user, QueryScope.core_user.get_spec(),
-                ("personas.id", "given_names", "family_name", *ADMIN_KEYS),
-                ((",".join(ADMIN_KEYS), QueryOperators.equal, True),),
-                (("family_name", True), ("given_names", True), ("personas.id", True))),
-        },
-        QueryScope.assembly_user: {
-            n_("00_query_assembly_user_all"): Query(
-                QueryScope.persona, QueryScope.persona.get_spec(),
-                ("personas.id", "given_names", "family_name"),
-                tuple(),
-                (("family_name", True), ("given_names", True),
-                 ("personas.id", True))),
-            n_("02_query_assembly_user_admin"): Query(
-                QueryScope.persona, QueryScope.persona.get_spec(),
-                ("personas.id", "given_names", "family_name",
-                 "is_assembly_admin"),
-                (("is_assembly_admin", QueryOperators.equal, True),),
-                (("family_name", True), ("given_names", True),
-                 ("personas.id", True))),
-        },
-        QueryScope.ml_user: {
-            n_("00_query_ml_user_all"): Query(
-                QueryScope.persona, QueryScope.persona.get_spec(),
-                ("personas.id", "given_names", "family_name"),
-                tuple(),
-                (("family_name", True), ("given_names", True),
-                 ("personas.id", True))),
-            n_("02_query_ml_user_admin"): Query(
-                QueryScope.persona, QueryScope.persona.get_spec(),
-                ("personas.id", "given_names", "family_name",
-                 "is_ml_admin"),
-                (("is_ml_admin", QueryOperators.equal, True),),
-                (("family_name", True), ("given_names", True),
-                 ("personas.id", True))),
-        },
-    },
-
-    "DEFAULT_QUERIES_REGISTRATION":
-        generate_event_registration_default_queries,
-
-    "DEFAULT_QUERIES_COURSE":
-        generate_event_course_default_queries,
+    # this can be found and overridden in cdedb2/query_defaults.py
 
 }
 
@@ -604,12 +288,6 @@ _SECRECTS_DEFAULTS = {
     },
 
     # ldap related stuff
-    "LDAP_SLAPD": {
-        "ADMIN_PASSWORD": "secret",
-        "PASSWORD1": "secret",
-        "PASSWORD2": "secret"
-    },
-    "LDAP_OLC_ROOT_PW": "secret",
     "LDAP_DUA_PW": {
         "admin": "secret",
         "apache": "secret",
