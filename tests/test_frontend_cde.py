@@ -1324,7 +1324,8 @@ class TestCdEFrontend(FrontendTest):
             tuple(),
             tuple(),
             tuple(),
-            (r"pevent_id:\W*Teilnahme bereits erfasst.",),
+            (r"pevent_id:\W*Teilnahme bereits erfasst.",
+             r"doppelganger:\W*Probemitgliedschaft für Mitglieder nicht erlaubt.",),
             tuple(),
             (r"doppelganger:\W*Accountzusammenführung mit nicht-CdE Account.",),
             tuple(),
@@ -1369,7 +1370,7 @@ class TestCdEFrontend(FrontendTest):
         inputdata = inputdata.replace('"1a";"Beispiel";"Berta B."',
                                       '"Ω";"Beispiel";"Berta B."')
         f['accounts'] = inputdata
-        f['resolution4'] = LineResolutions.renew_and_update.value
+        f['resolution4'] = LineResolutions.update.value
         f['doppelganger_id4'] = '2'
         f['resolution6'] = LineResolutions.create.value
         f['resolution8'] = LineResolutions.create.value
@@ -1417,7 +1418,8 @@ class TestCdEFrontend(FrontendTest):
             tuple(),
             tuple(),
             tuple(),
-            (r"pevent_id:\W*Teilnahme bereits erfasst.",),
+            (r"pevent_id:\W*Teilnahme bereits erfasst.",
+             r"doppelganger:\W*Probemitgliedschaft für Mitglieder nicht erlaubt.",),
             tuple(),
             tuple(),
             tuple(),
@@ -1432,7 +1434,7 @@ class TestCdEFrontend(FrontendTest):
         for nonex, out in zip(nonexpectation, output):
             for piece in nonex:
                 self.assertFalse(re.search(piece, out))
-        f['resolution4'] = LineResolutions.renew_and_update.value
+        f['resolution4'] = LineResolutions.update.value
         f['doppelganger_id4'] = '2'
         f['resolution6'] = LineResolutions.renew_and_update.value
         self.assertEqual('False', f['finalized'].value)
@@ -1442,8 +1444,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Anlegen")
         self.assertNonPresence("Erneut validieren")
         f = self.response.forms['admissionform']
-        self.assertEqual(str(LineResolutions.renew_and_update.value),
-                         f['resolution4'].value)
+        self.assertEqual(str(LineResolutions.update.value), f['resolution4'].value)
         self.assertEqual('True', f['finalized'].value)
         self.submit(f, check_notification=False)
         self.assertPresence("10 Neuaufnahmen.", div="notifications")
@@ -1647,7 +1648,8 @@ class TestCdEFrontend(FrontendTest):
 
         f = self.response.forms['admissionform']
         self.assertPresence("Ähnlicher Account", div="problems0")
-        f['resolution0'] = LineResolutions.renew_trial.value
+        # charly is currently member, so renew trial is not allowed for him
+        f['resolution0'] = LineResolutions.update.value
         self.assertPresence("Charly C. Clown", div="doppelgangers0")
         self.assertPresence("<charly@example.cde>", div="doppelgangers0")
         f['doppelganger_id0'] = 3
