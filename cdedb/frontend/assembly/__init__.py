@@ -1638,4 +1638,4 @@ class AssemblyFrontend(AbstractUserFrontend):
         result = self.bundle_verify_result_zipapp()
         return self.send_file(
             rs, data=result, inline=False, filename="verify_result.pyz",
-            mimetype="application/zip")
+            mimetype="application/x-python")
