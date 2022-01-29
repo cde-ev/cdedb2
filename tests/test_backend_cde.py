@@ -321,6 +321,10 @@ class TestCdEBackend(BackendTest):
                               (ltstati.cancelled, None),
                               (ltstati.failure, decimal.Decimal("-4.50"))):
             with self.subTest(status=status):
+                # since this is modified by the successful lastschrift test, we need to
+                # retrieve it in each subtest
+                old_balance = self.core.get_cde_user(
+                    self.key, USER_DICT["berta"]["id"])["balance"]
                 newdata = {
                     'issued_at': datetime.datetime.now(pytz.utc),
                     'lastschrift_id': 2,
@@ -345,13 +349,19 @@ class TestCdEBackend(BackendTest):
                         self.key, new_id, status, tally=tally))
                 data = self.cde.get_lastschrift_transactions(self.key, (new_id,))
                 data = data[new_id]
+                new_balance = self.core.get_cde_user(
+                    self.key, USER_DICT["berta"]["id"])["balance"]
                 self.assertEqual(status, data['status'])
                 if status == ltstati.success:
                     self.assertEqual(decimal.Decimal('42.23'), data['tally'])
+                    self.assertEqual(
+                        new_balance, old_balance + 2*self.conf["MEMBERSHIP_FEE"])
                 elif status == ltstati.cancelled:
                     self.assertEqual(decimal.Decimal('0'), data['tally'])
+                    self.assertEqual(new_balance, old_balance)
                 elif status == ltstati.failure:
                     self.assertEqual(decimal.Decimal('-4.50'), data['tally'])
+                    self.assertEqual(new_balance, old_balance)
 
     @as_users("farin")
     def test_lastschrift_transaction_rollback(self) -> None:
