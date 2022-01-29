@@ -509,9 +509,8 @@ class CdEBaseFrontend(AbstractUserFrontend):
                                  ValueError(n_("Missing data for realm upgrade."))))
                 elif dg['is_member']:
                     if datum['resolution'].do_trial():
-                        problems.append(
-                            ("doppelganger",
-                             ValueError(n_("May not grant trial membership to member."))))
+                        msg = n_("May not grant trial membership to member.")
+                        problems.append(("doppelganger", ValueError(msg)))
         if datum['doppelganger_id'] and pevent_id:
             existing = self.pasteventproxy.list_participants(rs, pevent_id=pevent_id)
             if (datum['doppelganger_id'], pcourse_id) in existing:
