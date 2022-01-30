@@ -841,7 +841,7 @@ class DatabaseLock:
     def __enter__(self) -> None:
         _affirm_atomized_context(self.rs)
         query = ("SELECT name FROM core.locks WHERE name = ANY(%s)"
-                 " FOR NO KEY UPDATE")
+                 " FOR NO KEY UPDATE NOWAIT")
         params = [lock.value for lock in self.locks]
         with self.rs.conn as conn:
             with conn.cursor() as cur:
