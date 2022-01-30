@@ -269,7 +269,6 @@ The original message as received by Mailman is attached.
             self.mailman_sync_list_mods(rs, mailman, db_list, mm_list)
             self.mailman_sync_list_whites(rs, mailman, db_list, mm_list)
 
-
     @periodic("mailman_sync")
     def auto_mailman_sync(self, rs: RequestState, store: CdEDBObject) -> CdEDBObject:
         self.mailman_sync(rs)

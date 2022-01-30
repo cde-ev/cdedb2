@@ -125,5 +125,5 @@ class MlFrontend(MlMailmanMixin, MlBaseFrontend):
     def manual_mailman_sync(self, rs: RequestState) -> Response:
         """Trigger sync manually"""
         code = self.mailman_sync(rs)
-        self.notify_return_code(rs, code, error=n_("Could not connect."))
+        rs.notify_return_code(code, error=n_("Could not connect."))
         return self.redirect(rs, "ml/index")
