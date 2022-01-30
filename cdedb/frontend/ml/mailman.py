@@ -8,7 +8,10 @@ on the mail VM from within the CdEDB.
 from mailmanclient import Client, MailingList
 
 import cdedb.database.constants as const
+from cdedb.backend.common import DatabaseLock, Silencer
 from cdedb.common import CdEDBObject, RequestState
+from cdedb.database.connection import Atomizer
+from cdedb.database.constants import LockType
 from cdedb.frontend.common import cdedburl, make_persona_name, periodic
 from cdedb.frontend.ml.base import MlBaseFrontend
 
@@ -281,6 +284,10 @@ The original message as received by Mailman is attached.
 
         :returns: Whether connection to Mailman has been successful.
         """
+        rs.conn = rs._conn
+        with Atomizer(rs):
+            with DatabaseLock(rs, LockType.mailman):
+                print("Hello world!")
         if (self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or (
                 self.conf["CDEDB_DEV"] and not self.conf["CDEDB_TEST"])):  # pragma: no cover
             self.logger.debug("Skipping mailman sync in dev/offline mode.")

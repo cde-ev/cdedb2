@@ -33,7 +33,7 @@ from cdedb.common import (
 )
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
-from cdedb.database.constants import FieldDatatypes
+from cdedb.database.constants import FieldDatatypes, LockType
 from cdedb.query import Query, QueryOperators
 from cdedb.validation import parse_date, parse_datetime
 
@@ -830,6 +830,26 @@ class Silencer:
     def __exit__(self, atype: Type[Exception], value: Exception,
                  tb: TracebackType) -> None:
         self.rs.is_quiet = False
+
+
+class DatabaseLock:
+
+    def __init__(self, rs: RequestState, *locks: LockType):
+        self.rs = rs
+        self.locks = locks
+
+    def __enter__(self) -> None:
+        _affirm_atomized_context(self.rs)
+        query = ("SELECT name FROM core.locks WHERE name = ANY(%s)"
+                 " FOR NO KEY UPDATE")
+        params = [lock.value for lock in self.locks]
+        with self.rs.conn as conn:
+            with conn.cursor() as cur:
+                cur.execute(query, (params,))
+
+    def __exit__(self, atype: Type[Exception], value: Exception,
+                 tb: TracebackType) -> None:
+        return None
 
 
 def affirm_validation(assertion: Type[T], value: Any, **kwargs: Any) -> T:

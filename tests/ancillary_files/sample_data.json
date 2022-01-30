@@ -3409,6 +3409,11 @@
         }
     ],
     "core.cron_store": [],
+    "core.locks": [
+        {
+            "name": 1
+        }
+    ],
     "cde.org_period": [
         {
             "id": 41,

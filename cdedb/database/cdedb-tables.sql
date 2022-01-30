@@ -425,6 +425,14 @@ CREATE TABLE core.cron_store (
 GRANT SELECT, UPDATE ON core.cron_store_id_seq TO cdb_admin;
 GRANT INSERT, SELECT, UPDATE ON core.cron_store TO cdb_admin;
 
+CREATE TABLE core.locks (
+        id                      serial PRIMARY KEY,
+        name                    integer NOT NULL UNIQUE,
+        atime                   timestamp WITH TIME ZONE DEFAULT now()
+);
+GRANT SELECT, UPDATE ON core.locks_id_seq TO cdb_admin;
+GRANT INSERT, SELECT, DELETE ON core.locks TO cdb_admin;
+
 ---
 --- SCHEMA cde
 ---
