@@ -431,7 +431,7 @@ CREATE TABLE core.locks (
         atime                   timestamp WITH TIME ZONE DEFAULT now()
 );
 GRANT SELECT, UPDATE ON core.locks_id_seq TO cdb_admin;
-GRANT INSERT, SELECT, DELETE ON core.locks TO cdb_admin;
+GRANT INSERT, SELECT, DELETE, UPDATE ON core.locks TO cdb_admin;
 
 ---
 --- SCHEMA cde
