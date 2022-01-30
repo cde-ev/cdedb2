@@ -10,7 +10,7 @@
 #
 #   [merge "pomerge"]
 #     name = Gettext merge driver
-#     driver = i18n/get-merge-po.sh %O %A %B
+#     driver = i18n/git-merge-po.sh %O %A %B
 #
 # It is recommended to delete all duplicte message defintions before trying to
 # merge branches.
