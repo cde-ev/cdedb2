@@ -10,7 +10,7 @@ This should be the only module which makes subsistantial use of psycopg.
 
 import logging
 from types import TracebackType
-from typing import Any, Collection, Literal, Mapping, NoReturn, Optional, Protocol, Type
+from typing import Any, Collection, Literal, Mapping, NoReturn, Optional, Type
 
 import psycopg2
 import psycopg2.extensions
@@ -26,8 +26,13 @@ SecretsConfig = Mapping[str, Any]
 Role = str
 
 
-class RequestState(Protocol):
+class ConnectionContainer:
+    # Visible version of the database connection
+    # noinspection PyTypeChecker
     conn: "IrradiatedConnection"
+    # Private version of the database connection, only visible in the
+    # backends (mediated by the make_proxy)
+    # noinspection PyTypeChecker
     _conn: "IrradiatedConnection"
 
 
@@ -159,7 +164,7 @@ class Atomizer:
     about them, however they are still a bad idea.
     """
 
-    def __init__(self, rs: RequestState):
+    def __init__(self, rs: ConnectionContainer):
         self.rs = rs
 
     def __enter__(self) -> "IrradiatedConnection":
