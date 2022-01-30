@@ -45,7 +45,6 @@
             <div id="extension-period">
                 {% if ambience['ballot']['extended'] is none %}
                     {% if ambience['ballot']['quorum'] %}
-                        <br />
                         {% trans extension=ambience['ballot']['vote_extension_end']|datetime(lang=lang),
                                  quorum=ambience['ballot']['quorum'] -%}
                         Extension until {{ extension }} if {{ quorum }} votes are not reached.
@@ -53,13 +52,11 @@
                     {% endif %}
                 {% else %}
                     {% if ambience['ballot']['extended'] %}
-                        <br />
                         {% trans extension=ambience['ballot']['vote_extension_end']|datetime(lang=lang),
                                  quorum=ambience['ballot']['quorum'] -%}
                         Extended until {{ extension }} because {{ quorum }} votes were not reached.
                         {% endtrans %}
                     {% elif ambience['ballot']['quorum'] %}
-                        <br />
                         {% trans quorum=anbience['ballot']['quorum'] %}
                         No extension neccessary, because {{ quorum }} votes were reached.
                         {% endtrans %}
@@ -73,7 +70,7 @@
             {% if now() < ambience['ballot']['vote_begin'] %}
                 <strong>{% trans %}This ballot has not yet begun.{% endtrans %}</strong><br />
                 {% trans %}Admins can still make changes to description, files and candidates.{% endtrans %}
-                {% if "assembly_presider" in user.admin_views %}
+                {% if "assembly_presider" in user.admin_views or ambience['assembly']['id'] in user.presider %}
                     {% trans %}
                         All CdE-Members and external assembly participants can already
                         see this ballot and all associated information.
@@ -89,7 +86,8 @@
             {% elif ambience['ballot']['is_voting'] %}
                 <strong>{% trans %}This ballot is currently open for voting.{% endtrans %}</strong><br />
                 {% if own_vote %}
-                    {% if own_vote == MAGIC_ABSTAIN %}
+                    {# If there are no > in a preferential vote, you abstained #}
+                    {% if own_vote == MAGIC_ABSTAIN or ">" not in own_vote and not ambience['ballot']['votes'] %}
                         <span class='text-warning'>{% trans %}You have abstained.{% endtrans %}</span>
                         {% trans %}You can make your choice below, during the voting period.{% endtrans %}
                     {% else %}
@@ -156,18 +154,58 @@
         {% endif %}
     </dl>
 
-    {% if "assembly_presider" in user.admin_views and ambience['ballot']['notes'] %}
-        {% call util.bootstrap_panel(title=gettext("Admin-Notes"), icon="tag", aclass="panel-default panel-condensed") %}
+    {% if ("assembly_presider" in user.admin_views or ambience['assembly']['id'] in user.presider)
+           and ambience['ballot']['notes'] %}
+        {% call util.bootstrap_panel(title=gettext("Admin-Notes"), icon="tag", aclass="panel-default panel-condensed",
+                                     anid='notes') %}
             {{ ambience['ballot']['notes']|md }}
         {% endcall %}
     {% endif %}
 {%- endmacro %}
 
 
-
-{% macro show_attachments(edit_mode) -%}
-    {{ assembly_util.attachment_box(attachments, attachment_histories, edit=edit_mode, title=gettext("Files"),
-                                    ballot=ambience['ballot'], new_attachment_button=True, full_history=False) }}
+{% macro show_attachments() -%}
+    {% call util.bootstrap_panel(title=gettext("Files"), icon='file', aclass="panel-default panel-condensed mosp") %}
+        <div class="row" id="attachments">
+            {% for slice in definitive_versions|keydictsort(EntitySorter.attachment)|slice(2) if definitive_versions %}
+                <div class="col-sm-6">
+                    <ul class="slim" id="attachments-{{ "ballot-{}".format(ambience['ballot']['id'])}}">
+                        {% for attachment_id, definitive_version in slice %}
+                            <li class="hide-hover-container clearfix-after" id="attachment{{ attachment_id }}">
+                                <div class="p">
+                                    {% set is_only_version = definitive_version["version_nr"] == 1 %}
+                                    {{ assembly_util.print_attachment_version_for_ballot(
+                                            version=definitive_version,
+                                            is_only_version=is_only_version,
+                                            is_definitive_version=True) }}
+                                    {% if latest_versions[attachment_id] != definitive_version %}
+                                        <div style="margin-top: 5px">
+                                            {{ assembly_util.print_attachment_version_for_ballot(
+                                                    version=latest_versions[attachment_id],
+                                                    is_only_version=False,
+                                                    is_definitive_version=False) }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% else %}
+                <div class="col-sm-12 p text-muted">
+                    {% if ambience['ballot']['vote_begin'] < now() %}
+                        {% trans %}
+                            This ballot does not have any attachments.
+                        {% endtrans %}
+                    {% else %}
+                        {% trans %}
+                            This ballot does not yet have any attachments.
+                        {% endtrans %}
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% endcall %}
 {%- endmacro %}
 
 

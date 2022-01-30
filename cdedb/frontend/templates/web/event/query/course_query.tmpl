@@ -1,0 +1,52 @@
+{% set sidenav_active='event_course_stats' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/generic.tmpl" as generic with context %}
+{% set jshint='strong' %}
+{% block scripts %}{{ util.cdedb_script('cdedb_queryform.js') }}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% block title %}
+    {% trans title=ambience['event']['title'] %}
+        Course Query ({{ title }})
+    {% endtrans %}
+{% endblock %}
+{% block heading %}
+    {{ util.context_heading(gettext("Courses"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+{% endblock %}
+{% block breadcrumb %}
+{{ super() }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+{{ util.breadcrumb_link(cdedblink("event/course_stats"), gettext("Courses")) }}
+{{ util.breadcrumb_link(cdedblink("event/course_query"), gettext("Course Query"), active=True) }}
+{% endblock %}
+{% block content %}
+    <div class="row">
+        <div class="col-md-4">
+            <div class="p button-par">
+                {{ util.href(cdedblink("event/create_course"), gettext("Create Course"),
+                             readonly=is_locked, icon='plus', aclass='btn btn-sm btn-success') }}
+                {% if ambience['event']['fields'] %}
+                    {{ util.href(cdedblink("event/field_set_select", {'kind': enums['FieldAssociations'].course.value}), gettext("Set Field"),
+                                  readonly=is_locked, icon='edit', aclass='btn btn-sm btn-warning') }}
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-md-8">
+            {{ generic.place_default_queries("event/course_query", default_queries) }}
+        </div>
+    </div>
+
+    {{ generic.format_query(enums['QueryScope'].event_course, spec, cdedblink('event/course_query'),
+                            selection_default=selection_default) }}
+
+    {% if values['is_search'] %}
+        <h3 id="query-results">{% trans %}Result{% endtrans %} [{{ result|length }}]</h3>
+        <!-- Additional buttons for the course_query -->
+
+        <div class="p pull-right">
+            {{ generic.query_button_field_set(enums['FieldAssociations'].course) }}
+        </div>
+
+        {{ generic.display_query_result(result, query) }}
+
+    {% endif %}
+{% endblock %}

@@ -8,12 +8,14 @@ their symbolic names provided by this module should be used.
 """
 
 import enum
-from typing import Dict
+from typing import Dict, Set
 
-from cdedb.subman.machine import SubscriptionAction, SubscriptionState  # pylint: disable=unused-import # noqa: F401
+from cdedb.subman.machine import (  # pylint: disable=unused-import # noqa: F401
+    SubscriptionAction, SubscriptionState,
+)
 
 
-def n_(x: str) -> str:
+def n_(x: str) -> str:  # pragma: no cover
     """Clone of :py:func:`cdedb.common.n_` for marking translatable strings."""
     return x
 
@@ -104,12 +106,15 @@ class QuestionnaireUsages(enum.IntEnum):
         """Whether or not rows with this usage may use fee modifier fields."""
         return self == QuestionnaireUsages.registration
 
+
+@enum.unique
+class EventPartGroupType(enum.IntEnum):
+    Statistic = 100
+
     def get_icon(self) -> str:
-        icons = {
-            QuestionnaireUsages.registration: "sign-in-alt",
-            QuestionnaireUsages.additional: "pen",
-        }
-        return icons.get(self, repr(self))
+        return {
+            EventPartGroupType.Statistic: "chart-bar",
+        }[self]
 
 
 @enum.unique
@@ -123,8 +128,17 @@ class GenesisStati(enum.IntEnum):
     approved = 3
     #: finished (persona created, challenge archived)
     successful = 4
+    #: finished (existing persona updated, challenge archived)
+    existing_updated = 5
     #: reviewed and rejected (also a final state)
     rejected = 10
+
+    @classmethod
+    def finalized_stati(cls) -> Set["GenesisStati"]:
+        return {cls.successful, cls.existing_updated, cls.rejected}
+
+    def is_finalized(self) -> bool:
+        return self in self.finalized_stati()
 
 
 @enum.unique
@@ -185,10 +199,15 @@ class MailinglistDomain(enum.IntEnum):
 
     testmail = 100
 
-    def __str__(self) -> str:
-        if self not in _DOMAIN_STR_MAP:
+    def get_domain(self) -> str:
+        """Return the actual domain for this enum member."""
+        if self not in _DOMAIN_STR_MAP:  # pragma: no cover
             raise NotImplementedError(n_("This domain is not supported."))
         return _DOMAIN_STR_MAP[self]
+
+    def display_str(self) -> str:
+        """Return a readable string representation to be displayed in the UI."""
+        return self.get_domain()
 
 
 # Instead of importing this, call str() on a MailinglistDomain.
@@ -257,6 +276,7 @@ class CoreLogCodes(enum.IntEnum):
     genesis_rejected = 22  #:
     genesis_deleted = 23  #:
     genesis_verified = 24  #:
+    genesis_merged = 25  #:
     privilege_change_pending = 30  #:
     privilege_change_approved = 31  #:
     privilege_change_rejected = 32  #:
@@ -347,6 +367,11 @@ class EventLogCodes(enum.IntEnum):
     minor_form_removed = 86  #:
     query_stored = 90  #:
     query_deleted = 91  #:
+    part_group_created = 100  #:
+    part_group_changed = 101  #:
+    part_group_deleted = 102  #:
+    part_group_link_created = 105  #:
+    part_group_link_deleted = 106  #:
 
 
 @enum.unique
@@ -385,10 +410,12 @@ class AssemblyLogCodes(enum.IntEnum):
     assembly_presider_removed = 36  #:
     attachment_added = 40  #:
     attachment_removed = 41  #:
-    attachment_changed = 42
-    attachment_version_added = 50
-    attachment_version_removed = 51
-    attachment_version_changed = 52
+    attachment_changed = 42  #:
+    attachment_ballot_link_created = 43  #:
+    attachment_ballot_link_deleted = 44  #:
+    attachment_version_added = 50  #:
+    attachment_version_removed = 51  #:
+    attachment_version_changed = 52  #:
 
 
 @enum.unique

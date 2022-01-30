@@ -1,0 +1,84 @@
+{% if ambience["assembly"] %}
+    {% set action_target = "assembly/change_assembly" %}
+    {% set sidenav_active='assembly_config' %}
+{% else %}
+    {% set action_target = "assembly/create_assembly" %}
+    {% set sidenav_active='assembly_index' %}
+{% endif %}
+{% extends "web/assembly/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+    {{ util.cdedb_script('cdedb_searchpersona.js') }}
+{% endblock %}
+{% set jshint='weak' %}
+{% block title %}
+    {% if ambience["assembly"] %}
+        {% trans title=ambience["assembly"]["title"] %}
+            Edit {{ title }}
+        {% endtrans %}
+    {% else %}
+        {% trans %}Create Assembly{% endtrans %}
+    {% endif %}
+{% endblock %}
+{% block heading %}
+    {% if ambience["assembly"] %}
+        {{ util.context_heading(gettext("Configuration"), ambience['assembly']['title'],
+                                'bullhorn', gettext("Assembly")) }}
+    {% else %}
+        {{ super() }}
+    {% endif %}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {% if ambience["assembly"] %}
+        {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
+        {{ util.breadcrumb_link(cdedblink(action_target), gettext("Configuration"), active=True) }}
+    {% else %}
+        {{ util.breadcrumb_link(cdedblink(action_target), gettext("Create Assembly"), active=True) }}
+    {% endif %}
+{% endblock %}
+{% block content %}
+
+    <form action="{{ cdedblink(action_target) }}" method="POST" id="configureassemblyform" class="form-horizontal">
+        {{ util.anti_csrf_token(action_target) }}
+
+        {# Data field definitions. #}
+        {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]")) }}
+        {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
+        {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5", markdown=True) }}
+        {{ util.form_input_text(name="presider_address", label=gettext("Presider Address"),
+                                    info=gettext("This will be the default address for replies to mails sent for this assembly.")) }}
+        {{ util.form_input_text(name="signup_end", label=gettext("Application Deadline"), type="datetime-local") }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="5", markdown=True) }}
+
+        {# Display a warning and submit buttons.
+           For creation additionally allow specifying presiders and creating mailinglists. #}
+        {% if ambience["assembly"] %}
+            {{ util.form_input_static(aclass='text-info', icon='info-circle',
+                                      value=gettext("Warning: All changes will be immediately "
+                                                    "visible to all CdE-Members and Assembly-Participants.")) }}
+            {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("assembly/show_assembly")) }}
+        {% else %}
+            {{ util.form_input_text(name="presider_ids", label=gettext("Presiders"), anid="input-presider_ids") }}
+            <script nonce="{{ csp_nonce }}">
+                $('#input-presider_ids').cdedbSearchPerson(
+                    '{{ (cdedblink('core/select_persona')|e) + ('?kind=assembly_user&phrase=%s'|s) }}',
+                    [], false, true, "{{ gettext("ID, name, email") }}"
+                );
+            </script>
+
+            {{ util.form_input_checkbox(name="create_attendee_list", label=gettext("Create Attendee Mailinglist")) }}
+            {{ util.form_input_checkbox(name="create_presider_list", label=gettext("Create Presider Mailinglist")) }}
+
+            {{ util.form_input_static(aclass='text-info', icon='info-circle',
+                                      value=gettext("Warning: The Assembly will be immediately "
+                                                    "visible to all CdE-Members.")) }}
+            {{ util.form_input_submit(label=gettext("Create"), cancellink=cdedblink('assembly/index')) }}
+        {% endif %}
+    </form>
+
+    <script nonce="{{ csp_nonce }}">
+        $('#configureassemblyform').cdedbProtectChanges();
+    </script>
+{% endblock %}

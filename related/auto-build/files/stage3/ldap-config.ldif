@@ -1,0 +1,39 @@
+# Formating rules:
+# - Comment lines beginning with a '#' character are ignored.
+# - If a line begins with a single space, it is considered a continuation of the previous line (even if the previous line is a comment) and the single leading space is removed.
+# - Entries are separated by blank lines.
+
+# load sql-backend module
+dn: cn=module{0},cn=config
+changetype: modify
+add: olcModuleLoad
+olcModuleLoad: back_sql
+
+# load memberof-module
+dn: cn=module{0},cn=config
+changetype: modify
+add: olcModuleLoad
+olcModuleLoad: memberof
+
+# backend definition
+# currently no options are implemented and therefore this shall not be used
+# https://manpages.debian.org/buster/slapd/slapd-config.5.en.html#GENERAL_BACKEND_OPTIONS
+#dn: olcBackend=sql,cn=config
+#changetype: add
+#objectClass: olcBackendConfig
+#olcBackend: sql
+
+# specify the password hash format
+# however, I am not sure if this works, it seems to be enough to prepend the
+# '{CRYPT}' string in front of the password hash in the database...
+dn: olcDatabase={-1}frontend,cn=config
+changetype: modify
+add: olcPasswordHash
+olcPasswordHash: {CRYPT}
+
+# specify the password hash format
+# use SHA512 like in the CdEDB
+dn: cn=config
+changetype: modify
+add: olcPasswordCryptSaltFormat
+olcPasswordCryptSaltFormat: $6$%.16s

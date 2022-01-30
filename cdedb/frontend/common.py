@@ -25,7 +25,6 @@ import email.utils
 import functools
 import gettext
 import io
-import itertools
 import json
 import logging
 import pathlib
@@ -44,23 +43,23 @@ from email.mime.nonmultipart import MIMENonMultipart
 from secrets import token_hex
 from types import TracebackType
 from typing import (
-    IO, AbstractSet, Any, AnyStr, Callable, ClassVar, Collection, Dict,
-    Iterable, List, Mapping, MutableMapping, NamedTuple, Optional, Sequence,
-    Tuple, Type, TypeVar, Union, cast, overload,
+    IO, AbstractSet, Any, AnyStr, Callable, ClassVar, Collection, Dict, Iterable, List,
+    Literal, Mapping, MutableMapping, NamedTuple, Optional, Protocol, Sequence, Tuple,
+    Type, TypeVar, Union, cast, overload,
 )
 
 import icu
 import jinja2
-import mailmanclient.restobjects.mailinglist
 import mailmanclient.restobjects.held_message
+import mailmanclient.restobjects.mailinglist
+import markupsafe
 import werkzeug
 import werkzeug.datastructures
 import werkzeug.exceptions
 import werkzeug.utils
 import werkzeug.wrappers
-import werkzeug.wsgi
-from typing_extensions import Literal, Protocol
 
+import cdedb.database.constants as const
 import cdedb.query as query_mod
 import cdedb.validation as validate
 import cdedb.validationtypes as vtypes
@@ -72,11 +71,12 @@ from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.common import (
-    ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS, ANTI_CSRF_TOKEN_NAME,
-    ANTI_CSRF_TOKEN_PAYLOAD, REALM_SPECIFIC_GENESIS_FIELDS, PERSONA_DEFAULTS,
-    CdEDBMultiDict, CdEDBObject, CustomJSONEncoder, EntitySorter, Error, Notification,
-    NotificationType, PathLike, PrivilegeError, RequestState, Role, User,
-    ValidationWarning, _tdelta, asciificator, decode_parameter, encode_parameter,
+    ADMIN_KEYS, ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS, ANTI_CSRF_TOKEN_NAME,
+    ANTI_CSRF_TOKEN_PAYLOAD, IGNORE_WARNINGS_NAME, PERSONA_DEFAULTS,
+    REALM_SPECIFIC_GENESIS_FIELDS, CdEDBMultiDict, CdEDBObject, CustomJSONEncoder,
+    EntitySorter, Error, Notification, NotificationType, PathLike, PrivilegeError,
+    RequestState, Role, User, ValidationWarning, _tdelta, asciificator,
+    decode_parameter, encode_parameter, format_country_code,
     get_localized_country_codes, glue, json_serialize, make_proxy, make_root_logger,
     merge_dicts, n_, now, roles_to_db_role, unwrap,
 )
@@ -85,8 +85,11 @@ from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.devsamples import HELD_MESSAGE_SAMPLE
 from cdedb.enums import ENUMS_DICT
-from cdedb.filter import JINJA_FILTERS, cdedbid_filter, safe_filter, sanitize_None
+from cdedb.filter import (
+    JINJA_FILTERS, cdedbid_filter, enum_entries_filter, safe_filter, sanitize_None,
+)
 from cdedb.query import Query
+from cdedb.query_defaults import DEFAULT_QUERIES
 
 _LOGGER = logging.getLogger(__name__)
 _BASICCONF = BasicConfig()
@@ -120,11 +123,11 @@ class BaseApp(metaclass=abc.ABCMeta):
         secrets = SecretsConfig(configpath)
         # initialize logging
         if hasattr(self, 'realm') and self.realm:
-            logger_name = "cdedb.frontend.{}".format(self.realm)
-            logger_file = self.conf[f"{self.realm.upper()}_FRONTEND_LOG"]
+            logger_name = f"cdedb.frontend.{self.realm}"
+            logger_file = self.conf["LOG_DIR"] / f"cdedb-frontend-{self.realm}.log"
         else:
             logger_name = "cdedb.frontend"
-            logger_file = self.conf["FRONTEND_LOG"]
+            logger_file = self.conf["LOG_DIR"] / "cdedb-frontend.log"
         make_root_logger(
             logger_name, logger_file, self.conf["LOG_LEVEL"],
             syslog_level=self.conf["SYSLOG_LEVEL"],
@@ -203,15 +206,14 @@ class BaseApp(metaclass=abc.ABCMeta):
         taken not to lose any notifications.
         """
         params = params or {}
-        if rs.retrieve_validation_errors() and not rs.notifications:
-            rs.notify("error", n_("Failed validation."))
+        if not rs.notifications:
+            rs.notify_validation()
         url = cdedburl(rs, target, params, force_external=True)
         if anchor is not None:
             url += "#" + anchor
         ret = basic_redirect(rs, url)
         if rs.notifications:
-            notifications = [self.encode_notification(rs, ntype, nmessage,
-                                                      nparams)
+            notifications = [self.encode_notification(rs, ntype, nmessage, nparams)
                              for ntype, nmessage, nparams in rs.notifications]
             ret.set_cookie("displaynote", json_serialize(notifications))
         return ret
@@ -268,8 +270,7 @@ PeriodicMethod = Callable[[Any, RequestState, CdEDBObject], CdEDBObject]
 class PeriodicJob(Protocol):
     cron: CdEDBObject
 
-    def __call__(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject:
-        ...
+    def __call__(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject: ...
 
 
 def periodic(name: str, period: int = 1
@@ -323,12 +324,17 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'staticurl': functools.partial(staticurl,
                                            version=self.conf["GIT_COMMIT"][:8]),
             'docurl': docurl,
+            "drow_name": drow_name,
+            "drow_create": drow_create,
+            "drow_delete": drow_delete,
+            "drow_last_index": drow_last_index,
             'CDEDB_OFFLINE_DEPLOYMENT': self.conf["CDEDB_OFFLINE_DEPLOYMENT"],
             'CDEDB_DEV': self.conf["CDEDB_DEV"],
             'UNCRITICAL_PARAMETER_TIMEOUT': self.conf[
                 "UNCRITICAL_PARAMETER_TIMEOUT"],
             'ANTI_CSRF_TOKEN_NAME': ANTI_CSRF_TOKEN_NAME,
             'ANTI_CSRF_TOKEN_PAYLOAD': ANTI_CSRF_TOKEN_PAYLOAD,
+            'IGNORE_WARNINGS_NAME': IGNORE_WARNINGS_NAME,
             'GIT_COMMIT': self.conf["GIT_COMMIT"],
             'I18N_LANGUAGES': self.conf["I18N_LANGUAGES"],
             'I18N_ADVERTISED_LANGUAGES': self.conf["I18N_ADVERTISED_LANGUAGES"],
@@ -463,10 +469,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         def _has_warnings() -> bool:
             """Determine if there are any warnings among the errors."""
-            all_errors = rs.retrieve_validation_errors()
-            return any(
-                isinstance(kind, ValidationWarning)
-                for param, kind in all_errors)
+            return bool(validate.get_warnings(rs.retrieve_validation_errors()))
 
         def _make_backend_checker(rs: RequestState, backend: AbstractBackend,
                                   method_name: str) -> Callable[..., Any]:
@@ -611,25 +614,35 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         response.headers.add('X-Generation-Time', str(now() - rs.begin))
         return response
 
-    def send_query_download(self, rs: RequestState,
-                            result: Collection[CdEDBObject], fields: List[str],
-                            kind: str, filename: str,
-                            substitutions: Mapping[
-                                str, Mapping[Any, Any]] = None
-                            ) -> Response:
+    def send_query_download(self, rs: RequestState, result: Collection[CdEDBObject],
+                            query: Query, kind: str, filename: str) -> Response:
         """Helper to send download of query result.
 
-        :param fields: List of fields the output should have. Commaseparated
-            fields will be split up.
         :param kind: Can be either `'csv'` or `'json'`.
         :param filename: The extension will be added automatically depending on
             the kind specified.
         """
-        if not fields:
-            raise ValueError(n_("Cannot download query result without fields"
-                                " of interest."))
-        fields: List[str] = sum((csvfield.split(',') for csvfield in fields), [])
+        fields: List[str] = sum(
+            (csvfield.split(',') for csvfield in query.fields_of_interest), [])
         filename += f".{kind}"
+
+        # Apply special handling to enums and country codes for downloads.
+        for k, v in query.spec.items():
+            if k.endswith("gender"):
+                query.spec[k] = query.spec[k].replace_choices(
+                    dict(enum_entries_filter(
+                        const.Genders, lambda x: x.name, raw=True)))
+            if k.endswith(".status"):
+                query.spec[k] = query.spec[k].replace_choices(
+                    dict(enum_entries_filter(
+                        const.RegistrationPartStati, lambda x: x.name, raw=True)))
+            if k.endswith(("country", "country2")):
+                query.spec[k] = query.spec[k].replace_choices(
+                    dict(get_localized_country_codes(rs, rs.default_lang)))
+            if "xfield" in k:
+                query.spec[k] = query.spec[k].replace_choices({})
+        substitutions = {k: v.choices for k, v in query.spec.items() if v.choices}
+
         if kind == "csv":
             csv_data = csv_output(result, fields, substitutions=substitutions)
             return self.send_csv_file(
@@ -662,8 +675,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
             _LOGGER.debug(debugstring)
             params['debugstring'] = debugstring
-        if rs.retrieve_validation_errors() and not rs.notifications:
-            rs.notify("error", n_("Failed validation."))
+        if not rs.notifications:
+            rs.notify_validation()
         if self.conf["LOCKDOWN"]:
             rs.notify("info", n_("The database currently undergoes "
                                  "maintenance and is unavailable."))
@@ -782,7 +795,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                             submit_general_query: Callable[[RequestState, Query],
                                                            Tuple[CdEDBObject, ...]], *,
                             endpoint: str = "user_search",
-                            choices: Dict[str, collections.OrderedDict] = None,  # type: ignore
+                            choices: Mapping[str, Mapping[Any, str]] = None,
                             query: Query = None) -> werkzeug.Response:
         """Perform user search.
 
@@ -813,21 +826,26 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             query_input = scope.mangle_query_input(rs)
             query = check_validation(rs, vtypes.QueryInput, query_input, "query",
                                      spec=spec, allow_empty=False)
-        default_queries = self.conf["DEFAULT_QUERIES"][default_scope]
-        if not choices:
+        default_queries = DEFAULT_QUERIES[default_scope]
+        choices_lists = {}
+        if choices is None:
             choices = {}
-        choices_lists = {k: list(v.items()) for k, v in choices.items()}
+        for k, v in choices.items():
+            choices_lists[k] = list(v.items())
+            if query and k in query.spec:
+                query.spec[k] = query.spec[k].replace_choices(v)
         params = {
-            'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
-            'default_queries': default_queries, 'query': query, 'scope': scope}
+            'spec': spec, 'choices_lists': choices_lists,
+            'default_queries': default_queries, 'query': query, 'scope': scope,
+            'ADMIN_KEYS': ADMIN_KEYS,
+        }
         # Tricky logic: In case of no validation errors we perform a query
         if not rs.has_validation_errors() and is_search and query:
             result = submit_general_query(rs, query)
             params['result'] = result
             if download:
                 return self.send_query_download(
-                    rs, result, fields=query.fields_of_interest, kind=download,
-                    filename=endpoint + "_result", substitutions=params['choices'])
+                    rs, result, query, kind=download, filename=endpoint + "_result")
         else:
             rs.values['is_search'] = False
         return self.render(rs, endpoint, params)
@@ -876,7 +894,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if not msg["To"] and not msg["Cc"] and not msg["Bcc"]:
             self.logger.warning("No recipients for mail. Dropping it.")
             return None
-        if not self.conf["CDEDB_DEV"]:
+        if not self.conf["CDEDB_DEV"]:  # pragma: no cover
             s = smtplib.SMTP(self.conf["MAIL_HOST"])
             s.send_message(msg)
             s.quit()
@@ -903,31 +921,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if quote_me is not None:
             params['quote_me'] = True
         return self.redirect(rs, 'core/show_user', params=params)
-
-    @staticmethod
-    def notify_return_code(rs: RequestState, code: Union[int, bool, None],
-                           success: str = n_("Change committed."),
-                           info: str = n_("Change pending."),
-                           error: str = n_("Change failed.")) -> None:
-        """Small helper to issue a notification based on a return code.
-
-        We allow some flexibility in what type of return code we accept. It
-        may be a boolean (with the obvious meanings), an integer (specifying
-        the number of changed entries, and negative numbers for entries with
-        pending review) or None (signalling failure to acquire something).
-
-        :param success: Affirmative message for positive return codes.
-        :param info: Message for negative return codes signalling review.
-        :param error: Exception message for zero return codes.
-        """
-        if not code:
-            rs.notify("error", error)
-        elif code is True or code > 0:
-            rs.notify("success", success)
-        elif code < 0:
-            rs.notify("info", info)
-        else:
-            raise RuntimeError(n_("Impossible."))
 
     def safe_compile(self, rs: RequestState, target_file: str, cwd: PathLike,
                      runs: int, errormsg: Optional[str]) -> pathlib.Path:
@@ -1138,22 +1131,19 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     # @access("realm_admin", modi={"POST"})
     # @REQUESTdatadict(...)
     @abc.abstractmethod
-    def create_user(self, rs: RequestState, data: CdEDBObject,
-                    ignore_warnings: bool = False) -> werkzeug.Response:
+    def create_user(self, rs: RequestState, data: CdEDBObject) -> werkzeug.Response:
         """Create new user account."""
         merge_dicts(data, PERSONA_DEFAULTS)
-        data = check_validation(
-            rs, vtypes.Persona, data, creation=True, _ignore_warnings=ignore_warnings)
+        data = check_validation(rs, vtypes.Persona, data, creation=True)
         if data:
             exists = self.coreproxy.verify_existence(rs, data['username'])
             if exists:
                 rs.extend_validation_errors(
                     (("username",
-                      ValueError("User with this E-Mail exists already.")),))
+                      ValueError(n_("User with this E-Mail exists already."))),))
         if rs.has_validation_errors() or not data:
             return self.create_user_form(rs)
-        new_id = self.coreproxy.create_persona(
-            rs, data, ignore_warnings=ignore_warnings)
+        new_id = self.coreproxy.create_persona(rs, data)
         if new_id:
             success, message = self.coreproxy.make_reset_cookie(rs, data[
                 'username'])
@@ -1172,7 +1162,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
                           'meta_info': meta_info,
                           })
 
-            self.notify_return_code(rs, new_id, success=n_("User created."))
+            rs.notify_return_code(new_id, success=n_("User created."))
             return self.redirect_show_user(rs, new_id)
         else:
             return self.create_user_form(rs)
@@ -1200,8 +1190,8 @@ class CdEMailmanClient(mailmanclient.Client):
         # Initialize logger. This needs the base class initialization to be done.
         logger_name = "cdedb.frontend.mailmanclient"
         make_root_logger(
-            logger_name, self.conf["MAILMAN_LOG"], self.conf["LOG_LEVEL"],
-            syslog_level=self.conf["SYSLOG_LEVEL"],
+            logger_name, self.conf["LOG_DIR"] / "cdedb-frontend-mailman.log",
+            self.conf["LOG_LEVEL"], syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         self.logger = logging.getLogger(logger_name)
         self.logger.debug(f"Instantiated {self} with configpath {conf._configpath}.")
@@ -1230,11 +1220,33 @@ class CdEMailmanClient(mailmanclient.Client):
         if self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or self.conf["CDEDB_DEV"]:
             self.logger.info("Skipping mailman query in dev/offline mode.")
             if self.conf["CDEDB_DEV"]:
-                return HELD_MESSAGE_SAMPLE
+                # Some diversity regarding moderation.
+                if dblist['id'] % 2 == 0:
+                    return HELD_MESSAGE_SAMPLE
+                else:
+                    return []
             return None
         else:
             mmlist = self.get_list_safe(dblist['address'])
             return mmlist.held if mmlist else None
+
+    def get_held_message_count(self, dblist: CdEDBObject) -> Optional[int]:
+        """Returns the number of held messages for a mailman list.
+
+        If the list is not managed by mailman, this returns None instead.
+        """
+        if self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or self.conf["CDEDB_DEV"]:
+            self.logger.info("Skipping mailman query in dev/offline mode.")
+            if self.conf["CDEDB_DEV"]:
+                # Add some diversity.
+                if dblist['id'] % 2 == 0:
+                    return len(HELD_MESSAGE_SAMPLE)
+                else:
+                    return 0
+        else:
+            mmlist = self.get_list_safe(dblist['address'])
+            return mmlist.get_held_count() if mmlist else None
+        return None
 
 
 # Type Aliases for the Worker class.
@@ -1273,7 +1285,8 @@ class Worker(threading.Thread):
         # noinspection PyProtectedMember
         secrets = SecretsConfig(conf._configpath)
         connpool = connection_pool_factory(
-            conf["CDB_DATABASE_NAME"], DATABASE_ROLES, secrets, conf["DB_PORT"])
+            conf["CDB_DATABASE_NAME"], DATABASE_ROLES, secrets,
+            conf["DB_HOST"], conf["DB_PORT"])
         rrs._conn = connpool[roles_to_db_role(rs.user.roles)]
         logger = logging.getLogger("cdedb.frontend.worker")
 
@@ -1374,14 +1387,6 @@ def reconnoitre_ambience(obj: AbstractFrontend,
             raise werkzeug.exceptions.BadRequest(
                 rs.gettext("Inconsistent request."))
 
-    def attachment_check(a: CdEDBObject) -> None:
-        if a['attachment']['ballot_id']:
-            do_assert(a['attachment']['ballot_id']
-                      == rs.requestargs.get('ballot_id'))
-        else:
-            do_assert(a['attachment']['assembly_id']
-                      == rs.requestargs['assembly_id'])
-
     scouts = (
         Scout(lambda anid: obj.coreproxy.get_persona(rs, anid), 'persona_id',
               'persona', ()),
@@ -1427,8 +1432,15 @@ def reconnoitre_ambience(obj: AbstractFrontend,
         Scout(None, 'field_id', None,
               ((lambda a: do_assert(rs.requestargs['field_id']
                                     in a['event']['fields'])),)),
+        # Dirty hack, that relies on the event being retrieved into ambience first.
+        Scout(lambda anid: ambience['event']['part_groups'][anid],  # type: ignore[has-type]
+              'part_group_id', 'part_group',
+              ((lambda a: do_assert(a['part_group']['event_id']
+                                    == a['event']['id'])),)),
         Scout(lambda anid: obj.assemblyproxy.get_attachment(rs, anid),
-              'attachment_id', 'attachment', (attachment_check,)),
+              'attachment_id', 'attachment',
+              ((lambda a: do_assert(a['attachment']['assembly_id']
+                                    == rs.requestargs['assembly_id'])),)),
         Scout(lambda anid: obj.assemblyproxy.get_assembly(rs, anid),
               'assembly_id', 'assembly', ()),
         Scout(lambda anid: obj.assemblyproxy.get_ballot(rs, anid),
@@ -1509,6 +1521,10 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
                 expects_persona = any('droid' not in role
                                       for role in access_list)
                 if rs.user.roles == {"anonymous"} and expects_persona:
+                    # Validation errors do not matter on session expiration,
+                    # since we redirect to get anyway.
+                    # In practice, this is mostly relevant for the anti csrf error.
+                    rs.ignore_validation_errors()
                     params = {
                         'wants': obj.encode_parameter(
                             "core/index", "wants", rs.request.url,
@@ -1596,13 +1612,6 @@ def cdedburl(rs: RequestState, endpoint: str,
         for key in params:
             allparams[key] = params[key]
 
-    # Until Werkzeug 0.15, this workaround is necessary to keep duplicates.
-    allparams = allparams.to_dict(flat=False)
-    for key in allparams:
-        # And then, this needs to be done to keep <magic replacements> working
-        if len(allparams[key]) == 1:
-            allparams[key] = unwrap(allparams[key])
-
     return rs.urls.build(endpoint, allparams, force_external=force_external)
 
 
@@ -1623,7 +1632,7 @@ def staticurl(path: str, version: str = "") -> str:
 
 @overload
 def staticlink(rs: RequestState, label: str, path: str, version: str = "",
-               html: Literal[True] = True) -> jinja2.Markup: ...
+               html: Literal[True] = True) -> markupsafe.Markup: ...
 
 
 @overload
@@ -1632,14 +1641,14 @@ def staticlink(rs: RequestState, label: str, path: str, version: str = "",
 
 
 def staticlink(rs: RequestState, label: str, path: str, version: str = "",
-               html: bool = True) -> Union[jinja2.Markup, str]:
+               html: bool = True) -> Union[markupsafe.Markup, str]:
     """Create a link to a static resource.
 
     This can either create a basic html link or a fully qualified, static https link.
 
     .. note:: This will be overridden by _staticlink in templates, see fill_template.
     """
-    link: Union[jinja2.Markup, str]
+    link: Union[markupsafe.Markup, str]
     if html:
         return safe_filter(f'<a href="{staticurl(path, version=version)}">{label}</a>')
     else:
@@ -1657,7 +1666,7 @@ def docurl(topic: str, anchor: str = "") -> str:
 
 @overload
 def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
-            html: Literal[True] = True) -> jinja2.Markup: ...
+            html: Literal[True] = True) -> markupsafe.Markup: ...
 
 
 @overload
@@ -1666,13 +1675,13 @@ def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
 
 
 def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
-            html: bool = True) -> Union[jinja2.Markup, str]:
+            html: bool = True) -> Union[markupsafe.Markup, str]:
     """Create a link to our documentation.
 
     This can either create a basic html link or a fully qualified, static https link.
     .. note:: This will be overridden by _doclink in templates, see fill_template.
     """
-    link: Union[jinja2.Markup, str]
+    link: Union[markupsafe.Markup, str]
     if html:
         return safe_filter(f'<a href="{docurl(topic, anchor=anchor)}">{label}</a>')
     else:
@@ -1682,7 +1691,7 @@ def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
 
 # noinspection PyPep8Naming
 def REQUESTdata(
-    *spec: str, _hints: validate.TypeMapping = None
+    *spec: str, _hints: vtypes.TypeMapping = None, _postpone_validation: bool = False
 ) -> Callable[[F], F]:
     """Decorator to extract parameters from requests and validate them.
 
@@ -1703,6 +1712,8 @@ def REQUESTdata(
         are valid as a type.
         To extract an encoded parameter one may prepended the name of it
         with an octothorpe (``#``).
+    :param _postpone_validation: Whether or not validation should be applied inside.
+        This should be used rarely, but sometimes its necessary.
     """
 
     def wrap(fun: F) -> F:
@@ -1720,7 +1731,7 @@ def REQUESTdata(
 
                 if name not in kwargs:
 
-                    if getattr(hints[name], "__origin__", None) is Union:
+                    if typing.get_origin(hints[name]) is Union:
                         type_, _ = hints[name].__args__
                         optional = True
                     else:
@@ -1741,9 +1752,8 @@ def REQUESTdata(
                         if timeout is False:
                             rs.notify("warning", n_("Link invalid."))
 
-                    if getattr(
-                        type_, "__origin__", None
-                    ) is collections.abc.Collection:
+                    origin = typing.get_origin(type_)
+                    if origin is collections.abc.Collection:
                         type_ = unwrap(type_.__args__)
                         vals = tuple(rs.request.values.getlist(name))
                         if vals:
@@ -1753,7 +1763,9 @@ def REQUESTdata(
                             # We have to be careful, since empty lists are
                             # problematic for the werkzeug MultiDict
                             rs.values[name] = None
-                        if optional:
+                        if _postpone_validation:
+                            kwargs[name] = tuple(vals)
+                        elif optional:
                             kwargs[name] = tuple(
                                 check_validation_optional(rs, type_, val, name)
                                 for val in vals
@@ -1765,7 +1777,9 @@ def REQUESTdata(
                             )
                     else:
                         rs.values[name] = val
-                        if optional:
+                        if _postpone_validation:
+                            kwargs[name] = val
+                        elif optional:
                             kwargs[name] = check_validation_optional(
                                 rs, type_, val, name)
                         else:
@@ -1823,8 +1837,9 @@ RequestConstraint = Tuple[Callable[[CdEDBObject], bool], Error]
 
 
 def request_extractor(
-        rs: RequestState, spec: validate.TypeMapping,
-        constraints: Collection[RequestConstraint] = None) -> CdEDBObject:
+        rs: RequestState, spec: vtypes.TypeMapping,
+        constraints: Collection[RequestConstraint] = None,
+        postpone_validation: bool = False) -> CdEDBObject:
     """Utility to apply REQUESTdata later than usual.
 
     This is intended to bu used, when the parameter list is not known before
@@ -1844,9 +1859,10 @@ def request_extractor(
     :param spec: handed through to the decorator
     :param constraints: additional constraints that shoud produce
       validation errors
+    :param postpone_validation: handed through to the decorator
     :returns: dict containing the requested values
     """
-    @REQUESTdata(*spec, _hints=spec)
+    @REQUESTdata(*spec, _hints=spec, _postpone_validation=postpone_validation)
     def fun(_: None, rs: RequestState, **kwargs: Any) -> CdEDBObject:
         if not rs.has_validation_errors():
             for checker, error in constraints or []:
@@ -2001,7 +2017,10 @@ def assembly_guard(fun: F) -> F:
 
 def check_validation(rs: RequestState, type_: Type[T], value: Any,
                      name: str = None, **kwargs: Any) -> Optional[T]:
-    """Helper to perform parameter sanitization.
+    """Wrapper to call checks in :py:mod:`cdedb.validation`.
+
+    This performs the check and appends all occurred errors to the RequestState.
+    This also ignores warnings appropriately due to rs.ignore_warnings.
 
     :param type_: type to check for
     :param name: name of the parameter to check (bonus points if you find
@@ -2009,19 +2028,23 @@ def check_validation(rs: RequestState, type_: Type[T], value: Any,
       capabilities, but I didn't see how this should be done).
     """
     if name is not None:
-        ret, errs = validate.validate_check(type_, value, argname=name, **kwargs)
+        ret, errs = validate.validate_check(
+            type_, value, ignore_warnings=rs.ignore_warnings, argname=name, **kwargs)
     else:
-        ret, errs = validate.validate_check(type_, value, **kwargs)
+        ret, errs = validate.validate_check(
+            type_, value, ignore_warnings=rs.ignore_warnings, **kwargs)
     rs.extend_validation_errors(errs)
     return ret
 
 
 def check_validation_optional(rs: RequestState, type_: Type[T], value: Any,
                               name: str = None, **kwargs: Any) -> Optional[T]:
-    """Helper to perform parameter sanitization.
+    """Wrapper to call checks in :py:mod:`cdedb.validation`.
 
     This is similar to :func:`~cdedb.frontend.common.check_validation`
     but also allows optional/falsy values.
+
+    This also ignores warnings appropriately due to rs.ignore_warnings.
 
     :param type_: type to check for
     :param name: name of the parameter to check (bonus points if you find
@@ -2030,11 +2053,37 @@ def check_validation_optional(rs: RequestState, type_: Type[T], value: Any,
     """
     if name is not None:
         ret, errs = validate.validate_check_optional(
-            type_, value, argname=name, **kwargs)
+            type_, value, ignore_warnings=rs.ignore_warnings, argname=name, **kwargs)
     else:
-        ret, errs = validate.validate_check_optional(type_, value, **kwargs)
+        ret, errs = validate.validate_check_optional(
+            type_, value, ignore_warnings=rs.ignore_warnings, **kwargs)
     rs.extend_validation_errors(errs)
     return ret
+
+
+def inspect_validation(
+    type_: Type[T], value: Any, *, ignore_warnings: bool = False, **kwargs: Any
+) -> Tuple[Optional[T], List[Error]]:
+    """Convenient wrapper to call checks in :py:mod:`cdedb.validation`.
+
+    This is similar to :func:`~cdedb.frontend.common.check_validation` but returns
+    all encountered errors instead of appending them to the RequestState.
+    This should only be used if the error handling differs from the default handling.
+    """
+    return validate.validate_check(
+        type_, value, ignore_warnings=ignore_warnings, **kwargs)
+
+
+def inspect_validation_optional(
+    type_: Type[T], value: Any, *, ignore_warnings: bool = False, **kwargs: Any
+) -> Tuple[Optional[T], List[Error]]:
+    """Convenient wrapper to call checks in :py:mod:`cdedb.validation`.
+
+    This is similar to :func:`~cdedb.frontend.common.inspect_validation` but also allows
+    optional/falsy values.
+    """
+    return validate.validate_check_optional(
+        type_, value, ignore_warnings=ignore_warnings, **kwargs)
 
 
 def basic_redirect(rs: RequestState, url: str) -> werkzeug.Response:
@@ -2098,9 +2147,7 @@ def make_postal_address(rs: RequestState, persona: CdEDBObject) -> List[str]:
         ret.append("{} {}".format(p['postal_code'] or '',
                                   p['location'] or ''))
     if p['country']:
-        # Mask the `gettext` name, so that pybabel does not try to extract this string.
-        g = rs.translations["de"].gettext
-        ret.append(g(f"CountryCodes.{p['country']}"))
+        ret.append(rs.translations["de"].gettext(format_country_code(p['country'])))
     return ret
 
 
@@ -2166,28 +2213,39 @@ def make_persona_name(persona: CdEDBObject,
     return " ".join(ret)
 
 
+def drow_name(field_name: str, entity_id: int, prefix: str = "") -> str:
+    prefix = prefix + "_" if prefix else ""
+    return f"{prefix}{field_name}_{entity_id}"
+
+
+def drow_create(entity_id: int, prefix: str = "") -> str:
+    return drow_name("create", entity_id, prefix)
+
+
+def drow_delete(entity_id: int, prefix: str = "") -> str:
+    return drow_name("delete", entity_id, prefix)
+
+
+def drow_last_index(prefix: str = "") -> str:
+    return f"{prefix}create_last_index"
+
+
+# TODO maybe retrieve the spec from the type_?
 def process_dynamic_input(
-    rs: RequestState, existing: Collection[int], spec: validate.TypeMapping, *,
-    additional: CdEDBObject = None, prefix: str = "",
-    constraint_maker: Callable[[int, str], List[RequestConstraint]] = None
+    rs: RequestState,
+    type_: Type[T],
+    existing: Collection[int],
+    spec: vtypes.TypeMapping,
+    *,
+    additional: CdEDBObject = None,
+    creation_spec: vtypes.TypeMapping = None,
+    prefix: str = "",
 ) -> Dict[int, Optional[CdEDBObject]]:
-    """Retrieve data from rs provided by 'dynamic_row_table' makro.
+    """Retrieve data from rs provided by 'dynamic_row_meta' macros.
 
     This takes a 'spec' of field_names mapped to their validation. Each field_name is
     prepended with the 'prefix' and appended with the entity_id in the form of
     "{prefix}{field_name}_{entity_id}" before being extracted from the RequestState.
-
-    During extraction with `request_extractor`, it is possible to pass some additional
-    constraints. To dynamically create them for each not-deleted entry, a
-    'constraint_maker' function is needed. It might look like the following:
-
-        def int_constraint_maker(field_id: int, prefix: str) -> List[RequestConstraint]:
-            # the field_name present in spec is assumed to be 'int' in this example
-            rs_field_name = f"{prefix}int_{field_id}"
-            msg = n_("Must be greater than zero.")
-            return [(
-                lambda d: d[rs_field_name] > 0, (rs_field_name, ValueError(msg))
-            )]
 
     'process_dynamic_input' returns a data dict to update the database, which includes:
     - existing entries, mapped to their (validated) input fields (from spec)
@@ -2198,62 +2256,76 @@ def process_dynamic_input(
     - To each existing, not deleted entry: the 'id' of the entry.
     - To each new and each existing, not deleted entry: all entries of 'additional'
 
+    Take care to check for validation_errors directly after calling this function!
+    Since the validation facillity is used inside, a ValidationError inside an entry
+    causes the entry to be set to None (similar to all deleted entries), which may have
+    unwanted side-effects if you simply proceed.
+
+    :param type_: validation_type of the entities
     :param existing: ids of already existent objects
     :param spec: name of input fields, mapped to their validation. This uses the same
         format as the `request_extractor`, but adds the 'prefix' to each key if present.
-    :param constraint_maker: a function accepting the id of a non-deleted entry and
-        the string prefix and gives back all constraints for this entry, which are
-        further passed to request_extractor
     :param additional: additional keys added to each output object
+    :param creation_spec: alternative spec used for new entries. Defaults to spec.
     :param prefix: prefix in front of all concerned fields. Should be used when more
         then one dynamic input table is present on the same page.
     """
     additional = additional or dict()
+    creation_spec = creation_spec or spec
+    # this is the used prefix for the validation
+    field_prefix = f"{prefix}_" if prefix else ""
 
-    delete_spec = {f"{prefix}delete_{anid}": bool for anid in existing}
+    delete_spec = {drow_delete(anid, prefix): bool for anid in existing}
     delete_flags = request_extractor(rs, delete_spec)
-    deletes = {anid for anid in existing if delete_flags[f"{prefix}delete_{anid}"]}
+    deletes = {anid for anid in existing if delete_flags[drow_delete(anid, prefix)]}
     non_deleted_existing = {anid for anid in existing if anid not in deletes}
 
-    existing_data_spec: validate.TypeMapping = {
-        f"{prefix}{key}_{anid}": value
+    existing_data_spec: vtypes.TypeMapping = {
+        drow_name(key, anid, prefix): value
         for anid in non_deleted_existing
         for key, value in spec.items()
     }
-    # generate the constraints for each existing entry which will not be deleted
-    constraints = list(itertools.chain.from_iterable(
-        constraint_maker(anid, prefix) for anid in non_deleted_existing)
-    ) if constraint_maker else None
-    data = request_extractor(rs, existing_data_spec, constraints)
+    # validation is postponed to a later point to use the validator for the whole object
+    data = request_extractor(rs, existing_data_spec, postpone_validation=True)
 
-    # build the return dict of all existing entries
+    # build the return dict of all existing entries and check if they pass validation
     ret: Dict[int, Optional[CdEDBObject]] = {
-        anid: {key: data[f"{prefix}{key}_{anid}"] for key in spec}
+        anid: {key: data[drow_name(key, anid, prefix)] for key in spec}
         for anid in non_deleted_existing
     }
     for anid in existing:
         if anid in deletes:
             ret[anid] = None
         else:
-            ret[anid]['id'] = anid  # type: ignore
-            ret[anid].update(additional)  # type: ignore
+            entry = ret[anid]
+            assert entry is not None
+            if type_ not in {vtypes.EventTrack, vtypes.BallotCandidate,
+                             vtypes.EventPartGroup}:
+                entry["id"] = anid
+            entry.update(additional)
+            # apply the promised validation
+            ret[anid] = check_validation(rs, type_, entry, field_prefix=field_prefix,
+                                         field_postfix=f"_{anid}")  # type: ignore
 
     # extract the new entries which shall be created
     marker = 1
     while marker < 2 ** 10:
-        will_create = unwrap(request_extractor(rs, {f"{prefix}create_-{marker}": bool}))
+        will_create = unwrap(
+            request_extractor(rs, {drow_create(-marker, prefix): bool}))
         if will_create:
-            params = {f"{prefix}{key}_-{marker}": value for key, value in spec.items()}
-            constraints = (constraint_maker(-marker, prefix)
-                           if constraint_maker else None)
-            data = request_extractor(rs, params, constraints)
-            ret[-marker] = {key: data[f"{prefix}{key}_-{marker}"] for key in spec}
-            if additional:
-                ret[-marker].update(additional)  # type: ignore
+            params = {drow_name(key, -marker, prefix): value
+                      for key, value in creation_spec.items()}
+            data = request_extractor(rs, params, postpone_validation=True)
+            entry = {
+                key: data[drow_name(key, -marker, prefix)] for key in creation_spec}
+            entry.update(additional)
+            ret[-marker] = check_validation(
+                rs, type_, entry, field_prefix=field_prefix,
+                field_postfix=f"_{-marker}", creation=True)  # type: ignore
         else:
             break
         marker += 1
-    rs.values[f'{prefix}create_last_index'] = marker - 1
+    rs.values[drow_last_index(prefix)] = marker - 1
     return ret
 
 

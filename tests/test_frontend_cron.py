@@ -6,8 +6,8 @@ import datetime
 import decimal
 import json
 import numbers
-from typing import Any, Dict, Set, Union, cast
 import unittest.mock
+from typing import Any, Dict, Set, Union, cast
 
 import cdedb.database.constants as const
 from cdedb.common import RequestState, now, xsorted
@@ -161,7 +161,7 @@ class TestCron(CronTest):
         ctime=(now() - datetime.timedelta(hours=6))))
     def test_genesis_remind_new(self) -> None:
         self.execute('genesis_remind')
-        self.assertEqual(["genesis_requests_pending"],
+        self.assertEqual(["genesis/genesis_requests_pending"],
                          [mail.template for mail in self.mails])
 
     @prepsql(genesis_template())
@@ -185,7 +185,7 @@ class TestCron(CronTest):
                         store={"tstamp": 1, "ids": [1001]}))
     def test_genesis_remind_older(self) -> None:
         self.execute('genesis_remind')
-        self.assertEqual(["genesis_requests_pending"],
+        self.assertEqual(["genesis/genesis_requests_pending"],
                          [mail.template for mail in self.mails])
 
     @storage
@@ -197,6 +197,14 @@ class TestCron(CronTest):
     def test_genesis_forget_unrelated(self) -> None:
         self.execute('genesis_forget')
         self.assertEqual({1001}, set(self.core.genesis_list_cases(RS)))
+
+    @storage
+    @prepsql(genesis_template(
+        ctime=datetime.datetime(2000, 1, 1),
+        case_status=const.GenesisStati.successful.value))
+    def test_genesis_forget_successful(self) -> None:
+        self.execute('genesis_forget')
+        self.assertEqual({}, self.core.genesis_list_cases(RS))
 
     @storage
     @prepsql(genesis_template(
@@ -389,7 +397,7 @@ class TestCron(CronTest):
             'send_welcome_message': False,
             # 'send_goodbye_message': False,
             'subscription_policy': 'moderate',
-            # 'unsubscription_policy': 'moderate',
+            'unsubscription_policy': 'moderate',
             'archive_policy': 'private',
             # 'filter_content': True,
             # 'filter_action': 'forward',
@@ -533,7 +541,7 @@ class TestCron(CronTest):
                     pre_approved=True, pre_confirmed=True, pre_verified=True)])
         self.assertEqual(
             mm_lists['witz'].unsubscribe.call_args_list,
-            [umcall('undead@example.cde')])
+            [umcall('undead@example.cde', pre_confirmed=True, pre_approved=True)])
         self.assertEqual(mm_lists['klatsch'].subscribe.call_count, 4)
         # Moderator update
         self.assertEqual(

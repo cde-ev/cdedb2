@@ -17,20 +17,19 @@ import logging
 import sys
 from types import TracebackType
 from typing import (
-    Any, Callable, ClassVar, Collection, Dict, Iterable, List, Mapping,
+    Any, Callable, ClassVar, Collection, Dict, Iterable, List, Literal, Mapping,
     Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast, overload,
 )
 
 import psycopg2.extensions
 import psycopg2.extras
-from typing_extensions import Literal
 
 import cdedb.validation as validate
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    LOCALE, CdEDBLog, CdEDBObject, CdEDBObjectMap, PathLike, PrivilegeError, PsycoJson,
-    Realm, RequestState, Role, diacritic_patterns, glue, make_proxy, make_root_logger,
-    n_, unwrap, DefaultReturnCode,
+    LOCALE, CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Error, PathLike,
+    PrivilegeError, PsycoJson, RequestState, Role, diacritic_patterns, glue, make_proxy,
+    make_root_logger, n_, unwrap,
 )
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
@@ -245,12 +244,14 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         self.conf = Config(configpath)
         # initialize logging
         make_root_logger(
-            "cdedb.backend", self.conf["BACKEND_LOG"], self.conf["LOG_LEVEL"],
+            "cdedb.backend",
+            self.conf["LOG_DIR"] / "cdedb-backend.log",
+            self.conf["LOG_LEVEL"],
             syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         make_root_logger(
-            "cdedb.backend.{}".format(self.realm),
-            self.conf[f"{self.realm.upper()}_BACKEND_LOG"],
+            f"cdedb.backend.{self.realm}",
+            self.conf["LOG_DIR"] / f"cdedb-backend-{self.realm}.log",
             self.conf["LOG_LEVEL"],
             syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
@@ -260,7 +261,9 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         # Everybody needs access to the core backend
         # Import here since we otherwise have a cyclic import.
         # I don't see how we can get out of this ...
-        from cdedb.backend.core import CoreBackend  # pylint: disable=import-outside-toplevel
+        from cdedb.backend.core import (  # pylint: disable=import-outside-toplevel
+            CoreBackend,
+        )
         self.core: CoreBackend
         if isinstance(self, CoreBackend):
             # self.core = cast('CoreBackend', self)
@@ -269,19 +272,6 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             self.core = make_proxy(CoreBackend(configpath), internal=True)
 
     affirm_atomized_context = staticmethod(_affirm_atomized_context)
-
-    def affirm_realm(self, rs: RequestState, ids: Collection[int],
-                     realms: Set[Realm] = None) -> None:
-        """Check that all personas corresponding to the ids are in the
-        appropriate realm.
-
-        :param realms: Set of realms to check for. By default this is
-          the set containing only the realm of this class.
-        """
-        realms = realms or {self.realm}
-        actual_realms = self.core.get_realms_multi(rs, ids)
-        if any(not x >= realms for x in actual_realms.values()):
-            raise ValueError(n_("Wrong realm for personas."))
 
     @classmethod
     @abc.abstractmethod
@@ -389,7 +379,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
 
         See :py:meth:`sql_select` for thoughts on this.
 
-        :param unique: Whether to do nothing if conflicting with a constraint
+        :param drop_on_conflict: Whether to do nothing if conflicting with a constraint
         :returns: id of inserted row
         """
         keys = tuple(key for key in data)
@@ -514,6 +504,12 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         query = f"DELETE FROM {table} WHERE {entity_key} = %s"
         return self.query_exec(rs, query, (entity,))
 
+    def sql_defer_constraints(self, rs: RequestState, *constraints: str
+                              ) -> DefaultReturnCode:
+        """Helper for deferring the given constraints for the current transaction."""
+        query = f"SET CONSTRAINTS {', '.join(constraints)} DEFERRED"
+        return self.query_exec(rs, query, ())
+
     def cgitb_log(self) -> None:
         """Log the current exception.
 
@@ -549,7 +545,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             # Collate compatible to COLLATOR in python
             orders = []
             for entry, _ in query.order:
-                if query.spec[entry] == 'str':
+                if query.spec[entry].type == 'str':
                     orders.append(f'{entry.split(",")[0]} COLLATE "{LOCALE}"')
                 else:
                     orders.append(entry.split(',')[0])
@@ -561,7 +557,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         constraints = []
         _ops = QueryOperators
         for field, operator, value in query.constraints:
-            lowercase = (query.spec[field] == "str")
+            lowercase = (query.spec[field].type == "str")
             if lowercase:
                 # the following should be used with operators which are allowed
                 # for str as well as for other types
@@ -666,7 +662,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             # Collate compatible to COLLATOR in python
             orders = []
             for entry, ascending in query.order:
-                if query.spec[entry] == 'str':
+                if query.spec[entry].type == 'str':
                     orders.append(
                         f'{entry.split(",")[0]} COLLATE "{LOCALE}" '
                         f'{"ASC" if ascending else "DESC"}')
@@ -724,18 +720,17 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         assert issubclass(code_validator, enum.IntEnum)
         codes = affirm_set_validation(code_validator, codes or set())
         entity_ids = affirm_set_validation(vtypes.ID, entity_ids or set())
-        offset: Optional[int] = affirm_validation_typed_optional(
+        offset: Optional[int] = affirm_validation_optional(
             vtypes.NonNegativeInt, offset)
-        length: Optional[int] = affirm_validation_typed_optional(
-            vtypes.PositiveInt, length)
+        length: Optional[int] = affirm_validation_optional(vtypes.PositiveInt, length)
         additional_columns = affirm_set_validation(
             vtypes.RestrictiveIdentifier, additional_columns or set())
-        persona_id = affirm_validation_typed_optional(vtypes.ID, persona_id)
-        submitted_by = affirm_validation_typed_optional(vtypes.ID, submitted_by)
-        reviewed_by = affirm_validation_typed_optional(vtypes.ID, reviewed_by)
-        change_note = affirm_validation_typed_optional(vtypes.Regex, change_note)
-        time_start = affirm_validation_typed_optional(datetime.datetime, time_start)
-        time_stop = affirm_validation_typed_optional(datetime.datetime, time_stop)
+        persona_id = affirm_validation_optional(vtypes.ID, persona_id)
+        submitted_by = affirm_validation_optional(vtypes.ID, submitted_by)
+        reviewed_by = affirm_validation_optional(vtypes.ID, reviewed_by)
+        change_note = affirm_validation_optional(vtypes.Regex, change_note)
+        time_start = affirm_validation_optional(datetime.datetime, time_start)
+        time_stop = affirm_validation_optional(datetime.datetime, time_stop)
 
         length = length or self.conf["DEFAULT_LOG_LENGTH"]
         additional_columns: List[str] = list(additional_columns or [])
@@ -804,7 +799,10 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         if offset is not None:
             query = glue(query, "OFFSET {}".format(offset))
 
-        return total, self.query_all(rs, query, params)
+        data = self.query_all(rs, query, params)
+        for e in data:
+            e['code'] = code_validator(e['code'])
+        return total, data
 
 
 class Silencer:
@@ -834,23 +832,27 @@ class Silencer:
         self.rs.is_quiet = False
 
 
-def _affirm_validation(assertion: str, value: T, **kwargs: Any) -> T:
-    """Wrapper to call asserts in :py:mod:`cdedb.validation`."""
-    checker = getattr(validate, "assert_{}".format(assertion))
-    return checker(value, **kwargs)
+def affirm_validation(assertion: Type[T], value: Any, **kwargs: Any) -> T:
+    """Wrapper to call asserts in :py:mod:`cdedb.validation`.
+
+    ValidationWarnings are used to hint the user to re-think about a given valid entry.
+    The user may decide that the given entry is fine by ignoring the warning.
+    Therefore, the frontend has to handle ValidationWarnings properly, while the backend
+    must **ignore** them always to reduce redundancy between frontend and backend.
+    """
+    return validate.validate_assert(assertion, value, ignore_warnings=True, **kwargs)
 
 
-def affirm_validation_typed(assertion: Type[T], value: Any, **kwargs: Any) -> T:
-    """Wrapper to call asserts in :py:mod:`cdedb.validation`."""
-    return validate.validate_assert(assertion, value, **kwargs)
-
-
-def affirm_validation_typed_optional(
+def affirm_validation_optional(
     assertion: Type[T], value: Any, **kwargs: Any
 ) -> Optional[T]:
-    """Wrapper to call asserts in :py:mod:`cdedb.validation`."""
-    return validate.validate_assert(
-        Optional[assertion], value, **kwargs)  # type: ignore
+    """Wrapper to call asserts in :py:mod:`cdedb.validation`.
+
+    This is similar to :func:`~cdedb.backend.common.affirm_validation`
+    but also allows optional/falsy values.
+    """
+    return validate.validate_assert_optional(
+        Optional[assertion], value, ignore_warnings=True, **kwargs)  # type: ignore
 
 
 def affirm_array_validation(
@@ -858,7 +860,7 @@ def affirm_array_validation(
 ) -> Tuple[T, ...]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation` for an array."""
     return tuple(
-        affirm_validation_typed(assertion, value, **kwargs)
+        affirm_validation(assertion, value, **kwargs)
         for value in values
     )
 
@@ -868,9 +870,21 @@ def affirm_set_validation(
 ) -> Set[T]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation` for a set."""
     return set(
-        affirm_validation_typed(assertion, value, **kwargs)
+        affirm_validation(assertion, value, **kwargs)
         for value in values
     )
+
+
+def inspect_validation(
+    type_: Type[T], value: Any, *, ignore_warnings: bool = True, **kwargs: Any
+) -> Tuple[Optional[T], List[Error]]:
+    """Convenient wrapper to call checks in :py:mod:`cdedb.validation`.
+
+    This should only be used if the error handling must be done in the backend to
+    retrieve the errors and not raising them (like affirm would do).
+    """
+    return validate.validate_check(
+        type_, value, ignore_warnings=ignore_warnings, **kwargs)
 
 
 def cast_fields(data: CdEDBObject, fields: CdEDBObjectMap) -> CdEDBObject:
@@ -904,10 +918,10 @@ def cast_fields(data: CdEDBObject, fields: CdEDBObjectMap) -> CdEDBObject:
 #:
 #: This is utilized during handling jsonb columns.
 PYTHON_TO_SQL_MAP = {
-    "int": "integer",
-    "str": "varchar",
-    "float": "double precision",
-    "date": "date",
-    "datetime": "timestamp with time zone",
-    "bool": "boolean",
+    FieldDatatypes.int: "integer",
+    FieldDatatypes.str: "varchar",
+    FieldDatatypes.float: "double precision",
+    FieldDatatypes.date: "date",
+    FieldDatatypes.datetime: "timestamp with time zone",
+    FieldDatatypes.bool: "boolean",
 }

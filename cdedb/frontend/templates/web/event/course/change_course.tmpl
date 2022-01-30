@@ -1,0 +1,108 @@
+{% extends "web/event/base.tmpl" %}
+{% set sidenav_active='event_course_stats' %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/event/generic.tmpl" as generic_event with context %}
+{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% set jshint='weak' %}
+{% block title %}
+    {% trans course=ambience['course']['shortname'], event=ambience['event']['title'] %}
+        Edit {{ course }} ({{ event }})
+    {% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+    {{ util.breadcrumb_link(cdedblink("event/course_stats"), gettext("Courses")) }}
+    {{ util.breadcrumb_link(cdedblink("event/show_course"), ambience['course']['shortname'], icon='book') }}
+    {{ util.breadcrumb_link(cdedblink("event/change_course"), gettext("Edit"), active=True) }}
+{% endblock %}
+{% block heading %}
+    {{ util.context_heading(gettext("Edit course %(course)s")|format(course=ambience['course']['shortname']),
+                            ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+{% endblock %}
+
+{% block content %}
+    <form action="{{ cdedblink('event/change_course') }}" method="POST" id="changecourseform" class="form-horizontal">
+        {{ util.anti_csrf_token('event/change_course') }}
+        <h4 class="heading-underline">{% trans %}Meta{% endtrans %}</h4>
+        {{ util.form_input_text(name="nr", label=gettext("Coursenumber")) }}
+        {{ util.form_input_text(name="title", label=gettext("Long Title")) }}
+        {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
+        {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5", markdown=True) }}
+        <h4 class="heading-underline">{% trans %}Course{% endtrans %}</h4>
+        {{ util.form_input_text(name="instructors", label=gettext("Instructors")) }}
+        {{ util.form_input_text(name="min_size", label=gettext("Minimum Size (excl. instr.)")) }}
+        {{ util.form_input_text(name="max_size", label=gettext("Maximum Size (excl. instr.)")) }}
+        {% if ambience['event']['tracks']|length == 1 %}
+            {# hide selection of course tracks/segments if the event has only one track #}
+            {{ util.input_hidden("segments", (ambience['event']['tracks']|list)[0]) }}
+        {% else %}
+            {{ util.form_input_checkboxes(name="segments", label=gettext("Course Tracks"),
+                                          entries=ambience['event']['tracks']|keydictsort(EntitySorter.course_track)|dict_entries('id', 'title'),
+                                          aclass='checkbox_segment',
+                                          info=gettext("Course tracks, in which the Course was originally offered."),
+                                          sort=False) }}
+        {% endif %}
+
+        <h4 class="heading-underline">{% trans %}Status{% endtrans %}</h4>
+        {% if ambience['event']['tracks']|length == 1 %}
+            {# show only single checkbox if event has only one course track #}
+            {{ util.form_input_checkbox("active_segments", label=gettext("Takes place"),
+                                        value=(ambience['event']['tracks']|list)[0],
+                                        info=gettext("Cancelled courses are no longer choosable by participants and "
+                                                     "are marked in the courselist and the course assignment view.")
+                                            if ambience['event']['is_course_state_visible']
+                                            else gettext(
+                                                "This is an orga-internal marker to help with course assignment. To "
+                                                "make cancelled courses public, check Configuration → Visibility of "
+                                                "cancelled courses.")) }}
+        {% else %}
+            {{ util.form_input_checkboxes(name="active_segments", label=gettext("Takes place in"),
+                                          entries=ambience['event']['tracks']|keydictsort(EntitySorter.course_track)|dict_entries('id', 'title'),
+                                          aclass='checkbox_active_segment',
+                                          info=gettext("Cancelled courses are no longer choosable by participants and "
+                                                       "are marked in the courselist and the course assignment view.")
+                                              if ambience['event']['is_course_state_visible']
+                                              else gettext(
+                                                  "This is an orga-internal marker to help with course assignment. To "
+                                                  "make cancelled courses public, check Configuration → Visibility of "
+                                                  "cancelled courses."),
+                                          sort=False) }}
+        {% endif %}
+        {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="5", markdown=True) }}
+
+        <h4 class="heading-underline">{% trans %}Fields{% endtrans %}</h4>
+        {% for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field)
+                if field['association'] == enums['FieldAssociations'].course %}
+            {{ generic_event.form_field_input(field) }}
+        {% else %}
+            <p class="text-muted">{% trans %}No custom fields for courses available.{% endtrans %}</p>
+        {% endfor %}
+
+        {{ util.form_input_static(aclass='text-info', icon='info-circle',
+                          value=gettext("Warning: The description will be publicly visible, once courselist visibility "
+                                        "is activated in the configuration. Course instructors will be visible to "
+                                        "event users.")) }}
+        {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("event/show_course")) }}
+    </form>
+    <script nonce="{{ csp_nonce }}">
+        $('#changecourseform').cdedbProtectChanges();
+        $(function(){
+            function updateCheckbox($checkbox, enabled) {
+                if (enabled) {
+                    $checkbox.prop('disabled', false);
+                } else {
+                    $checkbox.prop('checked', false);
+                    $checkbox.prop('disabled', true);
+                }
+            }
+            $('.checkbox_segment').each(function () {
+                var $related_checkbox = $('.checkbox_active_segment[value="' + $(this).val() + '"]');
+                updateCheckbox($related_checkbox, $(this).prop('checked'));
+                $(this).change(function(){
+                    updateCheckbox($related_checkbox, $(this).prop('checked'));
+                });
+            });
+        });
+    </script>
+{% endblock %}

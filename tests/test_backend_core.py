@@ -4,21 +4,20 @@
 import copy
 import datetime
 import decimal
-from typing import cast, Optional
+from typing import List, Optional, cast
 
 import cdedb.database.constants as const
-from cdedb.common import (
-    CdEDBObject, PERSONA_CDE_FIELDS, PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS,
-    ArchiveError, PrivilegeError, RequestState, get_hash, merge_dicts, now, nearly_now
-)
-from cdedb.backend.common import affirm_validation_typed as affirm
-from cdedb.validation import PERSONA_CDE_CREATION
 import cdedb.validationtypes as vtypes
-from tests.common import (
-    ANONYMOUS, BackendTest, USER_DICT, as_users, create_mock_image, execsql, prepsql,
-    storage
+from cdedb.backend.common import affirm_validation as affirm
+from cdedb.common import (
+    PERSONA_CDE_FIELDS, PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, ArchiveError,
+    CdEDBObject, GenesisDecision, PrivilegeError, RequestState, get_hash, merge_dicts,
+    nearly_now, now,
 )
-
+from cdedb.validation import PERSONA_CDE_CREATION
+from tests.common import (
+    ANONYMOUS, USER_DICT, BackendTest, as_users, create_mock_image, prepsql, storage,
+)
 
 PERSONA_TEMPLATE = {
     'username': "zelda@example.cde",
@@ -101,7 +100,7 @@ class TestCoreBackend(BackendTest):
 
             # Validate ml data
             persona = self.core.get_ml_user(self.key, persona_id)
-            affirm(vtypes.Persona, persona, _ignore_warnings=True)
+            affirm(vtypes.Persona, persona)
 
             # Validate event data if applicable
             if not persona['is_event_realm']:
@@ -109,10 +108,10 @@ class TestCoreBackend(BackendTest):
 
             persona = self.core.get_event_user(self.key, persona_id)
             if persona_id != USER_DICT["inga"]["id"]:
-                affirm(vtypes.Persona, persona, _ignore_warnings=True)
+                affirm(vtypes.Persona, persona)
             else:
                 with self.assertRaises(ValueError) as cm:
-                    affirm(vtypes.Persona, persona, _ignore_warnings=True)
+                    affirm(vtypes.Persona, persona)
                     self.assertIn("A birthday must be in the past. (birthday)",
                                   cm.exception.args)
 
@@ -122,10 +121,10 @@ class TestCoreBackend(BackendTest):
 
             persona = self.core.get_total_persona(self.key, persona_id)
             if persona_id != USER_DICT["inga"]["id"]:
-                affirm(vtypes.Persona, persona, _ignore_warnings=True)
+                affirm(vtypes.Persona, persona)
             else:
                 with self.assertRaises(ValueError) as cm:
-                    affirm(vtypes.Persona, persona, _ignore_warnings=True)
+                    affirm(vtypes.Persona, persona)
                     self.assertIn("A birthday must be in the past. (birthday)",
                                   cm.exception.args)
 
@@ -140,8 +139,7 @@ class TestCoreBackend(BackendTest):
     @as_users("anton", "berta", "janis")
     def test_change_password(self) -> None:
         user = self.user
-        ret, _ = self.core.change_password(self.key, self.user['password'],
-                                           "weakpass")
+        ret, _ = self.core.change_password(self.key, self.user['password'], "weakpass")
         self.assertFalse(ret)
         newpass = "er3NQ_5bkrc#"
         ret, message = self.core.change_password(self.key, self.user['password'],
@@ -269,6 +267,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_purged': False,
             'is_cdelokal_admin': False,
+            'is_auditor': False,
         })
         self.assertEqual(data, new_data)
         expectation = {
@@ -312,6 +311,7 @@ class TestCoreBackend(BackendTest):
                 'is_ml_admin': False,
                 'is_ml_realm': False,
                 'is_cdelokal_admin': False,
+                'is_auditor': False,
                 'is_purged': False,
                 'is_searchable': False,
                 'location': None,
@@ -388,6 +388,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_purged': False,
             'is_cdelokal_admin': False,
+            'is_auditor': False,
         })
         self.assertEqual(data, new_data)
 
@@ -425,6 +426,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_purged': False,
             'is_cdelokal_admin': False,
+            'is_auditor': False,
         })
         self.assertEqual(data, new_data)
 
@@ -449,6 +451,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_purged': False,
             'is_cdelokal_admin': False,
+            'is_auditor': False,
         })
         self.assertEqual(data, new_data)
 
@@ -487,6 +490,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_purged': False,
             'is_cdelokal_admin': False,
+            'is_auditor': False,
         })
         self.assertEqual(data, new_data)
 
@@ -655,6 +659,8 @@ class TestCoreBackend(BackendTest):
             'reviewer': None,
             'attachment_hash': None,
             'birth_name': None,
+            'pevent_id': None,
+            'pcourse_id': None,
         })
         value = self.core.genesis_get_case(self.key, case_id)
         del value['ctime']
@@ -687,6 +693,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_purged': False,
             'is_cdelokal_admin': False,
+            'is_auditor': False,
             'id': new_id,
             'display_name': 'Zelda',
             'is_active': True,
@@ -731,6 +738,8 @@ class TestCoreBackend(BackendTest):
             'telephone': None,
             'attachment_hash': None,
             'birth_name': None,
+            'pevent_id': None,
+            'pcourse_id': None,
         })
         value = self.core.genesis_get_case(self.key, case_id)
         del value['ctime']
@@ -762,6 +771,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_purged': False,
             'is_cdelokal_admin': False,
+            'is_auditor': False,
             'id': new_id,
             'display_name': 'Zelda',
             'is_active': True,
@@ -795,6 +805,8 @@ class TestCoreBackend(BackendTest):
             'location': "Marcuria",
             'country': "AQ",
             'attachment_hash': attachment_hash,
+            'pevent_id': None,
+            'pcourse_id': None,
         }
         self.assertFalse(self.core.genesis_attachment_usage(
             self.key, attachment_hash))
@@ -825,8 +837,7 @@ class TestCoreBackend(BackendTest):
         expectation.update(update)
         new_id = self.core.genesis(self.key, case_id)
         self.assertLess(0, new_id)
-        expectation = {k: v for k, v in expectation.items() if
-                       k in PERSONA_CDE_FIELDS}
+        expectation = {k: v for k, v in expectation.items() if k in PERSONA_CDE_FIELDS}
         expectation.update({
             'is_meta_admin': False,
             'is_archived': False,
@@ -839,6 +850,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_purged': False,
             'is_cdelokal_admin': False,
+            'is_auditor': False,
             'id': new_id,
             'display_name': 'Zelda',
             'is_active': True,
@@ -949,6 +961,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_ml_realm': True,
             'is_cdelokal_admin': False,
+            'is_auditor': False,
             'is_purged': False,
             'is_searchable': True,
             'username': 'berta@example.cde'}
@@ -962,10 +975,10 @@ class TestCoreBackend(BackendTest):
             'country': "DE",
             'gender': 1,
             'location': 'Utopia',
-            'mobile': '0163/123456789',
+            'mobile': '+4916312345678',
             'name_supplement': 'MdB',
             'postal_code': '34576',
-            'telephone': '+49 (5432) 987654321',
+            'telephone': '+495432987654321',
             'title': 'Dr.',
             })
         self.assertEqual(expectation, self.core.get_event_user(self.key, 2))
@@ -986,7 +999,7 @@ class TestCoreBackend(BackendTest):
             'paper_expuls': True,
             'postal_code2': '8XA 45-$',
             'specialisation': 'Alles\nUnd noch mehr',
-            'telephone': '+49 (5432) 987654321',
+            'telephone': '+495432987654321',
             'timeline': 'Überall',
             'trial_member': False,
             'username': 'berta@example.cde',
@@ -1250,16 +1263,11 @@ class TestCoreBackend(BackendTest):
                 if u["id"] == 18:
                     self.assertTrue(res)
                     key = self.key
-                    generation = self.core.changelog_get_generation(key, u["id"])
-                    self.core.change_persona(
+                    self.core.set_persona(
                         key, {"id": u["id"], "notes": "test"},
-                        change_note="Land auf Ländercode umgestellt.")
-                    self.assertEqual(
-                        generation + 1,
-                        self.core.changelog_get_generation(key, u["id"]))
-                    execsql(f"UPDATE core.changelog SET ctime = '2021-03-20T09:42:34'"
-                            f" WHERE persona_id = {u['id']}"
-                            f" AND generation = {generation + 1}")
+                        change_note="Diese Änderung wurde maschinell erstellt und ist"
+                                    " auch ohne Unterschrift gültig.",
+                        automated_change=True)
                     self.assertTrue(
                         self.core.is_persona_automatically_archivable(key, u["id"]))
                     self.assertIsNone(
@@ -1274,21 +1282,27 @@ class TestCoreBackend(BackendTest):
 
     @as_users("janis")
     def test_list_personas(self) -> None:
-        reality = self.core.list_all_personas(self.key, is_active=True)
-        active_personas = {1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 13, 14, 16, 17, 18, 22,
-                           23, 27, 32, 48, 100}
-        self.assertEqual(active_personas, reality)
+        all_personas = tuple(e for e in self.get_sample_data("core.personas").values()
+                             if not e['is_archived'])
         reality = self.core.list_all_personas(self.key, is_active=False)
-        self.assertEqual(active_personas | {15}, reality)
+        self.assertEqual(reality, {e['id'] for e in all_personas})
+        active_personas = {e['id'] for e in all_personas if e['is_active']}
+        reality = self.core.list_all_personas(self.key, is_active=True)
+        self.assertEqual(reality, active_personas)
+        current_active_members = {
+            e['id'] for e in all_personas if e['is_member'] and e['is_active']}
         reality = self.core.list_current_members(self.key, is_active=True)
-        self.assertEqual({1, 2, 3, 6, 7, 9, 100}, reality)
+        self.assertEqual(reality, current_active_members)
+        current_members = {e['id'] for e in all_personas if e['is_member']}
         reality = self.core.list_current_members(self.key, is_active=False)
-        self.assertEqual({1, 2, 3, 6, 7, 9, 15, 100}, reality)
+        self.assertEqual(reality, current_members)
+        all_moderators = {
+            e['persona_id'] for e in self.get_sample_data("ml.moderators").values()}
         reality = self.core.list_all_moderators(self.key)
-        self.assertEqual({1, 2, 3, 4, 5, 7, 9, 10, 11, 15, 23, 27, 100}, reality)
+        self.assertEqual(reality, all_moderators)
         MT = const.MailinglistTypes
-        reality = self.core.list_all_moderators(self.key, {MT.member_moderated_opt_in,
-                                                           MT.cdelokal})
+        reality = self.core.list_all_moderators(
+            self.key, {MT.member_moderated_opt_in, MT.cdelokal})
         self.assertEqual({2, 5, 9, 100}, reality)
 
     @as_users("vera")
@@ -1296,58 +1310,79 @@ class TestCoreBackend(BackendTest):
         # first generate some data
         data = copy.deepcopy(PERSONA_TEMPLATE)
         new_persona_id = self.core.create_persona(self.key, data)
-        data = {
+        genesis_data = {
             "family_name": "Zeruda-Hime",
             "given_names": "Zelda",
             "username": 'zeldax@example.cde',
             'realm': "ml",
             "notes": "Some blah",
         }
-        case_id = self.core.genesis_request(ANONYMOUS, data)
-        update = {
-            'id': case_id,
-            'realm': "ml",
-            'case_status': const.GenesisStati.approved,
-            'reviewer': 1,
-        }
-        self.core.genesis_modify_case(self.key, update)
+        case_id = self.core.genesis_request(ANONYMOUS, genesis_data)
+        assert case_id is not None
+        self.core.genesis_verify(ANONYMOUS, case_id)
+        new_genesis_persona_id = self.core.genesis_decide(
+            self.key, case_id, GenesisDecision.approve)
         newpass = "er3NQ_5bkrc#"
         self.core.change_password(self.key, self.user['password'], newpass)
 
-        expectation = (4, (
-            {'id': 1001,
-             'change_note': None,
-             'code': const.CoreLogCodes.persona_creation,
-             'ctime': nearly_now(),
-             'persona_id': new_persona_id,
-             'submitted_by': self.user['id']},
-            {'id': 1002,
-             'change_note': 'zeldax@example.cde',
-             'code': const.CoreLogCodes.genesis_request,
-             'ctime': nearly_now(),
-             'persona_id': None,
-             'submitted_by': None},
-            {'id': 1003,
-             'change_note': 'zeldax@example.cde',
-             'code': const.CoreLogCodes.genesis_approved,
-             'ctime': nearly_now(),
-             'persona_id': None,
-             'submitted_by': self.user['id']},
-            {'id': 1004,
-             'change_note': None,
-             'code': const.CoreLogCodes.password_change,
-             'ctime': nearly_now(),
-             'persona_id': 22,
-             'submitted_by': self.user['id']}
-        ))
+        log_expectation: List[CdEDBObject] = [
+            {
+                'code': const.CoreLogCodes.persona_creation,
+                'persona_id': new_persona_id,
+            },
+            {
+                'code': const.CoreLogCodes.genesis_request,
+                'change_note': genesis_data['username'],
+                'submitted_by': None,
+            },
+            {
+                'code': const.CoreLogCodes.genesis_verified,
+                'change_note': genesis_data['username'],
+                'submitted_by': None,
+            },
+            {
+                'code': const.CoreLogCodes.persona_creation,
+                'persona_id': new_genesis_persona_id,
+            },
+            {
+                'code': const.CoreLogCodes.genesis_approved,
+                'change_note': genesis_data['username'],
+                'persona_id': new_genesis_persona_id,
+            },
+            {
+                'code': const.CoreLogCodes.password_change,
+                'persona_id': self.user['id'],
+            },
+        ]
 
-        self.assertEqual(expectation, self.core.retrieve_log(self.key))
+        self.assertLogEqual(log_expectation, realm="core")
 
     @as_users("vera")
     def test_changelog_meta(self) -> None:
         expectation = self.get_sample_data(
-            "core.changelog", range(1, 32),
-            ("id", "submitted_by", "reviewed_by", "ctime", "generation",
-             "change_note", "code", "persona_id"))
+            "core.changelog", ids=None,
+            keys=("id", "submitted_by", "reviewed_by", "ctime", "generation",
+                  "change_note", "code", "persona_id"))
         self.assertEqual((len(expectation), tuple(expectation.values())),
                          self.core.retrieve_changelog_meta(self.key))
+
+    @as_users("katarina")
+    def test_auditor(self) -> None:
+        for retriever, table in (
+            (self.core.retrieve_log, "core.log"),
+            (self.core.retrieve_changelog_meta, "core.changelog"),
+            (self.cde.retrieve_cde_log, "cde.log"),
+            (self.cde.retrieve_finance_log, "cde.finance_log"),
+            (self.event.retrieve_log, "event.log"),
+            (self.assembly.retrieve_log, "assembly.log"),
+            (self.ml.retrieve_log, "ml.log"),
+        ):
+            with self.subTest(log=table):
+                keys = None
+                if table == "core.changelog":
+                    keys = ("change_note", "code", "ctime", "generation", "id",
+                            "persona_id", "reviewed_by", "submitted_by")
+                self.assertLogEqual(
+                    tuple(self.get_sample_data(table, keys=keys).values()),
+                    log_retriever=retriever,  # type: ignore[arg-type]
+                )

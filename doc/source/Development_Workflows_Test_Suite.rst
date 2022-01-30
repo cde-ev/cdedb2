@@ -60,6 +60,7 @@ vera@example.cde        DB-22-1   secret     former member, corresponding to Ver
 werner@example.cde      DB-23-X   secret     former member, corresponding to Versammlungsleitung (presider)
 annika@example.cde      DB-27-2   secret     former member, corresponding to Akademieteam
 farin@example.cde       DB-32-9   secret     former member, corresponding to Finanzvorstand
+katarina@example.cde    DB-37-X   secret     auditor (Kassenprüfer)
 viktor@example.cde      DB-48-5   secret     assembly admin
 akira@example.cde       DB-100-7  secret     equal to Anton - to test sorting
 ======================= ========= ========== ================================================
@@ -78,6 +79,29 @@ Assembly User               Secret
 2        Rowena             asdgeargsd
 ======== ================== ==========
 
+LDAP
+^^^^
+
+We expose some information about our users via ldap. This contains some general
+information like name and mail address, and group privileges of the user in particular.
+The data is directly retrieved from the sql tables of the CdEDB and therefore
+needs no syncing.
+
+To locally test our ldap integration, we add some ldap agents to the CdEDB
+sample data. They can be used to connect to and retrieve data from the ldap system.
+To test the permissions of the live duas properly, we also add them in our
+sample-data.
+
+============= ============== =====================================
+CN            Password       Notes
+============= ============== =====================================
+admin         secret         olcRootDN
+apache        secret
+cloud         secret
+cyberaka      secret
+dokuwiki      secret
+test          secret         does not exist in live instance
+============= ============== =====================================
 
 .. _running-tests:
 

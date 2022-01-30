@@ -28,7 +28,7 @@ help:
 	@echo ""
 	@echo "Code testing:"
 	@echo "mypy           -- let mypy run over our codebase (bin, cdedb, tests)"
-	@echo "lint           -- run linters (flake8 and pylint)"
+	@echo "lint           -- run linters (isort, flake8 and pylint)"
 	@echo "check          -- run (parts of the) test suite"
 	@echo "xss-check      -- check for xss vulnerabilities"
 	@echo "dump-html      -- run frontend tests and store all encountered pages inside"
@@ -39,6 +39,7 @@ help:
 
 # Executables
 PYTHONBIN ?= python3
+ISORT ?= $(PYTHONBIN) -m isort
 FLAKE8 ?= $(PYTHONBIN) -m flake8
 PYLINT ?= $(PYTHONBIN) -m pylint
 COVERAGE ?= $(PYTHONBIN) -m coverage
@@ -151,9 +152,10 @@ endif
 	sudo cp tests/ancillary_files/kandidaten.pdf /var/lib/cdedb/assembly_attachment/3_v1
 	sudo chown --recursive www-data:www-data /var/lib/cdedb
 
-TESTFILES := picture.pdf,picture.png,picture.jpg,form.pdf,ballot_result.json,sepapain.xml$\
+TESTFILES := picture.pdf,picture.png,picture.jpg,form.pdf,rechen.pdf,ballot_result.json,sepapain.xml$\
 		,event_export.json,batch_admission.csv,money_transfers.csv,money_transfers_valid.csv$\
-		,partial_event_import.json,TestAka_partial_export_event.json,statement.csv
+		,partial_event_import.json,TestAka_partial_export_event.json,statement.csv$\
+		,questionnaire_import.json
 
 storage-test:
 	rm -rf -- ${TESTSTORAGEPATH}/*
@@ -182,6 +184,7 @@ ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
 endif
 ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl stop pgbouncer
+	sudo systemctl stop slapd
 endif
 	$(PSQL_ADMIN) -f cdedb/database/cdedb-users.sql
 	$(PSQL_ADMIN) -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb
@@ -189,9 +192,13 @@ ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl start pgbouncer
 endif
 	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=cdb
+	$(PSQL) -f cdedb/database/cdedb-ldap.sql --dbname=cdb
 	$(PSQL) -f tests/ancillary_files/sample_data.sql --dbname=cdb
+ifneq ($(wildcard /CONTAINER),/CONTAINER)
+	sudo systemctl start slapd
+endif
 
-sql-test:
+sql-test: tests/ancillary_files/sample_data.sql
 ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl stop pgbouncer
 endif
@@ -200,7 +207,8 @@ ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl start pgbouncer
 endif
 	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=${TESTDATABASENAME}
-	$(MAKE) sql-test-shallow
+	$(PSQL) -f cdedb/database/cdedb-ldap.sql --dbname=${TESTDATABASENAME}
+	$(PSQL) -f tests/ancillary_files/sample_data.sql --dbname=${TESTDATABASENAME}
 
 sql-test-shallow: tests/ancillary_files/sample_data.sql
 	$(PSQL) -f tests/ancillary_files/clean_data.sql --dbname=${TESTDATABASENAME}
@@ -209,14 +217,83 @@ sql-test-shallow: tests/ancillary_files/sample_data.sql
 cron:
 	sudo -u www-data /cdedb2/bin/cron_execute.py
 
-################
-# Code testing #
-################
+
+########
+# LDAP #
+########
+# TODO add dependency on sql-test to create the specified database
+
+# use command-line arguments of make to override
+DATABASE_NAME = cdb
+DATABASE_HOST = localhost
+DATABASE_CDB_ADMIN_PASSWORD = 9876543210abcdefghijklmnopqrst
+
+.PHONY: ldap-prepare-odbc
+ldap-prepare-odbc:
+	# prepare odbc.ini file to enable database connection for ldap
+	sudo cp -f ldap/odbc.ini /etc/odbc.ini \
+		&& sudo sed -i -r -e "s/DATABASE_CDB_ADMIN_PASSWORD/${DATABASE_CDB_ADMIN_PASSWORD}/g" \
+		                  -e "s/DATABASE_NAME/${DATABASE_NAME}/g" \
+		                  -e "s/DATABASE_HOST/${DATABASE_HOST}/g" /etc/odbc.ini
+
+.PHONY: ldap-prepare-ldif
+ldap-prepare-ldif:
+	# prepare the new cdedb-specific ldap configuration
+	cp -f ldap/cdedb-ldap.ldif ldap/cdedb-ldap-applied.ldif \
+		&& sed -i -r -e "s/DATABASE_CDB_ADMIN_PASSWORD/${DATABASE_CDB_ADMIN_PASSWORD}/g" \
+		             -e "s/OLC_DB_NAME/${DATABASE_NAME}/g" \
+		             -e "s/OLC_DB_HOST/${DATABASE_HOST}/g" ldap/cdedb-ldap-applied.ldif
+
+.PHONY: ldap-create
+ldap-create:
+	# the only way to remove all ldap settings for sure is currently to uninstall it.
+	# therefore, we need to re-install slapd here.
+	sudo DEBIAN_FRONTEND=noninteractive apt-get install --yes slapd
+	# remove the predefined mdb-database from ldap
+	sudo systemctl stop slapd
+	sudo rm -f /etc/ldap/slapd.d/cn=config/olcDatabase=\{1\}mdb.ldif
+	sudo systemctl start slapd
+	# Apply the overall ldap configuration (load modules, add backends etc)
+	sudo ldapmodify -Y EXTERNAL -H ldapi:/// -f related/auto-build/files/stage3/ldap-config.ldif
+
+.PHONY: ldap-update
+ldap-update: ldap-prepare-odbc ldap-prepare-ldif
+	# remove the old cdedb-specific configuration and apply the new one
+	sudo systemctl stop slapd
+	# TODO is there any nice solution to do this from within ldap?
+	sudo rm -f /etc/ldap/slapd.d/cn=config/olcDatabase={1}sql.ldif
+	sudo systemctl start slapd
+	sudo ldapmodify -Y EXTERNAL -H ldapi:/// -f ldap/cdedb-ldap-applied.ldif
+
+.PHONY: ldap-update-full
+ldap-update-full: ldap-update
+	sudo -u www-data $(PYTHONBIN) bin/ldap_add_duas.py
+
+.PHONY: ldap-remove
+ldap-remove:
+	sudo apt-get remove --purge -y slapd
+
+.PHONY: ldap-reset
+ldap-reset: ldap-remove ldap-create ldap-update-full
+
+###############################
+# Code testing and formatting #
+###############################
+
+format:
+	$(ISORT) bin/*.py cdedb tests
 
 mypy:
 	$(MYPY) bin/*.py cdedb tests
 
 BANNERLINE := "================================================================================"
+
+isort:
+	@echo $(BANNERLINE)
+	@echo "All of isort"
+	@echo $(BANNERLINE)
+	@echo ""
+	$(ISORT) --check-only bin/*.py cdedb tests
 
 flake8:
 	@echo $(BANNERLINE)
@@ -230,8 +307,7 @@ pylint:
 	@echo "All of pylint"
 	@echo $(BANNERLINE)
 	@echo ""
-	# test_subman crashes pylint seemingly due to symlinking
-	$(PYLINT) cdedb tests --ignore=test_subman.py
+	$(PYLINT) cdedb tests
 
 template-line-length:
 	@echo $(BANNERLINE)
@@ -240,7 +316,7 @@ template-line-length:
 	@echo ""
 	grep -E -R '^.{121,}' cdedb/frontend/templates/ | grep 'tmpl:'
 
-lint: flake8 pylint
+lint: isort flake8 pylint
 
 prepare-check:
 ifneq ($(TESTPREPARATION), manual)
@@ -255,7 +331,7 @@ else
 endif
 
 check:
-	$(PYTHONBIN) -m bin.check --verbose
+	$(PYTHONBIN) bin/check.py --verbose $(or $(TESTPATTERNS), )
 
 sql-xss: tests/ancillary_files/sample_data_xss.sql
 ifneq ($(wildcard /CONTAINER),/CONTAINER)
@@ -266,10 +342,11 @@ ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl start pgbouncer
 endif
 	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=${TESTDATABASENAME}
+	$(PSQL) -f cdedb/database/cdedb-ldap.sql --dbname=${TESTDATABASENAME}
 	$(PSQL) -f tests/ancillary_files/sample_data_xss.sql --dbname=${TESTDATABASENAME}
 
 xss-check:
-	$(PYTHONBIN) -m bin.check --xss-check --verbose
+	$(PYTHONBIN) bin/check.py --xss-check --verbose
 
 dump-html:
 	$(MAKE) -B /tmp/cdedb-dump/
@@ -309,7 +386,7 @@ coverage: .coverage
 	@echo "HTML reports for easier inspection are in ./htmlcov"
 
 tests/ancillary_files/sample_data.sql: tests/ancillary_files/sample_data.json \
-		$(SAMPLE_DATA_SQL) cdedb/database/cdedb-tables.sql
+		$(SAMPLE_DATA_SQL) cdedb/database/cdedb-tables.sql cdedb/database/cdedb-ldap.sql
 	SQLTEMPFILE=`sudo -u www-data mktemp` \
 		&& sudo -u www-data chmod +r "$${SQLTEMPFILE}" \
 		&& sudo rm -f /tmp/cdedb*log \
@@ -322,7 +399,7 @@ tests/ancillary_files/sample_data.sql: tests/ancillary_files/sample_data.json \
 		&& sudo -u www-data rm "$${SQLTEMPFILE}"
 
 tests/ancillary_files/sample_data_xss.sql: tests/ancillary_files/sample_data.json \
-		$(SAMPLE_DATA_SQL) cdedb/database/cdedb-tables.sql
+		$(SAMPLE_DATA_SQL) cdedb/database/cdedb-tables.sql cdedb/database/cdedb-ldap.sql
 	SQLTEMPFILE=`sudo -u www-data mktemp` \
 		&& sudo -u www-data chmod +r "$${SQLTEMPFILE}" \
 		&& sudo rm -f /tmp/cdedb*log \

@@ -1,0 +1,105 @@
+{% set sidenav_active='core_genesis_list' %}
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% set jshint='weak' %}
+{% block title %}
+    {% trans %}
+    	Edit Account Request
+    {% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+{{ super() }}
+{{ util.breadcrumb_link(cdedblink("core/genesis_list_cases"), gettext("Account Requests")) }}
+{# Since the dataset is no full persona (esp. it does not contain a display_name entry), we can not use the
+   util.persona_name makro here. #}
+{{ util.breadcrumb_link(cdedblink("core/genesis_modify_form", {'case_id': values['case_id']}),
+                        gettext("Edit Account Request from %(name)s")|format(
+                            name=values['given_names']+" "+values['family_name']),
+                        active="True", icon="user") }}
+{% endblock %}
+{% block content %}
+    <form action="{{ cdedblink('core/genesis_modify') }}" method="POST" id="genesismodifyform" class="form-horizontal">
+        {{ util.anti_csrf_token('core/genesis_modify') }}
+        <div>
+            {{ util.form_input_text(name="given_names", label=gettext("Given Names"), small=True) }}
+            {{ util.form_input_text(name="family_name", label=gettext("Family Name"), small=True) }}
+            {{ util.form_input_text(name="birth_name", label=gettext("Birth Name"), small=True,
+                                    aclass="genesis-realm-specific") }}
+            {{ util.form_input_text(name="username", label=gettext("E-Mail"), small=True, type="email") }}
+            {% if "core_admin" in user.roles %}
+                {{ util.form_input_select(
+                    name="realm", small=True, entries=realm_options,
+                    label=gettext("Realm"), anid="realm-select") }}
+            {% else %}
+                {% with (icon, caption) = {
+                        'ml': ('envelope', gettext("Mailinglists")),
+                        'event': ('chalkboard-teacher', gettext("Events")),
+                        'cde': ('education', gettext("Members")),
+                        'assembly': ('bullhorn', gettext("Assemblies"))
+                    }.get(values['realm']) %}
+                    {{ util.form_input_static(label=gettext("Realm"), small=True, icon=icon, value=caption) }}
+                {% endwith %}
+                {{ util.input_hidden(name="realm") }}
+            {% endif %}
+            {{ util.form_input_textarea(name="notes",
+                                        label=gettext("Rationale (max. %s Characters)")|format(max_rationale),
+                                        small=True, maxlength=max_rationale) }}
+
+             <noscript>
+                <p class="text-muted">
+                    {{ util.make_icon('info-circle') }}
+                    {% trans %}The following fields are only relevant for Event-Account Requests.{% endtrans %}
+                </p>
+            </noscript>
+            {{ util.form_input_select(name="gender", entries=enums['Genders']|enum_entries(processing=gettext),
+                                      label=gettext("Gender"), small=True, aclass="genesis-realm-specific") }}
+            {{ util.form_input_text(name="birthday", label=gettext("Birthday"), placeholder="YYYY-MM-DD",
+                                    type="date", small=True, aclass="genesis-realm-specific") }}
+            {{ util.form_input_text(name="telephone", label=gettext("Phone"), type="tel", small=True,
+                                    aclass="genesis-realm-specific") }}
+            {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone"), type="tel", small=True,
+                                    aclass="genesis-realm-specific") }}
+            {{ util.form_input_text(name="address", label=gettext("Street, Nr."), small=True,
+                                    aclass="genesis-realm-specific") }}
+            {{ util.form_input_text(name="address_supplement", label=gettext("Address Supplement"), small=True,
+                                    aclass="genesis-realm-specific") }}
+            {{ util.form_input_text(name="postal_code", label=gettext("Zipcode"), small=True,
+                                    aclass="genesis-realm-specific") }}
+            {{ util.form_input_text(name="location", label=gettext("City"), small=True,
+                                    aclass="genesis-realm-specific") }}
+            {{ util.form_input_select(name="country", label=gettext("Country"), entries=COUNTRY_CODES, small=True,
+                                      defaultvalue=DEFAULT_COUNTRY, aclass="genesis-realm-specific") }}
+            {{ util.form_input_select(name="pevent_id", entries=choices['pevent_id'].items(), small=True,
+                                      nulloption=nbsp, label=gettext("Past Event"), aclass="input-sm",
+                                      sort=True) }}
+            {% if values.get('pevent_id') %}
+                {{ util.form_input_select(name="pcourse_id", entries=choices['pcourse_id'].items(), small=True,
+                                          nulloption=nbsp, label=gettext("Course"), aclass="input-sm",
+                                          defaultvalue='', sort=True) }}
+            {% else %}
+                {{ util.form_input_static(aclass='text-info', icon='info-circle', small=True, label=gettext("Course"),
+                                          value=gettext("Course can be specified if past event is given.")) }}
+            {% endif %}
+
+            <script nonce="{{ csp_nonce }}">
+                var $select = $('#realm-select');
+                var $realmSpecificFields = $('.genesis-realm-specific');
+                var fieldsPerRealm = {{ REALM_SPECIFIC_GENESIS_FIELDS|tojson }};
+                var show_realm_specific_fields = function() {
+                    $realmSpecificFields.each(function() {
+                        if (fieldsPerRealm[$select.val()].indexOf($(this).prop('name')) >= 0) {
+                            $(this).closest('.form-group').show();
+                        } else {
+                            $(this).closest('.form-group').hide();
+                        }
+                    });
+                };
+                $select.change(show_realm_specific_fields);
+                show_realm_specific_fields();
+            </script>
+
+            {{ util.form_input_submit(label=gettext("Save"), small=True, cancellink=cdedblink("core/genesis_show_case")) }}
+        </div>
+    </form>
+{% endblock %}

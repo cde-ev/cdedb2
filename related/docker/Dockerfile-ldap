@@ -1,0 +1,28 @@
+FROM debian:bullseye-20210816
+
+# touch the CONTAINER file
+RUN touch /CONTAINER
+
+# Install the ldap specific packages
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends \
+    slapd \
+    ldap-utils \
+    unixodbc \
+    odbc-postgresql
+
+# copy the ldap files and the ldap entrypoint into the container
+COPY ./ldap/ ./related/docker/ldap-entrypoint.sh ./related/auto-build/files/stage3/ldap-config.ldif /tmp/ldap/
+
+# Move all relevant files into the /app directory & the ldap entrypoint in root
+RUN mkdir /app \
+    && mv /tmp/ldap/odbc.ini /app/ \
+    && mv /tmp/ldap/ldap-config.ldif /app/ \
+    && mv /tmp/ldap/cdedb-ldap.ldif /app/ \
+    \
+    && mv /tmp/ldap/ldap-entrypoint.sh /ldap-entrypoint.sh
+
+# Set custom entrypoint to perform additional work on first run.
+ENTRYPOINT ["/ldap-entrypoint.sh"]
+
+# Start slapd in foreground/debug mode without debug messages (-d 0).
+CMD ["slapd", "-d", "0"]

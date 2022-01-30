@@ -10,33 +10,29 @@ import copy
 import datetime
 import decimal
 from collections import OrderedDict
-from typing import Any, Collection, Dict, List, Optional, Tuple
+from typing import Any, Collection, Dict, List, Optional, Protocol, Tuple
 
-import psycopg2
-from typing_extensions import Protocol
+import psycopg2.extensions
 
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
-    AbstractBackend, access, affirm_set_validation as affirm_set,
-    affirm_array_validation as affirm_array,
-    affirm_validation_typed as affirm,
-    affirm_validation_typed_optional as affirm_optional, batchify, singularize,
+    AbstractBackend, access, affirm_array_validation as affirm_array,
+    affirm_set_validation as affirm_set, affirm_validation as affirm,
+    affirm_validation_optional as affirm_optional, batchify, singularize,
 )
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.common import (
     EXPULS_PERIOD_FIELDS, LASTSCHRIFT_FIELDS, LASTSCHRIFT_TRANSACTION_FIELDS,
-    ORG_PERIOD_FIELDS, CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
-    DeletionBlockers, PrivilegeError, QuotaException, RequestState, implying_realms,
-    merge_dicts, n_, now, unwrap, glue, LineResolutions, PathLike, make_proxy,
-    PARSE_OUTPUT_DATEFORMAT, ArchiveError,
+    ORG_PERIOD_FIELDS, PARSE_OUTPUT_DATEFORMAT, ArchiveError, CdEDBLog, CdEDBObject,
+    CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, LineResolutions, PathLike,
+    PrivilegeError, QuotaException, RequestState, glue, implying_realms, make_proxy,
+    merge_dicts, n_, now, unwrap,
 )
 from cdedb.database.connection import Atomizer
 from cdedb.filter import money_filter
-from cdedb.query import Query, QueryOperators, QueryScope
-from cdedb.validation import (
-    PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS, is_optional,
-)
+from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
+from cdedb.validation import PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS, is_optional
 
 
 class CdEBackend(AbstractBackend):
@@ -75,7 +71,7 @@ class CdEBackend(AbstractBackend):
         }
         return self.sql_insert(rs, "cde.log", data)
 
-    @access("cde_admin")
+    @access("cde_admin", "auditor")
     def retrieve_cde_log(self, rs: RequestState,
                          codes: Collection[const.CdeLogCodes] = None,
                          offset: int = None, length: int = None,
@@ -94,7 +90,7 @@ class CdEBackend(AbstractBackend):
             submitted_by=submitted_by, change_note=change_note,
             time_start=time_start, time_stop=time_stop)
 
-    @access("core_admin", "cde_admin")
+    @access("core_admin", "cde_admin", "auditor")
     def retrieve_finance_log(self, rs: RequestState,
                              codes: Collection[const.FinanceLogCodes] = None,
                              offset: int = None, length: int = None,
@@ -161,8 +157,7 @@ class CdEBackend(AbstractBackend):
                             raise ValueError(n_(
                                 "Failed to revoke active lastschrift permit"))
                         revoked_permits.append(active_permit)
-            code = self.core.change_membership_easy_mode(
-                rs, persona_id, is_member)
+            code = self.core.change_membership_easy_mode(rs, persona_id, is_member)
         return code, revoked_permits, collateral_transactions
 
     @access("member", "core_admin", "cde_admin")
@@ -385,8 +380,11 @@ class CdEBackend(AbstractBackend):
                                LASTSCHRIFT_TRANSACTION_FIELDS, ids)
         # We only need these for access checking, which is done inside.
         self.get_lastschrifts(rs, {e["lastschrift_id"] for e in data})
-
-        return {e['id']: e for e in data}
+        ret = {}
+        for e in data:
+            e['status'] = const.LastschriftTransactionStati(e['status'])
+            ret[e['id']] = e
+        return ret
 
     class _GetLastschriftTransactionProtocol(Protocol):
         def __call__(self, rs: RequestState, anid: int) -> CdEDBObject: ...
@@ -689,7 +687,7 @@ class CdEBackend(AbstractBackend):
             # We perform a rather big transaction, so serialization errors
             # could happen.
             return False, None, None
-        except Exception:
+        except Exception:  # pragma: no cover
             # This blanket catching of all exceptions is a last resort. We try
             # to do enough validation, so that this should never happen, but
             # an opaque error (as would happen without this) would be rather
@@ -1298,7 +1296,8 @@ class CdEBackend(AbstractBackend):
         """Retrieve some generic statistics about members."""
         # Simple stats first.
         query = """SELECT
-            num_members, num_of_searchable, num_of_trial, num_ex_members, num_all
+            num_members, num_of_searchable, num_of_trial, num_of_printed_expuls,
+            num_ex_members, num_all
         FROM
             (
                 SELECT COUNT(*) AS num_members
@@ -1316,6 +1315,11 @@ class CdEBackend(AbstractBackend):
                 WHERE is_member = True AND trial_member = True
             ) AS trial_count,
             (
+                SELECT COUNT(*) AS num_of_printed_expuls
+                FROM core.personas
+                WHERE is_member = True and paper_expuls = True
+            ) AS printed_expuls_count,
+            (
                 SELECT COUNT(*) AS num_ex_members
                 FROM core.personas
                 WHERE is_cde_realm = True AND is_member = False
@@ -1330,7 +1334,7 @@ class CdEBackend(AbstractBackend):
 
         simple_stats = OrderedDict((k, data[k]) for k in (
             n_("num_members"), n_("num_of_searchable"), n_("num_of_trial"),
-            n_("num_ex_members"), n_("num_all")))
+            n_("num_of_printed_expuls"), n_("num_ex_members"), n_("num_all")))
 
         # TODO: improve this type annotation with a new mypy version.
         def query_stats(select: str, condition: str, order: str, limit: int = 0
@@ -1398,7 +1402,8 @@ class CdEBackend(AbstractBackend):
 
         # Unique event attendees per year:
         query = """SELECT
-            COUNT(DISTINCT persona_id) AS num, EXTRACT(year FROM events.tempus)::integer AS datum
+            COUNT(DISTINCT persona_id) AS num,
+            EXTRACT(year FROM events.tempus)::integer AS datum
         FROM
             (
                 past_event.institutions
@@ -1423,19 +1428,23 @@ class CdEBackend(AbstractBackend):
 
     def _perform_one_batch_admission(self, rs: RequestState, datum: CdEDBObject,
                                      trial_membership: bool, consent: bool
-                                     ) -> int:
+                                     ) -> Optional[bool]:
         """Uninlined code from perform_batch_admission().
 
-        :returns: number of created accounts (0 or 1)
+        :returns: None if nothing happened. True if a new member account was created or
+            membership was granted to an existing (non-member) account. False if
+            (trial-)membership was renewed for an existing (already member) account.
         """
-        ret = 0
+        # Require an Atomizer.
+        self.affirm_atomized_context(rs)
+
         batch_fields = (
-            'family_name', 'given_names', 'title', 'name_supplement',
+            'family_name', 'given_names', 'display_name', 'title', 'name_supplement',
             'birth_name', 'gender', 'address_supplement', 'address',
             'postal_code', 'location', 'country', 'telephone',
             'mobile', 'birthday')  # email omitted as it is handled separately
         if datum['resolution'] == LineResolutions.skip:
-            return ret
+            return None
         elif datum['resolution'] == LineResolutions.create:
             new_persona = copy.deepcopy(datum['persona'])
             new_persona.update({
@@ -1445,10 +1454,21 @@ class CdEBackend(AbstractBackend):
                 'is_searchable': consent,
             })
             persona_id = self.core.create_persona(rs, new_persona)
-            ret = 1
+            ret = True
         elif datum['resolution'].is_modification():
+            ret = False
             persona_id = datum['doppelganger_id']
             current = self.core.get_persona(rs, persona_id)
+            if current['is_archived']:
+                if current['is_purged']:
+                    raise RuntimeError(n_("Cannot restore purged account."))
+                self.core.dearchive_persona(
+                    rs, persona_id, datum['persona']['username'])
+                current['username'] = datum['persona']['username']
+            if datum['update_username']:
+                if current['username'] != datum['persona']['username']:
+                    self.core.change_username(
+                        rs, persona_id, datum['persona']['username'], password=None)
             if not current['is_cde_realm']:
                 # Promote to cde realm dependent on current realm
                 promotion: CdEDBObject = {
@@ -1498,8 +1518,10 @@ class CdEBackend(AbstractBackend):
                 self.core.change_persona_realms(
                     rs, promotion, change_note="Datenübernahme nach Massenaufnahme")
             if datum['resolution'].do_trial():
-                self.change_membership(
+                code, _, _ = self.change_membership(
                     rs, datum['doppelganger_id'], is_member=True)
+                # This will be true if the user was not a member before.
+                ret = bool(code)
                 update = {
                     'id': datum['doppelganger_id'],
                     'trial_member': True,
@@ -1508,8 +1530,6 @@ class CdEBackend(AbstractBackend):
                     rs, update, may_wait=False,
                     change_note="Probemitgliedschaft erneuert.")
             if datum['resolution'].do_update():
-                self.core.change_username(
-                    rs, persona_id, datum['persona']['username'], password=None)
                 update = {'id': datum['doppelganger_id']}
                 for field in batch_fields:
                     update[field] = datum['persona'][field]
@@ -1527,16 +1547,23 @@ class CdEBackend(AbstractBackend):
     @access("cde_admin")
     def perform_batch_admission(self, rs: RequestState, data: List[CdEDBObject],
                                 trial_membership: bool, consent: bool
-                                ) -> Tuple[bool, Optional[int]]:
+                                ) -> Tuple[bool, Optional[int], Optional[int]]:
         """Atomized call to recruit new members.
 
         The frontend wants to do this in its entirety or not at all, so this
         needs to be in atomized context.
 
-        :returns: A tuple consisting of a boolean signalling success and an
-            optional integer that confers information if an error occured:
-            it is None if a TransactionRollbackError occured and otherwise
-            the index of the entry where the error happened.
+        :returns: A tuple consisting of a bool and two optional integers.:
+            A boolean signalling success.
+            If the operation was successful:
+                An integer signalling the number of newly created accounts.
+                An integer signalling the number of modified/renewed accounts.
+            If the operation was not successful:
+                If a TransactionRollbackError occrured:
+                    Both integer parameters are None.
+                Otherwise:
+                    The index where the error occured.
+                    The second parameter is None.
         """
         data = affirm_array(vtypes.BatchAdmissionEntry, data)
         trial_membership = affirm(bool, trial_membership)
@@ -1544,15 +1571,21 @@ class CdEBackend(AbstractBackend):
         # noinspection PyBroadException
         try:
             with Atomizer(rs):
-                count = 0
+                count_new = count_renewed = 0
                 for index, datum in enumerate(data, start=1):
-                    count += self._perform_one_batch_admission(
+                    account_created = self._perform_one_batch_admission(
                         rs, datum, trial_membership, consent)
+                    if account_created is None:
+                        pass
+                    elif account_created:
+                        count_new += 1
+                    else:
+                        count_renewed += 1
         except psycopg2.extensions.TransactionRollbackError:
             # We perform a rather big transaction, so serialization errors
             # could happen.
-            return False, None
-        except Exception:
+            return False, None, None
+        except Exception:  # pragma: no cover
             # This blanket catching of all exceptions is a last resort. We try
             # to do enough validation, so that this should never happen, but
             # an opaque error (as would happen without this) would be rather
@@ -1564,8 +1597,8 @@ class CdEBackend(AbstractBackend):
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
             self.cgitb_log()
-            return False, index
-        return True, count
+            return False, index, None
+        return True, count_new, count_renewed
 
     @access("searchable", "core_admin", "cde_admin")
     def submit_general_query(self, rs: RequestState,
@@ -1581,10 +1614,10 @@ class CdEBackend(AbstractBackend):
             query.constraints.append(("is_member", QueryOperators.equal, True))
             query.constraints.append(("is_searchable", QueryOperators.equal, True))
             query.constraints.append(("is_archived", QueryOperators.equal, False))
-            query.spec['is_cde_realm'] = "bool"
-            query.spec['is_member'] = "bool"
-            query.spec['is_searchable'] = "bool"
-            query.spec["is_archived"] = "bool"
+            query.spec['is_cde_realm'] = QuerySpecEntry("bool", "")
+            query.spec['is_member'] = QuerySpecEntry("bool", "")
+            query.spec['is_searchable'] = QuerySpecEntry("bool", "")
+            query.spec["is_archived"] = QuerySpecEntry("bool", "")
         elif query.scope in {QueryScope.cde_user, QueryScope.archived_past_event_user}:
             if not {'core_admin', 'cde_admin'} & rs.user.roles:
                 raise PrivilegeError(n_("Admin only."))
@@ -1592,20 +1625,20 @@ class CdEBackend(AbstractBackend):
             query.constraints.append(
                 ("is_archived", QueryOperators.equal,
                  query.scope == QueryScope.archived_past_event_user))
-            query.spec['is_cde_realm'] = "bool"
-            query.spec["is_archived"] = "bool"
+            query.spec['is_cde_realm'] = QuerySpecEntry("bool", "")
+            query.spec["is_archived"] = QuerySpecEntry("bool", "")
             # Exclude users of any higher realm (implying event)
             for realm in implying_realms('cde'):
                 query.constraints.append(
                     ("is_{}_realm".format(realm), QueryOperators.equal, False))
-                query.spec["is_{}_realm".format(realm)] = "bool"
+                query.spec["is_{}_realm".format(realm)] = QuerySpecEntry("bool", "")
         elif query.scope == QueryScope.past_event_user:
             if not self.is_admin(rs):
                 raise PrivilegeError(n_("Admin only."))
             query.constraints.append(("is_event_realm", QueryOperators.equal, True))
             query.constraints.append(("is_archived", QueryOperators.equal, False))
-            query.spec['is_event_realm'] = "bool"
-            query.spec["is_archived"] = "bool"
+            query.spec['is_event_realm'] = QuerySpecEntry("bool", "")
+            query.spec["is_archived"] = QuerySpecEntry("bool", "")
         else:
             raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query)

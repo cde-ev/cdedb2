@@ -5,9 +5,7 @@ from typing import Collection, Set, cast
 
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
-from cdedb.common import (
-    CdEDBObject, PrivilegeError, RequestState, nearly_now,
-)
+from cdedb.common import CdEDBObject, PrivilegeError, RequestState, nearly_now
 from cdedb.database.constants import SubscriptionState as SS
 from cdedb.subman.exceptions import SubscriptionError
 from cdedb.subman.machine import SubscriptionAction as SA
@@ -315,7 +313,7 @@ class TestMlBackend(BackendTest):
         self.assertIn(new_id, self.ml.list_mailinglists(self.key))
         new_data['id'] = new_id
         new_data['address'] = ml_type.get_full_address(new_data)
-        new_data['domain_str'] = str(new_data['domain'])
+        new_data['domain_str'] = new_data['domain'].display_str()  # type: ignore[attr-defined]
         atype = new_data['ml_type']
         assert isinstance(atype, const.MailinglistTypes)
         new_data['ml_type_class'] = ml_type.get_type(atype)
@@ -1547,6 +1545,13 @@ class TestMlBackend(BackendTest):
         self.assertEqual(expectation,
                          self.ml.get_subscription_addresses(self.key, 10))
 
+    def _check_implicit_whitelist(self, mailinglist_id: int,
+                                  persona_ids: Collection[int]) -> None:
+        expectation = {persona['username'] for persona
+                       in self.core.get_ml_users(self.key, persona_ids).values()}
+        result = self.ml.get_implicit_whitelist(self.key, mailinglist_id)
+        self.assertEqual(result, expectation)
+
     @as_users("janis")
     def test_set_subscription_address(self) -> None:
         # This is a bit tricky, since users may only change their own
@@ -1560,6 +1565,7 @@ class TestMlBackend(BackendTest):
         }
         result = self.ml.get_subscription_addresses(self.key, mailinglist_id)
         self.assertEqual(result, expectation)
+        self._check_implicit_whitelist(mailinglist_id, expectation.keys())
 
         # Add an addresses.
         datum = {
@@ -1572,6 +1578,7 @@ class TestMlBackend(BackendTest):
 
         result = self.ml.get_subscription_addresses(self.key, mailinglist_id)
         self.assertEqual(result, expectation)
+        self._check_implicit_whitelist(mailinglist_id, expectation.keys())
 
         datum = {
             'mailinglist_id': mailinglist_id,
@@ -1583,6 +1590,7 @@ class TestMlBackend(BackendTest):
 
         result = self.ml.get_subscription_addresses(self.key, mailinglist_id)
         self.assertEqual(result, expectation)
+        self._check_implicit_whitelist(mailinglist_id, expectation.keys())
 
         # Remove an address.
         datum = {
@@ -1594,6 +1602,8 @@ class TestMlBackend(BackendTest):
 
         result = self.ml.get_subscription_addresses(self.key, mailinglist_id)
         self.assertEqual(result, expectation)
+        self._check_implicit_whitelist(mailinglist_id,
+                                       expectation.keys() - {self.user['id']})
 
     @as_users("janis")
     def test_remove_subscription_address(self) -> None:

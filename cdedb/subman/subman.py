@@ -24,10 +24,9 @@ from typing import AbstractSet, Collection, Optional
 
 from .exceptions import SubscriptionError
 from .machine import (
-    n_, SubscriptionAction, SubscriptionPolicy, SubscriptionState,
-    ActionStateErrorMatrix, SUBSCRIPTION_ERROR_MATRIX,
+    SUBSCRIPTION_ERROR_MATRIX, ActionStateErrorMatrix, SubscriptionAction,
+    SubscriptionPolicy, SubscriptionState, n_,
 )
-
 
 StateColl = Collection[SubscriptionState]
 StateSet = AbstractSet[SubscriptionState]
@@ -94,9 +93,7 @@ class SubscriptionManager:
         of them may be appropriate to use from the current state.
         """
 
-        # TODO: `if exception := self.get_error(action, old_state)`.
-        exception = self._get_error(action, old_state)
-        if exception:
+        if exception := self._get_error(action, old_state):
             raise exception
 
     @staticmethod

@@ -20,9 +20,9 @@ import re
 import string
 import sys
 from typing import (
-    Generic, TYPE_CHECKING, Any, Callable, Collection, Container, Dict, Generator,
+    TYPE_CHECKING, Any, Callable, Collection, Container, Dict, Generator, Generic,
     Iterable, KeysView, List, Mapping, MutableMapping, Optional, Set, Tuple, Type,
-    TypeVar, Union, cast, overload
+    TypeVar, Union, cast, overload,
 )
 
 import icu
@@ -102,6 +102,15 @@ Path = pathlib.Path
 T = TypeVar("T")
 
 
+def n_(x: str) -> str:
+    """
+    Alias of the identity for i18n.
+    Identity function that shadows the gettext alias to trick pybabel into
+    adding string to the translated strings.
+    """
+    return x
+
+
 class User:
     """Container for a persona."""
 
@@ -137,6 +146,7 @@ class RequestState:
     convenient semi-magic behaviours (magic enough to be nice, but non-magic
     enough to not be non-nice).
     """
+    default_lang = "en"
 
     def __init__(self, sessionkey: Optional[str], apitoken: Optional[str], user: User,
                  request: werkzeug.Request, notifications: Collection[Notification],
@@ -184,6 +194,9 @@ class RequestState:
         self._conn: IrradiatedConnection = None  # type: ignore
         # Toggle to disable logging
         self.is_quiet = False
+        # Toggle to ignore validation warnings. The value is parsed directly inside
+        # application.py
+        self.ignore_warnings = False
         # Is true, if the application detected an invalid (or no) CSRF token
         self.csrf_alert = False
         # Used for validation enforcement, set to False if a validator
@@ -201,11 +214,11 @@ class RequestState:
 
     @property
     def default_gettext(self) -> Callable[[str], str]:
-        return self.translations["en"].gettext
+        return self.translations[self.default_lang].gettext
 
     @property
     def default_ngettext(self) -> Callable[[str, str, int], str]:
-        return self.translations["en"].ngettext
+        return self.translations[self.default_lang].ngettext
 
     def notify(self, ntype: NotificationType, message: str,
                params: CdEDBObject = None) -> None:
@@ -215,6 +228,44 @@ class RequestState:
                              {'t': ntype})
         params = params or {}
         self.notifications.append((ntype, message, params))
+
+    def notify_return_code(self, code: Union[DefaultReturnCode, bool, None],
+                           success: str = n_("Change committed."),
+                           info: str = n_("Change pending."),
+                           error: str = n_("Change failed.")) -> None:
+        """Small helper to issue a notification based on a return code.
+
+        We allow some flexibility in what type of return code we accept. It
+        may be a boolean (with the obvious meanings), an integer (specifying
+        the number of changed entries, and negative numbers for entries with
+        pending review) or None (signalling failure to acquire something).
+
+        :param success: Affirmative message for positive return codes.
+        :param info: Message for negative return codes signalling review.
+        :param error: Exception message for zero return codes.
+        """
+        if not code:
+            self.notify("error", error)
+        elif code is True or code > 0:
+            self.notify("success", success)
+        elif code < 0:
+            self.notify("info", info)
+        else:
+            raise RuntimeError(n_("Impossible."))
+
+    def notify_validation(self) -> None:
+        """Puts a notification about validation complaints, if there are some.
+
+        This takes care of the distinction between validation errors and
+        warnings, but does not cause the validation tracking to register
+        a successful check.
+        """
+        if errors := self.retrieve_validation_errors():
+            if all(isinstance(kind, ValidationWarning) for param, kind in errors):
+                self.notify("warning", n_("Input seems faulty. Please double-check if"
+                                          " you really want to save it."))
+            else:
+                self.notify("error", n_("Failed validation."))
 
     def append_validation_error(self, error: Error) -> None:
         """Register a new  error.
@@ -406,7 +457,7 @@ def merge_dicts(targetdict: Union[MutableMapping[T, S], CdEDBMultiDict],
     for adict in dicts:
         for key in adict:
             if key not in targetdict:
-                if (isinstance(adict[key], collections.abc.Sequence)
+                if (isinstance(adict[key], collections.abc.Collection)
                         and not isinstance(adict[key], str)
                         and isinstance(targetdict, werkzeug.datastructures.MultiDict)):
                     targetdict.setlist(key, adict[key])
@@ -547,20 +598,52 @@ def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
             return tuple(map(collate, sortkey))
         return sortkey
 
-    return sorted(iterable, key=lambda x: collate(key(x)),  # pylint: disable=bad-builtin # noqa
+    return sorted(iterable, key=lambda x: collate(key(x)),  # pylint: disable=bad-builtin
                   reverse=reverse)
 
 
-def get_localized_country_codes(rs: RequestState) -> List[Tuple[str, str]]:
+def format_country_code(code: str) -> str:
+    """Helper to make string hidden to pybabel.
+
+    All possible combined strings are given for translation
+    in `i18n_additional.py`
+    """
+    return f'CountryCodes.{code}'
+
+
+def get_localized_country_codes(rs: RequestState, lang: str = None
+                                ) -> List[Tuple[str, str]]:
     """Generate a list of country code - name tuples in current language."""
 
-    def _format_country_code(code: str) -> str:
-        """Helper to make string hidden to pybabel."""
-        return f'CountryCodes.{code}'
+    if not hasattr(get_localized_country_codes, "localized_country_codes"):
+        localized_country_codes = {
+            lang: xsorted(
+                ((cc, rs.translations[lang].gettext(format_country_code(cc)))
+                 for cc in COUNTRY_CODES),
+                key=lambda x: x[1]
+            )
+            for lang in rs.translations
+        }
+        get_localized_country_codes.localized_country_codes = localized_country_codes  # type: ignore[attr-defined]
+    return get_localized_country_codes.localized_country_codes[lang or rs.lang]  # type: ignore[attr-defined]
 
-    return xsorted(
-        [(v, rs.gettext(_format_country_code(v))) for v in COUNTRY_CODES],
-        key=lambda x: x[1])
+
+def get_country_code_from_country(rs: RequestState, country: str) -> str:
+    """Match a country to its country code."""
+
+    if not hasattr(get_country_code_from_country, "reverse_country_code_map"):
+        reverse_map = {
+            lang: {
+                rs.translations[lang].gettext(format_country_code(cc)): cc
+                for cc in COUNTRY_CODES
+            }
+            for lang in rs.translations
+        }
+        get_country_code_from_country.reverse_map = reverse_map  # type: ignore[attr-defined]
+    for lang, v in get_country_code_from_country.reverse_map.items():  # type: ignore[attr-defined]
+        if ret := v.get(country):
+            return ret
+    return country
 
 
 Sortkey = Tuple[Union[str, int, datetime.datetime], ...]
@@ -633,12 +716,20 @@ class EntitySorter:
                 event_part['shortname'], event_part['id'])
 
     @staticmethod
+    def event_part_group(part_group: CdEDBObject) -> Sortkey:
+        return (part_group['title'], part_group['id'])
+
+    @staticmethod
     def course_track(course_track: CdEDBObject) -> Sortkey:
         return (course_track['sortkey'], course_track['id'])
 
     @staticmethod
+    def fee_modifier(fee_modifier: CdEDBObject) -> Sortkey:
+        return (fee_modifier['modifier_name'], fee_modifier['id'])
+
+    @staticmethod
     def event_field(event_field: CdEDBObject) -> Sortkey:
-        return (event_field['field_name'], event_field['id'])
+        return (event_field['sortkey'], event_field['field_name'], event_field['id'])
 
     @staticmethod
     def candidates(candidates: CdEDBObject) -> Sortkey:
@@ -653,16 +744,13 @@ class EntitySorter:
         return (ballot['title'], ballot['id'])
 
     @staticmethod
-    def get_attachment_sorter(histories: CdEDBObject) -> KeyFunction:
-        def attachment(attachment: CdEDBObject) -> Sortkey:
-            attachment = histories[attachment['id']][attachment['current_version']]
-            return (attachment['title'], attachment['attachment_id'])
-
-        return attachment
+    def attachment(attachment: CdEDBObject) -> Sortkey:
+        """This is used for dicts containing one version of different attachments."""
+        return (attachment["title"], attachment["attachment_id"])
 
     @staticmethod
     def attachment_version(version: CdEDBObject) -> Sortkey:
-        return (version['attachment_id'], version['version'])
+        return (version['attachment_id'], version['version_nr'])
 
     @staticmethod
     def past_event(past_event: CdEDBObject) -> Sortkey:
@@ -1127,6 +1215,21 @@ class LineResolutions(enum.IntEnum):
                         LineResolutions.renew_and_update}
 
 
+@enum.unique
+class GenesisDecision(enum.IntEnum):
+    """Possible decisions during review of a genesis request."""
+    approve = 1  #: Approve the request and create a new account.
+    deny = 2  #: Deny the request. Do not create or update an account.
+    #: Deny the request but update an existing account, dearchiving it if necessary.
+    update = 3
+
+    def is_create(self) -> bool:
+        return self == GenesisDecision.approve
+
+    def is_update(self) -> bool:
+        return self == GenesisDecision.update
+
+
 #: magic number which signals our makeshift algebraic data type
 INFINITE_ENUM_MAGIC_NUMBER = 0
 
@@ -1223,7 +1326,7 @@ class CourseChoiceToolActions(enum.IntEnum):
 
 
 @enum.unique
-class Accounts(enum.Enum):
+class Accounts(enum.IntEnum):
     """Store the existing CdE Accounts."""
     Account0 = 8068900
     Account1 = 8068901
@@ -1231,8 +1334,37 @@ class Accounts(enum.Enum):
     # Fallback if Account is none of the above
     Unknown = 0
 
-    def __str__(self) -> str:
+    def display_str(self) -> str:
         return str(self.value)
+
+
+@enum.unique
+class ConfidenceLevel(enum.IntEnum):
+    """Store the different Levels of Confidence about the prediction."""
+    Null = 0
+    Low = 1
+    Medium = 2
+    High = 3
+    Full = 4
+
+    @classmethod
+    def destroy(cls) -> "ConfidenceLevel":
+        return cls.Null
+
+    def decrease(self, amount: int = 1) -> "ConfidenceLevel":
+        if self.value - amount > self.__class__.Null.value:
+            return self.__class__(self.value - amount)
+        else:
+            return self.__class__.Null
+
+    def increase(self, amount: int = 1) -> "ConfidenceLevel":
+        if self.value + amount < self.__class__.Full.value:
+            return self.__class__(self.value + amount)
+        else:
+            return self.__class__.Full
+
+    def __format__(self, format_spec: str) -> str:
+        return str(self)
 
 
 @enum.unique
@@ -1293,32 +1425,30 @@ class TransactionType(enum.IntEnum):
         else:
             return "Sonstiges"
 
-    def __str__(self) -> str:
+    def display_str(self) -> str:
         """
-        Return a string represantation for the TransactionType.
+        Return a string representation for the TransactionType meant to be displayed.
 
         These are _not_ translated on purpose, so that the generated download
         is the same regardless of locale.
         """
-        to_string = {TransactionType.MembershipFee.name: "Mitgliedsbeitrag",
-                     TransactionType.EventFee.name: "Teilnehmerbeitrag",
-                     TransactionType.Donation.name: "Spende",
-                     TransactionType.I25p.name: "Initiative25+",
-                     TransactionType.Other.name: "Sonstiges",
-                     TransactionType.EventFeeRefund.name:
-                         "Teilnehmererstattung",
-                     TransactionType.InstructorRefund.name: "KL-Erstattung",
-                     TransactionType.EventExpenses.name:
-                         "Veranstaltungsausgabe",
-                     TransactionType.Expenses.name: "Ausgabe",
-                     TransactionType.AccountFee.name: "Kontogebühr",
-                     TransactionType.OtherPayment.name: "Andere Zahlung",
-                     TransactionType.Unknown.name: "Unbekannt",
-                     }
-        if self.name in to_string:
-            return to_string[self.name]
-        else:
-            return repr(self)
+        display_str = {
+            TransactionType.MembershipFee: "Mitgliedsbeitrag",
+            TransactionType.EventFee: "Teilnehmerbeitrag",
+            TransactionType.Donation: "Spende",
+            TransactionType.I25p: "Initiative25+",
+            TransactionType.Other: "Sonstiges",
+            TransactionType.EventFeeRefund:
+                "Teilnehmererstattung",
+            TransactionType.InstructorRefund: "KL-Erstattung",
+            TransactionType.EventExpenses:
+                "Veranstaltungsausgabe",
+            TransactionType.Expenses: "Ausgabe",
+            TransactionType.AccountFee: "Kontogebühr",
+            TransactionType.OtherPayment: "Andere Zahlung",
+            TransactionType.Unknown: "Unbekannt",
+        }
+        return display_str.get(self, str(self))
 
 
 class SemesterSteps(enum.Enum):
@@ -1352,15 +1482,6 @@ def mixed_existence_sorter(iterable: Union[Collection[int], KeysView[int]]
     for i in reversed(xsorted(iterable)):
         if i < 0:
             yield i
-
-
-def n_(x: str) -> str:
-    """
-    Alias of the identity for i18n.
-    Identity function that shadows the gettext alias to trick pybabel into
-    adding string to the translated strings.
-    """
-    return x
 
 
 UMLAUT_MAP = {
@@ -1627,6 +1748,8 @@ def extract_roles(session: CdEDBObject, introspection_only: bool = False
             ret.add("member")
             if session.get("is_searchable"):
                 ret.add("searchable")
+        if session.get("is_auditor"):
+            ret.add("auditor")
     if "ml" in ret:
         if session.get("is_cdelokal_admin"):
             ret.add("cdelokal_admin")
@@ -1807,6 +1930,10 @@ ANTI_CSRF_TOKEN_NAME = "_anti_csrf"
 #: The value the anti CSRF token is expected to have
 ANTI_CSRF_TOKEN_PAYLOAD = "_anti_csrf_check"
 
+#: The form field name used to ignore ValidationWarnings.
+#: This is added on-the-fly by util.form_input_submit if needed
+IGNORE_WARNINGS_NAME = "_magic_ignore_warnings"
+
 #: Map of available privilege levels to those present in the SQL database
 #: (where we have less differentiation for the sake of simplicity).
 #:
@@ -1818,10 +1945,18 @@ else:
     role_map_type = collections.OrderedDict
 
 #: List of all roles we consider admin roles. Changes in these roles must be
-#: approved by two meta admins in total.
-ADMIN_KEYS = {"is_meta_admin", "is_core_admin", "is_cde_admin",
-              "is_finance_admin", "is_event_admin", "is_ml_admin",
-              "is_assembly_admin", "is_cdelokal_admin"}
+#: approved by two meta admins in total. Values are required roles.
+ADMIN_KEYS = {
+    "is_meta_admin": "is_cde_realm",
+    "is_core_admin": "is_cde_realm",
+    "is_cde_admin": "is_cde_realm",
+    "is_finance_admin": "is_cde_admin",
+    "is_event_admin": "is_event_realm",
+    "is_ml_admin": "is_ml_realm",
+    "is_assembly_admin": "is_assembly_realm",
+    "is_cdelokal_admin": "is_ml_realm",
+    "is_auditor": "is_cde_realm",
+}
 
 #: List of all admin roles who actually have a corresponding realm with a user role.
 REALM_ADMINS = {"core_admin", "cde_admin", "event_admin", "ml_admin", "assembly_admin"}
@@ -1840,6 +1975,7 @@ DB_ROLE_MAPPING: role_map_type = collections.OrderedDict((
     ("member", "cdb_member"),
     ("cde", "cdb_member"),
     ("assembly", "cdb_member"),
+    ("auditor", "cdb_member"),
 
     ("event", "cdb_persona"),
     ("ml", "cdb_persona"),
@@ -1877,7 +2013,9 @@ ALL_ADMIN_VIEWS: Set[AdminView] = {
     "ml_mgmt_cdelokal", "ml_mod_cdelokal",
     "assembly_user", "assembly_mgmt", "assembly_presider",
     "ml_mgmt_assembly", "ml_mod_assembly",
-    "genesis"}
+    "auditor",
+    "genesis",
+}
 
 ALL_MOD_ADMIN_VIEWS: Set[AdminView] = {
     "ml_mod", "ml_mod_cde", "ml_mod_event", "ml_mod_cdelokal",
@@ -1910,6 +2048,8 @@ def roles_to_admin_views(roles: Set[Role]) -> Set[AdminView]:
     if "assembly_admin" in roles:
         result |= {"assembly_user", "assembly_mgmt", "assembly_presider",
                    "ml_mgmt_assembly", "ml_mod_assembly"}
+    if "auditor" in roles:
+        result |= {"auditor"}
     if roles & ({'core_admin'} | set(
             "{}_admin".format(realm)
             for realm in REALM_SPECIFIC_GENESIS_FIELDS)):
@@ -1922,7 +2062,7 @@ def roles_to_admin_views(roles: Set[Role]) -> Set[AdminView]:
 #: If the partial export and import are unaffected the minor version may be
 #: incremented.
 #: If you increment this, it must be incremented in make_offline_vm.py as well.
-EVENT_SCHEMA_VERSION = (15, 3)
+EVENT_SCHEMA_VERSION = (15, 5)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3
@@ -1932,7 +2072,9 @@ PERSONA_STATUS_FIELDS = (
     "is_active", "is_meta_admin", "is_core_admin", "is_cde_admin",
     "is_finance_admin", "is_event_admin", "is_ml_admin", "is_assembly_admin",
     "is_cde_realm", "is_event_realm", "is_ml_realm", "is_assembly_realm",
-    "is_cdelokal_admin", "is_member", "is_searchable", "is_archived", "is_purged")
+    "is_cdelokal_admin", "is_auditor", "is_member", "is_searchable", "is_archived",
+    "is_purged",
+)
 
 #: Names of all columns associated to an abstract persona.
 #: This does not include the ``password_hash`` for security reasons.
@@ -1971,7 +2113,7 @@ GENESIS_CASE_FIELDS = (
     "id", "ctime", "username", "given_names", "family_name",
     "gender", "birthday", "telephone", "mobile", "address_supplement",
     "address", "postal_code", "location", "country", "birth_name", "attachment_hash",
-    "realm", "notes", "case_status", "reviewer")
+    "realm", "notes", "case_status", "reviewer", "pevent_id", "pcourse_id")
 
 # The following dict defines, which additional fields are required for genesis
 # request for distinct realms. Additionally, it is used to define for which
@@ -1983,7 +2125,7 @@ REALM_SPECIFIC_GENESIS_FIELDS: Dict[Realm, Tuple[str, ...]] = {
               "country"),
     "cde": ("gender", "birthday", "telephone", "mobile",
             "address_supplement", "address", "postal_code", "location",
-            "country", "birth_name", "attachment_hash"),
+            "country", "birth_name", "attachment_hash", "pevent_id", "pcourse_id"),
 }
 
 # This overrides the more general PERSONA_DEFAULTS dict with some realm-specific
@@ -2073,10 +2215,11 @@ def get_persona_fields_by_realm(roles: Set[Role], restricted: bool = True
 
 #: Fields of a pending privilege change.
 PRIVILEGE_CHANGE_FIELDS = (
-    "id", "ctime", "ftime", "persona_id", "submitted_by", "status",
-    "is_meta_admin", "is_core_admin", "is_cde_admin",
-    "is_finance_admin", "is_event_admin", "is_ml_admin",
-    "is_assembly_admin", "is_cdelokal_admin", "notes", "reviewer")
+    "id", "ctime", "ftime", "persona_id", "submitted_by", "status", "is_meta_admin",
+    "is_core_admin", "is_cde_admin", "is_finance_admin", "is_event_admin",
+    "is_ml_admin", "is_assembly_admin", "is_cdelokal_admin", "is_auditor", "notes",
+    "reviewer",
+)
 
 #: Fields for institutions of events
 INSTITUTION_FIELDS = ("id", "title", "shortname")
@@ -2099,13 +2242,16 @@ EVENT_FIELDS = (
 EVENT_PART_FIELDS = ("id", "event_id", "title", "shortname", "part_begin",
                      "part_end", "fee", "waitlist_field")
 
+PART_GROUP_FIELDS = ("id", "event_id", "title", "shortname", "notes", "constraint_type")
+
 #: Fields of a track where courses can happen
 COURSE_TRACK_FIELDS = ("id", "part_id", "title", "shortname", "num_choices",
                        "min_choices", "sortkey")
 
 #: Fields of an extended attribute associated to an event entity
 FIELD_DEFINITION_FIELDS = (
-    "id", "event_id", "field_name", "kind", "association", "entries", "checkin",
+    "id", "event_id", "field_name", "title", "sortkey", "kind", "association",
+    "checkin", "entries",
 )
 
 #: Fields of a modifier for an event_parts fee.
@@ -2119,7 +2265,7 @@ COURSE_FIELDS = ("id", "event_id", "title", "description", "nr", "shortname",
                  "instructors", "max_size", "min_size", "notes", "fields")
 
 #: Fields specifying in which part a course is available
-COURSE_SEGMENT_FIELDS = ("course_id", "track_id", "is_active")
+COURSE_SEGMENT_FIELDS = ("id", "course_id", "track_id", "is_active")
 
 #: Fields of a registration to an event organized via the CdEDB
 REGISTRATION_FIELDS = (
@@ -2144,7 +2290,7 @@ LODGEMENT_FIELDS = ("id", "event_id", "title", "regular_capacity",
 
 # Fields of a row in a questionnaire.
 # (This can be displayed in different places according to `kind`).
-QUESTIONNAIRE_ROW_FIELDS = ("field_id", "pos", "title", "info",
+QUESTIONNAIRE_ROW_FIELDS = ("event_id", "field_id", "pos", "title", "info",
                             "input_size", "readonly", "default_value", "kind")
 
 #: Fields for a stored event query.
@@ -2182,9 +2328,9 @@ BALLOT_FIELDS = (
 
 #: Fields of an attachment in the assembly realm (attached either to an
 #: assembly or a ballot)
-ASSEMBLY_ATTACHMENT_FIELDS = ("id", "assembly_id", "ballot_id")
+ASSEMBLY_ATTACHMENT_FIELDS = ("id", "assembly_id")
 
-ASSEMBLY_ATTACHMENT_VERSION_FIELDS = ("attachment_id", "version", "title",
+ASSEMBLY_ATTACHMENT_VERSION_FIELDS = ("attachment_id", "version_nr", "title",
                                       "authors", "filename", "ctime", "dtime",
                                       "file_hash")
 
@@ -2227,10 +2373,6 @@ LOG_FIELDS_COMMON = ("codes", "persona_id", "submitted_by", "change_note", "offs
                      "length", "time_start", "time_stop")
 
 EPSILON = 10 ** (-6)  #:
-
-#: Timestamp which lies in the future. Make a constant so we do not have to
-#: hardcode the value otherwere
-FUTURE_TIMESTAMP = datetime.datetime(9996, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
 
 #: Specification for the output date format of money transfers.
 #: Note how this differs from the input in that we use 4 digit years.

@@ -31,6 +31,7 @@ The final view will be constructed as follows. ::
 The following columns will be available in this view:
 
 * ``course.id``
+* ``course.course_id`` *This is magically replaced by "{nr}. {shortname}" linking to the course.*
 * ``course.event_id``
 * ``course.nr``
 * ``course.title``

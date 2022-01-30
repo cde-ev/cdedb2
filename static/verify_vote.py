@@ -13,7 +13,6 @@ import pathlib
 from typing import Collection, Dict, Optional
 
 
-
 def encrypt_vote(salt: str, secret: str, vote: str) -> str:
     """Berechne Hash zum Datensatz einer Stimme."""
     h = hmac.new(salt.encode('ascii'), digestmod="sha512")

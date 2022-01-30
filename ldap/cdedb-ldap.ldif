@@ -1,0 +1,147 @@
+# Formating rules:
+# - Comment lines beginning with a '#' character are ignored.
+# - If a line begins with a single space, it is considered a continuation of the previous line (even if the previous line is a comment) and the single leading space is removed.
+# - Entries are separated by blank lines.
+
+# default mdb configuration, for reference
+# dn: olcDatabase={1}mdb,cn=config
+# objectClass: olcDatabaseConfig
+# objectClass: olcMdbConfig
+# olcDatabase: {1}mdb
+# olcDbDirectory: /var/lib/ldap
+# olcSuffix: dc=dummy-ev,dc=de
+# olcAccess: {0}to attrs=userPassword by self write by anonymous auth by * none
+# olcAccess: {1}to attrs=shadowLastChange by self write by * read
+# olcAccess: {2}to * by * read
+# olcLastMod: TRUE
+# olcRootDN: cn=admin,dc=dummy-ev,dc=de
+# olcRootPW: {SSHA}lphnDlepDQS6YE/4qSMP7B6CTfS/yXka
+# olcDbCheckpoint: 512 30
+# olcDbIndex: objectClass eq
+# olcDbIndex: cn,uid eq
+# olcDbIndex: uidNumber,gidNumber eq
+# olcDbIndex: member,memberUid eq
+# olcDbMaxSize: 1073741824
+
+# database definitions
+# see https://manpages.debian.org/buster/slapd/slapd-config.5.en.html#GENERAL_DATABASE_OPTIONS
+dn: olcDatabase=sql,cn=config
+changetype: add
+objectClass: olcDatabaseConfig
+objectClass: olcSqlConfig
+olcSuffix: dc=cde-ev,dc=de
+# idea:
+# grant all users access to their own data
+# grant users no access to groups (they can see their own group membership over their memberOf attributes)
+# grant all duas access to user mail, uid, names (but not to memberOf)
+# grant some duas dedicated access to some groups
+#
+# for details see https://manpages.debian.org/buster/slapd/slapd.access.5.en.html
+# protect passwords to be accessed only for authentication
+olcAccess:
+  to attrs=userPassword
+  by * auth
+# grant every authenticated client access to the structural nodes (base node,
+# first sublevel of base) of the ldap tree
+olcAccess:
+  to dn.base="dc=cde-ev,dc=de"
+  by users read
+olcAccess:
+  to dn.onelevel="dc=cde-ev,dc=de"
+  by users read
+# grant group access to some duas, only if they need them
+olcAccess:
+  to dn.subtree="ou=groups,dc=cde-ev,dc=de"
+  by dn.base="cn=admin,ou=dua,dc=cde-ev,dc=de" read
+  by dn.base="cn=cloud,ou=dua,dc=cde-ev,dc=de" read
+# grant users and all duas access to some user attributes
+# access to objectClass and entry (the entry itself) are mandatory to access an user
+olcAccess:
+  to dn.subtree="ou=users,dc=cde-ev,dc=de" attrs=objectClass,entry,uid,mail,cn,sn,displayName,givenName
+  by self read break
+  by dn.subtree="ou=dua,dc=cde-ev,dc=de" read
+# grant users full access to their own data, also the admin dua
+olcAccess:
+  to dn.subtree="ou=users,dc=cde-ev,dc=de"
+  by self read
+  by dn.subtree="cn=admin,ou=dua,dc=cde-ev,dc=de" read
+#
+# In theory, it should be possible to give more fine granular access to duas.
+# This would allow specific duas access to only users which are members of
+# specific groups, using the 'memberOf' attribute of users.
+# To filter users by attribute should be possible by using the 'filter' >what<
+# clause, providing a valid ldap search filter.
+# A filter like 'filter=(objectClass=*)' or 'filter=(objectClass=inetOrgPerson)'
+# works, but filtering after any other user attribute does not yield any hits...
+# olcAccess:
+#  to filter=(memberOf=cn=is_active,ou=status,ou=groups,dc=cde-ev,dc=de)
+#  by dn.subtree="ou=dua,dc=cde-ev,dc=de" read
+#
+# grant duas access to their own data and the admin dua to all duas
+olcAccess:
+  to dn.subtree="ou=dua,dc=cde-ev,dc=de"
+  by self read
+  by dn.subtree="cn=admin,ou=dua,dc=cde-ev,dc=de" read
+# prevent all other requests
+olcAccess:
+  to *
+  by * none
+#
+# we do not set a RootDN, but give all rights to the cn=admin dua by hand
+# using the olcAccess clauses above
+# olcRootDN: cn=admin,ou=dua,dc=cde-ev,dc=de
+# olcRootPW: secret
+olcDatabase: sql
+olcDbHost: OLC_DB_HOST
+olcDbName: OLC_DB_NAME
+olcDbUser: cdb_admin
+olcDbPass: DATABASE_CDB_ADMIN_PASSWORD
+#
+# SQL-backend configuration options (unused commented out)
+olcSqlConcatPattern: ?||?
+# olcSqlSubtreeCond
+# olcSqlChildrenCond
+# olcSqlDnMatchCond
+# olcSqlOcQuery
+# olcSqlAtQuery
+# olcSqlInsEntryStmt
+# olcSqlCreateNeedsSelect
+olcSqlUpperFunc: upper
+# olcSqlUpperNeedsCast
+olcSqlStrcastFunc: text
+# olcSqlDelEntryStmt
+# olcSqlRenEntryStmt
+# olcSqlDelObjclassesStmt
+olcSqlHasLDAPinfoDnRu: FALSE
+# olcSqlFailIfNoMapping
+# olcSqlAllowOrphans
+# olcSqlBaseObject
+# olcSqlLayer
+# olcSqlUseSubtreeShortcut
+# olcSqlFetchAllAttrs
+# olcSqlFetchAttrs
+# olcSqlCheckSchema
+# olcSqlAliasingKeyword
+# olcSqlAliasingQuote
+# olcSqlAutocommit
+# olcSqlIdQuery
+
+# add memberOf attribute
+# if we would work with a 'normal' ldap setup, we would like to construct those
+# attributes dynamically from the group membership of each users. However, this
+# would need writing access to the ldap database which we do not want to grant.
+# Since we fetch all our information from PostgreSQL, we can simply fetch this
+# reversed-group-membership from our database too, adding the values of this
+# attributes manually.
+#
+# for reference, this is how this may look if we would not use our current backend.
+# from https://tylersguides.com/guides/openldap-memberof-overlay/
+#
+# dn: olcOverlay=memberof,olcDatabase={1}sql,cn=config
+# changetype: add
+# objectClass: olcOverlayConfig
+# objectClass: olcMemberOf
+# olcOverlay: memberof
+# olcMemberOfRefint: TRUE
+# olcMemberOfGroupOC: groupOfNames
+# olcMemberOfMemberAD: uniqueMember

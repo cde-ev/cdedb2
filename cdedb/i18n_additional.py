@@ -29,8 +29,10 @@ I18N_STRINGS = (
     n_("AssemblyLogCodes.assembly_presider_added"),
     n_("AssemblyLogCodes.assembly_presider_removed"),
     n_("AssemblyLogCodes.attachment_added"),
-    n_("AssemblyLogCodes.attachment_changed"),
     n_("AssemblyLogCodes.attachment_removed"),
+    n_("AssemblyLogCodes.attachment_changed"),
+    n_("AssemblyLogCodes.attachment_ballot_link_created"),
+    n_("AssemblyLogCodes.attachment_ballot_link_deleted"),
     n_("AssemblyLogCodes.attachment_version_added"),
     n_("AssemblyLogCodes.attachment_version_removed"),
     n_("AssemblyLogCodes.attachment_version_changed"),
@@ -64,6 +66,7 @@ I18N_STRINGS = (
     n_("CoreLogCodes.genesis_rejected"),
     n_("CoreLogCodes.genesis_deleted"),
     n_("CoreLogCodes.genesis_verified"),
+    n_("CoreLogCodes.genesis_merged"),
     n_("CoreLogCodes.privilege_change_pending"),
     n_("CoreLogCodes.privilege_change_approved"),
     n_("CoreLogCodes.privilege_change_rejected"),
@@ -111,6 +114,11 @@ I18N_STRINGS = (
     n_("EventLogCodes.minor_form_removed"),
     n_("EventLogCodes.query_stored"),
     n_("EventLogCodes.query_deleted"),
+    n_("EventLogCodes.part_group_created"),
+    n_("EventLogCodes.part_group_changed"),
+    n_("EventLogCodes.part_group_deleted"),
+    n_("EventLogCodes.part_group_link_created"),
+    n_("EventLogCodes.part_group_link_deleted"),
 
     n_("FinanceLogCodes.new_member"),
     n_("FinanceLogCodes.gain_membership"),
@@ -151,6 +159,7 @@ I18N_STRINGS = (
     n_("GenesisStati.to_review"),
     n_("GenesisStati.approved"),
     n_("GenesisStati.successful"),
+    n_("GenesisStati.existing_updated"),
     n_("GenesisStati.rejected"),
 
     n_("LineResolutions.none"),
@@ -213,6 +222,8 @@ I18N_STRINGS = (
 
     n_("QuestionnaireUsages.registration"),
     n_("QuestionnaireUsages.additional"),
+
+    n_("EventPartGroupType.Statistic"),
 
     n_("RegistrationPartStati.not_applied"),
     n_("RegistrationPartStati.applied"),
@@ -292,6 +303,8 @@ I18N_STRINGS = (
     n_("is_event_admin"),
     n_("is_ml_admin"),
     n_("is_assembly_admin"),
+    n_("is_cdelokal_admin"),
+    n_("is_auditor"),
 
     # zxcvbn feedback
     n_('Use a few words, avoid common phrases.'),

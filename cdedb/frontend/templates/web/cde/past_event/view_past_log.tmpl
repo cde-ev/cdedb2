@@ -1,0 +1,30 @@
+{% set sidenav_active='cde_past_events_log' %}
+{% extends "web/cde/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/logging.tmpl" as logging with context %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_searchpersona.js') }}
+{% endblock %}
+{% block title %}
+    {% trans %}Past Events Log{% endtrans %}
+    {{ logging.counter(total, values['offset'] or '', length) }}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("cde/view_past_log"), gettext("Past Events Log"), active=True) }}
+{% endblock %}
+{% block content %}
+    {% call logging.table(log, 'Event') %}
+        {% for entry in log %}
+            {% set link = None %}
+            {% if entry['pevent_id'] %}
+                {% set link = util.href(cdedblink("cde/show_past_event", {"pevent_id": entry['pevent_id']}),
+                                    pevents[entry['pevent_id']]['title']) %}
+            {% endif %}
+            {{ logging.row(entry, enums['PastEventLogCodes'], loop.index, 'pevent_id', link) }}
+        {% endfor %}
+    {% endcall %}
+
+    {{ logging.navigation('cde/view_past_log', total, length, loglinks) }}
+    {{ logging.filter('cde/view_past_log', enums['PastEventLogCodes'], 'past_event_user', 'pevent_id') }}
+{% endblock %}

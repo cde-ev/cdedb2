@@ -12,5 +12,5 @@
 {{ util.breadcrumb_link(cdedblink("ml/user_search"), gettext("Manage Users"), active=True) }}
 {% endblock %}
 {% block content %}
-    {{ generic.user_search('ml', info=gettext("This search will only show pure mailinglist users.")) }}
+    {{ generic.user_search('ml', result, query, info=gettext("This search will only show pure mailinglist users.")) }}
 {% endblock %}

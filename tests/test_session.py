@@ -3,11 +3,12 @@
 
 import datetime
 import secrets
-from typing import List, NamedTuple, Sequence, Optional, cast
+from typing import List, NamedTuple, Optional, Sequence, cast
 
 from cdedb.common import RequestState, User, now
 from tests.common import (
-    UserIdentifier, USER_DICT, BackendTest, MultiAppFrontendTest, execsql, get_user,
+    USER_DICT, BackendTest, FrontendTest, MultiAppFrontendTest, UserIdentifier, execsql,
+    get_user,
 )
 
 SessionEntry = NamedTuple(
@@ -169,6 +170,25 @@ class TestSessionBackend(BackendTest):
         self.assertEqual(u.persona_id, user["id"])
 
 
+class TestSessionFrontend(FrontendTest):
+    def test_2285(self) -> None:
+        self.login("anton")
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Kurse",
+                      "Kurs hinzufügen")
+        f = self.response.forms['createcourseform']
+        f['nr'] = "1"
+        f['title'] = "Test"
+        f['shortname'] = "test"
+        self.submit(f)
+        # Delete sessionkey and submit again.
+        self.app.reset()
+        try:
+            self.submit(f, check_notification=False)
+        except RuntimeError:
+            self.fail("Input validation not checked when submitting csrf-protected"
+                      " form withput sessionkey.")
+
+
 class TestMultiSessionFrontend(MultiAppFrontendTest):
     n = 3  # Needs to be at least 3 for the following test to work correctly.
 
@@ -208,6 +228,7 @@ class TestMultiSessionFrontend(MultiAppFrontendTest):
             with self.subTest(app_index=i):
                 self.get("/core/self/show")
                 self.assertTitle(user['default_name_format'])
+                self.assertPresence(f"Von allen ({self.n - 1}) Geräten abmelden")
                 self.assertNotIn('loginform', self.response.forms)
 
         # Now terminate all sessions and check that they are all inactive.

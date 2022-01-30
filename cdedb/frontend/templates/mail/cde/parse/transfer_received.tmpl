@@ -1,0 +1,33 @@
+Hallo {{ persona['display_name'] }},
+
+Vielen Dank für Deine Überweisung auf das Konto des CdE. Wir haben
+diese verarbeitet. Dein Guthaben beträgt jetzt {{ new_balance|money }}.
+
+Als Mitglied bekommst Du unsere Mitglieder-Zeitschrift exPuls
+zugeschickt. Unter anderem deshalb ist es wichtig, dass wir Deine
+aktuelle Adresse kennen. Deine in der Datenbank eingetragene
+Adresse ist:
+
+{{ "\n".join(address) }}
+
+Falls diese nicht mehr aktuell ist, so kannst Du Dich in die
+CdE-Datenbank unter der Adresse
+{{ cdedblink('core/change_user') }}
+einloggen und die Adresse korrigieren. Falls Du kein Passwort
+hast, kannst Du auf derselben Seite ein neues anfordern.
+
+Der exPuls erscheint sowohl gedruckt als auch online.
+Die gedruckte Ausgabe kannst Du in der Datenbank unter
+{{ cdedblink('core/change_user') }}
+abbestellen.
+Alle Online-Ausgaben findest Du im exPuls-Archiv, den Link
+zum Archiv findest Du in der Datenbank unter
+{{ cdedblink('cde/view_misc') }}
+Über die CdE-Info Mailingliste wirst Du über das Erscheinen einer
+neuen Online-Ausgabe benachrichtigt.
+
+Wenn Du Fragen hast, so erreichst Du uns unter <{{ MANAGEMENT_ADDRESS }}>
+
+
+Viele Grüße
+das Verwaltungsteam

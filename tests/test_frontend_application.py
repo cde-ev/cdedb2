@@ -132,7 +132,6 @@ class TestApplication(FrontendTest):
         self.assertPresence("Dieses Formular benötigt einen Anti-CSRF-Token.",
                             div='notifications')
         self.get("/core/self/show")
-        self.follow()
         self.assertNonPresence("22337")
 
         # Try submitting with invalid anti CSRF token hash

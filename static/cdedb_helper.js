@@ -282,53 +282,101 @@
     };
 
     /**
-     * Preview rendered HTML from Markdown plaintext
+     * Display a bootstrap modal showing a loading spinner
+     * in its content section ("#cdedb-modal-content").
      *
-     * @param link (String) Link to markdown parsing frontend endpoint
-     * @param translations (object) A dict containing the localized labels for the preview modal. Should have
-     *                              "title", "loading" and "closa" as keys.
+     * @param translations (object) Translation texts for the modal. Must contain keys
+     *                              "title", "loading" and "close".
+     * @param small (boolean) optionally reduce the width of the modal
      */
-    $.fn.cdedbMarkdownPreview = function (link, translations) {
-        $(".mdjs").show();
+    function cdedb_show_modal(translations, small=false) {
+        const loading_spinner = `
+<div class="text-center">
+    <span class="fas fa-sync fa-spin" aria-hidden="true"></span>
+    <span class="sr-only">${translations["loading"]}</span>
+</div>
+        `;
         const modal = `
-<div class="modal fade" id="mdpreview-modal" tabindex="-1" role="dialog" aria-labelledby="mdpreview-modal-label">
-    <div class="modal-dialog" role="document">
+<div class="modal fade" id="cdedb-modal" tabindex="-1" role="dialog" aria-labelledby="mdpreview-modal-title">
+    <div class="modal-dialog${ small ? ' modal-sm' : '' }" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
-                <h4 class="modal-title" id="mdpreview-modal-label">
-                    ${translations["title"]}
+                <h4 class="modal-title" id="cdedb-modal-title">
+                    ${ translations["title"] }
                 </h4>
             </div>
-            <div class="modal-body" id="mdpreview-html">
-                ${translations["loading"]}
+            <div class="modal-body" id="cdedb-modal-content">
+                ${ loading_spinner }
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">
-                    ${translations["close"]}
+                <button type="button" class="btn btn-default" id="cdedb-modal-close" data-dismiss="modal">
+                    ${ translations["close"] }
                 </button>
             </div>
         </div>
     </div>
 </div>
         `;
+        if (!$("#cdedb-modal").length) {
+            $("body").append(modal);
+        } else {
+            $("#cdedb-modal-title").text(translations["title"]);
+            $("#cdedb-modal-content").html(loading_spinner);
+            $("#cdedb-modal-close").text(translations["close"]);
+        }
+        $("#cdedb-modal").modal("show");
+    }
+
+    /**
+     * Preview rendered HTML from Markdown plaintext
+     *
+     * @param link (String) Link to markdown parsing frontend endpoint
+     * @param translations (object) A dict containing the localized labels for the preview modal. Should have
+     *                              "title", "loading" and "close" as keys.
+     */
+    $.fn.cdedbMarkdownPreview = function (link, translations) {
+        $(".mdjs").show();
         let input = this;  // we need it inside the onclick-function
         $(`#${ input.attr("id") }-mdpreview`).click(function() {
-            if (!$("#mdpreview-modal").length) {  // check if modal is already present from a previous run
-                $("body").append(modal);
-            }
+            cdedb_show_modal(translations);
             $.post(link,
                 { md_str: input.val() },
                 function(result) {
-                    $("#mdpreview-html").html(result);
+                    $("#cdedb-modal-content").html(result);
                 }
             );
-            $("#mdpreview-modal").modal("show");
         });
         return this;
     };
+
+    /**
+     * Replace the link to vcard QR code with a popup modal showing the QR code.
+     *
+     * @param translations Label texts for the modal. Must contain keys "title", "loading" and "close".
+     */
+    $.fn.cdedbQRCodeModal = function (translations) {
+        let qr_button = this;
+        let qr_link = qr_button[0].href;
+        qr_button.removeAttr("href");
+        qr_button.click(function () {
+            cdedb_show_modal(translations, true);
+            $.get(qr_link, function (data) {
+                let modal_content = $("#cdedb-modal-content");
+                // size qr code (quadratic) to the full modal, but not exceeding small screens
+                let width = Math.min(modal_content.width(), window.innerHeight, window.innerWidth) + "px";
+                let svg = $(data).find("svg")[0];  // find the svg in the returned XML document, then get
+                                        // plain DOM element since jQuery operations may be incompatible with SVG DOM
+                svg.setAttribute("width", width);
+                svg.setAttribute("height", width);
+                // now display it, also shrink the inner div around qr code
+                modal_content.html('<div class="text-center" id="cdedb-contact-qr"></div>');
+                $("#cdedb-contact-qr").html(svg).width(width).height(width);
+            }, "xml");
+        });
+    }
 })(jQuery);
 
 

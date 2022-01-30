@@ -1,14 +1,12 @@
 import argparse
 import json
 from itertools import chain
-from typing import Any, Callable, Dict, List, Set, Tuple, Type
+from typing import Any, Callable, Dict, List, Set, Sized, Tuple, Type, TypedDict
 
-from typing_extensions import TypedDict
-
-from cdedb.backend.common import PsycoJson
+from cdedb.backend.common import DatabaseValue_s, PsycoJson
 from cdedb.backend.core import CoreBackend
-from cdedb.common import RequestState, CdEDBObject
-from cdedb.script import setup
+from cdedb.common import CdEDBObject, RequestState
+from cdedb.script import Script
 
 
 class AuxData(TypedDict):
@@ -26,8 +24,9 @@ class AuxData(TypedDict):
 def prepare_aux(data: CdEDBObject) -> AuxData:
     # Note that we do not care about the actual backend but rather about
     # the methds inherited from `AbstractBackend`.
-    rs_maker = setup(1, "nobody", "nobody", dbname="nobody")
-    rs = rs_maker()
+    # Small config hack, by writing a dict into config file for password retrieval.
+    rs = Script(dbuser="nobody", dbname="nobody",
+                CDB_DATABASE_ROLES="{'nobody': 'nobody'}").rs()
     core = CoreBackend  # No need to instantiate, we only use statics.
 
     # Extract some data about the databse tables using the database connection.
@@ -94,6 +93,26 @@ def prepare_aux(data: CdEDBObject) -> AuxData:
     )
 
 
+def format_inserts(table_name: str, table_data: Sized, keys: Tuple[str, ...],
+                   params: List[DatabaseValue_s], aux: AuxData) -> List[str]:
+    ret = []
+    # Create len(data) many row placeholders for len(keys) many values.
+    value_list = ",\n".join(("({})".format(", ".join(("%s",) * len(keys))),)
+                            * len(table_data))
+    query = "INSERT INTO {table} ({keys}) VALUES {value_list};".format(
+        table=table_name, keys=", ".join(keys), value_list=value_list)
+    # noinspection PyProtectedMember
+    params = tuple(aux["core"]._sanitize_db_input(p) for p in params)
+
+    # This is a bit hacky, but it gives us access to a psycopg2.cursor
+    # object so we can let psycopg2 take care of the heavy lifting
+    # regarding correctly inserting the parameters into the SQL query.
+    with aux["rs"].conn as conn:
+        with conn.cursor() as cur:
+            ret.append(cur.mogrify(query, params).decode("utf8"))
+    return ret
+
+
 def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
     commands: List[str] = []
 
@@ -119,7 +138,7 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
         # Convert the keys to a tuple to ensure consistent ordering.
         keys = tuple(key_set)
         # FIXME more precise type
-        params: List[Any] = []
+        params_list: List[DatabaseValue_s] = []
         for entry in table_data:
             for k in keys:
                 if k not in entry:
@@ -132,22 +151,9 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
                         entry[k] = entry[k] + xss
             for k, f in aux["entry_replacements"].get(table, {}).items():
                 entry[k] = f(entry)
-            params.extend(entry[k] for k in keys)
+            params_list.extend(entry[k] for k in keys)
 
-        # Create len(data) many row placeholders for len(keys) many values.
-        value_list = ",\n".join(("({})".format(", ".join(("%s",) * len(keys))),)
-                                * len(table_data))
-        query = "INSERT INTO {table} ({keys}) VALUES {value_list};".format(
-            table=table, keys=", ".join(keys), value_list=value_list)
-        # noinspection PyProtectedMember
-        params = tuple(aux["core"]._sanitize_db_input(p) for p in params)
-
-        # This is a bit hacky, but it gives us access to a psycopg2.cursor
-        # object so we can let psycopg2 take care of the heavy lifting
-        # regarding correctly inserting the parameters into the SQL query.
-        with aux["rs"].conn as conn:
-            with conn.cursor() as cur:
-                commands.append(cur.mogrify(query, params).decode("utf8"))
+        commands.extend(format_inserts(table, table_data, keys, params_list, aux))
 
     # Now we update the tables to fix the cyclic references we skipped earlier.
     for table, refs in aux["cyclic_references"].items():

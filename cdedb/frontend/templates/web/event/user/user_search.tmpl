@@ -1,0 +1,16 @@
+{% set sidenav_active='event_users' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/generic.tmpl" as generic with context %}
+{% set jshint='strong' %}
+{% block scripts %}{{ util.cdedb_script('cdedb_queryform.js') }}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% block title %}
+    {% trans %}Event-User Management{% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/user_search"), gettext("Manage Users"), active="True") }}
+{% endblock %}
+{% block content %}
+    {{ generic.user_search('event', result, query, info=gettext("This search will only show pure event users.")) }}
+{% endblock %}

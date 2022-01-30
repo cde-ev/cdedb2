@@ -21,8 +21,9 @@ from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.common import (
-    ADMIN_VIEWS_COOKIE_NAME, CdEDBObject, PathLike, QuotaException, RequestState,
-    User, glue, make_proxy, make_root_logger, n_, now, roles_to_db_role,
+    ADMIN_VIEWS_COOKIE_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, PathLike,
+    QuotaException, RequestState, User, glue, make_proxy, make_root_logger, n_, now,
+    roles_to_db_role,
 )
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -30,8 +31,9 @@ from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.assembly import AssemblyFrontend
 from cdedb.frontend.cde import CdEFrontend
 from cdedb.frontend.common import (
-    JINJA_FILTERS, BaseApp, FrontendEndpoint, Response, construct_redirect, docurl,
-    sanitize_None, staticurl, datetime_filter, AbstractFrontend, setup_translations,
+    JINJA_FILTERS, AbstractFrontend, BaseApp, FrontendEndpoint, Response,
+    construct_redirect, datetime_filter, docurl, sanitize_None, setup_translations,
+    staticurl,
 )
 from cdedb.frontend.core import CoreFrontend
 from cdedb.frontend.event import EventFrontend
@@ -59,14 +61,14 @@ class Application(BaseApp):
         self.ml = MlFrontend(configpath)
         # Set up a logger for all Worker instances.
         make_root_logger(
-            "cdedb.frontend.worker", self.conf["WORKER_LOG"],
+            "cdedb.frontend.worker", self.conf["LOG_DIR"] / "cdedb-frontend-worker.log",
             self.conf["LOG_LEVEL"], syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         self.urlmap = CDEDB_PATHS
         secrets = SecretsConfig(configpath)
         self.connpool = connection_pool_factory(
             self.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
-            secrets, self.conf["DB_PORT"])
+            secrets, self.conf["DB_HOST"], self.conf["DB_PORT"])
         # Construct a reduced Jinja environment for rendering error pages.
         self.jinja_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(
@@ -85,7 +87,7 @@ class Application(BaseApp):
         self.jinja_env.filters.update({'datetime': datetime_filter})
         self.jinja_env.policies['ext.i18n.trimmed'] = True  # type: ignore
         self.translations = setup_translations(self.conf)
-        if pathlib.Path("/PRODUCTIONVM").is_file():
+        if pathlib.Path("/PRODUCTIONVM").is_file():  # pragma: no cover
             # Sanity checks for the live instance
             if self.conf["CDEDB_DEV"] or self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
                 raise RuntimeError(
@@ -140,7 +142,7 @@ class Application(BaseApp):
             response = Response(html, mimetype='text/html', status=error.code)
             response.headers.add('X-Generation-Time', str(now() - begin))
             return response
-        except Exception:
+        except Exception:  # pragma: no cover
             self.logger.exception("Exception while rendering error page")
             return Response("HTTP {}: {}\n{}".format(error.code, error.name,
                                                      error.description),
@@ -238,6 +240,9 @@ class Application(BaseApp):
                         ((handler.anti_csrf.name, ValueError(error)),))
                     rs.notify('error', error)
 
+            # Decide whether the user wants to ignore ValidationWarnings
+            rs.ignore_warnings = rs.request.values.get(IGNORE_WARNINGS_NAME, False)
+
             # Store database connection as private attribute.
             # It will be made accessible for the backends by the make_proxy.
             rs._conn = self.connpool[roles_to_db_role(user.roles)]
@@ -266,6 +271,9 @@ class Application(BaseApp):
             try:
                 ret = handler(rs, **args)
                 if rs.validation_appraised is False:
+                    self.logger.error(
+                        f"User {rs.user.persona_id} has evaded input validation"
+                        f" with errors {rs.retrieve_validation_errors()}")
                     raise RuntimeError(f"Input validation forgotten: {handler}")
                 return ret
             except QuotaException as e:
@@ -314,7 +322,7 @@ class Application(BaseApp):
                 raise
 
             # debug output if applicable
-            if self.conf["CDEDB_DEV"]:
+            if self.conf["CDEDB_DEV"]:  # pragma: no cover
                 return self.cgitb_html()
 
             # generic errors

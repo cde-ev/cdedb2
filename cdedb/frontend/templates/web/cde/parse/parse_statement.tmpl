@@ -1,0 +1,218 @@
+{% set sidenav_active='cde_parse' %}
+{% extends "web/cde/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_csv_tools.js') }}
+    {{ util.cdedb_script('cdedb_searchpersona.js') }}
+{% endblock %}
+{% block title %}
+    {% trans %}
+        Parse Bank Statement
+    {% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+{{ super() }}
+{{ util.breadcrumb_link(cdedblink("cde/parse_statement_form"), gettext("Parse Bank Statement"), active=True) }}
+{% endblock %}
+{% macro print_transaction(t_id) %}
+    {% if data["errors{}".format(t_id)] %}
+        {% set aclass="panel-danger" %}
+        {% set anicon="exclamation-circle" %}
+    {% elif data["warnings{}".format(t_id)] %}
+        {% set aclass="panel-warning" %}
+        {% set anicon="exclamation-triangle" %}
+    {% else %}
+        {% set aclass="panel-default" %}
+        {% set anicon="info-circle" %}
+    {% endif %}
+    {% call util.bootstrap_panel(title=gettext("Line %(lineno)s")|format(lineno=t_id), aclass=aclass,
+                                 icon=anicon, anid="transaction-container{}".format(t_id)) %}
+    <div class="batch-line-body">
+        <div class="row">
+            <div class="col-md-6">
+                {% for key in transaction_keys %}
+                    {{ util.input_hidden(name=key + t_id|string) }}
+                {% endfor %}
+                <ul>
+                    <li>
+                        {% trans %}Reference{% endtrans %}: {{ data["reference{}".format(t_id)] }}
+                    </li>
+                    {% if data["other_references{}".format(t_id)] %}
+                    <li>
+                        {% trans %}Other References{% endtrans %}:
+                        <ul>
+                            {% for ref in data["other_references{}".format(t_id)].split(ref_sep) %}
+                                <li>{{ ref }}</li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                    {% endif %}
+                    <li>
+                        {% trans %}Statement Date{% endtrans %}: {{ data["statement_date{}".format(t_id)] }}
+                    </li>
+                    <li>
+                        {% trans %}Amount{% endtrans %}: {{ data["amount{}".format(t_id)] }}
+                    </li>
+                    <li>
+                        {% trans %}Posting{% endtrans %}: {{ data["posting{}".format(t_id)] }}
+                    </li>
+                    <li>
+                        {% trans %}Account holder{% endtrans %}: {{ data["account_holder{}".format(t_id)] }}
+                    </li>
+                    {% if data["persona{}".format(t_id)] %}
+                        <li>
+                            {% trans %}Matched User{% endtrans %}:
+                            {{ util.print_doppelganger(data["persona{}".format(t_id)]) }}
+                        </li>
+                    {% endif %}
+                </ul>
+                <ul id="transaction{{ t_id }}_errors" class="list-unstyled">
+                        {% for key, problem in data["errors{}".format(t_id)] %}
+                            <li class="text-danger">
+                                {{ util.make_icon('exclamation-circle', title=gettext("Error")) }}
+                                <em>{{ key }}</em>:
+                                {{ util.format_error(problem) }}
+                            </li>
+                        {% endfor %}
+                </ul>
+                <ul id="transaction{{ t_id }}_warnings" class="list-unstyled">
+                        {% for key, problem in data["warnings{}".format(t_id)] %}
+                            <li class="text-warning">
+                                {{ util.make_icon('exclamation-triangle', title=gettext("Warning")) }}
+                                <em>{{ key }}</em>:
+                                {{ util.format_error(problem) }}
+                            </li>
+                        {% endfor %}
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <div class="row">
+                    <div class="col-md-1">
+                        {{ util.input_checkbox(name="type_confirm{}".format(t_id)) }}
+                    </div>
+                    <div class="col-md-11">
+                        {{ util.form_input_select(name="type{}".format(t_id),
+                                    entries=TransactionType|enum_entries,
+                                    label=gettext("Transaction Type"), horizontal=False, small=True) }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-1">
+                        {{ util.input_checkbox(name="persona_confirm{}".format(t_id)) }}
+                    </div>
+                    <div class="col-md-11">
+                        {{ util.form_input_text(name="cdedbid{}".format(t_id), small=True, horizontal=False,
+                                    label=gettext("Member"), anid="input-cdedbid-{}".format(t_id)) }}
+                            <script nonce="{{ csp_nonce }}">
+                                $('#input-cdedbid-{{ t_id }}').cdedbSearchPerson(
+                                    '{{ (cdedblink('core/select_persona')|e) + ('?kind=admin_persona&phrase=%s'|s) }}',
+                                    [], false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
+                                );
+                            </script>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-1">
+                        {{ util.input_checkbox(name="event_confirm{}".format(t_id)) }}
+                    </div>
+                    <div class="col-md-11">
+                        {{ util.form_input_select(name="event_id{}".format(t_id), entries=event_entries, small=True,
+                                    nulloption=nbsp, label=gettext("Event"), horizontal=False, sort=False) }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% if t_id in params["jump_order"] %}
+            {% if params["jump_order"][t_id] %}
+                <a class="btn btn-default btn-sm" href="#transaction-container{{ params["jump_order"][t_id] }}">
+                    {{ util.make_icon('arrow-down') }}
+                    {% trans %}
+                        Go to next Error.
+                    {% endtrans %}
+                </a>
+            {% else %}
+                <a class="btn btn-default btn-sm" href="#submit-container">
+                    {{ util.make_icon('arrow-down') }}
+                    {% trans %}
+                        Go to submit buttons.
+                    {% endtrans %}
+                </a>
+            {% endif %}
+        {% endif %}
+    </div>
+    {% endcall %}
+{% endmacro %}
+
+{% block content %}
+    {% if not data %}
+        <form action="{{ cdedblink('cde/parse_statement') }}" method="POST" id="statementform" enctype="multipart/form-data">
+            {{ util.anti_csrf_token('cde/parse_statement') }}
+            {{ util.form_input_file(name="statement_file", label=gettext("Statement"), horizontal=False, accept="text/csv,.csv",
+                    info=gettext("Directly paste the Bank Statement from Bank für Sozialwirtschaft here.")) }}
+
+            {{ util.form_input_submit(label=gettext("Parse"), horizontal=False) }}
+        </form>
+    {% else %}
+        <h2>{% trans %}Validation results{% endtrans %}</h2>
+        <form action="{{ cdedblink("cde/parse_download") }}" method="POST" id="parsedownloadform">
+            {{ util.anti_csrf_token("cde/parse_download") }}
+            {{ util.input_hidden(name="count") }}
+            {{ util.input_hidden(name="start") }}
+            {{ util.input_hidden(name="end") }}
+            {{ util.input_hidden(name="timestamp") }}
+            <div>
+            {% if params["has_error"] %}
+                <div id="has_error_summary">
+                    {% trans count=params["has_error"]|length %}{{ count }} Transactions with Errors{% endtrans %}
+                </div>
+            {% endif %}
+            {% if params["has_warning"] %}
+                <div id="has_warning_summary">
+                    {% trans count=params["has_warning"]|length %}{{ count }} Transactions with Warnings{% endtrans %}
+                </div>
+            {% endif %}
+            {% if params["has_none"] %}
+                <div id="has_none_summary">
+                    {% trans count=params["has_none"]|length %}{{ count }} Successful Transactions{% endtrans %}
+                </div>
+            {% endif %}
+            {% if params["jump_order"][None] %}
+                <a class="btn btn-default btn-sm" href="#transaction-container{{ params["jump_order"][None] }}">
+                    {{ util.make_icon('arrow-down') }}
+                    {% trans %}
+                        Go to first Error.
+                    {% endtrans %}
+                </a>
+            {% endif %}
+            <a class="btn btn-default btn-sm" href="#submit-container">
+                {{ util.make_icon('arrow-down') }}
+                {% trans %}
+                    Go to submit buttons.
+                {% endtrans %}
+            </a>
+            </div>
+            {% for t_id in params["all"] %}
+                {{ print_transaction(t_id) }}
+            {% endfor %}
+            <div id="submit-container">
+            {{ util.form_input_checkbox(name="ignore_warnings", label=gettext("Ignore Warnings"), horizontal=False) }}
+            {{ util.form_input_submit(name="validate", label=gettext("Validate"), horizontal=False) }}
+            {% if not params["has_error"] %}
+                {{ util.input_submit(label=gettext("GnuCash Download"), value="gnucash", name="gnucash", icon='download') }}
+                {% for account in enums["Accounts"] if account in params["accounts"] %}
+                    {{ util.input_submit(label=(gettext("Excel Download") + " " + account.display_str()),
+                        value=account, name="excel", icon='download') }}
+                {% endfor %}
+                {% if params["memberships"] %}
+                    {{ util.input_submit(label=gettext("Download Membership Fees"), value="membership",
+                        name="membership", icon='download') }}
+                {% endif %}
+                {% for event_id in params["events"] %}
+                    {{ util.input_submit(label=gettext("%(shortname)s participants")|format(shortname=events[event_id]['shortname']),
+                        value=event_id, name="event", icon='download') }}
+                {% endfor %}
+            {% endif %}
+            </div>
+        </form>
+    {% endif %}
+{% endblock %}

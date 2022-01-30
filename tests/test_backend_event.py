@@ -8,17 +8,25 @@ import decimal
 import json
 from typing import Any, Dict, List
 
+import freezegun
 import psycopg2
+import psycopg2.errorcodes
+import psycopg2.errors
 import pytz
 
 import cdedb.database.constants as const
 from cdedb.backend.common import cast_fields
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, InfiniteEnum, PartialImportError, PrivilegeError,
-    CourseFilterPositions, nearly_now
+    CdEDBObject, CdEDBObjectMap, CourseFilterPositions, InfiniteEnum,
+    PartialImportError, PrivilegeError, nearly_now, now,
 )
 from cdedb.query import Query, QueryOperators, QueryScope
-from tests.common import USER_DICT, BackendTest, as_users, json_keys_to_int, storage
+from tests.common import (
+    ANONYMOUS, USER_DICT, BackendTest, as_users, json_keys_to_int, storage,
+)
+
+UNIQUE_VIOLATION = psycopg2.errors.lookup(psycopg2.errorcodes.UNIQUE_VIOLATION)
+NON_EXISTING_ID = 2 ** 30
 
 
 class TestEventBackend(BackendTest):
@@ -110,16 +118,20 @@ class TestEventBackend(BackendTest):
             },
             'fields': {
                 -1: {
-                    'association': 1,
+                    'association': const.FieldAssociations.registration,
                     'field_name': "instrument",
-                    'kind': 1,
+                    'title': "Instrument",
+                    'sortkey': 0,
+                    'kind': const.FieldDatatypes.str,
                     'entries': None,
                     'checkin': False,
                 },
                 -2: {
-                    'association': 1,
+                    'association': const.FieldAssociations.registration,
                     'field_name': "preferred_excursion_date",
-                    'kind': 5,
+                    'title': "Bevorzugtes Ausflugsdatum",
+                    'sortkey': 0,
+                    'kind': const.FieldDatatypes.date,
                     'entries': [["2109-08-16", "In the first coming"],
                                 ["2110-08-16", "During the second coming"]],
                     'checkin': True,
@@ -127,6 +139,8 @@ class TestEventBackend(BackendTest):
                 -3: {
                     'association': const.FieldAssociations.registration,
                     'field_name': "is_child",
+                    'title': "Ist Kind",
+                    'sortkey': 5,
                     'kind': const.FieldDatatypes.bool,
                     'entries': None,
                     'checkin': False,
@@ -161,6 +175,7 @@ class TestEventBackend(BackendTest):
                           1002: data['parts'][-2]['tracks'][-1]}
         data['parts'][-2]['fee_modifiers'][-1].update({'id': 1001, 'part_id': 1002})
         data['fee_modifiers'] = {1001: data['parts'][-2]['fee_modifiers'][-1]}
+        data['part_groups'] = {}
         # correct part and field ids
         tmp = self.event.get_event(self.key, new_id)
         part_map = {}
@@ -196,8 +211,7 @@ class TestEventBackend(BackendTest):
                     del data['fields'][oldfield]
                     break
 
-        self.assertEqual(data,
-                         self.event.get_event(self.key, new_id))
+        self.assertEqual(data, self.event.get_event(self.key, new_id))
         data['title'] = "Alternate Universe Academy"
         newpart = {
             'tracks': {
@@ -221,12 +235,13 @@ class TestEventBackend(BackendTest):
             'fee': decimal.Decimal("1.23"),
             'waitlist_field': None,
             'tracks': {
-                1002: {'id': 1002,
-                       'title': "Second lecture v2",
-                       'shortname': "Second v2",
-                       'num_choices': 5,
-                       'min_choices': 4,
-                       'sortkey': 3}
+                1002: {
+                    'title': "Second lecture v2",
+                    'shortname': "Second v2",
+                    'num_choices': 5,
+                    'min_choices': 4,
+                    'sortkey': 3,
+                }
             },
             'fee_modifiers': {
                 1001: {
@@ -237,15 +252,17 @@ class TestEventBackend(BackendTest):
             },
         }
         newfield = {
-            'association': 3,
+            'association': const.FieldAssociations.lodgement,
             'field_name': "kuea",
-            'kind': 1,
+            'title': "KäA",
+            'sortkey': -7,
+            'kind': const.FieldDatatypes.str,
             'entries': None,
             'checkin': False,
         }
         changed_field = {
-            'association': 2,
-            'kind': 5,
+            'association': const.FieldAssociations.registration,
+            'kind': const.FieldDatatypes.date,
             'entries': [
                 ["2110-08-15", "early second coming"],
                 ["2110-08-17", "late second coming"],
@@ -274,10 +291,11 @@ class TestEventBackend(BackendTest):
                 data['parts'][part] = newpart
                 data['parts'][part]['id'] = part
                 data['parts'][part]['event_id'] = new_id
-                self.assertEqual(set(x['title']
-                                     for x in data['parts'][part]['tracks'].values()),
-                                 set(x['title']
-                                     for x in tmp['parts'][part]['tracks'].values()))
+                self.assertEqual(
+                    set(x['title'] for x in data['parts'][part]['tracks'].values()),
+                    set(x['title'] for x in tmp['parts'][part]['tracks'].values()))
+                for track in tmp['parts'][part]['tracks']:
+                    tmp['parts'][part]['tracks'][track]['id'] = track
                 data['parts'][part]['tracks'] = tmp['parts'][part]['tracks']
                 data['parts'][part]['fee_modifiers'] = (
                     tmp['parts'][part]['fee_modifiers'])
@@ -298,28 +316,34 @@ class TestEventBackend(BackendTest):
         changed_field['id'] = field_map["preferred_excursion_date"]
         changed_field['event_id'] = new_id
         changed_field['field_name'] = "preferred_excursion_date"
-        data['fields'][field_map["preferred_excursion_date"]] = changed_field
+        data['fields'][field_map["preferred_excursion_date"]].update(changed_field)
         data['begin'] = datetime.date(2110, 9, 8)
         data['end'] = datetime.date(2111, 8, 20)
         # TODO dynamically adapt ids from the database result
-        data['tracks'] = {1002: {'id': 1002,
-                                 'part_id': 1002,
-                                 'title': 'Second lecture v2',
-                                 'shortname': "Second v2",
-                                 'num_choices': 5,
-                                 'min_choices': 4,
-                                 'sortkey': 3},
-                          1003: {'id': 1003,
-                                 'part_id': 1003,
-                                 'title': 'Third lecture',
-                                 'shortname': 'Third',
-                                 'num_choices': 2,
-                                 'min_choices': 2,
-                                 'sortkey': 2}}
+        data['tracks'] = {
+            1002: {
+                'id': 1002,
+                'part_id': 1002,
+                'title': 'Second lecture v2',
+                'shortname': "Second v2",
+                'num_choices': 5,
+                'min_choices': 4,
+                'sortkey': 3,
+            },
+            1003: {
+                'id': 1003,
+                'part_id': 1003,
+                'title': 'Third lecture',
+                'shortname': 'Third',
+                'num_choices': 2,
+                'min_choices': 2,
+                'sortkey': 2,
+            },
+        }
         data['fee_modifiers'] = changed_part['fee_modifiers']
+        data['part_groups'] = {}
 
-        self.assertEqual(data,
-                         self.event.get_event(self.key, new_id))
+        self.assertEqual(data, self.event.get_event(self.key, new_id))
 
         self.assertNotIn(new_id, old_events)
         new_events = self.event.list_events(self.key)
@@ -431,6 +455,12 @@ class TestEventBackend(BackendTest):
             ("event_parts", "course_tracks", "field_definitions", "courses",
              "orgas", "lodgement_groups", "lodgements", "registrations", "log",
              "questionnaire", "stored_queries", "mailinglists", "fee_modifiers")))
+
+        # Test deletion of event, cascading all blockers.
+        self.assertLess(
+            0,
+            self.event.delete_event(
+                self.key, 1, self.event.delete_event_blockers(self.key, 1)))
 
     @storage
     @as_users("annika", "garcia")
@@ -585,7 +615,8 @@ class TestEventBackend(BackendTest):
         }
         with self.assertRaises(ValueError) as cm:
             self.event.set_questionnaire(self.key, event_id, questionnaire)
-        self.assertIn("Must not duplicate field. (field_id)", cm.exception.args)
+        self.assertEqual("Must not duplicate field ('brings_balls'). (field_id)",
+                         cm.exception.args[0] % cm.exception.args[1])
 
         # Event mustn't have registrations to alter fee modifiers.
         reg_ids = self.event.list_registrations(self.key, event_id)
@@ -835,7 +866,8 @@ class TestEventBackend(BackendTest):
 
     @as_users("annika", "garcia")
     def test_visible_events(self) -> None:
-        expectation = {1: 'Große Testakademie 2222', 3: 'CyberTestAkademie'}
+        expectation = {
+            1: 'Große Testakademie 2222', 3: 'CyberTestAkademie', 4: 'TripelAkademie'}
         self.assertEqual(expectation, self.event.list_events(
             self.key, visible=True, archived=False))
 
@@ -1482,7 +1514,7 @@ class TestEventBackend(BackendTest):
                      'default_value': None,
                      'info': None,
                      'pos': 0,
-                     'readonly': None,
+                     'readonly': False,
                      'input_size': None,
                      'title': 'Ich bin unter 13 Jahre alt.',
                      'kind': const.QuestionnaireUsages.registration,
@@ -1619,7 +1651,7 @@ class TestEventBackend(BackendTest):
                     'default_value': None,
                     'info': "Du kannst freiwillig etwas mehr bezahlen um zukünftige"
                             " Akademien zu unterstützen.",
-                    'readonly': None,
+                    'readonly': False,
                     'input_size': None,
                     'title': "Ich möchte den Solidaritätszuschlag bezahlen.",
                 },
@@ -1654,17 +1686,6 @@ class TestEventBackend(BackendTest):
                  ['pedes', 'etc'])],
             order=(("reg.id", True),),)
 
-        # fix query spec (normally done by frontend)
-        query.spec.update({
-            'lodgement1.id': "int",
-            'part3.status': "int",
-            'course2.id': "int",
-            'lodgement2.xfield_contamination': "str",
-            'course1.xfield_room': "str",
-            'reg_fields.xfield_brings_balls': "bool",
-            'reg_fields.xfield_transportation': "str",
-            'part2.status': "int",
-        })
         result = self.event.submit_general_query(self.key, query, event_id=1)
         expectation = (
             {'birthday': datetime.date(2012, 6, 2),
@@ -2320,12 +2341,13 @@ class TestEventBackend(BackendTest):
         # field definitions
         new_data['event.field_definitions'].update({
             11000: {
-                'association': 1,
+                'association': const.FieldAssociations.registration,
                 'entries': [['good', 'good'],
                             ['neutral', 'so so'],
                             ['bad', 'not good']],
                 'event_id': 1,
-                'field_name': 'behaviour',
+                'field_name': "behaviour",
+                'title': "Benehmen",
                 'id': 11000,
                 'kind': const.FieldDatatypes.str,
                 'checkin': False,
@@ -2335,6 +2357,7 @@ class TestEventBackend(BackendTest):
                 'entries': None,
                 'event_id': 1,
                 'field_name': "solidarity",
+                'title': "Solidarität",
                 'id': 11001,
                 'kind': const.FieldDatatypes.bool,
                 'checkin': False,
@@ -2351,6 +2374,7 @@ class TestEventBackend(BackendTest):
             'readonly': True,
             'title': 'Vorsätze',
             'kind': const.QuestionnaireUsages.additional,
+            'default_value': None,
         }
         new_data['event.fee_modifiers'][13000] = {
             'id': 13000,
@@ -2536,7 +2560,9 @@ class TestEventBackend(BackendTest):
                             ['neutral', 'so so'],
                             ['bad', 'not good']],
                 'event_id': 1,
-                'field_name': 'behaviour',
+                'field_name': "behaviour",
+                'title': "Benehmen",
+                'sortkey': 0,
                 'id': 1001,
                 'kind': const.FieldDatatypes.str,
                 'checkin': False,
@@ -2545,7 +2571,9 @@ class TestEventBackend(BackendTest):
                 'association': const.FieldAssociations.registration,
                 'entries': None,
                 'event_id': 1,
-                'field_name': 'solidarity',
+                'field_name': "solidarity",
+                'title': "Solidarität",
+                'sortkey': 0,
                 'id': 1002,
                 'kind': const.FieldDatatypes.bool,
                 'checkin': False,
@@ -2568,6 +2596,7 @@ class TestEventBackend(BackendTest):
             'readonly': True,
             'title': 'Vorsätze',
             'kind': const.QuestionnaireUsages.additional,
+            'default_value': None,
         }
 
         result = self.event.export_event(self.key, 1)
@@ -3297,32 +3326,54 @@ class TestEventBackend(BackendTest):
                         'status': const.RegistrationPartStati.waitlist,
                     },
                     2: {
-                        'status': const.RegistrationPartStati.waitlist
-                    } if anid in {2, 3} else {},
+                        'status': (const.RegistrationPartStati.waitlist
+                                   if anid in {2, 3}
+                                   else const.RegistrationPartStati.participant)
+                    },
                     3: {
-                        'status': const.RegistrationPartStati.waitlist
-                    } if anid in {2, 3} else {},
+                        'status': (const.RegistrationPartStati.waitlist
+                                   if anid in {2, 3}
+                                   else const.RegistrationPartStati.participant)
+                    },
                 },
                 'fields': {
-                    'waitlist': i,
+                    'waitlist': i+1,
                 },
             }
             for i, anid in enumerate((5, 4, 3, 2, 1))
         ]
         for rdata in regs:
             self.event.set_registration(self.key, rdata)
-        self.assertEqual({1: [5, 4, 3, 2, 1], 2: [3, 2], 3: [3, 2]},
-                         self.event.get_waitlist(self.key, event_id=1))
+        # Registration 3 belongs to Garcia (persona_id 7).
+        expectation = {1: [5, 4, 3, 2, 1], 2: [3, 2], 3: [3, 2]}
+        self.assertEqual(expectation, self.event.get_waitlist(self.key, event_id=1))
         self.assertEqual({1: 3, 2: 1, 3: 1},
                          self.event.get_waitlist_position(self.key, event_id=1))
+        # Registration 2 belongs to Emilia (persona_id 5).
         self.assertEqual({1: 4, 2: 2, 3: 2},
                          self.event.get_waitlist_position(
                              self.key, event_id=1, persona_id=5))
+        # Unset waitlist field data.
+        reg_id = 4
+        reg_data = {
+            'id': reg_id,
+            'fields': {
+                'waitlist': None,
+            },
+        }
+        self.event.set_registration(self.key, reg_data)
+        # The altered registration will be placed first in the waitlist, because
+        # it defaults to 0.
+        for waitlist in expectation.values():
+            if reg_id in waitlist:
+                waitlist.remove(reg_id)
+                waitlist.insert(0, reg_id)
+        self.assertEqual(expectation, self.event.get_waitlist(self.key, event_id=1))
+
+        # Check that users can check their own waitlist position.
         self.login(USER_DICT["emilia"])
-        self.event._get_waitlist(self.key, event_id=1)  # pylint: disable=protected-access
         self.assertEqual({1: 4, 2: 2, 3: 2},
-                         self.event.get_waitlist_position(
-                             self.key, event_id=1))
+                         self.event.get_waitlist_position(self.key, event_id=1))
         with self.assertRaises(PrivilegeError):
             self.event.get_waitlist_position(
                 self.key, event_id=1, persona_id=1)
@@ -3504,23 +3555,25 @@ class TestEventBackend(BackendTest):
             'part_end': datetime.date(2110, 9, 21),
             'fee': decimal.Decimal("1.23"),
             'tracks': {
-                1002: {'id': 1002,
-                       'title': "Second lecture v2",  # hardcoded id 5
-                       'shortname': "Second v2",
-                       'num_choices': 5,
-                       'min_choices': 4,
-                       'sortkey': 3}}
+                1002: {
+                    'title': "Second lecture v2",  # hardcoded id 5
+                    'shortname': "Second v2",
+                    'num_choices': 5,
+                    'min_choices': 4,
+                    'sortkey': 3,
+                },
+            },
         }
         newfield = {
-            'association': 1,
+            'association': const.FieldAssociations.registration,
             'field_name': "kuea",
-            'kind': 1,
+            'kind': const.FieldDatatypes.date,
             'entries': None,
             'checkin': False,
         }
         changed_field = {
-            'association': 1,
-            'kind': 5,
+            'association': const.FieldAssociations.registration,
+            'kind': const.FieldDatatypes.date,
             'entries': [
                 ["2110-8-15", "early second coming"],
                 ["2110-8-17", "late second coming"],
@@ -3696,7 +3749,7 @@ class TestEventBackend(BackendTest):
         self.event.set_questionnaire(self.key, 1, data)
 
         # now check it
-        expectation = (35, (
+        expectation = (
             {'id': 1001,
              'change_note': None,
              'code': const.EventLogCodes.event_created,
@@ -3781,23 +3834,20 @@ class TestEventBackend(BackendTest):
              'event_id': 1001,
              'persona_id': None,
              'submitted_by': self.user['id']},
-            {'id': 1013,
-             'change_note': 'kuea',
+            {'change_note': 'instrument',
+             'code': const.EventLogCodes.field_removed,
+             'ctime': nearly_now(),
+             'event_id': 1001,
+             'persona_id': None,
+             'submitted_by': self.user['id']},
+            {'change_note': 'kuea',
              'code': const.EventLogCodes.field_added,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
              'submitted_by': self.user['id']},
-            {'id': 1014,
-             'change_note': 'preferred_excursion_date',
+            {'change_note': 'preferred_excursion_date',
              'code': const.EventLogCodes.field_updated,
-             'ctime': nearly_now(),
-             'event_id': 1001,
-             'persona_id': None,
-             'submitted_by': self.user['id']},
-            {'id': 1015,
-             'change_note': 'instrument',
-             'code': const.EventLogCodes.field_removed,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
@@ -3913,7 +3963,209 @@ class TestEventBackend(BackendTest):
              'ctime': nearly_now(),
              'event_id': 1,
              'persona_id': None,
-             'submitted_by': self.user['id'], }))
+             'submitted_by': self.user['id']},
+        )
 
-        result = self.event.retrieve_log(self.key, offset=offset)
-        self.assertEqual(expectation, result)
+        self.assertLogEqual(expectation, realm="event", offset=offset)
+
+    def _create_registration(self, persona_id: int, event_id: int) -> int:
+        event = self.event.get_event(self.key, event_id)
+        return self.event.create_registration(self.key, {
+            'persona_id': persona_id,
+            'event_id': event['id'],
+            'mixed_lodging': True,
+            'list_consent': True,
+            'notes': None,
+            'parts': {
+                p_id: {'status': const.RegistrationPartStati.applied}
+                for p_id in event['parts']
+            },
+            'tracks': {
+                t_id: {}
+                for p_id in event['parts'] for t_id in event['parts'][p_id]['tracks']
+            }
+        })
+
+    @as_users("annika")
+    def test_registration_timestamps(self) -> None:
+        persona_id = self.user['id']
+        event_ids = [1, 2]
+        reg_ids = {}
+        base_time = now()
+        delta = datetime.timedelta(seconds=42)
+        with freezegun.freeze_time(base_time) as frozen_time:
+            for event_id in event_ids:
+                reg_id = self._create_registration(persona_id, event_id)
+                frozen_time.tick(delta)
+                self.event.set_registration(
+                    self.key, {'id': reg_id, 'notes': "Important change!"})
+                frozen_time.tick(delta)
+                reg_ids[event_id] = reg_id
+            for i, (event_id, reg_id) in enumerate(reg_ids.items()):
+                reg = self.event.get_registration(self.key, reg_id)
+                self.assertEqual(reg['ctime'], base_time + 2 * i * delta)
+                self.assertEqual(reg['mtime'], base_time + (2 * i + 1) * delta)
+
+    @as_users("emilia")
+    def test_part_groups(self) -> None:
+        event_id = 4
+        event = self.event.get_event(self.key, event_id)
+
+        # Load expected sample part groups.
+        part_group_parts_data = self.get_sample_data("event.part_group_parts")
+        part_group_expectation = {
+            part_group_id: part_group
+            for part_group_id, part_group
+            in self.get_sample_data("event.part_groups").items()
+            if part_group['event_id'] == event_id
+        }
+        # Add dynamic data and convert enum.
+        for part_group in part_group_expectation.values():
+            part_group['part_ids'] = {
+                e['part_id'] for e in part_group_parts_data.values()
+                if e['part_group_id'] == part_group['id']
+            }
+            part_group['constraint_type'] = const.EventPartGroupType(
+                part_group['constraint_type'])
+        # Compare to retrieved data.
+        self.assertEqual(event['part_groups'], part_group_expectation)
+
+        # Check setting of part groups.
+
+        new_part_group = {
+            'title': "Everything",
+            'shortname': "all",
+            'notes': "Let's see what happens",
+            'part_ids': set(event['parts']),
+            'constraint_type': const.EventPartGroupType.Statistic,
+        }
+
+        # Setting is not allowed for non-privileged users.
+        with self.assertRaises(PrivilegeError):
+            self.event.set_part_groups(ANONYMOUS, event_id, {})
+        with self.switch_user("garcia"):
+            with self.assertRaises(PrivilegeError):
+                self.event.set_part_groups(self.key, event_id, {})
+
+        # Empty setter just returns 1.
+        self.assertEqual(self.event.set_part_groups(self.key, event_id, {}), 1)
+
+        new_part_group_id = self.event.set_part_groups(
+            self.key, event_id, {-1: new_part_group})
+        self.assertTrue(new_part_group_id)
+
+        with self.assertRaises(UNIQUE_VIOLATION):
+            self.event.set_part_groups(self.key, event_id, {-1: new_part_group})
+
+        data = new_part_group.copy()
+        data['shortname'] = "ALL"
+        with self.assertRaises(UNIQUE_VIOLATION):
+            self.event.set_part_groups(self.key, event_id, {-1: data})
+
+        data = new_part_group.copy()
+        data['title'] = "All"
+        with self.assertRaises(UNIQUE_VIOLATION):
+            self.event.set_part_groups(self.key, event_id, {-1: data})
+
+        data = new_part_group.copy()
+        data['shortname'] = "ALL"
+        data['title'] = "All"
+        self.event.set_part_groups(self.key, event_id, {-1: data})  # id 1005
+
+        # Simultaneous deletion and recreation of part group with same name works.
+        self.event.set_part_groups(
+            self.key, event_id, {1001: None, -1: new_part_group}  # id 1006
+        )
+
+        # Switching of shortnames for exisitng groups is also possible.
+        setter = {
+            1005: {'shortname': new_part_group['shortname']},
+            1006: {'shortname': data['shortname']},
+        }
+        self.assertTrue(self.event.set_part_groups(self.key, event_id, setter))  # type: ignore[arg-type]
+        part_group_expectation.update({
+            1005: {**data, **setter[1005], **{'event_id': event_id, 'id': 1005}},
+            1006: {**new_part_group, **setter[1006],
+                   **{'event_id': event_id, 'id': 1006}}
+        })
+
+        # Update and delete an existing group.
+        update = {
+            1: {
+                'notes': "Pack explosives for New Years!",
+            },
+            4: None,
+            1006: {
+                'part_ids': set(list(event['parts'])[:len(event['parts']) // 2])
+            }
+        }
+        self.assertTrue(self.event.set_part_groups(self.key, event_id, update))
+        part_group_expectation[1].update(update[1])  # type: ignore[arg-type]
+        del part_group_expectation[4]
+        part_group_expectation[1006].update(update[1006])  # type: ignore[arg-type]
+
+        self.assertEqual(
+            self.event.get_event(self.key, event_id)['part_groups'],
+            part_group_expectation
+        )
+
+        # ValueError is raised when trying to update or delete a nonexisting part group.
+        with self.assertRaises(ValueError):
+            self.event.set_part_groups(self.key, event_id, {NON_EXISTING_ID: None})
+        # ValueError when creating or updating a part group with a non existing part.
+        with self.assertRaises(ValueError):
+            self.event.set_part_groups(
+                self.key, event_id,
+                {-1: {**new_part_group, **{'part_ids': [NON_EXISTING_ID]}}})
+        with self.assertRaises(ValueError):
+            self.event.set_part_groups(
+                self.key, event_id, {1: {'part_ids': [NON_EXISTING_ID]}})
+
+        # Delete a part still linked to a part group.
+        self.assertTrue(self.event.set_event(
+            self.key, {'id': event_id, 'parts': {min(event['parts']): None}}))
+
+        export_expectation = {
+            1: {'constraint_type': const.EventPartGroupType.Statistic,
+                'notes': 'Pack explosives for New Years!',
+                'part_ids': [7, 8],
+                'shortname': '1.H.',
+                'title': '1. Hälfte'},
+            2: {'constraint_type': const.EventPartGroupType.Statistic,
+                'notes': None,
+                'part_ids': [9, 10, 11],
+                'shortname': '2.H.',
+                'title': '2. Hälfte'},
+            3: {'constraint_type': const.EventPartGroupType.Statistic,
+                'notes': None,
+                'part_ids': [9],
+                'shortname': 'OW',
+                'title': 'Oberwesel'},
+            5: {'constraint_type': const.EventPartGroupType.Statistic,
+                'notes': None,
+                'part_ids': [8, 11],
+                'shortname': 'KA',
+                'title': 'Kaub'},
+            1005: {'constraint_type': const.EventPartGroupType.Statistic,
+                   'notes': "Let's see what happens",
+                   'part_ids': [7, 8, 9, 10, 11],
+                   'shortname': 'all',
+                   'title': 'All'},
+            1006: {'constraint_type': const.EventPartGroupType.Statistic,
+                   'notes': "Let's see what happens",
+                   'part_ids': [7, 8],
+                   'shortname': 'ALL',
+                   'title': 'Everything'},
+        }
+        export = self.event.partial_export_event(self.key, event_id)
+        self.assertEqual(export['event']['part_groups'], export_expectation)
+
+        # Delete the entire event. Requires admin.
+        with self.switch_user("annika"):
+            blockers = self.event.delete_event_blockers(self.key, event_id)
+            self.assertEqual(
+                set(blockers),
+                {"orgas", "event_parts", "course_tracks", "part_groups",
+                 "part_group_parts", "log"}
+            )
+            self.assertTrue(self.event.delete_event(self.key, event_id, blockers))

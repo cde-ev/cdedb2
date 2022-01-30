@@ -2,12 +2,12 @@
 # pylint: disable=missing-module-docstring
 
 import datetime
-from typing import Dict, Set
 import urllib.parse
+from typing import Dict, Set
 
 from cdedb.common import CdEDBObject
 from tests.common import (
-    FrontendTest, UserIdentifier, UserObject, USER_DICT, admin_views, as_users,
+    USER_DICT, FrontendTest, UserIdentifier, UserObject, admin_views, as_users,
 )
 
 # TODO Profilfoto
@@ -178,11 +178,12 @@ class TestPrivacyFrontend(FrontendTest):
         if old_user:
             self.login(old_user)
 
-    def show_user_link(self, persona_id: int) -> str:
+    def show_user_link(self, persona_id: int, quote_me: bool = False) -> str:
         confirm_id = urllib.parse.quote_plus(self.app.app.encode_parameter(
             "core/show_user", "confirm_id", persona_id,
             persona_id=None, timeout=datetime.timedelta(hours=12)))
-        return f'/core/persona/{persona_id}/show?confirm_id={confirm_id}'
+        return (f'/core/persona/{persona_id}/show?'
+                f'confirm_id={confirm_id}&quote_me={quote_me}')
 
     def test_profile_base_information(self) -> None:
         # non-searchable user views normal account
@@ -357,6 +358,27 @@ class TestPrivacyFrontend(FrontendTest):
             self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
                                    check_div=False)
 
+        # they can not access non-searchable or archived users.
+        self.get(self.show_user_link(USER_DICT['charly']['id'], quote_me=True),
+                 status=403)
+        self.get(self.show_user_link(USER_DICT['hades']['id']), status=403)
+
+    @as_users("charly")
+    def test_profile_as_unsearchable_member(self) -> None:
+        inspected = USER_DICT['berta']
+        self.get(self.show_user_link(inspected['id']))
+
+        # members got first an un-quoted view on a profile, showing the basics
+        found = self._profile_base_view(inspected)
+        # The username must not be visible, although "Email" occurs as field
+        self.assertNonPresence(inspected['username'])
+        for field in self.ALL_FIELDS - found:
+            self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
+                                   check_div=False)
+
+        # they can not decide to got an quoted closer look on a profile
+        self.assertNoLink(content="Gesamtes Profil anzeigen")
+
     @as_users("inga")
     def test_ex_profile_as_member(self) -> None:
         # See #1821
@@ -519,6 +541,17 @@ class TestPrivacyFrontend(FrontendTest):
         # a disabled user should be viewable as an equal non-disabled user
         # TODO maybe add all above tests as subtests?
         self.skipTest("Test not yet implemented.")
+
+    @as_users("inga", "viktor")
+    def test_user_pages_unprivileged(self) -> None:
+        self.get('/core/persona/2/events', status=403)
+        self.get('/core/persona/2/mailinglists', status=403)
+        self.get('/core/persona/2/history', status=403)
+        self.get('/core/persona/2/adminchange', status=403)
+        self.get('/core/persona/2/foto/change', status=403)
+        self.get('/core/persona/2/username/adminchange', status=403)
+        self.get('/core/persona/2/dearchive', status=403)
+        self.post('/core/persona/2/activity/change', {'activity': False}, status=403)
 
     def test_user_search(self) -> None:
         users = ("annika", "berta", "farin", "martin", "nina", "quintus", "paul",

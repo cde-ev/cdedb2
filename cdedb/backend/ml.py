@@ -3,33 +3,33 @@
 """The ml backend provides mailing lists. This provides services to the
 event and assembly realm in the form of specific mailing lists.
 """
-from datetime import datetime
 import itertools
-from typing import Any, Collection, Dict, List, Optional, Set, Tuple, cast, overload
-
-from typing_extensions import Protocol
+from datetime import datetime
+from typing import (
+    Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, cast, overload,
+)
 
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
+import cdedb.subman as subman
 import cdedb.validationtypes as vtypes
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_array_validation as affirm_array,
-    affirm_set_validation as affirm_set, affirm_validation_typed as affirm,
-    internal, singularize,
+    affirm_set_validation as affirm_set, affirm_validation as affirm, internal,
+    singularize,
 )
 from cdedb.backend.event import EventBackend
-import cdedb.subman as subman
 from cdedb.common import (
-    MAILINGLIST_FIELDS, MOD_ALLOWED_FIELDS, RESTRICTED_MOD_ALLOWED_FIELDS, CdEDBLog,
-    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, PathLike,
-    PrivilegeError, RequestState, implying_realms, make_proxy, n_, unwrap, xsorted,
-    ADMIN_KEYS,
+    ADMIN_KEYS, MAILINGLIST_FIELDS, MOD_ALLOWED_FIELDS, RESTRICTED_MOD_ALLOWED_FIELDS,
+    CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers,
+    PathLike, PrivilegeError, RequestState, implying_realms, make_proxy, n_, unwrap,
+    xsorted,
 )
-from cdedb.subman.machine import SubscriptionAction, SubscriptionPolicy
 from cdedb.database.connection import Atomizer
 from cdedb.ml_type_aux import MLType, MLTypeLike
-from cdedb.query import Query, QueryOperators, QueryScope
+from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
+from cdedb.subman.machine import SubscriptionAction, SubscriptionPolicy
 
 SubStates = Collection[const.SubscriptionState]
 
@@ -250,7 +250,7 @@ class MlBackend(AbstractBackend):
         }
         return self.sql_insert(rs, "ml.log", new_log)
 
-    @access("ml")
+    @access("ml", "auditor")
     def retrieve_log(self, rs: RequestState,
                      codes: Optional[Collection[const.MlLogCodes]] = None,
                      mailinglist_ids: Optional[Collection[int]] = None,
@@ -271,7 +271,8 @@ class MlBackend(AbstractBackend):
         mailinglist_ids = affirm_set(vtypes.ID, mailinglist_ids or set())
         if not (self.is_admin(rs) or (mailinglist_ids
                 and all(self.may_manage(rs, ml_id)
-                        for ml_id in mailinglist_ids))):
+                        for ml_id in mailinglist_ids))
+                or "auditor" in rs.user.roles):
             raise PrivilegeError(n_("Not privileged."))
         return self.generic_retrieve_log(
             rs, const.MlLogCodes, "mailinglist", "ml.log", codes=codes,
@@ -293,13 +294,13 @@ class MlBackend(AbstractBackend):
                                       True))
             query.constraints.append(("is_archived", QueryOperators.equal,
                                       query.scope == QueryScope.archived_persona))
-            query.spec["is_ml_realm"] = "bool"
-            query.spec["is_archived"] = "bool"
+            query.spec["is_ml_realm"] = QuerySpecEntry("bool", "")
+            query.spec["is_archived"] = QuerySpecEntry("bool", "")
             # Exclude users of any higher realm (implying event)
             for realm in implying_realms('ml'):
                 query.constraints.append(
                     ("is_{}_realm".format(realm), QueryOperators.equal, False))
-                query.spec["is_{}_realm".format(realm)] = "bool"
+                query.spec["is_{}_realm".format(realm)] = QuerySpecEntry("bool", "")
         else:
             raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query)
@@ -375,10 +376,17 @@ class MlBackend(AbstractBackend):
         with Atomizer(rs):
             data = self.sql_select(rs, "ml.mailinglists", MAILINGLIST_FIELDS,
                                    mailinglist_ids)
-            ret = {e['id']: e for e in data}
-            # Maybe more elegant than using get_ml_type?
-            # for k in ret:
-            #    ret[k]['type'] = ml_type.TYPE_MAP[ret[k]['ml_type']]
+            ret = {}
+            for e in data:
+                e['ml_type'] = const.MailinglistTypes(e['ml_type'])
+                e['ml_type_class'] = ml_type.TYPE_MAP[e['ml_type']]
+                e['domain'] = const.MailinglistDomain(e['domain'])
+                e['domain_str'] = e['domain'].get_domain()
+                e['mod_policy'] = const.ModerationPolicy(e['mod_policy'])
+                e['attachment_policy'] = const.AttachmentPolicy(e['attachment_policy'])
+                e['registration_stati'] = [
+                    const.RegistrationPartStati(v) for v in e['registration_stati']]
+                ret[e['id']] = e
             data = self.sql_select(
                 rs, "ml.moderators", ("persona_id", "mailinglist_id"), mailinglist_ids,
                 entity_key="mailinglist_id")
@@ -391,15 +399,10 @@ class MlBackend(AbstractBackend):
             data = self.sql_select(
                 rs, "ml.whitelist", ("address", "mailinglist_id"), mailinglist_ids,
                 entity_key="mailinglist_id")
-        for anid in mailinglist_ids:
-            whitelist = {d['address'] for d in data if d['mailinglist_id'] == anid}
-            if 'whitelist' in ret[anid]:
-                raise RuntimeError()
-            ret[anid]['whitelist'] = whitelist
-        for anid in mailinglist_ids:
-            ret[anid]['domain_str'] = str(const.MailinglistDomain(
-                ret[anid]['domain']))
-            ret[anid]['ml_type_class'] = ml_type.TYPE_MAP[ret[anid]['ml_type']]
+        for ml in ret.values():
+            ml['whitelist'] = set()
+        for e in data:
+            ret[e['mailinglist_id']]['whitelist'].add(e['address'])
         return ret
 
     class _GetMailinglistProtocol(Protocol):
@@ -1184,6 +1187,30 @@ class MlBackend(AbstractBackend):
         ret = set(data.values())
         ret.add(rs.user.username)
         return ret
+
+    @access("ml")
+    def get_implicit_whitelist(self, rs: RequestState, mailinglist_id: int
+                               ) -> Set[str]:
+        """Get all usernames of users which have a custom subscription address
+        configured for the mailinglist.
+
+        This allows those users to also pass moderation with mails sent from
+        their username address instead of just their subscription address,
+        if the ml has non_subscribers moderation policy.
+        Take care to use this function only in this case!
+
+        :returns: Set of mailadresses to whitelist
+        """
+        persona_ids = self.get_subscription_states(
+            rs, mailinglist_id, states=const.SubscriptionState.subscribing_states())
+        persona_ids = {
+            persona_id for persona_id, address
+            in self.get_subscription_addresses(
+                rs, mailinglist_id, persona_ids, explicits_only=True).items()
+            if address
+        }
+        return {persona['username'] for persona
+                in self.core.get_ml_users(rs, persona_ids).values()}
 
     @access("ml")
     def is_subscribed(self, rs: RequestState, persona_id: Optional[int],

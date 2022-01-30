@@ -2,12 +2,11 @@
 
 import enum
 import itertools
+import typing
 from collections import OrderedDict
 from typing import (
-    TYPE_CHECKING, Any, Collection, Dict, List, Mapping, Optional, Set, Type, Union,
+    TYPE_CHECKING, Collection, Dict, List, Literal, Mapping, Optional, Set, Type, Union,
 )
-
-from typing_extensions import Literal
 
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
@@ -16,11 +15,10 @@ from cdedb.common import (
 from cdedb.database.constants import (
     MailinglistDomain, MailinglistTypes, RegistrationPartStati,
 )
-from cdedb.subman.machine import SubscriptionPolicy
 from cdedb.query import Query, QueryOperators, QueryScope
+from cdedb.subman.machine import SubscriptionPolicy
 
 SubscriptionPolicyMap = Dict[int, SubscriptionPolicy]
-TypeMapping = Mapping[str, Type[Any]]
 
 
 class BackendContainer:
@@ -34,7 +32,7 @@ class BackendContainer:
 def get_full_address(val: CdEDBObject) -> str:
     """Construct the full address of a mailinglist."""
     if isinstance(val, dict):
-        return val['local_part'] + '@' + str(MailinglistDomain(val['domain']))
+        return val['local_part'] + '@' + MailinglistDomain(val['domain']).get_domain()
     else:
         raise ValueError(n_("Cannot determine full address for %(input)s."),
                          {'input': val})
@@ -86,8 +84,8 @@ class GeneralMailinglist:
     allow_unsub: bool = True
 
     # Additional fields for validation. See docstring for details.
-    mandatory_validation_fields: TypeMapping = {}
-    optional_validation_fields: TypeMapping = {}
+    mandatory_validation_fields: vtypes.TypeMapping = {}
+    optional_validation_fields: vtypes.TypeMapping = {}
 
     @classmethod
     def get_additional_fields(cls) -> Mapping[
@@ -98,7 +96,7 @@ class GeneralMailinglist:
             **cls.mandatory_validation_fields,
             **cls.optional_validation_fields,
         }.items():
-            if getattr(argtype, "__origin__", None) is list:
+            if typing.get_origin(argtype) is list:
                 ret[field] = "[str]"
             else:
                 ret[field] = "str"
@@ -283,7 +281,7 @@ class AllMembersImplicitMeta(GeneralMailinglist):
 class EventAssociatedMeta(GeneralMailinglist):
     """Metaclass for all event associated mailinglists."""
     # Allow empty event_id to mark legacy event-lists.
-    mandatory_validation_fields: TypeMapping = {
+    mandatory_validation_fields: vtypes.TypeMapping = {
         "event_id": Optional[vtypes.ID]  # type: ignore
     }
 
@@ -406,7 +404,7 @@ class RestrictedTeamMailinglist(TeamMeta, MemberInvitationOnlyMailinglist):
 
 
 class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
-    mandatory_validation_fields: TypeMapping = {
+    mandatory_validation_fields: vtypes.TypeMapping = {
             **EventAssociatedMeta.mandatory_validation_fields,
             "registration_stati": List[RegistrationPartStati],
     }
@@ -472,16 +470,10 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
 
         event = bc.event.get_event(rs, mailinglist["event_id"])
 
-        status_column = ",".join(
-            "part{}.status".format(part_id) for part_id in event["parts"])
-        spec = {
-            'reg.id': 'id',
-            'persona.id': 'id',
-            status_column: 'int',
-        }
+        status_column = ",".join(f"part{part_id}.status" for part_id in event["parts"])
         query = Query(
             scope=QueryScope.registration,
-            spec=spec,
+            spec=QueryScope.registration.get_spec(event=event),
             fields_of_interest=("persona.id",),
             constraints=[
                 (status_column, QueryOperators.oneof,
@@ -660,7 +652,10 @@ MLType = Type[GeneralMailinglist]
 
 def get_type(val: Union[str, int, MLTypeLike]) -> MLType:
     if isinstance(val, str):
-        val = int(val)
+        if val.startswith(MailinglistTypes.__name__):
+            val = MailinglistTypes[val.replace(MailinglistTypes.__name__ + ".", "")]
+        else:
+            val = int(val)
     if isinstance(val, int):
         val = MailinglistTypes(val)
     if isinstance(val, MailinglistTypes):

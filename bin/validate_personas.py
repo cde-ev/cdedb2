@@ -1,25 +1,21 @@
 #!/usr/bin/env python3
 from typing import Optional
 
-from cdedb.script import make_backend, setup, Script, CoreBackend
 import cdedb.validationtypes as vtypes
-from cdedb.backend.common import affirm_validation_typed as affirm
-
-# Configuration
-
-# The admin id will need to be replaces before use.
-executing_admin_id = -1
-rs = setup(persona_id=executing_admin_id, dbuser="cdb_admin",
-           dbpassword="9876543210abcdefghijklmnopqrst")()
+from cdedb.backend.common import affirm_validation as affirm
+from cdedb.script import Script
 
 # Prepare stuff
 
-core: CoreBackend = make_backend("core")
+script = Script(dbuser="cdb_persona")
+rs = script.rs()
+core = script.make_backend("core")
 
 # Execution
 
-with Script(rs, dry_run=False):
+with script:
     persona_id: Optional[int] = -1
+    errors = 0
     while True:
         persona_id = core.next_persona(
             rs, persona_id=persona_id, is_member=None, is_archived=False)
@@ -30,12 +26,13 @@ with Script(rs, dry_run=False):
         # Validate ml data
         persona = core.get_ml_user(rs, persona_id)
         try:
-            affirm(vtypes.Persona, persona, _ignore_warnings=True)
+            affirm(vtypes.Persona, persona)
         except Exception as e:
             print("-" * 80)
             print(f"Error for persona {persona_id}:")
             print(e.__class__)
             print(e)
+            errors += 1
             continue
 
         # Validate event data if applicable
@@ -44,12 +41,13 @@ with Script(rs, dry_run=False):
 
         persona = core.get_event_user(rs, persona_id)
         try:
-            affirm(vtypes.Persona, persona, _ignore_warnings=True)
+            affirm(vtypes.Persona, persona)
         except Exception as e:
             print("-" * 80)
             print(f"Error for persona {persona_id}:")
             print(e.__class__)
             print(e)
+            errors += 1
             continue
 
         # Validate cde/total data if applicable
@@ -58,10 +56,14 @@ with Script(rs, dry_run=False):
 
         persona = core.get_total_persona(rs, persona_id)
         try:
-            affirm(vtypes.Persona, persona, _ignore_warnings=True)
+            affirm(vtypes.Persona, persona)
         except Exception as e:
             print("-" * 80)
             print(f"Error for persona {persona_id}:")
             print(e.__class__)
             print(e)
+            errors += 1
             continue
+
+    if not errors:
+        print("All personas were validated successfully.")

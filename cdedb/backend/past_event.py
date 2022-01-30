@@ -5,17 +5,14 @@ concluded events.
 """
 
 import datetime
-from typing import Any, Collection, Dict, List, Optional, Set, Tuple, Union
-
-from typing_extensions import Protocol
+from typing import Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, Union
 
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     AbstractBackend, Silencer, access, affirm_set_validation as affirm_set,
-    affirm_validation_typed as affirm,
-    affirm_validation_typed_optional as affirm_optional, singularize,
-    read_conditional_write_composer,
+    affirm_validation as affirm, affirm_validation_optional as affirm_optional,
+    read_conditional_write_composer, singularize,
 )
 from cdedb.backend.event import EventBackend
 from cdedb.common import (
@@ -103,7 +100,7 @@ class PastEventBackend(AbstractBackend):
         }
         return self.sql_insert(rs, "past_event.log", data)
 
-    @access("cde_admin", "event_admin")
+    @access("cde_admin", "event_admin", "auditor")
     def retrieve_past_log(self, rs: RequestState,
                           codes: Collection[const.PastEventLogCodes] = None,
                           pevent_id: int = None, offset: int = None,
@@ -504,7 +501,7 @@ class PastEventBackend(AbstractBackend):
                     pcourse['pevent_id'], change_note=pcourse['title'])
         return ret
 
-    @access("cde_admin", "event_admin")
+    @access("core_admin", "cde_admin", "event_admin")
     def add_participant(self, rs: RequestState, pevent_id: int,
                         pcourse_id: Optional[int], persona_id: int,
                         is_instructor: bool = False, is_orga: bool = False
@@ -530,14 +527,15 @@ class PastEventBackend(AbstractBackend):
                     self.remove_participant(rs, pevent_id, pcourse_id=None,
                                             persona_id=persona_id)
                 else:
-                    rs.notify("error", n_("User is already pure event participant."))
                     return 0
-            ret = self.sql_insert(rs, "past_event.participants", data)
-            self.past_event_log(rs, const.PastEventLogCodes.participant_added,
-                                pevent_id, persona_id=persona_id)
+            ret = self.sql_insert(rs, "past_event.participants", data,
+                                  drop_on_conflict=True)
+            if ret:
+                self.past_event_log(rs, const.PastEventLogCodes.participant_added,
+                                    pevent_id, persona_id=persona_id)
         return ret
 
-    @access("cde_admin", "event_admin")
+    @access("core_admin", "cde_admin", "event_admin")
     def remove_participant(self, rs: RequestState, pevent_id: int,
                            pcourse_id: Optional[int], persona_id: int
                            ) -> DefaultReturnCode:

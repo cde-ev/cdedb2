@@ -1,0 +1,144 @@
+{% set sidenav_active='event_stats' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block title %}
+    {% trans title=ambience['event']['title']%}
+    	Statistics ({{ title }})
+    {% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+{{ super() }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+{{ util.breadcrumb_link(cdedblink("event/stats"), gettext("Statistics"), active=True) }}
+{% endblock %}
+{% block heading %}
+    {{ util.context_heading(gettext("Statistics"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+{% endblock %}
+{% block content %}
+    <h3>{% trans %}Participant Statistics{% endtrans %}</h3>
+        <table id="participant-stats" class="table table-slim table-condensed table-stats">
+            <thead>
+                <tr>
+                    <th colspan="2"></th>
+                    {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+                        <th class="text-right">
+                            {% if ambience['event']['parts']|length + ambience['event']['part_groups']|length > 1 %}
+                                {{ part['shortname'] }}
+                            {% else %}
+                                {% trans %}Count{% endtrans %}
+                            {% endif %}
+                        </th>
+                    {% endfor %}
+                    {% for part_group_id, part_group in ambience['event']['part_groups']|keydictsort(EntitySorter.event_part_group) %}
+                        <th class="text-right {% if loop.first %}b-left{% endif %}">
+                            {{ part_group['shortname'] }}
+                        </th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for stat, row in per_part_statistics.items() %}
+                    <tr>
+                        {% if stat.indent %}
+                            <th class="indent"></th>
+                            <th>{{ gettext(stat.value) }}</th>
+                        {% else %}
+                            <th colspan="2">{{ gettext(stat.value) }}</th>
+                        {% endif %}
+                        {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+                            <td class="text-right">
+                                {% set query = stat.get_query(ambience['event'], part_id) %}
+                                {% set datum = row[part_id] %}
+                                {% if query %}
+                                    {{ util.href(
+                                        cdedblink('event/registration_query', query.serialize()) + "#query-results",
+                                        datum, anid="part_" + stat.name + "_" + part_id|string) }}
+                                {% else %}
+                                    {{ datum }}
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                        {% for part_group_id, part_group in ambience['event']['part_groups']|keydictsort(EntitySorter.event_part_group) %}
+                            <td class="text-right {% if loop.first %}b-left{% endif %}">
+                                {% set query = stat.get_query_part_group(ambience['event'], part_group_id) %}
+                                {% set datum = row[-part_group_id] %}
+                                {% if query %}
+                                    {{ util.href(
+                                        cdedblink('event/registration_query', query.serialize()) + "#query-results",
+                                        datum, anid="part_group_" + stat.name + "_" + part_group_id|string) }}
+                                {% else %}
+                                    {{ datum }}
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% if ambience['event']['tracks'] %}
+        <h3>{% trans %}Course Statistics{% endtrans %}</h3>
+            <table id="course-stats" class="table table-condensed table-slim table-stats">
+                <thead>
+                    <tr>
+                        <th></th>
+                        {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
+                            <th class="text-right">
+                                {% if ambience['event']['tracks']|length > 1 %}
+                                    {{ track['shortname'] }}
+                                {% else %}
+                                    {% trans %}Count{% endtrans %}
+                                {% endif %}
+                            </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for x, row in grouper.choice_track_map.items() %}
+                        <tr>
+                            <th>{% trans x = x + 1 %}In {{ x }}. Choice{% endtrans %}</th>
+                            {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
+                                <td class="text-right">
+                                    {% if row[track_id] is none %}
+                                        –
+                                    {% else %}
+                                        {% set query = grouper.get_query(ambience['event'], track_id, x) %}
+                                        {% set page = query.scope.get_target() %}
+                                        {% if query %}
+                                            {{ util.href(
+                                                cdedblink(page, query.serialize()) + "#query-results",
+                                                row[track_id]|length, anid="part_in_" + x|string +  "_choice_" + track_id|string) }}
+                                        {% else %}
+                                            {{ row[track_id]|length }}
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                    {% for stat, row in per_track_statistics.items() %}
+                        <tr>
+                            <th>{{ gettext(stat.value) }}</th>
+                            {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
+                                <td class="text-right">
+                                    {% if row[track_id] is none %}
+                                        –
+                                    {% else %}
+                                        {% set query = stat.get_query(ambience['event'], track_id) %}
+                                        {% set page = query.scope.get_target() %}
+                                        {% if query %}
+                                            {{ util.href(
+                                                cdedblink(page, query.serialize()) + "#query-results",
+                                                row[track_id], anid="part_" + stat.name + "_" + track_id|string) }}
+                                        {% else %}
+                                            {{ row[track_id] }}
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                <tbody>
+            </table>
+    {% endif %}
+
+{% endblock %}
