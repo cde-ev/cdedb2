@@ -14,6 +14,8 @@ from typing import Any, Collection, Dict, List, Optional, Sequence, Tuple, Union
 import psycopg2.extensions
 import psycopg2.extras
 
+# TODO we do not want to import from cdedb.common
+from cdedb.common import unwrap
 from cdedb.database.connection import ConnectionContainer, n_
 
 # we do not want to import from cdedb.common here
@@ -153,11 +155,7 @@ class QueryMixin:
             query += " ON CONFLICT DO NOTHING"
         query += f" RETURNING {entity_key}"
         params = tuple(data[key] for key in keys)
-        if result := self.query_one(container, query, params) is None:
-            return 0
-        else:
-            [value] = result.values()
-            return value
+        return unwrap(self.query_one(container, query, params)) or 0
 
     def sql_insert_many(self, container: ConnectionContainer, table: str,
                         data: Sequence[CdEDBObject]) -> int:
