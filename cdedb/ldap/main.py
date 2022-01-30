@@ -8,7 +8,7 @@ from twisted.internet.protocol import ServerFactory
 from twisted.python import log
 from twisted.python.components import registerAdapter
 
-from cdedb.ldap.sql import LDAPsqlEntry
+from cdedb.ldap.entry import LDAPsqlEntry
 
 
 class LDAPServerFactory(ServerFactory):
@@ -29,11 +29,10 @@ class LDAPServerFactory(ServerFactory):
 
 
 if __name__ == "__main__":
-    port = 389
+    port = 20389
     # First of all, to show logging info in stdout :
     log.startLogging(sys.stderr)
-    # TODO instanicate the root dn (CdE organization dn?), the rest is done recursively
-    root = ...
+    root = LDAPsqlEntry("")
     # When the ldap protocol handle the ldap tree,
     # it retrieves it from the factory adapting
     # the factory to the IConnectedLDAPEntry interface

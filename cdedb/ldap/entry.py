@@ -86,7 +86,7 @@ class LDAPsqlEntry(
         """
         attributes = attributes or self._get_entity(self.dn)
         if attributes is None:
-            failure.Failure(LDAPTreeNoSuchEntry())
+            return failure.Failure(LDAPTreeNoSuchEntry())
         for k, v in attributes.items():
             self._attributes[k] = attributeset.LDAPAttributeSet(k, v)
 
