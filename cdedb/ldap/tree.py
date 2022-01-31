@@ -2,7 +2,8 @@ import logging
 from typing import Callable, Dict, List, TypedDict
 
 from ldaptor.protocols.ldap.distinguishedname import (
-    DistinguishedName as DN, RelativeDistinguishedName as RDN,
+    DistinguishedName as DN, LDAPAttributeTypeAndValue as ATV,
+    RelativeDistinguishedName as RDN,
 )
 
 from cdedb.common import unwrap
@@ -84,10 +85,20 @@ class LDAPsqlTree(QueryMixin):
     def get_ml_subscriber_groups(self, dns: List[DN]) -> LDAPObjectMap:
         pass
 
+    def _list_entities(self, query: str, attribute_key: str) -> List[RDN]:
+        """Construct the RDN of all entities returned by the given query."""
+        data = self.query_all(self.rs, query, [])
+        return [
+            RDN(
+                attributeTypesAndValues=[
+                    ATV(attributeType=attribute_key, value=e[attribute_key])
+                ]
+            ) for e in data
+        ]
+
     def list_duas(self) -> List[RDN]:
         query = "SELECT cn FROM ldap.duas"
-        dua_rdns = ...
-        return dua_rdns
+        return self._list_entities(query, "cn")
 
     def list_users(self) -> List[RDN]:
         pass
