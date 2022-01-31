@@ -12,7 +12,7 @@ from twisted.internet import defer, error
 from twisted.python import failure
 
 from cdedb.common import unwrap
-from cdedb.ldap.tree import LDAP_BRANCHES, LDAP_LEAFS, Attributes
+from cdedb.ldap.tree import LDAPObject, LDAPObjectMap, LDAPsqlTree
 
 
 class LDAPTreeNoSuchEntry(Exception):
@@ -43,28 +43,29 @@ class LDAPsqlEntry(
     add, delete or modify an entry will fail immediately. Those endpoints are only
     contained because the default LDAPServer of ldaptor assumes they are implemented.
     """
-    def __init__(self, dn: Union[DistinguishedName, str], attributes: Attributes = None, *a, **kw):
+    def __init__(self, dn: Union[DistinguishedName, str], tree: LDAPsqlTree, attributes: LDAPObject = None, *a, **kw):
         entry.BaseLDAPEntry.__init__(self, dn, *a, **kw)
+        # this is our interface to the database
+        self.tree = tree
         # root entry
         if self.dn == "":
             return
         # this also checks whether the given dn corresponds to a valid entry
         self._load(attributes=attributes)
 
-    @staticmethod
-    def _get_entities(dns: List[DistinguishedName]) -> Dict[DistinguishedName, Optional[Attributes]]:
+    def _get_entities(self, dns: List[DistinguishedName]) -> Dict[DistinguishedName, Optional[LDAPObject]]:
         """Get all attributes of the given entities."""
         ret = dict()
         # get all attributes of non-leaf ldap entries
         for dn in dns:
-            if dn.getText() in LDAP_BRANCHES:
-                ret[dn] = LDAP_BRANCHES[dn.getText()]
+            if dn.getText() in self.tree.branches:
+                ret[dn] = self.tree.branches[dn.getText()]
         # get all attributes of leaf ldap entries
         parents = set(dn.up() for dn in dns)
         for parent in parents:
-            if parent.getText() in LDAP_LEAFS:
+            if parent.getText() in self.tree.leafs:
                 siblings = [dn for dn in dns if dn.split()[1:] == parent.split()]
-                getter = LDAP_LEAFS[parent.getText()]["get_entities"]
+                getter = self.tree.leafs[parent.getText()]["get_entities"]
                 ret.update(getter(siblings))
         # initialize all dns which are not found with None, so they don't pass the
         # validity check inside _load during initialization
@@ -74,10 +75,10 @@ class LDAPsqlEntry(
                 ret[dn] = None
         return ret
 
-    def _get_entity(self, dn: DistinguishedName) -> Optional[Attributes]:
+    def _get_entity(self, dn: DistinguishedName) -> Optional[LDAPObject]:
         return unwrap(self._get_entities([dn]))
 
-    def _load(self, attributes: Attributes = None):
+    def _load(self, attributes: LDAPObject = None):
         """Load own attributes.
 
         This accepts a set of Attributes to be used instead of fetching them from the
@@ -95,24 +96,23 @@ class LDAPsqlEntry(
         if self.dn == "":
             return None
         else:
-            return self.__class__(self.dn.up())
+            return self.__class__(self.dn.up(), tree=self.tree)
 
-    @staticmethod
-    def _get_children(parent_dn: DistinguishedName) -> Optional[List[DistinguishedName]]:
+    def _get_children(self, parent_dn: DistinguishedName) -> Optional[List[DistinguishedName]]:
         """Return the children of the given entry."""
         ret = list()
         # get all branch children
-        for dn_str in LDAP_BRANCHES:
+        for dn_str in self.tree.branches:
             dn = DistinguishedName(dn_str)
             # here, we compare if the given dn is the parent of the branch dn
             if dn.up() == parent_dn:
                 ret.append(dn)
         # get all leaf children
-        for dn_str in LDAP_LEAFS:
+        for dn_str in self.tree.leafs:
             dn = DistinguishedName(dn_str)
             # attention, since LDAP_LEAFS maps already the _parent_ dn to its children
             if dn == parent_dn:
-                children_rdns = LDAP_LEAFS[dn_str]["list_entities"]()
+                children_rdns = self.tree.leafs[dn_str]["list_entities"]()
                 children_dns = [DistinguishedName(listOfRDNs=[rdn, *dn.listOfRDNs])
                                 for rdn in children_rdns]
                 ret.extend(children_dns)
@@ -124,7 +124,7 @@ class LDAPsqlEntry(
             return None
         attributes = self._get_entities(dns)
 
-        children = [self.__class__(dn, attributes=attributes[dn]) for dn in dns]
+        children = [self.__class__(dn, attributes=attributes[dn], tree=self.tree) for dn in dns]
         if callback is None:
             return children
         else:
@@ -149,7 +149,7 @@ class LDAPsqlEntry(
         assert (len(me) == 0) or (it[-len(me):] == me)
         rdn = it[-len(me) - 1]
         childDN = distinguishedname.DistinguishedName(listOfRDNs=(rdn,) + me)
-        c = self.__class__(childDN)
+        c = self.__class__(childDN, tree=self.tree)
         return c.lookup(dn)
 
     def addChild(self, rdn, attributes):

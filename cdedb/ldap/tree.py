@@ -10,11 +10,13 @@ from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import ConnectionContainer, connection_pool_factory
 from cdedb.database.query import QueryMixin
 
-##############
-# Attributes #
-##############
+LDAPObject = Dict[str, List[str]]
+LDAPObjectMap = Dict[DN, LDAPObject]
 
-Attributes = Dict[str, List[str]]
+
+class LdapLeaf(TypedDict):
+    get_entities: Callable[[List[DN]], LDAPObjectMap]
+    list_entities: Callable[[], List[RDN]]
 
 
 class LDAPsqlTree(QueryMixin):
@@ -31,12 +33,12 @@ class LDAPsqlTree(QueryMixin):
         super().__init__(self.logger)
 
     @staticmethod
-    def db_key(dn: DN):
+    def _db_key(dn: DN):
         rdn = dn.split()[0]
         attribute_value = unwrap(rdn.split())
         return attribute_value.value
 
-    def get_entities(self, query: str, dns: List[DN]) -> Dict[DN, Attributes]:
+    def _get_entities(self, query: str, dns: List[DN]) -> LDAPObjectMap:
         """Retrieve all dns with the specified query and format them accordingly.
 
         Each query result is converted in an attributes' dict, where the name of the
@@ -46,7 +48,7 @@ class LDAPsqlTree(QueryMixin):
         """
         # TODO check that this is equal for all dns
         attribute_key = dns[0].split()[0].split()[0].attributeType
-        dn_to_key = {dn: self.db_key(dn) for dn in dns}
+        dn_to_key = {dn: self._db_key(dn) for dn in dns}
         data = self.query_all(self.rs, query, (dn_to_key.values(),))
         # the attributes of each entry have to be a list of strings
         entries = {
@@ -56,192 +58,134 @@ class LDAPsqlTree(QueryMixin):
         }
         return {dn: entries.get(dn_to_key.get(dn)) for dn in dns}
 
-    def get_duas(self, dns: List[DN]) -> Dict[DN, Attributes]:
+    def get_duas(self, dns: List[DN]) -> LDAPObjectMap:
         query = "SELECT cn, password_hash FROM ldap.duas WHERE cn = ANY(%s)"
-        entities = self.get_entities(query, dns)
+        entities = self._get_entities(query, dns)
         # add the object class to the entities
         entities = {dn: dict(**entity, objectclass=["person"])
                     for dn, entity in entities.items()}
         return entities
 
+    def get_users(self, dns: List[DN]) -> LDAPObjectMap:
+        pass
 
-tree = LDAPsqlTree()
+    def get_status_groups(self, dns: List[DN]) -> LDAPObjectMap:
+        pass
 
+    def get_assembly_presider_groups(self, dns: List[DN]) -> LDAPObjectMap:
+        pass
 
-#
-# duas
-#
+    def get_event_orga_groups(self, dns: List[DN]) -> LDAPObjectMap:
+        pass
 
+    def get_ml_moderator_groups(self, dns: List[DN]) -> LDAPObjectMap:
+        pass
 
-def get_duas(dns: List[DN]) -> Dict[DN, Attributes]:
-    pass
+    def get_ml_subscriber_groups(self, dns: List[DN]) -> LDAPObjectMap:
+        pass
 
+    def list_duas(self) -> List[RDN]:
+        query = "SELECT cn FROM ldap.duas"
+        dua_rdns = ...
+        return dua_rdns
 
-#
-# users
-#
+    def list_users(self) -> List[RDN]:
+        pass
 
+    def list_assembly_presider_groups(self) -> List[RDN]:
+        pass
 
-def get_users(dns: List[DN]) -> Dict[DN, Attributes]:
-    pass
+    def list_event_orga_groups(self) -> List[RDN]:
+        pass
 
+    def list_ml_moderator_groups(self) -> List[RDN]:
+        pass
 
-#
-# groups
-#
+    def list_ml_subscriber_groups(self) -> List[RDN]:
+        pass
 
+    def list_status_groups(self) -> List[RDN]:
+        pass
 
-def get_status_groups(dns: List[DN]) -> Dict[DN, Attributes]:
-    pass
+    @property
+    def branches(self) -> Dict[str, LDAPObject]:
+        """All non-leaf ldap entries, mapping their DN to their attributes."""
+        return {
+            "dc=de": {
+                "objectClass": ["dcObject", "top"],
+            },
+            "dc=cde-ev,dc=de": {
+                "objectClass": ["dcObject", "organization"],
+                "o": ["CdE e.V."],
+            },
+            "ou=duas,dc=cde-ev,dc=de": {
+                "objectClass": ["organizationalUnit"],
+                "o": ["Directory User Agents"]
+            },
+            "ou=users,dc=cde-ev,dc=de": {
+                "objectClass": ["organizationalUnit"],
+                "o": ["Users"]
+            },
+            "ou=groups,dc=cde-ev,dc=de": {
+                "objectClass": ["organizationalUnit"],
+                "o": ["Groups"]
+            },
+            "ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de": {
+                "objectClass": ["organizationalUnit"],
+                "o": ["Assembly Presiders"]
+            },
+            "ou=event-orgas,ou=groups,dc=cde-ev,dc=de": {
+                "objectClass": ["organizationalUnit"],
+                "o": ["Event Orgas"]
+            },
+            "ou=ml-moderators,ou=groups,dc=cde-ev,dc=de": {
+                "objectClass": ["organizationalUnit"],
+                "o": ["Mailinglists Moderators"]
+            },
+            "ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de": {
+                "objectClass": ["organizationalUnit"],
+                "o": ["Mailinglists Subscribers"]
+            },
+            "ou=status,ou=groups,dc=cde-ev,dc=de": {
+                "objectClass": ["organizationalUnit"],
+                "o": ["Status"]
+            }
+        }
 
+    @property
+    def leafs(self) -> Dict[str, LdapLeaf]:
+        """All information about the leaf entries.
 
-def get_assembly_presider_groups(dns: List[DN]) -> Dict[DN, Attributes]:
-    pass
-
-
-def get_event_orga_groups(dns: List[DN]) -> Dict[DN, Attributes]:
-    pass
-
-
-def get_ml_moderator_groups(dns: List[DN]) -> Dict[DN, Attributes]:
-    pass
-
-
-def get_ml_subscriber_groups(dns: List[DN]) -> Dict[DN, Attributes]:
-    pass
-
-
-#################
-# List Entities #
-#################
-
-#
-# duas
-#
-
-
-def list_duas() -> List[RDN]:
-    query = "SELECT cn FROM ldap.duas"
-    dua_rdns = ...
-    return dua_rdns
-
-
-#
-# users
-#
-
-
-def list_users() -> List[RDN]:
-    pass
-
-
-#
-# groups
-#
-
-
-def list_assembly_presider_groups() -> List[RDN]:
-    pass
-
-
-def list_event_orga_groups() -> List[RDN]:
-    pass
-
-
-def list_ml_moderator_groups() -> List[RDN]:
-    pass
-
-
-def list_ml_subscriber_groups() -> List[RDN]:
-    pass
-
-
-def list_status_groups() -> List[RDN]:
-    pass
-
-
-#############
-# LDAP Tree #
-#############
-
-# contains all non-leaf ldap entries, mapping their DN to their attributes
-LDAP_BRANCHES: Dict[str, Attributes] = {
-    "dc=de": {
-        "objectClass": ["dcObject", "top"],
-    },
-    "dc=cde-ev,dc=de": {
-        "objectClass": ["dcObject", "organization"],
-        "o": ["CdE e.V."],
-    },
-    "ou=duas,dc=cde-ev,dc=de": {
-        "objectClass": ["organizationalUnit"],
-        "o": ["Directory User Agents"]
-    },
-    "ou=users,dc=cde-ev,dc=de": {
-        "objectClass": ["organizationalUnit"],
-        "o": ["Users"]
-    },
-    "ou=groups,dc=cde-ev,dc=de": {
-        "objectClass": ["organizationalUnit"],
-        "o": ["Groups"]
-    },
-    "ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de": {
-        "objectClass": ["organizationalUnit"],
-        "o": ["Assembly Presiders"]
-    },
-    "ou=event-orgas,ou=groups,dc=cde-ev,dc=de": {
-        "objectClass": ["organizationalUnit"],
-        "o": ["Event Orgas"]
-    },
-    "ou=ml-moderators,ou=groups,dc=cde-ev,dc=de": {
-        "objectClass": ["organizationalUnit"],
-        "o": ["Mailinglists Moderators"]
-    },
-    "ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de": {
-        "objectClass": ["organizationalUnit"],
-        "o": ["Mailinglists Subscribers"]
-    },
-    "ou=status,ou=groups,dc=cde-ev,dc=de": {
-        "objectClass": ["organizationalUnit"],
-        "o": ["Status"]
-    }
-}
-
-
-class LdapLeaf(TypedDict):
-    get_entities: Callable[[List[DN]], Dict[DN, Attributes]]
-    list_entities: Callable[[], List[RDN]]
-
-
-# contains information about all ldap leaf entries. Maps their _parent_ DN to functions
-# for getting the attributes of a given list of entities and listing all entities.
-LDAP_LEAFS: Dict[str, LdapLeaf] = {
-    "ou=duas,dc=cde-ev,dc=de": {
-        "get_entities": tree.get_duas,
-        "list_entities": list_duas,
-    },
-    "ou=users,dc=cde-ev,dc=de": {
-        "get_entities": get_users,
-        "list_entities": list_users,
-    },
-    "ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de": {
-        "get_entities": get_assembly_presider_groups,
-        "list_entities": list_assembly_presider_groups,
-    },
-    "ou=event-orgas,ou=groups,dc=cde-ev,dc=de": {
-        "get_entities": get_event_orga_groups,
-        "list_entities": list_event_orga_groups,
-    },
-    "ou=ml-moderators,ou=groups,dc=cde-ev,dc=de": {
-        "get_entities": get_ml_moderator_groups,
-        "list_entities": list_ml_moderator_groups,
-    },
-    "ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de": {
-        "get_entities": get_ml_subscriber_groups,
-        "list_entities": list_ml_subscriber_groups,
-    },
-    "ou=status,ou=groups,dc=cde-ev,dc=de": {
-        "get_entities": get_status_groups,
-        "list_entities": list_status_groups,
-    }
-}
+        Maps their _parent_ DN to functions for getting the attributes of a given list
+        of entities and listing all entities.
+        """
+        return {
+            "ou=duas,dc=cde-ev,dc=de": {
+                "get_entities": self.get_duas,
+                "list_entities": self.list_duas,
+            },
+            "ou=users,dc=cde-ev,dc=de": {
+                "get_entities": self.get_users,
+                "list_entities": self.list_users,
+            },
+            "ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de": {
+                "get_entities": self.get_assembly_presider_groups,
+                "list_entities": self.list_assembly_presider_groups,
+            },
+            "ou=event-orgas,ou=groups,dc=cde-ev,dc=de": {
+                "get_entities": self.get_event_orga_groups,
+                "list_entities": self.list_event_orga_groups,
+            },
+            "ou=ml-moderators,ou=groups,dc=cde-ev,dc=de": {
+                "get_entities": self.get_ml_moderator_groups,
+                "list_entities": self.list_ml_moderator_groups,
+            },
+            "ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de": {
+                "get_entities": self.get_ml_subscriber_groups,
+                "list_entities": self.list_ml_subscriber_groups,
+            },
+            "ou=status,ou=groups,dc=cde-ev,dc=de": {
+                "get_entities": self.get_status_groups,
+                "list_entities": self.list_status_groups,
+            }
+        }
