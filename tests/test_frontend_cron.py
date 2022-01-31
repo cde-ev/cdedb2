@@ -395,12 +395,12 @@ class TestCron(CronTest):
         # Commented items will be available in mailman 3.3
         base_settings = {
             'send_welcome_message': False,
-            # 'send_goodbye_message': False,
+            'send_goodbye_message': False,
             'subscription_policy': 'moderate',
             'unsubscription_policy': 'moderate',
             'archive_policy': 'private',
-            # 'filter_content': True,
-            # 'filter_action': 'forward',
+            'filter_content': True,
+            'filter_action': 'reject',
             # 'pass_extensions': ['pdf'],
             # 'pass_types': ['multipart', 'text/plain', 'application/pdf'],
             'convert_html_to_plaintext': True,
