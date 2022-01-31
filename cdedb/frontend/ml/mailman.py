@@ -44,6 +44,7 @@ class MlMailmanMixin(MlBaseFrontend):
             prefix = "[{}] ".format(db_list['subject_prefix'] or "")
 
         # First, specify the generally desired settings, templates and header matches.
+        # Settings not specified here can be persistently set otherwise.
         desired_settings = {
             'send_welcome_message': False,
             'send_goodbye_message': False,
@@ -72,8 +73,9 @@ class MlMailmanMixin(MlBaseFrontend):
             'default_nonmember_action': POLICY_OTHER_CONVERT[
                 db_list['mod_policy']],
             # TODO handle attachment_policy, only available in mailman-3.3
-            # 'filter_content': True,
-            # 'filter_action': 'forward',
+            # Dropping mails silently, even after moderation is worse than rejecting...
+            'filter_content': True,
+            'filter_action': 'reject',
             # 'pass_extensions': ['pdf'],
             # 'pass_types': ['multipart', 'text/plain', 'application/pdf'],
         }
