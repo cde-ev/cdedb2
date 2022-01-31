@@ -284,16 +284,9 @@ The original message as received by Mailman is attached.
 
         :returns: Whether connection to Mailman has been successful.
         """
-        from time import sleep
+        with DatabaseLock(rs, LockType.mailman) as was_locking_successful:
+            self._sync(was_locking_successful)
 
-        from psycopg2.errors import LockNotAvailable
-        rs.conn = rs._conn
-        try:
-            with Atomizer(rs):
-                with DatabaseLock(rs, LockType.mailman):
-                    sleep(60)
-        except LockNotAvailable:
-            pass
         if (self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or (
                 self.conf["CDEDB_DEV"] and not self.conf["CDEDB_TEST"])):  # pragma: no cover
             self.logger.debug("Skipping mailman sync in dev/offline mode.")
@@ -323,3 +316,10 @@ The original message as received by Mailman is attached.
         for address in deleted_lists:
             mailman.delete_list(address)
         return True
+
+    def _sync(self, was_locking_successful: bool):
+        from time import sleep
+        if was_locking_successful:
+            sleep(60)
+        else:
+            return

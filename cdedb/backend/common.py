@@ -21,6 +21,7 @@ from typing import (
     Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast, overload,
 )
 
+import psycopg2.errors
 import psycopg2.extensions
 import psycopg2.extras
 
@@ -838,18 +839,29 @@ class DatabaseLock:
         self.rs = rs
         self.locks = locks
 
-    def __enter__(self) -> None:
-        _affirm_atomized_context(self.rs)
+    def __enter__(self) -> bool:
+        # start the transaction
+        self.rs._conn.contaminate()
+        self.rs._conn.__enter__()
         query = ("SELECT name FROM core.locks WHERE name = ANY(%s)"
                  " FOR NO KEY UPDATE NOWAIT")
         params = [lock.value for lock in self.locks]
-        with self.rs.conn as conn:
-            with conn.cursor() as cur:
-                cur.execute(query, (params,))
+
+        was_locking_successful = True
+        try:
+            with self.rs._conn as conn:
+                with conn.cursor() as cur:
+                    cur.execute(query, (params,))
+        except psycopg2.errors.LockNotAvailable:
+            was_locking_successful = False
+        finally:
+            return was_locking_successful
 
     def __exit__(self, atype: Type[Exception], value: Exception,
-                 tb: TracebackType) -> None:
-        return None
+                 tb: TracebackType) -> bool:
+        # finish the transaction
+        self.rs._conn.decontaminate()
+        return self.rs._conn.__exit__(atype, value, tb)
 
 
 def affirm_validation(assertion: Type[T], value: Any, **kwargs: Any) -> T:
