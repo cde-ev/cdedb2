@@ -44,10 +44,10 @@ class MlMailmanMixin(MlBaseFrontend):
             prefix = "[{}] ".format(db_list['subject_prefix'] or "")
 
         # First, specify the generally desired settings, templates and header matches.
+        # Settings not specified here can be persistently set otherwise.
         desired_settings = {
             'send_welcome_message': False,
-            # Available only in mailman-3.3
-            # 'send_goodbye_message': False,
+            'send_goodbye_message': False,
             # block the usage of the self-service facilities which should
             # not be used to prevent synchronisation issues
             'subscription_policy': 'moderate',
@@ -73,8 +73,9 @@ class MlMailmanMixin(MlBaseFrontend):
             'default_nonmember_action': POLICY_OTHER_CONVERT[
                 db_list['mod_policy']],
             # TODO handle attachment_policy, only available in mailman-3.3
-            # 'filter_content': True,
-            # 'filter_action': 'forward',
+            # Dropping mails silently, even after moderation is worse than rejecting...
+            'filter_content': True,
+            'filter_action': 'reject',
             # 'pass_extensions': ['pdf'],
             # 'pass_types': ['multipart', 'text/plain', 'application/pdf'],
         }
@@ -243,13 +244,7 @@ The original message as received by Mailman is attached.
 
         for address in new_whites:
             mm_list.add_role('nonmember', address)
-            # get_nonmember is only available in mailman 3.3
-            # white = mm_list.get_nonmember(address)
-        mm_updated_whitelist = {n.email: n for n in mm_list.nonmembers}
-        for address in new_whites:
-            # because of the unavailability of get_nonmember we do a
-            # different lookup
-            white = mm_updated_whitelist.get(address)
+            white = mm_list.get_nonmember(address)
             if white is not None:
                 white.moderation_action = 'accept'
                 white.save()

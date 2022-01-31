@@ -135,7 +135,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
                 code *= self.pasteventproxy.create_institution(rs, institution)
             else:
                 code *= self.pasteventproxy.rcw_institution(rs, institution)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "cde/institution_summary_form")
 
     def _process_participants(self, rs: RequestState, pevent_id: int,
@@ -341,7 +341,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
             return self.change_past_event_form(rs, pevent_id)
         assert data is not None
         code = self.pasteventproxy.set_past_event(rs, data)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "cde/show_past_event")
 
     @access("cde_admin")
@@ -387,7 +387,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
             for course in thecourses:
                 course['pevent_id'] = new_id
                 self.pasteventproxy.create_past_course(rs, course)
-        self.notify_return_code(rs, new_id, success=n_("Event created."))
+        rs.notify_return_code(new_id, success=n_("Event created."))
         return self.redirect(rs, "cde/show_past_event", {'pevent_id': new_id})
 
     @access("cde_admin", modi={"POST"})
@@ -403,7 +403,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
 
         code = self.pasteventproxy.delete_past_event(
             rs, pevent_id, cascade=("courses", "participants", "log"))
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "cde/list_past_events")
 
     @access("cde_admin")
@@ -424,7 +424,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
             return self.change_past_course_form(rs, pevent_id, pcourse_id)
         assert data is not None
         code = self.pasteventproxy.set_past_course(rs, data)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "cde/show_past_course")
 
     @access("cde_admin")
@@ -444,7 +444,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
             return self.create_past_course_form(rs, pevent_id)
         assert data is not None
         new_id = self.pasteventproxy.create_past_course(rs, data)
-        self.notify_return_code(rs, new_id, success=n_("Course created."))
+        rs.notify_return_code(new_id, success=n_("Course created."))
         return self.redirect(rs, "cde/show_past_course", {'pcourse_id': new_id})
 
     @access("cde_admin", modi={"POST"})
@@ -463,7 +463,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
 
         code = self.pasteventproxy.delete_past_course(
             rs, pcourse_id, cascade=("participants",))
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "cde/show_past_event")
 
     @access("cde_admin", modi={"POST"})
@@ -499,7 +499,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         for persona_id in persona_ids:
             code *= self.pasteventproxy.add_participant(
                 rs, pevent_id, pcourse_id, persona_id, is_instructor, is_orga)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         if pcourse_id:
             return self.redirect(rs, "cde/show_past_course",
                                  {'pcourse_id': pcourse_id})
@@ -516,7 +516,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
             return self.show_past_event(rs, pevent_id)
         code = self.pasteventproxy.remove_participant(
             rs, pevent_id, pcourse_id, persona_id)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         if pcourse_id:
             return self.redirect(rs, "cde/show_past_course", {
                 'pcourse_id': pcourse_id})

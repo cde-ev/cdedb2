@@ -1363,12 +1363,15 @@ etc;anything else""", f['entries_2'].value)
         if self.user_in('charly'):
             self.assertNonPresence(surcharge)
             self.assertNonPresence(membership_fee)
+            self.assertPresence("13.05.1984")
         elif self.user_in('daniel'):
             self.assertPresence(surcharge, div="nonmember-surcharge")
             self.assertPresence(membership_fee, div="nonmember-surcharge")
+            self.assertPresence("19.02.1963")
         elif self.user_in('rowena'):
             self.assertPresence(surcharge, div="nonmember-surcharge")
             self.assertNonPresence(membership_fee)
+            self.assertPresence("26.08.932")
         else:
             self.fail("Please reconfigure the users for the above checks.")
 

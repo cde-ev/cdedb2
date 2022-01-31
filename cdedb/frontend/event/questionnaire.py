@@ -79,7 +79,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         code = self._set_questionnaire(rs, event_id, kind)
         if rs.has_validation_errors() or code is None:
             return self.configure_registration_form(rs, event_id)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "event/configure_registration_form")
 
     @access("event", modi={"POST"})
@@ -95,7 +95,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         code = self._set_questionnaire(rs, event_id, kind)
         if rs.has_validation_errors() or code is None:
             return self.configure_additional_questionnaire_form(rs, event_id)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(
             rs, "event/configure_additional_questionnaire_form")
 
@@ -194,7 +194,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         change_note = "Fragebogen durch Teilnehmer bearbeitet."
         code = self.eventproxy.set_registration(rs,
             {'id': registration_id, 'fields': data}, change_note)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "event/additional_questionnaire_form")
 
     @staticmethod
@@ -365,5 +365,5 @@ class EventQuestionnaireMixin(EventBaseFrontend):
                              for i in order]
         code = self.eventproxy.set_questionnaire(rs, event_id,
                                                  {kind: new_questionnaire})
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "event/reorder_questionnaire_form", {'kind': kind})

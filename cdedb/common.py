@@ -20,9 +20,9 @@ import re
 import string
 import sys
 from typing import (
-    TYPE_CHECKING, Any, Callable, Collection, Container, Dict, Generator, Generic,
-    Iterable, KeysView, List, Mapping, MutableMapping, Optional, Set, Tuple, Type,
-    TypeVar, Union, cast, overload,
+    TYPE_CHECKING, Any, Callable, Collection, Dict, Generator, Generic, Iterable,
+    KeysView, List, Mapping, MutableMapping, Optional, Set, Tuple, Type, TypeVar, Union,
+    cast, overload,
 )
 
 import icu
@@ -100,6 +100,15 @@ PathLike = Union[pathlib.Path, str]
 Path = pathlib.Path
 
 T = TypeVar("T")
+
+
+def n_(x: str) -> str:
+    """
+    Alias of the identity for i18n.
+    Identity function that shadows the gettext alias to trick pybabel into
+    adding string to the translated strings.
+    """
+    return x
 
 
 class User:
@@ -220,12 +229,43 @@ class RequestState:
         params = params or {}
         self.notifications.append((ntype, message, params))
 
-    def notify_validation_errors_default(self) -> None:
-        """Helper to put notification about validation errors.
+    def notify_return_code(self, code: Union[DefaultReturnCode, bool, None],
+                           success: str = n_("Change committed."),
+                           info: str = n_("Change pending."),
+                           error: str = n_("Change failed.")) -> None:
+        """Small helper to issue a notification based on a return code.
 
-        This is placed centrally here so the message is always the same.
+        We allow some flexibility in what type of return code we accept. It
+        may be a boolean (with the obvious meanings), an integer (specifying
+        the number of changed entries, and negative numbers for entries with
+        pending review) or None (signalling failure to acquire something).
+
+        :param success: Affirmative message for positive return codes.
+        :param info: Message for negative return codes signalling review.
+        :param error: Exception message for zero return codes.
         """
-        self.notify("error", n_("Failed validation."))
+        if not code:
+            self.notify("error", error)
+        elif code is True or code > 0:
+            self.notify("success", success)
+        elif code < 0:
+            self.notify("info", info)
+        else:
+            raise RuntimeError(n_("Impossible."))
+
+    def notify_validation(self) -> None:
+        """Puts a notification about validation complaints, if there are some.
+
+        This takes care of the distinction between validation errors and
+        warnings, but does not cause the validation tracking to register
+        a successful check.
+        """
+        if errors := self.retrieve_validation_errors():
+            if all(isinstance(kind, ValidationWarning) for param, kind in errors):
+                self.notify("warning", n_("Input seems faulty. Please double-check if"
+                                          " you really want to save it."))
+            else:
+                self.notify("error", n_("Failed validation."))
 
     def append_validation_error(self, error: Error) -> None:
         """Register a new  error.
@@ -878,142 +918,6 @@ def pairwise(iterable: Iterable[T]) -> Iterable[Tuple[T, T]]:
     return zip(x, y)
 
 
-def _schulze_winners(d: Mapping[Tuple[str, str], int],
-                     candidates: Collection[str]) -> List[str]:
-    """This is the abstract part of the Schulze method doing the actual work.
-
-    The candidates are the vertices of a graph and the metric (in form
-    of ``d``) describes the strength of the links between the
-    candidates, that is edge weights.
-
-    We determine the strongest path from each vertex to each other
-    vertex. This gives a transitive relation, which enables us thus to
-    determine winners as maximal elements.
-    """
-    # First determine the strongst paths
-    p = {(x, y): d[(x, y)] for x in candidates for y in candidates}
-    for i in candidates:
-        for j in candidates:
-            if i == j:
-                continue
-            for k in candidates:
-                if k in {i, j}:
-                    continue
-                p[(j, k)] = max(p[(j, k)], min(p[(j, i)], p[(i, k)]))
-    # Second determine winners
-    winners = []
-    for i in candidates:
-        if all(p[(i, j)] >= p[(j, i)] for j in candidates):
-            winners.append(i)
-    return winners
-
-
-def schulze_evaluate(votes: Collection[str], candidates: Collection[str]
-                     ) -> Tuple[str, List[Dict[str, Union[int, List[str]]]]]:
-    """Use the Schulze method to cummulate preference list into one list.
-
-    This is used by the assembly realm to tally votes -- however this is
-    pretty abstract, so we move it here.
-
-    Votes have the form ``3>0>1=2>4`` where the shortnames between the
-    relation signs are exactly those passed in the ``candidates`` parameter.
-
-    The Schulze method is described in the pdf found in the ``related``
-    folder. Also the Wikipedia article is pretty nice.
-
-    One thing to mention is, that we do not do any tie breaking. Since
-    we allow equality in the votes, it seems reasonable to allow
-    equality in the result too.
-
-    For a nice set of examples see the test suite.
-
-    :param candidates: We require that the candidates be explicitly
-        passed. This allows for more flexibility (like returning a useful
-        result for zero votes).
-    :returns: The first Element is the aggregated result,
-        the second is an more extended list, containing every level
-        (descending) as dict with some extended information.
-    """
-    split_votes = tuple(
-        tuple(lvl.split('=') for lvl in vote.split('>')) for vote in votes)
-
-    def _subindex(alist: Collection[Container[str]], element: str) -> int:
-        """The element is in the list at which position in the big list.
-
-        :returns: ``ret`` such that ``element in alist[ret]``
-        """
-        for index, sublist in enumerate(alist):
-            if element in sublist:
-                return index
-        raise ValueError(n_("Not in list."))
-
-    # First we count the number of votes prefering x to y
-    counts = {(x, y): 0 for x in candidates for y in candidates}
-    for vote in split_votes:
-        for x in candidates:
-            for y in candidates:
-                if _subindex(vote, x) < _subindex(vote, y):
-                    counts[(x, y)] += 1
-
-    # Second we calculate a numeric link strength abstracting the problem
-    # into the realm of graphs with one vertex per candidate
-    def _strength(support: int, opposition: int, totalvotes: int) -> int:
-        """One thing not specified by the Schulze method is how to asses the
-        strength of a link and indeed there are several possibilities. We
-        use the strategy called 'winning votes' as advised by the paper of
-        Markus Schulze.
-
-        If two two links have more support than opposition, then the link
-        with more supporters is stronger, if supporters tie then less
-        opposition is used as secondary criterion.
-
-        Another strategy which seems to have a more intuitive appeal is
-        called 'margin' and sets the difference between support and
-        opposition as strength of a link. However the discrepancy
-        between the strategies is rather small, to wit all cases in the
-        test suite give the same result for both of them. Moreover if
-        the votes contain no ties both strategies (and several more) are
-        totally equivalent.
-        """
-        # the margin strategy would be given by the following line
-        # return support - opposition
-        if support > opposition:
-            return totalvotes * support - opposition
-        elif support == opposition:
-            return 0
-        else:
-            return -1
-
-    d = {(x, y): _strength(counts[(x, y)], counts[(y, x)], len(votes))
-         for x in candidates for y in candidates}
-    # Third we execute the Schulze method by iteratively determining
-    # winners
-    result: List[List[str]] = []
-    while True:
-        done = {x for level in result for x in level}
-        # avoid sets to preserve ordering
-        remaining = tuple(c for c in candidates if c not in done)
-        if not remaining:
-            break
-        winners = _schulze_winners(d, remaining)
-        result.append(winners)
-
-    # Return the aggregated preference list in the same format as the input
-    # votes are.
-    condensed = ">".join("=".join(level) for level in result)
-    detailed = []
-    for lead, follow in zip(result, result[1:]):
-        level: Dict[str, Union[List[str], int]] = {
-            'winner': lead,
-            'loser': follow,
-            'pro_votes': counts[(lead[0], follow[0])],
-            'contra_votes': counts[(follow[0], lead[0])]
-        }
-        detailed.append(level)
-
-    return condensed, detailed
-
-
 #: Magic value of shortname of the ballot candidate representing the bar.
 ASSEMBLY_BAR_SHORTNAME = "_bar_"
 
@@ -1442,15 +1346,6 @@ def mixed_existence_sorter(iterable: Union[Collection[int], KeysView[int]]
     for i in reversed(xsorted(iterable)):
         if i < 0:
             yield i
-
-
-def n_(x: str) -> str:
-    """
-    Alias of the identity for i18n.
-    Identity function that shadows the gettext alias to trick pybabel into
-    adding string to the translated strings.
-    """
-    return x
 
 
 UMLAUT_MAP = {
