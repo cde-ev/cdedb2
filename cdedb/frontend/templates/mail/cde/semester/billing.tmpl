@@ -1,4 +1,22 @@
 Hallo {{ persona['display_name'] }},
+
+
+== Erhöhung des Mitgliedsbeitrags ==
+
+Auf der Mitgliederversammlung 2021 wurde beschlossen, den
+Mitgliedsbeitrag von aktuell {{ 2.5|money }} auf {{ 4|money }} im Halbjahr zu erhöhen.
+Diese Erhöhung tritt aber erst zum 1. Juli 2022 in Kraft! An dieser
+Stelle soll nur frühzeitig auf die Erhöhung hingewiesen werden.
+
+
+== Flexibilisierung von Lastschriften ==
+
+Im Rahmen der Erhöhung des Mitgliedsbeitrags wird auch das
+aktuelle Lastschriftensystem (bisher Initiative 25+) überarbeitet.
+In Zukunft soll insbesondere jeder Betrag, der oberhalb von
+{{ 10|money }} im Jahr liegt als Lastschrifteinzug möglich sein.
+Die entsprechende Möglichkeit wird in den nächsten Monaten
+in die Datenbank integriert.
 {% if (persona['balance'] < fee and not persona['trial_member']) and not lastschrift %}
 
 
@@ -100,9 +118,12 @@ neuen Online-Ausgabe benachrichtigt.
 == Guthabenstatus ==
 {% if persona['balance'] %}
 
+{#
 Dein momentanes Guthaben beträgt {{ persona['balance']|money }}. Somit
 sind Deine Mitgliedsbeiträge bei der derzeitigen Beitragshöhe
 von {{ fee|money }} noch {{ persona['balance'] // fee }} Halbjahre bezahlt.
+#}
+Dein momentanes Guthaben beträgt {{ persona['balance']|money }}.
 {% else %}
 
 Du bist für dieses Halbjahr Probemitglied im CdE. Du bekommst in
