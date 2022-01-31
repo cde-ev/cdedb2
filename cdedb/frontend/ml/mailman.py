@@ -46,8 +46,7 @@ class MlMailmanMixin(MlBaseFrontend):
         # First, specify the generally desired settings, templates and header matches.
         desired_settings = {
             'send_welcome_message': False,
-            # Available only in mailman-3.3
-            # 'send_goodbye_message': False,
+            'send_goodbye_message': False,
             # block the usage of the self-service facilities which should
             # not be used to prevent synchronisation issues
             'subscription_policy': 'moderate',
@@ -243,13 +242,7 @@ The original message as received by Mailman is attached.
 
         for address in new_whites:
             mm_list.add_role('nonmember', address)
-            # get_nonmember is only available in mailman 3.3
-            # white = mm_list.get_nonmember(address)
-        mm_updated_whitelist = {n.email: n for n in mm_list.nonmembers}
-        for address in new_whites:
-            # because of the unavailability of get_nonmember we do a
-            # different lookup
-            white = mm_updated_whitelist.get(address)
+            white = mm_list.get_nonmember(address)
             if white is not None:
                 white.moderation_action = 'accept'
                 white.save()
