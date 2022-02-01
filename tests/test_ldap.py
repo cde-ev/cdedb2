@@ -110,7 +110,8 @@ class TestLDAP(BasicTest):
         conn = ldap3.Connection(self.server, user=self.test_dua_dn,
                                 password=self.test_dua_pw)
         self.assertTrue(conn.bind())
-        self.assertEqual('dn:' + self.test_dua_dn, conn.extend.standard.who_am_i())
+        # TODO not supported by ldaptor
+        # self.assertEqual('dn:' + self.test_dua_dn, conn.extend.standard.who_am_i())
         self.assertTrue(conn.unbind())
 
         # try to bind to nonexistent user
@@ -127,8 +128,9 @@ class TestLDAP(BasicTest):
         conn = ldap3.Connection(self.server, user='uid=1,ou=users,dc=cde-ev,dc=de',
                                 password='secret')
         self.assertTrue(conn.bind())
-        self.assertEqual(
-            'dn:' + 'uid=1,ou=users,dc=cde-ev,dc=de', conn.extend.standard.who_am_i())
+        # TODO not supported by ldaptor
+        # self.assertEqual(
+        #     'dn:' + 'uid=1,ou=users,dc=cde-ev,dc=de', conn.extend.standard.who_am_i())
         self.assertTrue(conn.unbind())
 
     def test_anonymous_search(self) -> None:
@@ -229,9 +231,8 @@ class TestLDAP(BasicTest):
         """Check if all attributes of the organization are correctly present."""
         expectation = {
             'objectClass': [
-                'organization',
                 'dcObject',
-                'top'
+                'organization',
             ],
             'o': ['CdE e.V.']
         }
@@ -284,8 +285,8 @@ class TestLDAP(BasicTest):
             'cn': ['is_cdelokal_admin'],
             'description': ['CdELokal-Administratoren'],
             'uniqueMember': [
-                'uid=100,ou=users,dc=cde-ev,dc=de',
                 'uid=1,ou=users,dc=cde-ev,dc=de',
+                'uid=100,ou=users,dc=cde-ev,dc=de',
                 'uid=9,ou=users,dc=cde-ev,dc=de'
             ],
             'objectClass': ['groupOfUniqueNames']
