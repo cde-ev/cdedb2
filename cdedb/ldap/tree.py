@@ -28,13 +28,18 @@ class LDAPsqlTree(QueryMixin):
     def __init__(self):
         self.conf = Config()
         secrets = SecretsConfig()
-        self.rs = ConnectionContainer()
-        conn = connection_pool_factory(
+        self.connection_pool = connection_pool_factory(
             self.conf["CDB_DATABASE_NAME"], ["cdb_admin"],
-            secrets, self.conf["DB_HOST"], self.conf["DB_PORT"])["cdb_admin"]
-        self.rs.conn = self.rs._conn = conn
+            secrets, self.conf["DB_HOST"], self.conf["DB_PORT"])
         self.logger = logging.getLogger(__name__)
         super().__init__(self.logger)
+
+    @property
+    def rs(self) -> ConnectionContainer:
+        conn = self.connection_pool["cdb_admin"]
+        rs = ConnectionContainer()
+        rs.conn = rs._conn = conn
+        return rs
 
     @staticmethod
     def _dn_value(dn: DN, attribute: str) -> Optional[str]:
