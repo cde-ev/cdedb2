@@ -84,6 +84,17 @@ class LDAPsqlTree(QueryMixin):
     def dua_dn(self, name: str) -> str:
         return f"cn={self.dua_cn(name)},{self.duas_dn}"
 
+    def list_duas(self) -> List[RDN]:
+        query = "SELECT cn FROM ldap.duas"
+        data = self.query_all(self.rs, query, [])
+        return [
+            RDN(
+                attributeTypesAndValues=[
+                    ATV(attributeType="cn", value=self.dua_cn(e["cn"]))
+                ]
+            ) for e in data
+        ]
+
     def get_duas(self, dns: List[DN]) -> LDAPObjectMap:
         dn_to_name = dict()
         for dn in dns:
@@ -128,6 +139,17 @@ class LDAPsqlTree(QueryMixin):
 
     def user_dn(self, persona_id: int) -> str:
         return f"uid={self.user_uid(persona_id)},{self.users_dn}"
+
+    def list_users(self) -> List[RDN]:
+        query = "SELECT id FROM core.personas"
+        data = self.query_all(self.rs, query, [])
+        return [
+            RDN(
+                attributeTypesAndValues=[
+                    ATV(attributeType="uid", value=self.user_uid(e["id"]))
+                ]
+            ) for e in data
+        ]
 
     def get_users(self, dns: List[DN]) -> LDAPObjectMap:
         dn_to_persona_id = dict()
@@ -213,6 +235,15 @@ class LDAPsqlTree(QueryMixin):
         "is_cdelokal_admin": "CdELokal-Administratoren",
     }
 
+    def list_status_groups(self) -> List[RDN]:
+        return [
+            RDN(
+                attributeTypesAndValues=[
+                    ATV(attributeType="cn", value=self.status_group_cn(name))
+                ]
+            ) for name in self.STATUS_GROUPS
+        ]
+
     def get_status_groups(self, dns: List[DN]) -> LDAPObjectMap:
         dn_to_name = dict()
         for dn in dns:
@@ -261,6 +292,17 @@ class LDAPsqlTree(QueryMixin):
 
     def presider_group_dn(self, assembly_id: int) -> str:
         return f"cn={self.presider_group_cn(assembly_id)},{self.presider_groups_dn}"
+
+    def list_assembly_presider_groups(self) -> List[RDN]:
+        query = "SELECT id FROM assembly.assemblies"
+        data = self.query_all(self.rs, query, [])
+        return [
+            RDN(
+                attributeTypesAndValues=[
+                    ATV(attributeType="cn", value=self.presider_group_cn(e["id"]))
+                ]
+            ) for e in data
+        ]
 
     def get_assembly_presider_groups(self, dns: List[DN]) -> LDAPObjectMap:
         dn_to_assembly_id = dict()
@@ -313,6 +355,17 @@ class LDAPsqlTree(QueryMixin):
 
     def orga_group_dn(self, event_id: int) -> str:
         return f"cn={self.orga_group_cn(event_id)},{self.orga_groups_dn}"
+
+    def list_event_orga_groups(self) -> List[RDN]:
+        query = "SELECT id FROM event.events"
+        data = self.query_all(self.rs, query, [])
+        return [
+            RDN(
+                attributeTypesAndValues=[
+                    ATV(attributeType="cn", value=self.orga_group_cn(e["id"]))
+                ]
+            ) for e in data
+        ]
 
     def get_event_orga_groups(self, dns: List[DN]) -> LDAPObjectMap:
         dn_to_event_id = dict()
@@ -369,6 +422,17 @@ class LDAPsqlTree(QueryMixin):
     def moderator_group_dn(self, address: str) -> str:
         return f"cn={self.moderator_group_cn(address)},{self.moderator_groups_dn}"
 
+    def list_ml_moderator_groups(self) -> List[RDN]:
+        query = "SELECT address FROM ml.mailinglists"
+        data = self.query_all(self.rs, query, [])
+        return [
+            RDN(
+                attributeTypesAndValues=[
+                    ATV(attributeType="cn", value=self.moderator_group_cn(e["address"]))
+                ]
+            ) for e in data
+        ]
+
     def get_ml_moderator_groups(self, dns: List[DN]) -> LDAPObjectMap:
         dn_to_address = dict()
         for dn in dns:
@@ -424,6 +488,17 @@ class LDAPsqlTree(QueryMixin):
     def subscriber_group_dn(self, address: str) -> str:
         return f"cn={self.subscriber_group_cn(address)},{self.subscriber_groups_dn}"
 
+    def list_ml_subscriber_groups(self) -> List[RDN]:
+        query = "SELECT address FROM ml.mailinglists"
+        data = self.query_all(self.rs, query, [])
+        return [
+            RDN(
+                attributeTypesAndValues=[
+                    ATV(attributeType="cn", value=self.subscriber_group_cn(e["address"]))
+                ]
+            ) for e in data
+        ]
+
     def get_ml_subscriber_groups(self, dns: List[DN]) -> LDAPObjectMap:
         dn_to_address = dict()
         for dn in dns:
@@ -458,80 +533,9 @@ class LDAPsqlTree(QueryMixin):
             ret[dn] = group
         return ret
 
-    def list_duas(self) -> List[RDN]:
-        query = "SELECT cn FROM ldap.duas"
-        data = self.query_all(self.rs, query, [])
-        return [
-            RDN(
-                attributeTypesAndValues=[
-                    ATV(attributeType="cn", value=self.dua_cn(e["cn"]))
-                ]
-            ) for e in data
-        ]
-
-    def list_users(self) -> List[RDN]:
-        query = "SELECT id FROM core.personas"
-        data = self.query_all(self.rs, query, [])
-        return [
-            RDN(
-                attributeTypesAndValues=[
-                    ATV(attributeType="uid", value=self.user_uid(e["id"]))
-                ]
-            ) for e in data
-        ]
-
-    def list_assembly_presider_groups(self) -> List[RDN]:
-        query = "SELECT id FROM assembly.assemblies"
-        data = self.query_all(self.rs, query, [])
-        return [
-            RDN(
-                attributeTypesAndValues=[
-                    ATV(attributeType="cn", value=self.presider_group_cn(e["id"]))
-                ]
-            ) for e in data
-        ]
-
-    def list_event_orga_groups(self) -> List[RDN]:
-        query = "SELECT id FROM event.events"
-        data = self.query_all(self.rs, query, [])
-        return [
-            RDN(
-                attributeTypesAndValues=[
-                    ATV(attributeType="cn", value=self.orga_group_cn(e["id"]))
-                ]
-            ) for e in data
-        ]
-
-    def list_ml_moderator_groups(self) -> List[RDN]:
-        query = "SELECT address FROM ml.mailinglists"
-        data = self.query_all(self.rs, query, [])
-        return [
-            RDN(
-                attributeTypesAndValues=[
-                    ATV(attributeType="cn", value=self.moderator_group_cn(e["address"]))
-                ]
-            ) for e in data
-        ]
-
-    def list_ml_subscriber_groups(self) -> List[RDN]:
-        query = "SELECT address FROM ml.mailinglists"
-        data = self.query_all(self.rs, query, [])
-        return [
-            RDN(
-                attributeTypesAndValues=[
-                    ATV(attributeType="cn", value=self.subscriber_group_cn(e["address"]))
-                ]
-            ) for e in data
-        ]
-
-    def list_status_groups(self) -> List[RDN]:
-        return [
-            RDN(
-                attributeTypesAndValues=[
-                    ATV(attributeType="cn", value=self.status_group_cn(name))
-                ]
-            ) for name in self.STATUS_GROUPS
-        ]
+    ########
+    # Tree #
+    ########
 
     @property
     def branches(self) -> Dict[str, LDAPObject]:
