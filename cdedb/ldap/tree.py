@@ -37,6 +37,11 @@ class LDAPsqlTree(QueryMixin):
         super().__init__(self.logger)
 
     @staticmethod
+    def _user_dn(persona_id: int) -> str:
+        """Central point to create the user dn from a given user id."""
+        return f"uid={persona_id},ou=users,dc=cde-ev,dc=de"
+
+    @staticmethod
     def _dn_value(dn: DN, attribute: str) -> Optional[str]:
         rdn = dn.split()[0]
         attribute_value = unwrap(rdn.split())
@@ -99,8 +104,7 @@ class LDAPsqlTree(QueryMixin):
                 condition = cn
             query = f"SELECT id FROM core.personas WHERE {condition}"
             members = self.query_all(self.rs, query, [])
-            # TODO can we avoid to hardcode the path to the users?
-            group["uniqueMember"] = [f"uid={e['id']},ou=users,dc=cde-ev,dc=de" for e in members]
+            group["uniqueMember"] = [self._user_dn(e["id"]) for e in members]
             ret[dn] = group
         return ret
 
@@ -136,7 +140,7 @@ class LDAPsqlTree(QueryMixin):
                 continue
             group = {"objectclass": ["groupOfUniqueNames"]}
             group["cn"] = [f"presiders-{assembly_id}"]
-            group["uniqueMember"] = [f"uid={presider},ou=users,dc=cde-ev,dc=de" for presider in presiders[assembly_id]]
+            group["uniqueMember"] = [self._user_dn(presider) for presider in presiders[assembly_id]]
             ret[dn] = group
         return ret
 
@@ -164,7 +168,7 @@ class LDAPsqlTree(QueryMixin):
                 continue
             group = {"objectclass": ["groupOfUniqueNames"]}
             group["cn"] = [f"orgas-{event_id}"]
-            group["uniqueMember"] = [f"uid={orga},ou=users,dc=cde-ev,dc=de" for orga in orgas[event_id]]
+            group["uniqueMember"] = [self._user_dn(orga) for orga in orgas[event_id]]
             ret[dn] = group
         return ret
 
@@ -201,7 +205,7 @@ class LDAPsqlTree(QueryMixin):
                 continue
             group = {"objectclass": ["groupOfUniqueNames"]}
             group["cn"] = [address]
-            group["uniqueMember"] = [f"uid={moderator},ou=users,dc=cde-ev,dc=de" for moderator in moderators[address]]
+            group["uniqueMember"] = [self._user_dn(moderator) for moderator in moderators[address]]
             ret[dn] = group
         return ret
 
@@ -228,7 +232,7 @@ class LDAPsqlTree(QueryMixin):
                 continue
             group = {"objectclass": ["groupOfUniqueNames"]}
             group["cn"] = [address]
-            group["uniqueMember"] = [f"uid={subscriber},ou=users,dc=cde-ev,dc=de" for subscriber in subscribers[address]]
+            group["uniqueMember"] = [self._user_dn(subscriber) for subscriber in subscribers[address]]
             ret[dn] = group
         return ret
 
