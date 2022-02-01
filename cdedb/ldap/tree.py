@@ -78,10 +78,20 @@ class LDAPsqlTree(QueryMixin):
         pass
 
     STATUS_GROUPS = {
-        "is_active", "is_member", "is_searchable", "is_ml_realm", "is_event_realm",
-        "is_assembly_realm", "is_cde_realm", "is_ml_admin", "is_event_admin",
-        "is_assembly_admin", "is_cde_admin", "is_core_admin", "is_finance_admin",
-        "is_cdelokal_admin"
+        "is_active": "Aktive Nutzer.",
+        "is_member": "Nutzer, die aktuell Mitglied im CdE sind.",
+        "is_searchable": "Nutzer, die aktuell Mitglied im CdE und und in der Datenbank suchbar sind.",
+        "is_ml_realm": "Nutzer, die auf Mailinglisten stehen dürfen.",
+        "is_event_realm": "Nutzer, die an Veranstaltungen teilnehmen dürfen.",
+        "is_assembly_realm": "Nutzer, die an Versammlungen teilnehmen dürfen.",
+        "is_cde_realm": "Nutzer, die jemals Mitglied im CdE waren oder sind.",
+        "is_ml_admin": "Mailinglisten-Administratoren",
+        "is_event_admin": "Veranstaltungs-Administratoren",
+        "is_assembly_admin": "Versammlungs-Administratoren",
+        "is_cde_admin": "CdE-Administratoren",
+        "is_core_admin": "Core-Administratoren",
+        "is_finance_admin": "Finanz-Administratoren",
+        "is_cdelokal_admin": "CdELokal-Administratoren",
     }
 
     def get_status_groups(self, dns: List[DN]) -> LDAPObjectMap:
@@ -97,7 +107,11 @@ class LDAPsqlTree(QueryMixin):
         for dn, cn in dn_to_cn.items():
             if cn not in self.STATUS_GROUPS:
                 continue
-            group = {"cn": [cn], "objectclass": ["groupOfUniqueNames"]}
+            group = {
+                "cn": [cn],
+                "objectclass": ["groupOfUniqueNames"],
+                "description": [self.STATUS_GROUPS[cn]]
+            }
             if cn == "is_searchable":
                 condition = "is_member AND is_searchable"
             else:
