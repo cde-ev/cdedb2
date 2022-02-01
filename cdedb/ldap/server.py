@@ -30,6 +30,8 @@ class CdEDBLDAPServer(LDAPServer):
             users_dn = DistinguishedName(stringValue=tree.users_dn)
             groups_dn = DistinguishedName(stringValue=tree.groups_dn)
             duas_dn = DistinguishedName(stringValue=tree.duas_dn)
+            admin_dn = DistinguishedName(tree.dua_dn("admin"))
+            cloud_dn = DistinguishedName(tree.dua_dn("cloud"))
 
             return_result = True
             # the requested entry is a user
@@ -53,7 +55,10 @@ class CdEDBLDAPServer(LDAPServer):
                     pass
                 # the request comes from a dua
                 elif duas_dn.contains(self.boundUser.dn):
-                    pass
+                    if self.boundUser.dn == cloud_dn:
+                        pass
+                    else:
+                        return_result = False
                 # disallow other requests
                 else:
                     return_result = False
@@ -63,10 +68,18 @@ class CdEDBLDAPServer(LDAPServer):
                     pass
                 # the request comes from a dua
                 elif duas_dn.contains(self.boundUser.dn):
-                    pass
+                    # the dua is requesting its own data
+                    if self.boundUser.dn == entry.dn:
+                        pass
+                    else:
+                        return_result = False
                 # disallow other requests
                 else:
                     return_result = False
+
+            # TODO do we need an admin dn?
+            if self.boundUser.dn == admin_dn:
+                return_result = True
 
             # filter the attributes requested in the search
             if b"*" in request.attributes or len(request.attributes) == 0:
