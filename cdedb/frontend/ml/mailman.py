@@ -13,14 +13,14 @@ from cdedb.frontend.common import cdedburl, make_persona_name, periodic
 from cdedb.frontend.ml.base import MlBaseFrontend
 
 POLICY_MEMBER_CONVERT = {
-    const.ModerationPolicy.unmoderated: 'accept',
-    const.ModerationPolicy.non_subscribers: 'accept',
+    const.ModerationPolicy.unmoderated: 'defer',
+    const.ModerationPolicy.non_subscribers: 'defer',
     const.ModerationPolicy.fully_moderated: 'hold',
 }
 
 
 POLICY_OTHER_CONVERT = {
-    const.ModerationPolicy.unmoderated: 'accept',
+    const.ModerationPolicy.unmoderated: 'defer',
     const.ModerationPolicy.non_subscribers: 'hold',
     const.ModerationPolicy.fully_moderated: 'hold',
 }
@@ -68,6 +68,7 @@ class MlMailmanMixin(MlBaseFrontend):
             'info': db_list['description'] or "",
             'subject_prefix': prefix,
             'max_message_size': db_list['maxsize'] or 0,
+            'max_num_recipients': 0,
             'default_member_action': POLICY_MEMBER_CONVERT[
                 db_list['mod_policy']],
             'default_nonmember_action': POLICY_OTHER_CONVERT[
@@ -246,12 +247,12 @@ The original message as received by Mailman is attached.
             mm_list.add_role('nonmember', address)
             white = mm_list.get_nonmember(address)
             if white is not None:
-                white.moderation_action = 'accept'
+                white.moderation_action = 'defer'
                 white.save()
         for address in current_whites:
             white = mm_whitelist[address]
-            if white.moderation_action != 'accept':
-                white.moderation_action = 'accept'
+            if white.moderation_action != 'defer':
+                white.moderation_action = 'defer'
                 white.save()
         for address in delete_whites:
             mm_list.remove_role('nonmember', address)
