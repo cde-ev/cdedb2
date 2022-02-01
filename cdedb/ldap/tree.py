@@ -188,7 +188,7 @@ class LDAPsqlTree(QueryMixin):
                 "cn": [f"{user['given_names']} {user['family_name']}"],
                 "sn": [user['family_name'] or ""],
                 "displayName": [f"{display_name} {user['family_name']}"],
-                "givenNames": [user['given_names'] or ""],
+                "givenName": [user['given_names'] or ""],
                 "mail": [user['username'] or ""],
                 "uid": [self.user_uid(persona_id)],
                 "userPassword": [user['password_hash']],
