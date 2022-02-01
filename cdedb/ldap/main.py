@@ -1,33 +1,14 @@
 import sys
 
 from ldaptor.interfaces import IConnectedLDAPEntry
-from ldaptor.protocols.ldap.ldapserver import LDAPServer
 from twisted.application import service
 from twisted.internet import reactor
-from twisted.internet.protocol import ServerFactory
 from twisted.python import log
 from twisted.python.components import registerAdapter
 
 from cdedb.ldap.entry import LDAPsqlEntry
+from cdedb.ldap.server import LDAPServerFactory
 from cdedb.ldap.tree import LDAPsqlTree
-
-
-class LDAPServerFactory(ServerFactory):
-    """
-    Our Factory is meant to persistently store the ldap tree
-    """
-
-    protocol = LDAPServer
-
-    def __init__(self, root):
-        self.root = root
-
-    def buildProtocol(self, addr):
-        proto = self.protocol()
-        proto.debug = self.debug
-        proto.factory = self
-        return proto
-
 
 if __name__ == "__main__":
     port = 20389

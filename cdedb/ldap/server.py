@@ -3,6 +3,7 @@ from ldaptor.protocols.ldap import ldaperrors
 from ldaptor.protocols.ldap.distinguishedname import DistinguishedName
 from ldaptor.protocols.ldap.ldapserver import LDAPServer
 from ldaptor.protocols.pureldap import LDAPSearchRequest
+from twisted.internet.protocol import ServerFactory
 
 from cdedb.ldap.entry import LDAPsqlEntry
 
@@ -44,3 +45,20 @@ class CdEDBLDAPServer(LDAPServer):
 
         d.addCallback(_done)
         return d
+
+
+class LDAPServerFactory(ServerFactory):
+    """
+    Our Factory is meant to persistently store the ldap tree
+    """
+
+    protocol = CdEDBLDAPServer
+
+    def __init__(self, root):
+        self.root = root
+
+    def buildProtocol(self, addr):
+        proto = self.protocol()
+        proto.debug = self.debug
+        proto.factory = self
+        return proto
