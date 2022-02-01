@@ -14,7 +14,8 @@ from cdedb.database.connection import ConnectionContainer, connection_pool_facto
 from cdedb.database.constants import SubscriptionState
 from cdedb.database.query import QueryMixin
 
-LDAPObject = Dict[str, List[str]]
+# TODO should the attributes be also bytes instead of strings?
+LDAPObject = Dict[bytes, List[str]]
 LDAPObjectMap = Dict[DN, LDAPObject]
 
 
@@ -120,9 +121,9 @@ class LDAPsqlTree(QueryMixin):
             if name not in duas:
                 continue
             dua = {
-                "objectClass": ["person", "simpleSecurityObject"],
-                "cn": [self.dua_cn(name)],
-                "userPassword": [duas[name]["password_hash"]]
+                b"objectClass": ["person", "simpleSecurityObject"],
+                b"cn": [self.dua_cn(name)],
+                b"userPassword": [duas[name]["password_hash"]]
             }
             ret[dn] = dua
         return ret
@@ -184,15 +185,15 @@ class LDAPsqlTree(QueryMixin):
             else:
                 display_name = user["given_names"]
             ldap_user = {
-                "objectClass": ["inetOrgPerson"],
-                "cn": [f"{user['given_names']} {user['family_name']}"],
-                "sn": [user['family_name'] or ""],
-                "displayName": [f"{display_name} {user['family_name']}"],
-                "givenName": [user['given_names'] or ""],
-                "mail": [user['username'] or ""],
-                "uid": [self.user_uid(persona_id)],
-                "userPassword": [user['password_hash']],
-                "memberOf": []  # TODO
+                b"objectClass": ["inetOrgPerson"],
+                b"cn": [f"{user['given_names']} {user['family_name']}"],
+                b"sn": [user['family_name'] or ""],
+                b"displayName": [f"{display_name} {user['family_name']}"],
+                b"givenName": [user['given_names'] or ""],
+                b"mail": [user['username'] or ""],
+                b"uid": [self.user_uid(persona_id)],
+                b"userPassword": [user['password_hash']],
+                #"memberOf": []  # TODO
             }
             ret[dn] = ldap_user
         return ret
@@ -272,10 +273,10 @@ class LDAPsqlTree(QueryMixin):
             query = f"SELECT id FROM core.personas WHERE {condition}"
             members = self.query_all(self.rs, query, [])
             group = {
-                "cn": [self.status_group_cn(name)],
-                "objectClass": ["groupOfUniqueNames"],
-                "description": [self.STATUS_GROUPS[name]],
-                "uniqueMember": [self.user_dn(e["id"]) for e in members]
+                b"cn": [self.status_group_cn(name)],
+                b"objectClass": ["groupOfUniqueNames"],
+                b"description": [self.STATUS_GROUPS[name]],
+                b"uniqueMember": [self.user_dn(e["id"]) for e in members]
             }
             ret[dn] = group
         return ret
@@ -335,10 +336,10 @@ class LDAPsqlTree(QueryMixin):
             if assembly_id not in presiders:
                 continue
             group = {
-                "objectClass": ["groupOfUniqueNames"],
-                "cn": [self.presider_group_cn(assembly_id)],
-                "description": [f"{assemblies[assembly_id]['title']} ({assemblies[assembly_id]['shortname']})"],
-                "uniqueMember": [self.user_dn(e) for e in presiders[assembly_id]]
+                b"objectClass": ["groupOfUniqueNames"],
+                b"cn": [self.presider_group_cn(assembly_id)],
+                b"description": [f"{assemblies[assembly_id]['title']} ({assemblies[assembly_id]['shortname']})"],
+                b"uniqueMember": [self.user_dn(e) for e in presiders[assembly_id]]
             }
             ret[dn] = group
         return ret
@@ -397,10 +398,10 @@ class LDAPsqlTree(QueryMixin):
             if event_id not in orgas:
                 continue
             group = {
-                "objectClass": ["groupOfUniqueNames"],
-                "cn": [self.orga_group_cn(event_id)],
-                "description": [f"{events[event_id]['title']} ({events[event_id]['shortname']})"],
-                "uniqueMember": [self.user_dn(e) for e in orgas[event_id]]
+                b"objectClass": ["groupOfUniqueNames"],
+                b"cn": [self.orga_group_cn(event_id)],
+                b"description": [f"{events[event_id]['title']} ({events[event_id]['shortname']})"],
+                b"uniqueMember": [self.user_dn(e) for e in orgas[event_id]]
             }
             ret[dn] = group
         return ret
@@ -466,10 +467,10 @@ class LDAPsqlTree(QueryMixin):
                 continue
             cn = self.moderator_group_cn(address)
             group = {
-                "objectClass": ["groupOfUniqueNames"],
-                "cn": [cn],
-                "description": [f"{mls[address]['title']} <{cn}>"],
-                "uniqueMember": [self.user_dn(e) for e in moderators[address]]
+                b"objectClass": ["groupOfUniqueNames"],
+                b"cn": [cn],
+                b"description": [f"{mls[address]['title']} <{cn}>"],
+                b"uniqueMember": [self.user_dn(e) for e in moderators[address]]
             }
             ret[dn] = group
         return ret
@@ -530,10 +531,10 @@ class LDAPsqlTree(QueryMixin):
             if address not in subscribers:
                 continue
             group = {
-                "objectClass": ["groupOfUniqueNames"],
-                "cn": [self.subscriber_group_cn(address)],
-                "description": [f"{mls[address]['title']} <{address}>"],
-                "uniqueMember": [self.user_dn(e) for e in subscribers[address]]
+                b"objectClass": ["groupOfUniqueNames"],
+                b"cn": [self.subscriber_group_cn(address)],
+                b"description": [f"{mls[address]['title']} <{address}>"],
+                b"uniqueMember": [self.user_dn(e) for e in subscribers[address]]
             }
             ret[dn] = group
         return ret

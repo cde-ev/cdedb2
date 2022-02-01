@@ -23,8 +23,8 @@ class CdEDBLDAPServer(LDAPServer):
             """The callback function which sends the entry after it was found."""
             attributes = {key: value for key, value in entry.items()}
             # never ever return an userPassword in a search result
-            if "userPassword" in attributes:
-                del attributes["userPassword"]
+            if b"userPassword" in attributes:
+                del attributes[b"userPassword"]
 
             tree = entry.tree
             users_dn = DistinguishedName(stringValue=tree.users_dn)
