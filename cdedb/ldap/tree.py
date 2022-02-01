@@ -37,11 +37,6 @@ class LDAPsqlTree(QueryMixin):
         super().__init__(self.logger)
 
     @staticmethod
-    def _user_dn(persona_id: int) -> str:
-        """Central point to create the user dn from a given user id."""
-        return f"uid={persona_id},ou=users,dc=cde-ev,dc=de"
-
-    @staticmethod
     def _dn_value(dn: DN, attribute: str) -> Optional[str]:
         """Retrieve the value of the RDN matching the given attribute type."""
         rdn = dn.split()[0]
@@ -51,29 +46,88 @@ class LDAPsqlTree(QueryMixin):
         else:
             return None
 
+    @staticmethod
+    def _extract_id(cn: str, prefix: str) -> Optional[int]:
+        """Extract the id from a cn by stripping the prefix.
+
+        This especially checks that the id is a valid base 10 integer.
+        """
+        if match := re.match(f"^{prefix}(?P<id>\d+)$", cn):
+            return int(match.group("id"))
+        else:
+            return None
+
+    @property
+    def de_dn(self) -> str:
+        return "dc=de"
+
+    @property
+    def cde_dn(self) -> str:
+        return f"dc=cde-ev,{self.de_dn}"
+
+    ########
+    # duas #
+    ########
+
+    @property
+    def duas_dn(self) -> str:
+        return f"ou=duas,{self.cde_dn}"
+
+    @staticmethod
+    def dua_cn(name: str) -> str:
+        return name
+
+    @staticmethod
+    def dua_name(cn: str) -> str:
+        return cn
+
+    def dua_dn(self, name: str) -> str:
+        return f"cn={self.dua_cn(name)},{self.duas_dn}"
+
     def get_duas(self, dns: List[DN]) -> LDAPObjectMap:
-        dn_to_cn = dict()
+        dn_to_name = dict()
         for dn in dns:
             cn = self._dn_value(dn, attribute="cn")
             if cn is None:
                 continue
-            dn_to_cn[dn] = cn
+            name = self.dua_name(cn)
+            if name is None:
+                continue
+            dn_to_name[dn] = name
 
         query = "SELECT cn, password_hash FROM ldap.duas WHERE cn = ANY(%s)"
-        data = self.query_all(self.rs, query, (dn_to_cn.values(),))
+        data = self.query_all(self.rs, query, (dn_to_name.values(),))
         duas = {e["cn"]: e for e in data}
 
         ret = dict()
-        for dn, cn in dn_to_cn.items():
-            if cn not in duas:
+        for dn, name in dn_to_name.items():
+            if name not in duas:
                 continue
             dua = {
-                "objectclass": ["person"],
-                "cn": [cn],
-                "userPassword": [duas[cn]["password_hash"]]
+                "objectclass": ["person", "simpleSecurityObject"],
+                "cn": [self.dua_cn(name)],
+                "userPassword": [duas[name]["password_hash"]]
             }
             ret[dn] = dua
         return ret
+
+    #########
+    # users #
+    #########
+
+    @property
+    def users_dn(self) -> str:
+        return f"ou=users,{self.cde_dn}"
+
+    @staticmethod
+    def user_uid(persona_id: int) -> str:
+        return str(persona_id)
+
+    def user_id(self, uid: str) -> Optional[int]:
+        return self._extract_id(uid, prefix="")
+
+    def user_dn(self, persona_id: int) -> str:
+        return f"uid={self.user_uid(persona_id)},{self.users_dn}"
 
     def get_users(self, dns: List[DN]) -> LDAPObjectMap:
         dn_to_persona_id = dict()
@@ -81,8 +135,7 @@ class LDAPsqlTree(QueryMixin):
             uid = self._dn_value(dn, attribute="uid")
             if uid is None:
                 continue
-            # mainly to check that the uid is a base 10 integer
-            persona_id = self.extract_id(uid, prefix="")
+            persona_id = self.user_id(uid)
             if persona_id is None:
                 continue
             dn_to_persona_id[dn] = persona_id
@@ -110,12 +163,38 @@ class LDAPsqlTree(QueryMixin):
                 "displayName": [f"{display_name} {user['family_name']}"],
                 "givenNames": [user['given_names'] or ""],
                 "mail": [user['username'] or ""],
-                "uid": [persona_id],
+                "uid": [self.user_uid(persona_id)],
                 "userPassword": [user['password_hash']],
                 "memberOf": []  # TODO
             }
             ret[dn] = ldap_user
         return ret
+
+    ##########
+    # groups #
+    ##########
+
+    @property
+    def groups_dn(self) -> str:
+        return f"ou=groups,{self.cde_dn}"
+
+    #
+    # status
+    #
+
+    @property
+    def status_groups_dn(self):
+        return f"ou=status,{self.groups_dn}"
+
+    @staticmethod
+    def status_group_cn(name: str) -> str:
+        return name
+
+    def status_group_name(self, cn: str) -> Optional[str]:
+        return cn if cn in self.STATUS_GROUPS else None
+
+    def status_group_dn(self, name: str) -> str:
+        return f"cn={self.status_group_cn(name)},{self.status_groups_dn}"
 
     STATUS_GROUPS = {
         "is_active": "Aktive Nutzer.",
@@ -135,43 +214,53 @@ class LDAPsqlTree(QueryMixin):
     }
 
     def get_status_groups(self, dns: List[DN]) -> LDAPObjectMap:
-        dn_to_cn = dict()
+        dn_to_name = dict()
         for dn in dns:
             cn = self._dn_value(dn, attribute="cn")
             if cn is None:
                 continue
-            dn_to_cn[dn] = cn
+            name = self.status_group_name(cn)
+            if name is None:
+                continue
+            dn_to_name[dn] = name
 
         # since we have only a small group of status groups, we query them one by one
         ret = dict()
-        for dn, cn in dn_to_cn.items():
-            if cn not in self.STATUS_GROUPS:
+        for dn, name in dn_to_name.items():
+            if name not in self.STATUS_GROUPS:
                 continue
-            if cn == "is_searchable":
+            if name == "is_searchable":
                 condition = "is_member AND is_searchable"
             else:
-                condition = cn
+                condition = name
             query = f"SELECT id FROM core.personas WHERE {condition}"
             members = self.query_all(self.rs, query, [])
             group = {
-                "cn": [cn],
+                "cn": [self.status_group_cn(name)],
                 "objectclass": ["groupOfUniqueNames"],
-                "description": [self.STATUS_GROUPS[cn]],
-                "uniqueMember": [self._user_dn(e["id"]) for e in members]
+                "description": [self.STATUS_GROUPS[name]],
+                "uniqueMember": [self.user_dn(e["id"]) for e in members]
             }
             ret[dn] = group
         return ret
 
-    @staticmethod
-    def extract_id(cn: str, prefix: str) -> Optional[int]:
-        """Extract the id from a cn by stripping the prefix.
+    #
+    # presiders
+    #
 
-        This especially checks that the id is a valid base 10 integer.
-        """
-        if match := re.match(f"^{prefix}(?P<id>\d+)$", cn):
-            return int(match.group("id"))
-        else:
-            return None
+    @property
+    def presider_groups_dn(self) -> str:
+        return f"ou=assembly-presiders,{self.groups_dn}"
+
+    @staticmethod
+    def presider_group_cn(assembly_id: int) -> str:
+        return f"presiders-{assembly_id}"
+
+    def presider_group_id(self, cn: str) -> Optional[int]:
+        return self._extract_id(cn, prefix="presiders-")
+
+    def presider_group_dn(self, assembly_id: int) -> str:
+        return f"cn={self.presider_group_cn(assembly_id)},{self.presider_groups_dn}"
 
     def get_assembly_presider_groups(self, dns: List[DN]) -> LDAPObjectMap:
         dn_to_assembly_id = dict()
@@ -179,7 +268,7 @@ class LDAPsqlTree(QueryMixin):
             cn = self._dn_value(dn, attribute="cn")
             if cn is None:
                 continue
-            assembly_id = self.extract_id(cn, prefix="presiders-")
+            assembly_id = self.presider_group_id(cn)
             if assembly_id is None:
                 continue
             dn_to_assembly_id[dn] = assembly_id
@@ -200,12 +289,30 @@ class LDAPsqlTree(QueryMixin):
                 continue
             group = {
                 "objectclass": ["groupOfUniqueNames"],
-                "cn": [f"presiders-{assembly_id}"],
+                "cn": [self.presider_group_cn(assembly_id)],
                 "description": [f"{assemblies[assembly_id]['title']} ({assemblies[assembly_id]['shortname']})"],
-                "uniqueMember": [self._user_dn(e) for e in presiders[assembly_id]]
+                "uniqueMember": [self.user_dn(e) for e in presiders[assembly_id]]
             }
             ret[dn] = group
         return ret
+
+    #
+    # orgas
+    #
+
+    @property
+    def orga_groups_dn(self) -> str:
+        return f"ou=event-orgas,{self.groups_dn}"
+
+    @staticmethod
+    def orga_group_cn(event_id: int) -> str:
+        return f"orgas-{event_id}"
+
+    def orga_group_id(self, cn: str) -> Optional[int]:
+        return self._extract_id(cn, prefix="orgas-")
+
+    def orga_group_dn(self, event_id: int) -> str:
+        return f"cn={self.orga_group_cn(event_id)},{self.orga_groups_dn}"
 
     def get_event_orga_groups(self, dns: List[DN]) -> LDAPObjectMap:
         dn_to_event_id = dict()
@@ -213,7 +320,7 @@ class LDAPsqlTree(QueryMixin):
             cn = self._dn_value(dn, attribute="cn")
             if cn is None:
                 continue
-            event_id = self.extract_id(cn, prefix="orgas-")
+            event_id = self.orga_group_id(cn)
             if event_id is None:
                 continue
             dn_to_event_id[dn] = event_id
@@ -233,20 +340,34 @@ class LDAPsqlTree(QueryMixin):
                 continue
             group = {
                 "objectclass": ["groupOfUniqueNames"],
-                "cn": [f"orgas-{event_id}"],
+                "cn": [self.orga_group_cn(event_id)],
                 "description": [f"{events[event_id]['title']} ({events[event_id]['shortname']})"],
-                "uniqueMember": [self._user_dn(e) for e in orgas[event_id]]
+                "uniqueMember": [self.user_dn(e) for e in orgas[event_id]]
             }
             ret[dn] = group
         return ret
 
+    #
+    # moderators
+    #
+
+    @property
+    def moderator_groups_dn(self) -> str:
+        return f"ou=ml-moderators,{self.groups_dn}"
+
     @staticmethod
-    def extract_address(owner_address: str) -> Optional[str]:
-        expression = r"(?P<local_part>[\w.-]*)-owner@(?P<domain>[\w.-]*)"
-        if match := re.match(expression, owner_address):
+    def moderator_group_cn(address: str) -> str:
+        return address.replace("@", "-owner@")
+
+    @staticmethod
+    def moderator_group_address(cn: str) -> Optional[str]:
+        if match := re.match(r"(?P<local_part>[\w.-]*)-owner@(?P<domain>[\w.-]*)", cn):
             return f"{match.group('local_part')}@{match.group('domain')}"
         else:
             return None
+
+    def moderator_group_dn(self, address: str) -> str:
+        return f"cn={self.moderator_group_cn(address)},{self.moderator_groups_dn}"
 
     def get_ml_moderator_groups(self, dns: List[DN]) -> LDAPObjectMap:
         dn_to_address = dict()
@@ -254,7 +375,7 @@ class LDAPsqlTree(QueryMixin):
             cn = self._dn_value(dn, attribute="cn")
             if cn is None:
                 continue
-            address = self.extract_address(cn)
+            address = self.moderator_group_address(cn)
             if address is None:
                 continue
             dn_to_address[dn] = address
@@ -274,14 +395,34 @@ class LDAPsqlTree(QueryMixin):
         for dn, address in dn_to_address.items():
             if address not in moderators:
                 continue
+            cn = self.moderator_group_cn(address)
             group = {
                 "objectclass": ["groupOfUniqueNames"],
-                "cn": [address.replace("@", "-owner@")],
-                "description": [f"{mls[address]['title']} <{address.replace('@', '-owner@')}>"],
-                "uniqueMember": [self._user_dn(e) for e in moderators[address]]
+                "cn": [cn],
+                "description": [f"{mls[address]['title']} <{cn}>"],
+                "uniqueMember": [self.user_dn(e) for e in moderators[address]]
             }
             ret[dn] = group
         return ret
+
+    #
+    # subscribers
+    #
+
+    @property
+    def subscriber_groups_dn(self) -> str:
+        return f"ou=ml-subscribers,{self.groups_dn}"
+
+    @staticmethod
+    def subscriber_group_cn(address: str) -> str:
+        return address
+
+    @staticmethod
+    def subscriber_group_address(cn: str) -> Optional[str]:
+        return cn
+
+    def subscriber_group_dn(self, address: str) -> str:
+        return f"cn={self.subscriber_group_cn(address)},{self.subscriber_groups_dn}"
 
     def get_ml_subscriber_groups(self, dns: List[DN]) -> LDAPObjectMap:
         dn_to_address = dict()
@@ -289,7 +430,8 @@ class LDAPsqlTree(QueryMixin):
             cn = self._dn_value(dn, attribute="cn")
             if cn is None:
                 continue
-            dn_to_address[dn] = cn
+            address = self.subscriber_group_address(cn)
+            dn_to_address[dn] = address
 
         query = ("SELECT persona_id, address FROM ml.subscription_states, ml.mailinglists"
                  " WHERE ml.mailinglists.id = ml.subscription_states.mailinglist_id"
@@ -309,9 +451,9 @@ class LDAPsqlTree(QueryMixin):
                 continue
             group = {
                 "objectclass": ["groupOfUniqueNames"],
-                "cn": [address],
+                "cn": [self.subscriber_group_cn(address)],
                 "description": [f"{mls[address]['title']} <{address}>"],
-                "uniqueMember": [self._user_dn(e) for e in subscribers[address]]
+                "uniqueMember": [self.user_dn(e) for e in subscribers[address]]
             }
             ret[dn] = group
         return ret
@@ -322,7 +464,7 @@ class LDAPsqlTree(QueryMixin):
         return [
             RDN(
                 attributeTypesAndValues=[
-                    ATV(attributeType="cn", value=e["cn"])
+                    ATV(attributeType="cn", value=self.dua_cn(e["cn"]))
                 ]
             ) for e in data
         ]
@@ -333,29 +475,29 @@ class LDAPsqlTree(QueryMixin):
         return [
             RDN(
                 attributeTypesAndValues=[
-                    ATV(attributeType="uid", value=str(e["id"]))
+                    ATV(attributeType="uid", value=self.user_uid(e["id"]))
                 ]
             ) for e in data
         ]
 
     def list_assembly_presider_groups(self) -> List[RDN]:
-        query = "SELECT assembly_id FROM assembly.presiders"
+        query = "SELECT id FROM assembly.assemblies"
         data = self.query_all(self.rs, query, [])
         return [
             RDN(
                 attributeTypesAndValues=[
-                    ATV(attributeType="cn", value=f"presiders-{e['assembly_id']}")
+                    ATV(attributeType="cn", value=self.presider_group_cn(e["id"]))
                 ]
             ) for e in data
         ]
 
     def list_event_orga_groups(self) -> List[RDN]:
-        query = "SELECT event_id FROM event.orgas"
+        query = "SELECT id FROM event.events"
         data = self.query_all(self.rs, query, [])
         return [
             RDN(
                 attributeTypesAndValues=[
-                    ATV(attributeType="cn", value=f"orgas-{e['event_id']}")
+                    ATV(attributeType="cn", value=self.orga_group_cn(e["id"]))
                 ]
             ) for e in data
         ]
@@ -366,7 +508,7 @@ class LDAPsqlTree(QueryMixin):
         return [
             RDN(
                 attributeTypesAndValues=[
-                    ATV(attributeType="cn", value=e["address"])
+                    ATV(attributeType="cn", value=self.moderator_group_cn(e["address"]))
                 ]
             ) for e in data
         ]
@@ -377,7 +519,7 @@ class LDAPsqlTree(QueryMixin):
         return [
             RDN(
                 attributeTypesAndValues=[
-                    ATV(attributeType="cn", value=e["address"].replace("@", "-owner@"))
+                    ATV(attributeType="cn", value=self.subscriber_group_cn(e["address"]))
                 ]
             ) for e in data
         ]
@@ -386,51 +528,51 @@ class LDAPsqlTree(QueryMixin):
         return [
             RDN(
                 attributeTypesAndValues=[
-                    ATV(attributeType="cn", value=group)
+                    ATV(attributeType="cn", value=self.status_group_cn(name))
                 ]
-            ) for group in self.STATUS_GROUPS
+            ) for name in self.STATUS_GROUPS
         ]
 
     @property
     def branches(self) -> Dict[str, LDAPObject]:
         """All non-leaf ldap entries, mapping their DN to their attributes."""
         return {
-            "dc=de": {
+            self.de_dn: {
                 "objectClass": ["dcObject", "top"],
             },
-            "dc=cde-ev,dc=de": {
+            self.cde_dn: {
                 "objectClass": ["dcObject", "organization"],
                 "o": ["CdE e.V."],
             },
-            "ou=duas,dc=cde-ev,dc=de": {
+            self.duas_dn: {
                 "objectClass": ["organizationalUnit"],
                 "o": ["Directory User Agents"]
             },
-            "ou=users,dc=cde-ev,dc=de": {
+            self.users_dn: {
                 "objectClass": ["organizationalUnit"],
                 "o": ["Users"]
             },
-            "ou=groups,dc=cde-ev,dc=de": {
+            self.groups_dn: {
                 "objectClass": ["organizationalUnit"],
                 "o": ["Groups"]
             },
-            "ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de": {
+            self.presider_groups_dn: {
                 "objectClass": ["organizationalUnit"],
                 "o": ["Assembly Presiders"]
             },
-            "ou=event-orgas,ou=groups,dc=cde-ev,dc=de": {
+            self.orga_groups_dn: {
                 "objectClass": ["organizationalUnit"],
                 "o": ["Event Orgas"]
             },
-            "ou=ml-moderators,ou=groups,dc=cde-ev,dc=de": {
+            self.moderator_groups_dn: {
                 "objectClass": ["organizationalUnit"],
                 "o": ["Mailinglists Moderators"]
             },
-            "ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de": {
+            self.subscriber_groups_dn: {
                 "objectClass": ["organizationalUnit"],
                 "o": ["Mailinglists Subscribers"]
             },
-            "ou=status,ou=groups,dc=cde-ev,dc=de": {
+            self.status_groups_dn: {
                 "objectClass": ["organizationalUnit"],
                 "o": ["Status"]
             }
@@ -444,31 +586,31 @@ class LDAPsqlTree(QueryMixin):
         of entities and listing all entities.
         """
         return {
-            "ou=duas,dc=cde-ev,dc=de": {
+            self.duas_dn: {
                 "get_entities": self.get_duas,
                 "list_entities": self.list_duas,
             },
-            "ou=users,dc=cde-ev,dc=de": {
+            self.users_dn: {
                 "get_entities": self.get_users,
                 "list_entities": self.list_users,
             },
-            "ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de": {
+            self.presider_groups_dn: {
                 "get_entities": self.get_assembly_presider_groups,
                 "list_entities": self.list_assembly_presider_groups,
             },
-            "ou=event-orgas,ou=groups,dc=cde-ev,dc=de": {
+            self.orga_groups_dn: {
                 "get_entities": self.get_event_orga_groups,
                 "list_entities": self.list_event_orga_groups,
             },
-            "ou=ml-moderators,ou=groups,dc=cde-ev,dc=de": {
+            self.moderator_groups_dn: {
                 "get_entities": self.get_ml_moderator_groups,
                 "list_entities": self.list_ml_moderator_groups,
             },
-            "ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de": {
+            self.subscriber_groups_dn: {
                 "get_entities": self.get_ml_subscriber_groups,
                 "list_entities": self.list_ml_subscriber_groups,
             },
-            "ou=status,ou=groups,dc=cde-ev,dc=de": {
+            self.status_groups_dn: {
                 "get_entities": self.get_status_groups,
                 "list_entities": self.list_status_groups,
             }
