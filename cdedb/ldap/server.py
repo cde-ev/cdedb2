@@ -11,6 +11,12 @@ from cdedb.ldap.entry import LDAPsqlEntry
 class CdEDBLDAPServer(LDAPServer):
     """Subclass the LDAPServer to add some security restrictions."""
 
+    def handle_LDAPBindRequest(self, request, controls, reply):
+        if request.dn == b"":
+            # anonymous bind
+            raise ldaperrors.LDAPAuthMethodNotSupported("Anonymous bind not supported.")
+        return super().handle_LDAPBindRequest(request, controls, reply)
+
     def _cbSearchGotBase(self, base: LDAPsqlEntry, dn: DistinguishedName, request: LDAPSearchRequest, reply):
         def _sendEntryToClient(entry):
             requested_attribs = request.attributes
