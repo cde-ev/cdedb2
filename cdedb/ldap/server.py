@@ -12,9 +12,11 @@ class CdEDBLDAPServer(LDAPServer):
     """Subclass the LDAPServer to add some security restrictions."""
 
     def handle_LDAPBindRequest(self, request, controls, reply):
+        # anonymous bind
         if request.dn == b"":
-            # anonymous bind
-            raise ldaperrors.LDAPAuthMethodNotSupported("Anonymous bind not supported.")
+            # TODO close connection more gracefully by using ldaptors errors
+            self.transport.loseConnection()
+            return
         return super().handle_LDAPBindRequest(request, controls, reply)
 
     def _cbSearchGotBase(self, base: LDAPsqlEntry, dn: DistinguishedName, request: LDAPSearchRequest, reply):
