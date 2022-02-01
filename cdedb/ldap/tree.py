@@ -120,7 +120,7 @@ class LDAPsqlTree(QueryMixin):
             if name not in duas:
                 continue
             dua = {
-                "objectclass": ["person", "simpleSecurityObject"],
+                "objectClass": ["person", "simpleSecurityObject"],
                 "cn": [self.dua_cn(name)],
                 "userPassword": [duas[name]["password_hash"]]
             }
@@ -184,7 +184,7 @@ class LDAPsqlTree(QueryMixin):
             else:
                 display_name = user["given_names"]
             ldap_user = {
-                "objectclass": ["inetOrgPerson"],
+                "objectClass": ["inetOrgPerson"],
                 "cn": [f"{user['given_names']} {user['family_name']}"],
                 "sn": [user['family_name'] or ""],
                 "displayName": [f"{display_name} {user['family_name']}"],
@@ -273,7 +273,7 @@ class LDAPsqlTree(QueryMixin):
             members = self.query_all(self.rs, query, [])
             group = {
                 "cn": [self.status_group_cn(name)],
-                "objectclass": ["groupOfUniqueNames"],
+                "objectClass": ["groupOfUniqueNames"],
                 "description": [self.STATUS_GROUPS[name]],
                 "uniqueMember": [self.user_dn(e["id"]) for e in members]
             }
@@ -335,7 +335,7 @@ class LDAPsqlTree(QueryMixin):
             if assembly_id not in presiders:
                 continue
             group = {
-                "objectclass": ["groupOfUniqueNames"],
+                "objectClass": ["groupOfUniqueNames"],
                 "cn": [self.presider_group_cn(assembly_id)],
                 "description": [f"{assemblies[assembly_id]['title']} ({assemblies[assembly_id]['shortname']})"],
                 "uniqueMember": [self.user_dn(e) for e in presiders[assembly_id]]
@@ -397,7 +397,7 @@ class LDAPsqlTree(QueryMixin):
             if event_id not in orgas:
                 continue
             group = {
-                "objectclass": ["groupOfUniqueNames"],
+                "objectClass": ["groupOfUniqueNames"],
                 "cn": [self.orga_group_cn(event_id)],
                 "description": [f"{events[event_id]['title']} ({events[event_id]['shortname']})"],
                 "uniqueMember": [self.user_dn(e) for e in orgas[event_id]]
@@ -466,7 +466,7 @@ class LDAPsqlTree(QueryMixin):
                 continue
             cn = self.moderator_group_cn(address)
             group = {
-                "objectclass": ["groupOfUniqueNames"],
+                "objectClass": ["groupOfUniqueNames"],
                 "cn": [cn],
                 "description": [f"{mls[address]['title']} <{cn}>"],
                 "uniqueMember": [self.user_dn(e) for e in moderators[address]]
@@ -530,7 +530,7 @@ class LDAPsqlTree(QueryMixin):
             if address not in subscribers:
                 continue
             group = {
-                "objectclass": ["groupOfUniqueNames"],
+                "objectClass": ["groupOfUniqueNames"],
                 "cn": [self.subscriber_group_cn(address)],
                 "description": [f"{mls[address]['title']} <{address}>"],
                 "uniqueMember": [self.user_dn(e) for e in subscribers[address]]
