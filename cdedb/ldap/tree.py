@@ -125,8 +125,11 @@ class LDAPsqlTree(QueryMixin):
 
     @staticmethod
     def extract_id(cn: str, prefix: str) -> Optional[int]:
-        """Extract the id from a cn by stripping the prefix."""
-        if match := re.match(f"{prefix}-(?P<id>\d)", cn):
+        """Extract the id from a cn by stripping the prefix.
+
+        This especially checks that the id is a valid base 10 integer.
+        """
+        if match := re.match(f"^{prefix}(?P<id>\d+)$", cn):
             return int(match.group("id"))
         else:
             return None
@@ -137,7 +140,7 @@ class LDAPsqlTree(QueryMixin):
             cn = self._dn_value(dn, attribute="cn")
             if cn is None:
                 continue
-            assembly_id = self.extract_id(cn, prefix="presiders")
+            assembly_id = self.extract_id(cn, prefix="presiders-")
             if assembly_id is None:
                 continue
             dn_to_assembly_id[dn] = assembly_id
@@ -171,7 +174,7 @@ class LDAPsqlTree(QueryMixin):
             cn = self._dn_value(dn, attribute="cn")
             if cn is None:
                 continue
-            event_id = self.extract_id(cn, prefix="orgas")
+            event_id = self.extract_id(cn, prefix="orgas-")
             if event_id is None:
                 continue
             dn_to_event_id[dn] = event_id
@@ -294,7 +297,7 @@ class LDAPsqlTree(QueryMixin):
         return [
             RDN(
                 attributeTypesAndValues=[
-                    ATV(attributeType="cn", value=f"presider-{e['assembly_id']}")
+                    ATV(attributeType="cn", value=f"presiders-{e['assembly_id']}")
                 ]
             ) for e in data
         ]
