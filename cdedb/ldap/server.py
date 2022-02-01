@@ -18,20 +18,69 @@ class CdEDBLDAPServer(LDAPServer):
         return super().handle_LDAPBindRequest(request, controls, reply)
 
     def _cbSearchGotBase(self, base: LDAPsqlEntry, dn: DistinguishedName, request: LDAPSearchRequest, reply):
-        def _sendEntryToClient(entry):
-            requested_attribs = request.attributes
-            if len(requested_attribs) > 0 and b"*" not in requested_attribs:
-                filtered_attribs = [
-                    (k, entry.get(k)) for k in requested_attribs if k in entry
-                ]
+
+        def _sendEntryToClient(entry: LDAPsqlEntry):
+            """The callback function which sends the entry after it was found."""
+            attributes = {key: value for key, value in entry.items()}
+            # never ever return an userPassword in a search result
+            if "userPassword" in attributes:
+                del attributes["userPassword"]
+
+            tree = entry.tree
+            users_dn = DistinguishedName(stringValue=tree.users_dn)
+            groups_dn = DistinguishedName(stringValue=tree.groups_dn)
+            duas_dn = DistinguishedName(stringValue=tree.duas_dn)
+
+            return_result = True
+            # the requested entry is a user
+            if users_dn.contains(entry.dn):
+                # the contains check succeeds also on equality
+                if users_dn == entry.dn:
+                    pass
+                # the user is requesting his own data
+                elif self.boundUser.dn == entry.dn:
+                    pass
+                # the request comes from a dua
+                elif duas_dn.contains(self.boundUser.dn):
+                    pass
+                # disallow other requests
+                else:
+                    return_result = False
+            # the requested entry is a group
+            elif groups_dn.contains(entry.dn):
+                # the contains check succeeds also on equality
+                if groups_dn == entry.dn:
+                    pass
+                # the request comes from a dua
+                elif duas_dn.contains(self.boundUser.dn):
+                    pass
+                # disallow other requests
+                else:
+                    return_result = False
+            elif duas_dn.contains(entry.dn):
+                # the contains check succeeds also on equality
+                if duas_dn == entry.dn:
+                    pass
+                # the request comes from a dua
+                elif duas_dn.contains(self.boundUser.dn):
+                    pass
+                # disallow other requests
+                else:
+                    return_result = False
+
+            # filter the attributes requested in the search
+            if b"*" in request.attributes or len(request.attributes) == 0:
+                filtered_attributes = attributes.items()
             else:
-                filtered_attribs = entry.items()
-            reply(
-                pureldap.LDAPSearchResultEntry(
-                    objectName=entry.dn.getText(),
-                    attributes=filtered_attribs,
-                )
-            )
+                filtered_attributes = [
+                    (key, attributes.get(key)) for key in request.attributes
+                    if key in attributes]
+
+            # return a result only if the boundUser is allowed to access it
+            if return_result:
+                reply(pureldap.LDAPSearchResultEntry(objectName=entry.dn.getText(),
+                                                     attributes=filtered_attributes))
+            # otherwise, return nothing
 
         d = base.search(
             filterObject=request.filter,
