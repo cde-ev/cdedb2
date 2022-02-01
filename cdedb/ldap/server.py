@@ -3,6 +3,7 @@ from ldaptor.protocols.ldap import ldaperrors
 from ldaptor.protocols.ldap.distinguishedname import DistinguishedName
 from ldaptor.protocols.ldap.ldapserver import LDAPServer
 from ldaptor.protocols.pureldap import LDAPSearchRequest
+from twisted.internet import defer
 from twisted.internet.protocol import ServerFactory
 
 from cdedb.ldap.entry import LDAPsqlEntry
@@ -10,14 +11,6 @@ from cdedb.ldap.entry import LDAPsqlEntry
 
 class CdEDBLDAPServer(LDAPServer):
     """Subclass the LDAPServer to add some security restrictions."""
-
-    def handle_LDAPBindRequest(self, request, controls, reply):
-        # anonymous bind
-        if request.dn == b"":
-            # TODO close connection more gracefully by using ldaptors errors
-            self.transport.loseConnection()
-            return
-        return super().handle_LDAPBindRequest(request, controls, reply)
 
     def _cbSearchGotBase(self, base: LDAPsqlEntry, dn: DistinguishedName, request: LDAPSearchRequest, reply):
 
@@ -36,8 +29,14 @@ class CdEDBLDAPServer(LDAPServer):
             cloud_dn = DistinguishedName(tree.dua_dn("cloud"))
 
             return_result = True
+            # anonymous users may not access anything - this is only a fail save
+            if self.boundUser is None:
+                return_result = False
+            # TODO do we need an admin dn?
+            elif self.boundUser.dn == admin_dn:
+                return_result = True
             # the requested entry is a user
-            if users_dn.contains(entry.dn):
+            elif users_dn.contains(entry.dn):
                 # the contains check succeeds also on equality
                 if users_dn == entry.dn:
                     pass
@@ -79,10 +78,6 @@ class CdEDBLDAPServer(LDAPServer):
                 else:
                     return_result = False
 
-            # TODO do we need an admin dn?
-            if self.boundUser.dn == admin_dn:
-                return_result = True
-
             # filter the attributes requested in the search
             if b"*" in request.attributes or len(request.attributes) == 0:
                 filtered_attributes = attributes.items()
@@ -96,6 +91,9 @@ class CdEDBLDAPServer(LDAPServer):
                 reply(pureldap.LDAPSearchResultEntry(objectName=entry.dn.getText(),
                                                      attributes=filtered_attributes))
             # otherwise, return nothing
+
+        if self.boundUser is None:
+            return defer.fail(ldaperrors.LDAPUnwillingToPerform("No anonymous search."))
 
         d = base.search(
             filterObject=request.filter,
@@ -115,6 +113,29 @@ class CdEDBLDAPServer(LDAPServer):
 
         d.addCallback(_done)
         return d
+
+    def handle_LDAPCompareRequest(self, request, controls, reply):
+        if self.boundUser is None:
+            return defer.fail(ldaperrors.LDAPUnwillingToPerform("No anonymous compare"))
+        return super().handle_LDAPCompareRequest(request, controls, reply)
+
+    def handle_LDAPDelRequest(self, request, controls, reply):
+        return defer.fail(ldaperrors.LDAPUnwillingToPerform("Not implemented"))
+
+    def handle_LDAPAddRequest(self, request, controls, reply):
+        return defer.fail(ldaperrors.LDAPUnwillingToPerform("Not implemented"))
+
+    def handle_LDAPModifyDNRequest(self, request, controls, reply):
+        return defer.fail(ldaperrors.LDAPUnwillingToPerform("Not implemented"))
+
+    def handle_LDAPModifyRequest(self, request, controls, reply):
+        return defer.fail(ldaperrors.LDAPUnwillingToPerform("Not implemented"))
+
+    def handle_LDAPExtendedRequest(self, request, controls, reply):
+        return defer.fail(ldaperrors.LDAPUnwillingToPerform("Not implemented"))
+
+    def extendedRequest_LDAPPasswordModifyRequest(self, data, reply):
+        return defer.fail(ldaperrors.LDAPUnwillingToPerform("Not implemented"))
 
 
 class LDAPServerFactory(ServerFactory):

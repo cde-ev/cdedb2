@@ -93,7 +93,8 @@ class TestLDAP(BasicTest):
     def test_anonymous_bind(self) -> None:
         conn = ldap3.Connection(self.server)
         self.assertTrue(conn.bind())
-        self.assertEqual(conn.extend.standard.who_am_i(), None)
+        # TODO not supported by ldaptor
+        # self.assertEqual(conn.extend.standard.who_am_i(), None)
 
     def test_simple_password_bind(self) -> None:
         # try to bind to nonexistent dua
