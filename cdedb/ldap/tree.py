@@ -76,7 +76,46 @@ class LDAPsqlTree(QueryMixin):
         return ret
 
     def get_users(self, dns: List[DN]) -> LDAPObjectMap:
-        pass
+        dn_to_persona_id = dict()
+        for dn in dns:
+            uid = self._dn_value(dn, attribute="uid")
+            if uid is None:
+                continue
+            # mainly to check that the uid is a base 10 integer
+            persona_id = self.extract_id(uid, prefix="")
+            if persona_id is None:
+                continue
+            dn_to_persona_id[dn] = persona_id
+
+        query = (
+            "SELECT id, username, display_name, given_names, family_name, password_hash"
+            " FROM core.personas WHERE id = ANY(%s)")
+        data = self.query_all(self.rs, query, (dn_to_persona_id.values(),))
+        users = {e["id"]: e for e in data}
+
+        ret = dict()
+        for dn, persona_id in dn_to_persona_id.items():
+            if persona_id not in users:
+                continue
+            user = users[persona_id]
+            # mimik the implementation of frontend.common.make_persona_name
+            if user["display_name"] and user["display_name"] in user["given_names"]:
+                display_name = user["display_name"]
+            else:
+                display_name = user["given_names"]
+            ldap_user = {
+                "objectclass": ["inetOrgPerson"],
+                "cn": [f"{user['given_names']} {user['family_name']}"],
+                "sn": [user['family_name'] or ""],
+                "displayName": [f"{display_name} {user['family_name']}"],
+                "givenNames": [user['given_names'] or ""],
+                "mail": [user['username'] or ""],
+                "uid": [persona_id],
+                "userPassword": [user['password_hash']],
+                "memberOf": []  # TODO
+            }
+            ret[dn] = ldap_user
+        return ret
 
     STATUS_GROUPS = {
         "is_active": "Aktive Nutzer.",
@@ -289,7 +328,15 @@ class LDAPsqlTree(QueryMixin):
         ]
 
     def list_users(self) -> List[RDN]:
-        pass
+        query = "SELECT id FROM core.personas"
+        data = self.query_all(self.rs, query, [])
+        return [
+            RDN(
+                attributeTypesAndValues=[
+                    ATV(attributeType="uid", value=str(e["id"]))
+                ]
+            ) for e in data
+        ]
 
     def list_assembly_presider_groups(self) -> List[RDN]:
         query = "SELECT assembly_id FROM assembly.presiders"
