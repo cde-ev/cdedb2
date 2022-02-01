@@ -148,6 +148,9 @@ class LDAPsqlTree(QueryMixin):
         presiders = defaultdict(list)
         for e in data:
             presiders[e["assembly_id"]].append(e["persona_id"])
+        query = "SELECT id, title, shortname FROM assembly.assemblies WHERE id = ANY(%s)"
+        data = self.query_all(self.rs, query, (dn_to_assembly_id.values(),))
+        assemblies = {e["id"]: e for e in data}
 
         ret = dict()
         for dn, assembly_id in dn_to_assembly_id.items():
@@ -156,6 +159,7 @@ class LDAPsqlTree(QueryMixin):
             group = {
                 "objectclass": ["groupOfUniqueNames"],
                 "cn": [f"presiders-{assembly_id}"],
+                "description": [f"{assemblies[assembly_id]['title']} ({assemblies[assembly_id]['shortname']})"],
                 "uniqueMember": [self._user_dn(e) for e in presiders[assembly_id]]
             }
             ret[dn] = group
@@ -177,6 +181,9 @@ class LDAPsqlTree(QueryMixin):
         orgas = defaultdict(list)
         for e in data:
             orgas[e["event_id"]].append(e["persona_id"])
+        query = "SELECT id, title, shortname FROM event.events WHERE id = ANY(%s)"
+        data = self.query_all(self.rs, query, (dn_to_event_id.values(),))
+        events = {e["id"]: e for e in data}
 
         ret = dict()
         for dn, event_id in dn_to_event_id.items():
@@ -185,6 +192,7 @@ class LDAPsqlTree(QueryMixin):
             group = {
                 "objectclass": ["groupOfUniqueNames"],
                 "cn": [f"orgas-{event_id}"],
+                "description": [f"{events[event_id]['title']} ({events[event_id]['shortname']})"],
                 "uniqueMember": [self._user_dn(e) for e in orgas[event_id]]
             }
             ret[dn] = group
@@ -216,6 +224,9 @@ class LDAPsqlTree(QueryMixin):
         moderators = defaultdict(list)
         for e in data:
             moderators[e["address"]].append(e["persona_id"])
+        query = ("SELECT address, title FROM ml.mailinglists WHERE address = ANY(%s)")
+        data = self.query_all(self.rs, query, (dn_to_address.values(),))
+        mls = {e["address"]: e for e in data}
 
         ret = dict()
         for dn, address in dn_to_address.items():
@@ -223,7 +234,8 @@ class LDAPsqlTree(QueryMixin):
                 continue
             group = {
                 "objectclass": ["groupOfUniqueNames"],
-                "cn": [address],
+                "cn": [address.replace("@", "-owner@")],
+                "description": [f"{mls[address]['title']} <{address.replace('@', '-owner@')}>"],
                 "uniqueMember": [self._user_dn(e) for e in moderators[address]]
             }
             ret[dn] = group
@@ -245,6 +257,9 @@ class LDAPsqlTree(QueryMixin):
         subscribers = defaultdict(list)
         for e in data:
             subscribers[e["address"]].append(e["persona_id"])
+        query = ("SELECT address, title FROM ml.mailinglists WHERE address = ANY(%s)")
+        data = self.query_all(self.rs, query, (dn_to_address.values(),))
+        mls = {e["address"]: e for e in data}
 
         ret = dict()
         for dn, address in dn_to_address.items():
@@ -253,6 +268,7 @@ class LDAPsqlTree(QueryMixin):
             group = {
                 "objectclass": ["groupOfUniqueNames"],
                 "cn": [address],
+                "description": [f"{mls[address]['title']} <{address}>"],
                 "uniqueMember": [self._user_dn(e) for e in subscribers[address]]
             }
             ret[dn] = group
