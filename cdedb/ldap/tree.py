@@ -333,7 +333,7 @@ class LDAPsqlTree(QueryMixin):
 
         ret = dict()
         for dn, assembly_id in dn_to_assembly_id.items():
-            if assembly_id not in presiders:
+            if assembly_id not in assemblies:
                 continue
             group = {
                 b"objectClass": ["groupOfUniqueNames"],
@@ -395,7 +395,7 @@ class LDAPsqlTree(QueryMixin):
 
         ret = dict()
         for dn, event_id in dn_to_event_id.items():
-            if event_id not in orgas:
+            if event_id not in events:
                 continue
             group = {
                 b"objectClass": ["groupOfUniqueNames"],
@@ -463,7 +463,7 @@ class LDAPsqlTree(QueryMixin):
 
         ret = dict()
         for dn, address in dn_to_address.items():
-            if address not in moderators:
+            if address not in mls:
                 continue
             cn = self.moderator_group_cn(address)
             group = {
@@ -528,7 +528,7 @@ class LDAPsqlTree(QueryMixin):
 
         ret = dict()
         for dn, address in dn_to_address.items():
-            if address not in subscribers:
+            if address not in mls:
                 continue
             group = {
                 b"objectClass": ["groupOfUniqueNames"],
