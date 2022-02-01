@@ -7,7 +7,10 @@ import zope.interface
 from ldaptor import attributeset, entry
 from ldaptor.protocols.ldap import distinguishedname
 from ldaptor.protocols.ldap.distinguishedname import DistinguishedName
-from ldaptor.protocols.ldap.ldaperrors import LDAPNoSuchObject, LDAPUnwillingToPerform
+from ldaptor.protocols.ldap.ldaperrors import (
+    LDAPInvalidCredentials, LDAPNoSuchObject, LDAPUnwillingToPerform,
+)
+from passlib.hash import sha512_crypt
 from twisted.internet import defer, error
 from twisted.python import failure
 
@@ -52,6 +55,17 @@ class LDAPsqlEntry(
             return
         # this also checks whether the given dn corresponds to a valid entry
         self._load(attributes=attributes)
+
+    def _bind(self, password):
+        """Overwrite the default method to use the encryption algorithm used in CdEDB
+
+        This is must be the same as used in CoreBackend.verify_password.
+        """
+        for key in self._user_password_keys:
+            for digest in self.get(key, ()):
+                if sha512_crypt.verify(password, digest):
+                    return self
+        raise LDAPInvalidCredentials()
 
     def _get_entities(self, dns: List[DistinguishedName]) -> Dict[DistinguishedName, Optional[LDAPObject]]:
         """Get all attributes of the given entities."""
