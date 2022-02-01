@@ -43,6 +43,7 @@ class LDAPsqlTree(QueryMixin):
 
     @staticmethod
     def _dn_value(dn: DN, attribute: str) -> Optional[str]:
+        """Retrieve the value of the RDN matching the given attribute type."""
         rdn = dn.split()[0]
         attribute_value = unwrap(rdn.split())
         if attribute_value.attributeType == attribute:
@@ -66,12 +67,12 @@ class LDAPsqlTree(QueryMixin):
         for dn, cn in dn_to_cn.items():
             if cn not in duas:
                 continue
-            group = {
+            dua = {
                 "objectclass": ["person"],
                 "cn": [cn],
                 "userPassword": [duas[cn]["password_hash"]]
             }
-            ret[dn] = group
+            ret[dn] = dua
         return ret
 
     def get_users(self, dns: List[DN]) -> LDAPObjectMap:
@@ -107,18 +108,18 @@ class LDAPsqlTree(QueryMixin):
         for dn, cn in dn_to_cn.items():
             if cn not in self.STATUS_GROUPS:
                 continue
-            group = {
-                "cn": [cn],
-                "objectclass": ["groupOfUniqueNames"],
-                "description": [self.STATUS_GROUPS[cn]]
-            }
             if cn == "is_searchable":
                 condition = "is_member AND is_searchable"
             else:
                 condition = cn
             query = f"SELECT id FROM core.personas WHERE {condition}"
             members = self.query_all(self.rs, query, [])
-            group["uniqueMember"] = [self._user_dn(e["id"]) for e in members]
+            group = {
+                "cn": [cn],
+                "objectclass": ["groupOfUniqueNames"],
+                "description": [self.STATUS_GROUPS[cn]],
+                "uniqueMember": [self._user_dn(e["id"]) for e in members]
+            }
             ret[dn] = group
         return ret
 
@@ -152,9 +153,11 @@ class LDAPsqlTree(QueryMixin):
         for dn, assembly_id in dn_to_assembly_id.items():
             if assembly_id not in presiders:
                 continue
-            group = {"objectclass": ["groupOfUniqueNames"]}
-            group["cn"] = [f"presiders-{assembly_id}"]
-            group["uniqueMember"] = [self._user_dn(presider) for presider in presiders[assembly_id]]
+            group = {
+                "objectclass": ["groupOfUniqueNames"],
+                "cn": [f"presiders-{assembly_id}"],
+                "uniqueMember": [self._user_dn(e) for e in presiders[assembly_id]]
+            }
             ret[dn] = group
         return ret
 
@@ -174,15 +177,16 @@ class LDAPsqlTree(QueryMixin):
         orgas = defaultdict(list)
         for e in data:
             orgas[e["event_id"]].append(e["persona_id"])
-        orgas = {e["event_id"]: e for e in data}
 
         ret = dict()
         for dn, event_id in dn_to_event_id.items():
             if event_id not in orgas:
                 continue
-            group = {"objectclass": ["groupOfUniqueNames"]}
-            group["cn"] = [f"orgas-{event_id}"]
-            group["uniqueMember"] = [self._user_dn(orga) for orga in orgas[event_id]]
+            group = {
+                "objectclass": ["groupOfUniqueNames"],
+                "cn": [f"orgas-{event_id}"],
+                "uniqueMember": [self._user_dn(e) for e in orgas[event_id]]
+            }
             ret[dn] = group
         return ret
 
@@ -217,9 +221,11 @@ class LDAPsqlTree(QueryMixin):
         for dn, address in dn_to_address.items():
             if address not in moderators:
                 continue
-            group = {"objectclass": ["groupOfUniqueNames"]}
-            group["cn"] = [address]
-            group["uniqueMember"] = [self._user_dn(moderator) for moderator in moderators[address]]
+            group = {
+                "objectclass": ["groupOfUniqueNames"],
+                "cn": [address],
+                "uniqueMember": [self._user_dn(e) for e in moderators[address]]
+            }
             ret[dn] = group
         return ret
 
@@ -244,9 +250,11 @@ class LDAPsqlTree(QueryMixin):
         for dn, address in dn_to_address.items():
             if address not in subscribers:
                 continue
-            group = {"objectclass": ["groupOfUniqueNames"]}
-            group["cn"] = [address]
-            group["uniqueMember"] = [self._user_dn(subscriber) for subscriber in subscribers[address]]
+            group = {
+                "objectclass": ["groupOfUniqueNames"],
+                "cn": [address],
+                "uniqueMember": [self._user_dn(e) for e in subscribers[address]]
+            }
             ret[dn] = group
         return ret
 
