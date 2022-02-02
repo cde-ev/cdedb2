@@ -5,8 +5,14 @@ from typing import Dict, List, Set, Union
 
 import ldap3
 from ldap3 import ALL_ATTRIBUTES
+from ldap3.utils.config import _ATTRIBUTES_EXCLUDED_FROM_CHECK
 
 from tests.common import USER_DICT, BasicTest
+
+# this is likely a bug in ldaptor and already reported upstream, see
+# https://github.com/cannatag/ldap3/issues/1017
+_ATTRIBUTES_EXCLUDED_FROM_CHECK.extend(
+    ["objectClasses", "attributeTypes", "createTimestamp", "modifyTimestamp"])
 
 
 class TestLDAP(BasicTest):
