@@ -65,7 +65,7 @@ class EventImportMixin(EventBaseFrontend):
         code = self.eventproxy.questionnaire_import(
             rs, event_id, fields=data['fields'], questionnaire=data['questionnaire'])
 
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "event/configure_additional_questionnaire")
 
     @access("event")

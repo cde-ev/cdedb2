@@ -488,7 +488,13 @@ class CdEBackend(AbstractBackend):
                 code = const.FinanceLogCodes.lastschrift_transaction_success
                 user = self.core.get_cde_user(rs, persona_id)
                 periods_per_year = self.conf["PERIODS_PER_YEAR"]
-                fee = periods_per_year * self.conf["MEMBERSHIP_FEE"]
+                # We increase our fee from 2.5€ to 4€ between period 58 and 59.
+                # Since lastschrifts cover two semester fees, we need to special
+                # case those booked in period 58.
+                if self.current_period(rs) == 58:
+                    fee = decimal.Decimal(2.5) + decimal.Decimal(4)
+                else:
+                    fee = periods_per_year * self.conf["MEMBERSHIP_FEE"]
                 delta = min(tally, fee)
                 new_balance = user['balance'] + delta
                 ret *= self.core.change_persona_balance(
