@@ -28,7 +28,7 @@
     {{ util.breadcrumb_link(cdedblink("event/part_summary"), gettext("Event-Parts")) }}
     {{ util.breadcrumb_link(cdedblink("event/part_group_summary"), gettext("Part Groups")) }}
     {% if ambience['part_group'] %}
-        {{ util.breadcrumb_link("", ambience['part_group']['title'], icon="bullseye", active=True) }}
+        {{ util.breadcrumb_link("", ambience['part_group']['title'], icon="bullseye", readonly=True) }}
         {{ util.breadcrumb_link(cdedblink("event/change_part_group_form"), gettext("Change"), active=True) }}
     {% else %}
         {{ util.breadcrumb_link(cdedblink("event/add_part_group_form"), gettext("Add part group"), active=True) }}
