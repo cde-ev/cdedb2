@@ -59,7 +59,7 @@
                     name="part_ids", label=gettext("Event Parts"), slice=2, info=gettext("Note: This cannot be changed later."),
                     entries=ambience['event']['parts']|keydictsort(EntitySorter.event_part)|dict_entries('id', 'title')) }}
         {% endif %}
-        {{ util.form_input_submit(label=gettext("Save")) }}
+        {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("event/part_group_summary")) }}
     </form>
 
 {% endblock %}

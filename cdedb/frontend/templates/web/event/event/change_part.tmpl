@@ -193,6 +193,7 @@
         {% endif %}
 
         {{ util.input_submit(label=gettext("Save")) }}
+        &emsp;{{ util.href(cdedblink("event/part_summary"), gettext("Cancel"), icon="times", aclass="btn btn-default cancel") }}
     </form>
 
     <script nonce="{{ csp_nonce }}">
