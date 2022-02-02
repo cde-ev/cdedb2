@@ -149,7 +149,14 @@ class LDAPsqlEntry(
     def children(self, callback=None):
         return defer.maybeDeferred(self._children, callback=callback)
 
-    def lookup(self, dn):
+    def hasMember(self, dn: DistinguishedName) -> bool:
+        # TODO replace by 'if memberDN in self.get("uniqueMember", [])'?
+        for memberDN in self.get("uniqueMember", []):
+            if memberDN == dn:
+                return True
+        return False
+
+    def lookup(self, dn: DistinguishedName) -> defer.Deferred:
         dn = distinguishedname.DistinguishedName(dn)
         if not self.dn.contains(dn):
             return defer.fail(LDAPNoSuchObject(dn.getText()))
