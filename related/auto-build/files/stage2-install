@@ -89,6 +89,7 @@ apt-get install --yes python3-coverage
 # The python3-mailmanclient debian package in bullseye is lagging behing the
 # mailman server funcionality.
 python3 -m pip install --no-cache-dir \
+    ldaptor==21.2.0 \
     mailmanclient==3.3.3 \
     schulze_condorcet==2.0.0
 

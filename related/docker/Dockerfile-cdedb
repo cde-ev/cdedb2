@@ -72,6 +72,7 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
     \
     && python3 -m pip --no-cache-dir install \
+    ldaptor==21.2.0 \
     mailmanclient==3.3.3 \
     schulze_condorcet==2.0.0 \
     \
