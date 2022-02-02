@@ -1,3 +1,7 @@
+import pathlib
+from typing import Any
+
+from ldaptor import interfaces
 from ldaptor.protocols import pureldap
 from ldaptor.protocols.ldap import ldaperrors
 from ldaptor.protocols.ldap.distinguishedname import DistinguishedName
@@ -7,10 +11,27 @@ from twisted.internet import defer
 from twisted.internet.protocol import ServerFactory
 
 from cdedb.ldap.entry import LDAPsqlEntry
+from cdedb.ldap.tree import LDAPsqlTree
 
 
 class CdEDBLDAPServer(LDAPServer):
     """Subclass the LDAPServer to add some security restrictions."""
+
+    def getRootDSE(self, request, reply):
+        """Shortcut to retrieve the root entry."""
+        root = interfaces.IConnectedLDAPEntry(self.factory)
+
+        reply(
+            pureldap.LDAPSearchResultEntry(
+                objectName="",
+                attributes=[
+                    ("supportedLDAPVersion", ["3"]),
+                    ("namingContexts", [root.dn.getText()]),
+                    ("subschemaSubentry", [LDAPsqlTree.subschema_dn()])
+                ],
+            )
+        )
+        return pureldap.LDAPSearchResultDone(resultCode=ldaperrors.Success.resultCode)
 
     def _cbSearchGotBase(self, base: LDAPsqlEntry, dn: DistinguishedName, request: LDAPSearchRequest, reply) -> defer.Deferred:
 
@@ -29,9 +50,12 @@ class CdEDBLDAPServer(LDAPServer):
             cloud_dn = DistinguishedName(tree.dua_dn("cloud"))
 
             return_result = True
-            # anonymous users may not access anything - this is only a fail save
+            # anonymous users have only very limited access
             if self.boundUser is None:
-                return_result = False
+                if entry.dn in tree.anonymous_accessible_dns:
+                    pass
+                else:
+                    return_result = False
             # TODO do we need an admin dn?
             elif self.boundUser.dn == admin_dn:
                 return_result = True
@@ -91,9 +115,6 @@ class CdEDBLDAPServer(LDAPServer):
                 reply(pureldap.LDAPSearchResultEntry(objectName=entry.dn.getText(),
                                                      attributes=filtered_attributes))
             # otherwise, return nothing
-
-        if self.boundUser is None:
-            return defer.fail(ldaperrors.LDAPUnwillingToPerform("No anonymous search."))
 
         d = base.search(
             filterObject=request.filter,

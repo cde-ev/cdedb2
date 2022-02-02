@@ -1,4 +1,5 @@
 import logging
+import pathlib
 import re
 from collections import defaultdict
 from typing import Callable, Dict, List, Optional, TypedDict
@@ -13,6 +14,7 @@ from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import ConnectionContainer, connection_pool_factory
 from cdedb.database.constants import SubscriptionState
 from cdedb.database.query import QueryMixin
+from cdedb.ldap.schema import SchemaDescription
 
 # TODO should the attributes be also bytes instead of strings?
 LDAPObject = Dict[bytes, List[str]]
@@ -33,6 +35,8 @@ class LDAPsqlTree(QueryMixin):
             self.conf["CDB_DATABASE_NAME"], ["cdb_admin"],
             secrets, self.conf["DB_HOST"], self.conf["DB_PORT"])
         self.logger = logging.getLogger(__name__)
+        # load the ldap schemas which are supported
+        self.schema = self.load_schemas("core", "cosine", "inetorgperson")
         super().__init__(self.logger)
 
     @property
@@ -62,6 +66,38 @@ class LDAPsqlTree(QueryMixin):
             return int(match.group("id"))
         else:
             return None
+
+    @property
+    def anonymous_accessible_dns(self) -> List[DN]:
+        """A closed list of all dns which may be accessed by anonymous binds."""
+        return [DN(stringValue=self.subschema_dn())]
+
+    @staticmethod
+    def load_schemas(*schemas: str) -> SchemaDescription:
+        """Load the provided ldap schemas and parse their content from file."""
+        data = []
+        for schema in schemas:
+            with open(pathlib.Path(f"/cdedb2/cdedb/ldap/schema/{schema}.schema")) as f:
+                data.append(f.read())
+
+        # punch all files together to create a single schema object
+        file = "\n\n\n".join(data)
+        return SchemaDescription(file)
+
+    ###############
+    # operational #
+    ###############
+
+    @staticmethod
+    def subschema_dn() -> str:
+        """The DN containing information about the supported schemas.
+
+        This is needed by f.e. Apache Directory Studio to determine which
+        attributeTypes, objectClasses etc are supported.
+        This is a staticmethod (and not a property) to be accessible inside
+        `getRootDSE` of server.py.
+        """
+        return "cn=subschema"
 
     @property
     def de_dn(self) -> str:
@@ -549,6 +585,16 @@ class LDAPsqlTree(QueryMixin):
     def branches(self) -> Dict[str, LDAPObject]:
         """All non-leaf ldap entries, mapping their DN to their attributes."""
         return {
+            self.subschema_dn(): {
+                b"objectClass": ["top", "subschema"],
+                b"attributeTypes": self.schema.attribute_types,
+                b"objectClasses": self.schema.object_classes,
+                # TODO find out which syntaxes and matching rules we support
+                b"ldapSyntaxes": self.schema.syntaxes,
+                b"matchingRules": self.schema.matching_rules,
+                b"matchingRuleUse": [],
+
+            },
             self.de_dn: {
                 b"objectClass": ["dcObject", "top"],
             },
