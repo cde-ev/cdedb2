@@ -12,9 +12,9 @@ from cdedb.ldap.entry import LDAPsqlEntry
 class CdEDBLDAPServer(LDAPServer):
     """Subclass the LDAPServer to add some security restrictions."""
 
-    def _cbSearchGotBase(self, base: LDAPsqlEntry, dn: DistinguishedName, request: LDAPSearchRequest, reply):
+    def _cbSearchGotBase(self, base: LDAPsqlEntry, dn: DistinguishedName, request: LDAPSearchRequest, reply) -> defer.Deferred:
 
-        def _sendEntryToClient(entry: LDAPsqlEntry):
+        def _sendEntryToClient(entry: LDAPsqlEntry) -> None:
             """The callback function which sends the entry after it was found."""
             attributes = {key: value for key, value in entry.items()}
             # never ever return an userPassword in a search result
@@ -106,7 +106,7 @@ class CdEDBLDAPServer(LDAPServer):
             callback=_sendEntryToClient,
         )
 
-        def _done(_):
+        def _done(_: Any) -> pureldap.LDAPSearchResultDone:
             return pureldap.LDAPSearchResultDone(
                 resultCode=ldaperrors.Success.resultCode
             )
@@ -114,27 +114,27 @@ class CdEDBLDAPServer(LDAPServer):
         d.addCallback(_done)
         return d
 
-    def handle_LDAPCompareRequest(self, request, controls, reply):
+    def handle_LDAPCompareRequest(self, request, controls, reply) -> defer.Deferred:
         if self.boundUser is None:
             return defer.fail(ldaperrors.LDAPUnwillingToPerform("No anonymous compare"))
         return super().handle_LDAPCompareRequest(request, controls, reply)
 
-    def handle_LDAPDelRequest(self, request, controls, reply):
+    def handle_LDAPDelRequest(self, request, controls, reply) -> defer.Deferred:
         return defer.fail(ldaperrors.LDAPUnwillingToPerform("Not implemented"))
 
-    def handle_LDAPAddRequest(self, request, controls, reply):
+    def handle_LDAPAddRequest(self, request, controls, reply) -> defer.Deferred:
         return defer.fail(ldaperrors.LDAPUnwillingToPerform("Not implemented"))
 
-    def handle_LDAPModifyDNRequest(self, request, controls, reply):
+    def handle_LDAPModifyDNRequest(self, request, controls, reply) -> defer.Deferred:
         return defer.fail(ldaperrors.LDAPUnwillingToPerform("Not implemented"))
 
-    def handle_LDAPModifyRequest(self, request, controls, reply):
+    def handle_LDAPModifyRequest(self, request, controls, reply) -> defer.Deferred:
         return defer.fail(ldaperrors.LDAPUnwillingToPerform("Not implemented"))
 
-    def handle_LDAPExtendedRequest(self, request, controls, reply):
+    def handle_LDAPExtendedRequest(self, request, controls, reply) -> defer.Deferred:
         return defer.fail(ldaperrors.LDAPUnwillingToPerform("Not implemented"))
 
-    def extendedRequest_LDAPPasswordModifyRequest(self, data, reply):
+    def extendedRequest_LDAPPasswordModifyRequest(self, data, reply) -> defer.Deferred:
         return defer.fail(ldaperrors.LDAPUnwillingToPerform("Not implemented"))
 
 
@@ -145,10 +145,10 @@ class LDAPServerFactory(ServerFactory):
 
     protocol = CdEDBLDAPServer
 
-    def __init__(self, root):
+    def __init__(self, root: LDAPsqlEntry) -> None:
         self.root = root
 
-    def buildProtocol(self, addr):
+    def buildProtocol(self, addr) -> CdEDBLDAPServer:
         proto = self.protocol()
         proto.debug = self.debug
         proto.factory = self

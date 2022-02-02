@@ -26,7 +26,7 @@ class LdapLeaf(TypedDict):
 
 class LDAPsqlTree(QueryMixin):
     """Provide the interface between ldap and database."""
-    def __init__(self):
+    def __init__(self) -> None:
         self.conf = Config()
         secrets = SecretsConfig()
         self.connection_pool = connection_pool_factory(
@@ -211,7 +211,7 @@ class LDAPsqlTree(QueryMixin):
     #
 
     @property
-    def status_groups_dn(self):
+    def status_groups_dn(self) -> str:
         return f"ou=status,{self.groups_dn}"
 
     @staticmethod
@@ -512,6 +512,8 @@ class LDAPsqlTree(QueryMixin):
             if cn is None:
                 continue
             address = self.subscriber_group_address(cn)
+            if address is None:
+                continue
             dn_to_address[dn] = address
 
         query = ("SELECT persona_id, address FROM ml.subscription_states, ml.mailinglists"
@@ -548,43 +550,43 @@ class LDAPsqlTree(QueryMixin):
         """All non-leaf ldap entries, mapping their DN to their attributes."""
         return {
             self.de_dn: {
-                "objectClass": ["dcObject", "top"],
+                b"objectClass": ["dcObject", "top"],
             },
             self.cde_dn: {
-                "objectClass": ["dcObject", "organization"],
-                "o": ["CdE e.V."],
+                b"objectClass": ["dcObject", "organization"],
+                b"o": ["CdE e.V."],
             },
             self.duas_dn: {
-                "objectClass": ["organizationalUnit"],
-                "o": ["Directory User Agents"]
+                b"objectClass": ["organizationalUnit"],
+                b"o": ["Directory User Agents"]
             },
             self.users_dn: {
-                "objectClass": ["organizationalUnit"],
-                "o": ["Users"]
+                b"objectClass": ["organizationalUnit"],
+                b"o": ["Users"]
             },
             self.groups_dn: {
-                "objectClass": ["organizationalUnit"],
-                "o": ["Groups"]
+                b"objectClass": ["organizationalUnit"],
+                b"o": ["Groups"]
             },
             self.presider_groups_dn: {
-                "objectClass": ["organizationalUnit"],
-                "o": ["Assembly Presiders"]
+                b"objectClass": ["organizationalUnit"],
+                b"o": ["Assembly Presiders"]
             },
             self.orga_groups_dn: {
-                "objectClass": ["organizationalUnit"],
-                "o": ["Event Orgas"]
+                b"objectClass": ["organizationalUnit"],
+                b"o": ["Event Orgas"]
             },
             self.moderator_groups_dn: {
-                "objectClass": ["organizationalUnit"],
-                "o": ["Mailinglists Moderators"]
+                b"objectClass": ["organizationalUnit"],
+                b"o": ["Mailinglists Moderators"]
             },
             self.subscriber_groups_dn: {
-                "objectClass": ["organizationalUnit"],
-                "o": ["Mailinglists Subscribers"]
+                b"objectClass": ["organizationalUnit"],
+                b"o": ["Mailinglists Subscribers"]
             },
             self.status_groups_dn: {
-                "objectClass": ["organizationalUnit"],
-                "o": ["Status"]
+                b"objectClass": ["organizationalUnit"],
+                b"o": ["Status"]
             }
         }
 

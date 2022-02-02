@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import ldaptor.entry
 import ldaptor.entryhelpers
@@ -46,7 +46,8 @@ class LDAPsqlEntry(
     add, delete or modify an entry will fail immediately. Those endpoints are only
     contained because the default LDAPServer of ldaptor assumes they are implemented.
     """
-    def __init__(self, dn: Union[DistinguishedName, str], tree: LDAPsqlTree, attributes: LDAPObject = None, *a, **kw):
+    def __init__(self, dn: Union[DistinguishedName, str], tree: LDAPsqlTree,
+                 attributes: LDAPObject = None, *a: Any, **kw: Any) -> None:
         entry.BaseLDAPEntry.__init__(self, dn, *a, **kw)
         # this is our interface to the database
         self.tree = tree
@@ -56,7 +57,7 @@ class LDAPsqlEntry(
         # this also checks whether the given dn corresponds to a valid entry
         self._load(attributes=attributes)
 
-    def _bind(self, password):
+    def _bind(self, password: Union[str, bytes]) -> "LDAPsqlEntry":
         """Overwrite the default method to use the encryption algorithm used in CdEDB
 
         This is must be the same as used in CoreBackend.verify_password.
@@ -65,7 +66,7 @@ class LDAPsqlEntry(
             for digest in self.get(key, ()):
                 if sha512_crypt.verify(password, digest):
                     return self
-        raise LDAPInvalidCredentials()
+        raise LDAPInvalidCredentials("Invalid Credentials")
 
     def _get_entities(self, dns: List[DistinguishedName]) -> Dict[DistinguishedName, Optional[LDAPObject]]:
         """Get all attributes of the given entities."""
@@ -92,7 +93,7 @@ class LDAPsqlEntry(
     def _get_entity(self, dn: DistinguishedName) -> Optional[LDAPObject]:
         return unwrap(self._get_entities([dn]))
 
-    def _load(self, attributes: LDAPObject = None):
+    def _load(self, attributes: LDAPObject = None) -> None:
         """Load own attributes.
 
         This accepts a set of Attributes to be used instead of fetching them from the
@@ -101,11 +102,12 @@ class LDAPsqlEntry(
         """
         attributes = attributes or self._get_entity(self.dn)
         if attributes is None:
-            return failure.Failure(LDAPTreeNoSuchEntry())
+            # TODO or do nothing?
+            raise failure.Failure(LDAPTreeNoSuchEntry())
         for k, v in attributes.items():
             self._attributes[k] = attributeset.LDAPAttributeSet(k, v)
 
-    def parent(self):
+    def parent(self) -> Optional["LDAPsqlEntry"]:
         # root entry
         if self.dn == "":
             return None
@@ -132,7 +134,7 @@ class LDAPsqlEntry(
                 ret.extend(children_dns)
         return ret or None
 
-    def _children(self, callback=None):
+    def _children(self, callback: defer.DeferredCallback = None) -> Optional[List["LDAPsqlEntry"]]:
         dns = self._get_children(self.dn)
         if dns is None:
             return None
@@ -146,7 +148,7 @@ class LDAPsqlEntry(
                 callback(c)
             return None
 
-    def children(self, callback=None):
+    def children(self, callback: defer.DeferredCallback = None) -> defer.Deferred:
         return defer.maybeDeferred(self._children, callback=callback)
 
     def hasMember(self, dn: DistinguishedName) -> bool:
@@ -173,28 +175,29 @@ class LDAPsqlEntry(
         c = self.__class__(childDN, tree=self.tree)
         return c.lookup(dn)
 
-    def addChild(self, rdn, attributes):
+    # TODO LDIFTreeEntry states that this returns the child instance...
+    def addChild(self, rdn, attributes) -> "LDAPsqlTree":
         return defer.fail(LDAPUnwillingToPerform("Not implemented."))
 
-    def delete(self):
+    def delete(self) -> defer.Deferred:
         return defer.fail(LDAPUnwillingToPerform("Not implemented."))
 
-    def deleteChild(self, rdn):
+    def deleteChild(self, rdn) -> defer.Deferred:
         return defer.fail(LDAPUnwillingToPerform("Not implemented."))
 
     # TODO where is this used?
-    def __lt__(self, other):
+    def __lt__(self, other) -> bool:
         if not isinstance(other, LDAPsqlEntry):
             return NotImplemented
         return self.dn < other.dn
 
-    def __gt__(self, other):
+    def __gt__(self, other) -> bool:
         if not isinstance(other, LDAPsqlEntry):
             return NotImplemented
         return self.dn > other.dn
 
-    def commit(self):
+    def commit(self) -> defer.Deferred:
         return defer.fail(LDAPUnwillingToPerform("Not implemented."))
 
-    def move(self, newDN):
+    def move(self, newDN) -> defer.Deferred:
         return defer.fail(LDAPUnwillingToPerform("Not implemented."))
