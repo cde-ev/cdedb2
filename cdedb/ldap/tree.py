@@ -85,7 +85,7 @@ class LDAPsqlTree(QueryMixin):
     @property
     def anonymous_accessible_dns(self) -> List[DN]:
         """A closed list of all dns which may be accessed by anonymous binds."""
-        return [DN(stringValue=self.subschema_dn())]
+        return [DN(stringValue=self.subschema_dn)]
 
     @staticmethod
     def load_schemas(*schemas: str) -> SchemaDescription:
@@ -103,14 +103,17 @@ class LDAPsqlTree(QueryMixin):
     # operational #
     ###############
 
-    @staticmethod
-    def subschema_dn() -> str:
+    @property
+    def root_dn(self) -> str:
+        """The root entry of the ldap tree."""
+        return ""
+
+    @property
+    def subschema_dn(self) -> str:
         """The DN containing information about the supported schemas.
 
         This is needed by f.e. Apache Directory Studio to determine which
         attributeTypes, objectClasses etc are supported.
-        This is a staticmethod (and not a property) to be accessible inside
-        `getRootDSE` of server.py.
         """
         return "cn=subschema"
 
@@ -600,7 +603,13 @@ class LDAPsqlTree(QueryMixin):
     def branches(self) -> Dict[str, LDAPObject]:
         """All non-leaf ldap entries, mapping their DN to their attributes."""
         return {
-            self.subschema_dn(): {
+            self.root_dn: {
+                b"supportedLDAPVersion": [b"3"],
+                # TODO right? Or is this rather dc=cde-ev,dc=de?
+                b"namingContexts": [self._to_bytes(self.root_dn)],
+                b"subschemaSubentry": [self._to_bytes(self.subschema_dn)],
+            },
+            self.subschema_dn: {
                 b"objectClass": [b"top", b"subschema"],
                 b"attributeTypes": self.schema.attribute_types,
                 b"objectClasses": self.schema.object_classes,

@@ -11,7 +11,6 @@ from twisted.internet import defer
 from twisted.internet.protocol import ServerFactory
 
 from cdedb.ldap.entry import LDAPsqlEntry
-from cdedb.ldap.tree import LDAPsqlTree
 
 
 class CdEDBLDAPServer(LDAPServer):
@@ -19,16 +18,13 @@ class CdEDBLDAPServer(LDAPServer):
 
     def getRootDSE(self, request, reply):
         """Shortcut to retrieve the root entry."""
-        root = interfaces.IConnectedLDAPEntry(self.factory)
+        root: LDAPsqlEntry = interfaces.IConnectedLDAPEntry(self.factory)
+        # prepare the attributes of the root entry as they are expected by the Result
+        attributes = [item for item in root.tree.branches[root.dn.getText()].items()]
 
         reply(
             pureldap.LDAPSearchResultEntry(
-                objectName="",
-                attributes=[
-                    ("supportedLDAPVersion", ["3"]),
-                    ("namingContexts", [root.dn.getText()]),
-                    ("subschemaSubentry", [LDAPsqlTree.subschema_dn()])
-                ],
+                objectName=root.dn.getText(), attributes=attributes
             )
         )
         return pureldap.LDAPSearchResultDone(resultCode=ldaperrors.Success.resultCode)

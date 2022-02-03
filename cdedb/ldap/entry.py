@@ -47,15 +47,18 @@ class LDAPsqlEntry(
     contained because the default LDAPServer of ldaptor assumes they are implemented.
     """
     def __init__(self, dn: Union[DistinguishedName, str], tree: LDAPsqlTree,
-                 attributes: LDAPObject = None, *a: Any, **kw: Any) -> None:
-        entry.BaseLDAPEntry.__init__(self, dn, *a, **kw)
+                 attributes: LDAPObject = None) -> None:
+        dn = DistinguishedName(dn)
         # this is our interface to the database
         self.tree = tree
-        # root entry
-        if self.dn == "":
-            return
-        # this also checks whether the given dn corresponds to a valid entry
-        self._load(attributes=attributes)
+        # load the attributes of the entry if they were not passed in
+        attributes = attributes or self._get_entity(dn)
+        # can only occur if the entry is not present in our ldap tree
+        if attributes is None:
+            # TODO or what should be done in such a case?
+            raise failure.Failure(LDAPTreeNoSuchEntry())
+        # initialize the entry
+        entry.BaseLDAPEntry.__init__(self, dn, attributes=attributes)
 
     def _bind(self, password: Union[str, bytes]) -> "LDAPsqlEntry":
         """Overwrite the default method to use the encryption algorithm used in CdEDB
@@ -82,8 +85,7 @@ class LDAPsqlEntry(
                 siblings = [dn for dn in dns if dn.split()[1:] == parent.split()]
                 getter = self.tree.leafs[parent.getText()]["get_entities"]
                 ret.update(getter(siblings))
-        # initialize all dns which are not found with None, so they don't pass the
-        # validity check inside _load during initialization
+        # initialize all dns which are not found with None
         if set(dns) > set(ret):
             missing_dns = set(dns) - set(ret)
             for dn in missing_dns:
@@ -92,20 +94,6 @@ class LDAPsqlEntry(
 
     def _get_entity(self, dn: DistinguishedName) -> Optional[LDAPObject]:
         return unwrap(self._get_entities([dn]))
-
-    def _load(self, attributes: LDAPObject = None) -> None:
-        """Load own attributes.
-
-        This accepts a set of Attributes to be used instead of fetching them from the
-        database, since this reduces the number of queries when instantiating children
-        entries significantly.
-        """
-        attributes = attributes or self._get_entity(self.dn)
-        if attributes is None:
-            # TODO or do nothing?
-            raise failure.Failure(LDAPTreeNoSuchEntry())
-        for k, v in attributes.items():
-            self._attributes[k] = attributeset.LDAPAttributeSet(k, v)
 
     def parent(self) -> Optional["LDAPsqlEntry"]:
         # root entry
