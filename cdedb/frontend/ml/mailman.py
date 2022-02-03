@@ -18,7 +18,6 @@ POLICY_MEMBER_CONVERT = {
     const.ModerationPolicy.fully_moderated: 'hold',
 }
 
-
 POLICY_OTHER_CONVERT = {
     const.ModerationPolicy.unmoderated: 'accept',
     const.ModerationPolicy.non_subscribers: 'hold',
@@ -42,6 +41,7 @@ ATTTACHMENT_HTML_CONVERT = {
     const.AttachmentPolicy.pdf_only: False,
     const.AttachmentPolicy.forbid: False,
 }
+
 
 def template_url(name: str) -> str:
     """Construct an HTTP URL to a published mailman template.
