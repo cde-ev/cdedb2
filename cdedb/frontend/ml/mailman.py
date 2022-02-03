@@ -25,6 +25,23 @@ POLICY_OTHER_CONVERT = {
     const.ModerationPolicy.fully_moderated: 'hold',
 }
 
+ATTACHMENT_EXTENSIONS_CONVERT = {
+    const.AttachmentPolicy.allow: [],
+    const.AttachmentPolicy.pdf_only: ['pdf'],
+    const.AttachmentPolicy.forbid: [],
+}
+
+ATTACHMENT_MIME_CONVERT = {
+    const.AttachmentPolicy.allow: [],
+    const.AttachmentPolicy.pdf_only: ['multipart', 'text/plain', 'application/pdf'],
+    const.AttachmentPolicy.forbid: ['text/plain'],
+}
+
+ATTTACHMENT_HTML_CONVERT = {
+    const.AttachmentPolicy.allow: True,
+    const.AttachmentPolicy.pdf_only: False,
+    const.AttachmentPolicy.forbid: False,
+}
 
 def template_url(name: str) -> str:
     """Construct an HTTP URL to a published mailman template.
@@ -53,7 +70,6 @@ class MlMailmanMixin(MlBaseFrontend):
             'subscription_policy': 'moderate',
             'unsubscription_policy': 'moderate',
             'archive_policy': 'private',
-            'convert_html_to_plaintext': True,
             'dmarc_mitigate_action': 'wrap_message',
             'dmarc_mitigate_unconditionally': False,
             'dmarc_wrapped_message_text': (
@@ -68,17 +84,17 @@ class MlMailmanMixin(MlBaseFrontend):
             'info': db_list['description'] or "",
             'subject_prefix': prefix,
             'max_message_size': db_list['maxsize'] or 0,
-            'default_member_action': POLICY_MEMBER_CONVERT[
-                db_list['mod_policy']],
-            'default_nonmember_action': POLICY_OTHER_CONVERT[
-                db_list['mod_policy']],
+            'default_member_action': POLICY_MEMBER_CONVERT[db_list['mod_policy']],
+            'default_nonmember_action': POLICY_OTHER_CONVERT[db_list['mod_policy']],
             'digests_enabled': False,
-            # TODO handle attachment_policy, only available in mailman-3.3
             # Dropping mails silently, even after moderation is worse than rejecting...
             'filter_content': True,
             'filter_action': 'reject',
-            # 'pass_extensions': ['pdf'],
-            # 'pass_types': ['multipart', 'text/plain', 'application/pdf'],
+            'convert_html_to_plaintext': ATTTACHMENT_HTML_CONVERT[
+                db_list['attachment_policy']],
+            'pass_extensions': ATTACHMENT_EXTENSIONS_CONVERT[
+                db_list['attachment_policy']],
+            'pass_types': ATTACHMENT_MIME_CONVERT[db_list['attachment_policy']],
         }
         desired_templates = {
             # pylint: disable=line-too-long

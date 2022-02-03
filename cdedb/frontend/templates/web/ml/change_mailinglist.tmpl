@@ -119,9 +119,7 @@
             build_preview();
         </script>
         {{ util.form_input_select(name="attachment_policy", label=gettext("MIME filter / Attachments"),
-                entries=enums['AttachmentPolicy']|enum_entries(processing=gettext), info=gettext(
-                    "This setting currently has no effect. By default, mailinglists accept PDF attachments only. "
-                    "Other attachment policy can be changed by the Admin-Team.")) }}
+                entries=enums['AttachmentPolicy']|enum_entries(processing=gettext)) }}
         {{ util.form_input_text(name="maxsize", label=gettext("max. message size (in kB)"), type="number") }}
         {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink('ml/show_mailinglist')) }}
     </form>
