@@ -72,6 +72,7 @@ class MlMailmanMixin(MlBaseFrontend):
                 db_list['mod_policy']],
             'default_nonmember_action': POLICY_OTHER_CONVERT[
                 db_list['mod_policy']],
+            'digests_enabled': False,
             # TODO handle attachment_policy, only available in mailman-3.3
             # Dropping mails silently, even after moderation is worse than rejecting...
             'filter_content': True,

@@ -399,6 +399,7 @@ class TestCron(CronTest):
             'subscription_policy': 'moderate',
             'unsubscription_policy': 'moderate',
             'archive_policy': 'private',
+            'digests_enabled': False,
             'filter_content': True,
             'filter_action': 'reject',
             # 'pass_extensions': ['pdf'],
