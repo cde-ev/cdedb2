@@ -11,10 +11,10 @@ class SchemaDescription:
 
     For processing the entries of the schema, the `ldaptor.schema` classes are used.
     """
-    attribute_types = list()
-    matching_rules = list()
-    object_classes = list()
-    syntaxes = list()
+    attribute_types: List[bytes] = list()
+    matching_rules: List[bytes] = list()
+    object_classes: List[bytes] = list()
+    syntaxes: List[bytes] = list()
 
     def __init__(self, file: str) -> None:
         for block in self.chunk_file(file):
@@ -29,8 +29,8 @@ class SchemaDescription:
         lines = [line for line in lines if not line.startswith("#")]
 
         # next, group all blocks separated by one or more blank lines together
-        blocks = list()
-        block = list()
+        blocks: List[List[str]] = list()
+        block: List[str] = list()
         for line in lines:
             if line.strip() == "":
                 if block:

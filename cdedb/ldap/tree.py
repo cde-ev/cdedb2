@@ -2,7 +2,7 @@ import logging
 import pathlib
 import re
 from collections import defaultdict
-from typing import Callable, Dict, List, Optional, TypedDict
+from typing import Any, Callable, Dict, List, Optional, TypedDict, Union
 
 from ldaptor.protocols.ldap.distinguishedname import (
     DistinguishedName as DN, LDAPAttributeTypeAndValue as ATV,
@@ -16,8 +16,7 @@ from cdedb.database.constants import SubscriptionState
 from cdedb.database.query import QueryMixin
 from cdedb.ldap.schema import SchemaDescription
 
-# TODO should the attributes be also bytes instead of strings?
-LDAPObject = Dict[bytes, List[str]]
+LDAPObject = Dict[bytes, List[bytes]]
 LDAPObjectMap = Dict[DN, LDAPObject]
 
 
@@ -66,6 +65,22 @@ class LDAPsqlTree(QueryMixin):
             return int(match.group("id"))
         else:
             return None
+
+    # TODO more fancy type annotations
+    def _to_bytes(self, object: Union[Dict[Any, Any], List[Any], str, int, bytes]
+                  ) -> Union[Dict[bytes, Any], List[Any], bytes]:
+        if isinstance(object, dict):
+            return {self._to_bytes(k): self._to_bytes(v) for k, v in object.items()}
+        elif isinstance(object, list):
+            return [self._to_bytes(entry) for entry in object]
+        elif isinstance(object, str):
+            return object.encode("utf-8")
+        elif isinstance(object, int):
+            return bytes(object)
+        elif isinstance(object, bytes):
+            return object
+        else:
+            raise NotImplementedError(object)
 
     @property
     def anonymous_accessible_dns(self) -> List[DN]:
@@ -120,8 +135,8 @@ class LDAPsqlTree(QueryMixin):
         return name
 
     @staticmethod
-    def dua_name(cn: str) -> str:
-        return cn
+    def dua_name(cn: str) -> Optional[str]:
+        return cn or None
 
     def dua_dn(self, name: str) -> str:
         return f"cn={self.dua_cn(name)},{self.duas_dn}"
@@ -161,7 +176,7 @@ class LDAPsqlTree(QueryMixin):
                 b"cn": [self.dua_cn(name)],
                 b"userPassword": [duas[name]["password_hash"]]
             }
-            ret[dn] = dua
+            ret[dn] = self._to_bytes(dua)
         return ret
 
     #########
@@ -231,7 +246,7 @@ class LDAPsqlTree(QueryMixin):
                 b"userPassword": [user['password_hash']],
                 #"memberOf": []  # TODO
             }
-            ret[dn] = ldap_user
+            ret[dn] = self._to_bytes(ldap_user)
         return ret
 
     ##########
@@ -314,7 +329,7 @@ class LDAPsqlTree(QueryMixin):
                 b"description": [self.STATUS_GROUPS[name]],
                 b"uniqueMember": [self.user_dn(e["id"]) for e in members]
             }
-            ret[dn] = group
+            ret[dn] = self._to_bytes(group)
         return ret
 
     #
@@ -377,7 +392,7 @@ class LDAPsqlTree(QueryMixin):
                 b"description": [f"{assemblies[assembly_id]['title']} ({assemblies[assembly_id]['shortname']})"],
                 b"uniqueMember": [self.user_dn(e) for e in presiders[assembly_id]]
             }
-            ret[dn] = group
+            ret[dn] = self._to_bytes(group)
         return ret
 
     #
@@ -439,7 +454,7 @@ class LDAPsqlTree(QueryMixin):
                 b"description": [f"{events[event_id]['title']} ({events[event_id]['shortname']})"],
                 b"uniqueMember": [self.user_dn(e) for e in orgas[event_id]]
             }
-            ret[dn] = group
+            ret[dn] = self._to_bytes(group)
         return ret
 
     #
@@ -508,7 +523,7 @@ class LDAPsqlTree(QueryMixin):
                 b"description": [f"{mls[address]['title']} <{cn}>"],
                 b"uniqueMember": [self.user_dn(e) for e in moderators[address]]
             }
-            ret[dn] = group
+            ret[dn] = self._to_bytes(group)
         return ret
 
     #
@@ -574,7 +589,7 @@ class LDAPsqlTree(QueryMixin):
                 b"description": [f"{mls[address]['title']} <{address}>"],
                 b"uniqueMember": [self.user_dn(e) for e in subscribers[address]]
             }
-            ret[dn] = group
+            ret[dn] = self._to_bytes(group)
         return ret
 
     ########
@@ -586,7 +601,7 @@ class LDAPsqlTree(QueryMixin):
         """All non-leaf ldap entries, mapping their DN to their attributes."""
         return {
             self.subschema_dn(): {
-                b"objectClass": ["top", "subschema"],
+                b"objectClass": [b"top", b"subschema"],
                 b"attributeTypes": self.schema.attribute_types,
                 b"objectClasses": self.schema.object_classes,
                 # TODO find out which syntaxes and matching rules we support
@@ -596,43 +611,43 @@ class LDAPsqlTree(QueryMixin):
 
             },
             self.de_dn: {
-                b"objectClass": ["dcObject", "top"],
+                b"objectClass": [b"dcObject", b"top"],
             },
             self.cde_dn: {
-                b"objectClass": ["dcObject", "organization"],
-                b"o": ["CdE e.V."],
+                b"objectClass": [b"dcObject", b"organization"],
+                b"o": [b"CdE e.V."],
             },
             self.duas_dn: {
-                b"objectClass": ["organizationalUnit"],
-                b"o": ["Directory User Agents"]
+                b"objectClass": [b"organizationalUnit"],
+                b"o": [b"Directory User Agents"]
             },
             self.users_dn: {
-                b"objectClass": ["organizationalUnit"],
-                b"o": ["Users"]
+                b"objectClass": [b"organizationalUnit"],
+                b"o": [b"Users"]
             },
             self.groups_dn: {
-                b"objectClass": ["organizationalUnit"],
-                b"o": ["Groups"]
+                b"objectClass": [b"organizationalUnit"],
+                b"o": [b"Groups"]
             },
             self.presider_groups_dn: {
-                b"objectClass": ["organizationalUnit"],
-                b"o": ["Assembly Presiders"]
+                b"objectClass": [b"organizationalUnit"],
+                b"o": [b"Assembly Presiders"]
             },
             self.orga_groups_dn: {
-                b"objectClass": ["organizationalUnit"],
-                b"o": ["Event Orgas"]
+                b"objectClass": [b"organizationalUnit"],
+                b"o": [b"Event Orgas"]
             },
             self.moderator_groups_dn: {
-                b"objectClass": ["organizationalUnit"],
-                b"o": ["Mailinglists Moderators"]
+                b"objectClass": [b"organizationalUnit"],
+                b"o": [b"Mailinglists Moderators"]
             },
             self.subscriber_groups_dn: {
-                b"objectClass": ["organizationalUnit"],
-                b"o": ["Mailinglists Subscribers"]
+                b"objectClass": [b"organizationalUnit"],
+                b"o": [b"Mailinglists Subscribers"]
             },
             self.status_groups_dn: {
-                b"objectClass": ["organizationalUnit"],
-                b"o": ["Status"]
+                b"objectClass": [b"organizationalUnit"],
+                b"o": [b"Status"]
             }
         }
 

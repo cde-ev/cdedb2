@@ -70,7 +70,7 @@ class LDAPsqlEntry(
 
     def _get_entities(self, dns: List[DistinguishedName]) -> Dict[DistinguishedName, Optional[LDAPObject]]:
         """Get all attributes of the given entities."""
-        ret = dict()
+        ret: Dict[DistinguishedName, Optional[LDAPObject]] = dict()
         # get all attributes of non-leaf ldap entries
         for dn in dns:
             if dn.getText() in self.tree.branches:
