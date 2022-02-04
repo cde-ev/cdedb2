@@ -629,7 +629,16 @@ class MlBackend(AbstractBackend):
         # address can either be free or taken by the current mailinglist
         if (address in addresses.values()
                 and address != addresses.get(data.get('id', 0))):
-            raise ValueError(n_("Non-unique mailinglist name"))
+            raise ValueError(n_("Non-unique mailinglist address"))
+        # address is not allowed to clash with magic mailman lists
+        subaddresses = ['admin', 'bounces', 'confirm', 'join', 'leave', 'owner',
+                        'request', 'subscribe', 'unsubscribe']
+        subaddresses = [f"-{x}@" for x in subaddresses]
+        for sub in subaddresses:
+            if sub in address:
+                raise ValueError(
+                    n_("Mailinglist address may not contain \"%(subaddress)s\"."),
+                    {'subaddress': sub})
         return address
 
     @access("ml")
