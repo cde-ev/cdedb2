@@ -26,7 +26,7 @@
 {% block content %}
     <div class="p button-par">
         {{ util.href(cdedblink('event/additional_questionnaire', {"preview": True}), gettext("Preview Questionnaire"),
-                     aclass="btn btn-info btn-sm", icon='edit') }}
+                     aclass="btn btn-info btn-sm", icon='eye') }}
         {{ util.href(cdedblink('event/reorder_questionnaire_form', {'kind': enums['QuestionnaireUsages'].additional.value}),
                      gettext("Reorder Questionnaire"), readonly=is_locked,
                      aclass="btn btn-info btn-sm", icon='sort') }}

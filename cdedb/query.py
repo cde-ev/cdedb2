@@ -812,7 +812,7 @@ def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = N
 
     def get_part_spec(part: CdEDBObject) -> QuerySpec:
         part_id = part['id']
-        prefix = "" if len(event['parts']) <= 1 else f"{part['shortname']}: "
+        prefix = "" if len(event['parts']) <= 1 else part['shortname']
         return {
             # Choices for the status will be manually set.
             f"part{part_id}.status": QuerySpecEntry(
@@ -842,7 +842,7 @@ def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = N
 
     def get_track_spec(track: CdEDBObject) -> QuerySpec:
         track_id = track['id']
-        prefix = "" if len(event['tracks']) <= 1 else f"{track['shortname']}: "
+        prefix = "" if len(event['tracks']) <= 1 else track['shortname']
         return {
             f"track{track_id}.is_course_instructor": QuerySpecEntry(
                 "bool", n_("instructs their course"), prefix),
@@ -886,7 +886,7 @@ def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = N
 
     def get_course_choice_spec(track: CdEDBObject) -> QuerySpec:
         track_id = track['id']
-        prefix = "" if len(event['tracks']) <= 1 else f"{track['shortname']}: "
+        prefix = "" if len(event['tracks']) <= 1 else track['shortname']
         return {
             f"course_choices{track_id}.rank{i}": QuerySpecEntry(
                 "id", n_("{rank}. Choice"), prefix, {'rank': str(i + 1)},
@@ -1000,7 +1000,7 @@ def make_course_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None,
 
     def get_track_spec(track: CdEDBObject) -> QuerySpec:
         track_id = track['id']
-        prefix = "" if len(event['tracks']) <= 1 else f"{track['shortname']}: "
+        prefix = "" if len(event['tracks']) <= 1 else track['shortname']
         return {
             f"track{track_id}.is_offered": QuerySpecEntry(
                 "bool", n_("is offered"), prefix),
@@ -1014,7 +1014,7 @@ def make_course_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None,
 
     def get_course_choice_spec(track: CdEDBObject) -> QuerySpec:
         track_id = track['id']
-        prefix = "" if len(event['tracks']) <= 1 else f"{track['shortname']}: "
+        prefix = "" if len(event['tracks']) <= 1 else track['shortname']
         return {
             f"track{track_id}.num_choices{i}": QuerySpecEntry(
                 "int", n_("{rank}. choices"), prefix, {'rank': str(i + 1)})
@@ -1116,7 +1116,7 @@ def make_lodgement_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None
 
     def get_part_spec(part: CdEDBObject) -> QuerySpec:
         part_id = part['id']
-        prefix = "" if len(event['parts']) <= 1 else f"{part['shortname']}: "
+        prefix = "" if len(event['parts']) <= 1 else part['shortname']
         return {
             f"part{part_id}.regular_inhabitants": QuerySpecEntry(
                 "int", n_("Regular Inhabitants"), prefix),
