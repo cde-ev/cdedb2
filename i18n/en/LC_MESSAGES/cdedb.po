@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2022-02-04 22:41+0100\n"
+"POT-Creation-Date: 2022-02-04 23:03+0100\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -97,10 +97,10 @@ msgstr ""
 #: cdedb/backend/event/registration.py:910
 #: cdedb/backend/event/registration.py:944 cdedb/backend/ml.py:165
 #: cdedb/backend/ml.py:276 cdedb/backend/ml.py:482 cdedb/backend/ml.py:504
-#: cdedb/backend/ml.py:662 cdedb/backend/ml.py:708 cdedb/backend/ml.py:864
-#: cdedb/backend/ml.py:909 cdedb/backend/ml.py:935 cdedb/backend/ml.py:968
-#: cdedb/backend/ml.py:1038 cdedb/backend/ml.py:1064 cdedb/backend/ml.py:1102
-#: cdedb/backend/ml.py:1183 cdedb/frontend/assembly/__init__.py:192
+#: cdedb/backend/ml.py:662 cdedb/backend/ml.py:708 cdedb/backend/ml.py:862
+#: cdedb/backend/ml.py:906 cdedb/backend/ml.py:932 cdedb/backend/ml.py:965
+#: cdedb/backend/ml.py:1035 cdedb/backend/ml.py:1061 cdedb/backend/ml.py:1099
+#: cdedb/backend/ml.py:1180 cdedb/frontend/assembly/__init__.py:192
 #: cdedb/frontend/assembly/__init__.py:591
 #: cdedb/frontend/assembly/__init__.py:693
 #: cdedb/frontend/assembly/__init__.py:790
@@ -1137,35 +1137,35 @@ msgstr ""
 msgid "Mailinglist address may not contain \"%(subaddress)s\"."
 msgstr ""
 
-#: cdedb/backend/ml.py:1265
+#: cdedb/backend/ml.py:1262
 msgid "Moderator access has been restricted."
 msgstr ""
 
-#: cdedb/backend/ml.py:1389
+#: cdedb/backend/ml.py:1386
 msgid "Source User is admin and can not be merged."
 msgstr ""
 
-#: cdedb/backend/ml.py:1392
+#: cdedb/backend/ml.py:1389
 msgid "Source persona must be a ml-only user."
 msgstr ""
 
-#: cdedb/backend/ml.py:1394
+#: cdedb/backend/ml.py:1391
 msgid "Source User is not accessible."
 msgstr ""
 
-#: cdedb/backend/ml.py:1400
+#: cdedb/backend/ml.py:1397
 msgid "Target User is no valid ml user."
 msgstr ""
 
-#: cdedb/backend/ml.py:1402
+#: cdedb/backend/ml.py:1399
 msgid "Target User is not accessible."
 msgstr ""
 
-#: cdedb/backend/ml.py:1404 cdedb/frontend/ml/base.py:304
+#: cdedb/backend/ml.py:1401 cdedb/frontend/ml/base.py:304
 msgid "Can not merge user into himself."
 msgstr ""
 
-#: cdedb/backend/ml.py:1419
+#: cdedb/backend/ml.py:1416
 #, python-format
 msgid "Both users are related to the same mailinglists: %(mls)s"
 msgstr ""
@@ -3193,7 +3193,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:339
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:117
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:265
-#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:182
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:188
 msgid "Actions"
 msgstr ""
 
@@ -3208,7 +3208,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/lodgement/lodgement_group_summary.tmpl:48
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:124
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:272
-#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:189
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:195
 msgid "Delete"
 msgstr ""
 
@@ -3229,7 +3229,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:429
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:126
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:274
-#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:191
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:197
 msgid "Are you sure?"
 msgstr ""
 
@@ -3370,7 +3370,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/show_user.tmpl:254
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:73
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:50
-#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:60 cdedb/query.py:337
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:66 cdedb/query.py:337
 #: cdedb/query.py:391 cdedb/query.py:421 cdedb/query.py:444 cdedb/query.py:460
 #: cdedb/query.py:472 cdedb/query.py:485
 msgid "Admin-Notes"
@@ -7107,7 +7107,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/admin_username_change.tmpl:24
 #: cdedb/frontend/templates/web/core/change_username.tmpl:24
-#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:120
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:126
 msgid "New Email Address"
 msgstr ""
 
@@ -12355,53 +12355,57 @@ msgstr ""
 msgid "Mailinglist Address"
 msgstr ""
 
-#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:67
-msgid "This mailinglist is inactive."
-msgstr ""
-
-#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:69
-msgid "Your Subscription"
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:53
+msgid "Moderator Contact"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:73
+msgid "This mailinglist is inactive."
+msgstr ""
+
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:75
+msgid "Your Subscription"
+msgstr ""
+
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:79
 msgid "You are subscribed to this mailinglist."
 msgstr ""
 
-#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:76
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:82
 msgid "Your email address"
 msgstr ""
 
-#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:81
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:87
 msgid "(default)"
 msgstr ""
 
-#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:92
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:98
 msgid "Reset email address"
 msgstr ""
 
-#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:99
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:105
 msgid "Unsubscribe"
 msgstr ""
 
-#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:104
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:110
 msgid "Change email address"
 msgstr ""
 
-#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:107
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:113
 msgid ""
 "To recieve mails from this mailinglist with a different email address, enter "
 "the new address in this form. You will recieve a confirmation mail."
 msgstr ""
 
-#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:116
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:122
 msgid "New Subsciption Address"
 msgstr ""
 
-#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:122
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:128
 msgid "Change E-Mail"
 msgstr ""
 
-#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:130
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:136
 #, python-format
 msgid ""
 "This mailinglist is mandatory. Therefor you are always subscribed to this "
@@ -12409,42 +12413,42 @@ msgid ""
 "%(link)s in your Account-Settings."
 msgstr ""
 
-#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:131
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:137
 msgid "corresponding site"
 msgstr ""
 
-#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:141
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:147
 msgid "Your subscription request is currently pending review by a moderator."
 msgstr ""
 
-#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:148
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:154
 msgid "Cancel request"
 msgstr ""
 
-#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:153
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:159
 msgid "You are not currently subscribed to this mailinglist."
 msgstr ""
 
-#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:159
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:165
 msgid "Request subscription"
 msgstr ""
 
-#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:166
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:172
 msgid "Subscribe"
 msgstr ""
 
-#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:172
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:178
 msgid ""
 "You cannot subscribe to this mailinglist, because you have been blocked by "
 "the moderators."
 msgstr ""
 
-#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:197
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:203
 msgid ""
 "Deletes the mailinglist including description and all subscriber information."
 msgstr ""
 
-#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:203
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:209
 msgid "The mailinglist will be permanently deleted."
 msgstr ""
 
