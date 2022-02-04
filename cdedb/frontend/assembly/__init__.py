@@ -17,7 +17,8 @@ from typing import Any, Collection, Dict, List, Optional, Set, Tuple, Union
 
 import werkzeug.exceptions
 from schulze_condorcet import schulze_evaluate_detailed
-from schulze_condorcet.types import DetailedResultLevel
+from schulze_condorcet.types import DetailedResultLevel, VoteString
+from schulze_condorcet.util import as_vote_strings, as_vote_tuple, as_vote_tuples
 from werkzeug import Response
 
 import cdedb.database.constants as const
@@ -1117,38 +1118,54 @@ class AssemblyFrontend(AbstractUserFrontend):
         result = self.get_online_result(rs, ballot)
         assert result is not None
 
-        # calculate the occurrence of each vote
-        if ballot['votes']:
-            # we actually voted in classical votes for the candidates before the first >
-            # if there are no >, it is an abstention which will be counted later
-            vote_set = {vote['vote'].split('>')[0] for vote in result['votes']
-                        if len(vote['vote'].split('>')) != 1}
-            vote_counts = {vote: sum((1 for v in result['votes']
-                                      if v.get('vote').split('>')[0] == vote))
-                           for vote in vote_set}
-        else:
-            # if there are no >, it is an abstention which will be counted later
-            vote_set = {vote['vote'] for vote in result['votes']
-                        if len(vote['vote'].split('>')) != 1}
-            vote_counts = {vote: sum((1 for v in result['votes']
-                                      if v.get('vote') == vote))
-                           for vote in vote_set}
-        # count the abstentions, which have no >
-        vote_counts[MAGIC_ABSTAIN] = sum(1 for v in result['votes']
-                                         if len(v.get('vote').split('>')) == 1)
-        if vote_counts[MAGIC_ABSTAIN] == 0:
-            del vote_counts[MAGIC_ABSTAIN]
-
         # map the candidate shortnames to their titles
         candidates = {candidate['shortname']: candidate['title']
                       for candidate in ballot['candidates'].values()}
-        candidates[MAGIC_ABSTAIN] = rs.gettext("Abstained")
+        # This will be added later
+        # candidates[MAGIC_ABSTAIN] = rs.gettext("Abstained")
         if ballot['use_bar']:
             if ballot['votes']:
                 candidates[ASSEMBLY_BAR_SHORTNAME] = rs.gettext(
                     "Against all Candidates")
             else:
                 candidates[ASSEMBLY_BAR_SHORTNAME] = rs.gettext("Rejection limit")
+
+        def count_equal_votes(votes: List[VoteString], classical: bool = False
+                              ) -> Dict[VoteString, int]:
+            """This counts how often a specific vote was submitted."""
+            # convert the votes into their tuple representation
+            vote_tuples = as_vote_tuples(votes)
+            if classical:
+                # in classical votes, there are at most two pairs of candidates, the
+                # first we voted for and the optional second we don't voted for
+                vote_tuples = [(vote[0],) for vote in vote_tuples]
+            # take care that all candidates of the same level of each vote are sorted.
+            # otherwise, votes which are semantically the same are counted as different
+            vote_lists = [
+                [xsorted(candidates) for candidates in vote] for vote in vote_tuples]
+            vote_strings = as_vote_strings(vote_lists)
+            # those are all unique votes we have
+            vote_sets = set(vote_strings)
+            return {
+                vote: sum(1 for v in vote_strings if v == vote) for vote in vote_sets}
+
+        # all vote string submitted in this ballot
+        votes = [vote["vote"] for vote in result["votes"]]
+        # calculate the occurrence of each vote
+        if ballot['votes']:
+            vote_counts = count_equal_votes(votes, classical=True)
+        else:
+            vote_counts = count_equal_votes(votes, classical=False)
+
+        # replace the abstention in the vote_counts with the MAGIC_ABSTAIN placeholder
+        abstention = VoteString("=".join(xsorted(candidates)))
+        if abstention in vote_counts:
+            abstentions = vote_counts[abstention]
+            del vote_counts[abstention]
+            vote_counts[MAGIC_ABSTAIN] = abstentions
+
+        # now add the MAGIC_ABSTAIN also to the candidates dict
+        candidates[MAGIC_ABSTAIN] = rs.gettext("Abstained")
 
         # calculate the hash of the result file
         result_bytes = self.assemblyproxy.get_ballot_result(rs, ballot['id'])
