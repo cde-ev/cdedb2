@@ -75,6 +75,7 @@ import pytz
 import pytz.tzinfo
 import werkzeug.datastructures
 import zxcvbn
+from schulze_condorcet.util import as_vote_tuple
 
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
@@ -4170,27 +4171,26 @@ def _vote(
             n_("Must specify ballot in order to validate vote.")))
         raise errs
 
-    entries = tuple(y for x in val.split('>') for y in x.split('='))
+    entries = {candidate for level in as_vote_tuple(val) for candidate in level}
     reference = set(e['shortname'] for e in ballot['candidates'].values())
     if ballot['use_bar'] or ballot['votes']:
         reference.add(ASSEMBLY_BAR_SHORTNAME)
-    if set(entries) - reference:
+    if entries - reference:
         errs.append(KeyError(argname, n_("Superfluous candidates.")))
-    if reference - set(entries):
+    if reference - entries:
         errs.append(KeyError(argname, n_("Missing candidates.")))
     if errs:
         raise errs
+    # ordinary voting has more constraints
+    # votes without '>' are valid abstentions
     if ballot['votes'] and '>' in val:
-        # ordinary voting has more constraints
-        # if no strictly greater we have a valid abstention
-        groups = val.split('>')
-        if len(groups) > 2:
+        vote_tuple = as_vote_tuple(val)
+        voted = vote_tuple[0]
+        if len(vote_tuple) > 2:
             errs.append(ValueError(argname, n_("Too many levels.")))
-        if len(groups[0].split('=')) > ballot['votes']:
+        if len(voted) > ballot['votes']:
             errs.append(ValueError(argname, n_("Too many votes.")))
-        first_group = groups[0].split('=')
-        if (ASSEMBLY_BAR_SHORTNAME in first_group
-                and first_group != [ASSEMBLY_BAR_SHORTNAME]):
+        if ASSEMBLY_BAR_SHORTNAME in vote_tuple and voted != [ASSEMBLY_BAR_SHORTNAME]:
             errs.append(ValueError(argname, n_("Misplaced bar.")))
         if errs:
             raise errs
