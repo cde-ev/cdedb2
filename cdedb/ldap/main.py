@@ -6,16 +6,16 @@ from twisted.internet import reactor
 from twisted.python import log
 from twisted.python.components import registerAdapter
 
+from cdedb.ldap.backend import LDAPsqlBackend
 from cdedb.ldap.entry import RootEntry
 from cdedb.ldap.server import LDAPServerFactory
-from cdedb.ldap.tree import LDAPsqlTree
 
 if __name__ == "__main__":
     port = 20389
     # First of all, to show logging info in stdout :
     log.startLogging(sys.stderr)
-    tree = LDAPsqlTree()
-    root = RootEntry(backend=tree)
+    backend = LDAPsqlBackend()
+    root = RootEntry(backend=backend)
     # When the ldap protocol handle the ldap tree,
     # it retrieves it from the factory adapting
     # the factory to the IConnectedLDAPEntry interface

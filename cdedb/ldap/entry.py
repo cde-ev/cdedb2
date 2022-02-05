@@ -18,7 +18,7 @@ from passlib.hash import sha512_crypt
 from twisted.internet.defer import Deferred, fail, succeed
 
 from cdedb.common import unwrap
-from cdedb.ldap.tree import LDAPObject, LDAPObjectMap, LDAPsqlTree
+from cdedb.ldap.backend import LDAPObject, LDAPObjectMap, LDAPsqlBackend
 
 
 class LDAPTreeNoSuchEntry(Exception):
@@ -50,7 +50,7 @@ class CdEDBBaseLDAPEntry(
     add, delete or modify an entry will fail immediately. Those endpoints are only
     contained because the default LDAPServer of ldaptor assumes they are implemented.
     """
-    def __init__(self, dn: DistinguishedName, backend: LDAPsqlTree, attributes: LDAPObject) -> None:
+    def __init__(self, dn: DistinguishedName, backend: LDAPsqlBackend, attributes: LDAPObject) -> None:
         self.backend = backend
         if not attributes:
             raise RuntimeError
@@ -136,7 +136,7 @@ class CdEDBBaseLDAPEntry(
 
 
 class CdEDBStaticEntry(CdEDBBaseLDAPEntry, metaclass=abc.ABCMeta):
-    def __init__(self, dn: DistinguishedName, backend: LDAPsqlTree) -> None:
+    def __init__(self, dn: DistinguishedName, backend: LDAPsqlBackend) -> None:
         self.backend = backend
         attributes = self._fetch()
         super().__init__(dn, backend, attributes)
@@ -222,7 +222,7 @@ class CdEDBLeafEntry(CdEDBBaseLDAPEntry, metaclass=abc.ABCMeta):
 
 
 class RootEntry(CdEDBStaticEntry):
-    def __init__(self, backend: LDAPsqlTree) -> None:
+    def __init__(self, backend: LDAPsqlBackend) -> None:
         dn = DistinguishedName(backend.root_dn)
         super().__init__(dn, backend)
 
@@ -264,7 +264,7 @@ class RootEntry(CdEDBStaticEntry):
 
 
 class SubschemaEntry(CdEDBStaticEntry):
-    def __init__(self, backend: LDAPsqlTree) -> None:
+    def __init__(self, backend: LDAPsqlBackend) -> None:
         dn = DistinguishedName(backend.subschema_dn)
         super().__init__(dn, backend)
 
@@ -295,7 +295,7 @@ class SubschemaEntry(CdEDBStaticEntry):
 
 
 class DeEntry(CdEDBStaticEntry):
-    def __init__(self, backend: LDAPsqlTree) -> None:
+    def __init__(self, backend: LDAPsqlBackend) -> None:
         dn = DistinguishedName(backend.de_dn)
         super().__init__(dn, backend)
 
@@ -328,7 +328,7 @@ class DeEntry(CdEDBStaticEntry):
 
 
 class CdeEvEntry(CdEDBStaticEntry):
-    def __init__(self, backend: LDAPsqlTree) -> None:
+    def __init__(self, backend: LDAPsqlBackend) -> None:
         dn = DistinguishedName(backend.cde_dn)
         super().__init__(dn, backend)
 
@@ -380,7 +380,7 @@ class DuaEntry(CdEDBLeafEntry, CdEDBBindableEntry):
 class DuasEntry(CdEPreLeafEntry):
     ChildGroup = DuaEntry
 
-    def __init__(self, backend: LDAPsqlTree) -> None:
+    def __init__(self, backend: LDAPsqlBackend) -> None:
         dn = DistinguishedName(backend.duas_dn)
         super().__init__(dn, backend)
 
@@ -412,7 +412,7 @@ class UserEntry(CdEDBLeafEntry, CdEDBBindableEntry):
 class UsersEntry(CdEPreLeafEntry):
     ChildGroup = UserEntry
 
-    def __init__(self, backend: LDAPsqlTree) -> None:
+    def __init__(self, backend: LDAPsqlBackend) -> None:
         dn = DistinguishedName(backend.users_dn)
         super().__init__(dn, backend)
 
@@ -437,7 +437,7 @@ class UsersEntry(CdEPreLeafEntry):
 
 
 class GroupsEntry(CdEDBStaticEntry):
-    def __init__(self, backend: LDAPsqlTree) -> None:
+    def __init__(self, backend: LDAPsqlBackend) -> None:
         dn = DistinguishedName(backend.groups_dn)
         super().__init__(dn, backend)
 
@@ -499,7 +499,7 @@ class StatusGroupEntry(CdEDBLeafEntry):
 class StatusGroupsEntry(CdEPreLeafEntry):
     ChildGroup = StatusGroupEntry
 
-    def __init__(self, backend: LDAPsqlTree) -> None:
+    def __init__(self, backend: LDAPsqlBackend) -> None:
         dn = DistinguishedName(backend.status_groups_dn)
         super().__init__(dn, backend)
 
@@ -531,7 +531,7 @@ class PresiderGroupEntry(CdEDBLeafEntry):
 class PresiderGroupsEntry(CdEPreLeafEntry):
     ChildGroup = PresiderGroupEntry
 
-    def __init__(self, backend: LDAPsqlTree) -> None:
+    def __init__(self, backend: LDAPsqlBackend) -> None:
         dn = DistinguishedName(backend.presider_groups_dn)
         super().__init__(dn, backend)
 
@@ -563,7 +563,7 @@ class OrgaGroupEntry(CdEDBLeafEntry):
 class OrgaGroupsEntry(CdEPreLeafEntry):
     ChildGroup = OrgaGroupEntry
 
-    def __init__(self, backend: LDAPsqlTree) -> None:
+    def __init__(self, backend: LDAPsqlBackend) -> None:
         dn = DistinguishedName(backend.orga_groups_dn)
         super().__init__(dn, backend)
 
@@ -595,7 +595,7 @@ class ModeratorGroupEntry(CdEDBLeafEntry):
 class ModeratorGroupsEntry(CdEPreLeafEntry):
     ChildGroup = ModeratorGroupEntry
 
-    def __init__(self, backend: LDAPsqlTree) -> None:
+    def __init__(self, backend: LDAPsqlBackend) -> None:
         dn = DistinguishedName(backend.moderator_groups_dn)
         super().__init__(dn, backend)
 
@@ -627,7 +627,7 @@ class SubscriberGroupEntry(CdEDBLeafEntry):
 class SubscriberGroupsEntry(CdEPreLeafEntry):
     ChildGroup = SubscriberGroupEntry
 
-    def __init__(self, backend: LDAPsqlTree) -> None:
+    def __init__(self, backend: LDAPsqlBackend) -> None:
         dn = DistinguishedName(backend.subscriber_groups_dn)
         super().__init__(dn, backend)
 

@@ -25,7 +25,7 @@ class LdapLeaf(TypedDict):
     list_entities: Callable[[], List[RDN]]
 
 
-class LDAPsqlTree(QueryMixin):
+class LDAPsqlBackend(QueryMixin):
     """Provide the interface between ldap and database."""
     def __init__(self) -> None:
         self.conf = Config()
