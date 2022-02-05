@@ -1289,9 +1289,9 @@ class AssemblyFrontend(AbstractUserFrontend):
             assert ballot_result is not None
             result = json.loads(ballot_result)
 
-            winners: List[Collection[str]] = []
-            losers: List[Collection[str]] = []
-            tmp = winners
+            preferred: List[Collection[str]] = []
+            rejected: List[Collection[str]] = []
+            tmp = preferred
             lookup = {e['shortname']: e['id']
                       for e in ballot['candidates'].values()}
             for candidates in as_vote_tuple(result["result"]):
@@ -1300,9 +1300,9 @@ class AssemblyFrontend(AbstractUserFrontend):
                 if level:
                     tmp.append(level)
                 if ASSEMBLY_BAR_SHORTNAME in candidates:
-                    tmp = losers
-            result['winners'] = winners
-            result['losers'] = losers
+                    tmp = rejected
+            result['preferred'] = preferred
+            result['rejected'] = rejected
 
             # vote count for classical vote ballots
             counts: Union[Dict[str, int], List[DetailedResultLevel]]

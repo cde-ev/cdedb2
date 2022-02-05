@@ -21,8 +21,8 @@
         </thead>
     <tbody>
         {% set count = namespace(value=0) %}
-        {% if result['winners'] %}
-            {% for candidate_ids in result['winners'] %}
+        {% if result['preferred'] %}
+            {% for candidate_ids in result['preferred'] %}
                 {% set count.value = count.value + 1 %}
                 {% for candidate_id in candidate_ids %}
                     {% set candidate_shortname = ballot['candidates'][candidate_id]['shortname'] %}
@@ -74,12 +74,12 @@
         {% if ballot['use_bar'] %}
             <tr
                 {% for level in result['counts'] %}
-                    {# it is possible that a candidate is equal to bar. This candidate will be in the winner section.
-                       So, if bar is a winner and not the only winner, we must not print an upper boarder.
-                       This has to check nonetherless for bar not in level[winner] and not in level[looser], think
-                       of a vote without losers.#}
-                    {% if ASSEMBLY_BAR_SHORTNAME in level['winner'] and level['winner']|length != 1
-                       or ASSEMBLY_BAR_SHORTNAME in level['loser'] and level['loser']|length != 1 %}
+                    {# it is possible that a candidate is equal to bar. This candidate will be in the preferred section.
+                       So, if bar is a preferred and not the only preferred, we must not print an upper boarder.
+                       This has to check nonetherless for bar not in level[preferred] and not in level[looser], think
+                       of a vote without rejected.#}
+                    {% if ASSEMBLY_BAR_SHORTNAME in level['preferred'] and level['preferred']|length != 1
+                       or ASSEMBLY_BAR_SHORTNAME in level['rejected'] and level['rejected']|length != 1 %}
                         class="no-upper-border"
                     {% endif %}
                 {% endfor %}
@@ -106,9 +106,9 @@
             {% else %}
                 <td class="text-right">
                     {% for level in result['counts'] %}
-                        {# It is possible that a candidate is equal to bar. This candidate will be in the winner section.
-                           So, if bar is a winner and not the only winner, we do not show the votes. #}
-                        {% if ASSEMBLY_BAR_SHORTNAME in level['winner'] and level['winner']|length == 1 %}
+                        {# It is possible that a candidate is equal to bar. This candidate will be in the preferred section.
+                           So, if bar is a preferred and not the only preferred, we do not show the votes. #}
+                        {% if ASSEMBLY_BAR_SHORTNAME in level['preferred'] and level['preferred']|length == 1 %}
                             {{ level['pro_votes'] }}
                         {% endif %}
                     {% endfor %}
@@ -116,7 +116,7 @@
                 <td class="text-right">
                     {% for level in result['counts'] %}
                         {# see above for a detailed explanation #}
-                        {% if ASSEMBLY_BAR_SHORTNAME in level['winner'] and level['winner']|length == 1 %}
+                        {% if ASSEMBLY_BAR_SHORTNAME in level['preferred'] and level['preferred']|length == 1 %}
                             {{ level['contra_votes'] }}
                         {% endif %}
                     {% endfor %}
@@ -125,8 +125,8 @@
             </tr>
         {% endif %}
 
-        {% if result['losers'] %}
-            {% for candidate_ids in result['losers'] %}
+        {% if result['rejected'] %}
+            {% for candidate_ids in result['rejected'] %}
                 {% set count.value = count.value + 1 %}
                 {% for candidate_id in candidate_ids %}
                     {% set candidate_shortname = ballot['candidates'][candidate_id]['shortname'] %}
@@ -149,14 +149,14 @@
                     {% else %}
                         <td class="text-right">
                             {% for level in result['counts'] %}
-                                {% if candidate_shortname in level['winner'] and first_candidate %}
+                                {% if candidate_shortname in level['preferred'] and first_candidate %}
                                     {{ level['pro_votes'] }}
                                 {% endif %}
                             {% endfor %}
                         </td>
                         <td class="text-right">
                             {% for level in result['counts'] %}
-                                {% if candidate_shortname in level['winner'] and first_candidate %}
+                                {% if candidate_shortname in level[''] and first_candidate %}
                                     {{ level['contra_votes'] }}
                                 {% endif %}
                             {% endfor %}
