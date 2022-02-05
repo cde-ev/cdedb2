@@ -44,9 +44,8 @@ from cdedb.validation import (
 )
 from cdedb.validationtypes import CdedbID, Email
 
-#: Magic value to signal abstention during voting. Used during the emulation
-#: of classical voting. This can not occur as a shortname since it contains
-#: forbidden characters.
+#: Magic value to signal abstention during _classical_ voting.
+#: This can not occur as a shortname since it contains forbidden characters.
 MAGIC_ABSTAIN = "special: abstain"
 
 
@@ -1123,8 +1122,6 @@ class AssemblyFrontend(AbstractUserFrontend):
         # map the candidate shortnames to their titles
         candidates = {candidate['shortname']: candidate['title']
                       for candidate in ballot['candidates'].values()}
-        # This will be added later
-        # candidates[MAGIC_ABSTAIN] = rs.gettext("Abstained")
         if ballot['use_bar']:
             if ballot['votes']:
                 candidates[ASSEMBLY_BAR_SHORTNAME] = rs.gettext(
@@ -1159,16 +1156,6 @@ class AssemblyFrontend(AbstractUserFrontend):
         else:
             vote_counts = count_equal_votes(votes, classical=False)
 
-        # replace the abstention in the vote_counts with the MAGIC_ABSTAIN placeholder
-        abstention = VoteString("=".join(xsorted(candidates)))
-        if abstention in vote_counts:
-            abstentions = vote_counts[abstention]
-            del vote_counts[abstention]
-            vote_counts[MAGIC_ABSTAIN] = abstentions
-
-        # now add the MAGIC_ABSTAIN also to the candidates dict
-        candidates[MAGIC_ABSTAIN] = rs.gettext("Abstained")
-
         # calculate the hash of the result file
         result_bytes = self.assemblyproxy.get_ballot_result(rs, ballot['id'])
         assert result_bytes is not None
@@ -1201,7 +1188,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         :return: one of the following strings:
             * your full preference, if the ballot was a preferential vote, otherwise
-            * MAGIC_ABSTAIN, if you abstained in the ballot
+            * MAGIC_ABSTAIN, if you abstained and the ballot was a classical vote
             * all candidates you voted for, seperated by '=', if the ballot was a
               classical vote
         """

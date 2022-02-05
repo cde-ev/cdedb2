@@ -153,7 +153,8 @@
                 {% for votestring, count in vote_counts|dictsort(by="value", reverse=True) %}
                     <tr id="vote-{{ loop.index }}">
                         <td>
-                            {% if vote == MAGIC_ABSTAIN %}
+                            {# If there are no > in a preferential vote, you abstained #}
+                            {% if votestring == MAGIC_ABSTAIN or (preferential and ">" not in votestring) %}
                                 {% trans %}Abstained{% endtrans %}
                             {% else %}
                                 <code class="result">{{ print_vote(votestring) }}</code>
@@ -176,7 +177,8 @@
         {% elif not has_voted %}
                 {% trans %}You did not vote.{% endtrans %}
         {% elif own_vote %}
-            {% if own_vote == MAGIC_ABSTAIN %}
+            {# If there are no > in a preferential vote, you abstained #}
+            {% if own_vote == MAGIC_ABSTAIN or (own_vote and ">" not in votestring) %}
                 <p>{% trans %}You abstained.{% endtrans %}</p>
             {% elif own_vote == ASSEMBLY_BAR_SHORTNAME %}
                 <p>{% trans %}You voted against all candidates.{% endtrans %}</p>
