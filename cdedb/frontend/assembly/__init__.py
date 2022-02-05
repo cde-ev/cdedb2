@@ -1321,7 +1321,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             # vote count for preferential vote ballots
             else:
                 votes = [e['vote'] for e in result['votes']]
-                candidates = [k for k, v in result['candidates'].items()]
+                candidates = tuple(Candidate(c) for c in result['candidates'])
                 if ballot['use_bar']:
                     candidates += (ASSEMBLY_BAR_SHORTNAME,)
                 counts = schulze_evaluate_detailed(votes, candidates)
