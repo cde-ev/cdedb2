@@ -2,7 +2,7 @@ import logging
 import pathlib
 import re
 from collections import defaultdict
-from typing import Any, Callable, Dict, List, Optional, TypedDict, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, TypedDict, Union
 
 from ldaptor.protocols.ldap.distinguishedname import (
     DistinguishedName as DN, LDAPAttributeTypeAndValue as ATV,
@@ -65,6 +65,15 @@ class LDAPsqlTree(QueryMixin):
             return int(match.group("id"))
         else:
             return None
+
+    @staticmethod
+    def _is_entry_dn(dn: DN, parent_dn: str, attribute_type: str) -> bool:
+        if dn.up().getText() != parent_dn:
+            return False
+        rdn = dn.split()[0]
+        if len(rdn.split()) != 1 or rdn.split()[0].attributeType != attribute_type:
+            return False
+        return True
 
     # TODO more fancy type annotations
     def _to_bytes(self, object: Union[Dict[Any, Any], List[Any], str, int, bytes]
@@ -144,7 +153,10 @@ class LDAPsqlTree(QueryMixin):
     def dua_dn(self, name: str) -> str:
         return f"cn={self.dua_cn(name)},{self.duas_dn}"
 
-    def list_duas(self) -> List[RDN]:
+    def is_dua_dn(self, dn: DN) -> bool:
+        return self._is_entry_dn(dn, self.duas_dn, "cn")
+
+    async def list_duas(self) -> List[RDN]:
         query = "SELECT cn FROM ldap.duas"
         data = self.query_all(self.rs, query, [])
         return [
@@ -155,7 +167,7 @@ class LDAPsqlTree(QueryMixin):
             ) for e in data
         ]
 
-    def get_duas(self, dns: List[DN]) -> LDAPObjectMap:
+    async def get_duas(self, dns: List[DN]) -> LDAPObjectMap:
         dn_to_name = dict()
         for dn in dns:
             cn = self._dn_value(dn, attribute="cn")
@@ -200,7 +212,10 @@ class LDAPsqlTree(QueryMixin):
     def user_dn(self, persona_id: int) -> str:
         return f"uid={self.user_uid(persona_id)},{self.users_dn}"
 
-    def list_users(self) -> List[RDN]:
+    def is_user_dn(self, dn: DN) -> bool:
+        return self._is_entry_dn(dn, self.users_dn, "uid")
+
+    async def list_users(self) -> List[RDN]:
         query = "SELECT id FROM core.personas"
         data = self.query_all(self.rs, query, [])
         return [
@@ -211,7 +226,7 @@ class LDAPsqlTree(QueryMixin):
             ) for e in data
         ]
 
-    def get_users(self, dns: List[DN]) -> LDAPObjectMap:
+    async def get_users(self, dns: List[DN]) -> LDAPObjectMap:
         dn_to_persona_id = dict()
         for dn in dns:
             uid = self._dn_value(dn, attribute="uid")
@@ -278,6 +293,9 @@ class LDAPsqlTree(QueryMixin):
     def status_group_dn(self, name: str) -> str:
         return f"cn={self.status_group_cn(name)},{self.status_groups_dn}"
 
+    def is_status_group_dn(self, dn: DN) -> bool:
+        return self._is_entry_dn(dn, self.status_groups_dn, "cn")
+
     STATUS_GROUPS = {
         "is_active": "Aktive Nutzer.",
         "is_member": "Nutzer, die aktuell Mitglied im CdE sind.",
@@ -295,7 +313,7 @@ class LDAPsqlTree(QueryMixin):
         "is_cdelokal_admin": "CdELokal-Administratoren",
     }
 
-    def list_status_groups(self) -> List[RDN]:
+    async def list_status_groups(self) -> List[RDN]:
         return [
             RDN(
                 attributeTypesAndValues=[
@@ -304,7 +322,7 @@ class LDAPsqlTree(QueryMixin):
             ) for name in self.STATUS_GROUPS
         ]
 
-    def get_status_groups(self, dns: List[DN]) -> LDAPObjectMap:
+    async def get_status_groups(self, dns: List[DN]) -> LDAPObjectMap:
         dn_to_name = dict()
         for dn in dns:
             cn = self._dn_value(dn, attribute="cn")
@@ -353,7 +371,10 @@ class LDAPsqlTree(QueryMixin):
     def presider_group_dn(self, assembly_id: int) -> str:
         return f"cn={self.presider_group_cn(assembly_id)},{self.presider_groups_dn}"
 
-    def list_assembly_presider_groups(self) -> List[RDN]:
+    def is_presider_group_dn(self, dn: DN) -> bool:
+        return self._is_entry_dn(dn, self.presider_groups_dn, "cn")
+
+    async def list_assembly_presider_groups(self) -> List[RDN]:
         query = "SELECT id FROM assembly.assemblies"
         data = self.query_all(self.rs, query, [])
         return [
@@ -364,7 +385,7 @@ class LDAPsqlTree(QueryMixin):
             ) for e in data
         ]
 
-    def get_assembly_presider_groups(self, dns: List[DN]) -> LDAPObjectMap:
+    async def get_assembly_presider_groups(self, dns: List[DN]) -> LDAPObjectMap:
         dn_to_assembly_id = dict()
         for dn in dns:
             cn = self._dn_value(dn, attribute="cn")
@@ -416,7 +437,10 @@ class LDAPsqlTree(QueryMixin):
     def orga_group_dn(self, event_id: int) -> str:
         return f"cn={self.orga_group_cn(event_id)},{self.orga_groups_dn}"
 
-    def list_event_orga_groups(self) -> List[RDN]:
+    def is_orga_group_dn(self, dn: DN) -> bool:
+        return self._is_entry_dn(dn, self.orga_groups_dn, "cn")
+
+    async def list_event_orga_groups(self) -> List[RDN]:
         query = "SELECT id FROM event.events"
         data = self.query_all(self.rs, query, [])
         return [
@@ -427,7 +451,7 @@ class LDAPsqlTree(QueryMixin):
             ) for e in data
         ]
 
-    def get_event_orga_groups(self, dns: List[DN]) -> LDAPObjectMap:
+    async def get_event_orga_groups(self, dns: List[DN]) -> LDAPObjectMap:
         dn_to_event_id = dict()
         for dn in dns:
             cn = self._dn_value(dn, attribute="cn")
@@ -482,7 +506,10 @@ class LDAPsqlTree(QueryMixin):
     def moderator_group_dn(self, address: str) -> str:
         return f"cn={self.moderator_group_cn(address)},{self.moderator_groups_dn}"
 
-    def list_ml_moderator_groups(self) -> List[RDN]:
+    def is_moderator_group_dn(self, dn: DN) -> bool:
+        return self._is_entry_dn(dn, self.moderator_groups_dn, "cn")
+
+    async def list_ml_moderator_groups(self) -> List[RDN]:
         query = "SELECT address FROM ml.mailinglists"
         data = self.query_all(self.rs, query, [])
         return [
@@ -493,7 +520,7 @@ class LDAPsqlTree(QueryMixin):
             ) for e in data
         ]
 
-    def get_ml_moderator_groups(self, dns: List[DN]) -> LDAPObjectMap:
+    async def get_ml_moderator_groups(self, dns: List[DN]) -> LDAPObjectMap:
         dn_to_address = dict()
         for dn in dns:
             cn = self._dn_value(dn, attribute="cn")
@@ -548,7 +575,10 @@ class LDAPsqlTree(QueryMixin):
     def subscriber_group_dn(self, address: str) -> str:
         return f"cn={self.subscriber_group_cn(address)},{self.subscriber_groups_dn}"
 
-    def list_ml_subscriber_groups(self) -> List[RDN]:
+    def is_subscriber_group_dn(self, dn: DN) -> bool:
+        return self._is_entry_dn(dn, self.subscriber_groups_dn, "cn")
+
+    async def list_ml_subscriber_groups(self) -> List[RDN]:
         query = "SELECT address FROM ml.mailinglists"
         data = self.query_all(self.rs, query, [])
         return [
@@ -559,7 +589,7 @@ class LDAPsqlTree(QueryMixin):
             ) for e in data
         ]
 
-    def get_ml_subscriber_groups(self, dns: List[DN]) -> LDAPObjectMap:
+    async def get_ml_subscriber_groups(self, dns: List[DN]) -> LDAPObjectMap:
         dn_to_address = dict()
         for dn in dns:
             cn = self._dn_value(dn, attribute="cn")
@@ -594,106 +624,3 @@ class LDAPsqlTree(QueryMixin):
             }
             ret[dn] = self._to_bytes(group)
         return ret
-
-    ########
-    # Tree #
-    ########
-
-    @property
-    def branches(self) -> Dict[str, LDAPObject]:
-        """All non-leaf ldap entries, mapping their DN to their attributes."""
-        return {
-            self.root_dn: {
-                b"supportedLDAPVersion": [b"3"],
-                # TODO right? Or is this rather dc=cde-ev,dc=de?
-                b"namingContexts": [self._to_bytes(self.root_dn)],
-                b"subschemaSubentry": [self._to_bytes(self.subschema_dn)],
-            },
-            self.subschema_dn: {
-                b"objectClass": [b"top", b"subschema"],
-                b"attributeTypes": self.schema.attribute_types,
-                b"objectClasses": self.schema.object_classes,
-                # TODO find out which syntaxes and matching rules we support
-                b"ldapSyntaxes": self.schema.syntaxes,
-                b"matchingRules": self.schema.matching_rules,
-                b"matchingRuleUse": [],
-
-            },
-            self.de_dn: {
-                b"objectClass": [b"dcObject", b"top"],
-            },
-            self.cde_dn: {
-                b"objectClass": [b"dcObject", b"organization"],
-                b"o": [b"CdE e.V."],
-            },
-            self.duas_dn: {
-                b"objectClass": [b"organizationalUnit"],
-                b"o": [b"Directory User Agents"]
-            },
-            self.users_dn: {
-                b"objectClass": [b"organizationalUnit"],
-                b"o": [b"Users"]
-            },
-            self.groups_dn: {
-                b"objectClass": [b"organizationalUnit"],
-                b"o": [b"Groups"]
-            },
-            self.presider_groups_dn: {
-                b"objectClass": [b"organizationalUnit"],
-                b"o": [b"Assembly Presiders"]
-            },
-            self.orga_groups_dn: {
-                b"objectClass": [b"organizationalUnit"],
-                b"o": [b"Event Orgas"]
-            },
-            self.moderator_groups_dn: {
-                b"objectClass": [b"organizationalUnit"],
-                b"o": [b"Mailinglists Moderators"]
-            },
-            self.subscriber_groups_dn: {
-                b"objectClass": [b"organizationalUnit"],
-                b"o": [b"Mailinglists Subscribers"]
-            },
-            self.status_groups_dn: {
-                b"objectClass": [b"organizationalUnit"],
-                b"o": [b"Status"]
-            }
-        }
-
-    @property
-    def leafs(self) -> Dict[str, LdapLeaf]:
-        """All information about the leaf entries.
-
-        Maps their _parent_ DN to functions for getting the attributes of a given list
-        of entities and listing all entities.
-        """
-        return {
-            self.duas_dn: {
-                "get_entities": self.get_duas,
-                "list_entities": self.list_duas,
-            },
-            self.users_dn: {
-                "get_entities": self.get_users,
-                "list_entities": self.list_users,
-            },
-            self.presider_groups_dn: {
-                "get_entities": self.get_assembly_presider_groups,
-                "list_entities": self.list_assembly_presider_groups,
-            },
-            self.orga_groups_dn: {
-                "get_entities": self.get_event_orga_groups,
-                "list_entities": self.list_event_orga_groups,
-            },
-            self.moderator_groups_dn: {
-                "get_entities": self.get_ml_moderator_groups,
-                "list_entities": self.list_ml_moderator_groups,
-            },
-            self.subscriber_groups_dn: {
-                "get_entities": self.get_ml_subscriber_groups,
-                "list_entities": self.list_ml_subscriber_groups,
-            },
-            self.status_groups_dn: {
-                "get_entities": self.get_status_groups,
-                "list_entities": self.list_status_groups,
-            }
-        }

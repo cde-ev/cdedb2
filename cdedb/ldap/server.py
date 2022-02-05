@@ -10,7 +10,7 @@ from ldaptor.protocols.pureldap import LDAPSearchRequest
 from twisted.internet import defer
 from twisted.internet.protocol import ServerFactory
 
-from cdedb.ldap.entry import LDAPsqlEntry
+from cdedb.ldap.entry import CdEDBBaseLDAPEntry
 
 
 class CdEDBLDAPServer(LDAPServer):
@@ -18,9 +18,9 @@ class CdEDBLDAPServer(LDAPServer):
 
     def getRootDSE(self, request, reply):
         """Shortcut to retrieve the root entry."""
-        root: LDAPsqlEntry = interfaces.IConnectedLDAPEntry(self.factory)
+        root: CdEDBBaseLDAPEntry = interfaces.IConnectedLDAPEntry(self.factory)
         # prepare the attributes of the root entry as they are expected by the Result
-        attributes = [item for item in root.tree.branches[root.dn.getText()].items()]
+        attributes = [item for item in root._fetch().items()]
 
         reply(
             pureldap.LDAPSearchResultEntry(
@@ -29,26 +29,26 @@ class CdEDBLDAPServer(LDAPServer):
         )
         return pureldap.LDAPSearchResultDone(resultCode=ldaperrors.Success.resultCode)
 
-    def _cbSearchGotBase(self, base: LDAPsqlEntry, dn: DistinguishedName, request: LDAPSearchRequest, reply) -> defer.Deferred:
+    def _cbSearchGotBase(self, base: CdEDBBaseLDAPEntry, dn: DistinguishedName, request: LDAPSearchRequest, reply) -> defer.Deferred:
 
-        def _sendEntryToClient(entry: LDAPsqlEntry) -> None:
+        def _sendEntryToClient(entry: CdEDBBaseLDAPEntry) -> None:
             """The callback function which sends the entry after it was found."""
             attributes = {key: value for key, value in entry.items()}
             # never ever return an userPassword in a search result
             if b"userPassword" in attributes:
                 del attributes[b"userPassword"]
 
-            tree = entry.tree
-            users_dn = DistinguishedName(stringValue=tree.users_dn)
-            groups_dn = DistinguishedName(stringValue=tree.groups_dn)
-            duas_dn = DistinguishedName(stringValue=tree.duas_dn)
-            admin_dn = DistinguishedName(tree.dua_dn("admin"))
-            cloud_dn = DistinguishedName(tree.dua_dn("cloud"))
+            backend = entry.backend
+            users_dn = DistinguishedName(stringValue=backend.users_dn)
+            groups_dn = DistinguishedName(stringValue=backend.groups_dn)
+            duas_dn = DistinguishedName(stringValue=backend.duas_dn)
+            admin_dn = DistinguishedName(backend.dua_dn("admin"))
+            cloud_dn = DistinguishedName(backend.dua_dn("cloud"))
 
             return_result = True
             # anonymous users have only very limited access
             if self.boundUser is None:
-                if entry.dn in tree.anonymous_accessible_dns:
+                if entry.dn in backend.anonymous_accessible_dns:
                     pass
                 else:
                     return_result = False
@@ -162,7 +162,7 @@ class LDAPServerFactory(ServerFactory):
 
     protocol = CdEDBLDAPServer
 
-    def __init__(self, root: LDAPsqlEntry) -> None:
+    def __init__(self, root: CdEDBBaseLDAPEntry) -> None:
         self.root = root
 
     def buildProtocol(self, addr) -> CdEDBLDAPServer:
