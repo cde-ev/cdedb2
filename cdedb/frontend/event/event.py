@@ -51,9 +51,17 @@ class EventEventMixin(EventBaseFrontend):
 
         if "event" in rs.user.roles:
             for event_id, event in open_events.items():
-                registration = self.eventproxy.list_registrations(
-                    rs, event_id, rs.user.persona_id)
-                event['registration'] = bool(registration)
+                registration_ids = self.eventproxy.list_registrations(
+                    rs, event_id, rs.user.persona_id).keys()
+                event['registration'] = bool(registration_ids)
+                if registration_ids:
+                    registration = self.eventproxy.get_registration(
+                        rs, unwrap(registration_ids))
+                    event['payment_pending'] = (
+                        not registration['payment']
+                        and self.eventproxy.calculate_fee(rs, unwrap(registration_ids)))
+                else:
+                    event['payment_pending'] = False
 
         return self.render(rs, "event/index", {
             'open_events': open_events, 'orga_events': orga_events,

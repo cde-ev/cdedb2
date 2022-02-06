@@ -26,12 +26,16 @@ from tests.common import USER_DICT, FrontendTest, UserObject, as_users, prepsql,
 class TestEventFrontend(FrontendTest):
     EVENT_LOG_OFFSET = 4
 
-    @as_users("emilia")
+    @as_users("anton", "emilia")
     def test_index(self) -> None:
         self.traverse({'description': 'Veranstaltungen'})
         self.assertPresence("Große Testakademie 2222", div='current-events')
+        registered = "(bereits angemeldet" + (", Bezahlung ausstehend)"
+                                              if self.user_in('anton') else ")")
+        self.assertPresence(registered, div='current-events')
         self.assertNonPresence("PfingstAkademie 2014")
-        self.assertNonPresence("CdE-Party 2050")
+        if self.user_in('emilia'):
+            self.assertNonPresence("CdE-Party 2050")
 
     @as_users("anonymous", "janis")
     def test_no_event_realm_view(self) -> None:
@@ -1411,6 +1415,7 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f, check_notification=False)
         self.assertPresence("Bereits angemeldet", div='notifications')
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
+        self.assertPresence("Offen (Bezahlung ausstehend)")
         if self.user_in('charly'):
             self.assertIn("461,49", text)
         elif self.user_in('daniel'):
@@ -1477,6 +1482,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence(
             "Anmeldung erst mit Überweisung des Teilnehmerbeitrags")
         self.assertPresence("573,99 €")
+        self.assertPresence("Offen (Bezahlung ausstehend)")
         self.assertNonPresence("Warteliste")
         self.assertNonPresence("Eingeteilt in")
         self.assertPresence("α. Planetenretten für Anfänger")

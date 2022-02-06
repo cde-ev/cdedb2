@@ -32,7 +32,8 @@
             {{ ambience['event']['registration_text']|md }}
         {% endcall %}
     {% endif %}
-    {% if not registration['payment'] and fee %}
+    {% set payment_pending = not registration['payment'] and fee %}
+    {% if payment_pending %}
     {% if ambience['event']['iban'] %}
         <h3 class="heading-underline">{% trans %}Bank Transfer{% endtrans %}</h3>
         <p>
@@ -120,6 +121,9 @@
             </dt>
             <dd id="registration_status_part{{ part_id }}">
                 {{ gettext(part['status']|enum(enums['RegistrationPartStati'])) }}
+                {% if part['status'] != enums['RegistrationPartStati'].not_applied and payment_pending %}
+                    <span class="text-danger">({% trans %}payment pending{% endtrans %})</span>
+                {% endif %}
                 {% if part['status'] == enums['RegistrationPartStati'].waitlist and waitlist_position[part_id] %}
                     ({% trans %}Placement{% endtrans %}{{ nbsp }}{{ waitlist_position[part_id] }})
                 {% endif %}
