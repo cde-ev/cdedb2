@@ -1384,8 +1384,7 @@ def reconnoitre_ambience(obj: AbstractFrontend,
 
     def do_assert(x: bool) -> None:
         if not x:
-            raise werkzeug.exceptions.BadRequest(
-                rs.gettext("Inconsistent request."))
+            raise werkzeug.exceptions.BadRequest()
 
     scouts = (
         Scout(lambda anid: obj.coreproxy.get_persona(rs, anid), 'persona_id',
