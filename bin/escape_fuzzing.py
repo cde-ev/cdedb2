@@ -3,8 +3,8 @@
 """
 This script tries to verify successful XSS mitigation, i.e. HTML escaping.
 
-It requires a properly populated database and a storage dir to been set up.
-Their name / directory can be passed in via the configpath argument.
+It requires a properly populated database and a storage dir to be set up.
+Their name / directory can be passed via the configpath argument.
 To run this inside the regular test suite, use `make xss-check` or
 `bin/check.py --parts xss`. See also the documentation.
 
@@ -238,14 +238,20 @@ if __name__ == "__main__":
                     " sure it is escaped properly.")
 
     general = parser.add_argument_group("General options")
-    general.add_argument("--configpath", "-c")
-    general.add_argument("--outdir", "-o", default="./out")
+    general.add_argument("--configpath", "-c",
+                         help="The config path to setup the application.")
+    general.add_argument(
+        "--outdir", "-o", default="./out",
+        help="The directory where output is saved. default: %(default)s")
 
     config = parser.add_argument_group("Configuration")
     config.add_argument("--verbose", "-v", action="store_true")
-    config.add_argument("--payload", "-p", default="<script>abcdef</script>")
-    config.add_argument("--secondary", "-sp", nargs='*',
-                        default=["&amp;lt;", "&amp;gt;"])
+    config.add_argument(
+        "--payload", "-p", default="<script>abcdef</script>",
+        help="The xss payload to be injected. default: %(default)s")
+    config.add_argument(
+        "--secondary", "-sp", nargs='*', default=["&amp;lt;", "&amp;gt;"],
+        help="Pre-inserted strings which must not be shown. default: %(default)s")
 
     args = parser.parse_args()
 

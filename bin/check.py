@@ -192,8 +192,8 @@ def run_ldap_tests(configpath: pathlib.Path, testpatterns: List[str] = None, *,
         subprocess.run(["make", "sql", f"DATABASE_NAME={conf['CDB_DATABASE_NAME']}"],
                        check=True, stdout=subprocess.DEVNULL)
         # update the current ldap setting
-        # TODO either run ldap-reset or only ldap-update-full
-        # subprocess.run(["make", "ldap-create"], check=True)
+        # note that this takes no changes of the base ldap setup into account,
+        # since this would need to reinstall slapd to work.
         subprocess.run(
             ["make", "ldap-update-full", f"DATABASE_NAME={conf['CDB_DATABASE_NAME']}"],
             check=True, stdout=subprocess.DEVNULL)

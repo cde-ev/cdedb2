@@ -114,7 +114,7 @@ stateful parts (in particular sql database, file storage directory and logs) of 
 and test instance.
 
 .. note::
-    The majority of our tests do not need the file storage. Thus, every test
+    The majority of our tests do not need the file storage. Since the setup is costly, every test
     who needs it has to get the ``@storage`` decorator from ``tests.common`` for the
     storage directory to be created. After this test has finished, the directory will
     be deleted.
@@ -171,15 +171,15 @@ LDAP tests
 ^^^^^^^^^^
 
 This includes all tests of our LDAP interface. This is a bit more tricky, since
-it involves additionally the ldap server, which is not able to serve the same
+it additionally involves the ldap server, which is not able to serve the same
 ldap tree for different databases (the development and the test instance)
 simultaneously. So, we decided to let our ldap server serve the test database
 only during test runs. This avoids resetting the development instance each
 time the ldap tests are run, but also prevents accessing the development ldap
-tree during test runs.
+tree during test runs. This may be fixed in the future.
 
 Inside the tests, we mock a ldap client querying our ldap server and check if
-the results satisfies our expectations. The configuration for this part of the
+the results satisfy our expectations. The configuration for this part of the
 testsuite is present in ``tests/config/test_ldap.py``.
 
 .. _xss-check:
