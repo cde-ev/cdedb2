@@ -2247,7 +2247,7 @@ class CoreBaseFrontend(AbstractFrontend):
             ('username', QueryOperators.equal, username),
             ('is_event_realm', QueryOperators.equal, True),
         )
-        query = Query(QueryScope.persona, QueryScope.persona.get_spec(),
+        query = Query(QueryScope.core_user, QueryScope.core_user.get_spec(),
                       ("given_names", "family_name", "is_member", "username"),
                       constraints, (('personas.id', True),))
         result = self.coreproxy.submit_resolve_api_query(rs, query)
