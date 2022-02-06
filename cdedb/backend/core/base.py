@@ -528,7 +528,7 @@ class CoreBaseBackend(AbstractBackend):
         fields.remove('id')
         fields.append("persona_id AS id")
         fields.extend(("submitted_by", "reviewed_by", "ctime", "generation",
-                       "code", "change_note"))
+                       "code", "change_note", "automated_change"))
         query = "SELECT {fields} FROM core.changelog WHERE {conditions}"
         conditions = ["persona_id = %s"]
         params: List[Any] = [persona_id]
