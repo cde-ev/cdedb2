@@ -1,27 +1,17 @@
-"""This contains some override config options used in the test suite.
-
-The structure follows those of the default config in cdedb2.config
-"""
+"""Config for testsuite thread ldap."""
 
 import pathlib
 
+from tests.config.base import *  # type: ignore[import]
+
 # temporary directory created during the test run for this test thread
-_TMP_DIR = pathlib.Path("/tmp/cdedb-test-ldap")
+_TMP_DIR = pathlib.Path("/tmp/cdedb-test-1")
 
-
-# basic config
-SYSLOG_LEVEL = None
-CONSOLE_LOG_LEVEL = None
 LOG_DIR = _TMP_DIR / "logs"  # May not be inside STORAGE_DIR
-
-
-# config
-CDB_DATABASE_NAME = "cdb_test_ldap"
-CDEDB_TEST = True
 STORAGE_DIR = _TMP_DIR / "storage"
 
-# docker specific
+CDB_DATABASE_NAME = "cdb_test_ldap"
+
+# change the ldap host in docker
 if pathlib.Path('/CONTAINER').is_file():
-    DB_HOST = "cdb"
-    DB_PORT = 5432
     LDAP_HOST = "ldap"
