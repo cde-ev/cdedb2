@@ -296,16 +296,15 @@ class AsyncQueryMixin(QueryMixin):
                 await self.execute_db_query(cur, query, params)
                 return self._sanitize_db_output(await cur.fetchone())
 
-    async def query_all(self, pool: _PoolContextManager, query: str, params: Sequence[DatabaseValue_s]
+    async def query_all(self, pool: Pool, query: str, params: Sequence[DatabaseValue_s]
                   ) -> Tuple[CdEDBObject, ...]:
         """Execute a query in a safe way (inside a transaction).
 
         :returns: all results of query
         """
-        async with pool as _pool:
-            async with _pool.acquire() as conn:
-                async with conn.cursor() as cur:
-                    await self.execute_db_query(cur, query, params)
-                    return tuple(
-                        cast(CdEDBObject, self._sanitize_db_output(x))
-                        async for x in cur.fetchall())
+        async with pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                await self.execute_db_query(cur, query, params)
+                return tuple(
+                    cast(CdEDBObject, self._sanitize_db_output(x))
+                    async for x in cur.fetchall())

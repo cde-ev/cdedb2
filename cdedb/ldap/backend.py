@@ -29,7 +29,7 @@ class LdapLeaf(TypedDict):
 
 class LDAPsqlBackend(AsyncQueryMixin):
     """Provide the interface between ldap and database."""
-    def __init__(self, pool: _PoolContextManager) -> None:
+    def __init__(self, pool: Pool) -> None:
         self.conf = Config()
         secrets = SecretsConfig()
         self.connection_pool = connection_pool_factory(
