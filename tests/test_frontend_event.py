@@ -1482,7 +1482,6 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence(
             "Anmeldung erst mit Überweisung des Teilnehmerbeitrags")
         self.assertPresence("573,99 €")
-        self.assertPresence("Offen (Bezahlung ausstehend)")
         self.assertNonPresence("Warteliste")
         self.assertNonPresence("Eingeteilt in")
         self.assertPresence("α. Planetenretten für Anfänger")
@@ -1498,6 +1497,31 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
         self.assertPresence("Eingeteilt in")
         self.assertPresence("separat mitteilen, wie du deinen Teilnahmebeitrag")
+
+        payment_pending = "Bezahlung ausstehend"
+        self.assertPresence(payment_pending)
+        self.traverse("Index")
+        self.assertPresence(payment_pending, div='event-box')
+        self.traverse("Veranstaltungen")
+        self.assertPresence(payment_pending, div='current-events')
+        # unset fee
+        for part_id in (1, 2, 3):
+            self.get(f'/event/event/1/part/{part_id}/change')
+            f = self.response.forms['changepartform']
+            f['fee'] = 0
+            if part_id == 2:
+                self.submit(f, check_notification=False)
+                f = self.response.forms['changepartform']
+                f[IGNORE_WARNINGS_NAME].checked = True
+                self.submit(f)
+            else:
+                self.submit(f)
+        self.traverse("Index")
+        self.assertNonPresence(payment_pending)
+        self.traverse("Veranstaltungen")
+        self.assertNonPresence(payment_pending)
+        self.traverse("angemeldet")
+        self.assertNonPresence(payment_pending)
 
     def test_register_no_registration_end(self) -> None:
         # Remove registration end (soft and hard) from Große Testakademie 2222
