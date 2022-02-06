@@ -253,3 +253,59 @@ class QueryMixin:
         """Helper for deferring the given constraints for the current transaction."""
         query = f"SET CONSTRAINTS {', '.join(constraints)} DEFERRED"
         return self.query_exec(container, query, ())
+
+
+from aiopg.pool import Pool, _PoolContextManager
+
+
+class AsyncQueryMixin(QueryMixin):
+    async def execute_db_query(self, cur: psycopg2.extensions.cursor, query: str,
+                         params: Sequence[DatabaseValue_s]) -> None:
+        """Perform a database query. This low-level wrapper should be used
+        for all explicit database queries, mostly because it invokes
+        :py:meth:`_sanitize_db_input`. However in nearly all cases you want to
+        call one of :py:meth:`query_exec`, :py:meth:`query_one`,
+        :py:meth:`query_all` which utilize a transaction to do the query. If
+        this is not called inside a transaction context (probably created by
+        a ``with`` block) it is unsafe!
+
+        This doesn't return anything, but has a side-effect on ``cur``.
+        """
+        sanitized_params = tuple(
+            self._sanitize_db_input(p) for p in params)
+        self.logger.debug(f"Execute PostgreSQL query"
+                          f" {cur.mogrify(query, sanitized_params)}.")
+        cur.execute(query, sanitized_params)
+
+    async def query_exec(self, pool: Pool, query: str,
+                   params: Sequence[DatabaseValue_s]) -> int:
+        """Execute a query in a safe way (inside a transaction)."""
+        async with pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                await self.execute_db_query(cur, query, params)
+                return cur.rowcount
+
+    async def query_one(self, pool: Pool, query: str, params: Sequence[DatabaseValue_s]
+                  ) -> Optional[CdEDBObject]:
+        """Execute a query in a safe way (inside a transaction).
+
+        :returns: First result of query or None if there is none
+        """
+        async with pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                await self.execute_db_query(cur, query, params)
+                return self._sanitize_db_output(await cur.fetchone())
+
+    async def query_all(self, pool: _PoolContextManager, query: str, params: Sequence[DatabaseValue_s]
+                  ) -> Tuple[CdEDBObject, ...]:
+        """Execute a query in a safe way (inside a transaction).
+
+        :returns: all results of query
+        """
+        async with pool as _pool:
+            async with _pool.acquire() as conn:
+                async with conn.cursor() as cur:
+                    await self.execute_db_query(cur, query, params)
+                    return tuple(
+                        cast(CdEDBObject, self._sanitize_db_output(x))
+                        async for x in cur.fetchall())

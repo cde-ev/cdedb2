@@ -4,16 +4,18 @@ import re
 from collections import defaultdict
 from typing import Any, Callable, Dict, List, Optional, Tuple, TypedDict, Union
 
+import psycopg2.extras
+from aiopg.pool import Pool, _PoolContextManager, create_pool
 from ldaptor.protocols.ldap.distinguishedname import (
     DistinguishedName as DN, LDAPAttributeTypeAndValue as ATV,
     RelativeDistinguishedName as RDN,
 )
 
-from cdedb.common import unwrap
+from cdedb.common import CdEDBObject, unwrap
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import ConnectionContainer, connection_pool_factory
 from cdedb.database.constants import SubscriptionState
-from cdedb.database.query import QueryMixin
+from cdedb.database.query import AsyncQueryMixin, QueryMixin
 from cdedb.ldap.schema import SchemaDescription
 
 LDAPObject = Dict[bytes, List[bytes]]
@@ -25,14 +27,15 @@ class LdapLeaf(TypedDict):
     list_entities: Callable[[], List[RDN]]
 
 
-class LDAPsqlBackend(QueryMixin):
+class LDAPsqlBackend(AsyncQueryMixin):
     """Provide the interface between ldap and database."""
-    def __init__(self) -> None:
+    def __init__(self, pool: _PoolContextManager) -> None:
         self.conf = Config()
         secrets = SecretsConfig()
         self.connection_pool = connection_pool_factory(
             self.conf["CDB_DATABASE_NAME"], ["cdb_admin"],
             secrets, self.conf["DB_HOST"], self.conf["DB_PORT"])
+        self.pool = pool
         self.logger = logging.getLogger(__name__)
         # load the ldap schemas which are supported
         self.schema = self.load_schemas("core", "cosine", "inetorgperson")
@@ -158,7 +161,7 @@ class LDAPsqlBackend(QueryMixin):
 
     async def list_duas(self) -> List[RDN]:
         query = "SELECT cn FROM ldap.duas"
-        data = self.query_all(self.rs, query, [])
+        data = await self.query_all(self.pool, query, [])
         return [
             RDN(
                 attributeTypesAndValues=[
@@ -179,7 +182,7 @@ class LDAPsqlBackend(QueryMixin):
             dn_to_name[dn] = name
 
         query = "SELECT cn, password_hash FROM ldap.duas WHERE cn = ANY(%s)"
-        data = self.query_all(self.rs, query, (dn_to_name.values(),))
+        data = await self.query_all(self.pool, query, (dn_to_name.values(),))
         duas = {e["cn"]: e for e in data}
 
         ret = dict()
