@@ -108,6 +108,16 @@ class QuestionnaireUsages(enum.IntEnum):
 
 
 @enum.unique
+class EventPartGroupType(enum.IntEnum):
+    Statistic = 100
+
+    def get_icon(self) -> str:
+        return {
+            EventPartGroupType.Statistic: "chart-bar",
+        }[self]
+
+
+@enum.unique
 class GenesisStati(enum.IntEnum):
     """Spec for field case_status of core.genesis_cases."""
     #: created, data logged, email unconfirmed
@@ -357,6 +367,11 @@ class EventLogCodes(enum.IntEnum):
     minor_form_removed = 86  #:
     query_stored = 90  #:
     query_deleted = 91  #:
+    part_group_created = 100  #:
+    part_group_changed = 101  #:
+    part_group_deleted = 102  #:
+    part_group_link_created = 105  #:
+    part_group_link_deleted = 106  #:
 
 
 @enum.unique

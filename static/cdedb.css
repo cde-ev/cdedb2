@@ -987,6 +987,9 @@ tr.drow-delete>td, tr.drow-delete1>td {
 td.b-left, th.b-left {
     border-left: solid 1px #ddd;
 }
+td.b-right, th.b-right {
+    border-right: solid 1px #ddd;
+}
 .event_course_id {
     display: inline-block;
     background-color: rgba(0, 0, 0, .6);
@@ -1078,6 +1081,9 @@ span.color-legend {
 }
 .button-par .btn {
     margin-bottom: 5px;
+}
+.btn-wrap {
+    white-space: normal;
 }
 .clickable {
     cursor: pointer;

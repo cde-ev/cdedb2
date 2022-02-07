@@ -60,7 +60,7 @@
                             {{ util.anti_csrf_token('ml/message_moderation') }}
                             {{ util.input_hidden(name="request_id", value=email.request_id) }}
                             {{ util.input_hidden(name="sender", value=email.sender) }}
-                            <div class="pull-right">
+                            <div class="pull-right button-par">
                                 {% for action, label, icon, coloring in (
                                         ('whitelist', gettext('Whitelist_[[verb]]'), 'plus', 'success'),
                                         ('accept', gettext('Accept'), 'check', 'success'),

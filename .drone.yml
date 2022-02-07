@@ -59,7 +59,7 @@ steps:
     - sleep 5
     - make i18n-compile # needed for sample-data creation in evolution-trial.sh
     - make sql-initial # add the postgres user
-    - bin/evolution-trial.sh origin/$DRONE_TARGET_BRANCH $DRONE_COMMIT
+    - bin/evolution-trial.sh origin/$DRONE_TARGET_BRANCH $DRONE_COMMIT || (git checkout ci/workdir && exit 1)
     - git checkout ci/workdir
 - name: mypy
   image: cdedb:20211218

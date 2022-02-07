@@ -812,7 +812,7 @@ def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = N
 
     def get_part_spec(part: CdEDBObject) -> QuerySpec:
         part_id = part['id']
-        prefix = "" if len(event['parts']) <= 1 else f"{part['shortname']}: "
+        prefix = "" if len(event['parts']) <= 1 else part['shortname']
         return {
             # Choices for the status will be manually set.
             f"part{part_id}.status": QuerySpecEntry(
@@ -842,7 +842,7 @@ def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = N
 
     def get_track_spec(track: CdEDBObject) -> QuerySpec:
         track_id = track['id']
-        prefix = "" if len(event['tracks']) <= 1 else f"{track['shortname']}: "
+        prefix = "" if len(event['tracks']) <= 1 else track['shortname']
         return {
             f"track{track_id}.is_course_instructor": QuerySpecEntry(
                 "bool", n_("instructs their course"), prefix),
@@ -886,7 +886,7 @@ def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = N
 
     def get_course_choice_spec(track: CdEDBObject) -> QuerySpec:
         track_id = track['id']
-        prefix = "" if len(event['tracks']) <= 1 else f"{track['shortname']}: "
+        prefix = "" if len(event['tracks']) <= 1 else track['shortname']
         return {
             f"course_choices{track_id}.rank{i}": QuerySpecEntry(
                 "id", n_("{rank}. Choice"), prefix, {'rank': str(i + 1)},
@@ -939,18 +939,24 @@ def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = N
             course_choice_specs, part['tracks'], prefix=part['shortname']))
 
     # Add entries for groups of parts and tracks in those parts.
-    part_groups = (
-        event['parts'].keys(),
-    )
-    for part_ids in part_groups:
-        spec.update(_combine_specs(part_specs, part_ids, prefix=n_("any part")))
+    sorted_part_groups = xsorted(
+        event['part_groups'].values(), key=EntitySorter.event_part_group)
+    sorted_part_groups.append({'part_ids': event['parts'].keys(), 'shortname': None})
+    for part_group in sorted_part_groups:
+        if constraint := part_group.get('constraint_type'):
+            if constraint != const.EventPartGroupType.Statistic:
+                continue
+        part_ids = part_group['part_ids']
+        prefix = part_group['shortname']
+        spec.update(_combine_specs(
+            part_specs, part_ids, prefix=prefix or n_("any part")))
         # Add entries for track combinations.
         track_ids = tuple(itertools.chain.from_iterable(
             event['parts'][part_id]['tracks'].keys() for part_id in part_ids))
         spec.update(_combine_specs(
-            track_specs, track_ids, prefix=n_("any track")))
+            track_specs, track_ids, prefix=prefix or n_("any track")))
         spec.update(_combine_specs(
-            course_choice_specs, track_ids, prefix=n_("any track")))
+            course_choice_specs, track_ids, prefix=prefix or n_("any track")))
 
     spec.update({
         f"reg_fields.xfield_{f['field_name']}": QuerySpecEntry(
@@ -994,7 +1000,7 @@ def make_course_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None,
 
     def get_track_spec(track: CdEDBObject) -> QuerySpec:
         track_id = track['id']
-        prefix = "" if len(event['tracks']) <= 1 else f"{track['shortname']}: "
+        prefix = "" if len(event['tracks']) <= 1 else track['shortname']
         return {
             f"track{track_id}.is_offered": QuerySpecEntry(
                 "bool", n_("is offered"), prefix),
@@ -1008,7 +1014,7 @@ def make_course_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None,
 
     def get_course_choice_spec(track: CdEDBObject) -> QuerySpec:
         track_id = track['id']
-        prefix = "" if len(event['tracks']) <= 1 else f"{track['shortname']}: "
+        prefix = "" if len(event['tracks']) <= 1 else track['shortname']
         return {
             f"track{track_id}.num_choices{i}": QuerySpecEntry(
                 "int", n_("{rank}. choices"), prefix, {'rank': str(i + 1)})
@@ -1039,16 +1045,28 @@ def make_course_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None,
         spec.update(course_choice_spec)
 
     # Add entries for groups of tracks.
+    sorted_parts = xsorted(event['parts'].values(), key=EntitySorter.event_part)
+    sorted_part_groups = xsorted(
+        event['part_groups'].values(), key=EntitySorter.event_part_group)
     track_groups = (
-        {'track_ids': event['tracks'].keys(), 'title': n_("any track")},
+        {'track_ids': event['tracks'].keys(), 'shortname': n_("any track")},
         *(
-            {'track_ids': part['tracks'].keys(), 'title': part['shortname']}
-            for part in event['parts'].values()
+            {'track_ids': part['tracks'].keys(), 'shortname': part['shortname']}
+            for part in sorted_parts
         ),
+        *(
+            {
+                'track_ids': tuple(itertools.chain.from_iterable(
+                    event['parts'][part_id]['tracks'].keys()
+                    for part_id in part_group['part_ids'])),
+                'shortname': part_group['shortname'],
+            }
+            for part_group in sorted_part_groups
+        )
     )
     for track_group in track_groups:
         track_ids = track_group['track_ids']
-        prefix = f"{track_group['title']}: "
+        prefix = track_group['shortname'] or n_("any track")
         spec.update(_combine_specs(track_specs, track_ids, prefix))
         spec.update(_combine_specs(course_choice_specs, track_ids, prefix))
 
@@ -1098,7 +1116,7 @@ def make_lodgement_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None
 
     def get_part_spec(part: CdEDBObject) -> QuerySpec:
         part_id = part['id']
-        prefix = "" if len(event['parts']) <= 1 else f"{part['shortname']}: "
+        prefix = "" if len(event['parts']) <= 1 else part['shortname']
         return {
             f"part{part_id}.regular_inhabitants": QuerySpecEntry(
                 "int", n_("Regular Inhabitants"), prefix),
@@ -1125,11 +1143,13 @@ def make_lodgement_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None
         spec.update(part_spec)
 
     # Add entries for groups of parts.
-    part_groups = (
-        event['parts'].keys(),
-    )
-    for part_ids in part_groups:
-        spec.update(_combine_specs(part_specs, part_ids, prefix=n_("any part")))
+    sorted_part_groups = xsorted(
+        event['part_groups'].values(), key=EntitySorter.event_part_group)
+    sorted_part_groups.append({'part_ids': event['parts'].keys(), 'shortname': None})
+    for part_group in sorted_part_groups:
+        part_ids = part_group['part_ids']
+        prefix = part_group['shortname'] or n_("any part")
+        spec.update(_combine_specs(part_specs, part_ids, prefix=prefix))
 
     spec.update({
         f"lodgement_fields.xfield_{f['field_name']}": QuerySpecEntry(

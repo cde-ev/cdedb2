@@ -469,7 +469,7 @@ class EventRegistrationMixin(EventBaseFrontend):
              'Reply-To': reply_to},
             {'fee': fee, 'age': age, 'meta_info': meta_info,
              'semester_fee': semester_fee, 'reference': reference})
-        self.notify_return_code(rs, new_id, success=n_("Registered for event."))
+        rs.notify_return_code(new_id, success=n_("Registered for event."))
         return self.redirect(rs, "event/registration_status")
 
     @access("event")
@@ -613,7 +613,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                                          and age.may_mix())
         change_note = "Anmeldung durch Teilnehmer bearbeitet."
         code = self.eventproxy.set_registration(rs, registration, change_note)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "event/registration_status")
 
     @access("event")
@@ -859,7 +859,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                 change_note=change_note)
         registration['id'] = registration_id
         code = self.eventproxy.set_registration(rs, registration, change_note)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "event/show_registration")
 
     @access("event")
@@ -928,7 +928,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         registration['persona_id'] = persona_id
         registration['event_id'] = event_id
         new_id = self.eventproxy.create_registration(rs, registration)
-        self.notify_return_code(rs, new_id)
+        rs.notify_return_code(new_id)
         return self.redirect(rs, "event/show_registration",
                              {'registration_id': new_id})
 
@@ -948,7 +948,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         code = self.eventproxy.delete_registration(
             rs, registration_id, {"registration_parts", "registration_tracks",
                                   "course_choices"})
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "event/registration_query")
 
     @access("event")
@@ -1064,7 +1064,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         for reg_id in reg_ids:
             registration['id'] = reg_id
             code *= self.eventproxy.set_registration(rs, registration, change_note)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
 
         # redirect to query filtered by reg_ids
         scope = QueryScope.registration
@@ -1138,5 +1138,5 @@ class EventRegistrationMixin(EventBaseFrontend):
             'checkin': now(),
         }
         code = self.eventproxy.set_registration(rs, new_reg, "Eingecheckt.")
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, 'event/checkin', {'part_ids': part_ids})

@@ -73,7 +73,7 @@
             </dd>
 
             <dt>{% trans %}Birthday{% endtrans %}</dt>
-            <dd>{{ persona['birthday'] }}</dd>
+            <dd>{{ persona['birthday']|date(lang=lang) }}</dd>
             <dt>{% trans %}Gender{% endtrans %}</dt>
             <dd>{{ gettext(enums['Genders'](persona['gender'])|string) }}</dd>
             <dt>{% trans %}E-Mail{% endtrans %}</dt>

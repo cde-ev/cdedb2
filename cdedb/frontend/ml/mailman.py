@@ -13,14 +13,14 @@ from cdedb.frontend.common import cdedburl, make_persona_name, periodic
 from cdedb.frontend.ml.base import MlBaseFrontend
 
 POLICY_MEMBER_CONVERT = {
-    const.ModerationPolicy.unmoderated: 'accept',
-    const.ModerationPolicy.non_subscribers: 'accept',
+    const.ModerationPolicy.unmoderated: 'defer',
+    const.ModerationPolicy.non_subscribers: 'defer',
     const.ModerationPolicy.fully_moderated: 'hold',
 }
 
 
 POLICY_OTHER_CONVERT = {
-    const.ModerationPolicy.unmoderated: 'accept',
+    const.ModerationPolicy.unmoderated: 'defer',
     const.ModerationPolicy.non_subscribers: 'hold',
     const.ModerationPolicy.fully_moderated: 'hold',
 }
@@ -44,22 +44,14 @@ class MlMailmanMixin(MlBaseFrontend):
             prefix = "[{}] ".format(db_list['subject_prefix'] or "")
 
         # First, specify the generally desired settings, templates and header matches.
+        # Settings not specified here can be persistently set otherwise.
         desired_settings = {
             'send_welcome_message': False,
-            # Available only in mailman-3.3
-            # 'send_goodbye_message': False,
+            'send_goodbye_message': False,
             # block the usage of the self-service facilities which should
             # not be used to prevent synchronisation issues
             'subscription_policy': 'moderate',
-            # Available only in mailman-3.3
-            # 'unsubscription_policy': 'moderate',
-            # QUICKFIX we set 'open' here to avoid bombarding moderators
-            # with unsubscription moderation emails they cannot process
-            # This is a hack and should probably be replaced by a solution
-            # that makes the CdEDB grant the approval automatically
-            # We would like the 'moderate' setting so that users cannot
-            # interact with mailman behind our backs.
-            'unsubscription_policy': 'open',
+            'unsubscription_policy': 'moderate',
             'archive_policy': 'private',
             'convert_html_to_plaintext': True,
             'dmarc_mitigate_action': 'wrap_message',
@@ -76,13 +68,16 @@ class MlMailmanMixin(MlBaseFrontend):
             'info': db_list['description'] or "",
             'subject_prefix': prefix,
             'max_message_size': db_list['maxsize'] or 0,
+            'max_num_recipients': 0,
             'default_member_action': POLICY_MEMBER_CONVERT[
                 db_list['mod_policy']],
             'default_nonmember_action': POLICY_OTHER_CONVERT[
                 db_list['mod_policy']],
+            'digests_enabled': False,
             # TODO handle attachment_policy, only available in mailman-3.3
-            # 'filter_content': True,
-            # 'filter_action': 'forward',
+            # Dropping mails silently, even after moderation is worse than rejecting...
+            'filter_content': True,
+            'filter_action': 'reject',
             # 'pass_extensions': ['pdf'],
             # 'pass_types': ['multipart', 'text/plain', 'application/pdf'],
         }
@@ -205,10 +200,8 @@ The original message as received by Mailman is attached.
             mm_list.subscribe(address, display_name=db_subscribers[address],
                               pre_verified=True, pre_confirmed=True,
                               pre_approved=True)
-        # The batch variant is only available in mailman 3.3
-        # mm_list.mass_unsubscribe(delete_subs)
         for address in delete_subs:
-            mm_list.unsubscribe(address)
+            mm_list.unsubscribe(address, pre_confirmed=True, pre_approved=True)
 
     def mailman_sync_list_mods(self, rs: RequestState, mailman: Client,
                                db_list: CdEDBObject,
@@ -253,20 +246,14 @@ The original message as received by Mailman is attached.
 
         for address in new_whites:
             mm_list.add_role('nonmember', address)
-            # get_nonmember is only available in mailman 3.3
-            # white = mm_list.get_nonmember(address)
-        mm_updated_whitelist = {n.email: n for n in mm_list.nonmembers}
-        for address in new_whites:
-            # because of the unavailability of get_nonmember we do a
-            # different lookup
-            white = mm_updated_whitelist.get(address)
+            white = mm_list.get_nonmember(address)
             if white is not None:
-                white.moderation_action = 'accept'
+                white.moderation_action = 'defer'
                 white.save()
         for address in current_whites:
             white = mm_whitelist[address]
-            if white.moderation_action != 'accept':
-                white.moderation_action = 'accept'
+            if white.moderation_action != 'defer':
+                white.moderation_action = 'defer'
                 white.save()
         for address in delete_whites:
             mm_list.remove_role('nonmember', address)

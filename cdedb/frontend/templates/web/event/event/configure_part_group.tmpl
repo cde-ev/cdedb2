@@ -1,0 +1,65 @@
+{% set sidenav_active='event_parts' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+
+{% block title %}
+    {% if ambience['part_group'] %}
+        {% trans event_title=ambience['event']['title'] %}
+            Change part group ({{ event_title }})
+        {% endtrans %}
+    {% else %}
+        {% trans event_title=ambience['event']['title'] %}
+            Add part group ({{ event_title }})
+        {% endtrans %}
+    {% endif %}
+{% endblock %}
+
+{% block heading %}
+    {% if ambience['part_group'] %}
+        {{ util.context_heading(gettext("Change part group"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+    {% else %}
+        {{ util.context_heading(gettext("Add part group"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+    {% endif %}
+{% endblock %}
+
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+    {{ util.breadcrumb_link(cdedblink("event/part_summary"), gettext("Event-Parts")) }}
+    {{ util.breadcrumb_link(cdedblink("event/part_group_summary"), gettext("Part Groups")) }}
+    {% if ambience['part_group'] %}
+        {{ util.breadcrumb_link("", ambience['part_group']['title'], icon="bullseye", readonly=True) }}
+        {{ util.breadcrumb_link(cdedblink("event/change_part_group_form"), gettext("Change"), active=True) }}
+    {% else %}
+        {{ util.breadcrumb_link(cdedblink("event/add_part_group_form"), gettext("Add part group"), active=True) }}
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+    {% if ambience['part_group'] %}
+        {% set action = 'event/change_part_group' %}
+    {% else %}
+        {% set action = 'event/add_part_group' %}
+    {% endif %}
+    <form action="{{ cdedblink(action) }}" method="POST" id="configurepartgroupform" class="form-horizontal">
+        {{ util.anti_csrf_token(action) }}
+        {{ util.form_input_text(name="title", label=gettext("Title")) }}
+        {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
+        {{ util.form_input_text(name="notes", label=gettext("Notes")) }}
+        {% if ambience['part_group'] %}
+            {{ util.form_input_select(
+                    name="constraint_type", label=gettext("Type"),
+                    entries=enums['EventPartGroupType']|enum_entries(processing=gettext), actualreadonly=True) }}
+            {{ util.form_input_checkboxes(
+                    name="part_ids", label=gettext("Event Parts"), slice=2, actualreadonly=True,
+                    entries=ambience['event']['parts']|keydictsort(EntitySorter.event_part)|dict_entries('id', 'title')) }}
+        {% else %}
+            {{ util.form_input_select(name="constraint_type", label=gettext("Type"), entries=enums['EventPartGroupType']|enum_entries(processing=gettext), info=gettext("Note: This cannot be changed later.")) }}
+            {{ util.form_input_checkboxes(
+                    name="part_ids", label=gettext("Event Parts"), slice=2, info=gettext("Note: This cannot be changed later."),
+                    entries=ambience['event']['parts']|keydictsort(EntitySorter.event_part)|dict_entries('id', 'title')) }}
+        {% endif %}
+        {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("event/part_group_summary")) }}
+    </form>
+
+{% endblock %}

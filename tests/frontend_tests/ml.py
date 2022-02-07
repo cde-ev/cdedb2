@@ -1378,6 +1378,7 @@ class TestMlFrontend(FrontendTest):
         mmlist.moderate_message.return_value = moderation_response
         client = client_class.return_value
         client.get_held_messages.return_value = messages
+        client.get_held_message_count.return_value = len(messages)
         client.get_list_safe.return_value = mmlist
 
         return messages, mmlist, client
@@ -1402,6 +1403,7 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("unerwartetes Erbe")
         mmlist.get_held_message.return_value = messages[0]
         client.get_held_messages.return_value = messages[1:]
+        client.get_held_message_count.return_value = len(messages[1:])
         f = self.response.forms['msg1']
         self.submit(f, button='action', value='accept')
         self.assertNonPresence("Finanzbericht")
@@ -1409,6 +1411,7 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("unerwartetes Erbe")
         mmlist.get_held_message.return_value = messages[1]
         client.get_held_messages.return_value = messages[2:]
+        client.get_held_message_count.return_value = len(messages[2:])
         f = self.response.forms['msg2']
         self.submit(f, button='action', value='reject')
         self.assertNonPresence("Finanzbericht")
@@ -1416,6 +1419,7 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("unerwartetes Erbe")
         mmlist.get_held_message.return_value = messages[2]
         client.get_held_messages.return_value = messages[3:]
+        client.get_held_message_count.return_value = len(messages[3:])
         f = self.response.forms['msg3']
         self.submit(f, button='action', value='discard')
         self.assertNonPresence("Finanzbericht")

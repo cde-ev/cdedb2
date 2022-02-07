@@ -39,7 +39,7 @@ Further we depend on a number of python packages:
 * python-imaging-library (more specifically pillow)
 * zxcvbn
 * icu
-* mailmanclient
+* mailmanclient (at least 3.3.3, for unsubscription handling)
 
 At last there are some recommended dependencies:
 
