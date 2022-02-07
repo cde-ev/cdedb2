@@ -266,9 +266,9 @@ class CoreBaseBackend(AbstractBackend):
         """
         return self.generic_retrieve_log(
             rs, const.MemberChangeStati, "persona", "core.changelog",
-            codes=stati, offset=offset, length=length, persona_id=persona_id,
-            submitted_by=submitted_by, reviewed_by=reviewed_by,
-            change_note=change_note, time_start=time_start,
+            additional_columns=['automated_change'], codes=stati, offset=offset,
+            length=length, persona_id=persona_id, submitted_by=submitted_by,
+            reviewed_by=reviewed_by, change_note=change_note, time_start=time_start,
             time_stop=time_stop)
 
     def changelog_submit_change(self, rs: RequestState, data: CdEDBObject,
