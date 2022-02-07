@@ -982,31 +982,51 @@ class EventBaseBackend(EventLowLevelBackend):
         return ret
 
     @internal
+    def event_keeper_run(self, args: List[Union[Path, str, bytes]],
+                         cwd: Optional[Path] = None, check: bool = True) -> None:
+        """Custom wrapper of subprocess.run to include proper logging."""
+        # Delay check to ensure logging
+        completed = subprocess.run(args, cwd=cwd, check=False,
+                                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        msg = completed.stdout or "unknown"
+        if completed.returncode != 0:
+            self.logger.error("Git error: %s", msg)
+        else:
+            self.logger.debug("Git output: %s", msg)
+        if check:
+            # Now, raise the check extension
+            completed.check_returncode()
+
+    @internal
     def event_keeper_init(self, event_id: int) -> None:
+        """Actually initialize the repository.
+
+        This takes care of all the dirty work regarding git configuration and
+        preparation of a basic git server.
+        """
         # Be double-safe against directory transversal
         event_id = affirm(int, event_id)
-        ek_dir = self.event_keeper_dir / str(event_id)
+        event_keeper_dir = self.event_keeper_dir / str(event_id)
 
         # TODO: remove the deletion and creation of parents.This is currently necessary
         #  to make the tests work, without adding storage everywhere.
-        if ek_dir.exists():
-            shutil.rmtree(ek_dir)
-        ek_dir.mkdir(parents=True)
+        if event_keeper_dir.exists():
+            shutil.rmtree(event_keeper_dir)
+        event_keeper_dir.mkdir(parents=True)
         # See https://git-scm.com/book/en/v2/Git-on-the-Server-The-Protocols
-        subprocess.run(["git", "init", "-b", "master"], cwd=ek_dir, check=True,
-                       stdout=subprocess.DEVNULL)
-        subprocess.run(["git", "config", "user.name", "CdE-Datenbank"],
-                       cwd=ek_dir, check=True)
-        subprocess.run(["git", "config", "user.email", "datenbank@cde-ev.de"],
-                       cwd=ek_dir, check=True)
-        shutil.move(ek_dir / ".git/hooks/post-update.sample",
-                    ek_dir / ".git/hooks/post-update")
+        self.event_keeper_run(["git", "init", "-b", "master"], cwd=event_keeper_dir)
+        self.event_keeper_run(["git", "config", "user.name", "CdE-Datenbank"],
+                              cwd=event_keeper_dir)
+        self.event_keeper_run(["git", "config", "user.email", "datenbank@cde-ev.de"],
+                              cwd=event_keeper_dir)
+        shutil.move(event_keeper_dir / ".git/hooks/post-update.sample",
+                    event_keeper_dir / ".git/hooks/post-update")
         # Additionally run post-commit since we commit on the repository itself
-        shutil.copy(ek_dir / ".git/hooks/post-update",
-                    ek_dir / ".git/hooks/post-commit")
-        subprocess.run(["chmod", "a+x", ".git/hooks/post-update",
-                        ".git/hooks/post-commit"],  cwd=ek_dir, check=True)
-        subprocess.run(["git", "update-server-info"], cwd=ek_dir, check=True)
+        shutil.copy(event_keeper_dir / ".git/hooks/post-update",
+                    event_keeper_dir / ".git/hooks/post-commit")
+        self.event_keeper_run(["chmod", "a+x", ".git/hooks/post-update",
+                        ".git/hooks/post-commit"], cwd=event_keeper_dir)
+        self.event_keeper_run(["git", "update-server-info"], cwd=event_keeper_dir)
 
     @access("event_admin")
     def event_keeper_drop(self, event_id: int) -> None:
@@ -1052,8 +1072,8 @@ class EventBaseBackend(EventLowLevelBackend):
                 f.write(json_serialize(export))
             # Declare the temporary directory to be the working tree, and specify the
             # actual git directory.
-            subprocess.run(["git", f"--work-tree={td}", "add", td / filename],
-                           cwd=event_keeper_dir, check=True)
+            self.event_keeper_run(["git", f"--work-tree={td}", "add", td / filename],
+                                   cwd=event_keeper_dir)
             # Then commit everything as if we were in the repository directory.
             commit: List[Union[PathLike, bytes]]
             commit = ["git", "-C", event_keeper_dir, "commit", "-m",
@@ -1064,5 +1084,7 @@ class EventBaseBackend(EventLowLevelBackend):
                                f"<{rs.user.username}>").encode("utf8"))
             if is_marker:
                 commit.append("--allow-empty")
-            subprocess.run(commit, check=True, stdout=subprocess.DEVNULL)
+            # Do not check here such that an error does not drag the whole request down
+            # In particular, this is expected for empty commits.
+            self.event_keeper_run(commit, check=False)
         return export
