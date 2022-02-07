@@ -1038,6 +1038,7 @@ class EventBaseBackend(EventLowLevelBackend):
         event_id = affirm(vtypes.ID, event_id)
         commit_msg = affirm(str, commit_msg)
         export = self.partial_export_event(rs, event_id)
+        del export['timestamp']
         event_keeper_dir = self.event_keeper_dir / str(event_id)
         # TODO: this should never happen in practice, but is a nice safeguard.
         if not event_keeper_dir.exists():
