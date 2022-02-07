@@ -4,13 +4,20 @@
 
 import collections
 import datetime
+import importlib.metadata
 import io
 import json
 import pathlib
+import shutil
+import subprocess
+import tempfile
 import time
+import zipapp
 from typing import Any, Collection, Dict, List, Optional, Set, Tuple, Union
 
 import werkzeug.exceptions
+from schulze_condorcet import schulze_evaluate_detailed
+from schulze_condorcet.types import DetailedResultLevel
 from werkzeug import Response
 
 import cdedb.database.constants as const
@@ -19,7 +26,7 @@ import cdedb.validationtypes as vtypes
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, LOG_FIELDS_COMMON, CdEDBObject, CdEDBObjectMap,
     DefaultReturnCode, EntitySorter, RequestState, get_hash, merge_dicts, n_, now,
-    schulze_evaluate, unwrap, xsorted,
+    unwrap, xsorted,
 )
 from cdedb.frontend.common import (
     AbstractUserFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, access,
@@ -238,7 +245,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.show_assembly(rs, assembly_id)
         code = self.assemblyproxy.add_assembly_presiders(
             rs, assembly_id, presider_ids)
-        self.notify_return_code(rs, code, error=n_("Action had no effect."))
+        rs.notify_return_code(code, error=n_("Action had no effect."))
         return self.redirect(rs, "assembly/show_assembly")
 
     @access("assembly_admin", modi={"POST"})
@@ -256,7 +263,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 "This user is not a presider for this assembly."))
             return self.redirect(rs, "assembly/show_assembly")
         code = self.assemblyproxy.remove_assembly_presider(rs, assembly_id, presider_id)
-        self.notify_return_code(rs, code, error=n_("Action had no effect."))
+        rs.notify_return_code(code, error=n_("Action had no effect."))
         return self.redirect(rs, "assembly/show_assembly")
 
     @access("assembly")
@@ -289,7 +296,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.change_assembly_form(rs, assembly_id)
         assert data is not None
         code = self.assemblyproxy.set_assembly(rs, data)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "assembly/show_assembly")
 
     @access("assembly_admin")
@@ -362,7 +369,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             new_id = self.mlproxy.create_mailinglist(rs, ml_data)
             msg = (n_("Presider mailinglist created.") if presider_list
                    else n_("Attendee mailinglist created."))
-            self.notify_return_code(rs, new_id, success=msg)
+            rs.notify_return_code(new_id, success=msg)
             if new_id and presider_list:
                 data = {'id': assembly_id, 'presider_address': ml_address}
                 self.assemblyproxy.set_assembly(rs, data)
@@ -420,15 +427,14 @@ class AssemblyFrontend(AbstractUserFrontend):
                         n_("Must not be empty in order to create a mailinglist."))))
         if rs.has_validation_errors():
             # as there may be other notifications already, notify errors explicitly
-            rs.notify_validation_errors_default()
+            rs.notify_validation()
             return self.create_assembly_form(rs)
         assert data is not None
         new_id = self.assemblyproxy.create_assembly(rs, data)
         if presider_ml_data:
             presider_ml_data['assembly_id'] = new_id
             code = self.mlproxy.create_mailinglist(rs, presider_ml_data)
-            self.notify_return_code(
-                rs, code, success=n_("Presider mailinglist created."))
+            rs.notify_return_code(code, success=n_("Presider mailinglist created."))
         if create_attendee_list:
             attendee_ml_data = self._get_mailinglist_setter(data)
             attendee_address = ml_type.get_full_address(attendee_ml_data)
@@ -438,12 +444,11 @@ class AssemblyFrontend(AbstractUserFrontend):
                 attendee_ml_data['description'] = descr
                 attendee_ml_data['assembly_id'] = new_id
                 code = self.mlproxy.create_mailinglist(rs, attendee_ml_data)
-                self.notify_return_code(
-                    rs, code, success=n_("Attendee mailinglist created."))
+                rs.notify_return_code(code, success=n_("Attendee mailinglist created."))
             else:
                 rs.notify("info", n_("Mailinglist %(address)s already exists."),
                           {'address': attendee_address})
-        self.notify_return_code(rs, new_id, success=n_("Assembly created."))
+        rs.notify_return_code(new_id, success=n_("Assembly created."))
         return self.redirect(rs, "assembly/show_assembly", {'assembly_id': new_id})
 
     @access("assembly_admin", modi={"POST"})
@@ -466,7 +471,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         code = self.assemblyproxy.delete_assembly(
             rs, assembly_id, cascade=cascade)
 
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "assembly/index")
 
     @access("assembly")
@@ -627,7 +632,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         cascade = {"signup_end"}
         code = self.assemblyproxy.conclude_assembly(rs, assembly_id, cascade)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "assembly/show_assembly")
 
     def _group_ballots(self, rs: RequestState, assembly_id: int
@@ -753,7 +758,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         assert data is not None
         new_id = self.assemblyproxy.create_ballot(rs, data)
         code = self._set_ballot_attachments(rs, new_id, data["linked_attachments"])
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "assembly/show_ballot", {'ballot_id': new_id})
 
     def _set_ballot_attachments(self, rs: RequestState, ballot_id: int,
@@ -833,7 +838,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             "authors": authors,
         }
         code = self.assemblyproxy.add_attachment(rs, data, attachment)
-        self.notify_return_code(rs, code, success=n_("Attachment added."))
+        rs.notify_return_code(code, success=n_("Attachment added."))
         return self.redirect(rs, "assembly/list_attachments")
 
     @access("assembly", modi={"POST"})
@@ -861,7 +866,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         cascade = {"ballots", "versions"}
         code = self.assemblyproxy.delete_attachment(rs, attachment_id, cascade)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "assembly/list_attachments")
 
     @access("assembly")
@@ -936,7 +941,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         data['attachment_id'] = attachment_id
         code = self.assemblyproxy.add_attachment_version(rs, data, attachment)
-        self.notify_return_code(rs, code, success=n_("Attachment added."))
+        rs.notify_return_code(code, success=n_("Attachment added."))
         return self.redirect(rs, "assembly/list_attachments")
 
     @access("assembly", modi={"POST"})
@@ -975,7 +980,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         code = self.assemblyproxy.remove_attachment_version(
             rs, attachment_id, version_nr)
-        self.notify_return_code(rs, code, error=n_("Unknown version."))
+        rs.notify_return_code(code, error=n_("Unknown version."))
         return self.redirect(rs, "assembly/list_attachments")
 
     @access("assembly", modi={"POST"})
@@ -1294,8 +1299,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             result['losers'] = losers
 
             # vote count for classical vote ballots
-            counts: Union[Dict[str, int],
-                          List[Dict[str, Union[int, List[str]]]]]
+            counts: Union[Dict[str, int], List[DetailedResultLevel]]
+            # TODO use helper function
             if ballot['votes']:
                 counts = {e['shortname']: 0
                           for e in ballot['candidates'].values()}
@@ -1314,7 +1319,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 candidates = [k for k, v in result['candidates'].items()]
                 if ballot['use_bar']:
                     candidates += (ASSEMBLY_BAR_SHORTNAME,)
-                condensed, counts = schulze_evaluate(votes, candidates)
+                counts = schulze_evaluate_detailed(votes, candidates)
 
             result['counts'] = counts
 
@@ -1422,7 +1427,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         code = self._set_ballot_attachments(rs, ballot_id, data['linked_attachments'])
         code *= self.assemblyproxy.set_ballot(rs, data)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "assembly/show_ballot")
 
     @access("assembly")
@@ -1446,7 +1451,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             rs.notify("error", n_("Comments are only allowed for concluded ballots."))
             return self.redirect(rs, "assembly/show_ballot")
         code = self.assemblyproxy.comment_concluded_ballot(rs, ballot_id, comment)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "assembly/show_ballot")
 
     @access("assembly", modi={"POST"})
@@ -1466,7 +1471,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             "vote_end": now() + datetime.timedelta(minutes=1),
         }
 
-        self.notify_return_code(rs, self.assemblyproxy.set_ballot(rs, bdata))
+        rs.notify_return_code(self.assemblyproxy.set_ballot(rs, bdata))
         # wait for ballot to be votable
         time.sleep(.1)
         return self.redirect(rs, "assembly/show_ballot")
@@ -1491,7 +1496,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         cascade = {"candidates", "attachments", "voters"} & blockers.keys()
         code = self.assemblyproxy.delete_ballot(rs, ballot_id, cascade=cascade)
 
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "assembly/list_ballots")
 
     @access("assembly", modi={"POST"})
@@ -1555,7 +1560,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.show_ballot(rs, assembly_id, ballot_id)
         assert vote is not None
         code = self.assemblyproxy.vote(rs, ballot_id, vote, secret=None)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "assembly/show_ballot")
 
     @access("assembly")
@@ -1603,5 +1608,32 @@ class AssemblyFrontend(AbstractUserFrontend):
             'candidates': candidates
         }
         code = self.assemblyproxy.set_ballot(rs, data)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "assembly/show_ballot")
+
+    def bundle_verify_result_zipapp(self) -> bytes:
+        version = importlib.metadata.version("schulze_condorcet")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            temp = pathlib.Path(tmp)
+            pkg = temp / 'verify_result'
+            pkg.mkdir()
+            shutil.copy2(self.conf['REPOSITORY_PATH'] / 'static' / 'verify_result.py',
+                         pkg / '__main__.py')
+            subprocess.run(
+                ['python3', '-m', 'pip', 'install',
+                 f'schulze_condorcet=={version}', '--target', 'verify_result'],
+                cwd=tmp, check=True)
+            shutil.rmtree(pkg / f'schulze_condorcet-{version}.dist-info')
+            output = temp / 'verify_result.pyz'
+            zipapp.create_archive(pkg, output, interpreter='/usr/bin/env python3')
+            with open(output, 'rb') as f:
+                return f.read()
+
+    @access("anonymous")
+    def download_verify_result_script(self, rs: RequestState) -> Response:
+        """Download the script to verify the vote result files."""
+        result = self.bundle_verify_result_zipapp()
+        return self.send_file(
+            rs, data=result, inline=False, filename="verify_result.pyz",
+            mimetype="application/x-python")

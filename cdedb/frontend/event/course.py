@@ -128,7 +128,7 @@ class EventCourseMixin(EventBaseFrontend):
             return self.change_course_form(rs, event_id, course_id)
         assert data is not None
         code = self.eventproxy.set_course(rs, data)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "event/show_course")
 
     @access("event")
@@ -169,7 +169,7 @@ class EventCourseMixin(EventBaseFrontend):
         assert data is not None
 
         new_id = self.eventproxy.create_course(rs, data)
-        self.notify_return_code(rs, new_id, success=n_("Course created."))
+        rs.notify_return_code(new_id, success=n_("Course created."))
         return self.redirect(rs, "event/show_course", {'course_id': new_id})
 
     @access("event", modi={"POST"})
@@ -194,7 +194,7 @@ class EventCourseMixin(EventBaseFrontend):
             is_marker=True)
         code = self.eventproxy.delete_course(
             rs, course_id, {"instructors", "course_choices", "course_segments"})
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "event/course_stats")
 
     @access("event")
@@ -760,5 +760,5 @@ class EventCourseMixin(EventBaseFrontend):
                     }
             if new_reg['tracks']:
                 code *= self.eventproxy.set_registration(rs, new_reg, change_note)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "event/show_course")

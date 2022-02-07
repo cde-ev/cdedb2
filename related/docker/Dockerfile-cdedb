@@ -73,7 +73,9 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     \
     && python3 -m pip --no-cache-dir install \
     mailmanclient==3.3.3 \
+    schulze_condorcet==2.0.0 \
     \
+    && python3 -m pip --no-cache-dir install \
     mypy==0.910 \
     types-werkzeug \
     types-pytz \

@@ -101,7 +101,7 @@ class EventFieldMixin(EventBaseFrontend):
         self.eventproxy.event_keeper_commit(rs, event_id, "Vor Datenfeld-Änderungen.",
                                             is_marker=True)
         code = self.eventproxy.set_event(rs, event)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(
             rs, "event/field_summary_form", anchor=(
                 ("tab:" + active_tab) if active_tab is not None else None))
@@ -305,7 +305,7 @@ class EventFieldMixin(EventBaseFrontend):
                     code *= entity_setter(rs, new)
         self.eventproxy.event_keeper_commit(
             rs, event_id, "Nach Änderung: " + change_note, is_marker=True)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
 
         if kind == const.FieldAssociations.registration:
             query = Query(
