@@ -993,7 +993,8 @@ class EventBaseBackend(EventLowLevelBackend):
             shutil.rmtree(ek_dir)
         ek_dir.mkdir(parents=True)
         # See https://git-scm.com/book/en/v2/Git-on-the-Server-The-Protocols
-        subprocess.run(["git", "init", "-b", "master"], cwd=ek_dir, check=True)
+        subprocess.run(["git", "init", "-b", "master"], cwd=ek_dir, check=True,
+                       stdout=subprocess.DEVNULL)
         subprocess.run(["git", "config", "user.name", "CdE-Datenbank"],
                        cwd=ek_dir, check=True)
         subprocess.run(["git", "config", "user.email", "datenbank@cde-ev.de"],
@@ -1062,5 +1063,5 @@ class EventBaseBackend(EventLowLevelBackend):
                                f"<{rs.user.username}>").encode("utf8"))
             if is_marker:
                 commit.append("--allow-empty")
-            subprocess.run(commit, check=True)
+            subprocess.run(commit, check=True, stdout=subprocess.DEVNULL)
         return export
