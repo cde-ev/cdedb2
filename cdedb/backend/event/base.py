@@ -1009,7 +1009,7 @@ class EventBaseBackend(EventLowLevelBackend):
         subprocess.run(["git", "update-server-info"], cwd=ek_dir, check=True)
 
     @access("event_admin")
-    def event_keeper_drop(self, rs: RequestState, event_id: int) -> None:
+    def event_keeper_drop(self, event_id: int) -> None:
         # Be double-safe against directory transversal
         event_id = affirm(int, event_id)
         try:
