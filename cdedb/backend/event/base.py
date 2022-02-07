@@ -983,28 +983,34 @@ class EventBaseBackend(EventLowLevelBackend):
 
     @internal
     def event_keeper_init(self, event_id: int) -> None:
-        event_keeper_directory = self.event_keeper_dir / str(event_id)
+        # Be double-safe against directory transversal
+        event_id = affirm(int, event_id)
+        ek_dir = self.event_keeper_dir / str(event_id)
 
         # TODO: remove the deletion and creation of parents.This is currently necessary
         #  to make the tests work, without adding storage everywhere.
-        if event_keeper_directory.exists():
-            shutil.rmtree(event_keeper_directory)
-        event_keeper_directory.mkdir(parents=True)
+        if ek_dir.exists():
+            shutil.rmtree(ek_dir)
+        ek_dir.mkdir(parents=True)
         # See https://git-scm.com/book/en/v2/Git-on-the-Server-The-Protocols
-        subprocess.run(["git", "init"], cwd=event_keeper_directory, check=True)
-        shutil.move(event_keeper_directory / ".git/hooks/post-update.sample",
-                    event_keeper_directory / ".git/hooks/post-update")
+        subprocess.run(["git", "init", "-b", "master"], cwd=ek_dir, check=True)
+        subprocess.run(["git", "config", "user.name", "CdE-Datenbank"],
+                       cwd=ek_dir, check=True)
+        subprocess.run(["git", "config", "user.email", "datenbank@cde-ev.de"],
+                       cwd=ek_dir, check=True)
+        shutil.move(ek_dir / ".git/hooks/post-update.sample",
+                    ek_dir / ".git/hooks/post-update")
         # Additionally run post-commit since we commit on the repository itself
-        shutil.copy(event_keeper_directory / ".git/hooks/post-update",
-                    event_keeper_directory / ".git/hooks/post-commit")
+        shutil.copy(ek_dir / ".git/hooks/post-update",
+                    ek_dir / ".git/hooks/post-commit")
         subprocess.run(["chmod", "a+x", ".git/hooks/post-update",
-                        ".git/hooks/post-commit"],  cwd=event_keeper_directory,
-                       check=True)
-        subprocess.run(["git", "update-server-info"], cwd=event_keeper_directory,
-                       check=True)
+                        ".git/hooks/post-commit"],  cwd=ek_dir, check=True)
+        subprocess.run(["git", "update-server-info"], cwd=ek_dir, check=True)
 
     @access("event_admin")
     def event_keeper_drop(self, rs: RequestState, event_id: int) -> None:
+        # Be double-safe against directory transversal
+        event_id = affirm(int, event_id)
         try:
             shutil.rmtree(self.event_keeper_dir / str(event_id))
         except FileNotFoundError:
