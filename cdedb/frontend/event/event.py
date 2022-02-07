@@ -860,7 +860,7 @@ class EventEventMixin(EventBaseFrontend):
 
         # Delete non-pseudonymized event keeper only after internal work has been
         # concluded successfully
-        self.eventproxy.event_keeper_drop(event_id)
+        self.eventproxy.event_keeper_drop(rs, event_id)
 
         if message:
             rs.notify("warning", message)
@@ -906,7 +906,7 @@ class EventEventMixin(EventBaseFrontend):
         else:
             # Delete non-pseudonymized event keeper only after internal work has been
             # concluded successfully
-            self.eventproxy.event_keeper_drop(event_id)
+            self.eventproxy.event_keeper_drop(rs, event_id)
 
             rs.notify("success", n_("Event deleted."))
             return self.redirect(rs, "event/index")

@@ -1029,7 +1029,10 @@ class EventBaseBackend(EventLowLevelBackend):
         self.event_keeper_run(["git", "update-server-info"], cwd=event_keeper_dir)
 
     @access("event_admin")
-    def event_keeper_drop(self, event_id: int) -> None:
+    def event_keeper_drop(self, rs: RequestState, event_id: int) -> None:
+        """Irreveersibly delete event keeper repostory.
+
+        :param rs: Required for access check."""
         # Be double-safe against directory transversal
         event_id = affirm(int, event_id)
         try:
