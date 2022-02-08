@@ -767,8 +767,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
     def view_misc(self, rs: RequestState) -> Response:
         """View miscellaneos things."""
         meta_data = self.coreproxy.get_meta_info(rs)
-        cde_misc = (meta_data.get("cde_misc")
-                    or rs.gettext("*Nothing here yet.*"))
+        cde_misc = (meta_data.get("cde_misc") or rs.gettext("*Nothing here yet.*"))
         return self.render(rs, "view_misc", {"cde_misc": cde_misc})
 
     @access("cde_admin", "auditor")
