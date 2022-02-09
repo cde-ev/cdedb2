@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2022-02-03 01:35+0100\n"
+"POT-Creation-Date: 2022-02-06 03:26+0100\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -1333,7 +1333,9 @@ msgstr ""
 
 #: cdedb/frontend/assembly/__init__.py:359
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:146
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:147
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:172
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:174
 msgid "Must have presiders in order to create a mailinglist."
 msgstr ""
 
@@ -2644,6 +2646,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:121
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:151
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:127
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:131
 #: cdedb/frontend/templates/web/event/generic.tmpl:12
 #: cdedb/frontend/templates/web/event/registration/add_registration.tmpl:73
 #: cdedb/frontend/templates/web/event/registration/amend_registration.tmpl:37
@@ -3195,6 +3198,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:11
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:352
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:215
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:217
 #: cdedb/frontend/templates/web/cde/past_event/institution_summary.tmpl:47
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:149
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:97
@@ -3210,7 +3214,9 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:12
 #: cdedb/frontend/templates/web/assembly/add_attachment_version.tmpl:52
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:193
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:195
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:216
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:218
 #: cdedb/frontend/templates/web/assembly/util.tmpl:32
 #: cdedb/frontend/templates/web/assembly/util.tmpl:50
 #: cdedb/frontend/templates/web/cde/past_event/show_past_course.tmpl:134
@@ -3219,6 +3225,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/show_user.tmpl:639
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:151
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:61
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:65
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:224
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:402
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:429
@@ -3714,7 +3721,9 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/event/create_event.tmpl:23
 #: cdedb/frontend/templates/web/event/event/part_group_summary.tmpl:41
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:74
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:78
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:126
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:130
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:98
 #: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:70
 msgid "Shortname"
@@ -3812,6 +3821,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:118
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:208
 #: cdedb/frontend/templates/web/generic.tmpl:322
+#: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:126
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:127
 #: cdedb/i18n_additional.py:343
 msgid "Save"
@@ -3820,7 +3830,9 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:374
 #: cdedb/frontend/templates/web/cde/past_event/institution_summary.tmpl:69
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:202
+#: cdedb/frontend/templates/web/event/event/change_part.tmpl:203
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:205
+#: cdedb/frontend/templates/web/event/event/change_part.tmpl:206
 #: cdedb/frontend/templates/web/event/lodgement/lodgement_group_summary.tmpl:70
 msgid "Delete line"
 msgstr ""
@@ -4451,30 +4463,36 @@ msgid "Create presider mailinglist"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:153
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:154
 msgid ""
 "Create a presider mailinglist for this assembly with a default configuration."
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:169
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:170
 msgid "Create attendee mailinglist"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:179
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:181
 msgid ""
 "Create an attendee mailinglist for this assembly with a default "
 "configuration."
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:191
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:193
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:397
 msgid "Archive"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:192
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:194
 msgid "Assembly still has open ballots."
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:199
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:201
 msgid ""
 "Archives the assembly. The configuration and attachments cannot be changed "
 "after this. The private keys used to sign the votes will be deleted from the "
@@ -4483,16 +4501,19 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:222
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:224
 msgid ""
 "Permanently deletes the assembly including all ballots and attendee "
 "information. This is only possible while no ballots have begun voting."
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:233
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:235
 msgid "The assembly will be permanently archived."
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:235
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:237
 msgid "The assembly will be permanently deleted."
 msgstr ""
 
@@ -5759,6 +5780,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:58
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:79
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:105
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:109
 #: cdedb/frontend/templates/web/event/registration/batch_fees.tmpl:46
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:65
 msgid "Amount"
@@ -7546,6 +7568,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:133
 #: cdedb/frontend/templates/web/core/modify_membership.tmpl:38
 #: cdedb/frontend/templates/web/event/course/manage_attendees.tmpl:68
+#: cdedb/frontend/templates/web/event/event/change_part.tmpl:196
 #: cdedb/frontend/templates/web/event/lodgement/manage_inhabitants.tmpl:72
 #: cdedb/frontend/templates/web/event/lodgement/manage_inhabitants.tmpl:82
 #: cdedb/i18n_additional.py:342
@@ -8084,6 +8107,10 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/view_changelog_meta.tmpl:24
 #: cdedb/frontend/templates/web/logging.tmpl:112
 msgid "Reviewed By"
+msgstr ""
+
+#: cdedb/frontend/templates/web/core/show_history.tmpl:289
+msgid "Automated change"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/show_privilege_change.tmpl:5
@@ -9495,24 +9522,28 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/event/add_part.tmpl:27
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:42
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:77
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:81
 msgid "Begin"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/add_part.tmpl:28
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:43
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:80
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:84
 msgid "End"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/add_part.tmpl:29
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:44
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:85
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:89
 msgid "Event-Part Fee"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/add_part.tmpl:31
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:46
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:88
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:92
 msgid "Field for Waitlist"
 msgstr ""
 
@@ -9760,6 +9791,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:31
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:30
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:34
 msgid ""
 "Event parts and course tracks can only be created or deleted if no "
 "registrations are present yet. Course tracks can only be deleted, if there "
@@ -9773,12 +9805,14 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:57
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:72
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:104
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:108
 msgid "Fee Modifier"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:59
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:86
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:106
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:110
 msgid "Linked Field"
 msgstr ""
 
@@ -9789,18 +9823,21 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:119
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:136
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:125
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:129
 msgid "Coursetrack"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:122
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:159
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:128
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:132
 msgid "Req. Choices"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:123
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:166
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:129
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:133
 #: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:50
 msgid "Sortkey"
 msgstr ""
@@ -9832,6 +9869,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/event/configure_part_group.tmpl:29
 #: cdedb/frontend/templates/web/event/event/part_group_summary.tmpl:22
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:26
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:30
 msgid "Part Groups"
 msgstr ""
 
@@ -10010,22 +10048,26 @@ msgstr ""
 msgid "Configure Event-Parts"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:62
-msgid "Delete Part"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:65
-msgid "The event part will be permanently deleted."
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:69
-msgid "Change Part"
-msgstr ""
-
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:27
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:149
 #: cdedb/frontend/templates/web/event/questionnaire/configure_additional_questionnaire.tmpl:53
 #: cdedb/frontend/templates/web/event/questionnaire/configure_registration.tmpl:53
 msgid "Add Part"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:62
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:66
+msgid "Delete Part"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:65
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:69
+msgid "The event part will be permanently deleted."
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:69
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:73
+msgid "Change Part"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:25

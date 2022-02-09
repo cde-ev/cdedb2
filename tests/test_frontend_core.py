@@ -1600,6 +1600,13 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Änderungshistorie von Bertålotta Beispiel")
         self.assertPresence(r"Gen 2\W*03.04.1933", regex=True)
         self.assertPresence(r"Gen 1\W*11.02.1981", regex=True)
+        self.assertNonPresence("Automatisiert")
+
+        self.admin_view_profile("martin")
+        self.traverse({'description': 'Änderungshistorie'})
+        self.assertTitle("Änderungshistorie von Martin Meister")
+        self.assertPresence("Automatisierte Änderung", div='generation2')
+        self.assertNonPresence("Automatisiert", div='generation1')
 
     @as_users("vera")
     def test_markdown(self) -> None:
