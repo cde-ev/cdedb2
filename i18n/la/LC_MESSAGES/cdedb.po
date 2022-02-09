@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2022-02-06 21:09+0000\n"
+"POT-Creation-Date: 2022-02-09 18:43+0000\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -2630,7 +2630,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/registration/add_registration.tmpl:60
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:72
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:152
-#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:139
+#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:145
 msgid "Course"
 msgstr ""
 
@@ -3073,7 +3073,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/registration/add_registration.tmpl:69
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:81
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:173
-#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:240
+#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:246
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:233
 #: cdedb/frontend/templates/web/generic.tmpl:71 cdedb/query.py:805
 msgid "Notes"
@@ -5648,6 +5648,13 @@ msgstr ""
 msgid "Payment reference"
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/index.tmpl:140
+#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:77
+msgid ""
+"Note: After the Bank Account recieved your transfer, it may take some time "
+"(up to a few weeks) until the payment is registered here."
+msgstr ""
+
 #: cdedb/frontend/templates/web/cde/lastschrift/i25p_index.tmpl:9
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_subscription_form_fill.tmpl:7
 msgid "Initiative 25+ (Additional Information)"
@@ -7734,7 +7741,7 @@ msgstr "annuntiatus:a (TODO: gender specific string)"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:217
 #: cdedb/frontend/templates/web/event/event/index.tmpl:49
-#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:125
+#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:132
 msgid "payment pending"
 msgstr ""
 
@@ -9800,7 +9807,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:26
 #: cdedb/frontend/templates/web/event/event/configure_part_group.tmpl:32
 #: cdedb/frontend/templates/web/event/registration/amend_registration.tmpl:19
-#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:181
+#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:187
 msgid "Change"
 msgstr ""
 
@@ -10450,14 +10457,14 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/registration/add_registration.tmpl:67
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:79
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:163
-#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:199
+#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:205
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:187
 #: cdedb/query.py:803
 msgid "Mixed Lodging"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:52
-#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:202
+#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:208
 msgid "Mixed Lodging not possible."
 msgstr ""
 
@@ -10466,12 +10473,12 @@ msgid "The selection must be compatible with the parental consent form."
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:60
-#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:205
+#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:211
 msgid "I agree to mixed lodging."
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:61
-#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:207
+#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:213
 msgid "I want to be lodged separated by gender."
 msgstr ""
 
@@ -10581,7 +10588,7 @@ msgid "New Value"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:62
-#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:94
+#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:101
 #: cdedb/query.py:799
 msgid "Payment"
 msgstr ""
@@ -10590,7 +10597,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/registration/add_registration.tmpl:44
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:53
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:113
-#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:104
+#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:111
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:98
 #: cdedb/query.py:802
 msgid "Parental Consent"
@@ -10600,7 +10607,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/registration/add_registration.tmpl:68
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:80
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:170
-#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:211
+#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:217
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:191
 #: cdedb/query.py:804
 msgid "Participant List Consent"
@@ -11198,7 +11205,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/registration/add_registration.tmpl:81
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:93
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:181
-#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:159
+#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:165
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:207
 msgid "Instructor of"
 msgstr ""
@@ -11279,7 +11286,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:78
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:160
-#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:177
+#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:183
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:185
 msgid "Registration Data"
 msgstr ""
@@ -11398,7 +11405,7 @@ msgid "form to edit your profile"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/registration/register.tmpl:116
-#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:79
+#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:86
 #, python-format
 msgid ""
 "Because you are not a CdE-Member, you will have to pay an additional fee of "
@@ -11406,7 +11413,7 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/registration/register.tmpl:122
-#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:85
+#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:92
 #, python-format
 msgid ""
 "You can instead just pay your regular membership fee of %(semester_fee)s per "
@@ -11458,63 +11465,63 @@ msgid ""
 "especially when paying internationally."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:96
+#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:103
 #, python-format
 msgid "The orgas will tell you separately how to pay your fee of %(fee)s€."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:106
+#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:113
 #, python-format
 msgid ""
 "You need to send the parental consent form to the Orgas. You can find the "
 "form %(link)s."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:106
+#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:113
 msgid "here"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:119
+#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:126
 msgid "Registration Status"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:128
+#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:135
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:138
 msgid "Placement"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:141
+#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:147
 msgid "for"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:148
+#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:154
 msgid "Assigned to"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:163
+#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:169
 msgid "{}. choice"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:184
+#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:190
 #, python-format
 msgid "Changes can be made until the registration end (%(date)s)."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:191
+#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:197
 msgid ""
 "Registration has ended, therefore no more changes are possible. Please "
 "contact the Orgas per E-Mail, if you need to change something about your "
 "registration."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:213
+#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:219
 #, python-format
 msgid ""
 "I %(consent)s agree that my data, including my name, address and my email, "
 "may be sent to other participants of this event beforehand."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:213
+#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:219
 msgid "do not"
 msgstr ""
 

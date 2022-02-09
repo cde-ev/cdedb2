@@ -72,6 +72,13 @@
                 </tr>
             </tbody>
         </table>
+        <p class="text-muted">
+            {{ util.make_icon('info-circle') }}
+            {% trans %}
+                Note: After the Bank Account recieved your transfer, it may take some time
+                (up to a few weeks) until the payment is registered here.
+            {% endtrans %}
+        </p>
 
         {% if "member" not in user.roles and ambience["event"]["nonmember_surcharge"] %}
             <div class="text-info" id="nonmember-surcharge" style="font-weight: bold;">
@@ -128,7 +135,6 @@
                     ({% trans %}Placement{% endtrans %}{{ nbsp }}{{ waitlist_position[part_id] }})
                 {% endif %}
             </dd>
-
         {% endfor %}
     </dl>
 

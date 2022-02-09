@@ -135,6 +135,13 @@
                     </tr>
                 </tbody>
             </table>
+            <p class="text-muted">
+                {{ util.make_icon('info-circle') }}
+                {% trans %}
+                    Note: After the Bank Account recieved your transfer, it may take some time
+                    (up to a few weeks) until the payment is registered here.
+                {% endtrans %}
+            </p>
         {% endcall %}
     {% endif %}
 {% endblock %}
