@@ -294,6 +294,18 @@ def periodic(name: str, period: int = 1
 
     return decorator
 
+class UnprintableUndefined(jinja2.Undefined):
+    """An undefined that barks on print and iteration, but not on boolean
+    tests and basic comparisons.
+
+    This matches our needs to catch `{{ undefined }}`, while still allowing
+    comfortable `if` checks as well as `sidenav_active` comparisons.
+    """
+
+    __iter__ = __str__ = __len__ = jinja2.Undefined._fail_with_undefined_error  # pylint: disable=protected-access
+    # __eq__ = __ne__ = __bool__ = Undefined._fail_with_undefined_error
+    __hash__ = jinja2.Undefined._fail_with_undefined_error  # pylint: disable=protected-access
+    __contains__ = jinja2.Undefined._fail_with_undefined_error  # pylint: disable=protected-access
 
 class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     """Common base class for all frontends."""
@@ -307,7 +319,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         self.jinja_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(str(self.template_dir)),
             extensions=['jinja2.ext.i18n', 'jinja2.ext.do', 'jinja2.ext.loopcontrols'],
-            finalize=sanitize_None, autoescape=True, auto_reload=self.conf["CDEDB_DEV"])
+            finalize=sanitize_None, autoescape=True, auto_reload=self.conf["CDEDB_DEV"],
+            undefined=UnprintableUndefined)
         self.jinja_env.policies['ext.i18n.trimmed'] = True  # type: ignore
         self.jinja_env.policies['json.dumps_kwargs']['cls'] = CustomJSONEncoder  # type: ignore
         self.jinja_env.filters.update(JINJA_FILTERS)

@@ -98,7 +98,7 @@
         </p>
 
         {% if ambience['event']['parts']|length > 1
-                or (ambience['event']['parts']|length == 1 and course_choices[(course_choices|list)[0]]|length > 0) %}
+                or (ambience['event']['parts']|length == 1 and course_choices and course_choices[course_choices|first]|length > 0) %}
             <h3 class="heading-underline">{% trans %}Registration{% endtrans %}</h3>
         {% endif %}
 

@@ -283,7 +283,7 @@
     {%- endif %}
 {%- endmacro %}
 
-{% macro output_info(info, link) %}
+{% macro output_info(info, link=none) %}
     {%- if info %}
         <p class="help-block no-color">
             {{ make_icon('info-circle') }} {{ info }}
@@ -518,7 +518,6 @@
         role="radiogroup" if radio else "group",
         **{'aria-labelledby': arialabeledby}
     )|xmlattr }}>
-        {%- if arialabel %}<legend class="sr-only">{{ arialabel }}</legend>{% endif %}
         {% set entries = entries|sort(attribute=1) if sort else entries %}
         {% set col_width = 12 // slice %}
         {%- for column in entries|slice(slice) %}
@@ -839,9 +838,9 @@ attribute to each field of a dynamic row. #}
     Creates a HTML compliant mailto: URL (though not neccessarily RFC compliant)
     Additional header such as to, subject, body, cc, or bcc can be passed as kwargs
 #}
-{% macro mailto(address, name) -%}
+{% macro mailto(address='', name=none) -%}
 mailto:
-{%- if name is defined %}{{ "{}%3C{}%3E".format(name|urlencode, address) }}{% else %}{{ address }}{% endif %}
+{%- if name is not none %}{{ "{}%3C{}%3E".format(name|urlencode, address) }}{% else %}{{ address }}{% endif %}
 {%- if kwargs %}?{{ kwargs|urlencode }}{% endif %}
 {%- endmacro %}
 

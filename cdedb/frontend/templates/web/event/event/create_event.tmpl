@@ -22,8 +22,7 @@
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5", markdown=True) }}
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
         {{ util.form_input_select(name="institution", label=gettext("Institution"),
-                                  entries=institutions|keydictsort(EntitySorter.institution)|dict_entries('id', 'title'),
-                                  defaultvalue=institutions['cde']) }}
+                                  entries=institutions|keydictsort(EntitySorter.institution)|dict_entries('id', 'title')) }}
         {{ util.form_input_text(name="part_begin", label=gettext("Event Begin"), type="date",
                                 placeholder="YYYY-MM-DD") }}
         {{ util.form_input_text(name="part_end", label=gettext("Event End"), type="date",
