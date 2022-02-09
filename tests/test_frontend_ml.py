@@ -804,6 +804,10 @@ class TestMlFrontend(FrontendTest):
         f['local_part'] = "platin"
         self.submit(f, check_notification=False)
         self.assertValidationError("local_part", "Uneindeutige Mailadresse")
+        # Check that list name may not contain magic mailman address strings
+        f['local_part'] = "munkelwand-unsubscribe"
+        self.submit(f, check_notification=False)
+        self.assertValidationError("local_part", "\"-unsubscribe@\" nicht enthalten.")
 
         f['local_part'] = "munkelwand"
         self.submit(f)
@@ -852,6 +856,10 @@ class TestMlFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertValidationError("local_part", "Uneindeutige Mailadresse")
         self.assertValidationError("domain", "Uneindeutige Mailadresse")
+        # Check that list name may not contain magic mailman address strings
+        f['local_part'] = "munkelwand-confirm"
+        self.submit(f, check_notification=False)
+        self.assertValidationError("local_part", "\"-confirm@\" nicht enthalten.")
 
         f['local_part'] = "munkelwand"
         self.submit(f)
