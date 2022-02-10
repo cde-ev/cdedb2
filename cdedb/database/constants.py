@@ -8,7 +8,7 @@ their symbolic names provided by this module should be used.
 """
 
 import enum
-from typing import Dict
+from typing import Dict, Set
 
 from cdedb.subman.machine import (  # pylint: disable=unused-import # noqa: F401
     SubscriptionAction, SubscriptionState,
@@ -108,6 +108,16 @@ class QuestionnaireUsages(enum.IntEnum):
 
 
 @enum.unique
+class EventPartGroupType(enum.IntEnum):
+    Statistic = 100
+
+    def get_icon(self) -> str:
+        return {
+            EventPartGroupType.Statistic: "chart-bar",
+        }[self]
+
+
+@enum.unique
 class GenesisStati(enum.IntEnum):
     """Spec for field case_status of core.genesis_cases."""
     #: created, data logged, email unconfirmed
@@ -118,8 +128,17 @@ class GenesisStati(enum.IntEnum):
     approved = 3
     #: finished (persona created, challenge archived)
     successful = 4
+    #: finished (existing persona updated, challenge archived)
+    existing_updated = 5
     #: reviewed and rejected (also a final state)
     rejected = 10
+
+    @classmethod
+    def finalized_stati(cls) -> Set["GenesisStati"]:
+        return {cls.successful, cls.existing_updated, cls.rejected}
+
+    def is_finalized(self) -> bool:
+        return self in self.finalized_stati()
 
 
 @enum.unique
@@ -257,6 +276,7 @@ class CoreLogCodes(enum.IntEnum):
     genesis_rejected = 22  #:
     genesis_deleted = 23  #:
     genesis_verified = 24  #:
+    genesis_merged = 25  #:
     privilege_change_pending = 30  #:
     privilege_change_approved = 31  #:
     privilege_change_rejected = 32  #:
@@ -347,6 +367,11 @@ class EventLogCodes(enum.IntEnum):
     minor_form_removed = 86  #:
     query_stored = 90  #:
     query_deleted = 91  #:
+    part_group_created = 100  #:
+    part_group_changed = 101  #:
+    part_group_deleted = 102  #:
+    part_group_link_created = 105  #:
+    part_group_link_deleted = 106  #:
 
 
 @enum.unique

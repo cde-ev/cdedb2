@@ -9,7 +9,7 @@ import collections
 import datetime
 import enum
 import pprint
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -29,6 +29,9 @@ from cdedb.frontend.event.base import EventBaseFrontend
 from cdedb.query import (
     Query, QueryConstraint, QueryOperators, QueryOrder, QueryScope, QuerySpec,
     QuerySpecEntry,
+)
+from cdedb.query_defaults import (
+    generate_event_course_default_queries, generate_event_registration_default_queries,
 )
 
 RPS = const.RegistrationPartStati
@@ -86,6 +89,28 @@ def _waitlist_order(event: CdEDBObject, part: CdEDBObject) -> List[QueryOrder]:
     return ret + [('reg.payment', True), ('ctime.creation_time', True)]
 
 
+def merge_constraints(*constraints: QueryConstraint) -> Optional[QueryConstraint]:
+    """
+    Helper function to try to merge a collection of query constraints into a single one.
+
+    In order to be mergable all constraints must have the same `QueryOperator` and the
+    same value. All differing constraint fields are joined together, respecting order.
+
+    The fields are collected in a dict, with ensures uniqueness, while preserving the
+    original order, which sets don't.
+    """
+    fields: Dict[str, None] = {}
+    operators, values = set(), set()
+    for con in constraints:
+        field, op, value = con
+        fields[field] = None
+        operators.add(op)
+        values.add(value)
+    if len(operators) != 1 or len(values) != 1:
+        return None
+    return (",".join(fields), unwrap(operators), unwrap(values))
+
+
 # These enums each offer a collection of statistics for the stats page.
 # They implement a test and query building interface:
 # A `.test` method that takes the event data and a registrations, returning
@@ -127,7 +152,10 @@ class EventRegistrationPartStatistic(enum.Enum):
     def indent(self) -> bool:
         return self.name.startswith("_")
 
-    def test(self, event: CdEDBObject, reg: CdEDBObject, part_id: CdEDBObject) -> bool:
+    def test(self, event: CdEDBObject, reg: CdEDBObject, part_id: int) -> bool:
+        """
+        Test wether the given registration fits into this statistic for the given part.
+        """
         part = reg['parts'][part_id]
         if self == self.pending:
             return part['status'] == RPS.applied
@@ -173,7 +201,19 @@ class EventRegistrationPartStatistic(enum.Enum):
         else:
             raise RuntimeError(n_("Impossible."))
 
+    def test_part_group(self, event: CdEDBObject, reg: CdEDBObject, part_group_id: int
+                        ) -> bool:
+        """
+        Similar to the `test` method, but for determining whether the registration fits
+        this statistic for any of the parts in the given part group.
+        """
+        part_group = event['part_groups'][part_group_id]
+        return any(self.test(event, reg, part_id) for part_id in part_group['part_ids'])
+
     def _get_query_aux(self, event: CdEDBObject, part_id: int) -> StatQueryAux:
+        """
+        Return fields of interest, constraints and order for this statistic for a part.
+        """
         part = event['parts'][part_id]
         if self == self.pending:
             return ([], [_status_constraint(part, RPS.applied)], [])
@@ -310,6 +350,7 @@ class EventRegistrationPartStatistic(enum.Enum):
             raise RuntimeError(n_("Impossible."))
 
     def get_query(self, event: CdEDBObject, part_id: int) -> Query:
+        """Return a `Query` object for this statistic for the given part."""
         query = Query(
             QueryScope.registration,
             QueryScope.registration.get_spec(event=event),
@@ -323,6 +364,39 @@ class EventRegistrationPartStatistic(enum.Enum):
         query.constraints.extend(constraints)
         # Prepend the specific order.
         query.order = order + query.order
+        return query
+
+    def get_query_part_group(self, event: CdEDBObject, part_group_id: int
+                             ) -> Optional[Query]:
+        """
+        Similar to `get_query`, but return q `Query` object for this statistics for the
+        given part group.
+
+        This means that all the individual constraints for the individual parts need to
+        be merged together. This is not always possible. For example the constraints
+        for determining minor participants might differ between parts if these parts
+        begin at different dates.
+        """
+        query = Query(
+            QueryScope.registration,
+            QueryScope.registration.get_spec(event=event),
+            fields_of_interest=['reg.id', 'persona.given_names', 'persona.family_name',
+                                'persona.username'],
+            constraints=[],
+            order=[('persona.family_name', True), ('persona.given_names', True)]
+        )
+        all_fields, all_constraints = [], []
+        for part_id in xsorted(event['part_groups'][part_group_id]['part_ids']):
+            fields, constraints, _ = self._get_query_aux(event, part_id)
+            all_fields.extend(fields)
+            all_constraints.append(constraints)
+        for i in range(len(all_constraints[0])):
+            new_constraint = merge_constraints(*(clist[i] for clist in all_constraints))
+            # Make sure that the constraints could be merged and that the new constraint
+            # is part of the spec.
+            if new_constraint is None or new_constraint[0] not in query.spec:
+                return None
+            query.constraints.append(new_constraint)
         return query
 
 
@@ -550,6 +624,13 @@ class EventQueryMixin(EventBaseFrontend):
                     if reg_stat.test(rs.ambience['event'], reg, part_id))
                 for part_id in event_parts
             }
+            per_part_statistics[reg_stat].update({
+                -part_group_id: sum(
+                    1 for reg in registrations.values()
+                    if reg_stat.test_part_group(
+                        rs.ambience['event'], reg, part_group_id))
+                for part_group_id in rs.ambience['event']['part_groups']
+            })
 
         per_track_statistics: Dict[
             Union[EventRegistrationTrackStatistic, EventCourseStatistic],
@@ -610,8 +691,8 @@ class EventQueryMixin(EventBaseFrontend):
                           query_input, "query", spec=spec, allow_empty=False)
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
 
-        default_queries = self.conf["DEFAULT_QUERIES_REGISTRATION"](
-            rs.gettext, rs.ambience['event'], spec)
+        default_queries = generate_event_registration_default_queries(
+            rs.ambience['event'], spec)
         stored_queries = self.eventproxy.get_event_queries(
             rs, event_id, scopes=(scope,))
         default_queries.update(stored_queries)
@@ -620,7 +701,7 @@ class EventQueryMixin(EventBaseFrontend):
                          for k, spec_entry in spec.items()
                          if spec_entry.choices}
 
-        params = {
+        params: Dict[str, Any] = {
             'spec': spec, 'query': query, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'has_registrations': has_registrations,
         }
@@ -655,7 +736,7 @@ class EventQueryMixin(EventBaseFrontend):
         if not rs.has_validation_errors() and query:
             query_id = self.eventproxy.store_event_query(
                 rs, rs.ambience["event"]["id"], query)
-            self.notify_return_code(rs, query_id)
+            rs.notify_return_code(query_id)
             if query_id:
                 query.query_id = query_id
                 del query_input["query_name"]
@@ -675,7 +756,7 @@ class EventQueryMixin(EventBaseFrontend):
             if stored_query:
                 query_input = stored_query.serialize()
             code = self.eventproxy.delete_event_query(rs, query_id)
-            self.notify_return_code(rs, code)
+            rs.notify_return_code(code)
         if query_scope and query_scope.get_target():
             return self.redirect(rs, query_scope.get_target(), query_input)
         return self.redirect(rs, "event/show_event", query_input)
@@ -724,15 +805,15 @@ class EventQueryMixin(EventBaseFrontend):
                                       for t_id in tracks)
         stored_queries = self.eventproxy.get_event_queries(
             rs, event_id, scopes=(scope,))
-        default_queries = self.conf["DEFAULT_QUERIES_COURSE"](
-            rs.gettext, rs.ambience['event'], spec)
+        default_queries = generate_event_course_default_queries(
+            rs.ambience['event'], spec)
         default_queries.update(stored_queries)
 
         choices_lists = {k: list(spec_entry.choices.items())
                          for k, spec_entry in spec.items()
                          if spec_entry.choices}
 
-        params = {
+        params: Dict[str, Any] = {
             'spec': spec, 'query': query, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'selection_default': selection_default,
         }

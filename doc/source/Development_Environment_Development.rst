@@ -41,7 +41,7 @@ To enable these scripts add the following to the ``.git/config`` file::
         textconv = i18n/git-diff-filter-po.sh
     [merge "pomerge"]
         name = Gettext merge driver
-        driver = i18n/get-merge-po.sh %O %A %B
+        driver = i18n/git-merge-po.sh %O %A %B
 
 The first one is used when executing ``git diff`` on `.po` files.
 It removes all lines starting with ``#:`` before comparing the files,
@@ -70,7 +70,7 @@ remove the following lines from your ``.git/config`` file::
 
     [merge "pomerge"]
         name = Gettext merge driver
-        driver = i18n/get-merge-po.sh %O %A %B
+        driver = i18n/git-merge-po.sh %O %A %B
 
 or add the following line from your ``.git/info/attributes`` file::
 

@@ -804,6 +804,10 @@ class TestMlFrontend(FrontendTest):
         f['local_part'] = "platin"
         self.submit(f, check_notification=False)
         self.assertValidationError("local_part", "Uneindeutige Mailadresse")
+        # Check that list name may not contain magic mailman address strings
+        f['local_part'] = "munkelwand-unsubscribe"
+        self.submit(f, check_notification=False)
+        self.assertValidationError("local_part", "\"-unsubscribe@\" nicht enthalten.")
 
         f['local_part'] = "munkelwand"
         self.submit(f)
@@ -852,6 +856,10 @@ class TestMlFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertValidationError("local_part", "Uneindeutige Mailadresse")
         self.assertValidationError("domain", "Uneindeutige Mailadresse")
+        # Check that list name may not contain magic mailman address strings
+        f['local_part'] = "munkelwand-confirm"
+        self.submit(f, check_notification=False)
+        self.assertValidationError("local_part", "\"-confirm@\" nicht enthalten.")
 
         f['local_part'] = "munkelwand"
         self.submit(f)
@@ -1122,27 +1130,21 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['addsubscriberform']
         f['subscriber_ids'] = USER_DICT["inga"]["DB-ID"]
         self.submit(f, check_notification=False)
-        self.assertIn("alert alert-danger", self.response.text)
-        self.assertPresence(
-            "Der Nutzer hat aktuell eine Abonnement-Anfrage gestellt.",
-            div="notifications")
+        self.assertNotification(
+            "Der Nutzer hat aktuell eine Abonnement-Anfrage gestellt.", 'error')
         # as mod subscriber
         self.traverse({'href': '/ml/mailinglist/4/management/advanced'}, )
         f = self.response.forms['addmodsubscriberform']
         f['modsubscriber_ids'] = USER_DICT["inga"]["DB-ID"]
         self.submit(f, check_notification=False)
-        self.assertIn("alert alert-danger", self.response.text)
-        self.assertPresence(
-            "Der Nutzer hat aktuell eine Abonnement-Anfrage gestellt.",
-            div="notifications")
+        self.assertNotification(
+            "Der Nutzer hat aktuell eine Abonnement-Anfrage gestellt.", 'error')
         # as mod unsubscribe
         f = self.response.forms['addmodunsubscriberform']
         f['modunsubscriber_ids'] = USER_DICT["inga"]["DB-ID"]
         self.submit(f, check_notification=False)
-        self.assertIn("alert alert-danger", self.response.text)
-        self.assertPresence(
-            "Der Nutzer hat aktuell eine Abonnement-Anfrage gestellt.",
-            div="notifications")
+        self.assertNotification(
+            "Der Nutzer hat aktuell eine Abonnement-Anfrage gestellt.", 'error')
 
         # testing: mod subscribe and unsubscribe
         # add already subscribed user as mod subscribe
@@ -1157,15 +1159,12 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/ml/mailinglist/4/management'}, )
         f = self.response.forms['removesubscriberform1']
         self.submit(f, check_notification=False)
-        self.assertIn("alert alert-danger", self.response.text)
-        self.assertPresence("Der Nutzer ist aktuell fixierter Abonnent.",
-                            div="notifications")
+        self.assertNotification("Der Nutzer ist aktuell fixierter Abonnent.", 'error')
         # try to add a mod unsubscribed user
         f = self.response.forms['addsubscriberform']
         f['subscriber_ids'] = USER_DICT["garcia"]["DB-ID"]
         self.submit(f, check_notification=False)
-        self.assertIn("alert alert-danger", self.response.text)
-        self.assertPresence("Der Nutzer ist aktuell blockiert.", div="notifications")
+        self.assertNotification("Der Nutzer ist aktuell blockiert.", 'error')
 
     @as_users("berta", "janis")
     def test_moderator_access(self) -> None:
@@ -1387,6 +1386,7 @@ class TestMlFrontend(FrontendTest):
         mmlist.moderate_message.return_value = moderation_response
         client = client_class.return_value
         client.get_held_messages.return_value = messages
+        client.get_held_message_count.return_value = len(messages)
         client.get_list_safe.return_value = mmlist
 
         return messages, mmlist, client
@@ -1411,6 +1411,7 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("unerwartetes Erbe")
         mmlist.get_held_message.return_value = messages[0]
         client.get_held_messages.return_value = messages[1:]
+        client.get_held_message_count.return_value = len(messages[1:])
         f = self.response.forms['msg1']
         self.submit(f, button='action', value='accept')
         self.assertNonPresence("Finanzbericht")
@@ -1418,6 +1419,7 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("unerwartetes Erbe")
         mmlist.get_held_message.return_value = messages[1]
         client.get_held_messages.return_value = messages[2:]
+        client.get_held_message_count.return_value = len(messages[2:])
         f = self.response.forms['msg2']
         self.submit(f, button='action', value='reject')
         self.assertNonPresence("Finanzbericht")
@@ -1425,6 +1427,7 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("unerwartetes Erbe")
         mmlist.get_held_message.return_value = messages[2]
         client.get_held_messages.return_value = messages[3:]
+        client.get_held_message_count.return_value = len(messages[3:])
         f = self.response.forms['msg3']
         self.submit(f, button='action', value='discard')
         self.assertNonPresence("Finanzbericht")

@@ -22,6 +22,14 @@
 
 
 {% block content %}
+    <div class="p button-par">
+        {% if not has_registrations %}
+            {{ util.href(cdedblink('event/add_part_form'), gettext("Add Part"),
+                                   icon='plus', aclass='btn btn-success btn-sm') }}
+        {% endif %}
+        {{ util.href(cdedblink('event/part_group_summary'), gettext("Part Groups"), icon='bullseye',
+                     aclass='btn btn-info btn-sm') }}
+    </div>
     <p class="text-warning">{{ util.make_icon('exclamation-triangle') }}
         {% trans %}
             Event parts and course tracks can only be created or deleted if no
@@ -30,10 +38,19 @@
         {% endtrans %}
     </p>
 
+    {% set sorted_part_groups = ambience['event']['part_groups']|keydictsort(EntitySorter.event_part_group) %}
+
     {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
         <div class="panel panel-info" id="part{{ part_id }}">
             <div class="panel-heading">
                 {{ part['title'] }}
+                <div id="part{{ part_id }}_partgroups" class="pull-right">
+                    {% for part_group_id, part_group in sorted_part_groups if part_id in part_group['part_ids'] %}
+                        {{ util.href(cdedblink("event/part_group_summary") + ("#partgroup_" + part_group_id|string)|s,
+                                     part_group['shortname'], aclass="badge badge-danger", icon="chart-bar",
+                                     title=gettext(part_group['constraint_type']|string) + ": " + part_group['shortname']) }}
+                    {% endfor %}
+                </div>
             </div>
 
             <div class="panel-body">
@@ -131,9 +148,4 @@
             </div>
         </div>
     {% endfor %}
-
-    {% if not has_registrations %}
-        {{ util.href(cdedblink('event/add_part_form'), gettext("Add Part"),
-                               icon='plus', aclass='btn btn-success pull-right') }}
-    {% endif %}
 {% endblock %}

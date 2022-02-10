@@ -1502,7 +1502,7 @@ def _genesis_case(
                 k: v for k, v in GENESIS_CASE_ADDITIONAL_FIELDS.items()
                 if k in REALM_SPECIFIC_GENESIS_FIELDS[val['realm']]}
     else:
-        raise ValidationSummary(ValueError(n_("Must specify realm.")))
+        raise ValidationSummary(ValueError('realm', n_("Must specify realm.")))
 
     if creation:
         mandatory_fields = dict(GENESIS_CASE_COMMON_FIELDS,
@@ -2352,6 +2352,71 @@ def _event_part(
     return EventPart(val)
 
 
+EVENT_PART_GROUP_COMMON_FIELDS: TypeMapping = {
+    'title': str,
+    'shortname': Shortname,
+    'constraint_type': const.EventPartGroupType,
+    'notes': Optional[str],  # type: ignore[dict-item]
+    'part_ids': List[ID],
+}
+
+
+@_add_typed_validator
+def _event_part_group(
+    val: Any, argname: str = "part_group", *,
+    creation: bool = False, **kwargs: Any
+) -> EventPartGroup:
+    val = _mapping(val, argname, **kwargs)
+
+    if creation:
+        mandatory_fields = {**EVENT_PART_GROUP_COMMON_FIELDS}
+        optional_fields: TypeMapping = {}
+    else:
+        mandatory_fields = {}
+        optional_fields = {**EVENT_PART_GROUP_COMMON_FIELDS}
+
+    val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
+
+    return EventPartGroup(val)
+
+
+@_add_typed_validator
+def _event_part_group_setter(
+    val: Any, argname: str = "part_groups",
+    **kwargs: Any
+) -> EventPartGroupSetter:
+    """Validate a `CdEDBOptionalMap` of part groups.
+
+    This is basically identical to the validation of the `fields` and `parts` keys of
+    the `vtypes.Event` validator, but is separate because this has a separate backend
+    setter.
+    """
+    val = _mapping(val, argname)
+
+    errs = ValidationSummary()
+    new_part_groups = {}
+    for anid, part_group in val.items():
+        try:
+            anid = _partial_import_id(anid, 'parts', **kwargs)
+        except ValidationSummary as e:
+            errs.extend(e)
+            continue
+        creation = (anid < 0)
+        try:
+            if creation:
+                part_group = _ALL_TYPED[EventPartGroup](
+                    part_group, creation=True, **kwargs)
+            else:
+                part_group = _ALL_TYPED[Optional[EventPartGroup]](part_group, **kwargs)  # type: ignore[index]
+        except ValidationSummary as e:
+            errs.extend(e)
+        else:
+            new_part_groups[anid] = part_group
+    if errs:
+        raise errs
+    return EventPartGroupSetter(new_part_groups)
+
+
 EVENT_TRACK_COMMON_FIELDS: TypeMapping = {
     'title': str,
     'shortname': Shortname,
@@ -2390,31 +2455,29 @@ def _event_track(
     return EventTrack(val)
 
 
-def _EVENT_FIELD_COMMON_FIELDS(extra_suffix: str) -> TypeMapping:
-    return {
-        f'kind{extra_suffix}': const.FieldDatatypes,
-        f'association{extra_suffix}': const.FieldAssociations,
-        f'entries{extra_suffix}': Any,  # type: ignore[dict-item]
-    }
+EVENT_FIELD_COMMON_FIELDS: TypeMapping = {
+    'kind': const.FieldDatatypes,
+    'association': const.FieldAssociations,
+    'entries': Any,  # type: ignore[dict-item]
+}
 
 
-def _EVENT_FIELD_OPTIONAL_FIELDS(extra_suffix: str) -> TypeMapping:
-    return {
-        f'title{extra_suffix}': str,
-        f'sortkey{extra_suffix}': int,
-        f'checkin{extra_suffix}': bool,
-    }
+EVENT_FIELD_OPTIONAL_FIELDS: TypeMapping = {
+    'title': str,
+    'sortkey': int,
+    'checkin': bool,
+}
 
 
-def _EVENT_FIELD_ALL_FIELDS(extra_suffix: str) -> TypeMapping:
-    return dict(_EVENT_FIELD_COMMON_FIELDS(extra_suffix),
-                **_EVENT_FIELD_OPTIONAL_FIELDS(extra_suffix))
+EVENT_FIELD_ALL_FIELDS: TypeMapping = {
+    **EVENT_FIELD_COMMON_FIELDS, **EVENT_FIELD_OPTIONAL_FIELDS
+}
 
 
 @_add_typed_validator
 def _event_field(
     val: Any, argname: str = "event_field", *, field_name: str = None,
-    creation: bool = False, extra_suffix: str = "", **kwargs: Any
+    creation: bool = False, **kwargs: Any
 ) -> EventField:
     """
     :param field_name: If given, set the field name of the field to this.
@@ -2422,41 +2485,34 @@ def _event_field(
         where the field name serves as the key and thus is not part of the dict itself.
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
-    :param extra_suffix: Suffix appended to all keys. This is due to the
-      necessity of the frontend to create unambiguous names.
     """
     val = _mapping(val, argname, **kwargs)
     val = dict(val)
 
-    field_name_key = f"field_name{extra_suffix}"
     if field_name is not None:
-        val[field_name_key] = field_name
+        val["field_name"] = field_name
     if creation:
-        title_key = f"title{extra_suffix}"
-        if not val.get(title_key):
-            val[title_key] = val.get(field_name_key)
-        spec = {**_EVENT_FIELD_COMMON_FIELDS(extra_suffix),
-                field_name_key: RestrictiveIdentifier}
-        mandatory_fields = spec
-        optional_fields: TypeMapping = _EVENT_FIELD_OPTIONAL_FIELDS(extra_suffix)
+        if not val.get("title"):
+            val["title"] = val.get("field_name")
+        mandatory_fields = {**EVENT_FIELD_COMMON_FIELDS,
+                            "field_name": RestrictiveIdentifier}
+        optional_fields = EVENT_FIELD_OPTIONAL_FIELDS
     else:
         mandatory_fields = {}
-        optional_fields = {**_EVENT_FIELD_ALL_FIELDS(extra_suffix), 'id': ID}
+        optional_fields = {**EVENT_FIELD_ALL_FIELDS, 'id': ID}
 
     val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
 
-    entries_key = f"entries{extra_suffix}"
-    kind_key = f"kind{extra_suffix}"
-
     errs = ValidationSummary()
-    if not val.get(entries_key, True):
-        val[entries_key] = None
-    if entries_key in val and val[entries_key] is not None:
-        if isinstance(val[entries_key], str):
-            val[entries_key] = list(list(y.strip() for y in x.split(';', 1))
-                                    for x in val[entries_key].split('\n'))
+    if not val.get("entries", True):
+        val["entries"] = None
+    if "entries" in val and val["entries"] is not None:
+        if isinstance(val["entries"], str):
+            val["entries"] = [
+                [y.strip() for y in x.split(';', 1)] for x in val["entries"].split('\n')
+            ]
         try:
-            oldentries = _iterable(val[entries_key], entries_key, **kwargs)
+            oldentries = _iterable(val["entries"], "entries", **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
         else:
@@ -2467,25 +2523,24 @@ def _event_field(
                 try:
                     value, description = entry
                 except (ValueError, TypeError):
-                    errs.append(ValueError(entries_key, n_(
+                    errs.append(ValueError("entries", n_(
                         "Invalid entry in line %(line)s."), {'line': idx + 1}))
                 else:
                     # Validate value according to type and use the opportunity
                     # to normalize the value by transforming it back to string
                     try:
-                        value = _by_field_datatype(value, entries_key, kind=val.get(
-                            kind_key, FieldDatatypes.str), **kwargs)
-                        description = _str(description, entries_key, **kwargs)
+                        value = _by_field_datatype(value, "entries", kind=val.get(
+                            "kind", FieldDatatypes.str), **kwargs)
+                        description = _str(description, "entries", **kwargs)
                     except ValidationSummary as e:
                         errs.extend(e)
                     else:
                         if value in seen_values:
-                            errs.append(ValueError(
-                                entries_key, n_("Duplicate value.")))
+                            errs.append(ValueError("entries", n_("Duplicate value.")))
                         else:
                             entries.append([value, description])
                             seen_values.add(value)
-            val[entries_key] = entries
+            val["entries"] = entries
 
     if errs:
         raise errs
@@ -2493,28 +2548,27 @@ def _event_field(
     return EventField(val)
 
 
-def _EVENT_FEE_MODIFIER_COMMON_FIELDS(extra_suffix: str) -> TypeMapping:
-    return {
-        "modifier_name{}".format(extra_suffix): RestrictiveIdentifier,
-        "amount{}".format(extra_suffix): decimal.Decimal,
-        "field_id{}".format(extra_suffix): ID,
-    }
+EVENT_FEE_MODIFIER_COMMON_FIELDS: TypeMapping = {
+    "modifier_name": RestrictiveIdentifier,
+    "amount": decimal.Decimal,
+    "field_id": ID,
+}
 
 
 @_add_typed_validator
 def _event_fee_modifier(
     val: Any, argname: str = "fee_modifiers", *,
-    creation: bool = False, extra_suffix: str = '', **kwargs: Any
+    creation: bool = False, **kwargs: Any
 ) -> EventFeeModifier:
 
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        mandatory_fields = _EVENT_FEE_MODIFIER_COMMON_FIELDS(extra_suffix)
+        mandatory_fields = EVENT_FEE_MODIFIER_COMMON_FIELDS
         optional_fields: TypeMapping = {'id': ID}
     else:
         mandatory_fields = {}
-        optional_fields = dict(_EVENT_FEE_MODIFIER_COMMON_FIELDS(extra_suffix), id=ID)
+        optional_fields = dict(EVENT_FEE_MODIFIER_COMMON_FIELDS, id=ID)
 
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
@@ -3148,6 +3202,8 @@ def _serialized_event(
     }
     optional_fields = {
         'core.personas': Mapping,
+        'event.part_groups': Mapping,
+        'event.part_group_parts': Mapping,
     }
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)

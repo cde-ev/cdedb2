@@ -1,7 +1,7 @@
 {
     "EVENT_SCHEMA_VERSION": [
         15,
-        4
+        5
     ],
     "kind": "partial",
     "id": 1,
@@ -647,6 +647,7 @@
         "lodge_field": "lodge",
         "camping_mat_field": "may_reserve",
         "course_room_field": "transportation",
+        "part_groups": {},
         "parts": {
             "1": {
                 "title": "Warmup",

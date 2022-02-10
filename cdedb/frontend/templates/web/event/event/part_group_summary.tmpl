@@ -1,0 +1,89 @@
+{% set sidenav_active='event_parts' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+    {{ util.cdedb_script('cdedb_dynamicrow.js') }}
+{% endblock %}
+{% set jshint = 'weak' %}
+{% block title %}
+    {% trans title=ambience['event']['title'] %}
+        Part Groups ({{ title }})
+    {% endtrans %}
+{% endblock %}
+{% block heading %}
+    {{ util.context_heading(gettext("Configure Part Groups"), ambience['event']['title'],
+                            'chalkboard-teacher', gettext("Event")) }}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+    {{ util.breadcrumb_link(cdedblink("event/part_summary"), gettext("Event-Parts")) }}
+    {{ util.breadcrumb_link(cdedblink("event/part_group_summary"), gettext("Part Groups"), active=True) }}
+{% endblock %}
+
+{% block content %}
+    <p class="text-danger">{{ util.make_icon('exclamation-triangle') }}
+        {% trans %}
+            This feature is still experimental. Use at your own risk, and only if you know what you are doing.
+            You have been warned!
+        {% endtrans %}
+    </p>
+    <p>
+        {{ util.href(cdedblink('event/add_part_group_form'), gettext("Add part group"),
+                               icon='plus', aclass='btn btn-success') }}
+    </p>
+    <table id="part-group-summary" class="table table-stats">
+        <thead>
+            <tr>
+                <th>{% trans %}Type{% endtrans %}</th>
+                <th>{% trans %}Title{% endtrans %}</th>
+                <th>{% trans %}Shortname{% endtrans %}</th>
+                <th>{% trans %}Notes{% endtrans %}</th>
+                {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+                    <th {% if loop.first %}class="b-left"{% endif %}>
+                        {{ part['shortname'] }}
+                    </th>
+                {% endfor %}
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for part_group_id, part_group in ambience['event']['part_groups']|keydictsort(EntitySorter.event_part_group) %}
+                <tr id="partgroup_{{ part_group_id }}">
+                    <td>
+                        {{ util.make_icon(part_group['constraint_type'].get_icon(), title=gettext(part_group['constraint_type']|string)) }}
+                    </td>
+                    <th>
+                        {{ part_group['title'] }}
+                    </th>
+                    <th>
+                        {{ part_group['shortname'] }}
+                    </th>
+                    <td>
+                        {{ part_group['notes'] }}
+                    </td>
+                    {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+                        <td class="{% if loop.first %} b-left {% endif %} {% if loop.last %}b-right{% endif %}">
+                            {{ util.deko_checkbox(part_id in part_group['part_ids'], titles=['', part['shortname']]) }}
+                        </td>
+                    {% endfor %}
+                    <td class="text-nowrap">
+                        {{ util.href(cdedblink("event/change_part_group", {'part_group_id': part_group_id}),
+                                     title=gettext("Change part group %(shortname)s")|format(shortname=part_group['shortname']),
+                                     label=util.make_icon("pen"), anid="partgroup{}_change".format(part_group_id),
+                                     aclass="btn btn-sm btn-warning") }}
+                        <form action="{{ cdedblink("event/delete_part_group", {'part_group_id': part_group_id}) }}"
+                              method="POST" id="deletepartgroupform{{ part_group_id }}"
+                              class="display-inline">
+                            {{ util.anti_csrf_token("event/delete_part_group") }}
+                            {{ util.input_submit(
+                                label=util.make_icon("trash-alt"), aclass="btn btn-sm btn-danger", icon=None,
+                                title=gettext("Delete part group %(shortname)s")|format(shortname=part_group['shortname'])) }}
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

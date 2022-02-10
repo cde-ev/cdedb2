@@ -42,8 +42,8 @@ def n_(x: str) -> str:
     return x
 
 
-def _create_connection(dbname: str, dbuser: str, password: str, port: int,
-                       isolation_level: Optional[int] = SERIALIZABLE
+def _create_connection(dbname: str, dbuser: str, password: str, host: str,
+                       port: int, isolation_level: Optional[int] = SERIALIZABLE
                        ) -> "IrradiatedConnection":
     """This creates a wrapper around :py:class:`psycopg2.extensions.connection`
     and correctly initializes the database connection.
@@ -57,15 +57,12 @@ def _create_connection(dbname: str, dbuser: str, password: str, port: int,
             "dbname": dbname,
             "user": dbuser,
             "password": password,
+            "host": host,
+            "port": port,
             "connection_factory": IrradiatedConnection,
             "cursor_factory": psycopg2.extras.RealDictCursor
     }
-    try:  # TODO simply check if inside docker first
-        conn = psycopg2.connect(**connection_parameters, port=port)
-    except psycopg2.OperationalError as e:  # Docker uses 5432/tcp instead of sockets
-        if "Passwort-Authentifizierung" in e.args[0]:
-            raise  # fail fast if wrong password is the problem - necessary for tests
-        conn = psycopg2.connect(**connection_parameters, host="cdb", port=5432)
+    conn = psycopg2.connect(**connection_parameters)
     conn.set_client_encoding("UTF8")
     conn.set_session(isolation_level)
     _LOGGER.debug(f"Created connection to {dbname} as {dbuser}")
@@ -73,7 +70,7 @@ def _create_connection(dbname: str, dbuser: str, password: str, port: int,
 
 
 def connection_pool_factory(dbname: str, roles: Collection[Role],
-                            secrets: SecretsConfig, port: int,
+                            secrets: SecretsConfig, host: str, port: int,
                             isolation_level: Optional[int] = SERIALIZABLE
                             ) -> Mapping[str, "IrradiatedConnection"]:
     """This returns a dict-like object which has database roles as keys and
@@ -110,7 +107,7 @@ def connection_pool_factory(dbname: str, roles: Collection[Role],
                 raise ValueError(n_("role %(role)s not available"),
                                  {'role': role})
             return _create_connection(
-                dbname, role, db_passwords[role], port, isolation_level)
+                dbname, role, db_passwords[role], host, port, isolation_level)
 
         def __delitem__(self, key: Any) -> NoReturn:
             raise NotImplementedError(n_("Not available for instant pool"))

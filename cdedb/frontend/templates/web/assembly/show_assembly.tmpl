@@ -140,8 +140,9 @@
                                         {{ util.anti_csrf_token('assembly/create_assembly_mailinglist') }}
                                         {{ util.input_hidden('presider_list', value=True) }}
                                         {{ util.input_submit(
-                                                label=gettext("Create presider mailinglist"), aclass="btn btn-success",
-                                                icon="plus", readonly=not ambience['assembly']['presiders'],
+                                                label=gettext("Create presider mailinglist"),
+                                                aclass="btn btn-success btn-wrap", icon="plus",
+                                                readonly=not ambience['assembly']['presiders'],
                                                 title=("" if ambience['assembly']['presiders']
                                                        else gettext("Must have presiders in order to"
                                                                     " create a mailinglist."))) }}
@@ -166,8 +167,9 @@
                                         {{ util.anti_csrf_token('assembly/create_assembly_mailinglist') }}
                                         {{ util.input_hidden('presider_list', value=False) }}
                                         {{ util.input_submit(
-                                                label=gettext("Create attendee mailinglist"), aclass="btn btn-success",
-                                                icon="plus", readonly=not ambience['assembly']['presiders'],
+                                                label=gettext("Create attendee mailinglist"),
+                                                aclass="btn btn-success btn-wrap", icon="plus",
+                                                readonly=not ambience['assembly']['presiders'],
                                                 title=("" if ambience['assembly']['presiders']
                                                        else gettext("Must have presiders in order to"
                                                                     " create a mailinglist."))) }}

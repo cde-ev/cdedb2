@@ -1,6 +1,7 @@
 {% set sidenav_active='event_configure_additional_questionnaire' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/event/generic.tmpl" as generic_event with context %}
 {% set jshint='strong' %}
 {% block scripts %}
     {{ util.cdedb_script('cdedb_helper.js') }}
@@ -25,7 +26,7 @@
 {% block content %}
     <div class="p button-par">
         {{ util.href(cdedblink('event/additional_questionnaire', {"preview": True}), gettext("Preview Questionnaire"),
-                     aclass="btn btn-info btn-sm", icon='edit') }}
+                     aclass="btn btn-info btn-sm", icon='eye') }}
         {{ util.href(cdedblink('event/reorder_questionnaire_form', {'kind': enums['QuestionnaireUsages'].additional.value}),
                      gettext("Reorder Questionnaire"), readonly=is_locked,
                      aclass="btn btn-info btn-sm", icon='sort') }}
@@ -38,15 +39,15 @@
         <div id="drow-container">
             {# Old items, already stored in the database #}
             {% for entry in add_questionnaire %}
-                {{ util.print_questionnaire_config(loop.index0, kind, aclass='drow-row') }}
+                {{ generic_event.print_questionnaire_config(loop.index0, kind, aclass='drow-row') }}
             {% endfor %}
 
             {# Items that were added by the user but failed validation. They are still new and have no official id. #}
             {% for i in range(1, values.get('create_last_index', 0) + 1) %}
-                {{ util.print_questionnaire_config(-i, kind, aclass='drow-new', newrow=True) }}
+                {{ generic_event.print_questionnaire_config(-i, kind, aclass='drow-new', newrow=True) }}
             {% endfor %}
             {# Prototype row. For non-JS users: an empty row with 'create'-checkbox, for JS: prototype for new rows. #}
-            {{ util.print_questionnaire_config(-values.get('create_last_index', 0) - 1, kind=kind, aclass='drow-prototype', newrow=True) }}
+            {{ generic_event.print_questionnaire_config(-values.get('create_last_index', 0) - 1, kind=kind, aclass='drow-prototype', newrow=True) }}
             <p>
                 <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">
                     {{ util.make_icon('plus') }} {% trans %}Add Part{% endtrans %}

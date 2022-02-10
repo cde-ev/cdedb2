@@ -68,7 +68,7 @@ class Application(BaseApp):
         secrets = SecretsConfig(configpath)
         self.connpool = connection_pool_factory(
             self.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
-            secrets, self.conf["DB_PORT"])
+            secrets, self.conf["DB_HOST"], self.conf["DB_PORT"])
         # Construct a reduced Jinja environment for rendering error pages.
         self.jinja_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(

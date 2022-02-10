@@ -127,12 +127,11 @@ class CoreBaseFrontend(AbstractFrontend):
                 moderator = self.mlproxy.get_mailinglists(rs, moderator_info)
                 sub_request = const.SubscriptionState.pending
                 mailman = self.get_mailman()
-                for mailinglist_id, mailinglist in moderator.items():
+                for mailinglist_id, ml in moderator.items():
                     requests = self.mlproxy.get_subscription_states(
                         rs, mailinglist_id, states=(sub_request,))
-                    held_mails = mailman.get_held_messages(mailinglist)
-                    mailinglist['requests'] = len(requests)
-                    mailinglist['held_mails'] = len(held_mails or [])
+                    ml['requests'] = len(requests)
+                    ml['held_mails'] = mailman.get_held_message_count(ml)
                 dashboard['moderator'] = {k: v for k, v in moderator.items()
                                           if v['is_active']}
             # visible and open events
@@ -201,7 +200,7 @@ class CoreBaseFrontend(AbstractFrontend):
             return self.meta_info_form(rs)
         assert data is not None
         code = self.coreproxy.set_meta_info(rs, data)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "core/meta_info_form")
 
     @access("anonymous", modi={"POST"})
@@ -1086,7 +1085,7 @@ class CoreBaseFrontend(AbstractFrontend):
         change_note = "Normale Änderung."
         code = self.coreproxy.change_persona(
             rs, data, generation=generation, change_note=change_note)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect_show_user(rs, rs.user.persona_id)
 
     @access("core_admin")
@@ -1202,7 +1201,7 @@ class CoreBaseFrontend(AbstractFrontend):
         assert data is not None
         code = self.coreproxy.change_persona(
             rs, data, generation=generation, change_note=change_note)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect_show_user(rs, persona_id)
 
     @access("persona")
@@ -1310,9 +1309,8 @@ class CoreBaseFrontend(AbstractFrontend):
 
         if ADMIN_KEYS & data.keys():
             code = self.coreproxy.initialize_privilege_change(rs, data)
-            self.notify_return_code(
-                rs, code, success=n_("Privilege change waiting for approval by "
-                                     "another Meta-Admin."))
+            rs.notify_return_code(code, success=n_("Privilege change waiting for"
+                                                   " approval by another Meta-Admin."))
             if not code:
                 return self.change_privileges_form(rs, persona_id)
         else:
@@ -1393,7 +1391,7 @@ class CoreBaseFrontend(AbstractFrontend):
             rs, privilege_change_id, case_status)
         success = n_("Change committed.") if ack else n_("Change rejected.")
         info = n_("Password reset issued for new admin.")
-        self.notify_return_code(rs, code, success=success, info=info)
+        rs.notify_return_code(code, success=success, info=info)
         if not code:
             return self.show_privilege_change(rs, privilege_change_id)
         else:
@@ -1522,7 +1520,7 @@ class CoreBaseFrontend(AbstractFrontend):
                     rs, persona_id, target_realm=target_realm, internal=True)
         assert data is not None
         code = self.coreproxy.change_persona_realms(rs, data, change_note)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         if code > 0 and target_realm == "cde":
             if pevent_id is not None:
                 self.pasteventproxy.add_participant(
@@ -1566,7 +1564,7 @@ class CoreBaseFrontend(AbstractFrontend):
         with TransactionObserver(rs, self, "modify_membership"):
             code, revoked_permits, collateral_transactions = (
                 self.cdeproxy.change_membership(rs, persona_id, is_member))
-            self.notify_return_code(rs, code)
+            rs.notify_return_code(code)
             if revoked_permits:
                 rs.notify("success", n_("%(num)s permits revoked."),
                           {'num': len(revoked_permits)})
@@ -1614,7 +1612,7 @@ class CoreBaseFrontend(AbstractFrontend):
             rs, persona_id, new_balance,
             const.FinanceLogCodes.manual_balance_correction,
             change_note=change_note, trial_member=trial_member)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect_show_user(rs, persona_id)
 
     @access("cde")
@@ -1651,7 +1649,7 @@ class CoreBaseFrontend(AbstractFrontend):
         if rs.has_validation_errors():
             return self.set_foto_form(rs, persona_id)
         code = self.coreproxy.change_foto(rs, persona_id, foto=foto)
-        self.notify_return_code(rs, code, success=n_("Foto updated."),
+        rs.notify_return_code(code, success=n_("Foto updated."),
                                 info=n_("Foto removed."))
         return self.redirect_show_user(rs, persona_id)
 
@@ -1669,7 +1667,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 rs, persona_id, confirm_id=persona_id, internal=True,
                 quote_me=False, event_id=None, ml_id=None)
         code = self.coreproxy.invalidate_password(rs, persona_id)
-        self.notify_return_code(rs, code, success=n_("Password invalidated."))
+        rs.notify_return_code(code, success=n_("Password invalidated."))
 
         if not code:  # pragma: no cover
             return self.show_user(
@@ -1715,7 +1713,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
         code, message = self.coreproxy.change_password(
             rs, old_password, new_password)
-        self.notify_return_code(rs, code, success=n_("Password changed."),
+        rs.notify_return_code(code, success=n_("Password changed."),
                                 error=message)
         if not code:
             rs.append_validation_error(
@@ -1772,6 +1770,7 @@ class CoreBaseFrontend(AbstractFrontend):
                         persona_id=None,
                         timeout=self.conf["PARAMETER_TIMEOUT"]),
                         'cookie': message})
+                # log message to be picked up by fail2ban
                 self.logger.info(f"Sent password reset mail to {email}"
                                  f" for IP {rs.request.remote_addr}.")
                 rs.notify("success", n_("Email sent."))
@@ -1877,7 +1876,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
         code, message = self.coreproxy.reset_password(rs, email, new_password,
                                                       cookie=cookie)
-        self.notify_return_code(rs, code, success=n_("Password reset."),
+        rs.notify_return_code(code, success=n_("Password reset."),
                                 error=message)
         if not code:
             return self.redirect(rs, "core/reset_password_form")
@@ -1938,7 +1937,7 @@ class CoreBaseFrontend(AbstractFrontend):
         assert rs.user.persona_id is not None
         code, message = self.coreproxy.change_username(
             rs, rs.user.persona_id, new_username, password)
-        self.notify_return_code(rs, code, success=n_("Email address changed."),
+        rs.notify_return_code(code, success=n_("Email address changed."),
                                 error=message)
         if not code:
             return self.redirect(rs, "core/change_username_form")
@@ -1972,7 +1971,7 @@ class CoreBaseFrontend(AbstractFrontend):
             return self.admin_username_change_form(rs, persona_id)
         code, message = self.coreproxy.change_username(
             rs, persona_id, new_username, password=None)
-        self.notify_return_code(rs, code, success=n_("Email address changed."),
+        rs.notify_return_code(code, success=n_("Email address changed."),
                                 error=message)
         if not code:
             return self.redirect(rs, "core/admin_username_change_form")
@@ -2000,7 +1999,7 @@ class CoreBaseFrontend(AbstractFrontend):
             activity="aktiv" if activity else "inaktiv")
         code = self.coreproxy.change_persona(rs, data, may_wait=False,
                                              change_note=change_note)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect_show_user(rs, persona_id)
 
     @access("core_admin")
@@ -2069,7 +2068,7 @@ class CoreBaseFrontend(AbstractFrontend):
         code = self.coreproxy.changelog_resolve_change(rs, persona_id,
                                                        generation, ack)
         message = n_("Change committed.") if ack else n_("Change dropped.")
-        self.notify_return_code(rs, code, success=message)
+        rs.notify_return_code(code, success=message)
         return self.redirect(rs, "core/list_pending_changes")
 
     @access(*REALM_ADMINS, modi={"POST"})
@@ -2092,7 +2091,7 @@ class CoreBaseFrontend(AbstractFrontend):
         except ArchiveError as e:
             rs.notify("error", e.args[0])
             code = 0
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect_show_user(rs, persona_id)
 
     @access(*REALM_ADMINS)
@@ -2110,11 +2109,15 @@ class CoreBaseFrontend(AbstractFrontend):
         """Reinstate a persona from the attic."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
+        if new_username and self.coreproxy.verify_existence(rs, new_username):
+            rs.append_validation_error(
+                ("new_username",
+                 ValueError(n_("User with this E-Mail exists already."))))
         if rs.has_validation_errors():
             return self.dearchive_persona_form(rs, persona_id)
 
         code = self.coreproxy.dearchive_persona(rs, persona_id, new_username)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect_show_user(rs, persona_id)
 
     @access("core_admin", modi={"POST"})
@@ -2129,7 +2132,7 @@ class CoreBaseFrontend(AbstractFrontend):
             return self.redirect_show_user(rs, persona_id)
 
         code = self.coreproxy.purge_persona(rs, persona_id)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect_show_user(rs, persona_id)
 
     @access("core_admin", "auditor")
