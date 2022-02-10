@@ -1590,6 +1590,9 @@ msgstr "Kein Kurs verfügbar."
 msgid "Doppelgangers found."
 msgstr "Ähnlicher Account gefunden."
 
+msgid "May not grant trial membership to member."
+msgstr "Probemitgliedschaft für Mitglieder nicht erlaubt."
+
 #: cdedb/frontend/cde/base.py:479
 msgid "Doppelganger choice doesn’t fit resolution."
 msgstr "Accountzusammenführung inkonsistent mit Aktion."
