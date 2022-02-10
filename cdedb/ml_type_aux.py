@@ -548,6 +548,8 @@ class AssemblyAssociatedMailinglist(ImplicitsSubscribableMeta, AssemblyMailingli
         check_appropriate_type(mailinglist, cls)
 
         basic_restriction = super().is_restricted_moderator(rs, bc, mailinglist)
+        if mailinglist['assembly_id'] is None:
+            return basic_restriction
         additional_restriction = not bc.assembly.may_assemble(
             rs, assembly_id=mailinglist['assembly_id'])
         return basic_restriction or additional_restriction
