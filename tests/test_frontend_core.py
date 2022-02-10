@@ -115,31 +115,36 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Anmelden")
         self.assertNonPresence("Meine Daten")
 
-    @as_users("annika", "martin", "nina", "vera", "werner")
+    @as_users("annika", "martin", "nina", "vera", "werner", "katarina")
     def test_sidebar(self) -> None:
         self.assertTitle("CdE-Datenbank")
         everyone = {"Index", "Übersicht", "Meine Daten", "Administratorenübersicht"}
         genesis = {"Accountanfragen"}
         core_admin = {"Nutzer verwalten", "Archivsuche", "Änderungen prüfen",
-                      "Account-Log", "Nutzerdaten-Log", "Metadaten"}
+                      "Metadaten"}
         meta_admin = {"Admin-Änderungen"}
+        log = {"Account-Log", "Nutzerdaten-Log"}
 
         # admin of a realm without genesis cases
         if self.user_in('werner'):
             ins = everyone
-            out = genesis | core_admin | meta_admin
+            out = genesis | core_admin | meta_admin | log
         # admin of a realm with genesis cases
         elif self.user_in('annika', 'nina'):
             ins = everyone | genesis
-            out = core_admin | meta_admin
+            out = core_admin | meta_admin | log
         # core admin
         elif self.user_in('vera'):
-            ins = everyone | genesis | core_admin
+            ins = everyone | genesis | core_admin | log
             out = meta_admin
         # meta admin
         elif self.user_in('martin'):
-            ins = everyone | meta_admin
-            out = genesis | core_admin
+            ins = everyone | meta_admin | {"Account-Log"}
+            out = genesis | core_admin | {"Nutzerdaten-Log"}
+        # auditor
+        elif self.user_in('katarina'):
+            ins = everyone | log
+            out = genesis | core_admin | meta_admin
         else:
             self.fail("Please adjust users for this tests.")
 
