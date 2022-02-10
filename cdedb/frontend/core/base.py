@@ -668,7 +668,6 @@ class CoreBaseFrontend(AbstractFrontend):
 
         This is only in the core frontend to stay consistent in the path naming scheme.
         """
-        assert rs.user.persona_id is not None
         return self.redirect(rs, "cde/lastschrift_show",
                              {"persona_id": rs.user.persona_id})
 
