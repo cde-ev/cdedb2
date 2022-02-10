@@ -45,15 +45,20 @@
                     {% else %}
                         <td class="text-right">
                             {% for level in result['counts'] %}
-                                {% if candidate_shortname in level['winner'] and first_candidate %}
-                                    {{ level['pro_votes'] }}
+                                {% if candidate_shortname in level['preferred'] and first_candidate %}
+                                    {# We do some simplification since we show only the support for one candidate of
+                                       the current level (they may differ for each candidate combination from this and
+                                       level and the level below). However, since dict sorting is stable, its always
+                                       the same number. #}
+                                    {{ level['support'].values()|first }}
                                 {% endif %}
                             {% endfor %}
                         </td>
                         <td class="text-right">
                             {% for level in result['counts'] %}
-                                {% if candidate_shortname in level['winner'] and first_candidate %}
-                                    {{ level['contra_votes'] }}
+                                {% if candidate_shortname in level['preferred'] and first_candidate %}
+                                    {# See above for explanation. #}
+                                    {{ level['opposition'].values()|first }}
                                 {% endif %}
                             {% endfor %}
                         </td>

@@ -4,13 +4,20 @@
 
 import collections
 import datetime
+import importlib.metadata
 import io
 import json
 import pathlib
+import shutil
+import subprocess
+import tempfile
 import time
+import zipapp
 from typing import Any, Collection, Dict, List, Optional, Set, Tuple, Union
 
 import werkzeug.exceptions
+from schulze_condorcet import schulze_evaluate_detailed
+from schulze_condorcet.types import DetailedResultLevel
 from werkzeug import Response
 
 import cdedb.database.constants as const
@@ -19,7 +26,7 @@ import cdedb.validationtypes as vtypes
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, LOG_FIELDS_COMMON, CdEDBObject, CdEDBObjectMap,
     DefaultReturnCode, EntitySorter, RequestState, get_hash, merge_dicts, n_, now,
-    schulze_evaluate, unwrap, xsorted,
+    unwrap, xsorted,
 )
 from cdedb.frontend.common import (
     AbstractUserFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, access,
@@ -1292,8 +1299,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             result['losers'] = losers
 
             # vote count for classical vote ballots
-            counts: Union[Dict[str, int],
-                          List[Dict[str, Union[int, List[str]]]]]
+            counts: Union[Dict[str, int], List[DetailedResultLevel]]
+            # TODO use helper function
             if ballot['votes']:
                 counts = {e['shortname']: 0
                           for e in ballot['candidates'].values()}
@@ -1312,7 +1319,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 candidates = [k for k, v in result['candidates'].items()]
                 if ballot['use_bar']:
                     candidates += (ASSEMBLY_BAR_SHORTNAME,)
-                condensed, counts = schulze_evaluate(votes, candidates)
+                counts = schulze_evaluate_detailed(votes, candidates)
 
             result['counts'] = counts
 
@@ -1603,3 +1610,30 @@ class AssemblyFrontend(AbstractUserFrontend):
         code = self.assemblyproxy.set_ballot(rs, data)
         rs.notify_return_code(code)
         return self.redirect(rs, "assembly/show_ballot")
+
+    def bundle_verify_result_zipapp(self) -> bytes:
+        version = importlib.metadata.version("schulze_condorcet")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            temp = pathlib.Path(tmp)
+            pkg = temp / 'verify_result'
+            pkg.mkdir()
+            shutil.copy2(self.conf['REPOSITORY_PATH'] / 'static' / 'verify_result.py',
+                         pkg / '__main__.py')
+            subprocess.run(
+                ['python3', '-m', 'pip', 'install',
+                 f'schulze_condorcet=={version}', '--target', 'verify_result'],
+                cwd=tmp, check=True)
+            shutil.rmtree(pkg / f'schulze_condorcet-{version}.dist-info')
+            output = temp / 'verify_result.pyz'
+            zipapp.create_archive(pkg, output, interpreter='/usr/bin/env python3')
+            with open(output, 'rb') as f:
+                return f.read()
+
+    @access("anonymous")
+    def download_verify_result_script(self, rs: RequestState) -> Response:
+        """Download the script to verify the vote result files."""
+        result = self.bundle_verify_result_zipapp()
+        return self.send_file(
+            rs, data=result, inline=False, filename="verify_result.pyz",
+            mimetype="application/x-python")

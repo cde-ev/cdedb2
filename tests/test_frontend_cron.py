@@ -395,12 +395,13 @@ class TestCron(CronTest):
         # Commented items will be available in mailman 3.3
         base_settings = {
             'send_welcome_message': False,
-            # 'send_goodbye_message': False,
+            'send_goodbye_message': False,
             'subscription_policy': 'moderate',
             'unsubscription_policy': 'moderate',
             'archive_policy': 'private',
-            # 'filter_content': True,
-            # 'filter_action': 'forward',
+            'digests_enabled': False,
+            'filter_content': True,
+            'filter_action': 'reject',
             # 'pass_extensions': ['pdf'],
             # 'pass_types': ['multipart', 'text/plain', 'application/pdf'],
             'convert_html_to_plaintext': True,
@@ -410,6 +411,7 @@ class TestCron(CronTest):
             'administrivia': True,
             'member_roster_visibility': 'moderators',
             'advertised': True,
+            'max_num_recipients': 0,
         }
         mm_lists = {
             'zombie': unittest.mock.MagicMock(
@@ -523,7 +525,7 @@ class TestCron(CronTest):
         # Meta update
         expectation = {
             'advertised': True,
-            'default_member_action': 'accept',
+            'default_member_action': 'defer',
             'default_nonmember_action': 'hold',
             'display_name': 'Witz des Tages',
             'info': 'Einer geht noch ...',

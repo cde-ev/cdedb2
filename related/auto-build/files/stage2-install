@@ -84,11 +84,16 @@ apt-get install --yes --no-install-recommends                       \
 # some packages interpret "recommends" very narrowly, breaking if they are missing
 apt-get install --yes python3-coverage
 
-# Only mailmanclient is required at runtime. The python3-mailmanclient
-# debian package in bullseye is lagging behing the mailman server funcionality.
+# runtime dependencies
+#
+# The python3-mailmanclient debian package in bullseye is lagging behing the
+# mailman server funcionality.
 python3 -m pip install --no-cache-dir \
     mailmanclient==3.3.3 \
-    \
+    schulze_condorcet==2.0.0
+
+# devtools
+python3 -m pip install --no-cache-dir \
     mypy==0.910 \
     flake8==3.8.4 \
     pylint==2.7.2 \

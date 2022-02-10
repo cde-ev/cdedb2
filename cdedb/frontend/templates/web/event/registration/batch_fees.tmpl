@@ -48,7 +48,9 @@
             {% trans %}e.g.{% endtrans %} <code>123.00;DB-9-4;Iota;Inga;01.04.2018</code>
         </p>
         <p class="help-block">
-            {% trans infolink=util.href(docurl("Handbuch_Email_Templates"), gettext("email template list")) %}
+            {% trans infolink=util.href(docurl("Handbuch_Email_Templates",
+                                               anchor="email-templates-for-realm-event-template-transfer-received-tmpl"),
+                                        gettext("email template list")) %}
                 The template for the notification can be found on the %(infolink)s.
             {% endtrans %}
         </p>

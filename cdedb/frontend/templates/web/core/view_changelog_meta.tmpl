@@ -54,7 +54,12 @@
                         {% endif %}
                     </td>
                     <td>{{ entry['generation'] }}</td>
-                    <td>{{ entry['change_note'] }}</td>
+                    <td>
+                        {% if entry['automated_change'] %}
+                            {{ util.make_icon('robot', title=gettext("Automated change")) }}
+                        {% endif %}
+                        {{ entry['change_note'] }}
+                    </td>
                 </tr>
             {% endfor %}
         </tbody>
