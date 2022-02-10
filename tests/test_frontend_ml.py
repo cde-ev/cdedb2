@@ -793,7 +793,6 @@ class TestMlFrontend(FrontendTest):
         # Check that there must be some moderators
         errormsg = "Darf nicht leer sein."
         f['moderators'] = ""
-        self.assertPresence("Admin-Team")
         self.submit(f, check_notification=False)
         self.assertValidationError("moderators", errormsg)
         # Check that you cannot add non-existing or archived moderators.
@@ -830,25 +829,20 @@ class TestMlFrontend(FrontendTest):
                       {'description': 'Konfiguration'},)
         self.assertTitle("Werbung – Konfiguration")
 
-        # Check if the attachment policy hint works
-        self.assertPresence("Admin-Team")
         f = self.response.forms['changelistform']
         f['domain'] = const.MailinglistDomain.testmail
         f['maxsize'] = "intentionally no valid maxsize"
         self.submit(f, check_notification=False)
         self.assertValidationError("maxsize", "Ungültige Eingabe für eine Ganzzahl.")
-        self.assertPresence("Admin-Team")
         f = self.response.forms['changelistform']
         f['maxsize'] = 12
         self.submit(f)
         self.assertTitle("Werbung")
         self.traverse({'href': '/ml/mailinglist/2/change'}, )
-        self.assertPresence("Admin-Team")
         f['domain'] = const.MailinglistDomain.lists
         self.submit(f)
         self.assertTitle("Werbung")
         self.traverse({'href': '/ml/mailinglist/2/change'}, )
-        self.assertPresence("Admin-Team")
 
         # Test list deactivation
         f = self.response.forms['changelistform']
