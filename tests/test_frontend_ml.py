@@ -947,9 +947,11 @@ class TestMlFrontend(FrontendTest):
                     self.assertPresence(
                         f"Mailingliste zur Veranstaltung {event_title}")
                 elif ml_type in assembly_types:
-                    self.submit(f, check_notification=False)
-                    self.assertValidationError(
-                        'assembly_id', "Ungültige Eingabe für eine Ganzzahl.")
+                    self.submit(f)  # only works if all assembly-associated ml
+                    # types can also not be associated with an assembly, which may
+                    # change in future
+                    self.traverse({'description': r"\sÜbersicht"})
+                    self.assertNonPresence("Mailingliste zur Versammlung")
                     f['assembly_id'] = assembly_id
                     self.submit(f)
                     self.traverse({'description': r"\sÜbersicht"})
