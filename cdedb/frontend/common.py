@@ -89,6 +89,7 @@ from cdedb.filter import (
     JINJA_FILTERS, cdedbid_filter, enum_entries_filter, safe_filter, sanitize_None,
 )
 from cdedb.query import Query
+from cdedb.query_defaults import DEFAULT_QUERIES
 
 _LOGGER = logging.getLogger(__name__)
 _BASICCONF = BasicConfig()
@@ -205,8 +206,8 @@ class BaseApp(metaclass=abc.ABCMeta):
         taken not to lose any notifications.
         """
         params = params or {}
-        if rs.retrieve_validation_errors() and not rs.notifications:
-            rs.notify_validation_errors_default()
+        if not rs.notifications:
+            rs.notify_validation()
         url = cdedburl(rs, target, params, force_external=True)
         if anchor is not None:
             url += "#" + anchor
@@ -674,12 +675,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
             _LOGGER.debug(debugstring)
             params['debugstring'] = debugstring
-        if (errors := rs.retrieve_validation_errors()) and not rs.notifications:
-            if all(isinstance(kind, ValidationWarning) for param, kind in errors):
-                rs.notify("warning", n_("Input seems faulty. Please double-check if"
-                                        " you really want to save it."))
-            else:
-                rs.notify_validation_errors_default()
+        if not rs.notifications:
+            rs.notify_validation()
         if self.conf["LOCKDOWN"]:
             rs.notify("info", n_("The database currently undergoes "
                                  "maintenance and is unavailable."))
@@ -829,7 +826,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             query_input = scope.mangle_query_input(rs)
             query = check_validation(rs, vtypes.QueryInput, query_input, "query",
                                      spec=spec, allow_empty=False)
-        default_queries = self.conf["DEFAULT_QUERIES"][default_scope]
+        default_queries = DEFAULT_QUERIES[default_scope]
         choices_lists = {}
         if choices is None:
             choices = {}
@@ -924,31 +921,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if quote_me is not None:
             params['quote_me'] = True
         return self.redirect(rs, 'core/show_user', params=params)
-
-    @staticmethod
-    def notify_return_code(rs: RequestState, code: Union[int, bool, None],
-                           success: str = n_("Change committed."),
-                           info: str = n_("Change pending."),
-                           error: str = n_("Change failed.")) -> None:
-        """Small helper to issue a notification based on a return code.
-
-        We allow some flexibility in what type of return code we accept. It
-        may be a boolean (with the obvious meanings), an integer (specifying
-        the number of changed entries, and negative numbers for entries with
-        pending review) or None (signalling failure to acquire something).
-
-        :param success: Affirmative message for positive return codes.
-        :param info: Message for negative return codes signalling review.
-        :param error: Exception message for zero return codes.
-        """
-        if not code:
-            rs.notify("error", error)
-        elif code is True or code > 0:
-            rs.notify("success", success)
-        elif code < 0:
-            rs.notify("info", info)
-        else:
-            raise RuntimeError(n_("Impossible."))
 
     def safe_compile(self, rs: RequestState, target_file: str, cwd: PathLike,
                      runs: int, errormsg: Optional[str]) -> pathlib.Path:
@@ -1190,7 +1162,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
                           'meta_info': meta_info,
                           })
 
-            self.notify_return_code(rs, new_id, success=n_("User created."))
+            rs.notify_return_code(new_id, success=n_("User created."))
             return self.redirect_show_user(rs, new_id)
         else:
             return self.create_user_form(rs)
@@ -1257,6 +1229,24 @@ class CdEMailmanClient(mailmanclient.Client):
         else:
             mmlist = self.get_list_safe(dblist['address'])
             return mmlist.held if mmlist else None
+
+    def get_held_message_count(self, dblist: CdEDBObject) -> Optional[int]:
+        """Returns the number of held messages for a mailman list.
+
+        If the list is not managed by mailman, this returns None instead.
+        """
+        if self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or self.conf["CDEDB_DEV"]:
+            self.logger.info("Skipping mailman query in dev/offline mode.")
+            if self.conf["CDEDB_DEV"]:
+                # Add some diversity.
+                if dblist['id'] % 2 == 0:
+                    return len(HELD_MESSAGE_SAMPLE)
+                else:
+                    return 0
+        else:
+            mmlist = self.get_list_safe(dblist['address'])
+            return mmlist.get_held_count() if mmlist else None
+        return None
 
 
 # Type Aliases for the Worker class.
@@ -1394,8 +1384,7 @@ def reconnoitre_ambience(obj: AbstractFrontend,
 
     def do_assert(x: bool) -> None:
         if not x:
-            raise werkzeug.exceptions.BadRequest(
-                rs.gettext("Inconsistent request."))
+            raise werkzeug.exceptions.BadRequest()
 
     scouts = (
         Scout(lambda anid: obj.coreproxy.get_persona(rs, anid), 'persona_id',
@@ -1948,12 +1937,12 @@ def event_guard(argname: str = "event_id",
                 arg = args[0]
             if arg not in rs.user.orga and not obj.is_admin(rs):
                 raise werkzeug.exceptions.Forbidden(
-                    rs.gettext("This page can only be accessed by orgas."))
+                    n_("This page can only be accessed by orgas."))
             if check_offline:
                 is_locked = obj.eventproxy.is_offline_locked(rs, event_id=arg)
                 if is_locked != obj.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
                     raise werkzeug.exceptions.Forbidden(
-                        rs.gettext("This event is locked for offline usage."))
+                        n_("This event is locked for offline usage."))
             return fun(obj, rs, *args, **kwargs)
 
         return cast(F, new_fun)
@@ -1985,17 +1974,17 @@ def mailinglist_guard(argname: str = "mailinglist_id",
                 arg = args[0]
             if allow_moderators:
                 if not obj.mlproxy.may_manage(rs, **{argname: arg}):
-                    raise werkzeug.exceptions.Forbidden(rs.gettext(
+                    raise werkzeug.exceptions.Forbidden(n_(
                         "This page can only be accessed by the mailinglist’s "
                         "moderators."))
                 if requires_privilege and not obj.mlproxy.may_manage(
                         rs, mailinglist_id=arg, allow_restricted=False):
-                    raise werkzeug.exceptions.Forbidden(rs.gettext(
+                    raise werkzeug.exceptions.Forbidden(n_(
                         "You only have restricted moderator access and may not"
                         " change subscriptions."))
             else:
                 if not obj.mlproxy.is_relevant_admin(rs, **{argname: arg}):
-                    raise werkzeug.exceptions.Forbidden(rs.gettext(
+                    raise werkzeug.exceptions.Forbidden(n_(
                         "This page can only be accessed by appropriate "
                         "admins."))
             return fun(obj, rs, *args, **kwargs)
@@ -2017,7 +2006,7 @@ def assembly_guard(fun: F) -> F:
         else:
             assembly_id = args[0]
         if not obj.assemblyproxy.is_presider(rs, assembly_id=assembly_id):
-            raise werkzeug.exceptions.Forbidden(rs.gettext(
+            raise werkzeug.exceptions.Forbidden(n_(
                 "This page may only be accessed by the assembly's"
                 " presiders or assembly admins."))
         return fun(obj, rs, *args, **kwargs)

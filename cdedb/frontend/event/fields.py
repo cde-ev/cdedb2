@@ -99,7 +99,7 @@ class EventFieldMixin(EventBaseFrontend):
             'fields': fields
         }
         code = self.eventproxy.set_event(rs, event)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(
             rs, "event/field_summary_form", anchor=(
                 ("tab:" + active_tab) if active_tab is not None else None))
@@ -297,7 +297,7 @@ class EventFieldMixin(EventBaseFrontend):
                     code *= entity_setter(rs, new, change_note)  # type: ignore
                 else:
                     code *= entity_setter(rs, new)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
 
         if kind == const.FieldAssociations.registration:
             query = Query(

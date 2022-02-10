@@ -42,7 +42,7 @@
                     {{ util.href(cdedblink("cde/show_semester"), gettext("Semester Management"), aclass="list-group-item",
                             icon="hourglass-half", active=(sidenav_active=='cde_semester')) }}
                 {% endif %}
-                {% if user.admin_views.intersection(('finance', 'auditor')) %}
+                {% if user.admin_views.intersection(('cde_user', 'finance', 'auditor')) %}
                     {{ util.href(cdedblink("cde/view_cde_log"), gettext("CdE Log"), aclass="list-group-item", icon="far fa-list-alt",
                             active=(sidenav_active=='cde_log')) }}
                     {{ util.href(cdedblink("cde/view_finance_log"), gettext("Finance Log"), aclass="list-group-item", icon="far fa-list-alt",

@@ -41,7 +41,8 @@ class TestMlFrontend(FrontendTest):
         else:
             self.assertNonPresence("Aktualisieren der Subscription States")
 
-    @as_users("annika", "anton", "berta", "martin", "nina", "vera", "viktor")
+    @as_users("annika", "anton", "berta", "martin", "nina", "vera", "viktor",
+              "katarina")
     def test_sidebar(self) -> None:
         self.traverse({'description': 'Mailinglisten'})
         # Users with no administrated and no moderated mailinglists:
@@ -81,6 +82,11 @@ class TestMlFrontend(FrontendTest):
                    "Accounts verschmelzen", "Moderierte Mailinglisten",
                    "Nutzer verwalten", "Archivsuche", "Log"}
             out = {"Übersicht"}
+        # Auditors
+        elif self.user_in('katarina'):
+            ins = {"Übersicht", "Log"}
+            out = {"Alle Mailinglisten", "Moderierte Mailinglisten",
+                   "Aktive Mailinglisten", "Nutzer verwalten", "Archivsuche"}
         else:
             self.fail("Please adjust users for this tests.")
 
@@ -286,7 +292,8 @@ class TestMlFrontend(FrontendTest):
             # Berta has no admin privileges, Annika has none _for this list_.
             self.assertNonPresence(ml_data['notes'])
 
-    @as_users("annika", "anton", "berta", "martin", "nina", "vera", "werner")
+    @as_users("annika", "anton", "berta", "martin", "nina", "vera", "werner",
+              "katarina")
     def test_sidebar_one_mailinglist(self) -> None:
         self.traverse({'description': 'Mailinglisten'},
                       {'description': 'Feriendorf Bau'})
@@ -305,7 +312,7 @@ class TestMlFrontend(FrontendTest):
         elif self.user_in('anton', 'nina'):
             ins = everyone | moderator
         # Other users:
-        elif self.user_in('annika', 'martin', 'werner'):
+        elif self.user_in('annika', 'martin', 'werner', 'katarina'):
             ins = everyone
             out = moderator
         else:
@@ -804,6 +811,10 @@ class TestMlFrontend(FrontendTest):
         f['local_part'] = "platin"
         self.submit(f, check_notification=False)
         self.assertValidationError("local_part", "Uneindeutige Mailadresse")
+        # Check that list name may not contain magic mailman address strings
+        f['local_part'] = "munkelwand-unsubscribe"
+        self.submit(f, check_notification=False)
+        self.assertValidationError("local_part", "\"-unsubscribe@\" nicht enthalten.")
 
         f['local_part'] = "munkelwand"
         self.submit(f)
@@ -852,6 +863,10 @@ class TestMlFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertValidationError("local_part", "Uneindeutige Mailadresse")
         self.assertValidationError("domain", "Uneindeutige Mailadresse")
+        # Check that list name may not contain magic mailman address strings
+        f['local_part'] = "munkelwand-confirm"
+        self.submit(f, check_notification=False)
+        self.assertValidationError("local_part", "\"-confirm@\" nicht enthalten.")
 
         f['local_part'] = "munkelwand"
         self.submit(f)
@@ -1380,6 +1395,7 @@ class TestMlFrontend(FrontendTest):
         mmlist.moderate_message.return_value = moderation_response
         client = client_class.return_value
         client.get_held_messages.return_value = messages
+        client.get_held_message_count.return_value = len(messages)
         client.get_list_safe.return_value = mmlist
 
         return messages, mmlist, client
@@ -1404,6 +1420,7 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("unerwartetes Erbe")
         mmlist.get_held_message.return_value = messages[0]
         client.get_held_messages.return_value = messages[1:]
+        client.get_held_message_count.return_value = len(messages[1:])
         f = self.response.forms['msg1']
         self.submit(f, button='action', value='accept')
         self.assertNonPresence("Finanzbericht")
@@ -1411,6 +1428,7 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("unerwartetes Erbe")
         mmlist.get_held_message.return_value = messages[1]
         client.get_held_messages.return_value = messages[2:]
+        client.get_held_message_count.return_value = len(messages[2:])
         f = self.response.forms['msg2']
         self.submit(f, button='action', value='reject')
         self.assertNonPresence("Finanzbericht")
@@ -1418,6 +1436,7 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("unerwartetes Erbe")
         mmlist.get_held_message.return_value = messages[2]
         client.get_held_messages.return_value = messages[3:]
+        client.get_held_message_count.return_value = len(messages[3:])
         f = self.response.forms['msg3']
         self.submit(f, button='action', value='discard')
         self.assertNonPresence("Finanzbericht")

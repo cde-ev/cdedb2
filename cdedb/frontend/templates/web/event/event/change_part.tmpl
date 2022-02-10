@@ -22,7 +22,7 @@
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
     {{ util.breadcrumb_link(cdedblink("event/part_summary"), gettext("Event-Parts")) }}
-    {{ util.breadcrumb_link("", ambience['event']['parts'][part_id]['title'], icon="clock", active=True) }}
+    {{ util.breadcrumb_link("", ambience['event']['parts'][part_id]['title'], icon="clock", readonly=True) }}
     {{ util.breadcrumb_link(cdedblink("event/change_part"), gettext("Change"), active=True) }}
 {% endblock %}
 
@@ -193,6 +193,7 @@
         {% endif %}
 
         {{ util.input_submit(label=gettext("Save")) }}
+        &emsp;{{ util.href(cdedblink("event/part_summary"), gettext("Cancel"), icon="times", aclass="btn btn-default cancel") }}
     </form>
 
     <script nonce="{{ csp_nonce }}">

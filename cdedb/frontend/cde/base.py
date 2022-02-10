@@ -157,7 +157,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             rs, new, generation=None, may_wait=False,
             change_note=change_note)
         message = n_("Consent noted.") if ack else n_("Decision noted.")
-        self.notify_return_code(rs, code, success=message)
+        rs.notify_return_code(code, success=message)
         if not code:
             return self.consent_decision_form(rs)
         if not data['decided_search']:
@@ -504,6 +504,10 @@ class CdEBaseFrontend(AbstractUserFrontend):
                             problems.append(
                                 ("doppelganger",
                                  ValueError(n_("Missing data for realm upgrade."))))
+                elif dg['is_member']:
+                    if datum['resolution'].do_trial():
+                        msg = n_("May not grant trial membership to member.")
+                        problems.append(("doppelganger", ValueError(msg)))
         if datum['doppelganger_id'] and pevent_id:
             existing = self.pasteventproxy.list_participants(rs, pevent_id=pevent_id)
             if (datum['doppelganger_id'], pcourse_id) in existing:
@@ -767,8 +771,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
     def view_misc(self, rs: RequestState) -> Response:
         """View miscellaneos things."""
         meta_data = self.coreproxy.get_meta_info(rs)
-        cde_misc = (meta_data.get("cde_misc")
-                    or rs.gettext("*Nothing here yet.*"))
+        cde_misc = (meta_data.get("cde_misc") or rs.gettext("*Nothing here yet.*"))
         return self.render(rs, "view_misc", {"cde_misc": cde_misc})
 
     @access("cde_admin", "auditor")

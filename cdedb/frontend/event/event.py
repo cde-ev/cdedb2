@@ -102,8 +102,7 @@ class EventEventMixin(EventBaseFrontend):
             params['minor_form_present'] = (
                     self.eventproxy.get_minor_form(rs, event_id) is not None)
         elif not rs.ambience['event']['is_visible']:
-            raise werkzeug.exceptions.Forbidden(
-                n_("The event is not published yet."))
+            raise werkzeug.exceptions.Forbidden(n_("The event is not published yet."))
         return self.render(rs, "event/show_event", params)
 
     @access("event")
@@ -151,7 +150,7 @@ class EventEventMixin(EventBaseFrontend):
         assert data is not None
 
         code = self.eventproxy.set_event(rs, data)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "event/show_event")
 
     @access("event")
@@ -160,8 +159,7 @@ class EventEventMixin(EventBaseFrontend):
         if not (rs.ambience['event']['is_visible']
                 or event_id in rs.user.orga
                 or self.is_admin(rs)):
-            raise werkzeug.exceptions.Forbidden(
-                n_("The event is not published yet."))
+            raise werkzeug.exceptions.Forbidden(n_("The event is not published yet."))
         minor_form = self.eventproxy.get_minor_form(rs, event_id)
         return self.send_file(
             rs, data=minor_form, mimetype="application/pdf",
@@ -187,7 +185,7 @@ class EventEventMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
         code = self.eventproxy.change_minor_form(rs, event_id, minor_form)
-        self.notify_return_code(rs, code, success=n_("Minor form updated."),
+        rs.notify_return_code(code, success=n_("Minor form updated."),
                                 info=n_("Minor form has been removed."),
                                 error=n_("Nothing to remove."))
         return self.redirect(rs, "event/show_event")
@@ -211,7 +209,7 @@ class EventEventMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
         code = self.eventproxy.add_event_orgas(rs, event_id, {orga_id})
-        self.notify_return_code(rs, code, error=n_("Action had no effect."))
+        rs.notify_return_code(code, error=n_("Action had no effect."))
         return self.redirect(rs, "event/show_event")
 
     @access("event_admin", modi={"POST"})
@@ -226,7 +224,7 @@ class EventEventMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
         code = self.eventproxy.remove_event_orga(rs, event_id, orga_id)
-        self.notify_return_code(rs, code, error=n_("Action had no effect."))
+        rs.notify_return_code(code, error=n_("Action had no effect."))
         return self.redirect(rs, "event/show_event")
 
     @access("event_admin", modi={"POST"})
@@ -250,7 +248,7 @@ class EventEventMixin(EventBaseFrontend):
             code = self.mlproxy.create_mailinglist(rs, ml_data)
             msg = (n_("Orga mailinglist created.") if orgalist
                    else n_("Participant mailinglist created."))
-            self.notify_return_code(rs, code, success=msg)
+            rs.notify_return_code(code, success=msg)
             if code and orgalist:
                 data = {'id': event_id, 'orga_address': ml_address}
                 self.eventproxy.set_event(rs, data)
@@ -335,7 +333,7 @@ class EventEventMixin(EventBaseFrontend):
             'parts': {part_id: None},
         }
         code = self.eventproxy.set_event(rs, event)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
 
         return self.redirect(rs, "event/part_summary")
 
@@ -381,7 +379,7 @@ class EventEventMixin(EventBaseFrontend):
 
         event = {'id': event_id, 'parts': {-1: data}}
         code = self.eventproxy.set_event(rs, event)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
 
         return self.redirect(rs, "event/part_summary")
 
@@ -561,7 +559,7 @@ class EventEventMixin(EventBaseFrontend):
             'parts': {part_id: data},
         }
         code = self.eventproxy.set_event(rs, event)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
 
         return self.redirect(rs, "event/part_summary")
 
@@ -600,7 +598,7 @@ class EventEventMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.add_part_group_form(rs, event_id)
         code = self.eventproxy.set_part_groups(rs, event_id, {-1: data})
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "event/part_group_summary")
 
     @access("event")
@@ -630,7 +628,7 @@ class EventEventMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.change_part_group_form(rs, event_id, part_group_id)
         code = self.eventproxy.set_part_groups(rs, event_id, {part_group_id: data})
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "event/part_group_summary")
 
     @access("event", modi={"POST"})
@@ -640,7 +638,7 @@ class EventEventMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.part_group_summary(rs, event_id)  # pragma: no cover
         code = self.eventproxy.set_part_groups(rs, event_id, {part_group_id: None})
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "event/part_group_summary")
 
     @staticmethod
@@ -773,8 +771,7 @@ class EventEventMixin(EventBaseFrontend):
         if orga_ml_data:
             orga_ml_data['event_id'] = new_id
             code = self.mlproxy.create_mailinglist(rs, orga_ml_data)
-            self.notify_return_code(
-                rs, code, success=n_("Orga mailinglist created."))
+            rs.notify_return_code(code, success=n_("Orga mailinglist created."))
         if create_participant_list:
             participant_ml_data = self._get_mailinglist_setter(data)
             participant_ml_address = ml_type.get_full_address(participant_ml_data)
@@ -784,12 +781,12 @@ class EventEventMixin(EventBaseFrontend):
                 participant_ml_data['description'] = descr
                 participant_ml_data['event_id'] = new_id
                 code = self.mlproxy.create_mailinglist(rs, participant_ml_data)
-                self.notify_return_code(
-                    rs, code, success=n_("Participant mailinglist created."))
+                rs.notify_return_code(code,
+                                      success=n_("Participant mailinglist created."))
             else:
                 rs.notify("info", n_("Mailinglist %(address)s already exists."),
                           {'address': participant_ml_address})
-        self.notify_return_code(rs, new_id, success=n_("Event created."))
+        rs.notify_return_code(new_id, success=n_("Event created."))
         return self.redirect(rs, "event/show_event", {"event_id": new_id})
 
     @access("event", modi={"POST"})
@@ -798,7 +795,7 @@ class EventEventMixin(EventBaseFrontend):
         """Lock an event for offline usage."""
         if not rs.has_validation_errors():
             code = self.eventproxy.lock_event(rs, event_id)
-            self.notify_return_code(rs, code)
+            rs.notify_return_code(code)
         return self.redirect(rs, "event/show_event")
 
     @access("event", modi={"POST"})
@@ -829,7 +826,7 @@ class EventEventMixin(EventBaseFrontend):
             return self.show_event(rs, event_id)
 
         code = self.eventproxy.unlock_import_event(rs, data)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "event/show_event")
 
     @access("event_admin", modi={"POST"})

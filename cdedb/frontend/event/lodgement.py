@@ -331,7 +331,7 @@ class EventLodgementMxin(EventBaseFrontend):
             else:
                 del group['event_id']
                 code *= self.eventproxy.rcw_lodgement_group(rs, group)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "event/lodgement_group_summary")
 
     @access("event")
@@ -453,7 +453,7 @@ class EventLodgementMxin(EventBaseFrontend):
         assert data is not None
 
         new_id = self.eventproxy.create_lodgement(rs, data)
-        self.notify_return_code(rs, new_id)
+        rs.notify_return_code(new_id)
         return self.redirect(rs, "event/show_lodgement",
                              {'lodgement_id': new_id})
 
@@ -494,7 +494,7 @@ class EventLodgementMxin(EventBaseFrontend):
         assert data is not None
 
         code = self.eventproxy.set_lodgement(rs, data)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "event/show_lodgement")
 
     @access("event", modi={"POST"})
@@ -510,7 +510,7 @@ class EventLodgementMxin(EventBaseFrontend):
             return self.show_lodgement(rs, event_id, lodgement_id)
         code = self.eventproxy.delete_lodgement(
             rs, lodgement_id, cascade={"inhabitants"})
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "event/lodgements")
 
     @access("event")
@@ -656,7 +656,7 @@ class EventLodgementMxin(EventBaseFrontend):
                     }
             if new_reg['parts']:
                 code *= self.eventproxy.set_registration(rs, new_reg, change_note)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "event/show_lodgement")
 
     @access("event", modi={"POST"})
@@ -703,5 +703,5 @@ class EventLodgementMxin(EventBaseFrontend):
         change_note = ", ".join(change_notes) + "."
         for new_reg in new_regs.values():
             code *= self.eventproxy.set_registration(rs, new_reg, change_note)
-        self.notify_return_code(rs, code)
+        rs.notify_return_code(code)
         return self.redirect(rs, "event/show_lodgement")
