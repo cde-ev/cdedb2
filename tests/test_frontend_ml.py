@@ -41,7 +41,8 @@ class TestMlFrontend(FrontendTest):
         else:
             self.assertNonPresence("Aktualisieren der Subscription States")
 
-    @as_users("annika", "anton", "berta", "martin", "nina", "vera", "viktor")
+    @as_users("annika", "anton", "berta", "martin", "nina", "vera", "viktor",
+              "katarina")
     def test_sidebar(self) -> None:
         self.traverse({'description': 'Mailinglisten'})
         # Users with no administrated and no moderated mailinglists:
@@ -81,6 +82,11 @@ class TestMlFrontend(FrontendTest):
                    "Accounts verschmelzen", "Moderierte Mailinglisten",
                    "Nutzer verwalten", "Archivsuche", "Log"}
             out = {"Übersicht"}
+        # Auditors
+        elif self.user_in('katarina'):
+            ins = {"Übersicht", "Log"}
+            out = {"Alle Mailinglisten", "Moderierte Mailinglisten",
+                   "Aktive Mailinglisten", "Nutzer verwalten", "Archivsuche"}
         else:
             self.fail("Please adjust users for this tests.")
 
@@ -286,7 +292,8 @@ class TestMlFrontend(FrontendTest):
             # Berta has no admin privileges, Annika has none _for this list_.
             self.assertNonPresence(ml_data['notes'])
 
-    @as_users("annika", "anton", "berta", "martin", "nina", "vera", "werner")
+    @as_users("annika", "anton", "berta", "martin", "nina", "vera", "werner",
+              "katarina")
     def test_sidebar_one_mailinglist(self) -> None:
         self.traverse({'description': 'Mailinglisten'},
                       {'description': 'Feriendorf Bau'})
@@ -305,7 +312,7 @@ class TestMlFrontend(FrontendTest):
         elif self.user_in('anton', 'nina'):
             ins = everyone | moderator
         # Other users:
-        elif self.user_in('annika', 'martin', 'werner'):
+        elif self.user_in('annika', 'martin', 'werner', 'katarina'):
             ins = everyone
             out = moderator
         else:
@@ -803,6 +810,10 @@ class TestMlFrontend(FrontendTest):
         f['local_part'] = "platin"
         self.submit(f, check_notification=False)
         self.assertValidationError("local_part", "Uneindeutige Mailadresse")
+        # Check that list name may not contain magic mailman address strings
+        f['local_part'] = "munkelwand-unsubscribe"
+        self.submit(f, check_notification=False)
+        self.assertValidationError("local_part", "\"-unsubscribe@\" nicht enthalten.")
 
         f['local_part'] = "munkelwand"
         self.submit(f)
@@ -846,6 +857,10 @@ class TestMlFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertValidationError("local_part", "Uneindeutige Mailadresse")
         self.assertValidationError("domain", "Uneindeutige Mailadresse")
+        # Check that list name may not contain magic mailman address strings
+        f['local_part'] = "munkelwand-confirm"
+        self.submit(f, check_notification=False)
+        self.assertValidationError("local_part", "\"-confirm@\" nicht enthalten.")
 
         f['local_part'] = "munkelwand"
         self.submit(f)
