@@ -139,8 +139,8 @@ class TestCoreFrontend(FrontendTest):
             out = meta_admin
         # meta admin
         elif self.user_in('martin'):
-            ins = everyone | meta_admin | {"Account-Log"}
-            out = genesis | core_admin | {"Nutzerdaten-Log"}
+            ins = everyone | meta_admin
+            out = genesis | core_admin | log
         # auditor
         elif self.user_in('katarina'):
             ins = everyone | log
