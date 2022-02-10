@@ -24,6 +24,8 @@ POLICY_OTHER_CONVERT = {
     const.ModerationPolicy.fully_moderated: 'hold',
 }
 
+# This looks a bit counter-intuitive, but this is ANDed with the MIME convert.
+# TODO: Potentially, this lets text/plain attachments through on forbid.
 ATTACHMENT_EXTENSIONS_CONVERT = {
     const.AttachmentPolicy.allow: [],
     const.AttachmentPolicy.pdf_only: ['pdf'],
@@ -36,7 +38,7 @@ ATTACHMENT_MIME_CONVERT = {
     const.AttachmentPolicy.forbid: ['text/plain'],
 }
 
-ATTTACHMENT_HTML_CONVERT = {
+ATTACHMENT_HTML_CONVERT = {
     const.AttachmentPolicy.allow: True,
     const.AttachmentPolicy.pdf_only: False,
     const.AttachmentPolicy.forbid: False,
@@ -90,7 +92,7 @@ class MlMailmanMixin(MlBaseFrontend):
             # Dropping mails silently, even after moderation is worse than rejecting...
             'filter_content': True,
             'filter_action': 'reject',
-            'convert_html_to_plaintext': ATTTACHMENT_HTML_CONVERT[
+            'convert_html_to_plaintext': ATTACHMENT_HTML_CONVERT[
                 db_list['attachment_policy']],
             'pass_extensions': ATTACHMENT_EXTENSIONS_CONVERT[
                 db_list['attachment_policy']],
