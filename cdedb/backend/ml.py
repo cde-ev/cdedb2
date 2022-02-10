@@ -476,7 +476,7 @@ class MlBackend(AbstractBackend):
                             address: str) -> DefaultReturnCode:
         """Add whitelist entry for a mailinglist."""
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
-        address = affirm(str, address)
+        address = affirm(vtypes.Email, address)
 
         if not self.may_manage(rs, mailinglist_id):
             raise PrivilegeError(n_("Not privileged."))
@@ -498,6 +498,7 @@ class MlBackend(AbstractBackend):
                                address: str) -> DefaultReturnCode:
         """Remove whitelist entry from a mailinglist."""
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
+        # Being broad here does not hurt and is defensive
         address = affirm(str, address)
 
         if not self.may_manage(rs, mailinglist_id):
