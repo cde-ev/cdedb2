@@ -9,8 +9,9 @@ BEGIN;
     DROP INDEX core.idx_sessions_is_active;
     CREATE INDEX sessions_is_active_atime_idx ON core.sessions(is_active, atime);
 
-    -- Add persona_id + generation key to changelog.
+    -- Add persona_id + generation key to changelog to replace the existing for only the persona_id.
     ALTER TABLE core.changelog ADD UNIQUE (persona_id, generation);
+    DROP INDEX core.idx_changelog_persona_id;
 
     -- Switch order of quota index to allow index scan when deleting all entries for a persona.
     DROP INDEX core.idx_quota_persona_id_qdate;
@@ -157,7 +158,6 @@ BEGIN;
     ALTER INDEX core.idx_core_log_code RENAME TO core_log_code_idx;
     ALTER INDEX core.idx_core_log_persona_id RENAME TO core_log_persona_id_idx;
     ALTER INDEX core.idx_changelog_code RENAME TO changelog_code_idx;
-    ALTER INDEX core.idx_changelog_persona_id RENAME TO changelog_persona_id_idx;
     ALTER INDEX cde.idx_lastschrift_persona_id RENAME TO lastschrift_persona_id_idx;
     ALTER INDEX cde.idx_cde_lastschrift_transactions_lastschrift_id RENAME TO cde_lastschrift_transactions_lastschrift_id_idx;
     ALTER INDEX cde.idx_cde_finance_log_code RENAME TO cde_finance_log_code_idx;

@@ -412,7 +412,6 @@ CREATE TABLE core.changelog (
         paper_expuls            boolean
 );
 CREATE INDEX changelog_code_idx ON core.changelog(code);
-CREATE INDEX changelog_persona_id_idx ON core.changelog(persona_id);
 GRANT SELECT, INSERT ON core.changelog TO cdb_persona;
 GRANT SELECT, UPDATE ON core.changelog_id_seq TO cdb_persona;
 GRANT UPDATE (code) ON core.changelog TO cdb_persona;
