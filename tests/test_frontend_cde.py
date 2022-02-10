@@ -136,7 +136,8 @@ class TestCdEFrontend(FrontendTest):
                          _calculate_ejection_deadline(
                              persona_data, period_data))
 
-    @as_users("annika", "berta", "charly", "farin", "martin", "vera", "werner")
+    @as_users("annika", "berta", "charly", "farin", "martin", "vera", "werner",
+              "katarina")
     def test_sidebar(self) -> None:
         self.traverse({'description': 'Mitglieder'})
         everyone = {"Mitglieder", "Übersicht"}
@@ -144,33 +145,39 @@ class TestCdEFrontend(FrontendTest):
         member = {"Sonstiges", "Datenschutzerklärung"}
         searchable = {"CdE-Mitglied suchen"}
         cde_admin_or_member = {"Mitglieder-Statistik"}
-        cde_admin = {"Nutzer verwalten", "Archivsuche", "Organisationen verwalten",
-                     "Verg.-Veranstaltungen-Log"}
-        finance_admin = {
-            "Einzugsermächtigungen", "Kontoauszug parsen", "Finanz-Log",
-            "Überweisungen eintragen", "Semesterverwaltung", "CdE-Log"}
+        cde_admin = {"Nutzer verwalten", "Archivsuche", "Organisationen verwalten"}
+        cde_admin_or_auditor = {"Finanz-Log", "CdE-Log", "Verg.-Veranstaltungen-Log"}
+        finance_admin = {"Einzugsermächtigungen", "Kontoauszug parsen",
+                         "Überweisungen eintragen", "Semesterverwaltung"}
 
         # non-members
         if self.user_in('annika', 'werner', 'martin'):
             ins = everyone
-            out = past_event | member | searchable | cde_admin | finance_admin
+            out = (past_event | member | searchable | cde_admin | cde_admin_or_auditor |
+                   finance_admin)
         # searchable member
         elif self.user_in('berta'):
             ins = everyone | past_event | member | cde_admin_or_member | searchable
-            out = cde_admin | finance_admin
+            out = cde_admin | cde_admin_or_auditor | finance_admin
         # not-searchable member
         elif self.user_in('charly'):
             ins = everyone | past_event | member | cde_admin_or_member
-            out = searchable | cde_admin | finance_admin
+            out = searchable | cde_admin | cde_admin_or_auditor | finance_admin
         # cde but not finance admin (vera is no member)
         elif self.user_in('vera'):
-            ins = everyone | past_event | cde_admin_or_member | cde_admin
+            ins = (everyone | past_event | cde_admin_or_member | cde_admin |
+                   cde_admin_or_auditor)
             out = member | searchable | finance_admin
         # cde and finance admin (farin is no member)
         elif self.user_in('farin'):
-            ins = (everyone | past_event | cde_admin_or_member | cde_admin
-                   | finance_admin)
+            ins = (everyone | past_event | cde_admin_or_member | cde_admin |
+                   cde_admin_or_auditor | finance_admin)
             out = member | searchable
+        # auditor
+        elif self.user_in('katarina'):
+            ins = everyone | cde_admin_or_auditor
+            out = (past_event | member | searchable | cde_admin_or_member | cde_admin |
+                   finance_admin)
         else:
             self.fail("Please adjust users for this tests.")
 
@@ -241,7 +248,6 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'href': '/cde/search/user'})
         self.assertNoLink('/cde/semester/show')
         self.assertNoLink('/cde/lastschrift/')
-        self.assertNoLink('/cde/log')
         self.realm_admin_view_profile('berta', 'cde')
         self.assertNoLink('/lastschrift')
         self.assertNoLink('/balance/change')
