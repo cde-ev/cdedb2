@@ -1052,7 +1052,11 @@ class EventBaseBackend(EventLowLevelBackend):
     @access("event")
     def event_keeper_commit(self, rs: RequestState, event_id: int,
                             commit_msg: str, *, is_marker: bool = False) -> CdEDBObject:
-        """Commit the current state of the event to it'S git repository.
+        """Commit the current state of the event to its git repository.
+
+        In contrast to its friends, we allow some wiggle room for errors here right now
+        and just log them instead of aborting. Once we are reasonably sure there is
+        rarely interference, we may revisit this.
 
         :param is_marker: Marks an important operation with explicit event keeper call.
             If there is a commit before and after an operation, only True
@@ -1063,7 +1067,7 @@ class EventBaseBackend(EventLowLevelBackend):
         export = self.partial_export_event(rs, event_id)
         del export['timestamp']
         event_keeper_dir = self.event_keeper_dir / str(event_id)
-        # TODO: this should never happen in practice, but is a nice safeguard.
+        # TODO: remove this
         if not event_keeper_dir.exists():
             self.event_keeper_init(event_id)
         filename = f"{event_id}.json"
@@ -1071,12 +1075,11 @@ class EventBaseBackend(EventLowLevelBackend):
         # Write to a file in a temporary directory, in order to be thread safe.
         with tempfile.TemporaryDirectory() as t:
             td = Path(t)
-            with open(td / filename, "w") as f:
-                f.write(json_serialize(export))
+            (td / filename).write_text(json_serialize(export))
             # Declare the temporary directory to be the working tree, and specify the
             # actual git directory.
             self.event_keeper_run(["git", f"--work-tree={td}", "add", td / filename],
-                                   cwd=event_keeper_dir)
+                                  cwd=event_keeper_dir)
             # Then commit everything as if we were in the repository directory.
             commit: List[Union[PathLike, bytes]]
             commit = ["git", "-C", event_keeper_dir, "commit", "-m",

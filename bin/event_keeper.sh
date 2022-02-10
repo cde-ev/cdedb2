@@ -1,4 +1,5 @@
 #!/bin/bash
+# Event keeper deployment script.
 cd /etc/apache2/mods-enabled
 sudo ln -s ../mods-available/ldap.conf
 sudo ln -s ../mods-available/ldap.load
