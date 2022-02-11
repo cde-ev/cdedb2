@@ -17,11 +17,11 @@ class SchemaDescription:
     syntaxes: List[bytes] = list()
 
     def __init__(self, file: str) -> None:
-        for block in self.chunk_file(file):
+        for block in self.split_file(file):
             self.process_chunk(block)
 
     @staticmethod
-    def chunk_file(file: str) -> List[str]:
+    def split_file(file: str) -> List[str]:
         """Split a given file into blocks separated by whitespace."""
         lines = file.split(sep="\n")
 

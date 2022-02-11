@@ -14,7 +14,11 @@ from cdedb.ldap.entry import CdEDBBaseLDAPEntry
 
 
 class CdEDBLDAPServer(LDAPServer):
-    """Subclass the LDAPServer to add some security restrictions."""
+    """Subclass the LDAPServer to add some security restrictions.
+
+    This mainly involve searches. Note that some handlers performing actions which
+    modify the ldap tree are overwritten since we currently do not support them.
+    """
 
     def getRootDSE(self, request, reply):
         """Shortcut to retrieve the root entry."""
@@ -30,9 +34,17 @@ class CdEDBLDAPServer(LDAPServer):
         return pureldap.LDAPSearchResultDone(resultCode=ldaperrors.Success.resultCode)
 
     def _cbSearchGotBase(self, base: CdEDBBaseLDAPEntry, dn: DistinguishedName, request: LDAPSearchRequest, reply) -> defer.Deferred:
+        """Callback which is invoked after a search was performed."""
 
         def _sendEntryToClient(entry: CdEDBBaseLDAPEntry) -> None:
-            """The callback function which sends the entry after it was found."""
+            """The callback function which sends the entry after it was found.
+
+            This is the main place where our security restrictions are implemented.
+            We currently restrict:
+            - anonymous access (without binding to an ldap entry previously)
+            - which entries may access other entries
+            - which attributes may be accessed by which entries
+            """
             attributes = {key: value for key, value in entry.items()}
             # never ever return an userPassword in a search result
             if b"userPassword" in attributes:
@@ -156,9 +168,7 @@ class CdEDBLDAPServer(LDAPServer):
 
 
 class LDAPServerFactory(ServerFactory):
-    """
-    Our Factory is meant to persistently store the ldap tree
-    """
+    """Factory to provide a CdEDBLDAPServer instance per connection."""
 
     protocol = CdEDBLDAPServer
 

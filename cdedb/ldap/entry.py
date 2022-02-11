@@ -29,28 +29,51 @@ class LDAPTreeNoSuchEntry(Exception):
 class CdEDBBaseLDAPEntry(
     # use BaseLDAPEntry, since the entries are not modifiable
     ldaptor.entry.BaseLDAPEntry,
-    # TODO is this needed?
-    ldaptor.entryhelpers.DiffTreeMixin,
+    ldaptor.entryhelpers.DiffTreeMixin,  # TODO is this needed?
     ldaptor.entryhelpers.SubtreeFromChildrenMixin,
     ldaptor.entryhelpers.MatchMixin,
     ldaptor.entryhelpers.SearchByTreeWalkingMixin,
     metaclass=abc.ABCMeta
 ):
-    """Implement a custom LDAPEntry class.
+    """Implement a custom LDAPEntry class for the CdEDB.
 
-    This can be used for static ldap entries (which are hardcoded in python) and dynamic
-    ldap entries (which are retrieved from a sql database).
+    This provides the interface between the LDAPsqlBackend and ldaptor by implementing
+    the IConnectedLDAPEntry interface of ldaptor.
 
-    The layout of the ldap tree, the definition of the static entries and the retrieval
-    procedures for the dynamic ldap entries are stored in `tree.py`. This class is
-    mostly a wrapper, to translate our custom ldap schema so ldaptor can understand
-    and serve it.
+    In general, we have two different kinds of entries in our LDAP:
+    - Static entries which do not depend on the postgres database.
+    - Dynamic entries which are retrieved from the postgres database.
 
-    Note that this provides just a read-only view on the ldap tree. Each attempt to
-    add, delete or modify an entry will fail immediately. Those endpoints are only
-    contained because the default LDAPServer of ldaptor assumes they are implemented.
+    Both kind of entries look and behave identically from an ldap (and even ldaptor)
+    point of view. On the other hand, the LDAPsqlBackend has very limited structural
+    knowledge about the ldap tree (there are just individual functions listing and
+    retrieving the dynamic entries from postgres).
+
+    So, this is the place where the ldap tree get its form by determining ...
+    - ... the attributes of static entries.
+    - ... static children of static entries.
+    - ... which backend function retrieves the attributes of a dynamic entry.
+    - ... which backend function retrieves the dynamic children of a static entry.
+
+    This is done by subclassing this base class and overwriting the abstract methods
+    accordingly. The abstract methods are asyncio directives, the conversion to twisteds
+    Deferred is already done in this class.
+
+    Currently, we support just a read-only ldap tree. Therefore, all methods specified
+    by ldaptor's interface to add, modify or delete an entry are overwritten to error
+    out immediatly. They may not be overwritten in the child classes.
     """
+
     def __init__(self, dn: DistinguishedName, backend: LDAPsqlBackend, attributes: LDAPObject) -> None:
+        """Create a new entry object.
+
+        Note that this gets an instance of the LDAPsqlBackend and the attributes of the
+        new entry. The latter is done to increase performance: Instead of 1000 separate
+        database queries to get all attributes of f.e. user objects individually,
+        they can be retrieved in a single query.
+
+        Therefor, querying the attributes of an entry is done in its parent entry!
+        """
         self.backend = backend
         if not attributes:
             raise RuntimeError
@@ -63,6 +86,11 @@ class CdEDBBaseLDAPEntry(
 
     @abc.abstractmethod
     def _fetch(self, *attributes) -> LDAPObject:
+        """Fetch the given attributes of the current entry.
+
+        Attribute _loading_ is done before the entry is instantiated (see __init__).
+        During creation, the attributes are stored in the private _attributes variable.
+        """
         raise NotImplementedError
 
     def fetch(self, *attributes) -> Deferred:
@@ -73,6 +101,10 @@ class CdEDBBaseLDAPEntry(
 
     @abc.abstractmethod
     async def _children(self, callback=None) -> Optional[List["CdEDBBaseLDAPEntry"]]:
+        """List children entries of this entry.
+
+        Note that the children are already instantiated.
+        """
         raise NotImplementedError
 
     def children(self, callback=None) -> Deferred:
@@ -83,6 +115,14 @@ class CdEDBBaseLDAPEntry(
 
     @abc.abstractmethod
     async def _lookup(self, dn_str: str) -> "CdEDBBaseLDAPEntry":
+        """Lookup the given DN.
+
+        This is used to find a specific entry in the ldap tree:
+        Each entry has to decide if the given DN ...
+        - ... is itself (then return itself).
+        - ... lays underneath it (then decide under which children and call its lookup).
+        - ... is not inside its part of the tree (then return an error).
+        """
         raise NotImplementedError
 
     def lookup(self, dn: str) -> Deferred:
@@ -92,15 +132,25 @@ class CdEDBBaseLDAPEntry(
     # def match(self, filter):
 
     def bind(self, password: Union[str, bytes]) -> Deferred:
+        """Bind with this entry and the given password.
+
+        In general, this is forbidden for all entries. Exceptions from this rule
+        may implement the CdEDBBindableEntryMixing.
+        """
         return fail(LDAPUnwillingToPerform("This entry does not support binding."))
 
     @abc.abstractmethod
-    def _parent(self) -> "CdEDBBaseLDAPEntry":
+    def _parent(self) -> Optional["CdEDBBaseLDAPEntry"]:
+        """Return the parent entry of this entry.
+
+        Only the root entry may return None instead.
+        """
         raise NotImplementedError
 
     def parent(self) -> Deferred:
         return succeed(self._parent())
 
+    # TODO where is this used?
     def hasMember(self, dn: DistinguishedName) -> bool:
         # TODO replace by 'if memberDN in self.get("uniqueMember", [])'?
         for memberDN in self.get("uniqueMember", []):
@@ -136,17 +186,27 @@ class CdEDBBaseLDAPEntry(
 
 
 class CdEDBStaticEntry(CdEDBBaseLDAPEntry, metaclass=abc.ABCMeta):
+    """Base class for all static ldap entries."""
+
     def __init__(self, dn: DistinguishedName, backend: LDAPsqlBackend) -> None:
+        """Initialize a new entry.
+
+        Static ldap entries should store their attributes inside the _fetch method.
+        Therefore, this wraps the creation and inserts the attributes accordingly.
+        """
         self.backend = backend
         attributes = self._fetch()
         super().__init__(dn, backend, attributes)
 
 
-class CdEDBBindableEntry(CdEDBBaseLDAPEntry, metaclass=abc.ABCMeta):
-    def _bind(self, password: Union[str, bytes]) -> "CdEDBBaseLDAPEntry":
+class CdEDBBindableEntryMixing(CdEDBBaseLDAPEntry, metaclass=abc.ABCMeta):
+    """Mixin to allow binding with an entry."""
+
+    def _bind(self, password: Union[str, bytes]) -> CdEDBBaseLDAPEntry:
         """Overwrite the default method to use the encryption algorithm used in CdEDB
 
-        This is must be the same as used in CoreBackend.verify_password.
+        This must be the same as used in CoreBackend.verify_password. Note that the
+        entry must have one of the password attributes specified in _user_password_keys.
         """
         for key in self._user_password_keys:
             for digest in self.get(key, ()):
@@ -159,19 +219,46 @@ class CdEDBBindableEntry(CdEDBBaseLDAPEntry, metaclass=abc.ABCMeta):
 
 
 class CdEPreLeafEntry(CdEDBStaticEntry, metaclass=abc.ABCMeta):
+    """Base class for all entries which have dynamic _children_.
 
+    Since dynamic entries do not have any children by design, dynamic entries are leafs
+    of the ldap tree. Therefore, entries with dynamic children are pre-leaf entries.
+
+    Loading attributes of dynamic entries is done in their parent entry for reasons of
+    performance. This class implements the (always equal) procedure of instantiating
+    the children and performing lookup of dns. The subclass does only need to specify
+    the (backend) function which should be used to list the children and retrieve
+    their attributes.
+    """
+
+    # class which is used to instantiate the children
     ChildGroup: "CdEDBLeafEntry"
 
     @abc.abstractmethod
     async def children_lister(self) -> List[RelativeDistinguishedName]:
+        """List all children of this entry.
+
+        The real work is done in the backend, this is only used to link the correct
+        function in place.
+        """
         raise NotImplementedError
 
     @abc.abstractmethod
     async def children_getter(self, dns: List[DistinguishedName]) -> LDAPObjectMap:
+        """Get the attributes of those DNs which are children of this entry.
+
+        The real work is done in the backend, this is only used to link the correct
+        function in place.
+        """
         raise NotImplementedError
 
     @abc.abstractmethod
     def is_children_dn(self, dn: DistinguishedName) -> bool:
+        """Decide whether a DN is a child of this entry or not.
+
+        The real work is done in the backend, this is only used to link the correct
+        function in place.
+        """
         raise NotImplementedError
 
     async def _children(self, callback=None) -> Optional[List[CdEDBBaseLDAPEntry]]:
@@ -204,13 +291,21 @@ class CdEPreLeafEntry(CdEDBStaticEntry, metaclass=abc.ABCMeta):
 
 
 class CdEDBLeafEntry(CdEDBBaseLDAPEntry, metaclass=abc.ABCMeta):
+    """Base class for all dynamic entries.
+
+    Since all dynamic entries do not have any children, they are leafs of the ldap tree.
+    Note however that the opposite is not true.
+    """
+
     def _fetch(self, *attributes) -> LDAPObject:
+        """Use the _attributes attribute to return the requested attributes."""
         if not self._attributes:
             raise RuntimeError
         return {k: self._attributes[k] for k in
                 attributes} if attributes else self._attributes
 
     async def _children(self, callback=None) -> Optional[List["CdEDBBaseLDAPEntry"]]:
+        """All dynamic entries do not have any children by design."""
         return None
 
     async def _lookup(self, dn_str: str) -> "CdEDBBaseLDAPEntry":
@@ -264,6 +359,11 @@ class RootEntry(CdEDBStaticEntry):
 
 
 class SubschemaEntry(CdEDBStaticEntry):
+    """Provide some information about the ldap specifications.
+
+    Note that this is a static leaf entry!
+    """
+
     def __init__(self, backend: LDAPsqlBackend) -> None:
         dn = DistinguishedName(backend.subschema_dn)
         super().__init__(dn, backend)
@@ -372,7 +472,7 @@ class CdeEvEntry(CdEDBStaticEntry):
         return DeEntry(self.backend)
 
 
-class DuaEntry(CdEDBLeafEntry, CdEDBBindableEntry):
+class DuaEntry(CdEDBLeafEntry, CdEDBBindableEntryMixing):
     def _parent(self) -> "CdEDBBaseLDAPEntry":
         return DuasEntry(self.backend)
 
@@ -404,7 +504,7 @@ class DuasEntry(CdEPreLeafEntry):
         return self.backend.is_dua_dn(dn)
 
 
-class UserEntry(CdEDBLeafEntry, CdEDBBindableEntry):
+class UserEntry(CdEDBLeafEntry, CdEDBBindableEntryMixing):
     def _parent(self) -> "CdEDBBaseLDAPEntry":
         return UsersEntry(self.backend)
 
