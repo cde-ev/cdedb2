@@ -435,6 +435,26 @@ class EventRegistrationBackend(EventBaseBackend):
         data = self.query_all(rs, query, params)
         return {e['id']: e['persona_id'] for e in data}
 
+    @access("event")
+    def get_registration_payment_info(self, rs: RequestState, event_id: int
+                                      ) -> Tuple[bool, bool]:
+        """Small helper to get information for the dashboard pages.
+
+        :return: Whether there is a registration and whether some amount left to pay.
+        """
+        registration_ids = self.list_registrations(rs, event_id,
+                                                   rs.user.persona_id).keys()
+        if registration_ids:
+            registration = self.get_registration(rs, unwrap(registration_ids))
+            payment_pending = bool(
+                not registration['payment']
+                and any(part['status'].has_to_pay()
+                        for part in registration['parts'].values())
+                and self.calculate_fee(rs, unwrap(registration_ids)))
+            return True, payment_pending
+        else:
+            return False, False
+
     @access("event", "ml_admin")
     def get_registrations(self, rs: RequestState, registration_ids: Collection[int]
                           ) -> CdEDBObjectMap:

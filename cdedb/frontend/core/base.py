@@ -142,20 +142,8 @@ class CoreBaseFrontend(AbstractFrontend):
                 final = {}
                 for event_id, event in events.items():
                     if event_id not in orga_info:
-                        registration_ids = self.eventproxy.list_registrations(
-                            rs, event_id, rs.user.persona_id).keys()
-                        event['registration'] = bool(registration_ids)
-                        if registration_ids:
-                            registration = self.eventproxy.get_registration(
-                                rs, unwrap(registration_ids))
-                            event['payment_pending'] = (
-                                not registration['payment']
-                                and any(part['status'].has_to_pay()
-                                        for part in registration['parts'].values())
-                                and self.eventproxy.calculate_fee(
-                                    rs, unwrap(registration_ids)))
-                        else:
-                            event['payment_pending'] = False
+                        event['registration'], event['payment_pending'] = (
+                            self.eventproxy.get_registration_payment_info(rs, event_id))
                         # Skip event, if the registration begins more than
                         # 2 weeks in future
                         if event['registration_start'] and \
