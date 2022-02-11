@@ -128,7 +128,7 @@
             </dt>
             <dd id="registration_status_part{{ part_id }}">
                 {{ gettext(part['status']|enum(enums['RegistrationPartStati'])) }}
-                {% if part['status'] != enums['RegistrationPartStati'].not_applied and payment_pending %}
+                {% if part['status'].has_to_pay() and payment_pending %}
                     <span class="text-danger">({% trans %}payment pending{% endtrans %})</span>
                 {% endif %}
                 {% if part['status'] == enums['RegistrationPartStati'].waitlist and waitlist_position[part_id] %}

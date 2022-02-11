@@ -1504,7 +1504,22 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence(payment_pending, div='event-box')
         self.traverse("Veranstaltungen")
         self.assertPresence(payment_pending, div='current-events')
-        # unset fee
+        # registration stati that don't have to pay
+        self.get('/event/event/1/registration/1/change')
+        f = self.response.forms['changeregistrationform']
+        f['part1.status'] = const.RegistrationPartStati.not_applied
+        f['part2.status'] = const.RegistrationPartStati.cancelled
+        f['part3.status'] = const.RegistrationPartStati.rejected
+        self.submit(f)
+        self.traverse("Index")
+        self.assertNonPresence(payment_pending)
+        self.traverse("Veranstaltungen")
+        self.assertNonPresence(payment_pending)
+        self.traverse("angemeldet")
+        self.assertNonPresence(payment_pending)
+        # participant again, but with fee = 0
+        f['part2.status'] = const.RegistrationPartStati.participant
+        self.submit(f)
         for part_id in (1, 2, 3):
             self.get(f'/event/event/1/part/{part_id}/change')
             f = self.response.forms['changepartform']
@@ -1513,9 +1528,7 @@ etc;anything else""", f['entries_2'].value)
                 self.submit(f, check_notification=False)
                 f = self.response.forms['changepartform']
                 f[IGNORE_WARNINGS_NAME].checked = True
-                self.submit(f)
-            else:
-                self.submit(f)
+            self.submit(f)
         self.traverse("Index")
         self.assertNonPresence(payment_pending)
         self.traverse("Veranstaltungen")

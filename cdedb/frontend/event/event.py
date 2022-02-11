@@ -59,6 +59,8 @@ class EventEventMixin(EventBaseFrontend):
                         rs, unwrap(registration_ids))
                     event['payment_pending'] = (
                         not registration['payment']
+                        and any(part['status'].has_to_pay()
+                                for part in registration['parts'].values())
                         and self.eventproxy.calculate_fee(rs, unwrap(registration_ids)))
                 else:
                     event['payment_pending'] = False
