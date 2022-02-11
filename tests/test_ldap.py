@@ -12,19 +12,19 @@ from tests.common import USER_DICT, BasicTest
 class TestLDAP(BasicTest):
 
     root_dn = 'dc=cde-ev,dc=de'
-    test_dua_dn = f'cn=test,ou=dua,{root_dn}'
+    test_dua_dn = f'cn=test,ou=duas,{root_dn}'
     test_dua_pw = 'secret'
-    admin_dua_dn = f'cn=admin,ou=dua,{root_dn}'
+    admin_dua_dn = f'cn=admin,ou=duas,{root_dn}'
     admin_dua_pw = 'secret'
     server: ldap3.Server
 
     # all duas except the admin dua
     DUAs = {
-        f'cn=apache,ou=dua,{root_dn}': 'secret',
-        f'cn=cloud,ou=dua,{root_dn}': 'secret',
-        f'cn=cyberaka,ou=dua,{root_dn}': 'secret',
-        f'cn=dokuwiki,ou=dua,{root_dn}': 'secret',
-        f'cn=test,ou=dua,{root_dn}': 'secret',
+        f'cn=apache,ou=duas,{root_dn}': 'secret',
+        f'cn=cloud,ou=duas,{root_dn}': 'secret',
+        f'cn=cyberaka,ou=duas,{root_dn}': 'secret',
+        f'cn=dokuwiki,ou=duas,{root_dn}': 'secret',
+        f'cn=test,ou=duas,{root_dn}': 'secret',
     }
 
     # all users which have a password
@@ -98,7 +98,7 @@ class TestLDAP(BasicTest):
     def test_simple_password_bind(self) -> None:
         # try to bind to nonexistent dua
         conn = ldap3.Connection(
-            self.server, user='cn=nonexistent,ou=dua,dc=cde-ev,dc=de',
+            self.server, user='cn=nonexistent,ou=duas,dc=cde-ev,dc=de',
             password=self.test_dua_pw)
         self.assertFalse(conn.bind())
 
