@@ -116,31 +116,36 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Anmelden")
         self.assertNonPresence("Meine Daten")
 
-    @as_users("annika", "martin", "nina", "vera", "werner")
+    @as_users("annika", "martin", "nina", "vera", "werner", "katarina")
     def test_sidebar(self) -> None:
         self.assertTitle("CdE-Datenbank")
         everyone = {"Index", "Übersicht", "Meine Daten", "Administratorenübersicht"}
         genesis = {"Accountanfragen"}
         core_admin = {"Nutzer verwalten", "Archivsuche", "Änderungen prüfen",
-                      "Account-Log", "Nutzerdaten-Log", "Metadaten"}
+                      "Metadaten"}
         meta_admin = {"Admin-Änderungen"}
+        log = {"Account-Log", "Nutzerdaten-Log"}
 
         # admin of a realm without genesis cases
         if self.user_in('werner'):
             ins = everyone
-            out = genesis | core_admin | meta_admin
+            out = genesis | core_admin | meta_admin | log
         # admin of a realm with genesis cases
         elif self.user_in('annika', 'nina'):
             ins = everyone | genesis
-            out = core_admin | meta_admin
+            out = core_admin | meta_admin | log
         # core admin
         elif self.user_in('vera'):
-            ins = everyone | genesis | core_admin
+            ins = everyone | genesis | core_admin | log
             out = meta_admin
         # meta admin
         elif self.user_in('martin'):
             ins = everyone | meta_admin
-            out = genesis | core_admin
+            out = genesis | core_admin | log
+        # auditor
+        elif self.user_in('katarina'):
+            ins = everyone | log
+            out = genesis | core_admin | meta_admin
         else:
             self.fail("Please adjust users for this tests.")
 
@@ -1601,6 +1606,13 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Änderungshistorie von Bertålotta Beispiel")
         self.assertPresence(r"Gen 2\W*03.04.1933", regex=True)
         self.assertPresence(r"Gen 1\W*11.02.1981", regex=True)
+        self.assertNonPresence("Automatisiert")
+
+        self.admin_view_profile("martin")
+        self.traverse({'description': 'Änderungshistorie'})
+        self.assertTitle("Änderungshistorie von Martin Meister")
+        self.assertPresence("Automatisierte Änderung", div='generation2')
+        self.assertNonPresence("Automatisiert", div='generation1')
 
     @as_users("vera")
     def test_markdown(self) -> None:

@@ -661,6 +661,15 @@ class CoreBaseFrontend(AbstractFrontend):
             'active_session_count': active_session_count, 'ADMIN_KEYS': ADMIN_KEYS,
         })
 
+    @access("member")
+    def my_lastschrift(self, rs: RequestState) -> Response:
+        """Convenience entry point to view own lastschrift.
+
+        This is only in the core frontend to stay consistent in the path naming scheme.
+        """
+        return self.redirect(rs, "cde/lastschrift_show",
+                             {"persona_id": rs.user.persona_id})
+
     @access("event")
     def show_user_events(self, rs: RequestState, persona_id: vtypes.ID) -> Response:
         """Render overview which events a given user is registered for."""
@@ -2246,7 +2255,7 @@ class CoreBaseFrontend(AbstractFrontend):
             ('username', QueryOperators.equal, username),
             ('is_event_realm', QueryOperators.equal, True),
         )
-        query = Query(QueryScope.persona, QueryScope.persona.get_spec(),
+        query = Query(QueryScope.core_user, QueryScope.core_user.get_spec(),
                       ("given_names", "family_name", "is_member", "username"),
                       constraints, (('personas.id', True),))
         result = self.coreproxy.submit_resolve_api_query(rs, query)

@@ -101,8 +101,7 @@ class EventEventMixin(EventBaseFrontend):
             params['minor_form_present'] = (
                     self.eventproxy.get_minor_form(rs, event_id) is not None)
         elif not rs.ambience['event']['is_visible']:
-            raise werkzeug.exceptions.Forbidden(
-                n_("The event is not published yet."))
+            raise werkzeug.exceptions.Forbidden(n_("The event is not published yet."))
         return self.render(rs, "event/show_event", params)
 
     @access("event")
@@ -159,8 +158,7 @@ class EventEventMixin(EventBaseFrontend):
         if not (rs.ambience['event']['is_visible']
                 or event_id in rs.user.orga
                 or self.is_admin(rs)):
-            raise werkzeug.exceptions.Forbidden(
-                n_("The event is not published yet."))
+            raise werkzeug.exceptions.Forbidden(n_("The event is not published yet."))
         minor_form = self.eventproxy.get_minor_form(rs, event_id)
         return self.send_file(
             rs, data=minor_form, mimetype="application/pdf",

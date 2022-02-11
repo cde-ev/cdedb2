@@ -121,6 +121,7 @@ class CdESemesterMixin(CdEBaseFrontend):
                     rrs, period_id, testrun)
 
                 if persona:
+                    transaction_subject = make_membership_fee_reference(persona)
                     self.do_mail(
                         rrs, "semester/imminent_archival",
                         {'To': (persona['username'],),
@@ -128,6 +129,7 @@ class CdESemesterMixin(CdEBaseFrontend):
                                     " CdE-Datenbank-Accounts"},
                         {'persona': persona,
                          'fee': self.conf["MEMBERSHIP_FEE"],
+                         'transaction_subject': transaction_subject,
                          'meta_info': meta_info})
             return proceed and not testrun
 
