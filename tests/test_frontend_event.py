@@ -1504,7 +1504,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence(payment_pending, div='event-box')
         self.traverse("Veranstaltungen")
         self.assertPresence(payment_pending, div='current-events')
-        # registration stati that don't have to pay
+        # registration stati that are not really registered
         self.get('/event/event/1/registration/1/change')
         f = self.response.forms['changeregistrationform']
         f['part1.status'] = const.RegistrationPartStati.not_applied
@@ -1512,7 +1512,10 @@ etc;anything else""", f['entries_2'].value)
         f['part3.status'] = const.RegistrationPartStati.rejected
         self.submit(f)
         self.traverse("Index")
-        self.assertNonPresence(payment_pending)
+        self.assertNonPresence("bereits angemeldet")
+        # guests do not necessarily need to pay
+        f['part3.status'] = const.RegistrationPartStati.guest
+        self.submit(f)
         self.traverse("Veranstaltungen")
         self.assertNonPresence(payment_pending)
         self.traverse("angemeldet")

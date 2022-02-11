@@ -441,11 +441,16 @@ class EventRegistrationBackend(EventBaseBackend):
         """Small helper to get information for the dashboard pages.
 
         :return: Whether there is a registration and whether some amount left to pay.
+            The second is always False if the first is.
         """
         registration_ids = self.list_registrations(rs, event_id,
                                                    rs.user.persona_id).keys()
         if registration_ids:
             registration = self.get_registration(rs, unwrap(registration_ids))
+            if not any(part['status'].is_involved()
+                       for part in registration['parts'].values()):
+                # cancelled and rejected people are not really "registered" anymore
+                return False, False
             payment_pending = bool(
                 not registration['payment']
                 and any(part['status'].has_to_pay()
