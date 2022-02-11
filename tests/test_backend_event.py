@@ -1045,7 +1045,7 @@ class TestEventBackend(BackendTest):
                          self.event.list_registrations(self.key, event_id))
         expectation: CdEDBObjectMap = {
             1: {'amount_owed': decimal.Decimal("573.99"),
-                'amount_paid': decimal.Decimal("0.00"),
+                'amount_paid': decimal.Decimal("200.00"),
                 'checkin': None,
                 'ctime': datetime.datetime(2014, 1, 1, 1, 4, 5, tzinfo=pytz.utc),
                 'event_id': 1,

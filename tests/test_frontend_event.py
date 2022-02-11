@@ -1481,7 +1481,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
         self.assertPresence(
             "Anmeldung erst mit Überweisung des Teilnehmerbeitrags")
-        self.assertPresence("573,99 €")
+        self.assertPresence("573,99 € (bereits bezahlt: 200,00 €)")
         self.assertNonPresence("Warteliste")
         self.assertNonPresence("Eingeteilt in")
         self.assertPresence("α. Planetenretten für Anfänger")
@@ -1497,6 +1497,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
         self.assertPresence("Eingeteilt in")
         self.assertPresence("separat mitteilen, wie du deinen Teilnahmebeitrag")
+        self.assertPresence("573,99 € (bereits bezahlt: 200,00 €)")
 
         payment_pending = "Bezahlung ausstehend"
         self.assertPresence(payment_pending)
@@ -1520,18 +1521,19 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence(payment_pending)
         self.traverse("angemeldet")
         self.assertNonPresence(payment_pending)
-        # participant again, but with fee = 0
-        f['part2.status'] = const.RegistrationPartStati.participant
+        # participant again, only for one part
+        f['part3.status'] = const.RegistrationPartStati.participant
+        f['reg.amount_paid'] = 0
         self.submit(f)
-        for part_id in (1, 2, 3):
-            self.get(f'/event/event/1/part/{part_id}/change')
-            f = self.response.forms['changepartform']
-            f['fee'] = 0
-            if part_id == 2:
-                self.submit(f, check_notification=False)
-                f = self.response.forms['changepartform']
-                f[IGNORE_WARNINGS_NAME].checked = True
-            self.submit(f)
+        self.traverse({'href': 'registration/status'})
+        self.assertPresence("450,99 €")
+        self.assertNonPresence("bereits bezahlt")
+        self.assertPresence(payment_pending)
+        # unset fee for this part - no payment needed anymore
+        self.get('/event/event/1/part/3/change')
+        f = self.response.forms['changepartform']
+        f['fee'] = 0
+        self.submit(f)
         self.traverse("Index")
         self.assertNonPresence(payment_pending)
         self.traverse("Veranstaltungen")
@@ -2207,7 +2209,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Überweisungen eintragen (Große Testakademie 2222)")
         f = self.response.forms['batchfeesform']
         f['fee_data'] = """
-573.99;DB-1-9;Admin;Anton;01.04.18
+373.99;DB-1-9;Admin;Anton;01.04.18
 466.99;DB-5-1;Eventis;Emilia;01.04.18
 589.49;DB-9-4;Iota;Inga;30.12.19
 570.99;DB-11-6;K;Kalif;01.04.18
@@ -2221,7 +2223,7 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['batchfeesform']
         f['full_payment'].checked = True
         f['fee_data'] = """
-573.98;DB-1-9;Admin;Anton;01.04.18
+373.98;DB-1-9;Admin;Anton;01.04.18
 589.49;DB-5-1;Eventis;Emilia;04.01.18
 451.00;DB-9-4;Iota;Inga;30.12.19
 """
@@ -2265,7 +2267,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Bereits Bezahlt 451,00 €")
         # Check log
         self.traverse({'href': '/event/event/1/log'})
-        self.assertPresence("573,98 € am 01.04.2018 gezahlt.",
+        self.assertPresence("373,98 € am 01.04.2018 gezahlt.",
                             div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
         self.assertPresence("589,49 € am 04.01.2018 gezahlt.",
                             div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")

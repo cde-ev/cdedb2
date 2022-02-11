@@ -4609,7 +4609,7 @@
             "notes": null,
             "orga_notes": null,
             "payment": null,
-            "amount_paid": "0.00",
+            "amount_paid": "200.00",
             "amount_owed": "573.99",
             "parental_agreement": true,
             "mixed_lodging": true,

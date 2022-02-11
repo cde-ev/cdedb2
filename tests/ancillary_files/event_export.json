@@ -158,7 +158,7 @@
     "event.registrations": {
         "1": {
             "amount_owed": "573.99",
-            "amount_paid": "0.00",
+            "amount_paid": "200.00",
             "event_id": 1,
             "checkin": null,
             "persona_id": 1,
