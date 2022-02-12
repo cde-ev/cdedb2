@@ -7,7 +7,9 @@ from werkzeug.serving import run_simple
 
 from cdedb.frontend.application import Application
 
-static_directory = Path(__file__).resolve().parent.parent / "static"
+repopath = Path(__file__).resolve().parent.parent
+docs_directory = repopath / "doc/build/html"
+static_directory = repopath / "static"
 configpath = Path("/etc/cdedb-application-config.py")
 
 if __name__ == "__main__":
@@ -20,5 +22,5 @@ if __name__ == "__main__":
         use_debugger=True,
         use_evalex=True,
         use_reloader=True,
-        static_files={"/static": str(static_directory)}
+        static_files={"/static": str(static_directory), "/doc": str(docs_directory)}
     )
