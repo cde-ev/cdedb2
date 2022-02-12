@@ -2218,7 +2218,7 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['batchfeesform']
         f['fee_data'] = """
 373.99;DB-1-9;Admin;Anton;01.04.18
-466.99;DB-5-1;Eventis;Emilia;01.04.18
+455.99;DB-5-1;Eventis;Emilia;01.04.18
 589.49;DB-9-4;Iota;Inga;30.12.19
 570.99;DB-11-6;K;Kalif;01.04.18
 0.0;DB-666-1;Y;Z;77.04.18;stuff

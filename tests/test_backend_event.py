@@ -879,7 +879,7 @@ class TestEventBackend(BackendTest):
     def test_registration_participant(self) -> None:
         expectation: CdEDBObject = {
             'amount_paid': decimal.Decimal("0.00"),
-            'amount_owed': decimal.Decimal("589.49"),
+            'amount_owed': decimal.Decimal("466.49"),
             'checkin': None,
             'ctime': datetime.datetime(2014, 1, 1, 2, 5, 6, tzinfo=pytz.utc),
             'event_id': 1,
@@ -1097,7 +1097,7 @@ class TestEventBackend(BackendTest):
                 'payment': None,
                 'persona_id': 1,
                 'real_persona_id': None},
-            2: {'amount_owed': decimal.Decimal("589.49"),
+            2: {'amount_owed': decimal.Decimal("466.49"),
                 'amount_paid': decimal.Decimal("0.00"),
                 'checkin': None,
                 'ctime': datetime.datetime(2014, 1, 1, 2, 5, 6, tzinfo=pytz.utc),
@@ -2722,6 +2722,8 @@ class TestEventBackend(BackendTest):
         del expectation['timestamp']
         del updated['timestamp']
         del updated['registrations'][1002]['persona']  # ignore additional info
+        updated['registrations'][2]['amount_owed'] = str(
+            updated['registrations'][2]['amount_owed'])
         updated['registrations'][1002]['amount_paid'] = str(
             updated['registrations'][1002]['amount_paid'])
         updated['registrations'][1002]['amount_owed'] = str(
@@ -3063,7 +3065,7 @@ class TestEventBackend(BackendTest):
             reg_ids = self.event.list_registrations(self.key, event_id=1)
             expectation = {
                 1: decimal.Decimal("573.99"),
-                2: decimal.Decimal("589.49"),
+                2: decimal.Decimal("466.49"),
                 3: decimal.Decimal("584.49"),
                 4: decimal.Decimal("431.99"),
                 5: decimal.Decimal("584.49"),
@@ -3072,7 +3074,7 @@ class TestEventBackend(BackendTest):
             self.assertEqual(expectation, self.event.calculate_fees(self.key, reg_ids))
         reg_id = 2
         reg = self.event.get_registration(self.key, reg_id)
-        self.assertEqual(reg['amount_owed'], decimal.Decimal("589.49"))
+        self.assertEqual(reg['amount_owed'], decimal.Decimal("466.49"))
         self.assertEqual(
             const.RegistrationPartStati.waitlist, reg['parts'][1]['status'])
         self.assertEqual(

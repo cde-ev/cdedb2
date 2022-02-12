@@ -873,7 +873,6 @@ class EventRegistrationBackend(EventBaseBackend):
         :param is_member: If this is None, retrieve membership status here.
         """
         fee = decimal.Decimal(0)
-        rps = const.RegistrationPartStati
 
         if event is None and event_id is None:
             raise ValueError("No input given.")
@@ -884,13 +883,13 @@ class EventRegistrationBackend(EventBaseBackend):
         assert event is not None
         for part_id, rpart in reg['parts'].items():
             part = event['parts'][part_id]
-            if rps(rpart['status']).is_involved():
+            if rpart['status'].has_to_pay():
                 fee += part['fee']
 
         for fee_modifier in event['fee_modifiers'].values():
             field = event['fields'][fee_modifier['field_id']]
-            status = rps(reg['parts'][fee_modifier['part_id']]['status'])
-            if status.is_involved():
+            status = reg['parts'][fee_modifier['part_id']]['status']
+            if status.has_to_pay():
                 if reg['fields'].get(field['field_name']):
                     fee += fee_modifier['amount']
 

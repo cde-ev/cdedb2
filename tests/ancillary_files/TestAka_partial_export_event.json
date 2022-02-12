@@ -241,7 +241,7 @@
                 "transportation": "pedes"
             },
             "amount_paid": "0.00",
-            "amount_owed": "589.49",
+            "amount_owed": "466.49",
             "parts": {
                 "1": {
                     "status": 3,
