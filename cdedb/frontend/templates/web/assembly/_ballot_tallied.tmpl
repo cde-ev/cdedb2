@@ -74,10 +74,12 @@
         {% if ballot['use_bar'] %}
             <tr
                 {% for level in result['counts'] %}
-                    {# it is possible that a candidate is equal to bar. This candidate will be in the preferred section.
-                       So, if bar is a preferred and not the only preferred, we must not print an upper boarder.
-                       This has to check nonetherless for bar not in level[preferred] and not in level[looser], think
-                       of a vote without rejected.#}
+                    {# It is possible that a candidate is equal to the bar. If this is the case, the candidate
+                       needs to be printed above the bar, in the 'preferred' section. Therefore, if the bar is
+                       in level['preferred'] and there are also other candidates in level['prefered'], we do not
+                       print an upper border.
+                       The same is true if there are no candidates below the bar, so we apply the same logic to
+                       'rejected'. #}
                     {% if ASSEMBLY_BAR_SHORTNAME in level['preferred'] and level['preferred']|length != 1
                        or ASSEMBLY_BAR_SHORTNAME in level['rejected'] and level['rejected']|length != 1 %}
                         class="no-upper-border"
