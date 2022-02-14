@@ -63,7 +63,7 @@ GVC_DESCRIPTIONS = {
     '152': 'Gutschrift Dauerauftrag',
     '153': 'Gutschrift Lohn/Gehalt/Rente',
     '159': 'Überweisung Retoure',
-    '166': 'Gutschriftt',
+    '166': 'Gutschrift',
     '169': 'Gutschrift Spende',
     '171': 'Einzug Basislastschrift',
     '191': 'Sammelüberweisung',

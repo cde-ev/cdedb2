@@ -5,7 +5,10 @@
 {% endblock %}
 {% block static_notifications %}
     {% call util.notification('error') %}
-        {% if error.code == 403 %}
+        {% if error.code == 400 %}
+            {% trans %}Inconsistent request.{% endtrans %}
+            {{ gettext(error.description) }}
+        {% elif error.code == 403 %}
             {% trans %}You do not have sufficient permissions to access this page:{% endtrans %}
             {{ gettext(error.description) }}
         {% elif error.code == 404 %}

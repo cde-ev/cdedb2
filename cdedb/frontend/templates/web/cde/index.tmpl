@@ -58,7 +58,7 @@
                                 You are already a part of the Initiative 25+.
                             {% endtrans %}
                         </strong>
-                        {% trans link=util.href(cdedblink("cde/lastschrift_show", {'persona_id': user.persona_id}),
+                        {% trans link=util.href(cdedblink("core/my_lastschrift"),
                                  gettext("existing Direct Debit Authorization"), icon='euro-sign')-%}
                             View Your {{ link }}.
                         {% endtrans %}

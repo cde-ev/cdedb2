@@ -80,7 +80,9 @@ CDEDB_PATHS = werkzeug.routing.Map((
                 rule("/events", methods=_GET,
                      endpoint="show_user_events_self"),
                 rule("/mailinglists", methods=_GET,
-                     endpoint="show_user_mailinglists_self"),)),
+                     endpoint="show_user_mailinglists_self"),
+                rule("/lastschrift", methods=_GET,
+                     endpoint="my_lastschrift"),)),
             sub('/self/username', (
                 rule("/change", methods=_GET,
                      endpoint="change_username_form"),
@@ -633,6 +635,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
         sub('/assembly', (
             rule("/", methods=_GET,
                  endpoint="index"),
+            rule("/verify_result.pyz", methods=_GET,
+                 endpoint="download_verify_result_script"),
             sub('/search', (
                 rule("/user", methods=_GET,
                      endpoint="user_search"),

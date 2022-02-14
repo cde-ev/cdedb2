@@ -1,4 +1,22 @@
 Hallo {{ persona['display_name'] }},
+
+
+== Erhöhung des Mitgliedsbeitrags ==
+
+Auf der Mitgliederversammlung 2021 wurde beschlossen, den
+Mitgliedsbeitrag von aktuell {{ 2.5|money }} auf {{ 4|money }} im Halbjahr zu erhöhen.
+Diese Erhöhung tritt aber erst zum 1. Juli 2022 in Kraft! An dieser
+Stelle soll nur frühzeitig auf die Erhöhung hingewiesen werden.
+
+
+== Flexibilisierung von Lastschriften ==
+
+Im Rahmen der Erhöhung des Mitgliedsbeitrags wird auch das
+aktuelle Lastschriftensystem (bisher Initiative 25+) überarbeitet.
+In Zukunft soll insbesondere jeder Betrag, der oberhalb von
+{{ 10|money }} im Jahr liegt als Lastschrifteinzug möglich sein.
+Die entsprechende Möglichkeit wird in den nächsten Monaten
+in die Datenbank integriert.
 {% if (persona['balance'] < fee and not persona['trial_member']) and not lastschrift %}
 
 
@@ -39,27 +57,34 @@ Deine Mitgliedschaft endet dann in wenigen Wochen automatisch. Solltest
 du später wieder Interesse am CdE haben, kannst du jederzeit wieder
 Mitglied werden.
 {% endif %}
-{% if lastschrift and lastschrift['id'] in open_lastschrift %}
+{% if lastschrift %}
 
 
 == Mitgliedsbeitrag per Lastschrift ==
 
 Wir danken Dir, dass Du uns erlaubt hast, jährlich per Lastschrift
-von Deinem Konto den jährlichen Mitgliedsbeitrag und eine Spende
-einzuziehen. Das Lastschriftmandat mit der Mandatsreferenz
+von Deinem Konto den jährlichen Mitgliedsbeitrag von {{ (2*fee)|money }}
+und eine Spende einzuziehen. Das Lastschriftmandat mit der Mandatsreferenz
 {{ lastschrift['reference'] }} kannst Du unter
-{{ cdedblink("cde/lastschrift_show", {'persona_id': persona['id']}) }}
-einsehen. Sollte sich Deine Bankverbindung geändert haben,
-so informiere uns bitte.
+{{ cdedblink("core/my_lastschrift") }}
+einsehen. Sollte sich Deine Kontoverbindung inzwischen
+geändert haben, informiere uns bitte unter <{{ MANAGEMENT_ADDRESS }}>.
+{% if lastschrift['id'] in open_lastschrift %}
 
 In wenigen Tagen werden wir nun den vereinbarten Betrag
 von Deinem Konto abbuchen. Den genauen Termin werden wir Dir noch
-gesondert mitteilen. Sollte sich Deine Kontoverbindung inzwischen
-geändert haben, informiere uns bitte unter <{{ MANAGEMENT_ADDRESS }}>.
+gesondert mitteilen.
 
-Bitte melde Dich auch bei uns, wenn Du diesen Betrag lieber von Deinem
+Bitte melde Dich bei uns, wenn Du diesen Betrag lieber von Deinem
 CdE-'Guthabenkonto' abgezogen haben möchtest, oder auch, wenn Du dieses
-Jahr mit dem Lastschrifteinzug pausieren möchtest.
+Jahr mit dem Lastschrifteinzug pausieren oder ihn vollständig
+widerrufen möchtest.
+{% else %}
+
+Wir informieren Dich in einer gesonderten E-Mail vor jeder
+Lastschrift. Wenn Du Deine Lastschrift widerrufen möchtest, melde
+Dich bitte bei uns.
+{% endif %}
 {% endif %}
 {% if addresscheck %}
 
@@ -74,17 +99,17 @@ Adresse ist:
 
 Falls diese nicht mehr aktuell ist, so kannst Du Dich in die
 CdE-Datenbank unter der Adresse
-{{ cdedblink("core/index") }}
+{{ cdedblink('core/change_user') }}
 einloggen und die Adresse korrigieren.
 
 Der exPuls erscheint sowohl gedruckt als auch online.
-Die gedruckte Ausgabe kannst du in der Datenbank unter
+Die gedruckte Ausgabe kannst Du in der Datenbank unter
 {{ cdedblink('core/change_user') }}
 abbestellen.
-Alle Online-Ausgaben findest du im exPuls-Archiv, den Link
+Alle Online-Ausgaben findest Du im exPuls-Archiv, den Link
 zum Archiv findest du in der Datenbank unter
 {{ cdedblink('cde/view_misc') }}
-Über die CdE-Info Mailingliste wirst du über das Erscheinen einer
+Über die CdE-Info Mailingliste wirst Du über das Erscheinen einer
 neuen Online-Ausgabe benachrichtigt.
 {% endif %}
 {% if (persona['balance'] >= fee or persona['trial_member']) and not lastschrift %}
@@ -93,9 +118,12 @@ neuen Online-Ausgabe benachrichtigt.
 == Guthabenstatus ==
 {% if persona['balance'] %}
 
+{#
 Dein momentanes Guthaben beträgt {{ persona['balance']|money }}. Somit
 sind Deine Mitgliedsbeiträge bei der derzeitigen Beitragshöhe
 von {{ fee|money }} noch {{ persona['balance'] // fee }} Halbjahre bezahlt.
+#}
+Dein momentanes Guthaben beträgt {{ persona['balance']|money }}.
 {% else %}
 
 Du bist für dieses Halbjahr Probemitglied im CdE. Du bekommst in
@@ -127,20 +155,6 @@ Mitgliedsbeitrag und eine Spende einzuziehen (Initiative 25+). Um
 Dich hieran zu beteiligen, rufe bitte
 {{ cdedblink("cde/i25p_index") }}
 auf und folge den dort angegebenen Hinweisen.
-{% endif %}
-{% if lastschrift and not lastschrift['id'] in open_lastschrift %}
-
-
-== Lastschriftmandat ==
-
-Wir danken Dir, dass Du uns erlaubt hast, jährlich per Lastschrift
-von Deinem Konto den jährlichen Mitgliedsbeitrag und eine Spende
-einzuziehen. Wir informieren Dich in einer gesonderten E-Mail vor
-jeder Lastschrift. Das Lastschriftmandat mit der Mandatsreferenz
-{{ lastschrift['reference'] }} kannst Du unter
-{{ cdedblink("core/index") }}
-widerrufen. Sollte sich Deine Bankverbindung geändert haben,
-so informiere uns bitte.
 {% endif %}
 
 

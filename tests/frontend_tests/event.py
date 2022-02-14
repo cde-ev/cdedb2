@@ -62,7 +62,7 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("CdE-Party 2050", div='organized-events')
         self.assertNonPresence("CdE-Party 2050", div='current-events')
 
-    @as_users("annika", "emilia", "martin", "vera", "werner")
+    @as_users("annika", "emilia", "martin", "vera", "werner", "katarina")
     def test_sidebar(self) -> None:
         self.traverse({'description': 'Veranstaltungen'})
         everyone = {"Veranstaltungen", "Übersicht"}
@@ -80,6 +80,10 @@ class TestEventFrontend(FrontendTest):
         elif self.user_in('annika'):
             ins = everyone | admin | {"Nutzer verwalten", "Archivsuche"}
             out = set()
+        # auditors
+        elif self.user_in('katarina'):
+            ins = everyone | {"Log"}
+            out = admin - {"Log"}
         else:
             self.fail("Please adjust users for this tests.")
 
@@ -349,7 +353,7 @@ class TestEventFrontend(FrontendTest):
         f = self.response.forms["createparticipantlistform"]
         self.submit(f)
 
-    @as_users("annika", "emilia", "garcia", "martin", "vera", "werner")
+    @as_users("annika", "emilia", "garcia", "martin", "vera", "werner", "katarina")
     def test_sidebar_one_event(self) -> None:
         self.traverse({'description': 'Veranstaltungen'},
                       {'description': 'Große Testakademie 2222'})
@@ -366,9 +370,13 @@ class TestEventFrontend(FrontendTest):
         # TODO this could be more expanded (event without courses, distinguish
         #  between registered and participant, ...
         # not registered, not event admin
-        if self.user_in('martin', 'vera', 'werner'):
+        if self.user_in('martin', 'vera', 'werner', 'katarina'):
             ins = everyone | not_registered
             out = registered | registered_or_orga | orga
+        # same, but auditor
+        elif self.user_in('katarina'):
+            ins = everyone | not_registered | {"Log"}
+            out = registered | registered_or_orga | orga - {"Log"}
         # registered
         elif self.user_in('emilia'):
             ins = everyone | registered | registered_or_orga
@@ -1363,12 +1371,15 @@ etc;anything else""", f['entries_2'].value)
         if self.user_in('charly'):
             self.assertNonPresence(surcharge)
             self.assertNonPresence(membership_fee)
+            self.assertPresence("13.05.1984")
         elif self.user_in('daniel'):
             self.assertPresence(surcharge, div="nonmember-surcharge")
             self.assertPresence(membership_fee, div="nonmember-surcharge")
+            self.assertPresence("19.02.1963")
         elif self.user_in('rowena'):
             self.assertPresence(surcharge, div="nonmember-surcharge")
             self.assertNonPresence(membership_fee)
+            self.assertPresence("26.08.932")
         else:
             self.fail("Please reconfigure the users for the above checks.")
 

@@ -3,10 +3,10 @@
 """
 This script tries to verify successful XSS mitigation, i.e. HTML escaping.
 
-It has some requirements, most importantly the storage directory to be
-existing and the environment variable CDEDB_TEST to be truthy. Thus, it is not
-recommended to run it directly, but invoke it via `make xss-check` or
-`bin/check.py --xss-check`. See also the documentation.
+It requires a properly populated database and a storage dir to be set up.
+Their name / directory can be passed via the configpath argument.
+To run this inside the regular test suite, use `make xss-check` or
+`bin/check.py --parts xss`. See also the documentation.
 
 This script logs in as Anton (our testing meta admin account) and traverses all
 links and forms it can find. In every response it checks for the magic string
@@ -26,12 +26,10 @@ import os
 import pathlib
 import queue
 import sys
-import tempfile
 import time
-from typing import TYPE_CHECKING, Collection, List, NamedTuple, Optional, Set
+from typing import TYPE_CHECKING, Collection, List, NamedTuple, Optional, Set, Tuple
 
 import webtest
-from bin.test_runner_helpers import check_test_setup
 
 from cdedb.frontend.application import Application
 
@@ -46,43 +44,28 @@ visited_urls: Set[str] = set()
 posted_urls: Set[str] = set()
 
 
-def setup(dbname: str, storage_dir: str) -> webtest.TestApp:
-    """Prepare the application."""
-    check_test_setup()
-    with tempfile.NamedTemporaryFile("w", suffix=".py") as f:
-        f.write(f"import pathlib\n"
-                f"STORAGE_DIR = pathlib.Path('{storage_dir}')\n"
-                f"CDB_DATABASE_NAME = '{dbname}'")
-        f.flush()
-        os.environ["CDEDB_CONFIGPATH"] = f.name
-        return Application()
-
-
-def main() -> int:
+def work(
+    configpath: pathlib.Path,
+    outdir: pathlib.Path,
+    *,
+    verbose: bool = False,
+    payload: str = "<script>abcdef</script>",
+    secondary_payload: Tuple[str, ...] = ("&amp;lt;", "&amp;gt;")
+) -> int:
     """Iterate over all visible page links and check them for the xss payload."""
-    parser = argparse.ArgumentParser(
-        description="Insert XSS payload into database, then traverse all sites to make"
-                    " sure it is escaped properly.")
+    # Do some sanity checks to avoide spamming an offline or production vm.
+    if pathlib.Path("/OFFLINEVM").exists():
+        raise RuntimeError("Cannot run this script in an Offline-VM.")
+    if pathlib.Path("/PRODUCTIONVM").exists():
+        raise RuntimeError("Cannot run this scirpt in Production-VM.")
 
-    general = parser.add_argument_group("General options")
-    general.add_argument("--dbname", "-d")
-    general.add_argument("--storage-dir", "-s", default="/tmp/cdedb-store")
-    general.add_argument("--outdir", "-o", default="./out")
+    os.environ["CDEDB_CONFIGPATH"] = str(configpath)
 
-    config = parser.add_argument_group("Ccnfiguration")
-    config.add_argument("--verbose", "-v", action="store_true")
-    config.add_argument("--payload", "-p", default="<script>abcdef</script>")
-    config.add_argument("--secondary", "-sp", nargs='*',
-                        default=["&amp;lt;", "&amp;gt;"])
-
-    args = parser.parse_args()
-
-    app = setup(args.dbname, args.storage_dir)
+    app = Application()
     wt_app = webtest.TestApp(app, extra_environ={
         'REMOTE_ADDR': "127.0.0.0",
         'SERVER_PROTOCOL': "HTTP/1.1",
         'wsgi.url_scheme': 'https'})
-    outdir = pathlib.Path(args.outdir)
     if not outdir.exists():
         print(f"Target directory {outdir!r} doesn't exist."
               f" Nothing will be written to file.")
@@ -114,8 +97,8 @@ def main() -> int:
             response_data = response_queue.get(False)
         except queue.Empty:
             break
-        e, q = check(response_data, outdir=outdir, verbose=args.verbose,
-                     payload=args.payload, secondary_payloads=args.secondary)
+        e, q = check(response_data, outdir=outdir, verbose=verbose,
+                     payload=payload, secondary_payloads=secondary_payload)
         errors.extend(e)
         for rd in q:
             response_queue.put(rd)
@@ -253,5 +236,29 @@ def check(response_data: ResponseData, *, payload: str,
 
 
 if __name__ == "__main__":
-    ret = main()
+    parser = argparse.ArgumentParser(
+        description="Insert XSS payload into database, then traverse all sites to make"
+                    " sure it is escaped properly.")
+
+    general = parser.add_argument_group("General options")
+    general.add_argument("--configpath", "-c",
+                         help="The config path to setup the application.")
+    general.add_argument(
+        "--outdir", "-o", default="./out",
+        help="The directory where output is saved. default: %(default)s")
+
+    config = parser.add_argument_group("Configuration")
+    config.add_argument("--verbose", "-v", action="store_true")
+    config.add_argument(
+        "--payload", "-p", default="<script>abcdef</script>",
+        help="The xss payload to be injected. default: %(default)s")
+    config.add_argument(
+        "--secondary", "-sp", nargs='*', default=["&amp;lt;", "&amp;gt;"],
+        help="Pre-inserted strings which must not be shown. default: %(default)s")
+
+    args = parser.parse_args()
+
+    ret = work(
+        pathlib.Path(args.configpath), pathlib.Path(args.outdir), verbose=args.verbose,
+        payload=args.payload, secondary_payload=args.secondary)
     sys.exit(ret)

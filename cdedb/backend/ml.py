@@ -475,7 +475,7 @@ class MlBackend(AbstractBackend):
                             address: str) -> DefaultReturnCode:
         """Add whitelist entry for a mailinglist."""
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
-        address = affirm(str, address)
+        address = affirm(vtypes.Email, address)
 
         if not self.may_manage(rs, mailinglist_id):
             raise PrivilegeError(n_("Not privileged."))
@@ -497,6 +497,7 @@ class MlBackend(AbstractBackend):
                                address: str) -> DefaultReturnCode:
         """Remove whitelist entry from a mailinglist."""
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
+        # Being broad here does not hurt and is defensive
         address = affirm(str, address)
 
         if not self.may_manage(rs, mailinglist_id):
@@ -628,7 +629,16 @@ class MlBackend(AbstractBackend):
         # address can either be free or taken by the current mailinglist
         if (address in addresses.values()
                 and address != addresses.get(data.get('id', 0))):
-            raise ValueError(n_("Non-unique mailinglist name"))
+            raise ValueError(n_("Non-unique mailinglist address"))
+        # address is not allowed to clash with magic mailman lists
+        subaddresses = ['admin', 'bounces', 'confirm', 'join', 'leave', 'owner',
+                        'request', 'subscribe', 'unsubscribe']
+        subaddresses = [f"-{x}@" for x in subaddresses]
+        for sub in subaddresses:
+            if sub in address:
+                raise ValueError(
+                    n_("Mailinglist address may not contain \"%(subaddress)s\"."),
+                    {'subaddress': sub})
         return address
 
     @access("ml")
