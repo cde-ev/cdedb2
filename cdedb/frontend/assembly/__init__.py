@@ -46,7 +46,7 @@ from cdedb.validationtypes import CdedbID, Email
 
 #: Magic value to signal abstention during _classical_ voting.
 #: This can not occur as a shortname since it contains forbidden characters.
-MAGIC_ABSTAIN = "special: abstain"
+MAGIC_ABSTAIN = Candidate("special: abstain")
 
 
 class AssemblyFrontend(AbstractUserFrontend):
@@ -1137,24 +1137,21 @@ class AssemblyFrontend(AbstractUserFrontend):
             if classical:
                 # in classical votes, there are at most two pairs of candidates, the
                 # first we voted for and the optional second we don't voted for
-                vote_tuples = [(vote[0],) for vote in vote_tuples]
+                # if there is only one pair of candidates, we abstained
+                vote_tuples = [((MAGIC_ABSTAIN,),) if len(vote) == 1 else (vote[0],)
+                               for vote in vote_tuples]
             # take care that all candidates of the same level of each vote are sorted.
             # otherwise, votes which are semantically the same are counted as different
             vote_lists = [
                 [xsorted(candidates) for candidates in vote] for vote in vote_tuples]
             vote_strings = as_vote_strings(vote_lists)
-            # those are all unique votes we have
-            vote_sets = set(vote_strings)
-            return {
-                vote: sum(1 for v in vote_strings if v == vote) for vote in vote_sets}
+            return {vote: sum(1 for v in vote_strings if v == vote)
+                    for vote in set(vote_strings)}
 
         # all vote string submitted in this ballot
         votes = [vote["vote"] for vote in result["votes"]]
         # calculate the occurrence of each vote
-        if ballot['votes']:
-            vote_counts = count_equal_votes(votes, classical=True)
-        else:
-            vote_counts = count_equal_votes(votes, classical=False)
+        vote_counts = count_equal_votes(votes, classical=bool(ballot['votes']))
 
         # calculate the hash of the result file
         result_bytes = self.assemblyproxy.get_ballot_result(rs, ballot['id'])

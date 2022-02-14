@@ -1482,7 +1482,7 @@ class AssemblyBackend(AbstractBackend):
             if ballot['is_tallied']:
                 return None
             elif now() < ballot['vote_begin']:
-                raise ValueError(n_("Ballot has not been voted."))
+                raise ValueError(n_("This ballot has not yet begun."))
             elif self.is_ballot_voting(rs, ballot_id):
                 raise ValueError(n_("Voting is still going on."))
 

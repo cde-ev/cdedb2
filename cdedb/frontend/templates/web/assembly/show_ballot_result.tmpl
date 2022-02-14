@@ -178,8 +178,9 @@
                 {% trans %}You did not vote.{% endtrans %}
         {% elif own_vote %}
             {# If there are no > in a preferential vote, you abstained #}
-            {% if own_vote == MAGIC_ABSTAIN or (own_vote and ">" not in votestring) %}
+            {% if own_vote == MAGIC_ABSTAIN or (preferential and ">" not in own_vote) %}
                 <p>{% trans %}You abstained.{% endtrans %}</p>
+            {# This is only for classical votes #}
             {% elif own_vote == ASSEMBLY_BAR_SHORTNAME %}
                 <p>{% trans %}You voted against all candidates.{% endtrans %}</p>
             {% else %}

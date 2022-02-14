@@ -156,7 +156,7 @@
                         </td>
                         <td class="text-right">
                             {% for level in result['counts'] %}
-                                {% if candidate_shortname in level[''] and first_candidate %}
+                                {% if candidate_shortname in level['preferred'] and first_candidate %}
                                     {{ level['contra_votes'] }}
                                 {% endif %}
                             {% endfor %}

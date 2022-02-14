@@ -4185,12 +4185,12 @@ def _vote(
     # votes without '>' are valid abstentions
     if ballot['votes'] and '>' in val:
         vote_tuple = as_vote_tuple(val)
-        voted = vote_tuple[0]
         if len(vote_tuple) > 2:
             errs.append(ValueError(argname, n_("Too many levels.")))
+        voted = vote_tuple[0]
         if len(voted) > ballot['votes']:
             errs.append(ValueError(argname, n_("Too many votes.")))
-        if ASSEMBLY_BAR_SHORTNAME in vote_tuple and voted != [ASSEMBLY_BAR_SHORTNAME]:
+        if ASSEMBLY_BAR_SHORTNAME in voted and voted != (ASSEMBLY_BAR_SHORTNAME, ):
             errs.append(ValueError(argname, n_("Misplaced bar.")))
         if errs:
             raise errs
