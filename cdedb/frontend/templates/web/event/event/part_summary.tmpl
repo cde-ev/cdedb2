@@ -23,8 +23,12 @@
 
 {% block content %}
     <div class="p button-par">
+        {% if not has_registrations %}
+            {{ util.href(cdedblink('event/add_part_form'), gettext("Add Part"),
+                                   icon='plus', aclass='btn btn-success btn-sm') }}
+        {% endif %}
         {{ util.href(cdedblink('event/part_group_summary'), gettext("Part Groups"), icon='bullseye',
-                     aclass='btn btn-warning btn-sm') }}
+                     aclass='btn btn-info btn-sm') }}
     </div>
     <p class="text-warning">{{ util.make_icon('exclamation-triangle') }}
         {% trans %}
@@ -144,9 +148,4 @@
             </div>
         </div>
     {% endfor %}
-
-    {% if not has_registrations %}
-        {{ util.href(cdedblink('event/add_part_form'), gettext("Add Part"),
-                               icon='plus', aclass='btn btn-success pull-right') }}
-    {% endif %}
 {% endblock %}

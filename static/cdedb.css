@@ -1082,6 +1082,9 @@ span.color-legend {
 .button-par .btn {
     margin-bottom: 5px;
 }
+.btn-wrap {
+    white-space: normal;
+}
 .clickable {
     cursor: pointer;
 }

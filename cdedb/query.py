@@ -319,9 +319,27 @@ _QUERY_SPECS = {
             "family_name": QuerySpecEntry("str", n_("Family Name")),
             "username": QuerySpecEntry("str", n_("E-Mail")),
             "display_name": QuerySpecEntry("str", n_("Known as (Forename)")),
+            "is_active": QuerySpecEntry("bool", n_("Active Account")),
+            "notes": QuerySpecEntry("str", n_("Admin-Notes")),
+            "fulltext": QuerySpecEntry("str", n_("Fulltext")),
+        },
+    QueryScope.core_user:
+        {
+            "personas.id": QuerySpecEntry("id", n_("ID")),
+            "given_names": QuerySpecEntry("str", n_("Given Names")),
+            "family_name": QuerySpecEntry("str", n_("Family Name")),
+            "username": QuerySpecEntry("str", n_("E-Mail")),
+            "display_name": QuerySpecEntry("str", n_("Known as (Forename)")),
             "birth_name": QuerySpecEntry("str", n_("Birth Name")),
             "gender": QuerySpecEntry("int", n_("Gender")),
             "birthday": QuerySpecEntry("date", n_("Birthday")),
+            "telephone": QuerySpecEntry("str", n_("Phone")),
+            "mobile": QuerySpecEntry("str", n_("Mobile Phone")),
+            "address": QuerySpecEntry("str", n_("Address")),
+            "address_supplement": QuerySpecEntry("str", n_("Address Supplement")),
+            "postal_code": QuerySpecEntry("str", n_("ZIP")),
+            "location": QuerySpecEntry("str", n_("City")),
+            "country": QuerySpecEntry("str", n_("Country")),
             "is_active": QuerySpecEntry("bool", n_("Active Account")),
             "is_ml_realm": QuerySpecEntry("bool", n_("Mailinglists"), n_("Realm")),
             "is_event_realm": QuerySpecEntry("bool", n_("Events"), n_("Realm")),
@@ -334,6 +352,8 @@ _QUERY_SPECS = {
                 for k in ADMIN_KEYS
             },
             ",".join(ADMIN_KEYS): QuerySpecEntry("bool", n_("Any"), n_("Admin")),
+            "pevent_id": QuerySpecEntry("id", n_("Past Event")),
+            "pcourse_id": QuerySpecEntry("id", n_("Past Course")),
             "notes": QuerySpecEntry("str", n_("Admin-Notes")),
             "fulltext": QuerySpecEntry("str", n_("Fulltext")),
         },
@@ -449,14 +469,6 @@ _QUERY_SPECS = {
             "given_names": QuerySpecEntry("str", n_("Given Names")),
             "family_name": QuerySpecEntry("str", n_("Family Name")),
             "display_name": QuerySpecEntry("str", n_("Known as (Forename)")),
-            "birth_name": QuerySpecEntry("str", n_("Birth Name")),
-            "gender": QuerySpecEntry("int", n_("Gender")),
-            "birthday": QuerySpecEntry("date", n_("Birthday")),
-            "is_ml_realm": QuerySpecEntry("bool", n_("Mailinglists"), n_("Realm")),
-            "is_event_realm": QuerySpecEntry("bool", n_("Events"), n_("Realm")),
-            "is_assembly_realm": QuerySpecEntry("bool", n_("Assemblies"), n_("Realm")),
-            "is_cde_realm": QuerySpecEntry("bool", n_("cde_realm"), n_("Realm")),
-            "pevent_id": QuerySpecEntry("id", n_("Past Event")),
             "notes": QuerySpecEntry("str", n_("Admin-Notes")),
         },
     QueryScope.archived_core_user:
@@ -465,10 +477,15 @@ _QUERY_SPECS = {
             "given_names": QuerySpecEntry("str", n_("Given Names")),
             "family_name": QuerySpecEntry("str", n_("Family Name")),
             "display_name": QuerySpecEntry("str", n_("Known as (Forename)")),
+            "birth_name": QuerySpecEntry("str", n_("Birth Name")),
+            "gender": QuerySpecEntry("int", n_("Gender")),
+            "birthday": QuerySpecEntry("date", n_("Birthday")),
             "is_ml_realm": QuerySpecEntry("bool", n_("Mailinglists"), n_("Realm")),
             "is_event_realm": QuerySpecEntry("bool", n_("Events"), n_("Realm")),
             "is_assembly_realm": QuerySpecEntry("bool", n_("Assemblies"), n_("Realm")),
             "is_cde_realm": QuerySpecEntry("bool", n_("cde_realm"), n_("Realm")),
+            "pevent_id": QuerySpecEntry("id", n_("Past Event")),
+            "pcourse_id": QuerySpecEntry("id", n_("Past Course")),
             "notes": QuerySpecEntry("str", n_("Admin-Notes")),
         },
     QueryScope.archived_past_event_user:
@@ -478,6 +495,7 @@ _QUERY_SPECS = {
             "family_name": QuerySpecEntry("str", n_("Family Name")),
             "display_name": QuerySpecEntry("str", n_("Known as (Forename)")),
             "birth_name": QuerySpecEntry("str", n_("Birth Name")),
+            "gender": QuerySpecEntry("int", n_("Gender")),
             "birthday": QuerySpecEntry("date", n_("Birthday")),
             "is_cde_realm": QuerySpecEntry("bool", n_("cde_realm"), n_("Realm")),
             "pevent_id": QuerySpecEntry("id", n_("Past Event")),
@@ -526,7 +544,6 @@ _QUERY_SPECS = {
                 "date", n_("Cutoff date"), n_("Past Event")),
         },
 }
-_QUERY_SPECS[QueryScope.core_user] = _QUERY_SPECS[QueryScope.persona]
 _QUERY_SPECS[QueryScope.ml_user] = _QUERY_SPECS[QueryScope.persona]
 _QUERY_SPECS[QueryScope.assembly_user] = _QUERY_SPECS[QueryScope.persona]
 
@@ -812,7 +829,7 @@ def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = N
 
     def get_part_spec(part: CdEDBObject) -> QuerySpec:
         part_id = part['id']
-        prefix = "" if len(event['parts']) <= 1 else f"{part['shortname']}: "
+        prefix = "" if len(event['parts']) <= 1 else part['shortname']
         return {
             # Choices for the status will be manually set.
             f"part{part_id}.status": QuerySpecEntry(
@@ -842,7 +859,7 @@ def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = N
 
     def get_track_spec(track: CdEDBObject) -> QuerySpec:
         track_id = track['id']
-        prefix = "" if len(event['tracks']) <= 1 else f"{track['shortname']}: "
+        prefix = "" if len(event['tracks']) <= 1 else track['shortname']
         return {
             f"track{track_id}.is_course_instructor": QuerySpecEntry(
                 "bool", n_("instructs their course"), prefix),
@@ -886,7 +903,7 @@ def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = N
 
     def get_course_choice_spec(track: CdEDBObject) -> QuerySpec:
         track_id = track['id']
-        prefix = "" if len(event['tracks']) <= 1 else f"{track['shortname']}: "
+        prefix = "" if len(event['tracks']) <= 1 else track['shortname']
         return {
             f"course_choices{track_id}.rank{i}": QuerySpecEntry(
                 "id", n_("{rank}. Choice"), prefix, {'rank': str(i + 1)},
@@ -1000,7 +1017,7 @@ def make_course_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None,
 
     def get_track_spec(track: CdEDBObject) -> QuerySpec:
         track_id = track['id']
-        prefix = "" if len(event['tracks']) <= 1 else f"{track['shortname']}: "
+        prefix = "" if len(event['tracks']) <= 1 else track['shortname']
         return {
             f"track{track_id}.is_offered": QuerySpecEntry(
                 "bool", n_("is offered"), prefix),
@@ -1014,7 +1031,7 @@ def make_course_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None,
 
     def get_course_choice_spec(track: CdEDBObject) -> QuerySpec:
         track_id = track['id']
-        prefix = "" if len(event['tracks']) <= 1 else f"{track['shortname']}: "
+        prefix = "" if len(event['tracks']) <= 1 else track['shortname']
         return {
             f"track{track_id}.num_choices{i}": QuerySpecEntry(
                 "int", n_("{rank}. choices"), prefix, {'rank': str(i + 1)})
@@ -1116,7 +1133,7 @@ def make_lodgement_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None
 
     def get_part_spec(part: CdEDBObject) -> QuerySpec:
         part_id = part['id']
-        prefix = "" if len(event['parts']) <= 1 else f"{part['shortname']}: "
+        prefix = "" if len(event['parts']) <= 1 else part['shortname']
         return {
             f"part{part_id}.regular_inhabitants": QuerySpecEntry(
                 "int", n_("Regular Inhabitants"), prefix),

@@ -151,8 +151,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             merge_dicts(rs.values, registration['fields'])
         else:
             if event_id not in rs.user.orga and not self.is_admin(rs):
-                raise werkzeug.exceptions.Forbidden(
-                    n_("Must be Orga to use preview."))
+                raise werkzeug.exceptions.Forbidden(n_("Must be Orga to use preview."))
             if not rs.ambience['event']['use_additional_questionnaire']:
                 rs.notify("info", n_("Questionnaire is not enabled yet."))
         add_questionnaire = unwrap(self.eventproxy.get_questionnaire(

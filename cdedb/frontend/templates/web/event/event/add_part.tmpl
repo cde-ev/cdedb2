@@ -34,7 +34,7 @@
                                                link=util.href(docurl("Handbuch_Orga_Warteliste"),
                                                               gettext("Waitlist")))|s
                                   ) }}
-        {{ util.input_submit(label=gettext("Save")) }}
+        {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("event/part_summary")) }}
     </form>
 
 {% endblock %}

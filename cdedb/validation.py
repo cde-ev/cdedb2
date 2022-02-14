@@ -987,7 +987,6 @@ def _email(
     full standard is horrendous. Also we normalize emails to lower case.
     """
     val = _printable_ascii(val, argname, **kwargs)
-    # TODO why is this necessary
     # strip address and normalize to lower case
     val = val.strip().lower()
     if not re.search(r'^[a-z0-9._+-]+@[a-z0-9.-]+\.[a-z]{2,}$', val):

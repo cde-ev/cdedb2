@@ -402,8 +402,8 @@ class TestCron(CronTest):
             'digests_enabled': False,
             'filter_content': True,
             'filter_action': 'reject',
-            # 'pass_extensions': ['pdf'],
-            # 'pass_types': ['multipart', 'text/plain', 'application/pdf'],
+            'pass_extensions': ['pdf'],
+            'pass_types': ['multipart', 'text/plain', 'application/pdf'],
             'convert_html_to_plaintext': True,
             'dmarc_mitigate_action': 'wrap_message',
             'dmarc_mitigate_unconditionally': False,
@@ -411,6 +411,7 @@ class TestCron(CronTest):
             'administrivia': True,
             'member_roster_visibility': 'moderators',
             'advertised': True,
+            'max_num_recipients': 0,
         }
         mm_lists = {
             'zombie': unittest.mock.MagicMock(
@@ -524,7 +525,7 @@ class TestCron(CronTest):
         # Meta update
         expectation = {
             'advertised': True,
-            'default_member_action': 'accept',
+            'default_member_action': 'defer',
             'default_nonmember_action': 'hold',
             'display_name': 'Witz des Tages',
             'info': 'Einer geht noch ...',

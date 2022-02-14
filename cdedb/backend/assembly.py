@@ -610,7 +610,7 @@ class AssemblyBackend(AbstractBackend):
         """
         assembly_id = affirm(vtypes.ID, assembly_id)
         data = self.sql_select(rs, "assembly.presiders", ("assembly_id", "persona_id"),
-                               (assembly_id,), "assembly_id")
+                               (assembly_id,), entity_key="assembly_id")
         return {e["persona_id"] for e in data}
 
     @access("assembly_admin")
@@ -2156,8 +2156,9 @@ class AssemblyBackend(AbstractBackend):
                                    (assembly_id,), entity_key="assembly_id")
         else:
             assert ballot_id is not None
-            data = self.sql_select(rs, "assembly.attachment_ballot_links",
-                                   ("attachment_id",), (ballot_id,), "ballot_id")
+            data = self.sql_select(
+                rs, "assembly.attachment_ballot_links", ("attachment_id",),
+                (ballot_id,), entity_key="ballot_id")
 
         return {unwrap(e) for e in data}
 

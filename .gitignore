@@ -44,6 +44,7 @@ messages.mo
 
 # local ldap config files
 ldap/cdedb-ldap-applied.ldif
+ldap/output/
 
 # virtual environment
 .venv
