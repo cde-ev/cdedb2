@@ -81,7 +81,14 @@ class LDAPsqlBackend(AsyncQueryMixin):
     # TODO more fancy type annotations
     def _to_bytes(self, object: Union[Dict[Any, Any], List[Any], str, int, bytes]
                   ) -> Union[Dict[bytes, Any], List[Any], bytes]:
-        if isinstance(object, dict):
+        """This takes a python data structure and convert all of its entries into bytes.
+
+        This is needed to send the ldap responses over the wire and ensure proper
+        encoding, especially of strings.
+        """
+        if object is None:
+            return b""
+        elif isinstance(object, dict):
             return {self._to_bytes(k): self._to_bytes(v) for k, v in object.items()}
         elif isinstance(object, list):
             return [self._to_bytes(entry) for entry in object]
@@ -290,10 +297,10 @@ class LDAPsqlBackend(AsyncQueryMixin):
             ldap_user = {
                 b"objectClass": ["inetOrgPerson"],
                 b"cn": [f"{user['given_names']} {user['family_name']}"],
-                b"sn": [user['family_name'] or ""],
+                b"sn": [user['family_name']],
                 b"displayName": [self.make_persona_name(user)],
-                b"givenName": [user['given_names'] or ""],
-                b"mail": [user['username'] or ""],
+                b"givenName": [user['given_names']],
+                b"mail": [user['username']],
                 b"uid": [self.user_uid(persona_id)],
                 b"userPassword": [user['password_hash']],
                 #"memberOf": []  # TODO
