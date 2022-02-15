@@ -219,7 +219,7 @@ class LDAPsqlBackend(AsyncQueryMixin):
         return self._is_entry_dn(dn, self.users_dn, "uid")
 
     async def list_users(self) -> List[RDN]:
-        query = "SELECT id FROM core.personas"
+        query = "SELECT id FROM core.personas WHERE NOT is_archived"
         data = self.query_all(self.rs, query, [])
         return [
             RDN(
@@ -242,7 +242,7 @@ class LDAPsqlBackend(AsyncQueryMixin):
 
         query = (
             "SELECT id, username, display_name, given_names, family_name, password_hash"
-            " FROM core.personas WHERE id = ANY(%s)")
+            " FROM core.personas WHERE id = ANY(%s) AND NOT is_archived")
         data = self.query_all(self.rs, query, (dn_to_persona_id.values(),))
         users = {e["id"]: e for e in data}
 
