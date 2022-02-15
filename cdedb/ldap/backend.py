@@ -206,6 +206,7 @@ class LDAPsqlBackend(AsyncQueryMixin):
             if name not in duas:
                 continue
             dua = {
+                # TODO find a better objectClass for duas then 'person'
                 b"objectClass": ["person", "simpleSecurityObject"],
                 b"cn": [self.dua_cn(name)],
                 b"userPassword": [duas[name]]
@@ -282,6 +283,12 @@ class LDAPsqlBackend(AsyncQueryMixin):
         ]
 
     async def get_users(self, dns: List[DN]) -> LDAPObjectMap:
+        """Get the users specified by dn.
+
+        The relevant RFCs are
+        https://datatracker.ietf.org/doc/html/rfc2798 (defining inetOrgPerson)
+        https://datatracker.ietf.org/doc/html/rfc4519 (defining additional attributes)
+        """
         dn_to_persona_id = dict()
         for dn in dns:
             uid = self._dn_value(dn, attribute="uid")
@@ -596,6 +603,8 @@ class LDAPsqlBackend(AsyncQueryMixin):
         for dn, address in dn_to_address.items():
             if address not in mls:
                 continue
+            # mail addresses seem to be valid cns
+            # https://datatracker.ietf.org/doc/html/rfc4512#section-2.3.2
             cn = self.moderator_group_cn(address)
             group = {
                 b"objectClass": ["groupOfUniqueNames"],
@@ -666,10 +675,13 @@ class LDAPsqlBackend(AsyncQueryMixin):
         for dn, address in dn_to_address.items():
             if address not in mls:
                 continue
+            # mail addresses seem to be valid cns
+            # https://datatracker.ietf.org/doc/html/rfc4512#section-2.3.2
+            cn = self.subscriber_group_cn(address)
             group = {
                 b"objectClass": ["groupOfUniqueNames"],
-                b"cn": [self.subscriber_group_cn(address)],
-                b"description": [f"{mls[address]['title']} <{address}>"],
+                b"cn": [cn],
+                b"description": [f"{mls[address]['title']} <{cn}>"],
                 b"uniqueMember": [self.user_dn(e) for e in subscribers[address]]
             }
             ret[dn] = self._to_bytes(group)
