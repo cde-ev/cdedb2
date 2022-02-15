@@ -14,7 +14,6 @@ from ldaptor.protocols.ldap.distinguishedname import (
 from ldaptor.protocols.ldap.ldaperrors import (
     LDAPInvalidCredentials, LDAPNoSuchObject, LDAPUnwillingToPerform,
 )
-from passlib.hash import sha512_crypt
 from twisted.internet.defer import Deferred, fail, succeed
 
 from cdedb.common import unwrap
@@ -210,7 +209,7 @@ class CdEDBBindableEntryMixing(CdEDBBaseLDAPEntry, metaclass=abc.ABCMeta):
         """
         for key in self._user_password_keys:
             for digest in self.get(key, ()):
-                if sha512_crypt.verify(password, digest):
+                if self.backend.verify_password(password, digest):
                     return self
         raise LDAPInvalidCredentials("Invalid Credentials")
 

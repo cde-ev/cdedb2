@@ -10,6 +10,7 @@ from ldaptor.protocols.ldap.distinguishedname import (
     DistinguishedName as DN, LDAPAttributeTypeAndValue as ATV,
     RelativeDistinguishedName as RDN,
 )
+from passlib.hash import sha512_crypt
 
 from cdedb.common import CdEDBObject, unwrap
 from cdedb.config import Config, SecretsConfig
@@ -31,10 +32,10 @@ class LDAPsqlBackend(AsyncQueryMixin):
     """Provide the interface between ldap and database."""
     def __init__(self, pool: Pool) -> None:
         self.conf = Config()
-        secrets = SecretsConfig()
+        self.secrets = SecretsConfig()
         self.connection_pool = connection_pool_factory(
             self.conf["CDB_DATABASE_NAME"], ["cdb_admin"],
-            secrets, self.conf["DB_HOST"], self.conf["DB_PORT"])
+            self.secrets, self.conf["DB_HOST"], self.conf["DB_PORT"])
         self.pool = pool
         self.logger = logging.getLogger(__name__)
         # load the ldap schemas which are supported
@@ -118,6 +119,16 @@ class LDAPsqlBackend(AsyncQueryMixin):
         file = "\n\n\n".join(data)
         return SchemaDescription(file)
 
+    @staticmethod
+    def verify_password(password: str, password_hash: str) -> bool:
+        """Mimic backend.core.base.verify_password"""
+        return sha512_crypt.verify(password, password_hash)
+
+    @staticmethod
+    def encrypt_password(password: str) -> str:
+        """Mimic backend.core.base.encrypt_password"""
+        return sha512_crypt.hash(password)
+
     ###############
     # operational #
     ###############
@@ -167,14 +178,13 @@ class LDAPsqlBackend(AsyncQueryMixin):
         return self._is_entry_dn(dn, self.duas_dn, "cn")
 
     async def list_duas(self) -> List[RDN]:
-        query = "SELECT cn FROM ldap.duas"
-        data = await self.query_all(self.pool, query, [])
+        duas = self.secrets["LDAP_DUA_PW"]
         return [
             RDN(
                 attributeTypesAndValues=[
-                    ATV(attributeType="cn", value=self.dua_cn(e["cn"]))
+                    ATV(attributeType="cn", value=self.dua_cn(cn))
                 ]
-            ) for e in data
+            ) for cn in duas
         ]
 
     async def get_duas(self, dns: List[DN]) -> LDAPObjectMap:
@@ -188,9 +198,8 @@ class LDAPsqlBackend(AsyncQueryMixin):
                 continue
             dn_to_name[dn] = name
 
-        query = "SELECT cn, password_hash FROM ldap.duas WHERE cn = ANY(%s)"
-        data = await self.query_all(self.pool, query, (dn_to_name.values(),))
-        duas = {e["cn"]: e for e in data}
+        data = self.secrets["LDAP_DUA_PW"]
+        duas = {name: self.encrypt_password(pwd) for name, pwd in data.items()}
 
         ret = dict()
         for dn, name in dn_to_name.items():
@@ -199,7 +208,7 @@ class LDAPsqlBackend(AsyncQueryMixin):
             dua = {
                 b"objectClass": ["person", "simpleSecurityObject"],
                 b"cn": [self.dua_cn(name)],
-                b"userPassword": [duas[name]["password_hash"]]
+                b"userPassword": [duas[name]]
             }
             ret[dn] = self._to_bytes(dua)
         return ret
