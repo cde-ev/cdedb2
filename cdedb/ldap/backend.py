@@ -218,6 +218,42 @@ class LDAPsqlBackend(AsyncQueryMixin):
     def is_user_dn(self, dn: DN) -> bool:
         return self._is_entry_dn(dn, self.users_dn, "uid")
 
+    @staticmethod
+    def make_persona_name(persona: CdEDBObject,
+                          only_given_names: bool = False,
+                          only_display_name: bool = False,
+                          given_and_display_names: bool = False,
+                          with_family_name: bool = True,
+                          with_titles: bool = False) -> str:
+        """Mimic the implementation of frontend.common.make_persona_name.
+
+        Since we do not want to have cross-dependencies between the web and ldap code
+        base, we need this small logic duplication.
+        """
+        display_name: str = persona.get('display_name', "")
+        given_names: str = persona['given_names']
+        ret = []
+        if with_titles and persona.get('title'):
+            ret.append(persona['title'])
+        if only_given_names:
+            ret.append(given_names)
+        elif only_display_name:
+            ret.append(display_name)
+        elif given_and_display_names:
+            if not display_name or display_name == given_names:
+                ret.append(given_names)
+            else:
+                ret.append(f"{given_names} ({display_name})")
+        elif display_name and display_name in given_names:
+            ret.append(display_name)
+        else:
+            ret.append(given_names)
+        if with_family_name:
+            ret.append(persona['family_name'])
+        if with_titles and persona.get('name_supplement'):
+            ret.append(persona['name_supplement'])
+        return " ".join(ret)
+
     async def list_users(self) -> List[RDN]:
         query = "SELECT id FROM core.personas WHERE NOT is_archived"
         data = self.query_all(self.rs, query, [])
@@ -251,16 +287,11 @@ class LDAPsqlBackend(AsyncQueryMixin):
             if persona_id not in users:
                 continue
             user = users[persona_id]
-            # mimik the implementation of frontend.common.make_persona_name
-            if user["display_name"] and user["display_name"] in user["given_names"]:
-                display_name = user["display_name"]
-            else:
-                display_name = user["given_names"]
             ldap_user = {
                 b"objectClass": ["inetOrgPerson"],
                 b"cn": [f"{user['given_names']} {user['family_name']}"],
                 b"sn": [user['family_name'] or ""],
-                b"displayName": [f"{display_name} {user['family_name']}"],
+                b"displayName": [self.make_persona_name(user)],
                 b"givenName": [user['given_names'] or ""],
                 b"mail": [user['username'] or ""],
                 b"uid": [self.user_uid(persona_id)],
