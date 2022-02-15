@@ -266,9 +266,9 @@ class CoreBaseBackend(AbstractBackend):
         """
         return self.generic_retrieve_log(
             rs, const.MemberChangeStati, "persona", "core.changelog",
-            codes=stati, offset=offset, length=length, persona_id=persona_id,
-            submitted_by=submitted_by, reviewed_by=reviewed_by,
-            change_note=change_note, time_start=time_start,
+            additional_columns=['automated_change'], codes=stati, offset=offset,
+            length=length, persona_id=persona_id, submitted_by=submitted_by,
+            reviewed_by=reviewed_by, change_note=change_note, time_start=time_start,
             time_stop=time_stop)
 
     def changelog_submit_change(self, rs: RequestState, data: CdEDBObject,
@@ -528,7 +528,7 @@ class CoreBaseBackend(AbstractBackend):
         fields.remove('id')
         fields.append("persona_id AS id")
         fields.extend(("submitted_by", "reviewed_by", "ctime", "generation",
-                       "code", "change_note"))
+                       "code", "change_note", "automated_change"))
         query = "SELECT {fields} FROM core.changelog WHERE {conditions}"
         conditions = ["persona_id = %s"]
         params: List[Any] = [persona_id]
@@ -1382,7 +1382,7 @@ class CoreBaseBackend(AbstractBackend):
             #
             lastschrift = self.sql_select(
                 rs, "cde.lastschrift", ("id", "revoked_at"), (persona_id,),
-                "persona_id")
+                entity_key="persona_id")
             if any(not ls['revoked_at'] for ls in lastschrift):
                 raise ArchiveError(n_("Active lastschrift exists."))
             query = ("UPDATE cde.lastschrift"

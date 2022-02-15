@@ -136,7 +136,8 @@ class TestCdEFrontend(FrontendTest):
                          _calculate_ejection_deadline(
                              persona_data, period_data))
 
-    @as_users("annika", "berta", "charly", "farin", "martin", "vera", "werner")
+    @as_users("annika", "berta", "charly", "farin", "martin", "vera", "werner",
+              "katarina")
     def test_sidebar(self) -> None:
         self.traverse({'description': 'Mitglieder'})
         everyone = {"Mitglieder", "Übersicht"}
@@ -144,33 +145,39 @@ class TestCdEFrontend(FrontendTest):
         member = {"Sonstiges", "Datenschutzerklärung"}
         searchable = {"CdE-Mitglied suchen"}
         cde_admin_or_member = {"Mitglieder-Statistik"}
-        cde_admin = {"Nutzer verwalten", "Archivsuche", "Organisationen verwalten",
-                     "Verg.-Veranstaltungen-Log"}
-        finance_admin = {
-            "Einzugsermächtigungen", "Kontoauszug parsen", "Finanz-Log",
-            "Überweisungen eintragen", "Semesterverwaltung", "CdE-Log"}
+        cde_admin = {"Nutzer verwalten", "Archivsuche", "Organisationen verwalten"}
+        cde_admin_or_auditor = {"Finanz-Log", "CdE-Log", "Verg.-Veranstaltungen-Log"}
+        finance_admin = {"Einzugsermächtigungen", "Kontoauszug parsen",
+                         "Überweisungen eintragen", "Semesterverwaltung"}
 
         # non-members
         if self.user_in('annika', 'werner', 'martin'):
             ins = everyone
-            out = past_event | member | searchable | cde_admin | finance_admin
+            out = (past_event | member | searchable | cde_admin | cde_admin_or_auditor |
+                   finance_admin)
         # searchable member
         elif self.user_in('berta'):
             ins = everyone | past_event | member | cde_admin_or_member | searchable
-            out = cde_admin | finance_admin
+            out = cde_admin | cde_admin_or_auditor | finance_admin
         # not-searchable member
         elif self.user_in('charly'):
             ins = everyone | past_event | member | cde_admin_or_member
-            out = searchable | cde_admin | finance_admin
+            out = searchable | cde_admin | cde_admin_or_auditor | finance_admin
         # cde but not finance admin (vera is no member)
         elif self.user_in('vera'):
-            ins = everyone | past_event | cde_admin_or_member | cde_admin
+            ins = (everyone | past_event | cde_admin_or_member | cde_admin |
+                   cde_admin_or_auditor)
             out = member | searchable | finance_admin
         # cde and finance admin (farin is no member)
         elif self.user_in('farin'):
-            ins = (everyone | past_event | cde_admin_or_member | cde_admin
-                   | finance_admin)
+            ins = (everyone | past_event | cde_admin_or_member | cde_admin |
+                   cde_admin_or_auditor | finance_admin)
             out = member | searchable
+        # auditor
+        elif self.user_in('katarina'):
+            ins = everyone | cde_admin_or_auditor
+            out = (past_event | member | searchable | cde_admin_or_member | cde_admin |
+                   finance_admin)
         else:
             self.fail("Please adjust users for this tests.")
 
@@ -241,7 +248,6 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'href': '/cde/search/user'})
         self.assertNoLink('/cde/semester/show')
         self.assertNoLink('/cde/lastschrift/')
-        self.assertNoLink('/cde/log')
         self.realm_admin_view_profile('berta', 'cde')
         self.assertNoLink('/lastschrift')
         self.assertNoLink('/balance/change')
@@ -1324,7 +1330,8 @@ class TestCdEFrontend(FrontendTest):
             tuple(),
             tuple(),
             tuple(),
-            (r"pevent_id:\W*Teilnahme bereits erfasst.",),
+            (r"pevent_id:\W*Teilnahme bereits erfasst.",
+             r"doppelganger:\W*Probemitgliedschaft für Mitglieder nicht erlaubt.",),
             tuple(),
             (r"doppelganger:\W*Accountzusammenführung mit nicht-CdE Account.",),
             tuple(),
@@ -1369,7 +1376,7 @@ class TestCdEFrontend(FrontendTest):
         inputdata = inputdata.replace('"1a";"Beispiel";"Berta B."',
                                       '"Ω";"Beispiel";"Berta B."')
         f['accounts'] = inputdata
-        f['resolution4'] = LineResolutions.renew_and_update.value
+        f['resolution4'] = LineResolutions.update.value
         f['doppelganger_id4'] = '2'
         f['resolution6'] = LineResolutions.create.value
         f['resolution8'] = LineResolutions.create.value
@@ -1417,7 +1424,8 @@ class TestCdEFrontend(FrontendTest):
             tuple(),
             tuple(),
             tuple(),
-            (r"pevent_id:\W*Teilnahme bereits erfasst.",),
+            (r"pevent_id:\W*Teilnahme bereits erfasst.",
+             r"doppelganger:\W*Probemitgliedschaft für Mitglieder nicht erlaubt.",),
             tuple(),
             tuple(),
             tuple(),
@@ -1432,7 +1440,7 @@ class TestCdEFrontend(FrontendTest):
         for nonex, out in zip(nonexpectation, output):
             for piece in nonex:
                 self.assertFalse(re.search(piece, out))
-        f['resolution4'] = LineResolutions.renew_and_update.value
+        f['resolution4'] = LineResolutions.update.value
         f['doppelganger_id4'] = '2'
         f['resolution6'] = LineResolutions.renew_and_update.value
         self.assertEqual('False', f['finalized'].value)
@@ -1442,8 +1450,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Anlegen")
         self.assertNonPresence("Erneut validieren")
         f = self.response.forms['admissionform']
-        self.assertEqual(str(LineResolutions.renew_and_update.value),
-                         f['resolution4'].value)
+        self.assertEqual(str(LineResolutions.update.value), f['resolution4'].value)
         self.assertEqual('True', f['finalized'].value)
         self.submit(f, check_notification=False)
         self.assertPresence("10 Neuaufnahmen.", div="notifications")
@@ -1647,7 +1654,8 @@ class TestCdEFrontend(FrontendTest):
 
         f = self.response.forms['admissionform']
         self.assertPresence("Ähnlicher Account", div="problems0")
-        f['resolution0'] = LineResolutions.renew_trial.value
+        # charly is currently member, so renew trial is not allowed for him
+        f['resolution0'] = LineResolutions.update.value
         self.assertPresence("Charly C. Clown", div="doppelgangers0")
         self.assertPresence("<charly@example.cde>", div="doppelgangers0")
         f['doppelganger_id0'] = 3

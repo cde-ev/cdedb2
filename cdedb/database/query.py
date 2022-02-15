@@ -181,7 +181,7 @@ class QueryMixin:
         return self.query_exec(container, query, params)
 
     def sql_select(self, container: ConnectionContainer, table: str, columns: Sequence[str],
-                   entities: EntityKeys, entity_key: str = "id"
+                   entities: EntityKeys, *, entity_key: str = "id"
                    ) -> Tuple[CdEDBObject, ...]:
         """Generic SQL select query.
 

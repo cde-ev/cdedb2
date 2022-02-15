@@ -289,7 +289,8 @@
                         {% endif %}
                         {% if data['has_lastschrift'] %}
                             {% trans %}and{% endtrans %}
-                            {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
+                            {{ util.href(cdedblink("core/my_lastschrift") if data['id'] == user.persona_id
+                                         else cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
                                     gettext("Direct Debit Authorization"), icon="euro-sign",
                                     readonly=(data['id'] != user.persona_id
                                               and "finance" not in user.admin_views)) }}

@@ -66,7 +66,7 @@ Wir danken Dir, dass Du uns erlaubt hast, jährlich per Lastschrift
 von Deinem Konto den jährlichen Mitgliedsbeitrag von {{ (2*fee)|money }}
 und eine Spende einzuziehen. Das Lastschriftmandat mit der Mandatsreferenz
 {{ lastschrift['reference'] }} kannst Du unter
-{{ cdedblink("cde/lastschrift_show", {'persona_id': persona['id']}) }}
+{{ cdedblink("core/my_lastschrift") }}
 einsehen. Sollte sich Deine Kontoverbindung inzwischen
 geändert haben, informiere uns bitte unter <{{ MANAGEMENT_ADDRESS }}>.
 {% if lastschrift['id'] in open_lastschrift %}

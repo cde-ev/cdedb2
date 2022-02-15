@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# pylint: disable=missing-module-docstring
+"""Module containing all tests for the CdEDB-LDAP interface."""
 
 from typing import Dict, List, Set, Union
 
