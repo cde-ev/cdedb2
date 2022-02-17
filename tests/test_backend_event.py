@@ -22,7 +22,8 @@ from cdedb.common import (
 )
 from cdedb.query import Query, QueryOperators, QueryScope
 from tests.common import (
-    ANONYMOUS, USER_DICT, BackendTest, as_users, json_keys_to_int, storage,
+    ANONYMOUS, USER_DICT, BackendTest, as_users, event_keeper, json_keys_to_int,
+    storage,
 )
 
 UNIQUE_VIOLATION = psycopg2.errors.lookup(psycopg2.errorcodes.UNIQUE_VIOLATION)
@@ -43,6 +44,7 @@ class TestEventBackend(BackendTest):
         new_data = self.core.get_event_user(self.key, self.user['id'])
         self.assertEqual(data, new_data)
 
+    @event_keeper
     @as_users("annika", "garcia")
     def test_entity_event(self) -> None:
         # need administrator to create event
@@ -2131,6 +2133,7 @@ class TestEventBackend(BackendTest):
         # The query is valid again.
         self.assertIn(query.name, self.event.get_event_queries(self.key, event_id))
 
+    @event_keeper
     @as_users("annika", "garcia")
     def test_lock_event(self) -> None:
         self.assertTrue(self.event.lock_event(self.key, 1))
@@ -2163,6 +2166,7 @@ class TestEventBackend(BackendTest):
         expectation['EVENT_SCHEMA_VERSION'] = tuple(expectation['EVENT_SCHEMA_VERSION'])
         self.assertEqual(expectation, self.event.export_event(self.key, 1))
 
+    @event_keeper
     @as_users("annika")
     def test_import_event(self) -> None:
         self.assertTrue(self.event.lock_event(self.key, 1))
@@ -2625,6 +2629,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual(expectation, export)
 
     @storage
+    @event_keeper
     @as_users("annika")
     def test_partial_import_event(self) -> None:
         event = self.event.get_event(self.key, 1)
@@ -2897,6 +2902,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual(log_expectation, result)
 
     @storage
+    @event_keeper
     @as_users("annika")
     def test_partial_import_integrity(self) -> None:
         with open(self.testfile_dir / "partial_event_import.json") as datafile:
@@ -2952,6 +2958,7 @@ class TestEventBackend(BackendTest):
                       cm.exception.args)
 
     @storage
+    @event_keeper
     @as_users("annika")
     def test_partial_import_event_twice(self) -> None:
         with open(self.testfile_dir / "partial_event_import.json") as datafile:
@@ -3403,6 +3410,7 @@ class TestEventBackend(BackendTest):
         self.assertIn("Some of these orgas are not event users.",
                       cm.exception.args)
 
+    @event_keeper
     @as_users("annika")
     def test_log(self) -> None:
         # first check the already existing log

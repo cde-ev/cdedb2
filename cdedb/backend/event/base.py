@@ -1008,11 +1008,7 @@ class EventBaseBackend(EventLowLevelBackend):
         event_id = affirm(int, event_id)
         event_keeper_dir = self.event_keeper_dir / str(event_id)
 
-        # TODO: remove the deletion and creation of parents.This is currently necessary
-        #  to make the tests work, without adding storage everywhere.
-        if event_keeper_dir.exists():
-            shutil.rmtree(event_keeper_dir)
-        event_keeper_dir.mkdir(parents=True)
+        event_keeper_dir.mkdir()
         # See https://git-scm.com/book/en/v2/Git-on-the-Server-The-Protocols
         self.event_keeper_run(["git", "init", "-b", "master"], cwd=event_keeper_dir)
         self.event_keeper_run(["git", "config", "user.name", "CdE-Datenbank"],
@@ -1028,8 +1024,8 @@ class EventBaseBackend(EventLowLevelBackend):
                         ".git/hooks/post-commit"], cwd=event_keeper_dir)
         self.event_keeper_run(["git", "update-server-info"], cwd=event_keeper_dir)
 
-    @access("event_admin")
-    def event_keeper_drop(self, rs: RequestState, event_id: int) -> None:
+    @internal
+    def event_keeper_delete(self, event_id: int) -> None:
         """Irreveersibly delete event keeper repostory.
 
         :param rs: Required for access check."""
@@ -1049,6 +1045,13 @@ class EventBaseBackend(EventLowLevelBackend):
         self.event_keeper_init(event_id)
         return self.event_keeper_commit(rs, event_id, "Initialer Commit")
 
+    @access("event_admin")
+    def event_keeper_drop(self, rs: RequestState, event_id: int) -> None:
+        """Published version of event_keeper_delete.
+
+        :param rs: Required for access check."""
+        return self.event_keeper_delete(event_id)
+
     @access("event")
     def event_keeper_commit(self, rs: RequestState, event_id: int,
                             commit_msg: str, *, is_marker: bool = False) -> CdEDBObject:
@@ -1067,9 +1070,6 @@ class EventBaseBackend(EventLowLevelBackend):
         export = self.partial_export_event(rs, event_id)
         del export['timestamp']
         event_keeper_dir = self.event_keeper_dir / str(event_id)
-        # TODO: remove this
-        if not event_keeper_dir.exists():
-            self.event_keeper_init(event_id)
         filename = f"{event_id}.json"
 
         # Write to a file in a temporary directory, in order to be thread safe.

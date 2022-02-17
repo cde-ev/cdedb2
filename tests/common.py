@@ -207,8 +207,8 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
 
         def __getattr__(self, name: str) -> Callable[..., Any]:
             attr = getattr(backend, name)
-            # Special case for the `subman.SubscriptionManager`.
-            if name == "subman":
+            # Special case for the `subman.SubscriptionManager` and `EventKeeper`.
+            if name in {"subman", "event_keeper_init"}:
                 return attr
             if any([
                 not getattr(attr, "access", False),
@@ -239,6 +239,7 @@ class BasicTest(unittest.TestCase):
     storage_dir: ClassVar[pathlib.Path]
     testfile_dir: ClassVar[pathlib.Path]
     needs_storage_marker = "_needs_storage"
+    needs_event_keeper_marker = "_needs_event_keeper"
     conf: ClassVar[Config]
 
     @classmethod
@@ -370,6 +371,11 @@ class BackendTest(CdEDBTest):
     def setUp(self) -> None:
         """Reset login state."""
         super().setUp()
+        test_method = getattr(self, self._testMethodName)
+        if getattr(test_method, self.needs_event_keeper_marker, False):
+            max_event_id = len(self.get_sample_data('event.events'))
+            for event_id in range(max_event_id + 1):
+                self.event.event_keeper_init(event_id)
         self.user = USER_DICT["anonymous"]
         self.key = ANONYMOUS
 
@@ -767,6 +773,12 @@ def storage(fun: F) -> F:
     """Decorate a test which needs some of the test files on the local drive."""
     setattr(fun, BasicTest.needs_storage_marker, True)
     return fun
+
+
+def event_keeper(fun: F) -> F:
+    """Decorate a test which needs an event keeper setup."""
+    setattr(fun, BasicTest.needs_event_keeper_marker, True)
+    return storage(fun)
 
 
 def execsql(sql: AnyStr) -> None:
