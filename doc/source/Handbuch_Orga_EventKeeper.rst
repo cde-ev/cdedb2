@@ -26,9 +26,9 @@ Manuelle Snapshots werden angelegt:
 * Vor und nach Entsperrung einer Veranstaltung
 * Nach einer Änderung des Datenbankschemas für Veranstaltungen
 
-Dabei wird jeweils der letzte Snapshot, der zu einer Änderung gehört, auch dann
-gespeichert, wenn sich der partielle Export dadurch nicht verändert hat, um eine
-Trennung der Aktion von anderen Änderungen im ähnlichen Zeitraum zu ermöglichen.
+Dabei wird jeweils der Snapshot vor einer Änderung immer vorgenommen, auch wenn
+sich der partielle Export dadurch nicht verändert hat, um eine Trennung der Aktion
+von anderen Änderungen im ähnlichen Zeitraum zu ermöglichen.
 
 Mit der Archivierung oder Löschung einer Veranstaltung wird auch sein EventKeeper
 gelöscht. Dadurch soll diversen Fristen zur Löschung personenbezogener Daten
@@ -44,10 +44,15 @@ wiederherzustellen.
 Verwendung und Zugriff
 ----------------------
 Auf das Git kann durch Orgas und Veranstaltungs-Administrationen einfach mithilfe
-der Zugangsdaten für die Datenbank und ``git pull`` zugegriffen werden.::
+der Zugangsdaten für die Datenbank zugegriffen werden. Es kann mittels ``git clone``
+heruntergeladen und mit ``git pull`` aktualisiert werden.::
 
-    git pull https://db2.cde-ev.de/git/event_keeper/<event_id>/
+    git clone https://db2.cde-ev.de/git/event_keeper/<event_id>/
+    git pull
 
-Dies vereinfach auch das Beziehen eines aktuellen partiellen Exports zur Verwendung in
+Dies vereinfacht auch das Beziehen eines aktuellen partiellen Exports zur Verwendung in
 externen Tools, das nun rein über die Kommandozeile geschenen kann.
-Ein partieller Import über ``git push`` kann hingegen nicht durchgeführt werden.
+Das Repositorium ist schreibgeschützt; ``git push`` hat somit keinen Effekt.
+
+Nach dem Abschluss aller Organisationstätigkeiten müssen lokale Kopien des EventKeepers
+gelöscht werden.
