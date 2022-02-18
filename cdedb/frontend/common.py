@@ -80,7 +80,7 @@ from cdedb.common import (
     get_localized_country_codes, glue, json_serialize, make_proxy, make_root_logger,
     merge_dicts, n_, now, roles_to_db_role, unwrap,
 )
-from cdedb.config import BasicConfig, Config, SecretsConfig
+from cdedb.config import BasicConfig, Config, SecretsConfig, TestConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.devsamples import HELD_MESSAGE_SAMPLE
@@ -1384,8 +1384,7 @@ def reconnoitre_ambience(obj: AbstractFrontend,
 
     def do_assert(x: bool) -> None:
         if not x:
-            raise werkzeug.exceptions.BadRequest(
-                rs.gettext("Inconsistent request."))
+            raise werkzeug.exceptions.BadRequest()
 
     scouts = (
         Scout(lambda anid: obj.coreproxy.get_persona(rs, anid), 'persona_id',
@@ -1938,12 +1937,12 @@ def event_guard(argname: str = "event_id",
                 arg = args[0]
             if arg not in rs.user.orga and not obj.is_admin(rs):
                 raise werkzeug.exceptions.Forbidden(
-                    rs.gettext("This page can only be accessed by orgas."))
+                    n_("This page can only be accessed by orgas."))
             if check_offline:
                 is_locked = obj.eventproxy.is_offline_locked(rs, event_id=arg)
                 if is_locked != obj.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
                     raise werkzeug.exceptions.Forbidden(
-                        rs.gettext("This event is locked for offline usage."))
+                        n_("This event is locked for offline usage."))
             return fun(obj, rs, *args, **kwargs)
 
         return cast(F, new_fun)
@@ -1975,17 +1974,17 @@ def mailinglist_guard(argname: str = "mailinglist_id",
                 arg = args[0]
             if allow_moderators:
                 if not obj.mlproxy.may_manage(rs, **{argname: arg}):
-                    raise werkzeug.exceptions.Forbidden(rs.gettext(
+                    raise werkzeug.exceptions.Forbidden(n_(
                         "This page can only be accessed by the mailinglist’s "
                         "moderators."))
                 if requires_privilege and not obj.mlproxy.may_manage(
                         rs, mailinglist_id=arg, allow_restricted=False):
-                    raise werkzeug.exceptions.Forbidden(rs.gettext(
+                    raise werkzeug.exceptions.Forbidden(n_(
                         "You only have restricted moderator access and may not"
                         " change subscriptions."))
             else:
                 if not obj.mlproxy.is_relevant_admin(rs, **{argname: arg}):
-                    raise werkzeug.exceptions.Forbidden(rs.gettext(
+                    raise werkzeug.exceptions.Forbidden(n_(
                         "This page can only be accessed by appropriate "
                         "admins."))
             return fun(obj, rs, *args, **kwargs)
@@ -2007,7 +2006,7 @@ def assembly_guard(fun: F) -> F:
         else:
             assembly_id = args[0]
         if not obj.assemblyproxy.is_presider(rs, assembly_id=assembly_id):
-            raise werkzeug.exceptions.Forbidden(rs.gettext(
+            raise werkzeug.exceptions.Forbidden(n_(
                 "This page may only be accessed by the assembly's"
                 " presiders or assembly admins."))
         return fun(obj, rs, *args, **kwargs)
@@ -2494,7 +2493,8 @@ class TransactionObserver:
         return False
 
 
-def setup_translations(conf: Config) -> Mapping[str, gettext.NullTranslations]:
+def setup_translations(conf: Union[Config, TestConfig]
+                       ) -> Mapping[str, gettext.NullTranslations]:
     """Helper to setup a mapping of languages to gettext translation objects."""
     return {
         lang: gettext.translation('cdedb', languages=[lang],

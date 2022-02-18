@@ -77,6 +77,7 @@ sudo -u postgres psql -U postgres -c \
      "CREATE DATABASE nobody WITH OWNER = nobody TEMPLATE = template0 ENCODING = 'UTF8'"
 sudo -u postgres psql -U postgres -c \
      "ALTER DATABASE nobody SET datestyle TO 'ISO, YMD'"
+sudo -u cdedb make sql-initial
 sudo -u cdedb make sql
 
 systemctl stop pgbouncer

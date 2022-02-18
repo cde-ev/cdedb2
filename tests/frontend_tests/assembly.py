@@ -166,7 +166,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.assertNonPresence("Teilnehmer")
         self.assertPresence("Inaktive Versammlungen")
 
-    @as_users("annika", "martin", "vera", "werner", "anton")
+    @as_users("annika", "martin", "vera", "werner", "anton", "katarina")
     def test_sidebar(self) -> None:
         self.traverse({'description': 'Versammlungen'})
         everyone = {"Versammlungen", "Übersicht"}
@@ -183,6 +183,10 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         elif self.user_in("anton"):
             ins = everyone | {"Nutzer verwalten", "Archivsuche", "Log"}
             out = set()
+        # auditors
+        elif self.user_in("katarina"):
+            ins = everyone | {"Log"}
+            out = {"Nutzer verwalten", "Archivsuche"}
         else:
             self.fail("Please adjust users for this tests.")
 
@@ -319,13 +323,13 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertIn('addattendeeform', self.response.forms)
         self.assertPresence("TeX-Liste")
 
-    @as_users("annika", "martin", "vera", "werner")
+    @as_users("annika", "martin", "vera", "werner", "katarina")
     def test_sidebar_one_assembly(self) -> None:
         user = self.user
         self.traverse({'description': 'Versammlungen'})
 
         # they are no member and not yet signed up
-        if self.user_in('annika', 'martin', 'vera'):
+        if self.user_in('annika', 'martin', 'vera', 'katarina'):
             self.assertNonPresence("Internationaler Kongress")
 
             # now, sign them up
@@ -341,7 +345,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         admin = {"Konfiguration", "Log"}
 
         # not assembly admins
-        if self.user_in('annika', 'martin', 'vera'):
+        if self.user_in('annika', 'martin', 'vera', 'katarina'):
             ins = attendee
             out = admin
         # assembly admin

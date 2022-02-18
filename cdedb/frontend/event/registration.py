@@ -279,8 +279,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                 return self.redirect(rs, "event/show_event")
         else:
             if event_id not in rs.user.orga and not self.is_admin(rs):
-                raise werkzeug.exceptions.Forbidden(
-                    n_("Must be Orga to use preview."))
+                raise werkzeug.exceptions.Forbidden(n_("Must be Orga to use preview."))
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         course_choices = {

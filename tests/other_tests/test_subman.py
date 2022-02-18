@@ -1,0 +1,1 @@
+../../cdedb/subman/tests/test_basics.py
