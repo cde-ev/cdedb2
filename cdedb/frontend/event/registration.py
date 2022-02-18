@@ -1060,18 +1060,20 @@ class EventRegistrationMixin(EventBaseFrontend):
         code = 1
         self.logger.info(
             f"Updating registrations {reg_ids} with data {registration}")
-        change_note1 = "Snapshot vor Bearbeitung mehrerer Anmeldungen"
-        change_note2 = "Bearbeite mehrere Anmeldungen"
+        msg1 = "Snapshot vor Bearbeitung mehrerer Anmeldungen"
+        msg2 = "Bearbeite mehrere Anmeldungen"
         if change_note:
-            change_note1 += ": " + change_note
-            change_note2 += ": " + change_note
+            msg1 += ": " + change_note
+            msg2 += ": " + change_note
+            change_note = "Multi-Edit: " + change_note
+        else:
+            change_note = "Multi-Edit."
 
-        self.eventproxy.event_keeper_commit(
-            rs, event_id, change_note1, is_snapshot=True)
+        self.eventproxy.event_keeper_commit(rs, event_id, msg1, is_snapshot=True)
         for reg_id in reg_ids:
             registration['id'] = reg_id
             code *= self.eventproxy.set_registration(rs, registration, change_note)
-        self.eventproxy.event_keeper_commit(rs, event_id, change_note2)
+        self.eventproxy.event_keeper_commit(rs, event_id, msg2)
         rs.notify_return_code(code)
 
         # redirect to query filtered by reg_ids

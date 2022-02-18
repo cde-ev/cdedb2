@@ -11,7 +11,7 @@ from typing import Any, Dict, Set, Union, cast
 
 import cdedb.database.constants as const
 from cdedb.common import RequestState, now, xsorted
-from tests.common import CronTest, prepsql, storage
+from tests.common import CronTest, event_keeper, prepsql, storage
 
 INSERT_TEMPLATE = """
 INSERT INTO {table} ({columns}) VALUES ({values});
@@ -381,6 +381,7 @@ class TestCron(CronTest):
         # We just want to test that no exception is raised.
         self.execute('validate_stored_event_queries')
 
+    @event_keeper
     def test_event_keeper(self) -> None:
         # We just want to test that no exception is raised.
         self.execute('event_keeper')

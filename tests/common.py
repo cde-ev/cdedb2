@@ -254,6 +254,10 @@ class BasicTest(unittest.TestCase):
         if getattr(test_method, self.needs_storage_marker, False):
             subprocess.run(("make", "storage-test"), stdout=subprocess.DEVNULL,
                            check=True, start_new_session=True)
+        if getattr(test_method, self.needs_event_keeper_marker, False):
+            max_event_id = len(self.get_sample_data('event.events'))
+            for event_id in range(max_event_id + 1):
+                EntityKeeper(self.conf, 'event_keeper').init(event_id)
 
     def tearDown(self) -> None:
         test_method = getattr(self, self._testMethodName)
@@ -372,11 +376,6 @@ class BackendTest(CdEDBTest):
     def setUp(self) -> None:
         """Reset login state."""
         super().setUp()
-        test_method = getattr(self, self._testMethodName)
-        if getattr(test_method, self.needs_event_keeper_marker, False):
-            max_event_id = len(self.get_sample_data('event.events'))
-            for event_id in range(max_event_id + 1):
-                EntityKeeper(self.conf, 'event_keeper').init(event_id)
         self.user = USER_DICT["anonymous"]
         self.key = ANONYMOUS
 
