@@ -98,8 +98,8 @@ class EventFieldMixin(EventBaseFrontend):
             'id': event_id,
             'fields': fields
         }
-        self.eventproxy.event_keeper_commit(rs, event_id, "Vor Datenfeld-Änderungen.",
-                                            is_marker=True)
+        self.eventproxy.event_keeper_commit(
+            rs, event_id, "Snapshot vor Datenfeld-Änderungen.", is_snapshot=True)
         code = self.eventproxy.set_event(rs, event)
         rs.notify_return_code(code)
         return self.redirect(
@@ -292,7 +292,9 @@ class EventFieldMixin(EventBaseFrontend):
 
         code = 1
         self.eventproxy.event_keeper_commit(
-            rs, event_id, "Vor Änderung: " + change_note)
+            rs, event_id,
+            f"Snapshot vor Setzen von Feld {field['field_name']}: " + change_note,
+            is_snapshot=True)
         for anid, entity in entities.items():
             if data[f"input{anid}"] != entity['fields'].get(field['field_name']):
                 new = {
@@ -304,7 +306,7 @@ class EventFieldMixin(EventBaseFrontend):
                 else:
                     code *= entity_setter(rs, new)
         self.eventproxy.event_keeper_commit(
-            rs, event_id, "Nach Änderung: " + change_note, is_marker=True)
+            rs, event_id, f"Setze Feld {field['field_name']}: " + change_note)
         rs.notify_return_code(code)
 
         if kind == const.FieldAssociations.registration:

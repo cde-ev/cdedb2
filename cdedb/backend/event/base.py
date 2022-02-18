@@ -17,9 +17,7 @@ backend parts.
 import collections
 import copy
 import datetime
-from typing import (
-    Any, Collection, Dict, Iterable, List, Optional, Protocol, Set, Tuple, Union,
-)
+from typing import Any, Collection, Dict, Iterable, List, Optional, Protocol, Set, Tuple
 
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
@@ -27,8 +25,8 @@ from cdedb.backend.common import (
     Silencer, access, affirm_set_validation as affirm_set, affirm_validation as affirm,
     affirm_validation_optional as affirm_optional, cast_fields, internal, singularize,
 )
-from cdedb.backend.event.lowlevel import EventLowLevelBackend
 from cdedb.backend.entity_keeper import EntityKeeper
+from cdedb.backend.event.lowlevel import EventLowLevelBackend
 from cdedb.common import (
     COURSE_FIELDS, COURSE_SEGMENT_FIELDS, COURSE_TRACK_FIELDS, EVENT_FIELDS,
     EVENT_PART_FIELDS, EVENT_SCHEMA_VERSION, FEE_MODIFIER_FIELDS,
@@ -687,7 +685,7 @@ class EventBaseBackend(EventLowLevelBackend):
             'offline_lock': not self.conf["CDEDB_OFFLINE_DEPLOYMENT"],
         }
         with Atomizer(rs):
-            self.event_keeper_commit(rs, event_id, "Vor Offline-Lock.")
+            self.event_keeper_commit(rs, event_id, "Snapshot vor Offline-Lock.")
             ret = self.sql_update(rs, "event.events", update)
             self.event_log(rs, const.EventLogCodes.event_locked, event_id)
         return ret
@@ -987,19 +985,19 @@ class EventBaseBackend(EventLowLevelBackend):
 
     @access("event_admin")
     def event_keeper_drop(self, rs: RequestState, event_id: int) -> None:
-        """Published version of event_keeper_delete.
+        """Published version of EntityKeeper.delete.
 
         :param rs: Required for access check."""
         return self._event_keeper.delete(event_id)
 
     @access("event")
-    def event_keeper_commit(self, rs: RequestState, event_id: int,
-                            commit_msg: str, *, is_marker: bool = False) -> CdEDBObject:
+    def event_keeper_commit(self, rs: RequestState, event_id: int, commit_msg: str, *,
+                            is_snapshot: bool = False) -> CdEDBObject:
         """Commit the current state of the event to its git repository.
 
-        :param is_marker: Marks an important operation with explicit event keeper call.
-            If there is a commit before and after an operation, only True
-            for the second commit. If True, commit even if there has been no change.
+        :param is_snapshot: If commit is Snapshot before an important operation with
+            an explicit event keeper call. If True, commit even if there has been
+            no change.
         """
         event_id = affirm(int, event_id)
         commit_msg = affirm(str, commit_msg)
@@ -1008,8 +1006,8 @@ class EventBaseBackend(EventLowLevelBackend):
         del export['timestamp']
         author_name = author_email = ""
         if rs.user.persona_id:
-            author_name =  f"{rs.user.given_names} {rs.user.family_name}"
+            author_name = f"{rs.user.given_names} {rs.user.family_name}"
             author_email = rs.user.username
         self._event_keeper.commit(event_id, json_serialize(export), commit_msg,
-                                  author_name, author_email, is_marker=is_marker)
+                                  author_name, author_email, allow_empty=is_snapshot)
         return export

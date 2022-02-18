@@ -509,8 +509,8 @@ class EventLodgementMxin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.show_lodgement(rs, event_id, lodgement_id)
         self.eventproxy.event_keeper_commit(
-            rs, event_id, f"Vor Löschen von Unterkunft"
-                          f" {rs.ambience['lodgement']['title']}.", is_marker=True)
+            rs, event_id, f"Snapshot vor Löschen von Unterkunft"
+                          f" {rs.ambience['lodgement']['title']}.", is_snapshot=True)
         code = self.eventproxy.delete_lodgement(
             rs, lodgement_id, cascade={"inhabitants"})
         rs.notify_return_code(code)

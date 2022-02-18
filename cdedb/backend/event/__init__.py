@@ -326,8 +326,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
             }
             ret *= self.sql_update(rs, "event.events", update)
             self.event_log(rs, const.EventLogCodes.event_unlocked, data['id'])
-            self.event_keeper_commit(rs, data['id'], "Nach Entsperrung.",
-                                     is_marker=True)
+            self.event_keeper_commit(rs, data['id'], "Entsperre Veranstaltung")
         return ret
 
     @access("event")
@@ -378,8 +377,8 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
 
         with Atomizer(rs):
             event = unwrap(self.get_events(rs, (data['id'],)))
-            all_current_data = self.event_keeper_commit(rs, data['id'],
-                                                        "Vor partiellem Import.")
+            all_current_data = self.event_keeper_commit(
+                rs, data['id'], "Snapshot vor partiellem Import.")
             oregistration_ids = self.list_registrations(rs, data['id'])
             old_registrations = self.get_registrations(rs, oregistration_ids)
 
@@ -707,6 +706,6 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                 self.event_log(rs, const.EventLogCodes.event_partial_import,
                                data['id'], change_note=data.get('summary'))
                 self.event_keeper_commit(rs, data['id'],
-                    "Nach partiellem Import: " + data.get('summary', ""),
-                                         is_marker=True)
+                    "Importiere partiell: " + data.get('summary', ""),
+                    is_snapshot=True)
         return result, total_delta

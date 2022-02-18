@@ -947,7 +947,8 @@ class EventRegistrationMixin(EventBaseFrontend):
         # maybe exclude some blockers
         db_id = cdedbid_filter(rs.ambience['registration']['persona_id'])
         self.eventproxy.event_keeper_commit(
-            rs, event_id, f"Vor Löschen von Anmeldung {db_id}.", is_marker=True)
+            rs, event_id, f"Snapshot vor Löschen von Anmeldung {db_id}.",
+            is_snapshot=True)
         code = self.eventproxy.delete_registration(
             rs, registration_id, {"registration_parts", "registration_tracks",
                                   "course_choices"})
@@ -1059,17 +1060,18 @@ class EventRegistrationMixin(EventBaseFrontend):
         code = 1
         self.logger.info(
             f"Updating registrations {reg_ids} with data {registration}")
+        change_note1 = "Snapshot vor Bearbeitung mehrerer Anmeldungen"
+        change_note2 = "Bearbeite mehrere Anmeldungen"
         if change_note:
-            change_note = "Multi-Edit: " + change_note
-        else:
-            change_note = "Multi-Edit"
+            change_note1 += ": " + change_note
+            change_note2 += ": " + change_note
 
-        self.eventproxy.event_keeper_commit(rs, event_id, "Vor " + change_note)
+        self.eventproxy.event_keeper_commit(
+            rs, event_id, change_note1, is_snapshot=True)
         for reg_id in reg_ids:
             registration['id'] = reg_id
             code *= self.eventproxy.set_registration(rs, registration, change_note)
-        self.eventproxy.event_keeper_commit(rs, event_id, "Nach " + change_note,
-                                            is_marker=True)
+        self.eventproxy.event_keeper_commit(rs, event_id, change_note2)
         rs.notify_return_code(code)
 
         # redirect to query filtered by reg_ids

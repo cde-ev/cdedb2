@@ -93,15 +93,13 @@ class EntityKeeper:
             pass
 
     def commit(self, entity_id: int, file_text: str, commit_msg: str,
-               author_name: str = "", author_email: str = "", *, is_marker: bool = False
-               ) -> subprocess.CompletedProcess[bytes]:
+               author_name: str = "", author_email: str = "", *,
+               allow_empty: bool = False) -> subprocess.CompletedProcess[bytes]:
         """Commit a single file representing an entity to a git repository.
 
         In contrast to its friends, we allow some wiggle room for errors here right now
         and just log them instead of aborting. Once we are reasonably sure there is
         rarely interference, we may revisit this.
-
-        :param is_marker: Always commit, even if empty.
         """
         entity_id = affirm(int, entity_id)
         file_text = affirm(str, file_text)
@@ -122,7 +120,7 @@ class EntityKeeper:
             if author_name or author_email:
                 commit.append("--author")
                 commit.append(f"{author_name} <{author_email}>".encode("utf8"))
-            if is_marker:
+            if allow_empty:
                 commit.append("--allow-empty")
             # Do not check here such that an error does not drag the whole request down
             # In particular, this is expected for empty commits.

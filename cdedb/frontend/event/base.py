@@ -440,19 +440,19 @@ class EventBaseFrontend(AbstractUserFrontend):
             self.logger.info("Event schema version changed, creating new commit for"
                              " every event.")
             for event_id in event_ids:
-                self.eventproxy.event_keeper_commit(
-                    rs, event_id, "Schema-Version hat sich geändert.")
+                self.eventproxy.event_keeper_commit(rs, event_id,
+                                                    "Ändere Veranstaltungs-Schema.")
             state['EVENT_SCHEMA_VERSION'] = EVENT_SCHEMA_VERSION
 
-        commit_msg = "Regelmäßiges Backup."
+        commit_msg = "Regelmäßiger Snapshot"
         for event_id in event_ids:
             if event_id not in state['events']:
                 state['events'][event_id] = 0
             _, entries = self.eventproxy.retrieve_log(rs, event_id=event_id, length=1)
             if entries:
-                # this can only happen for missing logs (e.g. test data)
                 log_entry_id = unwrap(entries)['id']
             else:
+                # this can only happen for missing logs (e.g. test data)
                 log_entry_id = 0
             if not log_entry_id or log_entry_id > state['events'][event_id]:
                 self.eventproxy.event_keeper_commit(rs, event_id, commit_msg)
