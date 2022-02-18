@@ -37,6 +37,7 @@ from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.common import AbstractBackend
 from cdedb.backend.core import CoreBackend
+from cdedb.backend.entity_keeper import EntityKeeper
 from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
@@ -208,7 +209,7 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
         def __getattr__(self, name: str) -> Callable[..., Any]:
             attr = getattr(backend, name)
             # Special case for the `subman.SubscriptionManager` and `EventKeeper`.
-            if name in {"subman", "event_keeper_init"}:
+            if name == "subman":
                 return attr
             if any([
                 not getattr(attr, "access", False),
@@ -375,7 +376,7 @@ class BackendTest(CdEDBTest):
         if getattr(test_method, self.needs_event_keeper_marker, False):
             max_event_id = len(self.get_sample_data('event.events'))
             for event_id in range(max_event_id + 1):
-                self.event.event_keeper_init(event_id)
+                EntityKeeper(self.conf, 'event_keeper').init(event_id)
         self.user = USER_DICT["anonymous"]
         self.key = ANONYMOUS
 

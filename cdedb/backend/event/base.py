@@ -17,10 +17,6 @@ backend parts.
 import collections
 import copy
 import datetime
-import shutil
-import subprocess
-import tempfile
-from pathlib import Path
 from typing import (
     Any, Collection, Dict, Iterable, List, Optional, Protocol, Set, Tuple, Union,
 )
@@ -32,6 +28,7 @@ from cdedb.backend.common import (
     affirm_validation_optional as affirm_optional, cast_fields, internal, singularize,
 )
 from cdedb.backend.event.lowlevel import EventLowLevelBackend
+from cdedb.backend.entity_keeper import EntityKeeper
 from cdedb.common import (
     COURSE_FIELDS, COURSE_SEGMENT_FIELDS, COURSE_TRACK_FIELDS, EVENT_FIELDS,
     EVENT_PART_FIELDS, EVENT_SCHEMA_VERSION, FEE_MODIFIER_FIELDS,
@@ -51,7 +48,7 @@ CdEDBQuestionnaire = Dict[const.QuestionnaireUsages, List[CdEDBObject]]
 class EventBaseBackend(EventLowLevelBackend):
     def __init__(self, configpath: PathLike = None):
         super().__init__(configpath)
-        self.event_keeper_dir: Path = self.conf['STORAGE_DIR'] / 'event_keeper'
+        self._event_keeper = EntityKeeper(self.conf, 'event_keeper')
 
     @access("event")
     def is_offline_locked(self, rs: RequestState, *, event_id: int = None,
@@ -981,68 +978,11 @@ class EventBaseBackend(EventLowLevelBackend):
             ret *= self.set_questionnaire(rs, event_id, questionnaire)
         return ret
 
-    @internal
-    def event_keeper_run(self, args: List[Union[Path, str, bytes]],
-                         cwd: Optional[Path] = None, check: bool = True) -> None:
-        """Custom wrapper of subprocess.run to include proper logging."""
-        # Delay check to ensure logging
-        completed = subprocess.run(args, cwd=cwd, check=False,
-                                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        msg = completed.stdout or "unknown"
-        if completed.returncode != 0:
-            self.logger.error("Git error: %s", msg)
-        else:
-            self.logger.debug("Git output: %s", msg)
-        if check:
-            # Now, raise the check extension
-            completed.check_returncode()
-
-    @internal
-    def event_keeper_init(self, event_id: int) -> None:
-        """Actually initialize the repository.
-
-        This takes care of all the dirty work regarding git configuration and
-        preparation of a basic git server.
-        """
-        # Be double-safe against directory transversal
-        event_id = affirm(int, event_id)
-        event_keeper_dir = self.event_keeper_dir / str(event_id)
-
-        event_keeper_dir.mkdir()
-        # See https://git-scm.com/book/en/v2/Git-on-the-Server-The-Protocols
-        self.event_keeper_run(["git", "init", "-b", "master"], cwd=event_keeper_dir)
-        self.event_keeper_run(["git", "config", "user.name", "CdE-Datenbank"],
-                              cwd=event_keeper_dir)
-        self.event_keeper_run(["git", "config", "user.email", "datenbank@cde-ev.de"],
-                              cwd=event_keeper_dir)
-        shutil.move(event_keeper_dir / ".git/hooks/post-update.sample",
-                    event_keeper_dir / ".git/hooks/post-update")
-        # Additionally run post-commit since we commit on the repository itself
-        shutil.copy(event_keeper_dir / ".git/hooks/post-update",
-                    event_keeper_dir / ".git/hooks/post-commit")
-        self.event_keeper_run(["chmod", "a+x", ".git/hooks/post-update",
-                        ".git/hooks/post-commit"], cwd=event_keeper_dir)
-        self.event_keeper_run(["git", "update-server-info"], cwd=event_keeper_dir)
-
-    @internal
-    def event_keeper_delete(self, event_id: int) -> None:
-        """Irreveersibly delete event keeper repostory.
-
-        :param rs: Required for access check."""
-        # Be double-safe against directory transversal
-        event_id = affirm(int, event_id)
-        try:
-            shutil.rmtree(self.event_keeper_dir / str(event_id))
-        except FileNotFoundError:
-            # We do not care if the event keeper has been deleted yet.
-            # This is the case for deleting an archived event.
-            pass
-
     @access("event_admin")
     def event_keeper_create(self, rs: RequestState, event_id: int) -> CdEDBObject:
         """Create a new git repository for keeping track of event changes."""
         event_id = affirm(vtypes.ID, event_id)
-        self.event_keeper_init(event_id)
+        self._event_keeper.init(event_id)
         return self.event_keeper_commit(rs, event_id, "Initialer Commit")
 
     @access("event_admin")
@@ -1050,47 +990,26 @@ class EventBaseBackend(EventLowLevelBackend):
         """Published version of event_keeper_delete.
 
         :param rs: Required for access check."""
-        return self.event_keeper_delete(event_id)
+        return self._event_keeper.delete(event_id)
 
     @access("event")
     def event_keeper_commit(self, rs: RequestState, event_id: int,
                             commit_msg: str, *, is_marker: bool = False) -> CdEDBObject:
         """Commit the current state of the event to its git repository.
 
-        In contrast to its friends, we allow some wiggle room for errors here right now
-        and just log them instead of aborting. Once we are reasonably sure there is
-        rarely interference, we may revisit this.
-
         :param is_marker: Marks an important operation with explicit event keeper call.
             If there is a commit before and after an operation, only True
             for the second commit. If True, commit even if there has been no change.
         """
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(int, event_id)
         commit_msg = affirm(str, commit_msg)
+
         export = self.partial_export_event(rs, event_id)
         del export['timestamp']
-        event_keeper_dir = self.event_keeper_dir / str(event_id)
-        filename = f"{event_id}.json"
-
-        # Write to a file in a temporary directory, in order to be thread safe.
-        with tempfile.TemporaryDirectory() as t:
-            td = Path(t)
-            (td / filename).write_text(json_serialize(export))
-            # Declare the temporary directory to be the working tree, and specify the
-            # actual git directory.
-            self.event_keeper_run(["git", f"--work-tree={td}", "add", td / filename],
-                                  cwd=event_keeper_dir)
-            # Then commit everything as if we were in the repository directory.
-            commit: List[Union[PathLike, bytes]]
-            commit = ["git", "-C", event_keeper_dir, "commit", "-m",
-                      commit_msg.encode("utf8")]
-            if rs.user.persona_id:
-                commit.append("--author")
-                commit.append((f"{rs.user.given_names} {rs.user.family_name}"
-                               f"<{rs.user.username}>").encode("utf8"))
-            if is_marker:
-                commit.append("--allow-empty")
-            # Do not check here such that an error does not drag the whole request down
-            # In particular, this is expected for empty commits.
-            self.event_keeper_run(commit, check=False)
+        author_name = author_email = ""
+        if rs.user.persona_id:
+            author_name =  f"{rs.user.given_names} {rs.user.family_name}"
+            author_email = rs.user.username
+        self._event_keeper.commit(event_id, json_serialize(export), commit_msg,
+                                  author_name, author_email, is_marker=is_marker)
         return export
