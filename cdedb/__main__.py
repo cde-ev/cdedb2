@@ -14,9 +14,7 @@ static_directory = repopath / "static"
 configpath = Path("/etc/cdedb-application-config.py")
 
 if __name__ == "__main__":
-    if os.environ.get("INTERACTIVE_DEBUGGER"):
-        # otherwise, this would be executed twice on startup
-        subprocess.run(["make", "i18n-compile"], check=True)
+    subprocess.run(["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL)
     os.environ["INTERACTIVE_DEBUGGER"] = "1"
     application = Application(configpath if configpath.is_file() else None)
     i18n_files = (repopath / "i18n" / lang / "LC_MESSAGES" / "cdedb.po"
