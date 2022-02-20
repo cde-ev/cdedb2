@@ -203,15 +203,15 @@ class TestCommon(BasicTest):
             ) for lang in langs
         }
 
-        for lang in langs:
-            assert matches[lang] is not None
+        for lang, match in matches.items():
+            assert match is not None
             if lang != 'en':
                 with self.subTest(f"untranslated-{lang}"):
-                    self.assertIsNone(matches[lang]["untranslated"],
+                    self.assertIsNone(match["untranslated"],
                                       f"There are untranslated strings ({lang})."
                                       " Make sure all strings are translated.")
             with self.subTest(f"fuzzy-{lang}"):
-                self.assertIsNone(matches[lang]["fuzzy"],
+                self.assertIsNone(match["fuzzy"],
                                   f"There are fuzzy translations ({lang}). Double check"
                                   " these and remove the '#, fuzzy' marker afterwards.")
 
