@@ -453,8 +453,6 @@ class EventRegistrationBackend(EventBaseBackend):
                 return False, False
             payment_pending = bool(
                 not registration['payment']
-                and any(part['status'].has_to_pay()
-                        for part in registration['parts'].values())
                 and self.calculate_fee(rs, unwrap(registration_ids)))
             return True, payment_pending
         else:
