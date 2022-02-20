@@ -437,11 +437,13 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event")
     def get_registration_payment_info(self, rs: RequestState, event_id: int
-                                      ) -> Tuple[bool, bool]:
+                                      ) -> Tuple[Optional[bool], bool]:
         """Small helper to get information for the dashboard pages.
 
-        :return: Whether there is a registration and whether some amount left to pay.
-            The second is always False if the first is.
+        The first returned flag is None iff there is no registration for the user.
+        Otherwise, it tells whether the user is involved in any part.
+        The second flag tells whether there is still some amount left to pay; this
+        can only be True if the first flag is True.
         """
         registration_ids = self.list_registrations(rs, event_id,
                                                    rs.user.persona_id).keys()
@@ -456,7 +458,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 and self.calculate_fee(rs, unwrap(registration_ids)))
             return True, payment_pending
         else:
-            return False, False
+            return None, False
 
     @access("event", "ml_admin")
     def get_registrations(self, rs: RequestState, registration_ids: Collection[int]

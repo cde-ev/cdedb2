@@ -40,19 +40,25 @@
                         {% endtrans %}
                     {% endif %}
                     <br />
-                    {% if "event" in user.roles and event['registration'] %}
-                        ({% trans link=util.href(cdedblink('event/registration_status', {'event_id': event_id}),
-                                                 gettext("registered")) -%}
-                            already {{ link }}
-                        {% endtrans %}
-                        {%- if event['payment_pending'] -%}
-                            , {% trans %}payment pending{% endtrans %}
-                        {%- endif %})
-                        {%- if event['use_additional_questionnaire'] %}
-                            &bull;
-                            {{ util.href(cdedblink('event/additional_questionnaire', {'event_id': event_id}),
-                                         gettext("Questionnaire"), icon='edit') -}}
-                        {% endif -%}
+                    {% if "event" in user.roles and event['registration'] != None %}
+                        {% set link=cdedblink('event/registration_status', {'event_id': event_id}) %}
+                        {% if event['registration'] %}
+                            ({% trans registered=util.href(link, gettext("registered")) -%}
+                                already {{ registered }}
+                            {% endtrans %}
+                            {%- if event['payment_pending'] -%}
+                                , {% trans %}payment pending{% endtrans %}
+                            {%- endif %})
+                            {%- if event['use_additional_questionnaire'] %}
+                                &bull;
+                                {{ util.href(cdedblink('event/additional_questionnaire', {'event_id': event_id}),
+                                             gettext("Questionnaire"), icon='edit') -}}
+                            {% endif -%}
+                        {% else %}
+                            ({% trans registered=util.href(link, gettext("registered")) -%}
+                                formerly {{ registered }}
+                            {%- endtrans %})
+                        {% endif %}
                     {% elif "event" in user.roles and event['is_open'] %}
                         {{ util.href(cdedblink('event/register_form', {'event_id': event_id}),
                             gettext("Register"), icon='sign-in-alt') }}
