@@ -175,10 +175,11 @@ class TestCommon(BasicTest):
                 self.assertIn("Can only unwrap collections.", cmt.exception.args[0])
 
     def test_untranslated_strings(self) -> None:
-        i18n_path = self.conf["REPOSITORY_PATH"] / 'i18n'
-        langs = ('en', 'de')  # languages we currently test
+        i18n_path = self.conf["REPOSITORY_PATH"] / "i18n"
+        # list of languages we currently test
+        langs = [i18n_path / lang / "LC_MESSAGES" for lang in ["en", "de"]]
         with tempfile.TemporaryDirectory() as tempdir:
-            tmppath = pathlib.Path(tempdir, 'i18n')
+            tmppath = pathlib.Path(tempdir, "i18n")
             shutil.copytree(i18n_path, tmppath)
             subprocess.run(["make", f"I18NDIR={tmppath}",
                             f"I18N_LANGUAGES={' '.join(langs)}", "i18n-extract"],
@@ -205,7 +206,7 @@ class TestCommon(BasicTest):
 
         for lang, match in matches.items():
             assert match is not None
-            if lang != 'en':
+            if lang != "en":
                 with self.subTest(f"untranslated-{lang}"):
                     self.assertIsNone(match["untranslated"],
                                       f"There are untranslated strings ({lang})."

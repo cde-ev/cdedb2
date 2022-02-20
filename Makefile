@@ -89,6 +89,8 @@ DATA_USER = www-data
 XSS_PAYLOAD = <script>abcdef</script>
 # Directory where the translation files are stored. Especially used by the i18n-targets.
 I18NDIR = ./i18n
+# Subdirectories of the translation targets. No trailing slash as that messes up some patterns.
+I18N_LANGUAGES = $(wildcard $(I18NDIR)/*/LC_MESSAGES)
 
 ###########
 # General #
@@ -135,13 +137,13 @@ i18n-extract:
 		--mapping=./babel.cfg --keywords="rs.gettext rs.ngettext n_" \
 		--output=$(I18NDIR)/cdedb.pot --input-dirs="bin,cdedb"
 
-i18n-update: $(I18NDIR)/*/LC_MESSAGES/cdedb.po
+i18n-update: $(foreach dir, $(I18N_LANGUAGES), $(dir)/cdedb.po)
 
 $(I18NDIR)/%/LC_MESSAGES/cdedb.po: $(I18NDIR)/cdedb.pot
 	msgmerge --lang=$* --update $@ $<
 	msgattrib --no-obsolete --sort-by-file -o $@ $@
 
-i18n-compile: $(I18NDIR)/*/LC_MESSAGES/cdedb.mo
+i18n-compile: $(foreach dir, $(I18N_LANGUAGES), $(dir)/cdedb.mo)
 
 $(I18NDIR)/%/LC_MESSAGES/cdedb.mo: $(I18NDIR)/%/LC_MESSAGES/cdedb.po
 	msgfmt --verbose --check --statistics -o $@ $<
