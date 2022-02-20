@@ -838,20 +838,19 @@ class DatabaseLock:
     def __init__(self, rs: RequestState, *locks: LockType):
         self.rs = rs
         self.locks = locks
+        self.conn = None
+        self.cur = None
 
     def __enter__(self) -> bool:
-        # start the transaction
-        self.rs._conn.contaminate()
-        self.rs._conn.__enter__()
+        was_locking_successful = True
         query = ("SELECT name FROM core.locks WHERE name = ANY(%s)"
                  " FOR NO KEY UPDATE NOWAIT")
         params = [lock.value for lock in self.locks]
-
-        was_locking_successful = True
+        self.rs._conn.contaminate()
+        self.conn = self.rs._conn.__enter__()
+        self.cur = self.conn.cursor().__enter__()
         try:
-            with self.rs._conn as conn:
-                with conn.cursor() as cur:
-                    cur.execute(query, (params,))
+            self.cur.execute(query, (params,))
         except psycopg2.errors.LockNotAvailable:
             was_locking_successful = False
         finally:
@@ -859,9 +858,13 @@ class DatabaseLock:
 
     def __exit__(self, atype: Type[Exception], value: Exception,
                  tb: TracebackType) -> bool:
-        # finish the transaction
+        ret = False
+        if self.cur is not None:
+            ret = self.cur.__exit__(atype, value, tb) or ret
+        if self.conn is not None:
+            ret = self.conn.__exit__(atype, value, tb) or ret
         self.rs._conn.decontaminate()
-        return self.rs._conn.__exit__(atype, value, tb)
+        return ret
 
 
 def affirm_validation(assertion: Type[T], value: Any, **kwargs: Any) -> T:

@@ -285,7 +285,10 @@ The original message as received by Mailman is attached.
         :returns: Whether connection to Mailman has been successful.
         """
         with DatabaseLock(rs, LockType.mailman) as was_locking_successful:
-            self._sync(was_locking_successful)
+            if was_locking_successful:
+                self._sync()
+            else:
+                self.logger.info("Mailman sync ongoing, skipping this invokation.")
 
         if (self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or (
                 self.conf["CDEDB_DEV"] and not self.conf["CDEDB_TEST"])):  # pragma: no cover
@@ -317,9 +320,6 @@ The original message as received by Mailman is attached.
             mailman.delete_list(address)
         return True
 
-    def _sync(self, was_locking_successful: bool):
+    def _sync(self):
         from time import sleep
-        if was_locking_successful:
-            sleep(60)
-        else:
-            return
+        sleep(60)
