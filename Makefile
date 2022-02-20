@@ -1,43 +1,56 @@
 SHELL := /bin/bash
 
-.PHONY: help doc reload i18n-refresh i18n-extract i18n-update i18n-compile sample-data \
-	sample-data-dump storage storage-test sql sql-test sql-test-shallow cron mypy flake8 pylint \
-	template-line-length lint prepare-check check check-parallel sql-xss xss-check dump-html \
-	validate-html .coverage coverage
-
+.PHONY: help
 help:
-	@echo "General:"
-	@echo "doc          -- build documentation"
-	@echo "reload       -- re-compile GNU gettext data and trigger WSGI worker reload"
-	@echo "i18n-refresh -- extract translatable strings from code and update translation catalogs"
+	@echo "Default Variables:"
+	@echo "DATABASE_NAME       -- name of a postgres database. Default: cdb"
+	@echo "STORAGE_DIR         -- location where the cdedb stores files. Default: /var/lib/cdedb"
+	@echo "LOG_DIR             -- location of the logs. Default: /var/log/cdedb"
+	@echo "DATA_USER           -- system user who will own STORAGE_DIR and LOG_DIR. Default: www-data"
+	@echo "XSS_PAYLOAD         -- payload to insert in sample_data_xss.sql. Default: <script>abcdef</script>"
+	@echo "I18NDIR             -- directory of the translation files. Default: ./i18n"
 	@echo ""
-	@echo "Database and storage:"
-	@echo "sample-data      -- initialize database structures (DESTROYS DATA!)"
-	@echo "sample-data-dump -- dump current database state into json file in tests directory"
-	@echo "sql              -- initialize postgres (use sample-data instead)"
-	@echo "sql-test         -- initialize database structures for test suite"
-	@echo "sql-test-shallow -- reset database structures for test suite"
-	@echo "                    (this is a fast version of sql-test, can be substituted after that"
-	@echo "                        was executed)"
-	@echo "storage          -- (re)create storage directory in /var/lib/cdedb"
-	@echo "storage-test     -- create storage directory inside /tmp for tests needing this for"
-	@echo "                    attachments, photos etc."
-	@echo "                    (this should not be called by hand, but every test needing this"
-	@echo "                        should get the @storage decorator)"
-	@echo "cron             -- trigger cronjob execution (as user www-data)"
+	@echo "General:"
+	@echo "cron                -- trigger cronjob execution (as user www-data)"
+	@echo "doc                 -- build documentation"
+	@echo "reload              -- re-compile GNU gettext data and trigger WSGI worker reload"
+	@echo ""
+	@echo "Translations"
+	@echo "i18n-refresh        -- extract translatable strings from code and update translation catalogs in I18NDIR"
+	@echo ""
+	@echo "Storage:"
+	@echo "storage             -- recreate STORAGE_DIR owned by DATA_USER and populate it with sample files"
+	@echo "log                 -- recreate LOG_DIR owned by DATA_USER"
+	@echo ""
+	@echo "Database"
+	@echo "sql-initial         -- Drops all databases and create default postgres users."
+	@echo "sql-setup           -- Create new database DATABASE_NAME"
+	@echo "sql                 -- populates database DATABASE_NAME with sample content (use sample-data instead)"
+	@echo ""
+	@echo "LDAP:"
+	@echo "TODO add description"
+	@echo ""
+	@echo "Code formatting:"
+	@echo "mypy                -- let mypy run over our codebase (bin, cdedb, tests)"
+	@echo "lint                -- run linters (isort, flake8 and pylint)"
 	@echo ""
 	@echo "Code testing:"
-	@echo "mypy           -- let mypy run over our codebase (bin, cdedb, tests)"
-	@echo "lint           -- run linters (isort, flake8 and pylint)"
-	@echo "check          -- run (parts of the) test suite"
-	@echo "xss-check      -- check for xss vulnerabilities"
-	@echo "dump-html      -- run frontend tests and store all encountered pages inside"
-	@echo "                  /tmp/cdedb-dump/"
-	@echo "validate-html  -- run html validator over the dumped frontend pages "
-	@echo "                  (dump-html is executed before if they do not exist yet)"
-	@echo "coverage       -- run coverage to determine test suite coverage"
+	@echo "check               -- run (parts of the) test suite"
+	@echo "xss-check           -- check for xss vulnerabilities"
+	@echo "dump-html           -- run frontend tests and store all encountered pages inside /tmp/cdedb-dump/"
+	@echo "validate-html       -- run html validator over the dumped frontend pages "
+	@echo "                       (dump-html is executed before if they do not exist yet)"
+	@echo "coverage            -- run coverage to determine test suite coverage"
+	@echo ""
+	@echo "Sample Data:"
+	@echo "sample-data         -- initialize database structures (DESTROYS DATA!)"
+	@echo "sample-data-dump    -- dump current database state into json file in tests directory"
 
-# Executables
+
+###############
+# Executables #
+###############
+
 PYTHONBIN ?= python3
 ISORT ?= $(PYTHONBIN) -m isort
 FLAKE8 ?= $(PYTHONBIN) -m flake8
@@ -54,41 +67,76 @@ else
 endif
 SAMPLE_DATA_SQL ?= bin/create_sample_data_sql.py
 
-# Others
-TESTPREPARATION ?= automatic
-TESTDATABASENAME ?= $(or ${CDEDB_TEST_DATABASE}, cdb_test)
-TESTTMPDIR ?= $(or ${CDEDB_TEST_TMP_DIR}, /tmp/cdedb-test-default )
-TESTSTORAGEPATH ?= $(TESTTMPDIR)/storage
-TESTLOGPATH ?= $(TESTTMPDIR)/logs
-XSS_PAYLOAD ?= $(or ${CDEDB_TEST_XSS_PAYLOAD}, <script>abcdef</script>)
-I18NDIR ?= ./i18n
+
+#####################
+# Default Variables #
+#####################
+
+# Use makes command-line arguments to override the following default variables
+# The database name on which we operate. This will be overridden in the test suite.
+DATABASE_NAME = cdb
+# The host where the database is available. This is mostly needed to setup ldap correctly.
+DATABASE_HOST = localhost
+# The password of the cdb_admin user. This is currently needed to setup ldap correctly.
+DATABASE_CDB_ADMIN_PASSWORD = 9876543210abcdefghijklmnopqrst
+# Directory where the python application stores additional files. This will be overridden in the test suite.
+STORAGE_DIR = /var/lib/cdedb
+# Directory where the application stores its log files. This will be overridden in the test suite.
+LOG_DIR = /var/log/cdedb
+# User who runs the application and has access to storage and log dir. This will be overridden in the test suite.
+DATA_USER = www-data
+# Payload to be injected in the sample_data_xss.sql file.
+XSS_PAYLOAD = <script>abcdef</script>
+# Directory where the translation files are stored. Especially used by the i18n-targets.
+I18NDIR = ./i18n
 
 
 ###########
 # General #
 ###########
 
+.PHONY: cron
+cron:
+	sudo -u www-data /cdedb2/bin/cron_execute.py
+
+.PHONY: doc
 doc:
 	bin/create_email_template_list.sh .
 	$(MAKE) -C doc html
 
-reload:
-	$(MAKE) i18n-compile
+.PHONY: reload
+reload: i18n-compile
 ifeq ($(wildcard /CONTAINER),/CONTAINER)
 	apachectl restart
 else
 	sudo systemctl restart apache2
 endif
 
-i18n-refresh:
-	$(MAKE) i18n-extract
-	$(MAKE) i18n-update
+# ensure we do not modify a production or offline vm. Add as prerequisite to each target which could destroy data.
+.PHONY: sanity-check
+sanity-check:
+  ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
+	$(error Refusing to touch live instance)
+  endif
+  ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
+	$(error Refusing to touch orga instance)
+  endif
 
+
+################
+# Translations #
+################
+
+.PHONY: i18n-refresh
+i18n-refresh: i18n-extract i18n-update
+
+.PHONY: i18n-extract
 i18n-extract:
 	pybabel extract --msgid-bugs-address="cdedb@lists.cde-ev.de" \
 		--mapping=./babel.cfg --keywords="rs.gettext rs.ngettext n_" \
 		--output=$(I18NDIR)/cdedb.pot --input-dirs="bin,cdedb"
 
+.PHONY: i18n-update
 i18n-update:
 	msgmerge --lang=de --update $(I18NDIR)/de/LC_MESSAGES/cdedb.po $(I18NDIR)/cdedb.pot
 	msgmerge --lang=en --update $(I18NDIR)/en/LC_MESSAGES/cdedb.po $(I18NDIR)/cdedb.pot
@@ -101,6 +149,7 @@ i18n-update:
 		$(I18NDIR)/la/LC_MESSAGES/cdedb.po
 	# TODO: do we want to use msgattribs --indent option for prettier po files?
 
+.PHONY: i18n-compile
 i18n-compile:
 	msgfmt --verbose --check --statistics -o $(I18NDIR)/de/LC_MESSAGES/cdedb.mo \
 		$(I18NDIR)/de/LC_MESSAGES/cdedb.po
@@ -110,123 +159,102 @@ i18n-compile:
 		$(I18NDIR)/la/LC_MESSAGES/cdedb.po
 
 
-########################
-# Database and storage #
-########################
-
-sample-data:
-	cp -f related/auto-build/files/stage3/localconfig.py cdedb/localconfig.py
-	$(MAKE) storage > /dev/null
-	$(MAKE) sql > /dev/null
-
-sample-data-dump:
-	JSONTEMPFILE=`sudo -u www-data mktemp` \
-		&& sudo -u www-data chmod +r "$${JSONTEMPFILE}" \
-		&& sudo -u www-data $(PYTHONBIN) bin/create_sample_data_json.py -o "$${JSONTEMPFILE}" \
-		&& cp "$${JSONTEMPFILE}" tests/ancillary_files/sample_data.json \
-		&& sudo -u www-data rm "$${JSONTEMPFILE}"
+###########
+# Storage #
+###########
 
 TESTFOTONAME := e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea243$\
 		33cc17797fc29b047c437ef5beb33ac0f570c6589d64f9
 
-storage:
-ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
-	$(error Refusing to touch live instance)
-endif
-ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
-	$(error Refusing to touch orga instance)
-endif
-	sudo rm -rf -- /var/lib/cdedb/*
-	sudo mkdir /var/lib/cdedb/foto/
-	sudo mkdir /var/lib/cdedb/minor_form/
-	sudo mkdir /var/lib/cdedb/event_logo/
-	sudo mkdir /var/lib/cdedb/course_logo/
-	sudo mkdir /var/lib/cdedb/ballot_result/
-	sudo mkdir /var/lib/cdedb/assembly_attachment/
-	sudo mkdir /var/lib/cdedb/mailman_templates/
-	sudo mkdir /var/lib/cdedb/genesis_attachment/
-	sudo cp tests/ancillary_files/$(TESTFOTONAME) /var/lib/cdedb/foto/
-	sudo cp tests/ancillary_files/rechen.pdf /var/lib/cdedb/assembly_attachment/1_v1
-	sudo cp tests/ancillary_files/kassen.pdf /var/lib/cdedb/assembly_attachment/2_v1
-	sudo cp tests/ancillary_files/kassen2.pdf /var/lib/cdedb/assembly_attachment/2_v3
-	sudo cp tests/ancillary_files/kandidaten.pdf /var/lib/cdedb/assembly_attachment/3_v1
-	sudo chown --recursive www-data:www-data /var/lib/cdedb
+.PHONY: storage
+storage: sanity-check
+	sudo rm -rf -- $(STORAGE_DIR)/*
+	# this takes care the DATA_USER also owns the directories containing STORAGE_DIR
+	sudo -u $(DATA_USER) mkdir -p $(STORAGE_DIR)
+	sudo mkdir -p $(STORAGE_DIR)/foto/
+	sudo mkdir -p $(STORAGE_DIR)/minor_form/
+	sudo mkdir -p $(STORAGE_DIR)/event_logo/
+	sudo mkdir -p $(STORAGE_DIR)/course_logo/
+	sudo mkdir -p $(STORAGE_DIR)/ballot_result/
+	sudo mkdir -p $(STORAGE_DIR)/assembly_attachment/
+	sudo mkdir -p $(STORAGE_DIR)/genesis_attachment/
+	sudo mkdir -p $(STORAGE_DIR)/mailman_templates/
+	sudo mkdir -p $(STORAGE_DIR)/testfiles/
+	sudo cp tests/ancillary_files/$(TESTFOTONAME) $(STORAGE_DIR)/foto/
+	sudo cp tests/ancillary_files/rechen.pdf $(STORAGE_DIR)/assembly_attachment/1_v1
+	sudo cp tests/ancillary_files/kassen.pdf $(STORAGE_DIR)/assembly_attachment/2_v1
+	sudo cp tests/ancillary_files/kassen2.pdf $(STORAGE_DIR)/assembly_attachment/2_v3
+	sudo cp tests/ancillary_files/kandidaten.pdf $(STORAGE_DIR)/assembly_attachment/3_v1
+	sudo cp -t $(STORAGE_DIR)/testfiles/ tests/ancillary_files/{$(TESTFILES)}
+	sudo chown --recursive $(DATA_USER):$(DATA_USER) $(STORAGE_DIR)
 
 TESTFILES := picture.pdf,picture.png,picture.jpg,form.pdf,rechen.pdf,ballot_result.json,sepapain.xml$\
 		,event_export.json,batch_admission.csv,money_transfers.csv,money_transfers_valid.csv$\
 		,partial_event_import.json,TestAka_partial_export_event.json,statement.csv$\
 		,questionnaire_import.json
 
-storage-test:
-	rm -rf -- ${TESTSTORAGEPATH}/*
-	mkdir -p ${TESTSTORAGEPATH}/foto/
-	mkdir -p ${TESTSTORAGEPATH}/minor_form/
-	mkdir -p ${TESTSTORAGEPATH}/event_logo/
-	mkdir -p ${TESTSTORAGEPATH}/course_logo/
-	mkdir -p ${TESTSTORAGEPATH}/ballot_result/
-	mkdir -p ${TESTSTORAGEPATH}/assembly_attachment/
-	mkdir -p ${TESTSTORAGEPATH}/genesis_attachment/
-	mkdir -p ${TESTSTORAGEPATH}/mailman_templates/
-	mkdir -p ${TESTSTORAGEPATH}/testfiles/
-	cp tests/ancillary_files/$(TESTFOTONAME) ${TESTSTORAGEPATH}/foto/
-	cp tests/ancillary_files/rechen.pdf ${TESTSTORAGEPATH}/assembly_attachment/1_v1
-	cp tests/ancillary_files/kassen.pdf ${TESTSTORAGEPATH}/assembly_attachment/2_v1
-	cp tests/ancillary_files/kassen2.pdf ${TESTSTORAGEPATH}/assembly_attachment/2_v3
-	cp tests/ancillary_files/kandidaten.pdf ${TESTSTORAGEPATH}/assembly_attachment/3_v1
-	cp -t ${TESTSTORAGEPATH}/testfiles/ tests/ancillary_files/{$(TESTFILES)}
+.PHONY: log
+log: sanity-check
+	sudo rm -rf -- $(LOG_DIR)/*
+	# this takes care the DATA_USER also owns the directories containing LOG_DIR
+	sudo -u $(DATA_USER) mkdir -p $(LOG_DIR)
+	sudo chown $(DATA_USER):$(DATA_USER) $(LOG_DIR)
 
-sql: tests/ancillary_files/sample_data.sql
-ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
-	$(error Refusing to touch live instance)
-endif
-ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
-	$(error Refusing to touch orga instance)
-endif
-ifneq ($(wildcard /CONTAINER),/CONTAINER)
+
+############
+# Database #
+############
+
+# drop all existent databases and add the database users. Acts globally and is idempotent.
+.PHONY: sql-initial
+sql-initial: sanity-check
+  # we cannot use systemctl in docker
+  ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl stop pgbouncer
 	sudo systemctl stop slapd
-endif
+  endif
 	$(PSQL_ADMIN) -f cdedb/database/cdedb-users.sql
-	$(PSQL_ADMIN) -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb
-ifneq ($(wildcard /CONTAINER),/CONTAINER)
+  ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl start pgbouncer
-endif
-	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=cdb
-	$(PSQL) -f cdedb/database/cdedb-ldap.sql --dbname=cdb
-	$(PSQL) -f tests/ancillary_files/sample_data.sql --dbname=cdb
-ifneq ($(wildcard /CONTAINER),/CONTAINER)
-	sudo systemctl start slapd
-endif
+	# we need actual data before we can restart slapd, so we deferr this to later
+	# sudo systemctl start slapd
+  endif
 
-sql-test: tests/ancillary_files/sample_data.sql
-ifneq ($(wildcard /CONTAINER),/CONTAINER)
+# setup a new database, specified by DATABASE_NAME. Does not yet populate it with actual data.
+.PHONY: sql-setup
+sql-setup: sanity-check
+  # we cannot use systemctl in docker
+  ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl stop pgbouncer
-endif
-	$(PSQL_ADMIN) -f cdedb/database/cdedb-db.sql -v cdb_database_name=${TESTDATABASENAME}
-ifneq ($(wildcard /CONTAINER),/CONTAINER)
+	sudo systemctl stop slapd
+  endif
+	$(PSQL_ADMIN) -f cdedb/database/cdedb-db.sql -v cdb_database_name=$(DATABASE_NAME)
+  ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl start pgbouncer
-endif
-	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=${TESTDATABASENAME}
-	$(PSQL) -f cdedb/database/cdedb-ldap.sql --dbname=${TESTDATABASENAME}
-	$(PSQL) -f tests/ancillary_files/sample_data.sql --dbname=${TESTDATABASENAME}
+	# we need actual data before we can restart slapd, so we deferr this to later
+	# sudo systemctl start slapd
+  endif
+	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=$(DATABASE_NAME)
+	$(PSQL) -f cdedb/database/cdedb-ldap.sql --dbname=$(DATABASE_NAME)
 
-sql-test-shallow: tests/ancillary_files/sample_data.sql
-	$(PSQL) -f tests/ancillary_files/clean_data.sql --dbname=${TESTDATABASENAME}
-	$(PSQL) -f tests/ancillary_files/sample_data.sql --dbname=${TESTDATABASENAME}
+# setup a new database and populate it with the sample data.
+.PHONY: sql
+sql: sql-setup tests/ancillary_files/sample_data.sql
+	$(PSQL) -f tests/ancillary_files/sample_data.sql --dbname=$(DATABASE_NAME)
+  # finally restart slapd
+  ifneq ($(wildcard /CONTAINER),/CONTAINER)
+	sudo systemctl restart slapd
+  endif
 
-cron:
-	sudo -u www-data /cdedb2/bin/cron_execute.py
+# setup a new database and populate it with special sample data to perform xss checks.
+.PHONY: sql-xss
+sql-xss: sql-setup tests/ancillary_files/sample_data_xss.sql
+	$(PSQL) -f tests/ancillary_files/sample_data_xss.sql --dbname=$(DATABASE_NAME)
 
 
 ########
 # LDAP #
 ########
-# TODO add dependency on sql-test to create the specified database
-
-# use command-line arguments of make to override
-DATABASE_NAME = cdb
-DATABASE_HOST = localhost
-DATABASE_CDB_ADMIN_PASSWORD = 9876543210abcdefghijklmnopqrst
 
 .PHONY: ldap-prepare-odbc
 ldap-prepare-odbc:
@@ -276,18 +304,22 @@ ldap-remove:
 .PHONY: ldap-reset
 ldap-reset: ldap-remove ldap-create ldap-update-full
 
-###############################
-# Code testing and formatting #
-###############################
 
+###################
+# Code formatting #
+###################
+
+.PHONY: format
 format:
 	$(ISORT) bin/*.py cdedb tests
 
+.PHONY: mypy
 mypy:
 	$(MYPY) bin/*.py cdedb tests
 
 BANNERLINE := "================================================================================"
 
+.PHONY: isort
 isort:
 	@echo $(BANNERLINE)
 	@echo "All of isort"
@@ -295,6 +327,7 @@ isort:
 	@echo ""
 	$(ISORT) --check-only bin/*.py cdedb tests
 
+.PHONY: flake8
 flake8:
 	@echo $(BANNERLINE)
 	@echo "All of flake8"
@@ -302,6 +335,7 @@ flake8:
 	@echo ""
 	$(FLAKE8) cdedb tests
 
+.PHONY: pylint
 pylint:
 	@echo $(BANNERLINE)
 	@echo "All of pylint"
@@ -309,6 +343,7 @@ pylint:
 	@echo ""
 	$(PYLINT) cdedb tests
 
+.PHONY: template-line-length
 template-line-length:
 	@echo $(BANNERLINE)
 	@echo "Lines too long in templates"
@@ -316,38 +351,23 @@ template-line-length:
 	@echo ""
 	grep -E -R '^.{121,}' cdedb/frontend/templates/ | grep 'tmpl:'
 
+.PHONY: lint
 lint: isort flake8 pylint
 
-prepare-check:
-ifneq ($(TESTPREPARATION), manual)
-	mkdir -p $(TESTTMPDIR)
-	sudo rm -rf $(TESTLOGPATH)  /tmp/cdedb-mail-* \
-		|| true
-	mkdir $(TESTLOGPATH)
-	$(MAKE) i18n-compile
-	$(MAKE) sql-test
-else
-	@echo "Omitting test preparation."
-endif
 
+################
+# Code testing #
+################
+
+.PHONY: check
 check:
 	$(PYTHONBIN) bin/check.py --verbose $(or $(TESTPATTERNS), )
 
-sql-xss: tests/ancillary_files/sample_data_xss.sql
-ifneq ($(wildcard /CONTAINER),/CONTAINER)
-	sudo systemctl stop pgbouncer
-endif
-	$(PSQL_ADMIN) -f cdedb/database/cdedb-db.sql -v cdb_database_name=${TESTDATABASENAME}
-ifneq ($(wildcard /CONTAINER),/CONTAINER)
-	sudo systemctl start pgbouncer
-endif
-	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=${TESTDATABASENAME}
-	$(PSQL) -f cdedb/database/cdedb-ldap.sql --dbname=${TESTDATABASENAME}
-	$(PSQL) -f tests/ancillary_files/sample_data_xss.sql --dbname=${TESTDATABASENAME}
-
+.PHONY: xss-check
 xss-check:
 	$(PYTHONBIN) bin/check.py --xss-check --verbose
 
+.PHONY: dump-html
 dump-html:
 	$(MAKE) -B /tmp/cdedb-dump/
 
@@ -355,6 +375,7 @@ dump-html:
 /tmp/cdedb-dump/:
 	$(PYTHONBIN) -m bin.check --verbose tests.test_frontend*
 
+.PHONY: validate-html
 validate-html: /tmp/cdedb-dump/ /opt/validator/vnu-runtime-image/bin/vnu
 	/opt/validator/vnu-runtime-image/bin/vnu --no-langdetect --stdout \
 		--filterpattern '(.*)input type is not supported in all browsers(.*)' /tmp/cdedb-dump/* \
@@ -380,10 +401,28 @@ VALIDATORCHECKSUM := "f56d95448fba4015ec75cfc9546e3063e8d66390 /opt/validator/vn
 		$(wildcard cdedb/backend/*.py) $(wildcard tests/*.py)
 	$(COVERAGE) run -m bin.check
 
+.PHONY: coverage
 coverage: .coverage
 	$(COVERAGE) report --include 'cdedb/*' --show-missing
 	$(COVERAGE) html --include 'cdedb/*'
 	@echo "HTML reports for easier inspection are in ./htmlcov"
+
+
+##########################
+# Sample Data Generation #
+##########################
+
+.PHONY: sample-data
+sample-data: storage sql-initial sql
+	cp -f related/auto-build/files/stage3/localconfig.py cdedb/localconfig.py
+
+.PHONY: sample-data-dump
+sample-data-dump:
+	JSONTEMPFILE=`sudo -u www-data mktemp` \
+		&& sudo -u www-data chmod +r "$${JSONTEMPFILE}" \
+		&& sudo -u www-data $(PYTHONBIN) bin/create_sample_data_json.py -o "$${JSONTEMPFILE}" \
+		&& cp "$${JSONTEMPFILE}" tests/ancillary_files/sample_data.json \
+		&& sudo -u www-data rm "$${JSONTEMPFILE}"
 
 tests/ancillary_files/sample_data.sql: tests/ancillary_files/sample_data.json \
 		$(SAMPLE_DATA_SQL) cdedb/database/cdedb-tables.sql cdedb/database/cdedb-ldap.sql

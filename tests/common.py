@@ -11,6 +11,7 @@ import email.parser
 import email.policy
 import enum
 import functools
+import getpass
 import gettext
 import io
 import json
@@ -46,7 +47,7 @@ from cdedb.common import (
     ANTI_CSRF_TOKEN_PAYLOAD, CdEDBLog, CdEDBObject, CdEDBObjectMap, PathLike,
     PrivilegeError, RequestState, merge_dicts, nearly_now, now, roles_to_db_role,
 )
-from cdedb.config import BasicConfig, Config, SecretsConfig
+from cdedb.config import SecretsConfig, TestConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.application import Application
@@ -55,8 +56,6 @@ from cdedb.frontend.cron import CronFrontend
 from cdedb.frontend.paths import CDEDB_PATHS
 from cdedb.query import QueryOperators
 from cdedb.script import Script
-
-_BASICCONF = BasicConfig()
 
 # TODO: use TypedDict to specify UserObject.
 UserObject = Mapping[str, Any]
@@ -236,22 +235,30 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
 
 class BasicTest(unittest.TestCase):
     """Provide some basic useful test functionalities."""
+    needs_storage_marker = "_needs_storage"
+
     storage_dir: ClassVar[pathlib.Path]
     testfile_dir: ClassVar[pathlib.Path]
-    needs_storage_marker = "_needs_storage"
-    conf: ClassVar[Config]
+    configpath: ClassVar[str]
+    conf: ClassVar[TestConfig]
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.conf = Config()
+        cls.configpath = os.environ['CDEDB_TEST_CONFIGPATH']
+        cls.conf = TestConfig(cls.configpath)
         cls.storage_dir = cls.conf['STORAGE_DIR']
         cls.testfile_dir = cls.storage_dir / "testfiles"
 
     def setUp(self) -> None:
         test_method = getattr(self, self._testMethodName)
         if getattr(test_method, self.needs_storage_marker, False):
-            subprocess.run(("make", "storage-test"), stdout=subprocess.DEVNULL,
-                           check=True, start_new_session=True)
+            # get the user running the current process, so the access rights for the
+            # storage directory are set correctly
+            user = getpass.getuser()
+            subprocess.run(
+                ("make", "storage", f"STORAGE_DIR={self.storage_dir}",
+                 f"DATA_USER={user}"),
+                stdout=subprocess.DEVNULL, check=True, start_new_session=True)
 
     def tearDown(self) -> None:
         test_method = getattr(self, self._testMethodName)
@@ -316,6 +323,15 @@ class BasicTest(unittest.TestCase):
 class CdEDBTest(BasicTest):
     """Reset the DB for every test."""
     longMessage = False
+    _clean_data: ClassVar[str]
+    _sample_data: ClassVar[str]
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        sample_data_dir = pathlib.Path("tests/ancillary_files")
+        cls._clean_data = (sample_data_dir / "clean_data.sql").read_text()
+        cls._sample_data = (sample_data_dir / "sample_data.sql").read_text()
 
     def setUp(self) -> None:
         with Script(
@@ -326,12 +342,8 @@ class CdEDBTest(BasicTest):
         ).rs().conn as conn:
             conn.set_session(autocommit=True)
             with conn.cursor() as curr:
-                with open("tests/ancillary_files/clean_data.sql") as f:
-                    sql_input = f.read()
-                curr.execute(sql_input)
-                with open("tests/ancillary_files/sample_data.sql") as f:
-                    sql_input = f.read()
-                curr.execute(sql_input)
+                curr.execute(self._clean_data)
+                curr.execute(self._sample_data)
 
         super().setUp()
 
@@ -436,14 +448,14 @@ class BackendTest(CdEDBTest):
                     exp[k] = decimal.Decimal(exp[k])
         self.assertEqual(log, tuple(log_expectation))
 
-    @staticmethod
-    def initialize_raw_backend(backendcls: Type[SessionBackend]
+    @classmethod
+    def initialize_raw_backend(cls, backendcls: Type[SessionBackend]
                                ) -> SessionBackend:
-        return backendcls()
+        return backendcls(configpath=cls.configpath)
 
     @classmethod
     def initialize_backend(cls, backendcls: Type[B]) -> B:
-        return _make_backend_shim(backendcls(), internal=True)
+        return _make_backend_shim(backendcls(configpath=cls.configpath), internal=True)
 
 
 # A reference of the most important attributes for all users. This is used for
@@ -771,8 +783,9 @@ def storage(fun: F) -> F:
 
 def execsql(sql: AnyStr) -> None:
     """Execute arbitrary SQL-code on the test database."""
+    conf = TestConfig(os.environ['CDEDB_TEST_CONFIGPATH'])
     psql = ("/cdedb2/bin/execute_sql_script.py",
-            "--username", "cdb", "--dbname", os.environ['CDEDB_TEST_DATABASE'])
+            "--username", "cdb", "--dbname", conf["CDB_DATABASE_NAME"])
     mode = 'wb' if isinstance(sql, bytes) else 'w'
     with tempfile.NamedTemporaryFile(mode=mode, suffix='.sql') as sql_file:
         sql_file.write(sql)
@@ -806,7 +819,7 @@ class FrontendTest(BackendTest):
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
-        app = Application()
+        app = Application(cls.configpath)
         cls.gettext = app.translations[cls.lang].gettext
         cls.app = webtest.TestApp(app, extra_environ=cls.app_extra_environ)
 
@@ -865,7 +878,7 @@ class FrontendTest(BackendTest):
         if response is None:
             response = self.response
         # record performance information during test runs
-        with open(_BASICCONF["LOG_DIR"] / "cdedb-timing.log", 'a') as f:
+        with open(self.conf["LOG_DIR"] / "cdedb-timing.log", 'a') as f:
             output = "{} {} {} {}\n".format(
                 response.request.path, response.request.method,
                 response.headers.get('X-Generation-Time'),
@@ -1631,9 +1644,13 @@ class MultiAppFrontendTest(FrontendTest):
     def setUpClass(cls) -> None:
         """Create n new apps, overwrite cls.app with a reference."""
         super().setUpClass()
-        cls.apps = [webtest.TestApp(Application(),
-                                    extra_environ=cls.app_extra_environ)
-                    for _ in range(cls.n)]
+        cls.apps = [
+            webtest.TestApp(
+                Application(cls.configpath),
+                extra_environ=cls.app_extra_environ,
+            )
+            for _ in range(cls.n)
+        ]
         # The super().setUpClass overwrites the property, so reset it here.
         cls.app = property(fget=cls.get_app, fset=cls.set_app)
         cls.responses = [None for _ in range(cls.n)]
@@ -1699,6 +1716,8 @@ def make_cron_backend_proxy(cron: CronFrontend, backend: B) -> B:
 class CronTest(CdEDBTest):
     _remaining_periodics: Set[str]
     _remaining_tests: Set[str]
+    stores: List[StoreTrace]
+    mails: List[MailTrace]
     cron: ClassVar[CronFrontend]
     core: ClassVar[CoreBackend]
     cde: ClassVar[CdEBackend]
@@ -1707,15 +1726,10 @@ class CronTest(CdEDBTest):
     assembly: ClassVar[AssemblyBackend]
     ml: ClassVar[MlBackend]
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self.stores: List[StoreTrace] = []
-        self.mails: List[MailTrace] = []
-
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
-        cls.cron = CronFrontend()
+        cls.cron = CronFrontend(configpath=cls.configpath)
         cls.core = make_cron_backend_proxy(cls.cron, cls.cron.core.coreproxy)
         cls.cde = make_cron_backend_proxy(cls.cron, cls.cron.core.cdeproxy)
         cls.event = make_cron_backend_proxy(cls.cron, cls.cron.core.eventproxy)

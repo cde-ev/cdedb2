@@ -7,23 +7,29 @@ import tempfile
 import unittest
 from contextlib import redirect_stdout
 from pkgutil import resolve_name
-from typing import Any, Callable
+from typing import Any, Callable, ClassVar
 
 import psycopg2.errorcodes
 
 from cdedb.backend.core import CoreBackend
 from cdedb.common import unwrap
+from cdedb.config import TestConfig
 from cdedb.script import DryRunError, Script, ScriptAtomizer
 
 
 class TestScript(unittest.TestCase):
+    conf: ClassVar[TestConfig]
+    script: Script
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.conf = TestConfig(os.environ['CDEDB_TEST_CONFIGPATH'])
 
     def setUp(self) -> None:
         self.script = self.get_script()
 
-    @staticmethod
-    def get_script(**config: Any) -> Script:
-        return Script(persona_id=-1, dbname=os.environ['CDEDB_TEST_DATABASE'],
+    def get_script(self, **config: Any) -> Script:
+        return Script(persona_id=-1, dbname=self.conf["CDB_DATABASE_NAME"],
                       dbuser="cdb_admin", check_system_user=False, **config)
 
     @staticmethod
@@ -40,7 +46,7 @@ class TestScript(unittest.TestCase):
         self.assertEqual(23, rs_factory(23).user.persona_id)
 
         with self.assertRaises(psycopg2.OperationalError) as cm:
-            Script(dbname=os.environ['CDEDB_TEST_DATABASE'], dbuser="cdb_admin",
+            Script(dbname=self.conf["CDB_DATABASE_NAME"], dbuser="cdb_admin",
                    check_system_user=False, CDB_DATABASE_ROLES="{'cdb_admin': 'abc'}")
         # the vm is german while the postgresql docker image is english
         self.assertTrue(
