@@ -108,23 +108,91 @@ test          secret         does not exist in live instance
 Running tests
 -------------
 
-We provide a central script to run (parts of) our testsuite: ``bin/check.py``
+To allow simultaneous development and testing on the same machine without
+interference between the development and test process, we strictly separate the
+stateful parts (in particular sql database, file storage directory and logs) of development
+and test instance.
 
-Unittest
-^^^^^^^^
+.. note::
+    The majority of our tests do not need the file storage. Since the setup is costly, every test
+    who needs it has to get the ``@storage`` decorator from ``tests.common`` for the
+    storage directory to be created. After this test has finished, the directory will
+    be deleted.
+
+To achieve this, we use the same mechanisms as for development (or production)
+environments. This even allows running multiple test instances in parallel!
+Each instance of the test suite gains its own configuration file in ``tests/config/``,
+which extends the existent default configuration from ``cdedb/config.py``.
+This configuration may (in contrast to ``cdedb/localconfig.py``, which is not
+taken into account for test instances) include additional keys which are not
+present in the default configuration, if they are needed during the test process.
+The setup process uses the Makefile and overwrites the default values of the
+make variables with the values specified in the config file.
+
+To prepare and run the testsuite, we provide a central script: ``bin/check.py``
+You can pass some pattern to run only specific tests, or use the command line
+arguments to run only specific parts of the test suite. For detailed information
+run::
+
+    bin/check.py --help
+
+In the following, we will explain the pattern matching mechanism and shortly
+introduce each part of the test suite.
+
+Pattern matching
+^^^^^^^^^^^^^^^^
 
 You can pass an arbitrary amount of patterns to ``check.py``, which will then get matched
 against the fully qualified test method name.
 Such a full specifier looks like
-``tests.test_frontend_event.TestEventFrontend.test_create_event``, but you can also pass
+``tests.frontend_tests.event.TestEventFrontend.test_create_event``, but you can also pass
 an unambiguous part of it, like e.g. just ``create_eve``, for convenience.
-These parts of course can also specify complete test files, like ``test_backend_core``,
+These parts of course can also specify complete test files, like ``backend_tests.core``,
 where unambiguous parts suffer too.
 
 Pattern matching is performed by unittest, which uses ``fnmatch.fnmatchcase``
 internally [#fnmatch]_.
 If a pattern without an asterisk is passed it will be wrapped with one on both ends.
 
+Application tests
+^^^^^^^^^^^^^^^^^
+
+This is the main part of our test suite, providing tests for the CdEDB WSGI application,
+including the frontend tests (``tests/frontend_tests``), backend tests (``tests/backend_tests``),
+database tests and tests for the gluing parts (like validation, all in ``tests/other_tests``).
+
+To decrease runtime, we split this tests in our CI in three parts, using the
+configuration present in ``tests/config/test_1.py`` to ``tests/config/test_4.py``.
+To avoid test clashes when different parts use the same configuration, we use
+a simple locking mechanism with lockfiles inside ``/tmp`` and let the test script
+choose a free test configuration automatically.
+
+LDAP tests
+^^^^^^^^^^
+
+This includes all tests of our LDAP interface. This is a bit more tricky, since
+it additionally involves the ldap server, which is not able to serve the same
+ldap tree for different databases (the development and the test instance)
+simultaneously. So, we decided to let our ldap server serve the test database
+only during test runs. This avoids resetting the development instance each
+time the ldap tests are run, but also prevents accessing the development ldap
+tree during test runs. This may be fixed in the future.
+
+Inside the tests, we mock a ldap client querying our ldap server and check if
+the results satisfy our expectations. The configuration for this part of the
+testsuite is present in ``tests/config/test_ldap.py``.
+
+.. _xss-check:
+
+XSS tests
+^^^^^^^^^
+
+To prevent XSS mitigation, we test if our code performs proper HTML escaping
+on user input. For this, we use the ``bin/escape_fuzzing.py`` script to inject
+a payload containing HTML tags inside the database and check if they are
+escaped properly during serving.
+
+The configuration for this part of the testsuite is present in ``tests/config/test_xss.py``.
 
 .. _coverage:
 
@@ -136,51 +204,6 @@ Code coverage
 The coverage html reports for easier inspection are accessible on the local dev
 instance via Apache at `localhost:8443/coverage <https://localhost:8443/coverage>`_ for
 docker and `localhost:20443/coverage <https://localhost:20443/coverage>`_ for the VM.
-
-.. _xss-check:
-
-XSS vulnerabilty check
-^^^^^^^^^^^^^^^^^^^^^^
-
-Our test suite also contains a little script which injects a customizable payload into
-every database field and then checks that it is escaped correctly.
-You can run this script by just invoking ``make xss-check`` or specify a custom
-payload using the argparse entrypoint, e.g.::
-
-    bin/check.py --xss-check --payload "<script>mycustompayload</script>"
-
-
-Parallel testing
-----------------
-
-Our test suite is implemented using ``unittest``.
-However, as a web application the CdEDB needs database access.
-To mock the database and allow running multiple test "threads" in parallel, we create
-four test databases, ``cdb_test_1`` to ``cdb_test_4``.
-
-Which thread should be used for a test run is detected automatically by our script,
-using simple lockfiles inside ``/tmp``.
-This prevents multiple test runs from using the same database simultaneously, which
-would break everything.
-You can explicitly specify a thread id by using the ``--thread-id`` flag of
-``bin/check.py``.
-
-Every test ``Application`` stores log files and, if needed, some test files for up- and
-downloading (e.g. assembly attachments) in a temporary directory living inside ``/tmp``,
-whose structure is as follows::
-
-    /tmp/
-    `-- cdedb-test-<thread-id>
-        |-- logs
-        |   `-- [...]
-        `-- storage
-            `-- [subdirectories for attachments, fotos, files for uploading, exports, ...]
-
-.. note::
-    The majority of our tests do not need the test file storage. Thus, every test
-    who needs it has to get the ``@storage`` decorator from ``tests.common`` for the
-    storage directory to be created. After this test has finished, the directory will
-    be deleted.
 
 
 .. [#fnmatch] https://docs.python.org/3/library/unittest.html#unittest.TestLoader.testNamePatterns
