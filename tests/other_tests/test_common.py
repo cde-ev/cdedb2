@@ -177,7 +177,7 @@ class TestCommon(BasicTest):
     def test_untranslated_strings(self) -> None:
         i18n_path = self.conf["REPOSITORY_PATH"] / "i18n"
         # list of languages we currently test
-        langs = [i18n_path / lang / "LC_MESSAGES" for lang in ["en", "de"]]
+        langs = ["en", "de"]
         with tempfile.TemporaryDirectory() as tempdir:
             tmppath = pathlib.Path(tempdir, "i18n")
             shutil.copytree(i18n_path, tmppath)
