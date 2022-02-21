@@ -305,7 +305,7 @@ The original message as received by Mailman is attached.
                 return self._sync(rs)
             else:
                 self.logger.info("Mailman sync ongoing, skipping this invokation.")
-                return False
+        return False
 
     def _sync(self, rs: RequestState) -> bool:
         if (self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or (

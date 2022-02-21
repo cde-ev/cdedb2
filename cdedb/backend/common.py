@@ -850,6 +850,7 @@ class DatabaseLock:
         was_locking_successful = True
 
         self.stack = contextlib.ExitStack().__enter__()
+        assert self.stack is not None
 
         self.rs._conn.contaminate()
         self.stack.callback(lambda: self.rs._conn.decontaminate())
