@@ -34,7 +34,7 @@ from cdedb.common import (
     make_root_logger, n_, unwrap,
 )
 from cdedb.config import Config
-from cdedb.database.connection import Atomizer
+from cdedb.database.connection import Atomizer, IrradiatedConnection
 from cdedb.database.constants import FieldDatatypes, LockType
 from cdedb.query import Query, QueryOperators
 from cdedb.validation import parse_date, parse_datetime
@@ -835,13 +835,13 @@ class Silencer:
 
 
 class DatabaseLock:
+    stack: contextlib.ExitStack
+    conn: IrradiatedConnection
+    cur: psycopg2.extensions.cursor
 
     def __init__(self, rs: RequestState, *locks: LockType):
         self.rs = rs
         self.locks = locks
-        self.stack = None
-        self.conn = None
-        self.cur = None
 
     def __enter__(self) -> bool:
         query = ("SELECT name FROM core.locks WHERE name = ANY(%s)"
@@ -850,7 +850,6 @@ class DatabaseLock:
         was_locking_successful = True
 
         self.stack = contextlib.ExitStack().__enter__()
-        assert self.stack is not None
 
         self.rs._conn.contaminate()
         self.stack.callback(lambda: self.rs._conn.decontaminate())
@@ -879,9 +878,7 @@ class DatabaseLock:
 
     def __exit__(self, atype: Type[Exception], value: Exception,
                  tb: TracebackType) -> bool:
-        if self.stack is not None:
-            return self.stack.__exit__(atype, value, tb)
-        return False
+        return self.stack.__exit__(atype, value, tb)
 
 
 def affirm_validation(assertion: Type[T], value: Any, **kwargs: Any) -> T:
