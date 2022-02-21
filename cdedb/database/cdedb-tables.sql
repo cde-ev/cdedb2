@@ -178,13 +178,13 @@ CREATE TABLE core.personas (
         -- string for fulltext search
         fulltext                varchar NOT NULL
 );
-CREATE INDEX idx_personas_username ON core.personas(username);
-CREATE INDEX idx_personas_is_cde_realm ON core.personas(is_cde_realm);
-CREATE INDEX idx_personas_is_event_realm ON core.personas(is_event_realm);
-CREATE INDEX idx_personas_is_ml_realm ON core.personas(is_ml_realm);
-CREATE INDEX idx_personas_is_assembly_realm ON core.personas(is_assembly_realm);
-CREATE INDEX idx_personas_is_member ON core.personas(is_member);
-CREATE INDEX idx_personas_is_searchable ON core.personas(is_searchable);
+CREATE INDEX personas_username_idx ON core.personas(username);
+CREATE INDEX personas_is_cde_realm_idx ON core.personas(is_cde_realm);
+CREATE INDEX personas_is_event_realm_idx ON core.personas(is_event_realm);
+CREATE INDEX personas_is_ml_realm_idx ON core.personas(is_ml_realm);
+CREATE INDEX personas_is_assembly_realm_idx ON core.personas(is_assembly_realm);
+CREATE INDEX personas_is_member_idx ON core.personas(is_member);
+CREATE INDEX personas_is_searchable_idx ON core.personas(is_searchable);
 GRANT SELECT (id, username, password_hash, is_active, is_meta_admin, is_core_admin, is_cde_admin, is_finance_admin, is_event_admin, is_ml_admin, is_assembly_admin, is_cdelokal_admin, is_auditor, is_cde_realm, is_event_realm, is_ml_realm, is_assembly_realm, is_member, is_searchable, is_archived, is_purged) ON core.personas TO cdb_anonymous;
 GRANT UPDATE (username, password_hash) ON core.personas TO cdb_persona;
 GRANT SELECT, UPDATE (display_name, given_names, family_name, title, name_supplement, gender, birthday, telephone, mobile, address_supplement, address, postal_code, location, country, fulltext) ON core.personas TO cdb_persona;
@@ -236,7 +236,7 @@ CREATE TABLE core.genesis_cases (
         pcourse_id              integer DEFAULT NULL -- REFERENCES past_event.courses(id)
 
 );
-CREATE INDEX idx_genesis_cases_case_status ON core.genesis_cases(case_status);
+CREATE INDEX genesis_cases_case_status_idx ON core.genesis_cases(case_status);
 GRANT SELECT, INSERT ON core.genesis_cases To cdb_anonymous;
 GRANT SELECT, UPDATE ON core.genesis_cases_id_seq TO cdb_anonymous;
 GRANT UPDATE (case_status) ON core.genesis_cases TO cdb_anonymous;
@@ -269,7 +269,7 @@ CREATE TABLE core.privilege_changes (
         -- persona who approved the change
         reviewer                integer REFERENCES core.personas(id) DEFAULT NULL
 );
-CREATE INDEX idx_privilege_changes_status ON core.privilege_changes(status);
+CREATE INDEX privilege_changes_status_idx ON core.privilege_changes(status);
 GRANT SELECT, INSERT, UPDATE, DELETE ON core.privilege_changes TO cdb_admin;
 GRANT SELECT, UPDATE ON core.privilege_changes_id_seq TO cdb_admin;
 
@@ -285,8 +285,8 @@ CREATE TABLE core.sessions (
         ip                      varchar NOT NULL,
         sessionkey              varchar NOT NULL UNIQUE
 );
-CREATE INDEX idx_sessions_persona_id ON core.sessions(persona_id);
-CREATE INDEX idx_sessions_is_active ON core.sessions(is_active);
+CREATE INDEX sessions_persona_id_is_active_idx ON core.sessions(persona_id, is_active);
+CREATE INDEX sessions_is_active_atime_idx ON core.sessions(is_active, atime);
 GRANT SELECT, INSERT ON core.sessions TO cdb_anonymous;
 GRANT SELECT, UPDATE ON core.sessions_id_seq TO cdb_anonymous;
 GRANT UPDATE (is_active) ON core.sessions TO cdb_anonymous;
@@ -298,9 +298,9 @@ CREATE TABLE core.quota (
         persona_id              integer NOT NULL REFERENCES core.personas(id),
         qdate                   date NOT NULL DEFAULT current_date,
         queries                 integer NOT NULL DEFAULT 0,
-        last_access_hash        varchar
+        last_access_hash        varchar,
+        UNIQUE (persona_id, qdate)
 );
-CREATE UNIQUE INDEX idx_quota_persona_id_qdate ON core.quota(qdate, persona_id);
 GRANT SELECT, INSERT ON core.quota TO cdb_member;
 GRANT SELECT, UPDATE ON core.quota_id_seq TO cdb_member;
 GRANT UPDATE (queries, last_access_hash) ON core.quota TO cdb_member;
@@ -329,8 +329,9 @@ CREATE TABLE core.log (
         persona_id              integer REFERENCES core.personas(id),
         change_note             varchar
 );
-CREATE INDEX idx_core_log_code ON core.log(code);
-CREATE INDEX idx_core_log_persona_id ON core.log(persona_id);
+-- TODO: Add additional indexes and/or expand the columns?
+CREATE INDEX core_log_code_idx ON core.log(code);
+CREATE INDEX core_log_persona_id_idx ON core.log(persona_id);
 GRANT SELECT ON core.log TO cdb_member;
 GRANT DELETE ON core.log TO cdb_admin;
 GRANT INSERT ON core.log TO cdb_anonymous;
@@ -356,6 +357,7 @@ CREATE TABLE core.changelog (
         -- data fields
         --
         persona_id              integer NOT NULL REFERENCES core.personas(id),
+        UNIQUE (persona_id, generation),
         username                varchar,
         is_active               boolean,
         notes                   varchar,
@@ -409,8 +411,7 @@ CREATE TABLE core.changelog (
         foto                    varchar,
         paper_expuls            boolean
 );
-CREATE INDEX idx_changelog_code ON core.changelog(code);
-CREATE INDEX idx_changelog_persona_id ON core.changelog(persona_id);
+CREATE INDEX changelog_code_idx ON core.changelog(code);
 GRANT SELECT, INSERT ON core.changelog TO cdb_persona;
 GRANT SELECT, UPDATE ON core.changelog_id_seq TO cdb_persona;
 GRANT UPDATE (code) ON core.changelog TO cdb_persona;
@@ -503,11 +504,11 @@ CREATE TABLE cde.lastschrift (
         -- administrative comments
         notes                   varchar
 );
-CREATE INDEX idx_lastschrift_persona_id ON cde.lastschrift(persona_id);
+CREATE INDEX lastschrift_persona_id_idx ON cde.lastschrift(persona_id);
 GRANT SELECT ON cde.lastschrift TO cdb_member;
 GRANT UPDATE, INSERT, DELETE ON cde.lastschrift TO cdb_admin;
 GRANT SELECT, UPDATE ON cde.lastschrift_id_seq TO cdb_admin;
-CREATE UNIQUE INDEX lastschrift_unique_active ON cde.lastschrift (persona_id) WHERE revoked_at IS NULL;
+CREATE UNIQUE INDEX lastschrift_partial_unique_active_idx ON cde.lastschrift (persona_id) WHERE revoked_at IS NULL;
 
 CREATE TABLE cde.lastschrift_transactions (
         id                      serial PRIMARY KEY,
@@ -521,7 +522,7 @@ CREATE TABLE cde.lastschrift_transactions (
         -- positive for money we got and negative if bounced with fee
         tally                   numeric(8, 2) DEFAULT NULL
 );
-CREATE INDEX idx_cde_lastschrift_transactions_lastschrift_id ON cde.lastschrift_transactions(lastschrift_id);
+CREATE INDEX cde_lastschrift_transactions_lastschrift_id_idx ON cde.lastschrift_transactions(lastschrift_id);
 GRANT SELECT ON cde.lastschrift_transactions TO cdb_member;
 GRANT UPDATE, INSERT, DELETE ON cde.lastschrift_transactions TO cdb_admin;
 GRANT SELECT, UPDATE ON cde.lastschrift_transactions_id_seq TO cdb_admin;
@@ -543,8 +544,8 @@ CREATE TABLE cde.finance_log (
         -- sum of all balances (SELECT SUM(balance) FROM core.personas)
         total                   numeric(11, 2) NOT NULL
 );
-CREATE INDEX idx_cde_finance_log_code ON cde.finance_log(code);
-CREATE INDEX idx_cde_finance_log_persona_id ON cde.finance_log(persona_id);
+CREATE INDEX cde_finance_log_code_idx ON cde.finance_log(code);
+CREATE INDEX cde_finance_log_persona_id_idx ON cde.finance_log(persona_id);
 GRANT SELECT, INSERT ON cde.finance_log TO cdb_member;
 GRANT SELECT, UPDATE ON cde.finance_log_id_seq TO cdb_member;
 
@@ -558,8 +559,8 @@ CREATE TABLE cde.log (
         persona_id              integer REFERENCES core.personas(id),
         change_note             varchar
 );
-CREATE INDEX idx_cde_log_code ON cde.log(code);
-CREATE INDEX idx_cde_log_persona_id ON cde.log(persona_id);
+CREATE INDEX cde_log_code_idx ON cde.log(code);
+CREATE INDEX cde_log_persona_id_idx ON cde.log(persona_id);
 GRANT SELECT ON cde.log TO cdb_member;
 GRANT INSERT, DELETE ON cde.log TO cdb_admin;
 GRANT SELECT, UPDATE ON cde.log_id_seq TO cdb_admin;
@@ -598,6 +599,7 @@ CREATE TABLE past_event.events (
         -- Information only visible to participants.
         participant_info        varchar
 );
+CREATE INDEX past_events_institution_idx ON past_event.events(institution);
 GRANT SELECT (id, title, shortname, tempus) ON past_event.events TO cdb_persona;
 GRANT SELECT ON past_event.events to cdb_member;
 GRANT UPDATE, DELETE, INSERT ON past_event.events TO cdb_admin;
@@ -610,7 +612,7 @@ CREATE TABLE past_event.courses (
         title                   varchar NOT NULL,
         description             varchar
 );
-CREATE INDEX idx_courses_pevent_id ON past_event.courses(pevent_id);
+CREATE INDEX courses_pevent_id_idx ON past_event.courses(pevent_id);
 GRANT SELECT, INSERT, UPDATE ON past_event.courses TO cdb_persona;
 GRANT DELETE ON past_event.courses TO cdb_admin;
 GRANT SELECT, UPDATE ON past_event.courses_id_seq TO cdb_persona;
@@ -625,12 +627,11 @@ CREATE TABLE past_event.participants (
         pevent_id               integer NOT NULL REFERENCES past_event.events(id),
         pcourse_id              integer REFERENCES past_event.courses(id),
         is_instructor           boolean NOT NULL,
-        is_orga                 boolean NOT NULL
+        is_orga                 boolean NOT NULL,
+        UNIQUE (persona_id, pevent_id, pcourse_id)
 );
-CREATE INDEX idx_participants_persona_id ON past_event.participants(persona_id);
-CREATE INDEX idx_participants_event_id ON past_event.participants(pevent_id);
-CREATE INDEX idx_participants_course_id ON past_event.participants(pcourse_id);
-CREATE UNIQUE INDEX idx_participants_constraint ON past_event.participants(persona_id, pevent_id, pcourse_id);
+CREATE INDEX participants_pevent_id_idx ON past_event.participants(pevent_id);
+CREATE INDEX participants_pcourse_id_idx ON past_event.participants(pcourse_id);
 GRANT SELECT ON past_event.participants TO cdb_persona;
 GRANT INSERT, UPDATE, DELETE ON past_event.participants TO cdb_admin;
 GRANT SELECT, UPDATE ON past_event.participants_id_seq TO cdb_admin;
@@ -646,8 +647,8 @@ CREATE TABLE past_event.log (
         persona_id              integer REFERENCES core.personas(id),
         change_note             varchar
 );
-CREATE INDEX idx_past_event_log_code ON past_event.log(code);
-CREATE INDEX idx_past_event_log_event_id ON past_event.log(pevent_id);
+CREATE INDEX past_event_log_code_idx ON past_event.log(code);
+CREATE INDEX past_event_log_event_id_idx ON past_event.log(pevent_id);
 GRANT SELECT ON past_event.log TO cdb_member;
 GRANT INSERT, DELETE ON past_event.log TO cdb_admin;
 GRANT SELECT, UPDATE ON past_event.log_id_seq TO cdb_admin;
@@ -702,6 +703,7 @@ CREATE TABLE event.events (
         course_room_field            integer DEFAULT NULL  -- REFERENCES event.field_definitions(id)
         -- The references above are not yet possible, but will be added later on.
 );
+-- TODO: ADD indexes for is_visible, is_archived, etc.?
 GRANT SELECT, UPDATE ON event.events TO cdb_persona;
 GRANT INSERT, DELETE ON event.events TO cdb_admin;
 GRANT SELECT, UPDATE ON event.events_id_seq TO cdb_admin;
@@ -720,7 +722,8 @@ CREATE TABLE event.event_parts (
         -- reference to custom data field for waitlist management
         waitlist_field          integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
 );
-CREATE INDEX idx_event_parts_event_id ON event.event_parts(event_id);
+CREATE INDEX event_parts_event_id_idx ON event.event_parts(event_id);
+CREATE INDEX event_parts_partial_waitlist_field_idx ON event.event_parts(waitlist_field) WHERE waitlist_field IS NOT NULL;
 GRANT INSERT, SELECT, UPDATE, DELETE ON event.event_parts TO cdb_persona;
 GRANT SELECT, UPDATE ON event.event_parts_id_seq TO cdb_persona;
 GRANT SELECT ON event.event_parts TO cdb_anonymous;
@@ -760,7 +763,7 @@ CREATE TABLE event.course_tracks (
         min_choices             integer NOT NULL, -- required number of distinct course choices
         sortkey                 integer NOT NULL
 );
-CREATE INDEX idx_course_tracks_part_id ON event.course_tracks(part_id);
+CREATE INDEX course_tracks_part_id_idx ON event.course_tracks(part_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.course_tracks TO cdb_persona;
 GRANT SELECT, UPDATE ON event.course_tracks_id_seq TO cdb_persona;
 GRANT SELECT ON event.course_tracks TO cdb_anonymous;
@@ -783,10 +786,10 @@ CREATE TABLE event.field_definitions (
         -- first entry of each tuple is the value, second entry the description
         -- the whole thing may be NULL, if the field does not enforce a
         -- particular selection and is free-form instead
-        entries                 varchar[][2]
+        entries                 varchar[][2],
+        -- make event/name combinations unique to avoid surprises
+        UNIQUE (event_id, field_name)
 );
--- make event/name combinations unique to avoid surprises
-CREATE UNIQUE INDEX idx_field_definitions_event_id ON event.field_definitions(event_id, field_name);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.field_definitions TO cdb_persona;
 GRANT SELECT, UPDATE ON event.field_definitions_id_seq TO cdb_persona;
 GRANT SELECT ON event.field_definitions TO cdb_anonymous;
@@ -805,10 +808,10 @@ CREATE TABLE event.fee_modifiers (
         -- the amount to modify the fee by. Can be negative.
         amount                  numeric(8, 2) NOT NULL,
         -- in which field do we save the information whether the modifier has been selected:
-        field_id                integer NOT NULL REFERENCES event.field_definitions(id)
+        field_id                integer NOT NULL REFERENCES event.field_definitions(id),
+        UNIQUE (part_id, modifier_name),
+        UNIQUE (part_id, field_id)
 );
-CREATE UNIQUE INDEX idx_fee_modifiers_part_id ON event.fee_modifiers(part_id, modifier_name);
-CREATE UNIQUE INDEX idx_fee_modifiers_field_id ON event.fee_modifiers(part_id, field_id);
 GRANT INSERT, UPDATE, DELETE ON event.fee_modifiers TO cdb_persona;
 GRANT SELECT ON event.fee_modifiers TO cdb_anonymous;
 GRANT SELECT, UPDATE ON event.fee_modifiers_id_seq TO cdb_persona;
@@ -832,7 +835,7 @@ CREATE TABLE event.courses (
         -- additional data, customized by each orga team
         fields                  jsonb NOT NULL DEFAULT '{}'::jsonb
 );
-CREATE INDEX idx_courses_event_id ON event.courses(event_id);
+CREATE INDEX courses_event_id_idx ON event.courses(event_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.courses TO cdb_persona;
 GRANT SELECT, UPDATE ON event.courses_id_seq TO cdb_persona;
 GRANT SELECT ON event.courses TO cdb_anonymous;
@@ -842,9 +845,10 @@ CREATE TABLE event.course_segments (
         id                      serial PRIMARY KEY,
         course_id               integer NOT NULL REFERENCES event.courses(id),
         track_id                integer NOT NULL REFERENCES event.course_tracks(id),
-        is_active               boolean NOT NULL DEFAULT True
+        is_active               boolean NOT NULL DEFAULT True,
+        UNIQUE (track_id, course_id)
 );
-CREATE INDEX idx_course_segments_course_id ON event.course_segments(course_id);
+CREATE INDEX course_segments_course_id_idx ON event.course_segments(course_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.course_segments TO cdb_persona;
 GRANT SELECT, UPDATE ON event.course_segments_id_seq TO cdb_persona;
 GRANT SELECT ON event.course_segments TO cdb_anonymous;
@@ -853,11 +857,9 @@ CREATE TABLE event.orgas (
         id                      serial PRIMARY KEY,
         persona_id              integer NOT NULL REFERENCES core.personas(id),
         event_id                integer NOT NULL REFERENCES event.events(id),
-        CONSTRAINT event_unique_orgas
-            UNIQUE(persona_id, event_id)
+        UNIQUE (persona_id, event_id)
 );
-CREATE INDEX idx_orgas_persona_id ON event.orgas(persona_id);
-CREATE INDEX idx_orgas_event_id ON event.orgas(event_id);
+CREATE INDEX orgas_event_id_idx ON event.orgas(event_id);
 GRANT INSERT, UPDATE, DELETE ON event.orgas TO cdb_admin;
 GRANT SELECT, UPDATE ON event.orgas_id_seq TO cdb_admin;
 GRANT SELECT ON event.orgas TO cdb_anonymous;
@@ -867,7 +869,7 @@ CREATE TABLE event.lodgement_groups (
         event_id                integer NOT NULL REFERENCES event.events(id),
         title                   varchar NOT NULL
 );
-CREATE INDEX ids_lodgement_groups_event_id ON event.lodgement_groups(event_id);
+CREATE INDEX lodgement_groups_event_id_idx ON event.lodgement_groups(event_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.lodgement_groups TO cdb_persona;
 GRANT SELECT, UPDATE ON event.lodgement_groups_id_seq TO cdb_persona;
 
@@ -884,7 +886,8 @@ CREATE TABLE event.lodgements (
         -- additional data, customized by each orga team
         fields                  jsonb NOT NULL DEFAULT '{}'::jsonb
 );
-CREATE INDEX idx_lodgements_event_id ON event.lodgements(event_id);
+CREATE INDEX lodgements_event_id_idx ON event.lodgements(event_id);
+-- TODO: Index on group_id.
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.lodgements TO cdb_persona;
 GRANT SELECT, UPDATE ON event.lodgements_id_seq TO cdb_persona;
 
@@ -915,11 +918,10 @@ CREATE TABLE event.registrations (
 
         -- only basic data should be defined here and everything else will
         -- be handeled via additional fields
-        fields                  jsonb NOT NULL DEFAULT '{}'::jsonb
+        fields                  jsonb NOT NULL DEFAULT '{}'::jsonb,
+        UNIQUE (persona_id, event_id)
 );
-CREATE INDEX idx_registrations_persona_id ON event.registrations(persona_id);
-CREATE INDEX idx_registrations_event_id ON event.registrations(event_id);
-CREATE UNIQUE INDEX idx_registrations_constraint ON event.registrations(persona_id, event_id);
+CREATE INDEX registrations_event_id_idx ON event.registrations(event_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.registrations TO cdb_persona;
 GRANT SELECT, UPDATE ON event.registrations_id_seq TO cdb_persona;
 
@@ -931,9 +933,11 @@ CREATE TABLE event.registration_parts (
         -- see cdedb.database.constants.RegistrationPartStati
         status                  integer NOT NULL,
         lodgement_id            integer REFERENCES event.lodgements(id) DEFAULT NULL,
-        is_camping_mat          boolean NOT NULL DEFAULT False
+        is_camping_mat          boolean NOT NULL DEFAULT False,
+        UNIQUE (part_id, registration_id)
 );
-CREATE INDEX idx_registration_parts_registration_id ON event.registration_parts(registration_id);
+CREATE INDEX registration_parts_registration_id_idx ON event.registration_parts(registration_id);
+-- TODO: Index on lodgement_id?
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.registration_parts TO cdb_persona;
 GRANT SELECT, UPDATE ON event.registration_parts_id_seq TO cdb_persona;
 
@@ -943,9 +947,11 @@ CREATE TABLE event.registration_tracks (
         track_id                integer NOT NULL REFERENCES event.course_tracks(id),
         course_id               integer REFERENCES event.courses(id),
         -- this is NULL if not an instructor
-        course_instructor       integer REFERENCES event.courses(id)
+        course_instructor       integer REFERENCES event.courses(id),
+        UNIQUE (registration_id, track_id)
 );
-CREATE INDEX idx_registration_tracks_registration_id ON event.registration_tracks(registration_id);
+CREATE INDEX registration_tracks_track_id_idx ON event.registration_tracks(track_id);
+-- TODO: Indexes for course_id and course_instructor?
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.registration_tracks TO cdb_persona;
 GRANT SELECT, UPDATE ON event.registration_tracks_id_seq TO cdb_persona;
 
@@ -954,9 +960,11 @@ CREATE TABLE event.course_choices (
         registration_id         integer NOT NULL REFERENCES event.registrations(id),
         track_id                integer NOT NULL REFERENCES event.course_tracks(id),
         course_id               integer NOT NULL REFERENCES event.courses(id),
-        rank                    integer NOT NULL
+        rank                    integer NOT NULL,
+        UNIQUE (registration_id, track_id, course_id),
+        UNIQUE (registration_id, track_id, rank)
 );
-CREATE UNIQUE INDEX idx_course_choices_constraint ON event.course_choices(registration_id, track_id, course_id);
+CREATE INDEX course_choices_track_id_rank_idx ON event.course_choices(track_id, rank);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.course_choices TO cdb_persona;
 GRANT SELECT, UPDATE ON event.course_choices_id_seq TO cdb_persona;
 
@@ -977,7 +985,7 @@ CREATE TABLE event.questionnaire_rows (
         -- Where the row will be used (registration, questionnaire). See cdedb.constants.QuestionnaireUsages.
         kind                    integer NOT NULL
 );
-CREATE INDEX idx_questionnaire_rows_event_id ON event.questionnaire_rows(event_id);
+CREATE INDEX questionnaire_rows_event_id_idx ON event.questionnaire_rows(event_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.questionnaire_rows TO cdb_persona;
 GRANT SELECT, UPDATE ON event.questionnaire_rows_id_seq TO cdb_persona;
 
@@ -988,9 +996,8 @@ CREATE TABLE event.stored_queries (
         -- See cdedb.query.QueryScope:
         scope                   integer NOT NULL,
         serialized_query        jsonb NOT NULL DEFAULT '{}'::jsonb,
-        CONSTRAINT event_unique_query UNIQUE(event_id, query_name)
+        UNIQUE(event_id, query_name)
 );
-CREATE INDEX idx_stored_queries_event_id ON event.stored_queries(event_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.stored_queries TO cdb_persona;
 GRANT SELECT, UPDATE ON event.stored_queries_id_seq TO cdb_persona;
 
@@ -1005,8 +1012,8 @@ CREATE TABLE event.log (
         persona_id              integer REFERENCES core.personas(id),
         change_note             varchar
 );
-CREATE INDEX idx_event_log_code ON event.log(code);
-CREATE INDEX idx_event_log_event_id ON event.log(event_id);
+CREATE INDEX event_log_code_idx ON event.log(code);
+CREATE INDEX event_log_event_id_idx ON event.log(event_id);
 GRANT SELECT, INSERT ON event.log TO cdb_persona;
 GRANT SELECT, UPDATE ON event.log_id_seq TO cdb_persona;
 GRANT DELETE ON event.log TO cdb_admin;
@@ -1041,11 +1048,9 @@ CREATE TABLE assembly.presiders (
         id                      serial PRIMARY KEY,
         assembly_id             integer NOT NULL REFERENCES assembly.assemblies(id),
         persona_id              integer NOT NULL REFERENCES core.personas(id),
-        CONSTRAINT assembly_unique_presiders
-            UNIQUE(persona_id, assembly_id)
+        UNIQUE(persona_id, assembly_id)
 );
-CREATE INDEX idx_assembly_presiders_persona_id ON assembly.presiders(persona_id);
-CREATE UNIQUE INDEX idx_assembly_presiders_constraint ON assembly.presiders(assembly_id, persona_id);
+CREATE INDEX ON assembly.presiders(assembly_id);
 GRANT SELECT ON assembly.presiders TO cdb_persona;
 GRANT INSERT, DELETE ON assembly.presiders TO cdb_admin;
 GRANT SELECT, UPDATE ON assembly.presiders_id_seq TO cdb_admin;
@@ -1095,7 +1100,7 @@ CREATE TABLE assembly.ballots (
         -- comment to be added after the ballot has finished
         comment                 varchar
 );
-CREATE INDEX idx_ballots_assembly_id ON assembly.ballots(assembly_id);
+CREATE INDEX ballots_assembly_id_idx ON assembly.ballots(assembly_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON assembly.ballots TO cdb_member;
 GRANT SELECT, UPDATE ON assembly.ballots_id_seq TO cdb_member;
 
@@ -1114,9 +1119,10 @@ CREATE TABLE assembly.attendees (
         id                      serial PRIMARY KEY,
         persona_id              integer NOT NULL REFERENCES core.personas(id),
         assembly_id             integer NOT NULL REFERENCES assembly.assemblies(id),
-        secret                  varchar
+        secret                  varchar,
+        UNIQUE (persona_id, assembly_id)
 );
-CREATE UNIQUE INDEX idx_attendee_constraint ON assembly.attendees(persona_id, assembly_id);
+CREATE INDEX attendees_assembly_id_idx ON assembly.attendees(assembly_id);
 GRANT SELECT, INSERT ON assembly.attendees TO cdb_member;
 GRANT UPDATE (secret) ON assembly.attendees TO cdb_admin;
 GRANT DELETE ON assembly.attendees TO cdb_admin;
@@ -1127,9 +1133,10 @@ CREATE TABLE assembly.voter_register (
         id                      serial PRIMARY KEY,
         persona_id              integer NOT NULL REFERENCES core.personas(id),
         ballot_id               integer NOT NULL REFERENCES assembly.ballots(id),
-        has_voted               boolean NOT NULL DEFAULT False
+        has_voted               boolean NOT NULL DEFAULT False,
+        UNIQUE (persona_id, ballot_id)
 );
-CREATE UNIQUE INDEX idx_voter_constraint ON assembly.voter_register(persona_id, ballot_id);
+CREATE INDEX voter_register_ballot_id_idx ON assembly.voter_register(ballot_id);
 GRANT SELECT, INSERT, DELETE ON assembly.voter_register TO cdb_member;
 GRANT UPDATE (has_voted) ON assembly.voter_register TO cdb_member;
 GRANT SELECT, UPDATE ON assembly.voter_register_id_seq TO cdb_member;
@@ -1145,7 +1152,7 @@ CREATE TABLE assembly.votes (
         -- This is the SHA512 of the concatenation of salt, voting secret and vote.
         hash                    varchar NOT NULL
 );
-CREATE INDEX idx_votes_ballot_id ON assembly.votes(ballot_id);
+CREATE INDEX votes_ballot_id_idx ON assembly.votes(ballot_id);
 GRANT SELECT, INSERT, UPDATE ON assembly.votes TO cdb_member;
 GRANT SELECT, UPDATE ON assembly.votes_id_seq TO cdb_member;
 
@@ -1155,7 +1162,7 @@ CREATE TABLE assembly.attachments (
        id                       serial PRIMARY KEY,
        assembly_id              integer NOT NULL REFERENCES assembly.assemblies(id)
 );
-CREATE INDEX idx_attachments_assembly_id ON assembly.attachments(assembly_id);
+CREATE INDEX attachments_assembly_id_idx ON assembly.attachments(assembly_id);
 GRANT SELECT, UPDATE, INSERT, DELETE ON assembly.attachments TO cdb_member;
 GRANT SELECT, UPDATE ON assembly.attachments_id_seq TO cdb_member;
 
@@ -1169,19 +1176,19 @@ CREATE TABLE assembly.attachment_versions (
         ctime                   timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
         dtime                   timestamp WITH TIME ZONE DEFAULT NULL,
         -- Store the hash of the file for comparison and proof.
-        file_hash               varchar NOT NULL
+        file_hash               varchar NOT NULL,
+        UNIQUE (attachment_id, version_nr)
 );
-CREATE INDEX idx_attachment_versions_attachment_id ON assembly.attachment_versions(attachment_id);
-CREATE UNIQUE INDEX idx_attachment_version_constraint ON assembly.attachment_versions(attachment_id, version_nr);
 GRANT SELECT, INSERT, DELETE, UPDATE on assembly.attachment_versions TO cdb_member;
 GRANT SELECT, UPDATE on assembly.attachment_versions_id_seq TO cdb_member;
 
 CREATE TABLE assembly.attachment_ballot_links (
         id                      bigserial PRIMARY KEY,
         attachment_id           integer NOT NULL REFERENCES assembly.attachments(id),
-        ballot_id               integer NOT NULL REFERENCES assembly.ballots(id)
+        ballot_id               integer NOT NULL REFERENCES assembly.ballots(id),
+        UNIQUE (attachment_id, ballot_id)
 );
-CREATE UNIQUE INDEX idx_attachment_ballot_links_constraint ON assembly.attachment_ballot_links(attachment_id, ballot_id);
+CREATE INDEX attachment_ballot_links_ballot_id_idx ON assembly.attachment_ballot_links(ballot_id);
 GRANT SELECT, INSERT, DELETE, UPDATE ON assembly.attachment_ballot_links TO cdb_member;
 GRANT SELECT, UPDATE ON assembly.attachment_ballot_links_id_seq TO cdb_member;
 
@@ -1196,8 +1203,8 @@ CREATE TABLE assembly.log (
         persona_id              integer REFERENCES core.personas(id),
         change_note             varchar
 );
-CREATE INDEX idx_assembly_log_code ON assembly.log(code);
-CREATE INDEX idx_assembly_log_assembly_id ON assembly.log(assembly_id);
+CREATE INDEX assembly_log_code_idx ON assembly.log(code);
+CREATE INDEX assembly_log_assembly_id_idx ON assembly.log(assembly_id);
 GRANT DELETE ON assembly.log TO cdb_admin;
 GRANT SELECT, INSERT ON assembly.log TO cdb_member;
 GRANT SELECT, UPDATE ON assembly.log_id_seq TO cdb_member;
@@ -1250,6 +1257,7 @@ CREATE TABLE ml.mailinglists (
 GRANT SELECT, UPDATE ON ml.mailinglists TO cdb_persona;
 GRANT INSERT, DELETE ON ml.mailinglists TO cdb_admin;
 GRANT SELECT, UPDATE ON ml.mailinglists_id_seq TO cdb_admin;
+-- TODO add assembly_id and event_id indexes.
 
 -- Record mailinglist membership information.
 --
@@ -1265,9 +1273,10 @@ CREATE TABLE ml.subscription_states (
         id                      serial PRIMARY KEY,
         mailinglist_id          integer NOT NULL REFERENCES ml.mailinglists(id),
         persona_id              integer NOT NULL REFERENCES core.personas(id),
-        subscription_state      integer NOT NULL
+        subscription_state      integer NOT NULL,
+        UNIQUE (persona_id, mailinglist_id)
 );
-CREATE UNIQUE INDEX idx_subscription_constraint ON ml.subscription_states(mailinglist_id, persona_id);
+CREATE INDEX subscription_states_mailinglist_id_idx ON ml.subscription_states(mailinglist_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON ml.subscription_states TO cdb_persona;
 GRANT SELECT, UPDATE ON ml.subscription_states_id_seq TO cdb_persona;
 
@@ -1275,9 +1284,10 @@ CREATE TABLE ml.subscription_addresses (
         id                      serial PRIMARY KEY,
         mailinglist_id          integer NOT NULL REFERENCES ml.mailinglists(id),
         persona_id              integer NOT NULL REFERENCES core.personas(id),
-        address                 varchar NOT NULL
+        address                 varchar NOT NULL,
+        UNIQUE (persona_id, mailinglist_id)
 );
-CREATE UNIQUE INDEX idx_subscription_address_constraint ON ml.subscription_addresses(mailinglist_id, persona_id);
+CREATE INDEX subscription_addresses_mailinglist_id_idx ON ml.subscription_addresses(mailinglist_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON ml.subscription_addresses TO cdb_persona;
 GRANT SELECT, UPDATE ON ml.subscription_addresses_id_seq TO cdb_persona;
 
@@ -1285,10 +1295,8 @@ CREATE TABLE ml.whitelist (
         id                      serial PRIMARY KEY,
         mailinglist_id          integer NOT NULL REFERENCES ml.mailinglists(id),
         address                 varchar NOT NULL,
-        CONSTRAINT mailinglist_unique_whitelist
-            UNIQUE(address, mailinglist_id)
+        UNIQUE (mailinglist_id, address)
 );
-CREATE INDEX idx_whitelist_mailinglist_id ON ml.whitelist(mailinglist_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON ml.whitelist TO cdb_persona;
 GRANT SELECT, UPDATE ON ml.whitelist_id_seq TO cdb_persona;
 
@@ -1296,11 +1304,9 @@ CREATE TABLE ml.moderators (
         id                      serial PRIMARY KEY,
         mailinglist_id          integer NOT NULL REFERENCES ml.mailinglists(id),
         persona_id              integer NOT NULL REFERENCES core.personas(id),
-        CONSTRAINT mailinglist_unique_moderators
-            UNIQUE(persona_id, mailinglist_id)
+        UNIQUE (persona_id, mailinglist_id)
 );
-CREATE INDEX idx_moderators_mailinglist_id ON ml.moderators(mailinglist_id);
-CREATE INDEX idx_moderators_persona_id ON ml.moderators(persona_id);
+CREATE INDEX moderators_mailinglist_id_idx ON ml.moderators(mailinglist_id);
 GRANT SELECT, UPDATE, INSERT, DELETE ON ml.moderators TO cdb_persona;
 GRANT SELECT, UPDATE ON ml.moderators_id_seq TO cdb_persona;
 
@@ -1315,8 +1321,8 @@ CREATE TABLE ml.log (
         persona_id              integer REFERENCES core.personas(id),
         change_note             varchar
 );
-CREATE INDEX idx_ml_log_code ON ml.log(code);
-CREATE INDEX idx_ml_log_mailinglist_id ON ml.log(mailinglist_id);
+CREATE INDEX ml_log_code_idx ON ml.log(code);
+CREATE INDEX ml_log_mailinglist_id_idx ON ml.log(mailinglist_id);
 GRANT SELECT, INSERT ON ml.log TO cdb_persona;
 GRANT DELETE ON ml.log TO cdb_admin;
 GRANT SELECT, UPDATE ON ml.log_id_seq TO cdb_persona;

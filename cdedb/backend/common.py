@@ -417,7 +417,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         return self.query_exec(rs, query, params)
 
     def sql_select(self, rs: RequestState, table: str, columns: Sequence[str],
-                   entities: EntityKeys, entity_key: str = "id"
+                   entities: EntityKeys, *, entity_key: str = "id"
                    ) -> Tuple[CdEDBObject, ...]:
         """Generic SQL select query.
 

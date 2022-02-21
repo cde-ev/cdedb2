@@ -251,26 +251,12 @@ DEFAULT_QUERIES = {
                 tuple(),
                 (("family_name", True), ("given_names", True),
                  ("personas.id", True))),
-            n_("02_query_assembly_user_admin"): Query(
-                QueryScope.persona, QueryScope.persona.get_spec(),
-                ("personas.id", "given_names", "family_name",
-                 "is_assembly_admin"),
-                (("is_assembly_admin", QueryOperators.equal, True),),
-                (("family_name", True), ("given_names", True),
-                 ("personas.id", True))),
         },
         QueryScope.ml_user: {
             n_("00_query_ml_user_all"): Query(
                 QueryScope.persona, QueryScope.persona.get_spec(),
                 ("personas.id", "given_names", "family_name"),
                 tuple(),
-                (("family_name", True), ("given_names", True),
-                 ("personas.id", True))),
-            n_("02_query_ml_user_admin"): Query(
-                QueryScope.persona, QueryScope.persona.get_spec(),
-                ("personas.id", "given_names", "family_name",
-                 "is_ml_admin"),
-                (("is_ml_admin", QueryOperators.equal, True),),
                 (("family_name", True), ("given_names", True),
                  ("personas.id", True))),
         },

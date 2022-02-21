@@ -47,7 +47,8 @@ class TestMlFrontend(FrontendTest):
             self.assertNonPresence("Aktualisieren der Subscription States")
             self.assertNonPresence("Mailman-Synchronisation")
 
-    @as_users("annika", "anton", "berta", "martin", "nina", "vera", "viktor")
+    @as_users("annika", "anton", "berta", "martin", "nina", "vera", "viktor",
+              "katarina")
     def test_sidebar(self) -> None:
         self.traverse({'description': 'Mailinglisten'})
         # Users with no administrated and no moderated mailinglists:
@@ -87,6 +88,11 @@ class TestMlFrontend(FrontendTest):
                    "Accounts verschmelzen", "Moderierte Mailinglisten",
                    "Nutzer verwalten", "Archivsuche", "Log"}
             out = {"Übersicht"}
+        # Auditors
+        elif self.user_in('katarina'):
+            ins = {"Übersicht", "Log"}
+            out = {"Alle Mailinglisten", "Moderierte Mailinglisten",
+                   "Aktive Mailinglisten", "Nutzer verwalten", "Archivsuche"}
         else:
             self.fail("Please adjust users for this tests.")
 
@@ -292,7 +298,8 @@ class TestMlFrontend(FrontendTest):
             # Berta has no admin privileges, Annika has none _for this list_.
             self.assertNonPresence(ml_data['notes'])
 
-    @as_users("annika", "anton", "berta", "martin", "nina", "vera", "werner")
+    @as_users("annika", "anton", "berta", "martin", "nina", "vera", "werner",
+              "katarina")
     def test_sidebar_one_mailinglist(self) -> None:
         self.traverse({'description': 'Mailinglisten'},
                       {'description': 'Feriendorf Bau'})
@@ -311,7 +318,7 @@ class TestMlFrontend(FrontendTest):
         elif self.user_in('anton', 'nina'):
             ins = everyone | moderator
         # Other users:
-        elif self.user_in('annika', 'martin', 'werner'):
+        elif self.user_in('annika', 'martin', 'werner', 'katarina'):
             ins = everyone
             out = moderator
         else:
@@ -792,7 +799,6 @@ class TestMlFrontend(FrontendTest):
         # Check that there must be some moderators
         errormsg = "Darf nicht leer sein."
         f['moderators'] = ""
-        self.assertPresence("Admin-Team")
         self.submit(f, check_notification=False)
         self.assertValidationError("moderators", errormsg)
         # Check that you cannot add non-existing or archived moderators.
@@ -810,6 +816,10 @@ class TestMlFrontend(FrontendTest):
         f['local_part'] = "platin"
         self.submit(f, check_notification=False)
         self.assertValidationError("local_part", "Uneindeutige Mailadresse")
+        # Check that list name may not contain magic mailman address strings
+        f['local_part'] = "munkelwand-unsubscribe"
+        self.submit(f, check_notification=False)
+        self.assertValidationError("local_part", "\"-unsubscribe@\" nicht enthalten.")
 
         f['local_part'] = "munkelwand"
         self.submit(f)
@@ -825,25 +835,20 @@ class TestMlFrontend(FrontendTest):
                       {'description': 'Konfiguration'},)
         self.assertTitle("Werbung – Konfiguration")
 
-        # Check if the attachment policy hint works
-        self.assertPresence("Admin-Team")
         f = self.response.forms['changelistform']
         f['domain'] = const.MailinglistDomain.testmail
         f['maxsize'] = "intentionally no valid maxsize"
         self.submit(f, check_notification=False)
         self.assertValidationError("maxsize", "Ungültige Eingabe für eine Ganzzahl.")
-        self.assertPresence("Admin-Team")
         f = self.response.forms['changelistform']
         f['maxsize'] = 12
         self.submit(f)
         self.assertTitle("Werbung")
         self.traverse({'href': '/ml/mailinglist/2/change'}, )
-        self.assertPresence("Admin-Team")
         f['domain'] = const.MailinglistDomain.lists
         self.submit(f)
         self.assertTitle("Werbung")
         self.traverse({'href': '/ml/mailinglist/2/change'}, )
-        self.assertPresence("Admin-Team")
 
         # Test list deactivation
         f = self.response.forms['changelistform']
@@ -858,6 +863,10 @@ class TestMlFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertValidationError("local_part", "Uneindeutige Mailadresse")
         self.assertValidationError("domain", "Uneindeutige Mailadresse")
+        # Check that list name may not contain magic mailman address strings
+        f['local_part'] = "munkelwand-confirm"
+        self.submit(f, check_notification=False)
+        self.assertValidationError("local_part", "\"-confirm@\" nicht enthalten.")
 
         f['local_part'] = "munkelwand"
         self.submit(f)
@@ -944,9 +953,11 @@ class TestMlFrontend(FrontendTest):
                     self.assertPresence(
                         f"Mailingliste zur Veranstaltung {event_title}")
                 elif ml_type in assembly_types:
-                    self.submit(f, check_notification=False)
-                    self.assertValidationError(
-                        'assembly_id', "Ungültige Eingabe für eine Ganzzahl.")
+                    self.submit(f)  # only works if all assembly-associated ml
+                    # types can also not be associated with an assembly, which may
+                    # change in future
+                    self.traverse({'description': r"\sÜbersicht"})
+                    self.assertNonPresence("Mailingliste zur Versammlung")
                     f['assembly_id'] = assembly_id
                     self.submit(f)
                     self.traverse({'description': r"\sÜbersicht"})

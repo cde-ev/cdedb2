@@ -3,7 +3,10 @@
 
 import datetime
 import json
+import pathlib
 import re
+import subprocess
+import tempfile
 from typing import List
 
 import freezegun
@@ -163,7 +166,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.assertNonPresence("Teilnehmer")
         self.assertPresence("Inaktive Versammlungen")
 
-    @as_users("annika", "martin", "vera", "werner", "anton")
+    @as_users("annika", "martin", "vera", "werner", "anton", "katarina")
     def test_sidebar(self) -> None:
         self.traverse({'description': 'Versammlungen'})
         everyone = {"Versammlungen", "Übersicht"}
@@ -180,6 +183,10 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         elif self.user_in("anton"):
             ins = everyone | {"Nutzer verwalten", "Archivsuche", "Log"}
             out = set()
+        # auditors
+        elif self.user_in("katarina"):
+            ins = everyone | {"Log"}
+            out = {"Nutzer verwalten", "Archivsuche"}
         else:
             self.fail("Please adjust users for this tests.")
 
@@ -316,13 +323,13 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertIn('addattendeeform', self.response.forms)
         self.assertPresence("TeX-Liste")
 
-    @as_users("annika", "martin", "vera", "werner")
+    @as_users("annika", "martin", "vera", "werner", "katarina")
     def test_sidebar_one_assembly(self) -> None:
         user = self.user
         self.traverse({'description': 'Versammlungen'})
 
         # they are no member and not yet signed up
-        if self.user_in('annika', 'martin', 'vera'):
+        if self.user_in('annika', 'martin', 'vera', 'katarina'):
             self.assertNonPresence("Internationaler Kongress")
 
             # now, sign them up
@@ -338,7 +345,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         admin = {"Konfiguration", "Log"}
 
         # not assembly admins
-        if self.user_in('annika', 'martin', 'vera'):
+        if self.user_in('annika', 'martin', 'vera', 'katarina'):
             ins = attendee
             out = admin
         # assembly admin
@@ -1883,6 +1890,36 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                       {'secret': "-YZN1KWDfMLQ5Y8Q"})
             self.assertTitle("Bester Hof (Internationaler Kongress)")
             self.assertNotification("Abstimmung wurde noch nicht ausgezählt.", 'error')
+
+    def test_verify_result(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            script = pathlib.Path(tmp) / 'verify_result.pyz'
+            self.get('/assembly/verify_result.pyz')
+            with open(script, 'wb') as f:
+                f.write(self.response.body)
+            script.chmod(0o755)
+            output = subprocess.check_output(
+                [str(script), "tests/ancillary_files/ballot_result.json"],
+            )
+            expectation = b"""Versammlung: Internationaler Kongress
+Abstimmung: Antwort auf die letzte aller Fragen
+Optionen: Ich (1)
+          23 (2)
+          42 (3)
+          Philosophie (4)
+Detail: Optionen ['3'] bekamen mehr Stimmen als ['2', '4']
+          mit ('3', '2'): 2, ('3', '4'): 2 Pro
+          und ('3', '2'): 1, ('3', '4'): 1 Contra Stimmen.
+        Optionen ['2', '4'] bekamen mehr Stimmen als ['_bar_']
+          mit ('2', '_bar_'): 3, ('4', '_bar_'): 2 Pro
+          und ('2', '_bar_'): 1, ('4', '_bar_'): 2 Contra Stimmen.
+        Optionen ['_bar_'] bekamen mehr Stimmen als ['1']
+          mit ('_bar_', '1'): 3 Pro
+          und ('_bar_', '1'): 1 Contra Stimmen.
+Ergebnis: 3>2=4>_bar_>1
+\xc3\x9cbereinstimmung: ja
+"""
+            self.assertEqual(expectation, output)
 
 
 class TestMultiAssemblyFrontend(MultiAppFrontendTest, AssemblyTestHelpers):

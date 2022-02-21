@@ -1,5 +1,5 @@
-import os
-import pathlib
+"""Contains some custom classes to run and display the tests on the command line."""
+
 import unittest
 from types import TracebackType
 from typing import List, Optional, TextIO, Tuple, Type, Union
@@ -10,17 +10,8 @@ ExceptionInfo = Union[
 ]
 
 
-def check_test_setup() -> None:
-    """Raise a RuntimeError if the vm is ill-equipped for performing tests."""
-    if pathlib.Path("/OFFLINEVM").exists():
-        raise RuntimeError("Cannot run tests in an Offline-VM.")
-    if pathlib.Path("/PRODUCTIONVM").exists():
-        raise RuntimeError("Cannot run tests in Production-VM.")
-    if not os.environ.get('CDEDB_TEST'):
-        raise RuntimeError("Not configured for test (CDEDB_TEST unset).")
-
-
 class MyTextTestRunner(unittest.TextTestRunner):
+    """Subclass the TextTestRunner to provide a short command to re-run failed tests."""
     stream: TextIO
 
     def run(
@@ -44,10 +35,10 @@ class MyTextTestResult(unittest.TextTestResult):
     We keep track of the errors, failures and skips occurring in SubTests,
     and print a summary at the end of the TestCase itself.
     """
+    stream: TextIO
+    showAll: bool
 
     def __init__(self, stream: TextIO, descriptions: bool, verbosity: int) -> None:
-        self.showAll: bool
-        self.stream: TextIO
         super().__init__(stream, descriptions, verbosity)
         self._subTestErrors: List[ExceptionInfo] = []
         self._subTestFailures: List[ExceptionInfo] = []
@@ -103,5 +94,5 @@ class MyTextTestResult(unittest.TextTestResult):
 
     def addSkip(self, test: unittest.TestCase, reason: str) -> None:
         # Purposely override the parents method, to not print the skip here.
-        super(unittest.TextTestResult, self).addSkip(test, reason)
+        super(unittest.TextTestResult, self).addSkip(test, reason)  # pylint: disable=bad-super-call
         self._subTestSkips.append(reason)
