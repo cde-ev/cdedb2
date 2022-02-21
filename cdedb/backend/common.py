@@ -9,6 +9,7 @@ template for all services.
 import abc
 import cgitb
 import collections.abc
+import contextlib
 import copy
 import datetime
 import enum
@@ -838,33 +839,48 @@ class DatabaseLock:
     def __init__(self, rs: RequestState, *locks: LockType):
         self.rs = rs
         self.locks = locks
+        self.stack = None
         self.conn = None
         self.cur = None
 
     def __enter__(self) -> bool:
-        was_locking_successful = True
         query = ("SELECT name FROM core.locks WHERE name = ANY(%s)"
                  " FOR NO KEY UPDATE NOWAIT")
         params = [lock.value for lock in self.locks]
+        was_locking_successful = True
+
+        self.stack = contextlib.ExitStack().__enter__()
+
         self.rs._conn.contaminate()
-        self.conn = self.rs._conn.__enter__()
-        self.cur = self.conn.cursor().__enter__()
+        self.stack.callback(lambda atype, value, tb: self.rs._conn.decontaminate())
+
+        try:
+            self.conn = self.stack.enter(self.rs._conn)
+        except Exception:
+            self.stack.__exit__(sys.exc_info())
+            raise
+
+        try:
+            self.cur = self.stack.enter(self.conn.cursor())
+        except Exception:
+            self.stack.__exit__(sys.exc_info())
+            raise
+
         try:
             self.cur.execute(query, (params,))
         except psycopg2.errors.LockNotAvailable:
             was_locking_successful = False
-        finally:
-            return was_locking_successful
+        except Exception:
+            self.stack.__exit__(sys.exc_info())
+            raise
+
+        return was_locking_successful
 
     def __exit__(self, atype: Type[Exception], value: Exception,
                  tb: TracebackType) -> bool:
-        ret = False
-        if self.cur is not None:
-            ret = self.cur.__exit__(atype, value, tb) or ret
-        if self.conn is not None:
-            ret = self.conn.__exit__(atype, value, tb) or ret
-        self.rs._conn.decontaminate()
-        return ret
+        if self.stack is not None:
+            return self.stack.__exit__(atype, value, tb)
+        return False
 
 
 def affirm_validation(assertion: Type[T], value: Any, **kwargs: Any) -> T:
