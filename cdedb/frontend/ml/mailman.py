@@ -8,9 +8,8 @@ on the mail VM from within the CdEDB.
 from mailmanclient import Client, MailingList
 
 import cdedb.database.constants as const
-from cdedb.backend.common import DatabaseLock, Silencer
+from cdedb.backend.common import DatabaseLock
 from cdedb.common import CdEDBObject, RequestState
-from cdedb.database.connection import Atomizer
 from cdedb.database.constants import LockType
 from cdedb.frontend.common import cdedburl, make_persona_name, periodic
 from cdedb.frontend.ml.base import MlBaseFrontend
