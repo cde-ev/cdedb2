@@ -852,18 +852,18 @@ class DatabaseLock:
         self.stack = contextlib.ExitStack().__enter__()
 
         self.rs._conn.contaminate()
-        self.stack.callback(lambda atype, value, tb: self.rs._conn.decontaminate())
+        self.stack.callback(lambda: self.rs._conn.decontaminate())
 
         try:
-            self.conn = self.stack.enter(self.rs._conn)
+            self.conn = self.stack.enter_context(self.rs._conn)
         except Exception:
-            self.stack.__exit__(sys.exc_info())
+            self.stack.__exit__(*sys.exc_info())
             raise
 
         try:
-            self.cur = self.stack.enter(self.conn.cursor())
+            self.cur = self.stack.enter_context(self.conn.cursor())
         except Exception:
-            self.stack.__exit__(sys.exc_info())
+            self.stack.__exit__(*sys.exc_info())
             raise
 
         try:
@@ -871,7 +871,7 @@ class DatabaseLock:
         except psycopg2.errors.LockNotAvailable:
             was_locking_successful = False
         except Exception:
-            self.stack.__exit__(sys.exc_info())
+            self.stack.__exit__(*sys.exc_info())
             raise
 
         return was_locking_successful
