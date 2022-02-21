@@ -852,7 +852,9 @@ class DatabaseLock:
         self.stack = contextlib.ExitStack().__enter__()
 
         self.rs._conn.contaminate()
-        self.stack.callback(lambda: self.rs._conn.decontaminate())
+        # We want to use this in the frontend, so we need to peek
+        self.stack.callback(
+            self.rs._conn.decontaminate)  # pylint: disable=protected-access
 
         try:
             self.conn = self.stack.enter_context(self.rs._conn)
