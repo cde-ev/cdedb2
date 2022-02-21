@@ -282,14 +282,16 @@ The original message as received by Mailman is attached.
 
         This has an @periodic decorator in the frontend.
 
-        :returns: Whether connection to Mailman has been successful.
+        :returns: Whether the operation has been successful.
         """
         with DatabaseLock(rs, LockType.mailman) as was_locking_successful:
             if was_locking_successful:
-                self._sync()
+                return self._sync(rs)
             else:
                 self.logger.info("Mailman sync ongoing, skipping this invokation.")
+                return False
 
+    def _sync(self, rs: RequestState) -> bool:
         if (self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or (
                 self.conf["CDEDB_DEV"] and not self.conf["CDEDB_TEST"])):  # pragma: no cover
             self.logger.debug("Skipping mailman sync in dev/offline mode.")
@@ -319,7 +321,3 @@ The original message as received by Mailman is attached.
         for address in deleted_lists:
             mailman.delete_list(address)
         return True
-
-    def _sync(self):
-        from time import sleep
-        sleep(60)
