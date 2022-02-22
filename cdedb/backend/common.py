@@ -843,7 +843,7 @@ class DatabaseLock:
         self.rs = rs
         self.locks = locks
 
-    def __enter__(self) -> bool:
+    def __enter__(self) -> Optional["DatabaseLock"]:
         query = ("SELECT name FROM core.locks WHERE name = ANY(%s)"
                  " FOR NO KEY UPDATE NOWAIT")
         params = [lock.value for lock in self.locks]
@@ -876,7 +876,7 @@ class DatabaseLock:
             self.stack.__exit__(*sys.exc_info())
             raise
 
-        return was_locking_successful
+        return self if was_locking_successful else None
 
     def __exit__(self, atype: Type[Exception], value: Exception,
                  tb: TracebackType) -> bool:

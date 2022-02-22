@@ -300,8 +300,8 @@ The original message as received by Mailman is attached.
 
         :returns: Whether the operation has been successful.
         """
-        with DatabaseLock(rs, LockType.mailman) as was_locking_successful:
-            if was_locking_successful:
+        with DatabaseLock(rs, LockType.mailman) as lock:
+            if lock:
                 return self._sync(rs)
             else:
                 self.logger.info("Mailman sync ongoing, skipping this invokation.")
