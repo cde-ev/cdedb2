@@ -428,7 +428,7 @@ GRANT INSERT, SELECT, UPDATE ON core.cron_store TO cdb_admin;
 
 CREATE TABLE core.locks (
         id                      serial PRIMARY KEY,
-        name                    integer NOT NULL UNIQUE,
+        handle                  integer NOT NULL UNIQUE,
         atime                   timestamp WITH TIME ZONE DEFAULT now()
 );
 GRANT SELECT, UPDATE ON core.locks_id_seq TO cdb_admin;

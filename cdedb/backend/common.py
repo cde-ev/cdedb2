@@ -862,7 +862,7 @@ class DatabaseLock:
         self.locks = locks
 
     def __enter__(self) -> Optional["DatabaseLock"]:
-        query = ("SELECT name FROM core.locks WHERE name = ANY(%s)"
+        query = ("SELECT handle FROM core.locks WHERE handle = ANY(%s)"
                  " FOR NO KEY UPDATE NOWAIT")
         params = [lock.value for lock in self.locks]
         was_locking_successful = True
