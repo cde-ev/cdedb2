@@ -835,6 +835,24 @@ class Silencer:
 
 
 class DatabaseLock:
+    """A synchronization directive backed by the postgres database.
+
+    This uses a dedicated table in the database to ensure exclusive access
+    to the represented resources. This is intended as a context manager.
+
+    Care has to be taken that the caller must check whether the acquisition
+    of the lock was successful. The code should look like::
+
+        with DatabaseLock(rs, LockType.something) as lock:
+            if lock:
+                # use resource
+            else:
+                # handle lock contetion
+
+    This currently does not provide a way to block on the lock until it is
+    available.
+    """
+
     stack: contextlib.ExitStack
     conn: IrradiatedConnection
     cur: psycopg2.extensions.cursor
