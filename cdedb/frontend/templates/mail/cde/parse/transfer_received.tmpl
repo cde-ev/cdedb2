@@ -5,16 +5,27 @@ diese verarbeitet. Dein Guthaben beträgt jetzt {{ new_balance|money }}.
 
 Als Mitglied bekommst Du unsere Mitglieder-Zeitschrift exPuls
 zugeschickt. Unter anderem deshalb ist es wichtig, dass wir Deine
-aktuelle Adresse kennen. Deine in der Datenbank eingetragene
-Adresse ist:
+aktuelle Adresse kennen.
+{% if address %}
+Deine in der Datenbank eingetragene Adresse ist:
 
 {{ "\n".join(address) }}
 
 Falls diese nicht mehr aktuell ist, so kannst Du Dich in die
 CdE-Datenbank unter der Adresse
 {{ cdedblink('core/change_user') }}
-einloggen und die Adresse korrigieren. Falls Du kein Passwort
-hast, kannst Du auf derselben Seite ein neues anfordern.
+einloggen und Deine Adresse korrigieren.
+{% else %}
+Aktuell ist keine Adresse von Dir in der Datenbank hinterlegt,
+entsprechend können wir Dir auch keine gedruckte exPuls-Ausgabe
+zusenden!
+
+Logge Dich bitte umgehend in der Datenbank unter der Adresse
+{{ cdedblink('core/change_user') }}
+ein und trag dort Deine aktuelle Adresse ein!
+{% endif %}
+Falls Du kein Passwort hast, kannst Du auf derselben Seite
+ein neues anfordern.
 
 Der exPuls erscheint sowohl gedruckt als auch online.
 Die gedruckte Ausgabe kannst Du in der Datenbank unter
