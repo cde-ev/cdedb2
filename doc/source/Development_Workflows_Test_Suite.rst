@@ -199,8 +199,6 @@ The configuration for this part of the testsuite is present in ``tests/config/te
 Code coverage
 ^^^^^^^^^^^^^
 
-.. todo:: Implement coverage in ``bin/check.py`` script and document this here.
-
 The coverage html reports for easier inspection are accessible on the local dev
 instance via Apache at `localhost:8443/coverage <https://localhost:8443/coverage>`_ for
 docker and `localhost:20443/coverage <https://localhost:20443/coverage>`_ for the VM.
