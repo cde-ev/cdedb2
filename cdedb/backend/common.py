@@ -18,8 +18,8 @@ import logging
 import sys
 from types import TracebackType
 from typing import (
-    Any, Callable, ClassVar, Collection, Dict, Iterable, List, Literal, Mapping,
-    Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast, overload,
+    Any, Callable, ClassVar, Collection, ContextManager, Dict, Iterable, List, Literal,
+    Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast, overload,
 )
 
 import psycopg2.errors
@@ -875,7 +875,8 @@ class DatabaseLock:
             self.rs._conn.decontaminate)  # pylint: disable=protected-access
 
         try:
-            self.conn = self.stack.enter_context(self.rs._conn)
+            self.conn = self.stack.enter_context(
+                cast(ContextManager[IrradiatedConnection], self.rs._conn))
         except Exception:
             self.stack.__exit__(*sys.exc_info())
             raise
