@@ -56,8 +56,8 @@ steps:
   depends_on:
     - cdb
   commands:
-    - sleep 5
     - make i18n-compile # needed for sample-data creation in evolution-trial.sh
+    - pg_isready --host=cdb --timeout=15 # wait for database to come online
     - make sql-initial # add the postgres user
     - bin/evolution-trial.sh origin/$DRONE_TARGET_BRANCH $DRONE_COMMIT || (git checkout ci/workdir && exit 1)
     - git checkout ci/workdir
@@ -93,12 +93,11 @@ steps:
       - failure
       - success
   commands:
-  - sleep 5
   # Dirty hack to circumvent config instantiation problems, since docker uses
   # the script.py to setup databases. TODO remove
   - cp related/auto-build/files/stage3/localconfig.py cdedb/localconfig.py
-  - pg_isready --host=cdb --timeout=10 # wait for database to come online
   - make i18n-compile # required for sample-data target
+  - pg_isready --host=cdb --timeout=15 # wait for database to come online
   - make sample-data # this creates the sql schema and copies the localconfig.py
   - make sql DATABASE_NAME=cdb_test_ldap # create the test database for ldap
 - name: ldap # is used as the hostname for the container
