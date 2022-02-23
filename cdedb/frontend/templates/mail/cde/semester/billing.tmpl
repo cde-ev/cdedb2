@@ -86,21 +86,36 @@ Lastschrift. Wenn Du Deine Lastschrift widerrufen möchtest, melde
 Dich bitte bei uns.
 {% endif %}
 {% endif %}
-{% if addresscheck %}
+{% if addresscheck or not address %}
 
 
 == Adresskontrolle ==
 
 Unter anderem für den Versand des exPuls ist es wichtig, dass wir
-Deine aktuelle Adresse kennen. Deine in der Datenbank eingetragene
-Adresse ist:
+Deine aktuelle Adresse kennen.
+
+{% if address %}
+Deine in der Datenbank eingetragene Adresse ist:
 
 {{ "\n".join(address) }}
 
 Falls diese nicht mehr aktuell ist, so kannst Du Dich in die
 CdE-Datenbank unter der Adresse
 {{ cdedblink('core/change_user') }}
-einloggen und die Adresse korrigieren.
+einloggen und Deine Adresse korrigieren.
+{% else %}
+Aktuell ist keine Adresse von Dir in der Datenbank hinterlegt,
+entsprechend können wir Dir auch keine gedruckte exPuls Ausgabe
+zusenden!
+
+Logge Dich bitte umgehend in der Datenbank unter der Adresse
+{{ cdedblink('core/change_user') }}
+ein und trag dort Deine aktuelle Adresse ein!
+{% endif %}
+Benutzername ist Deine Mail-Adresse. Falls Du Dein Passwort
+vergessen hast, kannst Du Dir unter
+{{ cdedblink("core/reset_password_form") }}
+ein neues Zusenden lassen.
 
 Der exPuls erscheint sowohl gedruckt als auch online.
 Die gedruckte Ausgabe kannst Du in der Datenbank unter
