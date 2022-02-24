@@ -41,11 +41,11 @@ class TestScript(unittest.TestCase):
     @staticmethod
     def check_buffer(buffer: io.StringIO, assertion: Callable[[str, str], None],
                      value: str) -> None:
-        """Chech the buffers content and empty it."""
-        buffer.seek(0)
+        """Check the buffer's content and empty it."""
+        buffer.seek(0)  # go to start of buffer
         assertion(value, buffer.read())
-        buffer.seek(0)
-        buffer.truncate()
+        buffer.seek(0)  # go back to start of buffer
+        buffer.truncate()  # cut off content after the current position -> empty buffer
 
     def test_rs_factory(self) -> None:
         rs_factory = self.script.rs
