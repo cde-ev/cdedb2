@@ -41,9 +41,11 @@ class TestScript(unittest.TestCase):
     @staticmethod
     def check_buffer(buffer: io.StringIO, assertion: Callable[[str, str], None],
                      value: str) -> None:
+        """Chech the buffers content and empty it."""
         buffer.seek(0)
         assertion(value, buffer.read())
         buffer.seek(0)
+        buffer.truncate()
 
     def test_rs_factory(self) -> None:
         rs_factory = self.script.rs
@@ -99,8 +101,6 @@ class TestScript(unittest.TestCase):
                               "Aborting Dry Run! Time taken: ")
             with ScriptAtomizer(rs, dry_run=True):
                 pass
-            # FIXME: this is not failsafe if the second operation did not write
-            #  anything into the buffer. Then, the old message would be always there.
             self.check_buffer(buffer, self.assertIn,
                               "Aborting Dry Run! Time taken: ")
             with ScriptAtomizer(rs, dry_run=False):
