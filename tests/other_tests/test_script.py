@@ -117,25 +117,12 @@ class TestScript(unittest.TestCase):
                 pass
             self.check_buffer(buffer, self.assertIn, "Success!")
 
-            minimal_persona = {
-                'username': "testUser@example.cde",
-                'password_hash': "abcde",
-                'display_name': "Test",
-                'given_names': "Testuser",
-                'family_name': "Dummy",
-                'is_cde_realm': False,
-                'is_event_realm': False,
-                'is_ml_realm': False,
-                'is_assembly_realm': False,
-                'is_member': False,
-                'fulltext': "something"
-            }
             insertion_query = (
-                f"INSERT INTO core.personas ({', '.join(minimal_persona.keys())})"
-                f" VALUES ({', '.join(map(repr, minimal_persona.values()))})"
+                "INSERT INTO past_event.institutions"  # arbitrary, small table
+                " (title, shortname) VALUES ('Dummy', 'Test')"
             )
-            selection_query = ("SELECT display_name FROM core.personas"
-                               " WHERE family_name = 'Dummy'")
+            selection_query = ("SELECT shortname FROM past_event.institutions"
+                               " WHERE title = 'Dummy'")
             # Make a change, roll back, then check it hasn't been committed.
             with ScriptAtomizer(rs, dry_run=True) as conn:
                 with conn.cursor() as cur:
