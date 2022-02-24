@@ -29,6 +29,12 @@ class TestScript(unittest.TestCase):
         self.script = self.get_script()
 
     def get_script(self, **config: Any) -> Script:
+        """This gets an instance of our Script class.
+
+        Note that it is not guaranteed that the database is in a cleanly
+        populated state. Tests which rely on specific contents should
+        prepare them theirselves.
+        """
         return Script(persona_id=-1, dbname=self.conf["CDB_DATABASE_NAME"],
                       dbuser="cdb_admin", check_system_user=False, **config)
 
@@ -93,6 +99,8 @@ class TestScript(unittest.TestCase):
                               "Aborting Dry Run! Time taken: ")
             with ScriptAtomizer(rs, dry_run=True):
                 pass
+            # FIXME: this is not failsafe if the second operation did not write
+            #  anything into the buffer. Then, the old message would be always there.
             self.check_buffer(buffer, self.assertIn,
                               "Aborting Dry Run! Time taken: ")
             with ScriptAtomizer(rs, dry_run=False):
@@ -109,26 +117,38 @@ class TestScript(unittest.TestCase):
                 pass
             self.check_buffer(buffer, self.assertIn, "Success!")
 
+            minimal_persona = {
+                'username': "testUser@example.cde",
+                'password_hash': "abcde",
+                'display_name': "Test",
+                'given_names': "Testuser",
+                'family_name': "Dummy",
+                'is_cde_realm': False,
+                'is_event_realm': False,
+                'is_ml_realm': False,
+                'is_assembly_realm': False,
+                'is_member': False,
+                'fulltext': "something"
+            }
+            insertion_query = (
+                f"INSERT INTO core.personas ({', '.join(minimal_persona.keys())})"
+                f" VALUES ({', '.join(map(repr, minimal_persona.values()))})"
+            )
+            selection_query = ("SELECT display_name FROM core.personas"
+                               " WHERE family_name = 'Dummy'")
             # Make a change, roll back, then check it hasn't been committed.
             with ScriptAtomizer(rs, dry_run=True) as conn:
                 with conn.cursor() as cur:
-                    cur.execute(
-                        "UPDATE core.personas SET display_name = 'Test'"
-                        " WHERE id = 1")
-                    cur.execute(
-                        "SELECT display_name FROM core.personas WHERE id = 1")
+                    cur.execute(insertion_query)
+                    cur.execute(selection_query)
                     self.assertEqual(unwrap(dict(cur.fetchone())), "Test")
             # Now make the change for real.
             with ScriptAtomizer(rs, dry_run=False) as conn:
                 with conn.cursor() as cur:
-                    cur.execute(
-                        "SELECT display_name FROM core.personas WHERE id = 1")
-                    self.assertNotEqual(unwrap(dict(cur.fetchone())), "Test")
-                    cur.execute(
-                        "UPDATE core.personas SET display_name = 'Test'"
-                        " WHERE id = 1")
+                    cur.execute(selection_query)
+                    self.assertIsNone(cur.fetchone())
+                    cur.execute(insertion_query)
             with ScriptAtomizer(rs, dry_run=False) as conn:
                 with conn.cursor() as cur:
-                    cur.execute(
-                        "SELECT display_name FROM core.personas WHERE id = 1")
+                    cur.execute(selection_query)
                     self.assertEqual(unwrap(dict(cur.fetchone())), "Test")
