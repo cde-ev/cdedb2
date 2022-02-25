@@ -97,7 +97,6 @@ from cdedb.validationdata import (
 from cdedb.validationtypes import *  # pylint: disable=wildcard-import,unused-wildcard-import; # noqa: F403
 
 _BASICCONF = BasicConfig()
-_CONF = Config()
 NoneType = type(None)
 
 zxcvbn.matching.add_frequency_lists(FREQUENCY_LISTS)
@@ -638,11 +637,12 @@ def _str(val: Any, argname: str = None, **kwargs: Any) -> str:
 def _shortname(val: Any, argname: str = None, *,
                ignore_warnings: bool = False, **kwargs: Any) -> Shortname:
     """A string used as shortname with therefore limited length."""
+    conf = Config()
     val = _str(val, argname, ignore_warnings=ignore_warnings, **kwargs)
-    if len(val) > _CONF["SHORTNAME_LENGTH"] and not ignore_warnings:
+    if len(val) > conf["SHORTNAME_LENGTH"] and not ignore_warnings:
         raise ValidationSummary(
             ValidationWarning(argname, n_("Shortname is longer than %(len)s chars."),
-                              {'len': str(_CONF["SHORTNAME_LENGTH"])}))
+                              {'len': str(conf["SHORTNAME_LENGTH"])}))
     return Shortname(val)
 
 
@@ -673,11 +673,12 @@ def _shortname_restrictive_identifier(
 def _legacy_shortname(val: Any, argname: str = None, *,
                       ignore_warnings: bool = False, **kwargs: Any) -> LegacyShortname:
     """A string used as shortname, but with increased but still limited length."""
+    conf = Config()
     val = _str(val, argname, ignore_warnings=ignore_warnings, **kwargs)
-    if len(val) > _CONF["LEGACY_SHORTNAME_LENGTH"] and not ignore_warnings:
+    if len(val) > conf["LEGACY_SHORTNAME_LENGTH"] and not ignore_warnings:
         raise ValidationSummary(
             ValidationWarning(argname, n_("Shortname is longer than %(len)s chars."),
-                              {'len': str(_CONF["LEGACY_SHORTNAME_LENGTH"])}))
+                              {'len': str(conf["LEGACY_SHORTNAME_LENGTH"])}))
     return LegacyShortname(val)
 
 
