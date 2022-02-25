@@ -7,18 +7,23 @@ from cdedb.setup.util import sanity_check
 
 def mkdirs(directory: pathlib.Path, owner: str) -> None:
     """Create a directory and its parents and set their owner."""
+    if directory.is_dir():
+        return
+
     for parent in directory.parents:
         if parent.exists():
             continue
         parent.mkdir()
         shutil.chown(parent, owner)
 
+    directory.mkdir()
+    shutil.chown(directory, owner)
+
 
 @sanity_check
-def create_storage(conf: Config) -> None:
+def create_storage(conf: Config, owner: str = "www-data") -> None:
     """Create the directory structure of the storage directory."""
     storage_dir: pathlib.Path = conf["STORAGE_DIR"]
-    owner = "www-data"
 
     subdirs = (
         "foto",  # core: profile fotos
@@ -43,14 +48,12 @@ def create_storage(conf: Config) -> None:
 
 
 @sanity_check
-def populate_storage(conf: Config) -> None:
+def populate_storage(conf: Config, owner: str = "www-data") -> None:
     """Populate the storage directory with sample data."""
     storage_dir: pathlib.Path = conf["STORAGE_DIR"]
     repo_path: pathlib.Path = conf['REPOSITORY_PATH']
-    owner = "www-data"
 
-    if not storage_dir.is_dir():
-        create_storage(conf)
+    create_storage(conf, owner)
 
     foto = ("e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425"
             "a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9")
@@ -90,10 +93,9 @@ def populate_storage(conf: Config) -> None:
 
 
 @sanity_check
-def create_log(conf: Config) -> None:
+def create_log(conf: Config, owner: str = "www-data") -> None:
     """Create the directory structure of the log directory."""
     log_dir: pathlib.Path = conf["LOG_DIR"]
-    owner = "www-data"
 
     # Remove anything left in the log dir.
     if log_dir.exists():
