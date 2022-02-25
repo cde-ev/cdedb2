@@ -244,7 +244,10 @@ class BasicTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.configpath = os.environ['CDEDB_CONFIGPATH']
+        configpath = os.environ['CDEDB_CONFIGPATH']
+        cls.configpath = configpath
+        # save the configpath in an extra variable to reset it after each test
+        cls._orig_configpath = configpath
         cls.conf = TestConfig()
         cls.storage_dir = cls.conf['STORAGE_DIR']
         cls.testfile_dir = cls.storage_dir / "testfiles"
@@ -264,6 +267,7 @@ class BasicTest(unittest.TestCase):
         test_method = getattr(self, self._testMethodName)
         if getattr(test_method, self.needs_storage_marker, False):
             shutil.rmtree(self.storage_dir)
+        os.environ['CDEDB_CONFIGPATH'] = self._orig_configpath
 
     @staticmethod
     def get_sample_data(table: str, ids: Iterable[int] = None,
