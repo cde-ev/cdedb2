@@ -2,7 +2,6 @@
 # pylint: disable=missing-module-docstring
 
 import io
-import os
 import tempfile
 import unittest
 from contextlib import redirect_stdout
