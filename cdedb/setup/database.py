@@ -99,20 +99,23 @@ def create_database(conf: Config, secrets: SecretsConfig) -> None:
 @sanity_check
 def populate_database(conf: Config, secrets: SecretsConfig, xss: bool = False) -> None:
     """Populate the database with sample data."""
-    database = conf["CDB_DATABASE_NAME"]
-    storage_dir: pathlib.Path = conf["STORAGE_DIR"]
     repo_path: pathlib.Path = conf['REPOSITORY_PATH']
-
-    # TODO add cross-dependency checks, like if storage_dir exists?
 
     # compile the sample data
     # TODO since the creation of the sample data is a bit invasive, this is done via
     #  a subprocess call. Maybe this can be done a bit more elegant...
     infile = repo_path / "tests" / "ancillary_files" / "sample_data.json"
-    outfile = storage_dir / "sample_data.sql"
+    # TODO use a real temporary file instead
+    outfile = pathlib.Path("/tmp") / "sample_data.sql"
     script_file = repo_path / "bin" / "create_sample_data_sql.py"
-    subprocess.run(["sudo", "-u", "www-data", script_file, "--infile", infile,
-                    "--outfile", outfile, "--xss" if xss else ""], check=True)
+
+    if xss:
+        xss_arg = ["--xss", conf.get("XSS_PAYLOAD") or ""]
+    else:
+        xss_arg = []
+
+    subprocess.run(["sudo", "-u", "www-data", "python3", script_file,
+                    "--infile", infile, "--outfile", outfile, *xss_arg], check=True)
 
     with connect(conf, secrets) as conn:
         with conn.cursor() as curr:
