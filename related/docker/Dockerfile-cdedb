@@ -59,6 +59,7 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3-phonenumbers \
     \
     python3-pip \
+    python3-click \
     \
     flake8 \
     isort \

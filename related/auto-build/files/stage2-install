@@ -80,7 +80,7 @@ apt-get install --yes --no-install-recommends                       \
     python3-requests python3-qrcode python3-vobject                 \
     python3-graphviz python3-phonenumbers                           \
     \
-    python3-pip isort python3-freezegun
+    python3-pip python3-click isort python3-freezegun
 # some packages interpret "recommends" very narrowly, breaking if they are missing
 apt-get install --yes python3-coverage
 
