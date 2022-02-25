@@ -1,23 +1,26 @@
 import pathlib
-import shutil
+import subprocess
 
 from cdedb.setup.config import Config
 from cdedb.setup.util import sanity_check
 
 
+def chown(path: pathlib.Path, owner: str) -> None:
+    subprocess.run(["sudo", "chown", "--recursive", f"{owner}:{owner}", path],
+                   check=True)
+
+
+def copy(source: pathlib.Path, dest: pathlib.Path) -> None:
+    subprocess.run(["sudo", "cp", source, dest], check=True)
+
+
 def mkdirs(directory: pathlib.Path, owner: str) -> None:
     """Create a directory and its parents and set their owner."""
-    if directory.is_dir():
-        return
+    subprocess.run(["sudo", "-u", owner, "mkdir", "-p", directory], check=True)
 
-    for parent in directory.parents:
-        if parent.exists():
-            continue
-        parent.mkdir()
-        shutil.chown(parent, owner)
 
-    directory.mkdir()
-    shutil.chown(directory, owner)
+def rmtree(path: pathlib.Path) -> None:
+    subprocess.run(["sudo", "rm", "-rf", path], check=True)
 
 
 @sanity_check
@@ -37,14 +40,13 @@ def create_storage(conf: Config, owner: str = "www-data") -> None:
 
     # Remove anything left in the storage dir.
     if storage_dir.exists():
-        shutil.rmtree(storage_dir)
+        rmtree(storage_dir)
     mkdirs(storage_dir, owner)
 
     for subdir in subdirs:
-        (storage_dir / subdir).mkdir()
+        mkdirs(storage_dir / subdir, owner)
 
-    for path in storage_dir.iterdir():
-        shutil.chown(path, owner)
+    chown(storage_dir, owner)
 
 
 @sanity_check
@@ -79,17 +81,16 @@ def populate_storage(conf: Config, owner: str = "www-data") -> None:
     testfile_dir: pathlib.Path = repo_path / "tests" / "ancillary_files"
     attachment_dir = storage_dir / "assembly_attachment"
 
-    shutil.copy(testfile_dir / foto, storage_dir / "foto")
-    shutil.copy(testfile_dir / "rechen.pdf", attachment_dir / "1_v1")
-    shutil.copy(testfile_dir / "kassen.pdf", attachment_dir / "2_v1")
-    shutil.copy(testfile_dir / "kassen2.pdf", attachment_dir / "2_v3")
-    shutil.copy(testfile_dir / "kandidaten.pdf", attachment_dir / "3_v1")
+    copy(testfile_dir / foto, storage_dir / "foto")
+    copy(testfile_dir / "rechen.pdf", attachment_dir / "1_v1")
+    copy(testfile_dir / "kassen.pdf", attachment_dir / "2_v1")
+    copy(testfile_dir / "kassen2.pdf", attachment_dir / "2_v3")
+    copy(testfile_dir / "kandidaten.pdf", attachment_dir / "3_v1")
     for file in files:
-        shutil.copy(testfile_dir / file, storage_dir / "testfiles")
+        copy(testfile_dir / file, storage_dir / "testfiles")
 
     # adjust the owner of the files
-    for path in storage_dir.iterdir():
-        shutil.chown(path, owner)
+    chown(storage_dir, owner)
 
 
 @sanity_check
@@ -99,5 +100,5 @@ def create_log(conf: Config, owner: str = "www-data") -> None:
 
     # Remove anything left in the log dir.
     if log_dir.exists():
-        shutil.rmtree(log_dir)
+        rmtree(log_dir)
     mkdirs(log_dir, owner)
