@@ -19,9 +19,25 @@ import logging
 import os
 import pathlib
 import subprocess
-from typing import Any, Iterator, Mapping
+from typing import Any, Iterator, Mapping, Optional, Union
 
 import pytz
+
+PathLike = Union[pathlib.Path, str]
+
+
+def set_configpath(path: PathLike) -> None:
+    """Helper to set the configpath as environment variable."""
+    os.environ["CDEDB_CONFIGPATH"] = str(path)
+
+
+def get_configpath() -> Optional[pathlib.Path]:
+    """Helper to get the config path from the environment."""
+    path = os.environ.get("CDEDB_CONFIGPATH")
+    if path:
+        return pathlib.Path(path)
+    return None
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -342,7 +358,7 @@ class Config(BasicConfig):
 
     def __init__(self) -> None:
         super().__init__()
-        configpath = os.environ.get("CDEDB_CONFIGPATH")
+        configpath = get_configpath()
         _LOGGER.debug(f"Initialising Config with path {configpath}")
         self._configpath = configpath
         # TODO this is diametral to the statement above
@@ -401,7 +417,7 @@ class TestConfig(BasicConfig):
         :param configpath: path to file with overrides
         """
         super().__init__()
-        configpath = os.environ.get("CDEDB_CONFIGPATH")
+        configpath = get_configpath()
         _LOGGER.debug(f"Initialising TestConfig with path {configpath}")
         self._configpath = configpath
 
@@ -436,7 +452,7 @@ class SecretsConfig(Mapping[str, Any]):
 
     def __init__(self) -> None:
         # TODO switch to own config file
-        configpath = os.environ.get("CDEDB_CONFIGPATH")
+        configpath = get_configpath()
         _LOGGER.debug(f"Initialising SecretsConfig with path {configpath}")
         if not configpath:
             raise RuntimeError("No configpath for SecretsConfig provided!")
