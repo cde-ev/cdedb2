@@ -38,11 +38,11 @@ def psql(*commands) -> None:
     subprocess.run([*psql, *commands], check=True)
 
 
-def connect(dbname: str, config: Config, secrets: SecretsConfig) -> psycopg2.connection:
+def connect(config: Config, secrets: SecretsConfig) -> psycopg2.extensions.connection:
     """Create a very basic database connection."""
 
     connection_parameters = {
-        "dbname": dbname,
+        "dbname": config["CDB_DATABASE_NAME"],
         "user": "cdb",
         "password": secrets["CDB_DATABASE_ROLES"]["cdb"],
         "host": config["DB_HOST"],
@@ -89,7 +89,7 @@ def create_database(conf: Config, secrets: SecretsConfig) -> None:
     psql("-f", db_path, "-v", f"cdb_database_name={database}")
     start_services("pgbouncer")
 
-    with connect(database, conf, secrets) as conn:
+    with connect(conf, secrets) as conn:
         with conn.cursor() as curr:
             curr.execute(tables_path.read_text())
             curr.execute(ldap_path.read_text())
@@ -113,7 +113,7 @@ def populate_database(conf: Config, secrets: SecretsConfig, xss: bool = False) -
     subprocess.run(["sudo", "-u", "www-data", script_file, "--infile", infile,
                     "--outfile", outfile, "--xss" if xss else ""], check=True)
 
-    with connect(database, conf, secrets) as conn:
+    with connect(conf, secrets) as conn:
         with conn.cursor() as curr:
             curr.execute(outfile.read_text())
 
