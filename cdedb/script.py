@@ -44,7 +44,8 @@ class TempConfig:
     def __init__(self, configpath: PathLike = None, **config: Any):
         if config and configpath:
             raise ValueError("Mustn't specify both config and configpath.")
-        self._configpath = configpath
+        # avoid to set "None" as configpath, rather set an empty configpath
+        self._configpath = configpath or ""
         self._config = config
         self._f: Optional[IO[str]] = None
 

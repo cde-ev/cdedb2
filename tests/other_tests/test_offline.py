@@ -35,7 +35,7 @@ class TestOffline(FrontendTest):
                 check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             # Reset web test app for changed configuration
             sys.modules.pop('cdedb.localconfig', None)
-            new_app = Application(self.configpath)
+            new_app = Application()
             self.app = webtest.TestApp(  # type: ignore
                 new_app, extra_environ=self.app_extra_environ)
             self.app.reset()

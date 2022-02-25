@@ -23,7 +23,7 @@ class TestScript(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.conf = TestConfig(os.environ['CDEDB_TEST_CONFIGPATH'])
+        cls.conf = TestConfig()
 
     def setUp(self) -> None:
         self.script = self.get_script()

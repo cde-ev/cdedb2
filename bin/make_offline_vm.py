@@ -317,6 +317,6 @@ if __name__ == "__main__":
 
     if args.test:
         sys.path.append(str(args.repopath))  # test config imports from module `tests`
-        args.conf = TestConfig(os.environ['CDEDB_TEST_CONFIGPATH'])
+        args.conf = TestConfig()
 
     work(args)

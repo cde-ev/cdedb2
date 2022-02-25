@@ -45,7 +45,6 @@ posted_urls: Set[str] = set()
 
 
 def work(
-    configpath: pathlib.Path,
     outdir: pathlib.Path,
     *,
     verbose: bool = False,
@@ -53,13 +52,11 @@ def work(
     secondary_payload: Tuple[str, ...] = ("&amp;lt;", "&amp;gt;")
 ) -> int:
     """Iterate over all visible page links and check them for the xss payload."""
-    # Do some sanity checks to avoide spamming an offline or production vm.
+    # Do some sanity checks to avoid spamming an offline or production vm.
     if pathlib.Path("/OFFLINEVM").exists():
         raise RuntimeError("Cannot run this script in an Offline-VM.")
     if pathlib.Path("/PRODUCTIONVM").exists():
         raise RuntimeError("Cannot run this scirpt in Production-VM.")
-
-    os.environ["CDEDB_CONFIGPATH"] = str(configpath)
 
     app = Application()
     wt_app = webtest.TestApp(app, extra_environ={
@@ -258,7 +255,9 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    ret = work(
-        pathlib.Path(args.configpath), pathlib.Path(args.outdir), verbose=args.verbose,
-        payload=args.payload, secondary_payload=args.secondary)
+    # set the config path
+    os.environ["CDEDB_CONFIGPATH"] = args.configpath
+
+    ret = work(pathlib.Path(args.outdir), verbose=args.verbose,
+               payload=args.payload, secondary_payload=args.secondary)
     sys.exit(ret)

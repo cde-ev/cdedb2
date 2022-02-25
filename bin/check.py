@@ -115,9 +115,9 @@ def _load_tests(testpatterns: Optional[List[str]],
     return test_suite
 
 
-def run_application_tests(configpath: pathlib.Path, testpatterns: List[str] = None, *,
+def run_application_tests(testpatterns: List[str] = None, *,
                           verbose: bool = False) -> int:
-    conf = TestConfig(configpath)
+    conf = TestConfig()
     # get the user running the current process, so the access rights for log directory
     # are set correctly
     user = getpass.getuser()
@@ -129,8 +129,6 @@ def run_application_tests(configpath: pathlib.Path, testpatterns: List[str] = No
     # setup the database
     subprocess.run(["make", "sql", f"DATABASE_NAME={conf['CDB_DATABASE_NAME']}"],
                    check=True, stdout=subprocess.DEVNULL)
-    # add the configpath to environment to access the configuration inside the tests
-    os.environ['CDEDB_TEST_CONFIGPATH'] = str(configpath)
 
     # load all tests which are not meant to be run separately (f.e. the ldap tests)
     test_modules = [backend_tests, frontend_tests, other_tests]
@@ -143,8 +141,8 @@ def run_application_tests(configpath: pathlib.Path, testpatterns: List[str] = No
     return 0 if ran_tests.wasSuccessful() else 1
 
 
-def run_xss_tests(configpath: pathlib.Path, *, verbose: bool = False) -> int:
-    conf = TestConfig(configpath)
+def run_xss_tests(*, verbose: bool = False) -> int:
+    conf = TestConfig()
     # get the user running the current process, so the access rights for log directory
     # are set correctly
     user = getpass.getuser()
@@ -160,20 +158,17 @@ def run_xss_tests(configpath: pathlib.Path, *, verbose: bool = False) -> int:
     # create the storage directory
     subprocess.run(["make", "storage", f"STORAGE_DIR={conf['STORAGE_DIR']}",
                     f"DATA_USER={user}"], check=True, stdout=subprocess.DEVNULL)
-    # add the configpath to environment to access the configuration inside the tests
-    os.environ['CDEDB_TEST_CONFIGPATH'] = str(configpath)
 
     ret = xss_check(
-        configpath, conf["XSS_OUTDIR"], verbose=verbose, payload=conf["XSS_PAYLOAD"],
+        conf["XSS_OUTDIR"], verbose=verbose, payload=conf["XSS_PAYLOAD"],
         secondary_payload=conf["XSS_PAYLOAD_SECONDARY"]
     )
 
     return ret
 
 
-def run_ldap_tests(configpath: pathlib.Path, testpatterns: List[str] = None, *,
-                   verbose: bool = False) -> int:
-    conf = TestConfig(configpath)
+def run_ldap_tests(testpatterns: List[str] = None, *, verbose: bool = False) -> int:
+    conf = TestConfig()
     # get the user running the current process, so the access rights for log directory
     # are set correctly
     user = getpass.getuser()
@@ -197,8 +192,6 @@ def run_ldap_tests(configpath: pathlib.Path, testpatterns: List[str] = None, *,
         subprocess.run(
             ["make", "ldap-update-full", f"DATABASE_NAME={conf['CDB_DATABASE_NAME']}"],
             check=True, stdout=subprocess.DEVNULL)
-    # add the configpath to environment to access the configuration inside the tests
-    os.environ['CDEDB_TEST_CONFIGPATH'] = str(configpath)
 
     test_suite = _load_tests(testpatterns, [ldap_tests])
 
@@ -285,9 +278,9 @@ if __name__ == '__main__':
         with CdEDBTestLock() as Lock:
             assert Lock.thread is not None
             print(f"Using thread {Lock.thread}", file=sys.stderr)
+            os.environ["CDEDB_CONFIGPATH"] = str(Lock.configpath)
             return_code += run_application_tests(
-                configpath=Lock.configpath, testpatterns=testpatterns,
-                verbose=args.verbose)
+                testpatterns=testpatterns, verbose=args.verbose)
 
     if do_ldap:
         # Override testpatterns to run all tests.
@@ -299,15 +292,15 @@ if __name__ == '__main__':
         with CdEDBTestLock("ldap") as Lock:
             assert Lock.thread is not None
             print(f"Using thread {Lock.thread}", file=sys.stderr)
+            os.environ["CDEDB_CONFIGPATH"] = str(Lock.configpath)
             return_code += run_ldap_tests(
-                configpath=Lock.configpath, testpatterns=testpatterns,
-                verbose=args.verbose)
+                testpatterns=testpatterns, verbose=args.verbose)
 
     if do_xss:
         with CdEDBTestLock("xss") as Lock:
             assert Lock.thread is not None
             print(f"Using thread {Lock.thread}", file=sys.stderr)
-            return_code += run_xss_tests(
-                configpath=Lock.configpath, verbose=args.verbose)
+            os.environ["CDEDB_CONFIGPATH"] = str(Lock.configpath)
+            return_code += run_xss_tests(verbose=args.verbose)
 
     sys.exit(return_code)

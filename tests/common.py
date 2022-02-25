@@ -244,8 +244,8 @@ class BasicTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.configpath = os.environ['CDEDB_TEST_CONFIGPATH']
-        cls.conf = TestConfig(cls.configpath)
+        cls.configpath = os.environ['CDEDB_CONFIGPATH']
+        cls.conf = TestConfig()
         cls.storage_dir = cls.conf['STORAGE_DIR']
         cls.testfile_dir = cls.storage_dir / "testfiles"
 
@@ -451,11 +451,11 @@ class BackendTest(CdEDBTest):
     @classmethod
     def initialize_raw_backend(cls, backendcls: Type[SessionBackend]
                                ) -> SessionBackend:
-        return backendcls(configpath=cls.configpath)
+        return backendcls()
 
     @classmethod
     def initialize_backend(cls, backendcls: Type[B]) -> B:
-        return _make_backend_shim(backendcls(configpath=cls.configpath), internal=True)
+        return _make_backend_shim(backendcls(), internal=True)
 
 
 # A reference of the most important attributes for all users. This is used for
@@ -783,7 +783,7 @@ def storage(fun: F) -> F:
 
 def execsql(sql: AnyStr) -> None:
     """Execute arbitrary SQL-code on the test database."""
-    conf = TestConfig(os.environ['CDEDB_TEST_CONFIGPATH'])
+    conf = TestConfig()
     psql = ("/cdedb2/bin/execute_sql_script.py",
             "--username", "cdb", "--dbname", conf["CDB_DATABASE_NAME"])
     mode = 'wb' if isinstance(sql, bytes) else 'w'
@@ -819,7 +819,7 @@ class FrontendTest(BackendTest):
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
-        app = Application(cls.configpath)
+        app = Application()
         cls.gettext = app.translations[cls.lang].gettext
         cls.app = webtest.TestApp(app, extra_environ=cls.app_extra_environ)
 
@@ -1646,7 +1646,7 @@ class MultiAppFrontendTest(FrontendTest):
         super().setUpClass()
         cls.apps = [
             webtest.TestApp(
-                Application(cls.configpath),
+                Application(),
                 extra_environ=cls.app_extra_environ,
             )
             for _ in range(cls.n)
@@ -1729,7 +1729,7 @@ class CronTest(CdEDBTest):
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
-        cls.cron = CronFrontend(configpath=cls.configpath)
+        cls.cron = CronFrontend()
         cls.core = make_cron_backend_proxy(cls.cron, cls.cron.core.coreproxy)
         cls.cde = make_cron_backend_proxy(cls.cron, cls.cron.core.cdeproxy)
         cls.event = make_cron_backend_proxy(cls.cron, cls.cron.core.eventproxy)
