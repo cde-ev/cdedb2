@@ -23,13 +23,11 @@ from typing import Any, Iterator, Mapping
 
 import pytz
 
-from cdedb.common import n_
-
 _LOGGER = logging.getLogger(__name__)
 
 _currentpath = pathlib.Path(__file__).resolve().parent
 if _currentpath.parts[0] != '/' or _currentpath.parts[-1] != 'cdedb':  # pragma: no cover
-    raise RuntimeError(n_("Failed to locate repository"))
+    raise RuntimeError("Failed to locate repository")
 _repopath = _currentpath.parent
 
 try:
