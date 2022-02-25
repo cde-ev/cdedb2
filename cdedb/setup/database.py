@@ -1,5 +1,6 @@
 import pathlib
 import subprocess
+from typing import Union
 
 import psycopg2
 import psycopg2.extensions
@@ -9,7 +10,7 @@ from cdedb.setup.config import Config, SecretsConfig
 from cdedb.setup.util import is_docker, sanity_check
 
 
-def start_services(*services) -> None:
+def start_services(*services: str) -> None:
     """Start the given services."""
     if is_docker():
         return
@@ -17,7 +18,7 @@ def start_services(*services) -> None:
         subprocess.run(["sudo", "systemctl", "start", service], check=True)
 
 
-def stop_services(*services) -> None:
+def stop_services(*services: str) -> None:
     """Stop the given services."""
     if is_docker():
         return
@@ -25,16 +26,16 @@ def stop_services(*services) -> None:
         subprocess.run(["sudo", "systemctl", "stop", service], check=True)
 
 
-def psql(*commands) -> None:
+def psql(*commands: Union[str, pathlib.Path]) -> None:
     """Execute commands using the psql client.
 
     This should be used only in cases where a direct connection to the database
     via psycopg2 is not possible, f.e. to create the database.
     """
     if is_docker():
-        psql = ("psql", "postgresql://postgres:passwd@cdb")
+        psql = ["psql", "postgresql://postgres:passwd@cdb"]
     else:
-        psql = ("sudo", "-u", "postgres", "psql")
+        psql = ["sudo", "-u", "postgres", "psql"]
     subprocess.run([*psql, *commands], check=True)
 
 
