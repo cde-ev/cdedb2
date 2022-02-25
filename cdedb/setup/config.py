@@ -25,7 +25,7 @@ import pytz
 
 _LOGGER = logging.getLogger(__name__)
 
-_currentpath = pathlib.Path(__file__).resolve().parent
+_currentpath = pathlib.Path(__file__).resolve().parent.parent
 if _currentpath.parts[0] != '/' or _currentpath.parts[-1] != 'cdedb':  # pragma: no cover
     raise RuntimeError("Failed to locate repository")
 _repopath = _currentpath.parent
