@@ -31,10 +31,10 @@ from cdedb.common import (
     PrivilegeError, PsycoJson, RequestState, Role, diacritic_patterns, glue, make_proxy,
     make_root_logger, n_, unwrap,
 )
-from cdedb.config import Config
 from cdedb.database.connection import Atomizer
 from cdedb.database.constants import FieldDatatypes
 from cdedb.query import Query, QueryOperators
+from cdedb.setup.config import Config
 from cdedb.validation import parse_date, parse_datetime
 
 F = TypeVar('F', bound=Callable[..., Any])

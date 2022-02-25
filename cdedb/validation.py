@@ -84,13 +84,13 @@ from cdedb.common import (
     InfiniteEnum, LineResolutions, ValidationWarning, asciificator, compute_checkdigit,
     extract_roles, n_, now, xsorted,
 )
-from cdedb.config import BasicConfig, Config
 from cdedb.database.constants import FieldAssociations, FieldDatatypes
 from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS
 from cdedb.query import (
     MULTI_VALUE_OPERATORS, NO_VALUE_OPERATORS, VALID_QUERY_OPERATORS, QueryOperators,
     QueryOrder, QueryScope, QuerySpec,
 )
+from cdedb.setup.config import BasicConfig, Config
 from cdedb.validationdata import (
     COUNTRY_CODES, FREQUENCY_LISTS, GERMAN_POSTAL_CODES, IBAN_LENGTHS,
 )

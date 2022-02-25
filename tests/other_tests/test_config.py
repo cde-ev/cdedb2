@@ -6,7 +6,7 @@ import unittest
 
 import pytz
 
-from cdedb.config import BasicConfig, Config, SecretsConfig
+from cdedb.setup.config import BasicConfig, Config, SecretsConfig
 
 
 class TestConfig(unittest.TestCase):

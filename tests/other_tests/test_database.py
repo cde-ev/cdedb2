@@ -6,10 +6,10 @@ from typing import Any
 
 import psycopg2.extensions
 
-from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database.connection import (
     Atomizer, IrradiatedConnection, connection_pool_factory,
 )
+from cdedb.setup.config import BasicConfig, Config, SecretsConfig
 
 _BASICCONF = BasicConfig()
 

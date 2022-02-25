@@ -19,8 +19,8 @@ from typing import Collection
 from psycopg2.extras import DictCursor, Json
 
 from cdedb.common import CdEDBObject
-from cdedb.config import TestConfig
 from cdedb.script import Script
+from cdedb.setup.config import TestConfig
 
 # This is 'secret' the hashed
 PHASH = ("$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/"

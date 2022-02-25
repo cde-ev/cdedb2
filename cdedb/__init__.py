@@ -10,7 +10,7 @@ import os
 import stat
 
 from cdedb.common import make_root_logger
-from cdedb.config import BasicConfig
+from cdedb.setup.config import BasicConfig
 
 _BASICCONF = BasicConfig()
 

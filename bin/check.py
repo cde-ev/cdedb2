@@ -26,7 +26,7 @@ import tests.backend_tests as backend_tests
 import tests.frontend_tests as frontend_tests
 import tests.ldap_tests as ldap_tests
 import tests.other_tests as other_tests
-from cdedb.config import TestConfig
+from cdedb.setup.config import TestConfig
 
 
 class CdEDBTestLock:

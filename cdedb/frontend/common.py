@@ -80,7 +80,6 @@ from cdedb.common import (
     get_localized_country_codes, glue, json_serialize, make_proxy, make_root_logger,
     merge_dicts, n_, now, roles_to_db_role, unwrap,
 )
-from cdedb.config import BasicConfig, Config, SecretsConfig, TestConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.devsamples import HELD_MESSAGE_SAMPLE
@@ -90,6 +89,7 @@ from cdedb.filter import (
 )
 from cdedb.query import Query
 from cdedb.query_defaults import DEFAULT_QUERIES
+from cdedb.setup.config import BasicConfig, Config, SecretsConfig, TestConfig
 
 _LOGGER = logging.getLogger(__name__)
 _BASICCONF = BasicConfig()

@@ -11,7 +11,6 @@ import pathlib
 from typing import Collection, Iterator
 
 from cdedb.common import ALL_ROLES, RequestState, User, n_, now
-from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.assembly import AssemblyFrontend
@@ -21,6 +20,7 @@ from cdedb.frontend.core import CoreFrontend
 from cdedb.frontend.event import EventFrontend
 from cdedb.frontend.ml import MlFrontend
 from cdedb.frontend.paths import CDEDB_PATHS
+from cdedb.setup.config import SecretsConfig
 
 
 class CronFrontend(BaseApp):

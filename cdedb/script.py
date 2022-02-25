@@ -27,8 +27,8 @@ import psycopg2.extras
 from cdedb.common import (
     ALL_ROLES, AbstractBackend, PathLike, RequestState, User, make_proxy, n_,
 )
-from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import Atomizer, IrradiatedConnection
+from cdedb.setup.config import Config, SecretsConfig
 
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)

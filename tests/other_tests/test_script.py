@@ -13,8 +13,8 @@ import psycopg2.errorcodes
 
 from cdedb.backend.core import CoreBackend
 from cdedb.common import unwrap
-from cdedb.config import TestConfig
 from cdedb.script import DryRunError, Script, ScriptAtomizer
+from cdedb.setup.config import TestConfig
 
 
 class TestScript(unittest.TestCase):
