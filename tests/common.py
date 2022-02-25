@@ -19,7 +19,6 @@ import os
 import pathlib
 import re
 import shutil
-import subprocess
 import sys
 import tempfile
 import unittest
@@ -56,6 +55,8 @@ from cdedb.frontend.paths import CDEDB_PATHS
 from cdedb.query import QueryOperators
 from cdedb.script import Script
 from cdedb.setup.config import SecretsConfig, TestConfig
+from cdedb.setup.database import connect
+from cdedb.setup.storage import populate_storage
 
 # TODO: use TypedDict to specify UserObject.
 UserObject = Mapping[str, Any]
@@ -259,10 +260,7 @@ class BasicTest(unittest.TestCase):
             # get the user running the current process, so the access rights for the
             # storage directory are set correctly
             user = getpass.getuser()
-            subprocess.run(
-                ("make", "storage", f"STORAGE_DIR={self.storage_dir}",
-                 f"DATA_USER={user}"),
-                stdout=subprocess.DEVNULL, check=True, start_new_session=True)
+            populate_storage(self.conf, user)
 
     def tearDown(self) -> None:
         test_method = getattr(self, self._testMethodName)
@@ -789,17 +787,11 @@ def storage(fun: F) -> F:
 def execsql(sql: AnyStr) -> None:
     """Execute arbitrary SQL-code on the test database."""
     conf = TestConfig()
-    psql = ("/cdedb2/bin/execute_sql_script.py",
-            "--username", "cdb", "--dbname", conf["CDB_DATABASE_NAME"])
-    # TODO wtf? unset the configpath for the subprocess call - the tests module is not
-    #  found in the subprocess call...
-    env = {"CDEDB_CONFIGPATH": "no valid path though"}
-    mode = 'wb' if isinstance(sql, bytes) else 'w'
-    with tempfile.NamedTemporaryFile(mode=mode, suffix='.sql') as sql_file:
-        sql_file.write(sql)
-        sql_file.flush()
-        subprocess.run(psql + ("--file", sql_file.name), stdout=subprocess.DEVNULL,
-                       start_new_session=True, check=True, env=env)
+    secrets = SecretsConfig()
+
+    with connect(conf, secrets) as conn:
+        with conn.cursor() as curr:
+            curr.execute(sql)
 
 
 class FrontendTest(BackendTest):

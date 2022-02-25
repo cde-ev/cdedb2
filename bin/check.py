@@ -26,7 +26,9 @@ import tests.backend_tests as backend_tests
 import tests.frontend_tests as frontend_tests
 import tests.ldap_tests as ldap_tests
 import tests.other_tests as other_tests
-from cdedb.setup.config import TestConfig
+from cdedb.setup.config import SecretsConfig, TestConfig, set_configpath
+from cdedb.setup.database import create_database, populate_database
+from cdedb.setup.storage import create_log, populate_storage
 
 
 class CdEDBTestLock:
@@ -118,17 +120,17 @@ def _load_tests(testpatterns: Optional[List[str]],
 def run_application_tests(testpatterns: List[str] = None, *,
                           verbose: bool = False) -> int:
     conf = TestConfig()
+    secrets = SecretsConfig()
     # get the user running the current process, so the access rights for log directory
     # are set correctly
     user = getpass.getuser()
     # prepare the translations
     subprocess.run(["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL)
-    # create the log directory
-    subprocess.run(["make", "log", f"LOG_DIR={conf['LOG_DIR']}", f"DATA_USER={user}"],
-                   check=True, stdout=subprocess.DEVNULL)
-    # setup the database
-    subprocess.run(["make", "sql", f"DATABASE_NAME={conf['CDB_DATABASE_NAME']}"],
-                   check=True, stdout=subprocess.DEVNULL)
+
+    create_log(conf, user)
+    populate_storage(conf, user)
+    create_database(conf, secrets)
+    populate_database(conf, secrets)
 
     # load all tests which are not meant to be run separately (f.e. the ldap tests)
     test_modules = [backend_tests, frontend_tests, other_tests]
@@ -143,21 +145,17 @@ def run_application_tests(testpatterns: List[str] = None, *,
 
 def run_xss_tests(*, verbose: bool = False) -> int:
     conf = TestConfig()
+    secrets = SecretsConfig()
     # get the user running the current process, so the access rights for log directory
     # are set correctly
     user = getpass.getuser()
     # prepare the translations
     subprocess.run(["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL)
-    # create the log directory
-    subprocess.run(["make", "log", f"LOG_DIR={conf['LOG_DIR']}", f"DATA_USER={user}"],
-                   check=True, stdout=subprocess.DEVNULL)
-    # setup the database
-    subprocess.run(["make", "sql-xss", f"DATABASE_NAME={conf['CDB_DATABASE_NAME']}",
-                    f"XSS_PAYLOAD={conf['XSS_PAYLOAD']}"],
-                   check=True, stdout=subprocess.DEVNULL)
-    # create the storage directory
-    subprocess.run(["make", "storage", f"STORAGE_DIR={conf['STORAGE_DIR']}",
-                    f"DATA_USER={user}"], check=True, stdout=subprocess.DEVNULL)
+
+    create_log(conf, user)
+    populate_storage(conf, user)
+    create_database(conf, secrets)
+    populate_database(conf, secrets)
 
     ret = xss_check(
         conf["XSS_OUTDIR"], verbose=verbose, payload=conf["XSS_PAYLOAD"],
@@ -169,23 +167,23 @@ def run_xss_tests(*, verbose: bool = False) -> int:
 
 def run_ldap_tests(testpatterns: List[str] = None, *, verbose: bool = False) -> int:
     conf = TestConfig()
+    secrets = SecretsConfig()
     # get the user running the current process, so the access rights for log directory
     # are set correctly
     user = getpass.getuser()
     # prepare the translations
     subprocess.run(["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL)
-    # create the log directory
-    subprocess.run(["make", "log", f"LOG_DIR={conf['LOG_DIR']}", f"DATA_USER={user}"],
-                   check=True, stdout=subprocess.DEVNULL)
+
+    create_log(conf, user)
     if pathlib.Path("/CONTAINER").is_file():
         # the database is already initialized, since it is needed to start the
         # ldap container in the first place
         print(f"Database {conf['CDB_DATABASE_NAME']} must already been set up.")
         # TODO verify this somehow
     else:
-        # setup the database
-        subprocess.run(["make", "sql", f"DATABASE_NAME={conf['CDB_DATABASE_NAME']}"],
-                       check=True, stdout=subprocess.DEVNULL)
+        create_database(conf, secrets)
+        populate_database(conf, secrets)
+
         # update the current ldap setting
         # note that this takes no changes of the base ldap setup into account,
         # since this would need to reinstall slapd to work.
@@ -278,7 +276,7 @@ if __name__ == '__main__':
         with CdEDBTestLock() as Lock:
             assert Lock.thread is not None
             print(f"Using thread {Lock.thread}", file=sys.stderr)
-            os.environ["CDEDB_CONFIGPATH"] = str(Lock.configpath)
+            set_configpath(Lock.configpath)
             return_code += run_application_tests(
                 testpatterns=testpatterns, verbose=args.verbose)
 
@@ -292,7 +290,7 @@ if __name__ == '__main__':
         with CdEDBTestLock("ldap") as Lock:
             assert Lock.thread is not None
             print(f"Using thread {Lock.thread}", file=sys.stderr)
-            os.environ["CDEDB_CONFIGPATH"] = str(Lock.configpath)
+            set_configpath(Lock.configpath)
             return_code += run_ldap_tests(
                 testpatterns=testpatterns, verbose=args.verbose)
 
@@ -300,7 +298,7 @@ if __name__ == '__main__':
         with CdEDBTestLock("xss") as Lock:
             assert Lock.thread is not None
             print(f"Using thread {Lock.thread}", file=sys.stderr)
-            os.environ["CDEDB_CONFIGPATH"] = str(Lock.configpath)
+            set_configpath(Lock.configpath)
             return_code += run_xss_tests(verbose=args.verbose)
 
     sys.exit(return_code)
