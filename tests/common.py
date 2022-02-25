@@ -240,6 +240,7 @@ class BasicTest(unittest.TestCase):
     storage_dir: ClassVar[pathlib.Path]
     testfile_dir: ClassVar[pathlib.Path]
     configpath: ClassVar[str]
+    _orig_configpath: ClassVar[str]
     conf: ClassVar[TestConfig]
 
     @classmethod

@@ -2,6 +2,7 @@
 # pylint: disable=missing-module-docstring
 
 import unittest
+from typing import Any
 
 import psycopg2.extensions
 
@@ -15,7 +16,7 @@ _BASICCONF = BasicConfig()
 
 class TestDatabase(unittest.TestCase):
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.config = Config()
         self.secrets = SecretsConfig()
