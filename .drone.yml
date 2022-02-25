@@ -92,6 +92,10 @@ steps:
     status:
       - failure
       - success
+  environment:
+    # Dirty hack to circumvent dependencies of makefile on python files using the config
+    # TODO remove
+    CDEDB_CONFIGPATH: tests/config/test_ldap.py
   commands:
   - sleep 5
   # Dirty hack to circumvent config instantiation problems, since docker uses
