@@ -397,15 +397,16 @@ class TestConfig(BasicConfig):
     all the configuration in our testsuite in a configfile.
     """
 
-    def __init__(self, configpath: PathLike = None):
+    def __init__(self) -> None:
         """
         :param configpath: path to file with overrides
         """
         super().__init__()
+        configpath = os.environ.get("CDEDB_CONFIGPATH")
         _LOGGER.debug(f"Initialising TestConfig with path {configpath}")
         self._configpath = configpath
 
-        if configpath:
+        if configpath and pathlib.Path(configpath).is_file():
             spec = importlib.util.spec_from_file_location(
                 "primaryconf", str(configpath)
             )
@@ -414,6 +415,9 @@ class TestConfig(BasicConfig):
             additional = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(additional)  # type: ignore
             additional = {key: getattr(additional, key) for key in dir(additional)}
+        elif configpath and not pathlib.Path(configpath).is_file():
+            _LOGGER.error(f"During initialization of TestConfig, config file {configpath} not found!")
+            additional = {}
         else:
             additional = {}
 
