@@ -350,7 +350,9 @@ class Config(BasicConfig):
         # TODO this is diametral to the statement above
         config_keys = _DEFAULTS.keys() | _BASIC_DEFAULTS.keys()
 
-        if configpath and pathlib.Path(configpath).is_file():
+        if not configpath:
+            raise RuntimeError("No configpath for Config provided!")
+        if pathlib.Path(configpath).is_file():
             spec = importlib.util.spec_from_file_location(
                 "primaryconf", str(configpath)
             )
@@ -362,10 +364,9 @@ class Config(BasicConfig):
                 key: getattr(primaryconf, key)
                 for key in config_keys & set(dir(primaryconf))
             }
-        elif configpath and not pathlib.Path(configpath).is_file():
-            _LOGGER.error(f"During initialization of Config, config file {configpath} not found!")
-            primaryconf = {}
         else:
+            _LOGGER.error(f"During initialization of Config, config file"
+                          f" {configpath} not found!")
             primaryconf = {}
 
         try:
@@ -406,7 +407,9 @@ class TestConfig(BasicConfig):
         _LOGGER.debug(f"Initialising TestConfig with path {configpath}")
         self._configpath = configpath
 
-        if configpath and pathlib.Path(configpath).is_file():
+        if not configpath:
+            raise RuntimeError("No configpath for TestConfig provided!")
+        if pathlib.Path(configpath).is_file():
             spec = importlib.util.spec_from_file_location(
                 "primaryconf", str(configpath)
             )
@@ -415,10 +418,9 @@ class TestConfig(BasicConfig):
             additional = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(additional)  # type: ignore
             additional = {key: getattr(additional, key) for key in dir(additional)}
-        elif configpath and not pathlib.Path(configpath).is_file():
-            _LOGGER.error(f"During initialization of TestConfig, config file {configpath} not found!")
-            additional = {}
         else:
+            _LOGGER.error(f"During initialization of TestConfig, config file"
+                          f" {configpath} not found!")
             additional = {}
 
         self._configchain = collections.ChainMap(
@@ -438,7 +440,9 @@ class SecretsConfig(Mapping[str, Any]):
         # TODO switch to own config file
         configpath = os.environ.get("CDEDB_CONFIGPATH")
         _LOGGER.debug(f"Initialising SecretsConfig with path {configpath}")
-        if configpath and pathlib.Path(configpath).is_file():
+        if not configpath:
+            raise RuntimeError("No configpath for SecretsConfig provided!")
+        if pathlib.Path(configpath).is_file():
             spec = importlib.util.spec_from_file_location(
                 "primaryconf", str(configpath)
             )
@@ -450,10 +454,9 @@ class SecretsConfig(Mapping[str, Any]):
                 key: getattr(primaryconf, key)
                 for key in _SECRECTS_DEFAULTS.keys() & set(dir(primaryconf))
             }
-        elif configpath and not pathlib.Path(configpath).is_file():
-            _LOGGER.error(f"During initialization of SecretsConfig, config file {configpath} not found!")
-            primaryconf = {}
         else:
+            _LOGGER.error(f"During initialization of SecretsConfig, config file"
+                          f" {configpath} not found!")
             primaryconf = {}
 
         try:
