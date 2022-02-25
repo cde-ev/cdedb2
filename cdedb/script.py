@@ -108,7 +108,11 @@ class Script:
             raise RuntimeError("Must be run as user www-data.")
 
         # Read configurable data from environment and/or input.
-        configpath = configpath or os.environ.get("SCRIPT_CONFIGPATH")
+        configpath = (
+            configpath
+            or os.environ.get("SCRIPT_CONFIGPATH")
+            or os.environ.get("CDEDB_CONFIGPATH")
+        )
         # Allow overriding for evolution trial.
         if persona_id is None:
             persona_id = int(os.environ.get("SCRIPT_PERSONA_ID", -1))
