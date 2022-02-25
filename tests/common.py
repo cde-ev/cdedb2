@@ -791,12 +791,15 @@ def execsql(sql: AnyStr) -> None:
     conf = TestConfig()
     psql = ("/cdedb2/bin/execute_sql_script.py",
             "--username", "cdb", "--dbname", conf["CDB_DATABASE_NAME"])
+    # TODO wtf? unset the configpath for the subprocess call - the tests module is not
+    #  found in the subprocess call...
+    env = {"CDEDB_CONFIGPATH": "no valid path though"}
     mode = 'wb' if isinstance(sql, bytes) else 'w'
     with tempfile.NamedTemporaryFile(mode=mode, suffix='.sql') as sql_file:
         sql_file.write(sql)
         sql_file.flush()
         subprocess.run(psql + ("--file", sql_file.name), stdout=subprocess.DEVNULL,
-                       start_new_session=True, check=True)
+                       start_new_session=True, check=True, env=env)
 
 
 class FrontendTest(BackendTest):
