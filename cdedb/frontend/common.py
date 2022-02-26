@@ -2493,8 +2493,7 @@ class TransactionObserver:
         return False
 
 
-def setup_translations(conf: Union[Config, TestConfig]
-                       ) -> Mapping[str, gettext.NullTranslations]:
+def setup_translations(conf: Config) -> Mapping[str, gettext.NullTranslations]:
     """Helper to setup a mapping of languages to gettext translation objects."""
     return {
         lang: gettext.translation('cdedb', languages=[lang],

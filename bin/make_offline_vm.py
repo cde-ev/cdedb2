@@ -304,6 +304,7 @@ if __name__ == "__main__":
 
     data_path = pathlib.Path(args.data_path)
 
+    config: Config
     if args.test:
         # the configpath is already set and intended to be used here
         config = TestConfig()

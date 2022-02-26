@@ -4,8 +4,6 @@
 import os
 import unittest
 
-import pytz
-
 from cdedb.setup.config import Config, SecretsConfig, get_configpath, set_configpath
 
 
