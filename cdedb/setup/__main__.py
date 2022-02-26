@@ -91,5 +91,15 @@ def compile_sample_data(infile: str, outfile: str, xss: bool) -> None:
     _compile_sample_data(config, pathlib.Path(infile), pathlib.Path(outfile), xss=xss)
 
 
+@cli.command()
+def make_sample_data() -> None:
+    check_configpath()
+    config = TestConfig()
+    secrets = SecretsConfig()
+    _populate_storage(config)
+    _create_database(config, secrets)
+    _populate_database(config, secrets)
+
+
 if __name__ == "__main__":
     cli()
