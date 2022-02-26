@@ -380,9 +380,8 @@ class Config(BasicConfig):
                 for key in config_keys & set(dir(primaryconf))
             }
         else:
-            _LOGGER.error(f"During initialization of Config, config file"
-                          f" {configpath} not found!")
-            primaryconf = {}
+            raise RuntimeError(f"During initialization of Config, config file"
+                               f" {configpath} not found!")
 
         try:
             # noinspection PyUnresolvedReferences
