@@ -106,6 +106,7 @@ doc:
 
 .PHONY: reload
 reload: i18n-compile
+	bin/remove_prepared_transaction.py
 ifeq ($(wildcard /CONTAINER),/CONTAINER)
 	apachectl restart
 else
@@ -208,6 +209,7 @@ log: sanity-check
 # drop all existent databases and add the database users. Acts globally and is idempotent.
 .PHONY: sql-initial
 sql-initial: sanity-check
+	bin/remove_prepared_transaction.py
   # we cannot use systemctl in docker
   ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl stop pgbouncer

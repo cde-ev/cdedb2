@@ -9,13 +9,13 @@ template for all services.
 import abc
 import cgitb
 import collections.abc
-import contextlib
 import copy
 import datetime
 import enum
 import functools
 import logging
 import sys
+import uuid
 from types import TracebackType
 from typing import (
     Any, Callable, ClassVar, Collection, ContextManager, Dict, Iterable, List, Literal,
@@ -34,7 +34,7 @@ from cdedb.common import (
     make_root_logger, n_, unwrap,
 )
 from cdedb.config import Config
-from cdedb.database.connection import Atomizer, IrradiatedConnection
+from cdedb.database.connection import Atomizer
 from cdedb.database.constants import FieldDatatypes, LockType
 from cdedb.query import Query, QueryOperators
 from cdedb.validation import parse_date, parse_datetime
@@ -849,17 +849,19 @@ class DatabaseLock:
             else:
                 # handle lock contetion
 
+    Note that this may not be called in an atomized context. Simply call it
+    outside the Atomizer.
+
     This currently does not provide a way to block on the lock until it is
     available.
-    """
 
-    stack: contextlib.ExitStack
-    conn: IrradiatedConnection
-    cur: psycopg2.extensions.cursor
+    """
+    xid: str
 
     def __init__(self, rs: RequestState, *locks: LockType):
         self.rs = rs
         self.locks = locks
+        self.id = uuid.uuid4()
 
     def __enter__(self) -> Optional["DatabaseLock"]:
         query = ("SELECT handle FROM core.locks WHERE handle = ANY(%s)"
@@ -867,39 +869,47 @@ class DatabaseLock:
         params = [lock.value for lock in self.locks]
         was_locking_successful = True
 
-        self.stack = contextlib.ExitStack().__enter__()
+        if self.rs._conn.is_contaminated:
+            raise RuntimeError("Lock not possible in atomized context.")
 
-        self.rs._conn.contaminate()
-        # We want to use this in the frontend, so we need to peek
-        self.stack.callback(
-            self.rs._conn.decontaminate)  # pylint: disable=protected-access
-
+        self.xid = self.rs._conn.xid(42, "cdedb_database_lock", str(self.id))
+        if self.rs._conn.status != psycopg2.extensions.STATUS_READY:
+            raise RuntimeError("Connection not ready!")
         try:
-            self.conn = self.stack.enter_context(
-                cast(ContextManager[IrradiatedConnection], self.rs._conn))
-        except Exception:
-            self.stack.__exit__(*sys.exc_info())
-            raise
-
-        try:
-            self.cur = self.stack.enter_context(self.conn.cursor())
-        except Exception:
-            self.stack.__exit__(*sys.exc_info())
-            raise
-
-        try:
-            self.cur.execute(query, (params,))
+            self.rs._conn.tpc_begin(self.xid)
+            cur = self.rs._conn.cursor()
+            cur.execute(query, (params,))
+            self.rs._conn.tpc_prepare()
         except psycopg2.errors.LockNotAvailable:
+            # No lock was acquired, abort
+            self.rs._conn.tpc_rollback()
+            self.xid = None
             was_locking_successful = False
         except Exception:
-            self.stack.__exit__(*sys.exc_info())
+            self.rs._conn.tpc_rollback()
+            self.xid = None
             raise
+        finally:
+            if self.rs._conn.status == psycopg2.extensions.STATUS_PREPARED:
+                # Expunge information about prepared transaction to make
+                # connection available for further use
+                self.rs._conn.reset()
+            elif self.xid:
+                raise RuntimeError("Transaction exists, but status is not prepared.")
 
         return self if was_locking_successful else None
 
     def __exit__(self, atype: Type[Exception], value: Exception,
                  tb: TracebackType) -> bool:
-        return self.stack.__exit__(atype, value, tb)
+        if self.rs._conn.status == psycopg2.extensions.STATUS_IN_TRANSACTION:
+            # We are not atomized so a commit is always possible
+            self.rs._conn.commit()
+        if self.rs._conn.status != psycopg2.extensions.STATUS_READY:
+            raise RuntimeError(f"Connection not ready but {self.rs._conn.status}!")
+        if self.xid:
+            # release the lock only when actually having acquired it
+            self.rs._conn.tpc_commit(self.xid)
+        return False
 
 
 def affirm_validation(assertion: Type[T], value: Any, **kwargs: Any) -> T:
