@@ -3,14 +3,17 @@ import json
 from itertools import chain
 from typing import Any, Callable, Dict, List, Set, Sized, Tuple, Type, TypedDict
 
+from psycopg2.extensions import connection
+
 from cdedb.backend.common import DatabaseValue_s, PsycoJson
 from cdedb.backend.core import CoreBackend
-from cdedb.common import CdEDBObject, RequestState
-from cdedb.script import Script
+from cdedb.common import CdEDBObject
+from cdedb.setup.config import Config, SecretsConfig
+from cdedb.setup.database import connect
 
 
 class AuxData(TypedDict):
-    rs: RequestState
+    conn: connection
     core: Type[CoreBackend]
     PsycoJson: Type[PsycoJson]
     seq_id_tables: List[str]
@@ -22,11 +25,11 @@ class AuxData(TypedDict):
 
 
 def prepare_aux(data: CdEDBObject) -> AuxData:
-    # Note that we do not care about the actual backend but rather about
-    # the methds inherited from `AbstractBackend`.
-    # Small config hack, by writing a dict into config file for password retrieval.
-    rs = Script(dbuser="nobody", dbname="nobody",
-                CDB_DATABASE_ROLES="{'nobody': 'nobody'}").rs()
+    conf = Config()
+    secrets = SecretsConfig()
+    # create a database connection to the "nobody" database
+    conn = connect(conf, secrets, as_nobody=True)
+
     core = CoreBackend  # No need to instantiate, we only use statics.
 
     # Extract some data about the databse tables using the database connection.
@@ -82,7 +85,8 @@ def prepare_aux(data: CdEDBObject) -> AuxData:
     }
 
     return AuxData(
-        rs=rs, core=core,
+        conn=conn,
+        core=core,
         PsycoJson=PsycoJson,
         seq_id_tables=seq_id_tables,
         cyclic_references=cyclic_references,
@@ -107,7 +111,7 @@ def format_inserts(table_name: str, table_data: Sized, keys: Tuple[str, ...],
     # This is a bit hacky, but it gives us access to a psycopg2.cursor
     # object so we can let psycopg2 take care of the heavy lifting
     # regarding correctly inserting the parameters into the SQL query.
-    with aux["rs"].conn as conn:
+    with aux["conn"] as conn:
         with conn.cursor() as cur:
             ret.append(cur.mogrify(query, params).decode("utf8"))
     return ret
@@ -163,7 +167,7 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
                     query = "UPDATE {} SET {} = %s WHERE id = %s;".format(
                         table, ref)
                     params = (entry[ref], entry["id"])
-                    with aux["rs"].conn as conn:
+                    with aux["conn"] as conn:
                         with conn.cursor() as cur:
                             commands.append(
                                 cur.mogrify(query, params).decode("utf8"))
