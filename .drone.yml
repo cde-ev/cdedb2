@@ -58,7 +58,7 @@ steps:
   commands:
     - sleep 5
     - make i18n-compile # needed for sample-data creation in evolution-trial.sh
-    - make sql-initial # add the postgres user
+    - python3 -m cdedb.setup initiate-databases # add the postgres user
     - bin/evolution-trial.sh origin/$DRONE_TARGET_BRANCH $DRONE_COMMIT || (git checkout ci/workdir && exit 1)
     - git checkout ci/workdir
 - name: mypy
@@ -93,18 +93,13 @@ steps:
       - failure
       - success
   environment:
-    # Dirty hack to circumvent dependencies of makefile on python files using the config
-    # TODO remove
     CDEDB_CONFIGPATH: tests/config/test_ldap.py
   commands:
   - sleep 5
-  # Dirty hack to circumvent config instantiation problems, since docker uses
-  # the script.py to setup databases. TODO remove
-  - cp related/auto-build/files/stage3/localconfig.py cdedb/localconfig.py
   - pg_isready --host=cdb --timeout=10 # wait for database to come online
   - make i18n-compile # required for sample-data target
-  - make sample-data # this creates the sql schema and copies the localconfig.py
-  - make sql DATABASE_NAME=cdb_test_ldap # create the test database for ldap
+  - python3 -m cdedb.setup create-database # create the test database for ldap ...
+  - python3 -m cdedb.setup populate-database # ... and populates it
 - name: ldap # is used as the hostname for the container
   image: ldap
   pull: never # do not try to pull image from docker hub
