@@ -317,7 +317,12 @@ _SECRECTS_DEFAULTS = {
 
 
 class Config(Mapping[str, Any]):
-    """Main configuration."""
+    """Main configuration.
+
+    Can be overridden through the file specified by the CDEDB_CONFIGPATH environment
+    variable. However, this does not allow to introduce keys which are not present in
+    the _DEFAULT configuration.
+    """
 
     def __init__(self) -> None:
         configpath = get_configpath()
@@ -326,35 +331,21 @@ class Config(Mapping[str, Any]):
 
         if not configpath:
             raise RuntimeError("No configpath for Config provided!")
-        if pathlib.Path(configpath).is_file():
-            spec = importlib.util.spec_from_file_location(
-                "primaryconf", str(configpath)
-            )
-            if not spec:
-                raise ImportError
-            primaryconf = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(primaryconf)  # type: ignore
-            primaryconf = {
-                key: getattr(primaryconf, key)
-                for key in _DEFAULTS.keys() & set(dir(primaryconf))
-            }
-        else:
+        if not pathlib.Path(configpath).is_file():
             raise RuntimeError(f"During initialization of Config, config file"
                                f" {configpath} not found!")
 
-        try:
-            # noinspection PyUnresolvedReferences
-            import cdedb.localconfig as secondaryconf_mod  # pylint: disable=import-outside-toplevel
-            secondaryconf = {
-                key: getattr(secondaryconf_mod, key)
-                for key in _DEFAULTS.keys() & set(dir(secondaryconf_mod))
-            }
-        except ImportError:
-            secondaryconf = {}
+        spec = importlib.util.spec_from_file_location("override", str(configpath))
+        if not spec:
+            raise ImportError
+        override = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(override)  # type: ignore
+        override = {
+            key: getattr(override, key)
+            for key in _DEFAULTS.keys() & set(dir(override))
+        }
 
-        self._configchain = collections.ChainMap(
-            primaryconf, secondaryconf, _DEFAULTS
-        )
+        self._configchain = collections.ChainMap(override, _DEFAULTS)
 
     def __getitem__(self, key: str) -> Any:
         return self._configchain.__getitem__(key)
@@ -369,40 +360,30 @@ class Config(Mapping[str, Any]):
 class TestConfig(Mapping[str, Any]):
     """Main configuration for tests.
 
-    This is very similar to Config: It can also be extended by a given configpath and
-    has the same default values.
-
-    The big difference is that we do not take the localconfig into account and allow
-    arbitrary new keys to be introduced via the configpath. This is usefull to bundle
+    This is very similar to Config. The big difference is that it allows adding
+    arbitrary new keys through the config override. This is useful to bundle
     all the configuration in our testsuite in a configfile.
     """
 
     def __init__(self) -> None:
-        """
-        :param configpath: path to file with overrides
-        """
         configpath = get_configpath()
         _LOGGER.debug(f"Initialising TestConfig with path {configpath}")
         self._configpath = configpath
 
         if not configpath:
             raise RuntimeError("No configpath for TestConfig provided!")
-        if pathlib.Path(configpath).is_file():
-            spec = importlib.util.spec_from_file_location(
-                "primaryconf", str(configpath)
-            )
-            if not spec:
-                raise ImportError
-            additional = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(additional)  # type: ignore
-            additional = {key: getattr(additional, key) for key in dir(additional)}
-        else:
+        if not pathlib.Path(configpath).is_file():
             raise RuntimeError(f"During initialization of TestConfig, config file"
                                f" {configpath} not found!")
 
-        self._configchain = collections.ChainMap(
-            additional, _DEFAULTS
-        )
+        spec = importlib.util.spec_from_file_location("additional", str(configpath))
+        if not spec:
+            raise ImportError
+        additional = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(additional)  # type: ignore
+        additional = {key: getattr(additional, key) for key in dir(additional)}
+
+        self._configchain = collections.ChainMap(additional, _DEFAULTS)
 
     def __getitem__(self, key: str) -> Any:
         return self._configchain.__getitem__(key)
@@ -426,39 +407,24 @@ class SecretsConfig(Mapping[str, Any]):
         # TODO switch to own config file
         configpath = get_configpath()
         _LOGGER.debug(f"Initialising SecretsConfig with path {configpath}")
+
         if not configpath:
             raise RuntimeError("No configpath for SecretsConfig provided!")
-        if pathlib.Path(configpath).is_file():
-            spec = importlib.util.spec_from_file_location(
-                "primaryconf", str(configpath)
-            )
-            if not spec:
-                raise ImportError
-            primaryconf = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(primaryconf)  # type: ignore
-            primaryconf = {
-                key: getattr(primaryconf, key)
-                for key in _SECRECTS_DEFAULTS.keys() & set(dir(primaryconf))
-            }
-        else:
-            _LOGGER.error(f"During initialization of SecretsConfig, config file"
-                          f" {configpath} not found!")
-            primaryconf = {}
+        if not pathlib.Path(configpath).is_file():
+            raise RuntimeError(f"During initialization of TestConfig, config file"
+                               f" {configpath} not found!")
 
-        try:
-            # noinspection PyUnresolvedReferences
-            import cdedb.localconfig as secondaryconf_mod  # pylint: disable=import-outside-toplevel
-            secondaryconf = {
-                key: getattr(secondaryconf_mod, key)
-                for key in _SECRECTS_DEFAULTS.keys() & set(
-                    dir(secondaryconf_mod))
-            }
-        except ImportError:
-            secondaryconf = {}
+        spec = importlib.util.spec_from_file_location("override", str(configpath))
+        if not spec:
+            raise ImportError
+        override = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(override)  # type: ignore
+        override = {
+            key: getattr(override, key)
+            for key in _SECRECTS_DEFAULTS.keys() & set(dir(override))
+        }
 
-        self._configchain = collections.ChainMap(
-            primaryconf, secondaryconf, _SECRECTS_DEFAULTS
-        )
+        self._configchain = collections.ChainMap(override, _SECRECTS_DEFAULTS)
 
     def __getitem__(self, key: str) -> Any:
         return self._configchain.__getitem__(key)
