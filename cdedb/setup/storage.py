@@ -1,6 +1,8 @@
 import logging
 import logging.handlers
+import os
 import pathlib
+import stat
 import subprocess
 import sys
 
@@ -108,6 +110,20 @@ def create_log(conf: Config, owner: str = "www-data") -> None:
     if log_dir.exists():
         rmtree(log_dir)
     mkdirs(log_dir, owner)
+
+    # create fallback logger for everything which cannot be covered by another logger
+    logger_path = conf["LOG_DIR"] / "cdedb.log"
+    setup_logger("cdedb", logger_path, conf["LOG_LEVEL"],
+                 syslog_level=conf["SYSLOG_LEVEL"],
+                 console_log_level=conf["CONSOLE_LOG_LEVEL"])
+    try:
+        # the global log needs to be writable by different users (frontend
+        # and backend) making it world writable is pretty permissive but
+        # seems to be the most sensible way
+        os.chmod(str(logger_path), stat.S_IRUSR | stat.S_IWUSR |
+                 stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH)
+    except (PermissionError, FileNotFoundError):  # pragma: no cover
+        pass
 
 
 def setup_logger(name: str, logfile_path: pathlib.Path,
