@@ -16,7 +16,8 @@ configpath = "/etc/cdedb-application-config.py"
 if not os.path.isfile(configpath):
    pass
 # set the configpath environment variable
-os.environ["CDEDB_CONFIGPATH"] = ""
+# TODO decide which config path we should use here
+os.environ["CDEDB_CONFIGPATH"] = f"{repopath}/cdedb/localconfig.py"
 
 from cdedb.frontend.application import Application
 
