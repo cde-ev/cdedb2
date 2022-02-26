@@ -120,7 +120,8 @@ def populate_database(conf: Config, secrets: SecretsConfig, xss: bool = False) -
     #  a subprocess call. Maybe this can be done a bit more elegant...
     infile = repo_path / "tests" / "ancillary_files" / "sample_data.json"
     # TODO use a real temporary file instead
-    outfile = pathlib.Path("/tmp") / "sample_data.sql"
+    # TODO this is assumed by tests/common.py -- can we resolve this?
+    outfile = repo_path / "tests" / "ancillary_files" / "sample_data.sql"
     compile_sample_data(conf, infile, outfile, xss=xss)
 
     with connect(conf, secrets) as conn:
