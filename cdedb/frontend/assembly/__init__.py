@@ -1129,29 +1129,10 @@ class AssemblyFrontend(AbstractUserFrontend):
             else:
                 candidates[ASSEMBLY_BAR_SHORTNAME] = rs.gettext("Rejection limit")
 
-        def count_equal_votes(votes: List[VoteString], classical: bool = False
-                              ) -> Dict[VoteString, int]:
-            """This counts how often a specific vote was submitted."""
-            # convert the votes into their tuple representation
-            vote_tuples = as_vote_tuples(votes)
-            if classical:
-                # in classical votes, there are at most two pairs of candidates, the
-                # first we voted for and the optional second we don't voted for
-                # if there is only one pair of candidates, we abstained
-                vote_tuples = [((MAGIC_ABSTAIN,),) if len(vote) == 1 else (vote[0],)
-                               for vote in vote_tuples]
-            # take care that all candidates of the same level of each vote are sorted.
-            # otherwise, votes which are semantically the same are counted as different
-            vote_lists = [
-                [xsorted(candidates) for candidates in vote] for vote in vote_tuples]
-            vote_strings = as_vote_strings(vote_lists)
-            return {vote: sum(1 for v in vote_strings if v == vote)
-                    for vote in set(vote_strings)}
-
         # all vote string submitted in this ballot
         votes = [vote["vote"] for vote in result["votes"]]
         # calculate the occurrence of each vote
-        vote_counts = count_equal_votes(votes, classical=bool(ballot['votes']))
+        vote_counts = self.count_equal_votes(votes, classical=bool(ballot['votes']))
 
         # calculate the hash of the result file
         result_bytes = self.assemblyproxy.get_ballot_result(rs, ballot['id'])
@@ -1175,6 +1156,26 @@ class AssemblyFrontend(AbstractUserFrontend):
             'BALLOT_TALLY_MAILINGLIST_URL': self.conf["BALLOT_TALLY_MAILINGLIST_URL"],
             'prev_ballot': prev_ballot, 'next_ballot': next_ballot,
             'candidates': candidates})
+
+    @staticmethod
+    def count_equal_votes(votes: List[VoteString], classical: bool = False
+                          ) -> Dict[VoteString, int]:
+        """This counts how often a specific vote was submitted."""
+        # convert the votes into their tuple representation
+        vote_tuples = as_vote_tuples(votes)
+        if classical:
+            # in classical votes, there are at most two pairs of candidates, the
+            # first we voted for and the optional second we don't voted for
+            # if there is only one pair of candidates, we abstained
+            vote_tuples = [((MAGIC_ABSTAIN,),) if len(vote) == 1 else (vote[0],)
+                           for vote in vote_tuples]
+        # take care that all candidates of the same level of each vote are sorted.
+        # otherwise, votes which are semantically the same are counted as different
+        vote_lists = [
+            [xsorted(candidates) for candidates in vote] for vote in vote_tuples]
+        vote_strings = as_vote_strings(vote_lists)
+        return {vote: sum(1 for v in vote_strings if v == vote)
+                for vote in set(vote_strings)}
 
     def _retrieve_own_vote(self, rs: RequestState, ballot: CdEDBObject,
                            secret: str = None) -> CdEDBObject:
