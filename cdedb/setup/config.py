@@ -31,12 +31,13 @@ def set_configpath(path: PathLike) -> None:
     os.environ["CDEDB_CONFIGPATH"] = str(path)
 
 
-def get_configpath() -> Optional[pathlib.Path]:
+def get_configpath() -> pathlib.Path:
     """Helper to get the config path from the environment."""
     path = os.environ.get("CDEDB_CONFIGPATH")
     if path:
         return pathlib.Path(path)
-    return None
+    else:
+        raise RuntimeError("No config path set!")
 
 
 _LOGGER = logging.getLogger(__name__)
