@@ -15,11 +15,14 @@ import subprocess
 import sys
 from typing import Collection
 
+import psycopg2.extensions
 from psycopg2.extras import DictCursor, Json
 
 from cdedb.common import CdEDBObject
-from cdedb.script import Script
-from cdedb.setup.config import TestConfig
+from cdedb.setup.config import (
+    Config, SecretsConfig, TestConfig, get_configpath, set_configpath,
+)
+from cdedb.setup.database import connect
 
 # This is 'secret' the hashed
 PHASH = ("$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/"
@@ -55,7 +58,7 @@ DEFAULTS = {
 
 
 def populate_table(cur: DictCursor, table: str, data: CdEDBObject,
-                   repopath: pathlib.Path) -> None:
+                   connection: psycopg2.extensions.connection) -> None:
     """Insert the passed data into the DB."""
     if data:
         for entry in data.values():
@@ -76,10 +79,9 @@ def populate_table(cur: DictCursor, table: str, data: CdEDBObject,
         # messages of locking the event if somebody gets the ordering wrong)
         query = "ALTER SEQUENCE {}_id_seq RESTART WITH {}".format(
             table, max(map(int, data)) + 1000)
-        # we need elevated privileges for sequences
-        subprocess.run(
-            [str(repopath / "bin/execute_sql_script.py"),
-             "-U", "cdb", "-d", "cdb", "-c", query], check=True)
+        with connection as conn:
+            with conn.cursor() as curr:
+                curr.execute(query)
     else:
         print("No data for table found")
 
@@ -111,14 +113,14 @@ def update_parts(cur: DictCursor, parts: Collection[CdEDBObject]) -> None:
         cur.execute(query, (part['waitlist_field'], part['id']))
 
 
-def work(args: argparse.Namespace) -> None:
-    if args.test:
-        db_name = args.conf["CDB_DATABASE_NAME"]
-    else:
-        db_name = "cdb"
+def work(data_path: pathlib.Path, conf: Config, is_test: bool = False,
+         extra_packages: bool = False, no_extra_packages: bool = False) -> None:
+    repo_path: pathlib.Path = conf["REPOSITORY_PATH"]
+    # connect to the database, using elevated access
+    connection = connect(conf, SecretsConfig())
 
     print("Loading exported event")
-    with open(args.data_path, encoding='UTF-8') as infile:
+    with open(data_path, encoding='UTF-8') as infile:
         data = json.load(infile)
 
     if data.get("EVENT_SCHEMA_VERSION") != [15, 5]:
@@ -134,7 +136,7 @@ def work(args: argparse.Namespace) -> None:
               " instance there will be data loss."
               "\nIf this is just a test run and you intend to scrap this"
               " offline instance you can ignore this warning.")
-        if not args.test:
+        if not is_test:
             if (input("Continue anyway (type uppercase USE ANYWAY)? ").strip()
                     != "USE ANYWAY"):
                 print("Aborting.")
@@ -143,15 +145,14 @@ def work(args: argparse.Namespace) -> None:
         data['event.events'][str(data['id'])]['offline_lock'] = True
 
     print("Clean current instance (deleting all data)")
-    if not args.test:
+    if not is_test:
         if input("Are you sure (type uppercase YES)? ").strip() != "YES":
             print("Aborting.")
             sys.exit()
-    clean_script = args.repopath / "tests/ancillary_files/clean_data.sql"
-    subprocess.run(
-        [str(args.repopath / "bin/execute_sql_script.py"),
-         "-U", "cdb", "-d", db_name, "-f", str(clean_script)],
-        stderr=subprocess.DEVNULL, check=True)
+    clean_script = repo_path / "tests/ancillary_files/clean_data.sql"
+    with connection as conn:
+        with conn.cursor() as curr:
+            curr.execute(clean_script.read_text())
 
     print("Make orgas into admins")
     orgas = {e['persona_id'] for e in data['event.orgas'].values()}
@@ -170,13 +171,12 @@ def work(args: argparse.Namespace) -> None:
 
     print("Prepare database.")
     # Fix uneditable table
-    subprocess.run(
-        [str(args.repopath / "bin/execute_sql_script.py"),
-         "-U", "cdb", "-d", db_name, "-c",
-         """GRANT SELECT, INSERT, UPDATE ON core.meta_info TO cdb_anonymous;
+    query = """GRANT SELECT, INSERT, UPDATE ON core.meta_info TO cdb_anonymous;
             GRANT SELECT, UPDATE ON core.meta_info_id_seq TO cdb_anonymous;
-            INSERT INTO core.meta_info (info) VALUES ('{}'::jsonb);"""],
-        stderr=subprocess.DEVNULL, check=True)
+            INSERT INTO core.meta_info (info) VALUES ('{}'::jsonb);"""
+    with connection as conn:
+        with conn.cursor() as curr:
+            curr.execute(query)
 
     tables = (
         'core.personas', 'event.events', 'event.event_parts',
@@ -187,13 +187,7 @@ def work(args: argparse.Namespace) -> None:
         'event.course_choices', 'event.questionnaire_rows', 'event.log')
 
     print("Connect to database")
-    conn = Script(
-        dbuser="cdb_admin",
-        dbname=db_name,
-        check_system_user=False,
-    )._conn
-
-    with conn as con:
+    with connection as conn:
         with conn.cursor() as cur:
             make_institution(
                 cur, data['event.events'][str(data['id'])]['institution'])
@@ -210,7 +204,7 @@ def work(args: argparse.Namespace) -> None:
                     for part_id in data[table]:
                         for key in ('waitlist_field',):
                             values[part_id][key] = None
-                populate_table(cur, table, values, repopath=args.repopath)
+                populate_table(cur, table, values, connection=connection)
             # Fix forward references
             update_event(cur, data['event.events'][str(data['id'])])
             update_parts(cur, data['event.event_parts'].values())
@@ -257,21 +251,22 @@ def work(args: argparse.Namespace) -> None:
         print("Everything in place.")
 
     print("Enabling offline mode")
-    config_path = args.repopath / "cdedb/localconfig.py"
+    config_path = get_configpath()
+    # make sure to unset the development vm config option, so we do not clash
     subprocess.run(
         ["sed", "-i", "-e", "s/CDEDB_DEV = True/CDEDB_DEV = False/",
          str(config_path)], check=True)
+    # mark the config as offline vm
     with open(str(config_path), 'a', encoding='UTF-8') as conf:
         conf.write("\nCDEDB_OFFLINE_DEPLOYMENT = True\n")
 
     print("Protecting data from accidental reset")
     subprocess.run(["sudo", "touch", "/OFFLINEVM"], check=True)
 
-    install_fonts = None
-    if args.no_extra_packages:
+    if no_extra_packages:
         print("Skipping installation of fonts for template renderer.")
         install_fonts = False
-    elif args.extra_packages:
+    elif extra_packages:
         print("Unconditionally installing fonts for template renderer.")
         install_fonts = True
     else:
@@ -288,7 +283,7 @@ def work(args: argparse.Namespace) -> None:
             check=True)
 
     print("Restarting application to make offline mode effective")
-    subprocess.run(["make", "reload"], check=True, cwd=args.repopath)
+    subprocess.run(["make", "reload"], check=True, cwd=repo_path)
 
     print("Finished")
 
@@ -307,15 +302,16 @@ if __name__ == "__main__":
     if args.extra_packages and args.no_extra_packages:
         parser.error("Confliction options for (no) additional packages.")
 
-    # detemine repo path
-    currentpath = pathlib.Path(__file__).resolve().parent
-    if (currentpath.parts[0] != '/'
-            or currentpath.parts[-1] != 'bin'):
-        raise RuntimeError("Failed to locate repository")
-    args.repopath = currentpath.parent
+    data_path = pathlib.Path(args.data_path)
 
     if args.test:
-        sys.path.append(str(args.repopath))  # test config imports from module `tests`
-        args.conf = TestConfig()
+        # the configpath is already set and intended to be used here
+        config = TestConfig()
+    else:
+        # otherwise, we want to use the default configpath of the real world
+        # TODO where do we want to store the default config?
+        set_configpath("/cdedb2/cdedb/localconfig.py")
+        config = Config()
 
-    work(args)
+    work(data_path, config, is_test=args.test, extra_packages=args.extra_packages,
+         no_extra_packages=args.no_extra_packages)
