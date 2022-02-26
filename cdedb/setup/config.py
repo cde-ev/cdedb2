@@ -273,6 +273,7 @@ _DEFAULTS = {
 _SECRECTS_DEFAULTS = {
     # database users
     "CDB_DATABASE_ROLES": {
+        "nobody": "nobody",  # use only to set up internal details like sample-data!
         "cdb_anonymous": "012345678901234567890123456789",
         "cdb_persona": "abcdefghijklmnopqrstuvwxyzabcd",
         "cdb_member": "zyxwvutsrqponmlkjihgfedcbazyxw",

@@ -40,13 +40,26 @@ def psql(*commands: Union[str, pathlib.Path]) -> None:
     subprocess.run([*psql, *commands], check=True)
 
 
-def connect(config: Config, secrets: SecretsConfig) -> psycopg2.extensions.connection:
-    """Create a very basic database connection."""
+def connect(config: Config, secrets: SecretsConfig, as_nobody: bool = False) -> psycopg2.extensions.connection:
+    """Create a very basic database connection.
+
+    In general, only the connection to the database specified in the config as 'cdb'
+    user is allowed.
+
+    Only exception from this is if the user wants to connect to the 'nobody' database,
+    which is used for very low-level setups (like generation of sample data).
+    """
+
+    if as_nobody:
+        dbname = user = "nobody"
+    else:
+        dbname = config["CDB_DATABASE_NAME"]
+        user = "cdb"
 
     connection_parameters = {
-        "dbname": config["CDB_DATABASE_NAME"],
-        "user": "cdb",
-        "password": secrets["CDB_DATABASE_ROLES"]["cdb"],
+        "dbname": dbname,
+        "user": user,
+        "password": secrets["CDB_DATABASE_ROLES"][user],
         "host": config["DB_HOST"],
         "port": 5432,
         "connection_factory": psycopg2.extensions.connection,
