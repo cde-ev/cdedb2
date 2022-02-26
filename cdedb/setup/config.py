@@ -434,9 +434,8 @@ class TestConfig(BasicConfig):
             spec.loader.exec_module(additional)  # type: ignore
             additional = {key: getattr(additional, key) for key in dir(additional)}
         else:
-            _LOGGER.error(f"During initialization of TestConfig, config file"
-                          f" {configpath} not found!")
-            additional = {}
+            raise RuntimeError(f"During initialization of TestConfig, config file"
+                               f" {configpath} not found!")
 
         self._configchain = collections.ChainMap(
             additional, _DEFAULTS, _BASIC_DEFAULTS
