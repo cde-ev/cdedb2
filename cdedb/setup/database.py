@@ -1,3 +1,4 @@
+import os
 import pathlib
 import subprocess
 from typing import Union
@@ -107,15 +108,7 @@ def populate_database(conf: Config, secrets: SecretsConfig, xss: bool = False) -
     infile = repo_path / "tests" / "ancillary_files" / "sample_data.json"
     # TODO use a real temporary file instead
     outfile = pathlib.Path("/tmp") / "sample_data.sql"
-    script_file = repo_path / "bin" / "create_sample_data_sql.py"
-
-    if xss:
-        xss_arg = ["--xss", conf.get("XSS_PAYLOAD") or ""]
-    else:
-        xss_arg = []
-
-    subprocess.run(["sudo", "-u", "www-data", "python3", script_file,
-                    "--infile", infile, "--outfile", outfile, *xss_arg], check=True)
+    compile_sample_data(conf, infile, outfile, xss=xss)
 
     with connect(conf, secrets) as conn:
         with conn.cursor() as curr:
@@ -123,3 +116,22 @@ def populate_database(conf: Config, secrets: SecretsConfig, xss: bool = False) -
 
     # if not xss:
     #     start_services("slapd")
+
+
+def compile_sample_data(conf: Config, infile: pathlib.Path, outfile: pathlib.Path,
+                        xss: bool = False) -> None:
+    repo_path: pathlib.Path = conf['REPOSITORY_PATH']
+
+    script_file = repo_path / "bin" / "create_sample_data_sql.py"
+
+    if xss:
+        xss_arg = ["--xss", conf.get("XSS_PAYLOAD") or ""]
+    else:
+        xss_arg = []
+
+    # give also the repo_path as pythonpath to the subprocess, so it can find the test
+    # module
+    env = {**os.environ, "PYTHONPATH": repo_path}
+    subprocess.run(["python3", script_file,
+                    "--infile", infile, "--outfile", outfile, *xss_arg],
+                   check=True, env=env)

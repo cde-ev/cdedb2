@@ -4,8 +4,8 @@ from cdedb.setup.config import (
     BasicConfig, SecretsConfig, TestConfig, get_configpath as _get_configpath,
 )
 from cdedb.setup.database import (
-    create_database as _create_database, initiate_databases as _initiate_databases,
-    populate_database as _populate_database,
+    compile_sample_data as _compile_sample_data, create_database as _create_database,
+    initiate_databases as _initiate_databases, populate_database as _populate_database,
 )
 from cdedb.setup.storage import (
     create_log as _create_log, create_storage as _create_storage,
@@ -75,6 +75,18 @@ def populate_database(xss):
     config = TestConfig()
     secrets = SecretsConfig()
     _populate_database(config, secrets, xss)
+
+
+@cli.command()
+@click.option("--infile", default="/cdedb2/tests/ancillary_files/sample_data.json",
+              help="the json file containing the sample data")
+@click.option("--outfile", default="/tmp/sample_data.sql",
+              help="the place to store the sql file")
+@click.option("--xss", default=False, help="prepare sample data for xss checks")
+def compile_sample_data(infile, outfile, xss):
+    check_configpath()
+    config = TestConfig()
+    _compile_sample_data(config, infile, outfile, xss=xss)
 
 
 if __name__ == "__main__":
