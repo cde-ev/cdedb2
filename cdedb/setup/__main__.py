@@ -1,3 +1,5 @@
+import pathlib
+
 import click
 
 from cdedb.setup.config import (
@@ -19,20 +21,20 @@ def check_configpath() -> None:
 
 
 @click.group()
-def cli():
+def cli() -> None:
     pass
 
 
 @cli.command()
 @click.argument("configpath")
-def set_configpath(configpath):
+def set_configpath(configpath: str) -> None:
     print("Execute the following command in your shell:")
     print(f"export CDEDB_CONFIGPATH={configpath}")
 
 
 @cli.command()
 @click.option("--owner", default="www-data", help="owner of the file storage")
-def create_storage(owner):
+def create_storage(owner: str) -> None:
     check_configpath()
     config = TestConfig()
     _create_storage(config, owner)
@@ -40,7 +42,7 @@ def create_storage(owner):
 
 @cli.command()
 @click.option("--owner", default="www-data", help="owner of the file storage")
-def populate_storage(owner):
+def populate_storage(owner: str) -> None:
     check_configpath()
     config = TestConfig()
     _populate_storage(config, owner)
@@ -48,20 +50,20 @@ def populate_storage(owner):
 
 @cli.command()
 @click.option("--owner", default="www-data", help="owner of the file storage")
-def create_log(owner):
+def create_log(owner: str) -> None:
     check_configpath()
     config = TestConfig()
     _create_log(config, owner)
 
 
 @cli.command()
-def initiate_databases():
+def initiate_databases() -> None:
     config = BasicConfig()
     _initiate_databases(config)
 
 
 @cli.command()
-def create_database():
+def create_database() -> None:
     check_configpath()
     config = TestConfig()
     secrets = SecretsConfig()
@@ -70,7 +72,7 @@ def create_database():
 
 @cli.command()
 @click.option("--xss", default=False, help="prepare the database for xss checks")
-def populate_database(xss):
+def populate_database(xss: bool) -> None:
     check_configpath()
     config = TestConfig()
     secrets = SecretsConfig()
@@ -83,10 +85,10 @@ def populate_database(xss):
 @click.option("--outfile", default="/tmp/sample_data.sql",
               help="the place to store the sql file")
 @click.option("--xss", default=False, help="prepare sample data for xss checks")
-def compile_sample_data(infile, outfile, xss):
+def compile_sample_data(infile: str, outfile: str, xss: bool) -> None:
     check_configpath()
     config = TestConfig()
-    _compile_sample_data(config, infile, outfile, xss=xss)
+    _compile_sample_data(config, pathlib.Path(infile), pathlib.Path(outfile), xss=xss)
 
 
 if __name__ == "__main__":
