@@ -20,7 +20,10 @@ def mkdirs(directory: pathlib.Path, owner: str) -> None:
 
 
 def rmtree(path: pathlib.Path) -> None:
-    subprocess.run(["sudo", "rm", "-rf", path], check=True)
+    """Remove the _sub_tree of the given path."""
+    # TODO make a decision which parts of the directories should be removed
+    #  - including the storage dir itself or excluding?
+    subprocess.run(["sudo", "rm", "-rf", "--", path / "*"], check=True)
 
 
 @sanity_check
