@@ -175,51 +175,46 @@ class TestCommon(BasicTest):
                 self.assertIn("Can only unwrap collections.", cmt.exception.args[0])
 
     def test_untranslated_strings(self) -> None:
-        i18n_path = self.conf["REPOSITORY_PATH"] / 'i18n'
+        i18n_path = self.conf["REPOSITORY_PATH"] / "i18n"
+        # list of languages we currently test
+        langs = ["en", "de"]
         with tempfile.TemporaryDirectory() as tempdir:
-            tmppath = pathlib.Path(tempdir, 'i18n')
+            tmppath = pathlib.Path(tempdir, "i18n")
             shutil.copytree(i18n_path, tmppath)
-            subprocess.run(["make", f"I18NDIR={tmppath}", "i18n-refresh"],
+            subprocess.run(["make", f"I18NDIR={tmppath}",
+                            f"I18N_LANGUAGES={' '.join(langs)}", "i18n-extract"],
                            check=True, capture_output=True)
             try:
                 result = subprocess.run(
-                    ["make", f"I18NDIR={tmppath}", "i18n-compile"],
+                    ["make", "-B", f"I18NDIR={tmppath}",
+                     f"I18N_LANGUAGES={' '.join(langs)}", "i18n-compile"],
                     check=True, capture_output=True, text=True,
                     env={"LC_MESSAGES": "en"}  # makes parsing easier
                 )
             except subprocess.CalledProcessError as e:
                 self.fail(f"Translation check failed:\n{e.stderr}")
 
-        matches_de = re.search(
-            r".*/de/LC_MESSAGES/cdedb.po: \d+ translated messages"
-            r"(, (?P<fuzzy>\d+) fuzzy translations?)?"
-            r"(, (?P<untranslated>\d+) untranslated messages?)?"
-            r"\.",
-            result.stderr
-        )
-        matches_en = re.search(
-            r".*/en/LC_MESSAGES/cdedb.po: \d+ translated messages"
-            r"(, (?P<fuzzy>\d+) fuzzy translations?)?"
-            r", \d+ untranslated messages"
-            r"\.",
-            result.stderr
-        )
+        matches = {
+            lang: re.search(
+                fr".*/{lang}/LC_MESSAGES/cdedb.po: \d+ translated messages"
+                r"(, (?P<fuzzy>\d+) fuzzy translations?)?"
+                r"(, (?P<untranslated>\d+) untranslated messages?)?"
+                r"\.",
+                result.stderr
+            ) for lang in langs
+        }
 
-        with self.subTest("untranslated"):
-            assert matches_de is not None
-            self.assertIsNone(matches_de["untranslated"],
-                              "There are untranslated strings (de)."
-                              " Make sure all strings are translated to German.")
-        with self.subTest("fuzzy-de"):
-            assert matches_de is not None
-            self.assertIsNone(matches_de["fuzzy"],
-                              "There are fuzzy translations (de). Double check these"
-                              " and remove the '#, fuzzy' marker afterwards.")
-        with self.subTest("fuzzy-en"):
-            assert matches_en is not None
-            self.assertIsNone(matches_en["fuzzy"],
-                              "There are fuzzy translations (en). Double check these"
-                              " and remove the '#, fuzzy' marker afterwards.")
+        for lang, match in matches.items():
+            assert match is not None
+            if lang != "en":
+                with self.subTest(f"untranslated-{lang}"):
+                    self.assertIsNone(match["untranslated"],
+                                      f"There are untranslated strings ({lang})."
+                                      " Make sure all strings are translated.")
+            with self.subTest(f"fuzzy-{lang}"):
+                self.assertIsNone(match["fuzzy"],
+                                  f"There are fuzzy translations ({lang}). Double check"
+                                  " these and remove the '#, fuzzy' marker afterwards.")
 
     def test_ml_type_mismatch(self) -> None:
         pseudo_mailinglist = {"ml_type": const.MailinglistTypes.event_associated}
