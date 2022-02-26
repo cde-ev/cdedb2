@@ -44,12 +44,13 @@ class TempConfig:
     def __init__(self, configpath: PathLike = None, **config: Any):
         if config and configpath:
             raise ValueError("Mustn't specify both config and configpath.")
-        # avoid to set "None" as configpath, rather set an empty configpath
-        self._configpath = configpath or ""
+        self._configpath = configpath
         self._config = config
+        if (not configpath and not config) or (configpath and config):
+            raise RuntimeError("Provide exactly one of config and configpath!")
         self._f: Optional[IO[str]] = None
 
-    def __enter__(self) -> Optional[PathLike]:
+    def __enter__(self) -> PathLike:
         if self._config:
             self._f = tempfile.NamedTemporaryFile("w", suffix=".py")
             f = self._f.__enter__()
@@ -57,6 +58,7 @@ class TempConfig:
                 f.write(f"{k} = {v}")
             f.flush()
             return f.name
+        assert self._configpath is not None
         return self._configpath
 
     def __exit__(self, exc_type: Optional[Type[Exception]],
