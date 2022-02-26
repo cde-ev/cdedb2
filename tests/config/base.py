@@ -12,6 +12,8 @@ CONSOLE_LOG_LEVEL = None
 
 
 # config
+# TODO make CDEDB_DEV and CDEDB_TEST orthogonal, so the test suite needs only the latter
+CDEDB_DEV = True
 CDEDB_TEST = True
 
 # docker specific
