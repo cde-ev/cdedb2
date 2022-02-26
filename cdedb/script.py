@@ -28,7 +28,7 @@ from cdedb.common import (
     ALL_ROLES, AbstractBackend, PathLike, RequestState, User, make_proxy, n_,
 )
 from cdedb.database.connection import Atomizer, IrradiatedConnection
-from cdedb.setup.config import Config, SecretsConfig
+from cdedb.setup.config import Config, SecretsConfig, get_configpath, set_configpath
 
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
@@ -107,12 +107,14 @@ class Script:
         if check_system_user and getpass.getuser() != "www-data":
             raise RuntimeError("Must be run as user www-data.")
 
+        current_configpath = get_configpath()
+
         # Read configurable data from environment and/or input.
-        configpath = (
-            configpath
-            or os.environ.get("SCRIPT_CONFIGPATH")
-            or os.environ.get("CDEDB_CONFIGPATH")
-        )
+        configpath = configpath or os.environ.get("SCRIPT_CONFIGPATH")
+        # if no special configpath and no config options are present, use the default
+        # way to obtain the configpath from the environment
+        if not configpath and not config:
+            configpath = current_configpath
         # Allow overriding for evolution trial.
         if persona_id is None:
             persona_id = int(os.environ.get("SCRIPT_PERSONA_ID", -1))
@@ -127,10 +129,13 @@ class Script:
         self._atomizer: Optional[ScriptAtomizer] = None
         self._conn: psycopg2.extensions.connection = None
         self._tempconfig = TempConfig(configpath, **config)
-        with self._tempconfig as p:
-            os.environ["CDEDB_CONFIGPATH"] = str(p)
+        with self._tempconfig as temp_config:
+            # shortly, set the temporary config as configpath
+            set_configpath(temp_config)
             self.config = Config()
             self._secrets = SecretsConfig()
+            # restore the real configpath
+            set_configpath(current_configpath)
         if TYPE_CHECKING:
             import gettext  # pylint: disable=import-outside-toplevel
             self._translations: Optional[Mapping[str, gettext.NullTranslations]]
@@ -162,10 +167,14 @@ class Script:
         """Create backend, either as a proxy or not."""
         if ret := self._backends.get((realm, proxy)):
             return ret
-        with self._tempconfig as p:
-            os.environ["CDEDB_CONFIGPATH"] = str(p)
+        current_configpath = get_configpath()
+        with self._tempconfig as temp_config:
+            # shortly, set the temporary config as configpath
+            set_configpath(temp_config)
             backend_name = self.backend_map[realm]
             backend = resolve_name(f"cdedb.backend.{realm}.{backend_name}")()
+            # restore the real configpath
+            set_configpath(current_configpath)
         self._backends.update({
             (realm, True): make_proxy(backend),
             (realm, False): backend,
