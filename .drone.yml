@@ -55,10 +55,12 @@ steps:
   pull: never # do not try to pull image from docker hub
   depends_on:
     - cdb
+  environment:
+    CDEDB_CONFIGPATH: tests/config/test_1.py
   commands:
     - sleep 5
     - make i18n-compile # needed for sample-data creation in evolution-trial.sh
-    - python3 -m cdedb.setup initiate-databases # add the postgres user
+    - python3 -m cdedb.setup initiate-databases # basic setup of the database for all following tests
     - bin/evolution-trial.sh origin/$DRONE_TARGET_BRANCH $DRONE_COMMIT || (git checkout ci/workdir && exit 1)
     - git checkout ci/workdir
 - name: mypy
