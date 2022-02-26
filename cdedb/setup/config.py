@@ -327,16 +327,23 @@ class Config(Mapping[str, Any]):
 
     def __init__(self) -> None:
         configpath = get_configpath()
-        _LOGGER.debug(f"Initialising Config with path {configpath}")
         self._configpath = configpath
 
+        name = self.__class__.__name__
+        _LOGGER.debug(f"Initialising {name} with path {configpath}")
+
         if not configpath:
-            raise RuntimeError("No configpath for Config provided!")
+            raise RuntimeError(f"No configpath for {name} provided!")
         if not pathlib.Path(configpath).is_file():
-            raise RuntimeError(f"During initialization of Config, config file"
+            raise RuntimeError(f"During initialization of {name}, config file"
                                f" {configpath} not found!")
 
-        spec = importlib.util.spec_from_file_location("override", str(configpath))
+        override = self._process_config_overwrite()
+        self._configchain = collections.ChainMap(override, _DEFAULTS)
+
+    def _process_config_overwrite(self) -> Any:
+        """Allow only keys which are already present in _DEFAULT."""
+        spec = importlib.util.spec_from_file_location("override", str(self._configpath))
         if not spec:
             raise ImportError
         override = importlib.util.module_from_spec(spec)
@@ -345,8 +352,7 @@ class Config(Mapping[str, Any]):
             key: getattr(override, key)
             for key in _DEFAULTS.keys() & set(dir(override))
         }
-
-        self._configchain = collections.ChainMap(override, _DEFAULTS)
+        return override
 
     def __getitem__(self, key: str) -> Any:
         return self._configchain.__getitem__(key)
@@ -358,7 +364,7 @@ class Config(Mapping[str, Any]):
         return self._configchain.__len__()
 
 
-class TestConfig(Mapping[str, Any]):
+class TestConfig(Config):
     """Main configuration for tests.
 
     This is very similar to Config. The big difference is that it allows adding
@@ -366,34 +372,15 @@ class TestConfig(Mapping[str, Any]):
     all the configuration in our testsuite in a configfile.
     """
 
-    def __init__(self) -> None:
-        configpath = get_configpath()
-        _LOGGER.debug(f"Initialising TestConfig with path {configpath}")
-        self._configpath = configpath
-
-        if not configpath:
-            raise RuntimeError("No configpath for TestConfig provided!")
-        if not pathlib.Path(configpath).is_file():
-            raise RuntimeError(f"During initialization of TestConfig, config file"
-                               f" {configpath} not found!")
-
-        spec = importlib.util.spec_from_file_location("additional", str(configpath))
+    def _process_config_overwrite(self) -> Any:
+        """Allow additional keys which are not present in _DEFAULT."""
+        spec = importlib.util.spec_from_file_location("override", str(self._configpath))
         if not spec:
             raise ImportError
-        additional = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(additional)  # type: ignore
-        additional = {key: getattr(additional, key) for key in dir(additional)}
-
-        self._configchain = collections.ChainMap(additional, _DEFAULTS)
-
-    def __getitem__(self, key: str) -> Any:
-        return self._configchain.__getitem__(key)
-
-    def __iter__(self) -> Iterator[str]:
-        return self._configchain.__iter__()
-
-    def __len__(self) -> int:
-        return self._configchain.__len__()
+        override = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(override)  # type: ignore
+        override = {key: getattr(override, key) for key in dir(override)}
+        return override
 
 
 class SecretsConfig(Mapping[str, Any]):
