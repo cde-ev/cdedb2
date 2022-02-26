@@ -1158,11 +1158,11 @@ class AssemblyFrontend(AbstractUserFrontend):
             'candidates': candidates})
 
     @staticmethod
-    def count_equal_votes(votes: List[VoteString], classical: bool = False
-                          ) -> Dict[VoteString, int]:
+    def count_equal_votes(vote_strings: List[VoteString], classical: bool = False
+                          ) -> collections.Counter[VoteString, int]:
         """This counts how often a specific vote was submitted."""
         # convert the votes into their tuple representation
-        vote_tuples = as_vote_tuples(votes)
+        vote_tuples = as_vote_tuples(vote_strings)
         if classical:
             # in classical votes, there are at most two pairs of candidates, the
             # first we voted for and the optional second we don't voted for
@@ -1171,11 +1171,8 @@ class AssemblyFrontend(AbstractUserFrontend):
                            for vote in vote_tuples]
         # take care that all candidates of the same level of each vote are sorted.
         # otherwise, votes which are semantically the same are counted as different
-        vote_lists = [
-            [xsorted(candidates) for candidates in vote] for vote in vote_tuples]
-        vote_strings = as_vote_strings(vote_lists)
-        return {vote: sum(1 for v in vote_strings if v == vote)
-                for vote in set(vote_strings)}
+        votes = [[xsorted(candidates) for candidates in vote] for vote in vote_tuples]
+        return collections.Counter(as_vote_strings(votes))
 
     def _retrieve_own_vote(self, rs: RequestState, ballot: CdEDBObject,
                            secret: str = None) -> CdEDBObject:
