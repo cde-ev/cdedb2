@@ -6,6 +6,7 @@ diese verarbeitet. Dein Guthaben beträgt jetzt {{ new_balance|money }}.
 Als Mitglied bekommst Du unsere Mitglieder-Zeitschrift exPuls
 zugeschickt. Unter anderem deshalb ist es wichtig, dass wir Deine
 aktuelle Adresse kennen.
+
 {% if address %}
 Deine in der Datenbank eingetragene Adresse ist:
 
@@ -24,8 +25,10 @@ Logge Dich bitte umgehend in der Datenbank unter der Adresse
 {{ cdedblink('core/change_user') }}
 ein und trag dort Deine aktuelle Adresse ein!
 {% endif %}
-Falls Du kein Passwort hast, kannst Du auf derselben Seite
-ein neues anfordern.
+Benutzername ist Deine Mail-Adresse. Falls Du Dein Passwort
+vergessen hast, kannst Du Dir unter
+{{ cdedblink("core/reset_password_form") }}
+ein neues zusenden lassen.
 
 Der exPuls erscheint sowohl gedruckt als auch online.
 Die gedruckte Ausgabe kannst Du in der Datenbank unter
