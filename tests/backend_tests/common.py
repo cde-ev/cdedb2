@@ -5,9 +5,6 @@ import unittest
 
 from cdedb.backend.core import CoreBackend
 from cdedb.common import PrivilegeError, make_proxy
-from cdedb.setup.config import BasicConfig
-
-_BASICCONF = BasicConfig()
 
 
 class TestBackendCommon(unittest.TestCase):

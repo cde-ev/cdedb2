@@ -5,15 +5,11 @@
 import logging
 import pathlib
 
-# BasicConfig
-
 LOG_DIR = pathlib.Path("/var/log/cdedb")
 
 LOG_LEVEL = logging.DEBUG
 SYSLOG_LEVEL = logging.INFO
 CONSOLE_LOG_LEVEL = logging.INFO
-
-# Config
 
 CDEDB_DEV = True
 

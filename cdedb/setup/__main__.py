@@ -3,7 +3,7 @@ import pathlib
 import click
 
 from cdedb.setup.config import (
-    BasicConfig, SecretsConfig, TestConfig, get_configpath as _get_configpath,
+    SecretsConfig, TestConfig, get_configpath as _get_configpath,
 )
 from cdedb.setup.database import (
     compile_sample_data as _compile_sample_data, create_database as _create_database,
@@ -58,7 +58,7 @@ def create_log(owner: str) -> None:
 
 @cli.command()
 def initiate_databases() -> None:
-    config = BasicConfig()
+    config = TestConfig()
     _initiate_databases(config)
 
 

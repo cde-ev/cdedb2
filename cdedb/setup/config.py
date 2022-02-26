@@ -4,10 +4,10 @@
 a way to override them. Any hardcoded values should be found in
 here. An exception are the default queries, which are defined in `query_defaults.py`.
 
-Each config object takes into account the default values found in
-here, the site specific global overrides in
-:py:mod:`cdedb.localconfig` and with exception of
-:py:class:`BasicConfig` an invocation specific override.
+Each config object takes into account the default values found in here. They can
+be overwritten with values in an additional config file, where the path to this
+file has to be present as environment variable CDEDB_CONFIGPATH.
+Note that setting those variable is mandatory, to prevent accidental misses.
 """
 
 import collections
@@ -57,29 +57,15 @@ except FileNotFoundError:  # pragma: no cover, only catch git executable not fou
         with pathlib.Path(_repopath, '.git', _git_commit[len('ref: '):]).open() as ref:
             _git_commit = ref.read().strip()
 
-#: defaults for :py:class:`BasicConfig`
-_BASIC_DEFAULTS = {
-    # Logging level for CdEDBs own log files
-    "LOG_LEVEL": logging.INFO,
-    # Logging level for syslog
-    "SYSLOG_LEVEL": logging.WARNING,
-    # Logging level for stdout
-    "CONSOLE_LOG_LEVEL": None,
-    # Directory in which all logs will be saved. The name of the specific log file will
-    # be determined by the instance generating the log. The global log is in 'cdedb.log'
-    "LOG_DIR": pathlib.Path("/tmp/"),
-    # file system path to this repository
-    "REPOSITORY_PATH": _repopath,
-    # default timezone for input and output
-    "DEFAULT_TIMEZONE": pytz.timezone('CET'),
-}
-
 
 #: defaults for :py:class:`Config`
 _DEFAULTS = {
     ################
     # Global stuff #
     ################
+
+    # file system path to this repository
+    "REPOSITORY_PATH": _repopath,
 
     # name of database to use
     "CDB_DATABASE_NAME": "cdb",
@@ -112,8 +98,24 @@ _DEFAULTS = {
     # place for uploaded data
     "STORAGE_DIR": pathlib.Path("/var/lib/cdedb/"),
 
+    # Directory in which all logs will be saved. The name of the specific log file will
+    # be determined by the instance generating the log. The global log is in 'cdedb.log'
+    "LOG_DIR": pathlib.Path("/tmp/"),
+
+    # Logging level for CdEDBs own log files
+    "LOG_LEVEL": logging.INFO,
+
+    # Logging level for syslog
+    "SYSLOG_LEVEL": logging.WARNING,
+
+    # Logging level for stdout
+    "CONSOLE_LOG_LEVEL": None,
+
     # hash id of the current HEAD/running version
     "GIT_COMMIT": _git_commit,
+
+    # default timezone for input and output
+    "DEFAULT_TIMEZONE": pytz.timezone('CET'),
 
     ##################
     # Frontend stuff #
@@ -314,56 +316,13 @@ _SECRECTS_DEFAULTS = {
 }
 
 
-class BasicConfig(Mapping[str, Any]):
-    """Global configuration for elementary options.
-
-    This is the global configuration which is the same for all
-    processes. This is to be used when no invocation context is
-    available (or it is infeasible to get at). There is no way to
-    override the values on invocation, so the amount of values handled
-    by this should be as small as possible.
-    """
-
-    # noinspection PyUnresolvedReferences
-    def __init__(self) -> None:
-        try:
-            import cdedb.localconfig as config_mod  # pylint: disable=import-outside-toplevel
-            config = {
-                key: getattr(config_mod, key)
-                for key in _BASIC_DEFAULTS.keys() & set(dir(config_mod))
-            }
-        except ImportError:
-            config = {}
-
-        self._configchain = collections.ChainMap(
-            config, _BASIC_DEFAULTS
-        )
-
-    def __getitem__(self, key: str) -> Any:
-        return self._configchain.__getitem__(key)
-
-    def __iter__(self) -> Iterator[str]:
-        return self._configchain.__iter__()
-
-    def __len__(self) -> int:
-        return self._configchain.__len__()
-
-
-class Config(BasicConfig):
-    """Main configuration.
-
-    This provides the primary configuration. It takes a path for
-    allowing overrides on each invocation. This does not enable
-    overriding the values inherited from :py:class:`BasicConfig`.
-    """
+class Config(Mapping[str, Any]):
+    """Main configuration."""
 
     def __init__(self) -> None:
-        super().__init__()
         configpath = get_configpath()
         _LOGGER.debug(f"Initialising Config with path {configpath}")
         self._configpath = configpath
-        # TODO this is diametral to the statement above
-        config_keys = _DEFAULTS.keys() | _BASIC_DEFAULTS.keys()
 
         if not configpath:
             raise RuntimeError("No configpath for Config provided!")
@@ -377,7 +336,7 @@ class Config(BasicConfig):
             spec.loader.exec_module(primaryconf)  # type: ignore
             primaryconf = {
                 key: getattr(primaryconf, key)
-                for key in config_keys & set(dir(primaryconf))
+                for key in _DEFAULTS.keys() & set(dir(primaryconf))
             }
         else:
             raise RuntimeError(f"During initialization of Config, config file"
@@ -388,20 +347,26 @@ class Config(BasicConfig):
             import cdedb.localconfig as secondaryconf_mod  # pylint: disable=import-outside-toplevel
             secondaryconf = {
                 key: getattr(secondaryconf_mod, key)
-                for key in config_keys & set(dir(secondaryconf_mod))
+                for key in _DEFAULTS.keys() & set(dir(secondaryconf_mod))
             }
         except ImportError:
             secondaryconf = {}
 
         self._configchain = collections.ChainMap(
-            primaryconf, secondaryconf, _DEFAULTS, _BASIC_DEFAULTS
+            primaryconf, secondaryconf, _DEFAULTS
         )
 
-        for key in _BASIC_DEFAULTS.keys() & set(dir(primaryconf)):
-            _LOGGER.debug(f"Ignored basic config entry {key} in {configpath}.")
+    def __getitem__(self, key: str) -> Any:
+        return self._configchain.__getitem__(key)
+
+    def __iter__(self) -> Iterator[str]:
+        return self._configchain.__iter__()
+
+    def __len__(self) -> int:
+        return self._configchain.__len__()
 
 
-class TestConfig(BasicConfig):
+class TestConfig(Mapping[str, Any]):
     """Main configuration for tests.
 
     This is very similar to Config: It can also be extended by a given configpath and
@@ -416,7 +381,6 @@ class TestConfig(BasicConfig):
         """
         :param configpath: path to file with overrides
         """
-        super().__init__()
         configpath = get_configpath()
         _LOGGER.debug(f"Initialising TestConfig with path {configpath}")
         self._configpath = configpath
@@ -437,8 +401,17 @@ class TestConfig(BasicConfig):
                                f" {configpath} not found!")
 
         self._configchain = collections.ChainMap(
-            additional, _DEFAULTS, _BASIC_DEFAULTS
+            additional, _DEFAULTS
         )
+
+    def __getitem__(self, key: str) -> Any:
+        return self._configchain.__getitem__(key)
+
+    def __iter__(self) -> Iterator[str]:
+        return self._configchain.__iter__()
+
+    def __len__(self) -> int:
+        return self._configchain.__len__()
 
 
 class SecretsConfig(Mapping[str, Any]):

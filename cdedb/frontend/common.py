@@ -89,11 +89,10 @@ from cdedb.filter import (
 )
 from cdedb.query import Query
 from cdedb.query_defaults import DEFAULT_QUERIES
-from cdedb.setup.config import BasicConfig, Config, SecretsConfig, TestConfig
+from cdedb.setup.config import Config, SecretsConfig, TestConfig
 from cdedb.setup.storage import setup_logger
 
 _LOGGER = logging.getLogger(__name__)
-_BASICCONF = BasicConfig()
 
 
 S = TypeVar('S')
@@ -233,6 +232,7 @@ def raise_jinja(val: str) -> None:
     raise RuntimeError(val)
 
 
+# TODO is this still a problem? Or can this be moved back in filter.py?
 # This needs acces to config, and cannot be moved to filter.py
 def datetime_filter(val: Union[datetime.datetime, str, None],
                     formatstr: str = "%Y-%m-%d %H:%M (%Z)", lang: str = None,
@@ -248,8 +248,9 @@ def datetime_filter(val: Union[datetime.datetime, str, None],
             return val
         return None
 
+    conf = Config()
     if val.tzinfo is not None:
-        val = val.astimezone(_BASICCONF["DEFAULT_TIMEZONE"])
+        val = val.astimezone(conf["DEFAULT_TIMEZONE"])
     else:
         _LOGGER.warning(f"Found naive datetime object {val}.")
 
@@ -257,7 +258,7 @@ def datetime_filter(val: Union[datetime.datetime, str, None],
         locale = icu.Locale(lang)
         datetime_formatter = icu.DateFormat.createDateTimeInstance(
             icu.DateFormat.MEDIUM, icu.DateFormat.MEDIUM, locale)
-        zone = _BASICCONF["DEFAULT_TIMEZONE"].zone
+        zone = conf["DEFAULT_TIMEZONE"].zone
         datetime_formatter.setTimeZone(icu.TimeZone.createTimeZone(zone))
         return datetime_formatter.format(val)
     else:

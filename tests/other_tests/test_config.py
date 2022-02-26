@@ -6,15 +6,13 @@ import unittest
 
 import pytz
 
-from cdedb.setup.config import BasicConfig, Config, SecretsConfig
+from cdedb.setup.config import Config, SecretsConfig
 
 
 class TestConfig(unittest.TestCase):
     def test_override(self) -> None:
         # save the actual config path, so we can use this after the test finishes
         current_configpath = os.environ.get("CDEDB_CONFIGPATH", "")
-        basic = BasicConfig()
-        self.assertEqual(basic["DEFAULT_TIMEZONE"], pytz.timezone('CET'))
 
         # check config default values
         config = Config()
@@ -43,7 +41,6 @@ class TestConfig(unittest.TestCase):
     def test_caching(self) -> None:
         # this is a regression test
         current_configpath = os.environ.get("CDEDB_CONFIGPATH", "")
-        BasicConfig()
         os.environ["CDEDB_CONFIGPATH"] = "tests/ancillary_files/extra_config.py"
         extrasecret = SecretsConfig()
         self.assertEqual(extrasecret["URL_PARAMETER_SALT"], "matrix")

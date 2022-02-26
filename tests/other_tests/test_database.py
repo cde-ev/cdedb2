@@ -9,9 +9,7 @@ import psycopg2.extensions
 from cdedb.database.connection import (
     Atomizer, IrradiatedConnection, connection_pool_factory,
 )
-from cdedb.setup.config import BasicConfig, Config, SecretsConfig
-
-_BASICCONF = BasicConfig()
+from cdedb.setup.config import Config, SecretsConfig
 
 
 class TestDatabase(unittest.TestCase):
