@@ -84,7 +84,8 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     types-python-dateutil \
     types-freezegun \
     types-bleach \
-    types-Markdown
+    types-Markdown \
+    types-click
 
 # TODO check wether it is sensible to lower privileges to cdedb user
 # create and configure directories for the apache user

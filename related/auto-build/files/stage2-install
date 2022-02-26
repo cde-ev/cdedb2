@@ -103,7 +103,8 @@ python3 -m pip install --no-cache-dir \
     types-python-dateutil \
     types-freezegun \
     types-bleach \
-    types-Markdown
+    types-Markdown \
+    types-click
 
 for file in /var/cache/apt/archives/*.deb
 do
