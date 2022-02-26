@@ -43,7 +43,7 @@ class TestApplication(FrontendTest):
         with unittest.mock.patch(
             'cdedb.backend.session.SessionBackend.lookupsession'
         ) as lookup_mock, unittest.mock.patch(
-            'cdedb.config.BasicConfig.__getitem__'
+            'cdedb.setup.config.BasicConfig.__getitem__'
         ) as config_mock:
 
             # make SessionBackend.lookupsession() raise a ValueError
@@ -72,7 +72,7 @@ class TestApplication(FrontendTest):
         with unittest.mock.patch(
             'cdedb.frontend.core.CoreFrontend.index'
         ) as index_mock, unittest.mock.patch(
-            'cdedb.config.BasicConfig.__getitem__'
+            'cdedb.setup.config.BasicConfig.__getitem__'
         ) as config_mock:
 
             # make CoreFrontend.index() raise a ValueError
