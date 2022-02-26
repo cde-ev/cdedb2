@@ -16,7 +16,9 @@ fi
 if ! python3 bin/execute_sql_script.py -f /dev/null 2> /dev/null; then
     # Apparently we cannot connect with the cdb user so we assume no sample-data is present.
     make i18n-compile
-    make sample-data
+    python3 -m cdedb.setup create-storage
+    python3 -m cdedb.setup create-database
+    python3 -m cdedb.setup populate-database
 fi
 
 exec "$@"
