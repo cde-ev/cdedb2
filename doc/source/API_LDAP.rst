@@ -20,7 +20,7 @@ LDAP Tree
 Our LDAP Tree looks as follows::
 
     dc=cde-ev,dc=de
-    ├── ou=dua
+    ├── ou=duas
     │   ├── cn=test
     │   └── ...
     ├── ou=groups
@@ -105,7 +105,7 @@ In general, we advise to use the second method (use the user credentials) to
 retrieve data from LDAP.
 
 However, to grant compatibility, each tool which **requires** an own LDAP user
-get an own entry inside ``ou=dua``. Sadly, there is no common specification
+get an own entry inside ``ou=duas``. Sadly, there is no common specification
 of duas with a common accepted objectclass.
 Therefore, we (ab)use the ``person`` objectclass for them, containing the
 following attributes:
