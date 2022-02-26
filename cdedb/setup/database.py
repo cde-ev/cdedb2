@@ -121,5 +121,5 @@ def populate_database(conf: Config, secrets: SecretsConfig, xss: bool = False) -
         with conn.cursor() as curr:
             curr.execute(outfile.read_text())
 
-    if not xss:
-        start_services("slapd")
+    # if not xss:
+    #     start_services("slapd")
