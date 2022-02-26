@@ -22,7 +22,7 @@ from cdedb.backend.ml import MlBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.common import (
     ADMIN_VIEWS_COOKIE_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, QuotaException,
-    RequestState, User, glue, make_proxy, make_root_logger, n_, now, roles_to_db_role,
+    RequestState, User, glue, make_proxy, n_, now, roles_to_db_role,
 )
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -38,6 +38,7 @@ from cdedb.frontend.event import EventFrontend
 from cdedb.frontend.ml import MlFrontend
 from cdedb.frontend.paths import CDEDB_PATHS
 from cdedb.setup.config import SecretsConfig
+from cdedb.setup.storage import setup_logger
 
 
 class Application(BaseApp):
@@ -59,7 +60,7 @@ class Application(BaseApp):
         self.assembly = AssemblyFrontend()
         self.ml = MlFrontend()
         # Set up a logger for all Worker instances.
-        make_root_logger(
+        setup_logger(
             "cdedb.frontend.worker", self.conf["LOG_DIR"] / "cdedb-frontend-worker.log",
             self.conf["LOG_LEVEL"], syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])

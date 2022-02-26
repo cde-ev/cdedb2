@@ -29,12 +29,13 @@ import cdedb.validationtypes as vtypes
 from cdedb.common import (
     LOCALE, CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Error,
     PrivilegeError, PsycoJson, RequestState, Role, diacritic_patterns, glue, make_proxy,
-    make_root_logger, n_, unwrap,
+    n_, unwrap,
 )
 from cdedb.database.connection import Atomizer
 from cdedb.database.constants import FieldDatatypes
 from cdedb.query import Query, QueryOperators
 from cdedb.setup.config import Config
+from cdedb.setup.storage import setup_logger
 from cdedb.validation import parse_date, parse_datetime
 
 F = TypeVar('F', bound=Callable[..., Any])
@@ -243,13 +244,13 @@ class AbstractBackend(metaclass=abc.ABCMeta):
     def __init__(self) -> None:
         self.conf = Config()
         # initialize logging
-        make_root_logger(
+        setup_logger(
             "cdedb.backend",
             self.conf["LOG_DIR"] / "cdedb-backend.log",
             self.conf["LOG_LEVEL"],
             syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
-        make_root_logger(
+        setup_logger(
             f"cdedb.backend.{self.realm}",
             self.conf["LOG_DIR"] / f"cdedb-backend-{self.realm}.log",
             self.conf["LOG_LEVEL"],

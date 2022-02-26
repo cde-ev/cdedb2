@@ -77,8 +77,8 @@ from cdedb.common import (
     EntitySorter, Error, Notification, NotificationType, PathLike, PrivilegeError,
     RequestState, Role, User, ValidationWarning, _tdelta, asciificator,
     decode_parameter, encode_parameter, format_country_code,
-    get_localized_country_codes, glue, json_serialize, make_proxy, make_root_logger,
-    merge_dicts, n_, now, roles_to_db_role, unwrap,
+    get_localized_country_codes, glue, json_serialize, make_proxy, merge_dicts, n_, now,
+    roles_to_db_role, unwrap,
 )
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -90,6 +90,7 @@ from cdedb.filter import (
 from cdedb.query import Query
 from cdedb.query_defaults import DEFAULT_QUERIES
 from cdedb.setup.config import BasicConfig, Config, SecretsConfig, TestConfig
+from cdedb.setup.storage import setup_logger
 
 _LOGGER = logging.getLogger(__name__)
 _BASICCONF = BasicConfig()
@@ -127,7 +128,7 @@ class BaseApp(metaclass=abc.ABCMeta):
         else:
             logger_name = "cdedb.frontend"
             logger_file = self.conf["LOG_DIR"] / "cdedb-frontend.log"
-        make_root_logger(
+        setup_logger(
             logger_name, logger_file, self.conf["LOG_LEVEL"],
             syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
@@ -1187,7 +1188,7 @@ class CdEMailmanClient(mailmanclient.Client):
 
         # Initialize logger. This needs the base class initialization to be done.
         logger_name = "cdedb.frontend.mailmanclient"
-        make_root_logger(
+        setup_logger(
             logger_name, self.conf["LOG_DIR"] / "cdedb-frontend-mailman.log",
             self.conf["LOG_LEVEL"], syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])

@@ -16,11 +16,10 @@ import psycopg2.extensions
 
 import cdedb.validationtypes as vtypes
 from cdedb.backend.common import inspect_validation as inspect
-from cdedb.common import (
-    PERSONA_STATUS_FIELDS, User, droid_roles, extract_roles, make_root_logger, now,
-)
+from cdedb.common import PERSONA_STATUS_FIELDS, User, droid_roles, extract_roles, now
 from cdedb.database.connection import connection_pool_factory
 from cdedb.setup.config import Config, SecretsConfig
+from cdedb.setup.storage import setup_logger
 
 
 class SessionBackend:
@@ -40,7 +39,7 @@ class SessionBackend:
         lookup = {v: k for k, v in secrets['API_TOKENS'].items()}
         self.api_token_lookup = lookup.get
 
-        make_root_logger(
+        setup_logger(
             "cdedb.backend.session", self.conf["LOG_DIR"] / "cdedb-backend-session.log",
             self.conf["LOG_LEVEL"], syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])

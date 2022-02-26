@@ -1,5 +1,8 @@
+import logging
+import logging.handlers
 import pathlib
 import subprocess
+import sys
 
 from cdedb.setup.config import Config
 from cdedb.setup.util import sanity_check
@@ -105,3 +108,37 @@ def create_log(conf: Config, owner: str = "www-data") -> None:
     if log_dir.exists():
         rmtree(log_dir)
     mkdirs(log_dir, owner)
+
+
+def setup_logger(name: str, logfile_path: pathlib.Path,
+                 log_level: int, syslog_level: int = None,
+                 console_log_level: int = None) -> logging.Logger:
+    """Configure the :py:mod:`logging` module.
+
+    Since this works hierarchical, it should only be necessary to call this
+    once and then every child logger is routed through this configured logger.
+    """
+    logger = logging.getLogger(name)
+    if logger.handlers:
+        logger.debug(f"Logger {name} already initialized.")
+        return logger
+    logger.propagate = False
+    logger.setLevel(log_level)
+    formatter = logging.Formatter(
+        '[%(asctime)s,%(name)s,%(levelname)s] %(message)s')
+    file_handler = logging.FileHandler(str(logfile_path))
+    file_handler.setLevel(log_level)
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+    if syslog_level:
+        syslog_handler = logging.handlers.SysLogHandler()
+        syslog_handler.setLevel(syslog_level)
+        syslog_handler.setFormatter(formatter)
+        logger.addHandler(syslog_handler)
+    if console_log_level:
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setLevel(console_log_level)
+        console_handler.setFormatter(formatter)
+        logger.addHandler(console_handler)
+    logger.debug(f"Configured logger {name}.")
+    return logger

@@ -9,14 +9,14 @@ coordination component as well as some other functionality to the CdE.
 import os
 import stat
 
-from cdedb.common import make_root_logger
 from cdedb.setup.config import BasicConfig
+from cdedb.setup.storage import setup_logger
 
 _BASICCONF = BasicConfig()
 
 # create fallback logger for everything which cannot be covered by another logger
 logfile_path = _BASICCONF["LOG_DIR"] / "cdedb.log"
-make_root_logger("cdedb", logfile_path, _BASICCONF["LOG_LEVEL"],
+setup_logger("cdedb", logfile_path, _BASICCONF["LOG_LEVEL"],
                  syslog_level=_BASICCONF["SYSLOG_LEVEL"],
                  console_log_level=_BASICCONF["CONSOLE_LOG_LEVEL"])
 try:
