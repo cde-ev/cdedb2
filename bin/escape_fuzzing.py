@@ -22,7 +22,6 @@ example the following things not taken into account:
 """
 import argparse
 import itertools
-import os
 import pathlib
 import queue
 import sys
@@ -32,6 +31,7 @@ from typing import TYPE_CHECKING, Collection, List, NamedTuple, Optional, Set, T
 import webtest
 
 from cdedb.frontend.application import Application
+from cdedb.setup.config import set_configpath
 
 # Custom type definitions.
 ResponseData = NamedTuple("ResponseData", [("response", webtest.TestResponse),
@@ -256,7 +256,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # set the config path
-    os.environ["CDEDB_CONFIGPATH"] = args.configpath
+    set_configpath(args.configpath)
 
     ret = work(pathlib.Path(args.outdir), verbose=args.verbose,
                payload=args.payload, secondary_payload=args.secondary)

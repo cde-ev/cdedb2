@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # pylint: disable=missing-module-docstring
 
-import os
 import unittest
 
 from cdedb.setup.config import Config, SecretsConfig, get_configpath, set_configpath
@@ -37,10 +36,10 @@ class TestConfig(unittest.TestCase):
 
     def test_caching(self) -> None:
         # this is a regression test
-        current_configpath = os.environ.get("CDEDB_CONFIGPATH", "")
-        os.environ["CDEDB_CONFIGPATH"] = "tests/ancillary_files/extra_config.py"
+        current_configpath = get_configpath()
+        set_configpath("tests/ancillary_files/extra_config.py")
         extrasecret = SecretsConfig()
         self.assertEqual(extrasecret["URL_PARAMETER_SALT"], "matrix")
-        os.environ["CDEDB_CONFIGPATH"] = current_configpath
+        set_configpath(current_configpath)
         testsecret = SecretsConfig()
         self.assertEqual(testsecret["URL_PARAMETER_SALT"], "aoeuidhtns9KT6AOR2kNjq2zO")

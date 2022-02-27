@@ -53,7 +53,7 @@ from cdedb.frontend.cron import CronFrontend
 from cdedb.frontend.paths import CDEDB_PATHS
 from cdedb.query import QueryOperators
 from cdedb.script import Script
-from cdedb.setup.config import SecretsConfig, TestConfig
+from cdedb.setup.config import SecretsConfig, TestConfig, get_configpath, set_configpath
 from cdedb.setup.database import connect
 from cdedb.setup.storage import populate_storage, rmtree
 
@@ -245,7 +245,7 @@ class BasicTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        configpath = os.environ['CDEDB_CONFIGPATH']
+        configpath = get_configpath()
         cls.configpath = configpath
         # save the configpath in an extra variable to reset it after each test
         cls._orig_configpath = configpath
@@ -265,7 +265,9 @@ class BasicTest(unittest.TestCase):
         test_method = getattr(self, self._testMethodName)
         if getattr(test_method, self.needs_storage_marker, False):
             rmtree(self.storage_dir)
-        os.environ['CDEDB_CONFIGPATH'] = self._orig_configpath
+        # reset the configpath after each test. This prevents interference between tests
+        # playing around with this.
+        set_configpath(self._orig_configpath)
 
     @staticmethod
     def get_sample_data(table: str, ids: Iterable[int] = None,
@@ -823,6 +825,7 @@ class FrontendTest(BackendTest):
         cls.app = webtest.TestApp(app, extra_environ=cls.app_extra_environ)
 
         # set `do_scrap` to True to capture a snapshot of all visited pages
+        # TODO move this in the TestConfig?
         cls.do_scrap = 'CDEDB_TEST_DUMP_DIR' in os.environ
         if cls.do_scrap:
             # create a parent directory for all dumps
