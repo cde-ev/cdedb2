@@ -104,24 +104,23 @@ RUN cp /tmp/autobuild/cdedb-entrypoint.sh /cdedb-entrypoint.sh \
     && chown www-data:www-data /etc/cdedb-mailman-htpasswd \
     && chmod 640 /etc/cdedb-mailman-htpasswd \
     \
-    && install -D /tmp/autobuild/localconfig.py "$CDEDB_CONFIGPATH" \
+    # this is the DEFAULT_CONFIGPATH from cdedb.setup. We do not make this configurable
+    # here, since its a default. However, passing a different configfile is possible
+    # via the environment variable CDEDB_CONFIGPATH.
+    && install -D /tmp/autobuild/localconfig.py /etc/cdedb/config.py \
     \
     && ln -s /cdedb2/cdedb/ /usr/lib/python3/dist-packages/cdedb \
     \
     && rm -rf /tmp/autobuild
 
-# TODO check wether it is sensible to lower privileges to cdedb user
-# create and configure directories for the apache user
-RUN python3 -m cdedb.setup create-storage --owner www-data \
-    \
-    && python3 -m cdedb.setup create-log --owner www-data \
-    \
-    && useradd --no-create-home cdedb \
+# create the cdedb user
+RUN useradd --no-create-home cdedb \
     && echo "%cdedb ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers \
     \
     && touch /CONTAINER
 
 # make storage persistent
+# the storage and log dirs are created during the first startup in the entrypoint.
 VOLUME /var/lib/cdedb
 # make config persistent
 VOLUME /etc/cdedb
