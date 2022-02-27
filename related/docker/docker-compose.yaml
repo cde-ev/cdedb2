@@ -20,12 +20,13 @@ services:
       dockerfile: ./related/docker/Dockerfile-cdedb
     volumes:
       - files:/var/lib/cdedb # attachments etc
+      - config:/etc/cdedb # config files
       - ../..:/cdedb2:z # the :z is for SELinux (see #2053)
     ports:
       - 127.0.0.1:5000:5000 # werkzeug server including interactive debugger
       - 127.0.0.1:8443:443 # apache
     environment:
-        CDEDB_CONFIGPATH: /cdedb2/cdedb/localconfig.py
+        CDEDB_CONFIGPATH: /etc/cdedb/config.py # DEFAULT_CONFIGPATH from cdedb.config
     depends_on:
       - cdb
   ldap:
@@ -50,6 +51,7 @@ services:
       - 127.0.0.1:8080:8080
 
 volumes:
+  config:
   database:
   files:
   ldap:

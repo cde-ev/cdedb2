@@ -87,27 +87,7 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     types-Markdown \
     types-click
 
-# TODO check wether it is sensible to lower privileges to cdedb user
-# create and configure directories for the apache user
-RUN mkdir /var/lib/cdedb \
-    && mkdir /var/lib/cdedb/foto \
-    && mkdir /var/lib/cdedb/minor_form \
-    && mkdir /var/lib/cdedb/ballot_result \
-    && mkdir /var/lib/cdedb/assembly_attachment \
-    && mkdir /var/lib/cdedb/mailman_templates \
-    && chown --recursive www-data:www-data /var/lib/cdedb \
-    \
-    && mkdir /var/log/cdedb \
-    && chown www-data:www-data /var/log/cdedb \
-    \
-    && useradd --no-create-home cdedb \
-    && echo "%cdedb ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers \
-    \
-    && touch /CONTAINER
-
-# make storage persistent
-VOLUME /var/lib/cdedb
-
+# get the configuration files from the autobuild
 COPY ./related/docker/cdedb-entrypoint.sh ./related/auto-build/files/stage3 /tmp/autobuild/
 
 # put configuration files into correct positions
@@ -124,9 +104,27 @@ RUN cp /tmp/autobuild/cdedb-entrypoint.sh /cdedb-entrypoint.sh \
     && chown www-data:www-data /etc/cdedb-mailman-htpasswd \
     && chmod 640 /etc/cdedb-mailman-htpasswd \
     \
+    && install -D /tmp/autobuild/localconfig.py "$CDEDB_CONFIGPATH" \
+    \
     && ln -s /cdedb2/cdedb/ /usr/lib/python3/dist-packages/cdedb \
     \
     && rm -rf /tmp/autobuild
+
+# TODO check wether it is sensible to lower privileges to cdedb user
+# create and configure directories for the apache user
+RUN python3 -m cdedb.setup create-storage --owner www-data \
+    \
+    && python3 -m cdedb.setup create-log --owner www-data \
+    \
+    && useradd --no-create-home cdedb \
+    && echo "%cdedb ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers \
+    \
+    && touch /CONTAINER
+
+# make storage persistent
+VOLUME /var/lib/cdedb
+# make config persistent
+VOLUME /etc/cdedb
 
 EXPOSE 443
 
