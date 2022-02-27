@@ -39,6 +39,28 @@ sudo -u cdedb echo '        rebase = merges' >> /cdedb2/.git/config
 # add cdedb to python path
 mkdir -p /usr/local/lib/python3.9/dist-packages
 sudo ln -s /cdedb2/cdedb/ /usr/local/lib/python3.9/dist-packages/cdedb
+
+echo ""
+echo "Create local config files..."
+echo "--------------------------------------------"
+
+# set the configpath to the default value
+export CDEDB_CONFIGPATH=$(python3 -m cdedb.setup default-configpath)
+
+# move the defaultconfig to the right place
+install -D /media/cdrom0/localconfig.py "$CDEDB_CONFIGPATH"
+chown cdedb:cdedb "$CDEDB_CONFIGPATH"
+chmod 644 "$CDEDB_CONFIGPATH"
+
+# set the mailman htpasswd
+cp /media/cdrom0/mailman-htpasswd /etc/cdedb-mailman-htpasswd
+chown www-data:www-data /etc/cdedb-mailman-htpasswd
+chmod 640 /etc/cdedb-mailman-htpasswd
+
+echo ""
+echo "Build documentation and translations..."
+echo "--------------------------------------------"
+
 # build the documentation
 sudo -u cdedb make doc
 # build the i18n files
@@ -48,13 +70,7 @@ echo ""
 echo "Creating storage directory for uploads..."
 echo "--------------------------------------------"
 
-mkdir /var/lib/cdedb/
-mkdir /var/lib/cdedb/foto/
-mkdir /var/lib/cdedb/minor_form/
-mkdir /var/lib/cdedb/ballot_result/
-mkdir /var/lib/cdedb/assembly_attachment/
-mkdir /var/lib/cdedb/mailman_templates/
-chown --recursive www-data:www-data /var/lib/cdedb
+python3 -m cdedb.setup create-storage --owner www-data
 
 echo ""
 echo "Setting up the database..."
@@ -92,22 +108,10 @@ cp /media/cdrom0/pgbouncer /etc/default/
 systemctl start pgbouncer
 
 echo ""
-echo "Create local config files..."
-echo "--------------------------------------------"
-
-cp /media/cdrom0/localconfig.py /cdedb2/cdedb/
-chown cdedb:cdedb /cdedb2/cdedb/localconfig.py
-chmod 644 /cdedb2/cdedb/localconfig.py
-cp /media/cdrom0/mailman-htpasswd /etc/cdedb-mailman-htpasswd
-chown www-data:www-data /etc/cdedb-mailman-htpasswd
-chmod 640 /etc/cdedb-mailman-htpasswd
-
-echo ""
 echo "Create central directory for log files..."
 echo "--------------------------------------------"
 
-mkdir /var/log/cdedb
-chown www-data:www-data /var/log/cdedb
+python3 -m cdedb.setup create-log --owner www-data
 
 echo ""
 echo "Setting up ldap..."
