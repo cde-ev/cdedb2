@@ -13,13 +13,14 @@ facility may be used in a minimized environment, such as the ldap docker contain
 """
 
 import getpass
+import gettext
 import os
 import pathlib
 import tempfile
 import time
 from pkgutil import resolve_name
 from types import TracebackType
-from typing import IO, TYPE_CHECKING, Any, Dict, Mapping, Optional, Tuple, Type
+from typing import IO, Any, Dict, Mapping, Optional, Tuple, Type
 
 import psycopg2
 import psycopg2.extensions
@@ -29,6 +30,7 @@ from cdedb.common import (
     ALL_ROLES, AbstractBackend, PathLike, RequestState, User, make_proxy, n_,
 )
 from cdedb.database.connection import Atomizer, IrradiatedConnection
+from cdedb.frontend.common import setup_translations
 from cdedb.setup.config import Config, SecretsConfig, get_configpath, set_configpath
 
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
@@ -149,10 +151,8 @@ class Script:
         with self._tempconfig:
             self.config = Config()
             self._secrets = SecretsConfig()
-        if TYPE_CHECKING:
-            import gettext  # pylint: disable=import-outside-toplevel
-            self._translations: Optional[Mapping[str, gettext.NullTranslations]]
-            self._backends: Dict[Tuple[str, bool], AbstractBackend]
+        self._translations: Optional[Mapping[str, gettext.NullTranslations]]
+        self._backends: Dict[Tuple[str, bool], AbstractBackend]
         self._translations = None
         self._backends = {}
         self._request_states: Dict[int, RequestState] = {}
@@ -195,9 +195,6 @@ class Script:
         if ret := self._request_states.get(persona_id):
             return ret
         if self._translations is None:
-            from cdedb.frontend.common import (  # pylint: disable=import-outside-toplevel
-                setup_translations,
-            )
             self._translations = setup_translations(self.config)
         rs = RequestState(
             sessionkey=None,
