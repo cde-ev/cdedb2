@@ -19,9 +19,9 @@ def copy(source: pathlib.Path, dest: pathlib.Path) -> None:
     subprocess.run(["sudo", "cp", source, dest], check=True)
 
 
-def mkdirs(directory: pathlib.Path, owner: str) -> None:
-    """Create a directory and its parents and set their owner."""
-    subprocess.run(["sudo", "-u", owner, "mkdir", "-p", directory], check=True)
+def mkdirs(directory: pathlib.Path) -> None:
+    """Create a directory and its parents."""
+    subprocess.run(["sudo", "mkdir", "-p", directory], check=True)
 
 
 def rmtree(path: pathlib.Path) -> None:
@@ -49,10 +49,10 @@ def create_storage(conf: Config, owner: str = "www-data") -> None:
     # Remove anything left in the storage dir.
     if storage_dir.exists():
         rmtree(storage_dir)
-    mkdirs(storage_dir, owner)
+    mkdirs(storage_dir)
 
     for subdir in subdirs:
-        mkdirs(storage_dir / subdir, owner)
+        mkdirs(storage_dir / subdir)
 
     chown(storage_dir, owner)
 
@@ -63,6 +63,7 @@ def populate_storage(conf: Config, owner: str = "www-data") -> None:
     storage_dir: pathlib.Path = conf["STORAGE_DIR"]
     repo_path: pathlib.Path = conf['REPOSITORY_PATH']
 
+    # TODO do we want to do this implicitly?
     create_storage(conf, owner)
 
     foto = ("e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425"
@@ -109,7 +110,8 @@ def create_log(conf: Config, owner: str = "www-data") -> None:
     # Remove anything left in the log dir.
     if log_dir.exists():
         rmtree(log_dir)
-    mkdirs(log_dir, owner)
+    mkdirs(log_dir)
+    chown(log_dir, owner)
 
     # create fallback logger for everything which cannot be covered by another logger
     logger_path = conf["LOG_DIR"] / "cdedb.log"
