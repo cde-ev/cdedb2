@@ -75,6 +75,9 @@ _DEFAULTS = {
     # file system path to this repository
     "REPOSITORY_PATH": _repopath,
 
+    # path to the file which holds the password overrides of the SecretsConfig
+    "SECRETS_CONFIGPATH": pathlib.Path("/etc/cdedb/public-secrets.py"),
+
     # name of database to use
     "CDB_DATABASE_NAME": "cdb",
 
@@ -399,14 +402,14 @@ class SecretsConfig(Mapping[str, Any]):
     """
 
     def __init__(self) -> None:
-        # TODO switch to own config file
-        configpath = get_configpath()
+        config = Config()
+        configpath = config["SECRETS_CONFIGPATH"]
         _LOGGER.debug(f"Initialising SecretsConfig with path {configpath}")
 
         if not configpath:
             raise RuntimeError("No configpath for SecretsConfig provided!")
         if not pathlib.Path(configpath).is_file():
-            raise RuntimeError(f"During initialization of TestConfig, config file"
+            raise RuntimeError(f"During initialization of SecretsConfig, config file"
                                f" {configpath} not found!")
 
         spec = importlib.util.spec_from_file_location("override", str(configpath))
