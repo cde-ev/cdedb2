@@ -38,6 +38,13 @@ def default_configpath() -> None:
 
 
 @cli.command()
+def secrets_configpath() -> None:
+    check_configpath()
+    config = TestConfig()
+    print(config["SECRETS_CONFIGPATH"])
+
+
+@cli.command()
 @click.option("--owner", default="www-data", help="owner of the file storage")
 def create_storage(owner: str) -> None:
     check_configpath()

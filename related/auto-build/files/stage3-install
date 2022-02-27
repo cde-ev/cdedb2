@@ -50,7 +50,32 @@ export CDEDB_CONFIGPATH=$(python3 -m cdedb.setup default-configpath)
 # move the defaultconfig to the right place
 install -D /media/cdrom0/localconfig.py "$CDEDB_CONFIGPATH"
 chown cdedb:cdedb "$CDEDB_CONFIGPATH"
+# make it world-readable, since it contains no secret data
 chmod 644 "$CDEDB_CONFIGPATH"
+
+# create default (and public) secrets config
+cat >"$(python3 -m cdedb.setup secrets-configpath)" <<EOF
+#!/usr/bin/env python3
+#
+# This is the default file for the SecretsConfig. On development and offline instances,
+# the config defaults are used so there is nothing to protect here and this file is
+# world-readable.
+#
+# NEVER EVER USE THIS FILE WITH THE CURRENT PERMISSIONS IN PRODUCTION!!!
+#
+# Instead, create an own file, add the overwrites for your passwords (which should mean
+# overwriting ALL options available) and add the following line to your config.py:
+#
+# SECRETS_CONFIGPATH = pathlib.Path("/path/to/your/secrets_config.py")
+#
+# Additionally, we recommend to shrink the permissions for that file:
+#
+# sudo chown www-data:www-data /path/to/your/secrets_config.py
+# sudo chmod 640 /path/to/your/secrets_config.py
+#
+EOF
+chown cdedb:cdedb "$(python3 -m cdedb.setup secrets-configpath)"
+chmod 644 "$(python3 -m cdedb.setup secrets-configpath)"
 
 # set the mailman htpasswd
 cp /media/cdrom0/mailman-htpasswd /etc/cdedb-mailman-htpasswd
