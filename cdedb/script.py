@@ -14,6 +14,7 @@ facility may be used in a minimized environment, such as the ldap docker contain
 
 import getpass
 import os
+import pathlib
 import tempfile
 import time
 from pkgutil import resolve_name
@@ -40,30 +41,46 @@ class TempConfig:
     """Provide a thin wrapper around a temporary file.
 
     The advantage ot this is that it works with both a given configpath or
-    config keyword arguments."""
+    config keyword arguments. This uses all config options from the real
+    configpath (from the environment) for all config options not set inside config.
+    """
+
     def __init__(self, configpath: PathLike = None, **config: Any):
-        if config and configpath:
-            raise ValueError("Mustn't specify both config and configpath.")
+        if (not configpath and not config) or (configpath and config):
+            print(configpath, config)
+            raise ValueError("Provide exactly one of config and configpath!")
         self._configpath = configpath
         self._config = config
-        if (not configpath and not config) or (configpath and config):
-            raise RuntimeError("Provide exactly one of config and configpath!")
+        # this will be used to hold the current configpath from the environment
+        # and restore it later on
+        self._real_configpath: pathlib.Path
         self._f: Optional[IO[str]] = None
 
-    def __enter__(self) -> PathLike:
+    def __enter__(self) -> None:
+        # store the real configpath
+        self._real_configpath = get_configpath()
         if self._config:
             self._f = tempfile.NamedTemporaryFile("w", suffix=".py")
             f = self._f.__enter__()
+            # copy the real_config into the temporary config
+            with open(self._real_configpath, "r") as cf:
+                real_config = cf.read()
+            f.write(real_config)
+            # now, add all keyword config options. Since they are added _after_ the
+            # real_config options, they overwrite them if necessary
             for k, v in self._config.items():
-                f.write(f"{k} = {v}")
+                f.write(f"\n{k} = {v}")
             f.flush()
-            return f.name
-        assert self._configpath is not None
-        return self._configpath
+            set_configpath(f.name)
+        else:
+            assert self._configpath is not None
+            set_configpath(self._configpath)
 
     def __exit__(self, exc_type: Optional[Type[Exception]],
                  exc_val: Optional[Exception],
                  exc_tb: Optional[TracebackType]) -> Optional[bool]:
+        # restore the real configpath
+        set_configpath(self._real_configpath)
         if self._f:
             return self._f.__exit__(exc_type, exc_val, exc_tb)
         return False
@@ -109,14 +126,12 @@ class Script:
         if check_system_user and getpass.getuser() != "www-data":
             raise RuntimeError("Must be run as user www-data.")
 
-        current_configpath = get_configpath()
-
         # Read configurable data from environment and/or input.
         configpath = configpath or os.environ.get("SCRIPT_CONFIGPATH")
         # if no special configpath and no config options are present, use the default
         # way to obtain the configpath from the environment
         if not configpath and not config:
-            configpath = current_configpath
+            configpath = get_configpath()
         # Allow overriding for evolution trial.
         if persona_id is None:
             persona_id = int(os.environ.get("SCRIPT_PERSONA_ID", -1))
@@ -131,13 +146,9 @@ class Script:
         self._atomizer: Optional[ScriptAtomizer] = None
         self._conn: psycopg2.extensions.connection = None
         self._tempconfig = TempConfig(configpath, **config)
-        with self._tempconfig as temp_config:
-            # shortly, set the temporary config as configpath
-            set_configpath(temp_config)
+        with self._tempconfig:
             self.config = Config()
             self._secrets = SecretsConfig()
-            # restore the real configpath
-            set_configpath(current_configpath)
         if TYPE_CHECKING:
             import gettext  # pylint: disable=import-outside-toplevel
             self._translations: Optional[Mapping[str, gettext.NullTranslations]]
@@ -169,14 +180,9 @@ class Script:
         """Create backend, either as a proxy or not."""
         if ret := self._backends.get((realm, proxy)):
             return ret
-        current_configpath = get_configpath()
-        with self._tempconfig as temp_config:
-            # shortly, set the temporary config as configpath
-            set_configpath(temp_config)
+        with self._tempconfig:
             backend_name = self.backend_map[realm]
             backend = resolve_name(f"cdedb.backend.{realm}.{backend_name}")()
-            # restore the real configpath
-            set_configpath(current_configpath)
         self._backends.update({
             (realm, True): make_proxy(backend),
             (realm, False): backend,
