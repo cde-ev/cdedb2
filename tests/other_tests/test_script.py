@@ -13,7 +13,7 @@ import psycopg2.errorcodes
 from cdedb.backend.core import CoreBackend
 from cdedb.common import unwrap
 from cdedb.script import DryRunError, Script, ScriptAtomizer
-from cdedb.setup.config import TestConfig
+from cdedb.setup.config import TestConfig, get_configpath
 
 
 class TestScript(unittest.TestCase):
@@ -64,15 +64,43 @@ class TestScript(unittest.TestCase):
              ' "cdb_admin"' in cm.exception.args[0])
         )
 
+    def test_config_overwrite(self) -> None:
+        # check that the config path stays correct
+        real_configpath = get_configpath()
+
+        # choose SYSLOG_LEVEL, since this is overwritten in the test config
+        script = self.get_script()
+        self.assertEqual(None, script.config["SYSLOG_LEVEL"])
+        self.assertEqual(real_configpath, get_configpath())
+
+        # check overwriting per config argument
+        configured_script = self.get_script(SYSLOG_LEVEL=42)
+        self.assertEqual(42, configured_script.config["SYSLOG_LEVEL"])
+        self.assertEqual(real_configpath, get_configpath())
+
+        # check overwriting per config file
+        with tempfile.NamedTemporaryFile("w", suffix=".py") as f:
+            f.write("SYSLOG_LEVEL = 42")
+            f.flush()
+            configured_script = self.get_script(configpath=f.name)
+            self.assertEqual(42, configured_script.config["SYSLOG_LEVEL"])
+            self.assertEqual(real_configpath, get_configpath())
+
     def test_make_backend(self) -> None:
+        # check that the config path stays correct
+        real_configpath = get_configpath()
+
         core = self.script.make_backend("core", proxy=False)
         self.assertTrue(isinstance(core, CoreBackend))
         coreproxy = self.script.make_backend("core", proxy=True)
         self.assertEqual(coreproxy.get_backend_class(), CoreBackend)
+
         configured_script = self.get_script(LOCKDOWN=42)
         self.assertEqual(
             42,
             configured_script.make_backend("core", proxy=False).conf["LOCKDOWN"])
+        self.assertEqual(real_configpath, get_configpath())
+
         # This way of writing to a temporary file mirrors exactly what happens
         # inside `make_backend`.
         with tempfile.NamedTemporaryFile("w", suffix=".py") as f:
@@ -82,6 +110,7 @@ class TestScript(unittest.TestCase):
             self.assertEqual(
                 42,
                 configured_script.make_backend("core", proxy=False).conf["LOCKDOWN"])
+            self.assertEqual(real_configpath, get_configpath())
 
         for realm, backend_name in Script.backend_map.items():
             backend_class = resolve_name(f"cdedb.backend.{realm}.{backend_name}")
