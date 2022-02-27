@@ -1159,7 +1159,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @staticmethod
     def count_equal_votes(vote_strings: List[VoteString], classical: bool = False
-                          ) -> collections.Counter[VoteString, int]:
+                          ) -> collections.Counter[VoteString]:
         """This counts how often a specific vote was submitted."""
         # convert the votes into their tuple representation
         vote_tuples = as_vote_tuples(vote_strings)
