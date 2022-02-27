@@ -26,6 +26,13 @@ import pytz
 PathLike = Union[pathlib.Path, str]
 
 
+# The default path were a configuration file is expected. It is easier to hardcode this
+# at some places where the configpath environment variable is unfeasible (like in
+# wsgi.py, the entry point of apache2). This reflects also the configpath were the
+# autobuild, docker-compose and production expect the config per default.
+DEFAULT_CONFIGPATH = pathlib.Path("/etc/cdedb/config.py")
+
+
 def set_configpath(path: PathLike) -> None:
     """Helper to set the configpath as environment variable."""
     os.environ["CDEDB_CONFIGPATH"] = str(path)

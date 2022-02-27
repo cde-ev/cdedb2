@@ -3,7 +3,7 @@ import pathlib
 import click
 
 from cdedb.setup.config import (
-    SecretsConfig, TestConfig, get_configpath as _get_configpath,
+    DEFAULT_CONFIGPATH, SecretsConfig, TestConfig, get_configpath as _get_configpath,
 )
 from cdedb.setup.database import (
     compile_sample_data as _compile_sample_data, create_database as _create_database,
@@ -30,6 +30,11 @@ def cli() -> None:
 def set_configpath(configpath: str) -> None:
     print("Execute the following command in your shell:")
     print(f"export CDEDB_CONFIGPATH={configpath}")
+
+
+@cli.command()
+def default_configpath() -> None:
+    print(DEFAULT_CONFIGPATH)
 
 
 @cli.command()
