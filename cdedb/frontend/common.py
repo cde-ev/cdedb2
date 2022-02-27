@@ -89,7 +89,7 @@ from cdedb.filter import (
 )
 from cdedb.query import Query
 from cdedb.query_defaults import DEFAULT_QUERIES
-from cdedb.setup.config import Config, SecretsConfig, TestConfig
+from cdedb.setup.config import Config, SecretsConfig
 from cdedb.setup.storage import setup_logger
 
 _LOGGER = logging.getLogger(__name__)

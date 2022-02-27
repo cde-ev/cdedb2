@@ -19,7 +19,7 @@ import logging
 import os
 import pathlib
 import subprocess
-from typing import Any, Iterator, Mapping, Optional, Union
+from typing import Any, Iterator, Mapping, Union
 
 import pytz
 
