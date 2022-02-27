@@ -109,6 +109,11 @@ RUN cp /tmp/autobuild/cdedb-entrypoint.sh /cdedb-entrypoint.sh \
     # via the environment variable CDEDB_CONFIGPATH.
     && install -D /tmp/autobuild/localconfig.py /etc/cdedb/config.py \
     \
+    # create the default (empty) secrets config. Sadly, we can not use the setup module
+    # to get the file path via "python3 -m cdedb.setup secrets-configpath", so we
+    # hardcode the default path here.
+    && touch /etc/cdedb/public-secrets.py \
+    \
     && ln -s /cdedb2/cdedb/ /usr/lib/python3/dist-packages/cdedb \
     \
     && rm -rf /tmp/autobuild
