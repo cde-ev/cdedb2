@@ -28,7 +28,8 @@ def rmtree(path: pathlib.Path) -> None:
     """Remove the _sub_tree of the given path."""
     # TODO make a decision which parts of the directories should be removed
     #  - including the storage dir itself or excluding?
-    subprocess.run(["sudo", "rm", "-rf", "--", path / "*"], check=True)
+    # this is a bit hacky to prevent subprocess from escaping *
+    subprocess.run([f"sudo rm -rf {path / '*'}"], check=True, shell=True)
 
 
 @sanity_check

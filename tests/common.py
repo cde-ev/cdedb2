@@ -18,7 +18,6 @@ import json
 import os
 import pathlib
 import re
-import shutil
 import sys
 import tempfile
 import unittest
@@ -56,7 +55,7 @@ from cdedb.query import QueryOperators
 from cdedb.script import Script
 from cdedb.setup.config import SecretsConfig, TestConfig
 from cdedb.setup.database import connect
-from cdedb.setup.storage import populate_storage
+from cdedb.setup.storage import populate_storage, rmtree
 
 # TODO: use TypedDict to specify UserObject.
 UserObject = Mapping[str, Any]
@@ -251,7 +250,7 @@ class BasicTest(unittest.TestCase):
         # save the configpath in an extra variable to reset it after each test
         cls._orig_configpath = configpath
         cls.conf = TestConfig()
-        cls.storage_dir = cls.conf['STORAGE_DIR']
+        cls.storage_dir: pathlib.Path = cls.conf['STORAGE_DIR']
         cls.testfile_dir = cls.storage_dir / "testfiles"
 
     def setUp(self) -> None:
@@ -265,7 +264,7 @@ class BasicTest(unittest.TestCase):
     def tearDown(self) -> None:
         test_method = getattr(self, self._testMethodName)
         if getattr(test_method, self.needs_storage_marker, False):
-            shutil.rmtree(self.storage_dir)
+            rmtree(self.storage_dir)
         os.environ['CDEDB_CONFIGPATH'] = self._orig_configpath
 
     @staticmethod
