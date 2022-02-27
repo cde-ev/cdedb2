@@ -67,6 +67,7 @@ class TestScript(unittest.TestCase):
     def test_config_overwrite(self) -> None:
         # check that the config path stays correct
         real_configpath = get_configpath()
+        real_config = TestConfig()
 
         # choose SYSLOG_LEVEL, since this is overwritten in the test config
         script = self.get_script()
@@ -74,13 +75,17 @@ class TestScript(unittest.TestCase):
         self.assertEqual(real_configpath, get_configpath())
 
         # check overwriting per config argument
+        # this takes the options from the real_configpath into account automatically
         configured_script = self.get_script(SYSLOG_LEVEL=42)
         self.assertEqual(42, configured_script.config["SYSLOG_LEVEL"])
         self.assertEqual(real_configpath, get_configpath())
 
         # check overwriting per config file
+        # here, we need to set the relevant flags from the real_config manually
         with tempfile.NamedTemporaryFile("w", suffix=".py") as f:
-            f.write("SYSLOG_LEVEL = 42")
+            f.write("SYSLOG_LEVEL = 42\n")
+            f.write(f"DB_HOST = '{real_config['DB_HOST']}'\n")
+            f.write(f"DB_PORT = {real_config['DB_PORT']}\n")
             f.flush()
             configured_script = self.get_script(configpath=f.name)
             self.assertEqual(42, configured_script.config["SYSLOG_LEVEL"])
@@ -89,22 +94,27 @@ class TestScript(unittest.TestCase):
     def test_make_backend(self) -> None:
         # check that the config path stays correct
         real_configpath = get_configpath()
+        real_config = TestConfig()
 
         core = self.script.make_backend("core", proxy=False)
         self.assertTrue(isinstance(core, CoreBackend))
         coreproxy = self.script.make_backend("core", proxy=True)
         self.assertEqual(coreproxy.get_backend_class(), CoreBackend)
 
+        # check setting config options per kwarg
+        # this takes the options from the real_configpath into account automatically
         configured_script = self.get_script(LOCKDOWN=42)
         self.assertEqual(
             42,
             configured_script.make_backend("core", proxy=False).conf["LOCKDOWN"])
         self.assertEqual(real_configpath, get_configpath())
 
-        # This way of writing to a temporary file mirrors exactly what happens
-        # inside `make_backend`.
+        # check setting config options per config file
+        # here, we need to set the relevant flags from the real_config manually
         with tempfile.NamedTemporaryFile("w", suffix=".py") as f:
-            f.write("LOCKDOWN = 42")
+            f.write("LOCKDOWN = 42\n")
+            f.write(f"DB_HOST = '{real_config['DB_HOST']}'\n")
+            f.write(f"DB_PORT = {real_config['DB_PORT']}\n")
             f.flush()
             configured_script = self.get_script(configpath=f.name)
             self.assertEqual(
