@@ -47,6 +47,7 @@ def get_configpath() -> pathlib.Path:
         raise RuntimeError("No config path set!")
 
 
+# TODO where exactly does this log?
 _LOGGER = logging.getLogger(__name__)
 
 _currentpath = pathlib.Path(__file__).resolve().parent.parent
@@ -331,7 +332,7 @@ class Config(Mapping[str, Any]):
     """Main configuration.
 
     Can be overridden through the file specified by the CDEDB_CONFIGPATH environment
-    variable. However, this does not allow to introduce keys which are not present in
+    variable. However, this does not allow introducing keys which are not present in
     the _DEFAULT configuration.
     """
 

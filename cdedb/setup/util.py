@@ -1,13 +1,16 @@
+"""Some utilities for the setup functions."""
 import functools
 import pathlib
 from typing import Any, Callable
 
 
 def is_docker() -> bool:
+    """Does the current process runs on a docker image?"""
     return pathlib.Path("/CONTAINER").is_file()
 
 
 def is_vm() -> bool:
+    """Does the current process runs on a vm image?"""
     return not is_docker()
 
 

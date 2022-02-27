@@ -1,3 +1,4 @@
+"""Set up the file system related stuff, like upload-storage, loggers and log dirs."""
 import logging
 import logging.handlers
 import os
@@ -11,11 +12,13 @@ from cdedb.setup.util import sanity_check
 
 
 def chown(path: pathlib.Path, owner: str) -> None:
+    """Change the owner of the given path recursively to the given owner."""
     subprocess.run(["sudo", "chown", "--recursive", f"{owner}:{owner}", path],
                    check=True)
 
 
 def copy(source: pathlib.Path, dest: pathlib.Path) -> None:
+    """Copy from source to target."""
     subprocess.run(["sudo", "cp", source, dest], check=True)
 
 
@@ -105,7 +108,10 @@ def populate_storage(conf: Config, owner: str = "www-data") -> None:
 
 @sanity_check
 def create_log(conf: Config, owner: str = "www-data") -> None:
-    """Create the directory structure of the log directory."""
+    """Create the directory structure of the log directory.
+
+    Directly instantiate the root logger, so this is not forgotten later.
+    """
     log_dir: pathlib.Path = conf["LOG_DIR"]
 
     # Remove anything left in the log dir.
@@ -114,6 +120,8 @@ def create_log(conf: Config, owner: str = "www-data") -> None:
     mkdirs(log_dir)
     chown(log_dir, owner)
 
+    # TODO does this work as expected? What happens if this is called in another process
+    #  than those running later the tests or apache?
     # create fallback logger for everything which cannot be covered by another logger
     logger_path = conf["LOG_DIR"] / "cdedb.log"
     setup_logger("cdedb", logger_path, conf["LOG_LEVEL"],

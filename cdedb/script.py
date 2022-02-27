@@ -7,9 +7,6 @@ on boilerplate.
 
 Additionally this provides some level of guidance on how to interact
 with the production environment.
-
-Note that some imports are only made when they are actually needed, so that this
-facility may be used in a minimized environment, such as the ldap docker container.
 """
 
 import getpass

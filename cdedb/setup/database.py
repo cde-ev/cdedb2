@@ -1,3 +1,4 @@
+"""Set up the database, including users, tables and population with sample data."""
 import os
 import pathlib
 import subprocess
@@ -134,6 +135,14 @@ def populate_database(conf: Config, secrets: SecretsConfig, xss: bool = False) -
 
 def compile_sample_data(conf: Config, infile: pathlib.Path, outfile: pathlib.Path,
                         xss: bool = False) -> None:
+    """Consume a .json file and parse the contained sample data to a .sql file.
+
+    The latter can then directly be applied to a database, to populate it with the
+    respective sample data.
+
+    The xss-switch decides if the sample data should be contaminated with script
+    tags, to check proper escaping afterwards.
+    """
     repo_path: pathlib.Path = conf['REPOSITORY_PATH']
 
     script_file = repo_path / "bin" / "create_sample_data_sql.py"
