@@ -20,7 +20,8 @@ from psycopg2.extras import DictCursor, Json
 
 from cdedb.common import CdEDBObject
 from cdedb.setup.config import (
-    Config, SecretsConfig, TestConfig, get_configpath, set_configpath,
+    DEFAULT_CONFIGPATH, Config, SecretsConfig, TestConfig, get_configpath,
+    set_configpath,
 )
 from cdedb.setup.database import connect
 
@@ -310,8 +311,7 @@ if __name__ == "__main__":
         config = TestConfig()
     else:
         # otherwise, we want to use the default configpath of the real world
-        # TODO where do we want to store the default config?
-        set_configpath("/cdedb2/cdedb/localconfig.py")
+        set_configpath(DEFAULT_CONFIGPATH)
         config = Config()
 
     work(data_path, config, is_test=args.test, extra_packages=args.extra_packages,

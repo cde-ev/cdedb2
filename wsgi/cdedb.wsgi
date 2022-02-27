@@ -12,12 +12,11 @@ repopath = currentpath[:-5]
 
 sys.path.append(repopath)
 
-configpath = "/etc/cdedb-application-config.py"
-if not os.path.isfile(configpath):
-   pass
-# set the configpath environment variable
-# TODO decide which config path we should use here
-os.environ["CDEDB_CONFIGPATH"] = f"{repopath}/cdedb/localconfig.py"
+# set the configpath to the default, since apache does not propagate environment
+# variables consciously
+from cdedb.setup.config import DEFAULT_CONFIGPATH, set_configpath
+
+set_configpath(DEFAULT_CONFIGPATH)
 
 from cdedb.frontend.application import Application
 
