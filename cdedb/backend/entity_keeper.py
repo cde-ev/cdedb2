@@ -18,6 +18,7 @@ import tempfile
 from pathlib import Path
 from typing import List, Optional, Union
 
+import cdedb.validationtypes as vtypes
 from cdedb.backend.common import affirm_validation as affirm
 from cdedb.common import PathLike, make_root_logger
 from cdedb.config import Config
@@ -111,7 +112,7 @@ class EntityKeeper:
         :returns: Representation of the finished commit, if one was done, else None
         """
         entity_id = affirm(int, entity_id)
-        file_text = affirm(str, file_text)
+        file_text = affirm(vtypes.StringType, file_text)
         commit_msg = affirm(str, commit_msg)
         full_dir = self._dir / str(entity_id)
         filename = f"{entity_id}.json"
