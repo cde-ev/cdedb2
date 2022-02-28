@@ -18,8 +18,9 @@ from werkzeug import Response
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, EntitySorter, RequestState, determine_age_class,
-    diacritic_patterns, get_hash, merge_dicts, n_, now, unwrap, xsorted,
+    CdEDBObject, CdEDBObjectMap, EntitySorter, RequestState, build_msg,
+    determine_age_class, diacritic_patterns, get_hash, merge_dicts, n_, now, unwrap,
+    xsorted,
 )
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
@@ -1059,14 +1060,9 @@ class EventRegistrationMixin(EventBaseFrontend):
         code = 1
         self.logger.info(
             f"Updating registrations {reg_ids} with data {registration}")
-        msg1 = "Snapshot vor Bearbeitung mehrerer Anmeldungen"
-        msg2 = "Bearbeite mehrere Anmeldungen"
-        if change_note:
-            msg1 += ": " + change_note
-            msg2 += ": " + change_note
-            change_note = "Multi-Edit: " + change_note
-        else:
-            change_note = "Multi-Edit."
+        msg1 = build_msg("Snapshot vor Bearbeitung mehrerer Anmeldungen", change_note)
+        msg2 = build_msg("Bearbeite mehrere Anmeldungen", change_note)
+        change_note = build_msg("Multi-Edit", change_note)
 
         self.eventproxy.event_keeper_commit(rs, event_id, msg1, is_snapshot=True)
         for reg_id in reg_ids:

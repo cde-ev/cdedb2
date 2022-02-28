@@ -2501,7 +2501,7 @@ etc;anything else""", f['entries_2'].value)
                             div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
         self.assertPresence("Multi-Edit",
                             div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
-        self.assertNonPresence("Mult-Edit:",
+        self.assertNonPresence("Multi-Edit:",
                                div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
         self.assertPresence("Multi-Edit: Muss doch nicht laufen.",
                             div=str(self.EVENT_LOG_OFFSET + 3) + "-1003")

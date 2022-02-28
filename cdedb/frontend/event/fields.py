@@ -14,7 +14,8 @@ from werkzeug import Response
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, EntitySorter, RequestState, merge_dicts, n_, xsorted,
+    CdEDBObject, CdEDBObjectMap, EntitySorter, RequestState, build_msg, merge_dicts, n_,
+    xsorted,
 )
 from cdedb.filter import safe_filter
 from cdedb.frontend.common import (
@@ -259,16 +260,12 @@ class EventFieldMixin(EventBaseFrontend):
             rs, event_id, field_id, ids, kind)
         assert field is not None  # to make mypy happy
 
+        msg = ""
         if kind == const.FieldAssociations.registration:
-            if change_note:
-                change_note = f"{field['field_name']} gesetzt: " + change_note
-            else:
-                change_note = f"{field['field_name']} gesetzt."
+            msg = build_msg(f"{field['field_name']} gesetzt", change_note)
         elif change_note:
             rs.append_validation_error(
                 (None, ValueError(n_("change_note only supported for registrations."))))
-        else:
-            change_note = ""
 
         data_params: vtypes.TypeMapping = {
             f"input{anid}": Optional[  # type: ignore
@@ -292,8 +289,8 @@ class EventFieldMixin(EventBaseFrontend):
 
         code = 1
         self.eventproxy.event_keeper_commit(
-            rs, event_id,
-            f"Snapshot vor Setzen von Feld {field['field_name']}: " + change_note,
+            rs, event_id, build_msg(
+                f"Snapshot vor Setzen von Feld {field['field_name']}", change_note),
             is_snapshot=True)
         for anid, entity in entities.items():
             if data[f"input{anid}"] != entity['fields'].get(field['field_name']):
@@ -301,12 +298,12 @@ class EventFieldMixin(EventBaseFrontend):
                     'id': anid,
                     'fields': {field['field_name']: data[f"input{anid}"]}
                 }
-                if change_note:
-                    code *= entity_setter(rs, new, change_note)  # type: ignore
+                if msg:
+                    code *= entity_setter(rs, new, msg)  # type: ignore
                 else:
                     code *= entity_setter(rs, new)
         self.eventproxy.event_keeper_commit(
-            rs, event_id, f"Setze Feld {field['field_name']}: " + change_note)
+            rs, event_id, build_msg(f"Setze Feld {field['field_name']}", change_note))
         rs.notify_return_code(code)
 
         if kind == const.FieldAssociations.registration:

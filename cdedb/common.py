@@ -435,6 +435,14 @@ def glue(*args: str) -> str:
     return " ".join(args)
 
 
+def build_msg(msg1: str, msg2: Optional[str] = None) -> str:
+    """Construct log message with appropriate punctuation"""
+    if msg2:
+        return msg1 + ": " + msg2
+    else:
+        return msg1 + "."
+
+
 S = TypeVar("S")
 
 

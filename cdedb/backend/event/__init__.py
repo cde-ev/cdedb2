@@ -21,8 +21,8 @@ from cdedb.backend.event.query import EventQueryBackend
 from cdedb.backend.event.registration import EventRegistrationBackend
 from cdedb.common import (
     EVENT_SCHEMA_VERSION, CdEDBObject, CdEDBOptionalMap, DefaultReturnCode,
-    DeletionBlockers, PartialImportError, PrivilegeError, RequestState, get_hash,
-    json_serialize, mixed_existence_sorter, n_, unwrap,
+    DeletionBlockers, PartialImportError, PrivilegeError, RequestState, build_msg,
+    get_hash, json_serialize, mixed_existence_sorter, n_, unwrap,
 )
 from cdedb.database.connection import Atomizer
 
@@ -705,7 +705,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
             if not dryrun:
                 self.event_log(rs, const.EventLogCodes.event_partial_import,
                                data['id'], change_note=data.get('summary'))
-                self.event_keeper_commit(rs, data['id'],
-                    "Importiere partiell: " + data.get('summary', ""),
+                self.event_keeper_commit(rs, data['id'], build_msg(
+                        "Importiere partiell", data.get('summary')),
                     is_snapshot=True)
         return result, total_delta
