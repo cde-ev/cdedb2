@@ -3,6 +3,7 @@ import logging
 import logging.handlers
 import os
 import pathlib
+import shutil
 import stat
 import subprocess
 import sys
@@ -35,6 +36,26 @@ def rmtree(path: pathlib.Path) -> None:
     subprocess.run([f"sudo rm -rf {path / '*'}"], check=True, shell=True)
 
 
+def recreate_directory(directory: pathlib.Path) -> None:
+    """Create the given directory, or remove its content if it already exists.
+
+    Since the right to create or delete a directory is determined by its parent and not
+    by the directory itself, this is a bit tricky. Therefore, this does also some error
+    detection about missing permissions.
+    """
+    if directory.exists():
+        # remove the content of the directory
+        for path in directory.iterdir():
+            shutil.rmtree(path)
+    else:
+        try:
+            directory.mkdir(parents=True)
+        except PermissionError as e:
+            msg = (f"Please create the directory {e.filename} manually. Make sure the"
+                   f" current user has proper permissions on this directory.")
+            raise PermissionError(msg) from e
+
+
 @sanity_check
 def create_storage(conf: Config, owner: str = "www-data") -> None:
     """Create the directory structure of the storage directory."""
@@ -50,15 +71,9 @@ def create_storage(conf: Config, owner: str = "www-data") -> None:
         "testfiles",  # tests: all testfiles
     )
 
-    # Remove anything left in the storage dir.
-    if storage_dir.exists():
-        rmtree(storage_dir)
-    mkdirs(storage_dir)
-
+    recreate_directory(storage_dir)
     for subdir in subdirs:
-        mkdirs(storage_dir / subdir)
-
-    chown(storage_dir, owner)
+        (storage_dir / subdir).mkdir()
 
 
 @sanity_check
@@ -114,11 +129,7 @@ def create_log(conf: Config, owner: str = "www-data") -> None:
     """
     log_dir: pathlib.Path = conf["LOG_DIR"]
 
-    # Remove anything left in the log dir.
-    if log_dir.exists():
-        rmtree(log_dir)
-    mkdirs(log_dir)
-    chown(log_dir, owner)
+    recreate_directory(log_dir)
 
     # TODO does this work as expected? What happens if this is called in another process
     #  than those running later the tests or apache?
