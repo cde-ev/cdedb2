@@ -429,7 +429,10 @@ class EventBaseFrontend(AbstractUserFrontend):
 
     @periodic("event_keeper", 4)
     def event_keeper(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject:
-        """Regularly backup any event that got changed."""
+        """Regularly backup any event that got changed.
+
+        :param state: Keeps track of the event schema version as well as of the newest
+            log entry to do a commit only if either is outdated."""
         if not state:
             state = {
                 'EVENT_SCHEMA_VERSION': None,

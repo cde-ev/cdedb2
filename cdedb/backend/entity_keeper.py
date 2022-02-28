@@ -25,6 +25,8 @@ from cdedb.config import Config
 
 class EntityKeeper:
     def __init__(self, conf: Config, directory: PathLike):
+        """This specifies the base directory where the individual entity repositories
+        will be located."""
         self.conf = conf
         self._dir = self.conf['STORAGE_DIR'] / directory
 
@@ -85,9 +87,7 @@ class EntityKeeper:
         return self
 
     def delete(self, entity_id: int) -> None:
-        """Irreversibly delete entity keeper repostory.
-
-        :param rs: Required for access check."""
+        """Irreversibly delete entity keeper repostory."""
         # Be double-safe against directory transversal
         entity_id = affirm(int, entity_id)
         try:
@@ -132,8 +132,9 @@ class EntityKeeper:
 
             # Take care of potential empty commits
             if may_drop:
+                # git diff-index reports whether the working directory is clean using
+                # its exit code. If the dir is clean it returns 0, and 1 otherwise.
                 # Does not work for the initial commit since HEAD is not defined yet.
-                # Does not use wrapper since it may error.
                 completed = self._run(
                     ["git", f"--work-tree={td}", "diff-index", "--exit-code", "HEAD"],
                     cwd=full_dir, check=None)
