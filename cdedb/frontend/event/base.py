@@ -427,7 +427,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             'log': log, 'total': total, 'length': _length, 'personas': personas,
             'registration_map': registration_map, 'loglinks': loglinks})
 
-    @periodic("event_keeper", 4)
+    @periodic("event_keeper", 2)
     def event_keeper(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject:
         """Regularly backup any event that got changed.
 
