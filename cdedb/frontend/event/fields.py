@@ -102,6 +102,7 @@ class EventFieldMixin(EventBaseFrontend):
         self.eventproxy.event_keeper_commit(
             rs, event_id, "Snapshot vor Datenfeld-Änderungen.", is_snapshot=True)
         code = self.eventproxy.set_event(rs, event)
+        self.eventproxy.event_keeper_commit(rs, event_id, "Ändere Datenfelder.")
         rs.notify_return_code(code)
         return self.redirect(
             rs, "event/field_summary_form", anchor=(

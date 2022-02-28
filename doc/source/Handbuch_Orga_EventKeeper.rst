@@ -22,8 +22,8 @@ Dadurch lassen sich diese Änderungen im Nachhinein über das Git nachvollziehen
 
 Weitere Snapshots werden angelegt:
 
-* Vor der Löschung eines Teilnehmers, eines Kurses oder einer Unterkunft
-* Vor Änderung oder Löschung von Datenfeldern
+* Vor der Löschung eines Teilnehmers, eines Kurses, einer Unterkunft oder eines Datenfelds
+* Vor und nach Änderung  von Datenfeldern
 * Vor und nach Multi-Edit
 * Vor und nach einem partiellen Import
 * Vor und nach Entsperrung einer Veranstaltung
