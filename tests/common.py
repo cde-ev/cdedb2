@@ -56,7 +56,7 @@ from cdedb.query import QueryOperators
 from cdedb.script import Script
 from cdedb.setup.config import SecretsConfig, TestConfig, get_configpath, set_configpath
 from cdedb.setup.database import connect
-from cdedb.setup.storage import populate_storage
+from cdedb.setup.storage import create_storage, populate_storage
 
 # TODO: use TypedDict to specify UserObject.
 UserObject = Mapping[str, Any]
@@ -257,6 +257,7 @@ class BasicTest(unittest.TestCase):
     def setUp(self) -> None:
         test_method = getattr(self, self._testMethodName)
         if getattr(test_method, self.needs_storage_marker, False):
+            create_storage(self.conf)
             populate_storage(self.conf)
 
     def tearDown(self) -> None:

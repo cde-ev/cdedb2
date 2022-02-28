@@ -28,7 +28,7 @@ import tests.ldap_tests as ldap_tests
 import tests.other_tests as other_tests
 from cdedb.setup.config import SecretsConfig, TestConfig, set_configpath
 from cdedb.setup.database import create_database, populate_database
-from cdedb.setup.storage import create_log, populate_storage
+from cdedb.setup.storage import create_log, create_storage, populate_storage
 
 
 class CdEDBTestLock:
@@ -146,6 +146,7 @@ def run_xss_tests(*, verbose: bool = False) -> int:
     subprocess.run(["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL)
 
     create_log(conf)
+    create_storage(conf)
     populate_storage(conf)
     create_database(conf, secrets)
     populate_database(conf, secrets)

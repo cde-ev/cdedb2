@@ -132,6 +132,7 @@ def make_sample_data() -> None:
     check_configpath()
     config = TestConfig()
     secrets = SecretsConfig()
+    _create_storage(config)
     _populate_storage(config)
     _create_database(config, secrets)
     _populate_database(config, secrets)
