@@ -57,7 +57,7 @@ def recreate_directory(directory: pathlib.Path) -> None:
 
 
 @sanity_check
-def create_storage(conf: Config, owner: str = "www-data") -> None:
+def create_storage(conf: Config) -> None:
     """Create the directory structure of the storage directory."""
     storage_dir: pathlib.Path = conf["STORAGE_DIR"]
 
@@ -77,13 +77,13 @@ def create_storage(conf: Config, owner: str = "www-data") -> None:
 
 
 @sanity_check
-def populate_storage(conf: Config, owner: str = "www-data") -> None:
+def populate_storage(conf: Config) -> None:
     """Populate the storage directory with sample data."""
     storage_dir: pathlib.Path = conf["STORAGE_DIR"]
     repo_path: pathlib.Path = conf['REPOSITORY_PATH']
 
     # TODO do we want to do this implicitly?
-    create_storage(conf, owner)
+    create_storage(conf)
 
     foto = ("e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425"
             "a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9")
@@ -122,7 +122,7 @@ def populate_storage(conf: Config, owner: str = "www-data") -> None:
 
 
 @sanity_check
-def create_log(conf: Config, owner: str = "www-data") -> None:
+def create_log(conf: Config) -> None:
     """Create the directory structure of the log directory.
 
     Directly instantiate the root logger, so this is not forgotten later.

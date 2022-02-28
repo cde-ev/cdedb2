@@ -121,14 +121,10 @@ def run_application_tests(testpatterns: List[str] = None, *,
                           verbose: bool = False) -> int:
     conf = TestConfig()
     secrets = SecretsConfig()
-    # get the user running the current process, so the access rights for log directory
-    # are set correctly
-    user = getpass.getuser()
     # prepare the translations
     subprocess.run(["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL)
 
-    create_log(conf, user)
-    populate_storage(conf, user)
+    create_log(conf)
     create_database(conf, secrets)
     populate_database(conf, secrets)
 
@@ -146,14 +142,11 @@ def run_application_tests(testpatterns: List[str] = None, *,
 def run_xss_tests(*, verbose: bool = False) -> int:
     conf = TestConfig()
     secrets = SecretsConfig()
-    # get the user running the current process, so the access rights for log directory
-    # are set correctly
-    user = getpass.getuser()
     # prepare the translations
     subprocess.run(["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL)
 
-    create_log(conf, user)
-    populate_storage(conf, user)
+    create_log(conf)
+    populate_storage(conf)
     create_database(conf, secrets)
     populate_database(conf, secrets)
 
@@ -168,13 +161,10 @@ def run_xss_tests(*, verbose: bool = False) -> int:
 def run_ldap_tests(testpatterns: List[str] = None, *, verbose: bool = False) -> int:
     conf = TestConfig()
     secrets = SecretsConfig()
-    # get the user running the current process, so the access rights for log directory
-    # are set correctly
-    user = getpass.getuser()
     # prepare the translations
     subprocess.run(["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL)
 
-    create_log(conf, user)
+    create_log(conf)
     if pathlib.Path("/CONTAINER").is_file():
         # the database is already initialized, since it is needed to start the
         # ldap container in the first place

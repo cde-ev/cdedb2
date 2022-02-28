@@ -60,7 +60,7 @@ def create_storage(owner: str) -> None:
     """Create the file storage."""
     check_configpath()
     config = TestConfig()
-    _create_storage(config, owner)
+    _create_storage(config)
 
 
 @cli.command()
@@ -69,7 +69,7 @@ def populate_storage(owner: str) -> None:
     """Populate the file storage with sample data."""
     check_configpath()
     config = TestConfig()
-    _populate_storage(config, owner)
+    _populate_storage(config)
 
 
 @cli.command()
@@ -78,7 +78,7 @@ def create_log(owner: str) -> None:
     """Create the log storage."""
     check_configpath()
     config = TestConfig()
-    _create_log(config, owner)
+    _create_log(config)
 
 
 @cli.command()

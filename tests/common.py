@@ -18,6 +18,7 @@ import json
 import os
 import pathlib
 import re
+import shutil
 import sys
 import tempfile
 import unittest
@@ -55,7 +56,7 @@ from cdedb.query import QueryOperators
 from cdedb.script import Script
 from cdedb.setup.config import SecretsConfig, TestConfig, get_configpath, set_configpath
 from cdedb.setup.database import connect
-from cdedb.setup.storage import populate_storage, rmtree
+from cdedb.setup.storage import populate_storage
 
 # TODO: use TypedDict to specify UserObject.
 UserObject = Mapping[str, Any]
@@ -256,15 +257,12 @@ class BasicTest(unittest.TestCase):
     def setUp(self) -> None:
         test_method = getattr(self, self._testMethodName)
         if getattr(test_method, self.needs_storage_marker, False):
-            # get the user running the current process, so the access rights for the
-            # storage directory are set correctly
-            user = getpass.getuser()
-            populate_storage(self.conf, user)
+            populate_storage(self.conf)
 
     def tearDown(self) -> None:
         test_method = getattr(self, self._testMethodName)
         if getattr(test_method, self.needs_storage_marker, False):
-            rmtree(self.storage_dir)
+            shutil.rmtree(self.storage_dir)
         # reset the configpath after each test. This prevents interference between tests
         # playing around with this.
         set_configpath(self._orig_configpath)
