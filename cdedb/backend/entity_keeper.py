@@ -38,16 +38,21 @@ class EntityKeeper:
         self.logger.debug(f"Instantiated {self} with configpath {conf._configpath}.")
 
     def _run(self, args: List[Union[Path, str, bytes]], cwd: Optional[Path] = None,
-             check: bool = True) -> subprocess.CompletedProcess[bytes]:
-        """Custom wrapper of subprocess.run to include proper logging."""
+             check: Optional[bool] = True) -> subprocess.CompletedProcess[bytes]:
+        """Custom wrapper of subprocess.run to include proper logging.
+
+        :param check: If True, raise on error. If False, log an error.
+            If None, ignore error."""
         # Delay check to ensure logging
         completed = subprocess.run(args, cwd=cwd, check=False,
                                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        msg = completed.stdout or "unknown"
-        if completed.returncode != 0:
-            self.logger.error("Git error: %s", msg)
+        msg = completed.stdout or ""
+        if check is not None and completed.returncode != 0:
+            self.logger.error("Git error performing command %s in directory %s: %s",
+                              args, cwd, msg)
         else:
-            self.logger.debug("Git output: %s", msg)
+            self.logger.debug("Git output performing command %s in directory %s: %s",
+                              args, cwd, msg)
         if check:
             # Now, raise the check extension
             completed.check_returncode()
@@ -94,12 +99,16 @@ class EntityKeeper:
 
     def commit(self, entity_id: int, file_text: str, commit_msg: str,
                author_name: str = "", author_email: str = "", *,
-               allow_empty: bool = False) -> subprocess.CompletedProcess[bytes]:
+               may_drop: bool = True) -> Optional[subprocess.CompletedProcess[bytes]]:
         """Commit a single file representing an entity to a git repository.
 
         In contrast to its friends, we allow some wiggle room for errors here right now
         and just log them instead of aborting. Once we are reasonably sure there is
         rarely interference, we may revisit this.
+
+        :param may_drop: If true, this commit may be dropped if empty. If false, an
+            empty commit is made if needed. May not be true for initial commit.
+        :returns: Representation of the finished commit, if one was done, else None
         """
         entity_id = affirm(int, entity_id)
         file_text = affirm(str, file_text)
@@ -120,8 +129,19 @@ class EntityKeeper:
             if author_name or author_email:
                 commit.append("--author")
                 commit.append(f"{author_name} <{author_email}>".encode("utf8"))
-            if allow_empty:
+
+            # Take care of potential empty commits
+            if may_drop:
+                # Does not work for the initial commit since HEAD is not defined yet.
+                # Does not use wrapper since it may error.
+                completed = self._run(
+                    ["git", f"--work-tree={td}", "diff-index", "--exit-code", "HEAD"],
+                    cwd=full_dir, check=None)
+                if completed.returncode == 0:
+                    return None
+            if not may_drop:
                 commit.append("--allow-empty")
+
             # Do not check here such that an error does not drag the whole request down
             # In particular, this is expected for empty commits.
             return self._run(commit, check=False)

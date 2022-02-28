@@ -981,7 +981,8 @@ class EventBaseBackend(EventLowLevelBackend):
         """Create a new git repository for keeping track of event changes."""
         event_id = affirm(vtypes.ID, event_id)
         self._event_keeper.init(event_id)
-        return self.event_keeper_commit(rs, event_id, "Initialer Commit")
+        return self.event_keeper_commit(rs, event_id, "Initialer Commit",
+                                        is_snapshot=True)
 
     @access("event_admin")
     def event_keeper_drop(self, rs: RequestState, event_id: int) -> None:
@@ -1009,5 +1010,5 @@ class EventBaseBackend(EventLowLevelBackend):
             author_name = f"{rs.user.given_names} {rs.user.family_name}"
             author_email = rs.user.username
         self._event_keeper.commit(event_id, json_serialize(export), commit_msg,
-                                  author_name, author_email, allow_empty=is_snapshot)
+                                  author_name, author_email, may_drop=not is_snapshot)
         return export
