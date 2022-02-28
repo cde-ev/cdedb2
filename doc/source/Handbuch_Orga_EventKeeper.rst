@@ -12,12 +12,15 @@ auf Basis des partiellen Exports.
 Architektur
 -----------
 Zu jeder Veranstaltung existiert ein Git-Repositorium, das als einzige Datei den
-partiellen Export der Veranstaltung enthält. In dieses Repositorium werden einmal pro
-Stunde Snapshots vorgenommen, sofern eine Änderung stattgefunden hat. Darüber hinaus
+partiellen Export der Veranstaltung enthält. Einzige Abweichung ist, dass der
+``timestamp`` aus dem Export entfernt wird.
+
+In dieses Repositorium werden einmal pro Stunde Snapshots vorgenommen,
+sofern eine Änderung stattgefunden hat. Darüber hinaus
 werden vor und teils nach größeren Änderungen manuelle Snapshots vorgenommen.
 Dadurch lassen sich diese Änderungen im Nachhinein über das Git nachvollziehen.
 
-Manuelle Snapshots werden angelegt:
+Weitere Snapshots werden angelegt:
 
 * Vor der Löschung eines Teilnehmers, eines Kurses oder einer Unterkunft
 * Vor Änderung oder Löschung von Datenfeldern
@@ -45,10 +48,9 @@ Verwendung und Zugriff
 ----------------------
 Auf das Git kann durch Orgas und Veranstaltungs-Administrationen einfach mithilfe
 der Zugangsdaten für die Datenbank zugegriffen werden. Es kann mittels ``git clone``
-heruntergeladen und mit ``git pull`` aktualisiert werden.::
+heruntergeladen und später mit ``git pull`` aktualisiert werden.::
 
     git clone https://db2.cde-ev.de/git/event_keeper/<event_id>/
-    git pull
 
 Dies vereinfacht auch das Beziehen eines aktuellen partiellen Exports zur Verwendung in
 externen Tools, das nun rein über die Kommandozeile geschenen kann.
