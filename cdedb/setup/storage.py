@@ -5,35 +5,10 @@ import os
 import pathlib
 import shutil
 import stat
-import subprocess
 import sys
 
 from cdedb.setup.config import Config
 from cdedb.setup.util import sanity_check
-
-
-def chown(path: pathlib.Path, owner: str) -> None:
-    """Change the owner of the given path recursively to the given owner."""
-    subprocess.run(["sudo", "chown", "--recursive", f"{owner}:{owner}", path],
-                   check=True)
-
-
-def copy(source: pathlib.Path, dest: pathlib.Path) -> None:
-    """Copy from source to target."""
-    subprocess.run(["sudo", "cp", source, dest], check=True)
-
-
-def mkdirs(directory: pathlib.Path) -> None:
-    """Create a directory and its parents."""
-    subprocess.run(["sudo", "mkdir", "-p", directory], check=True)
-
-
-def rmtree(path: pathlib.Path) -> None:
-    """Remove the _sub_tree of the given path."""
-    # TODO make a decision which parts of the directories should be removed
-    #  - including the storage dir itself or excluding?
-    # this is a bit hacky to prevent subprocess from escaping *
-    subprocess.run([f"sudo rm -rf {path / '*'}"], check=True, shell=True)
 
 
 def recreate_directory(directory: pathlib.Path) -> None:
@@ -109,16 +84,13 @@ def populate_storage(conf: Config) -> None:
     testfile_dir: pathlib.Path = repo_path / "tests" / "ancillary_files"
     attachment_dir = storage_dir / "assembly_attachment"
 
-    copy(testfile_dir / foto, storage_dir / "foto")
-    copy(testfile_dir / "rechen.pdf", attachment_dir / "1_v1")
-    copy(testfile_dir / "kassen.pdf", attachment_dir / "2_v1")
-    copy(testfile_dir / "kassen2.pdf", attachment_dir / "2_v3")
-    copy(testfile_dir / "kandidaten.pdf", attachment_dir / "3_v1")
+    shutil.copy(testfile_dir / foto, storage_dir / "foto")
+    shutil.copy(testfile_dir / "rechen.pdf", attachment_dir / "1_v1")
+    shutil.copy(testfile_dir / "kassen.pdf", attachment_dir / "2_v1")
+    shutil.copy(testfile_dir / "kassen2.pdf", attachment_dir / "2_v3")
+    shutil.copy(testfile_dir / "kandidaten.pdf", attachment_dir / "3_v1")
     for file in files:
-        copy(testfile_dir / file, storage_dir / "testfiles")
-
-    # adjust the owner of the files
-    chown(storage_dir, owner)
+        shutil.copy(testfile_dir / file, storage_dir / "testfiles")
 
 
 @sanity_check
