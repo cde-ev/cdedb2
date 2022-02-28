@@ -240,8 +240,8 @@ class BasicTest(unittest.TestCase):
 
     storage_dir: ClassVar[pathlib.Path]
     testfile_dir: ClassVar[pathlib.Path]
-    configpath: ClassVar[str]
-    _orig_configpath: ClassVar[str]
+    configpath: ClassVar[pathlib.Path]
+    _orig_configpath: ClassVar[pathlib.Path]
     conf: ClassVar[TestConfig]
 
     @classmethod
@@ -251,7 +251,7 @@ class BasicTest(unittest.TestCase):
         # save the configpath in an extra variable to reset it after each test
         cls._orig_configpath = configpath
         cls.conf = TestConfig()
-        cls.storage_dir: pathlib.Path = cls.conf['STORAGE_DIR']
+        cls.storage_dir = cls.conf['STORAGE_DIR']
         cls.testfile_dir = cls.storage_dir / "testfiles"
 
     def setUp(self) -> None:
