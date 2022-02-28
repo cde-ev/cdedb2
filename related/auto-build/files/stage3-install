@@ -95,7 +95,11 @@ echo ""
 echo "Creating storage directory for uploads..."
 echo "--------------------------------------------"
 
-python3 -m cdedb.setup create-storage --owner www-data
+# create the directory containing the storage manually, to ensure www-data has the proper permissions
+mkdir -p "$(python3 -m cdedb.setup get STORAGE_DIR)"
+chown www-data:www-data "$(python3 -m cdedb.setup get STORAGE_DIR)"
+# now, create the storage itself. Ensure that www-data owns everything.
+sudo -u www-data --preserve-env python3 -m cdedb.setup create-storage
 
 echo ""
 echo "Setting up the database..."
@@ -136,7 +140,11 @@ echo ""
 echo "Create central directory for log files..."
 echo "--------------------------------------------"
 
-python3 -m cdedb.setup create-log --owner www-data
+# create the directory containing the logs manually, to ensure www-data has the proper permissions
+mkdir -p "$(python3 -m cdedb.setup get LOG_DIR)"
+chown www-data:www-data "$(python3 -m cdedb.setup get LOG_DIR)"
+# now, create the directories inside the log. Ensure that www-data owns everything.
+sudo -u www-data --preserve-env python3 -m cdedb.setup create-log
 
 echo ""
 echo "Setting up ldap..."

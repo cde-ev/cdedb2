@@ -17,10 +17,19 @@ fi
 if [ ! -e /etc/cdedb/container_already_initalized ]; then
     # TODO check whether it is sensible to lower privileges to cdedb user in general
 
-    # Create and populate the storage and log dirs
-    python3 -m cdedb.setup create-storage --owner www-data
-    python3 -m cdedb.setup populate-storage --owner www-data
-    python3 -m cdedb.setup create-log --owner www-data
+    # Create the directory containing the storage manually, to ensure www-data has the proper permissions
+    mkdir -p "$(python3 -m cdedb.setup get STORAGE_DIR)"
+    chown www-data:www-data "$(python3 -m cdedb.setup get STORAGE_DIR)"
+    # now, create the storage itself. Ensure that www-data owns everything.
+    sudo -u www-data --preserve-env python3 -m cdedb.setup create-storage
+    # populate the storage dir with sample data
+    sudo -u www-data --preserve-env python3 -m cdedb.setup populate-storage
+
+    # Create the directory containing the logs manually, to ensure www-data has the proper permissions
+    mkdir -p "$(python3 -m cdedb.setup get LOG_DIR)"
+    chown www-data:www-data "$(python3 -m cdedb.setup get LOG_DIR)"
+    # now, create the directories inside the log. Ensure that www-data owns everything.
+    sudo -u www-data --preserve-env python3 -m cdedb.setup create-log
 
     # Compile the translations
     make i18n-compile

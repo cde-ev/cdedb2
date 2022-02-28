@@ -64,8 +64,7 @@ def secrets_configpath() -> None:
 
 
 @cli.command()
-@click.option("--owner", default="www-data", help="owner of the file storage")
-def create_storage(owner: str) -> None:
+def create_storage() -> None:
     """Create the file storage."""
     check_configpath()
     config = TestConfig()
@@ -73,8 +72,7 @@ def create_storage(owner: str) -> None:
 
 
 @cli.command()
-@click.option("--owner", default="www-data", help="owner of the file storage")
-def populate_storage(owner: str) -> None:
+def populate_storage() -> None:
     """Populate the file storage with sample data."""
     check_configpath()
     config = TestConfig()
@@ -82,8 +80,7 @@ def populate_storage(owner: str) -> None:
 
 
 @cli.command()
-@click.option("--owner", default="www-data", help="owner of the file storage")
-def create_log(owner: str) -> None:
+def create_log() -> None:
     """Create the log storage."""
     check_configpath()
     config = TestConfig()
