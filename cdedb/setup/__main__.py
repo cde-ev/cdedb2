@@ -47,6 +47,15 @@ def default_configpath() -> None:
 
 
 @cli.command()
+@click.argument("variable")
+def get(variable: str) -> None:
+    """Retrieve the given variable from the current config."""
+    check_configpath()
+    config = TestConfig()
+    print(config[variable])
+
+
+@cli.command()
 def secrets_configpath() -> None:
     """Prints the secrets config path of the current config."""
     check_configpath()
