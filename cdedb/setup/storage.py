@@ -21,7 +21,12 @@ def recreate_directory(directory: pathlib.Path) -> None:
     if directory.exists():
         # remove the content of the directory
         for path in directory.iterdir():
-            shutil.rmtree(path)
+            if path.is_dir():
+                shutil.rmtree(path)
+            elif path.is_file():
+                path.unlink()
+            else:
+                raise NotImplementedError
     else:
         try:
             directory.mkdir(parents=True)
