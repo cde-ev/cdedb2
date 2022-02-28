@@ -264,8 +264,10 @@ class BasicTest(unittest.TestCase):
                 stdout=subprocess.DEVNULL, check=True, start_new_session=True)
         if getattr(test_method, self.needs_event_keeper_marker, False):
             max_event_id = len(self.get_sample_data('event.events'))
+            keeper = EntityKeeper(self.conf, 'event_keeper')  # type: ignore
             for event_id in range(max_event_id + 1):
-                EntityKeeper(self.conf, 'event_keeper').init(event_id)
+                keeper.init(event_id)
+                keeper.commit(event_id, "", "Initialer Commit.")
 
     def tearDown(self) -> None:
         test_method = getattr(self, self._testMethodName)

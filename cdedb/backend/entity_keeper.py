@@ -29,7 +29,7 @@ class EntityKeeper:
         self._dir = self.conf['STORAGE_DIR'] / directory
 
         # Initialize logger.
-        logger_name = "cdedb.backend.entity.keeper"
+        logger_name = "cdedb.backend.entitykeeper"
         make_root_logger(
             logger_name, self.conf["LOG_DIR"] / "cdedb-frontend-keeper.log",
             self.conf["LOG_LEVEL"], syslog_level=self.conf["SYSLOG_LEVEL"],
