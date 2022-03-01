@@ -112,7 +112,7 @@ _DEFAULTS = {
 
     # Directory in which all logs will be saved. The name of the specific log file will
     # be determined by the instance generating the log. The global log is in 'cdedb.log'
-    "LOG_DIR": pathlib.Path("/tmp/"),
+    "LOG_DIR": pathlib.Path("/var/log/cdedb/"),
 
     # Logging level for CdEDBs own log files
     "LOG_LEVEL": logging.INFO,
