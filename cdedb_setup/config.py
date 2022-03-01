@@ -7,7 +7,7 @@ here. An exception are the default queries, which are defined in `query_defaults
 Each config object takes into account the default values found in here. They can
 be overwritten with values in an additional config file, where the path to this
 file has to be present as environment variable CDEDB_CONFIGPATH.
-Note that setting those variable is mandatory, to prevent accidental misses.
+Note that setting that variable is mandatory, to prevent accidental misses.
 """
 
 import collections

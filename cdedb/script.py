@@ -39,15 +39,19 @@ __all__ = ['DryRunError', 'Script', 'ScriptAtomizer']
 class TempConfig:
     """Provide a thin wrapper around a temporary file.
 
-    The advantage ot this is that it works with both a given configpath or
-    config keyword arguments. This uses all config options from the real
-    configpath (from the environment) for all config options not set inside config.
+    The advantage of this is that it works with both a given configpath or
+    config keyword arguments.
+
+    If config keyword arguments are given, the config options from the real configpath
+    (taken from the environment) are used as fallback values.
+    If a configpath is given, only the config options specified there are taken into
+    account.
     """
 
     def __init__(self, configpath: PathLike = None, **config: Any):
         if (not configpath and not config) or (configpath and config):
-            print(configpath, config)
-            raise ValueError("Provide exactly one of config and configpath!")
+            raise ValueError(f"Provide exactly one of config ({config}) and"
+                             f" configpath ({configpath})!")
         self._configpath = configpath
         self._config = config
         # this will be used to hold the current configpath from the environment

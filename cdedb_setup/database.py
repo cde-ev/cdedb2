@@ -43,11 +43,12 @@ def psql(*commands: Union[str, pathlib.Path]) -> None:
     subprocess.run([*psql, *commands], check=True)
 
 
+# TODO is the nobody hack really necessary?
 def connect(config: Config, secrets: SecretsConfig, as_nobody: bool = False) -> psycopg2.extensions.connection:
     """Create a very basic database connection.
 
-    In general, only the connection to the database specified in the config as 'cdb'
-    user is allowed.
+    This allows to connect to the database specified as CDB_DATABASE_NAME in the given
+    config. The connecting user is 'cdb'.
 
     Only exception from this is if the user wants to connect to the 'nobody' database,
     which is used for very low-level setups (like generation of sample data).
@@ -76,7 +77,7 @@ def connect(config: Config, secrets: SecretsConfig, as_nobody: bool = False) -> 
 
 
 @sanity_check
-def initiate_databases(conf: Config) -> None:
+def create_database_users(conf: Config) -> None:
     """Drop all existent databases and add the database users.
 
     Acts globally and is idempotent.
@@ -87,6 +88,7 @@ def initiate_databases(conf: Config) -> None:
 
     stop_services("pgbouncer", "slapd")
     psql("-f", users_path)
+    # we do not restart slapd, since it needs a proper database structure to start
     start_services("pgbouncer")
 
 
@@ -105,12 +107,13 @@ def create_database(conf: Config, secrets: SecretsConfig) -> None:
 
     stop_services("pgbouncer", "slapd")
     psql("-f", db_path, "-v", f"cdb_database_name={database}")
+    # we do not restart slapd, since we want to replace it anyway...
     start_services("pgbouncer")
 
     with connect(conf, secrets) as conn:
-        with conn.cursor() as curr:
-            curr.execute(tables_path.read_text())
-            curr.execute(ldap_path.read_text())
+        with conn.cursor() as cur:
+            cur.execute(tables_path.read_text())
+            cur.execute(ldap_path.read_text())
 
 
 @sanity_check
@@ -128,9 +131,10 @@ def populate_database(conf: Config, secrets: SecretsConfig, xss: bool = False) -
     compile_sample_data(conf, infile, outfile, xss=xss)
 
     with connect(conf, secrets) as conn:
-        with conn.cursor() as curr:
-            curr.execute(outfile.read_text())
+        with conn.cursor() as cur:
+            cur.execute(outfile.read_text())
 
+    # we do not restart slapd, since we want to replace it anyway...
     # if not xss:
     #     start_services("slapd")
 

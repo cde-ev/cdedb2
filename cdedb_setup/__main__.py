@@ -10,7 +10,8 @@ from cdedb_setup.config import (
 )
 from cdedb_setup.database import (
     compile_sample_data as _compile_sample_data, create_database as _create_database,
-    initiate_databases as _initiate_databases, populate_database as _populate_database,
+    create_database_users as _create_database_users,
+    populate_database as _populate_database,
 )
 from cdedb_setup.storage import (
     create_log as _create_log, create_storage as _create_storage,
@@ -129,10 +130,10 @@ def create_log_as(user: str) -> None:
 
 
 @cli.command()
-def initiate_databases() -> None:
+def create_database_users() -> None:
     """Creates the database users."""
     config = TestConfig()
-    _initiate_databases(config)
+    _create_database_users(config)
 
 
 @cli.command()
