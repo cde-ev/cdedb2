@@ -1623,7 +1623,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             subprocess.run(
                 ['python3', '-m', 'pip', 'install',
                  f'schulze_condorcet=={version}', '--target', 'verify_result'],
-                cwd=tmp, check=True)
+                cwd=tmp, check=True, stdout=subprocess.DEVNULL)
             shutil.rmtree(pkg / f'schulze_condorcet-{version}.dist-info')
             output = temp / 'verify_result.pyz'
             zipapp.create_archive(pkg, output, interpreter='/usr/bin/env python3')
