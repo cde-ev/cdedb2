@@ -50,10 +50,10 @@ def get_configpath() -> pathlib.Path:
 # TODO where exactly does this log?
 _LOGGER = logging.getLogger(__name__)
 
-_currentpath = pathlib.Path(__file__).resolve().parent.parent
-if _currentpath.parts[0] != '/' or _currentpath.parts[-1] != 'cdedb':  # pragma: no cover
+_currentdir = pathlib.Path(__file__).resolve().parent
+if _currentdir.parts[0] != '/' or _currentdir.parts[-1] != 'cdedb_setup':  # pragma: no cover
     raise RuntimeError("Failed to locate repository")
-_repopath = _currentpath.parent
+_repopath = _currentdir.parent
 
 try:
     _git_commit = subprocess.check_output(
