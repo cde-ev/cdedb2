@@ -8,7 +8,7 @@ used in the actual code.
 to the default time zone or the log directory.
 
 The config is build hierarchically:
-First, there are default values for each config variable in the file :mod:`cdedb.setup.config`.
+First, there are default values for each config variable in the file :mod:`cdedb_setup.config`.
 They can be overwritten by specifying the path to a custom config file via the environment
 variable ``CDEDB_CONFIGPATH``.
 
@@ -21,7 +21,7 @@ the file system to a specific user which is running the application (conventiona
 ``www-data``).
 
 Both, ``Config`` and ``SecretsConfig``, take config options from a custom file without a default
-value in :mod:`cdedb.setup.config` not into account. However, there are cases where it would be
+value in :mod:`cdedb_setup.config` not into account. However, there are cases where it would be
 desirable to add values to the config objects which are not used in the actual codebase, f.e.
 if they are needed inside the test-suite. To honor such usecases, there is the class
 ``TestConfig`` inheriting from ``Config``, allowing to set arbitrary values inside the overwrite

@@ -76,6 +76,9 @@ import pytz.tzinfo
 import werkzeug.datastructures
 import zxcvbn
 
+# TODO do we find a better alternative than instantiating a config object if we need it?
+from cdedb_setup.config import Config
+
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
 from cdedb.common import (
@@ -90,9 +93,6 @@ from cdedb.query import (
     MULTI_VALUE_OPERATORS, NO_VALUE_OPERATORS, VALID_QUERY_OPERATORS, QueryOperators,
     QueryOrder, QueryScope, QuerySpec,
 )
-
-# TODO do we find a better alternative than instantiating a config object if we need it?
-from cdedb.setup.config import Config
 from cdedb.validationdata import (
     COUNTRY_CODES, FREQUENCY_LISTS, GERMAN_POSTAL_CODES, IBAN_LENGTHS,
 )

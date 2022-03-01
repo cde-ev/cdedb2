@@ -14,6 +14,8 @@ import werkzeug
 import werkzeug.exceptions
 import werkzeug.routing
 import werkzeug.wrappers
+from cdedb_setup.config import SecretsConfig
+from cdedb_setup.storage import setup_logger
 
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.core import CoreBackend
@@ -37,8 +39,6 @@ from cdedb.frontend.core import CoreFrontend
 from cdedb.frontend.event import EventFrontend
 from cdedb.frontend.ml import MlFrontend
 from cdedb.frontend.paths import CDEDB_PATHS
-from cdedb.setup.config import SecretsConfig
-from cdedb.setup.storage import setup_logger
 
 
 class Application(BaseApp):

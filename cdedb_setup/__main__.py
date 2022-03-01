@@ -5,15 +5,14 @@ import sys
 from typing import Optional
 
 import click
-
-from cdedb.setup.config import (
+from cdedb_setup.config import (
     DEFAULT_CONFIGPATH, SecretsConfig, TestConfig, get_configpath as _get_configpath,
 )
-from cdedb.setup.database import (
+from cdedb_setup.database import (
     compile_sample_data as _compile_sample_data, create_database as _create_database,
     initiate_databases as _initiate_databases, populate_database as _populate_database,
 )
-from cdedb.setup.storage import (
+from cdedb_setup.storage import (
     create_log as _create_log, create_storage as _create_storage,
     populate_storage as _populate_storage,
 )
@@ -71,7 +70,7 @@ def _run_as(command: str, user: str) -> None:
 
     This is especially useful to set the correct permissions for directories and files.
     """
-    subprocess.run([sys.executable, "-m", "cdedb.setup", command],
+    subprocess.run([sys.executable, "-m", "cdedb_setup", command],
                    user=user, group=user, check=True)
 
 

@@ -7,8 +7,8 @@ import shutil
 import stat
 import sys
 
-from cdedb.setup.config import Config
-from cdedb.setup.util import sanity_check
+from cdedb_setup.config import Config
+from cdedb_setup.util import sanity_check
 
 
 def recreate_directory(directory: pathlib.Path) -> None:

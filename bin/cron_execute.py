@@ -7,8 +7,9 @@
 
 import getpass
 
+from cdedb_setup.config import DEFAULT_CONFIGPATH, set_configpath
+
 from cdedb.frontend.cron import CronFrontend
-from cdedb.setup.config import DEFAULT_CONFIGPATH, set_configpath
 
 if __name__ == "__main__":
     if getpass.getuser() != "www-data":

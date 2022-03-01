@@ -58,6 +58,8 @@ import werkzeug.datastructures
 import werkzeug.exceptions
 import werkzeug.utils
 import werkzeug.wrappers
+from cdedb_setup.config import Config, SecretsConfig
+from cdedb_setup.storage import setup_logger
 
 import cdedb.database.constants as const
 import cdedb.query as query_mod
@@ -89,8 +91,6 @@ from cdedb.filter import (
 )
 from cdedb.query import Query
 from cdedb.query_defaults import DEFAULT_QUERIES
-from cdedb.setup.config import Config, SecretsConfig
-from cdedb.setup.storage import setup_logger
 
 _LOGGER = logging.getLogger(__name__)
 

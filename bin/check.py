@@ -21,14 +21,14 @@ os.chdir(root)
 
 from bin.check_utils import MyTextTestResult, MyTextTestRunner
 from bin.escape_fuzzing import work as xss_check
+from cdedb_setup.config import SecretsConfig, TestConfig, set_configpath
+from cdedb_setup.database import create_database, populate_database
+from cdedb_setup.storage import create_log, create_storage, populate_storage
 
 import tests.backend_tests as backend_tests
 import tests.frontend_tests as frontend_tests
 import tests.ldap_tests as ldap_tests
 import tests.other_tests as other_tests
-from cdedb.setup.config import SecretsConfig, TestConfig, set_configpath
-from cdedb.setup.database import create_database, populate_database
-from cdedb.setup.storage import create_log, create_storage, populate_storage
 
 
 class CdEDBTestLock:

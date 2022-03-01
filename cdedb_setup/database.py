@@ -7,9 +7,8 @@ from typing import Union
 import psycopg2
 import psycopg2.extensions
 import psycopg2.extras
-
-from cdedb.setup.config import Config, SecretsConfig
-from cdedb.setup.util import is_docker, sanity_check
+from cdedb_setup.config import Config, SecretsConfig
+from cdedb_setup.util import is_docker, sanity_check
 
 
 def start_services(*services: str) -> None:

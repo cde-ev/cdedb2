@@ -13,13 +13,13 @@ import logging
 from typing import Optional
 
 import psycopg2.extensions
+from cdedb_setup.config import Config, SecretsConfig
+from cdedb_setup.storage import setup_logger
 
 import cdedb.validationtypes as vtypes
 from cdedb.backend.common import inspect_validation as inspect
 from cdedb.common import PERSONA_STATUS_FIELDS, User, droid_roles, extract_roles, now
 from cdedb.database.connection import connection_pool_factory
-from cdedb.setup.config import Config, SecretsConfig
-from cdedb.setup.storage import setup_logger
 
 
 class SessionBackend:

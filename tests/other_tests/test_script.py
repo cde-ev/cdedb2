@@ -9,11 +9,11 @@ from pkgutil import resolve_name
 from typing import Any, Callable, ClassVar
 
 import psycopg2.errorcodes
+from cdedb_setup.config import TestConfig, get_configpath
 
 from cdedb.backend.core import CoreBackend
 from cdedb.common import unwrap
 from cdedb.script import DryRunError, Script, ScriptAtomizer
-from cdedb.setup.config import TestConfig, get_configpath
 
 
 class TestScript(unittest.TestCase):

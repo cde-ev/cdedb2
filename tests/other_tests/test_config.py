@@ -3,7 +3,7 @@
 
 import unittest
 
-from cdedb.setup.config import Config, SecretsConfig, get_configpath, set_configpath
+from cdedb_setup.config import Config, SecretsConfig, get_configpath, set_configpath
 
 
 class TestConfig(unittest.TestCase):

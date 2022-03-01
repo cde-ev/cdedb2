@@ -5,11 +5,11 @@ import unittest
 from typing import Any
 
 import psycopg2.extensions
+from cdedb_setup.config import Config, SecretsConfig
 
 from cdedb.database.connection import (
     Atomizer, IrradiatedConnection, connection_pool_factory,
 )
-from cdedb.setup.config import Config, SecretsConfig
 
 
 class TestDatabase(unittest.TestCase):

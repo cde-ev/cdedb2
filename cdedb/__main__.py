@@ -4,10 +4,10 @@ import os
 import subprocess
 from pathlib import Path
 
+from cdedb_setup.config import DEFAULT_CONFIGPATH, set_configpath
 from werkzeug.serving import run_simple
 
 from cdedb.frontend.application import Application
-from cdedb.setup.config import DEFAULT_CONFIGPATH, set_configpath
 
 repopath = Path(__file__).resolve().parent.parent
 docs_directory = repopath / "doc/build/html"

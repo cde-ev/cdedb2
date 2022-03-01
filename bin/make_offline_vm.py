@@ -16,14 +16,14 @@ import sys
 from typing import Collection
 
 import psycopg2.extensions
-from psycopg2.extras import DictCursor, Json
-
-from cdedb.common import CdEDBObject
-from cdedb.setup.config import (
+from cdedb_setup.config import (
     DEFAULT_CONFIGPATH, Config, SecretsConfig, TestConfig, get_configpath,
     set_configpath,
 )
-from cdedb.setup.database import connect
+from cdedb_setup.database import connect
+from psycopg2.extras import DictCursor, Json
+
+from cdedb.common import CdEDBObject
 
 # This is 'secret' the hashed
 PHASH = ("$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/"

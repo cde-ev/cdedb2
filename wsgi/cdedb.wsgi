@@ -15,7 +15,7 @@ sys.path.append(str(repopath))
 
 # set the configpath to the default, since apache does not propagate environment
 # variables consciously
-from cdedb.setup.config import DEFAULT_CONFIGPATH, set_configpath
+from cdedb_setup.config import DEFAULT_CONFIGPATH, set_configpath
 
 set_configpath(DEFAULT_CONFIGPATH)
 

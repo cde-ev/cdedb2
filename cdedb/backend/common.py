@@ -23,6 +23,8 @@ from typing import (
 
 import psycopg2.extensions
 import psycopg2.extras
+from cdedb_setup.config import Config
+from cdedb_setup.storage import setup_logger
 
 import cdedb.validation as validate
 import cdedb.validationtypes as vtypes
@@ -34,8 +36,6 @@ from cdedb.common import (
 from cdedb.database.connection import Atomizer
 from cdedb.database.constants import FieldDatatypes
 from cdedb.query import Query, QueryOperators
-from cdedb.setup.config import Config
-from cdedb.setup.storage import setup_logger
 from cdedb.validation import parse_date, parse_datetime
 
 F = TypeVar('F', bound=Callable[..., Any])

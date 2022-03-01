@@ -20,6 +20,7 @@ from typing import (
     Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, Union, cast, overload,
 )
 
+from cdedb_setup.config import SecretsConfig
 from passlib.hash import sha512_crypt
 
 import cdedb.database.constants as const
@@ -41,7 +42,6 @@ from cdedb.common import (
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import Atomizer, connection_pool_factory
 from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
-from cdedb.setup.config import SecretsConfig
 
 
 class CoreBaseBackend(AbstractBackend):

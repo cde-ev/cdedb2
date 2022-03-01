@@ -29,9 +29,9 @@ import time
 from typing import TYPE_CHECKING, Collection, List, NamedTuple, Optional, Set, Tuple
 
 import webtest
+from cdedb_setup.config import set_configpath
 
 from cdedb.frontend.application import Application
-from cdedb.setup.config import set_configpath
 
 # Custom type definitions.
 ResponseData = NamedTuple("ResponseData", [("response", webtest.TestResponse),

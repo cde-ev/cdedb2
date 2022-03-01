@@ -104,13 +104,13 @@ RUN cp /tmp/autobuild/cdedb-entrypoint.sh /cdedb-entrypoint.sh \
     && chown www-data:www-data /etc/cdedb-mailman-htpasswd \
     && chmod 640 /etc/cdedb-mailman-htpasswd \
     \
-    # this is the DEFAULT_CONFIGPATH from cdedb.setup. We do not make this configurable
+    # this is the DEFAULT_CONFIGPATH from cdedb_setup. We do not make this configurable
     # here, since its a default. However, passing a different configfile is possible
     # via the environment variable CDEDB_CONFIGPATH.
     && install -D /tmp/autobuild/localconfig.py /etc/cdedb/config.py \
     \
     # create the default (empty) secrets config. Sadly, we can not use the setup module
-    # to get the file path via "python3 -m cdedb.setup secrets-configpath", so we
+    # to get the file path via "python3 -m cdedb_setup secrets-configpath", so we
     # hardcode the default path here.
     && touch /etc/cdedb/public-secrets.py \
     \

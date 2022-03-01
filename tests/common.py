@@ -32,6 +32,9 @@ from typing import (
 import PIL.Image
 import webtest
 import webtest.utils
+from cdedb_setup.config import SecretsConfig, TestConfig, get_configpath, set_configpath
+from cdedb_setup.database import connect
+from cdedb_setup.storage import create_storage, populate_storage
 
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
@@ -54,9 +57,6 @@ from cdedb.frontend.cron import CronFrontend
 from cdedb.frontend.paths import CDEDB_PATHS
 from cdedb.query import QueryOperators
 from cdedb.script import Script
-from cdedb.setup.config import SecretsConfig, TestConfig, get_configpath, set_configpath
-from cdedb.setup.database import connect
-from cdedb.setup.storage import create_storage, populate_storage
 
 # TODO: use TypedDict to specify UserObject.
 UserObject = Mapping[str, Any]

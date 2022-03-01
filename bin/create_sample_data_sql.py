@@ -3,13 +3,13 @@ import json
 from itertools import chain
 from typing import Any, Callable, Dict, List, Set, Sized, Tuple, Type, TypedDict
 
+from cdedb_setup.config import Config, SecretsConfig
+from cdedb_setup.database import connect
 from psycopg2.extensions import connection
 
 from cdedb.backend.common import DatabaseValue_s, PsycoJson
 from cdedb.backend.core import CoreBackend
 from cdedb.common import CdEDBObject
-from cdedb.setup.config import Config, SecretsConfig
-from cdedb.setup.database import connect
 
 
 class AuxData(TypedDict):
