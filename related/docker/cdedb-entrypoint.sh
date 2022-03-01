@@ -21,15 +21,15 @@ if [ ! -e /etc/cdedb/container_already_initalized ]; then
     mkdir -p "$(python3 -m cdedb.setup get STORAGE_DIR)"
     chown www-data:www-data "$(python3 -m cdedb.setup get STORAGE_DIR)"
     # now, create the storage itself. Ensure that www-data owns everything.
-    sudo -u www-data --preserve-env python3 -m cdedb.setup create-storage
+    python3 -m cdedb.setup create-storage-as www-data
     # populate the storage dir with sample data
-    sudo -u www-data --preserve-env python3 -m cdedb.setup populate-storage
+    python3 -m cdedb.setup populate-storage-as www-data
 
     # Create the directory containing the logs manually, to ensure www-data has the proper permissions
     mkdir -p "$(python3 -m cdedb.setup get LOG_DIR)"
     chown www-data:www-data "$(python3 -m cdedb.setup get LOG_DIR)"
     # now, create the directories inside the log. Ensure that www-data owns everything.
-    sudo -u www-data --preserve-env python3 -m cdedb.setup create-log
+    python3 -m cdedb.setup create-log-as www-data
 
     # Compile the translations
     make i18n-compile

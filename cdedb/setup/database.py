@@ -17,6 +17,7 @@ def start_services(*services: str) -> None:
     if is_docker():
         return
     for service in services:
+        # TODO can we somehow avoid to use sudo and friends here?
         subprocess.run(["sudo", "systemctl", "start", service], check=True)
 
 
@@ -25,6 +26,7 @@ def stop_services(*services: str) -> None:
     if is_docker():
         return
     for service in services:
+        # TODO can we somehow avoid to use sudo and friends here?
         subprocess.run(["sudo", "systemctl", "stop", service], check=True)
 
 
@@ -37,6 +39,7 @@ def psql(*commands: Union[str, pathlib.Path]) -> None:
     if is_docker():
         psql = ["psql", "postgresql://postgres:passwd@cdb"]
     else:
+        # TODO can we somehow avoid to use sudo and friends here?
         psql = ["sudo", "-u", "postgres", "psql"]
     subprocess.run([*psql, *commands], check=True)
 

@@ -1,5 +1,8 @@
 """Provide a command line interface for the setup module."""
 import pathlib
+import subprocess
+import sys
+from typing import Optional
 
 import click
 
@@ -63,12 +66,31 @@ def secrets_configpath() -> None:
     print(config["SECRETS_CONFIGPATH"])
 
 
+def _run_as(command: str, user: str) -> None:
+    """Run a command provided by this module as another user.
+
+    This is especially useful to set the correct permissions for directories and files.
+    """
+    subprocess.run([sys.executable, "-m", "cdedb.setup", command],
+                   user=user, group=user, check=True)
+
+
 @cli.command()
 def create_storage() -> None:
     """Create the file storage."""
     check_configpath()
     config = TestConfig()
     _create_storage(config)
+
+
+@cli.command()
+@click.argument("user")
+def create_storage_as(user: str) -> None:
+    """Run create-storage as another user.
+
+    This requires the calling user to have root permissions.
+    """
+    _run_as("create-storage", user)
 
 
 @cli.command()
@@ -80,11 +102,31 @@ def populate_storage() -> None:
 
 
 @cli.command()
+@click.argument("user")
+def populate_storage_as(user: str) -> None:
+    """Run populate-storage as another user.
+
+    This requires the calling user to have root permissions.
+    """
+    _run_as("populate-storage", user)
+
+
+@cli.command()
 def create_log() -> None:
     """Create the log storage."""
     check_configpath()
     config = TestConfig()
     _create_log(config)
+
+
+@cli.command()
+@click.argument("user")
+def create_log_as(user: str) -> None:
+    """Run create-log as another user.
+
+    This requires the calling user to have root permissions.
+    """
+    _run_as("create-log", user)
 
 
 @cli.command()
@@ -127,13 +169,18 @@ def compile_sample_data(infile: str, outfile: str, xss: bool) -> None:
 
 
 @cli.command()
-def make_sample_data() -> None:
+@click.option("--user", help="Use this as the owner of the storage and log.")
+def make_sample_data(user: Optional[str]) -> None:
     """Repopulates the application with sample data."""
     check_configpath()
     config = TestConfig()
     secrets = SecretsConfig()
-    _create_storage(config)
-    _populate_storage(config)
+    if user:
+        _run_as("create-storage", user)
+        _run_as("populate-storage", user)
+    else:
+        _create_storage(config)
+        _populate_storage(config)
     _create_database(config, secrets)
     _populate_database(config, secrets)
 
