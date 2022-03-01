@@ -1,10 +1,8 @@
 """Set up the file system related stuff, like upload-storage, loggers and log dirs."""
 import logging
 import logging.handlers
-import os
 import pathlib
 import shutil
-import stat
 import sys
 
 from cdedb_setup.config import Config
@@ -100,29 +98,10 @@ def populate_storage(conf: Config) -> None:
 
 @sanity_check
 def create_log(conf: Config) -> None:
-    """Create the directory structure of the log directory.
-
-    Directly instantiate the root logger, so this is not forgotten later.
-    """
+    """Create the directory structure of the log directory."""
     log_dir: pathlib.Path = conf["LOG_DIR"]
 
     recreate_directory(log_dir)
-
-    # TODO does this work as expected? What happens if this is called in another process
-    #  than those running later the tests or apache?
-    # create fallback logger for everything which cannot be covered by another logger
-    logger_path = conf["LOG_DIR"] / "cdedb.log"
-    setup_logger("cdedb", logger_path, conf["LOG_LEVEL"],
-                 syslog_level=conf["SYSLOG_LEVEL"],
-                 console_log_level=conf["CONSOLE_LOG_LEVEL"])
-    try:
-        # the global log needs to be writable by different users (frontend
-        # and backend) making it world writable is pretty permissive but
-        # seems to be the most sensible way
-        os.chmod(str(logger_path), stat.S_IRUSR | stat.S_IWUSR |
-                 stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH)
-    except (PermissionError, FileNotFoundError):  # pragma: no cover
-        pass
 
 
 def setup_logger(name: str, logfile_path: pathlib.Path,
