@@ -115,6 +115,7 @@ RUN cp /tmp/autobuild/cdedb-entrypoint.sh /cdedb-entrypoint.sh \
     && touch /etc/cdedb/public-secrets.py \
     \
     && ln -s /cdedb2/cdedb/ /usr/lib/python3/dist-packages/cdedb \
+    && ln -s /cdedb2/cdedb_setup/ /usr/lib/python3/dist-packages/cdedb_setup \
     \
     && rm -rf /tmp/autobuild
 

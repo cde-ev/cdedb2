@@ -39,6 +39,8 @@ sudo -u cdedb echo '        rebase = merges' >> /cdedb2/.git/config
 # add cdedb to python path
 mkdir -p /usr/local/lib/python3.9/dist-packages
 sudo ln -s /cdedb2/cdedb/ /usr/local/lib/python3.9/dist-packages/cdedb
+# add cdedb_setup module to python path
+sudo ln -s /cdedb2/cdedb_setup/ /usr/local/lib/python3.9/dist-packages/cdedb_setup
 
 echo ""
 echo "Create local config files..."
