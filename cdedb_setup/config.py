@@ -328,6 +328,16 @@ _SECRECTS_DEFAULTS = {
 }
 
 
+def _import_from_file(path: pathlib.Path) -> Mapping[str, Any]:
+    """Import all variables from the given file and return them as dict."""
+    spec = importlib.util.spec_from_file_location("override", str(path))
+    if not spec:
+        raise ImportError
+    override = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(override)  # type: ignore
+    return {key: getattr(override, key) for key in dir(override)}
+
+
 class Config(Mapping[str, Any]):
     """Main configuration.
 
@@ -352,18 +362,10 @@ class Config(Mapping[str, Any]):
         override = self._process_config_overwrite()
         self._configchain = collections.ChainMap(override, _DEFAULTS)
 
-    def _process_config_overwrite(self) -> Any:
+    def _process_config_overwrite(self) -> Mapping[str, Any]:
         """Allow only keys which are already present in _DEFAULT."""
-        spec = importlib.util.spec_from_file_location("override", str(self._configpath))
-        if not spec:
-            raise ImportError
-        override = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(override)  # type: ignore
-        override = {
-            key: getattr(override, key)
-            for key in _DEFAULTS.keys() & set(dir(override))
-        }
-        return override
+        override = _import_from_file(self._configpath)
+        return {key: value for key, value in override.items() if key in _DEFAULTS}
 
     def __getitem__(self, key: str) -> Any:
         return self._configchain.__getitem__(key)
@@ -383,15 +385,9 @@ class TestConfig(Config):
     all the configuration in our testsuite in a configfile.
     """
 
-    def _process_config_overwrite(self) -> Any:
+    def _process_config_overwrite(self) -> Mapping[str, Any]:
         """Allow additional keys which are not present in _DEFAULT."""
-        spec = importlib.util.spec_from_file_location("override", str(self._configpath))
-        if not spec:
-            raise ImportError
-        override = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(override)  # type: ignore
-        override = {key: getattr(override, key) for key in dir(override)}
-        return override
+        return _import_from_file(self._configpath)
 
 
 class SecretsConfig(Mapping[str, Any]):
@@ -405,6 +401,7 @@ class SecretsConfig(Mapping[str, Any]):
     def __init__(self) -> None:
         config = Config()
         configpath = config["SECRETS_CONFIGPATH"]
+        self._configpath = configpath
         _LOGGER.debug(f"Initialising SecretsConfig with path {configpath}")
 
         if not configpath:
@@ -413,15 +410,9 @@ class SecretsConfig(Mapping[str, Any]):
             raise RuntimeError(f"During initialization of SecretsConfig, config file"
                                f" {configpath} not found!")
 
-        spec = importlib.util.spec_from_file_location("override", str(configpath))
-        if not spec:
-            raise ImportError
-        override = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(override)  # type: ignore
+        override = _import_from_file(configpath)
         override = {
-            key: getattr(override, key)
-            for key in _SECRECTS_DEFAULTS.keys() & set(dir(override))
-        }
+            key: value for key, value in override.items() if key in _SECRECTS_DEFAULTS}
 
         self._configchain = collections.ChainMap(override, _SECRECTS_DEFAULTS)
 
