@@ -23,6 +23,7 @@ def switch_user(user: str) -> Generator[None, None, None]:
         raise PermissionError("May only run as root.")
     wanted_user = pwd.getpwnam(user)
     os.seteuid(wanted_user.pw_uid)
+    # TODO this raise a Permission Error on my local machine?
     # os.setegid(wanted_user.pw_gid)
     yield
     os.seteuid(real_user.pw_uid)
@@ -31,9 +32,15 @@ def switch_user(user: str) -> Generator[None, None, None]:
 
 @click.group()
 @click.option("--configpath", envvar="CDEDB_CONFIGPATH", default=DEFAULT_CONFIGPATH,
-              type=pathlib.Path, show_default=True, help="Or set via CDEDB_CONFIGPATH environment variable.")
+              type=pathlib.Path, show_default=True)
 def cli(configpath: pathlib.Path) -> None:
-    """Command line interface for setup of CdEDB."""
+    """Command line interface for setup of CdEDB.
+
+    This is divided in command subgroups for the different points of setup.
+
+    To change the setup process, you can provide a custom path to your configuration
+    file. This may also be done by setting the CDEDB_CONFIGPATH environment variable.
+    """
     set_configpath(configpath)
 
 

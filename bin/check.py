@@ -24,6 +24,7 @@ from bin.escape_fuzzing import work as xss_check
 from cdedb_setup.config import SecretsConfig, TestConfig, set_configpath
 from cdedb_setup.database import create_database, populate_database
 from cdedb_setup.storage import create_log, create_storage, populate_storage
+from cdedb_setup.util import is_docker
 
 import tests.backend_tests as backend_tests
 import tests.frontend_tests as frontend_tests
@@ -166,7 +167,7 @@ def run_ldap_tests(testpatterns: List[str] = None, *, verbose: bool = False) -> 
     subprocess.run(["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL)
 
     create_log(conf)
-    if pathlib.Path("/CONTAINER").is_file():
+    if is_docker():
         # the database is already initialized, since it is needed to start the
         # ldap container in the first place
         print(f"Database {conf['CDB_DATABASE_NAME']} must already been set up.")
