@@ -233,6 +233,8 @@ def raise_jinja(val: str) -> None:
 
 
 _CONFIG = Config()
+
+
 # TODO move this back in filter.py
 def datetime_filter(val: Union[datetime.datetime, str, None],
                     formatstr: str = "%Y-%m-%d %H:%M (%Z)", lang: str = None,

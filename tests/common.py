@@ -11,7 +11,6 @@ import email.parser
 import email.policy
 import enum
 import functools
-import getpass
 import gettext
 import io
 import json
