@@ -37,7 +37,7 @@ for evolution in $(cat /tmp/todoevolutions.txt); do
     if [[ $evolution == *.sql ]]; then
         echo ""
         echo "Apply evolution $evolution" | tee -a /tmp/output-evolution.txt
-        python3 bin/execute_sql_script.py -d $DATABASE_NAME -v \
+        python3 -m cdedb_setup dev execute-sql-script -v \
              -f cdedb/database/evolutions/$evolution \
              2>&1 | tee -a /tmp/output-evolution.txt
     fi
@@ -56,7 +56,7 @@ done
 # evolved db
 echo ""
 echo "Creating database description."
-python3 bin/execute_sql_script.py -d $DATABASE_NAME -v \
+python3 -m cdedb_setup dev execute-sql-script -v \
      -f bin/describe_database.sql > /tmp/evolved-description.txt
 
 make i18n-compile
@@ -67,7 +67,7 @@ echo ""
 echo "Resetting and creating database description again."
 python3 -m cdedb_setup database create
 python3 -m cdedb_setup database populate
-python3 bin/execute_sql_script.py -d $DATABASE_NAME -v \
+python3 -m cdedb_setup dev execute-sql-script -v \
      -f bin/describe_database.sql > /tmp/pristine-description.txt
 
 # perform check
