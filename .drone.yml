@@ -59,6 +59,7 @@ steps:
     CDEDB_CONFIGPATH: tests/config/test_1.py
   commands:
     - make i18n-compile # needed for sample-data creation in evolution-trial.sh
+    - python3 -m cdedb_setup filesystem log create # TODO needed during dependencies of script.py
     - sleep 3 # wait for posgres container to start up
     - pg_isready --host=cdb --timeout=15 # wait for database to come online
     - python3 -m cdedb_setup database create-users # basic setup of the database for all following tests

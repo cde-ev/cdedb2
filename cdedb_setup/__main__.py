@@ -188,7 +188,7 @@ def _execute_sql_script(file: pathlib.Path, verbose: int) -> None:
     secrets = SecretsConfig()
     with connect(config, secrets) as conn:
         with conn.cursor() as curr:
-            curr.execute(file)
+            curr.execute(file.read_text())
             if verbose > 0:
                 if verbose > 1:
                     click.echo(curr.query)
