@@ -10,7 +10,8 @@ from cdedb_setup.config import (
     DEFAULT_CONFIGPATH, SecretsConfig, TestConfig, set_configpath,
 )
 from cdedb_setup.database import (
-    compile_sample_data, create_database, create_database_users, populate_database,
+    compile_sample_data, connect, create_database, create_database_users,
+    populate_database,
 )
 from cdedb_setup.storage import create_log, create_storage, populate_storage
 
@@ -177,6 +178,24 @@ def _make_sample_data(context: click.Context, user: Optional[str]) -> None:
     context.invoke(_create_database_users)
     context.invoke(_create_database)
     context.invoke(_populate_database)
+
+
+@_development.command(name="execute-sql-script")
+@click.option("--file", "-f", type=pathlib.Path, help="the script to execute")
+@click.option('-v', '--verbose', count=True)
+def _execute_sql_script(file: pathlib.Path, verbose: int) -> None:
+    config = TestConfig()
+    secrets = SecretsConfig()
+    with connect(config, secrets) as conn:
+        with conn.cursor() as curr:
+            curr.execute(file)
+            if verbose > 0:
+                if verbose > 1:
+                    click.echo(curr.query)
+                    click.echo(curr.statusmessage)
+                if curr.rowcount != -1:
+                    for x in curr:
+                        click.echo(x)
 
 
 if __name__ == "__main__":
