@@ -2,7 +2,6 @@
 """Calling this script is the canonical way to run the test suite."""
 
 import argparse
-import getpass
 import os
 import pathlib
 import subprocess
@@ -20,16 +19,10 @@ sys.path.append(str(root))
 os.chdir(root)
 
 from bin.check_utils import MyTextTestResult, MyTextTestRunner
-from bin.escape_fuzzing import work as xss_check
 from cdedb_setup.config import SecretsConfig, TestConfig, set_configpath
 from cdedb_setup.database import create_database, populate_database
 from cdedb_setup.storage import create_log, create_storage, populate_storage
 from cdedb_setup.util import is_docker
-
-import tests.backend_tests as backend_tests
-import tests.frontend_tests as frontend_tests
-import tests.ldap_tests as ldap_tests
-import tests.other_tests as other_tests
 
 
 class CdEDBTestLock:
@@ -120,6 +113,11 @@ def _load_tests(testpatterns: Optional[List[str]],
 
 def run_application_tests(testpatterns: List[str] = None, *,
                           verbose: bool = False) -> int:
+    # imports can not be done at toplevel, since we need to set the configpath first
+    import tests.backend_tests as backend_tests  # pylint: disable=import-outside-toplevel
+    import tests.frontend_tests as frontend_tests  # pylint: disable=import-outside-toplevel
+    import tests.other_tests as other_tests  # pylint: disable=import-outside-toplevel
+
     conf = TestConfig()
     secrets = SecretsConfig()
     # prepare the translations
@@ -141,6 +139,11 @@ def run_application_tests(testpatterns: List[str] = None, *,
 
 
 def run_xss_tests(*, verbose: bool = False) -> int:
+    # import can not be done at toplevel, since we need to set the configpath first
+    from bin.escape_fuzzing import (  # pylint: disable=import-outside-toplevel
+        work as xss_check,
+    )
+
     conf = TestConfig()
     secrets = SecretsConfig()
     # prepare the translations
@@ -161,6 +164,9 @@ def run_xss_tests(*, verbose: bool = False) -> int:
 
 
 def run_ldap_tests(testpatterns: List[str] = None, *, verbose: bool = False) -> int:
+    # imports can not be done at toplevel, since we need to set the configpath first
+    import tests.ldap_tests as ldap_tests  # pylint: disable=import-outside-toplevel
+
     conf = TestConfig()
     secrets = SecretsConfig()
     # prepare the translations
