@@ -156,7 +156,7 @@ def _development() -> None:
 
 
 # TODO in which category should we do this?
-@cli.command(name="compile-sample-data")
+@_development.command(name="compile-sample-data")
 @click.option("--infile", default="/cdedb2/tests/ancillary_files/sample_data.json",
               help="the json file containing the sample data")
 @click.option("--outfile", default="/tmp/sample_data.sql",
