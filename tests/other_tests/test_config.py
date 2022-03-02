@@ -35,11 +35,15 @@ class TestConfig(unittest.TestCase):
         set_configpath(current_configpath)
 
     def test_caching(self) -> None:
-        # this is a regression test
         current_configpath = get_configpath()
+        # the new config configures itself as secret config override!
         set_configpath("tests/ancillary_files/extra_config.py")
+
+        # check that the secrets config was overridden
         extrasecret = SecretsConfig()
         self.assertEqual(extrasecret["URL_PARAMETER_SALT"], "matrix")
+
+        # check that everything works fine if we reset to the previous configpath
         set_configpath(current_configpath)
         testsecret = SecretsConfig()
         self.assertEqual(testsecret["URL_PARAMETER_SALT"], "aoeuidhtns9KT6AOR2kNjq2zO")
