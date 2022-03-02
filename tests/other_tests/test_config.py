@@ -1,16 +1,27 @@
 #!/usr/bin/env python3
 # pylint: disable=missing-module-docstring
 
+import pathlib
 import unittest
+from typing import ClassVar
 
 from cdedb_setup.config import Config, SecretsConfig, get_configpath, set_configpath
 
 
 class TestConfig(unittest.TestCase):
-    def test_override(self) -> None:
-        # save the actual config path, so we can use this after the test finishes
-        current_configpath = get_configpath()
 
+    real_config_path: ClassVar[pathlib.Path]
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        # store the real config path, so we can reset it after each test
+        cls.real_config_path = get_configpath()
+
+    def tearDown(self) -> None:
+        # reset the config path
+        set_configpath(self.real_config_path)
+
+    def test_override(self) -> None:
         # check config default values
         config = Config()
         self.assertIn(config["DB_PORT"], {6432, 5432})
@@ -30,9 +41,6 @@ class TestConfig(unittest.TestCase):
         # check secret config override
         extrasecret = SecretsConfig()
         self.assertEqual(extrasecret["URL_PARAMETER_SALT"], "matrix")
-
-        # restore old config path for further tests
-        set_configpath(current_configpath)
 
     def test_caching(self) -> None:
         current_configpath = get_configpath()
