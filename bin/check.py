@@ -113,11 +113,6 @@ def _load_tests(testpatterns: Optional[List[str]],
 
 def run_application_tests(testpatterns: List[str] = None, *,
                           verbose: bool = False) -> int:
-    # imports can not be done at toplevel, since we need to set the configpath first
-    import tests.backend_tests as backend_tests  # pylint: disable=import-outside-toplevel
-    import tests.frontend_tests as frontend_tests  # pylint: disable=import-outside-toplevel
-    import tests.other_tests as other_tests  # pylint: disable=import-outside-toplevel
-
     conf = TestConfig()
     secrets = SecretsConfig()
     # prepare the translations
@@ -126,6 +121,11 @@ def run_application_tests(testpatterns: List[str] = None, *,
     create_log(conf)
     create_database(conf, secrets)
     populate_database(conf, secrets)
+
+    # we need to setup the environment before we can import from cdedb or tests module
+    import tests.backend_tests as backend_tests  # pylint: disable=import-outside-toplevel
+    import tests.frontend_tests as frontend_tests  # pylint: disable=import-outside-toplevel
+    import tests.other_tests as other_tests  # pylint: disable=import-outside-toplevel
 
     # load all tests which are not meant to be run separately (f.e. the ldap tests)
     test_modules = [backend_tests, frontend_tests, other_tests]
@@ -139,11 +139,6 @@ def run_application_tests(testpatterns: List[str] = None, *,
 
 
 def run_xss_tests(*, verbose: bool = False) -> int:
-    # import can not be done at toplevel, since we need to set the configpath first
-    from bin.escape_fuzzing import (  # pylint: disable=import-outside-toplevel
-        work as xss_check,
-    )
-
     conf = TestConfig()
     secrets = SecretsConfig()
     # prepare the translations
@@ -155,6 +150,11 @@ def run_xss_tests(*, verbose: bool = False) -> int:
     create_database(conf, secrets)
     populate_database(conf, secrets)
 
+    # we need to setup the environment before we can import from cdedb or tests module
+    from bin.escape_fuzzing import (  # pylint: disable=import-outside-toplevel
+        work as xss_check,
+    )
+
     ret = xss_check(
         conf["XSS_OUTDIR"], verbose=verbose, payload=conf["XSS_PAYLOAD"],
         secondary_payload=conf["XSS_PAYLOAD_SECONDARY"]
@@ -164,9 +164,6 @@ def run_xss_tests(*, verbose: bool = False) -> int:
 
 
 def run_ldap_tests(testpatterns: List[str] = None, *, verbose: bool = False) -> int:
-    # imports can not be done at toplevel, since we need to set the configpath first
-    import tests.ldap_tests as ldap_tests  # pylint: disable=import-outside-toplevel
-
     conf = TestConfig()
     secrets = SecretsConfig()
     # prepare the translations
@@ -188,6 +185,9 @@ def run_ldap_tests(testpatterns: List[str] = None, *, verbose: bool = False) -> 
         subprocess.run(
             ["make", "ldap-update-full", f"DATABASE_NAME={conf['CDB_DATABASE_NAME']}"],
             check=True, stdout=subprocess.DEVNULL)
+
+    # we need to setup the environment before we can import from cdedb or tests module
+    import tests.ldap_tests as ldap_tests  # pylint: disable=import-outside-toplevel
 
     test_suite = _load_tests(testpatterns, [ldap_tests])
 
