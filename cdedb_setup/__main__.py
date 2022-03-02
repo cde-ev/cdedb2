@@ -51,6 +51,12 @@ def _get_config_var(variable: str) -> None:
     click.echo(config[variable])
 
 
+@_config.command(name="default-configpath")
+def _get_default_configpath() -> None:
+    """Get the default configpath."""
+    click.echo(DEFAULT_CONFIGPATH)
+
+
 @cli.group(name="filesystem")
 def _filesystem() -> None:
     """Preparations regarding the file system."""

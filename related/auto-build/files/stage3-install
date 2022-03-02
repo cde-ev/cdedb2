@@ -50,10 +50,10 @@ echo "--------------------------------------------"
 # we use the default configurationpath, so no need to set CDEDB_CONFIGPATH
 
 # move the defaultconfig to the right place
-install -D /media/cdrom0/localconfig.py "$(python3 -m cdedb_setup config get DEFAULT_CONFIGPATH)"
-chown cdedb:cdedb "$(python3 -m cdedb_setup config get DEFAULT_CONFIGPATH)"
+install -D /media/cdrom0/localconfig.py "$(python3 -m cdedb_setup config default-configpath)"
+chown cdedb:cdedb "$(python3 -m cdedb_setup config default-configpath)"
 # make it world-readable, since it contains no secret data
-chmod 644 "$(python3 -m cdedb_setup config get DEFAULT_CONFIGPATH)"
+chmod 644 "$(python3 -m cdedb_setup config default-configpath)"
 
 # create default (and public) secrets config
 cat >"$(python3 -m cdedb_setup config get SECRETS_CONFIGPATH)" <<EOF
