@@ -1,12 +1,13 @@
 """Provide a command line interface for the setup module."""
+import contextlib
+import os
 import pathlib
-import subprocess
-import sys
-from typing import Optional
+import pwd
+from typing import Generator, Optional
 
 import click
 from cdedb_setup.config import (
-    DEFAULT_CONFIGPATH, SecretsConfig, TestConfig, get_configpath as _get_configpath,
+    DEFAULT_CONFIGPATH, SecretsConfig, TestConfig, set_configpath as _set_configpath,
 )
 from cdedb_setup.database import (
     compile_sample_data as _compile_sample_data, create_database as _create_database,
@@ -19,140 +20,118 @@ from cdedb_setup.storage import (
 )
 
 
-def check_configpath() -> None:
-    """Helper to check that a configpath is set as environment variable."""
-    if not _get_configpath():
-        raise RuntimeError("Start by setting a configpath using 'set_configpath'.")
+@contextlib.contextmanager
+def switch_user(user: str) -> Generator[None, None, None]:
+    """Use as context manager to temporary switch the running user's effective uid."""
+    real_user = pwd.getpwuid(os.getuid())
+    if real_user.pw_name != "root":
+        raise PermissionError("May only run as root.")
+    wanted_user = pwd.getpwnam(user)
+    os.seteuid(wanted_user.pw_uid)
+    # os.setegid(wanted_user.pw_gid)
+    yield
+    os.seteuid(real_user.pw_uid)
+    # os.setegid(real_user.pw_gid)
 
 
 @click.group()
-def cli() -> None:
+@click.option("--configpath", envvar="CDEDB_CONFIGPATH", default=DEFAULT_CONFIGPATH,
+              type=pathlib.Path, show_default=True, help="Or set via CDEDB_CONFIGPATH environment variable.")
+def cli(configpath: pathlib.Path) -> None:
+    """Command line interface for setup of CdEDB."""
+    _set_configpath(configpath)
+
+
+@cli.group()
+def config() -> None:
+    """Interact with the config file."""
     pass
 
 
-@cli.command()
-@click.argument("configpath")
-def set_configpath(configpath: str) -> None:
-    """Tells you how to set the given path as configpath."""
-    print("Execute the following command in your shell:")
-    print(f"export CDEDB_CONFIGPATH={configpath}")
-
-
-@cli.command()
-def default_configpath() -> None:
-    """Prints the default configpath.
-
-    This is the default location of the config, which is also used in the vm and docker
-    images. Is also used as hardcoded value at some places where its infeasible to get
-    the right config path (like the entry point for apache).
-    """
-    print(DEFAULT_CONFIGPATH)
-
-
-@cli.command()
+@config.command()
 @click.argument("variable")
 def get(variable: str) -> None:
     """Retrieve the given variable from the current config."""
-    check_configpath()
     config = TestConfig()
     print(config[variable])
 
 
-@cli.command()
-def secrets_configpath() -> None:
-    """Prints the secrets config path of the current config."""
-    check_configpath()
-    config = TestConfig()
-    print(config["SECRETS_CONFIGPATH"])
+@cli.group()
+def filesystem() -> None:
+    """Preparations regarding the file system."""
+    pass
 
 
-def _run_as(command: str, user: str) -> None:
-    """Run a command provided by this module as another user.
-
-    This is especially useful to set the correct permissions for directories and files.
-    """
-    subprocess.run([sys.executable, "-m", "cdedb_setup", command],
-                   user=user, group=user, check=True)
-
-
-@cli.command()
-def create_storage() -> None:
+@filesystem.command()
+@click.option("--user", help="Use this user as the owner.")
+def create_storage(user: str) -> None:
     """Create the file storage."""
-    check_configpath()
     config = TestConfig()
-    _create_storage(config)
+    if user:
+        with switch_user(user):
+            _create_storage(config)
+    else:
+        _create_storage(config)
 
 
-@cli.command()
-@click.argument("user")
-def create_storage_as(user: str) -> None:
-    """Run create-storage as another user.
-
-    This requires the calling user to have root permissions.
-    """
-    _run_as("create-storage", user)
-
-
-@cli.command()
-def populate_storage() -> None:
+@filesystem.command()
+@click.option("--user", help="Use this user as the owner.")
+def populate_storage(user: str) -> None:
     """Populate the file storage with sample data."""
-    check_configpath()
     config = TestConfig()
-    _populate_storage(config)
+    if user:
+        with switch_user(user):
+            _populate_storage(config)
+    else:
+        _populate_storage(config)
 
 
-@cli.command()
-@click.argument("user")
-def populate_storage_as(user: str) -> None:
-    """Run populate-storage as another user.
-
-    This requires the calling user to have root permissions.
-    """
-    _run_as("populate-storage", user)
-
-
-@cli.command()
-def create_log() -> None:
+@filesystem.command()
+@click.option("--user", help="Use this user as the owner.")
+def create_log(user: str) -> None:
     """Create the log storage."""
-    check_configpath()
     config = TestConfig()
-    _create_log(config)
+    if user:
+        with switch_user(user):
+            _create_log(config)
+    else:
+        _create_log(config)
 
 
-@cli.command()
-@click.argument("user")
-def create_log_as(user: str) -> None:
-    """Run create-log as another user.
-
-    This requires the calling user to have root permissions.
-    """
-    _run_as("create-log", user)
+@cli.group()
+def database() -> None:
+    """Preparations regarding the database."""
+    pass
 
 
-@cli.command()
+@database.command()
 def create_database_users() -> None:
     """Creates the database users."""
     config = TestConfig()
     _create_database_users(config)
 
 
-@cli.command()
+@database.command()
 def create_database() -> None:
     """Create the tables of the database from the config."""
-    check_configpath()
     config = TestConfig()
     secrets = SecretsConfig()
     _create_database(config, secrets)
 
 
-@cli.command()
+@database.command()
 @click.option("--xss", default=False, help="prepare the database for xss checks")
 def populate_database(xss: bool) -> None:
     """Populate the database tables with sample data."""
-    check_configpath()
     config = TestConfig()
     secrets = SecretsConfig()
     _populate_database(config, secrets, xss)
+
+
+@cli.group()
+def development() -> None:
+    """High-level helpers for development."""
+    pass
 
 
 @cli.command()
@@ -163,26 +142,19 @@ def populate_database(xss: bool) -> None:
 @click.option("--xss", default=False, help="prepare sample data for xss checks")
 def compile_sample_data(infile: str, outfile: str, xss: bool) -> None:
     """Parse sample data from a .json to a .sql file."""
-    check_configpath()
     config = TestConfig()
     _compile_sample_data(config, pathlib.Path(infile), pathlib.Path(outfile), xss=xss)
 
 
-@cli.command()
+@development.command()
 @click.option("--user", help="Use this as the owner of the storage and log.")
-def make_sample_data(user: Optional[str]) -> None:
+@click.pass_context
+def make_sample_data(context: click.Context, user: Optional[str]) -> None:
     """Repopulates the application with sample data."""
-    check_configpath()
-    config = TestConfig()
-    secrets = SecretsConfig()
-    if user:
-        _run_as("create-storage", user)
-        _run_as("populate-storage", user)
-    else:
-        _create_storage(config)
-        _populate_storage(config)
-    _create_database(config, secrets)
-    _populate_database(config, secrets)
+    context.invoke(create_storage, user=user)
+    context.invoke(populate_storage, user=user)
+    context.invoke(create_database)
+    context.invoke(populate_database)
 
 
 if __name__ == "__main__":
