@@ -17,26 +17,28 @@ fi
 if [ ! -e /etc/cdedb/container_already_initalized ]; then
     # TODO check whether it is sensible to lower privileges to cdedb user in general
 
-    # Create the directory containing the storage manually, to ensure www-data has the proper permissions
-    mkdir -p "$(python3 -m cdedb_setup get STORAGE_DIR)"
-    chown www-data:www-data "$(python3 -m cdedb_setup get STORAGE_DIR)"
-    # now, create the storage itself. Ensure that www-data owns everything.
-    python3 -m cdedb_setup create-storage-as www-data
+    # Create the directory containing the storage directory manually, to ensure www-data has the proper permissions
+    mkdir -p "$(python3 -m cdedb_setup config get STORAGE_DIR)"
+    chown www-data:www-data "$(python3 -m cdedb_setup config get STORAGE_DIR)"
+    # now, create the storage directory itself. Ensure that www-data owns everything.
+    python3 -m cdedb_setup filesystem storage create --user www-data
     # populate the storage dir with sample data
-    python3 -m cdedb_setup populate-storage-as www-data
+    python3 -m cdedb_setup filesystem storage populate --user www-data
 
-    # Create the directory containing the logs manually, to ensure www-data has the proper permissions
-    mkdir -p "$(python3 -m cdedb_setup get LOG_DIR)"
-    chown www-data:www-data "$(python3 -m cdedb_setup get LOG_DIR)"
-    # now, create the directories inside the log. Ensure that www-data owns everything.
-    python3 -m cdedb_setup create-log-as www-data
+    # Create the directory containing the logs directory manually, to ensure www-data has the proper permissions
+    mkdir -p "$(python3 -m cdedb_setup config get LOG_DIR)"
+    chown www-data:www-data "$(python3 -m cdedb_setup config get LOG_DIR)"
+    # now, create the log directory itself. Ensure that www-data owns everything.
+    python3 -m cdedb_setup filesystem log create --user www-data
 
     # Compile the translations
     make i18n-compile
 
     # create and populate the database
-    python3 -m cdedb_setup create-database
-    python3 -m cdedb_setup populate-database
+    # TODO do we need to create the database users as well?
+    # python3 -m cdedb_setup database create-users
+    python3 -m cdedb_setup database create
+    python3 -m cdedb_setup database populate
 
     # Touch the firstrun file, so we perform the initialization only once.
     touch /etc/cdedb/container_already_initalized

@@ -47,16 +47,16 @@ echo "Create local config files..."
 echo "--------------------------------------------"
 
 # set the configpath to the default value
-export CDEDB_CONFIGPATH=$(python3 -m cdedb_setup default-configpath)
+# we use the default configurationpath, so no need to set CDEDB_CONFIGPATH
 
 # move the defaultconfig to the right place
-install -D /media/cdrom0/localconfig.py "$CDEDB_CONFIGPATH"
-chown cdedb:cdedb "$CDEDB_CONFIGPATH"
+install -D /media/cdrom0/localconfig.py "$(python3 -m cdedb_setup config get DEFAULT_CONFIGPATH)"
+chown cdedb:cdedb "$(python3 -m cdedb_setup config get DEFAULT_CONFIGPATH)"
 # make it world-readable, since it contains no secret data
-chmod 644 "$CDEDB_CONFIGPATH"
+chmod 644 "$(python3 -m cdedb_setup config get DEFAULT_CONFIGPATH)"
 
 # create default (and public) secrets config
-cat >"$(python3 -m cdedb_setup secrets-configpath)" <<EOF
+cat >"$(python3 -m cdedb_setup config get SECRETS_CONFIGPATH)" <<EOF
 #!/usr/bin/env python3
 #
 # This is the default file for the SecretsConfig. On development and offline instances,
@@ -76,8 +76,8 @@ cat >"$(python3 -m cdedb_setup secrets-configpath)" <<EOF
 # sudo chmod 640 /path/to/your/secrets_config.py
 #
 EOF
-chown cdedb:cdedb "$(python3 -m cdedb_setup secrets-configpath)"
-chmod 644 "$(python3 -m cdedb_setup secrets-configpath)"
+chown cdedb:cdedb "$(python3 -m cdedb_setup config get SECRETS_CONFIGPATH)"
+chmod 644 "$(python3 -m cdedb_setup config get SECRETS_CONFIGPATH)"
 
 # set the mailman htpasswd
 cp /media/cdrom0/mailman-htpasswd /etc/cdedb-mailman-htpasswd
@@ -98,10 +98,10 @@ echo "Creating storage directory for uploads..."
 echo "--------------------------------------------"
 
 # create the directory containing the storage manually, to ensure www-data has the proper permissions
-mkdir -p "$(python3 -m cdedb_setup get STORAGE_DIR)"
-chown www-data:www-data "$(python3 -m cdedb_setup get STORAGE_DIR)"
+mkdir -p "$(python3 -m cdedb_setup config get STORAGE_DIR)"
+chown www-data:www-data "$(python3 -m cdedb_setup config get STORAGE_DIR)"
 # now, create the storage itself. Ensure that www-data owns everything.
-python3 -m cdedb_setup create-storage-as www-data
+python3 -m cdedb_setup filesystem storage create --user www-data
 
 echo ""
 echo "Setting up the database..."
@@ -143,10 +143,10 @@ echo "Create central directory for log files..."
 echo "--------------------------------------------"
 
 # create the directory containing the logs manually, to ensure www-data has the proper permissions
-mkdir -p "$(python3 -m cdedb_setup get LOG_DIR)"
-chown www-data:www-data "$(python3 -m cdedb_setup get LOG_DIR)"
+mkdir -p "$(python3 -m cdedb_setup config get LOG_DIR)"
+chown www-data:www-data "$(python3 -m cdedb_setup config get LOG_DIR)"
 # now, create the directories inside the log. Ensure that www-data owns everything.
-python3 -m cdedb_setup create-log-as www-data
+python3 -m cdedb_setup filesystem log create --user www-data
 
 echo ""
 echo "Setting up ldap..."
