@@ -14,6 +14,10 @@ echo ""
 echo "Checkout $OLDREVISION"
 git checkout $OLDREVISION
 ls cdedb/database/evolutions > /tmp/oldevolutions.txt
+# TODO replace make calls with
+# python3 -m cdedb_setup dev compile-sample-data
+# python3 -m cdedb_setup database create
+# python3 -m cdedb_setup database populate
 make -B tests/ancillary_files/sample_data.sql &> /dev/null
 make sql DATABASE_NAME=$DATABASE_NAME > /dev/null
 
@@ -56,12 +60,13 @@ python3 bin/execute_sql_script.py -d $DATABASE_NAME -v \
      -f bin/describe_database.sql > /tmp/evolved-description.txt
 
 make i18n-compile
-make -B tests/ancillary_files/sample_data.sql &> /dev/null
+python3 -m cdedb_setup dev compile-sample-data
 
 # new db
 echo ""
 echo "Resetting and creating database description again."
-make sql DATABASE_NAME=$DATABASE_NAME > /dev/null
+python3 -m cdedb_setup database create
+python3 -m cdedb_setup database populate
 python3 bin/execute_sql_script.py -d $DATABASE_NAME -v \
      -f bin/describe_database.sql > /tmp/pristine-description.txt
 
