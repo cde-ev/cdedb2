@@ -4,10 +4,6 @@ SHELL := /bin/bash
 help:
 	@echo "Default Variables:"
 	@echo "DATABASE_NAME       -- name of a postgres database. Default: cdb"
-	@echo "STORAGE_DIR         -- location where the cdedb stores files. Default: /var/lib/cdedb"
-	@echo "LOG_DIR             -- location of the logs. Default: /var/log/cdedb"
-	@echo "DATA_USER           -- system user who will own STORAGE_DIR and LOG_DIR. Default: www-data"
-	@echo "XSS_PAYLOAD         -- payload to insert in sample_data_xss.sql. Default: <script>abcdef</script>"
 	@echo "I18NDIR             -- directory of the translation files. Default: ./i18n"
 	@echo ""
 	@echo "General:"
@@ -17,15 +13,6 @@ help:
 	@echo ""
 	@echo "Translations"
 	@echo "i18n-refresh        -- extract translatable strings from code and update translation catalogs in I18NDIR"
-	@echo ""
-	@echo "Storage:"
-	@echo "storage             -- recreate STORAGE_DIR owned by DATA_USER and populate it with sample files"
-	@echo "log                 -- recreate LOG_DIR owned by DATA_USER"
-	@echo ""
-	@echo "Database"
-	@echo "sql-initial         -- Drops all databases and create default postgres users."
-	@echo "sql-setup           -- Create new database DATABASE_NAME"
-	@echo "sql                 -- populates database DATABASE_NAME with sample content (use sample-data instead)"
 	@echo ""
 	@echo "LDAP:"
 	@echo "TODO add description"
@@ -43,7 +30,6 @@ help:
 	@echo "coverage            -- run coverage to determine test suite coverage"
 	@echo ""
 	@echo "Sample Data:"
-	@echo "sample-data         -- initialize database structures (DESTROYS DATA!)"
 	@echo "sample-data-dump    -- dump current database state into json file in tests directory"
 
 
@@ -57,15 +43,6 @@ FLAKE8 ?= $(PYTHONBIN) -m flake8
 PYLINT ?= $(PYTHONBIN) -m pylint
 COVERAGE ?= $(PYTHONBIN) -m coverage
 MYPY ?= $(PYTHONBIN) -m mypy
-ifeq ($(wildcard /CONTAINER),/CONTAINER)
-# We need to use psql directly as DROP DATABASE and variables are not supported by our helper
-	PSQL_ADMIN ?= psql postgresql://postgres:passwd@cdb
-	PSQL ?= $(PYTHONBIN) bin/execute_sql_script.py
-else
-	PSQL_ADMIN ?= sudo -u postgres psql
-	PSQL ?= sudo -u cdb psql
-endif
-SAMPLE_DATA_SQL ?= bin/create_sample_data_sql.py
 
 
 #####################
@@ -79,14 +56,6 @@ DATABASE_NAME = cdb
 DATABASE_HOST = localhost
 # The password of the cdb_admin user. This is currently needed to setup ldap correctly.
 DATABASE_CDB_ADMIN_PASSWORD = 9876543210abcdefghijklmnopqrst
-# Directory where the python application stores additional files. This will be overridden in the test suite.
-STORAGE_DIR = /var/lib/cdedb
-# Directory where the application stores its log files. This will be overridden in the test suite.
-LOG_DIR = /var/log/cdedb
-# User who runs the application and has access to storage and log dir. This will be overridden in the test suite.
-DATA_USER = www-data
-# Payload to be injected in the sample_data_xss.sql file.
-XSS_PAYLOAD = <script>abcdef</script>
 # Directory where the translation files are stored. Especially used by the i18n-targets.
 I18NDIR = ./i18n
 # Available languages, by default detected as subdirectories of the translation targets.
@@ -113,16 +82,6 @@ else
 	sudo systemctl restart apache2
 endif
 
-# ensure we do not modify a production or offline vm. Add as prerequisite to each target which could destroy data.
-.PHONY: sanity-check
-sanity-check:
-  ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
-	$(error Refusing to touch live instance)
-  endif
-  ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
-	$(error Refusing to touch orga instance)
-  endif
-
 
 ################
 # Translations #
@@ -147,98 +106,6 @@ i18n-compile: $(foreach lang, $(I18N_LANGUAGES), $(I18NDIR)/$(lang)/LC_MESSAGES/
 
 $(I18NDIR)/%/LC_MESSAGES/cdedb.mo: $(I18NDIR)/%/LC_MESSAGES/cdedb.po
 	msgfmt --verbose --check --statistics -o $@ $<
-
-###########
-# Storage #
-###########
-
-TESTFOTONAME := e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea243$\
-		33cc17797fc29b047c437ef5beb33ac0f570c6589d64f9
-
-.PHONY: storage
-storage: sanity-check
-	sudo rm -rf -- $(STORAGE_DIR)/*
-	# this takes care the DATA_USER also owns the directories containing STORAGE_DIR
-	sudo -u $(DATA_USER) mkdir -p $(STORAGE_DIR)
-	sudo mkdir -p $(STORAGE_DIR)/foto/
-	sudo mkdir -p $(STORAGE_DIR)/minor_form/
-	sudo mkdir -p $(STORAGE_DIR)/event_logo/
-	sudo mkdir -p $(STORAGE_DIR)/course_logo/
-	sudo mkdir -p $(STORAGE_DIR)/ballot_result/
-	sudo mkdir -p $(STORAGE_DIR)/assembly_attachment/
-	sudo mkdir -p $(STORAGE_DIR)/genesis_attachment/
-	sudo mkdir -p $(STORAGE_DIR)/mailman_templates/
-	sudo mkdir -p $(STORAGE_DIR)/testfiles/
-	sudo cp tests/ancillary_files/$(TESTFOTONAME) $(STORAGE_DIR)/foto/
-	sudo cp tests/ancillary_files/rechen.pdf $(STORAGE_DIR)/assembly_attachment/1_v1
-	sudo cp tests/ancillary_files/kassen.pdf $(STORAGE_DIR)/assembly_attachment/2_v1
-	sudo cp tests/ancillary_files/kassen2.pdf $(STORAGE_DIR)/assembly_attachment/2_v3
-	sudo cp tests/ancillary_files/kandidaten.pdf $(STORAGE_DIR)/assembly_attachment/3_v1
-	sudo cp -t $(STORAGE_DIR)/testfiles/ tests/ancillary_files/{$(TESTFILES)}
-	sudo chown --recursive $(DATA_USER):$(DATA_USER) $(STORAGE_DIR)
-
-TESTFILES := picture.pdf,picture.png,picture.jpg,form.pdf,rechen.pdf,ballot_result.json,sepapain.xml$\
-		,event_export.json,batch_admission.csv,money_transfers.csv,money_transfers_valid.csv$\
-		,partial_event_import.json,TestAka_partial_export_event.json,statement.csv$\
-		,questionnaire_import.json
-
-.PHONY: log
-log: sanity-check
-	sudo rm -rf -- $(LOG_DIR)/*
-	# this takes care the DATA_USER also owns the directories containing LOG_DIR
-	sudo -u $(DATA_USER) mkdir -p $(LOG_DIR)
-	sudo chown $(DATA_USER):$(DATA_USER) $(LOG_DIR)
-
-
-############
-# Database #
-############
-
-# drop all existent databases and add the database users. Acts globally and is idempotent.
-.PHONY: sql-initial
-sql-initial: sanity-check
-  # we cannot use systemctl in docker
-  ifneq ($(wildcard /CONTAINER),/CONTAINER)
-	sudo systemctl stop pgbouncer
-	sudo systemctl stop slapd
-  endif
-	$(PSQL_ADMIN) -f cdedb/database/cdedb-users.sql
-  ifneq ($(wildcard /CONTAINER),/CONTAINER)
-	sudo systemctl start pgbouncer
-	# we need actual data before we can restart slapd, so we deferr this to later
-	# sudo systemctl start slapd
-  endif
-
-# setup a new database, specified by DATABASE_NAME. Does not yet populate it with actual data.
-.PHONY: sql-setup
-sql-setup: sanity-check
-  # we cannot use systemctl in docker
-  ifneq ($(wildcard /CONTAINER),/CONTAINER)
-	sudo systemctl stop pgbouncer
-	sudo systemctl stop slapd
-  endif
-	$(PSQL_ADMIN) -f cdedb/database/cdedb-db.sql -v cdb_database_name=$(DATABASE_NAME)
-  ifneq ($(wildcard /CONTAINER),/CONTAINER)
-	sudo systemctl start pgbouncer
-	# we need actual data before we can restart slapd, so we deferr this to later
-	# sudo systemctl start slapd
-  endif
-	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=$(DATABASE_NAME)
-	$(PSQL) -f cdedb/database/cdedb-ldap.sql --dbname=$(DATABASE_NAME)
-
-# setup a new database and populate it with the sample data.
-.PHONY: sql
-sql: sql-setup tests/ancillary_files/sample_data.sql
-	$(PSQL) -f tests/ancillary_files/sample_data.sql --dbname=$(DATABASE_NAME)
-  # finally restart slapd
-  ifneq ($(wildcard /CONTAINER),/CONTAINER)
-	sudo systemctl restart slapd
-  endif
-
-# setup a new database and populate it with special sample data to perform xss checks.
-.PHONY: sql-xss
-sql-xss: sql-setup tests/ancillary_files/sample_data_xss.sql
-	$(PSQL) -f tests/ancillary_files/sample_data_xss.sql --dbname=$(DATABASE_NAME)
 
 
 ########
@@ -401,10 +268,6 @@ coverage: .coverage
 # Sample Data Generation #
 ##########################
 
-.PHONY: sample-data
-sample-data: storage sql-initial sql
-	cp -f related/auto-build/files/stage3/localconfig.py cdedb/localconfig.py
-
 .PHONY: sample-data-dump
 sample-data-dump:
 	JSONTEMPFILE=`sudo -u www-data mktemp` \
@@ -412,30 +275,3 @@ sample-data-dump:
 		&& sudo -u www-data $(PYTHONBIN) bin/create_sample_data_json.py -o "$${JSONTEMPFILE}" \
 		&& cp "$${JSONTEMPFILE}" tests/ancillary_files/sample_data.json \
 		&& sudo -u www-data rm "$${JSONTEMPFILE}"
-
-tests/ancillary_files/sample_data.sql: tests/ancillary_files/sample_data.json \
-		$(SAMPLE_DATA_SQL) cdedb/database/cdedb-tables.sql cdedb/database/cdedb-ldap.sql
-	SQLTEMPFILE=`sudo -u www-data mktemp` \
-		&& sudo -u www-data chmod +r "$${SQLTEMPFILE}" \
-		&& sudo rm -f /tmp/cdedb*log \
-		&& sudo -u www-data $(PYTHONBIN) \
-			$(SAMPLE_DATA_SQL) \
-			-i tests/ancillary_files/sample_data.json \
-			-o "$${SQLTEMPFILE}" \
-		&& sudo rm -f /tmp/cdedb*log \
-		&& cp "$${SQLTEMPFILE}" tests/ancillary_files/sample_data.sql \
-		&& sudo -u www-data rm "$${SQLTEMPFILE}"
-
-tests/ancillary_files/sample_data_xss.sql: tests/ancillary_files/sample_data.json \
-		$(SAMPLE_DATA_SQL) cdedb/database/cdedb-tables.sql cdedb/database/cdedb-ldap.sql
-	SQLTEMPFILE=`sudo -u www-data mktemp` \
-		&& sudo -u www-data chmod +r "$${SQLTEMPFILE}" \
-		&& sudo rm -f /tmp/cdedb*log \
-		&& sudo -u www-data $(PYTHONBIN) \
-			$(SAMPLE_DATA_SQL) \
-			-i tests/ancillary_files/sample_data.json \
-			-o "$${SQLTEMPFILE}" \
-			--xss "${XSS_PAYLOAD}" \
-		&& sudo rm -f /tmp/cdedb*log \
-		&& cp "$${SQLTEMPFILE}" tests/ancillary_files/sample_data_xss.sql \
-		&& sudo -u www-data rm "$${SQLTEMPFILE}"
