@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-DATABASE_NAME=cdb_test
+DATABASE_NAME=cdb_test_1
 
 OLDREVISION=$1
 NEWREVISION=$2
