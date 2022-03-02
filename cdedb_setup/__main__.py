@@ -174,6 +174,7 @@ def _make_sample_data(context: click.Context, user: Optional[str]) -> None:
     """Repopulates the application with sample data."""
     context.invoke(_create_storage, user=user)
     context.invoke(_populate_storage, user=user)
+    context.invoke(_create_database_users)
     context.invoke(_create_database)
     context.invoke(_populate_database)
 
