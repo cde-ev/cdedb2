@@ -109,7 +109,7 @@
                 <td class="text-right">
                     {% for level in result['counts'] %}
                         {# It is possible that a candidate is equal to bar. This candidate will be in the preferred section.
-                           So, if preferred and not the only preferred candidate, we do not show the votes. #}
+                           So, if bar is preferred and not the only preferred candidate, we do not show the votes. #}
                         {% if ASSEMBLY_BAR_SHORTNAME in level['preferred'] and level['preferred']|length == 1 %}
                             {{ level['pro_votes'] }}
                         {% endif %}
