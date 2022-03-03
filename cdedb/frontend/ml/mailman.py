@@ -85,6 +85,8 @@ class MlMailmanMixin(MlBaseFrontend):
             'description': db_list['title'],
             'info': db_list['description'] or "",
             'subject_prefix': prefix,
+            # TODO: Replace with whitelist of acceptable_aliases
+            'require_explicit_destination': False,
             'max_message_size': db_list['maxsize'] or 0,
             'max_num_recipients': 0,
             'default_member_action': POLICY_MEMBER_CONVERT[
