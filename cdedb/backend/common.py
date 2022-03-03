@@ -18,8 +18,8 @@ import sys
 import uuid
 from types import TracebackType
 from typing import (
-    Any, Callable, ClassVar, Collection, Dict, Iterable, List, Literal,
-    Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast, overload,
+    Any, Callable, ClassVar, Collection, Dict, Iterable, List, Literal, Mapping,
+    Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast, overload,
 )
 
 import psycopg2.errors
