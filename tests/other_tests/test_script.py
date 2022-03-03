@@ -8,7 +8,6 @@ from contextlib import redirect_stdout
 from pkgutil import resolve_name
 from typing import Any, Callable, ClassVar
 
-import psycopg2.errorcodes
 from cdedb_setup.config import TestConfig, get_configpath
 
 from cdedb.backend.core import CoreBackend
@@ -52,17 +51,11 @@ class TestScript(unittest.TestCase):
         self.assertEqual(-1, rs_factory().user.persona_id)
         self.assertEqual(23, rs_factory(23).user.persona_id)
 
-        with self.assertRaises(psycopg2.OperationalError) as cm:
+        with self.assertRaises(ValueError) as cm:
             Script(dbname=self.conf["CDB_DATABASE_NAME"], dbuser="cdb_admin",
                    check_system_user=False, CDB_DATABASE_ROLES="{'cdb_admin': 'abc'}")
-        # the vm is german while the postgresql docker image is english
-        self.assertTrue(
-            ("Passwort-Authentifizierung für Benutzer"
-             " »cdb_admin« fehlgeschlagen" in cm.exception.args[0])
-            or
-            ("password authentication failed for user"
-             ' "cdb_admin"' in cm.exception.args[0])
-        )
+        msg = "Override secret config options via kwarg is not possible."
+        self.assertIn(msg, cm.exception.args[0])
 
     def test_config_overwrite(self) -> None:
         # check that the config path stays correct

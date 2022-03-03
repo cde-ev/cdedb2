@@ -63,6 +63,7 @@ class TempConfig:
         # store the real configpath
         self._real_configpath = get_configpath()
         if self._config:
+            secrets = SecretsConfig()
             self._f = tempfile.NamedTemporaryFile("w", suffix=".py")
             f = self._f.__enter__()
             # copy the real_config into the temporary config
@@ -72,6 +73,10 @@ class TempConfig:
             # now, add all keyword config options. Since they are added _after_ the
             # real_config options, they overwrite them if necessary
             for k, v in self._config.items():
+                if k in secrets:
+                    msg = ("Override secret config options via kwarg is not possible."
+                           " Please use the SECRET_CONFIGPATH config argument instead.")
+                    raise ValueError(msg)
                 f.write(f"\n{k} = {v}")
             f.flush()
             set_configpath(f.name)
