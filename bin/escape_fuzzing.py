@@ -3,10 +3,11 @@
 """
 This script tries to verify successful XSS mitigation, i.e. HTML escaping.
 
-It requires a properly populated database and a storage dir to be set up.
-Their name / directory can be passed via the configpath argument.
-To run this inside the regular test suite, use `make xss-check` or
-`bin/check.py --parts xss`. See also the documentation.
+This requires a configpath to a configfile via CDEDB_CONFIGPATH. The specified
+database and storage dir have to be properly populated with sample data.
+
+To run this inside the regular test suite, use `bin/check.py --parts xss`.
+See also the documentation.
 
 This script logs in as Anton (our testing meta admin account) and traverses all
 links and forms it can find. In every response it checks for the magic string
@@ -238,8 +239,6 @@ if __name__ == "__main__":
                     " sure it is escaped properly.")
 
     general = parser.add_argument_group("General options")
-    general.add_argument("--configpath", "-c",
-                         help="The config path to setup the application.")
     general.add_argument(
         "--outdir", "-o", default="./out",
         help="The directory where output is saved. default: %(default)s")
@@ -254,9 +253,6 @@ if __name__ == "__main__":
         help="Pre-inserted strings which must not be shown. default: %(default)s")
 
     args = parser.parse_args()
-
-    # set the config path
-    set_configpath(args.configpath)
 
     ret = work(pathlib.Path(args.outdir), verbose=args.verbose,
                payload=args.payload, secondary_payload=args.secondary)
