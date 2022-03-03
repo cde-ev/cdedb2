@@ -856,7 +856,7 @@ class DatabaseLock:
     available.
 
     """
-    xid: str
+    xid: Optional[str]
 
     def __init__(self, rs: RequestState, *locks: LockType):
         self.rs = rs
@@ -900,7 +900,7 @@ class DatabaseLock:
         return self if was_locking_successful else None
 
     def __exit__(self, atype: Type[Exception], value: Exception,
-                 tb: TracebackType) -> bool:
+                 tb: TracebackType) -> Literal[False]:
         if self.rs._conn.status == psycopg2.extensions.STATUS_IN_TRANSACTION:
             # We are not atomized so a commit is always possible
             self.rs._conn.commit()
