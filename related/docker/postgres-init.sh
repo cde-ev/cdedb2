@@ -14,4 +14,4 @@ EOSQL
 sed -i -r 's/(host\s+\w+\s+)all(\s+\S+\s+trust)/\1postgres\2/g' /var/lib/postgresql/data/pg_hba.conf
 
 # enable two-phase commit
-sed -i -r 's/^# max_prepared_transactions = 0/max_prepared_transactions = 100/' /var/lib/postgresql/data/postgresql.conf
+sed -i -r 's/^#max_prepared_transactions = 0/max_prepared_transactions = 100/' /var/lib/postgresql/data/postgresql.conf
