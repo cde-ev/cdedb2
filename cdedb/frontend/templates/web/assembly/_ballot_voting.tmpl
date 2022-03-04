@@ -49,7 +49,7 @@
                 <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="abstentionform"
                         style="display: inline;">
                     {{ util.anti_csrf_token('assembly/vote') }}
-                    {{ util.input_hidden(name="vote", value="special: abstain") }}
+                    {{ util.input_hidden(name="vote", value=MAGIC_ABSTAIN) }}
                     {{ util.input_submit(label=gettext("Abstain"), icon="square") }}
                 </form>
             </div>

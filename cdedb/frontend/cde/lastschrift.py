@@ -531,6 +531,9 @@ class CdELastschriftMixin(CdEBaseFrontend):
         persona = self.coreproxy.get_cde_user(
             rs, rs.ambience['lastschrift']['persona_id'])
         addressee = make_postal_address(rs, persona)
+        # TODO add proper handling of missing address
+        if addressee is None:
+            addressee = []
         if rs.ambience['lastschrift']['account_owner']:
             addressee[0] = rs.ambience['lastschrift']['account_owner']
         if rs.ambience['lastschrift']['account_address']:
