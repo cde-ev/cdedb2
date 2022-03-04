@@ -208,7 +208,7 @@
                             <br />
                             {{ event['begin']|date(lang=lang) }}&#8239;–&#8239;{{ event['end']|date(lang=lang) }}
                             <br />
-                            {% if event['registration'] != None %}
+                            {% if event['registration'] is not none %}
                                 {% set link=cdedblink('event/registration_status', {'event_id': event_id}) %}
                                     {% if event['registration'] %}
                                         ({% trans registered=util.href(link, gettext("registered")) -%}
