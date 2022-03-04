@@ -17,7 +17,10 @@ from typing import Any, Collection, Dict, List, Optional, Set, Tuple, Union
 
 import werkzeug.exceptions
 from schulze_condorcet import schulze_evaluate_detailed
-from schulze_condorcet.types import DetailedResultLevel
+from schulze_condorcet.types import Candidate, DetailedResultLevel, VoteString
+from schulze_condorcet.util import (
+    as_vote_string, as_vote_strings, as_vote_tuple, as_vote_tuples,
+)
 from werkzeug import Response
 
 import cdedb.database.constants as const
@@ -41,10 +44,9 @@ from cdedb.validation import (
 )
 from cdedb.validationtypes import CdedbID, Email
 
-#: Magic value to signal abstention during voting. Used during the emulation
-#: of classical voting. This can not occur as a shortname since it contains
-#: forbidden characters.
-MAGIC_ABSTAIN = "special: abstain"
+#: Magic value to signal abstention during _classical_ voting.
+#: This can not occur as a shortname since it contains forbidden characters.
+MAGIC_ABSTAIN = Candidate("special: abstain")
 
 
 class AssemblyFrontend(AbstractUserFrontend):
@@ -1117,38 +1119,20 @@ class AssemblyFrontend(AbstractUserFrontend):
         result = self.get_online_result(rs, ballot)
         assert result is not None
 
-        # calculate the occurrence of each vote
-        if ballot['votes']:
-            # we actually voted in classical votes for the candidates before the first >
-            # if there are no >, it is an abstention which will be counted later
-            vote_set = {vote['vote'].split('>')[0] for vote in result['votes']
-                        if len(vote['vote'].split('>')) != 1}
-            vote_counts = {vote: sum((1 for v in result['votes']
-                                      if v.get('vote').split('>')[0] == vote))
-                           for vote in vote_set}
-        else:
-            # if there are no >, it is an abstention which will be counted later
-            vote_set = {vote['vote'] for vote in result['votes']
-                        if len(vote['vote'].split('>')) != 1}
-            vote_counts = {vote: sum((1 for v in result['votes']
-                                      if v.get('vote') == vote))
-                           for vote in vote_set}
-        # count the abstentions, which have no >
-        vote_counts[MAGIC_ABSTAIN] = sum(1 for v in result['votes']
-                                         if len(v.get('vote').split('>')) == 1)
-        if vote_counts[MAGIC_ABSTAIN] == 0:
-            del vote_counts[MAGIC_ABSTAIN]
-
         # map the candidate shortnames to their titles
         candidates = {candidate['shortname']: candidate['title']
                       for candidate in ballot['candidates'].values()}
-        candidates[MAGIC_ABSTAIN] = rs.gettext("Abstained")
         if ballot['use_bar']:
             if ballot['votes']:
                 candidates[ASSEMBLY_BAR_SHORTNAME] = rs.gettext(
                     "Against all Candidates")
             else:
                 candidates[ASSEMBLY_BAR_SHORTNAME] = rs.gettext("Rejection limit")
+
+        # all vote string submitted in this ballot
+        votes = [vote["vote"] for vote in result["votes"]]
+        # calculate the occurrence of each vote
+        vote_counts = self.count_equal_votes(votes, classical=bool(ballot['votes']))
 
         # calculate the hash of the result file
         result_bytes = self.assemblyproxy.get_ballot_result(rs, ballot['id'])
@@ -1173,6 +1157,23 @@ class AssemblyFrontend(AbstractUserFrontend):
             'prev_ballot': prev_ballot, 'next_ballot': next_ballot,
             'candidates': candidates})
 
+    @staticmethod
+    def count_equal_votes(vote_strings: List[VoteString], classical: bool = False
+                          ) -> collections.Counter[VoteString]:
+        """This counts how often a specific vote was submitted."""
+        # convert the votes into their tuple representation
+        vote_tuples = as_vote_tuples(vote_strings)
+        if classical:
+            # in classical votes, there are at most two pairs of candidates, the
+            # first we voted for and the optional second we don't voted for
+            # if there is only one pair of candidates, we abstained
+            vote_tuples = [((MAGIC_ABSTAIN,),) if len(vote) == 1 else (vote[0],)
+                           for vote in vote_tuples]
+        # take care that all candidates of the same level of each vote are sorted.
+        # otherwise, votes which are semantically the same are counted as different
+        votes = [[xsorted(candidates) for candidates in vote] for vote in vote_tuples]
+        return collections.Counter(as_vote_strings(votes))
+
     def _retrieve_own_vote(self, rs: RequestState, ballot: CdEDBObject,
                            secret: str = None) -> CdEDBObject:
         """Helper function to present the own vote
@@ -1182,7 +1183,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         :return: one of the following strings:
             * your full preference, if the ballot was a preferential vote, otherwise
-            * MAGIC_ABSTAIN, if you abstained in the ballot
+            * MAGIC_ABSTAIN, if you abstained and the ballot was a classical vote
             * all candidates you voted for, seperated by '=', if the ballot was a
               classical vote
         """
@@ -1203,13 +1204,13 @@ class AssemblyFrontend(AbstractUserFrontend):
                     own_vote = None
 
         if own_vote and ballot['votes']:
-            split_vote = own_vote.split('>')
-            if len(split_vote) == 1:
+            vote_tuple = as_vote_tuple(own_vote)
+            if len(vote_tuple) == 1:
                 # abstention
                 own_vote = MAGIC_ABSTAIN
             else:
                 # select voted options in classical voting
-                own_vote = split_vote[0]
+                own_vote = as_vote_string((vote_tuple[0],))
 
         return {'attends': attends, 'has_voted': has_voted, 'own_vote': own_vote}
 
@@ -1282,41 +1283,40 @@ class AssemblyFrontend(AbstractUserFrontend):
             ballot_result = self.assemblyproxy.get_ballot_result(rs, ballot['id'])
             assert ballot_result is not None
             result = json.loads(ballot_result)
-            tiers = tuple(x.split('=') for x in result['result'].split('>'))
-            winners: List[Collection[str]] = []
-            losers: List[Collection[str]] = []
-            tmp = winners
+
+            preferred: List[Collection[str]] = []
+            rejected: List[Collection[str]] = []
+            tmp = preferred
             lookup = {e['shortname']: e['id']
                       for e in ballot['candidates'].values()}
-            for tier in tiers:
+            for candidates in as_vote_tuple(result["result"]):
                 # Remove bar if present
-                ntier = tuple(lookup[x] for x in tier if x in lookup)
-                if ntier:
-                    tmp.append(ntier)
-                if ASSEMBLY_BAR_SHORTNAME in tier:
-                    tmp = losers
-            result['winners'] = winners
-            result['losers'] = losers
+                level = [lookup[c] for c in candidates if c in lookup]
+                if level:
+                    tmp.append(level)
+                if ASSEMBLY_BAR_SHORTNAME in candidates:
+                    tmp = rejected
+            result['preferred'] = preferred
+            result['rejected'] = rejected
 
             # vote count for classical vote ballots
             counts: Union[Dict[str, int], List[DetailedResultLevel]]
-            # TODO use helper function
             if ballot['votes']:
-                counts = {e['shortname']: 0
-                          for e in ballot['candidates'].values()}
+                counts = {e['shortname']: 0 for e in ballot['candidates'].values()}
                 if ballot['use_bar']:
                     counts[ASSEMBLY_BAR_SHORTNAME] = 0
                 for vote in result['votes']:
-                    raw = vote['vote']
-                    if '>' in raw:
-                        selected = raw.split('>')[0].split('=')
-                        for s in selected:
-                            counts[s] += 1
+                    vote_tuple = as_vote_tuple(vote["vote"])
+                    # votes with len 1 are abstentions
+                    if len(vote_tuple) > 1:
+                        # the first entry contains the candidates voted for
+                        for candidate in vote_tuple[0]:
+                            counts[candidate] += 1
                 result['counts'] = counts
             # vote count for preferential vote ballots
             else:
                 votes = [e['vote'] for e in result['votes']]
-                candidates = [k for k, v in result['candidates'].items()]
+                candidates = tuple(Candidate(c) for c in result['candidates'])
                 if ballot['use_bar']:
                     candidates += (ASSEMBLY_BAR_SHORTNAME,)
                 counts = schulze_evaluate_detailed(votes, candidates)
@@ -1326,7 +1326,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             # count abstentions for both voting forms
             abstentions = 0
             for vote in result['votes']:
-                if '>' not in vote['vote']:
+                if len(as_vote_tuple(vote['vote'])) == 1:
                     abstentions += 1
             result['abstentions'] = abstentions
 
@@ -1514,47 +1514,44 @@ class AssemblyFrontend(AbstractUserFrontend):
             rs.notify("error", n_("Ballot is outside its voting period."))
             return self.redirect(rs, "assembly/show_ballot", {'ballot_id': ballot_id})
         ballot = rs.ambience['ballot']
-        candidates = tuple(e['shortname']
-                           for e in ballot['candidates'].values())
+        candidates = [Candidate(e['shortname']) for e in ballot['candidates'].values()]
         vote: Optional[str]
         if ballot['votes']:
+            # classical voting
             voted = unwrap(request_extractor(rs, {"vote": Collection[str]}))
             if rs.has_validation_errors():
                 return self.show_ballot(rs, assembly_id, ballot_id)
             if voted == (ASSEMBLY_BAR_SHORTNAME,):
                 if not ballot['use_bar']:
                     raise ValueError(n_("Option not available."))
-                vote = "{}>{}".format(
-                    ASSEMBLY_BAR_SHORTNAME, "=".join(candidates))
+                vote = as_vote_string([[ASSEMBLY_BAR_SHORTNAME], candidates])
             elif voted == (MAGIC_ABSTAIN,):
-                vote = "=".join(candidates)
-                # When abstaining, the bar is equal do all candidates. This is
+                # When abstaining, the bar is equal to all candidates. This is
                 # different from voting *for* all candidates.
-                vote += "={}".format(ASSEMBLY_BAR_SHORTNAME)
+                candidates.append(ASSEMBLY_BAR_SHORTNAME)
+                vote = as_vote_string([candidates])
             elif ASSEMBLY_BAR_SHORTNAME in voted and len(voted) > 1:
                 rs.notify("error", n_("Rejection is exclusive."))
                 return self.show_ballot(rs, assembly_id, ballot_id)
             else:
-                winners = "=".join(voted)
-                losers = "=".join(c for c in candidates if c not in voted)
+                preferred = [c for c in candidates if c in voted]
+                rejected = [c for c in candidates if c not in voted]
                 # When voting for certain candidates, they are ranked higher
                 # than the bar (to distinguish the vote from abstaining)
-                if losers:
-                    losers += "={}".format(ASSEMBLY_BAR_SHORTNAME)
+                rejected.append(ASSEMBLY_BAR_SHORTNAME)
+                # TODO as_vote_string should not take empty lists in account
+                if preferred:
+                    vote = as_vote_string([preferred, rejected])
                 else:
-                    losers = ASSEMBLY_BAR_SHORTNAME
-                if winners and losers:
-                    vote = "{}>{}".format(winners, losers)
-                else:
-                    vote = winners + losers
+                    vote = as_vote_string([rejected])
         else:
-            vote = unwrap(request_extractor(
-                rs, {"vote": Optional[str]}))  # type: ignore
+            # preferential voting
+            vote = unwrap(request_extractor(rs, {"vote": Optional[str]}))  # type: ignore
             # Empty preferential vote counts as abstaining
             if not vote:
-                vote = "=".join(candidates)
                 if ballot['use_bar']:
-                    vote += "={}".format(ASSEMBLY_BAR_SHORTNAME)
+                    candidates.append(ASSEMBLY_BAR_SHORTNAME)
+                vote = as_vote_string([candidates])
         vote = check(rs, vtypes.Vote, vote, "vote", ballot=ballot)
         if rs.has_validation_errors():
             return self.show_ballot(rs, assembly_id, ballot_id)
