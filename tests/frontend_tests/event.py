@@ -1508,12 +1508,16 @@ etc;anything else""", f['entries_2'].value)
             "separat mitteilen, wie du deinen Teilnahmebeitrag von 573,99 €"
             " bezahlen kannst. Du hast bereits 200,00 € bezahlt.")
 
+        # check payment messages for different registration stati
         payment_pending = "Bezahlung ausstehend"
+
+        # sample data are for part 1, 2, 3: not_applied, open, participant
         self.assertPresence(payment_pending)
         self.traverse("Index")
         self.assertPresence(payment_pending, div='event-box')
         self.traverse("Veranstaltungen")
         self.assertPresence(payment_pending, div='current-events')
+
         # registration stati that are not really registered
         self.get('/event/event/1/registration/1/change')
         f = self.response.forms['changeregistrationform']
@@ -1527,7 +1531,10 @@ etc;anything else""", f['entries_2'].value)
         self.traverse("Veranstaltungen")
         self.assertPresence("ehemals angemeldet", div='current-events')
         self.assertNonPresence(payment_pending)
+
         # guests do not necessarily need to pay
+        self.get('/event/event/1/registration/1/change')
+        f = self.response.forms['changeregistrationform']
         f['part3.status'] = const.RegistrationPartStati.guest
         self.submit(f)
         self.traverse("Index")
@@ -1538,7 +1545,10 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence(payment_pending)
         self.traverse("angemeldet")
         self.assertNonPresence(payment_pending)
+
         # participant again, only for one part
+        self.get('/event/event/1/registration/1/change')
+        f = self.response.forms['changeregistrationform']
         f['part3.status'] = const.RegistrationPartStati.participant
         f['reg.amount_paid'] = 0
         self.submit(f)
@@ -1546,7 +1556,8 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("450,99 €")
         self.assertNonPresence("bereits bezahlt")
         self.assertPresence(payment_pending)
-        # unset fee for this part - no payment needed anymore
+
+        # unset fee for the only part participated in - no payment needed anymore
         self.get('/event/event/1/part/3/change')
         f = self.response.forms['changepartform']
         f['fee'] = 0
