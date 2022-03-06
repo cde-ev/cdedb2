@@ -7,14 +7,14 @@ from pathlib import Path
 from cdedb_setup.config import DEFAULT_CONFIGPATH, set_configpath
 from werkzeug.serving import run_simple
 
-from cdedb.frontend.application import Application
-
 repopath = Path(__file__).resolve().parent.parent
 docs_directory = repopath / "doc/build/html"
 static_directory = repopath / "static"
 
 if __name__ == "__main__":
     set_configpath(DEFAULT_CONFIGPATH)
+    from cdedb.frontend.application import Application
+
     subprocess.run(["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL)
     os.environ["INTERACTIVE_DEBUGGER"] = "1"
     application = Application()
