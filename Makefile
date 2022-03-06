@@ -229,7 +229,7 @@ dump-html:
 
 /tmp/cdedb-dump/: export CDEDB_TEST_DUMP_DIR=/tmp/cdedb-dump/
 /tmp/cdedb-dump/:
-	$(PYTHONBIN) -m bin.check --verbose tests.test_frontend*
+	$(PYTHONBIN) -m bin.check --verbose tests.frontend_tests.*
 
 .PHONY: validate-html
 validate-html: /tmp/cdedb-dump/ /opt/validator/vnu-runtime-image/bin/vnu
