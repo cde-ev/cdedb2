@@ -2125,13 +2125,15 @@ def construct_redirect(request: werkzeug.Request,
         return ret
 
 
-def make_postal_address(rs: RequestState, persona: CdEDBObject) -> List[str]:
+def make_postal_address(rs: RequestState, persona: CdEDBObject) -> Optional[List[str]]:
     """Prepare address info for formatting.
 
     Addresses have some specific formatting wishes, so we are flexible
     in that we represent an address to be printed as a list of strings
     each containing one line. The final formatting is now basically join
     on line breaks.
+
+    Returning None signals that we do not know the address of this persona.
     """
     p = persona
     name = "{} {}".format(p['given_names'], p['family_name'])
@@ -2147,9 +2149,14 @@ def make_postal_address(rs: RequestState, persona: CdEDBObject) -> List[str]:
     if p['postal_code'] or p['location']:
         ret.append("{} {}".format(p['postal_code'] or '',
                                   p['location'] or ''))
-    if p['country']:
-        ret.append(rs.translations["de"].gettext(format_country_code(p['country'])))
-    return ret
+    country = rs.translations["de"].gettext(format_country_code(p['country']))
+    ret.append(country)
+    # Each persona has always a name and a country. However, during realm upgrades, it
+    # may happen that some personas do not have an address even if its mandatory.
+    if ret == [name, country]:
+        return None
+    else:
+        return ret
 
 
 def make_membership_fee_reference(persona: CdEDBObject) -> str:

@@ -28,10 +28,16 @@
             {{- gettext(enums['Genders'](persona['gender'])|string) -}}
         {% elif key == 'id' %}
             {{- util.href(show_user_link(user, persona['id']), persona['id']|cdedbid, aclass='nowrap') -}}
+        {% elif key == 'is_member' %}
+            {{- util.deko_checkbox(persona['is_member']) -}}
+        {% elif key == 'balance' %}
+            {{- persona['balance']|money(lang=lang) -}}
         {% elif key == 'country' or key == 'country2' %}
             {{- util.gettext_country(persona[key]) -}}
         {% elif key == 'mobile' or key == 'telephone' %}
-            {{- persona[key]|phone }}
+            {{- persona[key]|phone -}}
+        {% elif key in ('weblink', 'specialisation', 'affiliation', 'timeline', 'interests', 'free_form') %}
+            {{- persona[key]|md -}}
         {% else %}
             {{- persona[key] -}}
         {% endif %}
