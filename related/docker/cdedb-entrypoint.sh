@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e
 
 if [ ! -d /etc/ssl/apache2 ]; then
     # If the apache2 directory does not exist we have to create it and add a certificate.
@@ -35,8 +36,7 @@ if [ ! -e /etc/cdedb/container_already_initalized ]; then
     make i18n-compile
 
     # create and populate the database
-    # TODO do we need to create the database users as well?
-    # python3 -m cdedb_setup database create-users
+    python3 -m cdedb_setup database create-users
     python3 -m cdedb_setup database create
     python3 -m cdedb_setup database populate
 
