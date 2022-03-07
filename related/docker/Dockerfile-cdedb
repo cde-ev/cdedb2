@@ -121,8 +121,8 @@ RUN cp /tmp/autobuild/cdedb-entrypoint.sh /cdedb-entrypoint.sh \
     \
     && rm -rf /tmp/autobuild \
     \
-    # create the cdedb user \
-    useradd --no-create-home cdedb \
+    # create the cdedb user
+    && useradd --no-create-home cdedb \
     && echo "%cdedb ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers \
     \
     # create the magic file to signal that we are inside a docker container
