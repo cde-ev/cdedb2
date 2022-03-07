@@ -75,8 +75,6 @@ import pytz
 import pytz.tzinfo
 import werkzeug.datastructures
 import zxcvbn
-
-# TODO do we find a better alternative than instantiating a config object if we need it?
 from cdedb_setup.config import Config
 from schulze_condorcet.util import as_vote_tuple
 

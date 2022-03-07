@@ -363,7 +363,10 @@ class Config(Mapping[str, Any]):
         self._configchain = collections.ChainMap(override, _DEFAULTS)
 
     def _process_config_overwrite(self) -> Mapping[str, Any]:
-        """Allow only keys which are already present in _DEFAULT."""
+        """Import the config overwrites from the file specified by the configpath.
+
+        Allow only keys which are already present in _DEFAULT.
+        """
         override = _import_from_file(self._configpath)
         return {key: value for key, value in override.items() if key in _DEFAULTS}
 
@@ -386,7 +389,10 @@ class TestConfig(Config):
     """
 
     def _process_config_overwrite(self) -> Mapping[str, Any]:
-        """Allow additional keys which are not present in _DEFAULT."""
+        """Import the config overwrites from the file specified by the configpath.
+
+        Allow additional keys which are not present in _DEFAULT.
+        """
         return _import_from_file(self._configpath)
 
 

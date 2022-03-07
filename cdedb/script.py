@@ -39,8 +39,8 @@ __all__ = ['DryRunError', 'Script', 'ScriptAtomizer']
 class TempConfig:
     """Provide a thin wrapper around a temporary file.
 
-    The advantage of this is that it works with both a given configpath or
-    config keyword arguments.
+    The advantage of this is that it works with both a given configpath xor config
+    keyword arguments.
 
     If config keyword arguments are given, the config options from the real configpath
     (taken from the environment) are used as fallback values.

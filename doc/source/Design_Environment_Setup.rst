@@ -22,5 +22,5 @@ scripting or setup via terminal. All available targets are shown after executing
 Make sure to add the :mod:`cdedb_setup` module to the python path before.
 
 A step-by-step guide through the setup is provided at :doc:`Development_Environment_Manual`.
-For using one of the prebuild environments, take a look at :doc:`Development_Environment_Setup_VM`
+For using one of the prebuilt environments, take a look at :doc:`Development_Environment_Setup_VM`
 and :doc:`Development_Environment_Setup_Docker`, respectively.

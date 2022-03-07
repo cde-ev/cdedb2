@@ -29,7 +29,7 @@ def stop_services(*services: str) -> None:
         subprocess.run(["sudo", "systemctl", "stop", service], check=True)
 
 
-def psql(*commands: Union[str, pathlib.Path]) -> None:
+def psql(*commands: Union[str, pathlib.Path]) -> subprocess.CompletedProcess:
     """Execute commands using the psql client.
 
     This should be used only in cases where a direct connection to the database
@@ -40,7 +40,7 @@ def psql(*commands: Union[str, pathlib.Path]) -> None:
     else:
         # TODO can we somehow avoid to use sudo and friends here?
         psql = ["sudo", "-u", "postgres", "psql"]
-    subprocess.run([*psql, *commands], check=True)
+    return subprocess.run([*psql, *commands], check=True)
 
 
 # TODO is the nobody hack really necessary?

@@ -36,7 +36,10 @@ def recreate_directory(directory: pathlib.Path) -> None:
 
 @sanity_check
 def create_storage(conf: Config) -> None:
-    """Create the directory structure of the storage directory."""
+    """Create the directory structure of the storage directory.
+
+    This will delete the whole content of the storage directory.
+    """
     storage_dir: pathlib.Path = conf["STORAGE_DIR"]
 
     subdirs = (
@@ -98,7 +101,10 @@ def populate_storage(conf: Config) -> None:
 
 @sanity_check
 def create_log(conf: Config) -> None:
-    """Create the directory structure of the log directory."""
+    """Create the directory structure of the log directory.
+
+    This will delete the whole content of the log directory, including all log files.
+    """
     log_dir: pathlib.Path = conf["LOG_DIR"]
 
     recreate_directory(log_dir)

@@ -30,7 +30,7 @@ import time
 from typing import TYPE_CHECKING, Collection, List, NamedTuple, Optional, Set, Tuple
 
 import webtest
-from cdedb_setup.config import set_configpath
+from cdedb_setup.util import sanity_check
 
 from cdedb.frontend.application import Application
 
@@ -45,6 +45,7 @@ visited_urls: Set[str] = set()
 posted_urls: Set[str] = set()
 
 
+@sanity_check
 def work(
     outdir: pathlib.Path,
     *,
@@ -53,12 +54,6 @@ def work(
     secondary_payload: Tuple[str, ...] = ("&amp;lt;", "&amp;gt;")
 ) -> int:
     """Iterate over all visible page links and check them for the xss payload."""
-    # Do some sanity checks to avoid spamming an offline or production vm.
-    if pathlib.Path("/OFFLINEVM").exists():
-        raise RuntimeError("Cannot run this script in an Offline-VM.")
-    if pathlib.Path("/PRODUCTIONVM").exists():
-        raise RuntimeError("Cannot run this scirpt in Production-VM.")
-
     app = Application()
     wt_app = webtest.TestApp(app, extra_environ={
         'REMOTE_ADDR': "127.0.0.0",

@@ -148,7 +148,7 @@ def run_xss_tests(*, verbose: bool = False) -> int:
     create_storage(conf)
     populate_storage(conf)
     create_database(conf, secrets)
-    populate_database(conf, secrets)
+    populate_database(conf, secrets, xss=True)
 
     # we need to setup the environment before we can import from cdedb or tests module
     from bin.escape_fuzzing import (  # pylint: disable=import-outside-toplevel
