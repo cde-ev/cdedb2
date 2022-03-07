@@ -114,7 +114,7 @@ def update_parts(cur: DictCursor, parts: Collection[CdEDBObject]) -> None:
         cur.execute(query, (part['waitlist_field'], part['id']))
 
 
-def work(data_path: pathlib.Path, conf: Config, is_test: bool = False,
+def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
          extra_packages: bool = False, no_extra_packages: bool = False) -> None:
     repo_path: pathlib.Path = conf["REPOSITORY_PATH"]
     # connect to the database, using elevated access
@@ -137,7 +137,7 @@ def work(data_path: pathlib.Path, conf: Config, is_test: bool = False,
               " instance there will be data loss."
               "\nIf this is just a test run and you intend to scrap this"
               " offline instance you can ignore this warning.")
-        if not is_test:
+        if is_interactive:
             if (input("Continue anyway (type uppercase USE ANYWAY)? ").strip()
                     != "USE ANYWAY"):
                 print("Aborting.")
@@ -146,7 +146,7 @@ def work(data_path: pathlib.Path, conf: Config, is_test: bool = False,
         data['event.events'][str(data['id'])]['offline_lock'] = True
 
     print("Clean current instance (deleting all data)")
-    if not is_test:
+    if is_interactive:
         if input("Are you sure (type uppercase YES)? ").strip() != "YES":
             print("Aborting.")
             sys.exit()
@@ -295,6 +295,8 @@ if __name__ == "__main__":
     parser.add_argument('data_path', help="Path to exported event data")
     parser.add_argument('-t', '--test', action="store_true",
                         help="Operate on test database")
+    parser.add_argument('--not-interactive', action="store_true",
+                        help="Supress confirmation prompt before irreversible changes.")
     parser.add_argument('-e', '--extra-packages', action="store_true",
                         help="Unconditionally install additional packages.")
     parser.add_argument('-E', '--no-extra-packages', action="store_true",
@@ -314,5 +316,5 @@ if __name__ == "__main__":
         set_configpath(DEFAULT_CONFIGPATH)
         config = Config()
 
-    work(data_path, config, is_test=args.test, extra_packages=args.extra_packages,
-         no_extra_packages=args.no_extra_packages)
+    work(data_path, config, is_interactive=not args.not_interactive,
+         extra_packages=args.extra_packages, no_extra_packages=args.no_extra_packages)

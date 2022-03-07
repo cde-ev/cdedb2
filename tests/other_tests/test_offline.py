@@ -31,7 +31,8 @@ class TestOffline(FrontendTest):
             # the whole repo to the PYTHONPATH so they are found.
             env = {**os.environ.copy(), "PYTHONPATH": str(repopath)}
             subprocess.run(
-                [repopath / 'bin/make_offline_vm.py', '--test', '--no-extra-packages',
+                [repopath / 'bin/make_offline_vm.py',
+                 '--test', '--no-extra-packages', '--not-interactive',
                  repopath / 'tests/ancillary_files/event_export.json'],
                 check=True, env=env)
             # Reset web test app for changed configuration
