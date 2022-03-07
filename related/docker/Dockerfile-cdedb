@@ -90,9 +90,9 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
 # get the configuration files from the autobuild
 COPY ./related/docker/cdedb-entrypoint.sh ./related/auto-build/files/stage3 /tmp/autobuild/
 
-# put configuration files into correct positions
-# and add symlink to /cdedb2/cdedb directory so python can find it
 RUN cp /tmp/autobuild/cdedb-entrypoint.sh /cdedb-entrypoint.sh \
+    \
+    # configure apache
     && a2enmod ssl wsgi headers \
     && a2dissite 000-default \
     && echo "" > /etc/apache2/ports.conf \
@@ -100,6 +100,7 @@ RUN cp /tmp/autobuild/cdedb-entrypoint.sh /cdedb-entrypoint.sh \
     && a2ensite cdedb-site \
     && cp /tmp/autobuild/index.html /var/www/html/ \
     \
+    # add the mailman basic-auth password
     && cp /tmp/autobuild/mailman-htpasswd /etc/cdedb-mailman-htpasswd \
     && chown www-data:www-data /etc/cdedb-mailman-htpasswd \
     && chmod 640 /etc/cdedb-mailman-htpasswd \
@@ -114,15 +115,17 @@ RUN cp /tmp/autobuild/cdedb-entrypoint.sh /cdedb-entrypoint.sh \
     # hardcode the default path here.
     && touch /etc/cdedb/public-secrets.py \
     \
+    # add symlink to /cdedb2/cdedb and /cdedb2/cdedb_setup directory so python can find it
     && ln -s /cdedb2/cdedb/ /usr/lib/python3/dist-packages/cdedb \
     && ln -s /cdedb2/cdedb_setup/ /usr/lib/python3/dist-packages/cdedb_setup \
     \
-    && rm -rf /tmp/autobuild
-
-# create the cdedb user
-RUN useradd --no-create-home cdedb \
+    && rm -rf /tmp/autobuild \
+    \
+    # create the cdedb user \
+    useradd --no-create-home cdedb \
     && echo "%cdedb ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers \
     \
+    # create the magic file to signal that we are inside a docker container
     && touch /CONTAINER
 
 # make storage persistent
