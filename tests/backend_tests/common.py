@@ -5,10 +5,10 @@ import multiprocessing
 import os
 import unittest
 
-from cdedb.backend.core import CoreBackend
 from cdedb.backend.common import DatabaseLock
-from cdedb.common import PrivilegeError, make_proxy, User, now, RequestState
-from cdedb.config import Config, BasicConfig, SecretsConfig
+from cdedb.backend.core import CoreBackend
+from cdedb.common import PrivilegeError, RequestState, User, make_proxy, now
+from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.database.constants import LockType
