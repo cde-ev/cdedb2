@@ -18,8 +18,8 @@ _BASICCONF = BasicConfig()
 
 
 def database_lock_job(
-        configpath: str, first: multiprocessing.Sempaphore,
-        second: multiprocessing.Sempaphore, control: multiprocessing.Sempaphore,
+        configpath: str, first: multiprocessing.Semaphore,
+        second: multiprocessing.Semaphore, control: multiprocessing.Semaphore,
         signal: multiprocessing.Queue):
     """See test_database_lock below.
 
