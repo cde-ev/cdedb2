@@ -17,7 +17,10 @@ from cdedb.frontend.common import setup_translations
 _BASICCONF = BasicConfig()
 
 
-def database_lock_job(configpath, first, second, control, signal):
+def database_lock_job(
+        configpath: str, first: multiprocessing.Sempaphore,
+        second: multiprocessing.Sempaphore, control: multiprocessing.Sempaphore,
+        signal: multiprocessing.Queue):
     """See test_database_lock below.
 
     This needs to be top-level as we want to pickle it for multiprocessing.
@@ -46,7 +49,7 @@ def database_lock_job(configpath, first, second, control, signal):
             translations=translations,
         )
         rs._conn = connpool['cdb_admin']
-        rs.conn = None
+        rs.conn = None  # type: ignore[assignement]
         return rs
 
     rs = setup_requeststate()
@@ -78,6 +81,7 @@ class TestBackendCommon(unittest.TestCase):
         configpath = os.environ['CDEDB_TEST_CONFIGPATH']
 
         with multiprocessing.Manager() as manager:
+            manager: multiprocessing.managers.SyncManager
             semaphoreA = manager.Semaphore()
             semaphoreB = manager.Semaphore()
             control = manager.Semaphore()
