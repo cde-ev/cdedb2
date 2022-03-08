@@ -49,7 +49,8 @@ def database_lock_job(
             lang="de",
             translations=translations,
         )
-        rs._conn = connpool['cdb_admin']
+        # We want to use this in the frontend, so we need to peek
+        rs._conn = connpool['cdb_admin']  # pylint: disable=protected-access
         rs.conn = None  # type: ignore[assignment]
         return rs
 
