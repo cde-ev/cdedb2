@@ -21,7 +21,7 @@ _BASICCONF = BasicConfig()
 def database_lock_job(
         configpath: str, first: threading.Semaphore,
         second: threading.Semaphore, control: threading.Semaphore,
-        signal: multiprocessing.Queue[int]) -> bool:
+        signal: multiprocessing.Queue) -> bool:
     """See test_database_lock below.
 
     This needs to be top-level as we want to pickle it for multiprocessing.
@@ -83,7 +83,7 @@ class TestBackendCommon(unittest.TestCase):
         configpath = os.environ['CDEDB_TEST_CONFIGPATH']
 
         manager: multiprocessing.managers.SyncManager
-        with multiprocessing.Manager() as manager:
+        with multiprocessing.Manager() as manager:  # type: ignore[assignment]
             semaphoreA = manager.Semaphore()
             semaphoreB = manager.Semaphore()
             control = manager.Semaphore()
