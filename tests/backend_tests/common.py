@@ -21,7 +21,7 @@ _BASICCONF = BasicConfig()
 def database_lock_job(
         configpath: str, first: threading.Semaphore,
         second: threading.Semaphore, control: threading.Semaphore,
-        signal: multiprocessing.Queue) -> bool:
+        signal: multiprocessing.Queue) -> bool:  # type: ignore[type-arg]
     """See test_database_lock below.
 
     This needs to be top-level as we want to pickle it for multiprocessing.
