@@ -15,7 +15,7 @@ Zu jeder Veranstaltung existiert ein Git-Repositorium, das als einzige Datei den
 partiellen Export der Veranstaltung enthält. Einzige Abweichung ist, dass der
 ``timestamp`` aus dem Export entfernt wird.
 
-In dieses Repositorium werden einmal pro Stunde Snapshots vorgenommen,
+In dieses Repositorium werden einmal pro halbe Stunde Snapshots vorgenommen,
 sofern eine Änderung stattgefunden hat. Darüber hinaus
 werden vor und teils nach größeren Änderungen manuelle Snapshots vorgenommen.
 Dadurch lassen sich diese Änderungen im Nachhinein über das Git nachvollziehen.
@@ -50,7 +50,7 @@ Auf das Git kann durch Orgas und Veranstaltungs-Administrationen einfach mithilf
 der Zugangsdaten für die Datenbank zugegriffen werden. Es kann mittels ``git clone``
 heruntergeladen und später mit ``git pull`` aktualisiert werden.::
 
-    git clone https://db2.cde-ev.de/git/event_keeper/<event_id>/
+    git clone https://db.cde-ev.de/git/event_keeper/<event_id>/
 
 Dies vereinfacht auch das Beziehen eines aktuellen partiellen Exports zur Verwendung in
 externen Tools, das nun rein über die Kommandozeile geschenen kann.

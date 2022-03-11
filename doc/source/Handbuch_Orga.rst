@@ -14,7 +14,7 @@ Orgas
    Handbuch_Orga_Fragebogenimport
    Handbuch_Orga_EventKeeper
 
-.. hint:: Weiter Informationen zur Organisation von Veranstaltungen findet ihr im
+.. hint:: Weitere Informationen zur Organisation von Veranstaltungen findet ihr im
           `Akademieleitfaden <https://wiki.cde-ev.de/dokuwiki/doku.php?id=akademieleitfaden:allgemeines:technik:db>`_.
 
 .. todo:: Referenz Datenmodell von Veranstaltungsteilen, Kursschienen und Datenfeldern,

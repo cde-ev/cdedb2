@@ -705,7 +705,8 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
             if not dryrun:
                 self.event_log(rs, const.EventLogCodes.event_partial_import,
                                data['id'], change_note=data.get('summary'))
-                self.event_keeper_commit(rs, data['id'], build_msg(
-                        "Importiere partiell", data.get('summary')),
+                self.event_keeper_commit(
+                    rs, data['id'],
+                    build_msg("Importiere partiell", data.get('summary')),
                     is_snapshot=True)
         return result, total_delta

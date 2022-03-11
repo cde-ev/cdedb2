@@ -34,7 +34,7 @@ class EntityKeeper:
         # Initialize logger.
         logger_name = "cdedb.backend.entitykeeper"
         make_root_logger(
-            logger_name, self.conf["LOG_DIR"] / "cdedb-frontend-keeper.log",
+            logger_name, self.conf["LOG_DIR"] / "cdedb-backend-keeper.log",
             self.conf["LOG_LEVEL"], syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         self.logger = logging.getLogger(logger_name)
@@ -65,7 +65,7 @@ class EntityKeeper:
         """Actually initialize the repository.
 
         This takes care of all the dirty work regarding git configuration and
-        preparation of a basic git server.
+        preparation of a basic git server. Fails if the directory does already exist.
         """
         # Be double-safe against directory transversal
         entity_id = affirm(int, entity_id)
