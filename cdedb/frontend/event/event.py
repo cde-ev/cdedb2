@@ -856,13 +856,14 @@ class EventEventMixin(EventBaseFrontend):
         new_ids, message = self.pasteventproxy.archive_event(
             rs, event_id, create_past_event=create_past_event)
 
+        if message:
+            rs.notify("error", message)
+            return self.redirect(rs, "event/show_event")
+
         # Delete non-pseudonymized event keeper only after internal work has been
         # concluded successfully
         self.eventproxy.event_keeper_drop(rs, event_id)
 
-        if message:
-            rs.notify("warning", message)
-            return self.redirect(rs, "event/show_event")
         rs.notify("success", n_("Event archived."))
         if new_ids is None:
             return self.redirect(rs, "event/show_event")
