@@ -952,6 +952,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         code = self.eventproxy.delete_registration(
             rs, registration_id, {"registration_parts", "registration_tracks",
                                   "course_choices"})
+        self.eventproxy.event_keeper_commit(rs, event_id, f"Lösche Anmeldung {db_id}.")
         rs.notify_return_code(code)
         return self.redirect(rs, "event/registration_query")
 

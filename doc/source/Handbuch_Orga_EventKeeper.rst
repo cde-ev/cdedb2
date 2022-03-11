@@ -17,17 +17,18 @@ partiellen Export der Veranstaltung enthält. Einzige Abweichung ist, dass der
 
 In dieses Repositorium werden einmal pro halbe Stunde Snapshots vorgenommen,
 sofern eine Änderung stattgefunden hat. Darüber hinaus
-werden vor und teils nach größeren Änderungen manuelle Snapshots vorgenommen.
+werden vor und nach größeren Änderungen weitere Snapshots vorgenommen.
 Dadurch lassen sich diese Änderungen im Nachhinein über das Git nachvollziehen.
 
-Weitere Snapshots werden angelegt:
+Weitere Snapshots werden angelegt vor und nach:
 
-* Vor der Löschung eines Teilnehmers, eines Kurses, einer Unterkunft oder eines Datenfelds
-* Vor und nach Änderung  von Datenfeldern
-* Vor und nach Multi-Edit
-* Vor und nach einem partiellen Import
-* Vor und nach Entsperrung einer Veranstaltung
-* Nach einer Änderung des Datenbankschemas für Veranstaltungen
+* Löschung eines Teilnehmers, eines Kurses oder einer Unterkunft
+* Änderung oder Löschung von Datenfeldern
+* Multi-Edit
+* partiellem Import
+* Entsperrung einer Veranstaltung
+
+Zudem gibt es einen Snapshot nach Änderung des Datenbankschemas für Veranstaltungen.
 
 Dabei wird jeweils der Snapshot vor einer Änderung immer vorgenommen, auch wenn
 sich der partielle Export dadurch nicht verändert hat, um eine Trennung der Aktion
