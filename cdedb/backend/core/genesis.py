@@ -320,10 +320,10 @@ class CoreGenesisBackend(CoreBaseBackend):
 
     @access(*REALM_ADMINS)
     def genesis_decide(self, rs: RequestState, case_id: int, decision: GenesisDecision,
-                       persona_id: int = None) -> DefaultReturnCode:
+                       persona_id: int = None) -> vtypes.ID:
         """Final step in the genesis process. Create or modify an account or do nothing.
 
-        :returns: Default return code. The id of the newly created or the modified user.
+        :returns: The id of the newly created or modified user or 0 if nothing was done.
         """
         case_id = affirm(vtypes.ID, case_id)
         decision = affirm(GenesisDecision, decision)
