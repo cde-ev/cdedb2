@@ -56,7 +56,8 @@ following additional privileges are
 Due to complex inter-realm dependencies, mailinglist privileges have some caveats
 which are explained further at :doc:`Realm_Mailinglist_Privileges`.
 
-.. todo:: Weiterführende Referenz auf Realm_Core_Personas
+A privacy-focused overview of which personal data other users may access
+under which conditions can be found at :doc:`Realm_Core_Privacy`.
 
 Realm Admins
 ------------
