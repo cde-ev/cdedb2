@@ -323,13 +323,12 @@ class CoreGenesisBackend(CoreBaseBackend):
                        persona_id: int = None) -> DefaultReturnCode:
         """Final step in the genesis process. Create or modify an account or do nothing.
 
-        :returns: Default return code. The id of the newly created user if any.
+        :returns: Default return code. The id of the newly created or the modified user.
         """
         case_id = affirm(vtypes.ID, case_id)
         decision = affirm(GenesisDecision, decision)
         persona_id = affirm_optional(vtypes.ID, persona_id)
 
-        ret = 1
         with Atomizer(rs):
             # Privilege check is done in genesis_get_case, since it requires the case.
             case = self.genesis_get_case(rs, case_id)
@@ -381,10 +380,11 @@ class CoreGenesisBackend(CoreBaseBackend):
                 update['id'] = persona_id
                 # Set force_review, so that all changes can be reviewed and adjusted
                 # manually and we don't just overwrite existing data blindly.
-                ret *= self.change_persona(
+                self.change_persona(
                     rs, update, change_note="Daten aus Accountanfrage übernommen.",
                     force_review=True)
-        return ret
+                return persona_id
+        return 0
 
     @internal
     @access(*REALM_ADMINS)
