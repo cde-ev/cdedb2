@@ -428,6 +428,7 @@ GRANT INSERT, SELECT, UPDATE ON core.cron_store TO cdb_admin;
 
 CREATE TABLE core.locks (
         id                      serial PRIMARY KEY,
+        -- see cdedb.database.constants.LockType
         handle                  integer NOT NULL UNIQUE,
         atime                   timestamp WITH TIME ZONE DEFAULT now()
 );
