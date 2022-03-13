@@ -33,8 +33,9 @@ auto-build. So take a look there to see how everything fits together.
 
 The python code is state-less and thus easily parallelizable. This is
 exploited in the frontend (where Apache does multithreading). All state is
-kept in the database. For accountability we keep a record of all sessions
-of the last 30 days and only allow five active sessions per account.
+kept in the database. For accountability we always keep a user's latest session
+and a record of all sessions of the last 30 days. We only allow five active
+sessions per account, this number can be adjusted in the :doc:`Design_Configuration`.
 
 The basic account is referred to as :doc:`persona <Design_Roles>`. Each
 persona has access to a subset of the realms. Some attributes of an account
