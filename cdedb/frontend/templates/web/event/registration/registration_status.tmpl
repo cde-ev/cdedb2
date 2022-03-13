@@ -64,15 +64,7 @@
                 </tr>
                 <tr>
                     <td>{% trans %}Amount{% endtrans %}</td>
-                    <td>
-                        {{ fee|money(lang=lang) }}
-                        {% if registration["amount_paid"] %}
-                            <span class="text-muted">
-                                ({% trans %}already paid{% endtrans %}:
-                                {{ registration['amount_paid']|money(lang=lang) }})
-                            </span>
-                        {% endif %}
-                    </td>
+                    <td>{{ fee|money(lang=lang) }}</td>
                 </tr>
                 <tr>
                     <td>{% trans %}Reference{% endtrans %}</td>
@@ -108,12 +100,8 @@
     {% else %}
         <h3 class="heading-underline">{% trans %}Payment{% endtrans %}</h3>
         <p>
-            {% trans fee=(
-                fee|money(lang=lang) +
-                ((" (" + gettext("already paid") + ": %s)"|format(registration['amount_paid']|money(lang=lang)))
-                    if registration['amount_paid'] else "")
-                ) %}
-                The orgas will tell you separately how to pay your fee of {{ fee }}.
+            {% trans %}
+                The orgas will tell you separately how to pay your fee of {{ fee }}€.
             {% endtrans %}
         </p>
     {% endif %}
