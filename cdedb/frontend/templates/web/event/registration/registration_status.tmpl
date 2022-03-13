@@ -32,54 +32,73 @@
             {{ ambience['event']['registration_text']|md }}
         {% endcall %}
     {% endif %}
-    {% set payment_pending = not registration['payment'] and fee %}
-    {% if payment_pending %}
-    {% if ambience['event']['iban'] %}
-        <h3 class="heading-underline">{% trans %}Bank Transfer{% endtrans %}</h3>
+    {% if fee %}
+    {% if registration['amount_paid'] >= fee %}
+        <h3 class="heading-underline">{% trans %}Payment{% endtrans %}</h3>
         <p>
             {% trans fee=fee|money(lang=lang) %}
-            	Please keep in mind that your Registration will only be complete, once
-                you pay your participation fee. Please transfer {{ fee }} to the following
-                Account. Please make sure, the recipient does not have to pay any fees,
-                especially when paying internationally.
+                You have already payed the registration fee of {{ fee }}.
             {% endtrans %}
         </p>
-        <table class="table table-condensed" id="registrationsummary">
-            <tbody>
-                <tr>
-                    <td>{% trans %}Account holder{% endtrans %}</td>
-                    <td>{{ meta_info['CdE_Konto_Inhaber'] }}</td>
-                </tr>
-                <tr>
-                    <td>{% trans %}IBAN{% endtrans %}</td>
-                    <td>{{ ambience['event']['iban']|iban }}</td>
-                </tr>
-                <tr>
-                    <td>{% trans %}BIC{% endtrans %}</td>
-                    <td>{{ meta_info['CdE_Konto_BIC'] }}</td>
-                </tr>
-                <tr>
-                    <td>{% trans %}Bank{% endtrans %}</td>
-                    <td>{{ meta_info['CdE_Konto_Institut'] }}</td>
-                </tr>
-                <tr>
-                    <td>{% trans %}Amount{% endtrans %}</td>
-                    <td>{{ fee|money(lang=lang) }}</td>
-                </tr>
-                <tr>
-                    <td>{% trans %}Reference{% endtrans %}</td>
-                    <td>{{ reference }}</td>
-                </tr>
-            </tbody>
-        </table>
-        <p class="text-muted">
-            {{ util.make_icon('info-circle') }}
-            {% trans %}
-                Note: After your transfer incurred at the bank account, it may take some time
-                (up to a few weeks) until the payment is registered here.
+    {% else %}
+        {% if ambience['event']['iban'] %}
+            <h3 class="heading-underline">{% trans %}Bank Transfer{% endtrans %}</h3>
+            <p>
+                {% trans to_pay=(fee - registration['amount_paid'])|money(lang=lang) %}
+                    Please keep in mind that your Registration will only be complete, once
+                    you pay your participation fee. Please transfer {{ to_pay }} to the following
+                    Account. Please make sure, the recipient does not have to pay any fees,
+                    especially when paying internationally.
+                {% endtrans %}
+            </p>
+            <table class="table table-condensed" id="registrationsummary">
+                <tbody>
+                    <tr>
+                        <td>{% trans %}Account holder{% endtrans %}</td>
+                        <td>{{ meta_info['CdE_Konto_Inhaber'] }}</td>
+                    </tr>
+                    <tr>
+                        <td>{% trans %}IBAN{% endtrans %}</td>
+                        <td>{{ ambience['event']['iban']|iban }}</td>
+                    </tr>
+                    <tr>
+                        <td>{% trans %}BIC{% endtrans %}</td>
+                        <td>{{ meta_info['CdE_Konto_BIC'] }}</td>
+                    </tr>
+                    <tr>
+                        <td>{% trans %}Bank{% endtrans %}</td>
+                        <td>{{ meta_info['CdE_Konto_Institut'] }}</td>
+                    </tr>
+                    <tr>
+                        <td>{% trans %}Amount{% endtrans %}</td>
+                        <td>{{ (fee - registration['amount_paid'])|money(lang=lang) }}</td>
+                    </tr>
+                    <tr>
+                        <td>{% trans %}Reference{% endtrans %}</td>
+                        <td>{{ reference }}</td>
+                    </tr>
+                </tbody>
+            </table>
+            <p class="text-muted">
+                {{ util.make_icon('info-circle') }}
+                {% trans %}
+                    Note: After your transfer incurred at the bank account, it may take some time
+                    (up to a few weeks) until the payment is registered here.
+                {% endtrans %}
+            </p>
+        {% else %}
+            <h3 class="heading-underline">{% trans %}Payment{% endtrans %}</h3>
+            <p>
+                {% trans fee=fee|money(lang=lang) %}
+                    The orgas will tell you separately how to pay your fee of {{ fee }}.
+                {% endtrans %}
+            </p>
+        {% endif %}
+        <p>
+            {% trans fee=fee|money(lang=lang), amount_paid=registration['amount_paid']|money(lang=lang) %}
+                You have already payed {{ amount_paid }} of the total registration fee of {{ fee }}.
             {% endtrans %}
         </p>
-
         {% if "member" not in user.roles and ambience["event"]["nonmember_surcharge"] %}
             <div class="text-info" id="nonmember-surcharge" style="font-weight: bold;">
                 <p>
@@ -97,13 +116,6 @@
                 {% endif %}
             </div>
         {% endif %}
-    {% else %}
-        <h3 class="heading-underline">{% trans %}Payment{% endtrans %}</h3>
-        <p>
-            {% trans %}
-                The orgas will tell you separately how to pay your fee of {{ fee }}€.
-            {% endtrans %}
-        </p>
     {% endif %}
     {% endif %}
 
@@ -128,7 +140,7 @@
             </dt>
             <dd id="registration_status_part{{ part_id }}">
                 {{ gettext(part['status']|enum(enums['RegistrationPartStati'])) }}
-                {% if part['status'].has_to_pay() and payment_pending %}
+                {% if part['status'].has_to_pay() and not registration['payment'] and fee %}
                     <span class="text-danger">({% trans %}payment pending{% endtrans %})</span>
                 {% endif %}
                 {% if part['status'] == enums['RegistrationPartStati'].waitlist and waitlist_position[part_id] %}
