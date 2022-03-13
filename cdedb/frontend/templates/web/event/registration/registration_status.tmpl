@@ -108,14 +108,13 @@
     {% else %}
         <h3 class="heading-underline">{% trans %}Payment{% endtrans %}</h3>
         <p>
-            {% trans fee=fee|money(lang=lang) %}
+            {% trans fee=(
+                fee|money(lang=lang) +
+                ((" (" + gettext("already paid") + ": %s)"|format(registration['amount_paid']|money(lang=lang)))
+                    if registration['amount_paid'] else "")
+                ) %}
                 The orgas will tell you separately how to pay your fee of {{ fee }}.
             {% endtrans %}
-            {% if registration['amount_paid'] %}
-                {% trans amount=registration['amount_paid']|money(lang=lang) %}
-                    You have already paid {{ amount }}.
-                {% endtrans %}
-            {% endif %}
         </p>
     {% endif %}
     {% endif %}

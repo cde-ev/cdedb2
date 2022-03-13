@@ -1504,9 +1504,8 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/1/registration/status'})
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
         self.assertPresence("Eingeteilt in")
-        self.assertPresence(
-            "separat mitteilen, wie du deinen Teilnahmebeitrag von 573,99 €"
-            " bezahlen kannst. Du hast bereits 200,00 € bezahlt.")
+        self.assertPresence("separat mitteilen, wie du deinen Teilnahmebeitrag")
+        self.assertPresence("573,99 € (bereits bezahlt: 200,00 €)")
 
         # check payment messages for different registration stati
         payment_pending = "Bezahlung ausstehend"
