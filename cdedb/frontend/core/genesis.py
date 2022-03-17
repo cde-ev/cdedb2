@@ -417,7 +417,6 @@ class CoreGenesisMixin(CoreBaseFrontend):
             if not code:  # pragma: no cover
                 rs.notify(
                     "error", n_("Past event attendance could not be established."))
-                return self.genesis_show_case(rs, genesis_case_id)
 
         # Send notification to the user, depending on decision.
         if decision.is_create():
