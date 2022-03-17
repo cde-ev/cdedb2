@@ -8,7 +8,9 @@ on the mail VM from within the CdEDB.
 from mailmanclient import Client, MailingList
 
 import cdedb.database.constants as const
+from cdedb.backend.common import DatabaseLock
 from cdedb.common import CdEDBObject, RequestState
+from cdedb.database.constants import LockType
 from cdedb.frontend.common import cdedburl, make_persona_name, periodic
 from cdedb.frontend.ml.base import MlBaseFrontend
 
@@ -287,22 +289,36 @@ The original message as received by Mailman is attached.
             self.mailman_sync_list_whites(rs, mailman, db_list, mm_list)
 
     @periodic("mailman_sync")
-    def mailman_sync(self, rs: RequestState, store: CdEDBObject) -> CdEDBObject:
+    def auto_mailman_sync(self, rs: RequestState, store: CdEDBObject) -> CdEDBObject:
+        self.mailman_sync(rs)
+        return store
+
+    def mailman_sync(self, rs: RequestState) -> bool:
         """Synchronize the mailing list software with the database.
 
         This has an @periodic decorator in the frontend.
+
+        :returns: Whether the operation has been successful.
         """
+        with DatabaseLock(rs, LockType.mailman) as lock:
+            if lock:
+                return self._sync(rs)
+            else:
+                self.logger.info("Mailman sync ongoing, skipping this invokation.")
+        return False
+
+    def _sync(self, rs: RequestState) -> bool:
         if (self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or (
                 self.conf["CDEDB_DEV"] and not self.conf["CDEDB_TEST"])):  # pragma: no cover
             self.logger.debug("Skipping mailman sync in dev/offline mode.")
-            return store
+            return True
         mailman = self.get_mailman()
         # noinspection PyBroadException
         try:
             _ = mailman.system  # cause the client to connect
         except Exception:  # sadly this throws many different exceptions
             self.logger.exception("Mailman client connection failed!")
-            return store
+            return False
         db_lists = self.mlproxy.get_mailinglists(
             rs, self.mlproxy.list_mailinglists(rs, active_only=False))
         db_lists = {lst['address']: lst for lst in db_lists.values()}
@@ -320,4 +336,4 @@ The original message as received by Mailman is attached.
                                    mm_lists[address])
         for address in deleted_lists:
             mailman.delete_list(address)
-        return store
+        return True
