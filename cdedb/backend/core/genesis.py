@@ -323,7 +323,7 @@ class CoreGenesisBackend(CoreBaseBackend):
                        persona_id: int = None) -> DefaultReturnCode:
         """Final step in the genesis process. Create or modify an account or do nothing.
 
-        :returns: The id of the newly created or modified user or 0 if nothing was done.
+        :returns: The id of the newly created or modified user if any, -1 if rejected.
         """
         case_id = affirm(vtypes.ID, case_id)
         decision = affirm(GenesisDecision, decision)
@@ -351,7 +351,7 @@ class CoreGenesisBackend(CoreBaseBackend):
                 raise RuntimeError(n_("Genesis modification failed."))
             if decision.is_create():
                 return self.genesis(rs, case_id)
-            if decision.is_update():
+            elif decision.is_update():
                 assert persona_id is not None
                 persona = self.get_persona(rs, persona_id)
                 if persona['is_archived']:
@@ -385,9 +385,8 @@ class CoreGenesisBackend(CoreBaseBackend):
                     force_review=True)
                 return persona_id
             # Special return value for rejected cases.
-            if not decision.is_create() and not decision.is_update():
+            else:
                 return -1
-        return 0
 
     @internal
     @access(*REALM_ADMINS)
