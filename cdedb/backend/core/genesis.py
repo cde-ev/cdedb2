@@ -320,7 +320,7 @@ class CoreGenesisBackend(CoreBaseBackend):
 
     @access(*REALM_ADMINS)
     def genesis_decide(self, rs: RequestState, case_id: int, decision: GenesisDecision,
-                       persona_id: int = None) -> vtypes.ID:
+                       persona_id: int = None) -> DefaultReturnCode:
         """Final step in the genesis process. Create or modify an account or do nothing.
 
         :returns: The id of the newly created or modified user or 0 if nothing was done.
@@ -384,6 +384,9 @@ class CoreGenesisBackend(CoreBaseBackend):
                     rs, update, change_note="Daten aus Accountanfrage übernommen.",
                     force_review=True)
                 return persona_id
+            # Special return value for rejected cases.
+            if not decision.is_create() and not decision.is_update():
+                return -1
         return 0
 
     @internal
