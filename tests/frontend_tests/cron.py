@@ -369,10 +369,6 @@ class TestCron(CronTest):
         self.assertEqual(['ballot_tallied'] * 2,
                          [mail.template for mail in self.mails])
 
-    def test_write_subscription_states(self) -> None:
-        # We just want to test that no exception is raised.
-        self.execute('write_subscription_states')
-
     def test_clean_session_log(self) -> None:
         # We just want to test that no exception is raised.
         self.execute('deactivate_old_sessions', 'clean_session_log')
@@ -482,7 +478,7 @@ class TestCron(CronTest):
         #
         # Run
         #
-        self.execute('mailman_sync')
+        self.execute('sync_subscriptions')
 
         #
         # Check

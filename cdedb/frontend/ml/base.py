@@ -1143,12 +1143,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             store[str(ml_id)] = ml_store
         return store
 
-    @periodic("write_subscription_states")
-    def write_subscription_states(self, rs: RequestState,
-                                  store: CdEDBObject) -> CdEDBObject:
+    def write_subscription_states(self, rs: RequestState) -> None:
         """Write the current state of implicit subscribers to the database."""
         mailinglist_ids = self.mlproxy.list_mailinglists(rs)
-
         self.mlproxy.write_subscription_states(rs, mailinglist_ids)
-
-        return store
