@@ -641,6 +641,9 @@ class EventQueryMixin(EventBaseFrontend):
                         rs.ambience['event'], reg, part_group_id))
                 for part_group_id in rs.ambience['event']['part_groups']
             })
+        # Needed for formatting in template. We do it here since it's ugly in jinja
+        # without list comprehension.
+        per_part_max_indent = max(stat.indent for stat in per_part_statistics)
 
         per_track_statistics: Dict[
             Union[EventRegistrationTrackStatistic, EventCourseStatistic],
@@ -669,6 +672,7 @@ class EventQueryMixin(EventBaseFrontend):
         return self.render(rs, "query/stats", {
             'registrations': registrations, 'personas': personas,
             'courses': courses, 'per_part_statistics': per_part_statistics,
+            'per_part_max_indent': per_part_max_indent,
             'per_track_statistics': per_track_statistics, 'grouper': grouper,
         })
 

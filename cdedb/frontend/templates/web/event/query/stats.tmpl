@@ -19,7 +19,8 @@
         <table id="participant-stats" class="table table-slim table-condensed table-stats">
             <thead>
                 <tr>
-                    <th colspan="2"></th>
+                    {% set first_column_width = per_part_max_indent + 1 %}
+                    <th colspan="{{ first_column_width }}"></th>
                     {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
                         <th class="text-right">
                             {% if ambience['event']['parts']|length + ambience['event']['part_groups']|length > 1 %}
@@ -39,12 +40,10 @@
             <tbody>
                 {% for stat, row in per_part_statistics.items() %}
                     <tr>
-                        {% if stat.indent %}
+                        {% for _ in range(stat.indent) %}
                             <th class="indent"></th>
-                            <th>{{ gettext(stat.value) }}</th>
-                        {% else %}
-                            <th colspan="2">{{ gettext(stat.value) }}</th>
-                        {% endif %}
+                        {% endfor %}
+                        <th colspan="{{ first_column_width - stat.indent }}">{{ gettext(stat.value) }}</th>
                         {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
                             <td class="text-right">
                                 {% set query = stat.get_query(ambience['event'], part_id) %}
