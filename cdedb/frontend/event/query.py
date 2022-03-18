@@ -4,7 +4,6 @@
 The `EventQueryMixin` subclasses the `EventBaseFrontend` and provides endpoints for
 querying registrations, courses and lodgements.
 """
-
 import collections
 import datetime
 import enum
@@ -124,34 +123,42 @@ def merge_constraints(*constraints: QueryConstraint) -> Optional[QueryConstraint
 class EventRegistrationPartStatistic(enum.Enum):
     """This enum implements statistics for registration parts.
 
-    Some member names begin with an underscore, indicating, that they should be
-    indented under the previous member without an underscore. This can be checked using
-    the `.indent` property.
+    In addition to their string value, all members have an additional `.indent`
+    attribute, which specifies the level of indentation of that statistic.
     """
+    indent: int
+
+    def __new__(cls, value: str, indent: int = 0) -> "EventRegistrationPartStatistic":
+        """Custom creation method for this enum.
+
+        Achieves that value and indentation of new members can be written using tuple
+        syntax. Indentation defaults to 0.
+        """
+        obj = object.__new__(cls)
+        obj._value_ = value
+        obj.indent = indent
+        return obj
+
     pending = n_("Open Registrations")
-    _payed = n_("Paid")
+    paid = n_("Paid"), 1
     participant = n_("Participants")
-    _minors = n_("All minors")
-    _u18 = n_("U18")
-    _u16 = n_("U16")
-    _u14 = n_("U14")
-    _checked_in = n_("Checked-In")
-    _not_checked_in = n_("Not Checked-In")
-    _orgas = n_("Orgas")
+    minors = n_("All minors"), 1
+    u18 = n_("U18"), 1
+    u16 = n_("U16"), 1
+    u14 = n_("U14"), 1
+    checked_in = n_("Checked-In"), 1
+    not_checked_in = n_("Not Checked-In"), 1
+    orgas = n_("Orgas"), 1
     waitlist = n_("Waitinglist")
     guest = n_("Guests")
     involved = n_("Total Active Registrations")
-    _not_payed = n_("Not Paid")
-    _no_parental_agreement = n_("Parental Consent Pending")
+    not_paid = n_("Not Paid"), 1
+    no_parental_agreement = n_("Parental Consent Pending"), 1
     present = n_("Present")
-    _no_lodgement = n_("No Lodgement")
+    no_lodgement = n_("No Lodgement"), 1
     cancelled = n_("Registration Cancelled")
     rejected = n_("Registration Rejected")
     total = n_("Total Registrations")
-
-    @property
-    def indent(self) -> bool:
-        return self.name.startswith("_")
 
     def test(self, event: CdEDBObject, reg: CdEDBObject, part_id: int) -> bool:
         """
@@ -160,23 +167,23 @@ class EventRegistrationPartStatistic(enum.Enum):
         part = reg['parts'][part_id]
         if self == self.pending:
             return part['status'] == RPS.applied
-        elif self == self._payed:
+        elif self == self.paid:
             return part['status'] == RPS.applied and reg['payment']
         elif self == self.participant:
             return _is_participant(part)
-        elif self == self._minors:
+        elif self == self.minors:
             return _is_participant(part) and part['age_class'].is_minor()
-        elif self == self._u18:
+        elif self == self.u18:
             return _is_participant(part) and part['age_class'] == AgeClasses.u18
-        elif self == self._u16:
+        elif self == self.u16:
             return _is_participant(part) and part['age_class'] == AgeClasses.u16
-        elif self == self._u14:
+        elif self == self.u14:
             return _is_participant(part) and part['age_class'] == AgeClasses.u14
-        elif self == self._checked_in:
+        elif self == self.checked_in:
             return _is_participant(part) and reg['checkin']
-        elif self == self._not_checked_in:
+        elif self == self.not_checked_in:
             return _is_participant(part) and not reg['checkin']
-        elif self == self._orgas:
+        elif self == self.orgas:
             return _is_participant(part) and reg['persona_id'] in event['orgas']
         elif self == self.waitlist:
             return part['status'] == RPS.waitlist
@@ -184,14 +191,14 @@ class EventRegistrationPartStatistic(enum.Enum):
             return part['status'] == RPS.guest
         elif self == self.involved:
             return part['status'].is_involved()
-        elif self == self._not_payed:
+        elif self == self.not_paid:
             return part['status'].has_to_pay() and not reg['payment']
-        elif self == self._no_parental_agreement:
+        elif self == self.no_parental_agreement:
             return (part['status'].is_involved() and part['age_class'].is_minor()
                     and not reg['parental_agreement'])
         elif self == self.present:
             return part['status'].is_present()
-        elif self == self._no_lodgement:
+        elif self == self.no_lodgement:
             return part['status'].is_present() and not part['lodgement_id']
         elif self == self.cancelled:
             return part['status'] == RPS.cancelled
@@ -218,7 +225,7 @@ class EventRegistrationPartStatistic(enum.Enum):
         part = event['parts'][part_id]
         if self == self.pending:
             return ([], [_status_constraint(part, RPS.applied)], [])
-        elif self == self._payed:
+        elif self == self.paid:
             return (
                 ['reg.payment'],
                 [
@@ -229,13 +236,13 @@ class EventRegistrationPartStatistic(enum.Enum):
             )
         elif self == self.participant:
             return ([], [_participant_constraint(part)], [])
-        elif self == self._minors:
+        elif self == self.minors:
             return (
                 ['persona.birthday'],
                 [_participant_constraint(part), _age_constraint(part, 18)],
                 []
             )
-        elif self == self._u18:
+        elif self == self.u18:
             return (
                 ['persona.birthday'],
                 [
@@ -244,7 +251,7 @@ class EventRegistrationPartStatistic(enum.Enum):
                 ],
                 []
             )
-        elif self == self._u16:
+        elif self == self.u16:
             return (
                 ['persona.birthday'],
                 [
@@ -253,7 +260,7 @@ class EventRegistrationPartStatistic(enum.Enum):
                 ],
                 []
             )
-        elif self == self._u14:
+        elif self == self.u14:
             return (
                 ['persona.birthday'],
                 [
@@ -262,7 +269,7 @@ class EventRegistrationPartStatistic(enum.Enum):
                 ],
                 []
             )
-        elif self == self._checked_in:
+        elif self == self.checked_in:
             return (
                 ['reg.checkin'],
                 [
@@ -271,7 +278,7 @@ class EventRegistrationPartStatistic(enum.Enum):
                 ],
                 []
             )
-        elif self == self._not_checked_in:
+        elif self == self.not_checked_in:
             return (
                 [],
                 [
@@ -280,7 +287,7 @@ class EventRegistrationPartStatistic(enum.Enum):
                 ],
                 []
             )
-        elif self == self._orgas:
+        elif self == self.orgas:
             return (
                 [],
                 [
@@ -299,7 +306,7 @@ class EventRegistrationPartStatistic(enum.Enum):
             return ([], [_status_constraint(part, RPS.guest)], [])
         elif self == self.involved:
             return ([f"part{part['id']}.status"], [_involved_constraint(part)], [])
-        elif self == self._not_payed:
+        elif self == self.not_paid:
             return (
                 [f"part{part['id']}.status"],
                 [
@@ -308,7 +315,7 @@ class EventRegistrationPartStatistic(enum.Enum):
                 ],
                 []
             )
-        elif self == self._no_parental_agreement:
+        elif self == self.no_parental_agreement:
             return (
                 [f"part{part['id']}.status"],
                 [
@@ -320,7 +327,7 @@ class EventRegistrationPartStatistic(enum.Enum):
             )
         elif self == self.present:
             return ([f"part{part['id']}.status"], [_present_constraint(part)], [])
-        elif self == self._no_lodgement:
+        elif self == self.no_lodgement:
             return (
                 [f"part{part['id']}.status"],
                 [
