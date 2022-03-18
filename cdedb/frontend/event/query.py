@@ -153,6 +153,7 @@ class EventRegistrationPartStatistic(enum.Enum):
     guest = n_("Guests")
     involved = n_("Total Active Registrations")
     not_paid = n_("Not Paid"), 1
+    orgas_not_paid = n_("thereof Orgas"), 2
     no_parental_agreement = n_("Parental Consent Pending"), 1
     present = n_("Present")
     no_lodgement = n_("No Lodgement"), 1
@@ -193,6 +194,10 @@ class EventRegistrationPartStatistic(enum.Enum):
             return part['status'].is_involved()
         elif self == self.not_paid:
             return part['status'].has_to_pay() and not reg['payment']
+        elif self == self.orgas_not_paid:
+            return (
+                EventRegistrationPartStatistic.orgas.test(event, reg, part_id)
+                and EventRegistrationPartStatistic.not_paid.test(event, reg, part_id))
         elif self == self.no_parental_agreement:
             return (part['status'].is_involved() and part['age_class'].is_minor()
                     and not reg['parental_agreement'])
@@ -311,6 +316,16 @@ class EventRegistrationPartStatistic(enum.Enum):
                 [f"part{part['id']}.status"],
                 [
                     _involved_constraint(part),
+                    ('reg.payment', QueryOperators.empty, None),
+                ],
+                []
+            )
+        elif self == self.orgas_not_paid:
+            return (
+                [f"part{part['id']}.status"],
+                [
+                    _participant_constraint(part),
+                    ('persona.id', QueryOperators.oneof, tuple(event['orgas'])),
                     ('reg.payment', QueryOperators.empty, None),
                 ],
                 []
