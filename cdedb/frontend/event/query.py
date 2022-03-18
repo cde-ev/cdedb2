@@ -120,6 +120,7 @@ def merge_constraints(*constraints: QueryConstraint) -> Optional[QueryConstraint
 # The enum member values are translatable strings to be used as labels for that
 # statistic. The order of member definition inidicates the order they will be displayed.
 
+@enum.unique
 class EventRegistrationPartStatistic(enum.Enum):
     """This enum implements statistics for registration parts.
 
@@ -400,6 +401,7 @@ class EventRegistrationPartStatistic(enum.Enum):
         return query
 
 
+@enum.unique
 class EventCourseStatistic(enum.Enum):
     """This enum implements statistics for courses in course tracks."""
     offered = n_("Course Offers")
@@ -449,6 +451,7 @@ class EventCourseStatistic(enum.Enum):
         return query
 
 
+@enum.unique
 class EventRegistrationTrackStatistic(enum.Enum):
     """This enum implements statistics for registration tracks."""
     all_instructors = n_("(Potential) Instructor")
