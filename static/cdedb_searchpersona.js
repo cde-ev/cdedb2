@@ -39,8 +39,11 @@
      *                  added as option.
      * @param multi If true, a list of personas seperated by ',' is produced, otherwise only a single persona can be selected
      * @param placeholder If given, this string is used as placeholder in the selectize.js control
+     * @param toggle Optionally let some url parameters depend on a checkbox. If given, this object must contain a key `toggle`,
+     *               which holds the checkbox' jquery object and it may contain arbitrary other keys to append to the url with their values.
+     *               When the checkbox is checked, values from this object take precedence over those specified via the `params` argument.
      */
-    $.fn.cdedbSearchPerson = function(url, params, exclude, freeform, multi, placeholder) {
+    $.fn.cdedbSearchPerson = function(url, params, exclude, freeform, multi, placeholder, toggle) {
         exclude ??= [];
         $(this).selectize({
             'placeholder' : placeholder || '',
@@ -73,10 +76,17 @@
             },
             load: function(query, callback) {
                 if (!query.length) return callback();
+
                 let target_url = new URL(url, document.location);
                 params['phrase'] = encodeURIComponent(query);
-                for (const key in params) {
-                    target_url.searchParams.append(key, params[key]);
+                if (toggle && toggle['toggle'].is(':checked')) {
+                    let new_params = $.extend({}, params, toggle);  // values from toggle take precedence
+                    delete new_params['toggle'];
+                    for (const key in new_params)
+                        target_url.searchParams.append(key, new_params[key]);
+                } else {
+                    for (const key in params)
+                        target_url.searchParams.append(key, params[key]);
                 }
                 $.ajax({
                     url: target_url,
@@ -101,6 +111,12 @@
                 });
             }
         });
+        if (toggle) {  // toggling potentially changes search results
+            let selectize = $(this)[0].selectize;
+            toggle['toggle'].on('change', function () {
+                selectize.clearOptions();
+            });
+        }
         return this;
     };
 })(jQuery);
