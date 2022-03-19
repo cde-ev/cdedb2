@@ -42,7 +42,7 @@
                 </form>
                 <script nonce="{{ csp_nonce }}">
                     var $i = $('#input-showuser-id');
-                    $i.cdedbSearchPerson('{{ (cdedblink('core/select_persona')|e) + ('?kind=admin_persona&phrase=%s'|s) }}', [],
+                    $i.cdedbSearchPerson('{{ cdedblink('core/select_persona') }}', {'kind' : 'admin_persona'}, [],
                                          true, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}");
                     $i.change(function(){
                         if ($(this).val()) {

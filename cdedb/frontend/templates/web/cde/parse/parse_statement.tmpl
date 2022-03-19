@@ -105,7 +105,7 @@
                                     label=gettext("Member"), anid="input-cdedbid-{}".format(t_id)) }}
                             <script nonce="{{ csp_nonce }}">
                                 $('#input-cdedbid-{{ t_id }}').cdedbSearchPerson(
-                                    '{{ (cdedblink('core/select_persona')|e) + ('?kind=admin_persona&phrase=%s'|s) }}',
+                                    '{{ cdedblink('core/select_persona') }}', {'kind' : 'admin_persona'},
                                     [], false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                                 );
                             </script>

@@ -31,17 +31,19 @@
      * Adds selecizes to the given DOM elements to search personas via jQuerys ajax() function and the json api at the
      * given url provided by our python code.
      *
-     * The url parameter must contain '%s' wich will be replaced by the search pattern.
+     * @param url The url of the server-side endpoint, relative to the document's location.
+     * @param params Object specifying GET-parameters to be appended to the url.
+     *               The search phrase will be added with `phrase` as key.
      * @param exclude May contain an array of (unformatted) persona ids, which will be excluded from the fetched result list.
      * @param freeform' If true, all inputs will be accepted as new option, else only well-formed DB-Ids are accepted to be
      *                  added as option.
      * @param multi If true, a list of personas seperated by ',' is produced, otherwise only a single persona can be selected
      * @param placeholder If given, this string is used as placeholder in the selectize.js control
      */
-    $.fn.cdedbSearchPerson = function(url,exclude,freeform,multi,placeholder) {
+    $.fn.cdedbSearchPerson = function(url, params, exclude, freeform, multi, placeholder) {
         exclude ??= [];
         $(this).selectize({
-            'placeholder' : placeholder || '',
+            'placeholder' : placeholder || '',
             'valueField' : 'cdedb_id',
             'labelField' : 'name',
             searchField: ['name','email','id'],
@@ -71,8 +73,13 @@
             },
             load: function(query, callback) {
                 if (!query.length) return callback();
+                let target_url = new URL(url, document.location);
+                params['phrase'] = encodeURIComponent(query);
+                for (const key in params) {
+                    target_url.searchParams.append(key, params[key]);
+                }
                 $.ajax({
-                    url: url.replace('%s',encodeURIComponent(query)),
+                    url: target_url,
                     type: 'GET',
                     error: function() {
                         callback();
