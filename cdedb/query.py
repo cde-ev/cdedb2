@@ -487,6 +487,7 @@ _QUERY_SPECS = {
             "pevent_id": QuerySpecEntry("id", n_("Past Event")),
             "pcourse_id": QuerySpecEntry("id", n_("Past Course")),
             "notes": QuerySpecEntry("str", n_("Admin-Notes")),
+            "fulltext": QuerySpecEntry("str", n_("Fulltext")),
         },
     QueryScope.archived_past_event_user:
         {

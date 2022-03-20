@@ -10742,6 +10742,10 @@ msgstr "Dies ist eine Offline-Instanz der CdE-Datenbank"
 msgid "Search for Users by ID or Name"
 msgstr "Benutzer nach ID oder Namen suchen"
 
+#: cdedb/frontend/templates/web/core/index.tmpl:43
+msgid "Search for archived users"
+msgstr "Suche nach archivierten Nutzern"
+
 #: cdedb/frontend/templates/web/core/index.tmpl:62
 msgid "Account Management"
 msgstr "Verwaltung"
