@@ -340,11 +340,17 @@ class TestCoreFrontend(FrontendTest):
     def test_adminshowuser(self) -> None:
         self.admin_view_profile('berta')
         self.assertTitle("Bertå Beispiel")
+        self.assertTitle(USER_DICT['berta']['default_name_format'])
         self.assertPresence("Bei Überweisungen aus dem Ausland achte bitte",
                             div='copy-paste-template')
 
         self.admin_view_profile('emilia')
+        self.assertTitle(USER_DICT['emilia']['default_name_format'])
         self.assertNonPresence("Bei Überweisungen aus dem Ausland achte bitte")
+
+        self.admin_view_profile('hades')
+        self.assertTitle(USER_DICT['hades']['default_name_format'])
+        self.assertNotification("Der Benutzer ist archiviert", 'info', static=True)
 
     @as_users("berta")
     def test_member_profile_past_events(self) -> None:
@@ -379,6 +385,12 @@ class TestCoreFrontend(FrontendTest):
                           'id': 6,
                           'name': 'Ferdinand Findus'}]}
         self.assertEqual(expectation, self.response.json)
+        self.get('/core/persona/select?kind=admin_archived_persona&phrase=had')
+        expectation = {
+            'personas': [{'email': None,
+                          'id': 8,
+                          'name': "Hades Hell"}]}
+        self.assertEqual(expectation, self.response.json)
         self.get('/core/persona/select?kind=ml_user&phrase=@exam')
         expectation = (1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 13, 14)
         reality = tuple(e['id'] for e in self.response.json['personas'])
@@ -408,45 +420,54 @@ class TestCoreFrontend(FrontendTest):
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
 
-    @as_users("berta", "martin", "nina", "rowena", "vera", "viktor", "werner", "annika",
-              "katarina")
+    @as_users("annika", "berta", "katarina", "martin", "nina", "paul", "rowena",
+              "quintus", "viktor", "werner")
     def test_selectpersona_403(self) -> None:
-        if not self.user_in("vera", "katarina"):
+        # only core admins
+        if not self.user_in("paul"):
+            self.get('/core/persona/select?kind=admin_archived_persona&phrase=hades',
+                     status=403)
+            self.assertTitle('403: Forbidden')
+        # only core or cde admins and auditors
+        if not self.user_in("paul", "quintus", "katarina"):
             self.get('/core/persona/select?kind=admin_persona&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
+        # only cde admins or auditors
+        if not self.user_in("quintus", "katarina"):
             self.get('/core/persona/select?kind=cde_user&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
             self.get('/core/persona/select?kind=past_event_user&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
+        # only auditors, assembly admins and presiders
         if not self.user_in("katarina", "viktor", "werner"):
             self.get('/core/persona/select?kind=assembly_user&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
+        # only assembly admins and presiders
         if not self.user_in("viktor", "werner"):
             self.get('/core/persona/select?kind=pure_assembly_user&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
+        # visible to all admins except for meta admins
         if self.user_in("martin", "rowena"):
             self.get('/core/persona/select?kind=ml_user&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
+        # only ml admins
         if not self.user_in("nina"):
             self.get('/core/persona/select?kind=pure_ml_user&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
+        # only event admins, orgas and auditors
         if not self.user_in("annika", "berta", "katarina"):
             self.get('/core/persona/select?kind=event_user&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
-
+        # everyone who may manage the given mailinglist
         if self.user_in("martin", "rowena", "werner"):
-            self.get('/core/persona/select'
-                     '?kind=event_user&phrase=@exam',
-                     status=403)
-            self.assertTitle('403: Forbidden')
             self.get('/core/persona/select'
                      '?kind=ml_subscriber&phrase=@exam&aux=57',
                      status=403)
@@ -605,6 +626,7 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("vera")
     def test_adminshowuser_advanced(self) -> None:
+        # unique result - non-archived users
         for phrase, user in (("DB-2-7", USER_DICT['berta']),
                               ("2", USER_DICT['berta']),
                               ("Bertålotta Beispiel", USER_DICT['berta']),
@@ -616,20 +638,49 @@ class TestCoreFrontend(FrontendTest):
             f['phrase'] = phrase
             self.submit(f)
             self.assertTitle(user['default_name_format'])
+        # archived user
+        self.traverse({'href': '^/$'})
+        f = self.response.forms['adminshowuserform']
+        f['phrase'] = "Hades"
+        f['archived'].checked = True
+        self.submit(f)
+        self.assertTitle(USER_DICT['hades']['default_name_format'])
+
+        # no results
         self.traverse({'href': '^/$'})
         f = self.response.forms['adminshowuserform']
         f['phrase'] = "nonsense asorecuhasoecurhkgdgdckgdoao"
+        f['archived'].checked = False
         self.submit(f)
         self.assertTitle("CdE-Datenbank")
+        self.assertNotification("Kein Account gefunden.", 'warning')
         self.traverse({'href': '^/$'})
         f = self.response.forms['adminshowuserform']
         f['phrase'] = "@example.cde"
+        f['archived'].checked = True
+        self.submit(f)
+        self.assertTitle("CdE-Datenbank")
+        self.assertNotification("Kein Account gefunden.", 'warning')
+
+        # multiple results - non-archived users
+        f = self.response.forms['adminshowuserform']
+        f['phrase'] = "@example.cde"
+        f['archived'].checked = False
         self.submit(f)
         self.assertTitle("Allgemeine Nutzerverwaltung")
         self.assertPresence("Bertålotta", div='query-result')
         self.assertPresence("Emilia", div='query-result')
         self.assertPresence("Garcia", div='query-result')
         self.assertPresence("Kalif", div='query-result')
+        # archived users
+        self.traverse({'href': '^/$'})
+        f = self.response.forms['adminshowuserform']
+        f['phrase'] = "a"  # commom part of "Hades" and "Lisa"
+        f['archived'].checked = True
+        self.submit(f)
+        self.assertTitle("Archivsuche")
+        self.assertPresence("Hades")
+        self.assertPresence("Lisa")
 
     @as_users("vera", "berta", "garcia")
     def test_changedata(self) -> None:
