@@ -111,7 +111,8 @@
                         {# It is possible that a candidate is equal to bar. This candidate will be in the preferred section.
                            So, if bar is preferred and not the only preferred candidate, we do not show the votes. #}
                         {% if ASSEMBLY_BAR_SHORTNAME in level['preferred'] and level['preferred']|length == 1 %}
-                            {{ level['pro_votes'] }}
+                            {# See above for explanation. #}
+                            {{ level['support'].values()|first }}
                         {% endif %}
                     {% endfor %}
                 </td>
@@ -119,7 +120,8 @@
                     {% for level in result['counts'] %}
                         {# see above for a detailed explanation #}
                         {% if ASSEMBLY_BAR_SHORTNAME in level['preferred'] and level['preferred']|length == 1 %}
-                            {{ level['contra_votes'] }}
+                            {# See above for explanation. #}
+                            {{ level['opposition'].values()|first }}
                         {% endif %}
                     {% endfor %}
                 </td>
