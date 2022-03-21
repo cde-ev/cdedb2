@@ -1,5 +1,6 @@
 import argparse
 import json
+import sys
 from itertools import chain
 from typing import Any, Callable, Dict, List, Set, Sized, Tuple, Type, TypedDict
 
@@ -204,7 +205,7 @@ def main() -> None:
     aux = prepare_aux(data)
     commands = build_commands(data, aux, args.xss)
 
-    with open(args.outfile, "w") as f:
+    with open(args.outfile, "w") if args.outfile != "-" else sys.stdout as f:
         for cmd in commands:
             print(cmd, file=f)
 
