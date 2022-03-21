@@ -129,7 +129,8 @@ def create_database_cmd(config: TestConfig, secrets: SecretsConfig) -> None:
 
 
 @database.command(name="populate")
-@click.option("--xss/--no-xss", default=False, help="prepare the database for xss checks")
+@click.option(
+    "--xss/--no-xss", default=False, help="prepare the database for xss checks")
 @pass_secrets
 @pass_config
 def populate_database_cmd(
@@ -150,7 +151,8 @@ def development() -> None:
               help="the json file containing the sample data")
 @click.option("--outfile", default="/tmp/sample_data.sql",
               help="the place to store the sql file")
-@click.option("--xss/--no-xss", default=False, help="prepare sample data for xss checks")
+@click.option(
+    "--xss/--no-xss", default=False, help="prepare sample data for xss checks")
 @pass_config
 def compile_sample_data_cmd(
     config: TestConfig, infile: str, outfile: str, xss: bool
@@ -204,8 +206,10 @@ def main() -> None:
         with switch_user(sudo_user):
             cli()
     except PermissionError as e:
-        raise PermissionError("Unable to perform this command due to missing permissions."
-            " Some commands allow invoking them as root and passing a --owner.") from e
+        raise PermissionError(
+            "Unable to perform this command due to missing permissions."
+            " Some commands allow invoking them as root and passing a --owner."
+        ) from e
 
 
 if __name__ == "__main__":
