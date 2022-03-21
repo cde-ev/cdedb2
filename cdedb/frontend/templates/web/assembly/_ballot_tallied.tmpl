@@ -38,9 +38,7 @@
                         </td>
                     {% if is_classical %}
                         <td class="text-right">
-                            {% if first_candidate %}
-                                {{ result['counts'][candidate_shortname] }}
-                            {% endif %}
+                            {{ result['counts'][candidate_shortname] }}
                         </td>
                     {% else %}
                         <td class="text-right">
@@ -80,9 +78,15 @@
                        print an upper border.
                        The same is true if there are no candidates below the bar, so we apply the same logic to
                        'rejected'. #}
-                    {% if ASSEMBLY_BAR_SHORTNAME in level['preferred'] and level['preferred']|length != 1
-                       or ASSEMBLY_BAR_SHORTNAME in level['rejected'] and level['rejected']|length != 1 %}
-                        class="no-upper-border"
+                    {% if is_classical %}
+                        {% if ASSEMBLY_BAR_SHORTNAME in level %}
+                            class="no-upper-border"
+                        {% endif %}
+                    {% else %}
+                        {% if ASSEMBLY_BAR_SHORTNAME in level['preferred'] and level['preferred']|length != 1
+                           or ASSEMBLY_BAR_SHORTNAME in level['rejected'] and level['rejected']|length != 1 %}
+                            class="no-upper-border"
+                        {% endif %}
                     {% endif %}
                 {% endfor %}
             >
@@ -146,9 +150,7 @@
                         </td>
                     {% if is_classical %}
                         <td class="text-right">
-                            {% if first_candidate %}
-                                {{ result['counts'][candidate_shortname] }}
-                            {% endif %}
+                            {{ result['counts'][candidate_shortname] }}
                         </td>
                     {% else %}
                         <td class="text-right">
