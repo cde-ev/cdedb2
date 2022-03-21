@@ -21,13 +21,14 @@ if [ ! -e /etc/cdedb/container_already_initalized ]; then
     # Create the storage directory. Ensure that www-data owns everything.
     python3 -m cdedb filesystem --owner www-data storage create
 
-    # Create the database users and schema
+    # Create the database users and schema.
     python3 -m cdedb db create-users
     python3 -m cdedb db create
 
-    # Compile the translations and populate the db with sample data
+    # Compile the translations and populate the db with sample data.
+    # Most of the above would be done by make-sample-data but we want to be explicit.
     make i18n-compile
-    python3 -m cdedb dev make-sample-data
+    python3 -m cdedb dev make-sample-data --owner www-data
 
     # Touch the firstrun file, so we perform the initialization only once.
     touch /etc/cdedb/container_already_initalized

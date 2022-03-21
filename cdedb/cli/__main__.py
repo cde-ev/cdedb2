@@ -164,17 +164,17 @@ def compile_sample_data_cmd(config: TestConfig, infile: str, outfile: str, xss: 
     help="Use this user as the owner of storage and logs.",
     default=lambda: getpass.getuser(),
     show_default="current user")
+@pass_secrets
 @pass_config
-@click.pass_context
-def make_sample_data(context: click.Context, config: TestConfig, owner: str) -> None:
+def make_sample_data(config: TestConfig, secrets: SecretsConfig, owner: str) -> None:
     """Repopulates the application with sample data."""
     with switch_user(owner):
+        create_log(config)
         create_storage(config)
         populate_storage(config)
-        create_log(config)
-    context.invoke(create_database_users_cmd)
-    context.invoke(create_database_cmd)
-    context.invoke(populate_database_cmd)
+    create_database_users(config)
+    create_database(config, secrets)
+    populate_database(config, secrets)
 
 
 @development.command(name="execute-sql-script")

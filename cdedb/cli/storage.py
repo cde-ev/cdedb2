@@ -14,20 +14,40 @@ def recreate_directory(directory: pathlib.Path) -> None:
     by the directory itself, this is a bit tricky. Therefore, this does also some error
     detection about missing permissions.
     """
+    # Create the directory if it does not exist
     if not directory.exists():
+        # First try as current user and only then as root
         try:
             directory.mkdir(parents=True)
         except PermissionError:
-            euid = os.geteuid()
-            egid = os.getegid()
             with switch_user("root"):
                 directory.mkdir(parents=True)
+
+
+    # Chown the directory to the effective user
+    if (
+        directory.stat().st_uid != os.geteuid()
+        or directory.stat().st_gid != os.getegid()
+    ):
+        euid = os.geteuid()
+        egid = os.getegid()
+        # First try without root if CAP_CHOWN is given
+        try:
+            shutil.chown(directory, euid, egid)
+        except PermissionError:
+            with switch_user("root"):
                 shutil.chown(directory, euid, egid)
 
     # Remove the content of the directory
     for path in directory.iterdir():
         if path.is_dir():
-            shutil.rmtree(path)
+            # Direct entries can always be removed but subdirectories belonging
+            # to the previous owner might require elevated permissions
+            try:
+                shutil.rmtree(path)
+            except PermissionError:
+                with switch_user("root"):
+                    shutil.rmtree(path)
         else:
             path.unlink()
 

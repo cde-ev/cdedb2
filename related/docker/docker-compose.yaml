@@ -21,6 +21,7 @@ services:
     volumes:
       - files:/var/lib/cdedb # attachments etc
       - config:/etc/cdedb # config files
+      - cert:/etc/ssl/apache2 # dynamic self-signed certificate
       - ../..:/cdedb2:z # the :z is for SELinux (see #2053)
     ports:
       - 127.0.0.1:5000:5000 # werkzeug server including interactive debugger
@@ -55,3 +56,4 @@ volumes:
   database:
   files:
   ldap:
+  cert:
