@@ -18,12 +18,12 @@ if [ ! -e /etc/cdedb/container_already_initalized ]; then
     # TODO check whether it is sensible to lower privileges to cdedb user in general
 
     # Create the storage dir itself. Ensure that www-data owns everything.
-    python3 -m cdedb filesystem storage create --user www-data
+    python3 -m cdedb filesystem storage create --owner www-data
     # Populate the storage dir with sample data
-    python3 -m cdedb filesystem storage populate --user www-data
+    python3 -m cdedb filesystem storage populate --owner www-data
 
     # Create the log dir itself. Ensure that www-data owns everything.
-    python3 -m cdedb filesystem log create --user www-data
+    python3 -m cdedb filesystem log create --owner www-data
 
     # Compile the translations
     make i18n-compile

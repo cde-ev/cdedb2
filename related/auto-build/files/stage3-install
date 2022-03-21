@@ -99,7 +99,7 @@ echo "--------------------------------------------"
 mkdir -p "$(python3 -m cdedb config get STORAGE_DIR)"
 chown www-data:www-data "$(python3 -m cdedb config get STORAGE_DIR)"
 # now, create the storage itself. Ensure that www-data owns everything.
-python3 -m cdedb filesystem storage create --user www-data
+python3 -m cdedb filesystem storage create --owner www-data
 
 echo ""
 echo "Setting up the database..."
@@ -144,7 +144,7 @@ echo "--------------------------------------------"
 mkdir -p "$(python3 -m cdedb config get LOG_DIR)"
 chown www-data:www-data "$(python3 -m cdedb config get LOG_DIR)"
 # now, create the directories inside the log. Ensure that www-data owns everything.
-python3 -m cdedb filesystem log create --user www-data
+python3 -m cdedb filesystem log create --owner www-data
 
 echo ""
 echo "Setting up ldap..."

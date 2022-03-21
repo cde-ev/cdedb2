@@ -1,6 +1,7 @@
 """Provide a command line interface for the setup module."""
 import functools
 import getpass
+import os
 import pathlib
 from typing import Any, Callable, Optional
 
@@ -15,20 +16,8 @@ from cdedb.cli.storage import create_log, create_storage, populate_storage
 from cdedb.cli.util import switch_user
 from cdedb.config import DEFAULT_CONFIGPATH, SecretsConfig, TestConfig, set_configpath
 
-
-def pass_config(fun: Callable[..., Any]) -> Callable[..., Any]:
-    @functools.wraps(fun)
-    @click.pass_context
-    def new_func(ctx: click.Context, *args: Any, **kwargs: Any) -> Any:
-        return ctx.invoke(fun, TestConfig(), *args, **kwargs)
-    return new_func
-
-def pass_secrets(fun: Callable[..., Any]) -> Callable[..., Any]:
-    @functools.wraps(fun)
-    @click.pass_context
-    def new_func(ctx: click.Context, *args: Any, **kwargs: Any) -> Any:
-        return ctx.invoke(fun, SecretsConfig(), *args, **kwargs)
-    return new_func
+pass_config = click.make_pass_decorator(TestConfig, ensure=True)
+pass_secrets = click.make_pass_decorator(SecretsConfig, ensure=True)
 
 @click.group()
 @click.option("--configpath", envvar="CDEDB_CONFIGPATH", default=DEFAULT_CONFIGPATH,
@@ -72,10 +61,10 @@ def get_default_configpath() -> None:
     help="Use this user as the owner.",
     default=lambda: getpass.getuser(),
     show_default="current user")
-@click.pass_obj
-def filesystem(obj: Any, owner: str) -> None:
+@click.pass_context
+def filesystem(ctx: click.Context, owner: str) -> None:
     """Preparations regarding the file system."""
-    obj["owner"] = owner
+    ctx.obj = owner
 
 
 @filesystem.group(name="storage")
@@ -85,22 +74,20 @@ def storage() -> None:
 
 
 @storage.command(name="create")
+@click.pass_obj
 @pass_config
-def create_storage_cmd(config: TestConfig, user: str) -> None:
+def create_storage_cmd(config: TestConfig, owner: str) -> None:
     """Create the file storage."""
-    with switch_user(user):
+    with switch_user(owner):
         create_storage(config)
 
 
 @storage.command(name="populate")
-@click.option("--user",
-    help="Use this user as the owner.",
-    default=lambda: getpass.getuser(),
-    show_default="current user")
+@click.pass_obj
 @pass_config
-def populate_storage_cmd(config: TestConfig, user: str) -> None:
+def populate_storage_cmd(config: TestConfig, owner: str) -> None:
     """Populate the file storage with sample data."""
-    with switch_user(user):
+    with switch_user(owner):
         populate_storage(config)
 
 
@@ -111,14 +98,11 @@ def log() -> None:
 
 
 @log.command(name="create")
-@click.option("--user",
-    help="Use this user as the owner.",
-    default=lambda: getpass.getuser(),
-    show_default="current user")
+@click.pass_obj
 @pass_config
-def create_log_cmd(config: TestConfig, user: str) -> None:
+def create_log_cmd(config: TestConfig, owner: str) -> None:
     """Create the log storage."""
-    with switch_user(user):
+    with switch_user(owner):
         create_log(config)
 
 
@@ -144,7 +128,7 @@ def _create_database(config: TestConfig, secrets: SecretsConfig) -> None:
 
 
 @database.command(name="populate")
-@click.option("--xss", default=False, help="prepare the database for xss checks")
+@click.option("--xss/--no-xss", default=False, help="prepare the database for xss checks")
 def _populate_database(xss: bool) -> None:
     """Populate the database tables with sample data."""
     config = TestConfig()
@@ -164,7 +148,7 @@ def development() -> None:
               help="the json file containing the sample data")
 @click.option("--outfile", default="/tmp/sample_data.sql",
               help="the place to store the sql file")
-@click.option("--xss", default=False, help="prepare sample data for xss checks")
+@click.option("--xss/--no-xss", default=False, help="prepare sample data for xss checks")
 def _compile_sample_data(infile: str, outfile: str, xss: bool) -> None:
     """Parse sample data from a .json to a .sql file."""
     config = TestConfig()
@@ -172,12 +156,12 @@ def _compile_sample_data(infile: str, outfile: str, xss: bool) -> None:
 
 
 @development.command(name="make-sample-data")
-@click.option("--user", help="Use this as the owner of the storage and log.")
+@click.option("--owner", help="Use this as the owner of the storage and log.")
 @click.pass_context
-def _make_sample_data(context: click.Context, user: Optional[str]) -> None:
+def _make_sample_data(context: click.Context, owner: Optional[str]) -> None:
     """Repopulates the application with sample data."""
-    context.invoke(create_storage, user=user)
-    context.invoke(populate_storage, user=user)
+    context.invoke(create_storage, owner=owner)
+    context.invoke(populate_storage, owner=owner)
     context.invoke(_create_database_users)
     context.invoke(_create_database)
     context.invoke(_populate_database)
@@ -202,12 +186,13 @@ def _execute_sql_script(file: pathlib.Path, verbose: int) -> None:
 
 
 def main() -> None:
-    # TODO check if SUDO_USER is set and then use switch_user here
     try:
-        cli()
+        # Set euid/egid to the user invoking sudo if executed with sudo
+        with switch_user(os.environ.get("SUDO_USER", getpass.getuser())):
+            cli()
     except PermissionError as e:
         raise PermissionError("Unable to perform this command due to missing permissions."
-            " Some commands allow invoking them as root and passing a --user.") from e
+            " Some commands allow invoking them as root and passing a --owner.") from e
 
 if __name__ == "__main__":
     main()
