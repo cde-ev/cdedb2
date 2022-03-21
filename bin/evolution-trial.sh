@@ -1,4 +1,5 @@
 #!/bin/bash
+set -ex
 
 
 DATABASE_NAME=cdb_test_1
@@ -21,9 +22,16 @@ echo ""
 echo "Checkout $OLDREVISION"
 git checkout $OLDREVISION
 ls cdedb/database/evolutions > /tmp/oldevolutions.txt
-python3 -m cdedb dev compile-sample-data
-python3 -m cdedb db create
-python3 -m cdedb db populate
+# TODO this can be removed once there are no branches with make-based setup
+# check if OLDREVISION has python-based setup
+if git merge-base --is-ancestor 82aa3fb3d4172032dff8121ff3af0a2b746c4765 $OLDREVISION; then
+    python3 -m cdedb dev compile-sample-data
+    python3 -m cdedb db create
+    python3 -m cdedb db populate
+else
+    make -B tests/ancillary_files/sample_data.sql &> /dev/null
+    make sql DATABASE_NAME=$DATABASE_NAME > /dev/null
+fi
 
 # new revision
 echo ""
