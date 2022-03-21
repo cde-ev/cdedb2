@@ -5,7 +5,7 @@ import pathlib
 import unittest
 from typing import ClassVar
 
-from cdedb_setup.config import Config, SecretsConfig, get_configpath, set_configpath
+from cdedb.config import Config, SecretsConfig, get_configpath, set_configpath
 
 
 class TestConfig(unittest.TestCase):

@@ -39,8 +39,6 @@ sudo -u cdedb echo '        rebase = merges' >> /cdedb2/.git/config
 # add cdedb to python path
 mkdir -p /usr/local/lib/python3.9/dist-packages
 sudo ln -s /cdedb2/cdedb/ /usr/local/lib/python3.9/dist-packages/cdedb
-# add cdedb_setup module to python path
-sudo ln -s /cdedb2/cdedb_setup/ /usr/local/lib/python3.9/dist-packages/cdedb_setup
 
 echo ""
 echo "Create local config files..."
@@ -50,13 +48,13 @@ echo "--------------------------------------------"
 # we use the default configurationpath, so no need to set CDEDB_CONFIGPATH
 
 # move the defaultconfig to the right place
-install -D /media/cdrom0/localconfig.py "$(python3 -m cdedb_setup config default-configpath)"
-chown cdedb:cdedb "$(python3 -m cdedb_setup config default-configpath)"
+install -D /media/cdrom0/localconfig.py "$(python3 -m cdedb config default-configpath)"
+chown cdedb:cdedb "$(python3 -m cdedb config default-configpath)"
 # make it world-readable, since it contains no secret data
-chmod 644 "$(python3 -m cdedb_setup config default-configpath)"
+chmod 644 "$(python3 -m cdedb config default-configpath)"
 
 # create default (and public) secrets config
-cat >"$(python3 -m cdedb_setup config get SECRETS_CONFIGPATH)" <<EOF
+cat >"$(python3 -m cdedb config get SECRETS_CONFIGPATH)" <<EOF
 #!/usr/bin/env python3
 #
 # This is the default file for the SecretsConfig. On development and offline instances,
@@ -76,8 +74,8 @@ cat >"$(python3 -m cdedb_setup config get SECRETS_CONFIGPATH)" <<EOF
 # sudo chmod 640 /path/to/your/secrets_config.py
 #
 EOF
-chown cdedb:cdedb "$(python3 -m cdedb_setup config get SECRETS_CONFIGPATH)"
-chmod 644 "$(python3 -m cdedb_setup config get SECRETS_CONFIGPATH)"
+chown cdedb:cdedb "$(python3 -m cdedb config get SECRETS_CONFIGPATH)"
+chmod 644 "$(python3 -m cdedb config get SECRETS_CONFIGPATH)"
 
 # set the mailman htpasswd
 cp /media/cdrom0/mailman-htpasswd /etc/cdedb-mailman-htpasswd
@@ -98,10 +96,10 @@ echo "Creating storage directory for uploads..."
 echo "--------------------------------------------"
 
 # create the directory containing the storage manually, to ensure www-data has the proper permissions
-mkdir -p "$(python3 -m cdedb_setup config get STORAGE_DIR)"
-chown www-data:www-data "$(python3 -m cdedb_setup config get STORAGE_DIR)"
+mkdir -p "$(python3 -m cdedb config get STORAGE_DIR)"
+chown www-data:www-data "$(python3 -m cdedb config get STORAGE_DIR)"
 # now, create the storage itself. Ensure that www-data owns everything.
-python3 -m cdedb_setup filesystem storage create --user www-data
+python3 -m cdedb filesystem storage create --user www-data
 
 echo ""
 echo "Setting up the database..."
@@ -124,8 +122,8 @@ sudo -u postgres psql -U postgres -c \
      "CREATE DATABASE nobody WITH OWNER = nobody TEMPLATE = template0 ENCODING = 'UTF8'"
 sudo -u postgres psql -U postgres -c \
      "ALTER DATABASE nobody SET datestyle TO 'ISO, YMD'"
-python3 -m cdedb_setup database create-users
-python3 -m cdedb_setup database create
+python3 -m cdedb db create-users
+python3 -m cdedb db create
 
 systemctl stop pgbouncer
 
@@ -143,10 +141,10 @@ echo "Create central directory for log files..."
 echo "--------------------------------------------"
 
 # create the directory containing the logs manually, to ensure www-data has the proper permissions
-mkdir -p "$(python3 -m cdedb_setup config get LOG_DIR)"
-chown www-data:www-data "$(python3 -m cdedb_setup config get LOG_DIR)"
+mkdir -p "$(python3 -m cdedb config get LOG_DIR)"
+chown www-data:www-data "$(python3 -m cdedb config get LOG_DIR)"
 # now, create the directories inside the log. Ensure that www-data owns everything.
-python3 -m cdedb_setup filesystem log create --user www-data
+python3 -m cdedb filesystem log create --user www-data
 
 echo ""
 echo "Setting up ldap..."

@@ -10,16 +10,16 @@ pgbouncer or apache2), there are the following additional points:
 * creating the file storage
 * creating the log directory
 
-To do this in a convenient way, there is the :mod:`cdedb_setup` module. It consumes most
+To do this in a convenient way, there is the :mod:`cdedb.cli` module. It consumes most
 necessary information from the Config (and the given overrides) and performs the setup
 process in several python functions.
 
 Additionally, it provides a command line interface, so the functions can be used during
 scripting or setup via terminal. All available targets are shown after executing::
 
-  python3 -m cdedb_setup
+  python3 -m cdedb
 
-Make sure to add the :mod:`cdedb_setup` module to the python path before.
+Make sure to add the :mod:`cdedb` module to the python path before.
 
 A step-by-step guide through the setup is provided at :doc:`Development_Environment_Manual`.
 For using one of the prebuilt environments, take a look at :doc:`Development_Environment_Setup_VM`

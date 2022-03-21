@@ -3,8 +3,7 @@ import json
 from itertools import chain
 from typing import Any, Callable, Dict, List, Set, Sized, Tuple, Type, TypedDict
 
-from cdedb_setup.config import Config, SecretsConfig
-from cdedb_setup.database import connect
+from cdedb.script import Script
 from psycopg2.extensions import connection
 
 from cdedb.backend.common import DatabaseValue_s, PsycoJson
@@ -25,10 +24,8 @@ class AuxData(TypedDict):
 
 
 def prepare_aux(data: CdEDBObject) -> AuxData:
-    conf = Config()
-    secrets = SecretsConfig()
-    # create a database connection to the "nobody" database
-    conn = connect(conf, secrets, as_nobody=True)
+    # Note that we do not care about the actual backend but only the db connection.
+    conn = Script(dbuser="nobody", dbname="nobody").rs().conn
 
     core = CoreBackend  # No need to instantiate, we only use statics.
 

@@ -19,10 +19,10 @@ sys.path.append(str(root))
 os.chdir(root)
 
 from bin.check_utils import MyTextTestResult, MyTextTestRunner
-from cdedb_setup.config import SecretsConfig, TestConfig, set_configpath
-from cdedb_setup.database import create_database, populate_database
-from cdedb_setup.storage import create_log, create_storage, populate_storage
-from cdedb_setup.util import is_docker
+from cdedb.config import SecretsConfig, TestConfig, set_configpath
+from cdedb.cli.database import create_database, populate_database
+from cdedb.cli.storage import create_log, create_storage, populate_storage
+from cdedb.cli.util import is_docker
 
 
 class CdEDBTestLock:

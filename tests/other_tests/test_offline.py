@@ -5,7 +5,7 @@ import shutil
 import subprocess
 
 import webtest
-from cdedb_setup.config import get_configpath
+from cdedb.config import get_configpath
 
 from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS
 from cdedb.frontend.application import Application

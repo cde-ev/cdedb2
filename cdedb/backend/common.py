@@ -23,16 +23,15 @@ from typing import (
 
 import psycopg2.extensions
 import psycopg2.extras
-from cdedb_setup.config import Config
-from cdedb_setup.storage import setup_logger
 
 import cdedb.validation as validate
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
     LOCALE, CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Error,
     PrivilegeError, PsycoJson, RequestState, Role, diacritic_patterns, glue, make_proxy,
-    n_, unwrap,
+    n_, setup_logger, unwrap,
 )
+from cdedb.config import Config
 from cdedb.database.connection import Atomizer
 from cdedb.database.constants import FieldDatatypes
 from cdedb.query import Query, QueryOperators

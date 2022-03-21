@@ -1,12 +1,10 @@
 """Set up the file system related stuff, like upload-storage, loggers and log dirs."""
-import logging
-import logging.handlers
+import os
 import pathlib
 import shutil
-import sys
 
-from cdedb_setup.config import Config
-from cdedb_setup.util import sanity_check
+from cdedb.cli.util import sanity_check, switch_user
+from cdedb.config import Config
 
 
 def recreate_directory(directory: pathlib.Path) -> None:
@@ -16,22 +14,22 @@ def recreate_directory(directory: pathlib.Path) -> None:
     by the directory itself, this is a bit tricky. Therefore, this does also some error
     detection about missing permissions.
     """
-    if directory.exists():
-        # remove the content of the directory
-        for path in directory.iterdir():
-            if path.is_dir():
-                shutil.rmtree(path)
-            elif path.is_file():
-                path.unlink()
-            else:
-                raise NotImplementedError
-    else:
+    if not directory.exists():
         try:
             directory.mkdir(parents=True)
-        except PermissionError as e:
-            msg = (f"Please create the directory {e.filename} manually. Make sure the"
-                   f" current user has proper permissions on this directory.")
-            raise PermissionError(msg) from e
+        except PermissionError:
+            euid = os.geteuid()
+            egid = os.getegid()
+            with switch_user("root"):
+                directory.mkdir(parents=True)
+                shutil.chown(directory, euid, egid)
+
+    # Remove the content of the directory
+    for path in directory.iterdir():
+        if path.is_dir():
+            shutil.rmtree(path)
+        else:
+            path.unlink()
 
 
 @sanity_check
@@ -87,7 +85,7 @@ def populate_storage(conf: Config) -> None:
         "kassen.pdf",  # assembly: sample attachment
     )
 
-    testfile_dir: pathlib.Path = repo_path / "tests" / "ancillary_files"
+    testfile_dir = repo_path / "tests" / "ancillary_files"
     attachment_dir = storage_dir / "assembly_attachment"
 
     shutil.copy(testfile_dir / foto, storage_dir / "foto")
@@ -108,37 +106,3 @@ def create_log(conf: Config) -> None:
     log_dir: pathlib.Path = conf["LOG_DIR"]
 
     recreate_directory(log_dir)
-
-
-def setup_logger(name: str, logfile_path: pathlib.Path,
-                 log_level: int, syslog_level: int = None,
-                 console_log_level: int = None) -> logging.Logger:
-    """Configure the :py:mod:`logging` module.
-
-    Since this works hierarchical, it should only be necessary to call this
-    once and then every child logger is routed through this configured logger.
-    """
-    logger = logging.getLogger(name)
-    if logger.handlers:
-        logger.debug(f"Logger {name} already initialized.")
-        return logger
-    logger.propagate = False
-    logger.setLevel(log_level)
-    formatter = logging.Formatter(
-        '[%(asctime)s,%(name)s,%(levelname)s] %(message)s')
-    file_handler = logging.FileHandler(str(logfile_path))
-    file_handler.setLevel(log_level)
-    file_handler.setFormatter(formatter)
-    logger.addHandler(file_handler)
-    if syslog_level:
-        syslog_handler = logging.handlers.SysLogHandler()
-        syslog_handler.setLevel(syslog_level)
-        syslog_handler.setFormatter(formatter)
-        logger.addHandler(syslog_handler)
-    if console_log_level:
-        console_handler = logging.StreamHandler(sys.stdout)
-        console_handler.setLevel(console_log_level)
-        console_handler.setFormatter(formatter)
-        logger.addHandler(console_handler)
-    logger.debug(f"Configured logger {name}.")
-    return logger

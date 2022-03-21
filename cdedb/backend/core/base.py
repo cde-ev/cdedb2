@@ -20,7 +20,7 @@ from typing import (
     Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, Union, cast, overload,
 )
 
-from cdedb_setup.config import SecretsConfig
+from cdedb.config import SecretsConfig
 from passlib.hash import sha512_crypt
 
 import cdedb.database.constants as const

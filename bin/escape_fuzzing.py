@@ -30,7 +30,7 @@ import time
 from typing import TYPE_CHECKING, Collection, List, NamedTuple, Optional, Set, Tuple
 
 import webtest
-from cdedb_setup.util import sanity_check
+from cdedb.cli.util import sanity_check
 
 from cdedb.frontend.application import Application
 

@@ -7,40 +7,38 @@ from typing import Union
 import psycopg2
 import psycopg2.extensions
 import psycopg2.extras
-from cdedb_setup.config import Config, SecretsConfig
-from cdedb_setup.util import is_docker, sanity_check
+
+from cdedb.cli.util import has_systemd, is_docker, sanity_check
+from cdedb.config import Config, SecretsConfig
 
 
 def start_services(*services: str) -> None:
     """Start the given services."""
-    if is_docker():
+    if not has_systemd():
         return
-    for service in services:
-        # TODO can we somehow avoid to use sudo and friends here?
-        subprocess.run(["sudo", "systemctl", "start", service], check=True)
+    # TODO can we somehow avoid to use sudo and friends here?
+    subprocess.run(["sudo", "systemctl", "start", *services], check=True)
 
 
 def stop_services(*services: str) -> None:
     """Stop the given services."""
-    if is_docker():
+    if not has_systemd():
         return
-    for service in services:
-        # TODO can we somehow avoid to use sudo and friends here?
-        subprocess.run(["sudo", "systemctl", "stop", service], check=True)
+    # TODO can we somehow avoid to use sudo and friends here?
+    subprocess.run(["sudo", "systemctl", "stop", *services], check=True)
 
 
-def psql(*commands: Union[str, pathlib.Path]) -> subprocess.CompletedProcess:
+def psql(*commands: str) -> subprocess.CompletedProcess[bytes]:
     """Execute commands using the psql client.
 
     This should be used only in cases where a direct connection to the database
     via psycopg2 is not possible, f.e. to create the database.
     """
     if is_docker():
-        psql = ["psql", "postgresql://postgres:passwd@cdb"]
+        return subprocess.run(["psql", "postgresql://postgres:passwd@cdb", *commands], check=True)
     else:
-        # TODO can we somehow avoid to use sudo and friends here?
-        psql = ["sudo", "-u", "postgres", "psql"]
-    return subprocess.run([*psql, *commands], check=True)
+        # mypy does not know that run passes unknown arguments to Popen
+        return subprocess.run(["psql", *commands], check=True, user="postgres")  # type: ignore
 
 
 # TODO is the nobody hack really necessary?
@@ -87,7 +85,7 @@ def create_database_users(conf: Config) -> None:
     users_path = repo_path / "cdedb" / "database" / "cdedb-users.sql"
 
     stop_services("pgbouncer", "slapd")
-    psql("-f", users_path)
+    psql("-f", users_path.__fspath__())
     # we do not restart slapd, since it needs a proper database structure to start
     start_services("pgbouncer")
 
@@ -106,7 +104,7 @@ def create_database(conf: Config, secrets: SecretsConfig) -> None:
     ldap_path = repo_path / "cdedb" / "database" / "cdedb-ldap.sql"
 
     stop_services("pgbouncer", "slapd")
-    psql("-f", db_path, "-v", f"cdb_database_name={database}")
+    psql("-f", str(db_path), "-v", f"cdb_database_name={database}")
     # we do not restart slapd, since we want to replace it anyway...
     start_services("pgbouncer")
 

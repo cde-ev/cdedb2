@@ -58,8 +58,6 @@ import werkzeug.datastructures
 import werkzeug.exceptions
 import werkzeug.utils
 import werkzeug.wrappers
-from cdedb_setup.config import Config, SecretsConfig
-from cdedb_setup.storage import setup_logger
 
 import cdedb.database.constants as const
 import cdedb.query as query_mod
@@ -80,8 +78,9 @@ from cdedb.common import (
     RequestState, Role, User, ValidationWarning, _tdelta, asciificator,
     decode_parameter, encode_parameter, format_country_code,
     get_localized_country_codes, glue, json_serialize, make_proxy, merge_dicts, n_, now,
-    roles_to_db_role, unwrap,
+    roles_to_db_role, setup_logger, unwrap,
 )
+from cdedb.config import Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.devsamples import HELD_MESSAGE_SAMPLE

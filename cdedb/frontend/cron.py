@@ -10,7 +10,7 @@ import inspect
 import pathlib
 from typing import Collection, Iterator
 
-from cdedb_setup.config import SecretsConfig
+from cdedb.config import SecretsConfig
 
 from cdedb.common import ALL_ROLES, RequestState, User, n_, now
 from cdedb.database import DATABASE_ROLES

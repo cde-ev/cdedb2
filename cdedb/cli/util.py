@@ -1,8 +1,15 @@
 """Some utilities for the setup functions."""
+import contextlib
 import functools
+import os
 import pathlib
-from typing import Any, Callable
+import pwd
+from shutil import which
+from typing import Any, Callable, Generator
 
+
+def has_systemd() -> bool:
+    return which("systemctl") is not None
 
 def is_docker() -> bool:
     """Does the current process runs on a docker image?"""
@@ -26,3 +33,19 @@ def sanity_check(fun: Callable[..., Any]) -> Callable[..., Any]:
         return fun(*args, **kwargs)
 
     return new_fun
+
+@contextlib.contextmanager
+def switch_user(user: str) -> Generator[None, None, None]:
+    """Use as context manager to temporary switch the running user's effective uid."""
+    original_uid = os.geteuid()
+    original_gid = os.getegid()
+    wanted_user = pwd.getpwnam(user)
+    try:
+        os.setegid(wanted_user.pw_gid)
+        os.seteuid(wanted_user.pw_uid)
+        yield
+    except PermissionError:
+        raise PermissionError(f"Insufficient permissions to switch to user {user}.")
+    finally:
+        os.setegid(original_gid)
+        os.seteuid(original_uid)

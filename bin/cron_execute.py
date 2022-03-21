@@ -7,7 +7,7 @@
 
 import getpass
 
-from cdedb_setup.config import DEFAULT_CONFIGPATH, set_configpath
+from cdedb.config import DEFAULT_CONFIGPATH, set_configpath
 
 from cdedb.frontend.cron import CronFrontend
 

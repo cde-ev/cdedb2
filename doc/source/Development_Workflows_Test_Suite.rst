@@ -11,7 +11,7 @@ Sample Data
 -----------
 
 The sample data lives in ``tests/ancillary_files/sample_data.json``. You can fill
-the database with the sample data by calling ``python3 -m cdedb_setup dev make-sample-data``.
+the database with the sample data by calling ``python3 -m cdedb dev make-sample-data``.
 This will create a ``sample_data.sql`` file, drop the current
 database state and at last repopulate the database with the sample data. Now,
 you can use the DB as you would use it online, log in with the users described

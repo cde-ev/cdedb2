@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 """Global utility functions."""
-
 import collections
 import collections.abc
 import datetime
@@ -13,10 +12,12 @@ import hashlib
 import hmac
 import itertools
 import json
+import logging
 import logging.handlers
 import pathlib
 import re
 import string
+import sys
 from typing import (
     TYPE_CHECKING, Any, Callable, Collection, Dict, Generator, Generic, Iterable,
     KeysView, List, Mapping, MutableMapping, Optional, Set, Tuple, Type, TypeVar, Union,
@@ -387,6 +388,40 @@ def make_proxy(backend: B, internal: bool = False) -> B:
             return backend.__class__
 
     return cast(B, Proxy())
+
+
+def setup_logger(name: str, logfile_path: pathlib.Path,
+                 log_level: int, syslog_level: int = None,
+                 console_log_level: int = None) -> logging.Logger:
+    """Configure the :py:mod:`logging` module.
+
+    Since this works hierarchical, it should only be necessary to call this
+    once and then every child logger is routed through this configured logger.
+    """
+    logger = logging.getLogger(name)
+    if logger.handlers:
+        logger.debug(f"Logger {name} already initialized.")
+        return logger
+    logger.propagate = False
+    logger.setLevel(log_level)
+    formatter = logging.Formatter(
+        '[%(asctime)s,%(name)s,%(levelname)s] %(message)s')
+    file_handler = logging.FileHandler(str(logfile_path), delay=True)
+    file_handler.setLevel(log_level)
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+    if syslog_level:
+        syslog_handler = logging.handlers.SysLogHandler()
+        syslog_handler.setLevel(syslog_level)
+        syslog_handler.setFormatter(formatter)
+        logger.addHandler(syslog_handler)
+    if console_log_level:
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setLevel(console_log_level)
+        console_handler.setFormatter(formatter)
+        logger.addHandler(console_handler)
+    return logger
+
 
 
 def glue(*args: str) -> str:

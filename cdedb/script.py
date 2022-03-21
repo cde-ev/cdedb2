@@ -22,7 +22,7 @@ from typing import IO, Any, Dict, Mapping, Optional, Tuple, Type
 import psycopg2
 import psycopg2.extensions
 import psycopg2.extras
-from cdedb_setup.config import Config, SecretsConfig, get_configpath, set_configpath
+from cdedb.config import Config, SecretsConfig, get_configpath, set_configpath
 
 from cdedb.common import (
     ALL_ROLES, AbstractBackend, PathLike, RequestState, User, make_proxy, n_,
@@ -175,6 +175,7 @@ class Script:
             "user": dbuser,
             "password": self._secrets["CDB_DATABASE_ROLES"][dbuser],
             "host": self.config["DB_HOST"],
+            # TODO default to DB_PORT and provide flag for skipping pgbouncer
             "port": 5432,
             "connection_factory": IrradiatedConnection,
             "cursor_factory": cursor,

@@ -31,9 +31,6 @@ from typing import (
 import PIL.Image
 import webtest
 import webtest.utils
-from cdedb_setup.config import SecretsConfig, TestConfig, get_configpath, set_configpath
-from cdedb_setup.database import connect
-from cdedb_setup.storage import create_storage, populate_storage
 
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
@@ -43,11 +40,13 @@ from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
+from cdedb.cli.storage import create_storage, populate_storage
 from cdedb.common import (
     ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, ANTI_CSRF_TOKEN_NAME,
     ANTI_CSRF_TOKEN_PAYLOAD, CdEDBLog, CdEDBObject, CdEDBObjectMap, PathLike,
     PrivilegeError, RequestState, merge_dicts, nearly_now, now, roles_to_db_role,
 )
+from cdedb.config import SecretsConfig, TestConfig, get_configpath, set_configpath
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.application import Application
@@ -786,9 +785,14 @@ def storage(fun: F) -> F:
 def execsql(sql: AnyStr) -> None:
     """Execute arbitrary SQL-code on the test database."""
     conf = TestConfig()
-    secrets = SecretsConfig()
 
-    with connect(conf, secrets) as conn:
+    with Script(
+        persona_id=-1,
+        dbuser="cdb",
+        dbname=conf["CDB_DATABASE_NAME"],
+        check_system_user=False,
+    ).rs().conn as conn:
+        conn.set_session(autocommit=True)
         with conn.cursor() as curr:
             curr.execute(sql)
 

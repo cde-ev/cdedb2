@@ -16,14 +16,13 @@ import sys
 from typing import Collection
 
 import psycopg2.extensions
-from cdedb_setup.config import (
-    DEFAULT_CONFIGPATH, Config, SecretsConfig, TestConfig, get_configpath,
-    set_configpath,
-)
-from cdedb_setup.database import connect
 from psycopg2.extras import DictCursor, Json
 
 from cdedb.common import CdEDBObject
+from cdedb.config import (
+    DEFAULT_CONFIGPATH, Config, TestConfig, get_configpath, set_configpath,
+)
+from cdedb.script import Script
 
 # This is 'secret' the hashed
 PHASH = ("$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/"
@@ -118,7 +117,7 @@ def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
          extra_packages: bool = False, no_extra_packages: bool = False) -> None:
     repo_path: pathlib.Path = conf["REPOSITORY_PATH"]
     # connect to the database, using elevated access
-    connection = connect(conf, SecretsConfig())
+    connection = Script(dbuser="cdb").rs().conn
 
     print("Loading exported event")
     with open(data_path, encoding='UTF-8') as infile:

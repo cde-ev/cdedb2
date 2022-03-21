@@ -73,7 +73,7 @@ Configure the application
 First of all, you need to create your personal configuration and make the path to
 the file available via environment variable, like described in
 :doc:`Design_Environment_Setup`. The configuration file may be empty if you do not want
-to override the defaults from :mod:`cdedb_setup.config`.
+to override the defaults from :mod:`cdedb.config`.
 
 A sample configuration for development instances can be found in
 ``related/auto-build/files/stage3/localconfig.py``.
@@ -87,13 +87,13 @@ user xy). First execute as user with enough permissions (that is the ability
 to run ``sudo -u postgres ...`` and ``sudo -u cdb ...``) and with running
 postgres::
 
-  python3 -m cdedb_setup database create-users
-  python3 -m cdedb_setup database create
+  python3 -m cdedb db create-users
+  python3 -m cdedb db create
 
 The first one will create the database users, the second one the actual tables.
 To seed them with sample data, run additionally::
 
-  python3 -m cdedb_setup database populate
+  python3 -m cdedb db populate
 
 Now configure pgbouncer in ``pgbouncer.ini`` (in ``/etc``) with the following::
 
@@ -157,17 +157,17 @@ note, that this is syntax for apache-2.4 (which differs from apache-2.2).
 Next we need to create the directory for uploaded data (where
 ``www-data`` is the user running Apache)::
 
-  python3 -m cdedb_setup filesystem storage create --user www-data
+  python3 -m cdedb filesystem storage create --user www-data
 
 To populate the storage with sample data, run additionally::
 
-  python3 -m cdedb_setup filesystem storage populate --user www-data
+  python3 -m cdedb filesystem storage populate --user www-data
 
 Finally we need a directory where logging files resist. The directory
 needs to be writable by the user running Apache (default ``www-data``). To
 create the default log directory, you can call::
 
-  python3 -m cdedb_setup filesystem log create --user www-data
+  python3 -m cdedb filesystem log create --user www-data
 
 Running it
 ----------
@@ -199,4 +199,4 @@ reload::
   make reload
 
 For the database you should restart pgbouncer (which probably has some open
-connections left) before doing a ``python3 -m cdedb_setup dev make-sample-data``.
+connections left) before doing a ``python3 -m cdedb dev make-sample-data``.

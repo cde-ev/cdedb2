@@ -75,7 +75,7 @@ import pytz
 import pytz.tzinfo
 import werkzeug.datastructures
 import zxcvbn
-from cdedb_setup.config import Config
+from cdedb.config import Config
 from schulze_condorcet.util import as_vote_tuple
 
 import cdedb.database.constants as const

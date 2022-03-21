@@ -15,9 +15,9 @@ echo "Checkout $OLDREVISION"
 git checkout $OLDREVISION
 ls cdedb/database/evolutions > /tmp/oldevolutions.txt
 # TODO replace make calls with
-# python3 -m cdedb_setup dev compile-sample-data
-# python3 -m cdedb_setup database create
-# python3 -m cdedb_setup database populate
+# python3 -m cdedb dev compile-sample-data
+# python3 -m cdedb db create
+# python3 -m cdedb db populate
 make -B tests/ancillary_files/sample_data.sql &> /dev/null
 make sql DATABASE_NAME=$DATABASE_NAME > /dev/null
 
@@ -37,7 +37,7 @@ for evolution in $(cat /tmp/todoevolutions.txt); do
     if [[ $evolution == *.sql ]]; then
         echo ""
         echo "Apply evolution $evolution" | tee -a /tmp/output-evolution.txt
-        python3 -m cdedb_setup dev execute-sql-script -v \
+        python3 -m cdedb dev execute-sql-script -v \
              -f cdedb/database/evolutions/$evolution \
              2>&1 | tee -a /tmp/output-evolution.txt
     fi
@@ -56,18 +56,18 @@ done
 # evolved db
 echo ""
 echo "Creating database description."
-python3 -m cdedb_setup dev execute-sql-script -v \
+python3 -m cdedb dev execute-sql-script -v \
      -f bin/describe_database.sql > /tmp/evolved-description.txt
 
 make i18n-compile
-python3 -m cdedb_setup dev compile-sample-data
+python3 -m cdedb dev compile-sample-data
 
 # new db
 echo ""
 echo "Resetting and creating database description again."
-python3 -m cdedb_setup database create
-python3 -m cdedb_setup database populate
-python3 -m cdedb_setup dev execute-sql-script -v \
+python3 -m cdedb db create
+python3 -m cdedb db populate
+python3 -m cdedb dev execute-sql-script -v \
      -f bin/describe_database.sql > /tmp/pristine-description.txt
 
 # perform check
