@@ -120,3 +120,10 @@ class MlFrontend(MlMailmanMixin, MlBaseFrontend):
             action = "accept"
 
         return self._moderate_messages(rs, [request_id], action)
+
+    @access("ml_admin", modi={"POST"})
+    def manual_mailman_sync(self, rs: RequestState) -> Response:
+        """Trigger sync manually"""
+        code = self.mailman_sync(rs)
+        rs.notify_return_code(code, error=n_("Could not connect."))
+        return self.redirect(rs, "ml/index")

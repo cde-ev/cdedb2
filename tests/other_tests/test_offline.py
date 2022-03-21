@@ -1,11 +1,6 @@
 #!/usr/bin/env python3
 # pylint: disable=missing-module-docstring
 
-# FIXME: For some reason this test affect the configuration of later tests.
-#  Thus we need to ensure it is run last.
-
-import os
-import pathlib
 import shutil
 import subprocess
 import sys
@@ -19,32 +14,28 @@ from tests.common import FrontendTest
 
 class TestOffline(FrontendTest):
     def test_offline_vm(self) -> None:
-        base = pathlib.Path(__file__).parent.parent
+        repopath = self.conf["REPOSITORY_PATH"]
         user = {
             'username': "garcia@example.cde",
             'password': "notthenormalpassword",
         }
-        existing_config = base / "cdedb/localconfig.py"
-        config_backup = base / "cdedb/localconfig.copy"
+        existing_config = repopath / "cdedb/localconfig.py"
+        config_backup = repopath / "cdedb/localconfig.copy"
         if existing_config.exists():
             shutil.copyfile(existing_config, config_backup)
         subprocess.run(
-            ['bin/execute_sql_script.py', '-U', 'cdb',
-             '-d', os.environ['CDEDB_TEST_DATABASE'],
-             '-f', 'tests/ancillary_files/clean_data.sql'],
-            cwd=base, check=True, stdout=subprocess.DEVNULL)
+            [repopath / 'bin/execute_sql_script.py', '-U', 'cdb',
+             '-d', self.conf["CDB_DATABASE_NAME"],
+             '-f', repopath / 'tests/ancillary_files/clean_data.sql'],
+            check=True, stdout=subprocess.DEVNULL)
         try:
             subprocess.run(
-                ['bin/make_offline_vm.py', '--test', '--no-extra-packages',
-                 'tests/ancillary_files/event_export.json'],
-                cwd=base, check=True, stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL)
+                [repopath / 'bin/make_offline_vm.py', '--test', '--no-extra-packages',
+                 repopath / 'tests/ancillary_files/event_export.json'],
+                check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             # Reset web test app for changed configuration
-            try:
-                del sys.modules['cdedb.localconfig']
-            except AttributeError:
-                pass
-            new_app = Application()
+            sys.modules.pop('cdedb.localconfig', None)
+            new_app = Application(self.configpath)
             self.app = webtest.TestApp(  # type: ignore
                 new_app, extra_environ=self.app_extra_environ)
             self.app.reset()
@@ -110,9 +101,9 @@ class TestOffline(FrontendTest):
                 shutil.move(str(config_backup), existing_config)
             else:
                 subprocess.run(
-                    ["cp", "related/auto-build/files/stage3/localconfig.py",
-                     "cdedb/localconfig.py"], check=True)
+                    ["cp", repopath / "related/auto-build/files/stage3/localconfig.py",
+                     repopath / "cdedb/localconfig.py"], check=True)
+
+            # Force the localconfig to be reloaded
+            sys.modules.pop('cdedb.localconfig', None)
             subprocess.run(["sudo", "rm", "-f", "/OFFLINEVM"], check=True)
-            subprocess.run(
-                ["make", "reload"], check=True, cwd=base,
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

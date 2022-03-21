@@ -32,6 +32,7 @@ import werkzeug
 import werkzeug.datastructures
 import werkzeug.exceptions
 import werkzeug.routing
+from schulze_condorcet.types import Candidate
 
 import cdedb.database.constants as const
 from cdedb.database.connection import IrradiatedConnection
@@ -919,7 +920,7 @@ def pairwise(iterable: Iterable[T]) -> Iterable[Tuple[T, T]]:
 
 
 #: Magic value of shortname of the ballot candidate representing the bar.
-ASSEMBLY_BAR_SHORTNAME = "_bar_"
+ASSEMBLY_BAR_SHORTNAME = Candidate("_bar_")
 
 
 @overload

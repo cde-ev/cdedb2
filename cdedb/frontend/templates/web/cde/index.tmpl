@@ -58,7 +58,7 @@
                                 You are already a part of the Initiative 25+.
                             {% endtrans %}
                         </strong>
-                        {% trans link=util.href(cdedblink("cde/lastschrift_show", {'persona_id': user.persona_id}),
+                        {% trans link=util.href(cdedblink("core/my_lastschrift"),
                                  gettext("existing Direct Debit Authorization"), icon='euro-sign')-%}
                             View Your {{ link }}.
                         {% endtrans %}
@@ -135,6 +135,13 @@
                     </tr>
                 </tbody>
             </table>
+            <p class="text-muted">
+                {{ util.make_icon('info-circle') }}
+                {% trans %}
+                    Note: After your transfer incurred at the bank account, it may take some time
+                    (up to a few weeks) until the payment is registered here.
+                {% endtrans %}
+            </p>
         {% endcall %}
     {% endif %}
 {% endblock %}

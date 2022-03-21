@@ -32,6 +32,12 @@
                     {{ util.input_submit(label=gettext("Write Subscription States"), aclass="btn btn-sm btn-success",
                             icon="sync-alt") }}
                 </form>
+                <form action="{{ cdedblink("ml/manual_mailman_sync") }}" method="POST"
+                      id="mailmansync" style="display: inline;">
+                    {{ util.anti_csrf_token("ml/manual_mailman_sync") }}
+                    {{ util.input_submit(label=gettext("Force mailman sync now"), aclass="btn btn-sm btn-success",
+                            icon="share") }}
+                </form>
             {% endif %}
         </div>
     {% endif %}

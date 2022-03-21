@@ -7,31 +7,45 @@ import tempfile
 import unittest
 from contextlib import redirect_stdout
 from pkgutil import resolve_name
-from typing import Any, Callable
+from typing import Any, Callable, ClassVar
 
 import psycopg2.errorcodes
 
 from cdedb.backend.core import CoreBackend
 from cdedb.common import unwrap
+from cdedb.config import TestConfig
 from cdedb.script import DryRunError, Script, ScriptAtomizer
 
 
 class TestScript(unittest.TestCase):
+    conf: ClassVar[TestConfig]
+    script: Script
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.conf = TestConfig(os.environ['CDEDB_TEST_CONFIGPATH'])
 
     def setUp(self) -> None:
         self.script = self.get_script()
 
-    @staticmethod
-    def get_script(**config: Any) -> Script:
-        return Script(persona_id=-1, dbname=os.environ['CDEDB_TEST_DATABASE'],
+    def get_script(self, **config: Any) -> Script:
+        """This gets an instance of our Script class.
+
+        Note that it is not guaranteed that the database is in a cleanly
+        populated state. Tests which rely on specific contents should
+        prepare them theirselves.
+        """
+        return Script(persona_id=-1, dbname=self.conf["CDB_DATABASE_NAME"],
                       dbuser="cdb_admin", check_system_user=False, **config)
 
     @staticmethod
     def check_buffer(buffer: io.StringIO, assertion: Callable[[str, str], None],
                      value: str) -> None:
-        buffer.seek(0)
+        """Check the buffer's content and empty it."""
+        buffer.seek(0)  # go to start of buffer
         assertion(value, buffer.read())
-        buffer.seek(0)
+        buffer.seek(0)  # go back to start of buffer
+        buffer.truncate()  # cut off content after the current position -> empty buffer
 
     def test_rs_factory(self) -> None:
         rs_factory = self.script.rs
@@ -40,7 +54,7 @@ class TestScript(unittest.TestCase):
         self.assertEqual(23, rs_factory(23).user.persona_id)
 
         with self.assertRaises(psycopg2.OperationalError) as cm:
-            Script(dbname=os.environ['CDEDB_TEST_DATABASE'], dbuser="cdb_admin",
+            Script(dbname=self.conf["CDB_DATABASE_NAME"], dbuser="cdb_admin",
                    check_system_user=False, CDB_DATABASE_ROLES="{'cdb_admin': 'abc'}")
         # the vm is german while the postgresql docker image is english
         self.assertTrue(
@@ -103,26 +117,25 @@ class TestScript(unittest.TestCase):
                 pass
             self.check_buffer(buffer, self.assertIn, "Success!")
 
+            insertion_query = (
+                "INSERT INTO past_event.institutions"  # arbitrary, small table
+                " (title, shortname) VALUES ('Dummy', 'Test')"
+            )
+            selection_query = ("SELECT shortname FROM past_event.institutions"
+                               " WHERE title = 'Dummy'")
             # Make a change, roll back, then check it hasn't been committed.
             with ScriptAtomizer(rs, dry_run=True) as conn:
                 with conn.cursor() as cur:
-                    cur.execute(
-                        "UPDATE core.personas SET display_name = 'Test'"
-                        " WHERE id = 1")
-                    cur.execute(
-                        "SELECT display_name FROM core.personas WHERE id = 1")
+                    cur.execute(insertion_query)
+                    cur.execute(selection_query)
                     self.assertEqual(unwrap(dict(cur.fetchone())), "Test")
             # Now make the change for real.
             with ScriptAtomizer(rs, dry_run=False) as conn:
                 with conn.cursor() as cur:
-                    cur.execute(
-                        "SELECT display_name FROM core.personas WHERE id = 1")
-                    self.assertNotEqual(unwrap(dict(cur.fetchone())), "Test")
-                    cur.execute(
-                        "UPDATE core.personas SET display_name = 'Test'"
-                        " WHERE id = 1")
+                    cur.execute(selection_query)
+                    self.assertIsNone(cur.fetchone())
+                    cur.execute(insertion_query)
             with ScriptAtomizer(rs, dry_run=False) as conn:
                 with conn.cursor() as cur:
-                    cur.execute(
-                        "SELECT display_name FROM core.personas WHERE id = 1")
+                    cur.execute(selection_query)
                     self.assertEqual(unwrap(dict(cur.fetchone())), "Test")

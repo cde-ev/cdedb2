@@ -19,6 +19,7 @@ from typing import Collection
 from psycopg2.extras import DictCursor, Json
 
 from cdedb.common import CdEDBObject
+from cdedb.config import TestConfig
 from cdedb.script import Script
 
 # This is 'secret' the hashed
@@ -112,7 +113,10 @@ def update_parts(cur: DictCursor, parts: Collection[CdEDBObject]) -> None:
 
 
 def work(args: argparse.Namespace) -> None:
-    db_name = os.environ['CDEDB_TEST_DATABASE'] if args.test else 'cdb'
+    if args.test:
+        db_name = args.conf["CDB_DATABASE_NAME"]
+    else:
+        db_name = "cdb"
 
     print("Loading exported event")
     with open(args.data_path, encoding='UTF-8') as infile:
@@ -310,5 +314,9 @@ if __name__ == "__main__":
             or currentpath.parts[-1] != 'bin'):
         raise RuntimeError("Failed to locate repository")
     args.repopath = currentpath.parent
+
+    if args.test:
+        sys.path.append(str(args.repopath))  # test config imports from module `tests`
+        args.conf = TestConfig(os.environ['CDEDB_TEST_CONFIGPATH'])
 
     work(args)

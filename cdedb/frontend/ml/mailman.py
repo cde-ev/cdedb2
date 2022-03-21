@@ -8,7 +8,9 @@ on the mail VM from within the CdEDB.
 from mailmanclient import Client, MailingList
 
 import cdedb.database.constants as const
+from cdedb.backend.common import DatabaseLock
 from cdedb.common import CdEDBObject, RequestState
+from cdedb.database.constants import LockType
 from cdedb.frontend.common import cdedburl, make_persona_name, periodic
 from cdedb.frontend.ml.base import MlBaseFrontend
 
@@ -18,11 +20,30 @@ POLICY_MEMBER_CONVERT = {
     const.ModerationPolicy.fully_moderated: 'hold',
 }
 
-
 POLICY_OTHER_CONVERT = {
     const.ModerationPolicy.unmoderated: 'defer',
     const.ModerationPolicy.non_subscribers: 'hold',
     const.ModerationPolicy.fully_moderated: 'hold',
+}
+
+# This looks a bit counter-intuitive, but this is ANDed with the MIME convert.
+# TODO: Potentially, this lets text/plain attachments through on forbid.
+ATTACHMENT_EXTENSIONS_CONVERT = {
+    const.AttachmentPolicy.allow: [],
+    const.AttachmentPolicy.pdf_only: ['pdf'],
+    const.AttachmentPolicy.forbid: [],
+}
+
+ATTACHMENT_MIME_CONVERT = {
+    const.AttachmentPolicy.allow: [],
+    const.AttachmentPolicy.pdf_only: ['multipart', 'text/plain', 'application/pdf'],
+    const.AttachmentPolicy.forbid: ['text/plain'],
+}
+
+ATTACHMENT_HTML_CONVERT = {
+    const.AttachmentPolicy.allow: True,
+    const.AttachmentPolicy.pdf_only: False,
+    const.AttachmentPolicy.forbid: False,
 }
 
 
@@ -53,7 +74,6 @@ class MlMailmanMixin(MlBaseFrontend):
             'subscription_policy': 'moderate',
             'unsubscription_policy': 'moderate',
             'archive_policy': 'private',
-            'convert_html_to_plaintext': True,
             'dmarc_mitigate_action': 'wrap_message',
             'dmarc_mitigate_unconditionally': False,
             'dmarc_wrapped_message_text': (
@@ -67,6 +87,8 @@ class MlMailmanMixin(MlBaseFrontend):
             'description': db_list['title'],
             'info': db_list['description'] or "",
             'subject_prefix': prefix,
+            # TODO: Replace with whitelist of acceptable_aliases
+            'require_explicit_destination': False,
             'max_message_size': db_list['maxsize'] or 0,
             'max_num_recipients': 0,
             'default_member_action': POLICY_MEMBER_CONVERT[
@@ -74,12 +96,14 @@ class MlMailmanMixin(MlBaseFrontend):
             'default_nonmember_action': POLICY_OTHER_CONVERT[
                 db_list['mod_policy']],
             'digests_enabled': False,
-            # TODO handle attachment_policy, only available in mailman-3.3
             # Dropping mails silently, even after moderation is worse than rejecting...
             'filter_content': True,
             'filter_action': 'reject',
-            # 'pass_extensions': ['pdf'],
-            # 'pass_types': ['multipart', 'text/plain', 'application/pdf'],
+            'convert_html_to_plaintext': ATTACHMENT_HTML_CONVERT[
+                db_list['attachment_policy']],
+            'pass_extensions': ATTACHMENT_EXTENSIONS_CONVERT[
+                db_list['attachment_policy']],
+            'pass_types': ATTACHMENT_MIME_CONVERT[db_list['attachment_policy']],
         }
         desired_templates = {
             # pylint: disable=line-too-long
@@ -267,22 +291,36 @@ The original message as received by Mailman is attached.
             self.mailman_sync_list_whites(rs, mailman, db_list, mm_list)
 
     @periodic("mailman_sync")
-    def mailman_sync(self, rs: RequestState, store: CdEDBObject) -> CdEDBObject:
+    def auto_mailman_sync(self, rs: RequestState, store: CdEDBObject) -> CdEDBObject:
+        self.mailman_sync(rs)
+        return store
+
+    def mailman_sync(self, rs: RequestState) -> bool:
         """Synchronize the mailing list software with the database.
 
         This has an @periodic decorator in the frontend.
+
+        :returns: Whether the operation has been successful.
         """
+        with DatabaseLock(rs, LockType.mailman) as lock:
+            if lock:
+                return self._sync(rs)
+            else:
+                self.logger.info("Mailman sync ongoing, skipping this invokation.")
+        return False
+
+    def _sync(self, rs: RequestState) -> bool:
         if (self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or (
                 self.conf["CDEDB_DEV"] and not self.conf["CDEDB_TEST"])):  # pragma: no cover
             self.logger.debug("Skipping mailman sync in dev/offline mode.")
-            return store
+            return True
         mailman = self.get_mailman()
         # noinspection PyBroadException
         try:
             _ = mailman.system  # cause the client to connect
         except Exception:  # sadly this throws many different exceptions
             self.logger.exception("Mailman client connection failed!")
-            return store
+            return False
         db_lists = self.mlproxy.get_mailinglists(
             rs, self.mlproxy.list_mailinglists(rs, active_only=False))
         db_lists = {lst['address']: lst for lst in db_lists.values()}
@@ -300,4 +338,4 @@ The original message as received by Mailman is attached.
                                    mm_lists[address])
         for address in deleted_lists:
             mailman.delete_list(address)
-        return store
+        return True

@@ -248,7 +248,7 @@ class EventLowLevelBackend(AbstractBackend):
                 rs, const.EventLogCodes.track_added, event_id,
                 change_note=new_track['title'])
             reg_data = self.sql_select(
-                rs, "event.registrations", ("id",), (event_id,), "event_id")
+                rs, "event.registrations", ("id",), (event_id,), entity_key="event_id")
             reg_ids = tuple(e['id'] for e in reg_data)
             for reg_id in reg_ids:
                 reg_track = {

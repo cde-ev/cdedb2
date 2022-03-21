@@ -272,65 +272,16 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(data, new_data)
         expectation = {
             1: {
-                'address': None,
-                'address2': None,
-                'address_supplement': None,
-                'address_supplement2': None,
-                'affiliation': None,
-                'balance': None,
-                'birth_name': None,
-                'birthday': None,
-                'bub_search': None,
+                **data,
+                'automated_change': False,
                 'change_note': 'Account erstellt.',
                 'code': 2,
-                'country': None,
-                'country2': None,
                 'ctime': nearly_now(),
-                'decided_search': None,
-                'display_name': 'Zelda',
-                'family_name': 'Zeruda-Hime',
-                'foto': None,
-                'free_form': None,
-                'gender': None,
                 'generation': 1,
-                'given_names': 'Zelda',
                 'id': new_id,
-                'interests': None,
-                'is_active': True,
-                'is_meta_admin': False,
-                'is_archived': False,
-                'is_assembly_admin': False,
-                'is_assembly_realm': False,
-                'is_cde_admin': False,
-                'is_finance_admin': False,
-                'is_cde_realm': False,
-                'is_core_admin': False,
-                'is_event_admin': False,
-                'is_event_realm': False,
-                'is_member': False,
-                'is_ml_admin': False,
-                'is_ml_realm': False,
-                'is_cdelokal_admin': False,
-                'is_auditor': False,
-                'is_purged': False,
-                'is_searchable': False,
-                'location': None,
-                'location2': None,
-                'mobile': None,
-                'name_supplement': None,
-                'notes': 'Not Link.',
-                'paper_expuls': None,
-                'postal_code': None,
-                'postal_code2': None,
                 'reviewed_by': None,
-                'specialisation': None,
                 'submitted_by': self.user['id'],
-                'telephone': None,
-                'timeline': None,
-                'title': None,
-                'trial_member': None,
-                'username': 'zelda@example.cde',
-                'weblink': None}}
+            }}
         history = self.core.changelog_get_history(self.key, new_id, None)
         self.assertEqual(expectation, history)
 
@@ -1178,6 +1129,7 @@ class TestCoreBackend(BackendTest):
                 'persona_id': new_admin["id"],
                 'reviewed_by': None,
                 'submitted_by': admin2["id"],
+                'automated_change': False,
             },
         ))
         # Set offset to avoid selecting the Init. changelog entries
@@ -1362,7 +1314,7 @@ class TestCoreBackend(BackendTest):
         expectation = self.get_sample_data(
             "core.changelog", ids=None,
             keys=("id", "submitted_by", "reviewed_by", "ctime", "generation",
-                  "change_note", "code", "persona_id"))
+                  "change_note", "code", "persona_id", "automated_change"))
         self.assertEqual((len(expectation), tuple(expectation.values())),
                          self.core.retrieve_changelog_meta(self.key))
 
@@ -1381,7 +1333,8 @@ class TestCoreBackend(BackendTest):
                 keys = None
                 if table == "core.changelog":
                     keys = ("change_note", "code", "ctime", "generation", "id",
-                            "persona_id", "reviewed_by", "submitted_by")
+                            "persona_id", "reviewed_by", "submitted_by",
+                            "automated_change")
                 self.assertLogEqual(
                     tuple(self.get_sample_data(table, keys=keys).values()),
                     log_retriever=retriever,  # type: ignore[arg-type]

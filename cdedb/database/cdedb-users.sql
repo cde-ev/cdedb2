@@ -7,6 +7,8 @@ DROP DATABASE IF EXISTS cdb_test_1;
 DROP DATABASE IF EXISTS cdb_test_2;
 DROP DATABASE IF EXISTS cdb_test_3;
 DROP DATABASE IF EXISTS cdb_test_4;
+DROP DATABASE IF EXISTS cdb_test_ldap;
+DROP DATABASE IF EXISTS cdb_test_xss;
 -- master user cdb -- do not use in code
 DROP ROLE IF EXISTS cdb;
 CREATE USER cdb                 PASSWORD '987654321098765432109876543210';

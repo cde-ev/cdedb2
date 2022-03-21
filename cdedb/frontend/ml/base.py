@@ -250,7 +250,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.create_mailinglist_form(rs, ml_type=ml_type)
         assert data is not None
-        # Check if mailinglist address is unique
+        # Check if mailinglist address is unique and valid
         try:
             self.mlproxy.validate_address(rs, data)
         except ValueError as e:
@@ -472,7 +472,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             return self.change_mailinglist_form(rs, mailinglist_id)
         assert data is not None
 
-        # Check if mailinglist address is unique
+        # Check if mailinglist address is unique and valid
         try:
             self.mlproxy.validate_address(rs, data)
         except ValueError as e:

@@ -610,7 +610,7 @@ class AssemblyBackend(AbstractBackend):
         """
         assembly_id = affirm(vtypes.ID, assembly_id)
         data = self.sql_select(rs, "assembly.presiders", ("assembly_id", "persona_id"),
-                               (assembly_id,), "assembly_id")
+                               (assembly_id,), entity_key="assembly_id")
         return {e["persona_id"] for e in data}
 
     @access("assembly_admin")
@@ -1326,14 +1326,8 @@ class AssemblyBackend(AbstractBackend):
             vote = affirm(vtypes.Vote, vote, ballot=ballot)
             if not self.check_attendance(rs, ballot_id=ballot_id):
                 raise ValueError(n_("Must attend to vote."))
-            if ballot['extended']:
-                reference = ballot['vote_extension_end']
-            else:
-                reference = ballot['vote_end']
-            if now() > reference:
-                raise ValueError(n_("Ballot already closed."))
-            if now() < ballot['vote_begin']:
-                raise ValueError(n_("Ballot not yet open."))
+            if not self.is_ballot_voting(rs, ballot_id):
+                raise ValueError(n_("Ballot is not open for voting."))
 
             query = glue("SELECT has_voted FROM assembly.voter_register",
                          "WHERE ballot_id = %s and persona_id = %s")
@@ -1487,14 +1481,10 @@ class AssemblyBackend(AbstractBackend):
             ballot = unwrap(self.get_ballots(rs, (ballot_id,)))
             if ballot['is_tallied']:
                 return None
-            if ballot['extended'] is None:
-                raise ValueError(n_("Extension unchecked."))
-            if ballot['extended']:
-                reference = ballot['vote_extension_end']
-            else:
-                reference = ballot['vote_end']
-            if now() < reference:
-                raise ValueError(n_("Voting still going on."))
+            elif now() < ballot['vote_begin']:
+                raise ValueError(n_("This ballot has not yet begun."))
+            elif self.is_ballot_voting(rs, ballot_id):
+                raise ValueError(n_("Voting is still going on."))
 
             votes = self.sql_select(
                 rs, "assembly.votes", ("vote", "salt", "hash"), (ballot_id,),
@@ -2166,8 +2156,9 @@ class AssemblyBackend(AbstractBackend):
                                    (assembly_id,), entity_key="assembly_id")
         else:
             assert ballot_id is not None
-            data = self.sql_select(rs, "assembly.attachment_ballot_links",
-                                   ("attachment_id",), (ballot_id,), "ballot_id")
+            data = self.sql_select(
+                rs, "assembly.attachment_ballot_links", ("attachment_id",),
+                (ballot_id,), entity_key="ballot_id")
 
         return {unwrap(e) for e in data}
 

@@ -266,9 +266,9 @@ class CoreBaseBackend(AbstractBackend):
         """
         return self.generic_retrieve_log(
             rs, const.MemberChangeStati, "persona", "core.changelog",
-            codes=stati, offset=offset, length=length, persona_id=persona_id,
-            submitted_by=submitted_by, reviewed_by=reviewed_by,
-            change_note=change_note, time_start=time_start,
+            additional_columns=['automated_change'], codes=stati, offset=offset,
+            length=length, persona_id=persona_id, submitted_by=submitted_by,
+            reviewed_by=reviewed_by, change_note=change_note, time_start=time_start,
             time_stop=time_stop)
 
     def changelog_submit_change(self, rs: RequestState, data: CdEDBObject,
@@ -528,7 +528,7 @@ class CoreBaseBackend(AbstractBackend):
         fields.remove('id')
         fields.append("persona_id AS id")
         fields.extend(("submitted_by", "reviewed_by", "ctime", "generation",
-                       "code", "change_note"))
+                       "code", "change_note", "automated_change"))
         query = "SELECT {fields} FROM core.changelog WHERE {conditions}"
         conditions = ["persona_id = %s"]
         params: List[Any] = [persona_id]
@@ -1382,7 +1382,7 @@ class CoreBaseBackend(AbstractBackend):
             #
             lastschrift = self.sql_select(
                 rs, "cde.lastschrift", ("id", "revoked_at"), (persona_id,),
-                "persona_id")
+                entity_key="persona_id")
             if any(not ls['revoked_at'] for ls in lastschrift):
                 raise ArchiveError(n_("Active lastschrift exists."))
             query = ("UPDATE cde.lastschrift"
@@ -2090,19 +2090,23 @@ class CoreBaseBackend(AbstractBackend):
     def deactivate_old_sessions(self, rs: RequestState) -> DefaultReturnCode:
         """Deactivate old leftover sessions."""
         query = ("UPDATE core.sessions SET is_active = False"
-                 " WHERE is_active = True AND atime < now() - INTERVAL '30 days'")
-        return self.query_exec(rs, query, ())
+                 " WHERE is_active = True AND atime < %s")
+        # Choose longer interval than SESSION_LIFESPAN here to keep sessions active
+        # if e.g. the lifespan config is increased at some time. Inactivation of
+        # sessions based on lifetime is done in login and lookupsession methods.
+        cutoff = now() - self.conf['SESSION_SAVETIME']
+        return self.query_exec(rs, query, (cutoff, ))
 
     @access("core_admin")
     def clean_session_log(self, rs: RequestState) -> DefaultReturnCode:
         """Delete old entries from the sessionlog."""
         query = ("DELETE FROM core.sessions WHERE is_active = False"
-                 " AND atime < now() - INTERVAL '30 days'"
+                 " AND atime < %s"
                  " AND (persona_id, atime) NOT IN"
                  " (SELECT persona_id, MAX(atime) AS atime FROM core.sessions"
                  "  WHERE is_active = False GROUP BY persona_id)")
-
-        return self.query_exec(rs, query, ())
+        cutoff = now() - self.conf['SESSION_SAVETIME']
+        return self.query_exec(rs, query, (cutoff,))
 
     @access("persona")
     def verify_ids(self, rs: RequestState, persona_ids: Collection[int],

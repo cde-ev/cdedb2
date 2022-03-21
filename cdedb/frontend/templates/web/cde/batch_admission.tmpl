@@ -138,9 +138,17 @@
                             <div class="p">
                                 {#- jinja does not support list comprehension ... #}
                                 {%- set myentries = [] %}
-                                {%- for resolution in enums['LineResolutions'] if dataset['doppelgangers'] or not resolution.is_modification() %}
+                                {%- for resolution in enums['LineResolutions'] %}
+                                    {# Trial membership may only be granted to non-members #}
+                                    {% if dataset['doppelganger_id']
+                                            and dataset['doppelgangers'][dataset['doppelganger_id']]['is_member']
+                                            and resolution.do_trial() %}
+                                        {% continue %}
+                                    {# Modification resolutions make only sense if there is a doppelganger #}
+                                    {% elif not dataset['doppelgangers'] and resolution.is_modification() %}
+                                        {% continue %}
                                     {# We map None -> LineResolutions.none later in the frontend #}
-                                    {% if resolution == enums['LineResolutions'].none %}
+                                    {% elif resolution == enums['LineResolutions'].none %}
                                         {% continue %}
                                     {% endif %}
                                     {%- do myentries.append((resolution.value, gettext(resolution|string))) %}

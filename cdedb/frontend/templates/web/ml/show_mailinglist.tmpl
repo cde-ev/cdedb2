@@ -50,6 +50,12 @@
                 {{ util.persona_anchor(persona) }}{% if not loop.last %},{% endif %}
             {% endfor %}
         </dd>
+        <dt>{% trans %}Moderator Contact{% endtrans %}</dt>
+        <dd>
+            {% set owner=(ambience['mailinglist']['local_part'] + '-owner@' +
+                          enums['MailinglistDomain'](ambience['mailinglist']['domain']).get_domain()) %}
+            {{ util.href(util.mailto(owner), owner) }}
+        </dd>
     </dl>
 
     {{ ambience['mailinglist']['description']|md }}

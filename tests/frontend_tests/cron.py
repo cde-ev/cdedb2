@@ -402,8 +402,8 @@ class TestCron(CronTest):
             'digests_enabled': False,
             'filter_content': True,
             'filter_action': 'reject',
-            # 'pass_extensions': ['pdf'],
-            # 'pass_types': ['multipart', 'text/plain', 'application/pdf'],
+            'pass_extensions': ['pdf'],
+            'pass_types': ['multipart', 'text/plain', 'application/pdf'],
             'convert_html_to_plaintext': True,
             'dmarc_mitigate_action': 'wrap_message',
             'dmarc_mitigate_unconditionally': False,
@@ -412,6 +412,7 @@ class TestCron(CronTest):
             'member_roster_visibility': 'moderators',
             'advertised': True,
             'max_num_recipients': 0,
+            'require_explicit_destination': False,
         }
         mm_lists = {
             'zombie': unittest.mock.MagicMock(

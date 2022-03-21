@@ -26,12 +26,16 @@ from tests.common import USER_DICT, FrontendTest, UserObject, as_users, prepsql,
 class TestEventFrontend(FrontendTest):
     EVENT_LOG_OFFSET = 4
 
-    @as_users("emilia")
+    @as_users("anton", "emilia")
     def test_index(self) -> None:
         self.traverse({'description': 'Veranstaltungen'})
         self.assertPresence("Große Testakademie 2222", div='current-events')
+        registered = "(bereits angemeldet" + (", Bezahlung ausstehend)"
+                                              if self.user_in('anton') else ")")
+        self.assertPresence(registered, div='current-events')
         self.assertNonPresence("PfingstAkademie 2014")
-        self.assertNonPresence("CdE-Party 2050")
+        if self.user_in('emilia'):
+            self.assertNonPresence("CdE-Party 2050")
 
     @as_users("anonymous", "janis")
     def test_no_event_realm_view(self) -> None:
@@ -62,7 +66,7 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("CdE-Party 2050", div='organized-events')
         self.assertNonPresence("CdE-Party 2050", div='current-events')
 
-    @as_users("annika", "emilia", "martin", "vera", "werner")
+    @as_users("annika", "emilia", "martin", "vera", "werner", "katarina")
     def test_sidebar(self) -> None:
         self.traverse({'description': 'Veranstaltungen'})
         everyone = {"Veranstaltungen", "Übersicht"}
@@ -80,6 +84,10 @@ class TestEventFrontend(FrontendTest):
         elif self.user_in('annika'):
             ins = everyone | admin | {"Nutzer verwalten", "Archivsuche"}
             out = set()
+        # auditors
+        elif self.user_in('katarina'):
+            ins = everyone | {"Log"}
+            out = admin - {"Log"}
         else:
             self.fail("Please adjust users for this tests.")
 
@@ -349,7 +357,7 @@ class TestEventFrontend(FrontendTest):
         f = self.response.forms["createparticipantlistform"]
         self.submit(f)
 
-    @as_users("annika", "emilia", "garcia", "martin", "vera", "werner")
+    @as_users("annika", "emilia", "garcia", "martin", "vera", "werner", "katarina")
     def test_sidebar_one_event(self) -> None:
         self.traverse({'description': 'Veranstaltungen'},
                       {'description': 'Große Testakademie 2222'})
@@ -366,9 +374,13 @@ class TestEventFrontend(FrontendTest):
         # TODO this could be more expanded (event without courses, distinguish
         #  between registered and participant, ...
         # not registered, not event admin
-        if self.user_in('martin', 'vera', 'werner'):
+        if self.user_in('martin', 'vera', 'werner', 'katarina'):
             ins = everyone | not_registered
             out = registered | registered_or_orga | orga
+        # same, but auditor
+        elif self.user_in('katarina'):
+            ins = everyone | not_registered | {"Log"}
+            out = registered | registered_or_orga | orga - {"Log"}
         # registered
         elif self.user_in('emilia'):
             ins = everyone | registered | registered_or_orga
@@ -1411,6 +1423,7 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f, check_notification=False)
         self.assertPresence("Bereits angemeldet", div='notifications')
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
+        self.assertPresence("Offen (Bezahlung ausstehend)")
         if self.user_in('charly'):
             self.assertIn("461,49", text)
         elif self.user_in('daniel'):
@@ -1476,7 +1489,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
         self.assertPresence(
             "Anmeldung erst mit Überweisung des Teilnehmerbeitrags")
-        self.assertPresence("573,99 €")
+        self.assertPresence("573,99 € (bereits bezahlt: 200,00 €)")
         self.assertNonPresence("Warteliste")
         self.assertNonPresence("Eingeteilt in")
         self.assertPresence("α. Planetenretten für Anfänger")
@@ -1491,7 +1504,70 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/1/registration/status'})
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
         self.assertPresence("Eingeteilt in")
-        self.assertPresence("separat mitteilen, wie du deinen Teilnahmebeitrag")
+        self.assertPresence(
+            "separat mitteilen, wie du deinen Teilnahmebeitrag von 573,99 €"
+            " bezahlen kannst. Du hast bereits 200,00 € bezahlt.")
+
+        # check payment messages for different registration stati
+        payment_pending = "Bezahlung ausstehend"
+
+        # sample data are for part 1, 2, 3: not_applied, open, participant
+        self.assertPresence(payment_pending)
+        self.traverse("Index")
+        self.assertPresence(payment_pending, div='event-box')
+        self.traverse("Veranstaltungen")
+        self.assertPresence(payment_pending, div='current-events')
+
+        # registration stati that are not really registered
+        self.get('/event/event/1/registration/1/change')
+        f = self.response.forms['changeregistrationform']
+        f['part1.status'] = const.RegistrationPartStati.not_applied
+        f['part2.status'] = const.RegistrationPartStati.cancelled
+        f['part3.status'] = const.RegistrationPartStati.rejected
+        self.submit(f)
+        self.traverse("Index")
+        self.assertPresence("ehemals angemeldet", div='event-box')
+        self.assertNonPresence(payment_pending)
+        self.traverse("Veranstaltungen")
+        self.assertPresence("ehemals angemeldet", div='current-events')
+        self.assertNonPresence(payment_pending)
+
+        # guests do not necessarily need to pay
+        self.get('/event/event/1/registration/1/change')
+        f = self.response.forms['changeregistrationform']
+        f['part3.status'] = const.RegistrationPartStati.guest
+        self.submit(f)
+        self.traverse("Index")
+        self.assertPresence("bereits angemeldet", div='event-box')
+        self.assertNonPresence(payment_pending)
+        self.traverse("Veranstaltungen")
+        self.assertPresence("bereits angemeldet", div='current-events')
+        self.assertNonPresence(payment_pending)
+        self.traverse("angemeldet")
+        self.assertNonPresence(payment_pending)
+
+        # participant again, only for one part
+        self.get('/event/event/1/registration/1/change')
+        f = self.response.forms['changeregistrationform']
+        f['part3.status'] = const.RegistrationPartStati.participant
+        f['reg.amount_paid'] = 0
+        self.submit(f)
+        self.traverse({'href': 'registration/status'})
+        self.assertPresence("450,99 €")
+        self.assertNonPresence("bereits bezahlt")
+        self.assertPresence(payment_pending)
+
+        # unset fee for the only part participated in - no payment needed anymore
+        self.get('/event/event/1/part/3/change')
+        f = self.response.forms['changepartform']
+        f['fee'] = 0
+        self.submit(f)
+        self.traverse("Index")
+        self.assertNonPresence(payment_pending)
+        self.traverse("Veranstaltungen")
+        self.assertNonPresence(payment_pending)
+        self.traverse("angemeldet")
+        self.assertNonPresence(payment_pending)
 
     def test_register_no_registration_end(self) -> None:
         # Remove registration end (soft and hard) from Große Testakademie 2222
@@ -2161,8 +2237,8 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Überweisungen eintragen (Große Testakademie 2222)")
         f = self.response.forms['batchfeesform']
         f['fee_data'] = """
-573.99;DB-1-9;Admin;Anton;01.04.18
-466.99;DB-5-1;Eventis;Emilia;01.04.18
+373.99;DB-1-9;Admin;Anton;01.04.18
+455.99;DB-5-1;Eventis;Emilia;01.04.18
 589.49;DB-9-4;Iota;Inga;30.12.19
 570.99;DB-11-6;K;Kalif;01.04.18
 0.0;DB-666-1;Y;Z;77.04.18;stuff
@@ -2175,7 +2251,7 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['batchfeesform']
         f['full_payment'].checked = True
         f['fee_data'] = """
-573.98;DB-1-9;Admin;Anton;01.04.18
+373.98;DB-1-9;Admin;Anton;01.04.18
 589.49;DB-5-1;Eventis;Emilia;04.01.18
 451.00;DB-9-4;Iota;Inga;30.12.19
 """
@@ -2219,7 +2295,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Bereits Bezahlt 451,00 €")
         # Check log
         self.traverse({'href': '/event/event/1/log'})
-        self.assertPresence("573,98 € am 01.04.2018 gezahlt.",
+        self.assertPresence("373,98 € am 01.04.2018 gezahlt.",
                             div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
         self.assertPresence("589,49 € am 04.01.2018 gezahlt.",
                             div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
