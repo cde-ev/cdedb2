@@ -197,8 +197,11 @@ def execute_sql_script(file: pathlib.Path, verbose: int) -> None:
 
 def main() -> None:
     try:
-        # Set euid/egid to the user invoking sudo if executed with sudo
-        with switch_user(os.environ.get("SUDO_USER", getpass.getuser())):
+        # Set euid/egid to the user invoking sudo if exists and it is not root
+        sudo_user = os.environ.get("SUDO_USER")
+        if not sudo_user or sudo_user == "root":
+            sudo_user = getpass.getuser()
+        with switch_user(sudo_user):
             cli()
     except PermissionError as e:
         raise PermissionError("Unable to perform this command due to missing permissions."
