@@ -117,7 +117,9 @@ def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
          extra_packages: bool = False, no_extra_packages: bool = False) -> None:
     repo_path: pathlib.Path = conf["REPOSITORY_PATH"]
     # connect to the database, using elevated access
-    connection = Script(dbuser="cdb", check_system_user=False).rs().conn
+    connection = Script(
+        dbuser="cdb", dbname=conf["CDB_DATABASE_NAME"], check_system_user=False
+    ).rs().conn
 
     print("Loading exported event")
     with open(data_path, encoding='UTF-8') as infile:
