@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ex
+set -e
 
 
 DATABASE_NAME=cdb_test_1
@@ -40,12 +40,11 @@ git checkout $NEWREVISION
 
 # determine evolutions to apply.
 ls cdedb/database/evolutions | sort > /tmp/newevolutions.txt
-grep /tmp/newevolutions.txt -v -f /tmp/oldevolutions.txt \
-     > /tmp/todoevolutions.txt
+grep /tmp/newevolutions.txt -v -f /tmp/oldevolutions.txt || true > /tmp/todoevolutions.txt
 
 # apply all evolutions and gather the output.
 truncate -s0 /tmp/output-evolution.txt
-for evolution in $(cat /tmp/todoevolutions.txt); do
+while read -r evolution; do
     if [[ $evolution == *.sql ]]; then
         echo ""
         echo "Apply evolution $evolution" | tee -a /tmp/output-evolution.txt
@@ -63,7 +62,7 @@ for evolution in $(cat /tmp/todoevolutions.txt); do
             python3 cdedb/database/evolutions/$evolution \
             2>&1 | tee -a /tmp/output-evolution.txt
     fi
-done
+done < /tmp/todoevolutions.txt
 
 # evolved db
 echo ""
@@ -72,7 +71,7 @@ python3 -m cdedb dev execute-sql-script -v \
      -f bin/describe_database.sql > /tmp/evolved-description.txt
 
 make i18n-compile
-python3 -m cdedb dev compile-sample-data
+python3 -m cdedb dev compile-sample-data --outfile tests/ancillary_files/sample_data.sql
 
 # new db
 echo ""
