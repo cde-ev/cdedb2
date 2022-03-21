@@ -1,9 +1,11 @@
-"""Provide a command line interface for the setup module."""
-import functools
+"""Provide a command line interface for the setup module.
+
+Most of these are just wrappers around methods in their resepective submodule
+and should not be called directly.
+"""
 import getpass
 import os
 import pathlib
-from typing import Any, Callable, Optional
 
 import click
 
@@ -114,25 +116,27 @@ def database() -> None:
 
 @database.command("create-users")
 @pass_config
-def _create_database_users(config: TestConfig) -> None:
+def create_database_users_cmd(config: TestConfig) -> None:
     """Creates the database users."""
     create_database_users(config)
 
 
 @database.command(name="create")
-@pass_config
 @pass_secrets
-def _create_database(config: TestConfig, secrets: SecretsConfig) -> None:
+@pass_config
+def create_database_cmd(config: TestConfig, secrets: SecretsConfig) -> None:
     """Create the tables of the database from the config."""
     create_database(config, secrets)
 
 
 @database.command(name="populate")
 @click.option("--xss/--no-xss", default=False, help="prepare the database for xss checks")
-def _populate_database(xss: bool) -> None:
+@pass_secrets
+@pass_config
+def populate_database_cmd(
+    config: TestConfig, secrets: SecretsConfig, xss: bool
+) -> None:
     """Populate the database tables with sample data."""
-    config = TestConfig()
-    secrets = SecretsConfig()
     populate_database(config, secrets, xss)
 
 
@@ -149,28 +153,34 @@ def development() -> None:
 @click.option("--outfile", default="/tmp/sample_data.sql",
               help="the place to store the sql file")
 @click.option("--xss/--no-xss", default=False, help="prepare sample data for xss checks")
-def _compile_sample_data(infile: str, outfile: str, xss: bool) -> None:
+@pass_config
+def compile_sample_data_cmd(config: TestConfig, infile: str, outfile: str, xss: bool) -> None:
     """Parse sample data from a .json to a .sql file."""
-    config = TestConfig()
     compile_sample_data(config, pathlib.Path(infile), pathlib.Path(outfile), xss=xss)
 
 
 @development.command(name="make-sample-data")
-@click.option("--owner", help="Use this as the owner of the storage and log.")
+@click.option("--owner",
+    help="Use this user as the owner of storage and logs.",
+    default=lambda: getpass.getuser(),
+    show_default="current user")
+@pass_config
 @click.pass_context
-def _make_sample_data(context: click.Context, owner: Optional[str]) -> None:
+def make_sample_data(context: click.Context, config: TestConfig, owner: str) -> None:
     """Repopulates the application with sample data."""
-    context.invoke(create_storage, owner=owner)
-    context.invoke(populate_storage, owner=owner)
-    context.invoke(_create_database_users)
-    context.invoke(_create_database)
-    context.invoke(_populate_database)
+    with switch_user(owner):
+        create_storage(config)
+        populate_storage(config)
+        create_log(config)
+    context.invoke(create_database_users_cmd)
+    context.invoke(create_database_cmd)
+    context.invoke(populate_database_cmd)
 
 
 @development.command(name="execute-sql-script")
 @click.option("--file", "-f", type=pathlib.Path, help="the script to execute")
 @click.option('-v', '--verbose', count=True)
-def _execute_sql_script(file: pathlib.Path, verbose: int) -> None:
+def execute_sql_script(file: pathlib.Path, verbose: int) -> None:
     config = TestConfig()
     secrets = SecretsConfig()
     with connect(config, secrets) as conn:

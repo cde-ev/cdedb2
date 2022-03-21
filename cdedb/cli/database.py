@@ -16,16 +16,14 @@ def start_services(*services: str) -> None:
     """Start the given services."""
     if not has_systemd():
         return
-    # TODO can we somehow avoid to use sudo and friends here?
-    subprocess.run(["sudo", "systemctl", "start", *services], check=True)
+    subprocess.run(["systemctl", "start", *services], check=True)
 
 
 def stop_services(*services: str) -> None:
     """Stop the given services."""
     if not has_systemd():
         return
-    # TODO can we somehow avoid to use sudo and friends here?
-    subprocess.run(["sudo", "systemctl", "stop", *services], check=True)
+    subprocess.run(["systemctl", "stop", *services], check=True)
 
 
 def psql(*commands: str) -> subprocess.CompletedProcess[bytes]:
@@ -119,14 +117,13 @@ def populate_database(conf: Config, secrets: SecretsConfig, xss: bool = False) -
     """Populate the database with sample data."""
     repo_path: pathlib.Path = conf['REPOSITORY_PATH']
 
-    # compile the sample data
-    # TODO since the creation of the sample data is a bit invasive, this is done via
-    #  a subprocess call. Maybe this can be done a bit more elegant...
-    infile = repo_path / "tests" / "ancillary_files" / "sample_data.json"
-    # TODO use a real temporary file instead
-    # TODO this is assumed by tests/common.py -- can we resolve this?
     outfile = repo_path / "tests" / "ancillary_files" / "sample_data.sql"
-    compile_sample_data(conf, infile, outfile, xss=xss)
+    if not outfile.exists():
+        # compile the sample data
+        # TODO use a real temporary file instead or do it in memory
+        # TODO this is assumed by tests/common.py -- can we resolve this?
+        infile = repo_path / "tests" / "ancillary_files" / "sample_data.json"
+        compile_sample_data(conf, infile, outfile, xss=xss)
 
     with connect(conf, secrets) as conn:
         with conn.cursor() as cur:
@@ -147,6 +144,9 @@ def compile_sample_data(conf: Config, infile: pathlib.Path, outfile: pathlib.Pat
     The xss-switch decides if the sample data should be contaminated with script
     tags, to check proper escaping afterwards.
     """
+    # TODO since the creation of the sample data is a bit invasive, this is done via
+    #  a subprocess call. Maybe this can be done a bit more elegant...
+
     repo_path: pathlib.Path = conf['REPOSITORY_PATH']
 
     script_file = repo_path / "bin" / "create_sample_data_sql.py"
@@ -161,4 +161,4 @@ def compile_sample_data(conf: Config, infile: pathlib.Path, outfile: pathlib.Pat
     env = {**os.environ.copy(), "PYTHONPATH": str(repo_path)}
     subprocess.run(["python3", script_file,
                     "--infile", infile, "--outfile", outfile, *xss_arg],
-                   check=True, env=env)
+                   check=True, env=env, user="www-data")

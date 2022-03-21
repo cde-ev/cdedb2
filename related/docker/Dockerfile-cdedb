@@ -111,11 +111,12 @@ RUN cp /tmp/autobuild/cdedb-entrypoint.sh /cdedb-entrypoint.sh \
     \
     && touch /CONTAINER
 
-# make storage persistent
-# the storage and log dirs are created during the first startup in the entrypoint.
-VOLUME /var/lib/cdedb
 # make config persistent
 VOLUME /etc/cdedb
+# the ssl certificate is created dynamically and has should persist
+VOLUME /etc/ssl/apache2
+# the storage dir is created during the first startup by the entrypoint
+VOLUME /var/lib/cdedb
 
 EXPOSE 443
 

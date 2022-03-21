@@ -28,14 +28,16 @@ cd /cdedb2
 # correct upstream URL after auto-build
 sudo -u cdedb git remote set-url origin ssh://gitea@tracker.cde-ev.de:20009/cdedb/cdedb2.git
 # insert po-git-handlers
-sudo -u cdedb echo '' >> /cdedb2/.git/config
-sudo -u cdedb echo '[diff "podiff"]' >> /cdedb2/.git/config
-sudo -u cdedb echo '        textconv = i18n/git-diff-filter-po.sh' >> /cdedb2/.git/config
-sudo -u cdedb echo '[merge "pomerge"]' >> /cdedb2/.git/config
-sudo -u cdedb echo '        name = Gettext merge driver' >> /cdedb2/.git/config
-sudo -u cdedb echo '        driver = i18n/git-merge-po.sh %O %A %B' >> /cdedb2/.git/config
-sudo -u cdedb echo '[pull]' >> /cdedb2/.git/config
-sudo -u cdedb echo '        rebase = merges' >> /cdedb2/.git/config
+sudo -u cdedb tee -a /cdedb2/.git/config <<EOF
+
+[diff "podiff"]
+        textconv = i18n/git-diff-filter-po.sh
+[merge "pomerge"]
+        name = Gettext merge driver
+        driver = i18n/git-merge-po.sh %O %A %B
+[pull]
+        rebase = merges
+EOF
 # add cdedb to python path
 mkdir -p /usr/local/lib/python3.9/dist-packages
 sudo ln -s /cdedb2/cdedb/ /usr/local/lib/python3.9/dist-packages/cdedb
@@ -95,11 +97,8 @@ echo ""
 echo "Creating storage directory for uploads..."
 echo "--------------------------------------------"
 
-# create the directory containing the storage manually, to ensure www-data has the proper permissions
-mkdir -p "$(python3 -m cdedb config get STORAGE_DIR)"
-chown www-data:www-data "$(python3 -m cdedb config get STORAGE_DIR)"
-# now, create the storage itself. Ensure that www-data owns everything.
-python3 -m cdedb filesystem storage create --owner www-data
+# Create the storage dir itself. Ensure that www-data owns everything.
+python3 -m cdedb filesystem --owner www-data storage create
 
 echo ""
 echo "Setting up the database..."
@@ -116,12 +115,11 @@ sleep 10
 # First create the nobody account with its own database, but no other
 # rights. This enables us to connect to postgres at any point. Take care to
 # use the same database creation invocation as is used for the real dbs.
-sudo -u postgres psql -U postgres -c \
-     "CREATE USER nobody PASSWORD 'nobody'"
-sudo -u postgres psql -U postgres -c \
-     "CREATE DATABASE nobody WITH OWNER = nobody TEMPLATE = template0 ENCODING = 'UTF8'"
-sudo -u postgres psql -U postgres -c \
-     "ALTER DATABASE nobody SET datestyle TO 'ISO, YMD'"
+sudo -u postgres psql <<-EOSQL
+    CREATE USER nobody PASSWORD 'nobody';
+    CREATE DATABASE nobody WITH OWNER = nobody TEMPLATE = template0 ENCODING = 'UTF8';
+    ALTER DATABASE nobody SET datestyle TO 'ISO, YMD';
+EOSQL
 python3 -m cdedb db create-users
 python3 -m cdedb db create
 
@@ -140,11 +138,8 @@ echo ""
 echo "Create central directory for log files..."
 echo "--------------------------------------------"
 
-# create the directory containing the logs manually, to ensure www-data has the proper permissions
-mkdir -p "$(python3 -m cdedb config get LOG_DIR)"
-chown www-data:www-data "$(python3 -m cdedb config get LOG_DIR)"
-# now, create the directories inside the log. Ensure that www-data owns everything.
-python3 -m cdedb filesystem log create --owner www-data
+# Create the log directory. Ensure that www-data owns everything.
+python3 -m cdedb filesystem --owner www-data log create
 
 echo ""
 echo "Setting up ldap..."
