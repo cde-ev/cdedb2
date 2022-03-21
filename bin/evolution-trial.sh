@@ -25,7 +25,7 @@ ls cdedb/database/evolutions > /tmp/oldevolutions.txt
 # TODO this can be removed once there are no branches with make-based setup
 # check if OLDREVISION has python-based setup
 if git merge-base --is-ancestor 82aa3fb3d4172032dff8121ff3af0a2b746c4765 $OLDREVISION; then
-    python3 -m cdedb dev compile-sample-data
+    python3 -m cdedb dev compile-sample-data --outfile - > tests/ancillary_files/sample_data.sql
     python3 -m cdedb db create
     python3 -m cdedb db populate
 else
@@ -71,7 +71,7 @@ python3 -m cdedb dev execute-sql-script -v \
      -f bin/describe_database.sql > /tmp/evolved-description.txt
 
 make i18n-compile
-python3 -m cdedb dev compile-sample-data --outfile tests/ancillary_files/sample_data.sql
+python3 -m cdedb dev compile-sample-data --outfile - > tests/ancillary_files/sample_data.sql
 
 # new db
 echo ""
