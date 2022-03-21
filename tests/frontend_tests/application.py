@@ -72,7 +72,7 @@ class TestApplication(FrontendTest):
         with unittest.mock.patch(
             'cdedb.frontend.core.CoreFrontend.index'
         ) as index_mock, unittest.mock.patch(
-            'cdedb.config.config.Config.__getitem__'
+            'cdedb.config.Config.__getitem__'
         ) as config_mock:
 
             # make CoreFrontend.index() raise a ValueError

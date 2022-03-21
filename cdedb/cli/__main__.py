@@ -182,9 +182,11 @@ def make_sample_data(config: TestConfig, secrets: SecretsConfig, owner: str) -> 
 @development.command(name="execute-sql-script")
 @click.option("--file", "-f", type=pathlib.Path, help="the script to execute")
 @click.option('-v', '--verbose', count=True)
-def execute_sql_script(file: pathlib.Path, verbose: int) -> None:
-    config = TestConfig()
-    secrets = SecretsConfig()
+@pass_secrets
+@pass_config
+def execute_sql_script(
+    config: TestConfig, secrets: SecretsConfig, file: pathlib.Path, verbose: int
+) -> None:
     with connect(config, secrets) as conn:
         with conn.cursor() as curr:
             curr.execute(file.read_text())

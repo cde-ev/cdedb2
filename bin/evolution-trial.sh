@@ -9,17 +9,21 @@ NEWREVISION=$2
 
 cd /cdedb2
 
+# create temporary config file to override the default DATABASE_NAME
+tmp_configfile=$(mktemp -t config_XXXXXX.py)
+cp "$(python3 -m cdedb config default-configpath)" $tmp_configfile
+echo 'DATABASE_NAME="cdb_test_1"' >> $tmp_configfile
+chmod +r $tmp_configfile
+export CDEDB_CONFIGPATH=$tmp_configfile
+
 # old revision
 echo ""
 echo "Checkout $OLDREVISION"
 git checkout $OLDREVISION
 ls cdedb/database/evolutions > /tmp/oldevolutions.txt
-# TODO replace make calls with
-# python3 -m cdedb dev compile-sample-data
-# python3 -m cdedb db create
-# python3 -m cdedb db populate
-make -B tests/ancillary_files/sample_data.sql &> /dev/null
-make sql DATABASE_NAME=$DATABASE_NAME > /dev/null
+python3 -m cdedb dev compile-sample-data
+python3 -m cdedb db create
+python3 -m cdedb db populate
 
 # new revision
 echo ""
@@ -81,6 +85,8 @@ echo "EVOLUTION OUTPUT:"
 cat /tmp/output-evolution.txt
 echo ""
 echo "OLD: $OLDREVISION NEW: $NEWREVISION"
+
+rm $tmp_configfile
 
 if [[ -s /tmp/database_difference.txt ]]; then
     exit 1
