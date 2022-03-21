@@ -423,7 +423,6 @@ def setup_logger(name: str, logfile_path: pathlib.Path,
     return logger
 
 
-
 def glue(*args: str) -> str:
     """Join overly long strings, adds boundary white space for convenience.
 

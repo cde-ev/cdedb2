@@ -8,10 +8,9 @@ from contextlib import redirect_stdout
 from pkgutil import resolve_name
 from typing import Any, Callable, ClassVar
 
-from cdedb.config import TestConfig, get_configpath
-
 from cdedb.backend.core import CoreBackend
 from cdedb.common import unwrap
+from cdedb.config import TestConfig, get_configpath
 from cdedb.script import DryRunError, Script, ScriptAtomizer
 
 

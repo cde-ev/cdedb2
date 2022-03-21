@@ -2,7 +2,6 @@
 import os
 import pathlib
 import subprocess
-from typing import Union
 
 import psycopg2
 import psycopg2.extensions
@@ -33,14 +32,17 @@ def psql(*commands: str) -> subprocess.CompletedProcess[bytes]:
     via psycopg2 is not possible, f.e. to create the database.
     """
     if is_docker():
-        return subprocess.run(["psql", "postgresql://postgres:passwd@cdb", *commands], check=True)
+        return subprocess.run(
+            ["psql", "postgresql://postgres:passwd@cdb", *commands], check=True)
     else:
         # mypy does not know that run passes unknown arguments to Popen
         return subprocess.run(["psql", *commands], check=True, user="postgres")  # type: ignore
 
 
 # TODO is the nobody hack really necessary?
-def connect(config: Config, secrets: SecretsConfig, as_nobody: bool = False) -> psycopg2.extensions.connection:
+def connect(
+    config: Config, secrets: SecretsConfig, as_nobody: bool = False
+) -> psycopg2.extensions.connection:
     """Create a very basic database connection.
 
     This allows to connect to the database specified as CDB_DATABASE_NAME in the given
@@ -161,4 +163,4 @@ def compile_sample_data(conf: Config, infile: pathlib.Path, outfile: pathlib.Pat
     env = {**os.environ.copy(), "PYTHONPATH": str(repo_path)}
     subprocess.run(["python3", script_file,
                     "--infile", infile, "--outfile", outfile, *xss_arg],
-                   check=True, env=env, user="www-data")
+                   check=True, env=env, user="www-data")  # type: ignore

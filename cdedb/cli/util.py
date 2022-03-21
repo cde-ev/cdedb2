@@ -11,6 +11,7 @@ from typing import Any, Callable, Generator
 def has_systemd() -> bool:
     return which("systemctl") is not None
 
+
 def is_docker() -> bool:
     """Does the current process runs on a docker image?"""
     return pathlib.Path("/CONTAINER").is_file()
@@ -34,6 +35,7 @@ def sanity_check(fun: Callable[..., Any]) -> Callable[..., Any]:
 
     return new_fun
 
+
 @contextlib.contextmanager
 def switch_user(user: str) -> Generator[None, None, None]:
     """Use as context manager to temporary switch the running user's effective uid."""
@@ -44,8 +46,10 @@ def switch_user(user: str) -> Generator[None, None, None]:
         os.setegid(wanted_user.pw_gid)
         os.seteuid(wanted_user.pw_uid)
         yield
-    except PermissionError:
-        raise PermissionError(f"Insufficient permissions to switch to user {user}.")
+    except PermissionError as e:
+        raise PermissionError(
+            f"Insufficient permissions to switch to user {user}."
+        ) from e
     finally:
         os.setegid(original_gid)
         os.seteuid(original_uid)

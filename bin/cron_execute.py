@@ -8,7 +8,6 @@
 import getpass
 
 from cdedb.config import DEFAULT_CONFIGPATH, set_configpath
-
 from cdedb.frontend.cron import CronFrontend
 
 if __name__ == "__main__":

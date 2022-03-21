@@ -75,7 +75,6 @@ import pytz
 import pytz.tzinfo
 import werkzeug.datastructures
 import zxcvbn
-from cdedb.config import Config
 from schulze_condorcet.util import as_vote_tuple
 
 import cdedb.database.constants as const
@@ -86,6 +85,7 @@ from cdedb.common import (
     InfiniteEnum, LineResolutions, ValidationWarning, asciificator, compute_checkdigit,
     extract_roles, n_, now, xsorted,
 )
+from cdedb.config import Config
 from cdedb.database.constants import FieldAssociations, FieldDatatypes
 from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS
 from cdedb.query import (

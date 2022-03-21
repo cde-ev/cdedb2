@@ -1,6 +1,5 @@
 """interactive werkzeug debugger for the CdEDB2 application"""
 
-import os
 import subprocess
 
 from werkzeug.serving import is_running_from_reloader, run_simple
@@ -11,7 +10,6 @@ from cdedb.frontend.application import Application
 
 def serve() -> None:
     """Serve the cdedb using the werkzeug development server"""
-
 
     if not is_running_from_reloader():
         subprocess.run(["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL)

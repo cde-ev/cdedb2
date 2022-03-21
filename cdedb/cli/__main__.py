@@ -21,6 +21,7 @@ from cdedb.config import DEFAULT_CONFIGPATH, SecretsConfig, TestConfig, set_conf
 pass_config = click.make_pass_decorator(TestConfig, ensure=True)
 pass_secrets = click.make_pass_decorator(SecretsConfig, ensure=True)
 
+
 @click.group()
 @click.option("--configpath", envvar="CDEDB_CONFIGPATH", default=DEFAULT_CONFIGPATH,
               type=pathlib.Path, show_default=True)
@@ -34,14 +35,15 @@ def cli(configpath: pathlib.Path) -> None:
     """
     set_configpath(configpath)
 
+
 @cli.command("serve")
 def serve_cmd() -> None:
     serve()
 
+
 @cli.group(name="config")
 def config() -> None:
     """Interact with the config file."""
-    pass
 
 
 @config.command(name="get")
@@ -61,7 +63,7 @@ def get_default_configpath() -> None:
 @cli.group(name="filesystem")
 @click.option("--owner",
     help="Use this user as the owner.",
-    default=lambda: getpass.getuser(),
+    default=getpass.getuser,
     show_default="current user")
 @click.pass_context
 def filesystem(ctx: click.Context, owner: str) -> None:
@@ -72,7 +74,6 @@ def filesystem(ctx: click.Context, owner: str) -> None:
 @filesystem.group(name="storage")
 def storage() -> None:
     """Storage"""
-    pass
 
 
 @storage.command(name="create")
@@ -96,7 +97,6 @@ def populate_storage_cmd(config: TestConfig, owner: str) -> None:
 @filesystem.group(name="log")
 def log() -> None:
     """Log stuff."""
-    pass
 
 
 @log.command(name="create")
@@ -111,7 +111,6 @@ def create_log_cmd(config: TestConfig, owner: str) -> None:
 @cli.group(name="db")
 def database() -> None:
     """Preparations regarding the database."""
-    pass
 
 
 @database.command("create-users")
@@ -143,7 +142,6 @@ def populate_database_cmd(
 @cli.group(name="dev")
 def development() -> None:
     """High-level helpers for development."""
-    pass
 
 
 # TODO in which category should we do this?
@@ -154,7 +152,9 @@ def development() -> None:
               help="the place to store the sql file")
 @click.option("--xss/--no-xss", default=False, help="prepare sample data for xss checks")
 @pass_config
-def compile_sample_data_cmd(config: TestConfig, infile: str, outfile: str, xss: bool) -> None:
+def compile_sample_data_cmd(
+    config: TestConfig, infile: str, outfile: str, xss: bool
+) -> None:
     """Parse sample data from a .json to a .sql file."""
     compile_sample_data(config, pathlib.Path(infile), pathlib.Path(outfile), xss=xss)
 
@@ -162,7 +162,7 @@ def compile_sample_data_cmd(config: TestConfig, infile: str, outfile: str, xss: 
 @development.command(name="make-sample-data")
 @click.option("--owner",
     help="Use this user as the owner of storage and logs.",
-    default=lambda: getpass.getuser(),
+    default=getpass.getuser,
     show_default="current user")
 @pass_secrets
 @pass_config
@@ -203,6 +203,7 @@ def main() -> None:
     except PermissionError as e:
         raise PermissionError("Unable to perform this command due to missing permissions."
             " Some commands allow invoking them as root and passing a --owner.") from e
+
 
 if __name__ == "__main__":
     main()

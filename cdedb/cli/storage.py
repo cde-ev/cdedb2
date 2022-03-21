@@ -23,7 +23,6 @@ def recreate_directory(directory: pathlib.Path) -> None:
             with switch_user("root"):
                 directory.mkdir(parents=True)
 
-
     # Chown the directory to the effective user
     if (
         directory.stat().st_uid != os.geteuid()
