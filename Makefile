@@ -76,7 +76,7 @@ doc:
 
 .PHONY: reload
 reload: i18n-compile
-	-bin/remove_prepared_transaction.py
+	python3 -m cdedb db remove-transactions
 ifeq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo apachectl restart
 else

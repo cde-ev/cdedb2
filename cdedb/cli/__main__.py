@@ -11,7 +11,7 @@ import click
 
 from cdedb.cli.database import (
     compile_sample_data, connect, create_database, create_database_users,
-    populate_database,
+    populate_database, remove_prepared_transactions,
 )
 from cdedb.cli.storage import create_log, create_storage, populate_storage
 from cdedb.cli.util import switch_user
@@ -116,9 +116,13 @@ def database() -> None:
 
 
 @database.command("create-users")
+@pass_secrets
 @pass_config
-def create_database_users_cmd(config: TestConfig) -> None:
+def create_database_users_cmd(config: TestConfig, secrets: SecretsConfig) -> None:
     """Creates the database users."""
+    # since this is thought as full-reset of the database state, we also remove stale
+    # transactions here
+    remove_prepared_transactions(config, secrets)
     create_database_users(config)
 
 
@@ -140,6 +144,14 @@ def populate_database_cmd(
 ) -> None:
     """Populate the database tables with sample data."""
     populate_database(config, secrets, xss)
+
+
+@database.command(name="remove-transactions")
+@pass_secrets
+@pass_config
+def remove_transactions_cmd(config: TestConfig, secrets: SecretsConfig) -> None:
+    """Clean up stale prepared transactions."""
+    remove_prepared_transactions(config, secrets)
 
 
 @cli.group(name="dev")

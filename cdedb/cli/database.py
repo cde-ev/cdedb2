@@ -165,3 +165,16 @@ def compile_sample_data(conf: Config, infile: pathlib.Path, outfile: pathlib.Pat
         "python3", script_file, "--infile", infile, "--outfile", outfile, *xss_arg],
         check=True, env=env, user="www-data", group="www-data",  # type: ignore
     )
+
+
+def remove_prepared_transactions(conf: Config, secrets: SecretsConfig) -> None:
+    """Clean up stale prepared transactions.
+
+    Having these around messes up the whole system and is really painful as they
+    are pretty much invisible to the rest of the application.
+    """
+    with connect(conf, secrets) as conn:
+        transactions = conn.tpc_recover()
+        for xid in transactions:
+            print(f"Removing {xid}")
+            conn.tpc_rollback(xid)
