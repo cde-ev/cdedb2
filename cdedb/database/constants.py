@@ -64,6 +64,12 @@ class RegistrationPartStati(enum.IntEnum):
         return self in (RegistrationPartStati.participant,
                         RegistrationPartStati.guest,)
 
+    def has_to_pay(self) -> bool:
+        """Any status which should pay the participation fee."""
+        return self in (RegistrationPartStati.applied,
+                        RegistrationPartStati.participant,
+                        RegistrationPartStati.waitlist)
+
 
 @enum.unique
 class FieldAssociations(enum.IntEnum):
@@ -464,3 +470,9 @@ class MlLogCodes(enum.IntEnum):
             SubscriptionAction.reset: cls.reset,
         }
         return log_code_map[action]
+
+
+@enum.unique
+class LockType(enum.IntEnum):
+    """Types of Locks."""
+    mailman = 1  #:

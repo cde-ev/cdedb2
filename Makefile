@@ -76,8 +76,9 @@ doc:
 
 .PHONY: reload
 reload: i18n-compile
+	-bin/remove_prepared_transaction.py
 ifeq ($(wildcard /CONTAINER),/CONTAINER)
-	apachectl restart
+	sudo apachectl restart
 else
 	sudo systemctl restart apache2
 endif

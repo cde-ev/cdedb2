@@ -184,7 +184,7 @@ class EventRegistrationPartStatistic(enum.Enum):
         elif self == self.involved:
             return part['status'].is_involved()
         elif self == self._not_payed:
-            return part['status'].is_involved() and not reg['payment']
+            return part['status'].has_to_pay() and not reg['payment']
         elif self == self._no_parental_agreement:
             return (part['status'].is_involved() and part['age_class'].is_minor()
                     and not reg['parental_agreement'])

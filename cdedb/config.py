@@ -223,9 +223,12 @@ _DEFAULTS = {
     # Session stuff
     #
 
-    # session parameters
+    # time which a session remains active without sending a new request
     "SESSION_TIMEOUT": datetime.timedelta(days=2),
+    # maximum time which a session may remain active
     "SESSION_LIFESPAN": datetime.timedelta(days=7),
+    # minimum time which sessions stay in the database
+    "SESSION_SAVETIME": datetime.timedelta(days=30),
 
     # Maximum concurrent sessions per user.
     "MAX_ACTIVE_SESSIONS": 5,
