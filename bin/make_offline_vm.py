@@ -57,8 +57,7 @@ DEFAULTS = {
 }
 
 
-def populate_table(cur: DictCursor, table: str, data: CdEDBObject,
-                   connection: psycopg2.extensions.connection) -> None:
+def populate_table(cur: DictCursor, table: str, data: CdEDBObject) -> None:
     """Insert the passed data into the DB."""
     if data:
         for entry in data.values():
@@ -79,9 +78,7 @@ def populate_table(cur: DictCursor, table: str, data: CdEDBObject,
         # messages of locking the event if somebody gets the ordering wrong)
         query = "ALTER SEQUENCE {}_id_seq RESTART WITH {}".format(
             table, max(map(int, data)) + 1000)
-        with connection as conn:
-            with conn.cursor() as curr:
-                curr.execute(query)
+        cur.execute(query)
     else:
         print("No data for table found")
 
@@ -206,7 +203,7 @@ def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
                     for part_id in data[table]:
                         for key in ('waitlist_field',):
                             values[part_id][key] = None
-                populate_table(cur, table, values, connection=connection)
+                populate_table(cur, table, values)
             # Fix forward references
             update_event(cur, data['event.events'][str(data['id'])])
             update_parts(cur, data['event.event_parts'].values())
