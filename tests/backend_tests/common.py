@@ -2,14 +2,13 @@
 # pylint: disable=missing-module-docstring
 
 import multiprocessing
-import os
 import threading
 import unittest
 
 from cdedb.backend.common import DatabaseLock
 from cdedb.backend.core import CoreBackend
 from cdedb.common import PrivilegeError, RequestState, User, make_proxy, now
-from cdedb.config import Config, SecretsConfig, get_configpath
+from cdedb.config import Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.database.constants import LockType

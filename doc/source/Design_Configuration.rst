@@ -26,3 +26,8 @@ desirable to add values to the config objects which are not used in the actual c
 if they are needed inside the test-suite. To honor such usecases, there is the class
 ``TestConfig`` inheriting from ``Config``, allowing to set arbitrary values inside the overwrite
 files.
+
+All config objects can in principle be instantiated anywhere in the codebase. If they are
+available otherwise (f.e. as instance attribute), using them is preferred over instantiation.
+As a direct consequence of this design principle, the config is read-only and can not be
+changed at runtime.

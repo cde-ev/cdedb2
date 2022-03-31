@@ -23,6 +23,7 @@ def execute_script(dbname: str) -> None:
             conn.tpc_rollback(xid)
 
 
+# TODO integrate in cli. This was a dependency of 'sql_initial'/'create_database_users'
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Drop all prepared transactions. ")
