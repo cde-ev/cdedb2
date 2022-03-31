@@ -9,7 +9,7 @@ import collections.abc
 import datetime
 import enum
 import logging
-from typing import Any, Collection, Dict, List, Optional, Sequence, Tuple, Union, cast
+from typing import Any, Collection, List, Optional, Sequence, Tuple, Union, cast
 
 import psycopg2.extensions
 import psycopg2.extras
