@@ -13,7 +13,6 @@ from cdedb.cli.database import (
     compile_sample_data, connect, create_database, create_database_users,
     populate_database,
 )
-from cdedb.cli.server import serve
 from cdedb.cli.storage import create_log, create_storage, populate_storage
 from cdedb.cli.util import switch_user
 from cdedb.config import DEFAULT_CONFIGPATH, SecretsConfig, TestConfig, set_configpath
@@ -38,6 +37,9 @@ def cli(configpath: pathlib.Path) -> None:
 
 @cli.command("serve")
 def serve_cmd() -> None:
+    """Serve an interactive debugging instance."""
+    # this is an inline import to encapsulate the heavy dependencies of the server setup
+    from cdedb.cli.server import serve
     serve()
 
 
