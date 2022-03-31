@@ -163,14 +163,14 @@ def compile_sample_data_cmd(
     compile_sample_data(config, pathlib.Path(infile), pathlib.Path(outfile), xss=xss)
 
 
-@development.command(name="make-sample-data")
+@development.command(name="apply-sample-data")
 @click.option("--owner",
     help="Use this user as the owner of storage and logs.",
     default=getpass.getuser,
     show_default="current user")
 @pass_secrets
 @pass_config
-def make_sample_data(config: TestConfig, secrets: SecretsConfig, owner: str) -> None:
+def apply_sample_data(config: TestConfig, secrets: SecretsConfig, owner: str) -> None:
     """Repopulates the application with sample data."""
     with switch_user(owner):
         create_log(config)

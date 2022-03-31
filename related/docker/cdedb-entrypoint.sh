@@ -26,9 +26,9 @@ if [ ! -e /etc/cdedb/container_already_initalized ]; then
     python3 -m cdedb db create
 
     # Compile the translations and populate the db with sample data.
-    # Most of the above would be done by make-sample-data but we want to be explicit.
+    # Most of the above would be done by apply-sample-data but we want to be explicit.
     make i18n-compile
-    python3 -m cdedb dev make-sample-data --owner www-data
+    python3 -m cdedb dev apply-sample-data --owner www-data
 
     # Touch the firstrun file, so we perform the initialization only once.
     touch /etc/cdedb/container_already_initalized

@@ -72,7 +72,7 @@ To do this you can run the following:
     $ # navigate to the repository root
     $ make i18n-compile
     $ make doc
-    $ docker-compose --file related/docker/docker-compose.yaml exec app python3 -m cdedb dev make-sample-data
+    $ docker-compose --file related/docker/docker-compose.yaml exec app python3 -m cdedb dev apply-sample-data
 
 .. warning::
 

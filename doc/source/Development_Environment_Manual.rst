@@ -199,4 +199,4 @@ reload::
   make reload
 
 For the database you should restart pgbouncer (which probably has some open
-connections left) before doing a ``python3 -m cdedb dev make-sample-data``.
+connections left) before doing a ``python3 -m cdedb dev apply-sample-data``.
