@@ -39,7 +39,7 @@ def cli(configpath: pathlib.Path) -> None:
 def serve_cmd() -> None:
     """Serve an interactive debugging instance."""
     # this is an inline import to encapsulate the heavy dependencies of the server setup
-    from cdedb.cli.server import serve
+    from cdedb.cli.server import serve  # pylint: disable=import-outside-toplevel
     serve()
 
 
