@@ -159,7 +159,7 @@
                 "lodge": "Die \u00fcblichen Verd\u00e4chtigen, insb. Berta Beispiel und garcia@example.cde :)",
                 "is_child": false
             },
-            "amount_paid": "0.00",
+            "amount_paid": "200.00",
             "amount_owed": "573.99",
             "parts": {
                 "1": {
@@ -241,7 +241,7 @@
                 "transportation": "pedes"
             },
             "amount_paid": "0.00",
-            "amount_owed": "589.49",
+            "amount_owed": "466.49",
             "parts": {
                 "1": {
                     "status": 3,

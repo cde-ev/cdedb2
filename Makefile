@@ -89,7 +89,8 @@ DATA_USER = www-data
 XSS_PAYLOAD = <script>abcdef</script>
 # Directory where the translation files are stored. Especially used by the i18n-targets.
 I18NDIR = ./i18n
-
+# Available languages, by default detected as subdirectories of the translation targets.
+I18N_LANGUAGES = $(patsubst $(I18NDIR)/%/LC_MESSAGES, %, $(wildcard $(I18NDIR)/*/LC_MESSAGES))
 
 ###########
 # General #
@@ -106,8 +107,9 @@ doc:
 
 .PHONY: reload
 reload: i18n-compile
+	-bin/remove_prepared_transaction.py
 ifeq ($(wildcard /CONTAINER),/CONTAINER)
-	apachectl restart
+	sudo apachectl restart
 else
 	sudo systemctl restart apache2
 endif
@@ -136,28 +138,16 @@ i18n-extract:
 		--mapping=./babel.cfg --keywords="rs.gettext rs.ngettext n_" \
 		--output=$(I18NDIR)/cdedb.pot --input-dirs="bin,cdedb"
 
-.PHONY: i18n-update
-i18n-update:
-	msgmerge --lang=de --update $(I18NDIR)/de/LC_MESSAGES/cdedb.po $(I18NDIR)/cdedb.pot
-	msgmerge --lang=en --update $(I18NDIR)/en/LC_MESSAGES/cdedb.po $(I18NDIR)/cdedb.pot
-	msgmerge --lang=la --update $(I18NDIR)/la/LC_MESSAGES/cdedb.po $(I18NDIR)/cdedb.pot
-	msgattrib --no-obsolete --sort-by-file -o $(I18NDIR)/de/LC_MESSAGES/cdedb.po \
-		$(I18NDIR)/de/LC_MESSAGES/cdedb.po
-	msgattrib --no-obsolete --sort-by-file -o $(I18NDIR)/en/LC_MESSAGES/cdedb.po \
-		$(I18NDIR)/en/LC_MESSAGES/cdedb.po
-	msgattrib --no-obsolete --sort-by-file -o $(I18NDIR)/la/LC_MESSAGES/cdedb.po \
-		$(I18NDIR)/la/LC_MESSAGES/cdedb.po
-	# TODO: do we want to use msgattribs --indent option for prettier po files?
+i18n-update: $(foreach lang, $(I18N_LANGUAGES), $(I18NDIR)/$(lang)/LC_MESSAGES/cdedb.po)
 
-.PHONY: i18n-compile
-i18n-compile:
-	msgfmt --verbose --check --statistics -o $(I18NDIR)/de/LC_MESSAGES/cdedb.mo \
-		$(I18NDIR)/de/LC_MESSAGES/cdedb.po
-	msgfmt --verbose --check --statistics -o $(I18NDIR)/en/LC_MESSAGES/cdedb.mo \
-		$(I18NDIR)/en/LC_MESSAGES/cdedb.po
-	msgfmt --verbose --check --statistics -o $(I18NDIR)/la/LC_MESSAGES/cdedb.mo \
-		$(I18NDIR)/la/LC_MESSAGES/cdedb.po
+$(I18NDIR)/%/LC_MESSAGES/cdedb.po: $(I18NDIR)/cdedb.pot
+	msgmerge --lang=$* --update $@ $<
+	msgattrib --no-obsolete --sort-by-file -o $@ $@
 
+i18n-compile: $(foreach lang, $(I18N_LANGUAGES), $(I18NDIR)/$(lang)/LC_MESSAGES/cdedb.mo)
+
+$(I18NDIR)/%/LC_MESSAGES/cdedb.mo: $(I18NDIR)/%/LC_MESSAGES/cdedb.po
+	msgfmt --verbose --check --statistics -o $@ $<
 
 ###########
 # Storage #
@@ -208,6 +198,7 @@ log: sanity-check
 # drop all existent databases and add the database users. Acts globally and is idempotent.
 .PHONY: sql-initial
 sql-initial: sanity-check
+	-bin/remove_prepared_transaction.py
   # we cannot use systemctl in docker
   ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl stop pgbouncer

@@ -106,6 +106,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertNonPresence("Große Testakademie 2222", div='orga-box')
         self.assertPresence("Aktuelle Veranstaltungen", div='event-box')
         self.assertPresence("Große Testakademie 2222", div='event-box')
+        self.assertPresence("bereits angemeldet, Bezahlung ausstehend", div='event-box')
         self.assertNonPresence("CdE-Party 2050", div='event-box')
         self.assertPresence("Aktuelle Versammlungen", div='assembly-box')
         self.assertPresence("Internationaler Kongress", div='assembly-box')

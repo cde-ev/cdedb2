@@ -412,6 +412,7 @@ class TestCron(CronTest):
             'member_roster_visibility': 'moderators',
             'advertised': True,
             'max_num_recipients': 0,
+            'require_explicit_destination': False,
         }
         mm_lists = {
             'zombie': unittest.mock.MagicMock(

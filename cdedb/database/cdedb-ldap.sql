@@ -241,7 +241,7 @@ INSERT INTO ldap.organizations (id, dn, oc_map_id, parent, display_name, additio
     -- All organizational units
         (ldap.node_users_id(),                          'ou=users,dc=cde-ev,dc=de',                             ldap.oc_organizationalUnit_id(),    ldap.make_organization_entity_id(ldap.node_cde_id()),       'Users',                        NULL,           NULL),
         (ldap.node_groups_id(),                         'ou=groups,dc=cde-ev,dc=de',                            ldap.oc_organizationalUnit_id(),    ldap.make_organization_entity_id(ldap.node_cde_id()),       'Groups',                       NULL,           NULL),
-        (ldap.node_dua_id(),                            'ou=dua,dc=cde-ev,dc=de',                               ldap.oc_organizationalUnit_id(),    ldap.make_organization_entity_id(ldap.node_cde_id()),       'Directory System Agent',       NULL,           NULL),
+        (ldap.node_dua_id(),                            'ou=duas,dc=cde-ev,dc=de',                               ldap.oc_organizationalUnit_id(),    ldap.make_organization_entity_id(ldap.node_cde_id()),       'Directory System Agent',       NULL,           NULL),
     -- Additional organizational units holding group of groups
         (ldap.node_static_group_id(),                   'ou=status,ou=groups,dc=cde-ev,dc=de',                  ldap.oc_organizationalUnit_id(),    ldap.make_organization_entity_id(ldap.node_groups_id()),    'Status',                       NULL,           NULL),
         (ldap.node_ml_subscribers_group_id(),           'ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',          ldap.oc_organizationalUnit_id(),    ldap.make_organization_entity_id(ldap.node_groups_id()),    'Mailinglists Subscribers',     NULL,           NULL),
@@ -624,7 +624,7 @@ CREATE VIEW ldap_entries (id, dn, oc_map_id, parent, keyval) AS
     UNION (
         SELECT
            ldap.make_dua_entity_id(id),
-           'cn=' || cn || ',ou=dua,dc=cde-ev,dc=de' AS dn,
+           'cn=' || cn || ',ou=duas,dc=cde-ev,dc=de' AS dn,
            ldap.oc_person_id() AS oc_map_id,
            ldap.make_organization_entity_id(ldap.node_dua_id()) AS parent,
            id as keyval

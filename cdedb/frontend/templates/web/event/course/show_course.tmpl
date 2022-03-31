@@ -99,7 +99,7 @@
                             <p class="text-danger">
                                 <strong>{% trans %}Course is cancelled{% endtrans %}</strong>
                             </p>
-                        {% elif ambience['course']['min_size'] != None and
+                        {% elif ambience['course']['min_size'] is not none and
                                 num_track_learners < ambience['course']['min_size'] %}
                             <p class="text-warning">
                                 <strong>
@@ -107,7 +107,7 @@
                                         Course has {{ count }} attendees too few.
                                     {% endtrans %}</strong>
                             </p>
-                        {% elif ambience['course']['max_size'] != None and
+                        {% elif ambience['course']['max_size'] is not none and
                                 num_track_learners > ambience['course']['max_size'] %}
                             <p class="text-warning">
                                 <strong>

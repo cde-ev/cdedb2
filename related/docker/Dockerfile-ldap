@@ -24,5 +24,6 @@ RUN mkdir /app \
 # Set custom entrypoint to perform additional work on first run.
 ENTRYPOINT ["/ldap-entrypoint.sh"]
 
-# Start slapd in foreground/debug mode without debug messages (-d 0).
-CMD ["slapd", "-d", "0"]
+# First reduce the file descriptor limit to prevent huge malloc.
+# Afterwards start slapd in foreground/debug mode without debug messages (-d 0).
+CMD ulimit -n 1024 && slapd -d 0

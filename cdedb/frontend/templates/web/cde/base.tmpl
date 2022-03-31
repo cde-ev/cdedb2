@@ -66,14 +66,14 @@
                 {% if user.admin_views.intersection(('past_event', 'auditor')) %}
                     {{ util.href(cdedblink("cde/view_past_log"), gettext("Past Events Log"), icon="far fa-list-alt",
                             aclass="list-group-item", active=(sidenav_active=='cde_past_events_log')) }}
-                    </div>
-                    <div class="list-group tear-down">
-                {% endif %}
-                {% if "member" in user.roles %}
-                    {{ util.href(cdedblink("cde/view_misc"), gettext("Miscellaneous"), icon="random",
-                                 aclass="list-group-item", active=(sidenav_active=='cde_misc')) }}
                 {% endif %}
             </div>
+            {% if "member" in user.roles %}
+                <div class="list-group tear-down">
+                    {{ util.href(cdedblink("cde/view_misc"), gettext("Miscellaneous"), icon="random",
+                                 aclass="list-group-item", active=(sidenav_active=='cde_misc')) }}
+                </div>
+            {% endif %}
         {% endif %}
         <hr class="strong visible-xs visible-sm" />
     {% endif %}
