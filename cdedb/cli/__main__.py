@@ -116,13 +116,9 @@ def database() -> None:
 
 
 @database.command("create-users")
-@pass_secrets
 @pass_config
-def create_database_users_cmd(config: TestConfig, secrets: SecretsConfig) -> None:
+def create_database_users_cmd(config: TestConfig) -> None:
     """Creates the database users."""
-    # since this is thought as full-reset of the database state, we also remove stale
-    # transactions here
-    remove_prepared_transactions(config, secrets)
     create_database_users(config)
 
 
@@ -132,6 +128,8 @@ def create_database_users_cmd(config: TestConfig, secrets: SecretsConfig) -> Non
 def create_database_cmd(config: TestConfig, secrets: SecretsConfig) -> None:
     """Create the tables of the database from the config."""
     create_database(config, secrets)
+    # to reset all old states of the database, we also remove prepared transactions.
+    remove_prepared_transactions(config, secrets)
 
 
 @database.command(name="populate")
