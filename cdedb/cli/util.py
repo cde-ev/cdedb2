@@ -1,6 +1,7 @@
 """Some utilities for the setup functions."""
 import contextlib
 import functools
+import getpass
 import os
 import pathlib
 import pwd
@@ -53,3 +54,14 @@ def switch_user(user: str) -> Generator[None, None, None]:
     finally:
         os.setegid(original_gid)
         os.seteuid(original_uid)
+
+
+def get_user() -> str:
+    """Get the user running the process.
+
+    This resolves 'sudo' calls to the correct user invoking the process via sudo.
+    """
+    sudo_user = os.environ.get("SUDO_USER")
+    if not sudo_user or sudo_user == "root":
+        return getpass.getuser()
+    return sudo_user

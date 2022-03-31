@@ -3,8 +3,6 @@
 Most of these are just wrappers around methods in their resepective submodule
 and should not be called directly.
 """
-import getpass
-import os
 import pathlib
 
 import click
@@ -14,7 +12,7 @@ from cdedb.cli.database import (
     populate_database, remove_prepared_transactions,
 )
 from cdedb.cli.storage import create_log, create_storage, populate_storage
-from cdedb.cli.util import switch_user
+from cdedb.cli.util import get_user, switch_user
 from cdedb.config import DEFAULT_CONFIGPATH, SecretsConfig, TestConfig, set_configpath
 
 pass_config = click.make_pass_decorator(TestConfig, ensure=True)
@@ -65,7 +63,7 @@ def get_default_configpath() -> None:
 @cli.group(name="filesystem")
 @click.option("--owner",
     help="Use this user as the owner.",
-    default=getpass.getuser,
+    default=get_user,
     show_default="current user")
 @click.pass_context
 def filesystem(ctx: click.Context, owner: str) -> None:
@@ -176,7 +174,7 @@ def compile_sample_data_cmd(
 @development.command(name="apply-sample-data")
 @click.option("--owner",
     help="Use this user as the owner of storage and logs.",
-    default=getpass.getuser,
+    default=get_user,
     show_default="current user")
 @pass_secrets
 @pass_config
@@ -214,10 +212,7 @@ def execute_sql_script(
 def main() -> None:
     try:
         # Set euid/egid to the user invoking sudo if exists and it is not root
-        sudo_user = os.environ.get("SUDO_USER")
-        if not sudo_user or sudo_user == "root":
-            sudo_user = getpass.getuser()
-        with switch_user(sudo_user):
+        with switch_user(get_user()):
             cli()
     except PermissionError as e:
         raise PermissionError(
