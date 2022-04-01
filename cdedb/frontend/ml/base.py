@@ -13,8 +13,9 @@ import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
     FULL_MOD_REQUIRING_FIELDS, LOG_FIELDS_COMMON, MOD_ALLOWED_FIELDS,
-    RESTRICTED_MOD_ALLOWED_FIELDS, CdEDBObject, CdEDBObjectMap, EntitySorter, PathLike,
-    PrivilegeError, RequestState, merge_dicts, n_, now, unwrap, xsorted,
+    RESTRICTED_MOD_ALLOWED_FIELDS, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
+    EntitySorter, PathLike, PrivilegeError, RequestState, merge_dicts, n_, now, unwrap,
+    xsorted,
 )
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
@@ -71,10 +72,10 @@ class MlBaseFrontend(AbstractUserFrontend):
             'subscriptions': subscriptions,
             'mailinglist_infos': mailinglist_infos})
 
-    def write_subscription_states(self, rs: RequestState) -> None:
+    def write_subscription_states(self, rs: RequestState) -> DefaultReturnCode:
         """Write the current state of implicit subscribers to the database."""
         mailinglist_ids = self.mlproxy.list_mailinglists(rs)
-        self.mlproxy.write_subscription_states(rs, mailinglist_ids)
+        return self.mlproxy.write_subscription_states(rs, mailinglist_ids)
 
     @access("ml_admin", modi={"POST"})
     def manually_write_subscription_states(self, rs: RequestState) -> Response:
@@ -85,9 +86,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         """
         if rs.has_validation_errors():  # pragma: no cover
             return self.index(rs)
-        mailinglist_ids = self.mlproxy.list_mailinglists(rs)
 
-        code = self.mlproxy.write_subscription_states(rs, mailinglist_ids)
+        code = self.write_subscription_states(rs)
         rs.notify_return_code(code)
 
         return self.redirect(rs, "ml/index")
