@@ -17,7 +17,7 @@ import decimal
 from pathlib import Path
 from secrets import token_hex
 from typing import (
-    Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, Union, cast, overload,
+    Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, Union, overload,
 )
 
 from passlib.hash import sha512_crypt
@@ -2511,7 +2511,7 @@ class CoreBaseBackend(AbstractBackend):
         like who is responsible for donation certificates.
         """
         query = "SELECT info FROM core.meta_info LIMIT 1"
-        data = unwrap(self.query_one(rs, query, tuple()))
+        data = unwrap(self.query_one(rs, query, tuple())) or dict()
         return {field: data.get(field) for field in META_INFO_FIELDS}
 
     @access("core_admin")
