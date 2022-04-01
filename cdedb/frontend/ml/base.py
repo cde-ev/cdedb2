@@ -71,6 +71,11 @@ class MlBaseFrontend(AbstractUserFrontend):
             'subscriptions': subscriptions,
             'mailinglist_infos': mailinglist_infos})
 
+    def write_subscription_states(self, rs: RequestState) -> None:
+        """Write the current state of implicit subscribers to the database."""
+        mailinglist_ids = self.mlproxy.list_mailinglists(rs)
+        self.mlproxy.write_subscription_states(rs, mailinglist_ids)
+
     @access("ml_admin", modi={"POST"})
     def manually_write_subscription_states(self, rs: RequestState) -> Response:
         """Write subscription states of all mailinglists now.
@@ -1142,8 +1147,3 @@ class MlBaseFrontend(AbstractUserFrontend):
             ml_store['persona_ids'] = requests
             store[str(ml_id)] = ml_store
         return store
-
-    def write_subscription_states(self, rs: RequestState) -> None:
-        """Write the current state of implicit subscribers to the database."""
-        mailinglist_ids = self.mlproxy.list_mailinglists(rs)
-        self.mlproxy.write_subscription_states(rs, mailinglist_ids)
