@@ -33,8 +33,8 @@ EntityKey = Union[int, str]
 EntityKeys = Collection[int]
 
 
-class QueryMixin:
-    """Mixin to access the database layer.
+class SqlQueryBackend:
+    """Python backend to access the SQL database layer.
 
     This provides some methods to query the database. Beside the low-level query_*
     functions, this contains also some more elevate functions named sql_* to perform
@@ -78,7 +78,7 @@ class QueryMixin:
         """
         if (isinstance(obj, collections.abc.Iterable)
                 and not isinstance(obj, (str, collections.abc.Mapping))):
-            return [QueryMixin._sanitize_db_input(x) for x in obj]
+            return [SqlQueryBackend._sanitize_db_input(x) for x in obj]
         elif isinstance(obj, enum.Enum):
             return obj.value
         else:

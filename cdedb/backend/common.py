@@ -35,7 +35,7 @@ from cdedb.common import (
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
 from cdedb.database.constants import FieldDatatypes, LockType
-from cdedb.database.query import DatabaseValue, DatabaseValue_s, QueryMixin
+from cdedb.database.query import DatabaseValue, DatabaseValue_s, SqlQueryBackend
 from cdedb.query import Query, QueryOperators
 from cdedb.validation import parse_date, parse_datetime
 
@@ -216,7 +216,7 @@ def _affirm_atomized_context(rs: RequestState) -> None:
         raise RuntimeError(n_("No contamination!"))
 
 
-class AbstractBackend(QueryMixin, metaclass=abc.ABCMeta):
+class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
     """Basic template for all backend services.
 
     Children classes have to override some things: first :py:attr:`realm`
