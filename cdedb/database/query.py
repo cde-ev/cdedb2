@@ -243,8 +243,8 @@ class QueryMixin:
         params += (data[entity_key],)
         return self.query_exec(container, query, params)
 
-    def sql_delete(self, container: ConnectionContainer, table: str, entities: EntityKeys,
-                   entity_key: str = "id") -> int:
+    def sql_delete(self, container: ConnectionContainer, table: str,
+                   entities: EntityKeys, entity_key: str = "id") -> int:
         """Generic SQL deletion query.
 
         See :py:meth:`sql_select` for thoughts on this.
