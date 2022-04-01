@@ -71,24 +71,25 @@
 
         {% if ballot['use_bar'] %}
             <tr
-                {% for level in result['counts'] %}
-                    {# It is possible that a candidate is equal to the bar. If this is the case, the candidate
-                       needs to be printed above the bar, in the 'preferred' section. Therefore, if the bar is
-                       in level['preferred'] and there are also other candidates in level['prefered'], we do not
-                       print an upper border.
-                       The same is true if there are no candidates below the bar, so we apply the same logic to
-                       'rejected'. #}
-                    {% if is_classical %}
-                        {% if ASSEMBLY_BAR_SHORTNAME in level %}
-                            class="no-upper-border"
-                        {% endif %}
-                    {% else %}
+                {% if is_classical %}
+                    {# If there is any other candidate with an equal number of votes, we do not print an upper boarder. #}
+                    {% if (result['counts'] | dictcount)[result['counts'][ASSEMBLY_BAR_SHORTNAME]] > 1 %}
+                        class="no-upper-border"
+                    {% endif %}
+                {% else %}
+                    {% for level in result['counts'] %}
+                        {# It is possible that a candidate is equal to the bar. If this is the case, the candidate
+                           needs to be printed above the bar, in the 'preferred' section. Therefore, if the bar is
+                           in level['preferred'] and there are also other candidates in level['prefered'], we do not
+                           print an upper border.
+                           The same is true if there are no candidates below the bar, so we apply the same logic to
+                           'rejected'. #}
                         {% if ASSEMBLY_BAR_SHORTNAME in level['preferred'] and level['preferred']|length != 1
                            or ASSEMBLY_BAR_SHORTNAME in level['rejected'] and level['rejected']|length != 1 %}
                             class="no-upper-border"
                         {% endif %}
-                    {% endif %}
-                {% endfor %}
+                    {% endfor %}
+                {% endif %}
             >
                 <td>
                     {# We do not count bar as candidate, imagine bar to be an infinitisimal border between candidates. #}
