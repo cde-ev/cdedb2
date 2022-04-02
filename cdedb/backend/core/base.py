@@ -2511,7 +2511,7 @@ class CoreBaseBackend(AbstractBackend):
         like who is responsible for donation certificates.
         """
         query = "SELECT info FROM core.meta_info LIMIT 1"
-        data = unwrap(self.query_one(rs, query, tuple())) or dict()
+        data = unwrap(self.query_one(rs, query, tuple())) or {}
         return {field: data.get(field) for field in META_INFO_FIELDS}
 
     @access("core_admin")
