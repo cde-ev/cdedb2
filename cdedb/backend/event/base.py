@@ -981,8 +981,7 @@ class EventBaseBackend(EventLowLevelBackend):
         """Create a new git repository for keeping track of event changes."""
         event_id = affirm(vtypes.ID, event_id)
         self._event_keeper.init(event_id)
-        return self.event_keeper_commit(rs, event_id, "Initialer Commit",
-                                        is_snapshot=True)
+        return self.event_keeper_commit(rs, event_id, "Initialer Commit")
 
     @access("event_admin")
     def event_keeper_drop(self, rs: RequestState, event_id: int) -> None:
@@ -993,12 +992,18 @@ class EventBaseBackend(EventLowLevelBackend):
 
     @access("event")
     def event_keeper_commit(self, rs: RequestState, event_id: int, commit_msg: str, *,
-                            is_snapshot: bool = False) -> CdEDBObject:
+                            after_change: bool = False) -> CdEDBObject:
         """Commit the current state of the event to its git repository.
 
-        :param is_snapshot: If commit is Snapshot before an important operation with
-            an explicit event keeper call. If True, commit even if there has been
-            no change.
+        In general, there are two scenarios where we want to make a new commit:
+        * periodically by a cron job
+        * before and after relevant changes
+
+        We divide the three types of commits in those which may be dropped if they are
+        empty (periodic commits and commits before a relevant change) and those which
+        are taken even if they didn't change anything (after relevant changes).
+
+        :param after_change: Only true for commits taken after a relevant change.
         """
         event_id = affirm(int, event_id)
         commit_msg = affirm(str, commit_msg)
@@ -1010,5 +1015,5 @@ class EventBaseBackend(EventLowLevelBackend):
             author_name = f"{rs.user.given_names} {rs.user.family_name}"
             author_email = rs.user.username
         self._event_keeper.commit(event_id, json_serialize(export), commit_msg,
-                                  author_name, author_email, may_drop=not is_snapshot)
+                                  author_name, author_email, may_drop=not after_change)
         return export

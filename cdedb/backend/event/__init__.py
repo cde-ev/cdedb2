@@ -326,7 +326,8 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
             }
             ret *= self.sql_update(rs, "event.events", update)
             self.event_log(rs, const.EventLogCodes.event_unlocked, data['id'])
-            self.event_keeper_commit(rs, data['id'], "Entsperre Veranstaltung")
+            self.event_keeper_commit(
+                rs, data['id'], "Entsperre Veranstaltung", after_change=True)
         return ret
 
     @access("event")
@@ -705,8 +706,6 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
             if not dryrun:
                 self.event_log(rs, const.EventLogCodes.event_partial_import,
                                data['id'], change_note=data.get('summary'))
-                self.event_keeper_commit(
-                    rs, data['id'],
-                    build_msg("Importiere partiell", data.get('summary')),
-                    is_snapshot=True)
+                msg = build_msg("Importiere partiell", data.get('summary'))
+                self.event_keeper_commit(rs, data['id'], msg, after_change=True)
         return result, total_delta

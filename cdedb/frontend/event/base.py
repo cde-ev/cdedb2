@@ -443,8 +443,8 @@ class EventBaseFrontend(AbstractUserFrontend):
             self.logger.info("Event schema version changed, creating new commit for"
                              " every event.")
             for event_id in event_ids:
-                self.eventproxy.event_keeper_commit(rs, event_id,
-                                                    "Ändere Veranstaltungs-Schema.")
+                self.eventproxy.event_keeper_commit(
+                    rs, event_id, "Ändere Veranstaltungs-Schema.", after_change=True)
             state['EVENT_SCHEMA_VERSION'] = EVENT_SCHEMA_VERSION
 
         commit_msg = "Regelmäßiger Snapshot"

@@ -508,13 +508,14 @@ class EventLodgementMxin(EventBaseFrontend):
                 ("ack_delete", ValueError(n_("Must be checked."))))
         if rs.has_validation_errors():
             return self.show_lodgement(rs, event_id, lodgement_id)
-        self.eventproxy.event_keeper_commit(
-            rs, event_id, f"Snapshot vor Löschen von Unterkunft"
-                          f" {rs.ambience['lodgement']['title']}.", is_snapshot=True)
+
+        lodgement_title = rs.ambience['lodgement']['title']
+        pre_msg = f"Snapshot vor Löschen von Unterkunft {lodgement_title}."
+        post_msg = f"Lösche Unterkunft {lodgement_title}."
+        self.eventproxy.event_keeper_commit(rs, event_id, pre_msg)
         code = self.eventproxy.delete_lodgement(
             rs, lodgement_id, cascade={"inhabitants"})
-        self.eventproxy.event_keeper_commit(
-            rs, event_id, f"Lösche  Unterkunft {rs.ambience['lodgement']['title']}.")
+        self.eventproxy.event_keeper_commit(rs, event_id, post_msg, after_change=True)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/lodgements")
 

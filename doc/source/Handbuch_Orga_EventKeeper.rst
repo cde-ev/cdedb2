@@ -30,9 +30,10 @@ Weitere Snapshots werden angelegt vor und nach:
 
 Zudem gibt es einen Snapshot nach Änderung des Datenbankschemas für Veranstaltungen.
 
-Dabei wird jeweils der Snapshot vor einer Änderung immer vorgenommen, auch wenn
-sich der partielle Export dadurch nicht verändert hat, um eine Trennung der Aktion
-von anderen Änderungen im ähnlichen Zeitraum zu ermöglichen.
+Der Snapshot vor einer Änderung wird nur vorgenommen, wenn der partielle Export sich
+seit dem letzten Snapshot verändert hat. Im Gegensatz dazu werden Snapshots nach
+Änderungen immer vorgenommen, selbst wenn der partielle Export durch die Änderung nicht
+verändert wurde.
 
 Mit der Archivierung oder Löschung einer Veranstaltung wird auch sein EventKeeper
 gelöscht. Dadurch soll diversen Fristen zur Löschung personenbezogener Daten
@@ -54,7 +55,7 @@ heruntergeladen und später mit ``git pull`` aktualisiert werden.::
     git clone https://db.cde-ev.de/git/event_keeper/<event_id>/
 
 Dies vereinfacht auch das Beziehen eines aktuellen partiellen Exports zur Verwendung in
-externen Tools, das nun rein über die Kommandozeile geschenen kann.
+externen Tools, das nun rein über die Kommandozeile geschehenen kann.
 Das Repositorium ist schreibgeschützt; ``git push`` hat somit keinen Effekt.
 
 Nach dem Abschluss aller Organisationstätigkeiten müssen lokale Kopien des EventKeepers

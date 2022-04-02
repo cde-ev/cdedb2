@@ -100,9 +100,10 @@ class EventFieldMixin(EventBaseFrontend):
             'fields': fields
         }
         self.eventproxy.event_keeper_commit(
-            rs, event_id, "Snapshot vor Datenfeld-Änderungen.", is_snapshot=True)
+            rs, event_id, "Snapshot vor Datenfeld-Änderungen.")
         code = self.eventproxy.set_event(rs, event)
-        self.eventproxy.event_keeper_commit(rs, event_id, "Ändere Datenfelder.")
+        self.eventproxy.event_keeper_commit(
+            rs, event_id, "Ändere Datenfelder.", after_change=True)
         rs.notify_return_code(code)
         return self.redirect(
             rs, "event/field_summary_form", anchor=(
@@ -289,10 +290,10 @@ class EventFieldMixin(EventBaseFrontend):
             raise NotImplementedError(f"Unknown kind {kind}.")
 
         code = 1
-        self.eventproxy.event_keeper_commit(
-            rs, event_id, build_msg(
-                f"Snapshot vor Setzen von Feld {field['field_name']}", change_note),
-            is_snapshot=True)
+        pre_msg = build_msg(
+            f"Snapshot vor Setzen von Feld {field['field_name']}", change_note)
+        post_msg = build_msg(f"Setze Feld {field['field_name']}", change_note)
+        self.eventproxy.event_keeper_commit(rs, event_id, pre_msg)
         for anid, entity in entities.items():
             if data[f"input{anid}"] != entity['fields'].get(field['field_name']):
                 new = {
@@ -303,8 +304,7 @@ class EventFieldMixin(EventBaseFrontend):
                     code *= entity_setter(rs, new, msg)  # type: ignore
                 else:
                     code *= entity_setter(rs, new)
-        self.eventproxy.event_keeper_commit(
-            rs, event_id, build_msg(f"Setze Feld {field['field_name']}", change_note))
+        self.eventproxy.event_keeper_commit(rs, event_id, post_msg, after_change=True)
         rs.notify_return_code(code)
 
         if kind == const.FieldAssociations.registration:

@@ -946,13 +946,13 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         # maybe exclude some blockers
         db_id = cdedbid_filter(rs.ambience['registration']['persona_id'])
-        self.eventproxy.event_keeper_commit(
-            rs, event_id, f"Snapshot vor Löschen von Anmeldung {db_id}.",
-            is_snapshot=True)
+        pre_msg = f"Snapshot vor Löschen von Anmeldung {db_id}."
+        post_msg = f"Lösche Anmeldung {db_id}."
+        self.eventproxy.event_keeper_commit(rs, event_id, pre_msg)
         code = self.eventproxy.delete_registration(
             rs, registration_id, {"registration_parts", "registration_tracks",
                                   "course_choices"})
-        self.eventproxy.event_keeper_commit(rs, event_id, f"Lösche Anmeldung {db_id}.")
+        self.eventproxy.event_keeper_commit(rs, event_id, post_msg, after_change=True)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/registration_query")
 
@@ -1065,11 +1065,11 @@ class EventRegistrationMixin(EventBaseFrontend):
         msg2 = build_msg("Bearbeite mehrere Anmeldungen", change_note)
         change_note = build_msg("Multi-Edit", change_note)
 
-        self.eventproxy.event_keeper_commit(rs, event_id, msg1, is_snapshot=True)
+        self.eventproxy.event_keeper_commit(rs, event_id, msg1)
         for reg_id in reg_ids:
             registration['id'] = reg_id
             code *= self.eventproxy.set_registration(rs, registration, change_note)
-        self.eventproxy.event_keeper_commit(rs, event_id, msg2)
+        self.eventproxy.event_keeper_commit(rs, event_id, msg2, after_change=True)
         rs.notify_return_code(code)
 
         # redirect to query filtered by reg_ids
