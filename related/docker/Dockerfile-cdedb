@@ -1,5 +1,20 @@
 FROM debian:bullseye-20210816
 
+# TODO this should be obsolete, since we generate the certificates with a first run script.
+#  however, this does not work for the ci (which becomes visible for the offline vm test)
+RUN apt-get update && apt-get install --yes --no-install-recommends openssl \
+    && mkdir /etc/ssl/apache2 \
+    && openssl req \
+        -x509 \
+        -newkey rsa:4096 \
+        -out /etc/ssl/apache2/server.pem \
+        -keyout /etc/ssl/apache2/server.key \
+        -days 365 \
+        -nodes \
+        -subj "/C=DE/O=CdE e.V./CN=cdedb.local/emailAddress=cdedb@lists.cde-ev.de" \
+    && apt-get purge --yes --autoremove openssl \
+    && rm -rf /var/lib/apt/lists/*
+
 # rarely changing base of bigger packages whose cache we do not want to bust
 RUN apt-get update && apt-get install --yes --no-install-recommends \
     sudo \
