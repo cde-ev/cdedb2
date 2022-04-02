@@ -15,14 +15,17 @@ def start_services(*services: str) -> None:
     """Start the given services."""
     if not has_systemd():
         return
-    subprocess.run(["systemctl", "start", *services], check=True)
+    # TODO on the vm, we need 'sudo' to execute systemctl. Can we get rid of this?
+    #  The basic problem is that this is needed f.e. in the test suite...
+    subprocess.run(["sudo", "systemctl", "start", *services], check=True)
 
 
 def stop_services(*services: str) -> None:
     """Stop the given services."""
     if not has_systemd():
         return
-    subprocess.run(["systemctl", "stop", *services], check=True)
+    # TODO see above
+    subprocess.run(["sudo", "systemctl", "stop", *services], check=True)
 
 
 def psql(*commands: str) -> subprocess.CompletedProcess[bytes]:
@@ -35,8 +38,11 @@ def psql(*commands: str) -> subprocess.CompletedProcess[bytes]:
         return subprocess.run(
             ["psql", "postgresql://postgres:passwd@cdb", *commands], check=True)
     else:
+        # TODO can we use the user kwarg instead of doing the sudo dance?
         # mypy does not know that run passes unknown arguments to Popen
-        return subprocess.run(["psql", *commands], check=True, user="postgres")  # type: ignore
+        # return subprocess.run(["psql", *commands], check=True, user="postgres")
+        return subprocess.run(["sudo", "-u", "postgres", "psql", *commands], check=True)
+
 
 
 # TODO is the nobody hack really necessary?
