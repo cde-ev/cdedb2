@@ -38,6 +38,7 @@ from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.common import AbstractBackend
 from cdedb.backend.core import CoreBackend
+from cdedb.backend.entity_keeper import EntityKeeper
 from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
@@ -206,7 +207,7 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
 
         def __getattr__(self, name: str) -> Callable[..., Any]:
             attr = getattr(backend, name)
-            # Special case for the `subman.SubscriptionManager`.
+            # Special case for the `subman.SubscriptionManager`
             if name == "subman":
                 return attr
             if any([
@@ -236,9 +237,11 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
 class BasicTest(unittest.TestCase):
     """Provide some basic useful test functionalities."""
     needs_storage_marker = "_needs_storage"
+    needs_event_keeper_marker = "_needs_event_keeper"
 
     storage_dir: ClassVar[pathlib.Path]
     testfile_dir: ClassVar[pathlib.Path]
+
     configpath: ClassVar[str]
     conf: ClassVar[TestConfig]
 
@@ -259,6 +262,12 @@ class BasicTest(unittest.TestCase):
                 ("make", "storage", f"STORAGE_DIR={self.storage_dir}",
                  f"DATA_USER={user}"),
                 stdout=subprocess.DEVNULL, check=True, start_new_session=True)
+        if getattr(test_method, self.needs_event_keeper_marker, False):
+            max_event_id = len(self.get_sample_data('event.events'))
+            keeper = EntityKeeper(self.conf, 'event_keeper')  # type: ignore
+            for event_id in range(1, max_event_id + 1):
+                keeper.init(event_id)
+                keeper.commit(event_id, "", "Initialer Commit.")
 
     def tearDown(self) -> None:
         test_method = getattr(self, self._testMethodName)
@@ -779,6 +788,12 @@ def storage(fun: F) -> F:
     """Decorate a test which needs some of the test files on the local drive."""
     setattr(fun, BasicTest.needs_storage_marker, True)
     return fun
+
+
+def event_keeper(fun: F) -> F:
+    """Decorate a test which needs an event keeper setup."""
+    setattr(fun, BasicTest.needs_event_keeper_marker, True)
+    return storage(fun)
 
 
 def execsql(sql: AnyStr) -> None:

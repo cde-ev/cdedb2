@@ -168,6 +168,7 @@ storage: sanity-check
 	sudo mkdir -p $(STORAGE_DIR)/ballot_result/
 	sudo mkdir -p $(STORAGE_DIR)/assembly_attachment/
 	sudo mkdir -p $(STORAGE_DIR)/genesis_attachment/
+	sudo mkdir -p $(STORAGE_DIR)/event_keeper/
 	sudo mkdir -p $(STORAGE_DIR)/mailman_templates/
 	sudo mkdir -p $(STORAGE_DIR)/testfiles/
 	sudo cp tests/ancillary_files/$(TESTFOTONAME) $(STORAGE_DIR)/foto/
