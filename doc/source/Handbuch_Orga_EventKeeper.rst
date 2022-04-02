@@ -55,7 +55,7 @@ heruntergeladen und später mit ``git pull`` aktualisiert werden.::
     git clone https://db.cde-ev.de/git/event_keeper/<event_id>/
 
 Dies vereinfacht auch das Beziehen eines aktuellen partiellen Exports zur Verwendung in
-externen Tools, das nun rein über die Kommandozeile geschehenen kann.
+externen Tools, das nun rein über die Kommandozeile geschehen kann.
 Das Repositorium ist schreibgeschützt; ``git push`` hat somit keinen Effekt.
 
 Nach dem Abschluss aller Organisationstätigkeiten müssen lokale Kopien des EventKeepers
