@@ -32,8 +32,8 @@ if git merge-base --is-ancestor 82aa3fb3d4172032dff8121ff3af0a2b746c4765 $OLDREV
     python3 -m cdedb db create
     python3 -m cdedb db populate
 else
-    make -B tests/ancillary_files/sample_data.sql &> /dev/null
-    make sql DATABASE_NAME=$DATABASE_NAME > /dev/null
+    make -B tests/ancillary_files/sample_data.sql
+    make sql DATABASE_NAME=$DATABASE_NAME
 fi
 
 # new revision
