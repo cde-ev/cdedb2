@@ -17,6 +17,9 @@ echo 'DATABASE_NAME="cdb_test_1"' >> $tmp_configfile
 chmod +r $tmp_configfile
 export CDEDB_CONFIGPATH=$tmp_configfile
 
+# silence git output after switching to a detached head
+git config advice.detachedHead false
+
 # old revision
 echo ""
 echo "Checkout $OLDREVISION"
