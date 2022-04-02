@@ -981,7 +981,8 @@ class EventBaseBackend(EventLowLevelBackend):
         """Create a new git repository for keeping track of event changes."""
         event_id = affirm(vtypes.ID, event_id)
         self._event_keeper.init(event_id)
-        return self.event_keeper_commit(rs, event_id, "Initialer Commit")
+        return self.event_keeper_commit(rs, event_id, "Initialer Commit",
+                                        is_initial=True)
 
     @access("event_admin")
     def event_keeper_drop(self, rs: RequestState, event_id: int) -> None:
@@ -992,7 +993,8 @@ class EventBaseBackend(EventLowLevelBackend):
 
     @access("event")
     def event_keeper_commit(self, rs: RequestState, event_id: int, commit_msg: str, *,
-                            after_change: bool = False) -> CdEDBObject:
+                            after_change: bool = False, is_initial: bool = False
+                            ) -> CdEDBObject:
         """Commit the current state of the event to its git repository.
 
         In general, there are two scenarios where we want to make a new commit:
@@ -1004,6 +1006,7 @@ class EventBaseBackend(EventLowLevelBackend):
         are taken even if they didn't change anything (after relevant changes).
 
         :param after_change: Only true for commits taken after a relevant change.
+        :param is_initial: Only true for the first commit to the event keeper.
         """
         event_id = affirm(int, event_id)
         commit_msg = affirm(str, commit_msg)
@@ -1014,6 +1017,7 @@ class EventBaseBackend(EventLowLevelBackend):
         if rs.user.persona_id:
             author_name = f"{rs.user.given_names} {rs.user.family_name}"
             author_email = rs.user.username
+        may_drop = False if is_initial else not after_change
         self._event_keeper.commit(event_id, json_serialize(export), commit_msg,
-                                  author_name, author_email, may_drop=not after_change)
+                                  author_name, author_email, may_drop=may_drop)
         return export
