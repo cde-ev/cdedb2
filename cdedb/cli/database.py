@@ -44,7 +44,6 @@ def psql(*commands: str) -> subprocess.CompletedProcess[bytes]:
         return subprocess.run(["sudo", "-u", "postgres", "psql", *commands], check=True)
 
 
-
 # TODO is the nobody hack really necessary?
 def connect(
     config: Config, secrets: SecretsConfig, as_nobody: bool = False

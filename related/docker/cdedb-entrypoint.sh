@@ -15,6 +15,9 @@ fi
 
 # If this is the first run of the container, perform some initialization
 if [ ! -e /etc/cdedb/container_already_initalized ]; then
+    # Wait for the database to come online
+    pg_isready --host=cdb --timeout=15
+
     # Create the log directory. Ensure that www-data owns everything.
     python3 -m cdedb filesystem --owner www-data log create
 
