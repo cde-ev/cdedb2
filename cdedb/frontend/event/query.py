@@ -7,6 +7,7 @@ querying registrations, courses and lodgements.
 import collections
 import datetime
 import enum
+import itertools
 import pprint
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -438,6 +439,13 @@ class EventCourseStatistic(enum.Enum):
         else:
             raise RuntimeError(n_("Impossible."))
 
+    def test_part_group(self, event: CdEDBObject, course: CdEDBObject,
+                        part_group_id: int) -> bool:
+        part_ids = event['part_groups'][part_group_id]['part_ids']
+        parts = (p for part_id, p in event['parts'].items() if part_id in part_ids)
+        track_ids = itertools.chain.from_iterable(part['tracks'] for part in parts)
+        return any(self.test(event, course, track_id) for track_id in track_ids)
+
     def _get_query_aux(self, track_id: int) -> StatQueryAux:
         if self == self.offered:
             return (
@@ -471,6 +479,10 @@ class EventCourseStatistic(enum.Enum):
         # Prepend the specific order.
         query.order = order + query.order
         return query
+
+    def get_query_part_group(self, event: CdEDBObject, part_group_id: int
+                             ) -> Optional[Query]:
+        return None
 
 
 @enum.unique
@@ -640,45 +652,59 @@ class EventQueryMixin(EventBaseFrontend):
                     personas[reg['persona_id']]['birthday'],
                     event_parts[part_id]['part_begin'])
 
-        per_part_statistics: Dict[EventRegistrationPartStatistic, Dict[int, int]]
+        per_part_statistics: Dict[
+            EventRegistrationPartStatistic, Dict[str, Dict[int, int]]]
         per_part_statistics = collections.OrderedDict()
         for reg_stat in EventRegistrationPartStatistic:
             per_part_statistics[reg_stat] = {
-                part_id: sum(
-                    1 for reg in registrations.values()
-                    if reg_stat.test(rs.ambience['event'], reg, part_id))
-                for part_id in event_parts
+                'parts': {
+                    part_id: sum(
+                        1 for reg in registrations.values()
+                        if reg_stat.test(rs.ambience['event'], reg, part_id))
+                    for part_id in event_parts
+                },
+                'part_groups': {
+                    part_group_id: sum(
+                        1 for reg in registrations.values()
+                        if reg_stat.test_part_group(
+                            rs.ambience['event'], reg, part_group_id))
+                    for part_group_id in rs.ambience['event']['part_groups']
+                }
             }
-            per_part_statistics[reg_stat].update({
-                -part_group_id: sum(
-                    1 for reg in registrations.values()
-                    if reg_stat.test_part_group(
-                        rs.ambience['event'], reg, part_group_id))
-                for part_group_id in rs.ambience['event']['part_groups']
-            })
         # Needed for formatting in template. We do it here since it's ugly in jinja
         # without list comprehension.
         per_part_max_indent = max(stat.indent for stat in per_part_statistics)
 
         per_track_statistics: Dict[
             Union[EventRegistrationTrackStatistic, EventCourseStatistic],
-            Dict[int, int]]
+            Dict[str, Dict[int, int]]]
         per_track_statistics = collections.OrderedDict()
         grouper = None
         if tracks:
             for course_stat in EventCourseStatistic:
                 per_track_statistics[course_stat] = {
-                    track_id: sum(
-                        1 for course in courses.values()
-                        if course_stat.test(course, track_id))
-                    for track_id in tracks
+                    'tracks': {
+                        track_id: sum(
+                            1 for course in courses.values()
+                            if course_stat.test(course, track_id))
+                        for track_id in tracks
+                    },
+                    'part_groups': {
+                        part_group_id: sum(
+                            1 for course in courses.values()
+                            if course_stat.test_part_group(
+                                rs.ambience['event'], course, part_group_id))
+                        for part_group_id in rs.ambience['event']['part_groups']
+                    }
                 }
             for reg_track_stat in EventRegistrationTrackStatistic:
                 per_track_statistics[reg_track_stat] = {
-                    track_id: sum(
-                        1 for reg in registrations.values()
-                        if reg_track_stat.test(rs.ambience['event'], reg, track_id))
-                    for track_id in tracks
+                    'tracks': {
+                        track_id: sum(
+                            1 for reg in registrations.values()
+                            if reg_track_stat.test(rs.ambience['event'], reg, track_id))
+                        for track_id in tracks
+                    }
                 }
 
             grouper = EventRegistrationInXChoiceGrouper(

@@ -47,10 +47,10 @@
                         {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
                             <td class="text-right">
                                 {% set query = stat.get_query(ambience['event'], part_id) %}
-                                {% set datum = row[part_id] %}
+                                {% set datum = row['parts'][part_id] %}
                                 {% if query %}
                                     {{ util.href(
-                                        cdedblink('event/registration_query', query.serialize()) + "#query-results",
+                                        cdedblink(query.scope.get_target(), query.serialize()) + "#query-results",
                                         datum, anid="part_" + stat.name + "_" + part_id|string) }}
                                 {% else %}
                                     {{ datum }}
@@ -60,10 +60,10 @@
                         {% for part_group_id, part_group in ambience['event']['part_groups']|keydictsort(EntitySorter.event_part_group) %}
                             <td class="text-right {% if loop.first %}b-left{% endif %}">
                                 {% set query = stat.get_query_part_group(ambience['event'], part_group_id) %}
-                                {% set datum = row[-part_group_id] %}
+                                {% set datum = row['part_groups'][part_group_id] %}
                                 {% if query %}
                                     {{ util.href(
-                                        cdedblink('event/registration_query', query.serialize()) + "#query-results",
+                                        cdedblink(query.scope.get_target(), query.serialize()) + "#query-results",
                                         datum, anid="part_group_" + stat.name + "_" + part_group_id|string) }}
                                 {% else %}
                                     {{ datum }}
@@ -89,6 +89,11 @@
                                 {% endif %}
                             </th>
                         {% endfor %}
+                        {% for part_group_id, part_group in ambience['event']['part_groups']|keydictsort(EntitySorter.event_part_group) %}
+                            <th class="text-right {% if loop.first %}b-left{% endif %}">
+                                {{ part_group['shortname'] }}
+                            </th>
+                        {% endfor %}
                     </tr>
                 </thead>
                 <tbody>
@@ -101,15 +106,19 @@
                                         –
                                     {% else %}
                                         {% set query = grouper.get_query(ambience['event'], track_id, x) %}
-                                        {% set page = query.scope.get_target() %}
                                         {% if query %}
                                             {{ util.href(
-                                                cdedblink(page, query.serialize()) + "#query-results",
+                                                cdedblink(query.scope.get_target(), query.serialize()) + "#query-results",
                                                 row[track_id]|length, anid="part_in_" + x|string +  "_choice_" + track_id|string) }}
                                         {% else %}
                                             {{ row[track_id]|length }}
                                         {% endif %}
                                     {% endif %}
+                                </td>
+                            {% endfor %}
+                            {% for part_group_id, part_group in ambience['event']['part_groups']|keydictsort(EntitySorter.event_part_group) %}
+                                <td class="text-right {% if loop.first %}b-left{% endif %}">
+                                    –
                                 </td>
                             {% endfor %}
                         </tr>
@@ -119,18 +128,31 @@
                             <th>{{ gettext(stat.value) }}</th>
                             {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
                                 <td class="text-right">
-                                    {% if row[track_id] is none %}
-                                        –
+                                    {% set query = stat.get_query(ambience['event'], track_id) %}
+                                    {% set datum = row['tracks'][track_id] %}
+                                    {% if query %}
+                                        {{ util.href(
+                                            cdedblink(query.scope.get_target(), query.serialize()) + "#query-results",
+                                            datum, anid="track_" + stat.name + "_" + track_id|string) }}
                                     {% else %}
-                                        {% set query = stat.get_query(ambience['event'], track_id) %}
-                                        {% set page = query.scope.get_target() %}
+                                        {{ datum }}
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                            {% for part_group_id, part_group in ambience['event']['part_groups']|keydictsort(EntitySorter.event_part_group) %}
+                                <td class="text-right {% if loop.first %}b-left{% endif %}">
+                                    {% if 'part_groups' in row %}
+                                        {% set query = stat.get_query_part_group(ambience['event'], part_group_id) %}
+                                        {% set datum = row['part_groups'][part_group_id] %}
                                         {% if query %}
                                             {{ util.href(
-                                                cdedblink(page, query.serialize()) + "#query-results",
-                                                row[track_id], anid="part_" + stat.name + "_" + track_id|string) }}
+                                                cdedblink(query.scope.get_target(), query.serialize()) + "#query-results",
+                                                datum, anid="track_group_" + stat.name + "_" + part_group_id|string) }}
                                         {% else %}
-                                            {{ row[track_id] }}
+                                            {{ datum }}
                                         {% endif %}
+                                    {% else %}
+                                        –
                                     {% endif %}
                                 </td>
                             {% endfor %}
