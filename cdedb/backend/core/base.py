@@ -17,7 +17,7 @@ import decimal
 from pathlib import Path
 from secrets import token_hex
 from typing import (
-    Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, Union, cast, overload,
+    Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, Union, overload,
 )
 
 from passlib.hash import sha512_crypt
@@ -30,13 +30,13 @@ from cdedb.backend.common import (
     inspect_validation as inspect, internal, singularize,
 )
 from cdedb.common import (
-    ADMIN_KEYS, ALL_ROLES, PERSONA_ALL_FIELDS, PERSONA_ASSEMBLY_FIELDS,
-    PERSONA_CDE_FIELDS, PERSONA_CORE_FIELDS, PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS,
-    PERSONA_STATUS_FIELDS, PRIVILEGE_CHANGE_FIELDS, REALM_ADMINS, ArchiveError,
-    CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Error, PathLike,
-    PrivilegeError, PsycoJson, QuotaException, RequestState, Role, User,
-    decode_parameter, encode_parameter, extract_roles, get_hash, glue, n_, now,
-    privilege_tier, unwrap, xsorted,
+    ADMIN_KEYS, ALL_ROLES, META_INFO_FIELDS, PERSONA_ALL_FIELDS,
+    PERSONA_ASSEMBLY_FIELDS, PERSONA_CDE_FIELDS, PERSONA_CORE_FIELDS,
+    PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, PERSONA_STATUS_FIELDS,
+    PRIVILEGE_CHANGE_FIELDS, REALM_ADMINS, ArchiveError, CdEDBLog, CdEDBObject,
+    CdEDBObjectMap, DefaultReturnCode, Error, PathLike, PrivilegeError, PsycoJson,
+    QuotaException, RequestState, Role, User, decode_parameter, encode_parameter,
+    extract_roles, get_hash, glue, n_, now, privilege_tier, unwrap, xsorted,
 )
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -2511,7 +2511,8 @@ class CoreBaseBackend(AbstractBackend):
         like who is responsible for donation certificates.
         """
         query = "SELECT info FROM core.meta_info LIMIT 1"
-        return cast(CdEDBObject, unwrap(self.query_one(rs, query, tuple())))
+        data = unwrap(self.query_one(rs, query, tuple())) or {}
+        return {field: data.get(field) for field in META_INFO_FIELDS}
 
     @access("core_admin")
     def set_meta_info(self, rs: RequestState,

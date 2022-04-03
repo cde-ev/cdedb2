@@ -1940,6 +1940,15 @@ EVENT_SCHEMA_VERSION = (15, 5)
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3
 
+META_INFO_FIELDS = (
+    "Finanzvorstand_Name", "Finanzvorstand_Vorname", "Finanzvorstand_Ort",
+    "Finanzvorstand_Adresse_Einzeiler", "Finanzvorstand_Adresse_Zeile2",
+    "Finanzvorstand_Adresse_Zeile3", "Finanzvorstand_Adresse_Zeile4",
+    "CdE_Konto_Inhaber", "CdE_Konto_IBAN", "CdE_Konto_BIC", "CdE_Konto_Institut",
+    "Vorstand",
+    "banner_before_login", "banner_after_login", "banner_genesis", "cde_misc"
+)
+
 #: All columns deciding on the current status of a persona
 PERSONA_STATUS_FIELDS = (
     "is_active", "is_meta_admin", "is_core_admin", "is_cde_admin",
