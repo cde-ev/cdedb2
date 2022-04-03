@@ -26,16 +26,20 @@ POLICY_OTHER_CONVERT = {
     const.ModerationPolicy.fully_moderated: 'hold',
 }
 
-# This looks a bit counter-intuitive, but this is ANDed with the MIME convert.
+# Mailmanclient expects empty strings instead of empty lists, since they are seemingly
+# better compatible with its rest api. Effectively, mailman will ignore setting empty
+# lists, but cast empty strings to empty lists internally.
+#
+# Still, this looks a bit counter-intuitive, but this is ANDed with the MIME convert.
 # TODO: Potentially, this lets text/plain attachments through on forbid.
 ATTACHMENT_EXTENSIONS_CONVERT = {
-    const.AttachmentPolicy.allow: [],
+    const.AttachmentPolicy.allow: "",
     const.AttachmentPolicy.pdf_only: ['pdf'],
-    const.AttachmentPolicy.forbid: [],
+    const.AttachmentPolicy.forbid: "",
 }
 
 ATTACHMENT_MIME_CONVERT = {
-    const.AttachmentPolicy.allow: [],
+    const.AttachmentPolicy.allow: "",
     const.AttachmentPolicy.pdf_only: ['multipart', 'text/plain', 'application/pdf'],
     const.AttachmentPolicy.forbid: ['text/plain'],
 }
