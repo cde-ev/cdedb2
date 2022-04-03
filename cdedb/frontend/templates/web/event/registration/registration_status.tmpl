@@ -37,14 +37,15 @@
         <h3 class="heading-underline">{% trans %}Payment{% endtrans %}</h3>
         <p>
             {% trans fee=fee|money(lang=lang) %}
-                You have already payed the registration fee of {{ fee }}.
+                You have already paid the registration fee of {{ fee }}.
             {% endtrans %}
         </p>
     {% else %}
+        {% set to_pay=(fee - registration['amount_paid'])|money(lang=lang) %}
         {% if ambience['event']['iban'] %}
             <h3 class="heading-underline">{% trans %}Bank Transfer{% endtrans %}</h3>
             <p>
-                {% trans to_pay=(fee - registration['amount_paid'])|money(lang=lang) %}
+                {% trans %}
                     Please keep in mind that your Registration will only be complete, once
                     you pay your participation fee. Please transfer {{ to_pay }} to the following
                     Account. Please make sure, the recipient does not have to pay any fees,
@@ -82,7 +83,7 @@
             <p class="text-muted">
                 {{ util.make_icon('info-circle') }}
                 {% trans %}
-                    Note: After your transfer incurred at the bank account, it may take some time
+                    Note: After your transfer has been recieved at our bank account, it may take some time
                     (up to a few weeks) until the payment is registered here.
                 {% endtrans %}
             </p>
@@ -90,13 +91,13 @@
             <h3 class="heading-underline">{% trans %}Payment{% endtrans %}</h3>
             <p>
                 {% trans fee=fee|money(lang=lang) %}
-                    The orgas will tell you separately how to pay your fee of {{ fee }}.
+                    The orgas will tell you separately how to pay your fee of {{ to_pay }}.
                 {% endtrans %}
             </p>
         {% endif %}
         <p>
             {% trans fee=fee|money(lang=lang), amount_paid=registration['amount_paid']|money(lang=lang) %}
-                You have already payed {{ amount_paid }} of the total registration fee of {{ fee }}.
+                We have already registered a payment of {{ amount_paid }}. The total registration fee is {{ fee }}.
             {% endtrans %}
         </p>
         {% if "member" not in user.roles and ambience["event"]["nonmember_surcharge"] %}
@@ -140,6 +141,9 @@
             </dt>
             <dd id="registration_status_part{{ part_id }}">
                 {{ gettext(part['status']|enum(enums['RegistrationPartStati'])) }}
+                {# We assume that an orga sets 'payment' if enough has been paid for admission as participant.
+                   E.g. one might only request a second instalment of the fee by participants shortly before the event
+                   See also EventRegistrationBackend.get_registration_payment_info() #}
                 {% if part['status'].has_to_pay() and not registration['payment'] and fee %}
                     <span class="text-danger">({% trans %}payment pending{% endtrans %})</span>
                 {% endif %}

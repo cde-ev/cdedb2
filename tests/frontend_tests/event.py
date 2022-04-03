@@ -1506,16 +1506,18 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence(
             "Anmeldung erst mit Überweisung des Teilnehmerbeitrags")
         self.assertPresence("573,99 € auf folgendes Konto")
-        self.assertPresence("0,00 € des Teilnahmebeitrags von 573,99 €")
+        self.assertPresence(
+            "0,00 € eingegangen. Der volle Teilnahmebeitrag beträgt 573,99 €")
         _set_amount_paid(100)
         self.assertPresence("473,99 € auf folgendes Konto")
-        self.assertPresence("100,00 € des Teilnahmebeitrags von 573,99 €")
+        self.assertPresence(
+            "100,00 € eingegangen. Der volle Teilnahmebeitrag beträgt 573,99 €")
         _set_amount_paid(1000)
         self.assertNonPresence("Überweisung")
         self.assertNonPresence("Konto")
         self.assertNonPresence("1000,00")
         self.assertPresence("573,99 € bereits bezahlt.")
-        _set_amount_paid(0)
+        _set_amount_paid(200)
 
         # Payment checks without iban
         self.traverse({'href': '/event/event/1/change'})
@@ -1528,7 +1530,8 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
         self.assertPresence("Eingeteilt in")
         self.assertPresence("separat mitteilen, wie du deinen Teilnahmebeitrag")
-        self.assertPresence("0,00 € des Teilnahmebeitrags von 573,99 €")
+        self.assertPresence(
+            "200,00 € eingegangen. Der volle Teilnahmebeitrag beträgt 573,99 €")
 
         # check payment messages for different registration stati
         payment_pending = "Bezahlung ausstehend"
