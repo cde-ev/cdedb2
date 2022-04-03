@@ -26,7 +26,7 @@ class AuxData(TypedDict):
 
 def prepare_aux(data: CdEDBObject) -> AuxData:
     # Note that we do not care about the actual backend but only the db connection.
-    conn = Script(dbuser="nobody", dbname="nobody").rs().conn
+    conn = Script(dbuser="nobody", dbname="nobody", check_system_user=False).rs().conn
 
     core = CoreBackend  # No need to instantiate, we only use statics.
 
