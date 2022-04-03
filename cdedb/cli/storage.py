@@ -63,6 +63,7 @@ def create_storage(conf: Config) -> None:
         "foto",  # core: profile fotos
         "genesis_attachment",  # core: genesis attachments
         "minor_form",  # event: minor forms
+        "event_keeper",  # event: git repositories of event keeper
         "mailman_templates",  # ml: mailman message templates
         "ballot_result",  # assembly: ballot result files
         "assembly_attachment",  # assembly: attachment files

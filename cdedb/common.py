@@ -434,6 +434,14 @@ def glue(*args: str) -> str:
     return " ".join(args)
 
 
+def build_msg(msg1: str, msg2: Optional[str] = None) -> str:
+    """Construct log message with appropriate punctuation"""
+    if msg2:
+        return msg1 + ": " + msg2
+    else:
+        return msg1 + "."
+
+
 S = TypeVar("S")
 
 
@@ -1929,6 +1937,15 @@ EVENT_SCHEMA_VERSION = (15, 5)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3
+
+META_INFO_FIELDS = (
+    "Finanzvorstand_Name", "Finanzvorstand_Vorname", "Finanzvorstand_Ort",
+    "Finanzvorstand_Adresse_Einzeiler", "Finanzvorstand_Adresse_Zeile2",
+    "Finanzvorstand_Adresse_Zeile3", "Finanzvorstand_Adresse_Zeile4",
+    "CdE_Konto_Inhaber", "CdE_Konto_IBAN", "CdE_Konto_BIC", "CdE_Konto_Institut",
+    "Vorstand",
+    "banner_before_login", "banner_after_login", "banner_genesis", "cde_misc"
+)
 
 #: All columns deciding on the current status of a persona
 PERSONA_STATUS_FIELDS = (

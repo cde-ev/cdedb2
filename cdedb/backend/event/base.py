@@ -25,6 +25,7 @@ from cdedb.backend.common import (
     Silencer, access, affirm_set_validation as affirm_set, affirm_validation as affirm,
     affirm_validation_optional as affirm_optional, cast_fields, internal, singularize,
 )
+from cdedb.backend.entity_keeper import EntityKeeper
 from cdedb.backend.event.lowlevel import EventLowLevelBackend
 from cdedb.common import (
     COURSE_FIELDS, COURSE_SEGMENT_FIELDS, COURSE_TRACK_FIELDS, EVENT_FIELDS,
@@ -33,8 +34,8 @@ from cdedb.common import (
     PART_GROUP_FIELDS, PERSONA_EVENT_FIELDS, PERSONA_STATUS_FIELDS,
     QUESTIONNAIRE_ROW_FIELDS, REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS,
     REGISTRATION_TRACK_FIELDS, CdEDBLog, CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap,
-    DefaultReturnCode, PrivilegeError, RequestState, glue, mixed_existence_sorter, n_,
-    now, unwrap, xsorted,
+    DefaultReturnCode, PathLike, PrivilegeError, RequestState, glue, json_serialize,
+    mixed_existence_sorter, n_, now, unwrap, xsorted,
 )
 from cdedb.database.connection import Atomizer
 
@@ -43,6 +44,10 @@ CdEDBQuestionnaire = Dict[const.QuestionnaireUsages, List[CdEDBObject]]
 
 
 class EventBaseBackend(EventLowLevelBackend):
+    def __init__(self, configpath: PathLike = None):
+        super().__init__(configpath)
+        self._event_keeper = EntityKeeper(self.conf, 'event_keeper')
+
     @access("event")
     def is_offline_locked(self, rs: RequestState, *, event_id: int = None,
                           course_id: int = None) -> bool:
@@ -127,7 +132,7 @@ class EventBaseBackend(EventLowLevelBackend):
     @access("anonymous")
     def list_events(self, rs: RequestState, visible: bool = None,
                        current: bool = None,
-                       archived: bool = None) -> CdEDBObjectMap:
+                       archived: bool = None) -> Dict[int, str]:
         """List all events organized via DB.
 
         :returns: Mapping of event ids to titles.
@@ -471,6 +476,7 @@ class EventBaseBackend(EventLowLevelBackend):
             if update_data:
                 update_data['id'] = new_id
                 self.set_event(rs, update_data)
+            self.event_keeper_create(rs, new_id)
         return new_id
 
     @access("event")
@@ -679,6 +685,7 @@ class EventBaseBackend(EventLowLevelBackend):
             'offline_lock': not self.conf["CDEDB_OFFLINE_DEPLOYMENT"],
         }
         with Atomizer(rs):
+            self.event_keeper_commit(rs, event_id, "Snapshot vor Offline-Lock.")
             ret = self.sql_update(rs, "event.events", update)
             self.event_log(rs, const.EventLogCodes.event_locked, event_id)
         return ret
@@ -843,7 +850,6 @@ class EventBaseBackend(EventLowLevelBackend):
                                               event['fields'])
         ret['lodgements'] = lodgements
         # registrations
-        backup_registrations = copy.deepcopy(registrations)
         part_lookup: Dict[int, Dict[int, CdEDBObject]]
         part_lookup = collections.defaultdict(dict)
         for e in registration_parts:
@@ -855,7 +861,8 @@ class EventBaseBackend(EventLowLevelBackend):
         for registration_id, registration in registrations.items():
             del registration['id']
             del registration['event_id']
-            del registration['persona_id']
+            # Delete this later.
+            # del registration['persona_id']
             del registration['real_persona_id']
             parts = part_lookup[registration_id]
             for part in parts.values():
@@ -879,15 +886,15 @@ class EventBaseBackend(EventLowLevelBackend):
         # does not correspond to changeable entries
         #
         # event
-        export_event = copy.deepcopy(event)
-        del export_event['id']
-        del export_event['begin']
-        del export_event['end']
-        del export_event['is_open']
-        del export_event['orgas']
-        del export_event['tracks']
-        del export_event['fee_modifiers']
-        for part in export_event['parts'].values():
+        del event['id']
+        del event['begin']
+        del event['end']
+        del event['is_open']
+        # Delete this later.
+        # del event['orgas']
+        del event['tracks']
+        del event['fee_modifiers']
+        for part in event['parts'].values():
             del part['id']
             del part['event_id']
             for f in ('waitlist_field',):
@@ -904,23 +911,19 @@ class EventBaseBackend(EventLowLevelBackend):
                 del fm['part_id']
                 fm['field_name'] = event['fields'][fm['field_id']]['field_name']
                 del fm['field_id']
-        for pg in export_event['part_groups'].values():
+        for pg in event['part_groups'].values():
             del pg['id']
             del pg['event_id']
             pg['constraint_type'] = const.EventPartGroupType(pg['constraint_type'])
             pg['part_ids'] = xsorted(pg['part_ids'])
         for f in ('lodge_field', 'camping_mat_field', 'course_room_field'):
-            if export_event[f]:
-                export_event[f] = event['fields'][event[f]]['field_name']
+            if event[f]:
+                event[f] = event['fields'][event[f]]['field_name']
+        # Fields and questionnaire
         new_fields = {
             field['field_name']: field
-            for field in export_event['fields'].values()
+            for field in event['fields'].values()
         }
-        for field in new_fields.values():
-            del field['field_name']
-            del field['event_id']
-            del field['id']
-        export_event['fields'] = new_fields
         new_questionnaire = {
             str(usage): rows
             for usage, rows in questionnaire.items()
@@ -934,15 +937,22 @@ class EventBaseBackend(EventLowLevelBackend):
                 del q['pos']
                 del q['kind']
                 del q['field_id']
-        export_event['questionnaire'] = new_questionnaire
-        ret['event'] = export_event
+        for field in new_fields.values():
+            del field['field_name']
+            del field['event_id']
+            del field['id']
         # personas
         for reg_id, registration in ret['registrations'].items():
-            persona = personas[backup_registrations[reg_id]['persona_id']]
+            persona = personas[registration['persona_id']]
+            del registration['persona_id']
             persona['is_orga'] = persona['id'] in event['orgas']
             for attr in set(PERSONA_STATUS_FIELDS) - {'is_member'}:
                 del persona[attr]
             registration['persona'] = persona
+        del event['orgas']
+        event['fields'] = new_fields
+        event['questionnaire'] = new_questionnaire
+        ret['event'] = event
         return ret
 
     @access("event")
@@ -965,3 +975,49 @@ class EventBaseBackend(EventLowLevelBackend):
             ret = self.set_event(rs, {'id': event_id, 'fields': fields})
             ret *= self.set_questionnaire(rs, event_id, questionnaire)
         return ret
+
+    @access("event_admin")
+    def event_keeper_create(self, rs: RequestState, event_id: int) -> CdEDBObject:
+        """Create a new git repository for keeping track of event changes."""
+        event_id = affirm(vtypes.ID, event_id)
+        self._event_keeper.init(event_id)
+        return self.event_keeper_commit(rs, event_id, "Initialer Commit",
+                                        is_initial=True)
+
+    @access("event_admin")
+    def event_keeper_drop(self, rs: RequestState, event_id: int) -> None:
+        """Published version of EntityKeeper.delete.
+
+        :param rs: Required for access check."""
+        return self._event_keeper.delete(event_id)
+
+    @access("event")
+    def event_keeper_commit(self, rs: RequestState, event_id: int, commit_msg: str, *,
+                            after_change: bool = False, is_initial: bool = False
+                            ) -> CdEDBObject:
+        """Commit the current state of the event to its git repository.
+
+        In general, there are two scenarios where we want to make a new commit:
+        * periodically by a cron job
+        * before and after relevant changes
+
+        We divide the three types of commits in those which may be dropped if they are
+        empty (periodic commits and commits before a relevant change) and those which
+        are taken even if they didn't change anything (after relevant changes).
+
+        :param after_change: Only true for commits taken after a relevant change.
+        :param is_initial: Only true for the first commit to the event keeper.
+        """
+        event_id = affirm(int, event_id)
+        commit_msg = affirm(str, commit_msg)
+
+        export = self.partial_export_event(rs, event_id)
+        del export['timestamp']
+        author_name = author_email = ""
+        if rs.user.persona_id:
+            author_name = f"{rs.user.given_names} {rs.user.family_name}"
+            author_email = rs.user.username
+        may_drop = False if is_initial else not after_change
+        self._event_keeper.commit(event_id, json_serialize(export), commit_msg,
+                                  author_name, author_email, may_drop=may_drop)
+        return export
