@@ -20,12 +20,10 @@ os.chdir(root)
 
 from bin.check_utils import MyTextTestResult, MyTextTestRunner
 
-from cdedb.backend.entity_keeper import EntityKeeper
 from cdedb.cli.database import create_database, populate_database
 from cdedb.cli.storage import create_log, create_storage, populate_storage
 from cdedb.cli.util import is_docker
 from cdedb.config import SecretsConfig, TestConfig, set_configpath
-from tests.common import BasicTest
 
 
 class CdEDBTestLock:
@@ -153,17 +151,20 @@ def run_xss_tests(*, verbose: bool = False) -> int:
     create_database(conf, secrets)
     populate_database(conf, secrets, xss=True)
 
+    # we need to setup the environment before we can import from cdedb or tests module
+    from bin.escape_fuzzing import (  # pylint: disable=import-outside-toplevel
+        work as xss_check,
+    )
+
+    from cdedb.backend.entity_keeper import EntityKeeper
+    from tests.common import BasicTest
+
     # setup the event keepers
     max_event_id = len(BasicTest.get_sample_data('event.events'))
     keeper = EntityKeeper(conf, 'event_keeper')  # type: ignore
     for event_id in range(1, max_event_id + 1):
         keeper.init(event_id)
         keeper.commit(event_id, "", "Initialer Commit.")
-
-    # we need to setup the environment before we can import from cdedb or tests module
-    from bin.escape_fuzzing import (  # pylint: disable=import-outside-toplevel
-        work as xss_check,
-    )
 
     ret = xss_check(
         conf["XSS_OUTDIR"], verbose=verbose, payload=conf["XSS_PAYLOAD"],
