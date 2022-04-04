@@ -31,6 +31,7 @@ help:
 	@echo ""
 	@echo "Sample Data:"
 	@echo "sample-data-dump    -- dump current database state into json file in tests directory"
+	@echo "sample-data         -- shortcut to reset the whole application via the python cli"
 
 
 ###############
@@ -276,3 +277,7 @@ sample-data-dump:
 		&& sudo -u www-data $(PYTHONBIN) bin/create_sample_data_json.py -o "$${JSONTEMPFILE}" \
 		&& cp "$${JSONTEMPFILE}" tests/ancillary_files/sample_data.json \
 		&& sudo -u www-data rm "$${JSONTEMPFILE}"
+
+.PHONY: sample-data
+sample-data:
+	sudo python3 -m cdedb dev apply-sample-data --owner www-data
