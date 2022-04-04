@@ -13,7 +13,7 @@ cd /cdedb2
 # create temporary config file to override the default DATABASE_NAME
 tmp_configfile=$(mktemp -t config_XXXXXX.py)
 cp "$(python3 -m cdedb config default-configpath)" $tmp_configfile
-echo 'DATABASE_NAME="cdb_test_1"' >> $tmp_configfile
+echo 'CDB_DATABASE_NAME="cdb_test_1"' >> $tmp_configfile
 chmod +r $tmp_configfile
 export CDEDB_CONFIGPATH=$tmp_configfile
 
