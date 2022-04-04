@@ -180,14 +180,13 @@ def compile_sample_data_cmd(
 @pass_config
 def apply_sample_data(config: TestConfig, secrets: SecretsConfig, owner: str) -> None:
     """Repopulates the application with sample data."""
-    # do not use the switch_user context here to avoid nesting calls inside the
-    # create_* and populate_* functions
-    create_log(config)
-    create_storage(config)
-    populate_storage(config)
-    create_database_users(config)
-    create_database(config, secrets)
-    populate_database(config, secrets)
+    with switch_user(owner):
+        create_log(config)
+        create_storage(config)
+        populate_storage(config)
+        create_database_users(config)
+        create_database(config, secrets)
+        populate_database(config, secrets)
 
 
 @development.command(name="execute-sql-script")
@@ -212,9 +211,7 @@ def execute_sql_script(
 
 def main() -> None:
     try:
-        # Set euid/egid to the user invoking sudo if exists and it is not root
-        with switch_user(get_user()):
-            cli()
+        cli()
     except PermissionError as e:
         raise PermissionError(
             "Unable to perform this command due to missing permissions."
