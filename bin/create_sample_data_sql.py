@@ -26,8 +26,9 @@ def prepare_aux(data: CdEDBObject) -> AuxData:
     # Note that we do not care about the actual backend but rather about
     # the methds inherited from `AbstractBackend`.
     # Small config hack, by writing a dict into config file for password retrieval.
-    rs = Script(dbuser="nobody", dbname="nobody",
-                DB_HOST="cdb" if pathlib.Path("/CONTAINER").is_file() else "localhost",
+
+    DB_HOST = "'cdb'" if pathlib.Path("/CONTAINER").is_file() else "'localhost'"
+    rs = Script(dbuser="nobody", dbname="nobody", DB_HOST=DB_HOST,
                 CDB_DATABASE_ROLES="{'nobody': 'nobody'}").rs()
     core = CoreBackend  # No need to instantiate, we only use statics.
 
