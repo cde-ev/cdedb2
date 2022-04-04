@@ -1,6 +1,5 @@
 import argparse
 import json
-import pathlib
 from itertools import chain
 from typing import Any, Callable, Dict, List, Set, Sized, Tuple, Type, TypedDict
 
@@ -27,8 +26,7 @@ def prepare_aux(data: CdEDBObject) -> AuxData:
     # the methds inherited from `AbstractBackend`.
     # Small config hack, by writing a dict into config file for password retrieval.
 
-    DB_HOST = "'cdb'" if pathlib.Path("/CONTAINER").is_file() else "'localhost'"
-    rs = Script(dbuser="nobody", dbname="nobody", DB_HOST=DB_HOST,
+    rs = Script(dbuser="nobody", dbname="nobody",
                 CDB_DATABASE_ROLES="{'nobody': 'nobody'}").rs()
     core = CoreBackend  # No need to instantiate, we only use statics.
 

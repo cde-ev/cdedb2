@@ -153,7 +153,10 @@ class Script:
             "dbname": dbname,
             "user": dbuser,
             "password": self._secrets["CDB_DATABASE_ROLES"][dbuser],
-            "host": self.config["DB_HOST"],
+            # Temporary workaround because we cannot pass config options correctly.
+            "host":
+                "cdb" if pathlib.Path("/CONTAINER").is_file()
+                else self.config["DB_HOST"],
             "port": 5432,
             "connection_factory": IrradiatedConnection,
             "cursor_factory": cursor,
