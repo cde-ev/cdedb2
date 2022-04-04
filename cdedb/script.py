@@ -70,7 +70,7 @@ class TempConfig:
         if self._config:
             return str(self._config)
         elif self._configpath:
-            return self._configpath.read_text()
+            return pathlib.Path(self._configpath).read_text()
         else:
             return ""
 
