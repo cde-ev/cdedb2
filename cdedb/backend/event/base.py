@@ -44,7 +44,7 @@ CdEDBQuestionnaire = Dict[const.QuestionnaireUsages, List[CdEDBObject]]
 
 
 class EventBaseBackend(EventLowLevelBackend):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self._event_keeper = EntityKeeper(self.conf, 'event_keeper')
 

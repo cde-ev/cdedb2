@@ -161,7 +161,7 @@ def run_xss_tests(*, verbose: bool = False) -> int:
 
     # setup the event keepers
     max_event_id = len(BasicTest.get_sample_data('event.events'))
-    keeper = EntityKeeper(conf, 'event_keeper')  # type: ignore
+    keeper = EntityKeeper(conf, 'event_keeper')
     for event_id in range(1, max_event_id + 1):
         keeper.init(event_id)
         keeper.commit(event_id, "", "Initialer Commit.")

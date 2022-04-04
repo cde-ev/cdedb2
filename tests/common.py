@@ -261,7 +261,7 @@ class BasicTest(unittest.TestCase):
             populate_storage(self.conf)
         if getattr(test_method, self.needs_event_keeper_marker, False):
             max_event_id = len(self.get_sample_data('event.events'))
-            keeper = EntityKeeper(self.conf, 'event_keeper')  # type: ignore
+            keeper = EntityKeeper(self.conf, 'event_keeper')
             for event_id in range(1, max_event_id + 1):
                 keeper.init(event_id)
                 keeper.commit(event_id, "", "Initialer Commit.")

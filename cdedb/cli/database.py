@@ -166,9 +166,9 @@ def compile_sample_data(conf: Config, infile: pathlib.Path, outfile: pathlib.Pat
     # give also the repo_path as pythonpath to the subprocess, so it can find the test
     # module
     env = {**os.environ.copy(), "PYTHONPATH": str(repo_path)}
-    subprocess.run([
-        "python3", script_file, "--infile", infile, "--outfile", outfile, *xss_arg],
-        check=True, env=env,  # type: ignore
+    subprocess.run(
+        ["python3", script_file, "--infile", infile, "--outfile", outfile, *xss_arg],
+        check=True, env=env,
     )
 
 
