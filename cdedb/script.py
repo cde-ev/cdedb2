@@ -93,6 +93,14 @@ class TempConfig:
             return self._f.__exit__(exc_type, exc_val, exc_tb)
         return False
 
+    def __str__(self) -> str:
+        if self._config:
+            return str(self._config)
+        elif self._configpath:
+            return pathlib.Path(self._configpath).read_text()
+        else:
+            return ""
+
 
 class Script:
     backend_map = {
@@ -174,8 +182,11 @@ class Script:
             "dbname": dbname,
             "user": dbuser,
             "password": self._secrets["CDB_DATABASE_ROLES"][dbuser],
-            "host": self.config["DB_HOST"],
             # TODO default to DB_PORT and provide flag for skipping pgbouncer
+            # Temporary workaround because we cannot pass config options correctly.
+            "host":
+                "cdb" if pathlib.Path("/CONTAINER").is_file()
+                else self.config["DB_HOST"],
             "port": 5432,
             "connection_factory": IrradiatedConnection,
             "cursor_factory": cursor,
