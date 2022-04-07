@@ -14,7 +14,8 @@ from cdedb.common import (
 )
 from cdedb.query import QueryOperators
 from tests.common import (
-    USER_DICT, FrontendTest, UserIdentifier, UserObject, as_users, get_user, storage,
+    USER_DICT, FrontendTest, UserIdentifier, UserObject, as_users, execsql, get_user,
+    storage,
 )
 
 
@@ -106,6 +107,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertNonPresence("Große Testakademie 2222", div='orga-box')
         self.assertPresence("Aktuelle Veranstaltungen", div='event-box')
         self.assertPresence("Große Testakademie 2222", div='event-box')
+        self.assertPresence("bereits angemeldet, Bezahlung ausstehend", div='event-box')
         self.assertNonPresence("CdE-Party 2050", div='event-box')
         self.assertPresence("Aktuelle Versammlungen", div='assembly-box')
         self.assertPresence("Internationaler Kongress", div='assembly-box')
@@ -2071,6 +2073,11 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'href': '/core/genesis/1001/show'})
         self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
         f = self.response.forms['genesisdecisionform']
+
+        # Set the sequence of persona ids to a different value, so other ids are not
+        # accidently correct for the personas table.
+        execsql("SELECT setval('core.personas_id_seq', 2000);")
+
         self.submit(f, button="decision", value=str(GenesisDecision.approve))
         link = self.fetch_link()
         self.traverse({'href': '^/$'})

@@ -51,9 +51,8 @@ class EventEventMixin(EventBaseFrontend):
 
         if "event" in rs.user.roles:
             for event_id, event in open_events.items():
-                registration = self.eventproxy.list_registrations(
-                    rs, event_id, rs.user.persona_id)
-                event['registration'] = bool(registration)
+                event['registration'], event['payment_pending'] = (
+                    self.eventproxy.get_registration_payment_info(rs, event_id))
 
         return self.render(rs, "event/index", {
             'open_events': open_events, 'orga_events': orga_events,
@@ -62,8 +61,8 @@ class EventEventMixin(EventBaseFrontend):
     @access("anonymous")
     def list_events(self, rs: RequestState) -> Response:
         """List all events organized via DB."""
-        events = self.eventproxy.list_events(rs)
-        events = self.eventproxy.get_events(rs, events.keys())
+        event_ids = self.eventproxy.list_events(rs)
+        events = self.eventproxy.get_events(rs, event_ids)
         if self.is_admin(rs):
             for event in events.values():
                 regs = self.eventproxy.list_registrations(rs, event['id'])
@@ -855,9 +854,15 @@ class EventEventMixin(EventBaseFrontend):
 
         new_ids, message = self.pasteventproxy.archive_event(
             rs, event_id, create_past_event=create_past_event)
+
         if message:
-            rs.notify("warning", message)
+            rs.notify("error", message)
             return self.redirect(rs, "event/show_event")
+
+        # Delete non-pseudonymized event keeper only after internal work has been
+        # concluded successfully
+        self.eventproxy.event_keeper_drop(rs, event_id)
+
         rs.notify("success", n_("Event archived."))
         if new_ids is None:
             return self.redirect(rs, "event/show_event")

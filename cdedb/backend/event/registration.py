@@ -435,6 +435,31 @@ class EventRegistrationBackend(EventBaseBackend):
         data = self.query_all(rs, query, params)
         return {e['id']: e['persona_id'] for e in data}
 
+    @access("event")
+    def get_registration_payment_info(self, rs: RequestState, event_id: int
+                                      ) -> Tuple[Optional[bool], bool]:
+        """Small helper to get information for the dashboard pages.
+
+        The first returned flag is None iff there is no registration for the user.
+        Otherwise, it tells whether the user is involved in any part.
+        The second flag tells whether there is still some amount left to pay; this
+        can only be True if the first flag is True.
+        """
+        registration_ids = self.list_registrations(rs, event_id,
+                                                   rs.user.persona_id).keys()
+        if registration_ids:
+            registration = self.get_registration(rs, unwrap(registration_ids))
+            if not any(part['status'].is_involved()
+                       for part in registration['parts'].values()):
+                # cancelled and rejected people are not really "registered" anymore
+                return False, False
+            payment_pending = bool(
+                not registration['payment']
+                and self.calculate_fee(rs, unwrap(registration_ids)))
+            return True, payment_pending
+        else:
+            return None, False
+
     @access("event", "ml_admin")
     def get_registrations(self, rs: RequestState, registration_ids: Collection[int]
                           ) -> CdEDBObjectMap:
@@ -848,7 +873,6 @@ class EventRegistrationBackend(EventBaseBackend):
         :param is_member: If this is None, retrieve membership status here.
         """
         fee = decimal.Decimal(0)
-        rps = const.RegistrationPartStati
 
         if event is None and event_id is None:
             raise ValueError("No input given.")
@@ -859,13 +883,13 @@ class EventRegistrationBackend(EventBaseBackend):
         assert event is not None
         for part_id, rpart in reg['parts'].items():
             part = event['parts'][part_id]
-            if rps(rpart['status']).is_involved():
+            if rpart['status'].has_to_pay():
                 fee += part['fee']
 
         for fee_modifier in event['fee_modifiers'].values():
             field = event['fields'][fee_modifier['field_id']]
-            status = rps(reg['parts'][fee_modifier['part_id']]['status'])
-            if status.is_involved():
+            status = reg['parts'][fee_modifier['part_id']]['status']
+            if status.has_to_pay():
                 if reg['fields'].get(field['field_name']):
                     fee += fee_modifier['amount']
 

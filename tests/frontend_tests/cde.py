@@ -2704,6 +2704,12 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("vera")
     def test_postal_address(self) -> None:
+        # personas with event realm but without an address
+        personas_without_address = {
+            USER_DICT["farin"]["id"], USER_DICT["katarina"]["id"],
+            USER_DICT["martin"]["id"], USER_DICT["olaf"]["id"],
+            USER_DICT["vera"]["id"], USER_DICT["werner"]["id"]
+        }
         fake_rs = cast(RequestState, types.SimpleNamespace())
         fake_rs.translations = self.translations
         persona_id = None
@@ -2713,8 +2719,11 @@ class TestCdEFrontend(FrontendTest):
             p = self.core.get_total_persona(self.key, persona_id)
             if p['country']:
                 address = make_postal_address(fake_rs, p)
-                self.assertNotIn(p['country'], address)
-                self.assertIn(t(self.translations["de"].gettext, p), address)
+                if address is None:
+                    self.assertIn(persona_id, personas_without_address)
+                else:
+                    self.assertNotIn(p['country'], address)
+                    self.assertIn(t(self.translations["de"].gettext, p), address)
 
     def test_country_code_from_country(self) -> None:
         fake_rs = cast(RequestState, types.SimpleNamespace())

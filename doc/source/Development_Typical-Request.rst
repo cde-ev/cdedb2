@@ -9,7 +9,7 @@ some more intricacies if you look closer.
 
 We will take as an example the request::
 
-  https://db2.cde-ev.de/db/cde/past/event/42/show
+  https://db.cde-ev.de/db/cde/past/event/42/show
 
 It is received by the Apache Web Server on the CdEDB virtual machine running
 on the CdE server. Apache then delegates this to the WSGI application

@@ -26,14 +26,14 @@ from werkzeug import Response
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    LOG_FIELDS_COMMON, CdEDBObject, CdEDBObjectMap, EntitySorter, KeyFunction,
-    RequestState, Sortkey, get_localized_country_codes, merge_dicts, n_, unwrap,
-    xsorted,
+    EVENT_SCHEMA_VERSION, LOG_FIELDS_COMMON, CdEDBObject, CdEDBObjectMap, EntitySorter,
+    KeyFunction, RequestState, Sortkey, get_localized_country_codes, merge_dicts, n_,
+    unwrap, xsorted,
 )
 from cdedb.filter import enum_entries_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access, calculate_db_logparams,
-    calculate_loglinks, event_guard,
+    calculate_loglinks, event_guard, periodic,
 )
 from cdedb.query import QueryScope
 from cdedb.validation import PERSONA_FULL_EVENT_CREATION, filter_none
@@ -426,3 +426,39 @@ class EventBaseFrontend(AbstractUserFrontend):
         return self.render(rs, "base/view_event_log", {
             'log': log, 'total': total, 'length': _length, 'personas': personas,
             'registration_map': registration_map, 'loglinks': loglinks})
+
+    @periodic("event_keeper", 2)
+    def event_keeper(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject:
+        """Regularly backup any event that got changed.
+
+        :param state: Keeps track of the event schema version as well as of the newest
+            log entry to do a commit only if either is outdated."""
+        if not state:
+            state = {
+                'EVENT_SCHEMA_VERSION': None,
+                'events': {}
+            }
+        event_ids = self.eventproxy.list_events(rs, archived=False)
+        if state.get("EVENT_SCHEMA_VERSION") != list(EVENT_SCHEMA_VERSION):
+            self.logger.info("Event schema version changed, creating new commit for"
+                             " every event.")
+            for event_id in event_ids:
+                self.eventproxy.event_keeper_commit(
+                    rs, event_id, "Ändere Veranstaltungs-Schema.", after_change=True)
+            state['EVENT_SCHEMA_VERSION'] = EVENT_SCHEMA_VERSION
+
+        commit_msg = "Regelmäßiger Snapshot"
+        for event_id in event_ids:
+            if event_id not in state['events']:
+                state['events'][event_id] = 0
+            _, entries = self.eventproxy.retrieve_log(rs, event_id=event_id, length=1)
+            if entries:
+                log_entry_id = unwrap(entries)['id']
+            else:
+                # this can only happen for missing logs (e.g. test data)
+                log_entry_id = 0
+            if not log_entry_id or log_entry_id > state['events'][event_id]:
+                self.eventproxy.event_keeper_commit(rs, event_id, commit_msg)
+                state['events'][event_id] = log_entry_id
+
+        return state

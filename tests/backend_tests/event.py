@@ -22,7 +22,8 @@ from cdedb.common import (
 )
 from cdedb.query import Query, QueryOperators, QueryScope
 from tests.common import (
-    ANONYMOUS, USER_DICT, BackendTest, as_users, json_keys_to_int, storage,
+    ANONYMOUS, USER_DICT, BackendTest, as_users, event_keeper, json_keys_to_int,
+    storage,
 )
 
 UNIQUE_VIOLATION = psycopg2.errors.lookup(psycopg2.errorcodes.UNIQUE_VIOLATION)
@@ -43,6 +44,7 @@ class TestEventBackend(BackendTest):
         new_data = self.core.get_event_user(self.key, self.user['id'])
         self.assertEqual(data, new_data)
 
+    @event_keeper
     @as_users("annika", "garcia")
     def test_entity_event(self) -> None:
         # need administrator to create event
@@ -879,7 +881,7 @@ class TestEventBackend(BackendTest):
     def test_registration_participant(self) -> None:
         expectation: CdEDBObject = {
             'amount_paid': decimal.Decimal("0.00"),
-            'amount_owed': decimal.Decimal("589.49"),
+            'amount_owed': decimal.Decimal("466.49"),
             'checkin': None,
             'ctime': datetime.datetime(2014, 1, 1, 2, 5, 6, tzinfo=pytz.utc),
             'event_id': 1,
@@ -1045,7 +1047,7 @@ class TestEventBackend(BackendTest):
                          self.event.list_registrations(self.key, event_id))
         expectation: CdEDBObjectMap = {
             1: {'amount_owed': decimal.Decimal("573.99"),
-                'amount_paid': decimal.Decimal("0.00"),
+                'amount_paid': decimal.Decimal("200.00"),
                 'checkin': None,
                 'ctime': datetime.datetime(2014, 1, 1, 1, 4, 5, tzinfo=pytz.utc),
                 'event_id': 1,
@@ -1097,7 +1099,7 @@ class TestEventBackend(BackendTest):
                 'payment': None,
                 'persona_id': 1,
                 'real_persona_id': None},
-            2: {'amount_owed': decimal.Decimal("589.49"),
+            2: {'amount_owed': decimal.Decimal("466.49"),
                 'amount_paid': decimal.Decimal("0.00"),
                 'checkin': None,
                 'ctime': datetime.datetime(2014, 1, 1, 2, 5, 6, tzinfo=pytz.utc),
@@ -2131,6 +2133,7 @@ class TestEventBackend(BackendTest):
         # The query is valid again.
         self.assertIn(query.name, self.event.get_event_queries(self.key, event_id))
 
+    @event_keeper
     @as_users("annika", "garcia")
     def test_lock_event(self) -> None:
         self.assertTrue(self.event.lock_event(self.key, 1))
@@ -2163,6 +2166,7 @@ class TestEventBackend(BackendTest):
         expectation['EVENT_SCHEMA_VERSION'] = tuple(expectation['EVENT_SCHEMA_VERSION'])
         self.assertEqual(expectation, self.event.export_event(self.key, 1))
 
+    @event_keeper
     @as_users("annika")
     def test_import_event(self) -> None:
         self.assertTrue(self.event.lock_event(self.key, 1))
@@ -2625,6 +2629,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual(expectation, export)
 
     @storage
+    @event_keeper
     @as_users("annika")
     def test_partial_import_event(self) -> None:
         event = self.event.get_event(self.key, 1)
@@ -2722,6 +2727,8 @@ class TestEventBackend(BackendTest):
         del expectation['timestamp']
         del updated['timestamp']
         del updated['registrations'][1002]['persona']  # ignore additional info
+        updated['registrations'][2]['amount_owed'] = str(
+            updated['registrations'][2]['amount_owed'])
         updated['registrations'][1002]['amount_paid'] = str(
             updated['registrations'][1002]['amount_paid'])
         updated['registrations'][1002]['amount_owed'] = str(
@@ -2897,6 +2904,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual(log_expectation, result)
 
     @storage
+    @event_keeper
     @as_users("annika")
     def test_partial_import_integrity(self) -> None:
         with open(self.testfile_dir / "partial_event_import.json") as datafile:
@@ -2952,6 +2960,7 @@ class TestEventBackend(BackendTest):
                       cm.exception.args)
 
     @storage
+    @event_keeper
     @as_users("annika")
     def test_partial_import_event_twice(self) -> None:
         with open(self.testfile_dir / "partial_event_import.json") as datafile:
@@ -3063,7 +3072,7 @@ class TestEventBackend(BackendTest):
             reg_ids = self.event.list_registrations(self.key, event_id=1)
             expectation = {
                 1: decimal.Decimal("573.99"),
-                2: decimal.Decimal("589.49"),
+                2: decimal.Decimal("466.49"),
                 3: decimal.Decimal("584.49"),
                 4: decimal.Decimal("431.99"),
                 5: decimal.Decimal("584.49"),
@@ -3072,7 +3081,7 @@ class TestEventBackend(BackendTest):
             self.assertEqual(expectation, self.event.calculate_fees(self.key, reg_ids))
         reg_id = 2
         reg = self.event.get_registration(self.key, reg_id)
-        self.assertEqual(reg['amount_owed'], decimal.Decimal("589.49"))
+        self.assertEqual(reg['amount_owed'], decimal.Decimal("466.49"))
         self.assertEqual(
             const.RegistrationPartStati.waitlist, reg['parts'][1]['status'])
         self.assertEqual(
@@ -3403,6 +3412,7 @@ class TestEventBackend(BackendTest):
         self.assertIn("Some of these orgas are not event users.",
                       cm.exception.args)
 
+    @event_keeper
     @as_users("annika")
     def test_log(self) -> None:
         # first check the already existing log

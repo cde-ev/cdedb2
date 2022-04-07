@@ -22,10 +22,11 @@ import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
     ADMIN_KEYS, ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, LOG_FIELDS_COMMON,
-    REALM_ADMINS, REALM_INHERITANCE, REALM_SPECIFIC_GENESIS_FIELDS, ArchiveError,
-    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, EntitySorter, PrivilegeError, Realm,
-    RequestState, extract_roles, format_country_code, get_persona_fields_by_realm,
-    implied_realms, merge_dicts, n_, now, pairwise, sanitize_filename, unwrap, xsorted,
+    META_INFO_FIELDS, REALM_ADMINS, REALM_INHERITANCE, REALM_SPECIFIC_GENESIS_FIELDS,
+    ArchiveError, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, EntitySorter,
+    PrivilegeError, Realm, RequestState, extract_roles, format_country_code,
+    get_persona_fields_by_realm, implied_realms, merge_dicts, n_, now, pairwise,
+    sanitize_filename, unwrap, xsorted,
 )
 from cdedb.filter import date_filter, enum_entries_filter, markdown_parse_safe
 from cdedb.frontend.common import (
@@ -142,9 +143,8 @@ class CoreBaseFrontend(AbstractFrontend):
                 final = {}
                 for event_id, event in events.items():
                     if event_id not in orga_info:
-                        registration = self.eventproxy.list_registrations(
-                            rs, event_id, rs.user.persona_id)
-                        event['registration'] = bool(registration)
+                        event['registration'], event['payment_pending'] = (
+                            self.eventproxy.get_registration_payment_info(rs, event_id))
                         # Skip event, if the registration begins more than
                         # 2 weeks in future
                         if event['registration_start'] and \
@@ -184,7 +184,7 @@ class CoreBaseFrontend(AbstractFrontend):
         """Render form."""
         info = self.coreproxy.get_meta_info(rs)
         merge_dicts(rs.values, info)
-        return self.render(rs, "meta_info")
+        return self.render(rs, "meta_info", {"meta_info": info})
 
     @access("core_admin", modi={"POST"})
     def change_meta_info(self, rs: RequestState) -> Response:
@@ -192,7 +192,7 @@ class CoreBaseFrontend(AbstractFrontend):
         info = self.coreproxy.get_meta_info(rs)
         data_params: vtypes.TypeMapping = {
             key: Optional[str]  # type: ignore
-            for key in info
+            for key in META_INFO_FIELDS
         }
         data = request_extractor(rs, data_params)
         data = check(rs, vtypes.MetaInfo, data, keys=info.keys())

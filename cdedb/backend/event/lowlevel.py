@@ -30,8 +30,7 @@ class EventLowLevelBackend(AbstractBackend):
 
     def __init__(self, configpath: PathLike = None):
         super().__init__(configpath)
-        self.minor_form_dir: Path
-        self.minor_form_dir = self.conf['STORAGE_DIR'] / 'minor_form'
+        self.minor_form_dir: Path = self.conf['STORAGE_DIR'] / 'minor_form'
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
