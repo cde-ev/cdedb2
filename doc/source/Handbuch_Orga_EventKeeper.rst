@@ -52,7 +52,7 @@ Auf das Git kann durch Orgas und Veranstaltungs-Administrationen einfach mithilf
 der Zugangsdaten für die Datenbank zugegriffen werden. Es kann mittels ``git clone``
 heruntergeladen und später mit ``git pull`` aktualisiert werden.::
 
-    git clone https://db.cde-ev.de/git/event_keeper/<event_id>/
+    git clone https://db.cde-ev.de/git/event_keeper/<event_id>/.git/
 
 Dies vereinfacht auch das Beziehen eines aktuellen partiellen Exports zur Verwendung in
 externen Tools, das nun rein über die Kommandozeile geschehen kann.
