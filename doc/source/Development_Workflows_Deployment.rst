@@ -6,8 +6,9 @@ following steps to deploy a new revision.
 
 * Locally set the stable branch to the desired revision::
 
+    git fetch
     git checkout stable
-    git merge master # or another branch or an explicit commit
+    git merge origin/master # or another branch or an explicit commit
 
 * Run the ``bin/push-stable.sh`` script. If any new commits with deployment
   relevance are present (marked by a line starting with "Deploy:" in the

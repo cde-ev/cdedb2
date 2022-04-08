@@ -34,7 +34,7 @@ import werkzeug.routing
 from schulze_condorcet.types import Candidate
 
 import cdedb.database.constants as const
-from cdedb.database.connection import IrradiatedConnection
+from cdedb.database.connection import ConnectionContainer
 from cdedb.validationdata import COUNTRY_CODES
 
 _LOGGER = logging.getLogger(__name__)
@@ -140,7 +140,7 @@ class User:
         self.admin_views = self.available_admin_views & set(enabled_views)
 
 
-class RequestState:
+class RequestState(ConnectionContainer):
     """Container for request info. Besides this and db accesses the python
     code should be state-less. This data structure enables several
     convenient semi-magic behaviours (magic enough to be nice, but non-magic
@@ -185,13 +185,6 @@ class RequestState:
         self.lang = lang
         self.translations = translations
         self.begin = begin or now()
-        # Visible version of the database connection
-        # noinspection PyTypeChecker
-        self.conn: IrradiatedConnection = None  # type: ignore
-        # Private version of the database connection, only visible in the
-        # backends (mediated by the make_proxy)
-        # noinspection PyTypeChecker
-        self._conn: IrradiatedConnection = None  # type: ignore
         # Toggle to disable logging
         self.is_quiet = False
         # Toggle to ignore validation warnings. The value is parsed directly inside

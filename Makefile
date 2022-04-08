@@ -118,7 +118,7 @@ $(I18NDIR)/%/LC_MESSAGES/cdedb.mo: $(I18NDIR)/%/LC_MESSAGES/cdedb.po
 ldap-prepare-odbc:
 	# prepare odbc.ini file to enable database connection for ldap
 	sudo cp -f ldap/odbc.ini /etc/odbc.ini \
-		&& sudo sed -i -r -e "s/DATABASE_CDB_ADMIN_PASSWORD/${DATABASE_CDB_ADMIN_PASSWORD}/g" \
+		&& sudo sed -i -r -e "s|DATABASE_CDB_ADMIN_PASSWORD|${DATABASE_CDB_ADMIN_PASSWORD}|g" \
 		                  -e "s/DATABASE_NAME/${DATABASE_NAME}/g" \
 		                  -e "s/DATABASE_HOST/${DATABASE_HOST}/g" /etc/odbc.ini
 
@@ -126,7 +126,7 @@ ldap-prepare-odbc:
 ldap-prepare-ldif:
 	# prepare the new cdedb-specific ldap configuration
 	cp -f ldap/cdedb-ldap.ldif ldap/cdedb-ldap-applied.ldif \
-		&& sed -i -r -e "s/DATABASE_CDB_ADMIN_PASSWORD/${DATABASE_CDB_ADMIN_PASSWORD}/g" \
+		&& sed -i -r -e "s|DATABASE_CDB_ADMIN_PASSWORD|${DATABASE_CDB_ADMIN_PASSWORD}|g" \
 		             -e "s/OLC_DB_NAME/${DATABASE_NAME}/g" \
 		             -e "s/OLC_DB_HOST/${DATABASE_HOST}/g" ldap/cdedb-ldap-applied.ldif
 

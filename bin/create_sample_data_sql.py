@@ -6,9 +6,9 @@ from typing import Any, Callable, Dict, List, Set, Sized, Tuple, Type, TypedDict
 
 from psycopg2.extensions import connection
 
-from cdedb.backend.common import DatabaseValue_s, PsycoJson
+from cdedb.backend.common import DatabaseValue_s
 from cdedb.backend.core import CoreBackend
-from cdedb.common import CdEDBObject
+from cdedb.common import CdEDBObject, PsycoJson
 from cdedb.script import Script
 
 

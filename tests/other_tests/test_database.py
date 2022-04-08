@@ -8,7 +8,7 @@ import psycopg2.extensions
 
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import (
-    Atomizer, IrradiatedConnection, connection_pool_factory,
+    Atomizer, ConnectionContainer, IrradiatedConnection, connection_pool_factory,
 )
 
 
@@ -45,11 +45,8 @@ class TestDatabase(unittest.TestCase):
             self.config["DB_HOST"], self.config["DB_PORT"])
         conn = factory["cdb_persona"]
 
-        class Tmp:
-            def __init__(self, conn: IrradiatedConnection):
-                self._conn = conn
-                self.conn = conn
-        rs = Tmp(conn)
+        rs = ConnectionContainer()
+        rs.conn = rs._conn = conn
         with Atomizer(rs) as conn:
             with conn.cursor() as cur:
                 cur.execute("SELECT * FROM core.personas")
@@ -66,11 +63,8 @@ class TestDatabase(unittest.TestCase):
             self.config["DB_HOST"], self.config["DB_PORT"])
         conn = factory["cdb_admin"]
 
-        class Tmp:
-            def __init__(self, conn: IrradiatedConnection):
-                self._conn = conn
-                self.conn = conn
-        rs = Tmp(conn)
+        rs = ConnectionContainer()
+        rs.conn = rs._conn = conn
         with self.assertRaises(RuntimeError):
             with Atomizer(rs) as conn:
                 with conn.cursor() as cur:
