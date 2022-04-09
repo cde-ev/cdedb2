@@ -670,6 +670,12 @@ class EventQueryMixin(EventBaseFrontend):
         """Present an overview of the basic stats."""
         event_parts = rs.ambience['event']['parts']
         tracks = rs.ambience['event']['tracks']
+        stat_part_groups = {
+            part_group_id: part_group
+            for part_group_id, part_group in rs.ambience['event']['part_groups'].items()
+            if part_group['constraint_type'] == const.EventPartGroupType.Statistic
+        }
+
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         course_ids = self.eventproxy.list_courses(rs, event_id)
@@ -699,7 +705,7 @@ class EventQueryMixin(EventBaseFrontend):
                         1 for reg in registrations.values()
                         if reg_stat.test_part_group(
                             rs.ambience['event'], reg, part_group_id))
-                    for part_group_id in rs.ambience['event']['part_groups']
+                    for part_group_id in stat_part_groups
                 }
             }
         # Needed for formatting in template. We do it here since it's ugly in jinja
@@ -732,7 +738,7 @@ class EventQueryMixin(EventBaseFrontend):
                             1 for course in courses.values()
                             if course_stat.test_part_group(
                                 rs.ambience['event'], course, part_group_id))
-                        for part_group_id in rs.ambience['event']['part_groups']
+                        for part_group_id in stat_part_groups
                     }
                 }
             for reg_track_stat in EventRegistrationTrackStatistic:
@@ -755,7 +761,7 @@ class EventQueryMixin(EventBaseFrontend):
                             1 for reg in registrations.values()
                             if reg_track_stat.test_part_group(
                                 rs.ambience['event'], reg, part_group_id))
-                        for part_group_id in rs.ambience['event']['part_groups']
+                        for part_group_id in stat_part_groups
                     }
                 }
 
