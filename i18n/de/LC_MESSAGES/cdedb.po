@@ -2897,6 +2897,9 @@ msgstr "Kursangebote"
 msgid "Cancelled Courses"
 msgstr "Ausfallende Kurse"
 
+msgid "Courses Taking Place"
+msgstr "Stattfindende Kurse"
+
 #: cdedb/frontend/event/query.py:479
 msgid "(Potential) Instructor"
 msgstr "Kursleiter (theoretisch)"

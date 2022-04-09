@@ -429,6 +429,7 @@ class EventCourseStatistic(enum.Enum):
     """This enum implements statistics for courses in course tracks."""
     offered = n_("Course Offers")
     cancelled = n_("Cancelled Courses")
+    taking_place = n_("Courses Taking Place")
 
     def test(self, course: CdEDBObject, track_id: int) -> bool:
         """Determine whether the course fits this stat for the given track."""
@@ -437,6 +438,9 @@ class EventCourseStatistic(enum.Enum):
         elif self == self.cancelled:
             return (track_id in course['segments']
                     and track_id not in course['active_segments'])
+        elif self == self.taking_place:
+            return (track_id in course['segments']
+                    and track_id in course['active_segments'])
         else:
             raise RuntimeError(n_("Impossible."))
 
@@ -461,6 +465,15 @@ class EventCourseStatistic(enum.Enum):
                 []
             )
         elif self == self.cancelled:
+            return (
+                ['course.instructors'],
+                [
+                    (f"track{track_id}.is_offered", QueryOperators.equal, True),
+                    (f"track{track_id}.takes_place", QueryOperators.equal, False),
+                ],
+                []
+            )
+        elif self == self.taking_place:
             return (
                 ['course.instructors'],
                 [
