@@ -89,6 +89,11 @@
                                 {% endif %}
                             </th>
                         {% endfor %}
+                        {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+                            <th class="text-right {% if loop.first %}b-left{% endif %}">
+                                {{ part['shortname'] }}
+                            </th>
+                        {% endfor %}
                         {% for part_group_id, part_group in ambience['event']['part_groups']|keydictsort(EntitySorter.event_part_group) %}
                             <th class="text-right {% if loop.first %}b-left{% endif %}">
                                 {{ part_group['shortname'] }}
@@ -116,6 +121,11 @@
                                     {% endif %}
                                 </td>
                             {% endfor %}
+                            {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+                                <th class="text-right {% if loop.first %}b-left{% endif %}">
+                                    –
+                                </th>
+                            {% endfor %}
                             {% for part_group_id, part_group in ambience['event']['part_groups']|keydictsort(EntitySorter.event_part_group) %}
                                 <td class="text-right {% if loop.first %}b-left{% endif %}">
                                     –
@@ -139,20 +149,29 @@
                                     {% endif %}
                                 </td>
                             {% endfor %}
+                            {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+                                <td class="text-right {% if loop.first %}b-left{% endif %}">
+                                    {% set query = stat.get_query_part(ambience['event'], part_id) %}
+                                    {% set datum = row['parts'][part_id] %}
+                                    {% if query %}
+                                        {{ util.href(
+                                            cdedblink(query.scope.get_target(), query.serialize()) + "#query-results",
+                                            datum, anid="track_part_" + stat.name + "_" + part_id|string) }}
+                                    {% else %}
+                                        {{ datum }}
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
                             {% for part_group_id, part_group in ambience['event']['part_groups']|keydictsort(EntitySorter.event_part_group) %}
                                 <td class="text-right {% if loop.first %}b-left{% endif %}">
-                                    {% if 'part_groups' in row %}
-                                        {% set query = stat.get_query_part_group(ambience['event'], part_group_id) %}
-                                        {% set datum = row['part_groups'][part_group_id] %}
-                                        {% if query %}
-                                            {{ util.href(
-                                                cdedblink(query.scope.get_target(), query.serialize()) + "#query-results",
-                                                datum, anid="track_group_" + stat.name + "_" + part_group_id|string) }}
-                                        {% else %}
-                                            {{ datum }}
-                                        {% endif %}
+                                    {% set query = stat.get_query_part_group(ambience['event'], part_group_id) %}
+                                    {% set datum = row['part_groups'][part_group_id] %}
+                                    {% if query %}
+                                        {{ util.href(
+                                            cdedblink(query.scope.get_target(), query.serialize()) + "#query-results",
+                                            datum, anid="track_group_" + stat.name + "_" + part_group_id|string) }}
                                     {% else %}
-                                        –
+                                        {{ datum }}
                                     {% endif %}
                                 </td>
                             {% endfor %}

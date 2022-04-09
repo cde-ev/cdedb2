@@ -431,6 +431,7 @@ class EventCourseStatistic(enum.Enum):
     cancelled = n_("Cancelled Courses")
 
     def test(self, course: CdEDBObject, track_id: int) -> bool:
+        """Determine whether the course fits this stat for the given track."""
         if self == self.offered:
             return track_id in course['segments']
         elif self == self.cancelled:
@@ -439,12 +440,18 @@ class EventCourseStatistic(enum.Enum):
         else:
             raise RuntimeError(n_("Impossible."))
 
+    def test_part(self, event: CdEDBObject, course: CdEDBObject, part_id: int) -> bool:
+        """Determine whether the course fits this stat for any track in a part."""
+        track_ids = event['parts'][part_id]['tracks'].keys()
+        return any(self.test(course, track_id) for track_id in track_ids)
+
     def test_part_group(self, event: CdEDBObject, course: CdEDBObject,
                         part_group_id: int) -> bool:
+        """Determine whether the course fits this stat for any track in a part group."""
         part_ids = event['part_groups'][part_group_id]['part_ids']
         parts = (p for part_id, p in event['parts'].items() if part_id in part_ids)
         track_ids = itertools.chain.from_iterable(part['tracks'] for part in parts)
-        return any(self.test(event, course, track_id) for track_id in track_ids)
+        return any(self.test(course, track_id) for track_id in track_ids)
 
     def _get_query_aux(self, track_id: int) -> StatQueryAux:
         if self == self.offered:
@@ -480,6 +487,9 @@ class EventCourseStatistic(enum.Enum):
         query.order = order + query.order
         return query
 
+    def get_query_part(self, event: CdEDBObject, part_id: int) -> Optional[Query]:
+        return None
+
     def get_query_part_group(self, event: CdEDBObject, part_group_id: int
                              ) -> Optional[Query]:
         return None
@@ -494,6 +504,7 @@ class EventRegistrationTrackStatistic(enum.Enum):
     no_course = n_("No Course")
 
     def test(self, event: CdEDBObject, reg: CdEDBObject, track_id: int) -> bool:
+        """Determine whether the registration fits this stat for the given track."""
         track = reg['tracks'][track_id]
         part = reg['parts'][event['tracks'][track_id]['part_id']]
 
@@ -513,6 +524,19 @@ class EventRegistrationTrackStatistic(enum.Enum):
             return not track['course_id'] and reg['persona_id'] not in event['orgas']
         else:
             raise RuntimeError(n_("Impossible."))
+
+    def test_part(self, event: CdEDBObject, reg: CdEDBObject, part_id: int) -> bool:
+        """Determine whether the registration fits this stat for any track in a part."""
+        track_ids = event['parts'][part_id]['tracks'].keys()
+        return any(self.test(event, reg, track_id) for track_id in track_ids)
+
+    def test_part_group(self, event: CdEDBObject, reg: CdEDBObject,
+                        part_group_id: int) -> bool:
+        """Determine whether the reg fits this stat for any track in a part group."""
+        part_ids = event['part_groups'][part_group_id]['part_ids']
+        parts = (p for part_id, p in event['parts'].items() if part_id in part_ids)
+        track_ids = itertools.chain.from_iterable(part['tracks'] for part in parts)
+        return any(self.test(event, reg, track_id) for track_id in track_ids)
 
     def _get_query_aux(self, event: CdEDBObject, track_id: int) -> StatQueryAux:
         track = event['tracks'][track_id]
@@ -576,6 +600,13 @@ class EventRegistrationTrackStatistic(enum.Enum):
         # Prepend the specific order.
         query.order = order + query.order
         return query
+
+    def get_query_part(self, event: CdEDBObject, part_id: int) -> Optional[Query]:
+        return None
+
+    def get_query_part_group(self, event: CdEDBObject, part_group_id: int
+                             ) -> Optional[Query]:
+        return None
 
 
 class EventRegistrationInXChoiceGrouper:
@@ -689,6 +720,13 @@ class EventQueryMixin(EventBaseFrontend):
                             if course_stat.test(course, track_id))
                         for track_id in tracks
                     },
+                    'parts': {
+                        part_id: sum(
+                            1 for course in courses.values()
+                            if course_stat.test_part(
+                                rs.ambience['event'], course, part_id))
+                        for part_id in event_parts
+                    },
                     'part_groups': {
                         part_group_id: sum(
                             1 for course in courses.values()
@@ -704,6 +742,20 @@ class EventQueryMixin(EventBaseFrontend):
                             1 for reg in registrations.values()
                             if reg_track_stat.test(rs.ambience['event'], reg, track_id))
                         for track_id in tracks
+                    },
+                    'parts': {
+                        part_id: sum(
+                            1 for reg in registrations.values()
+                            if reg_track_stat.test_part(
+                                rs.ambience['event'], reg, part_id))
+                        for part_id in event_parts
+                    },
+                    'part_groups': {
+                        part_group_id: sum(
+                            1 for reg in registrations.values()
+                            if reg_track_stat.test_part_group(
+                                rs.ambience['event'], reg, part_group_id))
+                        for part_group_id in rs.ambience['event']['part_groups']
                     }
                 }
 
