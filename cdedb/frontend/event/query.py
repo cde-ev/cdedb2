@@ -625,12 +625,13 @@ class EventRegistrationTrackStatistic(enum.Enum):
 class EventRegistrationInXChoiceGrouper:
     """This class helps group registrations by their course choices for each track.
 
-    Instantiating the `EventRegistrationInXChoiceGrouper` will populate a dictionary
-    accessible via the `choice_track_map` attribute, mapping choice rank to a mapping
-    of track id to list of regisration ids.
+    Instantiating the `EventRegistrationInXChoiceGrouper` will create an internal
+    dictionary storing the fitting registrations for each choice and track.
 
-    Iterating over the outer mapping will yield ranks and row data to be displayed on
-    the stats page.
+    Iterating over this class will provide a mapping of choice to number of fitting
+    registrations, grouped by tracks, parts and part groups and sorted within each
+    such group. For the table of the stats page each value contains all entries for
+    the xth row, already presorted.
     """
     def __init__(self, event: CdEDBObject, regs: CdEDBObjectMap):
         self._sorted_tracks = dict(keydictsort_filter(
@@ -650,17 +651,19 @@ class EventRegistrationInXChoiceGrouper:
             for x in range(self._max_choices)
         }
 
+        # Put each registration into the appropriate choice pool for each track.
         for reg_id, reg in regs.items():
             for track_id, track in self._sorted_tracks.items():
                 for x in range(track['num_choices']):
-                    if self.test(event, reg, track_id, x):
+                    if self._test(event, reg, track_id, x):
                         target = self.choice_track_map[x][track_id]
                         assert target is not None
                         target.add(reg_id)
                         break
 
     @staticmethod
-    def test(event: CdEDBObject, reg: CdEDBObject, track_id: int, x: int) -> bool:
+    def _test(event: CdEDBObject, reg: CdEDBObject, track_id: int, x: int) -> bool:
+        """Uninlined helper to determine whether a reg fits choice x in a track."""
         course_track = event['tracks'][track_id]
         event_part = event['parts'][course_track['part_id']]
         part = reg['parts'][event_part['id']]
@@ -669,8 +672,15 @@ class EventRegistrationInXChoiceGrouper:
                 and len(track['choices']) > x
                 and track['choices'][x] == track['course_id'])
 
-    def _get_union(self, x: int, track_ids: Collection[int]) -> Optional[int]:
-        result = None
+    def _get_count(self, x: int, track_ids: Collection[int]) -> Optional[int]:
+        """Uninlined helper to determine the number of fitting entries across tracks.
+
+        If all given tracks do not offer an xth choice, return None, otherwise return
+        the number of entries that fit the xth choice in any of the given tracks. This
+        is easily done by unioning the values per track, but special care needs to be
+        given to the None values.
+        """
+        result: Optional[Set[int]] = None
         for track_id in track_ids:
             tmp = self.choice_track_map[x][track_id]
             if tmp is not None:
@@ -682,7 +692,8 @@ class EventRegistrationInXChoiceGrouper:
             return None
         return len(result)
 
-    def __iter__(self) -> Iterable[Dict[int, Dict[str, Dict[int, Optional[int]]]]]:
+    def __iter__(self) -> Iterable[Tuple[int, Dict[str, Dict[int, Optional[int]]]]]:
+        """Iterate over all x choices, for each one return sorted counts by type."""
         track_ids_per_part = {
             part_id: set(part['tracks'])
             for part_id, part in self._sorted_parts.items()
@@ -695,21 +706,21 @@ class EventRegistrationInXChoiceGrouper:
         ret = {
             x: {
                 'tracks': {
-                    track_id: self._get_union(x, (track_id,))
+                    track_id: self._get_count(x, (track_id,))
                     for track_id in self._sorted_tracks
                 },
                 'parts': {
-                    part_id: self._get_union(x, track_ids)
+                    part_id: self._get_count(x, track_ids)
                     for part_id, track_ids in track_ids_per_part.items()
                 },
                 'part_groups': {
-                    part_group_id: self._get_union(x, track_ids)
+                    part_group_id: self._get_count(x, track_ids)
                     for part_group_id, track_ids, in track_ids_per_part_group.items()
                 },
             }
             for x in range(self._max_choices)
         }
-        return iter(ret.items())
+        yield from ret.items()
 
     def get_query(self, event: CdEDBObject, track_id: int, x: int) -> Query:
         return Query(
