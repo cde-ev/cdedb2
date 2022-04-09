@@ -47,4 +47,5 @@ there was no execution of the task before.
 To take care of the stores and actually run the tasks, we have the ``CronFrontend``
 found in :py:mod:`cdedb.frontend.cron`, whose ``execute`` function sets up a basic
 ``RequestState``, searches for periodic functions and executes them. This should be done
-every 15 minutes and can be run using the ``cron_execute.py`` script for convenience.
+every 15 minutes (commonly via system cron) and can be run using the ``cron_execute.py``
+script for convenience.
