@@ -1812,16 +1812,17 @@ else:
 
 #: List of all roles we consider admin roles. Changes in these roles must be
 #: approved by two meta admins in total. Values are required roles.
+#: Translation of keys is needed for the privilege change page.
 ADMIN_KEYS = {
-    "is_meta_admin": "is_cde_realm",
-    "is_core_admin": "is_cde_realm",
-    "is_cde_admin": "is_cde_realm",
-    "is_finance_admin": "is_cde_admin",
-    "is_event_admin": "is_event_realm",
-    "is_ml_admin": "is_ml_realm",
-    "is_assembly_admin": "is_assembly_realm",
-    "is_cdelokal_admin": "is_ml_realm",
-    "is_auditor": "is_cde_realm",
+    n_("is_meta_admin"): "is_cde_realm",
+    n_("is_core_admin"): "is_cde_realm",
+    n_("is_cde_admin"): "is_cde_realm",
+    n_("is_finance_admin"): "is_cde_admin",
+    n_("is_event_admin"): "is_event_realm",
+    n_("is_ml_admin"): "is_ml_realm",
+    n_("is_assembly_admin"): "is_assembly_realm",
+    n_("is_cdelokal_admin"): "is_ml_realm",
+    n_("is_auditor"): "is_cde_realm",
 }
 
 #: List of all admin roles who actually have a corresponding realm with a user role.
@@ -1934,12 +1935,13 @@ EVENT_SCHEMA_VERSION = (15, 5)
 DEFAULT_NUM_COURSE_CHOICES = 3
 
 META_INFO_FIELDS = (
-    "Finanzvorstand_Name", "Finanzvorstand_Vorname", "Finanzvorstand_Ort",
-    "Finanzvorstand_Adresse_Einzeiler", "Finanzvorstand_Adresse_Zeile2",
-    "Finanzvorstand_Adresse_Zeile3", "Finanzvorstand_Adresse_Zeile4",
-    "CdE_Konto_Inhaber", "CdE_Konto_IBAN", "CdE_Konto_BIC", "CdE_Konto_Institut",
-    "Vorstand",
-    "banner_before_login", "banner_after_login", "banner_genesis", "cde_misc"
+    n_("Finanzvorstand_Name"), n_("Finanzvorstand_Vorname"), n_("Finanzvorstand_Ort"),
+    n_("Finanzvorstand_Adresse_Einzeiler"), n_("Finanzvorstand_Adresse_Zeile2"),
+    n_("Finanzvorstand_Adresse_Zeile3"), n_("Finanzvorstand_Adresse_Zeile4"),
+    n_("CdE_Konto_Inhaber"), n_("CdE_Konto_IBAN"), n_("CdE_Konto_BIC"),
+    n_("CdE_Konto_Institut"), n_("Vorstand"),
+    n_("banner_before_login"), n_("banner_after_login"), n_("banner_genesis"),
+    n_("cde_misc")
 )
 
 #: All columns deciding on the current status of a persona
