@@ -14,6 +14,7 @@ facility may be used in a minimized environment, such as the ldap docker contain
 
 import getpass
 import os
+import pathlib
 import tempfile
 import time
 from pkgutil import resolve_name
@@ -53,7 +54,7 @@ class TempConfig:
             self._f = tempfile.NamedTemporaryFile("w", suffix=".py")
             f = self._f.__enter__()
             for k, v in self._config.items():
-                f.write(f"{k} = {v}")
+                f.write(f"{k} = {v}\n")
             f.flush()
             return f.name
         return self._configpath
@@ -64,6 +65,14 @@ class TempConfig:
         if self._f:
             return self._f.__exit__(exc_type, exc_val, exc_tb)
         return False
+
+    def __str__(self) -> str:
+        if self._config:
+            return str(self._config)
+        elif self._configpath:
+            return pathlib.Path(self._configpath).read_text()
+        else:
+            return ""
 
 
 class Script:
@@ -144,7 +153,10 @@ class Script:
             "dbname": dbname,
             "user": dbuser,
             "password": self._secrets["CDB_DATABASE_ROLES"][dbuser],
-            "host": self.config["DB_HOST"],
+            # Temporary workaround because we cannot pass config options correctly.
+            "host":
+                "cdb" if pathlib.Path("/CONTAINER").is_file()
+                else self.config["DB_HOST"],
             "port": 5432,
             "connection_factory": IrradiatedConnection,
             "cursor_factory": cursor,

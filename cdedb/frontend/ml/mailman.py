@@ -11,7 +11,7 @@ import cdedb.database.constants as const
 from cdedb.backend.common import DatabaseLock
 from cdedb.common import CdEDBObject, RequestState
 from cdedb.database.constants import LockType
-from cdedb.frontend.common import cdedburl, make_persona_name, periodic
+from cdedb.frontend.common import cdedburl, make_persona_name
 from cdedb.frontend.ml.base import MlBaseFrontend
 
 POLICY_MEMBER_CONVERT = {
@@ -26,16 +26,20 @@ POLICY_OTHER_CONVERT = {
     const.ModerationPolicy.fully_moderated: 'hold',
 }
 
-# This looks a bit counter-intuitive, but this is ANDed with the MIME convert.
+# Mailmanclient expects empty strings instead of empty lists, since they are seemingly
+# better compatible with its rest api. Effectively, mailman will ignore setting empty
+# lists, but cast empty strings to empty lists internally.
+#
+# Still, this looks a bit counter-intuitive, but this is ANDed with the MIME convert.
 # TODO: Potentially, this lets text/plain attachments through on forbid.
 ATTACHMENT_EXTENSIONS_CONVERT = {
-    const.AttachmentPolicy.allow: [],
+    const.AttachmentPolicy.allow: "",
     const.AttachmentPolicy.pdf_only: ['pdf'],
-    const.AttachmentPolicy.forbid: [],
+    const.AttachmentPolicy.forbid: "",
 }
 
 ATTACHMENT_MIME_CONVERT = {
-    const.AttachmentPolicy.allow: [],
+    const.AttachmentPolicy.allow: "",
     const.AttachmentPolicy.pdf_only: ['multipart', 'text/plain', 'application/pdf'],
     const.AttachmentPolicy.forbid: ['text/plain'],
 }
@@ -289,11 +293,6 @@ The original message as received by Mailman is attached.
             self.mailman_sync_list_subs(rs, mailman, db_list, mm_list)
             self.mailman_sync_list_mods(rs, mailman, db_list, mm_list)
             self.mailman_sync_list_whites(rs, mailman, db_list, mm_list)
-
-    @periodic("mailman_sync")
-    def auto_mailman_sync(self, rs: RequestState, store: CdEDBObject) -> CdEDBObject:
-        self.mailman_sync(rs)
-        return store
 
     def mailman_sync(self, rs: RequestState) -> bool:
         """Synchronize the mailing list software with the database.

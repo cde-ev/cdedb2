@@ -26,7 +26,9 @@ import tests.backend_tests as backend_tests
 import tests.frontend_tests as frontend_tests
 import tests.ldap_tests as ldap_tests
 import tests.other_tests as other_tests
+from cdedb.backend.entity_keeper import EntityKeeper
 from cdedb.config import TestConfig
+from tests.common import BasicTest
 
 
 class CdEDBTestLock:
@@ -160,6 +162,13 @@ def run_xss_tests(configpath: pathlib.Path, *, verbose: bool = False) -> int:
     # create the storage directory
     subprocess.run(["make", "storage", f"STORAGE_DIR={conf['STORAGE_DIR']}",
                     f"DATA_USER={user}"], check=True, stdout=subprocess.DEVNULL)
+    # setup the event keepers
+    max_event_id = len(BasicTest.get_sample_data('event.events'))
+    keeper = EntityKeeper(conf, 'event_keeper')  # type: ignore
+    for event_id in range(1, max_event_id + 1):
+        keeper.init(event_id)
+        keeper.commit(event_id, "", "Initialer Commit.")
+
     # add the configpath to environment to access the configuration inside the tests
     os.environ['CDEDB_TEST_CONFIGPATH'] = str(configpath)
 

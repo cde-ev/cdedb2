@@ -35,7 +35,7 @@ import werkzeug.routing
 from schulze_condorcet.types import Candidate
 
 import cdedb.database.constants as const
-from cdedb.database.connection import IrradiatedConnection
+from cdedb.database.connection import ConnectionContainer
 from cdedb.validationdata import COUNTRY_CODES
 
 _LOGGER = logging.getLogger(__name__)
@@ -141,7 +141,7 @@ class User:
         self.admin_views = self.available_admin_views & set(enabled_views)
 
 
-class RequestState:
+class RequestState(ConnectionContainer):
     """Container for request info. Besides this and db accesses the python
     code should be state-less. This data structure enables several
     convenient semi-magic behaviours (magic enough to be nice, but non-magic
@@ -186,13 +186,6 @@ class RequestState:
         self.lang = lang
         self.translations = translations
         self.begin = begin or now()
-        # Visible version of the database connection
-        # noinspection PyTypeChecker
-        self.conn: IrradiatedConnection = None  # type: ignore
-        # Private version of the database connection, only visible in the
-        # backends (mediated by the make_proxy)
-        # noinspection PyTypeChecker
-        self._conn: IrradiatedConnection = None  # type: ignore
         # Toggle to disable logging
         self.is_quiet = False
         # Toggle to ignore validation warnings. The value is parsed directly inside
@@ -434,6 +427,14 @@ def glue(*args: str) -> str:
     explicit function.
     """
     return " ".join(args)
+
+
+def build_msg(msg1: str, msg2: Optional[str] = None) -> str:
+    """Construct log message with appropriate punctuation"""
+    if msg2:
+        return msg1 + ": " + msg2
+    else:
+        return msg1 + "."
 
 
 S = TypeVar("S")
@@ -1931,6 +1932,15 @@ EVENT_SCHEMA_VERSION = (15, 5)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3
+
+META_INFO_FIELDS = (
+    "Finanzvorstand_Name", "Finanzvorstand_Vorname", "Finanzvorstand_Ort",
+    "Finanzvorstand_Adresse_Einzeiler", "Finanzvorstand_Adresse_Zeile2",
+    "Finanzvorstand_Adresse_Zeile3", "Finanzvorstand_Adresse_Zeile4",
+    "CdE_Konto_Inhaber", "CdE_Konto_IBAN", "CdE_Konto_BIC", "CdE_Konto_Institut",
+    "Vorstand",
+    "banner_before_login", "banner_after_login", "banner_genesis", "cde_misc"
+)
 
 #: All columns deciding on the current status of a persona
 PERSONA_STATUS_FIELDS = (
