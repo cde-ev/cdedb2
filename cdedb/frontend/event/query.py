@@ -500,10 +500,10 @@ class EventCourseStatistic(enum.Enum):
         query.order = order + query.order
         return query
 
-    def get_query_part(self, event: CdEDBObject, part_id: int) -> Optional[Query]:
+    def get_query_part(self, event: CdEDBObject, part_id: int) -> Optional[Query]:  # pylint: disable=no-self-use
         return None
 
-    def get_query_part_group(self, event: CdEDBObject, part_group_id: int
+    def get_query_part_group(self, event: CdEDBObject, part_group_id: int  # pylint: disable=no-self-use
                              ) -> Optional[Query]:
         return None
 
@@ -614,10 +614,10 @@ class EventRegistrationTrackStatistic(enum.Enum):
         query.order = order + query.order
         return query
 
-    def get_query_part(self, event: CdEDBObject, part_id: int) -> Optional[Query]:
+    def get_query_part(self, event: CdEDBObject, part_id: int) -> Optional[Query]:  # pylint: disable=no-self-use
         return None
 
-    def get_query_part_group(self, event: CdEDBObject, part_group_id: int
+    def get_query_part_group(self, event: CdEDBObject, part_group_id: int  # pylint: disable=no-self-use
                              ) -> Optional[Query]:
         return None
 
