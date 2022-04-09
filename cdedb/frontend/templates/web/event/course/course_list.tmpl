@@ -59,7 +59,7 @@
 
         <div id="list-courses">
         {% for anid, entry in courses|keydictsort(EntitySorter.course) if entry['segments'].intersection(track_ids) %}
-            <div class="hide-hover-container">
+            <div class="hide-hover-container" id="course-{{ entry['id'] }}">
                 <h3>{{ entry['nr'] }}. {{ entry['title'] }}</h3>
                 {% if ambience['event']['id'] in user.orga or 'event_orga' in user.admin_views %}
                     <div class="pull-right">
