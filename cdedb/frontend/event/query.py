@@ -9,7 +9,7 @@ import datetime
 import enum
 import itertools
 import pprint
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Collection, Dict, Iterable, List, Optional, Set, Tuple, Union
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -20,7 +20,7 @@ from cdedb.common import (
     AgeClasses, CdEDBObject, CdEDBObjectMap, EntitySorter, RequestState, deduct_years,
     determine_age_class, get_localized_country_codes, n_, unwrap, xsorted,
 )
-from cdedb.filter import enum_entries_filter
+from cdedb.filter import enum_entries_filter, keydictsort_filter
 from cdedb.frontend.common import (
     REQUESTdata, access, check_validation as check, event_guard,
     inspect_validation as inspect, periodic,
@@ -620,23 +620,30 @@ class EventRegistrationInXChoiceGrouper:
     the stats page.
     """
     def __init__(self, event: CdEDBObject, regs: CdEDBObjectMap):
-        tracks = event['tracks']
-        max_choices = max(track['num_choices'] for track in tracks.values())
-        self.choice_track_map: Dict[int, Dict[int, Optional[List[int]]]] = {
+        self._sorted_tracks = dict(keydictsort_filter(
+            event['tracks'], EntitySorter.course_track))
+        self._sorted_parts = dict(keydictsort_filter(
+            event['parts'], EntitySorter.event_part))
+        self._sorted_part_groups = dict(keydictsort_filter(
+            event['part_groups'], EntitySorter.event_part_group))
+        self._max_choices = max(
+            track['num_choices'] for track in self._sorted_tracks.values())
+
+        self.choice_track_map: Dict[int, Dict[int, Optional[Set[int]]]] = {
             x: {
-                track_id: [] if track['num_choices'] > x else None
-                for track_id, track in tracks.items()
+                track_id: set() if track['num_choices'] > x else None
+                for track_id, track in self._sorted_tracks.items()
             }
-            for x in range(max_choices)
+            for x in range(self._max_choices)
         }
 
         for reg_id, reg in regs.items():
-            for track_id, track in tracks.items():
+            for track_id, track in self._sorted_tracks.items():
                 for x in range(track['num_choices']):
                     if self.test(event, reg, track_id, x):
                         target = self.choice_track_map[x][track_id]
                         assert target is not None
-                        target.append(reg_id)
+                        target.add(reg_id)
                         break
 
     @staticmethod
@@ -648,6 +655,48 @@ class EventRegistrationInXChoiceGrouper:
         return (_is_participant(part) and track['course_id']
                 and len(track['choices']) > x
                 and track['choices'][x] == track['course_id'])
+
+    def _get_union(self, x: int, track_ids: Collection[int]) -> Optional[int]:
+        result = None
+        for track_id in track_ids:
+            tmp = self.choice_track_map[x][track_id]
+            if tmp is not None:
+                if result is None:
+                    result = tmp
+                else:
+                    result |= tmp
+        if result is None:
+            return None
+        return len(result)
+
+    def __iter__(self) -> Iterable[Dict[int, Dict[str, Dict[int, Optional[int]]]]]:
+        track_ids_per_part = {
+            part_id: set(part['tracks'])
+            for part_id, part in self._sorted_parts.items()
+        }
+        track_ids_per_part_group = {
+            part_group_id: set(itertools.chain.from_iterable(
+                track_ids_per_part[part_id] for part_id in part_group['part_ids']))
+            for part_group_id, part_group in self._sorted_part_groups.items()
+        }
+        ret = {
+            x: {
+                'tracks': {
+                    track_id: self._get_union(x, (track_id,))
+                    for track_id in self._sorted_tracks
+                },
+                'parts': {
+                    part_id: self._get_union(x, track_ids)
+                    for part_id, track_ids in track_ids_per_part.items()
+                },
+                'part_groups': {
+                    part_group_id: self._get_union(x, track_ids)
+                    for part_group_id, track_ids, in track_ids_per_part_group.items()
+                },
+            }
+            for x in range(self._max_choices)
+        }
+        return iter(ret.items())
 
     def get_query(self, event: CdEDBObject, track_id: int, x: int) -> Query:
         return Query(

@@ -102,33 +102,41 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for x, row in grouper.choice_track_map.items() %}
+                    {% for x, row in grouper %}
                         <tr>
                             <th>{% trans x = x + 1 %}In {{ x }}. Choice{% endtrans %}</th>
-                            {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
+                            {% for track_id, count in row['tracks'].items() %}
                                 <td class="text-right">
-                                    {% if row[track_id] is none %}
+                                    {% if count is none %}
                                         –
                                     {% else %}
                                         {% set query = grouper.get_query(ambience['event'], track_id, x) %}
                                         {% if query %}
                                             {{ util.href(
                                                 cdedblink(query.scope.get_target(), query.serialize()) + "#query-results",
-                                                row[track_id]|length, anid="part_in_" + x|string +  "_choice_" + track_id|string) }}
+                                                count, anid="track_in_" + x|string +  "_choice_" + track_id|string) }}
                                         {% else %}
-                                            {{ row[track_id]|length }}
+                                            {{ count }}
                                         {% endif %}
                                     {% endif %}
                                 </td>
                             {% endfor %}
-                            {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
-                                <th class="text-right {% if loop.first %}b-left{% endif %}">
-                                    –
-                                </th>
-                            {% endfor %}
-                            {% for part_group_id, part_group in ambience['event']['part_groups']|keydictsort(EntitySorter.event_part_group) %}
+                            {% for part_id, count in row['parts'].items() %}
                                 <td class="text-right {% if loop.first %}b-left{% endif %}">
-                                    –
+                                    {% if count is none %}
+                                        –
+                                    {% else %}
+                                        {{ count }}
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                            {% for part_group_id, count in row['part_groups'].items() %}
+                                <td class="text-right {% if loop.first %}b-left{% endif %}">
+                                    {% if count is none %}
+                                        –
+                                    {% else %}
+                                        {{ count }}
+                                    {% endif %}
                                 </td>
                             {% endfor %}
                         </tr>
