@@ -198,14 +198,14 @@ def execute_sql_script(
     config: TestConfig, secrets: SecretsConfig, file: pathlib.Path, verbose: int
 ) -> None:
     with connect(config, secrets) as conn:
-        with conn.cursor() as curr:
-            curr.execute(file.read_text())
+        with conn.cursor() as cur:
+            cur.execute(file.read_text())
             if verbose > 0:
                 if verbose > 1:
-                    click.echo(curr.query)
-                    click.echo(curr.statusmessage)
-                if curr.rowcount != -1:
-                    for x in curr:
+                    click.echo(cur.query)
+                    click.echo(cur.statusmessage)
+                if cur.rowcount != -1:
+                    for x in cur:
                         click.echo(x)
 
 

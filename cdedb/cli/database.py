@@ -11,13 +11,13 @@ from cdedb.cli.util import has_systemd, is_docker, sanity_check
 from cdedb.config import Config, SecretsConfig
 
 
-def start_services(*services: str) -> None:
-    """Start the given services."""
+def restart_services(*services: str) -> None:
+    """Restart the given services."""
     if not has_systemd():
         return
     # TODO on the vm, we need 'sudo' to execute systemctl. Can we get rid of this?
     #  The basic problem is that this is needed f.e. in the test suite...
-    subprocess.run(["sudo", "systemctl", "start", *services], check=True)
+    subprocess.run(["sudo", "systemctl", "restart", *services], check=True)
 
 
 def stop_services(*services: str) -> None:
@@ -28,20 +28,20 @@ def stop_services(*services: str) -> None:
     subprocess.run(["sudo", "systemctl", "stop", *services], check=True)
 
 
-def psql(*commands: str) -> subprocess.CompletedProcess[bytes]:
-    """Execute commands using the psql client.
+def psql(*args: str) -> subprocess.CompletedProcess[bytes]:
+    """Execute a command using the psql client.
 
     This should be used only in cases where a direct connection to the database
     via psycopg2 is not possible, f.e. to create the database.
     """
     if is_docker():
         return subprocess.run(
-            ["psql", "postgresql://postgres:passwd@cdb", *commands], check=True)
+            ["psql", "postgresql://postgres:passwd@cdb", *args], check=True)
     else:
         # TODO can we use the user kwarg instead of doing the sudo dance?
         # mypy does not know that run passes unknown arguments to Popen
         # return subprocess.run(["psql", *commands], check=True, user="postgres")
-        return subprocess.run(["sudo", "-u", "postgres", "psql", *commands], check=True)
+        return subprocess.run(["sudo", "-u", "postgres", "psql", *args], check=True)
 
 
 # TODO is the nobody hack really necessary?
@@ -92,7 +92,7 @@ def create_database_users(conf: Config) -> None:
     stop_services("pgbouncer", "slapd")
     psql("-f", users_path.__fspath__())
     # we do not restart slapd, since it needs a proper database structure to start
-    start_services("pgbouncer")
+    restart_services("pgbouncer")
 
 
 @sanity_check
@@ -110,8 +110,8 @@ def create_database(conf: Config, secrets: SecretsConfig) -> None:
 
     stop_services("pgbouncer", "slapd")
     psql("-f", str(db_path), "-v", f"cdb_database_name={database}")
-    # we do not restart slapd, since we want to replace it anyway...
-    start_services("pgbouncer")
+    # we do not restart slapd, since it needs a proper populated database
+    restart_services("pgbouncer")
 
     with connect(conf, secrets) as conn:
         with conn.cursor() as cur:
@@ -136,9 +136,8 @@ def populate_database(conf: Config, secrets: SecretsConfig, xss: bool = False) -
         with conn.cursor() as cur:
             cur.execute(outfile.read_text())
 
-    # we do not restart slapd, since we want to replace it anyway...
-    # if not xss:
-    #     start_services("slapd")
+    if not xss:
+        restart_services("slapd")
 
 
 def compile_sample_data(conf: Config, infile: pathlib.Path, outfile: pathlib.Path,

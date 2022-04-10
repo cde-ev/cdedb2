@@ -14,12 +14,12 @@ def has_systemd() -> bool:
 
 
 def is_docker() -> bool:
-    """Does the current process runs on a docker image?"""
+    """Does the current process run on a docker image?"""
     return pathlib.Path("/CONTAINER").is_file()
 
 
 def is_vm() -> bool:
-    """Does the current process runs on a vm image?"""
+    """Does the current process run on a vm image?"""
     return not is_docker()
 
 

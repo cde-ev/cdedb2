@@ -12,7 +12,7 @@ pgbouncer or apache2), there are the following additional points:
 
 To do this in a convenient way, there is the :mod:`cdedb.cli` module. It consumes most
 necessary information from the Config (and the given overrides) and performs the setup
-process in several python functions.
+process via several python functions.
 
 Additionally, it provides a command line interface, so the functions can be used during
 scripting or setup via terminal. All available targets are shown after executing::

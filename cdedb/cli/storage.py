@@ -7,11 +7,11 @@ from cdedb.cli.util import sanity_check, switch_user
 from cdedb.config import Config
 
 
-def recreate_directory(directory: pathlib.Path) -> None:
+def _recreate_directory(directory: pathlib.Path) -> None:
     """Create the given directory, or remove its content if it already exists.
 
     Since the right to create or delete a directory is determined by its parent and not
-    by the directory itself, this is a bit tricky. Therefore, this does also some error
+    by the directory itself, this is a bit tricky. Therefore, this also does some error
     detection about missing permissions.
     """
     # Create the directory if it does not exist
@@ -70,7 +70,7 @@ def create_storage(conf: Config) -> None:
         "testfiles",  # tests: all testfiles
     )
 
-    recreate_directory(storage_dir)
+    _recreate_directory(storage_dir)
     for subdir in subdirs:
         (storage_dir / subdir).mkdir()
 
@@ -125,4 +125,4 @@ def create_log(conf: Config) -> None:
     """
     log_dir: pathlib.Path = conf["LOG_DIR"]
 
-    recreate_directory(log_dir)
+    _recreate_directory(log_dir)
