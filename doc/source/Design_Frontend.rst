@@ -1,7 +1,29 @@
 Frontend Design
 ===============
 
-.. todo:: Add information on abstract stuff, input handling
+Frontend endpoints are invoked depending on the URL requested by the client as mapped to
+in ``cdedb/frontend/paths.py``. Each endpoint is a python function responsible for
+aggregating the requested information from the :doc:`backend <Design_Backend>` and
+returning a rendered :doc:`template <Design_Template>` or redirect.
+
+.. todo:: Add information on abstract stuff
+
+.. seealso::
+    A rough overview about the general control flow upon a request can be found in the
+    development chapter at :doc:`Development_Typical-Request`.
+
+
+Input handling
+--------------
+
+For retrieving user input from POST-requests, there are the ``REQUEST*`` decorators in
+:py:mod:`cdedb.frontend.common`, furthermore the ``request_extractor`` functions for
+some rare use cases where it is not known at the beginning which data is needed.
+In general, you should always provide feedback on user input, which basically means
+every POST action should cause a meaningful notification. The notification mostly tells
+about success or failure of input :doc:`validation <Design_Validation>`.
+Remember to check successful validation before doing any processing, since the backend
+raises errors on invalid data.
 
 
 .. _cron-jobs:
