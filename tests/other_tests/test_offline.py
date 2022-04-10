@@ -28,6 +28,9 @@ class TestOffline(FrontendTest):
         # write the original config in a temporary config file
         config = tempfile.NamedTemporaryFile("w", suffix=".py", delete=False)
         config.write(existing_config.read_text())
+        config.flush()
+
+        # set the config path to the temporary config file
         set_configpath(config.name)
 
         # purge the content of the database
