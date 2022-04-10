@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 # pylint: disable=missing-module-docstring
 import os
-import shutil
+import pathlib
 import subprocess
+import tempfile
 
 import webtest
 
+from cdedb.cli.database import connect
 from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS
-from cdedb.config import get_configpath
+from cdedb.config import SecretsConfig, get_configpath, set_configpath
 from cdedb.frontend.application import Application
 from tests.common import FrontendTest
 
@@ -22,8 +24,17 @@ class TestOffline(FrontendTest):
 
         # save the current config, so we can reset if after the test ends
         existing_config = get_configpath()
-        config_backup = existing_config.parent / f"{existing_config.name}.copy"
-        shutil.copyfile(existing_config, config_backup)
+
+        # write the original config in a temporary config file
+        config = tempfile.NamedTemporaryFile("w", suffix=".py", delete=False)
+        config.write(existing_config.read_text())
+        set_configpath(config.name)
+
+        # purge the content of the database
+        purge_database = repopath / 'tests' / 'ancillary_files' / 'clean_data.sql'
+        with connect(self.conf, SecretsConfig()) as conn:
+            with conn.cursor() as curr:
+                curr.execute(purge_database.read_text())
 
         try:
             # give the environment (especially the current CDEDB_CONFIGPATH) to the
@@ -99,7 +110,10 @@ class TestOffline(FrontendTest):
             # be split out.
         finally:
             # restore the original config
-            shutil.move(str(config_backup), existing_config)
+            set_configpath(existing_config)
+
+            # remove the temporary config
+            pathlib.Path(config.name).unlink()
 
             # remove the file signaling that we are inside an offline vm
             subprocess.run(["sudo", "rm", "-f", "/OFFLINEVM"], check=True)
