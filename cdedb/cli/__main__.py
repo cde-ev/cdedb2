@@ -54,7 +54,7 @@ def get_config_var(config: TestConfig, variable: str) -> None:
     try:
         val = config[variable]
     except KeyError:
-        raise click.UsageError(f"Invalid config key '{variable}'.")  # pylint: diable=raise-missing-from
+        raise click.UsageError(f"Invalid config key '{variable}'.")  # pylint: disable=raise-missing-from
     else:
         click.echo(val)
 
@@ -162,10 +162,11 @@ def development() -> None:
 
 # TODO in which category should we do this?
 @development.command(name="compile-sample-data")
-@click.option("--infile", default="/cdedb2/tests/ancillary_files/sample_data.json",
-              help="the json file containing the sample data")
-@click.option("--outfile", default="/tmp/sample_data.sql",
-              help="the place to store the sql file")
+@click.option("-i", "--infile",
+              default="/cdedb2/tests/ancillary_files/sample_data.json",
+              type=click.Path(), help="the json file containing the sample data")
+@click.option("-o", "--outfile", default="/tmp/sample_data.sql",
+              type=click.Path(), help="the place to store the sql file")
 @click.option(
     "--xss/--no-xss", default=False, help="prepare sample data for xss checks")
 @pass_config
