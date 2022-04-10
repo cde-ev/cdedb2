@@ -51,7 +51,12 @@ def config() -> None:
 @pass_config
 def get_config_var(config: TestConfig, variable: str) -> None:
     """Retrieve the given variable from the current config."""
-    click.echo(config[variable])
+    try:
+        val = config[variable]
+    except KeyError:
+        raise click.UsageError(f"Invalid config key '{variable}'.")
+    else:
+        click.echo(val)
 
 
 @config.command(name="default-configpath")
