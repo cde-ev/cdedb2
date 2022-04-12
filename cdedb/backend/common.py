@@ -28,14 +28,14 @@ import psycopg2.extras
 import cdedb.validation as validate
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    LOCALE, CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Error, PathLike,
-    PrivilegeError, PsycoJson, RequestState, Role, diacritic_patterns, glue, make_proxy,
-    make_root_logger, n_, unwrap,
+    LOCALE, CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Error,
+    PrivilegeError, RequestState, Role, diacritic_patterns, glue, make_proxy, n_,
+    setup_logger, unwrap,
 )
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
 from cdedb.database.constants import FieldDatatypes, LockType
-from cdedb.database.query import DatabaseValue, DatabaseValue_s, QueryMixin
+from cdedb.database.query import DatabaseValue, DatabaseValue_s, SqlQueryBackend
 from cdedb.query import Query, QueryOperators
 from cdedb.validation import parse_date, parse_datetime
 
@@ -216,7 +216,7 @@ def _affirm_atomized_context(rs: RequestState) -> None:
         raise RuntimeError(n_("No contamination!"))
 
 
-class AbstractBackend(QueryMixin, metaclass=abc.ABCMeta):
+class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
     """Basic template for all backend services.
 
     Children classes have to override some things: first :py:attr:`realm`
@@ -227,16 +227,16 @@ class AbstractBackend(QueryMixin, metaclass=abc.ABCMeta):
     #: abstract str to be specified by children
     realm: ClassVar[str]
 
-    def __init__(self, configpath: PathLike = None) -> None:
-        self.conf = Config(configpath)
+    def __init__(self) -> None:
+        self.conf = Config()
         # initialize logging
-        make_root_logger(
+        setup_logger(
             "cdedb.backend",
             self.conf["LOG_DIR"] / "cdedb-backend.log",
             self.conf["LOG_LEVEL"],
             syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
-        make_root_logger(
+        setup_logger(
             f"cdedb.backend.{self.realm}",
             self.conf["LOG_DIR"] / f"cdedb-backend-{self.realm}.log",
             self.conf["LOG_LEVEL"],
@@ -244,7 +244,8 @@ class AbstractBackend(QueryMixin, metaclass=abc.ABCMeta):
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         # logger are thread-safe!
         self.logger = logging.getLogger("cdedb.backend.{}".format(self.realm))
-        self.logger.debug(f"Instantiated {self} with configpath {configpath}.")
+        self.logger.debug(
+            f"Instantiated {self} with configpath {self.conf._configpath}.")
         # make the logger available to the query mixin
         super().__init__(self.logger)
         # Everybody needs access to the core backend
@@ -258,7 +259,7 @@ class AbstractBackend(QueryMixin, metaclass=abc.ABCMeta):
             # self.core = cast('CoreBackend', self)
             self.core = make_proxy(self, internal=True)
         else:
-            self.core = make_proxy(CoreBackend(configpath), internal=True)
+            self.core = make_proxy(CoreBackend(), internal=True)
 
     affirm_atomized_context = staticmethod(_affirm_atomized_context)
 
@@ -271,30 +272,6 @@ class AbstractBackend(QueryMixin, metaclass=abc.ABCMeta):
         but for now it only checks the admin role.
         """
         return "{}_admin".format(cls.realm) in rs.user.roles
-
-    # This is not moved in the QueryMixin, since we need to access our
-    # custom JSON encoder from cdedb.common
-    def sql_json_inplace_update(self, rs: RequestState, table: str,
-                                data: CdEDBObject, entity_key: str = "id"
-                                ) -> int:
-        """Generic SQL update query for JSON fields storing a dict.
-
-        This leaves missing keys unmodified.
-
-        See :py:meth:`sql_select` for thoughts on this.
-
-        :returns: number of affected rows
-        """
-        keys = tuple(key for key in data if key != entity_key)
-        if not keys:
-            # no input is an automatic success
-            return 1
-        commands = ", ".join("{key} = {key} || %s".format(key=key)
-                             for key in keys)
-        query = f"UPDATE {table} SET {commands} WHERE {entity_key} = %s"
-        params = tuple(PsycoJson(data[key]) for key in keys)
-        params += (data[entity_key],)
-        return self.query_exec(rs, query, params)
 
     def cgitb_log(self) -> None:
         """Log the current exception.

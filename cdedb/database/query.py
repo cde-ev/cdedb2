@@ -9,19 +9,13 @@ import collections.abc
 import datetime
 import enum
 import logging
-from typing import Any, Collection, Dict, List, Optional, Sequence, Tuple, Union, cast
+from typing import Any, Collection, List, Optional, Sequence, Tuple, Union, cast
 
 import psycopg2.extensions
 import psycopg2.extras
 
-# TODO we do not want to import from cdedb.common
-from cdedb.common import unwrap
+from cdedb.common import CdEDBObject, DefaultReturnCode, PsycoJson, unwrap
 from cdedb.database.connection import ConnectionContainer, n_
-
-# we do not want to import from cdedb.common here
-# from cdedb.common import CdEDBObject, DefaultReturnCode
-CdEDBObject = Dict[str, Any]
-DefaultReturnCode = int
 
 # The following are meant to be used for type hinting the sql backend methods.
 # DatabaseValue is for any singular value that should be written into the database or
@@ -39,13 +33,14 @@ EntityKey = Union[int, str]
 EntityKeys = Collection[int]
 
 
-class QueryMixin:
-    """Mixin to access the database layer.
+class SqlQueryBackend:
+    """Python backend to access the SQL database layer.
 
     This provides some methods to query the database. Beside the low-level query_*
     functions, this contains also some more elevate functions named sql_* to perform
     common and simple sql queries.
     """
+
     def __init__(self, logger: logging.Logger) -> None:
         self.logger = logger
 
@@ -83,7 +78,7 @@ class QueryMixin:
         """
         if (isinstance(obj, collections.abc.Iterable)
                 and not isinstance(obj, (str, collections.abc.Mapping))):
-            return [QueryMixin._sanitize_db_input(x) for x in obj]
+            return [SqlQueryBackend._sanitize_db_input(x) for x in obj]
         elif isinstance(obj, enum.Enum):
             return obj.value
         else:
@@ -115,8 +110,8 @@ class QueryMixin:
                 self.execute_db_query(cur, query, params)
                 return cur.rowcount
 
-    def query_one(self, container: ConnectionContainer, query: str, params: Sequence[DatabaseValue_s]
-                  ) -> Optional[CdEDBObject]:
+    def query_one(self, container: ConnectionContainer, query: str,
+                  params: Sequence[DatabaseValue_s]) -> Optional[CdEDBObject]:
         """Execute a query in a safe way (inside a transaction).
 
         :returns: First result of query or None if there is none
@@ -126,8 +121,8 @@ class QueryMixin:
                 self.execute_db_query(cur, query, params)
                 return self._sanitize_db_output(cur.fetchone())
 
-    def query_all(self, container: ConnectionContainer, query: str, params: Sequence[DatabaseValue_s]
-                  ) -> Tuple[CdEDBObject, ...]:
+    def query_all(self, container: ConnectionContainer, query: str,
+                  params: Sequence[DatabaseValue_s]) -> Tuple[CdEDBObject, ...]:
         """Execute a query in a safe way (inside a transaction).
 
         :returns: all results of query
@@ -180,9 +175,9 @@ class QueryMixin:
         query = f"INSERT INTO {table} ({', '.join(keys)}) VALUES {value_list}"
         return self.query_exec(container, query, params)
 
-    def sql_select(self, container: ConnectionContainer, table: str, columns: Sequence[str],
-                   entities: EntityKeys, *, entity_key: str = "id"
-                   ) -> Tuple[CdEDBObject, ...]:
+    def sql_select(self, container: ConnectionContainer, table: str,
+                   columns: Sequence[str], entities: EntityKeys, *,
+                   entity_key: str = "id") -> Tuple[CdEDBObject, ...]:
         """Generic SQL select query.
 
         This is one of a set of functions which provides formatting and
@@ -197,8 +192,8 @@ class QueryMixin:
                  f" WHERE {entity_key} = ANY(%s)")
         return self.query_all(container, query, (entities,))
 
-    def sql_select_one(self, container: ConnectionContainer, table: str, columns: Sequence[str],
-                       entity: EntityKey, entity_key: str = "id"
+    def sql_select_one(self, container: ConnectionContainer, table: str,
+                       columns: Sequence[str], entity: EntityKey, entity_key: str = "id"
                        ) -> Optional[CdEDBObject]:
         """Generic SQL select query for one row.
 
@@ -226,8 +221,30 @@ class QueryMixin:
         params = tuple(data[key] for key in keys) + (data[entity_key],)
         return self.query_exec(container, query, params)
 
-    def sql_delete(self, container: ConnectionContainer, table: str, entities: EntityKeys,
-                   entity_key: str = "id") -> int:
+    def sql_json_inplace_update(self, container: ConnectionContainer, table: str,
+                                data: CdEDBObject, entity_key: str = "id"
+                                ) -> int:
+        """Generic SQL update query for JSON fields storing a dict.
+
+        This leaves missing keys unmodified.
+
+        See :py:meth:`sql_select` for thoughts on this.
+
+        :returns: number of affected rows
+        """
+        keys = tuple(key for key in data if key != entity_key)
+        if not keys:
+            # no input is an automatic success
+            return 1
+        commands = ", ".join("{key} = {key} || %s".format(key=key)
+                             for key in keys)
+        query = f"UPDATE {table} SET {commands} WHERE {entity_key} = %s"
+        params = tuple(PsycoJson(data[key]) for key in keys)
+        params += (data[entity_key],)
+        return self.query_exec(container, query, params)
+
+    def sql_delete(self, container: ConnectionContainer, table: str,
+                   entities: EntityKeys, entity_key: str = "id") -> int:
         """Generic SQL deletion query.
 
         See :py:meth:`sql_select` for thoughts on this.
@@ -237,8 +254,8 @@ class QueryMixin:
         query = f"DELETE FROM {table} WHERE {entity_key} = ANY(%s)"
         return self.query_exec(container, query, (entities,))
 
-    def sql_delete_one(self, container: ConnectionContainer, table: str, entity: EntityKey,
-                       entity_key: str = "id") -> int:
+    def sql_delete_one(self, container: ConnectionContainer, table: str,
+                       entity: EntityKey, entity_key: str = "id") -> int:
         """Generic SQL deletion query for a single row.
 
         See :py:meth:`sql_select` for thoughts on this.
@@ -258,7 +275,7 @@ class QueryMixin:
 from aiopg.pool import Pool, _PoolContextManager
 
 
-class AsyncQueryMixin(QueryMixin):
+class AsyncQueryMixin(SqlQueryBackend):
     async def execute_db_query(self, cur: psycopg2.extensions.cursor, query: str,
                          params: Sequence[DatabaseValue_s]) -> None:
         """Perform a database query. This low-level wrapper should be used

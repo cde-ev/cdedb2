@@ -404,24 +404,23 @@ class CoreGenesisMixin(CoreBaseFrontend):
             return self.redirect(rs, "core/genesis_show_case")
 
         # Apply the decision.
-        code = self.coreproxy.genesis_decide(rs, genesis_case_id, decision, persona_id)
-        if not code:  # pragma: no cover
+        persona_id = self.coreproxy.genesis_decide(
+            rs, genesis_case_id, decision, persona_id)
+        if not persona_id:  # Purely an error case. # pragma: no cover
             rs.notify("error", n_("Failed."))
             return self.genesis_show_case(rs, genesis_case_id)
 
         if (decision.is_create() or decision.is_update()) and case['pevent_id']:
-            persona_id = persona_id or code
             code = self.pasteventproxy.add_participant(
                 rs, pevent_id=case['pevent_id'], pcourse_id=case['pcourse_id'],
                 persona_id=persona_id)
             if not code:  # pragma: no cover
                 rs.notify(
                     "error", n_("Past event attendance could not be established."))
-                return self.genesis_show_case(rs, genesis_case_id)
 
         # Send notification to the user, depending on decision.
         if decision.is_create():
-            persona = self.coreproxy.get_persona(rs, code)
+            persona = self.coreproxy.get_persona(rs, persona_id)
             success, cookie = self.coreproxy.make_reset_cookie(
                 rs, persona['username'],
                 timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
@@ -442,7 +441,6 @@ class CoreGenesisMixin(CoreBaseFrontend):
                     {'persona': persona, 'email': email, 'cookie': cookie})
             rs.notify("success", n_("Case approved."))
         elif decision.is_update():
-            assert persona_id is not None
             persona = self.coreproxy.get_persona(rs, persona_id)
             success, cookie = self.coreproxy.make_reset_cookie(
                 rs, persona['username'], timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
