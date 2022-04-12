@@ -20,7 +20,7 @@ from typing import List, Optional, Union
 
 import cdedb.validationtypes as vtypes
 from cdedb.backend.common import affirm_validation as affirm
-from cdedb.common import PathLike, make_root_logger
+from cdedb.common import PathLike, setup_logger
 from cdedb.config import Config
 
 
@@ -33,7 +33,7 @@ class EntityKeeper:
 
         # Initialize logger.
         logger_name = "cdedb.backend.entitykeeper"
-        make_root_logger(
+        setup_logger(
             logger_name, self.conf["LOG_DIR"] / "cdedb-backend-keeper.log",
             self.conf["LOG_LEVEL"], syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 """Global utility functions."""
-
 import collections
 import collections.abc
 import datetime
@@ -384,13 +383,13 @@ def make_proxy(backend: B, internal: bool = False) -> B:
     return cast(B, Proxy())
 
 
-def make_root_logger(name: str, logfile_path: PathLike,
-                     log_level: int, syslog_level: int = None,
-                     console_log_level: int = None) -> logging.Logger:
+def setup_logger(name: str, logfile_path: pathlib.Path,
+                 log_level: int, syslog_level: int = None,
+                 console_log_level: int = None) -> logging.Logger:
     """Configure the :py:mod:`logging` module.
 
     Since this works hierarchical, it should only be necessary to call this
-     once and then every child logger is routed through this configured logger.
+    once and then every child logger is routed through this configured logger.
     """
     logger = logging.getLogger(name)
     if logger.handlers:
@@ -400,7 +399,7 @@ def make_root_logger(name: str, logfile_path: PathLike,
     logger.setLevel(log_level)
     formatter = logging.Formatter(
         '[%(asctime)s,%(name)s,%(levelname)s] %(message)s')
-    file_handler = logging.FileHandler(str(logfile_path))
+    file_handler = logging.FileHandler(str(logfile_path), delay=True)
     file_handler.setLevel(log_level)
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
@@ -414,7 +413,6 @@ def make_root_logger(name: str, logfile_path: PathLike,
         console_handler.setLevel(console_log_level)
         console_handler.setFormatter(formatter)
         logger.addHandler(console_handler)
-    logger.debug(f"Configured logger {name}.")
     return logger
 
 

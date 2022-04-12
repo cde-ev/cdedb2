@@ -2,19 +2,23 @@
 
 """Entry script for apache."""
 
-import os.path
+import pathlib
 import sys
 
-currentpath = os.path.dirname(os.path.abspath(__file__))
-if not currentpath.startswith('/') or not currentpath.endswith('/wsgi'):
+# determine the path of the repository, including all modules (cdedb, tests, doc etc)
+currentpath = pathlib.Path(__file__).resolve().parent
+if currentpath.parts[0] != '/' or currentpath.parts[-1] != 'wsgi':
     raise RuntimeError("Failed to locate repository")
-repopath = currentpath[:-5]
+repopath = currentpath.parent
 
-sys.path.append(repopath)
+sys.path.append(str(repopath))
+
+# set the configpath to the default, since apache does not propagate environment
+# variables consciously
+from cdedb.config import DEFAULT_CONFIGPATH, set_configpath
+
+set_configpath(DEFAULT_CONFIGPATH)
 
 from cdedb.frontend.application import Application
 
-configpath = "/etc/cdedb-application-config.py"
-if not os.path.isfile(configpath):
-   configpath = None
-application = Application(configpath)
+application = Application()

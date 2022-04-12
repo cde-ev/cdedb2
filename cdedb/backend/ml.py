@@ -23,8 +23,7 @@ from cdedb.backend.event import EventBackend
 from cdedb.common import (
     ADMIN_KEYS, MAILINGLIST_FIELDS, MOD_ALLOWED_FIELDS, RESTRICTED_MOD_ALLOWED_FIELDS,
     CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers,
-    PathLike, PrivilegeError, RequestState, implying_realms, make_proxy, n_, unwrap,
-    xsorted,
+    PrivilegeError, RequestState, implying_realms, make_proxy, n_, unwrap, xsorted,
 )
 from cdedb.database.connection import Atomizer
 from cdedb.ml_type_aux import MLType, MLTypeLike
@@ -39,10 +38,10 @@ class MlBackend(AbstractBackend):
     additional actions available."""
     realm = "ml"
 
-    def __init__(self, configpath: PathLike = None):
-        super().__init__(configpath)
-        self.event = make_proxy(EventBackend(configpath), internal=True)
-        self.assembly = make_proxy(AssemblyBackend(configpath), internal=True)
+    def __init__(self) -> None:
+        super().__init__()
+        self.event = make_proxy(EventBackend(), internal=True)
+        self.assembly = make_proxy(AssemblyBackend(), internal=True)
         self.backends = ml_type.BackendContainer(
             core=self.core, event=self.event, assembly=self.assembly)
         self.subman = subman.SubscriptionManager(
