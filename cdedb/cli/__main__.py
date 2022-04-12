@@ -54,7 +54,7 @@ def get_config_var(config: TestConfig, variable: str) -> None:
     try:
         val = config[variable]
     except KeyError:
-        raise click.UsageError(f"Invalid config key '{variable}'.")  # pylint: disable=raise-missing-from
+        raise click.UsageError(f"Invalid config key '{variable}'.") from None
     else:
         click.echo(val)
 
