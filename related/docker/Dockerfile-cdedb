@@ -1,6 +1,7 @@
 FROM debian:bullseye-20210816
 
-# TODO replace with mount from host, snakeoil or first-run script?
+# TODO this should be obsolete, since we generate the certificates with a first run script.
+#  however, this does not work for the ci (which becomes visible for the offline vm test)
 RUN apt-get update && apt-get install --yes --no-install-recommends openssl \
     && mkdir /etc/ssl/apache2 \
     && openssl req \
@@ -14,6 +15,7 @@ RUN apt-get update && apt-get install --yes --no-install-recommends openssl \
     && apt-get purge --yes --autoremove openssl \
     && rm -rf /var/lib/apt/lists/*
 
+# rarely changing base of bigger packages whose cache we do not want to bust
 RUN apt-get update && apt-get install --yes --no-install-recommends \
     sudo \
     make \
@@ -33,6 +35,7 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     texlive-luatex \
     && rm -rf /var/lib/apt/lists/*
 
+# mostly python packages and some dev tools
 RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3-psycopg2 \
     python3-dateutil \
@@ -59,6 +62,7 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3-phonenumbers \
     \
     python3-pip \
+    python3-click \
     \
     flake8 \
     isort \
@@ -83,34 +87,22 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     types-python-dateutil \
     types-freezegun \
     types-bleach \
-    types-Markdown
+    types-Markdown \
+    types-click
 
-# TODO check wether it is sensible to lower privileges to cdedb user
-# create and configure directories for the apache user
-RUN mkdir /var/lib/cdedb \
-    && mkdir /var/lib/cdedb/foto \
-    && mkdir /var/lib/cdedb/minor_form \
-    && mkdir /var/lib/cdedb/ballot_result \
-    && mkdir /var/lib/cdedb/assembly_attachment \
-    && mkdir /var/lib/cdedb/mailman_templates \
-    && chown --recursive www-data:www-data /var/lib/cdedb \
-    \
-    && mkdir /var/log/cdedb \
-    && chown www-data:www-data /var/log/cdedb \
-    \
-    && useradd --no-create-home cdedb \
-    && echo "%cdedb ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers \
-    \
-    && touch /CONTAINER
-
-# make storage persistent
-VOLUME /var/lib/cdedb
-
+# get the configuration files from the autobuild
 COPY ./related/docker/cdedb-entrypoint.sh ./related/auto-build/files/stage3 /tmp/autobuild/
 
-# put configuration files into correct positions
-# and add symlink to /cdedb2/cdedb directory so python can find it
+# This does the following:
+# - configure apache,
+# - add the mailman basic-auth password,
+# - put the localconfig at the default config path and
+#   create an empty secrets config (there has to exist one but the fallbacks are fine),
+# - add symlink to /cdedb2/cdedb directory so python can find it,
+# - create the cdedb user and enable passwordless sudo,
+# - create the magic file to signal that we are inside a container.
 RUN cp /tmp/autobuild/cdedb-entrypoint.sh /cdedb-entrypoint.sh \
+    \
     && a2enmod ssl wsgi headers authnz_ldap \
     && a2dissite 000-default \
     && echo "" > /etc/apache2/ports.conf \
@@ -122,9 +114,24 @@ RUN cp /tmp/autobuild/cdedb-entrypoint.sh /cdedb-entrypoint.sh \
     && chown www-data:www-data /etc/cdedb-mailman-htpasswd \
     && chmod 640 /etc/cdedb-mailman-htpasswd \
     \
+    && install -D /tmp/autobuild/localconfig.py /etc/cdedb/config.py \
+    && touch /etc/cdedb/public-secrets.py \
+    \
+    && rm -rf /tmp/autobuild \
+    \
     && ln -s /cdedb2/cdedb/ /usr/lib/python3/dist-packages/cdedb \
     \
-    && rm -rf /tmp/autobuild
+    && useradd --no-create-home cdedb \
+    && echo "%cdedb ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers \
+    \
+    && touch /CONTAINER
+
+# make config persistent
+VOLUME /etc/cdedb
+# the ssl certificate is created dynamically and has should persist
+VOLUME /etc/ssl/apache2
+# the storage dir is created during the first startup by the entrypoint
+VOLUME /var/lib/cdedb
 
 EXPOSE 443
 

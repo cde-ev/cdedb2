@@ -11,7 +11,6 @@ import email.parser
 import email.policy
 import enum
 import functools
-import getpass
 import gettext
 import io
 import json
@@ -19,7 +18,6 @@ import os
 import pathlib
 import re
 import shutil
-import subprocess
 import sys
 import tempfile
 import unittest
@@ -43,12 +41,13 @@ from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
+from cdedb.cli.storage import create_storage, populate_storage
 from cdedb.common import (
     ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, ANTI_CSRF_TOKEN_NAME,
     ANTI_CSRF_TOKEN_PAYLOAD, CdEDBLog, CdEDBObject, CdEDBObjectMap, PathLike,
     PrivilegeError, RequestState, merge_dicts, nearly_now, now, roles_to_db_role,
 )
-from cdedb.config import SecretsConfig, TestConfig
+from cdedb.config import SecretsConfig, TestConfig, get_configpath, set_configpath
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.application import Application
@@ -145,8 +144,8 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
     """
     # pylint: disable=protected-access
 
-    sessionproxy = SessionBackend(backend.conf._configpath)
-    secrets = SecretsConfig(backend.conf._configpath)
+    sessionproxy = SessionBackend()
+    secrets = SecretsConfig()
     connpool = connection_pool_factory(
         backend.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
         secrets, backend.conf["DB_HOST"], backend.conf["DB_PORT"])
@@ -241,30 +240,28 @@ class BasicTest(unittest.TestCase):
 
     storage_dir: ClassVar[pathlib.Path]
     testfile_dir: ClassVar[pathlib.Path]
-
-    configpath: ClassVar[str]
+    configpath: ClassVar[pathlib.Path]
+    _orig_configpath: ClassVar[pathlib.Path]
     conf: ClassVar[TestConfig]
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.configpath = os.environ['CDEDB_TEST_CONFIGPATH']
-        cls.conf = TestConfig(cls.configpath)
+        configpath = get_configpath()
+        cls.configpath = configpath
+        # save the configpath in an extra variable to reset it after each test
+        cls._orig_configpath = configpath
+        cls.conf = TestConfig()
         cls.storage_dir = cls.conf['STORAGE_DIR']
         cls.testfile_dir = cls.storage_dir / "testfiles"
 
     def setUp(self) -> None:
         test_method = getattr(self, self._testMethodName)
         if getattr(test_method, self.needs_storage_marker, False):
-            # get the user running the current process, so the access rights for the
-            # storage directory are set correctly
-            user = getpass.getuser()
-            subprocess.run(
-                ("make", "storage", f"STORAGE_DIR={self.storage_dir}",
-                 f"DATA_USER={user}"),
-                stdout=subprocess.DEVNULL, check=True, start_new_session=True)
+            create_storage(self.conf)
+            populate_storage(self.conf)
         if getattr(test_method, self.needs_event_keeper_marker, False):
             max_event_id = len(self.get_sample_data('event.events'))
-            keeper = EntityKeeper(self.conf, 'event_keeper')  # type: ignore
+            keeper = EntityKeeper(self.conf, 'event_keeper')
             for event_id in range(1, max_event_id + 1):
                 keeper.init(event_id)
                 keeper.commit(event_id, "", "Initialer Commit.")
@@ -273,6 +270,9 @@ class BasicTest(unittest.TestCase):
         test_method = getattr(self, self._testMethodName)
         if getattr(test_method, self.needs_storage_marker, False):
             shutil.rmtree(self.storage_dir)
+        # reset the configpath after each test. This prevents interference between tests
+        # playing around with this.
+        set_configpath(self._orig_configpath)
 
     @staticmethod
     def get_sample_data(table: str, ids: Iterable[int] = None,
@@ -460,11 +460,11 @@ class BackendTest(CdEDBTest):
     @classmethod
     def initialize_raw_backend(cls, backendcls: Type[SessionBackend]
                                ) -> SessionBackend:
-        return backendcls(configpath=cls.configpath)
+        return backendcls()
 
     @classmethod
     def initialize_backend(cls, backendcls: Type[B]) -> B:
-        return _make_backend_shim(backendcls(configpath=cls.configpath), internal=True)
+        return _make_backend_shim(backendcls(), internal=True)
 
 
 # A reference of the most important attributes for all users. This is used for
@@ -798,15 +798,17 @@ def event_keeper(fun: F) -> F:
 
 def execsql(sql: AnyStr) -> None:
     """Execute arbitrary SQL-code on the test database."""
-    conf = TestConfig(os.environ['CDEDB_TEST_CONFIGPATH'])
-    psql = ("/cdedb2/bin/execute_sql_script.py",
-            "--username", "cdb", "--dbname", conf["CDB_DATABASE_NAME"])
-    mode = 'wb' if isinstance(sql, bytes) else 'w'
-    with tempfile.NamedTemporaryFile(mode=mode, suffix='.sql') as sql_file:
-        sql_file.write(sql)
-        sql_file.flush()
-        subprocess.run(psql + ("--file", sql_file.name), stdout=subprocess.DEVNULL,
-                       start_new_session=True, check=True)
+    conf = TestConfig()
+
+    with Script(
+        persona_id=-1,
+        dbuser="cdb",
+        dbname=conf["CDB_DATABASE_NAME"],
+        check_system_user=False,
+    ).rs().conn as conn:
+        conn.set_session(autocommit=True)
+        with conn.cursor() as curr:
+            curr.execute(sql)
 
 
 class FrontendTest(BackendTest):
@@ -834,11 +836,12 @@ class FrontendTest(BackendTest):
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
-        app = Application(cls.configpath)
+        app = Application()
         cls.gettext = app.translations[cls.lang].gettext
         cls.app = webtest.TestApp(app, extra_environ=cls.app_extra_environ)
 
         # set `do_scrap` to True to capture a snapshot of all visited pages
+        # TODO move this in the TestConfig?
         cls.do_scrap = 'CDEDB_TEST_DUMP_DIR' in os.environ
         if cls.do_scrap:
             # create a parent directory for all dumps
@@ -1661,7 +1664,7 @@ class MultiAppFrontendTest(FrontendTest):
         super().setUpClass()
         cls.apps = [
             webtest.TestApp(
-                Application(cls.configpath),
+                Application(),
                 extra_environ=cls.app_extra_environ,
             )
             for _ in range(cls.n)
@@ -1744,7 +1747,7 @@ class CronTest(CdEDBTest):
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
-        cls.cron = CronFrontend(configpath=cls.configpath)
+        cls.cron = CronFrontend()
         cls.core = make_cron_backend_proxy(cls.cron, cls.cron.core.coreproxy)
         cls.cde = make_cron_backend_proxy(cls.cron, cls.cron.core.cdeproxy)
         cls.event = make_cron_backend_proxy(cls.cron, cls.cron.core.eventproxy)
