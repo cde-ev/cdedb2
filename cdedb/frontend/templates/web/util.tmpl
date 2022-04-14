@@ -868,7 +868,7 @@ mailto:
     {% endif %}
 {% endmacro %}
 
-{% macro notification(ntype, id) %}
+{% macro notification(ntype, id='') %}
     {% with icontypes = {"success": "check-circle", "info": "info-circle", "warning": "exclamation-circle",
                          "error" : "times-circle"},
             alerttypes = {"success": "success", "info": "info", "warning": "warning", "error": "danger"},
