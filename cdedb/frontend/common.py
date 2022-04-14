@@ -296,6 +296,7 @@ def periodic(name: str, period: int = 1
 
     return decorator
 
+
 class UnprintableUndefined(jinja2.Undefined):
     """An undefined that barks on print and iteration, but not on boolean
     tests and basic comparisons.
@@ -304,10 +305,11 @@ class UnprintableUndefined(jinja2.Undefined):
     comfortable `if` checks as well as `sidenav_active` comparisons.
     """
 
-    __iter__ = __str__ = __len__ = jinja2.Undefined._fail_with_undefined_error  # pylint: disable=protected-access
+    __iter__ = __str__ = __len__ = jinja2.Undefined._fail_with_undefined_error  # type: ignore[attr-defined]  # pylint: disable=protected-access
     # __eq__ = __ne__ = __bool__ = Undefined._fail_with_undefined_error
-    __hash__ = jinja2.Undefined._fail_with_undefined_error  # pylint: disable=protected-access
-    __contains__ = jinja2.Undefined._fail_with_undefined_error  # pylint: disable=protected-access
+    __hash__ = jinja2.Undefined._fail_with_undefined_error  # type: ignore[attr-defined]  # pylint: disable=protected-access
+    __contains__ = jinja2.Undefined._fail_with_undefined_error  # type: ignore[attr-defined]  # pylint: disable=protected-access
+
 
 class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     """Common base class for all frontends."""
