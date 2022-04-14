@@ -324,6 +324,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             undefined = UnprintableUndefined
         else:
             undefined = jinja2.make_logging_undefined(self.logger, jinja2.Undefined)
+            undefined.__bool__ = jinja2.Undefined.__bool__
         self.jinja_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(str(self.template_dir)),
             extensions=['jinja2.ext.i18n', 'jinja2.ext.do', 'jinja2.ext.loopcontrols'],
