@@ -156,22 +156,22 @@ class StatisticMixin:
     """Helper class for basic query construction shared across"""
 
     @abc.abstractmethod
-    def test(self, event: CdEDBObject, entity: CdEDBObject, entity_id: int) -> bool:
-        """Determine whether the given entity fits this stat for the given track."""
+    def test(self, event: CdEDBObject, entity: CdEDBObject, context_id: int) -> bool:
+        """Determine whether the given entity fits this stat for the given context."""
 
     @abc.abstractmethod
-    def _get_query_aux(self, event: CdEDBObject, part_id: int) -> StatQueryAux:
-        """Construct query fields, constraints and order for this stat and a track."""
+    def _get_query_aux(self, event: CdEDBObject, context_id: int) -> StatQueryAux:
+        """Construct query fields, constraints and order for this stat and a context."""
 
     @staticmethod
     @abc.abstractmethod
     def _get_base_query(event: CdEDBObject) -> Query:
         """Create a query object to base all queries for these stats on."""
 
-    def get_query(self, event: CdEDBObject, track_id: int) -> Query:
+    def get_query(self, event: CdEDBObject, context_id: int) -> Query:
         """Construct the actual query from the base and stat specifix query aux."""
         query = self._get_base_query(event)
-        fields, constraints, order = self._get_query_aux(event, track_id)
+        fields, constraints, order = self._get_query_aux(event, context_id)
         query.fields_of_interest.extend(fields)
         query.constraints.extend(constraints)
         # Prepend the specific order.
@@ -195,15 +195,16 @@ class StatisticMixin:
         return ()
 
 
-class StatisticPartMixin(StatisticMixin):
+# This class is still abstract, but adding abc.ABC doesn't play nice with enum.Enum.
+class StatisticPartMixin(StatisticMixin):  # pylint: disable=abstract-method
     """
     Helper class for methods to delegate tests and query construction for part stats.
     """
 
-    def test_part_group(self, event: CdEDBObject, enity: CdEDBObject,
+    def test_part_group(self, event: CdEDBObject, entity: CdEDBObject,
                         part_group_id: int) -> bool:
         """Determine whether the entity fits this stat for any track in a part group."""
-        return any(self.test(event, enity, track_id) for track_id
+        return any(self.test(event, entity, track_id) for track_id
                    in self.get_part_ids(event, part_group_id=part_group_id))
 
     def get_query_part_group(self, event: CdEDBObject, part_group_id: int
@@ -214,7 +215,8 @@ class StatisticPartMixin(StatisticMixin):
         return merge_queries(self._get_base_query(event), *queries)
 
 
-class StatisticTrackMixin(StatisticMixin):
+# This class is still abstract, but adding abc.ABC doesn't play nice with enum.Enum.
+class StatisticTrackMixin(StatisticMixin):  # pylint: disable=abstract-method
     """
     Helper class for methods to delegate tests and query construction for track stats.
     """
@@ -224,10 +226,10 @@ class StatisticTrackMixin(StatisticMixin):
         return any(self.test(event, entity, track_id)
                    for track_id in self.get_track_ids(event, part_id=part_id))
 
-    def test_part_group(self, event: CdEDBObject, enity: CdEDBObject,
+    def test_part_group(self, event: CdEDBObject, entity: CdEDBObject,
                         part_group_id: int) -> bool:
         """Determine whether the entity fits this stat for any track in a part group."""
-        return any(self.test(event, enity, track_id) for track_id
+        return any(self.test(event, entity, track_id) for track_id
                    in self.get_track_ids(event, part_group_id=part_group_id))
 
     def get_query_part(self, event: CdEDBObject, part_id: int) -> Optional[Query]:
@@ -296,7 +298,7 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
     rejected = n_("Registration Rejected")
     total = n_("Total Registrations")
 
-    def test(self, event: CdEDBObject, reg: CdEDBObject, part_id: int) -> bool:
+    def test(self, event: CdEDBObject, reg: CdEDBObject, part_id: int) -> bool:  # pylint: disable=arguments-differ
         """
         Test wether the given registration fits into this statistic for the given part.
         """
@@ -350,7 +352,7 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
         else:
             raise RuntimeError(n_("Impossible."))
 
-    def _get_query_aux(self, event: CdEDBObject, part_id: int) -> StatQueryAux:
+    def _get_query_aux(self, event: CdEDBObject, part_id: int) -> StatQueryAux:  # pylint: disable=arguments-differ
         """
         Return fields of interest, constraints and order for this statistic for a part.
         """
@@ -518,7 +520,7 @@ class EventCourseStatistic(StatisticTrackMixin, enum.Enum):
     cancelled = n_("Cancelled Courses")
     taking_place = n_("Courses Taking Place")
 
-    def test(self, event: CdEDBObject, course: CdEDBObject, track_id: int) -> bool:
+    def test(self, event: CdEDBObject, course: CdEDBObject, track_id: int) -> bool:  # pylint: disable=arguments-differ
         """Determine whether the course fits this stat for the given track."""
         if self == self.offered:
             return track_id in course['segments']
@@ -531,7 +533,7 @@ class EventCourseStatistic(StatisticTrackMixin, enum.Enum):
         else:
             raise RuntimeError(n_("Impossible."))
 
-    def _get_query_aux(self, event: CdEDBObject, track_id: int) -> StatQueryAux:
+    def _get_query_aux(self, event: CdEDBObject, track_id: int) -> StatQueryAux:  # pylint: disable=arguments-differ
         if self == self.offered:
             return (
                 ['course.instructors'],
@@ -578,7 +580,7 @@ class EventRegistrationTrackStatistic(StatisticTrackMixin, enum.Enum):
     attendees = n_("Attendees")
     no_course = n_("No Course")
 
-    def test(self, event: CdEDBObject, reg: CdEDBObject, track_id: int) -> bool:
+    def test(self, event: CdEDBObject, reg: CdEDBObject, track_id: int) -> bool:  # pylint: disable=arguments-differ
         """Determine whether the registration fits this stat for the given track."""
         track = reg['tracks'][track_id]
         part = reg['parts'][event['tracks'][track_id]['part_id']]
@@ -600,7 +602,7 @@ class EventRegistrationTrackStatistic(StatisticTrackMixin, enum.Enum):
         else:
             raise RuntimeError(n_("Impossible."))
 
-    def _get_query_aux(self, event: CdEDBObject, track_id: int) -> StatQueryAux:
+    def _get_query_aux(self, event: CdEDBObject, track_id: int) -> StatQueryAux:  # pylint: disable=arguments-differ
         track = event['tracks'][track_id]
         part = event['parts'][track['part_id']]
         if self == self.all_instructors:
