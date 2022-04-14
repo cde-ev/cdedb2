@@ -6,8 +6,9 @@ following steps to deploy a new revision.
 
 * Locally set the stable branch to the desired revision::
 
+    git fetch
     git checkout stable
-    git merge master # or another branch or an explicit commit
+    git merge origin/master # or another branch or an explicit commit
 
 * Run the ``bin/push-stable.sh`` script. If any new commits with deployment
   relevance are present (marked by a line starting with "Deploy:" in the
@@ -39,7 +40,7 @@ following steps to deploy a new revision.
     sudo -i
     cdedb-update.sh
     sudo -u cdb psql -U cdb -d cdb -f evolution.sql
-    sudo -u www-data SCRIPT_CONFIGPATH="/etc/cdedb-application-config.py" SCRIPT_PERSONA_ID=X SCRIPT_DRY_RUN="" python3 bin/some_script.py
+    sudo -u www-data SCRIPT_CONFIGPATH="/etc/cdedb/config.py" SCRIPT_PERSONA_ID=X SCRIPT_DRY_RUN="" python3 bin/some_script.py
     cdedb-restart.sh
 
 * Send update information to the Aktivenforum. These should include a short summary of

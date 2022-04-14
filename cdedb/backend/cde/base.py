@@ -28,8 +28,8 @@ from cdedb.backend.common import (
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.common import (
     PARSE_OUTPUT_DATEFORMAT, CdEDBLog, CdEDBObject, DefaultReturnCode, LineResolutions,
-    PathLike, PrivilegeError, QuotaException, RequestState, glue, implying_realms,
-    make_proxy, n_, unwrap,
+    PrivilegeError, QuotaException, RequestState, glue, implying_realms, make_proxy, n_,
+    unwrap,
 )
 from cdedb.database.connection import Atomizer
 from cdedb.filter import money_filter
@@ -44,9 +44,9 @@ class CdEBaseBackend(AbstractBackend):
     """
     realm = "cde"
 
-    def __init__(self, configpath: PathLike = None):
-        super().__init__(configpath)
-        self.pastevent = make_proxy(PastEventBackend(configpath), internal=True)
+    def __init__(self) -> None:
+        super().__init__()
+        self.pastevent = make_proxy(PastEventBackend(), internal=True)
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:

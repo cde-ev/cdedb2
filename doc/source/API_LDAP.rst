@@ -25,13 +25,13 @@ Our LDAP Tree looks as follows::
     │   └── ...
     ├── ou=groups
     │   ├── ou=assembly-presiders
-    │   │   ├── cn=1
+    │   │   ├── cn=presiders-1
     │   │   └── ...
     │   ├── ou=event-orgas
-    │   │   ├── cn=1
+    │   │   ├── cn=orgas-1
     │   │   └── ...
     │   ├── ou=ml-moderators
-    │   │   ├── cn=42@lists.cde-ev.de
+    │   │   ├── cn=42-owner@lists.cde-ev.de
     │   │   └── ...
     │   ├── ou=ml-subscribers
     │   │   ├── cn=42@lists.cde-ev.de

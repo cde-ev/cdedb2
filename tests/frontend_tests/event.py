@@ -20,7 +20,9 @@ from cdedb.common import (
 from cdedb.filter import iban_filter
 from cdedb.frontend.common import CustomCSVDialect
 from cdedb.query import QueryOperators
-from tests.common import USER_DICT, FrontendTest, UserObject, as_users, prepsql, storage
+from tests.common import (
+    USER_DICT, FrontendTest, UserObject, as_users, event_keeper, prepsql, storage,
+)
 
 
 class TestEventFrontend(FrontendTest):
@@ -506,6 +508,7 @@ class TestEventFrontend(FrontendTest):
             self.assertTitle("Universale Akademie")
             self.assertNonPresence("Beispiel")
 
+    @event_keeper
     @as_users("garcia")
     def test_orga_rate_limit(self) -> None:
         self.traverse({'href': '/event/$'},
@@ -639,6 +642,7 @@ class TestEventFrontend(FrontendTest):
         self.assertNotIn('5', [value for (value, checked, text)
                                in f['course_choice3_0'].options])
 
+    @event_keeper
     @as_users("annika", "garcia")
     def test_part_summary_trivial(self) -> None:
         self.traverse("Veranstaltungen", "Große Testakademie 2222", "Log")
@@ -875,6 +879,7 @@ class TestEventFrontend(FrontendTest):
         self.submit(f)
         self.assertNonPresence('Heldentum')
 
+    @event_keeper
     @as_users("annika", "garcia")
     def test_change_event_fields(self) -> None:
         self.traverse({'href': '/event/$'},
@@ -913,6 +918,7 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['fieldsummaryform']
         self.assertNotIn('field_name_9', f.fields)
 
+    @event_keeper
     @as_users("garcia")
     def test_event_fields_unique_name(self) -> None:
         self.get("/event/event/1/field/summary")
@@ -944,6 +950,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertValidationError('field_name_-1', "Feldname nicht eindeutig.")
         self.assertValidationError('field_name_-2', "Feldname nicht eindeutig.")
 
+    @event_keeper
     @as_users("garcia")
     def test_event_fields_datatype(self) -> None:
         self.get("/event/event/1/field/summary")
@@ -966,6 +973,7 @@ etc;anything else""", f['entries_2'].value)
             "kind_-1",
             "Ungültige Eingabe für Enumeration <enum 'FieldDatatypes'>.")
 
+    @event_keeper
     @as_users("annika", "garcia")
     def test_event_fields_change_datatype(self) -> None:
         # First, remove the "lodge" field from the questionaire and the event's,
@@ -1011,6 +1019,7 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/1/registration/1/show'},
                       {'href': '/event/event/1/registration/1/change'})
 
+    @event_keeper
     @as_users("garcia")
     def test_event_fields_boolean(self) -> None:
         self.traverse({'href': '/event/$'},
@@ -1041,6 +1050,7 @@ etc;anything else""", f['entries_2'].value)
         f['notevil'] = "True"
         self.submit(f)
 
+    @event_keeper
     @as_users("garcia")
     def test_event_fields_date(self) -> None:
         self.traverse({'href': '/event/$'},
@@ -1073,6 +1083,7 @@ etc;anything else""", f['entries_2'].value)
         f['notevil'] = "2018-10-03"
         self.submit(f)
 
+    @event_keeper
     @as_users("annika", "garcia")
     def test_event_fields_query_capital_letter(self) -> None:
         self.get("/event/event/1/field/summary")
@@ -1139,6 +1150,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Große Testakademie 2222")
         self.assertPresence("Kein Formular vorhanden", div='minor-form')
 
+    @event_keeper
     @as_users("annika", "ferdinand")
     def test_create_event(self) -> None:
         self.traverse({'href': '/event/$'},
@@ -1305,6 +1317,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("21", f['max_size'].value)
         self.assertEqual("Canyon", f['fields.room'].value)
 
+    @event_keeper
     @as_users("annika", "garcia")
     def test_create_delete_course(self) -> None:
         self.traverse({'href': '/event/$'},
@@ -1659,6 +1672,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
         self.assertPresence("Betrag 10,50 €")
 
+    @event_keeper
     @as_users("annika")
     def test_registration_questionnaire(self) -> None:
         self.traverse("Veranstaltungen", "Alle Veranstaltungen", "CdE-Party 2050")
@@ -1824,6 +1838,7 @@ etc;anything else""", f['entries_2'].value)
             f[k + "_-1"] = v
         self.submit(f)
 
+    @event_keeper
     @as_users("annika")
     def test_fee_modifiers(self) -> None:
         self.traverse("Veranstaltungen", "Alle Veranstaltungen", "CdE-Party 2050")
@@ -1945,6 +1960,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Beitragsmodifikator angelegt",
                             div=str(self.EVENT_LOG_OFFSET + 10) + "-1010")
 
+    @event_keeper
     @as_users("garcia")
     def test_waitlist(self) -> None:
         # Create some new fields.
@@ -2338,6 +2354,7 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f, check_notification=False)
         # Here the active regex chars where successfully neutralised
 
+    @event_keeper
     @as_users("garcia")
     def test_registration_query(self) -> None:
         self.traverse({'href': '/event/$'},
@@ -2512,6 +2529,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence(query_name, div="default_queries_container",
                                check_div=False)
 
+    @event_keeper
     @as_users("garcia")
     def test_multiedit(self) -> None:
         self.traverse({'href': '/event/$'},
@@ -2576,13 +2594,14 @@ etc;anything else""", f['entries_2'].value)
                             div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
         self.assertPresence("Multi-Edit",
                             div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
-        self.assertNonPresence("Mult-Edit:",
+        self.assertNonPresence("Multi-Edit:",
                                div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
         self.assertPresence("Multi-Edit: Muss doch nicht laufen.",
                             div=str(self.EVENT_LOG_OFFSET + 3) + "-1003")
         self.assertPresence("Multi-Edit: Muss doch nicht laufen.",
                             div=str(self.EVENT_LOG_OFFSET + 4) + "-1004")
 
+    @event_keeper
     @as_users("garcia")
     def test_multiedit_course_instructors(self) -> None:
         event_id = 3
@@ -2637,6 +2656,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("α. Heldentum")
         self.assertPresence("Extrawünsche: Meerblick, Weckdienst")
 
+    @event_keeper
     @as_users("garcia")
     def test_multiedit_wa1920(self) -> None:
         self.traverse({'href': '/event/$'},
@@ -2820,6 +2840,7 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['changeregistrationform']
         self.assertEqual(True, f['reg.parental_agreement'].checked)
 
+    @event_keeper
     @as_users("garcia")
     def test_delete_registration(self) -> None:
         self.traverse({'href': '/event/$'},
@@ -2852,6 +2873,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Tokyo Japan")
         self.assertNonPresence("Ich bin ein „Künstler“; im weiteren Sinne.")
 
+    @event_keeper
     @as_users("garcia")
     def test_lodgements(self) -> None:
         self.traverse({'href': '/event/$'},
@@ -2976,6 +2998,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Unterkunft Kellerverlies (Große Testakademie 2222)")
         self.assertPresence("Altes Schloss")
 
+    @event_keeper
     @as_users("garcia")
     def test_field_set(self) -> None:
         # first for registration-associated fields
@@ -3748,6 +3771,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("1", f['field_id_2'].value)
         self.assertEqual("", f['field_id_3'].value)
 
+    @event_keeper
     @as_users("garcia")
     def test_checkin(self) -> None:
         # multi-part
@@ -3998,6 +4022,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence(change_note,
                             div=str(self.EVENT_LOG_OFFSET + 4) + "-1004")
 
+    @event_keeper
     @as_users("annika", "garcia")
     def test_lock_event(self) -> None:
         self.traverse({'href': '/event/$'},
@@ -4010,6 +4035,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence(
             "Die Veranstaltung ist zur Offline-Nutzung gesperrt.")
 
+    @event_keeper
     @as_users("annika", "garcia")
     def test_unlock_event(self) -> None:
         self.traverse({'href': '/event/$'},
@@ -4032,6 +4058,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Die Veranstaltung ist nicht gesperrt.")
 
     @storage
+    @event_keeper
     @as_users("annika", "garcia")
     def test_partial_import_normal(self) -> None:
         self.traverse({'href': '/event/$'},
@@ -4096,6 +4123,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Geheimkabinett")
 
     @storage
+    @event_keeper
     @as_users("annika", "garcia")
     def test_partial_import_interleaved(self) -> None:
         self.traverse({'href': '/event/$'},
@@ -4239,6 +4267,7 @@ etc;anything else""", f['entries_2'].value)
         expectation['timestamp'] = result['timestamp']
         self.assertEqual(expectation, result)
 
+    @event_keeper
     @as_users("annika", "garcia")
     def test_partial_idempotency(self) -> None:
         self.traverse({'href': '/event/$'},

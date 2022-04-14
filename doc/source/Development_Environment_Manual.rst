@@ -67,6 +67,17 @@ issuing::
 
   make doc
 
+Configure the application
+-------------------------
+
+First of all, you need to create your personal configuration and make the path to
+the file available via environment variable, like described in
+:doc:`Design_Environment_Setup`. The configuration file may be empty if you do not want
+to override the defaults from :mod:`cdedb.config`.
+
+A sample configuration for development instances can be found in
+``related/auto-build/files/stage3/localconfig.py``.
+
 Prepare environment
 -------------------
 
@@ -76,13 +87,15 @@ user xy). First execute as user with enough permissions (that is the ability
 to run ``sudo -u postgres ...`` and ``sudo -u cdb ...``) and with running
 postgres::
 
-  make sql-initial
-  make sql
+  python3 -m cdedb db create-users
+  python3 -m cdedb db create
 
-The first one will create the database users, the second one the actual tables,
-seeded with sample data. To create an unseeded database, call ``make sql-setup``
-instead. Now configure pgbouncer in
-``pgbouncer.ini`` (in ``/etc``) with the following::
+The first one will create the database users, the second one the actual tables.
+To seed them with sample data, run additionally::
+
+  python3 -m cdedb db populate
+
+Now configure pgbouncer in ``pgbouncer.ini`` (in ``/etc``) with the following::
 
   [databases]
   cdb =
@@ -144,30 +157,17 @@ note, that this is syntax for apache-2.4 (which differs from apache-2.2).
 Next we need to create the directory for uploaded data (where
 ``www-data`` is the user running Apache)::
 
-  mkdir /var/lib/cdedb/
-  chown www-data:www-data /var/lib/cdedb/
+  python3 -m cdedb filesystem --owner www-data storage create
 
-To make the stored sample data available (f.e. in development instances), you
-can call alternatively::
+To populate the storage with sample data, run additionally::
 
-  make storage
+  python3 -m cdedb filesystem --owner www-data storage populate
 
-Finally we need a directory where logging files resist. Take care that this is
-consistent with the ``LOG_DIR`` config option which can be changed accordingly
-to the next section (the default location is ``var/log/cdedb``). The directory
+Finally we need a directory where logging files resist. The directory
 needs to be writable by the user running Apache (default ``www-data``). To
 create the default log directory, you can call::
 
-  make log
-
-Configure the application
--------------------------
-
-The details can be found in :py:mod:`cdedb.config`. The global configuration
-can be done in ``cdedb/localconfig.py`` (a sample for this is provided at
-``cdedb/localconfig.py.sample``, for development instances you are strongly
-encouraged to copy this file to ``cdedb/localconfig.py``). The configuration
-for the application resides in ``/etc/cdedb-application-config.py``.
+  python3 -m cdedb filesystem --owner www-data log create
 
 Running it
 ----------
@@ -179,7 +179,7 @@ Last step before startup is compiling the GNU gettext .mo files for i18n::
 Now, check if postgres, pgbouncer and slapd are running. Optionally you
 can run the test suite first to see whether everything is ready::
 
-  make check
+  ./bin/check.py
 
 Now start the apache and access ``https://localhost/db/`` with a
 browser.
@@ -199,4 +199,4 @@ reload::
   make reload
 
 For the database you should restart pgbouncer (which probably has some open
-connections left) before doing a ``make sample-data``.
+connections left) before doing a ``python3 -m cdedb dev apply-sample-data``.

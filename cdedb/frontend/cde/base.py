@@ -104,7 +104,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             if periods_left % 2:
                 deadline = deadline.replace(month=8)
         return deadline.replace(
-            year=deadline.year + periods_left // 2)
+            year=int(deadline.year + periods_left // 2))
 
     @access("cde")
     def index(self, rs: RequestState) -> Response:

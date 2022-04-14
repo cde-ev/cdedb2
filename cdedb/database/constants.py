@@ -470,3 +470,9 @@ class MlLogCodes(enum.IntEnum):
             SubscriptionAction.reset: cls.reset,
         }
         return log_code_map[action]
+
+
+@enum.unique
+class LockType(enum.IntEnum):
+    """Types of Locks."""
+    mailman = 1  #:

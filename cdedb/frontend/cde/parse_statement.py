@@ -771,9 +771,6 @@ class Transaction:
 
         matched_events = []
         for e, pattern in format_events(events):
-            if e["is_archived"]:
-                confidence = confidence.decrease()
-
             if re.search(re.escape(e["title"]), self.reference, flags=re.IGNORECASE):
                 # Exact match to Event Name
                 matched_events.append(Event(e, confidence))

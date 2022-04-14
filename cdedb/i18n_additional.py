@@ -295,17 +295,6 @@ I18N_STRINGS = (
     n_("day is out of range for month"),
     n_("[<class 'decimal.ConversionSyntax'>]"),
 
-    # admin bits and privilege changes
-    n_("is_meta_admin"),
-    n_("is_core_admin"),
-    n_("is_cde_admin"),
-    n_("is_finance_admin"),
-    n_("is_event_admin"),
-    n_("is_ml_admin"),
-    n_("is_assembly_admin"),
-    n_("is_cdelokal_admin"),
-    n_("is_auditor"),
-
     # zxcvbn feedback
     n_('Use a few words, avoid common phrases.'),
     n_('No need for symbols, digits, or uppercase letters.'),
@@ -341,26 +330,6 @@ I18N_STRINGS = (
     #
     n_("Cancel"),
     n_("Save"),
-
-    #
-    # Metadata
-    #
-    n_("Finanzvorstand_Name"),
-    n_("Finanzvorstand_Vorname"),
-    n_("Finanzvorstand_Ort"),
-    n_("Finanzvorstand_Adresse_Einzeiler"),
-    n_("Finanzvorstand_Adresse_Zeile2"),
-    n_("Finanzvorstand_Adresse_Zeile3"),
-    n_("Finanzvorstand_Adresse_Zeile4"),
-    n_("CdE_Konto_Inhaber"),
-    n_("CdE_Konto_IBAN"),
-    n_("CdE_Konto_BIC"),
-    n_("CdE_Konto_Institut"),
-    n_("Vorstand"),
-    n_("banner_before_login"),
-    n_("banner_after_login"),
-    n_("banner_genesis"),
-    n_("cde_misc"),
 
     #
     # country codes, see validationdata.py

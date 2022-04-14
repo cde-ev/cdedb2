@@ -21,8 +21,8 @@ from cdedb.backend.event.query import EventQueryBackend
 from cdedb.backend.event.registration import EventRegistrationBackend
 from cdedb.common import (
     EVENT_SCHEMA_VERSION, CdEDBObject, CdEDBOptionalMap, DefaultReturnCode,
-    DeletionBlockers, PartialImportError, PrivilegeError, RequestState, get_hash,
-    json_serialize, mixed_existence_sorter, n_, unwrap,
+    DeletionBlockers, PartialImportError, PrivilegeError, RequestState, build_msg,
+    get_hash, json_serialize, mixed_existence_sorter, n_, unwrap,
 )
 from cdedb.database.connection import Atomizer
 
@@ -241,6 +241,10 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                     rs, "event.events", event_id)
                 self.event_log(rs, const.EventLogCodes.event_deleted,
                                event_id=None, change_note=event["title"])
+                # Delete non-pseudonymized event keeper only after internal work has
+                # been concluded successfully. This is inside the Atomizer to
+                # guarantee event keeper deletion if the deletion goes through.
+                self.event_keeper_drop(rs, event_id)
             else:
                 raise ValueError(
                     n_("Deletion of %(type)s blocked by %(block)s."),
@@ -322,6 +326,8 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
             }
             ret *= self.sql_update(rs, "event.events", update)
             self.event_log(rs, const.EventLogCodes.event_unlocked, data['id'])
+            self.event_keeper_commit(
+                rs, data['id'], "Entsperre Veranstaltung", after_change=True)
         return ret
 
     @access("event")
@@ -372,7 +378,8 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
 
         with Atomizer(rs):
             event = unwrap(self.get_events(rs, (data['id'],)))
-            all_current_data = self.partial_export_event(rs, data['id'])
+            all_current_data = self.event_keeper_commit(
+                rs, data['id'], "Snapshot vor partiellem Import.")
             oregistration_ids = self.list_registrations(rs, data['id'])
             old_registrations = self.get_registrations(rs, oregistration_ids)
 
@@ -699,4 +706,6 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
             if not dryrun:
                 self.event_log(rs, const.EventLogCodes.event_partial_import,
                                data['id'], change_note=data.get('summary'))
+                msg = build_msg("Importiere partiell", data.get('summary'))
+                self.event_keeper_commit(rs, data['id'], msg, after_change=True)
         return result, total_delta

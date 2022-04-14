@@ -32,7 +32,7 @@ In this section should come everything that you might want to configure about th
 script. Note that ``persona_id``, ``dry_run`` and ``configpath`` can be set
 via environment variables if left out. ::
 
-    script = Script(dbuser="cdb_admin", configpath="/etc/cdedb-application-config.py")
+    script = Script(dbuser="cdb_admin", configpath="/etc/cdedb/config.py")
     SHOW_ERROR_DETAILS = True
 
 The created ``Script`` object has a ``.rs()`` method, that will return a
@@ -113,7 +113,7 @@ Setting environment variables.
 When running the script, most parameters can be set via environment variables. Note
 that this needs to happen after switching the executing user to ``www-data``. ::
 
-    sudo -u www-data SCRIPT_PERSONA_ID=1 SCRIPT_DRY_RUN="" SCRIPT_CONFIGPATH="/etc/cdedb-application-config.py" python3 bin/some_script.py
+    sudo -u www-data SCRIPT_PERSONA_ID=1 SCRIPT_DRY_RUN="" SCRIPT_CONFIGPATH="/etc/cdedb/config.py" python3 bin/some_script.py
 
 Note that in order to deactivate dry run mode, the ``SCRIPT_DRY_RUN`` environment
 variable needs to be falsy, so the only viable option is setting it to an empty string.

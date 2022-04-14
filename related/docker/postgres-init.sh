@@ -12,3 +12,6 @@ EOSQL
 # this is required for e.g. podman-compose where all containers share an ip
 # and consequently even cdb users would not require a password which breaks test_setup
 sed -i -r 's/(host\s+\w+\s+)all(\s+\S+\s+trust)/\1postgres\2/g' /var/lib/postgresql/data/pg_hba.conf
+
+# enable two-phase commit
+sed -i -r 's/^#max_prepared_transactions = 0/max_prepared_transactions = 100/' /var/lib/postgresql/data/postgresql.conf

@@ -9,8 +9,8 @@ from typing import Collection, Mapping
 from werkzeug import Response
 
 import cdedb.database.constants as const
-from cdedb.common import RequestState, n_
-from cdedb.frontend.common import REQUESTdata, access, mailinglist_guard
+from cdedb.common import CdEDBObject, RequestState, n_
+from cdedb.frontend.common import REQUESTdata, access, mailinglist_guard, periodic
 from cdedb.frontend.ml.base import MlBaseFrontend
 from cdedb.frontend.ml.mailman import MlMailmanMixin
 
@@ -120,3 +120,18 @@ class MlFrontend(MlMailmanMixin, MlBaseFrontend):
             action = "accept"
 
         return self._moderate_messages(rs, [request_id], action)
+
+    @access("ml_admin", modi={"POST"})
+    def manual_mailman_sync(self, rs: RequestState) -> Response:
+        """Trigger sync manually"""
+        code = self.mailman_sync(rs)
+        rs.notify_return_code(code, error=n_("Could not connect."))
+        return self.redirect(rs, "ml/index")
+
+    @periodic("sync_subscriptions")
+    def sync_subscriptions(self, rs: RequestState, store: CdEDBObject) -> CdEDBObject:
+        """Update current subscriptions then sync to mailman."""
+        self.write_subscription_states(rs)
+        self.mailman_sync(rs)
+
+        return store
