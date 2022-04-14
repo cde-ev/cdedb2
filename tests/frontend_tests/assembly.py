@@ -16,7 +16,7 @@ from cdedb.common import (
     ADMIN_VIEWS_COOKIE_NAME, ANTI_CSRF_TOKEN_NAME, ASSEMBLY_BAR_SHORTNAME, CdEDBObject,
     NearlyNow, now,
 )
-from cdedb.frontend.common import datetime_filter
+from cdedb.filter import datetime_filter
 from cdedb.query import QueryOperators
 from cdedb.validation import parse_datetime
 from tests.common import (
