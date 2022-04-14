@@ -4,6 +4,7 @@
 The `EventQueryMixin` subclasses the `EventBaseFrontend` and provides endpoints for
 querying registrations, courses and lodgements.
 """
+import abc
 import collections
 import datetime
 import enum
@@ -111,6 +112,126 @@ def merge_constraints(*constraints: QueryConstraint) -> Optional[QueryConstraint
     return (",".join(fields), unwrap(operators), unwrap(values))
 
 
+def merge_queries(base_query: Query, *queries: Query) -> Optional[Query]:
+    """Return a new query, which is derived from the base query and the merged
+    constraints of the other queries.
+
+    Mergable queries need to have the same number of constraints each, and have them
+    in the same order.
+
+    Returns None if the queries could not be merged.
+    """
+    if not queries:
+        return None
+    all_fields = itertools.chain.from_iterable(q.fields_of_interest for q in queries)
+    constraint_lists = [q.constraints for q in queries]
+    num_constraints = len(constraint_lists[0])
+    if any(len(c) != num_constraints for c in constraint_lists):
+        return None
+    merged_constraints = []
+    for i in range(num_constraints):
+        new_constraint = merge_constraints(*(clist[i] for clist in constraint_lists))
+
+        # If the constraints could not be merged or the new constraint is not a valid
+        # field, exit gracefully.
+        if new_constraint is None or new_constraint[0] not in base_query.spec:
+            return None
+        merged_constraints.append(new_constraint)
+    return Query(
+        scope=base_query.scope, spec=base_query.spec,
+        fields_of_interest=set(base_query.fields_of_interest) | set(all_fields),
+        constraints=merged_constraints, order=base_query.order
+    )
+
+
+class StatisticMixin:
+    """Helper class for basic query construction shared across"""
+    @abc.abstractmethod
+    def test(self, event: CdEDBObject, entity: CdEDBObject, entity_id: int) -> bool:
+        """Determine whether the given entity fits this stat for the given track."""
+
+    @abc.abstractmethod
+    def _get_query_aux(self, event: CdEDBObject, part_id: int) -> StatQueryAux:
+        """Construct query fields, constraints and order for this stat and a track."""
+
+    @staticmethod
+    @abc.abstractmethod
+    def _get_base_query(event: CdEDBObject) -> Query:
+        """Create a query object to base all queries for these stats on."""
+
+    def get_query(self, event: CdEDBObject, track_id: int) -> Query:
+        """Construct the actual query from the base and stat specifix query aux."""
+        query = self._get_base_query(event)
+        fields, constraints, order = self._get_query_aux(event, track_id)
+        query.fields_of_interest.extend(fields)
+        query.constraints.extend(constraints)
+        # Prepend the specific order.
+        query.order = order + query.order
+        return query
+
+    @staticmethod
+    def get_part_ids(event: CdEDBObject, *, part_group_id: int) -> Iterable[int]:
+        return event['part_groups'][part_group_id]['part_ids']
+
+    @staticmethod
+    def get_track_ids(event: CdEDBObject, *, part_id: int = None,
+                      part_group_id: int = None) -> Iterable[int]:
+        """Determine the relevant track ids for the given part (group) id."""
+        if part_id:
+            return event['parts'][part_id]['tracks'].keys()
+        if part_group_id:
+            part_ids = event['part_groups'][part_group_id]['part_ids']
+            parts = (p for part_id, p in event['parts'].items() if part_id in part_ids)
+            return itertools.chain.from_iterable(part['tracks'] for part in parts)
+        return ()
+
+
+class StatisticPartMixin(StatisticMixin):
+    """
+    Helper class for methods to delegate tests and query construction for part stats.
+    """
+    def test_part_group(self, event: CdEDBObject, enity: CdEDBObject,
+                        part_group_id: int) -> bool:
+        """Determine whether the entity fits this stat for any track in a part group."""
+        return any(self.test(event, enity, track_id) for track_id
+                   in self.get_part_ids(event, part_group_id=part_group_id))
+
+    def get_query_part_group(self, event: CdEDBObject, part_group_id: int
+                             ) -> Optional[Query]:
+        """Construct queries for every track in a given part group, then merge them."""
+        queries = [self.get_query(event, track_id) for track_id
+                   in self.get_part_ids(event, part_group_id=part_group_id)]
+        return merge_queries(self._get_base_query(event), *queries)
+
+
+class StatisticTrackMixin(StatisticMixin):
+    """
+    Helper class for methods to delegate tests and query construction for track stats.
+    """
+    def test_part(self, event: CdEDBObject, entity: CdEDBObject, part_id: int) -> bool:
+        """Determine whether the entity fits this stat for any track in a part."""
+        return any(self.test(event, entity, track_id)
+                   for track_id in self.get_track_ids(event, part_id=part_id))
+
+    def test_part_group(self, event: CdEDBObject, enity: CdEDBObject,
+                        part_group_id: int) -> bool:
+        """Determine whether the entity fits this stat for any track in a part group."""
+        return any(self.test(event, enity, track_id) for track_id
+                   in self.get_track_ids(event, part_group_id=part_group_id))
+
+    def get_query_part(self, event: CdEDBObject, part_id: int) -> Optional[Query]:
+        """Construct queries for every track in a given part, then merge them."""
+        queries = [self.get_query(event, track_id) for track_id
+                   in self.get_track_ids(event, part_id=part_id)]
+        return merge_queries(self._get_base_query(event), *queries)
+
+    def get_query_part_group(self, event: CdEDBObject, part_group_id: int
+                             ) -> Optional[Query]:
+        """Construct queries for every track in a given part group, then merge them."""
+        queries = [self.get_query(event, track_id) for track_id
+                   in self.get_track_ids(event, part_group_id=part_group_id)]
+        return merge_queries(self._get_base_query(event), *queries)
+
 # These enums each offer a collection of statistics for the stats page.
 # They implement a test and query building interface:
 # A `.test` method that takes the event data and a registrations, returning
@@ -120,8 +241,9 @@ def merge_constraints(*constraints: QueryConstraint) -> Optional[QueryConstraint
 # The enum member values are translatable strings to be used as labels for that
 # statistic. The order of member definition inidicates the order they will be displayed.
 
+
 @enum.unique
-class EventRegistrationPartStatistic(enum.Enum):
+class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
     """This enum implements statistics for registration parts.
 
     In addition to their string value, all members have an additional `.indent`
@@ -214,15 +336,6 @@ class EventRegistrationPartStatistic(enum.Enum):
             return part['status'] != RPS.not_applied
         else:
             raise RuntimeError(n_("Impossible."))
-
-    def test_part_group(self, event: CdEDBObject, reg: CdEDBObject, part_group_id: int
-                        ) -> bool:
-        """
-        Similar to the `test` method, but for determining whether the registration fits
-        this statistic for any of the parts in the given part group.
-        """
-        part_group = event['part_groups'][part_group_id]
-        return any(self.test(event, reg, part_id) for part_id in part_group['part_ids'])
 
     def _get_query_aux(self, event: CdEDBObject, part_id: int) -> StatQueryAux:
         """
@@ -373,9 +486,9 @@ class EventRegistrationPartStatistic(enum.Enum):
         else:
             raise RuntimeError(n_("Impossible."))
 
-    def get_query(self, event: CdEDBObject, part_id: int) -> Query:
-        """Return a `Query` object for this statistic for the given part."""
-        query = Query(
+    @staticmethod
+    def _get_base_query(event: CdEDBObject) -> Query:
+        return Query(
             QueryScope.registration,
             QueryScope.registration.get_spec(event=event),
             fields_of_interest=['reg.id', 'persona.given_names', 'persona.family_name',
@@ -383,55 +496,16 @@ class EventRegistrationPartStatistic(enum.Enum):
             constraints=[],
             order=[('persona.family_name', True), ('persona.given_names', True)]
         )
-        fields, constraints, order = self._get_query_aux(event, part_id)
-        query.fields_of_interest.extend(fields)
-        query.constraints.extend(constraints)
-        # Prepend the specific order.
-        query.order = order + query.order
-        return query
-
-    def get_query_part_group(self, event: CdEDBObject, part_group_id: int
-                             ) -> Optional[Query]:
-        """
-        Similar to `get_query`, but return q `Query` object for this statistics for the
-        given part group.
-
-        This means that all the individual constraints for the individual parts need to
-        be merged together. This is not always possible. For example the constraints
-        for determining minor participants might differ between parts if these parts
-        begin at different dates.
-        """
-        query = Query(
-            QueryScope.registration,
-            QueryScope.registration.get_spec(event=event),
-            fields_of_interest=['reg.id', 'persona.given_names', 'persona.family_name',
-                                'persona.username'],
-            constraints=[],
-            order=[('persona.family_name', True), ('persona.given_names', True)]
-        )
-        all_fields, all_constraints = [], []
-        for part_id in xsorted(event['part_groups'][part_group_id]['part_ids']):
-            fields, constraints, _ = self._get_query_aux(event, part_id)
-            all_fields.extend(fields)
-            all_constraints.append(constraints)
-        for i in range(len(all_constraints[0])):
-            new_constraint = merge_constraints(*(clist[i] for clist in all_constraints))
-            # Make sure that the constraints could be merged and that the new constraint
-            # is part of the spec.
-            if new_constraint is None or new_constraint[0] not in query.spec:
-                return None
-            query.constraints.append(new_constraint)
-        return query
 
 
 @enum.unique
-class EventCourseStatistic(enum.Enum):
+class EventCourseStatistic(StatisticTrackMixin, enum.Enum):
     """This enum implements statistics for courses in course tracks."""
     offered = n_("Course Offers")
     cancelled = n_("Cancelled Courses")
     taking_place = n_("Courses Taking Place")
 
-    def test(self, course: CdEDBObject, track_id: int) -> bool:
+    def test(self, event: CdEDBObject, course: CdEDBObject, track_id: int) -> bool:
         """Determine whether the course fits this stat for the given track."""
         if self == self.offered:
             return track_id in course['segments']
@@ -444,20 +518,7 @@ class EventCourseStatistic(enum.Enum):
         else:
             raise RuntimeError(n_("Impossible."))
 
-    def test_part(self, event: CdEDBObject, course: CdEDBObject, part_id: int) -> bool:
-        """Determine whether the course fits this stat for any track in a part."""
-        track_ids = event['parts'][part_id]['tracks'].keys()
-        return any(self.test(course, track_id) for track_id in track_ids)
-
-    def test_part_group(self, event: CdEDBObject, course: CdEDBObject,
-                        part_group_id: int) -> bool:
-        """Determine whether the course fits this stat for any track in a part group."""
-        part_ids = event['part_groups'][part_group_id]['part_ids']
-        parts = (p for part_id, p in event['parts'].items() if part_id in part_ids)
-        track_ids = itertools.chain.from_iterable(part['tracks'] for part in parts)
-        return any(self.test(course, track_id) for track_id in track_ids)
-
-    def _get_query_aux(self, track_id: int) -> StatQueryAux:
+    def _get_query_aux(self, event: CdEDBObject, track_id: int) -> StatQueryAux:
         if self == self.offered:
             return (
                 ['course.instructors'],
@@ -485,31 +546,19 @@ class EventCourseStatistic(enum.Enum):
         else:
             raise RuntimeError(n_("Impossible."))
 
-    def get_query(self, event: CdEDBObject, track_id: int) -> Query:
-        query = Query(
+    @staticmethod
+    def _get_base_query(event: CdEDBObject) -> Query:
+        return Query(
             QueryScope.event_course,
             QueryScope.event_course.get_spec(event=event),
             fields_of_interest=['course.course_id'],
             constraints=[],
             order=[('course.nr', True)]
         )
-        fields, constraints, order = self._get_query_aux(track_id)
-        query.fields_of_interest.extend(fields)
-        query.constraints.extend(constraints)
-        # Prepend the specific order.
-        query.order = order + query.order
-        return query
-
-    def get_query_part(self, event: CdEDBObject, part_id: int) -> Optional[Query]:  # pylint: disable=no-self-use
-        return None
-
-    def get_query_part_group(self, event: CdEDBObject, part_group_id: int  # pylint: disable=no-self-use
-                             ) -> Optional[Query]:
-        return None
 
 
 @enum.unique
-class EventRegistrationTrackStatistic(enum.Enum):
+class EventRegistrationTrackStatistic(StatisticTrackMixin, enum.Enum):
     """This enum implements statistics for registration tracks."""
     all_instructors = n_("(Potential) Instructor")
     instructors = n_("Instructor")
@@ -537,19 +586,6 @@ class EventRegistrationTrackStatistic(enum.Enum):
             return not track['course_id'] and reg['persona_id'] not in event['orgas']
         else:
             raise RuntimeError(n_("Impossible."))
-
-    def test_part(self, event: CdEDBObject, reg: CdEDBObject, part_id: int) -> bool:
-        """Determine whether the registration fits this stat for any track in a part."""
-        track_ids = event['parts'][part_id]['tracks'].keys()
-        return any(self.test(event, reg, track_id) for track_id in track_ids)
-
-    def test_part_group(self, event: CdEDBObject, reg: CdEDBObject,
-                        part_group_id: int) -> bool:
-        """Determine whether the reg fits this stat for any track in a part group."""
-        part_ids = event['part_groups'][part_group_id]['part_ids']
-        parts = (p for part_id, p in event['parts'].items() if part_id in part_ids)
-        track_ids = itertools.chain.from_iterable(part['tracks'] for part in parts)
-        return any(self.test(event, reg, track_id) for track_id in track_ids)
 
     def _get_query_aux(self, event: CdEDBObject, track_id: int) -> StatQueryAux:
         track = event['tracks'][track_id]
@@ -591,15 +627,16 @@ class EventRegistrationTrackStatistic(enum.Enum):
                 [
                     _participant_constraint(part),
                     (f"track{track_id}.course_id", QueryOperators.empty, None),
-                    ('persona.id', QueryOperators.otherthan, event['orgas']),
+                    ('persona.id', QueryOperators.otherthan, tuple(event['orgas'])),
                 ],
                 []
             )
         else:
             raise RuntimeError(n_("Impossible."))
 
-    def get_query(self, event: CdEDBObject, track_id: int) -> Query:
-        query = Query(
+    @staticmethod
+    def _get_base_query(event: CdEDBObject) -> Query:
+        return Query(
             QueryScope.registration,
             QueryScope.registration.get_spec(event=event),
             fields_of_interest=['reg.id', 'persona.given_names', 'persona.family_name',
@@ -607,19 +644,6 @@ class EventRegistrationTrackStatistic(enum.Enum):
             constraints=[],
             order=[('persona.family_name', True), ('persona.given_names', True)]
         )
-        fields, constraints, order = self._get_query_aux(event, track_id)
-        query.fields_of_interest.extend(fields)
-        query.constraints.extend(constraints)
-        # Prepend the specific order.
-        query.order = order + query.order
-        return query
-
-    def get_query_part(self, event: CdEDBObject, part_id: int) -> Optional[Query]:  # pylint: disable=no-self-use
-        return None
-
-    def get_query_part_group(self, event: CdEDBObject, part_group_id: int  # pylint: disable=no-self-use
-                             ) -> Optional[Query]:
-        return None
 
 
 class EventRegistrationInXChoiceGrouper:
@@ -796,7 +820,7 @@ class EventQueryMixin(EventBaseFrontend):
                     'tracks': {
                         track_id: sum(
                             1 for course in courses.values()
-                            if course_stat.test(course, track_id))
+                            if course_stat.test(rs.ambience['event'], course, track_id))
                         for track_id in tracks
                     },
                     'parts': {
