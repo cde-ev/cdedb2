@@ -63,11 +63,11 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     \
     python3-pip \
     python3-click \
-    \
+    python3-freezegun \
+    python3-segno \
     flake8 \
     isort \
     pylint \
-    python3-freezegun \
     wget \
     unzip \
     \

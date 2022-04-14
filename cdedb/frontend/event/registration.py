@@ -12,6 +12,7 @@ import re
 from collections import OrderedDict
 from typing import Collection, Dict, Optional, Tuple, Union
 
+import segno.helpers
 import werkzeug.exceptions
 from werkzeug import Response
 
@@ -491,6 +492,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         meta_info = self.coreproxy.get_meta_info(rs)
         reference = make_event_fee_reference(persona, rs.ambience['event'])
         fee = self.eventproxy.calculate_fee(rs, registration_id)
+        to_pay = fee - registration['amount_paid']
         semester_fee = self.conf["MEMBERSHIP_FEE"]
         part_order = xsorted(
             registration['parts'].keys(),
@@ -502,11 +504,17 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs, event_id, (const.QuestionnaireUsages.registration,)))
         waitlist_position = self.eventproxy.get_waitlist_position(
             rs, event_id, persona_id=rs.user.persona_id)
+
+        qrcode = None
+        if (iban := rs.ambience['event']['iban']) and to_pay > 0:
+            qrcode = segno.helpers.make_epc_qr(
+                name=meta_info['CdE_Konto_Inhaber'], iban=iban, text=reference,
+                amount=to_pay, bic=meta_info['CdE_Konto_BIC'])
         return self.render(rs, "registration/registration_status", {
             'registration': registration, 'age': age, 'courses': courses,
             'meta_info': meta_info, 'fee': fee, 'semester_fee': semester_fee,
             'reg_questionnaire': reg_questionnaire, 'reference': reference,
-            'waitlist_position': waitlist_position,
+            'waitlist_position': waitlist_position, 'qrcode': qrcode,
         })
 
     @access("event")

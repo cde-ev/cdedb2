@@ -44,6 +44,9 @@
                 especially when paying internationally.
             {% endtrans %}
         </p>
+        {% if qrcode %}
+            {{ qrcode.svg_inline(scale=3)|s }}
+        {% endif %}
         <table class="table table-condensed" id="registrationsummary">
             <tbody>
                 <tr>
