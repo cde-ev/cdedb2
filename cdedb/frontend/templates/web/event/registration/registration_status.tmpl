@@ -72,7 +72,7 @@
                     </tr>
                     <tr>
                         <td>{% trans %}Amount{% endtrans %}</td>
-                        <td>{{ (fee - registration['amount_paid'])|money(lang=lang) }}</td>
+                        <td>{{ to_pay }}</td>
                     </tr>
                     <tr>
                         <td>{% trans %}Reference{% endtrans %}</td>
@@ -90,7 +90,7 @@
         {% else %}
             <h3 class="heading-underline">{% trans %}Payment{% endtrans %}</h3>
             <p>
-                {% trans fee=fee|money(lang=lang) %}
+                {% trans %}
                     The orgas will tell you separately how to pay your fee of {{ to_pay }}.
                 {% endtrans %}
             </p>
