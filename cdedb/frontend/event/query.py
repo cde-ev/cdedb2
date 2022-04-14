@@ -97,9 +97,21 @@ def merge_constraints(*constraints: QueryConstraint) -> Optional[QueryConstraint
     In order to be mergable all constraints must have the same `QueryOperator` and the
     same value. All differing constraint fields are joined together, respecting order.
 
-    The fields are collected in a dict, with ensures uniqueness, while preserving the
-    original order, which sets don't.
+    >>> merge_constraints(("part1.status", "=", 1), ("part2.status", "=", 1))
+    QueryConstraint(field='part1.status,part2.status', op='=', value=1)
+    >>> merge_constraints(("part2.status", "=", 1), ("part1.status", "=", 1))
+    QueryConstraint(field='part2.status,part1.status', op='=', value=1)
+    >>> merge_constraints(("part1.status", "=", 1), ("part1.status", "=", 1))
+    QueryConstraint(field='part1.status', op='=', value=1)
+    >>> merge_constraints(("a", "=", 1), ("a", "=", 1), ("b", "=", 1))
+    QueryConstraint(field='a,b', op='=', value=1)
+    >>> merge_constraints(("part1.status", "=", 1), ("part1.status", "!=", 1))
+
+    >>> merge_constraints(("part1.status", "=", 1), ("part1.status", "=", 2))
+
     """
+    # Fields will be collected via the keys of this dict, with all values being None.
+    # This ensures uniqueness, while preserving order, which is not possible with sets.
     fields: Dict[str, None] = {}
     operators, values = set(), set()
     for con in constraints:
