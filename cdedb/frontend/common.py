@@ -10,7 +10,6 @@ import collections
 import collections.abc
 import copy
 import csv
-import datetime
 import email
 import email.charset
 import email.encoders
@@ -48,7 +47,6 @@ from typing import (
     Type, TypeVar, Union, cast, overload,
 )
 
-import icu
 import jinja2
 import mailmanclient.restobjects.held_message
 import mailmanclient.restobjects.mailinglist
@@ -232,40 +230,6 @@ def raise_jinja(val: str) -> None:
     raise RuntimeError(val)
 
 
-_CONFIG = Config()
-
-
-# TODO move this back in filter.py
-def datetime_filter(val: Union[datetime.datetime, str, None],
-                    formatstr: str = "%Y-%m-%d %H:%M (%Z)", lang: str = None,
-                    passthrough: bool = False) -> Optional[str]:
-    """Custom jinja filter to format ``datetime.datetime`` objects.
-
-    :param formatstr: Formatting used, if no l10n happens.
-    :param lang: If not None, then localize to the passed language.
-    :param passthrough: If True return strings unmodified.
-    """
-    if val is None or val == '' or not isinstance(val, datetime.datetime):
-        if passthrough and isinstance(val, str) and val:
-            return val
-        return None
-
-    if val.tzinfo is not None:
-        val = val.astimezone(_CONFIG["DEFAULT_TIMEZONE"])
-    else:
-        _LOGGER.warning(f"Found naive datetime object {val}.")
-
-    if lang:
-        locale = icu.Locale(lang)
-        datetime_formatter = icu.DateFormat.createDateTimeInstance(
-            icu.DateFormat.MEDIUM, icu.DateFormat.MEDIUM, locale)
-        zone = _CONFIG["DEFAULT_TIMEZONE"].zone
-        datetime_formatter.setTimeZone(icu.TimeZone.createTimeZone(zone))
-        return datetime_formatter.format(val)
-    else:
-        return val.strftime(formatstr)
-
-
 PeriodicMethod = Callable[[Any, RequestState, CdEDBObject], CdEDBObject]
 
 
@@ -312,7 +276,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         self.jinja_env.policies['ext.i18n.trimmed'] = True  # type: ignore
         self.jinja_env.policies['json.dumps_kwargs']['cls'] = CustomJSONEncoder  # type: ignore
         self.jinja_env.filters.update(JINJA_FILTERS)
-        self.jinja_env.filters.update({'datetime': datetime_filter})
         self.jinja_env.globals.update({
             'now': now,
             'nbsp': "\u00A0",

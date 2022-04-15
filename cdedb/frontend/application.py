@@ -31,8 +31,7 @@ from cdedb.frontend.assembly import AssemblyFrontend
 from cdedb.frontend.cde import CdEFrontend
 from cdedb.frontend.common import (
     JINJA_FILTERS, AbstractFrontend, BaseApp, FrontendEndpoint, Response,
-    construct_redirect, datetime_filter, docurl, sanitize_None, setup_translations,
-    staticurl,
+    construct_redirect, docurl, sanitize_None, setup_translations, staticurl,
 )
 from cdedb.frontend.core import CoreFrontend
 from cdedb.frontend.event import EventFrontend
@@ -88,7 +87,6 @@ class Application(BaseApp):
             'glue': glue,
         })
         self.jinja_env.filters.update(JINJA_FILTERS)
-        self.jinja_env.filters.update({'datetime': datetime_filter})
         self.jinja_env.policies['ext.i18n.trimmed'] = True  # type: ignore
         self.translations = setup_translations(self.conf)
         if pathlib.Path("/PRODUCTIONVM").is_file():  # pragma: no cover
