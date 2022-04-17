@@ -368,7 +368,8 @@
                 modal.off("shown.bs.modal");
                 modal.on("shown.bs.modal", function () {
                     let modal_content = $("#cdedb-modal-content");
-                    // size qr code (quadratic) to the full modal, but not exceeding small screens
+                    // size qr code width to the full modal, but not exceeding small screens.
+                    // height is set automatically preserving original aspect ratio (quadratic).
                     let width = Math.min(modal_content.width(), window.innerHeight, window.innerWidth) + "px";
                     modal_content.html(`<img src=${qr_link} alt="" width=${width} id="cdedb-modal-qr"/>`);
                 });
