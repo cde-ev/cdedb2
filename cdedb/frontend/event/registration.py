@@ -479,6 +479,9 @@ class EventRegistrationMixin(EventBaseFrontend):
     def registration_status(self, rs: RequestState, event_id: int) -> Response:
         """Present current state of own registration."""
         payment_data = self._get_payment_data(rs, event_id)
+        if not payment_data:
+            rs.notify("warning", n_("Not registered for event."))
+            return self.redirect(rs, "event/show")
         persona = payment_data.pop('persona')
         registration = payment_data.pop('registration')
 
@@ -1142,12 +1145,12 @@ class EventRegistrationMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, 'event/checkin', {'part_ids': part_ids})
 
-    def _get_payment_data(self, rs: RequestState, event_id) -> CdEDBObject:
+    def _get_payment_data(self, rs: RequestState, event_id: int
+                          ) -> Optional[CdEDBObject]:
         reg_list = self.eventproxy.list_registrations(
             rs, event_id, persona_id=rs.user.persona_id)
         if not reg_list:
-            rs.notify("warning", n_("Not registered for event."))
-            return self.redirect(rs, "event/show_event")
+            return None
         registration_id = unwrap(reg_list.keys())
         registration = self.eventproxy.get_registration(rs, registration_id)
         persona = self.coreproxy.get_event_user(rs, rs.user.persona_id, event_id)
@@ -1161,11 +1164,17 @@ class EventRegistrationMixin(EventBaseFrontend):
             'registration': registration, 'persona': persona,
             'meta_info': meta_info, 'reference': reference, 'to_pay': to_pay,
             'iban': rs.ambience['event']['iban'], 'fee': fee,
+            'semester_fee': self.conf['MEMBERSHIP_FEE']
         }
 
     @access("event")
     def registration_fee_qr(self, rs: RequestState, event_id: int) -> Response:
-        qrcode = self._registration_fee_qr(self._get_payment_data(rs, event_id))
+        payment_data = self._get_payment_data(rs, event_id)
+        if not payment_data:
+            return self.redirect(rs, "event/show")
+        qrcode = self._registration_fee_qr(payment_data)
+        if not qrcode:
+            return self.redirect(rs, "event/show")
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             temppath = pathlib.Path(tmp_dir, f"qr-{event_id}-{rs.user.persona_id}")

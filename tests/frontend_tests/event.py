@@ -1518,7 +1518,7 @@ etc;anything else""", f['entries_2'].value)
         }
 
         event_frontend: EventFrontend = self.app.app.event
-        qr_data = event_frontend._registration_fee_qr_data(payment_data)
+        qr_data = event_frontend._registration_fee_qr_data(payment_data)  # pylint: disable=protected-access
 
         qr_expectation = b"""\
 BCD
@@ -1532,7 +1532,7 @@ EUR10.5
 
 
 Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
-        self.assertEqual(qr_expectation, segno.helpers._make_epc_qr_data(**qr_data))
+        self.assertEqual(qr_expectation, segno.helpers._make_epc_qr_data(**qr_data))  # type: ignore[attr-defined]  # pylint: disable=protected-access
 
     @as_users("anton")
     def test_registration_status(self) -> None:
