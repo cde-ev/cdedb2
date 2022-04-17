@@ -8,9 +8,8 @@ for managing registrations both by orgas and participants.
 import csv
 import datetime
 import decimal
-import pathlib
+import io
 import re
-import tempfile
 from collections import OrderedDict
 from typing import Collection, Dict, Optional, Tuple, Union
 
@@ -1176,13 +1175,10 @@ class EventRegistrationMixin(EventBaseFrontend):
         if not qrcode:
             return self.redirect(rs, "event/show")
 
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            temppath = pathlib.Path(tmp_dir, f"qr-{event_id}-{rs.user.persona_id}")
-            qrcode.save(str(temppath), kind='svg', scale=4)
-            with open(temppath) as f:
-                data = f.read()
+        buffer = io.BytesIO()
+        qrcode.save(buffer, kind='svg', scale=4)
 
-        return self.send_file(rs, data=data, mimetype="image/svg+xml")
+        return self.send_file(rs, afile=buffer, mimetype="image/svg+xml")
 
     @staticmethod
     def _registration_fee_qr_data(payment_data: CdEDBObject) -> Optional[CdEDBObject]:
