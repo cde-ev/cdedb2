@@ -8,7 +8,9 @@ for managing registrations both by orgas and participants.
 import csv
 import datetime
 import decimal
+import pathlib
 import re
+import tempfile
 from collections import OrderedDict
 from typing import Collection, Dict, Optional, Tuple, Union
 
@@ -476,24 +478,14 @@ class EventRegistrationMixin(EventBaseFrontend):
     @access("event")
     def registration_status(self, rs: RequestState, event_id: int) -> Response:
         """Present current state of own registration."""
-        reg_list = self.eventproxy.list_registrations(
-            rs, event_id, persona_id=rs.user.persona_id)
-        if not reg_list:
-            rs.notify("warning", n_("Not registered for event."))
-            return self.redirect(rs, "event/show_event")
-        registration_id = unwrap(reg_list.keys())
-        registration = self.eventproxy.get_registration(rs, registration_id)
-        persona = self.coreproxy.get_event_user(
-            rs, rs.user.persona_id, event_id)
+        payment_data = self._get_payment_data(rs, event_id)
+        persona = payment_data.pop('persona')
+        registration = payment_data.pop('registration')
+
         age = determine_age_class(
             persona['birthday'], rs.ambience['event']['begin'])
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
-        meta_info = self.coreproxy.get_meta_info(rs)
-        reference = make_event_fee_reference(persona, rs.ambience['event'])
-        fee = self.eventproxy.calculate_fee(rs, registration_id)
-        to_pay = fee - registration['amount_paid']
-        semester_fee = self.conf["MEMBERSHIP_FEE"]
         part_order = xsorted(
             registration['parts'].keys(),
             key=lambda anid:
@@ -505,16 +497,11 @@ class EventRegistrationMixin(EventBaseFrontend):
         waitlist_position = self.eventproxy.get_waitlist_position(
             rs, event_id, persona_id=rs.user.persona_id)
 
-        qrcode = None
-        if (iban := rs.ambience['event']['iban']) and to_pay > 0:
-            qrcode = segno.helpers.make_epc_qr(
-                name=meta_info['CdE_Konto_Inhaber'], iban=iban, text=reference,
-                amount=to_pay, bic=meta_info['CdE_Konto_BIC'])
         return self.render(rs, "registration/registration_status", {
             'registration': registration, 'age': age, 'courses': courses,
-            'meta_info': meta_info, 'fee': fee, 'semester_fee': semester_fee,
-            'reg_questionnaire': reg_questionnaire, 'reference': reference,
-            'waitlist_position': waitlist_position, 'qrcode': qrcode,
+            'reg_questionnaire': reg_questionnaire,
+            'waitlist_position': waitlist_position,
+            **payment_data
         })
 
     @access("event")
@@ -1154,3 +1141,54 @@ class EventRegistrationMixin(EventBaseFrontend):
         code = self.eventproxy.set_registration(rs, new_reg, "Eingecheckt.")
         rs.notify_return_code(code)
         return self.redirect(rs, 'event/checkin', {'part_ids': part_ids})
+
+    def _get_payment_data(self, rs: RequestState, event_id) -> CdEDBObject:
+        reg_list = self.eventproxy.list_registrations(
+            rs, event_id, persona_id=rs.user.persona_id)
+        if not reg_list:
+            rs.notify("warning", n_("Not registered for event."))
+            return self.redirect(rs, "event/show_event")
+        registration_id = unwrap(reg_list.keys())
+        registration = self.eventproxy.get_registration(rs, registration_id)
+        persona = self.coreproxy.get_event_user(rs, rs.user.persona_id, event_id)
+
+        meta_info = self.coreproxy.get_meta_info(rs)
+        reference = make_event_fee_reference(persona, rs.ambience['event'])
+        fee = self.eventproxy.calculate_fee(rs, registration_id)
+        to_pay = fee - registration['amount_paid']
+
+        return {
+            'registration': registration, 'persona': persona,
+            'meta_info': meta_info, 'reference': reference, 'to_pay': to_pay,
+            'iban': rs.ambience['event']['iban'], 'fee': fee,
+        }
+
+    @access("event")
+    def registration_fee_qr(self, rs: RequestState, event_id: int) -> Response:
+        qrcode = self._registration_fee_qr(self._get_payment_data(rs, event_id))
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            temppath = pathlib.Path(tmp_dir, f"qr-{event_id}-{rs.user.persona_id}")
+            qrcode.save(str(temppath), kind='svg', scale=4)
+            with open(temppath) as f:
+                data = f.read()
+
+        return self.send_file(rs, data=data, mimetype="image/svg+xml")
+
+    @staticmethod
+    def _registration_fee_qr_data(payment_data: CdEDBObject) -> Optional[CdEDBObject]:
+        if not payment_data['iban']:
+            return None
+        return {
+            'name': payment_data['meta_info']['CdE_Konto_Inhaber'],
+            'text': payment_data['reference'],
+            'amount': payment_data['to_pay'],
+            'iban': payment_data['iban'],
+            'bic': payment_data['meta_info']['CdE_Konto_BIC'],
+        }
+
+    def _registration_fee_qr(self, payment_data: CdEDBObject) -> Optional[segno.QRCode]:
+        data = self._registration_fee_qr_data(payment_data)
+        if not data:
+            return None
+        return segno.helpers.make_epc_qr(**data)

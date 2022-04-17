@@ -2,6 +2,9 @@
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/event/generic.tmpl" as generic_event with context %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+{% endblock %}
 {% block title %}
     {% trans title=ambience['event']['title'] %}
     	Your Registration ({{ title }})
@@ -44,9 +47,6 @@
                 especially when paying internationally.
             {% endtrans %}
         </p>
-        {% if qrcode %}
-            {{ qrcode.svg_inline(scale=3)|s }}
-        {% endif %}
         <table class="table table-condensed" id="registrationsummary">
             <tbody>
                 <tr>
@@ -83,6 +83,17 @@
                 </tr>
             </tbody>
         </table>
+        <a id="show-registration-fee-qr" class="btn btn-default mosp"
+           href="{{ cdedblink('event/registration_fee_qr') }}">
+            {{ util.make_icon('qrcode') }}
+            {% trans %}QR{% endtrans %}
+        </a>
+        <script nonce="{{ csp_nonce }}">
+            $("#show-registration-fee-qr").cdedbQRCodeModal(
+                {{ {'title': ambience['event']['title'],
+                'loading': gettext("Loading..."),
+                'close': gettext("Close") }|tojson }})
+        </script>
         <p class="text-muted">
             {{ util.make_icon('info-circle') }}
             {% trans %}
