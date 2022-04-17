@@ -480,7 +480,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         payment_data = self._get_payment_data(rs, event_id)
         if not payment_data:
             rs.notify("warning", n_("Not registered for event."))
-            return self.redirect(rs, "event/show")
+            return self.redirect(rs, "event/show_event")
         persona = payment_data.pop('persona')
         registration = payment_data.pop('registration')
 
@@ -1170,10 +1170,10 @@ class EventRegistrationMixin(EventBaseFrontend):
     def registration_fee_qr(self, rs: RequestState, event_id: int) -> Response:
         payment_data = self._get_payment_data(rs, event_id)
         if not payment_data:
-            return self.redirect(rs, "event/show")
+            return self.redirect(rs, "event/show_event")
         qrcode = self._registration_fee_qr(payment_data)
         if not qrcode:
-            return self.redirect(rs, "event/show")
+            return self.redirect(rs, "event/show_event")
 
         buffer = io.BytesIO()
         qrcode.save(buffer, kind='svg', scale=4)
