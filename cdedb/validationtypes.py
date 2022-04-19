@@ -4,9 +4,10 @@ import datetime
 import decimal
 from typing import Any, Dict, List, Mapping, NewType as _NewType, Type
 
+from subman import SubscriptionState
+
 from cdedb.common import CdEDBObject, CdEDBOptionalMap
 from cdedb.query import Query
-from subman import SubscriptionState
 
 TypeMapping = Mapping[str, Type[Any]]
 

@@ -9,12 +9,12 @@ from typing import (
     Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, cast, overload,
 )
 
+import subman
 from subman.machine import SubscriptionAction, SubscriptionPolicy
 
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
 import cdedb.validationtypes as vtypes
-import subman as subman
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_array_validation as affirm_array,

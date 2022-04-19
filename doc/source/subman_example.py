@@ -2,7 +2,7 @@
 
 from typing import Collection, Dict, NewType, Tuple
 
-import subman as subman
+import subman
 from subman.machine import SubscriptionAction, SubscriptionPolicy, SubscriptionState
 
 # Some object representing a potential list subscriber
