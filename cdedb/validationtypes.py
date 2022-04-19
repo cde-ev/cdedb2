@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Mapping, NewType as _NewType, Type
 
 from cdedb.common import CdEDBObject, CdEDBOptionalMap
 from cdedb.query import Query
-from cdedb.subman import SubscriptionState
+from subman import SubscriptionState
 
 TypeMapping = Mapping[str, Type[Any]]
 
