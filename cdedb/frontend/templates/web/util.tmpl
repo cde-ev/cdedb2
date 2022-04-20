@@ -838,7 +838,7 @@ attribute to each field of a dynamic row. #}
     Creates a HTML compliant mailto: URL (though not neccessarily RFC compliant)
     Additional header such as to, subject, body, cc, or bcc can be passed as kwargs
 #}
-{% macro mailto(address='', name=none) -%}
+{% macro mailto(address, name=none) -%}
 mailto:
 {%- if name is not none %}{{ "{}%3C{}%3E".format(name|urlencode, address) }}{% else %}{{ address }}{% endif %}
 {%- if kwargs %}?{{ kwargs|urlencode }}{% endif %}
