@@ -15,13 +15,16 @@
     {{ util.context_heading(gettext("Statistics"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block content %}
+    {% set sorted_tracks = ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
+    {% set sorted_parts = ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+    {% set sorted_part_groups = ambience['event']['part_groups']|keydictsort(EntitySorter.event_part_group) %}
     <h3>{% trans %}Participant Statistics{% endtrans %}</h3>
         <table id="participant-stats" class="table table-slim table-condensed table-stats">
             <thead>
                 <tr>
                     {% set first_column_width = per_part_max_indent + 1 %}
                     <th colspan="{{ first_column_width }}"></th>
-                    {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+                    {% for part_id, part in sorted_parts %}
                         <th class="text-right">
                             {% if ambience['event']['parts']|length + ambience['event']['part_groups']|length > 1 %}
                                 {{ part['shortname'] }}
@@ -30,7 +33,7 @@
                             {% endif %}
                         </th>
                     {% endfor %}
-                    {% for part_group_id, part_group in ambience['event']['part_groups']|keydictsort(EntitySorter.event_part_group) %}
+                    {% for part_group_id, part_group in sorted_part_groups if part_group['part_ids']|length > 1 %}
                         <th class="text-right {% if loop.first %}b-left{% endif %}">
                             {{ part_group['shortname'] }}
                         </th>
@@ -44,7 +47,7 @@
                             <th class="indent"></th>
                         {% endfor %}
                         <th colspan="{{ first_column_width - stat.indent }}">{{ gettext(stat.value) }}</th>
-                        {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+                        {% for part_id, part in sorted_parts %}
                             <td class="text-right">
                                 {% set datum = row['parts'][part_id] %}
                                 {% set query = stat.get_query(ambience['event'], part_id) or stat.get_query_by_ids(ambience['event'], datum) %}
@@ -53,7 +56,7 @@
                                     datum|length, anid="part_" + stat.name + "_" + part_id|string) }}
                             </td>
                         {% endfor %}
-                        {% for part_group_id, part_group in ambience['event']['part_groups']|keydictsort(EntitySorter.event_part_group) %}
+                        {% for part_group_id, part_group in sorted_part_groups if part_group['part_ids']|length > 1 %}
                             <td class="text-right {% if loop.first %}b-left{% endif %}">
                                 {% set datum = row['part_groups'][part_group_id] %}
                                 {% set query = stat.get_query_part_group(ambience['event'], part_group_id) or stat.get_query_by_ids(ambience['event'], datum) %}
@@ -72,7 +75,7 @@
                 <thead>
                     <tr>
                         <th></th>
-                        {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
+                        {% for track_id, track in sorted_tracks %}
                             <th class="text-right">
                                 {% if ambience['event']['tracks']|length > 1 %}
                                     {{ track['shortname'] }}
@@ -81,12 +84,12 @@
                                 {% endif %}
                             </th>
                         {% endfor %}
-                        {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+                        {% for part_id, part in sorted_parts if part['tracks']|length > 1 %}
                             <th class="text-right {% if loop.first %}b-left{% endif %}">
                                 {{ part['shortname'] }}
                             </th>
                         {% endfor %}
-                        {% for part_group_id, part_group in ambience['event']['part_groups']|keydictsort(EntitySorter.event_part_group) %}
+                        {% for part_group_id, part_group in sorted_part_groups if grouper._track_ids_per_part_group[part_group_id]|length > 1 %}
                             <th class="text-right {% if loop.first %}b-left{% endif %}">
                                 {{ part_group['shortname'] }}
                             </th>
@@ -97,7 +100,7 @@
                     {% for x, row in grouper %}
                         <tr>
                             <th>{% trans x = x + 1 %}In {{ x }}. Choice{% endtrans %}</th>
-                            {% for track_id, count in row['tracks'].items() %}
+                            {% for track_id, reg_ids in row['tracks'].items() %}
                                 <td class="text-right">
                                     {% if reg_ids is none %}
                                         –
@@ -109,7 +112,7 @@
                                     {% endif %}
                                 </td>
                             {% endfor %}
-                            {% for part_id, count in row['parts'].items() %}
+                            {% for part_id, reg_ids in row['parts'].items() if ambience['event']['parts'][part_id]['tracks']|length > 1 %}
                                 <td class="text-right {% if loop.first %}b-left{% endif %}">
                                     {% if reg_ids is none %}
                                         –
@@ -121,7 +124,7 @@
                                     {% endif %}
                                 </td>
                             {% endfor %}
-                            {% for part_group_id, count in row['part_groups'].items() %}
+                            {% for part_group_id, reg_ids in row['part_groups'].items() if grouper._track_ids_per_part_group[part_group_id]|length > 1 %}
                                 <td class="text-right {% if loop.first %}b-left{% endif %}">
                                     {% if reg_ids is none %}
                                         –
@@ -147,7 +150,7 @@
                                         datum|length, anid="track_" + stat.name + "_" + track_id|string) }}
                                 </td>
                             {% endfor %}
-                            {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+                            {% for part_id, part in sorted_parts if part['tracks']|length > 1 %}
                                 <td class="text-right {% if loop.first %}b-left{% endif %}">
                                     {% set datum = row['parts'][part_id] %}
                                     {% set query = stat.get_query_part(ambience['event'], part_id) or stat.get_query_by_ids(ambience['event'], datum) %}
@@ -156,7 +159,7 @@
                                         datum|length, anid="track_part_" + stat.name + "_" + part_id|string) }}
                                 </td>
                             {% endfor %}
-                            {% for part_group_id, part_group in ambience['event']['part_groups']|keydictsort(EntitySorter.event_part_group) %}
+                            {% for part_group_id, part_group in sorted_part_groups if grouper._track_ids_per_part_group[part_group_id]|length > 1 %}
                                 <td class="text-right {% if loop.first %}b-left{% endif %}">
                                     {% set datum = row['part_groups'][part_group_id] %}
                                     {% set query = stat.get_query_part_group(ambience['event'], part_group_id) or stat.get_query_by_ids(ambience['event'], datum) %}
