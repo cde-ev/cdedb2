@@ -2,7 +2,6 @@
 """Calling this script is the canonical way to run the test suite."""
 
 import argparse
-import getpass
 import os
 import pathlib
 import subprocess
@@ -20,13 +19,11 @@ sys.path.append(str(root))
 os.chdir(root)
 
 from bin.check_utils import MyTextTestResult, MyTextTestRunner
-from bin.escape_fuzzing import work as xss_check
 
-import tests.backend_tests as backend_tests
-import tests.frontend_tests as frontend_tests
-import tests.ldap_tests as ldap_tests
-import tests.other_tests as other_tests
-from cdedb.config import TestConfig
+from cdedb.cli.database import create_database, populate_database
+from cdedb.cli.storage import create_log, create_storage, populate_storage
+from cdedb.cli.util import is_docker
+from cdedb.config import SecretsConfig, TestConfig, set_configpath
 
 
 class CdEDBTestLock:
@@ -115,22 +112,21 @@ def _load_tests(testpatterns: Optional[List[str]],
     return test_suite
 
 
-def run_application_tests(configpath: pathlib.Path, testpatterns: List[str] = None, *,
+def run_application_tests(testpatterns: List[str] = None, *,
                           verbose: bool = False) -> int:
-    conf = TestConfig(configpath)
-    # get the user running the current process, so the access rights for log directory
-    # are set correctly
-    user = getpass.getuser()
+    conf = TestConfig()
+    secrets = SecretsConfig()
     # prepare the translations
     subprocess.run(["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL)
-    # create the log directory
-    subprocess.run(["make", "log", f"LOG_DIR={conf['LOG_DIR']}", f"DATA_USER={user}"],
-                   check=True, stdout=subprocess.DEVNULL)
-    # setup the database
-    subprocess.run(["make", "sql", f"DATABASE_NAME={conf['CDB_DATABASE_NAME']}"],
-                   check=True, stdout=subprocess.DEVNULL)
-    # add the configpath to environment to access the configuration inside the tests
-    os.environ['CDEDB_TEST_CONFIGPATH'] = str(configpath)
+
+    create_log(conf)
+    create_database(conf, secrets)
+    populate_database(conf, secrets)
+
+    # we need to setup the environment before we can import from cdedb or tests module
+    import tests.backend_tests as backend_tests  # pylint: disable=import-outside-toplevel
+    import tests.frontend_tests as frontend_tests  # pylint: disable=import-outside-toplevel
+    import tests.other_tests as other_tests  # pylint: disable=import-outside-toplevel
 
     # load all tests which are not meant to be run separately (f.e. the ldap tests)
     test_modules = [backend_tests, frontend_tests, other_tests]
@@ -143,62 +139,66 @@ def run_application_tests(configpath: pathlib.Path, testpatterns: List[str] = No
     return 0 if ran_tests.wasSuccessful() else 1
 
 
-def run_xss_tests(configpath: pathlib.Path, *, verbose: bool = False) -> int:
-    conf = TestConfig(configpath)
-    # get the user running the current process, so the access rights for log directory
-    # are set correctly
-    user = getpass.getuser()
+def run_xss_tests(*, verbose: bool = False) -> int:
+    conf = TestConfig()
+    secrets = SecretsConfig()
     # prepare the translations
     subprocess.run(["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL)
-    # create the log directory
-    subprocess.run(["make", "log", f"LOG_DIR={conf['LOG_DIR']}", f"DATA_USER={user}"],
-                   check=True, stdout=subprocess.DEVNULL)
-    # setup the database
-    subprocess.run(["make", "sql-xss", f"DATABASE_NAME={conf['CDB_DATABASE_NAME']}",
-                    f"XSS_PAYLOAD={conf['XSS_PAYLOAD']}"],
-                   check=True, stdout=subprocess.DEVNULL)
-    # create the storage directory
-    subprocess.run(["make", "storage", f"STORAGE_DIR={conf['STORAGE_DIR']}",
-                    f"DATA_USER={user}"], check=True, stdout=subprocess.DEVNULL)
-    # add the configpath to environment to access the configuration inside the tests
-    os.environ['CDEDB_TEST_CONFIGPATH'] = str(configpath)
+
+    create_log(conf)
+    create_storage(conf)
+    populate_storage(conf)
+    create_database(conf, secrets)
+    populate_database(conf, secrets, xss=True)
+
+    # we need to setup the environment before we can import from cdedb or tests module
+    from bin.escape_fuzzing import (  # pylint: disable=import-outside-toplevel
+        work as xss_check,
+    )
+
+    from cdedb.backend.entity_keeper import EntityKeeper
+    from tests.common import BasicTest
+
+    # setup the event keepers
+    max_event_id = len(BasicTest.get_sample_data('event.events'))
+    keeper = EntityKeeper(conf, 'event_keeper')
+    for event_id in range(1, max_event_id + 1):
+        keeper.init(event_id)
+        keeper.commit(event_id, "", "Initialer Commit.")
 
     ret = xss_check(
-        configpath, conf["XSS_OUTDIR"], verbose=verbose, payload=conf["XSS_PAYLOAD"],
+        conf["XSS_OUTDIR"], verbose=verbose, payload=conf["XSS_PAYLOAD"],
         secondary_payload=conf["XSS_PAYLOAD_SECONDARY"]
     )
 
     return ret
 
 
-def run_ldap_tests(configpath: pathlib.Path, testpatterns: List[str] = None, *,
-                   verbose: bool = False) -> int:
-    conf = TestConfig(configpath)
-    # get the user running the current process, so the access rights for log directory
-    # are set correctly
-    user = getpass.getuser()
+def run_ldap_tests(testpatterns: List[str] = None, *, verbose: bool = False) -> int:
+    conf = TestConfig()
+    secrets = SecretsConfig()
     # prepare the translations
     subprocess.run(["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL)
-    # create the log directory
-    subprocess.run(["make", "log", f"LOG_DIR={conf['LOG_DIR']}", f"DATA_USER={user}"],
-                   check=True, stdout=subprocess.DEVNULL)
-    if pathlib.Path("/CONTAINER").is_file():
+
+    create_log(conf)
+    if is_docker():
         # the database is already initialized, since it is needed to start the
         # ldap container in the first place
         print(f"Database {conf['CDB_DATABASE_NAME']} must already been set up.")
         # TODO verify this somehow
     else:
-        # setup the database
-        subprocess.run(["make", "sql", f"DATABASE_NAME={conf['CDB_DATABASE_NAME']}"],
-                       check=True, stdout=subprocess.DEVNULL)
+        create_database(conf, secrets)
+        populate_database(conf, secrets)
+
         # update the current ldap setting
         # note that this takes no changes of the base ldap setup into account,
         # since this would need to reinstall slapd to work.
         subprocess.run(
             ["make", "ldap-update-full", f"DATABASE_NAME={conf['CDB_DATABASE_NAME']}"],
             check=True, stdout=subprocess.DEVNULL)
-    # add the configpath to environment to access the configuration inside the tests
-    os.environ['CDEDB_TEST_CONFIGPATH'] = str(configpath)
+
+    # we need to setup the environment before we can import from cdedb or tests module
+    import tests.ldap_tests as ldap_tests  # pylint: disable=import-outside-toplevel
 
     test_suite = _load_tests(testpatterns, [ldap_tests])
 
@@ -285,9 +285,9 @@ if __name__ == '__main__':
         with CdEDBTestLock() as Lock:
             assert Lock.thread is not None
             print(f"Using thread {Lock.thread}", file=sys.stderr)
+            set_configpath(Lock.configpath)
             return_code += run_application_tests(
-                configpath=Lock.configpath, testpatterns=testpatterns,
-                verbose=args.verbose)
+                testpatterns=testpatterns, verbose=args.verbose)
 
     if do_ldap:
         # Override testpatterns to run all tests.
@@ -299,15 +299,15 @@ if __name__ == '__main__':
         with CdEDBTestLock("ldap") as Lock:
             assert Lock.thread is not None
             print(f"Using thread {Lock.thread}", file=sys.stderr)
+            set_configpath(Lock.configpath)
             return_code += run_ldap_tests(
-                configpath=Lock.configpath, testpatterns=testpatterns,
-                verbose=args.verbose)
+                testpatterns=testpatterns, verbose=args.verbose)
 
     if do_xss:
         with CdEDBTestLock("xss") as Lock:
             assert Lock.thread is not None
             print(f"Using thread {Lock.thread}", file=sys.stderr)
-            return_code += run_xss_tests(
-                configpath=Lock.configpath, verbose=args.verbose)
+            set_configpath(Lock.configpath)
+            return_code += run_xss_tests(verbose=args.verbose)
 
     sys.exit(return_code)

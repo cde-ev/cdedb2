@@ -21,8 +21,10 @@ import phonenumbers
 
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, compute_checkdigit, xsorted
+from cdedb.config import Config
 
 _LOGGER = logging.getLogger(__name__)
+_CONFIG = Config()
 
 S = TypeVar("S")
 T = TypeVar("T")
@@ -107,6 +109,36 @@ def date_filter(val: Union[datetime.date, str, None],
             # detect freezegun was available.
             return date_formatter.format(effective)
     return val.strftime(formatstr)
+
+
+def datetime_filter(val: Union[datetime.datetime, str, None],
+                    formatstr: str = "%Y-%m-%d %H:%M (%Z)", lang: str = None,
+                    passthrough: bool = False) -> Optional[str]:
+    """Custom jinja filter to format ``datetime.datetime`` objects.
+
+    :param formatstr: Formatting used, if no l10n happens.
+    :param lang: If not None, then localize to the passed language.
+    :param passthrough: If True return strings unmodified.
+    """
+    if val is None or val == '' or not isinstance(val, datetime.datetime):
+        if passthrough and isinstance(val, str) and val:
+            return val
+        return None
+
+    if val.tzinfo is not None:
+        val = val.astimezone(_CONFIG["DEFAULT_TIMEZONE"])
+    else:
+        _LOGGER.warning(f"Found naive datetime object {val}.")
+
+    if lang:
+        locale = icu.Locale(lang)
+        datetime_formatter = icu.DateFormat.createDateTimeInstance(
+            icu.DateFormat.MEDIUM, icu.DateFormat.MEDIUM, locale)
+        zone = _CONFIG["DEFAULT_TIMEZONE"].zone
+        datetime_formatter.setTimeZone(icu.TimeZone.createTimeZone(zone))
+        return datetime_formatter.format(val)
+    else:
+        return val.strftime(formatstr)
 
 
 @overload
@@ -643,6 +675,7 @@ def xdict_entries_filter(items: Sequence[Tuple[Any, CdEDBObject]], *args: str,
 #: Dictionary of custom filters we make available in the templates.
 JINJA_FILTERS = {
     'date': date_filter,
+    'datetime': datetime_filter,
     'money': money_filter,
     'decimal': decimal_filter,
     'cdedbid': cdedbid_filter,

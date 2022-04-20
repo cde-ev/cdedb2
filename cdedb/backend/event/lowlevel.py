@@ -19,8 +19,8 @@ from cdedb.backend.common import (
 from cdedb.common import (
     COURSE_TRACK_FIELDS, EVENT_FIELD_SPEC, EVENT_PART_FIELDS, FEE_MODIFIER_FIELDS,
     FIELD_DEFINITION_FIELDS, PART_GROUP_FIELDS, CdEDBObject, CdEDBObjectMap,
-    CdEDBOptionalMap, DefaultReturnCode, DeletionBlockers, PathLike, PrivilegeError,
-    PsycoJson, RequestState, mixed_existence_sorter, n_, now, unwrap,
+    CdEDBOptionalMap, DefaultReturnCode, DeletionBlockers, PrivilegeError, PsycoJson,
+    RequestState, mixed_existence_sorter, n_, now, unwrap,
 )
 from cdedb.validation import parse_date, parse_datetime
 
@@ -28,10 +28,9 @@ from cdedb.validation import parse_date, parse_datetime
 class EventLowLevelBackend(AbstractBackend):
     realm = "event"
 
-    def __init__(self, configpath: PathLike = None):
-        super().__init__(configpath)
-        self.minor_form_dir: Path
-        self.minor_form_dir = self.conf['STORAGE_DIR'] / 'minor_form'
+    def __init__(self) -> None:
+        super().__init__()
+        self.minor_form_dir: Path = self.conf['STORAGE_DIR'] / 'minor_form'
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:

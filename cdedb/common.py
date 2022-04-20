@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 """Global utility functions."""
-
 import collections
 import collections.abc
 import datetime
@@ -35,7 +34,7 @@ import werkzeug.routing
 from schulze_condorcet.types import Candidate
 
 import cdedb.database.constants as const
-from cdedb.database.connection import IrradiatedConnection
+from cdedb.database.connection import ConnectionContainer
 from cdedb.validationdata import COUNTRY_CODES
 
 _LOGGER = logging.getLogger(__name__)
@@ -141,7 +140,7 @@ class User:
         self.admin_views = self.available_admin_views & set(enabled_views)
 
 
-class RequestState:
+class RequestState(ConnectionContainer):
     """Container for request info. Besides this and db accesses the python
     code should be state-less. This data structure enables several
     convenient semi-magic behaviours (magic enough to be nice, but non-magic
@@ -186,13 +185,6 @@ class RequestState:
         self.lang = lang
         self.translations = translations
         self.begin = begin or now()
-        # Visible version of the database connection
-        # noinspection PyTypeChecker
-        self.conn: IrradiatedConnection = None  # type: ignore
-        # Private version of the database connection, only visible in the
-        # backends (mediated by the make_proxy)
-        # noinspection PyTypeChecker
-        self._conn: IrradiatedConnection = None  # type: ignore
         # Toggle to disable logging
         self.is_quiet = False
         # Toggle to ignore validation warnings. The value is parsed directly inside
@@ -391,13 +383,13 @@ def make_proxy(backend: B, internal: bool = False) -> B:
     return cast(B, Proxy())
 
 
-def make_root_logger(name: str, logfile_path: PathLike,
-                     log_level: int, syslog_level: int = None,
-                     console_log_level: int = None) -> logging.Logger:
+def setup_logger(name: str, logfile_path: pathlib.Path,
+                 log_level: int, syslog_level: int = None,
+                 console_log_level: int = None) -> logging.Logger:
     """Configure the :py:mod:`logging` module.
 
     Since this works hierarchical, it should only be necessary to call this
-     once and then every child logger is routed through this configured logger.
+    once and then every child logger is routed through this configured logger.
     """
     logger = logging.getLogger(name)
     if logger.handlers:
@@ -407,7 +399,7 @@ def make_root_logger(name: str, logfile_path: PathLike,
     logger.setLevel(log_level)
     formatter = logging.Formatter(
         '[%(asctime)s,%(name)s,%(levelname)s] %(message)s')
-    file_handler = logging.FileHandler(str(logfile_path))
+    file_handler = logging.FileHandler(str(logfile_path), delay=True)
     file_handler.setLevel(log_level)
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
@@ -421,7 +413,6 @@ def make_root_logger(name: str, logfile_path: PathLike,
         console_handler.setLevel(console_log_level)
         console_handler.setFormatter(formatter)
         logger.addHandler(console_handler)
-    logger.debug(f"Configured logger {name}.")
     return logger
 
 
@@ -434,6 +425,14 @@ def glue(*args: str) -> str:
     explicit function.
     """
     return " ".join(args)
+
+
+def build_msg(msg1: str, msg2: Optional[str] = None) -> str:
+    """Construct log message with appropriate punctuation"""
+    if msg2:
+        return msg1 + ": " + msg2
+    else:
+        return msg1 + "."
 
 
 S = TypeVar("S")
@@ -1811,16 +1810,17 @@ else:
 
 #: List of all roles we consider admin roles. Changes in these roles must be
 #: approved by two meta admins in total. Values are required roles.
+#: Translation of keys is needed for the privilege change page.
 ADMIN_KEYS = {
-    "is_meta_admin": "is_cde_realm",
-    "is_core_admin": "is_cde_realm",
-    "is_cde_admin": "is_cde_realm",
-    "is_finance_admin": "is_cde_admin",
-    "is_event_admin": "is_event_realm",
-    "is_ml_admin": "is_ml_realm",
-    "is_assembly_admin": "is_assembly_realm",
-    "is_cdelokal_admin": "is_ml_realm",
-    "is_auditor": "is_cde_realm",
+    n_("is_meta_admin"): "is_cde_realm",
+    n_("is_core_admin"): "is_cde_realm",
+    n_("is_cde_admin"): "is_cde_realm",
+    n_("is_finance_admin"): "is_cde_admin",
+    n_("is_event_admin"): "is_event_realm",
+    n_("is_ml_admin"): "is_ml_realm",
+    n_("is_assembly_admin"): "is_assembly_realm",
+    n_("is_cdelokal_admin"): "is_ml_realm",
+    n_("is_auditor"): "is_cde_realm",
 }
 
 #: List of all admin roles who actually have a corresponding realm with a user role.
@@ -1931,6 +1931,16 @@ EVENT_SCHEMA_VERSION = (15, 5)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3
+
+META_INFO_FIELDS = (
+    n_("Finanzvorstand_Name"), n_("Finanzvorstand_Vorname"), n_("Finanzvorstand_Ort"),
+    n_("Finanzvorstand_Adresse_Einzeiler"), n_("Finanzvorstand_Adresse_Zeile2"),
+    n_("Finanzvorstand_Adresse_Zeile3"), n_("Finanzvorstand_Adresse_Zeile4"),
+    n_("CdE_Konto_Inhaber"), n_("CdE_Konto_IBAN"), n_("CdE_Konto_BIC"),
+    n_("CdE_Konto_Institut"), n_("Vorstand"),
+    n_("banner_before_login"), n_("banner_after_login"), n_("banner_genesis"),
+    n_("cde_misc")
+)
 
 #: All columns deciding on the current status of a persona
 PERSONA_STATUS_FIELDS = (

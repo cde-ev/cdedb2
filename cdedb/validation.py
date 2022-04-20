@@ -85,7 +85,7 @@ from cdedb.common import (
     InfiniteEnum, LineResolutions, ValidationWarning, asciificator, compute_checkdigit,
     extract_roles, n_, now, xsorted,
 )
-from cdedb.config import BasicConfig, Config
+from cdedb.config import Config
 from cdedb.database.constants import FieldAssociations, FieldDatatypes
 from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS
 from cdedb.query import (
@@ -97,13 +97,12 @@ from cdedb.validationdata import (
 )
 from cdedb.validationtypes import *  # pylint: disable=wildcard-import,unused-wildcard-import; # noqa: F403
 
-_BASICCONF = BasicConfig()
-_CONF = Config()
 NoneType = type(None)
 
 zxcvbn.matching.add_frequency_lists(FREQUENCY_LISTS)
 
 _LOGGER = logging.getLogger(__name__)
+_CONFIG = Config()
 
 T = TypeVar('T')
 F = TypeVar('F', bound=Callable[..., Any])
@@ -640,10 +639,10 @@ def _shortname(val: Any, argname: str = None, *,
                ignore_warnings: bool = False, **kwargs: Any) -> Shortname:
     """A string used as shortname with therefore limited length."""
     val = _str(val, argname, ignore_warnings=ignore_warnings, **kwargs)
-    if len(val) > _CONF["SHORTNAME_LENGTH"] and not ignore_warnings:
+    if len(val) > _CONFIG["SHORTNAME_LENGTH"] and not ignore_warnings:
         raise ValidationSummary(
             ValidationWarning(argname, n_("Shortname is longer than %(len)s chars."),
-                              {'len': str(_CONF["SHORTNAME_LENGTH"])}))
+                              {'len': str(_CONFIG["SHORTNAME_LENGTH"])}))
     return Shortname(val)
 
 
@@ -675,10 +674,10 @@ def _legacy_shortname(val: Any, argname: str = None, *,
                       ignore_warnings: bool = False, **kwargs: Any) -> LegacyShortname:
     """A string used as shortname, but with increased but still limited length."""
     val = _str(val, argname, ignore_warnings=ignore_warnings, **kwargs)
-    if len(val) > _CONF["LEGACY_SHORTNAME_LENGTH"] and not ignore_warnings:
+    if len(val) > _CONFIG["LEGACY_SHORTNAME_LENGTH"] and not ignore_warnings:
         raise ValidationSummary(
             ValidationWarning(argname, n_("Shortname is longer than %(len)s chars."),
-                              {'len': str(_CONF["LEGACY_SHORTNAME_LENGTH"])}))
+                              {'len': str(_CONFIG["LEGACY_SHORTNAME_LENGTH"])}))
     return LegacyShortname(val)
 
 
@@ -1348,7 +1347,7 @@ def parse_datetime(
     if ret is None:
         ret = datetime.datetime.fromisoformat(val)
     if ret.tzinfo is None:
-        timezone: pytz.tzinfo.DstTzInfo = _BASICCONF["DEFAULT_TIMEZONE"]
+        timezone: pytz.tzinfo.DstTzInfo = _CONFIG["DEFAULT_TIMEZONE"]
         ret = timezone.localize(ret)
         assert ret is not None
     return ret.astimezone(pytz.utc)
