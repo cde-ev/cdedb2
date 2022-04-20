@@ -692,7 +692,6 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['queryform']
         self.assertTrue(f['include_archived'].checked)
 
-
     @as_users("vera", "berta", "garcia")
     def test_changedata(self) -> None:
         self.traverse({'description': self.user['display_name']},
