@@ -487,14 +487,22 @@
         this.addSettingRow = function (number) {
             var f = additionalSettings[number];
 
-            var $checkbox = $('<input>', {'class': "", 'type': "checkbox"})
+            var $display_checkbox = $('<input>', {'class': "", 'type': "checkbox"})
                     .prop('checked', f.input_select.prop('checked'))
                     .change(function () {
-                f.input_select.prop('checked', $(this).prop('checked'));
-            });
+                        // Propagate new value.
+                        f.input_select.prop('checked', $display_checkbox.prop('checked'));
+                    });
 
             var $item = $('<li></li>', {'class': "list-group-item queryform-filterbox", 'data-id': number})
-                    .append($checkbox).append('&ensp;').append(f.name);
+                    .append($display_checkbox).append('&ensp;').append(f.name)
+                    .click(function (event) {
+                        if (event.target == this) {
+                            // If the click was not on the checkbox, toggle it.
+                            $display_checkbox.prop('checked', !$display_checkbox.prop('checked'));
+                            $display_checkbox.change();
+                        }
+                    });
 
             $additionalSettingsList.append($item);
         }
