@@ -6,7 +6,7 @@ querying registrations, courses and lodgements.
 """
 import collections
 import pprint
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Set, Union
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -62,7 +62,7 @@ class EventQueryMixin(EventBaseFrontend):
                     event_parts[part_id]['part_begin'])
 
         per_part_statistics: Dict[
-            EventRegistrationPartStatistic, Dict[str, Dict[int, int]]]
+            EventRegistrationPartStatistic, Dict[str, Dict[int, Set[int]]]]
         per_part_statistics = collections.OrderedDict()
         for reg_stat in EventRegistrationPartStatistic:
             per_part_statistics[reg_stat] = {
@@ -86,7 +86,7 @@ class EventQueryMixin(EventBaseFrontend):
 
         per_track_statistics: Dict[
             Union[EventRegistrationTrackStatistic, EventCourseStatistic],
-            Dict[str, Dict[int, int]]]
+            Dict[str, Dict[int, Set[int]]]]
         per_track_statistics = collections.OrderedDict()
         grouper = None
         if tracks:

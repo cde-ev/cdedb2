@@ -728,7 +728,7 @@ class EventRegistrationInXChoiceGrouper:
                 and len(track['choices']) > x
                 and track['choices'][x] == track['course_id'])
 
-    def _get_ids(self, x: int, track_ids: Collection[int]) -> Optional[int]:
+    def _get_ids(self, x: int, track_ids: Collection[int]) -> Optional[Set[int]]:
         """Uninlined helper to determine the number of fitting entries across tracks.
 
         If all given tracks do not offer an xth choice, return None, otherwise return
@@ -771,13 +771,14 @@ class EventRegistrationInXChoiceGrouper:
         yield from ret.items()
 
     @staticmethod
-    def _get_base_query(event: CdEDBObject, reg_ids: Collection[int]) -> Query:
+    def _get_base_query(event: CdEDBObject, reg_ids: Optional[Collection[int]]
+                        ) -> Query:
         return Query(
             QueryScope.registration,
             QueryScope.registration.get_spec(event=event),
             fields_of_interest=['reg.id', 'persona.given_names', 'persona.family_name',
                                 'persona.username'],
-            constraints=[('reg.id', QueryOperators.oneof, reg_ids)],
+            constraints=[('reg.id', QueryOperators.oneof, reg_ids or ())],
             order=[('persona.family_name', True), ('persona.given_names', True)]
         )
 
