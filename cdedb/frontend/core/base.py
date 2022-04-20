@@ -886,7 +886,7 @@ class CoreBaseFrontend(AbstractFrontend):
         Allowed kinds:
 
         - ``admin_persona``: Search for users as core_admin, cde_admin or auditor.
-        - ``admin_archived_persona``: Like ``admin_persona``, but for archived users.
+        - ``admin_all_users``: Like ``admin_persona``, but for archived users.
         - ``cde_user``: Search for a cde user as cde_admin.
         - ``past_event_user``: Search for an event user to add to a past
           event as cde_admin

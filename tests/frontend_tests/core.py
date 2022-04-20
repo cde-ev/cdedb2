@@ -386,7 +386,7 @@ class TestCoreFrontend(FrontendTest):
                           'id': 6,
                           'name': 'Ferdinand Findus'}]}
         self.assertEqual(expectation, self.response.json)
-        self.get('/core/persona/select?kind=admin_archived_persona&phrase=had')
+        self.get('/core/persona/select?kind=admin_all_users&phrase=had')
         expectation = {
             'personas': [{'email': None,
                           'id': 8,
@@ -426,7 +426,7 @@ class TestCoreFrontend(FrontendTest):
     def test_selectpersona_403(self) -> None:
         # only core admins
         if not self.user_in("paul"):
-            self.get('/core/persona/select?kind=admin_archived_persona&phrase=hades',
+            self.get('/core/persona/select?kind=admin_all_users&phrase=hades',
                      status=403)
             self.assertTitle('403: Forbidden')
         # only core or cde admins and auditors
@@ -643,7 +643,7 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'href': '^/$'})
         f = self.response.forms['adminshowuserform']
         f['phrase'] = "Hades"
-        f['archived'].checked = True
+        f['include_archived'].checked = True
         self.submit(f)
         self.assertTitle(USER_DICT['hades']['default_name_format'])
 
@@ -651,37 +651,47 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'href': '^/$'})
         f = self.response.forms['adminshowuserform']
         f['phrase'] = "nonsense asorecuhasoecurhkgdgdckgdoao"
-        f['archived'].checked = False
+        f['include_archived'].checked = True
         self.submit(f)
         self.assertTitle("CdE-Datenbank")
         self.assertNotification("Kein Account gefunden.", 'warning')
         self.traverse({'href': '^/$'})
-        f = self.response.forms['adminshowuserform']
-        f['phrase'] = "@example.cde"
-        f['archived'].checked = True
-        self.submit(f)
-        self.assertTitle("CdE-Datenbank")
-        self.assertNotification("Kein Account gefunden.", 'warning')
 
         # multiple results - non-archived users
         f = self.response.forms['adminshowuserform']
-        f['phrase'] = "@example.cde"
-        f['archived'].checked = False
+        f['phrase'] = "ad"
+        f['include_archived'].checked = False
         self.submit(f)
         self.assertTitle("Allgemeine Nutzerverwaltung")
-        self.assertPresence("Bertålotta", div='query-result')
-        self.assertPresence("Emilia", div='query-result')
-        self.assertPresence("Garcia", div='query-result')
-        self.assertPresence("Kalif", div='query-result')
-        # archived users
+        self.assertPresence("Anton Armin A.", div='query-result')
+        self.assertPresence("Beispiel", div='query-result')
+        self.assertPresence("Charly C.", div='query-result')
+        self.assertPresence("Garcia G.", div='query-result')
+        self.assertPresence("Inga", div='query-result')
+        self.assertPresence("Rowena", div='query-result')
+        self.assertPresence("Annika", div='query-result')
+        self.assertNonPresence("Hades", div='query-result')
+        f = self.response.forms['queryform']
+        self.assertFalse(f['include_archived'].checked)
+
+        # Including archived users
         self.traverse({'href': '^/$'})
         f = self.response.forms['adminshowuserform']
-        f['phrase'] = "a"  # commom part of "Hades" and "Lisa"
-        f['archived'].checked = True
+        f['phrase'] = "ad"
+        f['include_archived'].checked = True
         self.submit(f)
-        self.assertTitle("Archivsuche")
-        self.assertPresence("Hades")
-        self.assertPresence("Lisa")
+        self.assertTitle("Allgemeine Nutzerverwaltung")
+        self.assertPresence("Anton Armin A.", div='query-result')
+        self.assertPresence("Beispiel", div='query-result')
+        self.assertPresence("Charly C.", div='query-result')
+        self.assertPresence("Garcia G.", div='query-result')
+        self.assertPresence("Inga", div='query-result')
+        self.assertPresence("Rowena", div='query-result')
+        self.assertPresence("Annika", div='query-result')
+        self.assertPresence("Hades", div='query-result')
+        f = self.response.forms['queryform']
+        self.assertTrue(f['include_archived'].checked)
+
 
     @as_users("vera", "berta", "garcia")
     def test_changedata(self) -> None:
