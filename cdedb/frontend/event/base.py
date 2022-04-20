@@ -213,15 +213,16 @@ class EventBaseFrontend(AbstractUserFrontend):
             "email": EntitySorter.email,
             "address": EntitySorter.address,
             "course": EntitySorter.course,
-            "persona": EntitySorter.persona,
+            # the default sorting is, in contrast to EntitySorter.persona, by forename
+            "persona": EntitySorter.make_persona_sorter(family_name_first=False),
         }
 
         # FIXME: the result can have different lengths depending an amount of
         #  courses someone is assigned to.
         def sort_rank(sortkey: str, anid: int) -> Sortkey:
             prim_sorter: KeyFunction = all_sortkeys.get(
-                sortkey, EntitySorter.persona)
-            sec_sorter: KeyFunction = EntitySorter.persona
+                sortkey, all_sortkeys["persona"])
+            sec_sorter: KeyFunction = all_sortkeys["persona"]
             if sortkey == "course":
                 if not len(part_ids) == 1:
                     raise werkzeug.exceptions.BadRequest(n_(
