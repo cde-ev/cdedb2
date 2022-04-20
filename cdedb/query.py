@@ -155,6 +155,7 @@ class QueryScope(enum.IntEnum):
     lodgement = 32
     event_course = 33
     past_event_course = 40
+    all_core_users = 50
 
     def get_view(self) -> str:
         """Return the SQL FROM target associated with this scope.
@@ -347,6 +348,7 @@ _QUERY_SPECS = {
             "is_cde_realm": QuerySpecEntry("bool", n_("cde_realm"), n_("Realm")),
             "is_member": QuerySpecEntry("bool", n_("CdE-Member")),
             "is_searchable": QuerySpecEntry("bool", n_("Searchable")),
+            "is_archived": QuerySpecEntry("bool", n_("Archived Account")),
             **{
                 k: QuerySpecEntry("bool", k, n_("Admin"))
                 for k in ADMIN_KEYS
@@ -547,6 +549,7 @@ _QUERY_SPECS = {
 }
 _QUERY_SPECS[QueryScope.ml_user] = _QUERY_SPECS[QueryScope.persona]
 _QUERY_SPECS[QueryScope.assembly_user] = _QUERY_SPECS[QueryScope.persona]
+_QUERY_SPECS[QueryScope.all_core_users] = _QUERY_SPECS[QueryScope.core_user]
 
 
 class QueryResultEntryFormat(enum.Enum):

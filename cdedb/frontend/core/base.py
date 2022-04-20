@@ -814,14 +814,15 @@ class CoreBaseFrontend(AbstractFrontend):
         })
 
     @access("core_admin")
-    @REQUESTdata("phrase", "archived")
-    def admin_show_user(self, rs: RequestState, phrase: str, archived: bool
+    @REQUESTdata("phrase", "include_archived")
+    def admin_show_user(self, rs: RequestState, phrase: str, include_archived: bool
                         ) -> Response:
         """Allow admins to view any user data set.
 
         The search phrase may be anything: a numeric id (wellformed with
-        check digit or without) or a string matching the data set. If an id is given,
-        the archived parameter is ignored.
+        check digit or without) or a string matching the data set.
+
+        :param: include_archived: If True, allow archived users to be found.
         """
         if rs.has_validation_errors():
             return self.index(rs)
@@ -835,44 +836,35 @@ class CoreBaseFrontend(AbstractFrontend):
             assert anid is not None
             if self.coreproxy.verify_id(rs, anid, is_archived=None):
                 return self.redirect_show_user(rs, anid)
-        scope = QueryScope.archived_core_user if archived else QueryScope.core_user
+
+        scope = QueryScope.all_core_users if include_archived else QueryScope.core_user
         terms = tuple(t.strip() for t in phrase.split(' ') if t)
         key = "username,family_name,given_names,display_name"
-        search = [(key, QueryOperators.match, t) for t in terms]
         spec = scope.get_spec()
         spec[key] = QuerySpecEntry("str", "")
         query = Query(
-            scope,
-            spec,
-            ("personas.id",),
-            search,
-            (("personas.id", True),))
+            scope=scope,
+            spec=spec,
+            fields_of_interest=("personas.id", "family_name", "given_names",
+                                "display_name", "username"),
+            constraints=[(key, QueryOperators.match, t) for t in terms],
+            order=(("personas.id", True),),
+        )
         result = self.coreproxy.submit_general_query(rs, query)
         if len(result) == 1:
             return self.redirect_show_user(rs, result[0]["id"])
 
         # Precise search didn't uniquely match, hence a fulltext search now. Results
         # will be a superset of the above, since all relevant fields are in fulltext.
-        fields = ["personas.id", "family_name", "given_names", "display_name"]
-        if not archived:
-            fields.append("username")
-        query = Query(
-            scope,
-            spec,
-            fields,
-            [('fulltext', QueryOperators.containsall, terms)],
-            (("personas.id", True),))
+        query.constraints = [('fulltext', QueryOperators.containsall, terms)]
         result = self.coreproxy.submit_general_query(rs, query)
         if len(result) == 1:
             return self.redirect_show_user(rs, result[0]["id"])
         elif result:
             params = query.serialize()
             rs.values.update(params)
-            if archived:
-                return self.archived_user_search(rs, is_search=True, download=None,
-                                                 query=query)
-            else:
-                return self.user_search(rs, is_search=True, download=None, query=query)
+            return self.user_search(rs, is_search=True, download=None, query=query,
+                                    include_archived=include_archived)
         else:
             rs.notify("warning", n_("No account found."))
             return self.index(rs)
@@ -927,10 +919,10 @@ class CoreBaseFrontend(AbstractFrontend):
         if kind == "admin_persona":
             if not {"core_admin", "cde_admin", "auditor"} & rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        elif kind == "admin_archived_persona":
+        elif kind == "admin_all_users":
             if "core_admin" not in rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-            scope = QueryScope.archived_core_user
+            scope = QueryScope.all_core_users
         elif kind == "cde_user":
             if not {"cde_admin", "auditor"} & rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
@@ -1111,9 +1103,10 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.redirect_show_user(rs, rs.user.persona_id)
 
     @access("core_admin")
-    @REQUESTdata("download", "is_search")
-    def user_search(self, rs: RequestState, download: Optional[str],
-                    is_search: bool, query: Query = None) -> Response:
+    @REQUESTdata("download", "is_search", "include_archived")
+    def user_search(self, rs: RequestState, download: Optional[str], is_search: bool,
+                    include_archived: Optional[bool] = False, query: Query = None
+                    ) -> Response:
         """Perform search."""
         events = self.pasteventproxy.list_past_events(rs)
         choices: Dict[str, Dict[Any, str]] = {
@@ -1124,8 +1117,10 @@ class CoreBaseFrontend(AbstractFrontend):
                     const.Genders,
                     rs.gettext if download is None else rs.default_gettext)),
         }
+        rs.values['include_archived'] = include_archived
+        scope = QueryScope.all_core_users if include_archived else QueryScope.core_user
         return self.generic_user_search(
-            rs, download, is_search, QueryScope.core_user, QueryScope.core_user,
+            rs, download, is_search, scope, QueryScope.core_user,
             self.coreproxy.submit_general_query, choices=choices, query=query)
 
     @access("core_admin")

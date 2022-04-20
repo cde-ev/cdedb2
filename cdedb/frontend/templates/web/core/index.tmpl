@@ -40,7 +40,7 @@
                         </span>
                     </div>
                     <div class="checkbox">
-                        {{ util.input_checkbox('archived', gettext("Search for archived users"),
+                        {{ util.input_checkbox('include_archived', gettext("Include Archived Users"),
                                                anid='adminshowuser_archived_toggle') }}
                     </div>
                 </form>
@@ -48,7 +48,7 @@
                     var $i = $('#input-showuser-id');
                     $i.cdedbSearchPerson('{{ cdedblink('core/select_persona') }}', {'kind' : 'admin_persona'}, [],
                                          true, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}",
-                                         {'toggle': $('#adminshowuser_archived_toggle'), 'kind': 'admin_archived_persona'}
+                                         {'toggle': $('#adminshowuser_archived_toggle'), 'kind': 'admin_all_users'}
                     );
                     $i.change(function(){
                         if ($(this).val()) {

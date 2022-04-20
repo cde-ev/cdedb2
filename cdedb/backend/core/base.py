@@ -2563,6 +2563,8 @@ class CoreBaseBackend(AbstractBackend):
             query.constraints.append(("is_archived", QueryOperators.equal,
                                       query.scope == QueryScope.archived_core_user))
             query.spec["is_archived"] = QuerySpecEntry("bool", "")
+        elif query.scope == QueryScope.all_core_users:
+            pass
         else:
             raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query)
