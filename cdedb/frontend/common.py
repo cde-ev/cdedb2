@@ -56,6 +56,7 @@ import werkzeug.datastructures
 import werkzeug.exceptions
 import werkzeug.utils
 import werkzeug.wrappers
+import werkzeug.wsgi
 
 import cdedb.database.constants as const
 import cdedb.query as query_mod
@@ -261,6 +262,19 @@ def periodic(name: str, period: int = 1
     return decorator
 
 
+class CdEDBUndefined(jinja2.StrictUndefined):
+    """An undefined that allows boolean tests and basic comparisons, but barks on
+    everything else.
+
+    This matches our needs to catch `{{ undefined }}`, while still allowing
+    comfortable `if` checks as well as `sidenav_active` comparisons.
+    """
+
+    __eq__ = jinja2.Undefined.__eq__  # pylint: disable=protected-access
+    __ne__ = jinja2.Undefined.__ne__  # pylint: disable=protected-access
+    __bool__ = jinja2.Undefined.__bool__  # pylint: disable=protected-access
+
+
 class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     """Common base class for all frontends."""
     #: to be overridden by children
@@ -269,10 +283,16 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         super().__init__(*args, **kwargs)
         self.template_dir = pathlib.Path(self.conf["REPOSITORY_PATH"], "cdedb",
                                          "frontend", "templates")
+        if self.conf['CDEDB_DEV'] or self.conf['CDEDB_TEST']:
+            undefined = CdEDBUndefined
+        else:
+            undefined = jinja2.make_logging_undefined(self.logger, jinja2.Undefined)
+            undefined.__bool__ = jinja2.Undefined.__bool__
         self.jinja_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(str(self.template_dir)),
             extensions=['jinja2.ext.i18n', 'jinja2.ext.do', 'jinja2.ext.loopcontrols'],
-            finalize=sanitize_None, autoescape=True, auto_reload=self.conf["CDEDB_DEV"])
+            finalize=sanitize_None, autoescape=True, auto_reload=self.conf["CDEDB_DEV"],
+            undefined=undefined)
         self.jinja_env.policies['ext.i18n.trimmed'] = True  # type: ignore
         self.jinja_env.policies['json.dumps_kwargs']['cls'] = CustomJSONEncoder  # type: ignore
         self.jinja_env.filters.update(JINJA_FILTERS)
