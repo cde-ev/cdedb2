@@ -67,14 +67,14 @@ class EventQueryMixin(EventBaseFrontend):
         for reg_stat in EventRegistrationPartStatistic:
             per_part_statistics[reg_stat] = {
                 'parts': {
-                    part_id: sum(
-                        1 for reg in registrations.values()
+                    part_id: set(
+                        reg['id'] for reg in registrations.values()
                         if reg_stat.test(rs.ambience['event'], reg, part_id))
                     for part_id in event_parts
                 },
                 'part_groups': {
-                    part_group_id: sum(
-                        1 for reg in registrations.values()
+                    part_group_id: set(
+                        reg['id'] for reg in registrations.values()
                         if reg_stat.test_part_group(
                             rs.ambience['event'], reg, part_group_id))
                     for part_group_id in stat_part_groups
@@ -93,21 +93,21 @@ class EventQueryMixin(EventBaseFrontend):
             for course_stat in EventCourseStatistic:
                 per_track_statistics[course_stat] = {
                     'tracks': {
-                        track_id: sum(
-                            1 for course in courses.values()
+                        track_id: set(
+                            course['id'] for course in courses.values()
                             if course_stat.test(rs.ambience['event'], course, track_id))
                         for track_id in tracks
                     },
                     'parts': {
-                        part_id: sum(
-                            1 for course in courses.values()
+                        part_id: set(
+                            course['id'] for course in courses.values()
                             if course_stat.test_part(
                                 rs.ambience['event'], course, part_id))
                         for part_id in event_parts
                     },
                     'part_groups': {
-                        part_group_id: sum(
-                            1 for course in courses.values()
+                        part_group_id: set(
+                            course['id'] for course in courses.values()
                             if course_stat.test_part_group(
                                 rs.ambience['event'], course, part_group_id))
                         for part_group_id in stat_part_groups
@@ -116,21 +116,21 @@ class EventQueryMixin(EventBaseFrontend):
             for reg_track_stat in EventRegistrationTrackStatistic:
                 per_track_statistics[reg_track_stat] = {
                     'tracks': {
-                        track_id: sum(
-                            1 for reg in registrations.values()
+                        track_id: set(
+                            reg['id'] for reg in registrations.values()
                             if reg_track_stat.test(rs.ambience['event'], reg, track_id))
                         for track_id in tracks
                     },
                     'parts': {
-                        part_id: sum(
-                            1 for reg in registrations.values()
+                        part_id: set(
+                            reg['id'] for reg in registrations.values()
                             if reg_track_stat.test_part(
                                 rs.ambience['event'], reg, part_id))
                         for part_id in event_parts
                     },
                     'part_groups': {
-                        part_group_id: sum(
-                            1 for reg in registrations.values()
+                        part_group_id: set(
+                            reg['id'] for reg in registrations.values()
                             if reg_track_stat.test_part_group(
                                 rs.ambience['event'], reg, part_group_id))
                         for part_group_id in stat_part_groups

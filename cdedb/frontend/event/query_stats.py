@@ -178,6 +178,12 @@ class StatisticMixin:
         query.order = order + query.order
         return query
 
+    def get_query_by_ids(self, event: CdEDBObject, entity_ids: Collection[int]
+                         ) -> Query:
+        query = self._get_base_query(event)
+        query.constraints.append(("id", QueryOperators.oneof, list(entity_ids)))
+        return query
+
     @staticmethod
     def get_part_ids(event: CdEDBObject, *, part_group_id: int) -> Iterable[int]:
         return event['part_groups'][part_group_id]['part_ids']
@@ -682,6 +688,16 @@ class EventRegistrationInXChoiceGrouper:
             event['part_groups'], EntitySorter.event_part_group))
         self._max_choices = max(
             track['num_choices'] for track in self._sorted_tracks.values())
+        self._track_ids_per_part = {
+            part_id: set(part['tracks'])
+            for part_id, part in self._sorted_parts.items()
+        }
+        self._track_ids_per_part_group = {
+            part_group_id: set(itertools.chain.from_iterable(
+                self._track_ids_per_part[part_id]
+                for part_id in part_group['part_ids']))
+            for part_group_id, part_group in self._sorted_part_groups.items()
+        }
 
         self.choice_track_map: Dict[int, Dict[int, Optional[Set[int]]]] = {
             x: {
@@ -712,7 +728,7 @@ class EventRegistrationInXChoiceGrouper:
                 and len(track['choices']) > x
                 and track['choices'][x] == track['course_id'])
 
-    def _get_count(self, x: int, track_ids: Collection[int]) -> Optional[int]:
+    def _get_ids(self, x: int, track_ids: Collection[int]) -> Optional[int]:
         """Uninlined helper to determine the number of fitting entries across tracks.
 
         If all given tracks do not offer an xth choice, return None, otherwise return
@@ -725,52 +741,63 @@ class EventRegistrationInXChoiceGrouper:
             tmp = self.choice_track_map[x][track_id]
             if tmp is not None:
                 if result is None:
-                    result = tmp
+                    result = set(tmp)
                 else:
                     result |= tmp
-        if result is None:
-            return None
-        return len(result)
+        return result
 
-    def __iter__(self) -> Iterable[Tuple[int, Dict[str, Dict[int, Optional[int]]]]]:
+    def __iter__(
+            self
+    ) -> Iterable[Tuple[int, Dict[str, Dict[int, Optional[Set[int]]]]]]:
         """Iterate over all x choices, for each one return sorted counts by type."""
-        track_ids_per_part = {
-            part_id: set(part['tracks'])
-            for part_id, part in self._sorted_parts.items()
-        }
-        track_ids_per_part_group = {
-            part_group_id: set(itertools.chain.from_iterable(
-                track_ids_per_part[part_id] for part_id in part_group['part_ids']))
-            for part_group_id, part_group in self._sorted_part_groups.items()
-        }
         ret = {
             x: {
                 'tracks': {
-                    track_id: self._get_count(x, (track_id,))
+                    track_id: self._get_ids(x, (track_id,))
                     for track_id in self._sorted_tracks
                 },
                 'parts': {
-                    part_id: self._get_count(x, track_ids)
-                    for part_id, track_ids in track_ids_per_part.items()
+                    part_id: self._get_ids(x, track_ids)
+                    for part_id, track_ids in self._track_ids_per_part.items()
                 },
                 'part_groups': {
-                    part_group_id: self._get_count(x, track_ids)
-                    for part_group_id, track_ids, in track_ids_per_part_group.items()
+                    part_group_id: self._get_ids(x, track_ids)
+                    for part_group_id, track_ids
+                    in self._track_ids_per_part_group.items()
                 },
             }
             for x in range(self._max_choices)
         }
         yield from ret.items()
 
-    def get_query(self, event: CdEDBObject, track_id: int, x: int) -> Query:
+    @staticmethod
+    def _get_base_query(event: CdEDBObject, reg_ids: Collection[int]) -> Query:
         return Query(
             QueryScope.registration,
             QueryScope.registration.get_spec(event=event),
             fields_of_interest=['reg.id', 'persona.given_names', 'persona.family_name',
-                                'persona.username', f"track{track_id}.course_id"],
-            constraints=[
-                ('reg.id', QueryOperators.oneof, self.choice_track_map[x][track_id]),
-            ],
-            order=[(f"course{track_id}.nr", True), ('persona.family_name', True),
-                   ('persona.given_names', True)]
+                                'persona.username'],
+            constraints=[('reg.id', QueryOperators.oneof, reg_ids)],
+            order=[('persona.family_name', True), ('persona.given_names', True)]
         )
+
+    def get_query(self, event: CdEDBObject, track_id: int, x: int) -> Query:
+        query = self._get_base_query(event, self._get_ids(x, (track_id,)))
+        query.fields_of_interest.append(f"track{track_id}.course_id")
+        query.order = [(f"track{track_id}.course_id", True)] + query.order
+        return query
+
+    def get_query_part(self, event: CdEDBObject, part_id: int, x: int) -> Query:
+        track_ids = self._track_ids_per_part[part_id]
+        query = self._get_base_query(event, self._get_ids(x, track_ids))
+        query.fields_of_interest.extend(
+            f"track{track_id}.course_id" for track_id in track_ids)
+        return query
+
+    def get_query_part_group(self, event: CdEDBObject, part_group_id: int, x: int
+                             ) -> Query:
+        track_ids = self._track_ids_per_part_group[part_group_id]
+        query = self._get_base_query(event, self._get_ids(x, track_ids))
+        query.fields_of_interest.extend(
+            f"track{track_id}.course_id" for track_id in track_ids)
+        return query
