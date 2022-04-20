@@ -44,6 +44,12 @@
          */
         var sortInputs = [];
         /**
+         * List of additional settings inputs. Each element has the following attributes:
+         * input_select: jQuery DOM object of the setting checkbox
+         * name: human readable name of the setting
+         */
+        var additionalSettings = [];
+        /**
          * Index of the id field in the fieldList. This field is used by the setIdFilter() function.
          * -1 if no filterable field is known to be the id field.
          */
@@ -61,6 +67,8 @@
         var $viewFieldList = $element.find('.viewfield-list');
         /** The jQueryDOM object of the container for sort rows */
         var $sortFieldList = $element.find('.sortfield-list');
+        /** The jQueryDOM object of the container for additional settings. */
+        var $additionalSettingsList = $element.find('.settings-list');
 
         /* Scan form rows and initialize field list */
         $element.find('.query_field').each(function() {
@@ -97,6 +105,13 @@
             sortInputs.push({
                 input_field : $(this).find('.sort-field'),
                 input_order : $(this).find('.sort-order')
+            });
+        });
+
+        $element.find('.query_setting').each(function () {
+            additionalSettings.push({
+                input_select : $(this).find('.setting_checkbox'),
+                name : $(this).find('.name').text()
             });
         });
 
@@ -469,6 +484,21 @@
         };
 
 
+        this.addSettingRow = function (number) {
+            var f = additionalSettings[number];
+
+            var $checkbox = $('<input>', {'class': "", 'type': "checkbox"})
+                    .prop('checked', f.input_select.prop('checked'))
+                    .change(function () {
+                f.input_select.prop('checked', $(this).prop('checked'));
+            });
+
+            var $item = $('<li></li>', {'class': "list-group-item queryform-filterbox", 'data-id': number})
+                    .append($checkbox).append('&ensp;').append(f.name);
+
+            $additionalSettingsList.append($item);
+        }
+
         /**
          * Refresh the list of options in the .addfilter select box.
          */
@@ -634,6 +664,7 @@
             $filterFieldList.children().detach();
             $viewFieldList.children().detach();
             $sortFieldList.children().detach();
+            $additionalSettingsList.children().detach();
 
             // Add currently selected and filtered fields to dynamic lists
             for (var i = 0; i < fieldList.length; i++) {
@@ -661,6 +692,16 @@
 
                     // Add field to sort list
                     this.addSortRow(field, sortInputs[i].input_order.val());
+                }
+            }
+            // Add available additional settings
+            if (additionalSettings.length == 0) {
+                $additionalSettingsList.parent().hide();
+            }
+            else {
+                $additionalSettingsList.parent().show();
+                for (var i = 0; i < additionalSettings.length; i++) {
+                    this.addSettingRow(i);
                 }
             }
 

@@ -78,7 +78,7 @@
     </script>
 {% endmacro %}
 
-{% macro user_search(realm, result, query, info="", archived=False) %}
+{% macro user_search(realm, result, query, info="", archived=False, include_archived_toggle=False) %}
     <div class="row">
         <div class="col-md-4">
             <div class="p button-par">
@@ -104,7 +104,8 @@
         </div>
     </div>
 
-    {{ user_search_mask(realm, archived=archived, selection_blacklist=("pevent_id", "pcourse_id")) }}
+    {{ user_search_mask(realm, archived=archived, selection_blacklist=("pevent_id", "pcourse_id"),
+                        include_archived_toggle=include_archived_toggle) }}
 
     {% if values['is_search'] %}
         <h3 id="query-results">{% trans %}Result{% endtrans %} [{{ result|length }}]</h3>
@@ -113,19 +114,20 @@
 {% endmacro %}
 
 
-{% macro user_search_mask(realm, archived=False, selection_blacklist=[]) %}
+{% macro user_search_mask(realm, archived=False, selection_blacklist=[], include_archived_toggle=False) %}
     {% if archived %}
         {% set target=cdedblink('{}/archived_user_search'.format(realm)) %}
     {% else %}
         {% set target=cdedblink('{}/user_search'.format(realm)) %}
     {% endif %}
     {{ format_query(scope, spec, target + '#query-results', selection_blacklist=selection_blacklist,
-                    selection_default=('personas.id', 'username', 'family_name', 'given_names')) }}
+                    selection_default=('personas.id', 'username', 'family_name', 'given_names'),
+                    include_archived_toggle=include_archived_toggle) }}
 {% endmacro %}
 
 
 {% macro format_query(scope, spec, target, output_selection=True, selection_blacklist=[],
-                      selection_default=[]) %}
+                      selection_default=[], include_archived_toggle=False) %}
     <form action="{{ target }}" method="GET" id="queryform" aria-labelledby="qf_title">
         {{ util.input_hidden(name="is_search", value=True) }}
         <div class="panel panel-primary">
@@ -228,7 +230,10 @@
                         <div class="col-lg-5">
                             <table class="query-form-sort table table-superdense">
                             <thead>
-                                <tr><th colspan="3">Sortierung</th></tr>
+                                <tr>
+                                    <th>{{ util.make_icon('sort-alpha-down', title=gettext("Sorting")) }}</th>
+                                    <th colspan="2">{% trans %}Sorting{% endtrans %}</th>
+                                </tr>
                             </thead>
                             <tbody>
                                 {% for title, name in (("1.", "qord_primary"), ("2.", "qord_secondary"),
@@ -255,6 +260,28 @@
                                 {% endfor %}
                             </tbody>
                             </table>
+                            {% if include_archived_toggle %}
+                                <table class="query-form-sort table table-superdense">
+                                <thead>
+                                    <tr>
+                                        <th>{{ util.make_icon('cog', title=gettext("Additional Settings")) }}</th>
+                                        <th>{% trans %}Additional Settings{% endtrans %}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="query_setting">
+                                        <td>
+                                            {{ util.input_checkbox("include_archived", value=True, defaultvalue='',
+                                                                   aclass="setting_checkbox",
+                                                                   arialabel=gettext("Include Archived Users")) }}
+                                        </td>
+                                        <td class="name">
+                                            {% trans %}Include Archived Users{% endtrans %}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                                </table>
+                            {% endif %}
                         </div>
                     </div>
 
@@ -291,6 +318,11 @@
                                     </span>
                                     <select class="form-control input-sm addsortfield"
                                             aria-label="{% trans %}sort key to add{% endtrans %}"></select>
+                                </div>
+                                <div>
+                                    <h4 class="filter-title">
+                                        {{ util.make_icon('cog') }} {% trans %}Additional Settings{% endtrans %}</h4>
+                                    <ul class="list-group list-group-condensed list-group-hover settings-list"></ul>
                                 </div>
                             </div>
                         </div>
