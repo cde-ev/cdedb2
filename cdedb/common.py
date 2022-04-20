@@ -659,27 +659,53 @@ class EntitySorter:
     """
 
     @staticmethod
-    def given_names(persona: CdEDBObject) -> Sortkey:
-        return (persona['given_names'].lower(),)
+    def make_persona_sorter(only_given_names: bool = False,
+                            only_display_name: bool = False,
+                            given_and_display_names: bool = False,
+                            family_name_first: bool = True) -> KeyFunction:
+        """Create a function to sort names accordingly to the display name specification
 
-    @staticmethod
-    def family_name(persona: CdEDBObject) -> Sortkey:
-        return (persona['family_name'].lower(),)
+        The returned key function accepts a persona dict and returns a sorting key,
+        accordingly to the specification made at creation. The name specification can
+        be found at the documentation page about "User Experience Conventions".
 
-    @staticmethod
-    def given_names_first(persona: CdEDBObject) -> Sortkey:
-        return (persona['given_names'].lower(),
-                persona['family_name'].lower(),
-                persona['id'])
+        For the sake of simplicity, we ignore titles for sorting and always use
+        forename and surname as sort keys.
 
-    @staticmethod
-    def family_name_first(persona: CdEDBObject) -> Sortkey:
-        return (persona['family_name'].lower(),
-                persona['given_names'].lower(),
-                persona['id'])
+        :param family_name_first: Whether the forename or the surname take precedence
+            as sorting key.
+        """
+
+        def sorter(persona: CdEDBObject) -> Sortkey:
+            display_name: str = persona.get('display_name', "")
+            given_names: str = persona['given_names']
+            if only_given_names:
+                forename = given_names
+            elif only_display_name:
+                forename = display_name
+            elif given_and_display_names:
+                if not display_name or display_name == given_names:
+                    forename = given_names
+                else:
+                    forename = f"{given_names} ({display_name})"
+            elif display_name and display_name in given_names:
+                forename = display_name
+            else:
+                forename = given_names
+
+            forename = forename.lower()
+            family_name = persona["family_name"].lower()
+            if family_name_first:
+                return (family_name, *forename, persona["id"])
+            else:
+                return (*forename, family_name, persona["id"])
+
+        return sorter
 
     # TODO decide whether we sort by first or last name
-    persona = family_name_first
+    @classmethod
+    def persona(cls, persona: CdEDBObject) -> Sortkey:
+        return cls.make_persona_sorter(family_name_first=True)(persona)
 
     @staticmethod
     def email(persona: CdEDBObject) -> Sortkey:

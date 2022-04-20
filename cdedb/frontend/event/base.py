@@ -208,8 +208,8 @@ class EventBaseFrontend(AbstractUserFrontend):
                       for e in registrations.values()), event_id)
 
         all_sortkeys = {
-            "given_names": EntitySorter.given_names,
-            "family_name": EntitySorter.family_name,
+            "given_names": EntitySorter.make_persona_sorter(family_name_first=False),
+            "family_name": EntitySorter.make_persona_sorter(family_name_first=True),
             "email": EntitySorter.email,
             "address": EntitySorter.address,
             "course": EntitySorter.course,
