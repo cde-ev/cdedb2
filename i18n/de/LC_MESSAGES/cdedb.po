@@ -12297,7 +12297,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:85
 msgid ""
-"Note: After your transfer has been recieved at our bank account, it may take "
+"Note: After your transfer has been received at our bank account, it may take "
 "some time (up to a few weeks) until the payment is registered here."
 msgstr ""
 "Hinweis: Nachdem das Geld auf unserem Konto eingegangen ist, kann es "
@@ -13245,7 +13245,7 @@ msgstr "Diese Mailingliste wird nicht via Datenbank moderiert."
 
 #: cdedb/frontend/templates/web/ml/message_moderation.tmpl:32
 msgid ""
-"If you reject a message, its author will recieve a notification message. If "
+"If you reject a message, its author will receive a notification message. If "
 "you discard a message, no notification message will be sent. The latter is "
 "preferred for spam messages. If you whitelist a message, it is not only "
 "accepted, but its author can write emails without moderation in the future."
@@ -13332,8 +13332,8 @@ msgstr "Adresse ändern"
 
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:113
 msgid ""
-"To recieve mails from this mailinglist with a different email address, enter "
-"the new address in this form. You will recieve a confirmation mail."
+"To receive mails from this mailinglist with a different email address, enter "
+"the new address in this form. You will receive a confirmation mail."
 msgstr ""
 "Um Mails dieser Mailingliste an eine andere E-Mail-Adresse zu erhalten, "
 "trage die neue Adresse ins folgende Formular ein. Nach dem Absenden erhältst "
