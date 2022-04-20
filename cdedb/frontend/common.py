@@ -298,18 +298,17 @@ def periodic(name: str, period: int = 1
     return decorator
 
 
-class UnprintableUndefined(jinja2.Undefined):
-    """An undefined that barks on print and iteration, but not on boolean
-    tests and basic comparisons.
+class CdEDBUndefined(jinja2.StrictUndefined):
+    """An undefined that allows boolean tests and basic comparisons, but barks on
+    everything else.
 
     This matches our needs to catch `{{ undefined }}`, while still allowing
     comfortable `if` checks as well as `sidenav_active` comparisons.
     """
 
-    __iter__ = __str__ = __len__ = jinja2.Undefined._fail_with_undefined_error  # type: ignore[attr-defined]  # pylint: disable=protected-access
-    # __eq__ = __ne__ = __bool__ = Undefined._fail_with_undefined_error
-    __hash__ = jinja2.Undefined._fail_with_undefined_error  # type: ignore[attr-defined]  # pylint: disable=protected-access
-    __contains__ = jinja2.Undefined._fail_with_undefined_error  # type: ignore[attr-defined]  # pylint: disable=protected-access
+    __eq__ = jinja2.Undefined.__eq__  # pylint: disable=protected-access
+    __ne__ = jinja2.Undefined.__ne__  # pylint: disable=protected-access
+    __bool__ = jinja2.Undefined.__bool__  # pylint: disable=protected-access
 
 
 class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
@@ -321,7 +320,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         self.template_dir = pathlib.Path(self.conf["REPOSITORY_PATH"], "cdedb",
                                          "frontend", "templates")
         if self.conf['CDEDB_DEV'] or self.conf['CDEDB_TEST']:
-            undefined = UnprintableUndefined
+            undefined = CdEDBUndefined
         else:
             undefined = jinja2.make_logging_undefined(self.logger, jinja2.Undefined)
             undefined.__bool__ = jinja2.Undefined.__bool__
