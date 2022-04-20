@@ -270,9 +270,9 @@ class CdEDBUndefined(jinja2.StrictUndefined):
     comfortable `if` checks as well as `sidenav_active` comparisons.
     """
 
-    __eq__ = jinja2.Undefined.__eq__  # pylint: disable=protected-access
-    __ne__ = jinja2.Undefined.__ne__  # pylint: disable=protected-access
-    __bool__ = jinja2.Undefined.__bool__  # pylint: disable=protected-access
+    __eq__ = jinja2.Undefined.__eq__
+    __ne__ = jinja2.Undefined.__ne__
+    __bool__ = jinja2.Undefined.__bool__
 
 
 class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
