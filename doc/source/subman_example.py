@@ -2,8 +2,8 @@
 
 from typing import Collection, Dict, NewType, Tuple
 
-import cdedb.subman as subman
-from cdedb.subman.machine import SubscriptionAction, SubscriptionPolicy, SubscriptionState
+import subman
+from subman.machine import SubscriptionAction, SubscriptionPolicy, SubscriptionState
 
 # Some object representing a potential list subscriber
 Persona = NewType("Persona", object)

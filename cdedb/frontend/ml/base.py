@@ -7,6 +7,8 @@ from datetime import datetime
 from typing import Any, Collection, Dict, Optional, Set
 
 import werkzeug
+from subman.exceptions import SubscriptionError
+from subman.machine import SubscriptionAction
 from werkzeug import Response
 
 import cdedb.database.constants as const
@@ -14,8 +16,7 @@ import cdedb.validationtypes as vtypes
 from cdedb.common import (
     FULL_MOD_REQUIRING_FIELDS, LOG_FIELDS_COMMON, MOD_ALLOWED_FIELDS,
     RESTRICTED_MOD_ALLOWED_FIELDS, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
-    EntitySorter, PathLike, PrivilegeError, RequestState, merge_dicts, n_, now, unwrap,
-    xsorted,
+    EntitySorter, PrivilegeError, RequestState, merge_dicts, n_, now, unwrap, xsorted,
 )
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
@@ -27,8 +28,6 @@ from cdedb.ml_type_aux import (
     ADDITIONAL_TYPE_FIELDS, TYPE_MAP, MailinglistGroup, get_type,
 )
 from cdedb.query import QueryScope
-from cdedb.subman.exceptions import SubscriptionError
-from cdedb.subman.machine import SubscriptionAction
 from cdedb.validation import (
     ALL_MAILINGLIST_FIELDS, PERSONA_FULL_ML_CREATION, filter_none,
 )
@@ -37,8 +36,8 @@ from cdedb.validation import (
 class MlBaseFrontend(AbstractUserFrontend):
     realm = "ml"
 
-    def __init__(self, configpath: PathLike = None):
-        super().__init__(configpath)
+    def __init__(self) -> None:
+        super().__init__()
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:

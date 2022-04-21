@@ -3,10 +3,11 @@
 """
 This script tries to verify successful XSS mitigation, i.e. HTML escaping.
 
-It requires a properly populated database and a storage dir to be set up.
-Their name / directory can be passed via the configpath argument.
-To run this inside the regular test suite, use `make xss-check` or
-`bin/check.py --parts xss`. See also the documentation.
+This requires a configpath to a configfile via CDEDB_CONFIGPATH. The specified
+database and storage dir have to be properly populated with sample data.
+
+To run this inside the regular test suite, use `bin/check.py --parts xss`.
+See also the documentation.
 
 This script logs in as Anton (our testing meta admin account) and traverses all
 links and forms it can find. In every response it checks for the magic string
@@ -30,6 +31,7 @@ from typing import TYPE_CHECKING, Collection, List, NamedTuple, Optional, Set, T
 
 import webtest
 
+from cdedb.cli.util import sanity_check
 from cdedb.frontend.application import Application
 
 # Custom type definitions.
@@ -43,8 +45,8 @@ visited_urls: Set[str] = set()
 posted_urls: Set[str] = set()
 
 
+@sanity_check
 def work(
-    configpath: pathlib.Path,
     outdir: pathlib.Path,
     *,
     verbose: bool = False,
@@ -52,13 +54,7 @@ def work(
     secondary_payload: Tuple[str, ...] = ("&amp;lt;", "&amp;gt;")
 ) -> int:
     """Iterate over all visible page links and check them for the xss payload."""
-    # Do some sanity checks to avoide spamming an offline or production vm.
-    if pathlib.Path("/OFFLINEVM").exists():
-        raise RuntimeError("Cannot run this script in an Offline-VM.")
-    if pathlib.Path("/PRODUCTIONVM").exists():
-        raise RuntimeError("Cannot run this scirpt in Production-VM.")
-
-    app = Application(configpath)
+    app = Application()
     wt_app = webtest.TestApp(app, extra_environ={
         'REMOTE_ADDR': "127.0.0.0",
         'SERVER_PROTOCOL': "HTTP/1.1",
@@ -238,8 +234,6 @@ if __name__ == "__main__":
                     " sure it is escaped properly.")
 
     general = parser.add_argument_group("General options")
-    general.add_argument("--configpath", "-c",
-                         help="The config path to setup the application.")
     general.add_argument(
         "--outdir", "-o", default="./out",
         help="The directory where output is saved. default: %(default)s")
@@ -255,7 +249,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    ret = work(
-        pathlib.Path(args.configpath), pathlib.Path(args.outdir), verbose=args.verbose,
-        payload=args.payload, secondary_payload=args.secondary)
+    ret = work(pathlib.Path(args.outdir), verbose=args.verbose,
+               payload=args.payload, secondary_payload=args.secondary)
     sys.exit(ret)

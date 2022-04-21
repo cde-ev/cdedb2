@@ -28,9 +28,9 @@ import psycopg2.extras
 import cdedb.validation as validate
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    LOCALE, CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Error, PathLike,
-    PrivilegeError, RequestState, Role, diacritic_patterns, glue, make_proxy,
-    make_root_logger, n_, unwrap,
+    LOCALE, CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Error,
+    PrivilegeError, RequestState, Role, diacritic_patterns, glue, make_proxy, n_,
+    setup_logger, unwrap,
 )
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
@@ -227,16 +227,16 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
     #: abstract str to be specified by children
     realm: ClassVar[str]
 
-    def __init__(self, configpath: PathLike = None) -> None:
-        self.conf = Config(configpath)
+    def __init__(self) -> None:
+        self.conf = Config()
         # initialize logging
-        make_root_logger(
+        setup_logger(
             "cdedb.backend",
             self.conf["LOG_DIR"] / "cdedb-backend.log",
             self.conf["LOG_LEVEL"],
             syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
-        make_root_logger(
+        setup_logger(
             f"cdedb.backend.{self.realm}",
             self.conf["LOG_DIR"] / f"cdedb-backend-{self.realm}.log",
             self.conf["LOG_LEVEL"],
@@ -244,7 +244,8 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         # logger are thread-safe!
         self.logger = logging.getLogger("cdedb.backend.{}".format(self.realm))
-        self.logger.debug(f"Instantiated {self} with configpath {configpath}.")
+        self.logger.debug(
+            f"Instantiated {self} with configpath {self.conf._configpath}.")
         # make the logger available to the query mixin
         super().__init__(self.logger)
         # Everybody needs access to the core backend
@@ -258,7 +259,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
             # self.core = cast('CoreBackend', self)
             self.core = make_proxy(self, internal=True)
         else:
-            self.core = make_proxy(CoreBackend(configpath), internal=True)
+            self.core = make_proxy(CoreBackend(), internal=True)
 
     affirm_atomized_context = staticmethod(_affirm_atomized_context)
 

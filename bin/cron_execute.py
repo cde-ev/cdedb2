@@ -6,13 +6,13 @@
 """
 
 import getpass
-import pathlib
 
+from cdedb.config import DEFAULT_CONFIGPATH, set_configpath
 from cdedb.frontend.cron import CronFrontend
 
 if __name__ == "__main__":
     if getpass.getuser() != "www-data":
         raise RuntimeError("Must be run as user www-data.")
-    configpath = pathlib.Path("/etc/cdedb-application-config.py")
-    cron = CronFrontend(configpath if configpath.exists() else None)
+    set_configpath(DEFAULT_CONFIGPATH)
+    cron = CronFrontend()
     cron.execute()
