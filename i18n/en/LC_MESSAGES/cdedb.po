@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2022-04-09 21:16+0000\n"
+"POT-Creation-Date: 2022-04-21 11:28+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -9163,7 +9163,7 @@ msgid "Show only courses in tracks:"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/course/course_list.tmpl:66
-msgid "direct link"
+msgid "Permanent link"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/course/course_list.tmpl:81
