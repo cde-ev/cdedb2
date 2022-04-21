@@ -4,6 +4,7 @@
 
 import collections
 import datetime
+import io
 import itertools
 import operator
 import pathlib
@@ -12,8 +13,7 @@ import tempfile
 from typing import Any, Collection, Dict, List, Optional, Set, Tuple
 
 import magic
-import qrcode
-import qrcode.image.svg
+import segno
 import vobject
 import werkzeug.exceptions
 from werkzeug import Response
@@ -369,18 +369,10 @@ class CoreBaseFrontend(AbstractFrontend):
 
         vcard = self._create_vcard(rs, persona_id)
 
-        qr = qrcode.QRCode()
-        qr.add_data(vcard)
-        qr.make(fit=True)
-        qr_image = qr.make_image(qrcode.image.svg.SvgPathFillImage)
+        buffer = io.BytesIO()
+        segno.make_qr(vcard).save(buffer, kind='svg', scale=4)
 
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            temppath = pathlib.Path(tmp_dir, f"vcard-{persona_id}")
-            qr_image.save(str(temppath))
-            with open(temppath) as f:
-                data = f.read()
-
-        return self.send_file(rs, data=data, mimetype="image/svg+xml")
+        return self.send_file(rs, afile=buffer, mimetype="image/svg+xml")
 
     def _create_vcard(self, rs: RequestState, persona_id: int) -> str:
         """
