@@ -16,7 +16,7 @@ from cdedb.config import Config
 from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.validationtypes import (
     IBAN, JSON, Email, GenesisCase, PasswordStrength, Persona, Phone, PrintableASCII,
-    PrintableASCIIType, QueryInput, SafeStr, StringType, Vote,
+    PrintableASCIIType, SafeStr, StringType, Vote,
 )
 
 
