@@ -7,6 +7,8 @@ from datetime import datetime
 from typing import Any, Collection, Dict, Optional, Set
 
 import werkzeug
+from subman.exceptions import SubscriptionError
+from subman.machine import SubscriptionAction
 from werkzeug import Response
 
 import cdedb.database.constants as const
@@ -26,8 +28,6 @@ from cdedb.ml_type_aux import (
     ADDITIONAL_TYPE_FIELDS, TYPE_MAP, MailinglistGroup, get_type,
 )
 from cdedb.query import QueryScope
-from cdedb.subman.exceptions import SubscriptionError
-from cdedb.subman.machine import SubscriptionAction
 from cdedb.validation import (
     ALL_MAILINGLIST_FIELDS, PERSONA_FULL_ML_CREATION, filter_none,
 )

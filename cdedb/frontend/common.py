@@ -10,7 +10,6 @@ import collections
 import collections.abc
 import copy
 import csv
-import datetime
 import email
 import email.charset
 import email.encoders
@@ -48,7 +47,6 @@ from typing import (
     Type, TypeVar, Union, cast, overload,
 )
 
-import icu
 import jinja2
 import mailmanclient.restobjects.held_message
 import mailmanclient.restobjects.mailinglist
@@ -58,6 +56,7 @@ import werkzeug.datastructures
 import werkzeug.exceptions
 import werkzeug.utils
 import werkzeug.wrappers
+import werkzeug.wsgi
 
 import cdedb.database.constants as const
 import cdedb.query as query_mod
@@ -232,40 +231,6 @@ def raise_jinja(val: str) -> None:
     raise RuntimeError(val)
 
 
-_CONFIG = Config()
-
-
-# TODO move this back in filter.py
-def datetime_filter(val: Union[datetime.datetime, str, None],
-                    formatstr: str = "%Y-%m-%d %H:%M (%Z)", lang: str = None,
-                    passthrough: bool = False) -> Optional[str]:
-    """Custom jinja filter to format ``datetime.datetime`` objects.
-
-    :param formatstr: Formatting used, if no l10n happens.
-    :param lang: If not None, then localize to the passed language.
-    :param passthrough: If True return strings unmodified.
-    """
-    if val is None or val == '' or not isinstance(val, datetime.datetime):
-        if passthrough and isinstance(val, str) and val:
-            return val
-        return None
-
-    if val.tzinfo is not None:
-        val = val.astimezone(_CONFIG["DEFAULT_TIMEZONE"])
-    else:
-        _LOGGER.warning(f"Found naive datetime object {val}.")
-
-    if lang:
-        locale = icu.Locale(lang)
-        datetime_formatter = icu.DateFormat.createDateTimeInstance(
-            icu.DateFormat.MEDIUM, icu.DateFormat.MEDIUM, locale)
-        zone = _CONFIG["DEFAULT_TIMEZONE"].zone
-        datetime_formatter.setTimeZone(icu.TimeZone.createTimeZone(zone))
-        return datetime_formatter.format(val)
-    else:
-        return val.strftime(formatstr)
-
-
 PeriodicMethod = Callable[[Any, RequestState, CdEDBObject], CdEDBObject]
 
 
@@ -297,6 +262,19 @@ def periodic(name: str, period: int = 1
     return decorator
 
 
+class CdEDBUndefined(jinja2.StrictUndefined):
+    """An undefined that allows boolean tests and basic comparisons, but barks on
+    everything else.
+
+    This matches our needs to catch `{{ undefined }}`, while still allowing
+    comfortable `if` checks as well as `sidenav_active` comparisons.
+    """
+
+    __eq__ = jinja2.Undefined.__eq__
+    __ne__ = jinja2.Undefined.__ne__
+    __bool__ = jinja2.Undefined.__bool__
+
+
 class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     """Common base class for all frontends."""
     #: to be overridden by children
@@ -305,14 +283,19 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         super().__init__(*args, **kwargs)
         self.template_dir = pathlib.Path(self.conf["REPOSITORY_PATH"], "cdedb",
                                          "frontend", "templates")
+        if self.conf['CDEDB_DEV'] or self.conf['CDEDB_TEST']:
+            undefined = CdEDBUndefined
+        else:
+            undefined = jinja2.make_logging_undefined(self.logger, jinja2.Undefined)
+            undefined.__bool__ = jinja2.Undefined.__bool__
         self.jinja_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(str(self.template_dir)),
             extensions=['jinja2.ext.i18n', 'jinja2.ext.do', 'jinja2.ext.loopcontrols'],
-            finalize=sanitize_None, autoescape=True, auto_reload=self.conf["CDEDB_DEV"])
+            finalize=sanitize_None, autoescape=True, auto_reload=self.conf["CDEDB_DEV"],
+            undefined=undefined)
         self.jinja_env.policies['ext.i18n.trimmed'] = True  # type: ignore
         self.jinja_env.policies['json.dumps_kwargs']['cls'] = CustomJSONEncoder  # type: ignore
         self.jinja_env.filters.update(JINJA_FILTERS)
-        self.jinja_env.filters.update({'datetime': datetime_filter})
         self.jinja_env.globals.update({
             'now': now,
             'nbsp': "\u00A0",

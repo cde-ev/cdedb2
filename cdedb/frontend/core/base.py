@@ -16,6 +16,7 @@ import magic
 import segno
 import vobject
 import werkzeug.exceptions
+from subman.machine import SubscriptionPolicy
 from werkzeug import Response
 
 import cdedb.database.constants as const
@@ -38,7 +39,6 @@ from cdedb.frontend.common import (
 )
 from cdedb.ml_type_aux import MailinglistGroup
 from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
-from cdedb.subman.machine import SubscriptionPolicy
 from cdedb.validation import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
     PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS,

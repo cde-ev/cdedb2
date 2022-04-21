@@ -4,7 +4,7 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans names=util.persona_name(current) %}
+    {% trans name=util.persona_name(current) %}
     	Inspect Changes for {{ name }}
     {% endtrans %}
 {% endblock %}

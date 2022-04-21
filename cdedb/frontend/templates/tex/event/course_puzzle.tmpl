@@ -22,9 +22,9 @@
         <<% for track_id in tracks_sorted if track_id in course['active_segments'] %>>
             \course{<<< course['title']|te >>>}{<<< ambience['event']['tracks'][track_id]['title']|te >>>}%
                    {<<< course['instructors']|te >>>}{<<< course['min_size']|te >>>}{<<< course['max_size']|te >>>}%
-                   {<<< course['notes']|te >>>}{<<< counts[course_id][(track_id, 0)]|te >>>/%
-                                                <<< counts[course_id][(track_id, 1)]|te >>>/%
-                                                <<< counts[course_id][(track_id, 2)]|te >>>}
+                   {<<< course['notes']|te >>>}{<<< counts[course_id].get((track_id, 0), 0)|te >>>/%
+                                                <<< counts[course_id].get((track_id, 1), 0)|te >>>/%
+                                                <<< counts[course_id].get((track_id, 2), 0)|te >>>}
         <<% endfor %>>
     <<% endfor %>>
     \clearpage
