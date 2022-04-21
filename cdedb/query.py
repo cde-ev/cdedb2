@@ -656,7 +656,8 @@ class Query:
 
         :param timezone_aware: If True, serialize datetimes to timezone aware format.
         Otherwise convert to default timezone, so that it will be parsed correctly.
-        This is necessary because HTML standard does not support timezones correctly.
+        This is necessary because the HTML standard for `datetime-local` doesn't allow
+        timezone information, while `datetime` is not well supported in browsers.
         """
         def serialize_value(val: Any) -> str:
             """Serialize datetimes to the default timezone then strip tzinfo.
