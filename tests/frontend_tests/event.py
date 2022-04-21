@@ -1500,14 +1500,39 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/registration/status'})
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
-        self.assertPresence(
-            "Anmeldung erst mit Überweisung des Teilnehmerbeitrags")
-        self.assertPresence("573,99 € (bereits bezahlt: 200,00 €)")
+
         self.assertNonPresence("Warteliste")
         self.assertNonPresence("Eingeteilt in")
         self.assertPresence("α. Planetenretten für Anfänger")
         self.assertPresence("β. Lustigsein für Fortgeschrittene")
         self.assertPresence("Ich stimme zu, dass meine Daten")
+
+        # Payment checks with iban
+        def _set_amount_paid(amount: float) -> None:
+            self.get('/event/event/1/registration/1/change')
+            f = self.response.forms['changeregistrationform']
+            f['reg.amount_paid'] = amount
+            f.submit()
+            self.traverse({'href': '/event/event/1/registration/status'})
+
+        _set_amount_paid(0)
+        self.assertPresence(
+            "Anmeldung erst mit Überweisung des Teilnehmerbeitrags")
+        self.assertPresence("573,99 € auf folgendes Konto")
+        self.assertPresence(
+            "0,00 € eingegangen. Der volle Teilnahmebeitrag beträgt 573,99 €")
+        _set_amount_paid(100)
+        self.assertPresence("473,99 € auf folgendes Konto")
+        self.assertPresence(
+            "100,00 € eingegangen. Der volle Teilnahmebeitrag beträgt 573,99 €")
+        _set_amount_paid(1000)
+        self.assertNonPresence("Überweisung")
+        self.assertNonPresence("Konto")
+        self.assertNonPresence("1000,00")
+        self.assertPresence("573,99 € bereits bezahlt.")
+        _set_amount_paid(200)
+
+        # Payment checks without iban
         self.traverse({'href': '/event/event/1/change'})
         self.assertTitle("Große Testakademie 2222 – Konfiguration")
         f = self.response.forms['changeeventform']
@@ -1517,9 +1542,9 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/1/registration/status'})
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
         self.assertPresence("Eingeteilt in")
+        self.assertPresence("separat mitteilen, wie du deinen Teilnahmebeitrag")
         self.assertPresence(
-            "separat mitteilen, wie du deinen Teilnahmebeitrag von 573,99 €"
-            " bezahlen kannst. Du hast bereits 200,00 € bezahlt.")
+            "200,00 € eingegangen. Der volle Teilnahmebeitrag beträgt 573,99 €")
 
         # check payment messages for different registration stati
         payment_pending = "Bezahlung ausstehend"
