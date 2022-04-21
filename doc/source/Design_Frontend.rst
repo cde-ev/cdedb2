@@ -32,7 +32,7 @@ Cron jobs
 ---------
 
 All tasks which are designed to be executed regularly in an automated way, like syncing
-with the malinglist software or cleaning up the database, are represented by a frontend
+with the mailinglist software or cleaning up the database, are represented by a frontend
 function with the ``@periodic`` decorator.
 This decorator sets an additional ``cron`` attribute on the function, that is a dict
 containing an identifier and the interval (measured in executions of the cron frontend,
