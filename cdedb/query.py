@@ -656,6 +656,9 @@ class Query:
         `timezone_aware` should be True) and for turning a query object into a URL
         linking to a query page (in which case `timezone_aware` should be False.
 
+        While we would like to use `timezone_aware=True` as the default, the other
+        variant is used way more often, such that that is impractical.
+
         The format is compatible with QueryInput and search params.
 
         :param timezone_aware: If True, serialize datetimes to timezone aware format.
