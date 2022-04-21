@@ -652,6 +652,10 @@ class Query:
         """
         Serialize a query into a dict.
 
+        This is used for both storing queries in the database (in which case
+        `timezone_aware` should be True) and for turning a query object into a URL
+        linking to a query page (in which case `timezone_aware` should be False.
+
         The format is compatible with QueryInput and search params.
 
         :param timezone_aware: If True, serialize datetimes to timezone aware format.
