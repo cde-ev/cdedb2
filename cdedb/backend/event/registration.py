@@ -449,10 +449,10 @@ class EventRegistrationBackend(EventBaseBackend):
                                                    rs.user.persona_id).keys()
         if registration_ids:
             registration = self.get_registration(rs, unwrap(registration_ids))
-            if not any(part['status'].is_involved()
+            if not any(part['status'].has_to_pay()
                        for part in registration['parts'].values()):
-                # cancelled and rejected people are not really "registered" anymore
-                return False, False
+                return any(part['status'].is_involved()
+                           for part in registration['parts'].values()), False
             payment_pending = bool(
                 not registration['payment']
                 and self.calculate_fee(rs, unwrap(registration_ids)))
