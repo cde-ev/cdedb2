@@ -12,9 +12,10 @@ General Design
    Design_Frontend
    Design_Template
    Design_UX_Conventions
+   Design_Environment_Setup
    Design_Configuration
-   Design_Validation
    Design_Logging
+   Design_Validation
    Design_Internationalization
    Design_Testing
 

@@ -28,17 +28,66 @@ cd /cdedb2
 # correct upstream URL after auto-build
 sudo -u cdedb git remote set-url origin ssh://gitea@tracker.cde-ev.de:20009/cdedb/cdedb2.git
 # insert po-git-handlers
-sudo -u cdedb echo '' >> /cdedb2/.git/config
-sudo -u cdedb echo '[diff "podiff"]' >> /cdedb2/.git/config
-sudo -u cdedb echo '        textconv = i18n/git-diff-filter-po.sh' >> /cdedb2/.git/config
-sudo -u cdedb echo '[merge "pomerge"]' >> /cdedb2/.git/config
-sudo -u cdedb echo '        name = Gettext merge driver' >> /cdedb2/.git/config
-sudo -u cdedb echo '        driver = i18n/git-merge-po.sh %O %A %B' >> /cdedb2/.git/config
-sudo -u cdedb echo '[pull]' >> /cdedb2/.git/config
-sudo -u cdedb echo '        rebase = merges' >> /cdedb2/.git/config
+sudo -u cdedb tee -a /cdedb2/.git/config <<EOF
+
+[diff "podiff"]
+        textconv = i18n/git-diff-filter-po.sh
+[merge "pomerge"]
+        name = Gettext merge driver
+        driver = i18n/git-merge-po.sh %O %A %B
+[pull]
+        rebase = merges
+EOF
 # add cdedb to python path
 mkdir -p /usr/local/lib/python3.9/dist-packages
 sudo ln -s /cdedb2/cdedb/ /usr/local/lib/python3.9/dist-packages/cdedb
+
+echo ""
+echo "Create local config files..."
+echo "--------------------------------------------"
+
+# set the configpath to the default value
+# we use the default configurationpath, so no need to set CDEDB_CONFIGPATH
+
+# move the defaultconfig to the right place
+install -D /media/cdrom0/localconfig.py "$(python3 -m cdedb config default-configpath)"
+chown cdedb:cdedb "$(python3 -m cdedb config default-configpath)"
+# make it world-readable, since it contains no secret data
+chmod 644 "$(python3 -m cdedb config default-configpath)"
+
+# create default (and public) secrets config
+cat >"$(python3 -m cdedb config get SECRETS_CONFIGPATH)" <<EOF
+#!/usr/bin/env python3
+#
+# This is the default file for the SecretsConfig. On development and offline instances,
+# the config defaults are used so there is nothing to protect here and this file is
+# world-readable.
+#
+# NEVER EVER USE THIS FILE WITH THE CURRENT PERMISSIONS IN PRODUCTION!!!
+#
+# Instead, create an own file, add the overwrites for your passwords (which should mean
+# overwriting ALL options available) and add the following line to your config.py:
+#
+# SECRETS_CONFIGPATH = pathlib.Path("/path/to/your/secrets_config.py")
+#
+# Additionally, we recommend to shrink the permissions for that file:
+#
+# sudo chown www-data:www-data /path/to/your/secrets_config.py
+# sudo chmod 640 /path/to/your/secrets_config.py
+#
+EOF
+chown cdedb:cdedb "$(python3 -m cdedb config get SECRETS_CONFIGPATH)"
+chmod 644 "$(python3 -m cdedb config get SECRETS_CONFIGPATH)"
+
+# set the mailman htpasswd
+cp /media/cdrom0/mailman-htpasswd /etc/cdedb-mailman-htpasswd
+chown www-data:www-data /etc/cdedb-mailman-htpasswd
+chmod 640 /etc/cdedb-mailman-htpasswd
+
+echo ""
+echo "Build documentation and translations..."
+echo "--------------------------------------------"
+
 # build the documentation
 sudo -u cdedb make doc
 # build the i18n files
@@ -48,13 +97,8 @@ echo ""
 echo "Creating storage directory for uploads..."
 echo "--------------------------------------------"
 
-mkdir /var/lib/cdedb/
-mkdir /var/lib/cdedb/foto/
-mkdir /var/lib/cdedb/minor_form/
-mkdir /var/lib/cdedb/ballot_result/
-mkdir /var/lib/cdedb/assembly_attachment/
-mkdir /var/lib/cdedb/mailman_templates/
-chown --recursive www-data:www-data /var/lib/cdedb
+# Create the storage dir itself. Ensure that www-data owns everything.
+python3 -m cdedb filesystem --owner www-data storage create
 
 echo ""
 echo "Setting up the database..."
@@ -71,14 +115,13 @@ sleep 10
 # First create the nobody account with its own database, but no other
 # rights. This enables us to connect to postgres at any point. Take care to
 # use the same database creation invocation as is used for the real dbs.
-sudo -u postgres psql -U postgres -c \
-     "CREATE USER nobody PASSWORD 'nobody'"
-sudo -u postgres psql -U postgres -c \
-     "CREATE DATABASE nobody WITH OWNER = nobody TEMPLATE = template0 ENCODING = 'UTF8'"
-sudo -u postgres psql -U postgres -c \
-     "ALTER DATABASE nobody SET datestyle TO 'ISO, YMD'"
-sudo -u cdedb make sql-initial
-sudo -u cdedb make sql
+sudo -u postgres psql <<-EOSQL
+    CREATE USER nobody PASSWORD 'nobody';
+    CREATE DATABASE nobody WITH OWNER = nobody TEMPLATE = template0 ENCODING = 'UTF8';
+    ALTER DATABASE nobody SET datestyle TO 'ISO, YMD';
+EOSQL
+python3 -m cdedb db create-users
+python3 -m cdedb db create
 
 systemctl stop pgbouncer
 
@@ -92,22 +135,11 @@ cp /media/cdrom0/pgbouncer /etc/default/
 systemctl start pgbouncer
 
 echo ""
-echo "Create local config files..."
-echo "--------------------------------------------"
-
-cp /media/cdrom0/localconfig.py /cdedb2/cdedb/
-chown cdedb:cdedb /cdedb2/cdedb/localconfig.py
-chmod 644 /cdedb2/cdedb/localconfig.py
-cp /media/cdrom0/mailman-htpasswd /etc/cdedb-mailman-htpasswd
-chown www-data:www-data /etc/cdedb-mailman-htpasswd
-chmod 640 /etc/cdedb-mailman-htpasswd
-
-echo ""
 echo "Create central directory for log files..."
 echo "--------------------------------------------"
 
-mkdir /var/log/cdedb
-chown www-data:www-data /var/log/cdedb
+# Create the log directory. Ensure that www-data owns everything.
+python3 -m cdedb filesystem --owner www-data log create
 
 echo ""
 echo "Setting up ldap..."
@@ -128,7 +160,7 @@ echo ""
 echo "Set up the apache2..."
 echo "--------------------------------------------"
 
-for i in ssl wsgi headers; do
+for i in ssl wsgi headers authnz_ldap; do
     a2enmod $i
 done;
 

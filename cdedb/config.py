@@ -4,10 +4,10 @@
 a way to override them. Any hardcoded values should be found in
 here. An exception are the default queries, which are defined in `query_defaults.py`.
 
-Each config object takes into account the default values found in
-here, the site specific global overrides in
-:py:mod:`cdedb.localconfig` and with exception of
-:py:class:`BasicConfig` an invocation specific override.
+Each config object takes into account the default values found in here. They can
+be overwritten with values in an additional config file, where the path to this
+file has to be present as environment variable CDEDB_CONFIGPATH.
+Note that setting that variable is mandatory, to prevent accidental misses.
 """
 
 import collections
@@ -16,20 +16,44 @@ import datetime
 import decimal
 import importlib.util
 import logging
+import os
 import pathlib
 import subprocess
-from typing import Any, Iterator, Mapping
+from typing import Any, Iterator, Mapping, Union
 
 import pytz
 
-from cdedb.common import PathLike, n_
+PathLike = Union[pathlib.Path, str]
 
+
+# The default path were a configuration file is expected. It is easier to hardcode this
+# at some places where the configpath environment variable is unfeasible (like in
+# wsgi.py, the entry point of apache2). This reflects also the configpath were the
+# autobuild, docker-compose and production expect the config per default.
+DEFAULT_CONFIGPATH = pathlib.Path("/etc/cdedb/config.py")
+
+
+def set_configpath(path: PathLike) -> None:
+    """Helper to set the configpath as environment variable."""
+    os.environ["CDEDB_CONFIGPATH"] = str(path)
+
+
+def get_configpath() -> pathlib.Path:
+    """Helper to get the config path from the environment."""
+    path = os.environ.get("CDEDB_CONFIGPATH")
+    if path:
+        return pathlib.Path(path)
+    else:
+        raise RuntimeError("No config path set!")
+
+
+# TODO where exactly does this log?
 _LOGGER = logging.getLogger(__name__)
 
-_currentpath = pathlib.Path(__file__).resolve().parent
-if _currentpath.parts[0] != '/' or _currentpath.parts[-1] != 'cdedb':  # pragma: no cover
-    raise RuntimeError(n_("Failed to locate repository"))
-_repopath = _currentpath.parent
+_currentdir = pathlib.Path(__file__).resolve().parent
+if _currentdir.parts[0] != '/' or _currentdir.parts[-1] != 'cdedb':  # pragma: no cover
+    raise RuntimeError("Failed to locate repository")
+_repopath = _currentdir.parent
 
 try:
     _git_commit = subprocess.check_output(
@@ -42,29 +66,18 @@ except FileNotFoundError:  # pragma: no cover, only catch git executable not fou
         with pathlib.Path(_repopath, '.git', _git_commit[len('ref: '):]).open() as ref:
             _git_commit = ref.read().strip()
 
-#: defaults for :py:class:`BasicConfig`
-_BASIC_DEFAULTS = {
-    # Logging level for CdEDBs own log files
-    "LOG_LEVEL": logging.INFO,
-    # Logging level for syslog
-    "SYSLOG_LEVEL": logging.WARNING,
-    # Logging level for stdout
-    "CONSOLE_LOG_LEVEL": None,
-    # Directory in which all logs will be saved. The name of the specific log file will
-    # be determined by the instance generating the log. The global log is in 'cdedb.log'
-    "LOG_DIR": pathlib.Path("/tmp/"),
-    # file system path to this repository
-    "REPOSITORY_PATH": _repopath,
-    # default timezone for input and output
-    "DEFAULT_TIMEZONE": pytz.timezone('CET'),
-}
-
 
 #: defaults for :py:class:`Config`
 _DEFAULTS = {
     ################
     # Global stuff #
     ################
+
+    # file system path to this repository
+    "REPOSITORY_PATH": _repopath,
+
+    # path to the file which holds the password overrides of the SecretsConfig
+    "SECRETS_CONFIGPATH": pathlib.Path("/etc/cdedb/public-secrets.py"),
 
     # name of database to use
     "CDB_DATABASE_NAME": "cdb",
@@ -97,8 +110,24 @@ _DEFAULTS = {
     # place for uploaded data
     "STORAGE_DIR": pathlib.Path("/var/lib/cdedb/"),
 
+    # Directory in which all logs will be saved. The name of the specific log file will
+    # be determined by the instance generating the log. The global log is in 'cdedb.log'
+    "LOG_DIR": pathlib.Path("/var/log/cdedb/"),
+
+    # Logging level for CdEDBs own log files
+    "LOG_LEVEL": logging.INFO,
+
+    # Logging level for syslog
+    "SYSLOG_LEVEL": logging.WARNING,
+
+    # Logging level for stdout
+    "CONSOLE_LOG_LEVEL": None,
+
     # hash id of the current HEAD/running version
     "GIT_COMMIT": _git_commit,
+
+    # default timezone for input and output
+    "DEFAULT_TIMEZONE": pytz.timezone('CET'),
 
     ##################
     # Frontend stuff #
@@ -261,6 +290,7 @@ _DEFAULTS = {
 _SECRECTS_DEFAULTS = {
     # database users
     "CDB_DATABASE_ROLES": {
+        "nobody": "nobody",  # use only to set up internal details like sample-data!
         "cdb_anonymous": "012345678901234567890123456789",
         "cdb_persona": "abcdefghijklmnopqrstuvwxyzabcd",
         "cdb_member": "zyxwvutsrqponmlkjihgfedcbazyxw",
@@ -301,30 +331,47 @@ _SECRECTS_DEFAULTS = {
 }
 
 
-class BasicConfig(Mapping[str, Any]):
-    """Global configuration for elementary options.
+def _import_from_file(path: pathlib.Path) -> Mapping[str, Any]:
+    """Import all variables from the given file and return them as dict."""
+    spec = importlib.util.spec_from_file_location("override", str(path))
+    if not spec:
+        raise ImportError
+    override = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(override)  # type: ignore
+    return {key: getattr(override, key) for key in dir(override)}
 
-    This is the global configuration which is the same for all
-    processes. This is to be used when no invocation context is
-    available (or it is infeasible to get at). There is no way to
-    override the values on invocation, so the amount of values handled
-    by this should be as small as possible.
+
+class Config(Mapping[str, Any]):
+    """Main configuration.
+
+    Can be overridden through the file specified by the CDEDB_CONFIGPATH environment
+    variable. However, this does not allow introducing keys which are not present in
+    the _DEFAULT configuration.
     """
 
-    # noinspection PyUnresolvedReferences
     def __init__(self) -> None:
-        try:
-            import cdedb.localconfig as config_mod  # pylint: disable=import-outside-toplevel
-            config = {
-                key: getattr(config_mod, key)
-                for key in _BASIC_DEFAULTS.keys() & set(dir(config_mod))
-            }
-        except ImportError:
-            config = {}
+        configpath = get_configpath()
+        self._configpath = configpath
 
-        self._configchain = collections.ChainMap(
-            config, _BASIC_DEFAULTS
-        )
+        name = self.__class__.__name__
+        _LOGGER.debug(f"Initialising {name} with path {configpath}")
+
+        if not configpath:
+            raise RuntimeError(f"No configpath for {name} provided!")
+        if not pathlib.Path(configpath).is_file():
+            raise RuntimeError(f"During initialization of {name}, config file"
+                               f" {configpath} not found!")
+
+        override = self._process_config_overwrite()
+        self._configchain = collections.ChainMap(override, _DEFAULTS)
+
+    def _process_config_overwrite(self) -> Mapping[str, Any]:
+        """Import the config overwrites from the file specified by the configpath.
+
+        Allow only keys which are already present in _DEFAULT.
+        """
+        override = _import_from_file(self._configpath)
+        return {key: value for key, value in override.items() if key in _DEFAULTS}
 
     def __getitem__(self, key: str) -> Any:
         return self._configchain.__getitem__(key)
@@ -336,91 +383,20 @@ class BasicConfig(Mapping[str, Any]):
         return self._configchain.__len__()
 
 
-class Config(BasicConfig):
-    """Main configuration.
-
-    This provides the primary configuration. It takes a path for
-    allowing overrides on each invocation. This does not enable
-    overriding the values inherited from :py:class:`BasicConfig`.
-    """
-
-    def __init__(self, configpath: PathLike = None):
-        """
-        :param configpath: path to file with overrides
-        """
-        super().__init__()
-        _LOGGER.debug(f"Initialising Config with path {configpath}")
-        self._configpath = configpath
-        # TODO this is diametral to the statement above
-        config_keys = _DEFAULTS.keys() | _BASIC_DEFAULTS.keys()
-
-        if configpath:
-            spec = importlib.util.spec_from_file_location(
-                "primaryconf", str(configpath)
-            )
-            if not spec:
-                raise ImportError
-            primaryconf = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(primaryconf)  # type: ignore
-            primaryconf = {
-                key: getattr(primaryconf, key)
-                for key in config_keys & set(dir(primaryconf))
-            }
-        else:
-            primaryconf = {}
-
-        try:
-            # noinspection PyUnresolvedReferences
-            import cdedb.localconfig as secondaryconf_mod  # pylint: disable=import-outside-toplevel
-            secondaryconf = {
-                key: getattr(secondaryconf_mod, key)
-                for key in config_keys & set(dir(secondaryconf_mod))
-            }
-        except ImportError:
-            secondaryconf = {}
-
-        self._configchain = collections.ChainMap(
-            primaryconf, secondaryconf, _DEFAULTS, _BASIC_DEFAULTS
-        )
-
-        for key in _BASIC_DEFAULTS.keys() & set(dir(primaryconf)):
-            _LOGGER.debug(f"Ignored basic config entry {key} in {configpath}.")
-
-
-class TestConfig(BasicConfig):
+class TestConfig(Config):
     """Main configuration for tests.
 
-    This is very similar to Config: It can also be extended by a given configpath and
-    has the same default values.
-
-    The big difference is that we do not take the localconfig into account and allow
-    arbitrary new keys to be introduced via the configpath. This is usefull to bundle
+    This is very similar to Config. The big difference is that it allows adding
+    arbitrary new keys through the config override. This is useful to bundle
     all the configuration in our testsuite in a configfile.
     """
 
-    def __init__(self, configpath: PathLike = None):
-        """
-        :param configpath: path to file with overrides
-        """
-        super().__init__()
-        _LOGGER.debug(f"Initialising TestConfig with path {configpath}")
-        self._configpath = configpath
+    def _process_config_overwrite(self) -> Mapping[str, Any]:
+        """Import the config overwrites from the file specified by the configpath.
 
-        if configpath:
-            spec = importlib.util.spec_from_file_location(
-                "primaryconf", str(configpath)
-            )
-            if not spec:
-                raise ImportError
-            additional = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(additional)  # type: ignore
-            additional = {key: getattr(additional, key) for key in dir(additional)}
-        else:
-            additional = {}
-
-        self._configchain = collections.ChainMap(
-            additional, _DEFAULTS, _BASIC_DEFAULTS
-        )
+        Allow additional keys which are not present in _DEFAULT.
+        """
+        return _import_from_file(self._configpath)
 
 
 class SecretsConfig(Mapping[str, Any]):
@@ -431,37 +407,23 @@ class SecretsConfig(Mapping[str, Any]):
     should not be left in a globally accessible spot.
     """
 
-    def __init__(self, configpath: PathLike = None):
+    def __init__(self) -> None:
+        config = Config()
+        configpath = config["SECRETS_CONFIGPATH"]
+        self._configpath = configpath
         _LOGGER.debug(f"Initialising SecretsConfig with path {configpath}")
-        if configpath:
-            spec = importlib.util.spec_from_file_location(
-                "primaryconf", str(configpath)
-            )
-            if not spec:
-                raise ImportError
-            primaryconf = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(primaryconf)  # type: ignore
-            primaryconf = {
-                key: getattr(primaryconf, key)
-                for key in _SECRECTS_DEFAULTS.keys() & set(dir(primaryconf))
-            }
-        else:
-            primaryconf = {}
 
-        try:
-            # noinspection PyUnresolvedReferences
-            import cdedb.localconfig as secondaryconf_mod  # pylint: disable=import-outside-toplevel
-            secondaryconf = {
-                key: getattr(secondaryconf_mod, key)
-                for key in _SECRECTS_DEFAULTS.keys() & set(
-                    dir(secondaryconf_mod))
-            }
-        except ImportError:
-            secondaryconf = {}
+        if not configpath:
+            raise RuntimeError("No configpath for SecretsConfig provided!")
+        if not pathlib.Path(configpath).is_file():
+            raise RuntimeError(f"During initialization of SecretsConfig, config file"
+                               f" {configpath} not found!")
 
-        self._configchain = collections.ChainMap(
-            primaryconf, secondaryconf, _SECRECTS_DEFAULTS
-        )
+        override = _import_from_file(configpath)
+        override = {
+            key: value for key, value in override.items() if key in _SECRECTS_DEFAULTS}
+
+        self._configchain = collections.ChainMap(override, _SECRECTS_DEFAULTS)
 
     def __getitem__(self, key: str) -> Any:
         return self._configchain.__getitem__(key)

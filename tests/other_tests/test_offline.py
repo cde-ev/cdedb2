@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 # pylint: disable=missing-module-docstring
-
-import shutil
+import os
+import pathlib
 import subprocess
-import sys
+import tempfile
 
 import webtest
 
+from cdedb.cli.database import connect
 from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS
+from cdedb.config import SecretsConfig, get_configpath, set_configpath
 from cdedb.frontend.application import Application
 from tests.common import FrontendTest
 
@@ -19,23 +21,36 @@ class TestOffline(FrontendTest):
             'username': "garcia@example.cde",
             'password': "notthenormalpassword",
         }
-        existing_config = repopath / "cdedb/localconfig.py"
-        config_backup = repopath / "cdedb/localconfig.copy"
-        if existing_config.exists():
-            shutil.copyfile(existing_config, config_backup)
-        subprocess.run(
-            [repopath / 'bin/execute_sql_script.py', '-U', 'cdb',
-             '-d', self.conf["CDB_DATABASE_NAME"],
-             '-f', repopath / 'tests/ancillary_files/clean_data.sql'],
-            check=True, stdout=subprocess.DEVNULL)
+
+        # save the current config, so we can reset if after the test ends
+        existing_config = get_configpath()
+
+        # write the original config in a temporary config file
+        config = tempfile.NamedTemporaryFile("w", suffix=".py", delete=False)
+        config.write(existing_config.read_text())
+        config.flush()
+
+        # set the config path to the temporary config file
+        set_configpath(config.name)
+
+        # purge the content of the database
+        purge_database = repopath / 'tests' / 'ancillary_files' / 'clean_data.sql'
+        with connect(self.conf, SecretsConfig()) as conn:
+            with conn.cursor() as curr:
+                curr.execute(purge_database.read_text())
+
         try:
+            # give the environment (especially the current CDEDB_CONFIGPATH) to the
+            # subprocess. Since the test configpaths use imports from test, we append
+            # the whole repo to the PYTHONPATH so they are found.
+            env = {**os.environ.copy(), "PYTHONPATH": str(repopath)}
             subprocess.run(
-                [repopath / 'bin/make_offline_vm.py', '--test', '--no-extra-packages',
+                [repopath / 'bin/make_offline_vm.py',
+                 '--test', '--no-extra-packages', '--not-interactive',
                  repopath / 'tests/ancillary_files/event_export.json'],
-                check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                check=True, env=env)
             # Reset web test app for changed configuration
-            sys.modules.pop('cdedb.localconfig', None)
-            new_app = Application(self.configpath)
+            new_app = Application()
             self.app = webtest.TestApp(  # type: ignore
                 new_app, extra_environ=self.app_extra_environ)
             self.app.reset()
@@ -97,13 +112,11 @@ class TestOffline(FrontendTest):
             # Due to the expensive setup of this test these should not
             # be split out.
         finally:
-            if config_backup.exists():
-                shutil.move(str(config_backup), existing_config)
-            else:
-                subprocess.run(
-                    ["cp", repopath / "related/auto-build/files/stage3/localconfig.py",
-                     repopath / "cdedb/localconfig.py"], check=True)
+            # restore the original config
+            set_configpath(existing_config)
 
-            # Force the localconfig to be reloaded
-            sys.modules.pop('cdedb.localconfig', None)
+            # remove the temporary config
+            pathlib.Path(config.name).unlink()
+
+            # remove the file signaling that we are inside an offline vm
             subprocess.run(["sudo", "rm", "-f", "/OFFLINEVM"], check=True)

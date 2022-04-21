@@ -10,7 +10,6 @@ import collections
 import collections.abc
 import copy
 import csv
-import datetime
 import email
 import email.charset
 import email.encoders
@@ -48,7 +47,6 @@ from typing import (
     Type, TypeVar, Union, cast, overload,
 )
 
-import icu
 import jinja2
 import mailmanclient.restobjects.held_message
 import mailmanclient.restobjects.mailinglist
@@ -58,6 +56,7 @@ import werkzeug.datastructures
 import werkzeug.exceptions
 import werkzeug.utils
 import werkzeug.wrappers
+import werkzeug.wsgi
 
 import cdedb.database.constants as const
 import cdedb.query as query_mod
@@ -77,10 +76,10 @@ from cdedb.common import (
     EntitySorter, Error, Notification, NotificationType, PathLike, PrivilegeError,
     RequestState, Role, User, ValidationWarning, _tdelta, asciificator,
     decode_parameter, encode_parameter, format_country_code,
-    get_localized_country_codes, glue, json_serialize, make_proxy, make_root_logger,
-    merge_dicts, n_, now, roles_to_db_role, unwrap,
+    get_localized_country_codes, glue, json_serialize, make_proxy, merge_dicts, n_, now,
+    roles_to_db_role, setup_logger, unwrap,
 )
-from cdedb.config import BasicConfig, Config, SecretsConfig, TestConfig
+from cdedb.config import Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.devsamples import HELD_MESSAGE_SAMPLE
@@ -92,7 +91,6 @@ from cdedb.query import Query
 from cdedb.query_defaults import DEFAULT_QUERIES
 
 _LOGGER = logging.getLogger(__name__)
-_BASICCONF = BasicConfig()
 
 
 S = TypeVar('S')
@@ -117,10 +115,9 @@ class BaseApp(metaclass=abc.ABCMeta):
     """
     realm: ClassVar[str]
 
-    def __init__(self, configpath: PathLike = None, *args: Any,  # pylint: disable=keyword-arg-before-vararg
-                 **kwargs: Any) -> None:
-        self.conf = Config(configpath)
-        secrets = SecretsConfig(configpath)
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        self.conf = Config()
+        secrets = SecretsConfig()
         # initialize logging
         if hasattr(self, 'realm') and self.realm:
             logger_name = f"cdedb.frontend.{self.realm}"
@@ -128,12 +125,13 @@ class BaseApp(metaclass=abc.ABCMeta):
         else:
             logger_name = "cdedb.frontend"
             logger_file = self.conf["LOG_DIR"] / "cdedb-frontend.log"
-        make_root_logger(
+        setup_logger(
             logger_name, logger_file, self.conf["LOG_LEVEL"],
             syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         self.logger = logging.getLogger(logger_name)  # logger are thread-safe!
-        self.logger.debug(f"Instantiated {self} with configpath {configpath}.")
+        self.logger.debug(
+            f"Instantiated {self} with configpath {self.conf._configpath}.")
         # local variable to prevent closure over secrets
         url_parameter_salt = secrets["URL_PARAMETER_SALT"]
         self.decode_parameter = (
@@ -233,37 +231,6 @@ def raise_jinja(val: str) -> None:
     raise RuntimeError(val)
 
 
-# This needs acces to config, and cannot be moved to filter.py
-def datetime_filter(val: Union[datetime.datetime, str, None],
-                    formatstr: str = "%Y-%m-%d %H:%M (%Z)", lang: str = None,
-                    passthrough: bool = False) -> Optional[str]:
-    """Custom jinja filter to format ``datetime.datetime`` objects.
-
-    :param formatstr: Formatting used, if no l10n happens.
-    :param lang: If not None, then localize to the passed language.
-    :param passthrough: If True return strings unmodified.
-    """
-    if val is None or val == '' or not isinstance(val, datetime.datetime):
-        if passthrough and isinstance(val, str) and val:
-            return val
-        return None
-
-    if val.tzinfo is not None:
-        val = val.astimezone(_BASICCONF["DEFAULT_TIMEZONE"])
-    else:
-        _LOGGER.warning(f"Found naive datetime object {val}.")
-
-    if lang:
-        locale = icu.Locale(lang)
-        datetime_formatter = icu.DateFormat.createDateTimeInstance(
-            icu.DateFormat.MEDIUM, icu.DateFormat.MEDIUM, locale)
-        zone = _BASICCONF["DEFAULT_TIMEZONE"].zone
-        datetime_formatter.setTimeZone(icu.TimeZone.createTimeZone(zone))
-        return datetime_formatter.format(val)
-    else:
-        return val.strftime(formatstr)
-
-
 PeriodicMethod = Callable[[Any, RequestState, CdEDBObject], CdEDBObject]
 
 
@@ -295,23 +262,40 @@ def periodic(name: str, period: int = 1
     return decorator
 
 
+class CdEDBUndefined(jinja2.StrictUndefined):
+    """An undefined that allows boolean tests and basic comparisons, but barks on
+    everything else.
+
+    This matches our needs to catch `{{ undefined }}`, while still allowing
+    comfortable `if` checks as well as `sidenav_active` comparisons.
+    """
+
+    __eq__ = jinja2.Undefined.__eq__
+    __ne__ = jinja2.Undefined.__ne__
+    __bool__ = jinja2.Undefined.__bool__
+
+
 class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     """Common base class for all frontends."""
     #: to be overridden by children
 
-    def __init__(self, configpath: PathLike = None, *args: Any,  # pylint: disable=keyword-arg-before-vararg
-                 **kwargs: Any) -> None:
-        super().__init__(configpath, *args, **kwargs)
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
         self.template_dir = pathlib.Path(self.conf["REPOSITORY_PATH"], "cdedb",
                                          "frontend", "templates")
+        if self.conf['CDEDB_DEV'] or self.conf['CDEDB_TEST']:
+            undefined = CdEDBUndefined
+        else:
+            undefined = jinja2.make_logging_undefined(self.logger, jinja2.Undefined)
+            undefined.__bool__ = jinja2.Undefined.__bool__
         self.jinja_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(str(self.template_dir)),
             extensions=['jinja2.ext.i18n', 'jinja2.ext.do', 'jinja2.ext.loopcontrols'],
-            finalize=sanitize_None, autoescape=True, auto_reload=self.conf["CDEDB_DEV"])
+            finalize=sanitize_None, autoescape=True, auto_reload=self.conf["CDEDB_DEV"],
+            undefined=undefined)
         self.jinja_env.policies['ext.i18n.trimmed'] = True  # type: ignore
         self.jinja_env.policies['json.dumps_kwargs']['cls'] = CustomJSONEncoder  # type: ignore
         self.jinja_env.filters.update(JINJA_FILTERS)
-        self.jinja_env.filters.update({'datetime': datetime_filter})
         self.jinja_env.globals.update({
             'now': now,
             'nbsp': "\u00A0",
@@ -365,14 +349,14 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             lstrip_blocks=True,
         )
         # Always provide all backends -- they are cheap
-        self.assemblyproxy = make_proxy(AssemblyBackend(configpath))
-        self.cdeproxy = make_proxy(CdEBackend(configpath))
-        self.coreproxy = make_proxy(CoreBackend(configpath))
-        self.eventproxy = make_proxy(EventBackend(configpath))
-        self.mlproxy = make_proxy(MlBackend(configpath))
-        self.pasteventproxy = make_proxy(PastEventBackend(configpath))
+        self.assemblyproxy = make_proxy(AssemblyBackend())
+        self.cdeproxy = make_proxy(CdEBackend())
+        self.coreproxy = make_proxy(CoreBackend())
+        self.eventproxy = make_proxy(EventBackend())
+        self.mlproxy = make_proxy(MlBackend())
+        self.pasteventproxy = make_proxy(PastEventBackend())
         # Provide mailman access
-        secrets = SecretsConfig(configpath)
+        secrets = SecretsConfig()
         # local variables to prevent closure over secrets
         mailman_password = secrets["MAILMAN_PASSWORD"]
         mailman_basic_auth_password = secrets["MAILMAN_BASIC_AUTH_PASSWORD"]
@@ -574,7 +558,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :param encoding: The character encoding to be uses, if `data` is given
           as str
         """
-        if not path and not afile and not data:
+        if not path and not afile and data is None:
             raise ValueError(n_("No input specified."))
         if (path and afile) or (path and data) or (afile and data):
             raise ValueError(n_("Ambiguous input."))
@@ -1189,7 +1173,7 @@ class CdEMailmanClient(mailmanclient.Client):
 
         # Initialize logger. This needs the base class initialization to be done.
         logger_name = "cdedb.frontend.mailmanclient"
-        make_root_logger(
+        setup_logger(
             logger_name, self.conf["LOG_DIR"] / "cdedb-frontend-mailman.log",
             self.conf["LOG_LEVEL"], syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
@@ -1283,7 +1267,7 @@ class Worker(threading.Thread):
             requestargs=rs.requestargs, errors=[], values=copy.deepcopy(rs.values),
             begin=rs.begin, lang=rs.lang, translations=rs.translations)
         # noinspection PyProtectedMember
-        secrets = SecretsConfig(conf._configpath)
+        secrets = SecretsConfig()
         connpool = connection_pool_factory(
             conf["CDB_DATABASE_NAME"], DATABASE_ROLES, secrets,
             conf["DB_HOST"], conf["DB_PORT"])
@@ -2500,8 +2484,7 @@ class TransactionObserver:
         return False
 
 
-def setup_translations(conf: Union[Config, TestConfig]
-                       ) -> Mapping[str, gettext.NullTranslations]:
+def setup_translations(conf: Config) -> Mapping[str, gettext.NullTranslations]:
     """Helper to setup a mapping of languages to gettext translation objects."""
     return {
         lang: gettext.translation('cdedb', languages=[lang],

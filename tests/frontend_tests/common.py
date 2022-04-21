@@ -9,10 +9,10 @@ import pytz
 
 import cdedb.database.constants as const
 import cdedb.enums
-from cdedb.filter import date_filter, enum_entries_filter, tex_escape_filter
-from cdedb.frontend.common import (
-    cdedbid_filter, datetime_filter, decode_parameter, encode_parameter,
+from cdedb.filter import (
+    date_filter, datetime_filter, enum_entries_filter, tex_escape_filter,
 )
+from cdedb.frontend.common import cdedbid_filter, decode_parameter, encode_parameter
 from cdedb.ml_type_aux import TYPE_MAP
 from tests.common import FrontendTest
 

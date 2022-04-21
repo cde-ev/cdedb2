@@ -116,10 +116,10 @@
                     <div class="col-sm-3 col-xs-12 button-par">
                         {{ util.href(cdedblink('event/change_registration',
                                                {'registration_id': registration_id, 'skip': 'reg.checkin'}),
-                                     title=gettext("Edit"), icon='pen', aclass="btn btn-sm btn-warning") }}
+                                     label=none, title=gettext("Edit"), icon='pen', aclass="btn btn-sm btn-warning") }}
                         {{ util.href(cdedblink('event/show_registration',
                                                {'registration_id': registration_id}),
-                                     title=gettext("Details"), icon='user', aclass="btn btn-sm btn-info") }}
+                                     label=none, title=gettext("Details"), icon='user', aclass="btn btn-sm btn-info") }}
 
                         <form action="{{ cdedblink('event/checkin') }}" method="POST" id="checkinform{{ registration_id }}"
                               style="display: inline;" class="checkinform">

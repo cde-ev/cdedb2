@@ -2,18 +2,15 @@
 # pylint: disable=missing-module-docstring
 
 import io
-import os
 import tempfile
 import unittest
 from contextlib import redirect_stdout
 from pkgutil import resolve_name
 from typing import Any, Callable, ClassVar
 
-import psycopg2.errorcodes
-
 from cdedb.backend.core import CoreBackend
 from cdedb.common import unwrap
-from cdedb.config import TestConfig
+from cdedb.config import TestConfig, get_configpath
 from cdedb.script import DryRunError, Script, ScriptAtomizer
 
 
@@ -23,7 +20,7 @@ class TestScript(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.conf = TestConfig(os.environ['CDEDB_TEST_CONFIGPATH'])
+        cls.conf = TestConfig()
 
     def setUp(self) -> None:
         self.script = self.get_script()
@@ -53,36 +50,69 @@ class TestScript(unittest.TestCase):
         self.assertEqual(-1, rs_factory().user.persona_id)
         self.assertEqual(23, rs_factory(23).user.persona_id)
 
-        with self.assertRaises(psycopg2.OperationalError) as cm:
+        with self.assertRaises(ValueError) as cm:
             Script(dbname=self.conf["CDB_DATABASE_NAME"], dbuser="cdb_admin",
                    check_system_user=False, CDB_DATABASE_ROLES="{'cdb_admin': 'abc'}")
-        # the vm is german while the postgresql docker image is english
-        self.assertTrue(
-            ("Passwort-Authentifizierung für Benutzer"
-             " »cdb_admin« fehlgeschlagen" in cm.exception.args[0])
-            or
-            ("password authentication failed for user"
-             ' "cdb_admin"' in cm.exception.args[0])
-        )
+        msg = "Override secret config options via kwarg is not possible."
+        self.assertIn(msg, cm.exception.args[0])
+
+    def test_config_overwrite(self) -> None:
+        # check that the config path stays correct
+        real_configpath = get_configpath()
+        real_config = TestConfig()
+
+        # choose SYSLOG_LEVEL, since this is overwritten in the test config
+        script = self.get_script()
+        self.assertEqual(None, script.config["SYSLOG_LEVEL"])
+        self.assertEqual(real_configpath, get_configpath())
+
+        # check overwriting per config argument
+        # this takes the options from the real_configpath into account automatically
+        configured_script = self.get_script(SYSLOG_LEVEL=42)
+        self.assertEqual(42, configured_script.config["SYSLOG_LEVEL"])
+        self.assertEqual(real_configpath, get_configpath())
+
+        # check overwriting per config file
+        # here, we need to set the relevant flags from the real_config manually
+        with tempfile.NamedTemporaryFile("w", suffix=".py") as f:
+            f.write("SYSLOG_LEVEL = 42\n")
+            f.write(f"DB_HOST = '{real_config['DB_HOST']}'\n")
+            f.write(f"DB_PORT = {real_config['DB_PORT']}\n")
+            f.flush()
+            configured_script = self.get_script(configpath=f.name)
+            self.assertEqual(42, configured_script.config["SYSLOG_LEVEL"])
+            self.assertEqual(real_configpath, get_configpath())
 
     def test_make_backend(self) -> None:
+        # check that the config path stays correct
+        real_configpath = get_configpath()
+        real_config = TestConfig()
+
         core = self.script.make_backend("core", proxy=False)
         self.assertTrue(isinstance(core, CoreBackend))
         coreproxy = self.script.make_backend("core", proxy=True)
         self.assertEqual(coreproxy.get_backend_class(), CoreBackend)
+
+        # check setting config options per kwarg
+        # this takes the options from the real_configpath into account automatically
         configured_script = self.get_script(LOCKDOWN=42)
         self.assertEqual(
             42,
             configured_script.make_backend("core", proxy=False).conf["LOCKDOWN"])
-        # This way of writing to a temporary file mirrors exactly what happens
-        # inside `make_backend`.
+        self.assertEqual(real_configpath, get_configpath())
+
+        # check setting config options per config file
+        # here, we need to set the relevant flags from the real_config manually
         with tempfile.NamedTemporaryFile("w", suffix=".py") as f:
-            f.write("LOCKDOWN = 42")
+            f.write("LOCKDOWN = 42\n")
+            f.write(f"DB_HOST = '{real_config['DB_HOST']}'\n")
+            f.write(f"DB_PORT = {real_config['DB_PORT']}\n")
             f.flush()
             configured_script = self.get_script(configpath=f.name)
             self.assertEqual(
                 42,
                 configured_script.make_backend("core", proxy=False).conf["LOCKDOWN"])
+            self.assertEqual(real_configpath, get_configpath())
 
         for realm, backend_name in Script.backend_map.items():
             backend_class = resolve_name(f"cdedb.backend.{realm}.{backend_name}")
