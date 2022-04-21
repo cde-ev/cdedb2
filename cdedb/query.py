@@ -664,15 +664,18 @@ class Query:
         timezone information, while `datetime` is not well supported in browsers.
         """
         def serialize_value(val: Any) -> str:
-            """Serialize datetimes to the default timezone then strip tzinfo.
+            """Serialize datetimes to the default timezone then stringify w/o timezone.
 
             A datetime input without tzinfo will be set to the default timezone,
             therefore the result when reparsing will be identical.
             """
             if isinstance(val, datetime.datetime):
                 if not timezone_aware:
+                    formatcode = "%Y-%m-%dT%H:%M:%S"
+                    if val.microsecond:
+                        formatcode += ".%f"
                     return val.astimezone(
-                        _CONFIG['DEFAULT_TIMEZONE']).isoformat().split('+')[0]
+                        _CONFIG['DEFAULT_TIMEZONE']).strftime(formatcode)
                 return val.isoformat()
             return str(val)
 
