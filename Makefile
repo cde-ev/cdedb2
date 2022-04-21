@@ -39,7 +39,7 @@ help:
 ###############
 
 PYTHONBIN ?= python3
-ISORT ?= $(PYTHONBIN) -m isort
+ISORT ?= $(PYTHONBIN) -m isort --settings pyproject.toml
 FLAKE8 ?= $(PYTHONBIN) -m flake8
 PYLINT ?= $(PYTHONBIN) -m pylint
 COVERAGE ?= $(PYTHONBIN) -m coverage

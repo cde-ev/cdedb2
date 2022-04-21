@@ -6,6 +6,7 @@ import enum
 import logging
 import re
 import threading
+from collections import Counter
 from typing import (
     Any, Callable, Collection, Container, Dict, ItemsView, Iterable, List, Literal,
     Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, overload,
@@ -516,6 +517,11 @@ def md_filter(val: Optional[str]) -> Optional[markupsafe.Markup]:
     return markdown_parse_safe(val)
 
 
+def dict_count_filter(value: Mapping[T, S]) -> Counter[S]:
+    """Count the values of a dict and return a dict mapping entries to encounters."""
+    return Counter(value.values())
+
+
 @jinja2.environmentfilter
 def sort_filter(env: jinja2.Environment, value: Iterable[T],
                 reverse: bool = False, attribute: Any = None) -> List[T]:
@@ -689,6 +695,7 @@ JINJA_FILTERS = {
     'linebreaks': linebreaks_filter,
     'map_dict': map_dict_filter,
     'md': md_filter,
+    'dictcount': dict_count_filter,
     'enum': enum_filter,
     'sort': sort_filter,
     'dictsort': dictsort_filter,
