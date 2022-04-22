@@ -696,9 +696,9 @@ class EntitySorter:
             forename = forename.lower()
             family_name = persona["family_name"].lower()
             if family_name_first:
-                return (family_name, *forename, persona["id"])
+                return (family_name, forename, persona["id"])
             else:
-                return (*forename, family_name, persona["id"])
+                return (forename, family_name, persona["id"])
 
         return sorter
 
