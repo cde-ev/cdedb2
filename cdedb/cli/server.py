@@ -2,7 +2,7 @@
 
 import subprocess
 
-from werkzeug.serving import is_running_from_reloader, run_simple
+from werkzeug.serving import run_simple
 
 from cdedb.config import Config
 from cdedb.frontend.application import Application
