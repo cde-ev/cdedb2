@@ -609,7 +609,10 @@ class TestValidation(unittest.TestCase):
         )
 
         # With `timezone_aware`, tzinfo is kept.
-        self.assertEqual(query.serialize(timezone_aware=True)['qval_time'], timestamp.isoformat())
+        self.assertEqual(
+            query.serialize(timezone_aware=True)['qval_time'],
+            timestamp.isoformat()
+        )
 
         # Default is `False`.
         # This normalizes the timestamp to default timezone, then strips it away.
