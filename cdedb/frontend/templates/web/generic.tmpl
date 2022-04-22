@@ -188,7 +188,7 @@
                                                     {#- jinja does not support list comprehension ... #}
                                                     {%- set myentries = [] %}
                                                     {%- for op in query_mod.VALID_QUERY_OPERATORS[spec[field].type]
-                                                            if field not in choices
+                                                            if not choices or field not in choices
                                                                 or op in query_mod.SELECTION_VALUE_OPERATORS %}
                                                         {%- do myentries.append((op.value,
                                                             gettext(op.value|enum(enums.QueryOperators)))) %}
