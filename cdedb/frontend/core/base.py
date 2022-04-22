@@ -1143,9 +1143,9 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.redirect(rs, realm + "/create_user")
 
     @access("core_admin")
-    @REQUESTdata("download", "is_search", "query")
+    @REQUESTdata("download", "is_search")
     def archived_user_search(self, rs: RequestState, download: Optional[str],
-                             is_search: bool, query: Query = None) -> Response:
+                             is_search: bool) -> Response:
         """Perform search.
 
         Archived users are somewhat special since they are not visible
@@ -1161,7 +1161,7 @@ class CoreBaseFrontend(AbstractFrontend):
             rs, download, is_search,
             QueryScope.archived_core_user, QueryScope.archived_persona,
             self.coreproxy.submit_general_query, choices=choices,
-            endpoint="archived_user_search", query=query)
+            endpoint="archived_user_search")
 
     @staticmethod
     def admin_bits(rs: RequestState) -> Set[Realm]:
