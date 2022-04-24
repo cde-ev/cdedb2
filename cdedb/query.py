@@ -648,16 +648,13 @@ class Query:
             self.spec[field] = self.spec[field.replace('"', '')]
             del self.spec[field.replace('"', '')]
 
-    def serialize(self, timezone_aware: bool = False) -> CdEDBObject:
+    def serialize(self, timezone_aware: bool) -> CdEDBObject:
         """
         Serialize a query into a dict.
 
         This is used for both storing queries in the database (in which case
         `timezone_aware` should be True) and for turning a query object into a URL
         linking to a query page (in which case `timezone_aware` should be False.
-
-        While we would like to use `timezone_aware=True` as the default, the other
-        variant is used way more often, such that that is impractical.
 
         The format is compatible with QueryInput and search params.
 
@@ -701,6 +698,10 @@ class Query:
         params['scope'] = str(self.scope)
         params['query_name'] = self.name
         return params
+
+    def serialize_to_url(self) -> CdEDBObject:
+        """Helper to serialize the Query for use in an URL or to fill a form."""
+        return self.serialize(timezone_aware=False)
 
     def get_field_format_spec(self, field: str) -> QueryResultEntryFormat:
         if self.spec[field].type == "date":

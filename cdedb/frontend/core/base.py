@@ -862,7 +862,7 @@ class CoreBaseFrontend(AbstractFrontend):
         if len(result) == 1:
             return self.redirect_show_user(rs, result[0]["id"])
         elif result:
-            params = query.serialize()
+            params = query.serialize_to_url()
             rs.values.update(params)
             return self.user_search(rs, is_search=True, download=None,
                                     query=query)

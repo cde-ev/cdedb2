@@ -616,7 +616,7 @@ class TestValidation(unittest.TestCase):
 
         # Default is `False`.
         # This normalizes the timestamp to default timezone, then strips it away.
-        serialized_timestamp = query.serialize()['qval_time']
+        serialized_timestamp = query.serialize_to_url()['qval_time']
         self.assertEqual(
             query.serialize(timezone_aware=False)['qval_time'],
             serialized_timestamp
@@ -624,6 +624,12 @@ class TestValidation(unittest.TestCase):
         self.assertEqual(
             serialized_timestamp,
             timestamp.astimezone(conf['DEFAULT_TIMEZONE']).isoformat().split('+')[0]
+        )
+
+        # `serialize_to_url` is an alias for `timezone_aware=False`
+        self.assertEqual(
+            query.serialize_to_url(),
+            query.serialize(timezone_aware=False)
         )
 
         # The serialized timestampt gets parsed back to the original one.
