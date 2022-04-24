@@ -2,7 +2,7 @@
 
 import subprocess
 
-from werkzeug.serving import is_running_from_reloader, run_simple
+from werkzeug.serving import run_simple
 
 from cdedb.config import Config
 from cdedb.frontend.application import Application
@@ -11,8 +11,7 @@ from cdedb.frontend.application import Application
 def serve() -> None:
     """Serve the cdedb using the werkzeug development server"""
 
-    if not is_running_from_reloader():
-        subprocess.run(["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL)
+    subprocess.run(["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL)
 
     application = Application()
     conf = Config()
