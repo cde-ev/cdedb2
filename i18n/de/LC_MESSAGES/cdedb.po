@@ -8475,7 +8475,7 @@ msgstr "Benutzer nach ID oder Namen suchen"
 #: cdedb/frontend/templates/web/generic.tmpl:276
 #: cdedb/frontend/templates/web/generic.tmpl:279
 msgid "Include Archived Users"
-msgstr "Archivierte Nutzer miteinbezihen"
+msgstr "Archivierte Nutzer miteinbeziehen"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:62
 #: cdedb/frontend/templates/web/core/index.tmpl:68
