@@ -13,6 +13,7 @@ from ldaptor.protocols.ldap.distinguishedname import (
 from passlib.hash import sha512_crypt
 
 from cdedb.common import CdEDBObject, unwrap
+from cdedb.config import SecretsConfig
 from cdedb.database.constants import SubscriptionState
 from cdedb.database.query import DatabaseValue_s, SqlQueryBackend
 from cdedb.ldap.schema import SchemaDescription
@@ -31,9 +32,7 @@ class LdapLeaf(TypedDict):
 class LDAPsqlBackend:
     """Provide the interface between ldap and database."""
     def __init__(self, pool: Pool) -> None:
-        self.secrets = {
-            "LDAP_DUA_PW": "secret"
-        }
+        self.secrets = SecretsConfig()
         self.pool = pool
         # load the ldap schemas which are supported
         self.schema = self.load_schemas("core", "cosine", "inetorgperson")
