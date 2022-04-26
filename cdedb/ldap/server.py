@@ -9,7 +9,8 @@ from ldaptor.protocols.pureldap import LDAPSearchRequest
 from twisted.internet import defer
 from twisted.internet.protocol import ServerFactory
 
-from cdedb.ldap.entry import CdEDBBaseLDAPEntry
+from cdedb.ldap.backend import LDAPsqlBackend
+from cdedb.ldap.entry import CdEDBBaseLDAPEntry, RootEntry
 
 
 class CdEDBLDAPServer(LDAPServer):
@@ -166,13 +167,13 @@ class CdEDBLDAPServer(LDAPServer):
         return defer.fail(ldaperrors.LDAPUnwillingToPerform("Not implemented"))
 
 
-class LDAPServerFactory(ServerFactory):
+class CdEDBLDAPServerFactory(ServerFactory):
     """Factory to provide a CdEDBLDAPServer instance per connection."""
 
     protocol = CdEDBLDAPServer
 
-    def __init__(self, root: CdEDBBaseLDAPEntry) -> None:
-        self.root = root
+    def __init__(self, backend: LDAPsqlBackend) -> None:
+        self.root = RootEntry(backend)
 
     def buildProtocol(self, addr) -> CdEDBLDAPServer:
         proto = self.protocol()

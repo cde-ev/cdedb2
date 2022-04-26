@@ -11,25 +11,16 @@ import psycopg2.extras
 import twisted.python.log
 from aiopg import create_pool
 from ldaptor.interfaces import IConnectedLDAPEntry
-from ldaptor.protocols.ldap.ldapserver import LDAPServer
 from twisted.internet import reactor
-from twisted.internet.protocol import Factory, ServerFactory
 from twisted.python.components import registerAdapter
 
 from cdedb.config import Config, SecretsConfig
 from cdedb.ldap.backend import LDAPsqlBackend
-from cdedb.ldap.entry import RootEntry
+from cdedb.ldap.server import CdEDBLDAPServerFactory
 
 assert isinstance(reactor, asyncioreactor.AsyncioSelectorReactor)
 
 logger = logging.getLogger(__name__)
-
-
-class LDAPServerFactory(Factory):
-    protocol = LDAPServer
-
-    def __init__(self, backend):
-        self.root = RootEntry(backend)
 
 
 async def main():
@@ -51,11 +42,10 @@ async def main():
     ) as pool:
         logger.debug("Got aiopg connection pool.")
         backend = LDAPsqlBackend(pool)
-        factory = LDAPServerFactory(backend)
-        factory.protocol = LDAPServer
+        factory = CdEDBLDAPServerFactory(backend)
         factory.debug = True
         # Tell twisted, how to transform the factory into an IConnectedLDAPEntry
-        registerAdapter(lambda x: x.root, LDAPServerFactory, IConnectedLDAPEntry)
+        registerAdapter(lambda x: x.root, CdEDBLDAPServerFactory, IConnectedLDAPEntry)
 
         # Create Server
         logger.info("Opening LDAP server ...")
