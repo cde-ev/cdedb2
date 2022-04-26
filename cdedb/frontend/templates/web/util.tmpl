@@ -961,3 +961,18 @@ mailto:
         {% endif %}
     {% endwith %}
 {% endmacro %}
+
+{% macro pager(page_name, entity_id, prev, next, title_attr='title') %}
+    <nav>
+        <ul class="pager">
+            {% if prev %}
+                <li class="previous">{{ util.href(cdedblink(page_name, {entity_id: prev["id"]}),
+                         '<span aria-hidden="true">&larr;</span> '|s + gettext("Previous"), title=prev[title_attr]) }}</li>
+            {% endif %}
+            {% if next %}
+                <li class="next">{{ util.href(cdedblink(page_name, {entity_id: next["id"]}),
+                         gettext("Next") + ' <span aria-hidden="true">&rarr;</span>'|s, title=next[title_attr]) }}</li>
+            {% endif %}
+        </ul>
+    </nav>
+{% endmacro %}

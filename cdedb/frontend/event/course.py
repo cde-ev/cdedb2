@@ -84,6 +84,17 @@ class EventCourseMixin(EventBaseFrontend):
             instructors = self.coreproxy.get_personas(rs, instructor_ids)
             params['instructor_emails'] = [p['username']
                                            for p in instructors.values()]
+
+            course_ids = self.eventproxy.list_courses(rs, event_id=event_id).keys()
+            courses = xsorted(self.eventproxy.get_courses(rs, course_ids).values(),
+                              key=EntitySorter.course)
+            i = courses.index(rs.ambience['course'])
+            for c in courses:
+                c['label'] = f"{c['nr']}. {c['shortname']}"
+
+            params['prev_course'] = courses[i - 1] if i > 0 else None
+            params['next_course'] = courses[i + 1] if i + 1 < len(courses) else None
+
         return self.render(rs, "course/show_course", params)
 
     @access("event")

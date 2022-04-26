@@ -102,7 +102,7 @@
 
     {{ ballot_meta.show_attachments() }}
 
-    {{ ballot_meta.show_navigation(page_name="assembly/show_ballot") }}
+    {{ util.pager('assembly/show_ballot', 'ballot_id', prev_ballot, next_ballot) }}
 
     {% if edit_mode %}
         {{ ballot_meta.ballot_action_panel() }}
