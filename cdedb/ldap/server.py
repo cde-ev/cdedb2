@@ -1,4 +1,3 @@
-import pathlib
 from typing import Any
 
 from ldaptor import interfaces

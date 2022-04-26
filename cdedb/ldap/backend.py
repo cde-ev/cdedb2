@@ -2,7 +2,7 @@ import logging
 import pathlib
 import re
 from collections import defaultdict
-from typing import Any, Callable, Dict, List, Optional, TypedDict, Union, Sequence, cast
+from typing import Any, Callable, Dict, List, Optional, Sequence, TypedDict, Union, cast
 
 import aiopg.connection
 from aiopg.pool import Pool, create_pool
@@ -14,7 +14,7 @@ from passlib.hash import sha512_crypt
 
 from cdedb.common import CdEDBObject, unwrap
 from cdedb.database.constants import SubscriptionState
-from cdedb.database.query import SqlQueryBackend, DatabaseValue_s
+from cdedb.database.query import DatabaseValue_s, SqlQueryBackend
 from cdedb.ldap.schema import SchemaDescription
 
 LDAPObject = Dict[bytes, List[bytes]]

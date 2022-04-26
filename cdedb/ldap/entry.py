@@ -1,5 +1,5 @@
 import abc
-from typing import List, Optional, Union, Type
+from typing import List, Optional, Type, Union
 
 import ldaptor.entry
 import ldaptor.entryhelpers

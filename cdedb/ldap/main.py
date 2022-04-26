@@ -1,4 +1,3 @@
-
 import asyncio
 import logging
 import signal
@@ -9,18 +8,18 @@ from twisted.internet import asyncioreactor
 asyncioreactor.install(asyncio.get_event_loop())
 
 import psycopg2.extras
+import twisted.python.log
 from aiopg import create_pool
 from ldaptor.interfaces import IConnectedLDAPEntry
 from ldaptor.protocols.ldap.ldapserver import LDAPServer
-import twisted.python.log
-from twisted.internet.protocol import ServerFactory, Factory
+from twisted.internet import reactor
+from twisted.internet.protocol import Factory, ServerFactory
 from twisted.python.components import registerAdapter
 
 from cdedb.config import Config, SecretsConfig
 from cdedb.ldap.backend import LDAPsqlBackend
 from cdedb.ldap.entry import RootEntry
 
-from twisted.internet import reactor
 assert isinstance(reactor, asyncioreactor.AsyncioSelectorReactor)
 
 logger = logging.getLogger(__name__)
