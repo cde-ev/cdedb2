@@ -1,5 +1,5 @@
 import abc
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Type
 
 import ldaptor.entry
 import ldaptor.entryhelpers
@@ -231,7 +231,7 @@ class CdEPreLeafEntry(CdEDBStaticEntry, metaclass=abc.ABCMeta):
     """
 
     # class which is used to instantiate the children
-    ChildGroup: "CdEDBLeafEntry"
+    ChildGroup: Type["CdEDBLeafEntry"]
 
     @abc.abstractmethod
     async def children_lister(self) -> List[RelativeDistinguishedName]:
@@ -353,7 +353,7 @@ class RootEntry(CdEDBStaticEntry):
         else:
             raise LDAPNoSuchObject(dn_str)
 
-    def _parent(self) -> "CdEDBBaseLDAPEntry":
+    def _parent(self) -> Optional["CdEDBBaseLDAPEntry"]:
         return None
 
 

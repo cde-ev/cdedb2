@@ -2,10 +2,10 @@ import logging
 import pathlib
 import re
 from collections import defaultdict
-from typing import Any, Callable, Dict, List, Optional, Tuple, TypedDict, Union
+from typing import Any, Callable, Dict, List, Optional, TypedDict, Union, Sequence, cast
 
-import psycopg2.extras
-from aiopg.pool import Pool, _PoolContextManager, create_pool
+import aiopg.connection
+from aiopg.pool import Pool, create_pool
 from ldaptor.protocols.ldap.distinguishedname import (
     DistinguishedName as DN, LDAPAttributeTypeAndValue as ATV,
     RelativeDistinguishedName as RDN,
@@ -13,14 +13,14 @@ from ldaptor.protocols.ldap.distinguishedname import (
 from passlib.hash import sha512_crypt
 
 from cdedb.common import CdEDBObject, unwrap
-from cdedb.config import Config, SecretsConfig
-from cdedb.database.connection import ConnectionContainer, connection_pool_factory
 from cdedb.database.constants import SubscriptionState
-from cdedb.database.query import AsyncQueryMixin, QueryMixin
+from cdedb.database.query import SqlQueryBackend, DatabaseValue_s
 from cdedb.ldap.schema import SchemaDescription
 
 LDAPObject = Dict[bytes, List[bytes]]
 LDAPObjectMap = Dict[DN, LDAPObject]
+
+logger = logging.getLogger(__name__)
 
 
 class LdapLeaf(TypedDict):
@@ -28,31 +28,71 @@ class LdapLeaf(TypedDict):
     list_entities: Callable[[], List[RDN]]
 
 
-class LDAPsqlBackend(AsyncQueryMixin):
+class LDAPsqlBackend:
     """Provide the interface between ldap and database."""
     def __init__(self, pool: Pool) -> None:
-        self.conf = Config()
-        self.secrets = SecretsConfig()
-        self.connection_pool = connection_pool_factory(
-            self.conf["CDB_DATABASE_NAME"], ["cdb_admin"],
-            self.secrets, self.conf["DB_HOST"], self.conf["DB_PORT"])
+        self.secrets = {
+            "LDAP_DUA_PW": "secret"
+        }
         self.pool = pool
-        self.logger = logging.getLogger(__name__)
         # load the ldap schemas which are supported
         self.schema = self.load_schemas("core", "cosine", "inetorgperson")
-        super().__init__(self.logger)
 
-    @property
-    def rs(self) -> ConnectionContainer:
-        conn = self.connection_pool["cdb_admin"]
-        rs = ConnectionContainer()
-        rs.conn = rs._conn = conn
-        return rs
+    @staticmethod
+    async def execute_db_query(cur: aiopg.connection.Cursor, query: str,
+                               params: Sequence) -> None:
+        """Perform a database query. This low-level wrapper should be used
+        for all explicit database queries, mostly because it invokes
+        :py:meth:`_sanitize_db_input`. However in nearly all cases you want to
+        call one of :py:meth:`query_exec`, :py:meth:`query_one`,
+        :py:meth:`query_all` which utilize a transaction to do the query. If
+        this is not called inside a transaction context (probably created by
+        a ``with`` block) it is unsafe!
+
+        This doesn't return anything, but has a side-effect on ``cur``.
+        """
+        # TODO extract _sanitize_db_input() etc. from SqlQueryBackend
+        sanitized_params = tuple(
+            SqlQueryBackend._sanitize_db_input(p) for p in params)
+        logger.debug(f"Execute PostgreSQL query"
+                     f" {cur.mogrify(query, sanitized_params)}.")
+        await cur.execute(query, sanitized_params)
+
+    async def query_exec(self, query: str, params: Sequence[DatabaseValue_s]) -> int:
+        """Execute a query in a safe way (inside a transaction)."""
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                await self.execute_db_query(cur, query, params)
+                return cur.rowcount
+
+    async def query_one(self, query: str, params: Sequence[DatabaseValue_s]
+                        ) -> Optional[CdEDBObject]:
+        """Execute a query in a safe way (inside a transaction).
+
+        :returns: First result of query or None if there is none
+        """
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                await self.execute_db_query(cur, query, params)
+                return SqlQueryBackend._sanitize_db_output(await cur.fetchone())
+
+    async def query_all(self, query: str, params: Sequence[DatabaseValue_s]
+                        ) -> List[CdEDBObject]:
+        """Execute a query in a safe way (inside a transaction).
+
+        :returns: all results of query
+        """
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                await self.execute_db_query(cur, query, params)
+                return [cast(CdEDBObject, SqlQueryBackend._sanitize_db_output(x))
+                        async for x in cur.fetchall()]
 
     @staticmethod
     def _dn_value(dn: DN, attribute: str) -> Optional[str]:
         """Retrieve the value of the RDN matching the given attribute type."""
         rdn = dn.split()[0]
+        # TODO unwrap() seems to be overkill here
         attribute_value = unwrap(rdn.split())
         if attribute_value.attributeType == attribute:
             return attribute_value.value
@@ -112,7 +152,8 @@ class LDAPsqlBackend(AsyncQueryMixin):
         """Load the provided ldap schemas and parse their content from file."""
         data = []
         for schema in schemas:
-            with open(pathlib.Path(f"/cdedb2/cdedb/ldap/schema/{schema}.schema")) as f:
+            # TODO replace with pkgutil.get_data()
+            with (pathlib.Path(__file__).parent / "schema" / f"{schema}.schema").open() as f:
                 data.append(f.read())
 
         # punch all files together to create a single schema object
@@ -273,7 +314,7 @@ class LDAPsqlBackend(AsyncQueryMixin):
 
     async def list_users(self) -> List[RDN]:
         query = "SELECT id FROM core.personas WHERE NOT is_archived"
-        data = self.query_all(self.rs, query, [])
+        data = await self.query_all(query, [])
         return [
             RDN(
                 attributeTypesAndValues=[
@@ -302,7 +343,7 @@ class LDAPsqlBackend(AsyncQueryMixin):
         query = (
             "SELECT id, username, display_name, given_names, family_name, password_hash"
             " FROM core.personas WHERE id = ANY(%s) AND NOT is_archived")
-        data = self.query_all(self.rs, query, (dn_to_persona_id.values(),))
+        data = await self.query_all(query, (dn_to_persona_id.values(),))
         users = {e["id"]: e for e in data}
 
         ret = dict()
@@ -400,7 +441,7 @@ class LDAPsqlBackend(AsyncQueryMixin):
             else:
                 condition = name
             query = f"SELECT id FROM core.personas WHERE {condition}"
-            members = self.query_all(self.rs, query, [])
+            members = await self.query_all(query, [])
             group = {
                 b"cn": [self.status_group_cn(name)],
                 b"objectClass": ["groupOfUniqueNames"],
@@ -433,7 +474,7 @@ class LDAPsqlBackend(AsyncQueryMixin):
 
     async def list_assembly_presider_groups(self) -> List[RDN]:
         query = "SELECT id FROM assembly.assemblies"
-        data = self.query_all(self.rs, query, [])
+        data = await self.query_all(query, [])
         return [
             RDN(
                 attributeTypesAndValues=[
@@ -455,12 +496,12 @@ class LDAPsqlBackend(AsyncQueryMixin):
 
         query = ("SELECT persona_id, assembly_id FROM assembly.presiders"
                  " WHERE assembly_id = ANY(%s)")
-        data = self.query_all(self.rs, query, (dn_to_assembly_id.values(),))
+        data = await self.query_all(query, (dn_to_assembly_id.values(),))
         presiders = defaultdict(list)
         for e in data:
             presiders[e["assembly_id"]].append(e["persona_id"])
         query = "SELECT id, title, shortname FROM assembly.assemblies WHERE id = ANY(%s)"
-        data = self.query_all(self.rs, query, (dn_to_assembly_id.values(),))
+        data = await self.query_all(query, (dn_to_assembly_id.values(),))
         assemblies = {e["id"]: e for e in data}
 
         ret = dict()
@@ -499,7 +540,7 @@ class LDAPsqlBackend(AsyncQueryMixin):
 
     async def list_event_orga_groups(self) -> List[RDN]:
         query = "SELECT id FROM event.events"
-        data = self.query_all(self.rs, query, [])
+        data = await self.query_all(query, [])
         return [
             RDN(
                 attributeTypesAndValues=[
@@ -520,12 +561,12 @@ class LDAPsqlBackend(AsyncQueryMixin):
             dn_to_event_id[dn] = event_id
 
         query = "SELECT persona_id, event_id FROM event.orgas WHERE event_id = ANY(%s)"
-        data = self.query_all(self.rs, query, (dn_to_event_id.values(),))
+        data = await self.query_all(query, (dn_to_event_id.values(),))
         orgas = defaultdict(list)
         for e in data:
             orgas[e["event_id"]].append(e["persona_id"])
         query = "SELECT id, title, shortname FROM event.events WHERE id = ANY(%s)"
-        data = self.query_all(self.rs, query, (dn_to_event_id.values(),))
+        data = await self.query_all(query, (dn_to_event_id.values(),))
         events = {e["id"]: e for e in data}
 
         ret = dict()
@@ -568,7 +609,7 @@ class LDAPsqlBackend(AsyncQueryMixin):
 
     async def list_ml_moderator_groups(self) -> List[RDN]:
         query = "SELECT address FROM ml.mailinglists"
-        data = self.query_all(self.rs, query, [])
+        data = await self.query_all(query, [])
         return [
             RDN(
                 attributeTypesAndValues=[
@@ -591,12 +632,12 @@ class LDAPsqlBackend(AsyncQueryMixin):
         query = ("SELECT persona_id, address FROM ml.moderators, ml.mailinglists"
                  " WHERE ml.mailinglists.id = ml.moderators.mailinglist_id"
                  " AND address = ANY(%s)")
-        data = self.query_all(self.rs, query, (dn_to_address.values(),))
+        data = await self.query_all(query, (dn_to_address.values(),))
         moderators = defaultdict(list)
         for e in data:
             moderators[e["address"]].append(e["persona_id"])
         query = ("SELECT address, title FROM ml.mailinglists WHERE address = ANY(%s)")
-        data = self.query_all(self.rs, query, (dn_to_address.values(),))
+        data = await self.query_all(query, (dn_to_address.values(),))
         mls = {e["address"]: e for e in data}
 
         ret = dict()
@@ -639,7 +680,7 @@ class LDAPsqlBackend(AsyncQueryMixin):
 
     async def list_ml_subscriber_groups(self) -> List[RDN]:
         query = "SELECT address FROM ml.mailinglists"
-        data = self.query_all(self.rs, query, [])
+        data = await self.query_all(query, [])
         return [
             RDN(
                 attributeTypesAndValues=[
@@ -663,12 +704,12 @@ class LDAPsqlBackend(AsyncQueryMixin):
                  " WHERE ml.mailinglists.id = ml.subscription_states.mailinglist_id"
                  " AND subscription_state = ANY(%s) AND address = ANY(%s)")
         states = SubscriptionState.subscribing_states()
-        data = self.query_all(self.rs, query, (states, dn_to_address.values(),))
+        data = await self.query_all(query, (states, dn_to_address.values(),))
         subscribers = defaultdict(list)
         for e in data:
             subscribers[e["address"]].append(e["persona_id"])
         query = ("SELECT address, title FROM ml.mailinglists WHERE address = ANY(%s)")
-        data = self.query_all(self.rs, query, (dn_to_address.values(),))
+        data = await self.query_all(query, (dn_to_address.values(),))
         mls = {e["address"]: e for e in data}
 
         ret = dict()
