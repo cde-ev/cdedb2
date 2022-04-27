@@ -50,7 +50,7 @@
                                 {% set datum = row[part_id] %}
                                 {% if query %}
                                     {{ util.href(
-                                        cdedblink('event/registration_query', query.serialize()) + "#query-results",
+                                        cdedblink('event/registration_query', query.serialize_to_url()) + "#query-results",
                                         datum, anid="part_" + stat.name + "_" + part_id|string) }}
                                 {% else %}
                                     {{ datum }}
@@ -63,7 +63,7 @@
                                 {% set datum = row[-part_group_id] %}
                                 {% if query %}
                                     {{ util.href(
-                                        cdedblink('event/registration_query', query.serialize()) + "#query-results",
+                                        cdedblink('event/registration_query', query.serialize_to_url()) + "#query-results",
                                         datum, anid="part_group_" + stat.name + "_" + part_group_id|string) }}
                                 {% else %}
                                     {{ datum }}
@@ -104,7 +104,7 @@
                                         {% set page = query.scope.get_target() %}
                                         {% if query %}
                                             {{ util.href(
-                                                cdedblink(page, query.serialize()) + "#query-results",
+                                                cdedblink(page, query.serialize_to_url()) + "#query-results",
                                                 row[track_id]|length, anid="part_in_" + x|string +  "_choice_" + track_id|string) }}
                                         {% else %}
                                             {{ row[track_id]|length }}
@@ -126,7 +126,7 @@
                                         {% set page = query.scope.get_target() %}
                                         {% if query %}
                                             {{ util.href(
-                                                cdedblink(page, query.serialize()) + "#query-results",
+                                                cdedblink(page, query.serialize_to_url()) + "#query-results",
                                                 row[track_id], anid="part_" + stat.name + "_" + track_id|string) }}
                                         {% else %}
                                             {{ row[track_id] }}

@@ -783,7 +783,7 @@ class EventQueryMixin(EventBaseFrontend):
                 self.eventproxy.get_event_queries(rs, event_id, query_ids=(query_id,))
                 or None)
             if stored_query:
-                query_input = stored_query.serialize()
+                query_input = stored_query.serialize_to_url()
             code = self.eventproxy.delete_event_query(rs, query_id)
             rs.notify_return_code(code)
         if query_scope and query_scope.get_target():

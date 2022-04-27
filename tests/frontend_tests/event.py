@@ -4905,3 +4905,41 @@ etc;anything else""", f['entries_2'].value)
         f['submitted_by'] = "DB-1-9"
         self.submit(f)
         self.assertTitle("Veranstaltungen-Log [0–0 von 0]")
+
+    @as_users("garcia")
+    def test_registration_query_datetime_serialization(self) -> None:
+        reference_time = datetime.datetime(2000, 1, 1, 12, 0, 0)
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Anmeldungen")
+        f = self.response.forms['queryform']
+
+        # Submit a query using a timezone unaware datetime value.
+        f['qop_ctime.creation_time'] = QueryOperators.greater.value
+        f['qval_ctime.creation_time'] = reference_time.isoformat()
+        self.submit(f)
+
+        # Check that the value stayed the same.
+        f = self.response.forms['queryform']
+        self.assertEqual(
+            f['qval_ctime.creation_time'].value,
+            reference_time.isoformat()
+        )
+
+        # Now store that query.
+        f['query_name'] = "Timezone Storage Test"
+        self.submit(f, button="store_query", check_button_attrs=True)
+
+        # And check that the value didn't change
+        # Note that this is still the submitted value not the stored one.
+        f = self.response.forms['queryform']
+        self.assertEqual(
+            f['qval_ctime.creation_time'].value,
+            reference_time.isoformat()
+        )
+
+        # Now retrieve the stored query and check that the value is still the same.
+        self.traverse("Anmeldungen", "Timezone Storage Test")
+        f = self.response.forms['queryform']
+        self.assertEqual(
+            f['qval_ctime.creation_time'].value,
+            reference_time.isoformat()
+        )

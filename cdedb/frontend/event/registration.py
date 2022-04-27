@@ -1081,7 +1081,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             (("reg.id", QueryOperators.oneof, reg_ids),),
             (("persona.family_name", True), ("persona.given_names", True),)
         )
-        return self.redirect(rs, scope.get_target(), query.serialize())
+        return self.redirect(rs, scope.get_target(), query.serialize_to_url())
 
     @access("event")
     @event_guard(check_offline=True)
