@@ -172,7 +172,7 @@
                         {% if reg_track['course_id'] %}
                             {{ util.href(cdedblink('event/course_list') + '#course-' + reg_track['course_id']|string,
                                          "{}. {}".format(courses[reg_track['course_id']]['nr'],
-                                                         courses[reg_track['course_id']]['shortname'])) }}
+                                                         courses[reg_track['course_id']]['title'])) }}
                         {% else %}
                             —
                         {% endif %}
@@ -188,7 +188,7 @@
                         {% if reg_track['choices']|length > i %}
                             {{ util.href(cdedblink('event/course_list') + '#course-' + reg_track['choices'][i]|string,
                                          "{}. {}".format(courses[reg_track['choices'][i]]['nr'],
-                                                         courses[reg_track['choices'][i]]['shortname'])) }}
+                                                         courses[reg_track['choices'][i]]['title'])) }}
                         {% else %}
                             —
                         {% endif %}
