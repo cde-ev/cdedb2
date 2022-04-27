@@ -438,7 +438,8 @@ class TestEventBackend(BackendTest):
                       [('reg.notes', True)], name="test_query")
         self.assertTrue(self.event.store_event_query(self.key, new_id, query))
         self.assertEqual(
-            self.event.get_event_queries(self.key, new_id)["test_query"].serialize_to_url(),
+            self.event.get_event_queries(
+                self.key, new_id)["test_query"].serialize_to_url(),
             query.serialize_to_url())
         self.assertEqual(
             self.event.get_event_queries(
