@@ -283,11 +283,11 @@ class EventQueryMixin(EventBaseFrontend):
             query = check(rs, vtypes.QueryInput, query_input,
                           "query", spec=spec, allow_empty=False)
 
-        tracks = rs.ambience['event']['tracks']
-        selection_default = ["course.shortname", ]
-        for col in ("is_offered", "takes_place", "attendees"):
-            selection_default += list("track{}.{}".format(t_id, col)
-                                      for t_id in tracks)
+        selection_default = ["course.nr", "course.shortname", "course.instructors"]
+        for col in ("takes_place",):
+            selection_default.extend(
+                f"track{t_id}.{col}" for t_id in rs.ambience['event']['tracks'])
+
         stored_queries = self.eventproxy.get_event_queries(
             rs, event_id, scopes=(scope,))
         default_queries = generate_event_course_default_queries(
