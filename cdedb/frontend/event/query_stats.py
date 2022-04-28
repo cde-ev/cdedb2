@@ -542,13 +542,15 @@ class EventCourseStatistic(StatisticTrackMixin, enum.Enum):
     def _get_query_aux(self, event: CdEDBObject, track_id: int) -> StatQueryAux:  # pylint: disable=arguments-differ
         if self == self.offered:
             return (
-                ['course.instructors'],
-                [(f"track{track_id}.is_offered", QueryOperators.equal, True)],
+                [],
+                [
+                    (f"track{track_id}.is_offered", QueryOperators.equal, True),
+                ],
                 []
             )
         elif self == self.cancelled:
             return (
-                ['course.instructors'],
+                [f"track{t_id}.takes_place" for t_id in event['tracks']],
                 [
                     (f"track{track_id}.is_offered", QueryOperators.equal, True),
                     (f"track{track_id}.takes_place", QueryOperators.equal, False),
@@ -557,7 +559,7 @@ class EventCourseStatistic(StatisticTrackMixin, enum.Enum):
             )
         elif self == self.taking_place:
             return (
-                ['course.instructors'],
+                [],
                 [
                     (f"track{track_id}.is_offered", QueryOperators.equal, True),
                     (f"track{track_id}.takes_place", QueryOperators.equal, False),
@@ -572,7 +574,7 @@ class EventCourseStatistic(StatisticTrackMixin, enum.Enum):
         return Query(
             QueryScope.event_course,
             QueryScope.event_course.get_spec(event=event),
-            fields_of_interest=['course.course_id'],
+            fields_of_interest=['course.nr', 'course.shortname', 'course.instructors'],
             constraints=[],
             order=[('course.nr', True)]
         )
