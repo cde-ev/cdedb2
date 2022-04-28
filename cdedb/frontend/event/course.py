@@ -35,6 +35,7 @@ class EventCourseMixin(EventBaseFrontend):
         """List courses from an event."""
         if (not rs.ambience['event']['is_course_list_visible']
                 and not (event_id in rs.user.orga or self.is_admin(rs))):
+            rs.ignore_validation_errors()
             rs.notify("warning", n_("Course list not published yet."))
             return self.redirect(rs, "event/show_event")
         if rs.has_validation_errors() or not track_ids:
