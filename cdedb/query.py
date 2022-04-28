@@ -11,6 +11,7 @@ up an environment for passing a query from frontend to backend.
 
 import collections
 import copy
+import datetime
 import enum
 import itertools
 import re
@@ -22,7 +23,10 @@ import cdedb.database.constants as const
 from cdedb.common import (
     ADMIN_KEYS, CdEDBObject, CdEDBObjectMap, EntitySorter, RequestState, n_, xsorted,
 )
+from cdedb.config import Config
 from cdedb.filter import keydictsort_filter
+
+_CONFIG = Config()
 
 
 @enum.unique
@@ -107,6 +111,8 @@ QueryConstraintType = NamedTuple(
 QueryOrder = Tuple[str, bool]
 
 QueryChoices = Mapping[Union[int, str, enum.Enum], str]
+
+QUERY_VALUE_SEPARATOR = ","
 
 
 class QuerySpecEntry(NamedTuple):
@@ -644,32 +650,60 @@ class Query:
             self.spec[field] = self.spec[field.replace('"', '')]
             del self.spec[field.replace('"', '')]
 
-    def serialize(self) -> CdEDBObject:
+    def serialize(self, timezone_aware: bool) -> CdEDBObject:
         """
         Serialize a query into a dict.
 
-        The format is compatible with QueryInput and search params
+        This is used for both storing queries in the database (in which case
+        `timezone_aware` should be True) and for turning a query object into a URL
+        linking to a query page (in which case `timezone_aware` should be False.
+
+        The format is compatible with QueryInput and search params.
+
+        :param timezone_aware: If True, serialize datetimes to timezone aware format.
+        Otherwise convert to default timezone, so that it will be parsed correctly.
+        This is necessary because the HTML standard for `datetime-local` doesn't allow
+        timezone information, while `datetime` is not well supported in browsers.
         """
+        def serialize_value(val: Any) -> str:
+            """Serialize datetimes to the default timezone then stringify w/o timezone.
+
+            A datetime input without tzinfo will be set to the default timezone,
+            therefore the result when reparsing will be identical.
+            """
+            if isinstance(val, datetime.datetime):
+                if not timezone_aware:
+                    formatcode = "%Y-%m-%dT%H:%M:%S"
+                    if val.microsecond:
+                        formatcode += ".%f"
+                    return val.astimezone(
+                        _CONFIG['DEFAULT_TIMEZONE']).strftime(formatcode)
+                return val.isoformat()
+            return str(val)
+
         params: CdEDBObject = {}
         for field in self.fields_of_interest:
-            params['qsel_{}'.format(field)] = True
+            params[f'qsel_{field}'] = True
         for field, op, value in self.constraints:
-            params['qop_{}'.format(field)] = op.value
+            params[f'qop_{field}'] = op.value
             if (isinstance(value, collections.Iterable)
                     and not isinstance(value, str)):
-                # TODO: Get separator from central place
-                #  (also used in validation._query_input)
-                params['qval_{}'.format(field)] = ','.join(str(x) for x in value)
+                params[f'qval_{field}'] = QUERY_VALUE_SEPARATOR.join(
+                    serialize_value(x) for x in value)
             else:
-                params['qval_{}'.format(field)] = value
+                params[f'qval_{field}'] = serialize_value(value)
         for entry, postfix in zip(self.order, ("primary", "secondary", "tertiary")):
             field, ascending = entry
-            params['qord_{}'.format(postfix)] = field
-            params['qord_{}_ascending'.format(postfix)] = ascending
+            params[f'qord_{postfix}'] = field
+            params[f'qord_{postfix}_ascending'] = ascending
         params['is_search'] = True
         params['scope'] = str(self.scope)
         params['query_name'] = self.name
         return params
+
+    def serialize_to_url(self) -> CdEDBObject:
+        """Helper to serialize the Query for use in an URL or to fill a form."""
+        return self.serialize(timezone_aware=False)
 
     def get_field_format_spec(self, field: str) -> QueryResultEntryFormat:
         if self.spec[field].type == "date":

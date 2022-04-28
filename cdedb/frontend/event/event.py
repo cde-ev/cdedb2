@@ -75,7 +75,7 @@ class EventEventMixin(EventBaseFrontend):
                 ("persona.given_names", "persona.family_name"),
                 (),
                 (("persona.family_name", True), ("persona.given_names", True)))
-            params = query.serialize()
+            params = query.serialize_to_url()
             params['event_id'] = event_id
             return cdedburl(rs, 'event/registration_query', params)
 
@@ -989,8 +989,7 @@ class EventEventMixin(EventBaseFrontend):
                 return self.redirect(rs, "event/show_registration",
                                      {'registration_id': result[0]['id']})
             elif result:
-                params = query.serialize()
-                return self.redirect(rs, "event/registration_query",
-                                     params)
+                params = query.serialize_to_url()
+                return self.redirect(rs, "event/registration_query", params)
         rs.notify("warning", n_("No registration found."))
         return self.show_event(rs, event_id)

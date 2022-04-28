@@ -678,7 +678,7 @@ class EventQueryBackend(EventBaseBackend):
             'event_id': event_id,
             'query_name': query.name,
             'scope': query.scope,
-            'serialized_query': json_serialize(query.serialize()),
+            'serialized_query': json_serialize(query.serialize(timezone_aware=True)),
         }
         with Atomizer(rs):
             new_id = self.sql_insert(

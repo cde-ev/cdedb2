@@ -147,7 +147,7 @@
         {% endcall %}
 
         <div class="pull-right">
-            {{ util.href(cdedblink('event/registration_query', corresponding_query.serialize()),
+            {{ util.href(cdedblink('event/registration_query', corresponding_query.serialize_to_url()),
                          gettext("View Registrations"), icon='list', aclass='btn btn-sm btn-default') }}
         </div>
         <div class="p softhide" id="js-button-group">

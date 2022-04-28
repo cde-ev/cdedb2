@@ -16,6 +16,7 @@ import qrcode
 import qrcode.image.svg
 import vobject
 import werkzeug.exceptions
+from subman.machine import SubscriptionPolicy
 from werkzeug import Response
 
 import cdedb.database.constants as const
@@ -38,7 +39,6 @@ from cdedb.frontend.common import (
 )
 from cdedb.ml_type_aux import MailinglistGroup
 from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
-from cdedb.subman.machine import SubscriptionPolicy
 from cdedb.validation import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
     PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS,
@@ -862,7 +862,7 @@ class CoreBaseFrontend(AbstractFrontend):
         if len(result) == 1:
             return self.redirect_show_user(rs, result[0]["id"])
         elif result:
-            params = query.serialize()
+            params = query.serialize_to_url()
             rs.values.update(params)
             return self.user_search(rs, is_search=True, download=None,
                                     query=query)

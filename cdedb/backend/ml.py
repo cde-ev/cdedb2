@@ -9,9 +9,11 @@ from typing import (
     Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, cast, overload,
 )
 
+import subman
+from subman.machine import SubscriptionAction, SubscriptionPolicy
+
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
-import cdedb.subman as subman
 import cdedb.validationtypes as vtypes
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.common import (
@@ -28,7 +30,6 @@ from cdedb.common import (
 from cdedb.database.connection import Atomizer
 from cdedb.ml_type_aux import MLType, MLTypeLike
 from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
-from cdedb.subman.machine import SubscriptionAction, SubscriptionPolicy
 
 SubStates = Collection[const.SubscriptionState]
 

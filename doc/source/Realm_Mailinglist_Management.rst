@@ -17,7 +17,7 @@ explicitly. This ensures the subscriber list displayed is always identical to
 the list of users emails are actually sent to. In contrast, the Implicitly
 Unsubscribed state is not saved explicitly.
 
-To maintain the correct states, we use a cron job running every 15 minutes to
+To maintain the correct states, we use a :ref:`cron job <cron-jobs>` running every 15 minutes to
 take care of automatic state transitions on all active mailinglists.
 
 To simplify our logging, some subscription actions are summarized to a single log code,
