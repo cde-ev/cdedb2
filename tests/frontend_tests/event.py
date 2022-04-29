@@ -1285,6 +1285,9 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/course/list'},
+                      {'href': '/event/event/1/course/2/change'},
+                      {'href': '/event/event/1/course/2/show'},
+                      {'href': '/event/event/1/course/1/show'},
                       {'href': '/event/event/1/course/1/change'})
         self.assertTitle("Heldentum bearbeiten (Große Testakademie 2222)")
         f = self.response.forms['changecourseform']
