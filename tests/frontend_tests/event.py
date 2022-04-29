@@ -2884,6 +2884,8 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/lodgement/overview'})
         self.assertTitle("Unterkünfte (Große Testakademie 2222)")
         self.assertPresence("Kalte Kammer")
+        # Use the pager to navigate to Einzelzelle and test proper sorting
+        self.traverse("Einzelzelle", "Nächste")
         self.traverse({'href': '/event/event/1/lodgement/4/show'})
         self.assertTitle("Unterkunft Einzelzelle (Große Testakademie 2222)")
         self.assertPresence("Emilia")
