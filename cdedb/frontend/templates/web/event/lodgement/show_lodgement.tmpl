@@ -114,6 +114,8 @@
         </div>
     {% endfor %}
 
+    {{ util.pager('event/show_lodgement', 'lodgement_id', prev_lodgement, next_lodgement, "title") }}
+
     {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
         <div class="row">
             <div class="col-sm-4">

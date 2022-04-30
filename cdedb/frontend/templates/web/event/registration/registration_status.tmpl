@@ -170,8 +170,9 @@
                     <dt>{% trans %}Assigned to{% endtrans %}</dt>
                     <dd>
                         {% if reg_track['course_id'] %}
-                            {{ courses[reg_track['course_id']]['nr'] }}.
-                            {{ courses[reg_track['course_id']]['title'] }}
+                            {{ util.href(cdedblink('event/course_list') + '#course-' + reg_track['course_id']|string,
+                                         "{}. {}".format(courses[reg_track['course_id']]['nr'],
+                                                         courses[reg_track['course_id']]['title'])) }}
                         {% else %}
                             —
                         {% endif %}
@@ -185,8 +186,9 @@
                     <dt>{{ gettext("{}. choice").format(i + 1) }}</dt>
                     <dd>
                         {% if reg_track['choices']|length > i %}
-                            {{ courses[reg_track['choices'][i]]['nr'] }}.
-                            {{ courses[reg_track['choices'][i]]['title'] }}
+                            {{ util.href(cdedblink('event/course_list') + '#course-' + reg_track['choices'][i]|string,
+                                         "{}. {}".format(courses[reg_track['choices'][i]]['nr'],
+                                                         courses[reg_track['choices'][i]]['title'])) }}
                         {% else %}
                             —
                         {% endif %}

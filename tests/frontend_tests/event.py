@@ -1285,6 +1285,9 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/course/list'},
+                      {'href': '/event/event/1/course/2/change'},
+                      {'href': '/event/event/1/course/2/show'},
+                      {'href': '/event/event/1/course/1/show'},
                       {'href': '/event/event/1/course/1/change'})
         self.assertTitle("Heldentum bearbeiten (Große Testakademie 2222)")
         f = self.response.forms['changecourseform']
@@ -2881,6 +2884,8 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/lodgement/overview'})
         self.assertTitle("Unterkünfte (Große Testakademie 2222)")
         self.assertPresence("Kalte Kammer")
+        # Use the pager to navigate to Einzelzelle and test proper sorting
+        self.traverse("Einzelzelle", "Nächste")
         self.traverse({'href': '/event/event/1/lodgement/4/show'})
         self.assertTitle("Unterkunft Einzelzelle (Große Testakademie 2222)")
         self.assertPresence("Emilia")

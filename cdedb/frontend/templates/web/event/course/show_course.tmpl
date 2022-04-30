@@ -148,6 +148,9 @@
     {% call util.bootstrap_panel(title=gettext("Description"), icon="thumbtack", aclass="panel-default panel-condensed") %}
         {{ ambience['course']['description']|md }}
     {% endcall %}
+
+    {{ util.pager('event/show_course', 'course_id', prev_course, next_course, "label") }}
+
     {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
         <div class="row">
             <div class="col-sm-4">
