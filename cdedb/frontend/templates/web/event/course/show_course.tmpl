@@ -131,6 +131,14 @@
                             {% endfor %}
                         </ul>
                     </div>
+                    <div class="panel-footer">
+                        {{ util.href(cdedblink('event/course_choices', {
+                                                    'track_id': track_id,
+                                                    'course_id': ambience['course']['id'],
+                                                    'position': enums.CourseFilterPositions.anywhere.value,
+                                                    'submitform': True}),
+                                     util.make_icon('crosshairs') + nbsp + gettext("Related Course Choices")) }}
+                    </div>
                 </div>
             </div>
         {% endfor %}
