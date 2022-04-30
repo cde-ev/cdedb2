@@ -5,7 +5,7 @@ The `EventCourseBackend` subclasses the `EventBaseBackend` and provides function
 for managing courses belonging to an event.
 """
 
-from typing import Collection, List, Protocol
+from typing import Collection, Dict, List, Protocol
 
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
@@ -25,7 +25,7 @@ from cdedb.database.connection import Atomizer
 class EventCourseBackend(EventBaseBackend):
     @access("anonymous")
     def list_courses(self, rs: RequestState,
-                        event_id: int) -> CdEDBObjectMap:
+                        event_id: int) -> Dict[int, str]:
         """List all courses organized via DB.
 
         :returns: Mapping of course ids to titles.
