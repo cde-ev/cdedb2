@@ -104,6 +104,8 @@ NO_VALUE_OPERATORS = {_ops.empty, _ops.nonempty}
 # A query constraint translates to (part of) a WHERE clause. All constraints are
 # conjugated.
 QueryConstraint = Tuple[str, QueryOperators, Any]
+QueryConstraintType = NamedTuple(
+    "QueryConstraintType", [("field", str), ("op", QueryOperators), ("value", Any)])
 # A query order translate to an ORDER BY clause. The bool decides whether the sorting
 # is ASC (i.e. True -> ASC, False -> DESC).
 QueryOrder = Tuple[str, bool]
