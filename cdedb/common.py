@@ -646,6 +646,31 @@ def get_country_code_from_country(rs: RequestState, country: str) -> str:
     return country
 
 
+def make_persona_forename(persona: CdEDBObject,
+                          only_given_names: bool = False,
+                          only_display_name: bool = False,
+                          given_and_display_names: bool = False):
+    """Construct the forename of a persona according to the display name specification.
+
+    The name specification can be found at the documentation page about
+    "User Experience Conventions".
+    """
+    display_name: str = persona.get('display_name', "")
+    given_names: str = persona['given_names']
+    if only_given_names:
+        return given_names
+    elif only_display_name:
+        return display_name
+    elif given_and_display_names:
+        if not display_name or display_name == given_names:
+            return given_names
+        else:
+            return f"{given_names} ({display_name})"
+    elif display_name and display_name in given_names:
+        return display_name
+    return given_names
+
+
 Sortkey = Tuple[Union[str, int, datetime.datetime], ...]
 KeyFunction = Callable[[CdEDBObject], Sortkey]
 
@@ -668,21 +693,10 @@ def _make_persona_sorter(only_given_names: bool = False,
     """
 
     def sorter(persona: CdEDBObject) -> Sortkey:
-        display_name: str = persona.get('display_name', "")
-        given_names: str = persona['given_names']
-        if only_given_names:
-            forename = given_names
-        elif only_display_name:
-            forename = display_name
-        elif given_and_display_names:
-            if not display_name or display_name == given_names:
-                forename = given_names
-            else:
-                forename = f"{given_names} ({display_name})"
-        elif display_name and display_name in given_names:
-            forename = display_name
-        else:
-            forename = given_names
+        forename = make_persona_forename(
+            persona, only_given_names=only_given_names,
+            only_display_name=only_display_name,
+            given_and_display_names=given_and_display_names)
 
         forename = forename.lower()
         family_name = persona["family_name"].lower()
