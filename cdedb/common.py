@@ -655,6 +655,8 @@ def make_persona_forename(persona: CdEDBObject,
     The name specification can be found at the documentation page about
     "User Experience Conventions".
     """
+    if only_display_name + only_given_names + given_and_display_names > 1:
+        raise RuntimeError(n_("Invalid use of keyword parameters."))
     display_name: str = persona.get('display_name', "")
     given_names: str = persona['given_names']
     if only_given_names:
