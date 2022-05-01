@@ -8,11 +8,13 @@
 import getpass
 
 from cdedb.config import DEFAULT_CONFIGPATH, set_configpath
-from cdedb.frontend.cron import CronFrontend
+
+set_configpath(DEFAULT_CONFIGPATH)
+# TODO make importing from the cdedb module working without config path set
+from cdedb.frontend.cron import CronFrontend  # pylint: disable=import-outside-toplevel
 
 if __name__ == "__main__":
     if getpass.getuser() != "www-data":
         raise RuntimeError("Must be run as user www-data.")
-    set_configpath(DEFAULT_CONFIGPATH)
     cron = CronFrontend()
     cron.execute()
