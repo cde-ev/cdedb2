@@ -649,7 +649,7 @@ def get_country_code_from_country(rs: RequestState, country: str) -> str:
 def make_persona_forename(persona: CdEDBObject,
                           only_given_names: bool = False,
                           only_display_name: bool = False,
-                          given_and_display_names: bool = False):
+                          given_and_display_names: bool = False) -> str:
     """Construct the forename of a persona according to the display name specification.
 
     The name specification can be found at the documentation page about
