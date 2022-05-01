@@ -17,8 +17,8 @@ from cdedb.backend.common import (
 from cdedb.backend.event import EventBackend
 from cdedb.common import (
     INSTITUTION_FIELDS, PAST_COURSE_FIELDS, PAST_EVENT_FIELDS, CdEDBLog, CdEDBObject,
-    CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, Error, PathLike,
-    PrivilegeError, RequestState, glue, make_proxy, n_, now, unwrap, xsorted,
+    CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, Error, PrivilegeError,
+    RequestState, glue, make_proxy, n_, now, unwrap, xsorted,
 )
 from cdedb.database.connection import Atomizer
 from cdedb.query import Query, QueryScope
@@ -32,9 +32,9 @@ class PastEventBackend(AbstractBackend):
     """
     realm = "past_event"
 
-    def __init__(self, configpath: PathLike = None):
-        super().__init__(configpath)
-        self.event = make_proxy(EventBackend(configpath), internal=True)
+    def __init__(self) -> None:
+        super().__init__()
+        self.event = make_proxy(EventBackend(), internal=True)
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:

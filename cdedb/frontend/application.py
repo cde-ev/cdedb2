@@ -21,9 +21,8 @@ from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.common import (
-    ADMIN_VIEWS_COOKIE_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, PathLike,
-    QuotaException, RequestState, User, glue, make_proxy, make_root_logger, n_, now,
-    roles_to_db_role,
+    ADMIN_VIEWS_COOKIE_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, QuotaException,
+    RequestState, User, glue, make_proxy, n_, now, roles_to_db_role, setup_logger,
 )
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -32,8 +31,7 @@ from cdedb.frontend.assembly import AssemblyFrontend
 from cdedb.frontend.cde import CdEFrontend
 from cdedb.frontend.common import (
     JINJA_FILTERS, AbstractFrontend, BaseApp, FrontendEndpoint, Response,
-    construct_redirect, datetime_filter, docurl, sanitize_None, setup_translations,
-    staticurl,
+    construct_redirect, docurl, sanitize_None, setup_translations, staticurl,
 )
 from cdedb.frontend.core import CoreFrontend
 from cdedb.frontend.event import EventFrontend
@@ -45,27 +43,32 @@ class Application(BaseApp):
     """This does state creation upon every request and then hands it on to the
     appropriate frontend."""
 
-    def __init__(self, configpath: PathLike = None) -> None:
-        super().__init__(configpath)
-        self.coreproxy = make_proxy(CoreBackend(configpath))
-        self.eventproxy = make_proxy(EventBackend(configpath))
-        self.mlproxy = make_proxy(MlBackend(configpath))
-        self.assemblyproxy = make_proxy(AssemblyBackend(configpath))
+    def __init__(self) -> None:
+        super().__init__()
+        self.coreproxy = make_proxy(CoreBackend())
+        self.eventproxy = make_proxy(EventBackend())
+        self.mlproxy = make_proxy(MlBackend())
+        self.assemblyproxy = make_proxy(AssemblyBackend())
         # do not use a make_proxy since the only usage here is before the
         # RequestState exists
-        self.sessionproxy = SessionBackend(configpath)
-        self.core = CoreFrontend(configpath)
-        self.cde = CdEFrontend(configpath)
-        self.event = EventFrontend(configpath)
-        self.assembly = AssemblyFrontend(configpath)
-        self.ml = MlFrontend(configpath)
+        self.sessionproxy = SessionBackend()
+        self.core = CoreFrontend()
+        self.cde = CdEFrontend()
+        self.event = EventFrontend()
+        self.assembly = AssemblyFrontend()
+        self.ml = MlFrontend()
+        logger_path = self.conf["LOG_DIR"] / "cdedb.log"
+        setup_logger("cdedb", logger_path, self.conf["LOG_LEVEL"],
+            syslog_level=self.conf["SYSLOG_LEVEL"],
+            console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
+
         # Set up a logger for all Worker instances.
-        make_root_logger(
+        setup_logger(
             "cdedb.frontend.worker", self.conf["LOG_DIR"] / "cdedb-frontend-worker.log",
             self.conf["LOG_LEVEL"], syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         self.urlmap = CDEDB_PATHS
-        secrets = SecretsConfig(configpath)
+        secrets = SecretsConfig()
         self.connpool = connection_pool_factory(
             self.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
             secrets, self.conf["DB_HOST"], self.conf["DB_PORT"])
@@ -84,7 +87,6 @@ class Application(BaseApp):
             'glue': glue,
         })
         self.jinja_env.filters.update(JINJA_FILTERS)
-        self.jinja_env.filters.update({'datetime': datetime_filter})
         self.jinja_env.policies['ext.i18n.trimmed'] = True  # type: ignore
         self.translations = setup_translations(self.conf)
         if pathlib.Path("/PRODUCTIONVM").is_file():  # pragma: no cover

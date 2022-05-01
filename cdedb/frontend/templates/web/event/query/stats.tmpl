@@ -15,12 +15,16 @@
     {{ util.context_heading(gettext("Statistics"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block content %}
+    {% set sorted_tracks = ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
+    {% set sorted_parts = ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+    {% set sorted_part_groups = ambience['event']['part_groups']|keydictsort(EntitySorter.event_part_group) %}
     <h3>{% trans %}Participant Statistics{% endtrans %}</h3>
         <table id="participant-stats" class="table table-slim table-condensed table-stats">
             <thead>
                 <tr>
-                    <th colspan="2"></th>
-                    {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+                    {% set first_column_width = per_part_max_indent + 1 %}
+                    <th colspan="{{ first_column_width }}"></th>
+                    {% for part_id, part in sorted_parts %}
                         <th class="text-right">
                             {% if ambience['event']['parts']|length + ambience['event']['part_groups']|length > 1 %}
                                 {{ part['shortname'] }}
@@ -29,7 +33,7 @@
                             {% endif %}
                         </th>
                     {% endfor %}
-                    {% for part_group_id, part_group in ambience['event']['part_groups']|keydictsort(EntitySorter.event_part_group) %}
+                    {% for part_group_id, part_group in sorted_part_groups if part_group['part_ids']|length > 1 %}
                         <th class="text-right {% if loop.first %}b-left{% endif %}">
                             {{ part_group['shortname'] }}
                         </th>
@@ -39,36 +43,26 @@
             <tbody>
                 {% for stat, row in per_part_statistics.items() %}
                     <tr>
-                        {% if stat.indent %}
+                        {% for _ in range(stat.indent) %}
                             <th class="indent"></th>
-                            <th>{{ gettext(stat.value) }}</th>
-                        {% else %}
-                            <th colspan="2">{{ gettext(stat.value) }}</th>
-                        {% endif %}
-                        {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+                        {% endfor %}
+                        <th colspan="{{ first_column_width - stat.indent }}">{{ gettext(stat.value) }}</th>
+                        {% for part_id, part in sorted_parts %}
                             <td class="text-right">
-                                {% set query = stat.get_query(ambience['event'], part_id) %}
-                                {% set datum = row[part_id] %}
-                                {% if query %}
-                                    {{ util.href(
-                                        cdedblink('event/registration_query', query.serialize()) + "#query-results",
-                                        datum, anid="part_" + stat.name + "_" + part_id|string) }}
-                                {% else %}
-                                    {{ datum }}
-                                {% endif %}
+                                {% set datum = row['parts'][part_id] %}
+                                {% set query = stat.get_query(ambience['event'], part_id) or stat.get_query_by_ids(ambience['event'], datum) %}
+                                {{ util.href(
+                                    cdedblink(query.scope.get_target(), query.serialize_to_url()) + "#query-results",
+                                    datum|length, anid="part_" + stat.name + "_" + part_id|string) }}
                             </td>
                         {% endfor %}
-                        {% for part_group_id, part_group in ambience['event']['part_groups']|keydictsort(EntitySorter.event_part_group) %}
+                        {% for part_group_id, part_group in sorted_part_groups if part_group['part_ids']|length > 1 %}
                             <td class="text-right {% if loop.first %}b-left{% endif %}">
-                                {% set query = stat.get_query_part_group(ambience['event'], part_group_id) %}
-                                {% set datum = row[-part_group_id] %}
-                                {% if query %}
-                                    {{ util.href(
-                                        cdedblink('event/registration_query', query.serialize()) + "#query-results",
-                                        datum, anid="part_group_" + stat.name + "_" + part_group_id|string) }}
-                                {% else %}
-                                    {{ datum }}
-                                {% endif %}
+                                {% set datum = row['part_groups'][part_group_id] %}
+                                {% set query = stat.get_query_part_group(ambience['event'], part_group_id) or stat.get_query_by_ids(ambience['event'], datum) %}
+                                {{ util.href(
+                                    cdedblink(query.scope.get_target(), query.serialize_to_url()) + "#query-results",
+                                    datum|length, anid="part_group_" + stat.name + "_" + part_group_id|string) }}
                             </td>
                         {% endfor %}
                     </tr>
@@ -81,7 +75,7 @@
                 <thead>
                     <tr>
                         <th></th>
-                        {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
+                        {% for track_id, track in sorted_tracks %}
                             <th class="text-right">
                                 {% if ambience['event']['tracks']|length > 1 %}
                                     {{ track['shortname'] }}
@@ -90,26 +84,55 @@
                                 {% endif %}
                             </th>
                         {% endfor %}
+                        {% for part_id, part in sorted_parts if part['tracks']|length > 1 %}
+                            <th class="text-right {% if loop.first %}b-left{% endif %}">
+                                {{ part['shortname'] }}
+                            </th>
+                        {% endfor %}
+                        {% for part_group_id, part_group in sorted_part_groups if grouper._track_ids_per_part_group[part_group_id]|length > 1 %}
+                            <th class="text-right {% if loop.first %}b-left{% endif %}">
+                                {{ part_group['shortname'] }}
+                            </th>
+                        {% endfor %}
                     </tr>
                 </thead>
                 <tbody>
-                    {% for x, row in grouper.choice_track_map.items() %}
+                    {% for x, row in grouper %}
                         <tr>
                             <th>{% trans x = x + 1 %}In {{ x }}. Choice{% endtrans %}</th>
-                            {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
+                            {% for track_id, reg_ids in row['tracks'].items() %}
                                 <td class="text-right">
-                                    {% if row[track_id] is none %}
+                                    {% if reg_ids is none %}
                                         –
                                     {% else %}
                                         {% set query = grouper.get_query(ambience['event'], track_id, x) %}
-                                        {% set page = query.scope.get_target() %}
-                                        {% if query %}
-                                            {{ util.href(
-                                                cdedblink(page, query.serialize()) + "#query-results",
-                                                row[track_id]|length, anid="part_in_" + x|string +  "_choice_" + track_id|string) }}
-                                        {% else %}
-                                            {{ row[track_id]|length }}
-                                        {% endif %}
+                                        {{ util.href(
+                                            cdedblink(query.scope.get_target(), query.serialize_to_url()) + "#query-results",
+                                            reg_ids|length, anid="track_in_" + x|string +  "_choice_" + track_id|string) }}
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                            {% for part_id, reg_ids in row['parts'].items() if ambience['event']['parts'][part_id]['tracks']|length > 1 %}
+                                <td class="text-right {% if loop.first %}b-left{% endif %}">
+                                    {% if reg_ids is none %}
+                                        –
+                                    {% else %}
+                                        {% set query = grouper.get_query_part(ambience['event'], part_id, x) %}
+                                        {{ util.href(
+                                            cdedblink(query.scope.get_target(), query.serialize_to_url()) + "#query-results",
+                                            reg_ids|length, anid="part_in_" + x|string +  "_choice_" + part_id|string) }}
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                            {% for part_group_id, reg_ids in row['part_groups'].items() if grouper._track_ids_per_part_group[part_group_id]|length > 1 %}
+                                <td class="text-right {% if loop.first %}b-left{% endif %}">
+                                    {% if reg_ids is none %}
+                                        –
+                                    {% else %}
+                                        {% set query = grouper.get_query_part_group(ambience['event'], part_group_id, x) %}
+                                        {{ util.href(
+                                            cdedblink(query.scope.get_target(), query.serialize_to_url()) + "#query-results",
+                                            reg_ids|length, anid="part_group_in_" + x|string +  "_choice_" + part_group_id|string) }}
                                     {% endif %}
                                 </td>
                             {% endfor %}
@@ -120,19 +143,29 @@
                             <th>{{ gettext(stat.value) }}</th>
                             {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
                                 <td class="text-right">
-                                    {% if row[track_id] is none %}
-                                        –
-                                    {% else %}
-                                        {% set query = stat.get_query(ambience['event'], track_id) %}
-                                        {% set page = query.scope.get_target() %}
-                                        {% if query %}
-                                            {{ util.href(
-                                                cdedblink(page, query.serialize()) + "#query-results",
-                                                row[track_id], anid="part_" + stat.name + "_" + track_id|string) }}
-                                        {% else %}
-                                            {{ row[track_id] }}
-                                        {% endif %}
-                                    {% endif %}
+                                    {% set datum = row['tracks'][track_id] %}
+                                    {% set query = stat.get_query(ambience['event'], track_id) or stat.get_query_by_ids(ambience['event'], datum) %}
+                                    {{ util.href(
+                                        cdedblink(query.scope.get_target(), query.serialize_to_url()) + "#query-results",
+                                        datum|length, anid="track_" + stat.name + "_" + track_id|string) }}
+                                </td>
+                            {% endfor %}
+                            {% for part_id, part in sorted_parts if part['tracks']|length > 1 %}
+                                <td class="text-right {% if loop.first %}b-left{% endif %}">
+                                    {% set datum = row['parts'][part_id] %}
+                                    {% set query = stat.get_query_part(ambience['event'], part_id) or stat.get_query_by_ids(ambience['event'], datum) %}
+                                    {{ util.href(
+                                        cdedblink(query.scope.get_target(), query.serialize_to_url()) + "#query-results",
+                                        datum|length, anid="track_part_" + stat.name + "_" + part_id|string) }}
+                                </td>
+                            {% endfor %}
+                            {% for part_group_id, part_group in sorted_part_groups if grouper._track_ids_per_part_group[part_group_id]|length > 1 %}
+                                <td class="text-right {% if loop.first %}b-left{% endif %}">
+                                    {% set datum = row['part_groups'][part_group_id] %}
+                                    {% set query = stat.get_query_part_group(ambience['event'], part_group_id) or stat.get_query_by_ids(ambience['event'], datum) %}
+                                    {{ util.href(
+                                        cdedblink(query.scope.get_target(), query.serialize_to_url()) + "#query-results",
+                                        datum|length, anid="track_group_" + stat.name + "_" + part_group_id|string) }}
                                 </td>
                             {% endfor %}
                         </tr>

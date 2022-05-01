@@ -4,6 +4,7 @@
 
 import collections
 import datetime
+import io
 import itertools
 import operator
 import pathlib
@@ -12,10 +13,10 @@ import tempfile
 from typing import Any, Collection, Dict, List, Optional, Set, Tuple
 
 import magic
-import qrcode
-import qrcode.image.svg
+import segno
 import vobject
 import werkzeug.exceptions
+from subman.machine import SubscriptionPolicy
 from werkzeug import Response
 
 import cdedb.database.constants as const
@@ -38,7 +39,6 @@ from cdedb.frontend.common import (
 )
 from cdedb.ml_type_aux import MailinglistGroup
 from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
-from cdedb.subman.machine import SubscriptionPolicy
 from cdedb.validation import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
     PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS,
@@ -369,18 +369,10 @@ class CoreBaseFrontend(AbstractFrontend):
 
         vcard = self._create_vcard(rs, persona_id)
 
-        qr = qrcode.QRCode()
-        qr.add_data(vcard)
-        qr.make(fit=True)
-        qr_image = qr.make_image(qrcode.image.svg.SvgPathFillImage)
+        buffer = io.BytesIO()
+        segno.make_qr(vcard).save(buffer, kind='svg', scale=4)
 
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            temppath = pathlib.Path(tmp_dir, f"vcard-{persona_id}")
-            qr_image.save(str(temppath))
-            with open(temppath) as f:
-                data = f.read()
-
-        return self.send_file(rs, data=data, mimetype="image/svg+xml")
+        return self.send_file(rs, afile=buffer, mimetype="image/svg+xml")
 
     def _create_vcard(self, rs: RequestState, persona_id: int) -> str:
         """
@@ -862,7 +854,7 @@ class CoreBaseFrontend(AbstractFrontend):
         if len(result) == 1:
             return self.redirect_show_user(rs, result[0]["id"])
         elif result:
-            params = query.serialize()
+            params = query.serialize_to_url()
             rs.values.update(params)
             return self.user_search(rs, is_search=True, download=None,
                                     query=query)

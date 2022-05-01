@@ -283,7 +283,7 @@
     {%- endif %}
 {%- endmacro %}
 
-{% macro output_info(info, link) %}
+{% macro output_info(info, link=none) %}
     {%- if info %}
         <p class="help-block no-color">
             {{ make_icon('info-circle') }} {{ info }}
@@ -518,7 +518,6 @@
         role="radiogroup" if radio else "group",
         **{'aria-labelledby': arialabeledby}
     )|xmlattr }}>
-        {%- if arialabel %}<legend class="sr-only">{{ arialabel }}</legend>{% endif %}
         {% set entries = entries|sort(attribute=1) if sort else entries %}
         {% set col_width = 12 // slice %}
         {%- for column in entries|slice(slice) %}
@@ -839,9 +838,9 @@ attribute to each field of a dynamic row. #}
     Creates a HTML compliant mailto: URL (though not neccessarily RFC compliant)
     Additional header such as to, subject, body, cc, or bcc can be passed as kwargs
 #}
-{% macro mailto(address, name) -%}
+{% macro mailto(address, name=none) -%}
 mailto:
-{%- if name is defined %}{{ "{}%3C{}%3E".format(name|urlencode, address) }}{% else %}{{ address }}{% endif %}
+{%- if name is not none %}{{ "{}%3C{}%3E".format(name|urlencode, address) }}{% else %}{{ address }}{% endif %}
 {%- if kwargs %}?{{ kwargs|urlencode }}{% endif %}
 {%- endmacro %}
 
@@ -869,7 +868,7 @@ mailto:
     {% endif %}
 {% endmacro %}
 
-{% macro notification(ntype, id) %}
+{% macro notification(ntype, id='') %}
     {% with icontypes = {"success": "check-circle", "info": "info-circle", "warning": "exclamation-circle",
                          "error" : "times-circle"},
             alerttypes = {"success": "success", "info": "info", "warning": "warning", "error": "danger"},
@@ -961,4 +960,19 @@ mailto:
             {{ description }}
         {% endif %}
     {% endwith %}
+{% endmacro %}
+
+{% macro pager(page_name, entity_id, prev, next, title_attr='title') %}
+    <nav>
+        <ul class="pager">
+            {% if prev %}
+                <li class="previous">{{ util.href(cdedblink(page_name, {entity_id: prev["id"]}),
+                         '<span aria-hidden="true">&larr;</span> '|s + gettext("Previous"), title=prev[title_attr]) }}</li>
+            {% endif %}
+            {% if next %}
+                <li class="next">{{ util.href(cdedblink(page_name, {entity_id: next["id"]}),
+                         gettext("Next") + ' <span aria-hidden="true">&rarr;</span>'|s, title=next[title_attr]) }}</li>
+            {% endif %}
+        </ul>
+    </nav>
 {% endmacro %}

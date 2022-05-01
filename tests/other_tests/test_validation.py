@@ -11,7 +11,9 @@ import pytz
 
 import cdedb.database.constants as const
 import cdedb.validation as validate
-from cdedb.common import ValidationWarning
+from cdedb.common import ValidationWarning, now
+from cdedb.config import Config
+from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.validationtypes import (
     IBAN, JSON, Email, GenesisCase, PasswordStrength, Persona, Phone, PrintableASCII,
     PrintableASCIIType, SafeStr, StringType, Vote,
@@ -592,3 +594,47 @@ class TestValidation(unittest.TestCase):
             ([0, "Test", 2, 3], None, ValueError),
             ([0, None, 2, 3], None, TypeError),
         ])
+
+    def test_query_datetime(self) -> None:
+        conf = Config()
+        timestamp = now()
+        query_spec = {'time': QuerySpecEntry("datetime", "time")}
+
+        query = Query(
+            scope=QueryScope.core_user,
+            spec=query_spec,
+            fields_of_interest=["time"],
+            constraints=[("time", QueryOperators.equal, timestamp)],
+            order=[],
+        )
+
+        # With `timezone_aware`, tzinfo is kept.
+        self.assertEqual(
+            query.serialize(timezone_aware=True)['qval_time'],
+            timestamp.isoformat()
+        )
+
+        # Default is `False`.
+        # This normalizes the timestamp to default timezone, then strips it away.
+        serialized_timestamp = query.serialize_to_url()['qval_time']
+        self.assertEqual(
+            query.serialize(timezone_aware=False)['qval_time'],
+            serialized_timestamp
+        )
+        self.assertEqual(
+            serialized_timestamp,
+            timestamp.astimezone(conf['DEFAULT_TIMEZONE']).isoformat().split('+')[0]
+        )
+
+        # `serialize_to_url` is an alias for `timezone_aware=False`
+        self.assertEqual(
+            query.serialize_to_url(),
+            query.serialize(timezone_aware=False)
+        )
+
+        # The serialized timestampt gets parsed back to the original one.
+        self.assertEqual(
+            validate.validate_assert(
+                datetime.datetime, serialized_timestamp, ignore_warnings=False),
+            timestamp
+        )

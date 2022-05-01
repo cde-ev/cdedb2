@@ -24,6 +24,7 @@
 {% endblock %}
 
 {% macro print_vote(votestring) %}
+    {%- if votestring -%} {# avoid error if votestring is empty #}
     {%- for candidate_level in votestring.split(">") -%}
         {%- for candidate in candidate_level.split("=") -%}
             {{- candidates[candidate] -}}
@@ -35,6 +36,7 @@
             {{ nbsp }}<span class="result-separator">></span>{{ nbsp }}
         {%- endif -%}
     {%- endfor -%}
+    {%- endif -%}
 {% endmacro %}
 
 {% block content %}
@@ -229,6 +231,6 @@
             {% endfor %}
         </div>
 
-    {{ ballot_meta.show_navigation(page_name="assembly/show_ballot_result") }}
+    {{ util.pager("assembly/show_ballot_result", 'ballot_id', prev_ballot, next_ballot) }}
 
 {% endblock %}

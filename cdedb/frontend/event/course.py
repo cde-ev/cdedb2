@@ -35,6 +35,7 @@ class EventCourseMixin(EventBaseFrontend):
         """List courses from an event."""
         if (not rs.ambience['event']['is_course_list_visible']
                 and not (event_id in rs.user.orga or self.is_admin(rs))):
+            rs.ignore_validation_errors()
             rs.notify("warning", n_("Course list not published yet."))
             return self.redirect(rs, "event/show_event")
         if rs.has_validation_errors() or not track_ids:
@@ -84,6 +85,19 @@ class EventCourseMixin(EventBaseFrontend):
             instructors = self.coreproxy.get_personas(rs, instructor_ids)
             params['instructor_emails'] = [p['username']
                                            for p in instructors.values()]
+
+            course_ids = self.eventproxy.list_courses(rs, event_id=event_id).keys()
+            courses = self.eventproxy.get_courses(rs, course_ids)
+            sorted_ids = xsorted(
+                course_ids, key=lambda id_: EntitySorter.course(courses[id_]))
+            i = sorted_ids.index(course_id)
+            for c in courses.values():
+                c['label'] = f"{c['nr']}. {c['shortname']}"
+
+            params['prev_course'] = courses[sorted_ids[i - 1]] if i > 0 else None
+            params['next_course'] =\
+                courses[sorted_ids[i + 1]] if i + 1 < len(sorted_ids) else None
+
         return self.render(rs, "course/show_course", params)
 
     @access("event")

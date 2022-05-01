@@ -51,14 +51,11 @@ it right away.
   redirect and cause the entered data to be lost.
 * Email addresses are lower-cased. (This has to be taken into account during
   migration!)
-* We should always provide feedback to the user if an action was
-  successful. Basically this means, that in the frontend every POST action
-  should cause a notification.
 * Most templates should be rendered at exactly one point. That means that if
   other methods which want to redisplay the content need to call this
   point. Hence the rendering point must be able to cope with user input (as
   in data which failed to validate, but should not be discarded).
-* Generally use a line length limit of 80 columns, except for templates,
+* Generally use a line length limit of 88 columns, except for templates,
   where 120 columns seems appropriate.
 * If a function is documented to return a default return code this means,
   that it returns a positive number on success, zero if there was an error

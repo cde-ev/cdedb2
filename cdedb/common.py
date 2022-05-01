@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 """Global utility functions."""
-
 import collections
 import collections.abc
 import datetime
@@ -384,13 +383,13 @@ def make_proxy(backend: B, internal: bool = False) -> B:
     return cast(B, Proxy())
 
 
-def make_root_logger(name: str, logfile_path: PathLike,
-                     log_level: int, syslog_level: int = None,
-                     console_log_level: int = None) -> logging.Logger:
+def setup_logger(name: str, logfile_path: pathlib.Path,
+                 log_level: int, syslog_level: int = None,
+                 console_log_level: int = None) -> logging.Logger:
     """Configure the :py:mod:`logging` module.
 
     Since this works hierarchical, it should only be necessary to call this
-     once and then every child logger is routed through this configured logger.
+    once and then every child logger is routed through this configured logger.
     """
     logger = logging.getLogger(name)
     if logger.handlers:
@@ -400,7 +399,7 @@ def make_root_logger(name: str, logfile_path: PathLike,
     logger.setLevel(log_level)
     formatter = logging.Formatter(
         '[%(asctime)s,%(name)s,%(levelname)s] %(message)s')
-    file_handler = logging.FileHandler(str(logfile_path))
+    file_handler = logging.FileHandler(str(logfile_path), delay=True)
     file_handler.setLevel(log_level)
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
@@ -414,7 +413,6 @@ def make_root_logger(name: str, logfile_path: PathLike,
         console_handler.setLevel(console_log_level)
         console_handler.setFormatter(formatter)
         logger.addHandler(console_handler)
-    logger.debug(f"Configured logger {name}.")
     return logger
 
 
@@ -648,8 +646,68 @@ def get_country_code_from_country(rs: RequestState, country: str) -> str:
     return country
 
 
+def make_persona_forename(persona: CdEDBObject,
+                          only_given_names: bool = False,
+                          only_display_name: bool = False,
+                          given_and_display_names: bool = False) -> str:
+    """Construct the forename of a persona according to the display name specification.
+
+    The name specification can be found at the documentation page about
+    "User Experience Conventions".
+    """
+    if only_display_name + only_given_names + given_and_display_names > 1:
+        raise RuntimeError(n_("Invalid use of keyword parameters."))
+    display_name: str = persona.get('display_name', "")
+    given_names: str = persona['given_names']
+    if only_given_names:
+        return given_names
+    elif only_display_name:
+        return display_name
+    elif given_and_display_names:
+        if not display_name or display_name == given_names:
+            return given_names
+        else:
+            return f"{given_names} ({display_name})"
+    elif display_name and display_name in given_names:
+        return display_name
+    return given_names
+
+
 Sortkey = Tuple[Union[str, int, datetime.datetime], ...]
 KeyFunction = Callable[[CdEDBObject], Sortkey]
+
+
+def _make_persona_sorter(only_given_names: bool = False,
+                        only_display_name: bool = False,
+                        given_and_display_names: bool = False,
+                        family_name_first: bool = True) -> KeyFunction:
+    """Create a function to sort names accordingly to the display name specification
+
+    The returned key function accepts a persona dict and returns a sorting key,
+    accordingly to the specification made at creation. The name specification can
+    be found at the documentation page about "User Experience Conventions".
+
+    For the sake of simplicity, we ignore titles for sorting and always use
+    forename and surname as sort keys.
+
+    :param family_name_first: Whether the forename or the surname take precedence
+        as sorting key.
+    """
+
+    def sorter(persona: CdEDBObject) -> Sortkey:
+        forename = make_persona_forename(
+            persona, only_given_names=only_given_names,
+            only_display_name=only_display_name,
+            given_and_display_names=given_and_display_names)
+
+        forename = forename.lower()
+        family_name = persona["family_name"].lower()
+        if family_name_first:
+            return (family_name, forename, persona["id"])
+        else:
+            return (forename, family_name, persona["id"])
+
+    return sorter
 
 
 # noinspection PyRedundantParentheses
@@ -660,28 +718,10 @@ class EntitySorter:
     `sorted` or `keydictsort_filter`.
     """
 
-    @staticmethod
-    def given_names(persona: CdEDBObject) -> Sortkey:
-        return (persona['given_names'].lower(),)
-
-    @staticmethod
-    def family_name(persona: CdEDBObject) -> Sortkey:
-        return (persona['family_name'].lower(),)
-
-    @staticmethod
-    def given_names_first(persona: CdEDBObject) -> Sortkey:
-        return (persona['given_names'].lower(),
-                persona['family_name'].lower(),
-                persona['id'])
-
-    @staticmethod
-    def family_name_first(persona: CdEDBObject) -> Sortkey:
-        return (persona['family_name'].lower(),
-                persona['given_names'].lower(),
-                persona['id'])
+    make_persona_sorter = staticmethod(_make_persona_sorter)
 
     # TODO decide whether we sort by first or last name
-    persona = family_name_first
+    persona = staticmethod(_make_persona_sorter(family_name_first=True))
 
     @staticmethod
     def email(persona: CdEDBObject) -> Sortkey:
@@ -707,6 +747,11 @@ class EntitySorter:
     @staticmethod
     def lodgement(lodgement: CdEDBObject) -> Sortkey:
         return (lodgement['title'], lodgement['id'])
+
+    @staticmethod
+    def lodgement_by_group(lodgement: CdEDBObject) -> Sortkey:
+        return (lodgement['group_title'] is None, lodgement['group_title'],
+                lodgement['group_id'], lodgement['title'], lodgement['id'])
 
     @staticmethod
     def lodgement_group(lodgement_group: CdEDBObject) -> Sortkey:
@@ -1812,16 +1857,17 @@ else:
 
 #: List of all roles we consider admin roles. Changes in these roles must be
 #: approved by two meta admins in total. Values are required roles.
+#: Translation of keys is needed for the privilege change page.
 ADMIN_KEYS = {
-    "is_meta_admin": "is_cde_realm",
-    "is_core_admin": "is_cde_realm",
-    "is_cde_admin": "is_cde_realm",
-    "is_finance_admin": "is_cde_admin",
-    "is_event_admin": "is_event_realm",
-    "is_ml_admin": "is_ml_realm",
-    "is_assembly_admin": "is_assembly_realm",
-    "is_cdelokal_admin": "is_ml_realm",
-    "is_auditor": "is_cde_realm",
+    n_("is_meta_admin"): "is_cde_realm",
+    n_("is_core_admin"): "is_cde_realm",
+    n_("is_cde_admin"): "is_cde_realm",
+    n_("is_finance_admin"): "is_cde_admin",
+    n_("is_event_admin"): "is_event_realm",
+    n_("is_ml_admin"): "is_ml_realm",
+    n_("is_assembly_admin"): "is_assembly_realm",
+    n_("is_cdelokal_admin"): "is_ml_realm",
+    n_("is_auditor"): "is_cde_realm",
 }
 
 #: List of all admin roles who actually have a corresponding realm with a user role.
@@ -1934,12 +1980,13 @@ EVENT_SCHEMA_VERSION = (15, 5)
 DEFAULT_NUM_COURSE_CHOICES = 3
 
 META_INFO_FIELDS = (
-    "Finanzvorstand_Name", "Finanzvorstand_Vorname", "Finanzvorstand_Ort",
-    "Finanzvorstand_Adresse_Einzeiler", "Finanzvorstand_Adresse_Zeile2",
-    "Finanzvorstand_Adresse_Zeile3", "Finanzvorstand_Adresse_Zeile4",
-    "CdE_Konto_Inhaber", "CdE_Konto_IBAN", "CdE_Konto_BIC", "CdE_Konto_Institut",
-    "Vorstand",
-    "banner_before_login", "banner_after_login", "banner_genesis", "cde_misc"
+    n_("Finanzvorstand_Name"), n_("Finanzvorstand_Vorname"), n_("Finanzvorstand_Ort"),
+    n_("Finanzvorstand_Adresse_Einzeiler"), n_("Finanzvorstand_Adresse_Zeile2"),
+    n_("Finanzvorstand_Adresse_Zeile3"), n_("Finanzvorstand_Adresse_Zeile4"),
+    n_("CdE_Konto_Inhaber"), n_("CdE_Konto_IBAN"), n_("CdE_Konto_BIC"),
+    n_("CdE_Konto_Institut"), n_("Vorstand"),
+    n_("banner_before_login"), n_("banner_after_login"), n_("banner_genesis"),
+    n_("cde_misc")
 )
 
 #: All columns deciding on the current status of a persona

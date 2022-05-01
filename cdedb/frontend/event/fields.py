@@ -339,4 +339,4 @@ class EventFieldMixin(EventBaseFrontend):
             raise NotImplementedError(f"Unknown kind {kind}.")
 
         redirect = self.FIELD_REDIRECT[kind]
-        return self.redirect(rs, redirect, query.serialize())
+        return self.redirect(rs, redirect, query.serialize_to_url())

@@ -2,25 +2,28 @@
 # pylint: disable=missing-module-docstring
 
 import unittest
+from typing import Any
 
 import psycopg2.extensions
 
-from cdedb.config import BasicConfig, Config, SecretsConfig
+from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import (
     Atomizer, ConnectionContainer, IrradiatedConnection, connection_pool_factory,
 )
 
-_BASICCONF = BasicConfig()
-_CONF = Config()
-_SECRECTSCONF = SecretsConfig()
-
 
 class TestDatabase(unittest.TestCase):
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.config = Config()
+        self.secrets = SecretsConfig()
+
     def test_instant_connection(self) -> None:
         factory = connection_pool_factory(
-            _CONF["CDB_DATABASE_NAME"],
+            self.config["CDB_DATABASE_NAME"],
             ("cdb_anonymous", "cdb_persona", "cdb_admin"),
-            _SECRECTSCONF, _CONF["DB_HOST"], _CONF["DB_PORT"])
+            self.secrets, self.config["DB_HOST"], self.config["DB_PORT"])
         with factory["cdb_persona"] as conn:
             self.assertIsInstance(conn, psycopg2.extensions.connection)
             self.assertIsInstance(conn, IrradiatedConnection)
@@ -30,16 +33,16 @@ class TestDatabase(unittest.TestCase):
 
     def test_less_users(self) -> None:
         factory = connection_pool_factory(
-            _CONF["CDB_DATABASE_NAME"], ("cdb_anonymous", "cdb_admin"),
-            _SECRECTSCONF, _CONF["DB_HOST"], _CONF["DB_PORT"])
+            self.config["CDB_DATABASE_NAME"], ("cdb_anonymous", "cdb_admin"),
+            self.secrets, self.config["DB_HOST"], self.config["DB_PORT"])
         with self.assertRaises(ValueError):
             # pylint: disable=pointless-statement
             factory["cdb_persona"]  # exception in __getitem__
 
     def test_atomizer(self) -> None:
         factory = connection_pool_factory(
-            _CONF["CDB_DATABASE_NAME"],
-            ("cdb_persona",), _SECRECTSCONF, _CONF["DB_HOST"], _CONF["DB_PORT"])
+            self.config["CDB_DATABASE_NAME"], ("cdb_persona",), self.secrets,
+            self.config["DB_HOST"], self.config["DB_PORT"])
         conn = factory["cdb_persona"]
 
         rs = ConnectionContainer()
@@ -56,8 +59,8 @@ class TestDatabase(unittest.TestCase):
 
     def test_suppressed_exception(self) -> None:
         factory = connection_pool_factory(
-            _CONF["CDB_DATABASE_NAME"],
-            ("cdb_admin",), _SECRECTSCONF, _CONF["DB_HOST"], _CONF["DB_PORT"])
+            self.config["CDB_DATABASE_NAME"], ("cdb_admin",), self.secrets,
+            self.config["DB_HOST"], self.config["DB_PORT"])
         conn = factory["cdb_admin"]
 
         rs = ConnectionContainer()

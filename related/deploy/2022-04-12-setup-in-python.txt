@@ -1,0 +1,13 @@
+# run the following commands
+sudo -i
+apt install python3-click
+python3 -m pip install types-click
+mkdir /etc/cdedb
+mv /cdedb2/cdedb/localconfig.py /etc/cdedb/config.py
+mv /etc/cdedb-application-config.py /etc/cdedb/secrets.py
+
+# optionally make /etc/cdedb/config.py readable by all
+# keep /etc/cdedb/secrets.py only readable by www-data!
+
+# add to /etc/cdedb/config.py:
+SECRETS_CONFIGPATH = pathlib.Path("/etc/cdedb/secrets.py")

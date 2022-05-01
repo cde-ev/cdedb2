@@ -7,19 +7,17 @@ on boilerplate.
 
 Additionally this provides some level of guidance on how to interact
 with the production environment.
-
-Note that some imports are only made when they are actually needed, so that this
-facility may be used in a minimized environment, such as the ldap docker container.
 """
 
 import getpass
+import gettext
 import os
 import pathlib
 import tempfile
 import time
 from pkgutil import resolve_name
 from types import TracebackType
-from typing import IO, TYPE_CHECKING, Any, Dict, Mapping, Optional, Tuple, Type
+from typing import IO, Any, Dict, Mapping, Optional, Tuple, Type
 
 import psycopg2
 import psycopg2.extensions
@@ -28,8 +26,9 @@ import psycopg2.extras
 from cdedb.common import (
     ALL_ROLES, AbstractBackend, PathLike, RequestState, User, make_proxy, n_,
 )
-from cdedb.config import Config, SecretsConfig
+from cdedb.config import Config, SecretsConfig, get_configpath, set_configpath
 from cdedb.database.connection import Atomizer, IrradiatedConnection
+from cdedb.frontend.common import setup_translations
 
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
@@ -40,28 +39,56 @@ __all__ = ['DryRunError', 'Script', 'ScriptAtomizer']
 class TempConfig:
     """Provide a thin wrapper around a temporary file.
 
-    The advantage ot this is that it works with both a given configpath or
-    config keyword arguments."""
+    The advantage of this is that it works with both a given configpath xor config
+    keyword arguments.
+
+    If config keyword arguments are given, the config options from the real configpath
+    (taken from the environment) are used as fallback values.
+    If a configpath is given, only the config options specified there are taken into
+    account.
+    """
+
     def __init__(self, configpath: PathLike = None, **config: Any):
-        if config and configpath:
-            raise ValueError("Mustn't specify both config and configpath.")
+        if (not configpath and not config) or (configpath and config):
+            raise ValueError(f"Provide exactly one of config ({config}) and"
+                             f" configpath ({configpath})!")
         self._configpath = configpath
         self._config = config
+        # this will be used to hold the current configpath from the environment
+        # and restore it later on
+        self._real_configpath: pathlib.Path
         self._f: Optional[IO[str]] = None
 
-    def __enter__(self) -> Optional[PathLike]:
+    def __enter__(self) -> None:
+        # store the real configpath
+        self._real_configpath = get_configpath()
         if self._config:
+            secrets = SecretsConfig()
             self._f = tempfile.NamedTemporaryFile("w", suffix=".py")
             f = self._f.__enter__()
+            # copy the real_config into the temporary config
+            with open(self._real_configpath, "r") as cf:
+                real_config = cf.read()
+            f.write(real_config)
+            # now, add all keyword config options. Since they are added _after_ the
+            # real_config options, they overwrite them if necessary
             for k, v in self._config.items():
-                f.write(f"{k} = {v}\n")
+                if k in secrets:
+                    msg = ("Override secret config options via kwarg is not possible."
+                           " Please use the SECRET_CONFIGPATH config argument instead.")
+                    raise ValueError(msg)
+                f.write(f"\n{k} = {v}")
             f.flush()
-            return f.name
-        return self._configpath
+            set_configpath(f.name)
+        else:
+            assert self._configpath is not None
+            set_configpath(self._configpath)
 
     def __exit__(self, exc_type: Optional[Type[Exception]],
                  exc_val: Optional[Exception],
                  exc_tb: Optional[TracebackType]) -> Optional[bool]:
+        # restore the real configpath
+        set_configpath(self._real_configpath)
         if self._f:
             return self._f.__exit__(exc_type, exc_val, exc_tb)
         return False
@@ -117,6 +144,10 @@ class Script:
 
         # Read configurable data from environment and/or input.
         configpath = configpath or os.environ.get("SCRIPT_CONFIGPATH")
+        # if no special configpath and no config options are present, use the default
+        # way to obtain the configpath from the environment
+        if not configpath and not config:
+            configpath = get_configpath()
         # Allow overriding for evolution trial.
         if persona_id is None:
             persona_id = int(os.environ.get("SCRIPT_PERSONA_ID", -1))
@@ -131,13 +162,11 @@ class Script:
         self._atomizer: Optional[ScriptAtomizer] = None
         self._conn: psycopg2.extensions.connection = None
         self._tempconfig = TempConfig(configpath, **config)
-        with self._tempconfig as p:
-            self.config = Config(p)
-            self._secrets = SecretsConfig(p)
-        if TYPE_CHECKING:
-            import gettext  # pylint: disable=import-outside-toplevel
-            self._translations: Optional[Mapping[str, gettext.NullTranslations]]
-            self._backends: Dict[Tuple[str, bool], AbstractBackend]
+        with self._tempconfig:
+            self.config = Config()
+            self._secrets = SecretsConfig()
+        self._translations: Optional[Mapping[str, gettext.NullTranslations]]
+        self._backends: Dict[Tuple[str, bool], AbstractBackend]
         self._translations = None
         self._backends = {}
         self._request_states: Dict[int, RequestState] = {}
@@ -153,6 +182,7 @@ class Script:
             "dbname": dbname,
             "user": dbuser,
             "password": self._secrets["CDB_DATABASE_ROLES"][dbuser],
+            # TODO default to DB_PORT and provide flag for skipping pgbouncer
             # Temporary workaround because we cannot pass config options correctly.
             "host":
                 "cdb" if pathlib.Path("/CONTAINER").is_file()
@@ -168,9 +198,9 @@ class Script:
         """Create backend, either as a proxy or not."""
         if ret := self._backends.get((realm, proxy)):
             return ret
-        with self._tempconfig as p:
+        with self._tempconfig:
             backend_name = self.backend_map[realm]
-            backend = resolve_name(f"cdedb.backend.{realm}.{backend_name}")(p)
+            backend = resolve_name(f"cdedb.backend.{realm}.{backend_name}")()
         self._backends.update({
             (realm, True): make_proxy(backend),
             (realm, False): backend,
@@ -183,9 +213,6 @@ class Script:
         if ret := self._request_states.get(persona_id):
             return ret
         if self._translations is None:
-            from cdedb.frontend.common import (  # pylint: disable=import-outside-toplevel
-                setup_translations,
-            )
             self._translations = setup_translations(self.config)
         rs = RequestState(
             sessionkey=None,

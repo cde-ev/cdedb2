@@ -2,32 +2,29 @@
 # pylint: disable=missing-module-docstring
 
 import multiprocessing
-import os
 import threading
 import unittest
 
 from cdedb.backend.common import DatabaseLock
 from cdedb.backend.core import CoreBackend
 from cdedb.common import PrivilegeError, RequestState, User, make_proxy, now
-from cdedb.config import BasicConfig, Config, SecretsConfig
+from cdedb.config import Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.database.constants import LockType
 from cdedb.frontend.common import setup_translations
 
-_BASICCONF = BasicConfig()
-
 
 def database_lock_job(
-        configpath: str, first: threading.Semaphore,
-        second: threading.Semaphore, control: threading.Semaphore,
+        first: threading.Semaphore, second: threading.Semaphore,
+        control: threading.Semaphore,
         signal: "multiprocessing.Queue[int]") -> bool:
     """See test_database_lock below.
 
     This needs to be top-level as we want to pickle it for multiprocessing.
     """
-    config = Config(configpath)
-    secrets = SecretsConfig(configpath)
+    config = Config()
+    secrets = SecretsConfig()
     connpool = connection_pool_factory(
         config["CDB_DATABASE_NAME"], DATABASE_ROLES,
         secrets, config["DB_HOST"], config["DB_PORT"])
@@ -80,16 +77,14 @@ class TestBackendCommon(unittest.TestCase):
             proxy.verify_password  # exception in __getitem__
 
     def test_database_lock(self) -> None:
-        configpath = os.environ['CDEDB_TEST_CONFIGPATH']
-
         manager: multiprocessing.managers.SyncManager
         with multiprocessing.Manager() as manager:  # type: ignore[assignment]
             semaphoreA = manager.Semaphore()
             semaphoreB = manager.Semaphore()
             control = manager.Semaphore()
             backchannel = manager.Queue()
-            parameters = [(configpath, semaphoreA, semaphoreB, control, backchannel),
-                          (configpath, semaphoreB, semaphoreA, control, backchannel)]
+            parameters = [(semaphoreA, semaphoreB, control, backchannel),
+                          (semaphoreB, semaphoreA, control, backchannel)]
 
             control.acquire()
             with multiprocessing.Pool(2) as pool:
