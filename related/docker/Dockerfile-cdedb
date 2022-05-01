@@ -52,6 +52,7 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3-passlib \
     python3-bleach \
     python3-magic \
+    python3-segno \
     python3-sphinx-rtd-theme \
     python3-zxcvbn \
     python3-markdown \
@@ -63,7 +64,6 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3-pip \
     python3-click \
     python3-freezegun \
-    python3-segno \
     flake8 \
     isort \
     pylint \
