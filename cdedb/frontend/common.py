@@ -554,7 +554,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
           tries to save the file to disk
         :param inline: Set content disposition to force display in browser (if
           True) or to force a download box (if False).
-        :param afile: should be opened in binary mode
+        :param afile: Should be opened in binary mode. Will be reset to start of file.
         :param encoding: The character encoding to be uses, if `data` is given
           as str
         """
@@ -568,6 +568,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             f = pathlib.Path(path).open("rb")
             payload = werkzeug.wsgi.wrap_file(rs.request.environ, f)
         elif afile:
+            # Setting the buffer to 0 might be technically wrong in some theoretical
+            # case, but this is much more easily usable.
+            afile.seek(0)
             payload = werkzeug.wsgi.wrap_file(rs.request.environ, afile)
         elif data:
             if isinstance(data, str):

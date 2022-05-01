@@ -4,6 +4,7 @@
 import copy
 import csv
 import datetime
+import decimal
 import json
 import re
 import tempfile
@@ -11,6 +12,7 @@ import unittest
 from typing import Sequence
 
 import lxml.etree
+import segno.helpers
 import webtest
 
 import cdedb.database.constants as const
@@ -18,7 +20,8 @@ from cdedb.common import (
     ADMIN_VIEWS_COOKIE_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, now, unwrap, xsorted,
 )
 from cdedb.filter import iban_filter
-from cdedb.frontend.common import CustomCSVDialect
+from cdedb.frontend.common import CustomCSVDialect, make_event_fee_reference
+from cdedb.frontend.event import EventFrontend
 from cdedb.query import QueryOperators
 from tests.common import (
     USER_DICT, FrontendTest, UserObject, as_users, event_keeper, prepsql, storage,
@@ -1496,6 +1499,43 @@ etc;anything else""", f['entries_2'].value)
                             div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
         self.assertPresence("Anmeldung durch Teilnehmer bearbeitet.",
                             div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
+
+    @as_users("berta")
+    def test_registration_fee_qrcode(self) -> None:
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Meine Anmeldung")
+        self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
+        self.assertPresence("Überweisung")
+        self.assertPresence("Betrag 10,50 €", div="registrationsummary")
+        self.assertPresence("QR", div="show-registration-fee-qr")
+        save = self.response
+        self.traverse("QR")
+        print(self.response.text[0])
+        self.response = save
+
+        event = self.event.get_event(self.key, 1)
+        persona = self.core.get_persona(self.key, self.user['id'])
+        payment_data = {
+            'meta_info': self.core.get_meta_info(self.key),
+            'reference': make_event_fee_reference(persona, event),
+            'to_pay': decimal.Decimal("10.50"), 'iban': event['iban'],
+        }
+
+        event_frontend: EventFrontend = self.app.app.event
+        qr_data = event_frontend._registration_fee_qr_data(payment_data)  # pylint: disable=protected-access
+
+        qr_expectation = b"""\
+BCD
+002
+2
+SCT
+BFSWDE33XXX
+CdE e.V.
+DE26370205000008068900
+EUR10.5
+
+
+Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
+        self.assertEqual(qr_expectation, segno.helpers._make_epc_qr_data(**qr_data))  # type: ignore[attr-defined]  # pylint: disable=protected-access
 
     @as_users("anton")
     def test_registration_status(self) -> None:
