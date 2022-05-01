@@ -208,20 +208,21 @@ class EventBaseFrontend(AbstractUserFrontend):
                       for e in registrations.values()), event_id)
 
         all_sortkeys = {
-            "given_names": EntitySorter.given_names,
-            "family_name": EntitySorter.family_name,
+            "given_names": EntitySorter.make_persona_sorter(family_name_first=False),
+            "family_name": EntitySorter.make_persona_sorter(family_name_first=True),
             "email": EntitySorter.email,
             "address": EntitySorter.address,
             "course": EntitySorter.course,
-            "persona": EntitySorter.persona,
+            # the default sorting is, in contrast to EntitySorter.persona, by forename
+            "persona": EntitySorter.make_persona_sorter(family_name_first=False),
         }
 
         # FIXME: the result can have different lengths depending an amount of
         #  courses someone is assigned to.
         def sort_rank(sortkey: str, anid: int) -> Sortkey:
             prim_sorter: KeyFunction = all_sortkeys.get(
-                sortkey, EntitySorter.persona)
-            sec_sorter: KeyFunction = EntitySorter.persona
+                sortkey, all_sortkeys["persona"])
+            sec_sorter: KeyFunction = all_sortkeys["persona"]
             if sortkey == "course":
                 if not len(part_ids) == 1:
                     raise werkzeug.exceptions.BadRequest(n_(

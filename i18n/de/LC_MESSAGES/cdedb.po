@@ -188,6 +188,9 @@ msgstr "Löschen von %(type)s wird verhindert von %(block)s."
 msgid "Must have privileged access to change ballot."
 msgstr "Fehlende Zugriffsrechte zur Änderung der Abstimmung."
 
+msgid "Invalid use of keyword parameters."
+msgstr "Ungültige Funktionsparameter."
+
 #: cdedb/backend/assembly.py:958 cdedb/frontend/assembly/__init__.py:1384
 #: cdedb/frontend/assembly/__init__.py:1420
 msgid "Unable to modify active ballot."

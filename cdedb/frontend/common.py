@@ -76,8 +76,8 @@ from cdedb.common import (
     EntitySorter, Error, Notification, NotificationType, PathLike, PrivilegeError,
     RequestState, Role, User, ValidationWarning, _tdelta, asciificator,
     decode_parameter, encode_parameter, format_country_code,
-    get_localized_country_codes, glue, json_serialize, make_proxy, merge_dicts, n_, now,
-    roles_to_db_role, setup_logger, unwrap,
+    get_localized_country_codes, glue, json_serialize, make_persona_forename,
+    make_proxy, merge_dicts, n_, now, roles_to_db_role, setup_logger, unwrap,
 )
 from cdedb.config import Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -2181,24 +2181,13 @@ def make_persona_name(persona: CdEDBObject,
     For a full specification, which name variant should be used in which context, see
     the documentation page about "User Experience Conventions".
     """
-    display_name: str = persona.get('display_name', "")
-    given_names: str = persona['given_names']
+    forename = make_persona_forename(
+        persona, only_given_names=only_given_names, only_display_name=only_display_name,
+        given_and_display_names=given_and_display_names)
     ret = []
     if with_titles and persona.get('title'):
         ret.append(persona['title'])
-    if only_given_names:
-        ret.append(given_names)
-    elif only_display_name:
-        ret.append(display_name)
-    elif given_and_display_names:
-        if not display_name or display_name == given_names:
-            ret.append(given_names)
-        else:
-            ret.append(f"{given_names} ({display_name})")
-    elif display_name and display_name in given_names:
-        ret.append(display_name)
-    else:
-        ret.append(given_names)
+    ret.append(forename)
     if with_family_name:
         ret.append(persona['family_name'])
     if with_titles and persona.get('name_supplement'):
