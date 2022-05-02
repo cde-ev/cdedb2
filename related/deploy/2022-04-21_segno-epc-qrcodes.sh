@@ -1,2 +1,2 @@
 sudo apt-get install python3-segno
-sudo apt-get uninstall python3-qrcode
+sudo apt-get remove python3-qrcode
