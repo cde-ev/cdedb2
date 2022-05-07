@@ -484,7 +484,7 @@
     {%- set anid = anid or "input-textarea-{}".format(name) %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, markdown=markdown) %}
         {{- input_textarea(name, readonly, defaultvalue, anid, maxlength=maxlength, rows=rows, attributes=attributes,
-                          aclass='form-control ' + (aclass or '')) }}
+                           actualreadonly=actualreadonly, aclass='form-control ' + (aclass or '')) }}
     {%- endcall %}
 {%- endmacro %}
 
