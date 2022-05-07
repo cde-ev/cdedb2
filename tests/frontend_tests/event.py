@@ -3826,15 +3826,15 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertTitle("Checkin (Große Testakademie 2222)")
 
         # Check the display of custom datafields.
-        self.assertPresence("anzahl_GROSSBUCHSTABEN 4", div="checkin-fields-1")
-        self.assertPresence("anzahl_GROSSBUCHSTABEN 3", div="checkin-fields-2")
-        self.assertPresence("anzahl_GROSSBUCHSTABEN 2", div="checkin-fields-6")
+        self.assertPresence("Anzahl Großbuchstaben 4", div="checkin-fields-1")
+        self.assertPresence("Anzahl Großbuchstaben 3", div="checkin-fields-2")
+        self.assertPresence("Anzahl Großbuchstaben 2", div="checkin-fields-6")
         self.traverse("Datenfelder konfigurieren")
         f = self.response.forms['fieldsummaryform']
         f['checkin_8'].checked = False
         self.submit(f)
         self.traverse("Checkin")
-        self.assertNonPresence("anzahl_GROSSBUCHSTABEN", div="checkin-list")
+        self.assertNonPresence("Anzahl Großbuchstaben", div="checkin-list")
 
         # Check the filtering per event part.
         self.assertPresence("Anton Armin", div="checkin-list")
