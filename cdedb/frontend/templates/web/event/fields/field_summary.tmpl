@@ -71,7 +71,7 @@
                 </div>
                 {% if drow_name('association', field_id) not in values %}
                     <div class="association-input-container">
-                        {{ util.form_input_select(label=gettext("Fields for"), name=drow_name('association', field_id),
+                        {{ util.form_input_select(label=gettext("Category"), name=drow_name('association', field_id),
                                                   entries=enums['FieldAssociations']|enum_entries(processing=gettext),
                                                   attributes=util.drow_basename('association')|s if newrow else '',
                                                   actualreadonly=not changeable,
