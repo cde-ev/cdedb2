@@ -11091,7 +11091,7 @@ msgstr "Datentyp"
 
 #: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:75
 msgid "Category"
-msgstr "Kategory"
+msgstr "Kategorie"
 
 #: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:84
 msgid "Options"
