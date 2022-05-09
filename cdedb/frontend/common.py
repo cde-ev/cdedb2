@@ -80,6 +80,7 @@ from cdedb.common import (
     make_proxy, merge_dicts, n_, now, roles_to_db_role, setup_logger, unwrap,
 )
 from cdedb.common.query import Query
+from cdedb.common.query.defaults import DEFAULT_QUERIES
 from cdedb.config import Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -88,7 +89,6 @@ from cdedb.enums import ENUMS_DICT
 from cdedb.filter import (
     JINJA_FILTERS, cdedbid_filter, enum_entries_filter, safe_filter, sanitize_None,
 )
-from cdedb.query_defaults import DEFAULT_QUERIES
 
 _LOGGER = logging.getLogger(__name__)
 

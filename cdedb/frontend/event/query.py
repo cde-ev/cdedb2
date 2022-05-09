@@ -20,6 +20,9 @@ from cdedb.common import (
 from cdedb.common.query import (
     Query, QueryConstraint, QueryOperators, QueryScope, QuerySpec, QuerySpecEntry,
 )
+from cdedb.common.query.defaults import (
+    generate_event_course_default_queries, generate_event_registration_default_queries,
+)
 from cdedb.filter import enum_entries_filter
 from cdedb.frontend.common import (
     REQUESTdata, access, check_validation as check, event_guard,
@@ -29,9 +32,6 @@ from cdedb.frontend.event.base import EventBaseFrontend
 from cdedb.frontend.event.query_stats import (
     EventCourseStatistic, EventRegistrationInXChoiceGrouper,
     EventRegistrationPartStatistic, EventRegistrationTrackStatistic,
-)
-from cdedb.query_defaults import (
-    generate_event_course_default_queries, generate_event_registration_default_queries,
 )
 
 
