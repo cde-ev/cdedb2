@@ -16,9 +16,9 @@ from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
     COURSE_FIELDS, LODGEMENT_FIELDS, LODGEMENT_GROUP_FIELDS, REGISTRATION_FIELDS,
     REGISTRATION_PART_FIELDS, STORED_EVENT_QUERY_FIELDS, CdEDBObject, CdEDBObjectMap,
-    DefaultReturnCode, PrivilegeError, RequestState, implying_realms, json_serialize,
-    n_,
+    DefaultReturnCode, RequestState, implying_realms, json_serialize, n_,
 )
+from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.database.connection import Atomizer
 

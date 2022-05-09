@@ -16,9 +16,9 @@ from cdedb.backend.common import (
 from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
     COURSE_FIELDS, COURSE_SEGMENT_FIELDS, CdEDBObject, CdEDBObjectMap,
-    DefaultReturnCode, DeletionBlockers, PrivilegeError, PsycoJson, RequestState, glue,
-    n_, unwrap,
+    DefaultReturnCode, DeletionBlockers, PsycoJson, RequestState, glue, n_, unwrap,
 )
+from cdedb.common.exceptions import PrivilegeError
 from cdedb.database.connection import Atomizer
 
 

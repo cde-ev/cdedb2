@@ -34,6 +34,7 @@ import werkzeug.routing
 from schulze_condorcet.types import Candidate
 
 import cdedb.database.constants as const
+from cdedb.common.exceptions import PrivilegeError, ValidationWarning
 from cdedb.database.connection import ConnectionContainer
 from cdedb.validationdata import COUNTRY_CODES
 
@@ -531,44 +532,6 @@ def nearly_now(delta: datetime.timedelta = _NEARLY_DELTA_DEFAULT) -> NearlyNow:
     return NearlyNow(
         year=now.year, month=now.month, day=now.day, hour=now.hour,
         minute=now.minute, second=now.second, tzinfo=pytz.utc, delta=delta)
-
-
-class QuotaException(werkzeug.exceptions.TooManyRequests):
-    """
-    Exception for signalling a quota excess. This is thrown in
-    :py:mod:`cdedb.backend.cde` and caught in
-    :py:mod:`cdedb.frontend.application`. We use a custom class so that
-    we can distinguish it from other exceptions.
-    """
-
-
-class PrivilegeError(RuntimeError):
-    """
-    Exception for signalling missing privileges. This Exception is thrown by the
-    backend to indicate an unprivileged call to a backend function. However,
-    this situation should be prevented by privilege checks in the frontend.
-    Thus, we typically consider this Exception as an unexpected programming
-    error. In some cases the frontend may catch and handle the exception
-    instead of preventing it in the first place.
-    """
-
-
-class ArchiveError(RuntimeError):
-    """
-    Exception for signalling an exact error when archiving a persona
-    goes awry.
-    """
-
-
-class PartialImportError(RuntimeError):
-    """Exception for signalling a checksum mismatch in the partial import.
-
-    Making this an exception rolls back the database transaction.
-    """
-
-
-class ValidationWarning(Exception):
-    """Exception which should be suppressable by the user."""
 
 
 def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,

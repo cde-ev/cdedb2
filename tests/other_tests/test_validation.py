@@ -11,7 +11,8 @@ import pytz
 
 import cdedb.database.constants as const
 import cdedb.validation as validate
-from cdedb.common import ValidationWarning, now
+from cdedb.common import now
+from cdedb.common.exceptions import ValidationWarning
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.config import Config
 from cdedb.validationtypes import (
