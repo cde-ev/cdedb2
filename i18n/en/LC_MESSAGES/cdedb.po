@@ -13524,6 +13524,14 @@ msgid "QuestionnaireUsages.additional"
 msgstr "Additional Questionnaire"
 
 #: cdedb/i18n_additional.py:226
+msgid "EventPartGroupType.mutually_exclusive_participants"
+msgstr "Participation Constraint"
+
+#: cdedb/i18n_additional.py:226
+msgid "EventPartGroupType.mutually_exclusive_courses"
+msgstr "Course Constraint"
+
+#: cdedb/i18n_additional.py:226
 msgid "EventPartGroupType.Statistic"
 msgstr "Statistic"
 
