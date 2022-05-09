@@ -872,24 +872,29 @@ class EventRegistrationBackend(EventBaseBackend):
 
         :param is_member: If this is None, retrieve membership status here.
         """
+        mep = const.EventPartGroupType.mutually_exclusive_participants
+
         fee = decimal.Decimal(0)
+        parts_to_pay = {part_id for part_id, rpart in reg['parts'].items()
+                        if rpart['status'].has_to_pay()}
+        paid_parts = set()
 
-        if event is None and event_id is None:
-            raise ValueError("No input given.")
-        elif event is not None and event_id is not None:
-            raise ValueError("Only one input for event allowed.")
-        elif event_id is not None:
-            event = self.get_event(rs, event_id)
-        assert event is not None
-        for part_id, rpart in reg['parts'].items():
-            part = event['parts'][part_id]
-            if rpart['status'].has_to_pay():
-                fee += part['fee']
+        # Add the maximum fee of the registered-for parts for participant constraints.
+        for part_group_id, part_group in event['part_groups'].items():
+            if not part_group['constraint_type'] == mep:
+                continue
+            if part_ids := parts_to_pay & part_group['part_ids']:
+                fee += max(event['parts'][part_id]['fee'] for part_id in part_ids)
+                paid_parts.update(part_ids)
 
+        # Add the fee for registered-for parts not handled above.
+        for part_id in parts_to_pay - paid_parts:
+            fee += event['parts'][part_id]['fee']
+
+        # Add all applicable fee modifiers.
         for fee_modifier in event['fee_modifiers'].values():
             field = event['fields'][fee_modifier['field_id']]
-            status = reg['parts'][fee_modifier['part_id']]['status']
-            if status.has_to_pay():
+            if fee_modifier['part_id'] in parts_to_pay:
                 if reg['fields'].get(field['field_name']):
                     fee += fee_modifier['amount']
 
