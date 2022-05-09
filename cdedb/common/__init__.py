@@ -34,7 +34,6 @@ import werkzeug.routing
 from schulze_condorcet.types import Candidate
 
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
-from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.roles import roles_to_admin_views
 from cdedb.database.connection import ConnectionContainer
 from cdedb.validationdata import COUNTRY_CODES
