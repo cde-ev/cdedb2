@@ -404,7 +404,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             return xsorted(part_ids, key=lambda part_id: EntitySorter.event_part(
                 rs.ambience['event']['parts'][part_id]))
 
-        for reg_id, reg in registrations.items():
+        for reg_id, reg in sorted_registrations:
             for pg_id, part_group in pgs_by_type[mep]:
                 part_ids = set(part_id for part_id in part_group['part_ids']
                                if reg['parts'][part_id]['status'].is_present())
