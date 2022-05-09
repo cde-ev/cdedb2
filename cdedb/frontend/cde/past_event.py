@@ -19,16 +19,16 @@ from werkzeug import Response
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    LOG_FIELDS_COMMON, CdEDBObject, CdEDBObjectMap, EntitySorter, RequestState,
-    merge_dicts, n_, xsorted,
+    CdEDBObject, CdEDBObjectMap, EntitySorter, RequestState, merge_dicts, n_, xsorted,
 )
+from cdedb.common.fields import LOG_FIELDS_COMMON
+from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
     CustomCSVDialect, REQUESTdata, REQUESTdatadict, TransactionObserver, access,
     calculate_db_logparams, calculate_loglinks, check_validation as check, csv_output,
     drow_name, process_dynamic_input,
 )
-from cdedb.query import Query, QueryOperators, QueryScope
 from cdedb.validation import PAST_COURSE_COMMON_FIELDS, PAST_EVENT_FIELDS
 
 COURSESEARCH_DEFAULTS = {

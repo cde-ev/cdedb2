@@ -17,12 +17,12 @@ from cdedb.common import (
     CdEDBObject, CourseChoiceToolActions, CourseFilterPositions, EntitySorter,
     InfiniteEnum, RequestState, merge_dicts, n_, unwrap, xsorted,
 )
+from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, check_validation as check, event_guard,
     make_persona_name, request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
-from cdedb.query import Query, QueryOperators, QueryScope
 from cdedb.validation import COURSE_COMMON_FIELDS
 from cdedb.validationtypes import VALIDATOR_LOOKUP
 

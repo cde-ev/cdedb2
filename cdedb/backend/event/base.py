@@ -28,14 +28,17 @@ from cdedb.backend.common import (
 from cdedb.backend.entity_keeper import EntityKeeper
 from cdedb.backend.event.lowlevel import EventLowLevelBackend
 from cdedb.common import (
+    EVENT_SCHEMA_VERSION, CdEDBLog, CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap,
+    DefaultReturnCode, RequestState, glue, json_serialize, mixed_existence_sorter, n_,
+    now, unwrap, xsorted,
+)
+from cdedb.common.exceptions import PrivilegeError
+from cdedb.common.fields import (
     COURSE_FIELDS, COURSE_SEGMENT_FIELDS, COURSE_TRACK_FIELDS, EVENT_FIELDS,
-    EVENT_PART_FIELDS, EVENT_SCHEMA_VERSION, FEE_MODIFIER_FIELDS,
-    FIELD_DEFINITION_FIELDS, LODGEMENT_FIELDS, LODGEMENT_GROUP_FIELDS,
-    PART_GROUP_FIELDS, PERSONA_EVENT_FIELDS, PERSONA_STATUS_FIELDS,
-    QUESTIONNAIRE_ROW_FIELDS, REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS,
-    REGISTRATION_TRACK_FIELDS, CdEDBLog, CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap,
-    DefaultReturnCode, PrivilegeError, RequestState, glue, json_serialize,
-    mixed_existence_sorter, n_, now, unwrap, xsorted,
+    EVENT_PART_FIELDS, FEE_MODIFIER_FIELDS, FIELD_DEFINITION_FIELDS, LODGEMENT_FIELDS,
+    LODGEMENT_GROUP_FIELDS, PART_GROUP_FIELDS, PERSONA_EVENT_FIELDS,
+    PERSONA_STATUS_FIELDS, QUESTIONNAIRE_ROW_FIELDS, REGISTRATION_FIELDS,
+    REGISTRATION_PART_FIELDS, REGISTRATION_TRACK_FIELDS,
 )
 from cdedb.database.connection import Atomizer
 

@@ -11,13 +11,12 @@ from typing import (
 from subman.machine import SubscriptionPolicy
 
 import cdedb.validationtypes as vtypes
-from cdedb.common import (
-    CdEDBObject, PrivilegeError, RequestState, User, extract_roles, n_,
-)
+from cdedb.common import CdEDBObject, RequestState, User, extract_roles, n_
+from cdedb.common.exceptions import PrivilegeError
+from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.database.constants import (
     MailinglistDomain, MailinglistTypes, RegistrationPartStati,
 )
-from cdedb.query import Query, QueryOperators, QueryScope
 
 SubscriptionPolicyMap = Dict[int, SubscriptionPolicy]
 

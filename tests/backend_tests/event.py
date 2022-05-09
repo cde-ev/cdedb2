@@ -17,10 +17,10 @@ import pytz
 import cdedb.database.constants as const
 from cdedb.backend.common import cast_fields
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, CourseFilterPositions, InfiniteEnum,
-    PartialImportError, PrivilegeError, nearly_now, now,
+    CdEDBObject, CdEDBObjectMap, CourseFilterPositions, InfiniteEnum, nearly_now, now,
 )
-from cdedb.query import Query, QueryOperators, QueryScope
+from cdedb.common.exceptions import PartialImportError, PrivilegeError
+from cdedb.common.query import Query, QueryOperators, QueryScope
 from tests.common import (
     ANONYMOUS, USER_DICT, BackendTest, as_users, event_keeper, json_keys_to_int,
     storage,

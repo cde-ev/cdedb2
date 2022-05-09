@@ -19,10 +19,10 @@ import cdedb.database.constants as const
 from cdedb.common import (
     ADMIN_VIEWS_COOKIE_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, now, unwrap, xsorted,
 )
+from cdedb.common.query import QueryOperators
 from cdedb.filter import iban_filter
 from cdedb.frontend.common import CustomCSVDialect, make_event_fee_reference
 from cdedb.frontend.event import EventFrontend
-from cdedb.query import QueryOperators
 from tests.common import (
     USER_DICT, FrontendTest, UserObject, as_users, event_keeper, prepsql, storage,
 )

@@ -14,10 +14,15 @@ from werkzeug import Response
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    FULL_MOD_REQUIRING_FIELDS, LOG_FIELDS_COMMON, MOD_ALLOWED_FIELDS,
-    RESTRICTED_MOD_ALLOWED_FIELDS, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
-    EntitySorter, PrivilegeError, RequestState, merge_dicts, n_, now, unwrap, xsorted,
+    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, EntitySorter, RequestState,
+    merge_dicts, n_, now, unwrap, xsorted,
 )
+from cdedb.common.exceptions import PrivilegeError
+from cdedb.common.fields import (
+    FULL_MOD_REQUIRING_FIELDS, LOG_FIELDS_COMMON, MOD_ALLOWED_FIELDS,
+    RESTRICTED_MOD_ALLOWED_FIELDS,
+)
+from cdedb.common.query import QueryScope
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access, calculate_db_logparams,
@@ -27,7 +32,6 @@ from cdedb.frontend.common import (
 from cdedb.ml_type_aux import (
     ADDITIONAL_TYPE_FIELDS, TYPE_MAP, MailinglistGroup, get_type,
 )
-from cdedb.query import QueryScope
 from cdedb.validation import (
     ALL_MAILINGLIST_FIELDS, PERSONA_FULL_ML_CREATION, filter_none,
 )

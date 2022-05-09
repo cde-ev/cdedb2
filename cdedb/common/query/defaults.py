@@ -13,7 +13,7 @@ from typing import Dict
 
 import cdedb.database.constants as const
 from cdedb.common import ADMIN_KEYS, CdEDBObject, deduct_years, n_, now
-from cdedb.query import Query, QueryOperators, QueryScope, QuerySpec
+from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpec
 
 
 def generate_event_registration_default_queries(
