@@ -33,7 +33,7 @@
                             {% endif %}
                         </th>
                     {% endfor %}
-                    {% for part_group_id, part_group in sorted_part_groups if part_group['part_ids']|length > 1 %}
+                    {% for part_group_id, part_group in sorted_part_groups if part_group['part_ids']|length > 1 and part_group['constraint_type'].is_stats() %}
                         <th class="text-right {% if loop.first %}b-left{% endif %}">
                             {{ part_group['shortname'] }}
                         </th>
@@ -56,7 +56,7 @@
                                     datum|length, anid="part_" + stat.name + "_" + part_id|string) }}
                             </td>
                         {% endfor %}
-                        {% for part_group_id, part_group in sorted_part_groups if part_group['part_ids']|length > 1 %}
+                        {% for part_group_id, part_group in sorted_part_groups if part_group['part_ids']|length > 1 and part_group['constraint_type'].is_stats() %}
                             <td class="text-right {% if loop.first %}b-left{% endif %}">
                                 {% set datum = row['part_groups'][part_group_id] %}
                                 {% set query = stat.get_query_part_group(ambience['event'], part_group_id) or stat.get_query_by_ids(ambience['event'], datum) %}
@@ -89,7 +89,7 @@
                                 {{ part['shortname'] }}
                             </th>
                         {% endfor %}
-                        {% for part_group_id, part_group in sorted_part_groups if grouper._track_ids_per_part_group[part_group_id]|length > 1 %}
+                        {% for part_group_id, part_group in sorted_part_groups if grouper._track_ids_per_part_group[part_group_id]|length > 1 and part_group['constraint_type'].is_stats() %}
                             <th class="text-right {% if loop.first %}b-left{% endif %}">
                                 {{ part_group['shortname'] }}
                             </th>
@@ -124,7 +124,7 @@
                                     {% endif %}
                                 </td>
                             {% endfor %}
-                            {% for part_group_id, reg_ids in row['part_groups'].items() if grouper._track_ids_per_part_group[part_group_id]|length > 1 %}
+                            {% for part_group_id, reg_ids in row['part_groups'].items() if grouper._track_ids_per_part_group[part_group_id]|length > 1 and ambience['event']['part_groups'][part_group_id]['constraint_type'].is_stats() %}
                                 <td class="text-right {% if loop.first %}b-left{% endif %}">
                                     {% if reg_ids is none %}
                                         –
@@ -159,7 +159,7 @@
                                         datum|length, anid="track_part_" + stat.name + "_" + part_id|string) }}
                                 </td>
                             {% endfor %}
-                            {% for part_group_id, part_group in sorted_part_groups if grouper._track_ids_per_part_group[part_group_id]|length > 1 %}
+                            {% for part_group_id, part_group in sorted_part_groups if grouper._track_ids_per_part_group[part_group_id]|length > 1 and part_group['constraint_type'].is_stats() %}
                                 <td class="text-right {% if loop.first %}b-left{% endif %}">
                                     {% set datum = row['part_groups'][part_group_id] %}
                                     {% set query = stat.get_query_part_group(ambience['event'], part_group_id) or stat.get_query_by_ids(ambience['event'], datum) %}

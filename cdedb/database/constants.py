@@ -122,6 +122,9 @@ class EventPartGroupType(enum.IntEnum):
             EventPartGroupType.Statistic: "chart-bar",
         }[self]
 
+    def is_stats(self) -> bool:
+        return self == EventPartGroupType.Statistic
+
 
 @enum.unique
 class GenesisStati(enum.IntEnum):
