@@ -20,7 +20,7 @@ from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, CourseFilterPositions, InfiniteEnum,
     PartialImportError, PrivilegeError, nearly_now, now,
 )
-from cdedb.query import Query, QueryOperators, QueryScope
+from cdedb.common.query import Query, QueryOperators, QueryScope
 from tests.common import (
     ANONYMOUS, USER_DICT, BackendTest, as_users, event_keeper, json_keys_to_int,
     storage,

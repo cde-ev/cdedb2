@@ -24,6 +24,7 @@ from cdedb.common import (
     determine_age_class, diacritic_patterns, get_hash, merge_dicts, n_, now, unwrap,
     xsorted,
 )
+from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     CustomCSVDialect, REQUESTdata, REQUESTfile, TransactionObserver, access,
@@ -31,7 +32,6 @@ from cdedb.frontend.common import (
     inspect_validation as inspect, make_event_fee_reference, request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
-from cdedb.query import Query, QueryOperators, QueryScope
 from cdedb.validationtypes import VALIDATOR_LOOKUP
 
 

@@ -50,8 +50,8 @@ from cdedb.common import (
     RequestState, get_hash, glue, implying_realms, json_serialize,
     mixed_existence_sorter, n_, now, unwrap, xsorted,
 )
+from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.database.connection import Atomizer
-from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 
 
 class AssemblyBackend(AbstractBackend):

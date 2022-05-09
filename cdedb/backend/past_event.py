@@ -20,8 +20,8 @@ from cdedb.common import (
     CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, Error, PrivilegeError,
     RequestState, glue, make_proxy, n_, now, unwrap, xsorted,
 )
+from cdedb.common.query import Query, QueryScope
 from cdedb.database.connection import Atomizer
-from cdedb.query import Query, QueryScope
 
 
 class PastEventBackend(AbstractBackend):

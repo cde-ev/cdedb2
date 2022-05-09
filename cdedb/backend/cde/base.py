@@ -31,9 +31,9 @@ from cdedb.common import (
     PrivilegeError, QuotaException, RequestState, glue, implying_realms, make_proxy, n_,
     unwrap,
 )
+from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.database.connection import Atomizer
 from cdedb.filter import money_filter
-from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.validation import PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS, is_optional
 
 

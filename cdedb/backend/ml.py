@@ -27,9 +27,9 @@ from cdedb.common import (
     CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers,
     PrivilegeError, RequestState, implying_realms, make_proxy, n_, unwrap, xsorted,
 )
+from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.database.connection import Atomizer
 from cdedb.ml_type_aux import MLType, MLTypeLike
-from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 
 SubStates = Collection[const.SubscriptionState]
 

@@ -18,8 +18,8 @@ from cdedb.common import (
     extract_roles, format_country_code, get_country_code_from_country,
     get_localized_country_codes, now,
 )
+from cdedb.common.query import QueryOperators
 from cdedb.frontend.common import Worker, make_postal_address
-from cdedb.query import QueryOperators
 from tests.common import (
     USER_DICT, FrontendTest, UserIdentifier, as_users, get_user, prepsql, storage,
 )

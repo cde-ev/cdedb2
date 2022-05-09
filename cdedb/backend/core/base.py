@@ -38,10 +38,10 @@ from cdedb.common import (
     RequestState, Role, User, decode_parameter, encode_parameter, extract_roles,
     get_hash, glue, n_, now, privilege_tier, unwrap, xsorted,
 )
+from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import Atomizer, connection_pool_factory
-from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 
 
 class CoreBaseBackend(AbstractBackend):
