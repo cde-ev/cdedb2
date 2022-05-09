@@ -862,8 +862,8 @@ class EventRegistrationBackend(EventBaseBackend):
         return ret
 
     def _calculate_single_fee(self, rs: RequestState, reg: CdEDBObject, *,
-                              event: CdEDBObject = None, event_id: int = None,
-                              is_member: bool = None) -> decimal.Decimal:
+                              event: CdEDBObject, is_member: bool = None
+                              ) -> decimal.Decimal:
         """Helper function to calculate the fee for one registration.
 
         This is used inside `create_registration` and `set_registration`,
