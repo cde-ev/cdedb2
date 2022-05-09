@@ -16,9 +16,10 @@ become the full `EventFrontend` in this modules `__init__.py`.
 """
 
 import datetime
+import itertools
 import operator
 from collections import OrderedDict
-from typing import Any, Collection, Dict, Optional, Tuple, Type
+from typing import Any, Collection, Dict, List, NamedTuple, Optional, Set, Tuple, Type
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -30,13 +31,32 @@ from cdedb.common import (
     KeyFunction, RequestState, Sortkey, get_localized_country_codes, merge_dicts, n_,
     unwrap, xsorted,
 )
-from cdedb.filter import enum_entries_filter
+from cdedb.filter import enum_entries_filter, keydictsort_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access, calculate_db_logparams,
     calculate_loglinks, event_guard, periodic,
 )
 from cdedb.query import QueryScope
 from cdedb.validation import PERSONA_FULL_EVENT_CREATION, filter_none
+
+MEPViolation = NamedTuple(
+    "MEPViolation", [
+        ("reg_id", int),
+        ("persona_id", int),
+        ("pg_id", int),  # ID of the part group whose constraint is being violated.
+        ("constraint_type", const.EventPartGroupType),
+        ("part_ids", List[int]),  # Sorted IDs of the parts in violation.
+        ("parts_str", str)  # Locale agnostic string representation of said parts.
+    ])
+
+MECViolation = NamedTuple(
+    "MECViolation", [
+        ("course_id", int),
+        ("pg_id", int),  # ID of the part group whose constraint is being violated.
+        ("constraint_type", const.EventPartGroupType),
+        ("track_ids", List[int]),  # Sorted IDs of the tracks in violation.
+        ("tracks_str", str)  # Locale agnostic string representation of said tracks.
+    ])
 
 
 class EventBaseFrontend(AbstractUserFrontend):
@@ -325,7 +345,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             else:
                 raise RuntimeError("impossible.")
             ret = (instance[key] == entity_id and
-                    const.RegistrationPartStati(part['status']).is_present())
+                   const.RegistrationPartStati(part['status']).is_present())
             if (ret and key == "course_id" and not instructors
                     and instance['course_instructor'] == entity_id):
                 ret = False
@@ -350,6 +370,86 @@ class EventBaseFrontend(AbstractUserFrontend):
             for entity_id in entity_ids
             for sub_id in sub_ids
         }
+
+    @staticmethod
+    def _get_track_ids(event: CdEDBObject, part_group_id: int) -> Set[int]:
+        part_ids = event['part_groups'][part_group_id]['part_ids']
+        parts = (p for part_id, p in event['parts'].items() if part_id in part_ids)
+        return set(itertools.chain.from_iterable(part['tracks'] for part in parts))
+
+    def get_constraint_violations(self, rs: RequestState, event_id: int) -> CdEDBObject:
+        pgs_by_type: Dict[const.EventPartGroupType, List[Tuple[int, CdEDBObject]]] = {
+            constraint: keydictsort_filter(
+                {
+                    pg_id: part_group
+                    for pg_id, part_group in rs.ambience['event']['part_groups'].items()
+                    if part_group['constraint_type'] == constraint
+                }, EntitySorter.event_part_group)
+            for constraint in const.EventPartGroupType
+        }
+
+        # Check registrations for violations against mutual exclusiveness constraints.
+        mep = const.EventPartGroupType.mutually_exclusive_participants
+        mep_violations = []
+        registrations = self.eventproxy.get_registrations(
+            rs, self.eventproxy.list_registrations(rs, event_id))
+        personas = self.coreproxy.get_personas(
+            rs, [reg['persona_id'] for reg_id, reg in registrations.items()])
+        sorted_registrations = keydictsort_filter(
+            registrations,
+            lambda reg: EntitySorter.persona(personas[reg['persona_id']]))
+
+        def part_id_sorter(part_ids: Collection[int]) -> List[int]:
+            return xsorted(part_ids, key=lambda part_id: EntitySorter.event_part(
+                rs.ambience['event']['parts'][part_id]))
+
+        for reg_id, reg in registrations.items():
+            for pg_id, part_group in pgs_by_type[mep]:
+                part_ids = set(part_id for part_id in part_group['part_ids']
+                               if reg['parts'][part_id]['status'].is_present())
+                self.logger.debug(f"{reg_id}, {part_ids}, {part_group['part_ids']}")
+                if len(part_ids) > 1:
+                    sorted_part_ids = part_id_sorter(part_ids)
+                    mep_violations.append(MEPViolation(
+                        reg_id, reg['persona_id'], pg_id, mep, sorted_part_ids,
+                        ", ".join(rs.ambience['event']['parts'][part_id]['shortname']
+                                  for part_id in sorted_part_ids)))
+
+        # Check courses for violations against mutual exclusiveness constraints.
+        mec = const.EventPartGroupType.mutually_exclusive_courses
+        mec_violations = []
+        courses = dict(keydictsort_filter(
+            self.eventproxy.get_courses(
+                rs, self.eventproxy.list_courses(rs, event_id)),
+            EntitySorter.course
+        ))
+
+        def track_id_sorter(track_ids: Collection[int]) -> List[int]:
+            return xsorted(track_ids, key=lambda track_id: EntitySorter.course_track(
+                rs.ambience['event']['tracks'][track_id]))
+
+        for course_id, course in courses.items():
+            for pg_id, part_group in pgs_by_type[mec]:
+                pg_track_ids = self._get_track_ids(rs.ambience['event'], pg_id)
+                track_ids = set(course['active_segments']) & pg_track_ids
+                if len(track_ids) > 1:
+                    sorted_track_ids = track_id_sorter(track_ids)
+                    mec_violations.append(MECViolation(
+                        course_id, pg_id, mec, sorted_track_ids,
+                        ", ".join(rs.ambience['event']['tracks'][track_id]['shortname']
+                                  for track_id in sorted_track_ids)))
+
+        return {
+            'mep_violations': mep_violations, 'registrations': registrations,
+            'personas': personas,
+            'mec_violations': mec_violations, 'courses': courses,
+        }
+
+    @access("event")
+    @event_guard()
+    def constraint_violations(self, rs: RequestState, event_id: int) -> Response:
+        params = self.get_constraint_violations(rs, event_id)
+        return self.render(rs, "base/constraint_violations", params)
 
     @access("event_admin", "auditor")
     @REQUESTdata(*LOG_FIELDS_COMMON, "event_id")
