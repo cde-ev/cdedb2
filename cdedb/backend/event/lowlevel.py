@@ -17,12 +17,14 @@ from cdedb.backend.common import (
     affirm_validation as affirm, internal, singularize,
 )
 from cdedb.common import (
-    COURSE_TRACK_FIELDS, EVENT_FIELD_SPEC, EVENT_PART_FIELDS, FEE_MODIFIER_FIELDS,
-    FIELD_DEFINITION_FIELDS, PART_GROUP_FIELDS, CdEDBObject, CdEDBObjectMap,
-    CdEDBOptionalMap, DefaultReturnCode, DeletionBlockers, PsycoJson, RequestState,
-    mixed_existence_sorter, n_, now, unwrap,
+    CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap, DefaultReturnCode, DeletionBlockers,
+    PsycoJson, RequestState, mixed_existence_sorter, n_, now, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
+from cdedb.common.fields import (
+    COURSE_TRACK_FIELDS, EVENT_FIELD_SPEC, EVENT_PART_FIELDS, FEE_MODIFIER_FIELDS,
+    FIELD_DEFINITION_FIELDS, PART_GROUP_FIELDS,
+)
 from cdedb.validation import EVENT_FIELD_COMMON_FIELDS, parse_date, parse_datetime
 
 

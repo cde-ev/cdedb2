@@ -20,9 +20,10 @@ import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    DEFAULT_NUM_COURSE_CHOICES, EVENT_FIELD_SPEC, CdEDBObject, EntitySorter,
-    RequestState, merge_dicts, n_, now, unwrap, xsorted,
+    DEFAULT_NUM_COURSE_CHOICES, CdEDBObject, EntitySorter, RequestState, merge_dicts,
+    n_, now, unwrap, xsorted,
 )
+from cdedb.common.fields import EVENT_FIELD_SPEC
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access, cdedburl,

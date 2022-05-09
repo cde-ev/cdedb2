@@ -23,11 +23,13 @@ from cdedb.backend.common import (
 )
 from cdedb.backend.event import EventBackend
 from cdedb.common import (
-    ADMIN_KEYS, MAILINGLIST_FIELDS, MOD_ALLOWED_FIELDS, RESTRICTED_MOD_ALLOWED_FIELDS,
-    CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers,
-    RequestState, implying_realms, make_proxy, n_, unwrap, xsorted,
+    ADMIN_KEYS, CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
+    DeletionBlockers, RequestState, implying_realms, make_proxy, n_, unwrap, xsorted,
 )
 from cdedb.common.exceptions import PrivilegeError
+from cdedb.common.fields import (
+    MAILINGLIST_FIELDS, MOD_ALLOWED_FIELDS, RESTRICTED_MOD_ALLOWED_FIELDS,
+)
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.database.connection import Atomizer
 from cdedb.ml_type_aux import MLType, MLTypeLike

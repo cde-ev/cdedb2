@@ -19,10 +19,11 @@ from cdedb.backend.common import (
     affirm_validation_optional as affirm_optional, batchify, singularize,
 )
 from cdedb.common import (
-    LASTSCHRIFT_FIELDS, LASTSCHRIFT_TRANSACTION_FIELDS, CdEDBObject, CdEDBObjectMap,
-    DefaultReturnCode, DeletionBlockers, RequestState, merge_dicts, n_, now, unwrap,
+    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, RequestState,
+    merge_dicts, n_, now, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
+from cdedb.common.fields import LASTSCHRIFT_FIELDS, LASTSCHRIFT_TRANSACTION_FIELDS
 from cdedb.database.connection import Atomizer
 
 
