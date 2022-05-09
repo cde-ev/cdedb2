@@ -13,10 +13,10 @@ import freezegun
 import webtest
 
 from cdedb.common import (
-    ADMIN_VIEWS_COOKIE_NAME, ANTI_CSRF_TOKEN_NAME, ASSEMBLY_BAR_SHORTNAME, CdEDBObject,
-    NearlyNow, now,
+    ANTI_CSRF_TOKEN_NAME, ASSEMBLY_BAR_SHORTNAME, CdEDBObject, NearlyNow, now,
 )
 from cdedb.common.query import QueryOperators
+from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
 from cdedb.filter import datetime_filter
 from cdedb.validation import parse_datetime
 from tests.common import (
