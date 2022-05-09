@@ -26,9 +26,9 @@ from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
     REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS, REGISTRATION_TRACK_FIELDS,
     CdEDBObject, CdEDBObjectMap, CourseFilterPositions, DefaultReturnCode,
-    DeletionBlockers, InfiniteEnum, PrivilegeError, PsycoJson, RequestState, glue, n_,
-    unwrap, xsorted,
+    DeletionBlockers, InfiniteEnum, PsycoJson, RequestState, glue, n_, unwrap, xsorted,
 )
+from cdedb.common.exceptions import PrivilegeError
 from cdedb.database.connection import Atomizer
 from cdedb.filter import date_filter, money_filter
 

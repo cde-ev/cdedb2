@@ -28,9 +28,9 @@ from cdedb.backend.common import (
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.common import (
     PARSE_OUTPUT_DATEFORMAT, CdEDBLog, CdEDBObject, DefaultReturnCode, LineResolutions,
-    PrivilegeError, QuotaException, RequestState, glue, implying_realms, make_proxy, n_,
-    unwrap,
+    RequestState, glue, implying_realms, make_proxy, n_, unwrap,
 )
+from cdedb.common.exceptions import PrivilegeError, QuotaException
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.database.connection import Atomizer
 from cdedb.filter import money_filter

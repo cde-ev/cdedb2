@@ -46,10 +46,11 @@ from cdedb.backend.common import (
 from cdedb.common import (
     ASSEMBLY_ATTACHMENT_FIELDS, ASSEMBLY_ATTACHMENT_VERSION_FIELDS,
     ASSEMBLY_BAR_SHORTNAME, ASSEMBLY_FIELDS, BALLOT_FIELDS, CdEDBLog, CdEDBObject,
-    CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, EntitySorter, PrivilegeError,
-    RequestState, get_hash, glue, implying_realms, json_serialize,
-    mixed_existence_sorter, n_, now, unwrap, xsorted,
+    CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, EntitySorter, RequestState,
+    get_hash, glue, implying_realms, json_serialize, mixed_existence_sorter, n_, now,
+    unwrap, xsorted,
 )
+from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.database.connection import Atomizer
 
