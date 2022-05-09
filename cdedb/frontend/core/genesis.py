@@ -13,9 +13,9 @@ from werkzeug import Response
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    REALM_SPECIFIC_GENESIS_FIELDS, CdEDBObject, GenesisDecision, RequestState,
-    merge_dicts, n_, now,
+    CdEDBObject, GenesisDecision, RequestState, merge_dicts, n_, now,
 )
+from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access, check_validation as check,
     periodic,

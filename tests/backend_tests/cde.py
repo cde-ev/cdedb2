@@ -7,10 +7,11 @@ import decimal
 import pytz
 
 import cdedb.database.constants as const
-from cdedb.common import (
-    PERSONA_CDE_FIELDS, PERSONA_CORE_FIELDS, PERSONA_EVENT_FIELDS, CdEDBLog,
-)
+from cdedb.common import CdEDBLog
 from cdedb.common.exceptions import QuotaException
+from cdedb.common.fields import (
+    PERSONA_CDE_FIELDS, PERSONA_CORE_FIELDS, PERSONA_EVENT_FIELDS,
+)
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from tests.common import USER_DICT, BackendTest, as_users, nearly_now, prepsql
 

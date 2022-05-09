@@ -13,9 +13,8 @@ from werkzeug import Response
 
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
-from cdedb.common import (
-    LOG_FIELDS_COMMON, RequestState, SemesterSteps, lastschrift_reference, n_, unwrap,
-)
+from cdedb.common import RequestState, SemesterSteps, lastschrift_reference, n_, unwrap
+from cdedb.common.fields import LOG_FIELDS_COMMON
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
     REQUESTdata, TransactionObserver, Worker, access, calculate_db_logparams,

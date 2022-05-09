@@ -21,10 +21,11 @@ from werkzeug.datastructures import FileStorage
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    LOG_FIELDS_COMMON, PERSONA_DEFAULTS, CdEDBObject, CdEDBObjectMap, Error,
-    LineResolutions, RequestState, deduct_years, get_country_code_from_country,
-    get_hash, get_localized_country_codes, merge_dicts, n_, now, xsorted,
+    PERSONA_DEFAULTS, CdEDBObject, CdEDBObjectMap, Error, LineResolutions, RequestState,
+    deduct_years, get_country_code_from_country, get_hash, get_localized_country_codes,
+    merge_dicts, n_, now, xsorted,
 )
+from cdedb.common.fields import LOG_FIELDS_COMMON
 from cdedb.common.query import QueryConstraint, QueryOperators, QueryScope
 from cdedb.filter import enum_entries_filter
 from cdedb.frontend.common import (
