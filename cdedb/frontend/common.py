@@ -58,8 +58,8 @@ import werkzeug.utils
 import werkzeug.wrappers
 import werkzeug.wsgi
 
+import cdedb.common.query as query_mod
 import cdedb.database.constants as const
-import cdedb.query as query_mod
 import cdedb.validation as validate
 import cdedb.validationtypes as vtypes
 from cdedb.backend.assembly import AssemblyBackend
@@ -79,6 +79,7 @@ from cdedb.common import (
     get_localized_country_codes, glue, json_serialize, make_persona_forename,
     make_proxy, merge_dicts, n_, now, roles_to_db_role, setup_logger, unwrap,
 )
+from cdedb.common.query import Query
 from cdedb.config import Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -87,7 +88,6 @@ from cdedb.enums import ENUMS_DICT
 from cdedb.filter import (
     JINJA_FILTERS, cdedbid_filter, enum_entries_filter, safe_filter, sanitize_None,
 )
-from cdedb.query import Query
 from cdedb.query_defaults import DEFAULT_QUERIES
 
 _LOGGER = logging.getLogger(__name__)

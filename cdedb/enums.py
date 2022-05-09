@@ -16,7 +16,7 @@ from cdedb.common import (
     CourseFilterPositions, GenesisDecision, LineResolutions, LodgementsSortkeys,
     TransactionType,
 )
-from cdedb.query import QueryOperators, QueryScope
+from cdedb.common.query import QueryOperators, QueryScope
 
 #: The list of normal enums
 ALL_ENUMS: Tuple[Type[Enum], ...] = (

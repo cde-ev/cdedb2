@@ -29,6 +29,7 @@ from cdedb.common import (
     get_persona_fields_by_realm, implied_realms, merge_dicts, n_, now, pairwise,
     sanitize_filename, unwrap, xsorted,
 )
+from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.filter import date_filter, enum_entries_filter, markdown_parse_safe
 from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, TransactionObserver,
@@ -38,7 +39,6 @@ from cdedb.frontend.common import (
     periodic, request_dict_extractor, request_extractor,
 )
 from cdedb.ml_type_aux import MailinglistGroup
-from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.validation import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
     PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS,

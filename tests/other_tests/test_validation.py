@@ -12,8 +12,8 @@ import pytz
 import cdedb.database.constants as const
 import cdedb.validation as validate
 from cdedb.common import ValidationWarning, now
+from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.config import Config
-from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.validationtypes import (
     IBAN, JSON, Email, GenesisCase, PasswordStrength, Persona, Phone, PrintableASCII,
     PrintableASCIIType, SafeStr, StringType, Vote,

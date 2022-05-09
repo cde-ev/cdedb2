@@ -19,8 +19,8 @@ from cdedb.common import (
     DefaultReturnCode, PrivilegeError, RequestState, implying_realms, json_serialize,
     n_,
 )
+from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.database.connection import Atomizer
-from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 
 
 def _get_field_select_columns(fields: CdEDBObjectMap,

@@ -23,13 +23,13 @@ from cdedb.common import (
     DEFAULT_NUM_COURSE_CHOICES, EVENT_FIELD_SPEC, CdEDBObject, EntitySorter,
     RequestState, merge_dicts, n_, now, unwrap, xsorted,
 )
+from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access, cdedburl,
     check_validation as check, check_validation_optional as check_optional, drow_name,
     event_guard, inspect_validation as inspect, process_dynamic_input,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
-from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.validation import (
     EVENT_EXPOSED_FIELDS, EVENT_PART_COMMON_FIELDS,
     EVENT_PART_CREATION_MANDATORY_FIELDS, EVENT_PART_GROUP_COMMON_FIELDS,

@@ -47,6 +47,7 @@ from cdedb.common import (
     ANTI_CSRF_TOKEN_PAYLOAD, CdEDBLog, CdEDBObject, CdEDBObjectMap, PathLike,
     PrivilegeError, RequestState, merge_dicts, nearly_now, now, roles_to_db_role,
 )
+from cdedb.common.query import QueryOperators
 from cdedb.config import SecretsConfig, TestConfig, get_configpath, set_configpath
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -54,7 +55,6 @@ from cdedb.frontend.application import Application
 from cdedb.frontend.common import AbstractFrontend, Worker, setup_translations
 from cdedb.frontend.cron import CronFrontend
 from cdedb.frontend.paths import CDEDB_PATHS
-from cdedb.query import QueryOperators
 from cdedb.script import Script
 
 # TODO: use TypedDict to specify UserObject.

@@ -18,6 +18,7 @@ from cdedb.common import (
     RESTRICTED_MOD_ALLOWED_FIELDS, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
     EntitySorter, PrivilegeError, RequestState, merge_dicts, n_, now, unwrap, xsorted,
 )
+from cdedb.common.query import QueryScope
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access, calculate_db_logparams,
@@ -27,7 +28,6 @@ from cdedb.frontend.common import (
 from cdedb.ml_type_aux import (
     ADDITIONAL_TYPE_FIELDS, TYPE_MAP, MailinglistGroup, get_type,
 )
-from cdedb.query import QueryScope
 from cdedb.validation import (
     ALL_MAILINGLIST_FIELDS, PERSONA_FULL_ML_CREATION, filter_none,
 )
