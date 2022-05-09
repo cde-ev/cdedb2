@@ -25,7 +25,7 @@
                     {% set first_column_width = per_part_max_indent + 1 %}
                     <th colspan="{{ first_column_width }}"></th>
                     {% for part_id, part in sorted_parts %}
-                        <th class="text-right">
+                        <th class="text-right" title="{% trans %}Event Part{% endtrans %}: {{ part['title'] }}">
                             {% if ambience['event']['parts']|length + ambience['event']['part_groups']|length > 1 %}
                                 {{ part['shortname'] }}
                             {% else %}
@@ -34,7 +34,7 @@
                         </th>
                     {% endfor %}
                     {% for part_group_id, part_group in sorted_part_groups if part_group['part_ids']|length > 1 and part_group['constraint_type'].is_stats() %}
-                        <th class="text-right {% if loop.first %}b-left{% endif %}">
+                        <th class="text-right {% if loop.first %}b-left{% endif %}" title="{% trans %}Part Group{% endtrans %}: {{ part_group['title'] }}">
                             {{ part_group['shortname'] }}
                         </th>
                     {% endfor %}
@@ -76,7 +76,7 @@
                     <tr>
                         <th></th>
                         {% for track_id, track in sorted_tracks %}
-                            <th class="text-right">
+                            <th class="text-right" title="{% trans %}Track{% endtrans %}: {{ track['title'] }}">
                                 {% if ambience['event']['tracks']|length > 1 %}
                                     {{ track['shortname'] }}
                                 {% else %}
@@ -85,12 +85,12 @@
                             </th>
                         {% endfor %}
                         {% for part_id, part in sorted_parts if part['tracks']|length > 1 %}
-                            <th class="text-right {% if loop.first %}b-left{% endif %}">
+                            <th class="text-right {% if loop.first %}b-left{% endif %}" title="{% trans %}Event Part{% endtrans %}: {{ part['title'] }}">
                                 {{ part['shortname'] }}
                             </th>
                         {% endfor %}
                         {% for part_group_id, part_group in sorted_part_groups if grouper._track_ids_per_part_group[part_group_id]|length > 1 and part_group['constraint_type'].is_stats() %}
-                            <th class="text-right {% if loop.first %}b-left{% endif %}">
+                            <th class="text-right {% if loop.first %}b-left{% endif %}" title="{% trans %}Part Group{% endtrans %}: {{ part_group['title'] }}">
                                 {{ part_group['shortname'] }}
                             </th>
                         {% endfor %}
