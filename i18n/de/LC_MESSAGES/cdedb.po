@@ -11079,7 +11079,7 @@ msgstr "Datenfelder konfigurieren (%(title)s)"
 #: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:30
 #: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:32
 msgid "Title of the Custom Field"
-msgstr "Name des Datenfelds"
+msgstr "Titel des Datenfelds"
 
 #: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:39
 msgid "Field Name"
@@ -11090,8 +11090,8 @@ msgid "Datatype"
 msgstr "Datentyp"
 
 #: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:75
-msgid "Fields for"
-msgstr "Feld für"
+msgid "Category"
+msgstr "Kategorie"
 
 #: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:84
 msgid "Options"

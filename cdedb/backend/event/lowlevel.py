@@ -22,7 +22,7 @@ from cdedb.common import (
     CdEDBOptionalMap, DefaultReturnCode, DeletionBlockers, PrivilegeError, PsycoJson,
     RequestState, mixed_existence_sorter, n_, now, unwrap,
 )
-from cdedb.validation import parse_date, parse_datetime
+from cdedb.validation import EVENT_FIELD_COMMON_FIELDS, parse_date, parse_datetime
 
 
 class EventLowLevelBackend(AbstractBackend):
@@ -828,8 +828,13 @@ class EventLowLevelBackend(AbstractBackend):
                 current = current_field_data[x]
                 if any(updated_field[k] != current[k] for k in updated_field):
                     if x in fee_modifier_fields:
-                        raise ValueError(n_("Cannot change field that is "
-                                            "associated with a fee modifier."))
+                        # Only optional fields of event fields associated with
+                        #  fee modifiers may be changed.
+                        if not all(updated_field[k] == current[k]
+                                   for k in EVENT_FIELD_COMMON_FIELDS
+                                   if k in updated_field):
+                            raise ValueError(n_("Cannot change field that is"
+                                                " associated with a fee modifier."))
                     kind = current_field_data[x]['kind']
                     if updated_field.get('kind', kind) != kind:
                         self._cast_field_values(rs, current, updated_field['kind'])

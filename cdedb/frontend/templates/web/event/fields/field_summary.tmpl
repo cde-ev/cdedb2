@@ -26,7 +26,7 @@
     <div class="col-md-6 {{ aclass }}" role="group">
         <div class="panel panel-default panel-condensed">
             <div class="panel-heading {{ util.has_errors(drow_name('title', field_id)) }}">
-                {{ util.input_text(name=drow_name('title', field_id), actualreadonly=not changeable,
+                {{ util.input_text(name=drow_name('title', field_id),
                                    placeholder=gettext("Title of the Custom Field"),
                                    aclass='drow-input form-control',
                                    arialabel=gettext("Title of the Custom Field"),
@@ -51,8 +51,7 @@
                     </label>
                     <div class="col-sm-8 {{ util.has_errors(drow_name('sortkey', field_id)) }}">
                         {{ util.input_text(name=drow_name('sortkey', field_id), aclass='drow-input form-control',
-                                           actualreadonly=not changeable, type='number',
-                                           attributes=util.drow_basename('sortkey')|s if newrow else '',
+                                           type='number', attributes=util.drow_basename('sortkey')|s if newrow else '',
                                            anid=drow_name('input-text-sortkey', field_id), defaultvalue=0) }}
                         {{ util.output_errors(drow_name('sortkey', field_id)) }}
                     </div>
@@ -72,7 +71,7 @@
                 </div>
                 {% if drow_name('association', field_id) not in values %}
                     <div class="association-input-container">
-                        {{ util.form_input_select(label=gettext("Fields for"), name=drow_name('association', field_id),
+                        {{ util.form_input_select(label=gettext("Category"), name=drow_name('association', field_id),
                                                   entries=enums['FieldAssociations']|enum_entries(processing=gettext),
                                                   attributes=util.drow_basename('association')|s if newrow else '',
                                                   actualreadonly=not changeable,
@@ -86,7 +85,6 @@
                                             attributes=util.drow_basename('entries')|s if newrow else '') }}
                 {% if association == enums['FieldAssociations'].registration %}
                     {{ util.form_input_checkbox(label=gettext("Display at Checkin"), name=drow_name('checkin', field_id),
-                                                actualreadonly=not changeable,
                                                 attributes=util.drow_basename('checkin')|s if newrow else '') }}
                 {% endif %}
                 <div class="drow-buttonspace">

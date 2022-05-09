@@ -48,7 +48,7 @@
     id=anid,
     **{ "aria-current": "page" if active }
 )|xmlattr }}{# We use the `active` attribute for navigation only #}>
-{{- make_icon(icon) + "&nbsp;"|s if icon }}{{ label }}
+{{- make_icon(icon) if icon }}{{ nbsp if icon and label }}{{ label }}
 {%- if readonly %}</span>{%- else -%}</a>{% endif %}
 {%- endmacro %}
 
@@ -484,7 +484,7 @@
     {%- set anid = anid or "input-textarea-{}".format(name) %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, markdown=markdown) %}
         {{- input_textarea(name, readonly, defaultvalue, anid, maxlength=maxlength, rows=rows, attributes=attributes,
-                          aclass='form-control ' + (aclass or '')) }}
+                           actualreadonly=actualreadonly, aclass='form-control ' + (aclass or '')) }}
     {%- endcall %}
 {%- endmacro %}
 
