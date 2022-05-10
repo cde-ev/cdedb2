@@ -81,7 +81,7 @@
         {% for track_id, track in batch %}
             {% set num_track_learners = learners[(ambience['course']['id'], track_id)]|length %}
             <div class="col-md-4">
-                <div class="panel panel-info panel-condensed">
+                <div class="panel panel-info panel-condensed" id="track{{ track_id }}-attendees">
                     <div class="panel-heading">
                         <div class="pull-right">
                             {{ util.href(cdedblink('event/course_choices', {

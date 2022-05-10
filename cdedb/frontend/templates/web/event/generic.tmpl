@@ -283,14 +283,14 @@
     </div>
 {% endmacro %}
 
-{% macro constraint_violations_panel(severity, title=gettext("Constraint Violations"), icon='exclamation-circle', link_title=False) %}
+{% macro constraint_violations_panel(severity, title=gettext("Constraint Violations"), icon='exclamation-circle', anid="constraint-violations", link_title=False) %}
     {% set caller_content = caller() %}
     {% if link_title %}
         {% set title = util.href(cdedblink("event/constraint_violations"), title, icon=icon) %}
         {% set icon = none %}
     {% endif %}
     {% call util.bootstrap_panel(
-            title=title, icon=icon,
+            title=title, icon=icon, anid=anid,
             aclass="panel-default" if severity <= 0 else ("panel-danger" if severity > 1 else "panel-warning")) %}
         {{ caller_content }}
     {% endcall %}
@@ -298,7 +298,7 @@
 
 
 {% macro list_mep_violations(violations, personas, link_registration=False) %}
-    <ul>
+    <ul id="mep-violations">
         {% for violation in violations %}
             {% set persona_name = util.persona_name(personas[violation.persona_id]) %}
             {% if link_registration %}
@@ -321,7 +321,7 @@
 {% endmacro %}
 
 {% macro list_mec_violations(violations, courses, link_course=False) %}
-    <ul>
+    <ul id="mec-violations">
         {% for violation in violations %}
             {% set course_identifier = courses[violation.course_id]['nr'] + ". " + courses[violation.course_id]['shortname'] %}
             {% if link_course %}
