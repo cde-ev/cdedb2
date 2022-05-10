@@ -2,9 +2,10 @@
 import os
 import pathlib
 import shutil
+from typing import Tuple
 
 from cdedb.cli.util import sanity_check, switch_user
-from cdedb.config import Config
+from cdedb.config import Config, SecretsConfig, get_configpath
 
 
 def _recreate_directory(directory: pathlib.Path) -> None:
@@ -126,3 +127,19 @@ def create_log(conf: Config) -> None:
     log_dir: pathlib.Path = conf["LOG_DIR"]
 
     _recreate_directory(log_dir)
+
+
+@sanity_check
+def reset_config(conf: Config) -> Tuple[Config, SecretsConfig]:
+    """Replace the current config file with the sample config."""
+    sample_config_path: pathlib.Path = (
+        conf["REPOSITORY_PATH"] / "related/auto-build/files/stage3/localconfig.py")
+    config_path = get_configpath()
+
+    # there is obviously nothing to do
+    if sample_config_path.samefile(config_path):
+        return Config(), SecretsConfig()
+
+    config_path.unlink()
+    shutil.copy(sample_config_path, config_path)
+    return Config(), SecretsConfig()

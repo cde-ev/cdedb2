@@ -28,10 +28,11 @@ from cdedb.backend.common import (
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.common import (
     PARSE_OUTPUT_DATEFORMAT, CdEDBLog, CdEDBObject, DefaultReturnCode, LineResolutions,
-    RequestState, glue, implying_realms, make_proxy, n_, unwrap,
+    RequestState, glue, make_proxy, n_, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError, QuotaException
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
+from cdedb.common.roles import implying_realms
 from cdedb.database.connection import Atomizer
 from cdedb.filter import money_filter
 from cdedb.validation import PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS, is_optional

@@ -11,7 +11,7 @@ from cdedb.cli.database import (
     compile_sample_data, connect, create_database, create_database_users,
     populate_database, remove_prepared_transactions,
 )
-from cdedb.cli.storage import create_log, create_storage, populate_storage
+from cdedb.cli.storage import create_log, create_storage, populate_storage, reset_config
 from cdedb.cli.util import get_user, switch_user
 from cdedb.config import DEFAULT_CONFIGPATH, SecretsConfig, TestConfig, set_configpath
 
@@ -182,10 +182,10 @@ def compile_sample_data_cmd(
     help="Use this user as the owner of storage and logs.",
     default=get_user,
     show_default="current user")
-@pass_secrets
 @pass_config
-def apply_sample_data(config: TestConfig, secrets: SecretsConfig, owner: str) -> None:
+def apply_sample_data(config: TestConfig, owner: str) -> None:
     """Repopulates the application with sample data."""
+    config, secrets = reset_config(config)
     with switch_user(owner):
         create_log(config)
         create_storage(config)

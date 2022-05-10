@@ -28,11 +28,12 @@ import psycopg2.extras
 import cdedb.validation as validate
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    LOCALE, CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Error,
-    RequestState, Role, diacritic_patterns, glue, make_proxy, n_, setup_logger, unwrap,
+    CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Error, RequestState, Role,
+    diacritic_patterns, glue, make_proxy, n_, setup_logger, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.query import Query, QueryOperators
+from cdedb.common.sorting import LOCALE
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
 from cdedb.database.constants import FieldDatatypes, LockType

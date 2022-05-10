@@ -14,8 +14,8 @@ from werkzeug import Response
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    CdEDBObject, EntitySorter, RequestState, determine_age_class,
-    get_localized_country_codes, n_, unwrap, xsorted,
+    CdEDBObject, RequestState, determine_age_class, get_localized_country_codes, n_,
+    unwrap,
 )
 from cdedb.common.query import (
     Query, QueryConstraint, QueryOperators, QueryScope, QuerySpec, QuerySpecEntry,
@@ -23,6 +23,7 @@ from cdedb.common.query import (
 from cdedb.common.query.defaults import (
     generate_event_course_default_queries, generate_event_registration_default_queries,
 )
+from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.filter import enum_entries_filter
 from cdedb.frontend.common import (
     REQUESTdata, access, check_validation as check, event_guard,

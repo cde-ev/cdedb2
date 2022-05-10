@@ -14,10 +14,11 @@ from werkzeug import Response
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    CdEDBObject, CourseChoiceToolActions, CourseFilterPositions, EntitySorter,
-    InfiniteEnum, RequestState, merge_dicts, n_, unwrap, xsorted,
+    CdEDBObject, CourseChoiceToolActions, CourseFilterPositions, InfiniteEnum,
+    RequestState, merge_dicts, n_, unwrap,
 )
 from cdedb.common.query import Query, QueryOperators, QueryScope
+from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, check_validation as check, event_guard,
     make_persona_name, request_extractor,

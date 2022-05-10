@@ -12,8 +12,9 @@ about the event to be created. They can be obtained by calling the respective fu
 from typing import Dict
 
 import cdedb.database.constants as const
-from cdedb.common import ADMIN_KEYS, CdEDBObject, deduct_years, n_, now
+from cdedb.common import CdEDBObject, deduct_years, n_, now
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpec
+from cdedb.common.roles import ADMIN_KEYS
 
 
 def generate_event_registration_default_queries(
