@@ -378,7 +378,10 @@ class EventBaseFrontend(AbstractUserFrontend):
         parts = (p for part_id, p in event['parts'].items() if part_id in part_ids)
         return set(itertools.chain.from_iterable(part['tracks'] for part in parts))
 
-    def get_constraint_violations(self, rs: RequestState, event_id: int) -> CdEDBObject:
+    def get_constraint_violations(self, rs: RequestState, event_id: int,
+                                  registration_id: int = None, course_id: int = None
+                                  ) -> CdEDBObject:
+
         pgs_by_type: Dict[const.EventPartGroupType, List[Tuple[int, CdEDBObject]]] = {
             constraint: keydictsort_filter(
                 {
@@ -392,19 +395,24 @@ class EventBaseFrontend(AbstractUserFrontend):
         # Check registrations for violations against mutual exclusiveness constraints.
         mep = const.EventPartGroupType.mutually_exclusive_participants
         mep_violations = []
-        registrations = self.eventproxy.get_registrations(
-            rs, self.eventproxy.list_registrations(rs, event_id))
+        if registration_id is None:
+            registrations = self.eventproxy.get_registrations(
+                rs, self.eventproxy.list_registrations(rs, event_id))
+        elif registration_id < 0:
+            registrations = {}
+        else:
+            registrations = self.eventproxy.get_registrations(rs, (registration_id,))
         personas = self.coreproxy.get_personas(
             rs, [reg['persona_id'] for reg_id, reg in registrations.items()])
-        sorted_registrations = keydictsort_filter(
+        registrations = dict(keydictsort_filter(
             registrations,
-            lambda reg: EntitySorter.persona(personas[reg['persona_id']]))
+            lambda reg: EntitySorter.persona(personas[reg['persona_id']])))
 
         def part_id_sorter(part_ids: Collection[int]) -> List[int]:
             return xsorted(part_ids, key=lambda part_id: EntitySorter.event_part(
                 rs.ambience['event']['parts'][part_id]))
 
-        for reg_id, reg in sorted_registrations:
+        for reg_id, reg in registrations.items():
             for pg_id, part_group in pgs_by_type[mep]:
                 part_ids = set(part_id for part_id in part_group['part_ids']
                                if reg['parts'][part_id]['status'].is_present())
@@ -419,11 +427,14 @@ class EventBaseFrontend(AbstractUserFrontend):
         # Check courses for violations against mutual exclusiveness constraints.
         mec = const.EventPartGroupType.mutually_exclusive_courses
         mec_violations = []
-        courses = dict(keydictsort_filter(
-            self.eventproxy.get_courses(
-                rs, self.eventproxy.list_courses(rs, event_id)),
-            EntitySorter.course
-        ))
+        if course_id is None:
+            courses = self.eventproxy.get_courses(
+                rs, self.eventproxy.list_courses(rs, event_id))
+        elif course_id < 0:
+            courses = {}
+        else:
+            courses = self.eventproxy.get_courses(rs, (course_id,))
+        courses = dict(keydictsort_filter(courses, EntitySorter.course))
 
         def track_id_sorter(track_ids: Collection[int]) -> List[int]:
             return xsorted(track_ids, key=lambda track_id: EntitySorter.course_track(
@@ -440,7 +451,11 @@ class EventBaseFrontend(AbstractUserFrontend):
                         ", ".join(rs.ambience['event']['tracks'][track_id]['shortname']
                                   for track_id in sorted_track_ids)))
 
+        max_severity = max((v.constraint_type.severity
+                            for v in itertools.chain(mep_violations, mec_violations)),
+                           default=0)
         return {
+            'max_severity': max_severity,
             'mep_violations': mep_violations, 'registrations': registrations,
             'personas': personas,
             'mec_violations': mec_violations, 'courses': courses,
