@@ -13,9 +13,9 @@ from werkzeug import Response
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, EntitySorter, LodgementsSortkeys, RequestState,
-    Sortkey, merge_dicts, n_, xsorted,
+    CdEDBObject, CdEDBObjectMap, LodgementsSortkeys, RequestState, merge_dicts, n_,
 )
+from cdedb.common.sorting import EntitySorter, Sortkey, xsorted
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, check_validation as check, drow_name,

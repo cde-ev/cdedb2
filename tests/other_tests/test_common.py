@@ -12,10 +12,10 @@ import tempfile
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
 from cdedb.common import (
-    NearlyNow, int_to_words, inverse_diacritic_patterns, mixed_existence_sorter,
-    nearly_now, now, unwrap, xsorted,
+    NearlyNow, int_to_words, inverse_diacritic_patterns, nearly_now, now, unwrap,
 )
 from cdedb.common.roles import extract_roles
+from cdedb.common.sorting import mixed_existence_sorter, xsorted
 from cdedb.enums import ALL_ENUMS
 from tests.common import ANONYMOUS, BasicTest
 
