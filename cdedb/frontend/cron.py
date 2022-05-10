@@ -10,7 +10,8 @@ import inspect
 import pathlib
 from typing import Collection, Iterator
 
-from cdedb.common import ALL_ROLES, RequestState, User, n_, now
+from cdedb.common import RequestState, User, n_, now
+from cdedb.common.roles import ALL_ROLES
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory

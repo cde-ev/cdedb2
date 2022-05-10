@@ -21,8 +21,9 @@ from typing import (
 
 import cdedb.database.constants as const
 from cdedb.common import (
-    ADMIN_KEYS, CdEDBObject, CdEDBObjectMap, EntitySorter, RequestState, n_, xsorted,
+    CdEDBObject, CdEDBObjectMap, EntitySorter, RequestState, n_, xsorted,
 )
+from cdedb.common.roles import ADMIN_KEYS
 from cdedb.config import Config
 from cdedb.filter import keydictsort_filter
 
