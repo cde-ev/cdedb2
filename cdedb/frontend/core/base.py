@@ -22,9 +22,8 @@ from werkzeug import Response
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, EntitySorter, Realm, RequestState,
+    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Realm, RequestState,
     format_country_code, merge_dicts, n_, now, pairwise, sanitize_filename, unwrap,
-    xsorted,
 )
 from cdedb.common.exceptions import ArchiveError, PrivilegeError
 from cdedb.common.fields import (
@@ -36,6 +35,7 @@ from cdedb.common.roles import (
     ADMIN_KEYS, ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, REALM_ADMINS,
     REALM_INHERITANCE, extract_roles, implied_realms,
 )
+from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.filter import date_filter, enum_entries_filter, markdown_parse_safe
 from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, TransactionObserver,

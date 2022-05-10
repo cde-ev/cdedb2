@@ -14,8 +14,8 @@ from werkzeug import Response
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, EntitySorter, RequestState,
-    merge_dicts, n_, now, unwrap, xsorted,
+    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, RequestState, merge_dicts, n_, now,
+    unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
@@ -23,6 +23,7 @@ from cdedb.common.fields import (
     RESTRICTED_MOD_ALLOWED_FIELDS,
 )
 from cdedb.common.query import QueryScope
+from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access, calculate_db_logparams,

@@ -10,7 +10,8 @@ import unittest.mock
 from typing import Any, Dict, Set, Union, cast
 
 import cdedb.database.constants as const
-from cdedb.common import RequestState, now, xsorted
+from cdedb.common import RequestState, now
+from cdedb.common.sorting import xsorted
 from tests.common import CronTest, event_keeper, prepsql, storage
 
 INSERT_TEMPLATE = """

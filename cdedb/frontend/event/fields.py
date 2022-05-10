@@ -14,10 +14,10 @@ from werkzeug import Response
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, EntitySorter, RequestState, build_msg, merge_dicts, n_,
-    xsorted,
+    CdEDBObject, CdEDBObjectMap, RequestState, build_msg, merge_dicts, n_,
 )
 from cdedb.common.query import Query, QueryOperators, QueryScope
+from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.filter import safe_filter
 from cdedb.frontend.common import (
     REQUESTdata, access, drow_name, event_guard, make_persona_name,

@@ -24,7 +24,7 @@ from cdedb.backend.common import (
 from cdedb.backend.event import EventBackend
 from cdedb.common import (
     CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers,
-    RequestState, make_proxy, n_, unwrap, xsorted,
+    RequestState, make_proxy, n_, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
@@ -32,6 +32,7 @@ from cdedb.common.fields import (
 )
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.roles import ADMIN_KEYS, implying_realms
+from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.ml_type_aux import MLType, MLTypeLike
 

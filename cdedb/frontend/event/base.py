@@ -26,12 +26,12 @@ from werkzeug import Response
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    EVENT_SCHEMA_VERSION, CdEDBObject, CdEDBObjectMap, EntitySorter, KeyFunction,
-    RequestState, Sortkey, get_localized_country_codes, merge_dicts, n_, unwrap,
-    xsorted,
+    EVENT_SCHEMA_VERSION, CdEDBObject, CdEDBObjectMap, RequestState,
+    get_localized_country_codes, merge_dicts, n_, unwrap,
 )
 from cdedb.common.fields import LOG_FIELDS_COMMON
 from cdedb.common.query import QueryScope
+from cdedb.common.sorting import EntitySorter, KeyFunction, Sortkey, xsorted
 from cdedb.filter import enum_entries_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access, calculate_db_logparams,

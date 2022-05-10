@@ -82,7 +82,7 @@ import cdedb.ml_type_aux as ml_type
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, EPSILON, EVENT_SCHEMA_VERSION, INFINITE_ENUM_MAGIC_NUMBER,
     CdEDBObjectMap, Error, InfiniteEnum, LineResolutions, asciificator,
-    compute_checkdigit, n_, now, xsorted,
+    compute_checkdigit, n_, now,
 )
 from cdedb.common.exceptions import ValidationWarning
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
@@ -91,6 +91,7 @@ from cdedb.common.query import (
     QueryOrder, QueryScope, QuerySpec,
 )
 from cdedb.common.roles import ADMIN_KEYS, extract_roles
+from cdedb.common.sorting import xsorted
 from cdedb.config import Config
 from cdedb.database.constants import FieldAssociations, FieldDatatypes
 from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS

@@ -21,7 +21,8 @@ import markupsafe
 import phonenumbers
 
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, compute_checkdigit, xsorted
+from cdedb.common import CdEDBObject, compute_checkdigit
+from cdedb.common.sorting import xsorted
 from cdedb.config import Config
 
 _LOGGER = logging.getLogger(__name__)

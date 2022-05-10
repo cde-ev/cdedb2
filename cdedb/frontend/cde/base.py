@@ -23,11 +23,12 @@ import cdedb.validationtypes as vtypes
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, Error, LineResolutions, RequestState, deduct_years,
     get_country_code_from_country, get_hash, get_localized_country_codes, merge_dicts,
-    n_, now, xsorted,
+    n_, now,
 )
 from cdedb.common.fields import LOG_FIELDS_COMMON
 from cdedb.common.query import QueryConstraint, QueryOperators, QueryScope
 from cdedb.common.roles import PERSONA_DEFAULTS
+from cdedb.common.sorting import xsorted
 from cdedb.filter import enum_entries_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, CustomCSVDialect, REQUESTdata, REQUESTdatadict, REQUESTfile,
