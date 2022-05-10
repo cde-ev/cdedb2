@@ -20,8 +20,8 @@ import itertools
 import operator
 from collections import OrderedDict
 from typing import (
-    Any, Collection, Dict, Iterable, List, NamedTuple, Optional, Set, Tuple, Type,
-    Union,
+    Any, Collection, Dict, Iterable, List, Literal, NamedTuple, Optional, Set, Tuple,
+    Type, Union,
 )
 
 import werkzeug.exceptions
@@ -45,19 +45,21 @@ from cdedb.validation import PERSONA_FULL_EVENT_CREATION, filter_none
 
 MEPViolation = NamedTuple(
     "MEPViolation", [
+        ("constraint_type",
+         Literal[const.EventPartGroupType.mutually_exclusive_participants]),
         ("reg_id", int),
         ("persona_id", int),
         ("pg_id", int),  # ID of the part group whose constraint is being violated.
-        ("constraint_type", const.EventPartGroupType),
         ("part_ids", List[int]),  # Sorted IDs of the parts in violation.
         ("parts_str", str)  # Locale agnostic string representation of said parts.
     ])
 
 MECViolation = NamedTuple(
     "MECViolation", [
+        ("constraint_type",
+         Literal[const.EventPartGroupType.mutually_exclusive_courses]),
         ("course_id", int),
         ("pg_id", int),  # ID of the part group whose constraint is being violated.
-        ("constraint_type", const.EventPartGroupType),
         ("track_ids", List[int]),  # Sorted IDs of the tracks in violation.
         ("tracks_str", str)  # Locale agnostic string representation of said tracks.
     ])
@@ -423,7 +425,8 @@ class EventBaseFrontend(AbstractUserFrontend):
                 if len(part_ids) > 1:
                     sorted_part_ids = part_id_sorter(part_ids)
                     mep_violations.append(MEPViolation(
-                        reg_id, reg['persona_id'], pg_id, mep, sorted_part_ids,
+                        const.EventPartGroupType.mutually_exclusive_participants,
+                        reg_id, reg['persona_id'], pg_id, sorted_part_ids,
                         ", ".join(rs.ambience['event']['parts'][part_id]['shortname']
                                   for part_id in sorted_part_ids)))
 
@@ -451,7 +454,8 @@ class EventBaseFrontend(AbstractUserFrontend):
                 if len(part_ids) > 1:
                     sorted_track_ids = track_id_sorter(track_ids)
                     mec_violations.append(MECViolation(
-                        course_id_, pg_id, mec, sorted_track_ids,
+                        const.EventPartGroupType.mutually_exclusive_courses,
+                        course_id_, pg_id, sorted_track_ids,
                         ", ".join(rs.ambience['event']['tracks'][track_id]['shortname']
                                   for track_id in sorted_track_ids)))
 
