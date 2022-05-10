@@ -4992,6 +4992,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 
     @as_users("emilia")
     def test_part_group_constraints(self) -> None:
+        # pylint: disable=protected-access
         self.traverse("TripelAkademie")
         self.assertPresence("Verstöße gegen Beschränkungen",
                             div="constraint-violations")
