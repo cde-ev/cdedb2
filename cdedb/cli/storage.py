@@ -132,9 +132,14 @@ def create_log(conf: Config) -> None:
 @sanity_check
 def reset_config(conf: Config) -> Tuple[Config, SecretsConfig]:
     """Replace the current config file with the sample config."""
-    default_config_path = (
+    sample_config_path: pathlib.Path = (
         conf["REPOSITORY_PATH"] / "related/auto-build/files/stage3/localconfig.py")
     config_path = get_configpath()
+
+    # there is obviously nothing to do
+    if sample_config_path.samefile(config_path):
+        return Config(), SecretsConfig()
+
     config_path.unlink()
-    shutil.copy(default_config_path, config_path)
+    shutil.copy(sample_config_path, config_path)
     return Config(), SecretsConfig()
