@@ -4989,3 +4989,131 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             f['qval_ctime.creation_time'].value,
             reference_time.isoformat()
         )
+
+    @as_users("emilia")
+    def test_part_group_constraints(self) -> None:
+        self.traverse("TripelAkademie")
+        self.assertPresence("Verstöße gegen Beschränkungen",
+                            div="constraint-violations")
+        self.assertPresence("Es gibt 1 Verstöße gegen Teilnahmebeschränkungen.",
+                            div="constraint-violations")
+        self.assertPresence("Es gibt 1 Verstöße gegen Kursbeschränkungen.",
+                            div="constraint-violations")
+        self.traverse("Verstöße gegen Beschränkungen")
+        self.assertTitle("TripelAkademie – Verstöße gegen Beschränkungen")
+        self.assertPresence("Teilnahmebeschränkungen")
+        self.assertPresence("Emilia E. Eventis verstößt gegen die Teilnahmebeschränkung"
+                            " TN 1H. (Anwesend in K1, W1).", div="mep-violations")
+        self.assertNonPresence("TN 2H", div="mep-violations")
+        self.assertPresence("Kursbeschränkungen")
+        self.assertPresence("4. Akrobatik verstößt gegen die Kursbeschränkung"
+                            " Kurs 1H. (Findet statt in OK1, KK1).",
+                            div="mec-violations")
+        self.assertNonPresence("4. Akrobatik verstößt gegen die Kursbeschränkung"
+                               " Kurs 2H. (Findet statt in WK2m, WK2n).",
+                               div="mec-violations")
+
+        # Change Emilia's registration.
+        self.traverse("Emilia E. Eventis")
+        self.assertPresence("Verstöße gegen Beschränkungen",
+                            div="constraint-violations")
+        self.assertPresence("Emilia E. Eventis verstößt gegen die Teilnahmebeschränkung"
+                            " TN 1H. (Anwesend in K1, W1).", div="mep-violations")
+        self.assertNonPresence("TN 2H", div="mep-violations")
+        self.traverse("Bearbeiten")
+        f = self.response.forms['changeregistrationform']
+        self.assertEqual(
+            f['part8.status'].value, str(const.RegistrationPartStati.participant))
+        self.assertEqual(
+            f['part6.status'].value, str(const.RegistrationPartStati.waitlist))
+        self.assertEqual(
+            f['part7.status'].value, str(const.RegistrationPartStati.guest))
+        self.assertEqual(
+            f['part11.status'].value, str(const.RegistrationPartStati.waitlist))
+        self.assertEqual(
+            f['part9.status'].value, str(const.RegistrationPartStati.guest))
+        self.assertEqual(
+            f['part10.status'].value, str(const.RegistrationPartStati.rejected))
+        f['part7.status'] = const.RegistrationPartStati.rejected
+        f['part11.status'] = const.RegistrationPartStati.participant
+        self.submit(f)
+
+        self.assertPresence("Verstöße gegen Beschränkungen",
+                            div="constraint-violations")
+        self.assertNonPresence("TN 1H", div="mep-violations")
+        self.assertPresence("Emilia E. Eventis verstößt gegen die Teilnahmebeschränkung"
+                            " TN 2H. (Anwesend in K2, O2).", div="mep-violations")
+
+        f['part9.status'] = const.RegistrationPartStati.cancelled
+        self.submit(f)
+        self.assertNonPresence("Verstöße gegen Beschränkungen",
+                               div="constraint-violations", check_div=False)
+        self.assertNonPresence(
+            "Emilia E. Eventis verstößt gegen die Teilnahmebeschränkung")
+
+        self.traverse("Verstöße gegen Beschränkungen")
+        self.assertNonPresence("Teilnahmebeschränkungen")
+
+        # Change the Akrobatik course's active segments.
+        self.traverse("4. Akrobatik")
+        self.assertPresence("Verstöße gegen Beschränkungen",
+                            div="constraint-violations")
+        self.assertPresence("4. Akrobatik verstößt gegen die Kursbeschränkung"
+                            " Kurs 1H. (Findet statt in OK1, KK1).",
+                            div="mec-violations")
+        self.assertNonPresence("4. Akrobatik verstößt gegen die Kursbeschränkung"
+                               " Kurs 2H. (Findet statt in WK2m, WK2n).",
+                               div="mec-violations")
+        self.assertNonPresence("Kurs fällt aus")
+
+        self.traverse("Bearbeiten")
+        f = self.response.forms['changecourseform']
+        # Disabled checkboxes have a `value` of None, but have their `_value` set.
+        self.assertEqual(
+            f.get('active_segments', index=0).value, "6")
+        self.assertEqual(
+            f.get('active_segments', index=0).checked, True)
+        self.assertEqual(
+            f.get('active_segments', index=1)._value, "7")
+        self.assertEqual(
+            f.get('active_segments', index=1)._checked, False)
+        self.assertEqual(
+            f.get('active_segments', index=2).value, "8")
+        self.assertEqual(
+            f.get('active_segments', index=2).checked, True)
+        self.assertEqual(
+            f.get('active_segments', index=3)._value, "9")
+        self.assertEqual(
+            f.get('active_segments', index=3)._checked, False)
+        self.assertEqual(
+            f.get('active_segments', index=4)._value, "10")
+        self.assertEqual(
+            f.get('active_segments', index=4)._checked, False)
+        self.assertEqual(
+            f.get('active_segments', index=5).value, "11")
+        self.assertEqual(
+            f.get('active_segments', index=5).checked, True)
+        self.assertEqual(
+            f.get('active_segments', index=6)._value, "12")
+        self.assertEqual(
+            f.get('active_segments', index=6)._checked, True)
+        self.assertEqual(
+            f.get('active_segments', index=7)._value, "13")
+        self.assertEqual(
+            f.get('active_segments', index=7)._checked, False)
+        self.assertEqual(
+            f.get('active_segments', index=8)._value, "14")
+        self.assertEqual(
+            f.get('active_segments', index=8)._checked, False)
+        self.assertEqual(
+            f.get('active_segments', index=9)._value, "15")
+        self.assertEqual(
+            f.get('active_segments', index=9)._checked, False)
+
+        f['active_segments'] = [6, 11, 12]
+        self.submit(f)
+        self.assertNonPresence("Verstöße gegen Beschränkungen",
+                               div="constraint-violations", check_div=False)
+        self.assertPresence("Kurs fällt aus", div="track8-attendees")
+        self.traverse("Verstöße gegen Beschränkungen")
+        self.assertPresence("Es gibt derzeit keine Verstöße gegen Beschränkungen.")
