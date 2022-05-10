@@ -19,7 +19,10 @@ import datetime
 import itertools
 import operator
 from collections import OrderedDict
-from typing import Any, Collection, Dict, List, NamedTuple, Optional, Set, Tuple, Type
+from typing import (
+    Any, Collection, Dict, Iterable, List, NamedTuple, Optional, Set, Tuple, Type,
+    Union,
+)
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -440,20 +443,21 @@ class EventBaseFrontend(AbstractUserFrontend):
             return xsorted(track_ids, key=lambda track_id: EntitySorter.course_track(
                 rs.ambience['event']['tracks'][track_id]))
 
-        for course_id, course in courses.items():
+        for course_id_, course in courses.items():
             for pg_id, part_group in pgs_by_type[mec]:
                 pg_track_ids = self._get_track_ids(rs.ambience['event'], pg_id)
                 track_ids = set(course['active_segments']) & pg_track_ids
                 if len(track_ids) > 1:
                     sorted_track_ids = track_id_sorter(track_ids)
                     mec_violations.append(MECViolation(
-                        course_id, pg_id, mec, sorted_track_ids,
+                        course_id_, pg_id, mec, sorted_track_ids,
                         ", ".join(rs.ambience['event']['tracks'][track_id]['shortname']
                                   for track_id in sorted_track_ids)))
 
-        max_severity = max((v.constraint_type.severity
-                            for v in itertools.chain(mep_violations, mec_violations)),
-                           default=0)
+        all_violations: Iterable[Union[MEPViolation, MECViolation]] = itertools.chain(
+            mep_violations, mec_violations)
+        max_severity = max(
+            (v.constraint_type.severity for v in all_violations), default=0)
         return {
             'max_severity': max_severity,
             'mep_violations': mep_violations, 'registrations': registrations,
