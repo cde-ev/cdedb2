@@ -135,7 +135,7 @@ class EventPartGroupType(enum.IntEnum):
     def severity(self) -> int:
         """Severity 0 means no warnings, 1 means weak warnings, 2+ means errors."""
         return {
-            EventPartGroupType.mutually_exclusive_participants: 1,
+            EventPartGroupType.mutually_exclusive_participants: 2,
             EventPartGroupType.mutually_exclusive_courses: 1,
             EventPartGroupType.Statistic: 0,
         }[self]
