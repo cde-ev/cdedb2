@@ -631,10 +631,14 @@ class EventRegistrationMixin(EventBaseFrontend):
         fee = self.eventproxy.calculate_fee(rs, registration_id)
         waitlist_position = self.eventproxy.get_waitlist_position(
             rs, event_id, persona_id=persona['id'])
+        constraint_violations = self.get_constraint_violations(
+            rs, event_id, registration_id=registration_id, course_id=-1)
         return self.render(rs, "registration/show_registration", {
             'persona': persona, 'age': age, 'courses': courses,
             'lodgements': lodgements, 'meta_info': meta_info, 'fee': fee,
             'reference': reference, 'waitlist_position': waitlist_position,
+            'mep_violations': constraint_violations['mep_violations'],
+            'violation_severity': constraint_violations['max_severity'],
         })
 
     @access("event")

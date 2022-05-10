@@ -64,6 +64,12 @@
         {% endcall %}
     {% endif %}
 
+    {% if mec_violations %}
+        {% call generic_event.constraint_violations_panel(violation_severity) %}
+            {{ generic_event.list_mec_violations(mec_violations, {ambience['course']['id']: ambience['course']}) }}
+        {% endcall %}
+    {% endif %}
+
     <h2>{% trans %}Attendees{% endtrans %}</h2>
     {% set relevant_tracks = [] %}
     {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track)

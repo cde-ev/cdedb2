@@ -101,6 +101,10 @@ class EventEventMixin(EventBaseFrontend):
             params['institutions'] = self.pasteventproxy.list_institutions(rs)
             params['minor_form_present'] = (
                     self.eventproxy.get_minor_form(rs, event_id) is not None)
+            constraint_violations = self.get_constraint_violations(rs, event_id)
+            params['mep_violations'] = constraint_violations['mep_violations']
+            params['mec_violations'] = constraint_violations['mec_violations']
+            params['violation_severity'] = constraint_violations['max_severity']
         elif not rs.ambience['event']['is_visible']:
             raise werkzeug.exceptions.Forbidden(n_("The event is not published yet."))
         return self.render(rs, "event/show_event", params)

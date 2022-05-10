@@ -1,6 +1,7 @@
 {% set sidenav_active='event_show' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/event/generic.tmpl" as generic with context %}
 {% block scripts %}
     {% if values['event_id'] in user.orga or user.admin_views.intersection(('event_orga', 'event_mgmt')) %}
         {{ util.cdedb_script('cdedb_searchpersona.js') }}
@@ -166,7 +167,7 @@
 
         {% if "event_mgmt" in user.admin_views %}
             <div class="col-md-6" id="manage-orgas">
-                {% call util.bootstrap_panel(title="Orgas", icon='user-friends') %}
+                {% call util.bootstrap_panel(title=gettext("Orgas"), icon='user-friends') %}
                 <ul>
                     {% for anid, entry in orgas.items() %} {# This is already sorted. #}
                         <li class="hide-hover-container clearfix-after">
@@ -328,6 +329,33 @@
                                 {% endtrans %}
                             {% endif %}
                         </p>
+                    {% endif %}
+                {% endcall %}
+            </div>
+
+            <div class="col-md-6" id="constraint-violations">
+                {% call generic.constraint_violations_panel(violation_severity, link_title=True) %}
+                    {% if not mep_violations and not mec_violations %}
+                        {% trans %}
+                            There are currently no constraints being violated.
+                        {% endtrans %}
+                    {% else %}
+                        <ul>
+                            {% if mep_violations %}
+                                <li>
+                                    {% trans count=mep_violations|length %}
+                                        There are {{ count }} violations of participation constraints.
+                                    {% endtrans %}
+                                </li>
+                            {% endif %}
+                            {% if mec_violations %}
+                                <li>
+                                    {% trans count=mec_violations|length %}
+                                        There are {{ count }} violations of course constraints.
+                                    {% endtrans %}
+                                </li>
+                            {% endif %}
+                        </ul>
                     {% endif %}
                 {% endcall %}
             </div>

@@ -1,6 +1,7 @@
 {% set sidenav_active = 'constraint_violations' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/event/generic.tmpl" as generic with context %}
 {% block title %}
     {{ ambience['event']['title'] }} – {% trans %}Constraint Violations{% endtrans %}
 {% endblock %}
@@ -13,26 +14,18 @@
     {{ util.context_heading(gettext("Constraint Violations"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block content %}
+    {% if not mep_violations and not mec_violations %}
+        {% trans %}
+            There are currently no constraints being violated.
+        {% endtrans %}
+    {% endif %}
+
     {% if mep_violations %}
         <h2 class="heading-underline">
             {% trans %}Participation Constraints{% endtrans %}
         </h2>
         {# These are presorted by persona and constraint. #}
-        <ul>
-        {% for mep_violation in mep_violations %}
-            {% set persona_name = util.persona_name(personas[mep_violation.persona_id]) %}
-            {% set reg_link = util.href(cdedblink("event/show_registration", {'registration_id': mep_violation.reg_id}), persona_name) %}
-            <li {% if mep_violation.constraint_type.severity == 1 %} class="text-warning" {% elif mep_violation.constraint_type.severity > 1 %} class="text-danger" {% endif %}>
-                {% trans reg_link=reg_link, constraint_shortname=ambience['event']['part_groups'][mep_violation.pg_id]['shortname'] %}
-                    {{ reg_link }} is in violation of the {{ constraint_shortname }} mutually exclusive participation constraint.
-                {% endtrans -%}
-                {# These are presorted. #}
-                {% trans parts = mep_violation.parts_str %}
-                    (Present in {{ parts }}).
-                {% endtrans %}
-            </li>
-        {% endfor %}
-        </ul>
+        {{ generic.list_mep_violations(mep_violations, personas, link_registration=True) }}
     {% endif %}
 
     {% if mec_violations %}
@@ -40,20 +33,6 @@
             {% trans %}Course Constraints{% endtrans %}
         </h2>
         {# These are presorted by course and constraint. #}
-        <ul>
-        {% for mec_violation in mec_violations %}
-            {% set course_identifier = courses[mec_violation.course_id]['nr'] + ". " + courses[mec_violation.course_id]['shortname'] %}
-            {% set course_link = util.href(cdedblink("event/show_course", {'course_id': mec_violation.course_id}), course_identifier) %}
-            <li {% if mec_violation.constraint_type.severity == 1 %} class="text-warning" {% elif mec_violation.constraint_type.severity > 1 %} class="text-danger" {% endif %}>
-                {% trans course_link=course_link, constraint_shortname=ambience['event']['part_groups'][mec_violation.pg_id]['shortname'] %}
-                    {{ course_link }} is in violation of the {{ constraint_shortname }} mutually exclusive course constraint.
-                {% endtrans -%}
-                {# These are presorted. #}
-                {% trans tracks = mec_violation.tracks_str %}
-                    (Taking place in {{ tracks }}).
-                {% endtrans %}
-            </li>
-        {% endfor %}
-        </ul>
+        {{ generic.list_mec_violations(mec_violations, courses, link_course=True) }}
     {% endif %}
 {% endblock %}
