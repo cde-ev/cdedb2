@@ -441,18 +441,25 @@ class EventBaseFrontend(AbstractUserFrontend):
         else:
             courses = self.eventproxy.get_courses(rs, (course_id,))
         courses = dict(keydictsort_filter(courses, EntitySorter.course))
+        track_part_map = {
+            track_id: track['part_id']
+            for track_id, track in rs.ambience['event']['tracks'].items()
+        }
 
         def track_id_sorter(track_ids: Collection[int]) -> List[int]:
             return xsorted(track_ids, key=lambda track_id: EntitySorter.course_track(
                 rs.ambience['event']['tracks'][track_id]))
 
         for course_id_, course in courses.items():
+            # Gather the track and part ids of the courses active segments.
+            track_ids = set(course['active_segments'])
+            part_ids = set(track_part_map[t_id] for t_id in track_ids)
             for pg_id, part_group in pgs_by_type[mec]:
-                track_ids = set(course['active_segments'])
-                part_ids = set(rs.ambience['event']['tracks'][t_id]['part_id']
-                               for t_id in track_ids) & part_group['part_ids']
-                if len(part_ids) > 1:
-                    sorted_track_ids = track_id_sorter(track_ids)
+                if len(part_ids & part_group['part_ids']) > 1:
+                    # Filter those tracks, that belong to this part group.
+                    sorted_track_ids = track_id_sorter(
+                        t_id for t_id in track_ids
+                        if track_part_map[t_id] in part_group['part_ids'])
                     mec_violations.append(MECViolation(
                         const.EventPartGroupType.mutually_exclusive_courses,
                         course_id_, pg_id, sorted_track_ids,
