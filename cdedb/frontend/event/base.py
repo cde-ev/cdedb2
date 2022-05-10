@@ -445,9 +445,10 @@ class EventBaseFrontend(AbstractUserFrontend):
 
         for course_id_, course in courses.items():
             for pg_id, part_group in pgs_by_type[mec]:
-                pg_track_ids = self._get_track_ids(rs.ambience['event'], pg_id)
-                track_ids = set(course['active_segments']) & pg_track_ids
-                if len(track_ids) > 1:
+                track_ids = set(course['active_segments'])
+                part_ids = set(rs.ambience['event']['tracks'][t_id]['part_id']
+                               for t_id in track_ids) & part_group['part_ids']
+                if len(part_ids) > 1:
                     sorted_track_ids = track_id_sorter(track_ids)
                     mec_violations.append(MECViolation(
                         course_id_, pg_id, mec, sorted_track_ids,
