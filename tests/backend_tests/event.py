@@ -4022,6 +4022,12 @@ class TestEventBackend(BackendTest):
         event_id = 4
         event = self.event.get_event(self.key, event_id)
 
+        # Delete existing registrations so we are free to create and delete event parts.
+        registration_ids = self.event.list_registrations(self.key, event_id)
+        for reg_id in registration_ids:
+            self.event.delete_registration(
+                self.key, reg_id, cascade=("registration_parts", "registration_tracks"))
+
         # Load expected sample part groups.
         part_group_parts_data = self.get_sample_data("event.part_group_parts")
         part_group_expectation = {
@@ -4157,6 +4163,26 @@ class TestEventBackend(BackendTest):
                 'part_ids': [8, 11],
                 'shortname': 'KA',
                 'title': 'Kaub'},
+            6: {'constraint_type': const.EventPartGroupType.mutually_exclusive_participants,
+                'notes': None,
+                'part_ids': [7, 8],
+                'shortname': 'TN 1H',
+                'title': 'Teilnehmer 1. Hälfte'},
+            7: {'constraint_type': const.EventPartGroupType.mutually_exclusive_participants,
+                'notes': None,
+                'part_ids': [9, 10, 11],
+                'shortname': 'TN 2H',
+                'title': 'Teilnehmer 2. Hälfte'},
+            8: {'constraint_type': const.EventPartGroupType.mutually_exclusive_courses,
+                'notes': None,
+                'part_ids': [7, 8],
+                'shortname': 'Kurs 1H',
+                'title': 'Kurse 1. Hälfte'},
+            9: {'constraint_type': const.EventPartGroupType.mutually_exclusive_courses,
+                'notes': None,
+                'part_ids': [9, 10, 11],
+                'shortname': 'Kurs 2H',
+                'title': 'Kurse 2. Hälfte'},
             1005: {'constraint_type': const.EventPartGroupType.Statistic,
                    'notes': "Let's see what happens",
                    'part_ids': [7, 8, 9, 10, 11],
