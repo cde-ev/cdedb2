@@ -335,7 +335,8 @@ class EventQueryBackend(EventBaseBackend):
                     LEFT OUTER JOIN (
                         SELECT
                             c.id AS base_id, is_active IS NOT NULL AS is_offered,
-                            COALESCE(is_active, False) AS takes_place
+                            COALESCE(is_active, False) AS takes_place,
+                            NOT COALESCE(is_active, True) AS is_cancelled
                         FROM (
                             {base}
                             LEFT OUTER JOIN (
