@@ -902,7 +902,8 @@ class EventRegistrationBackend(EventBaseBackend):
         }
         for fee_mod in event['fee_modifiers'].values():
             if reg['fields'].get(event['fields'][fee_mod['field_id']]['field_name']):
-                fees_to_pay[fee_mod['part_id']] += fee_mod['amount']
+                if fee_mod['part_id'] in fees_to_pay:
+                    fees_to_pay[fee_mod['part_id']] += fee_mod['amount']
 
         def total_cost(part_ids: Collection[int]) -> decimal.Decimal:
             return sum((fees_to_pay[part_id] for part_id in part_ids), start=zero)
