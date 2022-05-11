@@ -1,3 +1,5 @@
+"""Parse the sample data from a json data file into sql statements."""
+
 import json
 import pathlib
 import sys
@@ -105,7 +107,7 @@ def format_inserts(table_name: str, table_data: Sized, keys: Tuple[str, ...],
     query = "INSERT INTO {table} ({keys}) VALUES {value_list};".format(
         table=table_name, keys=", ".join(keys), value_list=value_list)
     # noinspection PyProtectedMember
-    params = tuple(aux["core"]._sanitize_db_input(p) for p in params)
+    params = tuple(aux["core"]._sanitize_db_input(p) for p in params)  # pylint: disable=protected-access
 
     # This is a bit hacky, but it gives us access to a psycopg2.cursor
     # object so we can let psycopg2 take care of the heavy lifting
@@ -188,7 +190,7 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
 
 def compile_sample_data_sql(config: TestConfig, infile: pathlib.Path,
                             outfile: pathlib.Path, xss: bool) -> None:
-    """Do the actual work - for a detailed description, see the click function."""
+    """Parse the sample data from a json data file into sql statements."""
     with open(infile) as f:
         data = json.load(f)
 

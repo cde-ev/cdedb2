@@ -1,3 +1,5 @@
+"""Generate a JSON-file from the current state of the database."""
+
 import datetime
 import json
 import pathlib
@@ -59,8 +61,9 @@ def dump_sql_data(rs: RequestState, core: CoreBackend
                   ) -> Dict[str, List[Dict[str, Any]]]:
     # extract the tables to be created from the database tables
     with open("/cdedb2/cdedb/database/cdedb-tables.sql", "r") as f:
-        tables = [table.group('name')
-                  for table in re.finditer(r'CREATE TABLE\s(?P<name>\w+\.\w+)', f.read())]
+        tables = [
+            table.group('name')
+            for table in re.finditer(r'CREATE TABLE\s(?P<name>\w+\.\w+)', f.read())]
 
     # extract the ldap tables from the separate file
     with open("/cdedb2/cdedb/database/cdedb-ldap.sql", "r") as f:
