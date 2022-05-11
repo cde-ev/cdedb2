@@ -1,5 +1,4 @@
 """Set up the database, including users, tables and population with sample data."""
-import os
 import pathlib
 import subprocess
 
@@ -7,8 +6,9 @@ import psycopg2
 import psycopg2.extensions
 import psycopg2.extras
 
+from cdedb.cli.dev.compile_sample_data_sql import compile_sample_data_sql
 from cdedb.cli.util import has_systemd, is_docker, sanity_check
-from cdedb.config import Config, SecretsConfig
+from cdedb.config import Config, SecretsConfig, TestConfig
 
 
 def restart_services(*services: str) -> None:
@@ -120,7 +120,8 @@ def create_database(conf: Config, secrets: SecretsConfig) -> None:
 
 
 @sanity_check
-def populate_database(conf: Config, secrets: SecretsConfig, xss: bool = False) -> None:
+def populate_database(conf: TestConfig, secrets: SecretsConfig,
+                      xss: bool = False) -> None:
     """Populate the database with sample data."""
     repo_path: pathlib.Path = conf['REPOSITORY_PATH']
 
@@ -131,12 +132,7 @@ def populate_database(conf: Config, secrets: SecretsConfig, xss: bool = False) -
         # TODO use a real temporary file instead or do it in memory
         # TODO this is assumed by tests/common.py -- can we resolve this?
         infile = repo_path / "tests" / "ancillary_files" / "sample_data.json"
-
-        # this is an inline import to encapsulate the heavy dependencies
-        from cdedb.cli.dev.compile_sample_data_sql import (  # pylint: disable=import-outside-toplevel
-            work,
-        )
-        work(conf, infile, outfile, xss=xss)
+        compile_sample_data_sql(conf, infile, outfile, xss=xss)
 
     with connect(conf, secrets) as conn:
         with conn.cursor() as cur:
