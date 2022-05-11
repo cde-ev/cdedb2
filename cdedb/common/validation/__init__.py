@@ -278,9 +278,7 @@ def _add_typed_validator(fun: F, return_type: Type[Any] = None) -> F:
         return_type = get_type_hints(fun)["return"]
     assert return_type
     if return_type in _ALL_TYPED:
-        # TODO is there a better solution when we move this in separate files?
-        # raise RuntimeError(f"Type {return_type} already registered")
-        return fun
+        raise RuntimeError(f"Type {return_type} already registered")
     _ALL_TYPED[return_type] = fun
 
     return fun
