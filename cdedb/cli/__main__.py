@@ -199,7 +199,7 @@ DEV_DIR = pathlib.Path("/cdedb2/cdedb/cli/dev")
 
 @click.group(cls=command_group_from_folder(DEV_DIR))
 def development_dynamic() -> None:
-    """Helpers for development, expecting a running CdEDBv2.
+    """Dynamic helper scripts from an external folder.
 
     This allows us to import stuff from the remaining cdedb module inside the files,
     without polluting the namespace of the cli module, since we use this for setup
@@ -209,6 +209,7 @@ def development_dynamic() -> None:
 
 development = click.CommandCollection(sources=[development_static, development_dynamic])
 development.name = "dev"
+development.help = "Helpers for development, expecting a running CdEDBv2."
 cli.add_command(development)
 
 
