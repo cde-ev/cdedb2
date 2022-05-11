@@ -1184,9 +1184,11 @@ class EventRegistrationMixin(EventBaseFrontend):
     def _registration_fee_qr_data(payment_data: CdEDBObject) -> Optional[CdEDBObject]:
         if not payment_data['iban']:
             return None
+        # Ensure that the "free-"text parts are not too long. The exact size is limited
+        # by third parties.
         return {
-            'name': payment_data['meta_info']['CdE_Konto_Inhaber'],
-            'text': payment_data['reference'],
+            'name': payment_data['meta_info']['CdE_Konto_Inhaber'][:70],
+            'text': payment_data['reference'][:140],
             'amount': payment_data['to_pay'],
             'iban': payment_data['iban'],
             'bic': payment_data['meta_info']['CdE_Konto_BIC'],
