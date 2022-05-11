@@ -13,10 +13,8 @@ from werkzeug import Response
 
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
-from cdedb.common import (
-    CdEDBObject, RequestState, determine_age_class, get_localized_country_codes, n_,
-    unwrap,
-)
+from cdedb.common import CdEDBObject, RequestState, determine_age_class, unwrap
+from cdedb.common.i18n import get_localized_country_codes, n_
 from cdedb.common.query import (
     Query, QueryConstraint, QueryOperators, QueryScope, QuerySpec, QuerySpecEntry,
 )

@@ -22,10 +22,12 @@ import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, Error, LineResolutions, RequestState, deduct_years,
-    get_country_code_from_country, get_hash, get_localized_country_codes, merge_dicts,
-    n_, now,
+    get_hash, merge_dicts, now,
 )
 from cdedb.common.fields import LOG_FIELDS_COMMON
+from cdedb.common.i18n import (
+    get_country_code_from_country, get_localized_country_codes, n_,
+)
 from cdedb.common.query import QueryConstraint, QueryOperators, QueryScope
 from cdedb.common.roles import PERSONA_DEFAULTS
 from cdedb.common.sorting import xsorted

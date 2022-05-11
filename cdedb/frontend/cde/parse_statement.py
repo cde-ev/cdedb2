@@ -10,8 +10,9 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
     PARSE_OUTPUT_DATEFORMAT, Accounts, CdEDBObject, CdEDBObjectMap, ConfidenceLevel,
-    Error, TransactionType, diacritic_patterns, n_, now,
+    Error, TransactionType, diacritic_patterns, now,
 )
+from cdedb.common.i18n import n_
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.filter import cdedbid_filter
 from cdedb.frontend.common import inspect_validation as inspect
