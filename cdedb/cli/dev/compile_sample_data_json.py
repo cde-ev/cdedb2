@@ -1,13 +1,10 @@
 """Generate a JSON-file from the current state of the database."""
 
 import datetime
-import json
-import pathlib
 import re
 from typing import Any, Dict, List
 
-from cdedb.backend.core import CoreBackend
-from cdedb.common import CustomJSONEncoder, RequestState, nearly_now
+from cdedb.common import nearly_now
 from cdedb.script import Script
 
 # per default, we sort entries in a table by their id. Here we can specify any arbitrary
@@ -57,8 +54,13 @@ implicit_columns = {
 }
 
 
-def dump_sql_data(rs: RequestState, core: CoreBackend
-                  ) -> Dict[str, List[Dict[str, Any]]]:
+def sql2json(dbname: str) -> Dict[str, List[Dict[str, Any]]]:
+    """Generate a valid JSON dict from the current state of the given database."""
+
+    script = Script(dbuser="cdb_admin", dbname=dbname, check_system_user=False)
+    rs = script.rs()
+    core = script.make_backend("core", proxy=False)
+
     # extract the tables to be created from the database tables
     with open("/cdedb2/cdedb/database/cdedb-tables.sql", "r") as f:
         tables = [
@@ -100,16 +102,3 @@ def dump_sql_data(rs: RequestState, core: CoreBackend
         full_sample_data[table] = sorted_entities
 
     return full_sample_data
-
-
-def compile_sample_data_json(outfile: pathlib.Path) -> None:
-    """Generate a JSON-file from the current state of the database."""
-
-    script = Script(dbuser="cdb_admin")
-    rs = script.rs()
-    core = script.make_backend("core", proxy=False)
-
-    data = dump_sql_data(rs, core)
-
-    with open(outfile, "w") as f:
-        json.dump(data, f, cls=CustomJSONEncoder, indent=4, ensure_ascii=False)

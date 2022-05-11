@@ -13,11 +13,12 @@ from cdedb.cli.database import (
     connect, create_database, create_database_users, populate_database,
     remove_prepared_transactions,
 )
-from cdedb.cli.dev.compile_sample_data_json import compile_sample_data_json
+from cdedb.cli.dev.compile_sample_data_json import sql2json
 from cdedb.cli.dev.json2sql import json2sql
 from cdedb.cli.dev.serve import serve_debugger
 from cdedb.cli.storage import create_log, create_storage, populate_storage, reset_config
 from cdedb.cli.util import get_user, pass_config, pass_secrets, switch_user
+from cdedb.common import CustomJSONEncoder
 from cdedb.config import DEFAULT_CONFIGPATH, SecretsConfig, TestConfig, set_configpath
 
 
@@ -154,20 +155,23 @@ def remove_transactions_cmd(config: TestConfig, secrets: SecretsConfig) -> None:
 # Development commands
 #
 
-@cli.group("dev")
+@cli.group(name="dev")
 def development() -> None:
     """Helpers for development, expecting a running CdEDBv2."""
 
 
-@click.command()
+@click.command(name="compile-sample-data-json")
 @click.option("-o", "--outfile", default="/tmp/sample_data.json",
               type=click.Path(), help="the place to store the sql file")
-def compile_sample_data_json_cmd(outfile: pathlib.Path) -> None:
+@pass_config
+def compile_sample_data_json(config: TestConfig, outfile: pathlib.Path) -> None:
     """Generate a JSON-file from the current state of the database."""
-    compile_sample_data_json(outfile)
+    data = sql2json(config["CDB_DATABASE_NAME"])
+    with open(outfile, "w") as f:
+        json.dump(data, f, cls=CustomJSONEncoder, indent=4, ensure_ascii=False)
 
 
-@development.command(name="compile-sample-data")
+@development.command(name="compile-sample-data-sql")
 @click.option("-i", "--infile",
               default="/cdedb2/tests/ancillary_files/sample_data.json",
               type=click.Path(), help="the json file containing the sample data")
@@ -190,7 +194,6 @@ def compile_sample_data_sql(
     with open(infile, "r", encoding="utf8") as f:
         data: Dict[str, List[Any]] = json.load(f)
 
-    assert isinstance(data, dict)
     xss_payload = config.get("XSS_PAYLOAD", "") if xss else ""
     commands = json2sql(data, xss_payload)
 
