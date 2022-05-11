@@ -18,7 +18,6 @@ from cdedb.script import Script
 class AuxData(TypedDict):
     conn: connection
     core: Type[CoreBackend]
-    PsycoJson: Type[PsycoJson]
     seq_id_tables: List[str]
     cyclic_references: Dict[str, Tuple[str, ...]]
     constant_replacements: CdEDBObject
@@ -88,7 +87,6 @@ def prepare_aux(data: CdEDBObject) -> AuxData:
     return AuxData(
         conn=conn,
         core=core,
-        PsycoJson=PsycoJson,
         seq_id_tables=seq_id_tables,
         cyclic_references=cyclic_references,
         constant_replacements=constant_replacements,
@@ -102,10 +100,8 @@ def format_inserts(table_name: str, table_data: Sized, keys: Tuple[str, ...],
                    params: List[DatabaseValue_s], aux: AuxData) -> List[str]:
     ret = []
     # Create len(data) many row placeholders for len(keys) many values.
-    value_list = ",\n".join(("({})".format(", ".join(("%s",) * len(keys))),)
-                            * len(table_data))
-    query = "INSERT INTO {table} ({keys}) VALUES {value_list};".format(
-        table=table_name, keys=", ".join(keys), value_list=value_list)
+    value_list = ",\n".join((f"({', '.join(('%s',) * len(keys))})",) * len(table_data))
+    query = f"INSERT INTO {table_name} ({', '.join(keys)}) VALUES {value_list};"
     # noinspection PyProtectedMember
     params = tuple(aux["core"]._sanitize_db_input(p) for p in params)  # pylint: disable=protected-access
 
@@ -122,8 +118,8 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
     commands: List[str] = []
 
     # Start off by resetting the sequential ids to 1.
-    commands.extend("ALTER SEQUENCE IF EXISTS {}_id_seq RESTART WITH 1;"
-                    .format(table) for table in aux["seq_id_tables"])
+    commands.extend(f"ALTER SEQUENCE IF EXISTS {table}_id_seq RESTART WITH 1;"
+                    for table in aux["seq_id_tables"])
 
     # Prepare insert statements for the tables in the source file.
     for table, table_data in data.items():
@@ -132,12 +128,12 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
             continue
 
         # The following is similar to `cdedb.AbstractBackend.sql_insert_many
-        # But we fill missing keys with None isntead of giving an error.
+        # But we fill missing keys with None instead of giving an error.
         key_set = set(chain.from_iterable(e.keys() for e in table_data))
         for k in aux["entry_replacements"].get(table, {}).keys():
             key_set.add(k)
 
-        # Remove fileds causing cyclic references. These will be handled later.
+        # Remove fields causing cyclic references. These will be handled later.
         key_set -= set(aux["cyclic_references"].get(table, {}))
 
         # Convert the keys to a tuple to ensure consistent ordering.
@@ -149,7 +145,7 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
                 if k not in entry:
                     entry[k] = None
                 if isinstance(entry[k], dict):
-                    entry[k] = aux["PsycoJson"](entry[k])
+                    entry[k] = PsycoJson(entry[k])
                 elif isinstance(entry[k], str) and xss:
                     if (table not in aux["xss_table_excludes"]
                             and k not in aux['xss_field_excludes']):
@@ -165,8 +161,7 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
         for entry in data[table]:
             for ref in refs:
                 if entry.get(ref):
-                    query = "UPDATE {} SET {} = %s WHERE id = %s;".format(
-                        table, ref)
+                    query = f"UPDATE {table} SET {ref} = %s WHERE id = %s;"
                     params = (entry[ref], entry["id"])
                     with aux["conn"] as conn:
                         with conn.cursor() as cur:
@@ -175,7 +170,7 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
 
     # Here we set all sequential ids to start with 1001, so that
     # ids are consistent when running the test suite.
-    commands.extend("SELECT setval('{}_id_seq', 1000);".format(table)
+    commands.extend(f"SELECT setval('{table}_id_seq', 1000);"
                     for table in aux["seq_id_tables"])
 
     # Lastly we do some string replacements to cheat in SQL-syntax like `now()`:
