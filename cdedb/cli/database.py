@@ -7,7 +7,7 @@ import psycopg2
 import psycopg2.extensions
 import psycopg2.extras
 
-from cdedb.cli.dev.compile_sample_data_sql import json2sql
+from cdedb.cli.dev.json2sql import json2sql
 from cdedb.cli.util import has_systemd, is_docker, sanity_check
 from cdedb.config import Config, SecretsConfig, TestConfig
 

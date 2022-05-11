@@ -14,7 +14,7 @@ from cdedb.cli.database import (
     remove_prepared_transactions,
 )
 from cdedb.cli.dev.compile_sample_data_json import compile_sample_data_json
-from cdedb.cli.dev.compile_sample_data_sql import json2sql
+from cdedb.cli.dev.json2sql import json2sql
 from cdedb.cli.dev.serve import serve_debugger
 from cdedb.cli.storage import create_log, create_storage, populate_storage, reset_config
 from cdedb.cli.util import get_user, pass_config, pass_secrets, switch_user

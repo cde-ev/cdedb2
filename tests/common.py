@@ -41,7 +41,7 @@ from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
-from cdedb.cli.dev.compile_sample_data_sql import json2sql
+from cdedb.cli.dev.json2sql import json2sql
 from cdedb.cli.storage import create_storage, populate_storage
 from cdedb.common import (
     ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD, CdEDBLog, CdEDBObject,
