@@ -25,15 +25,16 @@ echo ""
 echo "Checkout $OLDREVISION"
 git checkout $OLDREVISION
 ls cdedb/database/evolutions > /tmp/oldevolutions.txt
-# TODO this can be removed once there are no branches with make-based setup
-# check if OLDREVISION has python-based setup
-if git merge-base --is-ancestor 82aa3fb3d4172032dff8121ff3af0a2b746c4765 $OLDREVISION; then
+# Leave this setting in place – the history shows that there will be a time the syntax
+# changes and we need this again...
+if git merge-base --is-ancestor 3879ebfc9c573100ec6ef82fac324f37fd0e0f09 $OLDREVISION; then
     python3 -m cdedb dev compile-sample-data-sql --outfile - > tests/ancillary_files/sample_data.sql
     python3 -m cdedb db create
     python3 -m cdedb db populate
 else
-    make -B tests/ancillary_files/sample_data.sql
-    make sql DATABASE_NAME=$DATABASE_NAME
+    python3 -m cdedb dev compile-sample-data --outfile - > tests/ancillary_files/sample_data.sql
+    python3 -m cdedb db create
+    python3 -m cdedb db populate
 fi
 
 # new revision
