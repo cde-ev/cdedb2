@@ -3980,6 +3980,16 @@
             "part_end": "3000-03-01",
             "fee": "0.00",
             "waitlist_field": null
+        },
+        {
+            "id": 12,
+            "event_id": 4,
+            "title": "Silvesterfeier",
+            "shortname": "Feier",
+            "part_begin": "2999-12-31",
+            "part_end": "3000-01-01",
+            "fee": "4.20",
+            "waitlist_field": null
         }
     ],
     "event.part_groups": [
@@ -5111,6 +5121,13 @@
             "registration_id": 10,
             "part_id": 11,
             "status": 3,
+            "lodgement_id": null,
+            "is_camping_mat": false
+        },
+        {
+            "registration_id": 10,
+            "part_id": 12,
+            "status": 2,
             "lodgement_id": null,
             "is_camping_mat": false
         }

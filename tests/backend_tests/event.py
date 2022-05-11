@@ -4185,7 +4185,7 @@ class TestEventBackend(BackendTest):
                 'title': 'Kurse 2. Hälfte'},
             1005: {'constraint_type': const.EventPartGroupType.Statistic,
                    'notes': "Let's see what happens",
-                   'part_ids': [7, 8, 9, 10, 11],
+                   'part_ids': [7, 8, 9, 10, 11, 12],
                    'shortname': 'all',
                    'title': 'All'},
             1006: {'constraint_type': const.EventPartGroupType.Statistic,
