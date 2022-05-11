@@ -1096,7 +1096,7 @@ class TransactionType(enum.IntEnum):
                     TransactionType.EventExpenses,
                     TransactionType.EventFeeRefund,
                     TransactionType.InstructorRefund}:
-            return "Teilnehmerbeitrag"
+            return "Teilnahmebeitrag"
         if self == TransactionType.I25p:
             return "Initiative 25+"
         if self == TransactionType.Donation:
@@ -1113,7 +1113,7 @@ class TransactionType(enum.IntEnum):
         """
         display_str = {
             TransactionType.MembershipFee: "Mitgliedsbeitrag",
-            TransactionType.EventFee: "Teilnehmerbeitrag",
+            TransactionType.EventFee: "Teilnahmebeitrag",
             TransactionType.Donation: "Spende",
             TransactionType.I25p: "Initiative25+",
             TransactionType.Other: "Sonstiges",

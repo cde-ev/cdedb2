@@ -1060,9 +1060,9 @@ def make_course_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None,
             f"track{track_id}.takes_place": QuerySpecEntry(
                 "bool", n_("takes place"), prefix),
             f"track{track_id}.attendees": QuerySpecEntry(
-                "int", n_("attendees"), prefix),
+                "int", n_("attendee count"), prefix),
             f"track{track_id}.instructors": QuerySpecEntry(
-                "int", n_("instructors"), prefix),
+                "int", n_("instructor count"), prefix),
         }
 
     def get_course_choice_spec(track: CdEDBObject) -> QuerySpec:

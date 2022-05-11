@@ -14,7 +14,7 @@ from cdedb.cli.database import (
 from cdedb.cli.dev.compile_sample_data_json import compile_sample_data_json
 from cdedb.cli.dev.compile_sample_data_sql import compile_sample_data_sql
 from cdedb.cli.dev.serve import serve_debugger
-from cdedb.cli.storage import create_log, create_storage, populate_storage
+from cdedb.cli.storage import create_log, create_storage, populate_storage, reset_config
 from cdedb.cli.util import get_user, pass_config, pass_secrets, switch_user
 from cdedb.config import DEFAULT_CONFIGPATH, SecretsConfig, TestConfig, set_configpath
 
@@ -193,10 +193,10 @@ def compile_sample_data_sql_cmd(
     help="Use this user as the owner of storage and logs.",
     default=get_user,
     show_default="current user")
-@pass_secrets
 @pass_config
-def apply_sample_data(config: TestConfig, secrets: SecretsConfig, owner: str) -> None:
+def apply_sample_data(config: TestConfig, owner: str) -> None:
     """Repopulates the application with sample data."""
+    config, secrets = reset_config(config)
     with switch_user(owner):
         create_log(config)
         create_storage(config)
