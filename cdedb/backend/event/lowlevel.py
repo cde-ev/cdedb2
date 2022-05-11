@@ -10,8 +10,8 @@ import copy
 from pathlib import Path
 from typing import Any, Callable, Collection, Dict, Optional, Protocol, Set
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_set_validation as affirm_set,
     affirm_validation as affirm, internal, singularize,
@@ -27,7 +27,9 @@ from cdedb.common.fields import (
 )
 from cdedb.common.i18n import n_
 from cdedb.common.sorting import mixed_existence_sorter
-from cdedb.validation import EVENT_FIELD_COMMON_FIELDS, parse_date, parse_datetime
+from cdedb.common.validation import (
+    EVENT_FIELD_COMMON_FIELDS, parse_date, parse_datetime,
+)
 
 
 class EventLowLevelBackend(AbstractBackend):

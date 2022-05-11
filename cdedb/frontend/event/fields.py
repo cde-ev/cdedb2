@@ -11,22 +11,22 @@ from typing import Any, Callable, Collection, Dict, List, Optional, Tuple, cast
 import werkzeug.exceptions
 from werkzeug import Response
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, RequestState, build_msg, merge_dicts,
 )
 from cdedb.common.i18n import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
+from cdedb.common.validation import EVENT_FIELD_ALL_FIELDS
+from cdedb.common.validation.types import VALIDATOR_LOOKUP
 from cdedb.filter import safe_filter
 from cdedb.frontend.common import (
     REQUESTdata, access, drow_name, event_guard, make_persona_name,
     process_dynamic_input, request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
-from cdedb.validation import EVENT_FIELD_ALL_FIELDS
-from cdedb.validationtypes import VALIDATOR_LOOKUP
 
 EntitySetter = Callable[[RequestState, Dict[str, Any]], int]
 

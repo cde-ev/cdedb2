@@ -18,8 +18,8 @@ from typing import List, Optional, Sequence, Tuple, cast
 from werkzeug import Response
 from werkzeug.datastructures import FileStorage
 
+import cdedb.common.validation.types as vtypes
 import cdedb.frontend.cde.parse_statement as parse
-import cdedb.validationtypes as vtypes
 from cdedb.common import (
     Accounts, CdEDBObject, RequestState, TransactionType, diacritic_patterns, get_hash,
     merge_dicts,

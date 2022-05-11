@@ -10,8 +10,8 @@ import datetime
 import decimal
 from typing import Any, Collection, Dict, List, Optional, Protocol, Tuple
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.backend.cde import CdEBaseBackend
 from cdedb.backend.common import (
     access, affirm_array_validation as affirm_array,

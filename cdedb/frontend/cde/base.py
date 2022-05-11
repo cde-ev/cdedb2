@@ -18,8 +18,8 @@ from typing import Any, Collection, Dict, List, Optional, Sequence, Set, Tuple
 from werkzeug import Response
 from werkzeug.datastructures import FileStorage
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, Error, LineResolutions, RequestState, deduct_years,
     get_hash, merge_dicts, now,
@@ -31,15 +31,15 @@ from cdedb.common.i18n import (
 from cdedb.common.query import QueryConstraint, QueryOperators, QueryScope
 from cdedb.common.roles import PERSONA_DEFAULTS
 from cdedb.common.sorting import xsorted
+from cdedb.common.validation import (
+    PERSONA_FULL_CDE_CREATION, filter_none, get_errors, get_warnings,
+)
 from cdedb.filter import enum_entries_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, CustomCSVDialect, REQUESTdata, REQUESTdatadict, REQUESTfile,
     TransactionObserver, access, calculate_db_logparams, calculate_loglinks,
     check_validation as check, check_validation_optional as check_optional,
     inspect_validation as inspect, make_membership_fee_reference, request_extractor,
-)
-from cdedb.validation import (
-    PERSONA_FULL_CDE_CREATION, filter_none, get_errors, get_warnings,
 )
 
 MEMBERSEARCH_DEFAULTS = {

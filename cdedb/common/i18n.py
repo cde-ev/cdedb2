@@ -5,7 +5,7 @@
 from typing import TYPE_CHECKING, List, Tuple
 
 from cdedb.common.sorting import xsorted
-from cdedb.validationdata import COUNTRY_CODES
+from cdedb.common.validation.data import COUNTRY_CODES
 
 if TYPE_CHECKING:
     from cdedb.common import RequestState

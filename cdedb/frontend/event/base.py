@@ -23,8 +23,8 @@ from typing import Any, Collection, Dict, Optional, Tuple, Type
 import werkzeug.exceptions
 from werkzeug import Response
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.common import (
     EVENT_SCHEMA_VERSION, CdEDBObject, CdEDBObjectMap, RequestState, merge_dicts,
     unwrap,
@@ -33,12 +33,12 @@ from cdedb.common.fields import LOG_FIELDS_COMMON
 from cdedb.common.i18n import get_localized_country_codes, n_
 from cdedb.common.query import QueryScope
 from cdedb.common.sorting import EntitySorter, KeyFunction, Sortkey, xsorted
+from cdedb.common.validation import PERSONA_FULL_EVENT_CREATION, filter_none
 from cdedb.filter import enum_entries_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access, calculate_db_logparams,
     calculate_loglinks, event_guard, periodic,
 )
-from cdedb.validation import PERSONA_FULL_EVENT_CREATION, filter_none
 
 
 class EventBaseFrontend(AbstractUserFrontend):

@@ -7,8 +7,8 @@ functionality for managing lodgements and lodgement groups belonging to an event
 
 from typing import Collection, Dict, Protocol
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     Silencer, access, affirm_set_validation as affirm_set, affirm_validation as affirm,
     cast_fields, read_conditional_write_composer, singularize,

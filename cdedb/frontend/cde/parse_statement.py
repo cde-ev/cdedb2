@@ -7,7 +7,7 @@ import json
 import re
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
-import cdedb.validationtypes as vtypes
+import cdedb.common.validation.types as vtypes
 from cdedb.common import (
     PARSE_OUTPUT_DATEFORMAT, Accounts, CdEDBObject, CdEDBObjectMap, ConfidenceLevel,
     Error, TransactionType, diacritic_patterns, now,

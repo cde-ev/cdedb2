@@ -11,8 +11,8 @@ from subman.exceptions import SubscriptionError
 from subman.machine import SubscriptionAction
 from werkzeug import Response
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, DefaultReturnCode, RequestState, merge_dicts, now,
     unwrap,
@@ -25,6 +25,9 @@ from cdedb.common.fields import (
 from cdedb.common.i18n import n_
 from cdedb.common.query import QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
+from cdedb.common.validation import (
+    ALL_MAILINGLIST_FIELDS, PERSONA_FULL_ML_CREATION, filter_none,
+)
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access, calculate_db_logparams,
@@ -33,9 +36,6 @@ from cdedb.frontend.common import (
 )
 from cdedb.ml_type_aux import (
     ADDITIONAL_TYPE_FIELDS, TYPE_MAP, MailinglistGroup, get_type,
-)
-from cdedb.validation import (
-    ALL_MAILINGLIST_FIELDS, PERSONA_FULL_ML_CREATION, filter_none,
 )
 
 

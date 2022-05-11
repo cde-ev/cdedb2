@@ -6,8 +6,8 @@ for querying information about an event aswell as storing and retrieving such qu
 """
 from typing import Collection, Dict, List, Optional, Tuple
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     PYTHON_TO_SQL_MAP, DatabaseValue_s, access, affirm_set_validation as affirm_set,
     affirm_validation as affirm,

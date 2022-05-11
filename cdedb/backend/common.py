@@ -25,8 +25,8 @@ import psycopg2.errors
 import psycopg2.extensions
 import psycopg2.extras
 
-import cdedb.validation as validate
-import cdedb.validationtypes as vtypes
+import cdedb.common.validation as validate
+import cdedb.common.validation.types as vtypes
 from cdedb.common import (
     CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Error, RequestState, Role,
     diacritic_patterns, glue, make_proxy, setup_logger, unwrap,
@@ -35,11 +35,11 @@ from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.i18n import n_
 from cdedb.common.query import Query, QueryOperators
 from cdedb.common.sorting import LOCALE
+from cdedb.common.validation import parse_date, parse_datetime
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
 from cdedb.database.constants import FieldDatatypes, LockType
 from cdedb.database.query import DatabaseValue, DatabaseValue_s, SqlQueryBackend
-from cdedb.validation import parse_date, parse_datetime
 
 F = TypeVar('F', bound=Callable[..., Any])
 T = TypeVar('T')

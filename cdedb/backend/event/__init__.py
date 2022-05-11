@@ -8,8 +8,8 @@ import collections
 import copy
 from typing import Any, Collection, Dict, Mapping, Set, Tuple
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     Silencer, access, affirm_set_validation as affirm_set, affirm_validation as affirm,
 )

@@ -10,7 +10,7 @@ from typing import (
 
 from subman.machine import SubscriptionPolicy
 
-import cdedb.validationtypes as vtypes
+import cdedb.common.validation.types as vtypes
 from cdedb.common import CdEDBObject, RequestState, User
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.i18n import n_

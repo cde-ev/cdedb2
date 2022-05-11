@@ -12,9 +12,9 @@ from typing import (
 import subman
 from subman.machine import SubscriptionAction, SubscriptionPolicy
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
-import cdedb.validationtypes as vtypes
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_array_validation as affirm_array,

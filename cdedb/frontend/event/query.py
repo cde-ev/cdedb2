@@ -11,8 +11,8 @@ from typing import Any, Dict, List, Optional, Set, Union
 import werkzeug.exceptions
 from werkzeug import Response
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.common import CdEDBObject, RequestState, determine_age_class, unwrap
 from cdedb.common.i18n import get_localized_country_codes, n_
 from cdedb.common.query import (

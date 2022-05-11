@@ -36,8 +36,8 @@ from typing import Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, 
 
 from schulze_condorcet import schulze_evaluate
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     AbstractBackend, Silencer, access, affirm_set_validation as affirm_set,
     affirm_validation as affirm, affirm_validation_optional as affirm_optional,
