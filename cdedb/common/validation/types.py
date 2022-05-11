@@ -2,12 +2,16 @@
 
 import datetime
 import decimal
-from typing import Any, Dict, List, Mapping, NewType as _NewType, Type
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, NewType as _NewType, Type
 
 from subman import SubscriptionState
 
-from cdedb.common import CdEDBObject, CdEDBOptionalMap
-from cdedb.common.query import Query
+if TYPE_CHECKING:
+    from cdedb.common import CdEDBObject, CdEDBOptionalMap
+    from cdedb.common.query import Query
+else:
+    CdEDBObject = CdEDBOptionalMap = None
+    Query = None
 
 TypeMapping = Mapping[str, Type[Any]]
 
