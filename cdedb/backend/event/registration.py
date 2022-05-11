@@ -6,11 +6,12 @@ functionality for managing registrations belonging to an event, including managi
 waitlist, calculating and booking event fees and checking the status of multiple
 registrations at once for the mailinglist realm.
 """
-
 import copy
 import decimal
+import itertools
 from typing import (
-    Any, Collection, Dict, List, Mapping, Optional, Protocol, Sequence, Tuple,
+    Any, Collection, Dict, Iterable, List, Mapping, Optional, Protocol, Sequence, Set,
+    Tuple, TypeVar,
 )
 
 import psycopg2.extensions
@@ -35,6 +36,8 @@ from cdedb.common.i18n import n_
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.filter import date_filter, money_filter
+
+T = TypeVar("T")
 
 
 class EventRegistrationBackend(EventBaseBackend):
@@ -865,6 +868,11 @@ class EventRegistrationBackend(EventBaseBackend):
                     {"type": "registration", "block": blockers.keys()})
         return ret
 
+    @staticmethod
+    def powerset(set_: Collection[T]) -> Iterable[Set[T]]:
+        return itertools.chain.from_iterable(
+            map(set, itertools.combinations(set_, n)) for n in range(len(set_) + 1))
+
     def _calculate_single_fee(self, rs: RequestState, reg: CdEDBObject, *,
                               event: CdEDBObject, is_member: bool = None
                               ) -> decimal.Decimal:
@@ -874,34 +882,37 @@ class EventRegistrationBackend(EventBaseBackend):
         so we take the full registration and event as input instead of
         retrieving them via id.
 
+        For the set of parts the registration has to pay for, every subset is checked.
+        If the subset does not violate any mep constraints, the total of all it's parts'
+        fees is calculated. The final fee will be the maximum of all such totals.
+
         :param is_member: If this is None, retrieve membership status here.
         """
         mep = const.EventPartGroupType.mutually_exclusive_participants
+        zero = decimal.Decimal(0)
 
-        fee = decimal.Decimal(0)
-        parts_to_pay = {part_id for part_id, rpart in reg['parts'].items()
-                        if rpart['status'].has_to_pay()}
-        paid_parts = set()
+        parts_per_mep = [pg['part_ids'] for pg in event['part_groups'].values()
+                        if pg['constraint_type'] == mep]
 
-        # Add the maximum fee of the registered-for parts for participant constraints.
-        for part_group_id, part_group in event['part_groups'].items():
-            if not part_group['constraint_type'] == mep:
-                continue
-            if part_ids := parts_to_pay & part_group['part_ids']:
-                fee += max(event['parts'][part_id]['fee'] for part_id in part_ids)
-                paid_parts.update(part_ids)
+        # Precompute fees including fee modifiers for every registered-for part.
+        fees_to_pay: Dict[int, decimal.Decimal] = {
+            part_id: event['parts'][part_id]['fee']
+            for part_id, rpart in reg['parts'].items()
+            if rpart['status'].has_to_pay()
+        }
+        for fee_mod in event['fee_modifiers'].values():
+            if reg['fields'].get(event['fields'][fee_mod['field_id']]['field_name']):
+                fees_to_pay[fee_mod['part_id']] += fee_mod['amount']
 
-        # Add the fee for registered-for parts not handled above.
-        for part_id in parts_to_pay - paid_parts:
-            fee += event['parts'][part_id]['fee']
+        def total_cost(part_ids: Collection[int]) -> decimal.Decimal:
+            return sum((fees_to_pay[part_id] for part_id in part_ids), start=zero)
 
-        # Add all applicable fee modifiers.
-        for fee_modifier in event['fee_modifiers'].values():
-            field = event['fields'][fee_modifier['field_id']]
-            if fee_modifier['part_id'] in parts_to_pay:
-                if reg['fields'].get(field['field_name']):
-                    fee += fee_modifier['amount']
+        fee = max(
+            (total_cost(part_ids) for part_ids in self.powerset(fees_to_pay.keys())
+             if all(len(mep_parts & part_ids) <= 1 for mep_parts in parts_per_mep)),
+            default=zero)
 
+        # Add nonmember surcharge if applicable.
         if is_member is None:
             is_member = self.core.get_persona(
                 rs, reg['persona_id'])['is_member']
