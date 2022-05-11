@@ -16,8 +16,9 @@ import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Error, RequestState, merge_dicts,
-    n_, unwrap,
+    unwrap,
 )
+from cdedb.common.i18n import n_
 from cdedb.common.sorting import mixed_existence_sorter
 from cdedb.frontend.common import (
     RequestConstraint, REQUESTdata, access, check_validation_optional as check_optional,

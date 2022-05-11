@@ -22,14 +22,15 @@ from werkzeug import Response
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Realm, RequestState,
-    format_country_code, merge_dicts, n_, now, pairwise, sanitize_filename, unwrap,
+    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Realm, RequestState, merge_dicts,
+    now, pairwise, sanitize_filename, unwrap,
 )
 from cdedb.common.exceptions import ArchiveError, PrivilegeError
 from cdedb.common.fields import (
     LOG_FIELDS_COMMON, META_INFO_FIELDS, REALM_SPECIFIC_GENESIS_FIELDS,
     get_persona_fields_by_realm,
 )
+from cdedb.common.i18n import format_country_code, n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.roles import (
     ADMIN_KEYS, ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, REALM_ADMINS,

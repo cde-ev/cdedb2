@@ -20,10 +20,11 @@ from cdedb.backend.common import (
 )
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, RequestState,
-    merge_dicts, n_, now, unwrap,
+    merge_dicts, now, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import LASTSCHRIFT_FIELDS, LASTSCHRIFT_TRANSACTION_FIELDS
+from cdedb.common.i18n import n_
 from cdedb.database.connection import Atomizer
 
 

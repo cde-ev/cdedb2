@@ -22,9 +22,8 @@ import itertools
 from typing import Collection, Dict, Iterable, List, Optional, Set, Tuple
 
 import cdedb.database.constants as const
-from cdedb.common import (
-    AgeClasses, CdEDBObject, CdEDBObjectMap, deduct_years, n_, unwrap,
-)
+from cdedb.common import AgeClasses, CdEDBObject, CdEDBObjectMap, deduct_years, unwrap
+from cdedb.common.i18n import n_
 from cdedb.common.query import (
     Query, QueryConstraint, QueryOperators, QueryOrder, QueryScope,
 )

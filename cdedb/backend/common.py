@@ -29,9 +29,10 @@ import cdedb.validation as validate
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
     CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Error, RequestState, Role,
-    diacritic_patterns, glue, make_proxy, n_, setup_logger, unwrap,
+    diacritic_patterns, glue, make_proxy, setup_logger, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
+from cdedb.common.i18n import n_
 from cdedb.common.query import Query, QueryOperators
 from cdedb.common.sorting import LOCALE
 from cdedb.config import Config

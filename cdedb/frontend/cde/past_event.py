@@ -18,8 +18,9 @@ from werkzeug import Response
 
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
-from cdedb.common import CdEDBObject, CdEDBObjectMap, RequestState, merge_dicts, n_
+from cdedb.common import CdEDBObject, CdEDBObjectMap, RequestState, merge_dicts
 from cdedb.common.fields import LOG_FIELDS_COMMON
+from cdedb.common.i18n import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.frontend.cde.base import CdEBaseFrontend
