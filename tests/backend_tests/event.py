@@ -4163,12 +4163,14 @@ class TestEventBackend(BackendTest):
                 'part_ids': [8, 11],
                 'shortname': 'KA',
                 'title': 'Kaub'},
-            6: {'constraint_type': const.EventPartGroupType.mutually_exclusive_participants,
+            6: {'constraint_type':
+                    const.EventPartGroupType.mutually_exclusive_participants,
                 'notes': None,
                 'part_ids': [7, 8],
                 'shortname': 'TN 1H',
                 'title': 'Teilnehmer 1. Hälfte'},
-            7: {'constraint_type': const.EventPartGroupType.mutually_exclusive_participants,
+            7: {'constraint_type':
+                    const.EventPartGroupType.mutually_exclusive_participants,
                 'notes': None,
                 'part_ids': [9, 10, 11],
                 'shortname': 'TN 2H',
@@ -4203,6 +4205,6 @@ class TestEventBackend(BackendTest):
             self.assertEqual(
                 set(blockers),
                 {"orgas", "event_parts", "course_tracks", "part_groups",
-                 "part_group_parts", "log"}
+                 "part_group_parts", "courses", "log"}
             )
             self.assertTrue(self.event.delete_event(self.key, event_id, blockers))

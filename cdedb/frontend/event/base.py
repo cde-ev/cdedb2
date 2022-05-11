@@ -446,7 +446,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             for track_id, track in rs.ambience['event']['tracks'].items()
         }
 
-        def track_id_sorter(track_ids: Collection[int]) -> List[int]:
+        def track_id_sorter(track_ids: Iterable[int]) -> List[int]:
             return xsorted(track_ids, key=lambda track_id: EntitySorter.course_track(
                 rs.ambience['event']['tracks'][track_id]))
 
