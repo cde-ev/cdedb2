@@ -12,11 +12,10 @@ from cdedb.cli.database import (
     populate_database, remove_prepared_transactions,
 )
 from cdedb.cli.storage import create_log, create_storage, populate_storage
-from cdedb.cli.util import command_group_from_folder, get_user, switch_user
+from cdedb.cli.util import (
+    command_group_from_folder, get_user, pass_config, pass_secrets, switch_user,
+)
 from cdedb.config import DEFAULT_CONFIGPATH, SecretsConfig, TestConfig, set_configpath
-
-pass_config = click.make_pass_decorator(TestConfig, ensure=True)
-pass_secrets = click.make_pass_decorator(SecretsConfig, ensure=True)
 
 
 @click.group()
@@ -151,22 +150,6 @@ def remove_transactions_cmd(config: TestConfig, secrets: SecretsConfig) -> None:
 def development() -> None:
     """High-level helpers for development."""
 
-
-# TODO in which category should we do this?
-@development.command(name="compile-sample-data")
-@click.option("-i", "--infile",
-              default="/cdedb2/tests/ancillary_files/sample_data.json",
-              type=click.Path(), help="the json file containing the sample data")
-@click.option("-o", "--outfile", default="/tmp/sample_data.sql",
-              type=click.Path(), help="the place to store the sql file")
-@click.option(
-    "--xss/--no-xss", default=False, help="prepare sample data for xss checks")
-@pass_config
-def compile_sample_data_cmd(
-    config: TestConfig, infile: str, outfile: str, xss: bool
-) -> None:
-    """Parse sample data from a .json to a .sql file."""
-    compile_sample_data(config, pathlib.Path(infile), pathlib.Path(outfile), xss=xss)
 
 
 @development.command(name="apply-sample-data")

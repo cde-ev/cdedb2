@@ -10,6 +10,11 @@ from typing import Any, Callable, Generator
 
 import click
 
+from cdedb.config import SecretsConfig, TestConfig
+
+pass_config = click.make_pass_decorator(TestConfig, ensure=True)
+pass_secrets = click.make_pass_decorator(SecretsConfig, ensure=True)
+
 
 def has_systemd() -> bool:
     return which("systemctl") is not None
