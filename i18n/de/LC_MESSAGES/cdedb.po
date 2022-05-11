@@ -6831,7 +6831,7 @@ msgid ""
 "Studieninformationswochenende."
 msgstr ""
 "Die Pfingst-, Sommer-, Winter- und Multinationale Akademie werden durch "
-"Spenden bezuschusst. Dadurch sinken ihre Teilnehmerbeiträge, was allen "
+"Spenden bezuschusst. Dadurch sinken ihre Teilnahmebeiträge, was allen "
 "Teilnehmern zugute kommt. Seit 2013 unterstützen wir auch einige kleinere "
 "Veranstaltungen mit einem Teil der eingegangenen Spenden, etwa das CdE-"
 "Seminar, die FamilienAkademie und das Studieninformationswochenende."
@@ -10729,7 +10729,7 @@ msgstr "Ende"
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:44
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:89
 msgid "Event-Part Fee"
-msgstr "Teilnehmerbeitrag"
+msgstr "Teilnahmebeitrag"
 
 #: cdedb/frontend/templates/web/event/event/add_part.tmpl:31
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:46
@@ -12442,7 +12442,7 @@ msgstr "Online CdEDB-ID"
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:50
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:104
 msgid "Fee paid"
-msgstr "Teilnehmerbeitrag bezahlt"
+msgstr "Teilnahmebeitrag bezahlt"
 
 #: cdedb/frontend/templates/web/event/registration/add_registration.tmpl:59
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:71
@@ -12528,7 +12528,7 @@ msgid ""
 "“%(my_registration)s”."
 msgstr ""
 "Die Teilnehmer und Angemeldeten können unter „%(my_registration)s“ ihren "
-"aktuellen Teilnahme-Status, den Status des Teilnehmerbeitrags und – bei "
+"aktuellen Teilnahme-Status, den Status des Teilnahmebeitrags und – bei "
 "Minderjährigen – den Status der Einverständniserklärung einsehen."
 
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:65
@@ -12745,7 +12745,7 @@ msgid ""
 "especially when paying internationally."
 msgstr ""
 "Beachte bitte, dass Deine Anmeldung erst mit Überweisung des "
-"Teilnehmerbeitrags gültig wird. Überweise dazu %(to_pay)s auf folgendes "
+"Teilnahmebeitrags gültig wird. Überweise dazu %(to_pay)s auf folgendes "
 "Konto. Achte bitte bei internationalen Überweisungen darauf, dass der "
 "Empfänger keine Gebühren zahlen muss."
 
@@ -12848,7 +12848,7 @@ msgstr "%(given_names)s ist Orga dieser Veranstaltung"
 
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:83
 msgid "Participation Fee"
-msgstr "Teilnehmerbeitrag"
+msgstr "Teilnahmebeitrag"
 
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:86
 #, python-format
