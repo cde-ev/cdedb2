@@ -2,15 +2,13 @@
 
 import subprocess
 
-import click
 from werkzeug.serving import run_simple
 
 from cdedb.config import Config
 from cdedb.frontend.application import Application
 
 
-@click.command()
-def serve() -> None:
+def serve_debugger() -> None:
     """Serve the cdedb using the werkzeug development server"""
 
     subprocess.run(["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL)

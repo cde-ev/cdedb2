@@ -11,10 +11,11 @@ from cdedb.cli.database import (
     connect, create_database, create_database_users, populate_database,
     remove_prepared_transactions,
 )
+from cdedb.cli.dev.compile_sample_data_json import compile_sample_data_json
+from cdedb.cli.dev.compile_sample_data_sql import compile_sample_data_sql
+from cdedb.cli.dev.serve import serve_debugger
 from cdedb.cli.storage import create_log, create_storage, populate_storage
-from cdedb.cli.util import (
-    command_group_from_folder, get_user, pass_config, pass_secrets, switch_user,
-)
+from cdedb.cli.util import get_user, pass_config, pass_secrets, switch_user
 from cdedb.config import DEFAULT_CONFIGPATH, SecretsConfig, TestConfig, set_configpath
 
 
@@ -151,12 +152,43 @@ def remove_transactions_cmd(config: TestConfig, secrets: SecretsConfig) -> None:
 # Development commands
 #
 
-@click.group()
-def development_static() -> None:
-    """Development commands which are not outsourced in their own file."""
+@cli.group("dev")
+def development() -> None:
+    """Helpers for development, expecting a running CdEDBv2."""
 
 
-@development_static.command(name="apply-sample-data")
+@click.command()
+@click.option("-o", "--outfile", default="/tmp/sample_data.json",
+              type=click.Path(), help="the place to store the sql file")
+def compile_sample_data_json_cmd(outfile: pathlib.Path) -> None:
+    """Generate a JSON-file from the current state of the database."""
+    compile_sample_data_json(outfile)
+
+
+@development.command(name="compile-sample-data")
+@click.option("-i", "--infile",
+              default="/cdedb2/tests/ancillary_files/sample_data.json",
+              type=click.Path(), help="the json file containing the sample data")
+@click.option("-o", "--outfile", default="/tmp/sample_data.sql",
+              type=click.Path(), help="the place to store the sql file")
+@click.option(
+    "--xss/--no-xss", default=False, help="prepare sample data for xss checks")
+@pass_config
+def compile_sample_data_sql_cmd(
+    config: TestConfig, infile: pathlib.Path, outfile: pathlib.Path, xss: bool
+) -> None:
+    """Parse sample data from a .json to a .sql file.
+
+    The latter can then directly be applied to a database, to populate it with the
+    respective sample data.
+
+    The xss-switch decides if the sample data should be contaminated with script
+    tags, to check proper escaping afterwards.
+    """
+    compile_sample_data_sql(config, infile, outfile, xss)
+
+
+@development.command(name="apply-sample-data")
 @click.option("--owner",
     help="Use this user as the owner of storage and logs.",
     default=get_user,
@@ -174,7 +206,13 @@ def apply_sample_data(config: TestConfig, secrets: SecretsConfig, owner: str) ->
         populate_database(config, secrets)
 
 
-@development_static.command(name="execute-sql-script")
+@development.command(name="serve")
+def serve_debugger_cmd() -> None:
+    """Serve the cdedb using the werkzeug development server"""
+    serve_debugger()
+
+
+@development.command(name="execute-sql-script")
 @click.option("--file", "-f", type=pathlib.Path, help="the script to execute")
 @click.option('-v', '--verbose', count=True)
 @pass_secrets
@@ -192,25 +230,6 @@ def execute_sql_script(
                 if cur.rowcount != -1:
                     for x in cur:
                         click.echo(x)
-
-
-DEV_DIR = pathlib.Path("/cdedb2/cdedb/cli/dev")
-
-
-@click.group(cls=command_group_from_folder(DEV_DIR))
-def development_dynamic() -> None:
-    """Dynamic helper scripts from an external folder.
-
-    This allows us to import stuff from the remaining cdedb module inside the files,
-    without polluting the namespace of the cli module, since we use this for setup
-    purpose.
-    """
-
-
-development = click.CommandCollection(sources=[development_static, development_dynamic])
-development.name = "dev"
-development.help = "Helpers for development, expecting a running CdEDBv2."
-cli.add_command(development)
 
 
 def main() -> None:

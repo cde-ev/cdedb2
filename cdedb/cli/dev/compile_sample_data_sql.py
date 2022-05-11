@@ -4,12 +4,10 @@ import sys
 from itertools import chain
 from typing import Any, Callable, Dict, List, Set, Sized, Tuple, Type, TypedDict
 
-import click
 from psycopg2.extensions import connection
 
 from cdedb.backend.common import DatabaseValue_s
 from cdedb.backend.core import CoreBackend
-from cdedb.cli.util import pass_config
 from cdedb.common import CdEDBObject, PsycoJson
 from cdedb.config import TestConfig
 from cdedb.script import Script
@@ -188,8 +186,9 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
     return ret
 
 
-def work(config: TestConfig, infile: pathlib.Path, outfile: pathlib.Path, xss: bool) -> None:
-    """Do the actual work - for a detailed description, see the click function below."""
+def compile_sample_data_sql(config: TestConfig, infile: pathlib.Path,
+                            outfile: pathlib.Path, xss: bool) -> None:
+    """Do the actual work - for a detailed description, see the click function."""
     with open(infile) as f:
         data = json.load(f)
 
@@ -201,26 +200,3 @@ def work(config: TestConfig, infile: pathlib.Path, outfile: pathlib.Path, xss: b
     with open(outfile, "w") if outfile != "-" else sys.stdout as f:
         for cmd in commands:
             print(cmd, file=f)
-
-
-@click.command()
-@click.option("-i", "--infile",
-              default="/cdedb2/tests/ancillary_files/sample_data.json",
-              type=click.Path(), help="the json file containing the sample data")
-@click.option("-o", "--outfile", default="/tmp/sample_data.sql",
-              type=click.Path(), help="the place to store the sql file")
-@click.option(
-    "--xss/--no-xss", default=False, help="prepare sample data for xss checks")
-@pass_config
-def compile_sample_data_sql(
-    config: TestConfig, infile: pathlib.Path, outfile: pathlib.Path, xss: bool
-) -> None:
-    """Parse sample data from a .json to a .sql file.
-
-    The latter can then directly be applied to a database, to populate it with the
-    respective sample data.
-
-    The xss-switch decides if the sample data should be contaminated with script
-    tags, to check proper escaping afterwards.
-    """
-    work(config, infile, outfile, xss)
