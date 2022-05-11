@@ -3,7 +3,9 @@
 Most of these are just wrappers around methods in their resepective submodule
 and should not be called directly.
 """
+import json
 import pathlib
+from typing import Any, Dict, List
 
 import click
 
@@ -12,7 +14,7 @@ from cdedb.cli.database import (
     remove_prepared_transactions,
 )
 from cdedb.cli.dev.compile_sample_data_json import compile_sample_data_json
-from cdedb.cli.dev.compile_sample_data_sql import compile_sample_data_sql
+from cdedb.cli.dev.compile_sample_data_sql import json2sql
 from cdedb.cli.dev.serve import serve_debugger
 from cdedb.cli.storage import create_log, create_storage, populate_storage, reset_config
 from cdedb.cli.util import get_user, pass_config, pass_secrets, switch_user
@@ -174,7 +176,7 @@ def compile_sample_data_json_cmd(outfile: pathlib.Path) -> None:
 @click.option(
     "--xss/--no-xss", default=False, help="prepare sample data for xss checks")
 @pass_config
-def compile_sample_data_sql_cmd(
+def compile_sample_data_sql(
     config: TestConfig, infile: pathlib.Path, outfile: pathlib.Path, xss: bool
 ) -> None:
     """Parse sample data from a .json to a .sql file.
@@ -185,7 +187,16 @@ def compile_sample_data_sql_cmd(
     The xss-switch decides if the sample data should be contaminated with script
     tags, to check proper escaping afterwards.
     """
-    compile_sample_data_sql(config, infile, outfile, xss)
+    with open(infile, "r", encoding="utf8") as f:
+        data: Dict[str, List[Any]] = json.load(f)
+
+    assert isinstance(data, dict)
+    xss_payload = config.get("XSS_PAYLOAD", "") if xss else ""
+    commands = json2sql(data, xss_payload)
+
+    with open(outfile, "w") as f:
+        for cmd in commands:
+            print(cmd, file=f)
 
 
 @development.command(name="apply-sample-data")

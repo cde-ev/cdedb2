@@ -1,17 +1,15 @@
-"""Parse the sample data from a json data file into sql statements."""
+"""Parse a given json dict into sql statements."""
 
-import json
-import pathlib
-import sys
 from itertools import chain
-from typing import Any, Callable, Dict, List, Set, Sized, Tuple, Type, TypedDict
+from typing import (
+    Any, Callable, Dict, List, Optional, Set, Sized, Tuple, Type, TypedDict,
+)
 
 from psycopg2.extensions import connection
 
 from cdedb.backend.common import DatabaseValue_s
 from cdedb.backend.core import CoreBackend
 from cdedb.common import CdEDBObject, PsycoJson
-from cdedb.config import TestConfig
 from cdedb.script import Script
 
 
@@ -114,7 +112,17 @@ def format_inserts(table_name: str, table_data: Sized, keys: Tuple[str, ...],
     return ret
 
 
-def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
+def json2sql(data: CdEDBObject, xss_payload: Optional[str] = None) -> List[str]:
+    """Convert a dict loaded from a json file into sql statements.
+
+    The dict contains tables, mapped to columns, mapped to values. The table and column
+    names must be the same as in our table definitions. The data may be loaded from
+    a json file.
+
+    :param xss_payload: If not None, it will be used as xss payload for the database.
+    :returns: A list of sql statements, inserting the given data.
+    """
+    aux = prepare_aux(data)
     commands: List[str] = []
 
     # Start off by resetting the sequential ids to 1.
@@ -146,10 +154,10 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
                     entry[k] = None
                 if isinstance(entry[k], dict):
                     entry[k] = PsycoJson(entry[k])
-                elif isinstance(entry[k], str) and xss:
+                elif isinstance(entry[k], str) and xss_payload is not None:
                     if (table not in aux["xss_table_excludes"]
                             and k not in aux['xss_field_excludes']):
-                        entry[k] = entry[k] + xss
+                        entry[k] = entry[k] + xss_payload
             for k, f in aux["entry_replacements"].get(table, {}).items():
                 entry[k] = f(entry)
             params_list.extend(entry[k] for k in keys)
@@ -181,19 +189,3 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
         ret.append(cmd)
 
     return ret
-
-
-def compile_sample_data_sql(config: TestConfig, infile: pathlib.Path,
-                            outfile: pathlib.Path, xss: bool) -> None:
-    """Parse the sample data from a json data file into sql statements."""
-    with open(infile) as f:
-        data = json.load(f)
-
-    assert isinstance(data, dict)
-    aux = prepare_aux(data)
-    xss_payload = config.get("XSS_PAYLOAD", "") if xss else ""
-    commands = build_commands(data, aux, xss_payload)
-
-    with open(outfile, "w") if outfile != "-" else sys.stdout as f:
-        for cmd in commands:
-            print(cmd, file=f)

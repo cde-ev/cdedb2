@@ -1,4 +1,5 @@
 """Set up the database, including users, tables and population with sample data."""
+import json
 import pathlib
 import subprocess
 
@@ -6,7 +7,7 @@ import psycopg2
 import psycopg2.extensions
 import psycopg2.extras
 
-from cdedb.cli.dev.compile_sample_data_sql import compile_sample_data_sql
+from cdedb.cli.dev.compile_sample_data_sql import json2sql
 from cdedb.cli.util import has_systemd, is_docker, sanity_check
 from cdedb.config import Config, SecretsConfig, TestConfig
 
@@ -125,18 +126,15 @@ def populate_database(conf: TestConfig, secrets: SecretsConfig,
     """Populate the database with sample data."""
     repo_path: pathlib.Path = conf['REPOSITORY_PATH']
 
-    outfile = repo_path / "tests" / "ancillary_files" / "sample_data.sql"
-    # TODO maybe raise an error instead of compiling on the fly?
-    if not outfile.exists():
-        # compile the sample data
-        # TODO use a real temporary file instead or do it in memory
-        # TODO this is assumed by tests/common.py -- can we resolve this?
-        infile = repo_path / "tests" / "ancillary_files" / "sample_data.json"
-        compile_sample_data_sql(conf, infile, outfile, xss=xss)
+    infile = repo_path / "tests" / "ancillary_files" / "sample_data.json"
+    with open(infile) as f:
+        data = json.load(f)
+    xss_payload = conf.get("XSS_PAYLOAD", "") if xss else ""
+    sql_commands = "\n".join(json2sql(data, xss_payload))
 
     with connect(conf, secrets) as conn:
         with conn.cursor() as cur:
-            cur.execute(outfile.read_text())
+            cur.execute(sql_commands)
 
     if not xss:
         restart_services("slapd")

@@ -121,7 +121,7 @@ def run_application_tests(testpatterns: List[str] = None, *,
 
     create_log(conf)
     create_database(conf, secrets)
-    populate_database(conf, secrets)
+    # populate_database(conf, secrets)
 
     # we need to setup the environment before we can import from cdedb or tests module
     import tests.backend_tests as backend_tests  # pylint: disable=import-outside-toplevel
