@@ -8,6 +8,8 @@ import pwd
 from shutil import which
 from typing import Any, Callable, Generator
 
+import click
+
 
 def has_systemd() -> bool:
     return which("systemctl") is not None
@@ -65,3 +67,33 @@ def get_user() -> str:
     if not sudo_user or sudo_user == "root":
         return getpass.getuser()
     return sudo_user
+
+
+def command_group_from_folder(group_folder: pathlib.Path):
+    """Collect click commands from files of a given directory.
+
+    The files must contain exactly one function decorated with the click.command()
+    decorator and named like the file (e.g. test_evolution.py containing the function
+    test_evolution()). It may contain arbitrary additional functions.
+
+    Take attention that each file is executed during reading, so be aware that they do
+    not apply any unwanted side effects!
+
+    The command may make full use of clicks argument and option decorators to change
+    its behaviour.
+    """
+
+    class FolderCommands(click.MultiCommand):
+        def list_commands(self, context):
+            return sorted(
+                f.name[:-3] for f in group_folder.iterdir() if f.name.endswith(".py"))
+
+        def get_command(self, context, name):
+            namespace = {}
+            command_file = group_folder / f"{name}.py"
+            with open(command_file) as f:
+                code = compile(f.read(), command_file, 'exec')
+                eval(code, namespace, namespace)
+            return namespace[name.replace('-', '_').lower()]
+
+    return FolderCommands

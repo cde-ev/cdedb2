@@ -12,7 +12,7 @@ from cdedb.cli.database import (
     populate_database, remove_prepared_transactions,
 )
 from cdedb.cli.storage import create_log, create_storage, populate_storage
-from cdedb.cli.util import get_user, switch_user
+from cdedb.cli.util import command_group_from_folder, get_user, switch_user
 from cdedb.config import DEFAULT_CONFIGPATH, SecretsConfig, TestConfig, set_configpath
 
 pass_config = click.make_pass_decorator(TestConfig, ensure=True)
@@ -31,14 +31,6 @@ def cli(configpath: pathlib.Path) -> None:
     file. This may also be done by setting the CDEDB_CONFIGPATH environment variable.
     """
     set_configpath(configpath)
-
-
-@cli.command("serve")
-def serve_cmd() -> None:
-    """Serve an interactive debugging instance."""
-    # this is an inline import to encapsulate the heavy dependencies of the server setup
-    from cdedb.cli.server import serve  # pylint: disable=import-outside-toplevel
-    serve()
 
 
 @cli.group(name="config")
@@ -213,6 +205,19 @@ def execute_sql_script(
                 if cur.rowcount != -1:
                     for x in cur:
                         click.echo(x)
+
+
+DEV_DIR = pathlib.Path("/cdedb2/cdedb/cli/dev")
+
+
+@cli.group("dev2", cls=command_group_from_folder(DEV_DIR))
+def dev2() -> None:
+    """Helpers for development, expecting a running CdEDBv2.
+
+    This allows us to import stuff from the remaining cdedb module inside the files,
+    without polluting the namespace of the cli module, since we use this for setup
+    purpose.
+    """
 
 
 def main() -> None:
