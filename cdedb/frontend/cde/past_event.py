@@ -20,7 +20,7 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, CdEDBObjectMap, RequestState, merge_dicts
 from cdedb.common.fields import LOG_FIELDS_COMMON
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation import PAST_COURSE_COMMON_FIELDS, PAST_EVENT_FIELDS

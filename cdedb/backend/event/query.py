@@ -21,7 +21,7 @@ from cdedb.common.fields import (
     COURSE_FIELDS, LODGEMENT_FIELDS, LODGEMENT_GROUP_FIELDS, REGISTRATION_FIELDS,
     REGISTRATION_PART_FIELDS, STORED_EVENT_QUERY_FIELDS,
 )
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.roles import implying_realms
 from cdedb.database.connection import Atomizer

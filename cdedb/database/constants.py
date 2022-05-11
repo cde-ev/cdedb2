@@ -14,10 +14,7 @@ from subman.machine import (  # pylint: disable=unused-import # noqa: F401
     SubscriptionAction, SubscriptionState,
 )
 
-
-def n_(x: str) -> str:  # pragma: no cover
-    """Clone of :py:func:`cdedb.common.n_` for marking translatable strings."""
-    return x
+from cdedb.common.n_ import n_
 
 
 @enum.unique

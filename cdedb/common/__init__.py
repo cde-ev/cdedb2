@@ -32,7 +32,7 @@ import werkzeug.routing
 from schulze_condorcet.types import Candidate
 
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.roles import roles_to_admin_views
 from cdedb.database.connection import ConnectionContainer
 

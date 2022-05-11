@@ -32,7 +32,7 @@ from cdedb.common import (
     diacritic_patterns, glue, make_proxy, setup_logger, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators
 from cdedb.common.sorting import LOCALE
 from cdedb.common.validation import parse_date, parse_datetime

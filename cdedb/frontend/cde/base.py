@@ -25,9 +25,8 @@ from cdedb.common import (
     get_hash, merge_dicts, now,
 )
 from cdedb.common.fields import LOG_FIELDS_COMMON
-from cdedb.common.i18n import (
-    get_country_code_from_country, get_localized_country_codes, n_,
-)
+from cdedb.common.i18n import get_country_code_from_country, get_localized_country_codes
+from cdedb.common.n_ import n_
 from cdedb.common.query import QueryConstraint, QueryOperators, QueryScope
 from cdedb.common.roles import PERSONA_DEFAULTS
 from cdedb.common.sorting import xsorted

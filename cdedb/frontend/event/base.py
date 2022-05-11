@@ -30,7 +30,8 @@ from cdedb.common import (
     unwrap,
 )
 from cdedb.common.fields import LOG_FIELDS_COMMON
-from cdedb.common.i18n import get_localized_country_codes, n_
+from cdedb.common.i18n import get_localized_country_codes
+from cdedb.common.n_ import n_
 from cdedb.common.query import QueryScope
 from cdedb.common.sorting import EntitySorter, KeyFunction, Sortkey, xsorted
 from cdedb.common.validation import PERSONA_FULL_EVENT_CREATION, filter_none

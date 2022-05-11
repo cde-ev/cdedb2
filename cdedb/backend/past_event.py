@@ -23,7 +23,7 @@ from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
     INSTITUTION_FIELDS, PAST_COURSE_FIELDS, PAST_EVENT_FIELDS,
 )
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryScope
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer

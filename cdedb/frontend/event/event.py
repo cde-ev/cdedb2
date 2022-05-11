@@ -23,7 +23,7 @@ from cdedb.common import (
     DEFAULT_NUM_COURSE_CHOICES, CdEDBObject, RequestState, merge_dicts, now, unwrap,
 )
 from cdedb.common.fields import EVENT_FIELD_SPEC
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation import (

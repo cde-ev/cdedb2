@@ -24,7 +24,7 @@ from cdedb.common import (
     DeletionBlockers, RequestState, build_msg, get_hash, json_serialize, unwrap,
 )
 from cdedb.common.exceptions import PartialImportError, PrivilegeError
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.sorting import mixed_existence_sorter
 from cdedb.database.connection import Atomizer
 

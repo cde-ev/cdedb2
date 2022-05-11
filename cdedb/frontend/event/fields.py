@@ -16,7 +16,7 @@ import cdedb.database.constants as const
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, RequestState, build_msg, merge_dicts,
 )
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation import EVENT_FIELD_ALL_FIELDS

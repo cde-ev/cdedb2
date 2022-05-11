@@ -22,7 +22,7 @@ from cdedb.common.fields import (
     GENESIS_CASE_FIELDS, PERSONA_ALL_FIELDS, PERSONA_CORE_FIELDS,
     PERSONA_FIELDS_BY_REALM, REALM_SPECIFIC_GENESIS_FIELDS,
 )
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.roles import (
     GENESIS_REALM_OVERRIDE, PERSONA_DEFAULTS, REALM_ADMINS, extract_realms,
     extract_roles, implied_realms,

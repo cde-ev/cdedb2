@@ -25,7 +25,7 @@ from cdedb.common import (
     setup_logger,
 )
 from cdedb.common.exceptions import QuotaException
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME, roles_to_db_role
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES

@@ -13,15 +13,6 @@ else:
     RequestState = None
 
 
-def n_(x: str) -> str:
-    """
-    Alias of the identity for i18n.
-    Identity function that shadows the gettext alias to trick pybabel into
-    adding string to the translated strings.
-    """
-    return x
-
-
 def format_country_code(code: str) -> str:
     """Helper to make string hidden to pybabel.
 

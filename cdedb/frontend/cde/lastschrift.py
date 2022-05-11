@@ -27,7 +27,7 @@ from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, RequestState, asciificator, determine_age_class, glue,
     int_to_words, lastschrift_reference, merge_dicts, now,
 )
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation import LASTSCHRIFT_COMMON_FIELDS
 from cdedb.frontend.cde.base import CdEBaseFrontend

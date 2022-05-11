@@ -18,7 +18,7 @@ from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Error, RequestState, merge_dicts,
     unwrap,
 )
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.sorting import mixed_existence_sorter
 from cdedb.common.validation import QUESTIONNAIRE_ROW_MANDATORY_FIELDS
 from cdedb.frontend.common import (

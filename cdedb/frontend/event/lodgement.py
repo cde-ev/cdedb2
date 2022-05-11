@@ -15,7 +15,7 @@ import cdedb.database.constants as const
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, LodgementsSortkeys, RequestState, merge_dicts,
 )
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.sorting import EntitySorter, Sortkey, xsorted
 from cdedb.common.validation import LODGEMENT_COMMON_FIELDS
 from cdedb.common.validation.types import VALIDATOR_LOOKUP

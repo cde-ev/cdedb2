@@ -25,7 +25,7 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import ArchiveError
 from cdedb.common.fields import EXPULS_PERIOD_FIELDS, ORG_PERIOD_FIELDS
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.database.connection import Atomizer
 from cdedb.filter import money_filter
 

@@ -30,7 +30,8 @@ from cdedb.common.fields import (
     LOG_FIELDS_COMMON, META_INFO_FIELDS, REALM_SPECIFIC_GENESIS_FIELDS,
     get_persona_fields_by_realm,
 )
-from cdedb.common.i18n import format_country_code, n_
+from cdedb.common.i18n import format_country_code
+from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.roles import (
     ADMIN_KEYS, ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, REALM_ADMINS,

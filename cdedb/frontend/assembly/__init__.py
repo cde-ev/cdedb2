@@ -31,7 +31,7 @@ from cdedb.common import (
     RequestState, get_hash, merge_dicts, now, unwrap,
 )
 from cdedb.common.fields import LOG_FIELDS_COMMON
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.query import QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation import (

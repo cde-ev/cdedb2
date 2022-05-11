@@ -78,7 +78,8 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
-from cdedb.common.i18n import format_country_code, get_localized_country_codes, n_
+from cdedb.common.i18n import format_country_code, get_localized_country_codes
+from cdedb.common.n_ import n_
 from cdedb.common.query import Query
 from cdedb.common.query.defaults import DEFAULT_QUERIES
 from cdedb.common.roles import (

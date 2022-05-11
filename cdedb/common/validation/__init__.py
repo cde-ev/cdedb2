@@ -86,7 +86,7 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import ValidationWarning
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.query import (
     MULTI_VALUE_OPERATORS, NO_VALUE_OPERATORS, VALID_QUERY_OPERATORS, QueryOperators,
     QueryOrder, QueryScope, QuerySpec,

@@ -24,7 +24,7 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import LASTSCHRIFT_FIELDS, LASTSCHRIFT_TRANSACTION_FIELDS
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.database.connection import Atomizer
 
 

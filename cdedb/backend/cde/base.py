@@ -31,7 +31,7 @@ from cdedb.common import (
     RequestState, glue, make_proxy, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError, QuotaException
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.roles import implying_realms
 from cdedb.common.validation import (

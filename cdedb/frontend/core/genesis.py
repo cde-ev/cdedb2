@@ -14,7 +14,7 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, GenesisDecision, RequestState, merge_dicts, now
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.validation import GENESIS_CASE_EXPOSED_FIELDS, PERSONA_COMMON_FIELDS
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access, check_validation as check,

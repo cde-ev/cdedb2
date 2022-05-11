@@ -22,7 +22,7 @@ from cdedb.common.fields import (
     FULL_MOD_REQUIRING_FIELDS, LOG_FIELDS_COMMON, MOD_ALLOWED_FIELDS,
     RESTRICTED_MOD_ALLOWED_FIELDS,
 )
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.query import QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation import (

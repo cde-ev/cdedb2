@@ -17,7 +17,7 @@ from cdedb.common import (
     CdEDBObject, CourseChoiceToolActions, CourseFilterPositions, InfiniteEnum,
     RequestState, merge_dicts, unwrap,
 )
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation import COURSE_COMMON_FIELDS
