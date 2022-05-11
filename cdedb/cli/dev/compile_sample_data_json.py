@@ -1,8 +1,10 @@
-import argparse
 import datetime
 import json
+import pathlib
 import re
 from typing import Any, Dict, List
+
+import click
 
 from cdedb.backend.core import CoreBackend
 from cdedb.common import CustomJSONEncoder, RequestState, nearly_now
@@ -99,24 +101,22 @@ def dump_sql_data(rs: RequestState, core: CoreBackend
     return full_sample_data
 
 
-def main() -> None:
-    # Import output file location from commandline.
-    parser = argparse.ArgumentParser(
-        description="Generate a JSON-file from the current state of the database.")
-    parser.add_argument(
-        "-o", "--outfile", default="/tmp/sample_data.json")
-    args = parser.parse_args()
+def work(outfile: pathlib.Path) -> None:
+    """Do the actual work - for a detailed description, see the click function below."""
 
-    # Setup rs
     script = Script(dbuser="cdb_admin")
     rs = script.rs()
     core = script.make_backend("core", proxy=False)
 
     data = dump_sql_data(rs, core)
 
-    with open(args.outfile, "w") as f:
+    with open(outfile, "w") as f:
         json.dump(data, f, cls=CustomJSONEncoder, indent=4, ensure_ascii=False)
 
 
-if __name__ == '__main__':
-    main()
+@click.command()
+@click.option("-o", "--outfile", default="/tmp/sample_data.json",
+              type=click.Path(), help="the place to store the sql file")
+def compile_sample_data_json(outfile: pathlib.Path) -> None:
+    """Generate a JSON-file from the current state of the database."""
+    work(outfile)
