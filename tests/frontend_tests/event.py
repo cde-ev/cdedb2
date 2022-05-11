@@ -1560,7 +1560,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 
         _set_amount_paid(0)
         self.assertPresence(
-            "Anmeldung erst mit Überweisung des Teilnehmerbeitrags")
+            "Anmeldung erst mit Überweisung des Teilnahmebeitrags")
         self.assertPresence("573,99 € auf folgendes Konto")
         self.assertPresence(
             "0,00 € eingegangen. Der volle Teilnahmebeitrag beträgt 573,99 €")
@@ -2361,7 +2361,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                       {'href': '/event/event/1/registration/1/show'})
         self.assertTitle("Anmeldung von Anton Administrator"
                          " (Große Testakademie 2222)")
-        self.assertPresence("Teilnehmerbeitrag ausstehend")
+        self.assertPresence("Teilnahmebeitrag ausstehend")
         self.assertPresence("Bereits Bezahlt 573,98 €")
         self.traverse({'href': '/event/event/1/show'},
                       {'href': '/event/event/1/registration/query'},
@@ -4567,7 +4567,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             f['fee'] = 0
             self.submit(f)
 
-        pay_request = "Anmeldung erst mit Überweisung des Teilnehmerbeitrags"
+        pay_request = "Anmeldung erst mit Überweisung des Teilnahmebeitrags"
         iban = iban_filter(self.app.app.conf['EVENT_BANK_ACCOUNTS'][0][0])
         no_member_surcharge = "zusätzlichen Beitrag in Höhe von 5,00"
 
