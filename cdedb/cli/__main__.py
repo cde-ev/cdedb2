@@ -160,7 +160,7 @@ def development() -> None:
     """Helpers for development, expecting a running CdEDBv2."""
 
 
-@click.command(name="compile-sample-data-json")
+@development.command(name="compile-sample-data-json")
 @click.option("-o", "--outfile", default="/tmp/sample_data.json",
               type=click.Path(), help="the place to store the sql file")
 @pass_config

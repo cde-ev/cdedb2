@@ -1,10 +1,12 @@
 """Generate a JSON-file from the current state of the database."""
 
 import datetime
+import logging
 import re
 from typing import Any, Dict, List
 
 from cdedb.common import nearly_now
+from cdedb.database.query import SqlQueryBackend
 from cdedb.script import Script
 
 # per default, we sort entries in a table by their id. Here we can specify any arbitrary
@@ -59,7 +61,11 @@ def sql2json(dbname: str) -> Dict[str, List[Dict[str, Any]]]:
 
     script = Script(dbuser="cdb_admin", dbname=dbname, check_system_user=False)
     rs = script.rs()
-    core = script.make_backend("core", proxy=False)
+
+    # avoid to spam the logs with unnecessary information
+    logger = logging.Logger("sql2json")
+    logger.addHandler(logging.NullHandler())
+    sql = SqlQueryBackend(logger)
 
     # extract the tables to be created from the database tables
     with open("/cdedb2/cdedb/database/cdedb-tables.sql", "r") as f:
@@ -80,7 +86,7 @@ def sql2json(dbname: str) -> Dict[str, List[Dict[str, Any]]]:
     for table in tables:
         order = ", ".join(sort_table_by.get(table, []) + ['id'])
         query = f"SELECT * FROM {table} ORDER BY {order}"
-        entities = core.query_all(rs, query, ())
+        entities = sql.query_all(rs, query, ())
         if table in ignored_tables:
             entities = tuple()
         print(f"{query:100} ==> {len(entities):3}", "" if entities else "!")
