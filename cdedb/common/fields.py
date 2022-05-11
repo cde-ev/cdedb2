@@ -5,21 +5,13 @@
 from typing import Dict, Set, Tuple
 
 import cdedb.database.constants as const
+from cdedb.common.i18n import n_
 
 # A set of roles a user may have.
 Role = str
 
 # A set of realms a persona belongs to.
 Realm = str
-
-
-def n_(x: str) -> str:
-    """
-    Alias of the identity for i18n.
-    Identity function that shadows the gettext alias to trick pybabel into
-    adding string to the translated strings.
-    """
-    return x
 
 
 META_INFO_FIELDS = (

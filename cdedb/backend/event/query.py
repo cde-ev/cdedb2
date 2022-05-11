@@ -14,13 +14,14 @@ from cdedb.backend.common import (
 )
 from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, RequestState, json_serialize, n_,
+    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, RequestState, json_serialize,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
     COURSE_FIELDS, LODGEMENT_FIELDS, LODGEMENT_GROUP_FIELDS, REGISTRATION_FIELDS,
     REGISTRATION_PART_FIELDS, STORED_EVENT_QUERY_FIELDS,
 )
+from cdedb.common.i18n import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.roles import implying_realms
 from cdedb.database.connection import Atomizer

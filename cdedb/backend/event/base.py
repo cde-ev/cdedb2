@@ -29,7 +29,7 @@ from cdedb.backend.entity_keeper import EntityKeeper
 from cdedb.backend.event.lowlevel import EventLowLevelBackend
 from cdedb.common import (
     EVENT_SCHEMA_VERSION, CdEDBLog, CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap,
-    DefaultReturnCode, RequestState, glue, json_serialize, n_, now, unwrap,
+    DefaultReturnCode, RequestState, glue, json_serialize, now, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
@@ -39,6 +39,7 @@ from cdedb.common.fields import (
     PERSONA_STATUS_FIELDS, QUESTIONNAIRE_ROW_FIELDS, REGISTRATION_FIELDS,
     REGISTRATION_PART_FIELDS, REGISTRATION_TRACK_FIELDS,
 )
+from cdedb.common.i18n import n_
 from cdedb.common.sorting import mixed_existence_sorter, xsorted
 from cdedb.database.connection import Atomizer
 

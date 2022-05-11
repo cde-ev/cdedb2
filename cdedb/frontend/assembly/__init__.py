@@ -28,9 +28,10 @@ import cdedb.ml_type_aux as ml_type
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
-    RequestState, get_hash, merge_dicts, n_, now, unwrap,
+    RequestState, get_hash, merge_dicts, now, unwrap,
 )
 from cdedb.common.fields import LOG_FIELDS_COMMON
+from cdedb.common.i18n import n_
 from cdedb.common.query import QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.frontend.common import (

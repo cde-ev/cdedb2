@@ -45,13 +45,14 @@ from cdedb.backend.common import (
 )
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
-    DeletionBlockers, RequestState, get_hash, glue, json_serialize, n_, now, unwrap,
+    DeletionBlockers, RequestState, get_hash, glue, json_serialize, now, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
     ASSEMBLY_ATTACHMENT_FIELDS, ASSEMBLY_ATTACHMENT_VERSION_FIELDS, ASSEMBLY_FIELDS,
     BALLOT_FIELDS,
 )
+from cdedb.common.i18n import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.roles import implying_realms
 from cdedb.common.sorting import EntitySorter, mixed_existence_sorter, xsorted

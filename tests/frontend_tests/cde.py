@@ -13,9 +13,9 @@ from typing import Set, Tuple, cast
 import webtest
 
 import cdedb.database.constants as const
-from cdedb.common import (
-    CdEDBObject, LineResolutions, RequestState, Role, format_country_code,
-    get_country_code_from_country, get_localized_country_codes, now,
+from cdedb.common import CdEDBObject, LineResolutions, RequestState, Role, now
+from cdedb.common.i18n import (
+    format_country_code, get_country_code_from_country, get_localized_country_codes,
 )
 from cdedb.common.query import QueryOperators
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME, extract_roles

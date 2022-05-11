@@ -21,8 +21,9 @@ import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, RequestState, build_msg, determine_age_class,
-    diacritic_patterns, get_hash, merge_dicts, n_, now, unwrap,
+    diacritic_patterns, get_hash, merge_dicts, now, unwrap,
 )
+from cdedb.common.i18n import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.filter import keydictsort_filter

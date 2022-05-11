@@ -16,10 +16,11 @@ from cdedb.backend.common import (
 from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, PsycoJson,
-    RequestState, glue, n_, unwrap,
+    RequestState, glue, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import COURSE_FIELDS, COURSE_SEGMENT_FIELDS
+from cdedb.common.i18n import n_
 from cdedb.database.connection import Atomizer
 
 

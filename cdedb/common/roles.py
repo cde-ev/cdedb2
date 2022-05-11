@@ -6,6 +6,7 @@ import collections
 from typing import TYPE_CHECKING, Any, Dict, List, Set
 
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
+from cdedb.common.i18n import n_
 
 # Pseudo objects like assembly, event, course, event part, etc.
 CdEDBObject = Dict[str, Any]
@@ -18,15 +19,6 @@ Realm = str
 
 # Admin views a user may activate/deactivate.
 AdminView = str
-
-
-def n_(x: str) -> str:
-    """
-    Alias of the identity for i18n.
-    Identity function that shadows the gettext alias to trick pybabel into
-    adding string to the translated strings.
-    """
-    return x
 
 
 def extract_roles(session: CdEDBObject, introspection_only: bool = False

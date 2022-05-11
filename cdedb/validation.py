@@ -82,10 +82,11 @@ import cdedb.ml_type_aux as ml_type
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, EPSILON, EVENT_SCHEMA_VERSION, INFINITE_ENUM_MAGIC_NUMBER,
     CdEDBObjectMap, Error, InfiniteEnum, LineResolutions, asciificator,
-    compute_checkdigit, n_, now,
+    compute_checkdigit, now,
 )
 from cdedb.common.exceptions import ValidationWarning
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
+from cdedb.common.i18n import n_
 from cdedb.common.query import (
     MULTI_VALUE_OPERATORS, NO_VALUE_OPERATORS, VALID_QUERY_OPERATORS, QueryOperators,
     QueryOrder, QueryScope, QuerySpec,

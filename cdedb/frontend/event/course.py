@@ -15,8 +15,9 @@ import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
     CdEDBObject, CourseChoiceToolActions, CourseFilterPositions, InfiniteEnum,
-    RequestState, merge_dicts, n_, unwrap,
+    RequestState, merge_dicts, unwrap,
 )
+from cdedb.common.i18n import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.frontend.common import (

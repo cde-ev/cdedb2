@@ -43,7 +43,7 @@ Veranstaltungsteil) zwei neue Beitragsmodifikatoren angelegt werden.
    * Kurzname: "Pfingsten"
    * Beginn: YYYY-MM-DD
    * Ende: YYYY-MM-DD
-   * Teilnehmerbeitrag: "90.00"
+   * Teilnahmebeitrag: "90.00"
 
 2. * Beitragsmodifikator: "is_child"
    * Betrag: "-15.00"
@@ -100,7 +100,7 @@ werden und insgesamt drei Beitragsmodifikatoren:
    * Kurzname: "1. H"
    * Beginn: YYYY-MM-DD
    * Ende: YYYY-MM-DD
-   * Teilnehmerbeitrag: "231.00"
+   * Teilnahmebeitrag: "231.00"
 
 2. * Beitragsmodifikator: "solidarity"
    * Betrag: "8.00"
@@ -110,7 +110,7 @@ werden und insgesamt drei Beitragsmodifikatoren:
    * Kurzname: "2. H"
    * Beginn: YYYY-MM-DD
    * Ende: YYYY-MM-DD
-   * Teilnehmerbeitrag: "227.00"
+   * Teilnahmebeitrag: "227.00"
 
 4. * Beitragsmodifikator: "solidarity"
    * Betrag: "8.00"
