@@ -12326,6 +12326,10 @@ msgstr "Teilnehmer-Statistik"
 msgid "Course Statistics"
 msgstr "Kursstatistik"
 
+#: cdedb/frontend/templates/web/event/query/stats.tmpl:74
+msgid "Only includes participants."
+msgstr "Beinhaltet nur Teilnehmer."
+
 #: cdedb/frontend/templates/web/event/query/stats.tmpl:102
 #, python-format
 msgid "In %(x)s. Choice"
