@@ -91,14 +91,15 @@ def command_group_from_folder(group_folder: pathlib.Path):
     class FolderCommands(click.MultiCommand):
         def list_commands(self, context):
             return sorted(
-                f.name[:-3] for f in group_folder.iterdir() if f.name.endswith(".py"))
+                f.name[:-3].replace("_", "-") for f in group_folder.iterdir() if f.name.endswith(".py"))
 
-        def get_command(self, context, name):
+        def get_command(self, context, command_name):
             namespace = {}
+            name = command_name.replace("-", "_")
             command_file = group_folder / f"{name}.py"
             with open(command_file) as f:
                 code = compile(f.read(), command_file, 'exec')
                 eval(code, namespace, namespace)
-            return namespace[name.replace('-', '_').lower()]
+            return namespace[name]
 
     return FolderCommands
