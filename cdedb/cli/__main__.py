@@ -8,8 +8,8 @@ import pathlib
 import click
 
 from cdedb.cli.database import (
-    compile_sample_data, connect, create_database, create_database_users,
-    populate_database, remove_prepared_transactions,
+    connect, create_database, create_database_users, populate_database,
+    remove_prepared_transactions,
 )
 from cdedb.cli.storage import create_log, create_storage, populate_storage
 from cdedb.cli.util import (
@@ -126,6 +126,7 @@ def create_database_cmd(config: TestConfig, secrets: SecretsConfig) -> None:
     remove_prepared_transactions(config, secrets)
 
 
+# TODO move this in development section
 @database.command(name="populate")
 @click.option(
     "--xss/--no-xss", default=False, help="prepare the database for xss checks")
@@ -146,13 +147,16 @@ def remove_transactions_cmd(config: TestConfig, secrets: SecretsConfig) -> None:
     remove_prepared_transactions(config, secrets)
 
 
-@cli.group(name="dev")
-def development() -> None:
-    """High-level helpers for development."""
+#
+# Development commands
+#
+
+@click.group()
+def development_static() -> None:
+    """Development commands which are not outsourced in their own file."""
 
 
-
-@development.command(name="apply-sample-data")
+@development_static.command(name="apply-sample-data")
 @click.option("--owner",
     help="Use this user as the owner of storage and logs.",
     default=get_user,
@@ -170,7 +174,7 @@ def apply_sample_data(config: TestConfig, secrets: SecretsConfig, owner: str) ->
         populate_database(config, secrets)
 
 
-@development.command(name="execute-sql-script")
+@development_static.command(name="execute-sql-script")
 @click.option("--file", "-f", type=pathlib.Path, help="the script to execute")
 @click.option('-v', '--verbose', count=True)
 @pass_secrets
@@ -193,14 +197,19 @@ def execute_sql_script(
 DEV_DIR = pathlib.Path("/cdedb2/cdedb/cli/dev")
 
 
-@cli.group("dev2", cls=command_group_from_folder(DEV_DIR))
-def dev2() -> None:
+@click.group(cls=command_group_from_folder(DEV_DIR))
+def development_dynamic() -> None:
     """Helpers for development, expecting a running CdEDBv2.
 
     This allows us to import stuff from the remaining cdedb module inside the files,
     without polluting the namespace of the cli module, since we use this for setup
     purpose.
     """
+
+
+development = click.CommandCollection(sources=[development_static, development_dynamic])
+development.name = "dev"
+cli.add_command(development)
 
 
 def main() -> None:
