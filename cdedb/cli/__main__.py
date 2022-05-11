@@ -13,9 +13,9 @@ from cdedb.cli.database import (
     connect, create_database, create_database_users, populate_database,
     remove_prepared_transactions,
 )
-from cdedb.cli.dev.compile_sample_data_json import sql2json
 from cdedb.cli.dev.json2sql import json2sql
 from cdedb.cli.dev.serve import serve_debugger
+from cdedb.cli.dev.sql2json import sql2json
 from cdedb.cli.storage import create_log, create_storage, populate_storage, reset_config
 from cdedb.cli.util import get_user, pass_config, pass_secrets, switch_user
 from cdedb.common import CustomJSONEncoder
