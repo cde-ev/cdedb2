@@ -103,7 +103,7 @@ steps:
   - pg_isready --host=cdb --timeout=15 # wait for database to come online
   - python3 -m cdedb filesystem log create
   - python3 -m cdedb db create # create the test database for ldap ...
-  - python3 -m cdedb dev compile-sample-data --outfile - > tests/ancillary_files/sample_data.sql
+  - python3 -m cdedb dev compile-sample-data-sql --outfile - > tests/ancillary_files/sample_data.sql
   - python3 -m cdedb db populate # ... and populates it
 - name: ldap # is used as the hostname for the container
   image: ldap
