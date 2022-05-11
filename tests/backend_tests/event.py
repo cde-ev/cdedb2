@@ -4337,7 +4337,6 @@ class TestEventBackend(BackendTest):
             (p, p, p, p): 6,
         }
 
-        print()
         for stati, expected_fee in expectation.items():
             r_data = {
                 "id": reg_id,
@@ -4357,7 +4356,7 @@ class TestEventBackend(BackendTest):
                 },
             }
             self.event.set_registration(self.key, r_data)
-            print(combination := ", ".join(str(int(x == p)) for x in stati))
-            print(fee := self.event.calculate_fee(self.key, reg_id))
+            combination = ", ".join(str(int(x == p)) for x in stati)
+            fee = self.event.calculate_fee(self.key, reg_id)
             with self.subTest(combination=combination):
                 self.assertEqual(fee, decimal.Decimal(expected_fee))
