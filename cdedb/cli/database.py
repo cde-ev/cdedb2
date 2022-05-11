@@ -125,12 +125,18 @@ def populate_database(conf: Config, secrets: SecretsConfig, xss: bool = False) -
     repo_path: pathlib.Path = conf['REPOSITORY_PATH']
 
     outfile = repo_path / "tests" / "ancillary_files" / "sample_data.sql"
+    # TODO maybe raise an error instead of compiling on the fly?
     if not outfile.exists():
         # compile the sample data
         # TODO use a real temporary file instead or do it in memory
         # TODO this is assumed by tests/common.py -- can we resolve this?
         infile = repo_path / "tests" / "ancillary_files" / "sample_data.json"
-        compile_sample_data(conf, infile, outfile, xss=xss)
+
+        # this is an inline import to encapsulate the heavy dependencies
+        from cdedb.cli.dev.compile_sample_data_sql import (  # pylint: disable=import-outside-toplevel
+            work,
+        )
+        work(conf, infile, outfile, xss=xss)
 
     with connect(conf, secrets) as conn:
         with conn.cursor() as cur:
@@ -138,37 +144,6 @@ def populate_database(conf: Config, secrets: SecretsConfig, xss: bool = False) -
 
     if not xss:
         restart_services("slapd")
-
-
-def compile_sample_data(conf: Config, infile: pathlib.Path, outfile: pathlib.Path,
-                        xss: bool = False) -> None:
-    """Consume a .json file and parse the contained sample data to a .sql file.
-
-    The latter can then directly be applied to a database, to populate it with the
-    respective sample data.
-
-    The xss-switch decides if the sample data should be contaminated with script
-    tags, to check proper escaping afterwards.
-    """
-    # TODO since the creation of the sample data is a bit invasive, this is done via
-    #  a subprocess call. Maybe this can be done a bit more elegant...
-
-    repo_path: pathlib.Path = conf['REPOSITORY_PATH']
-
-    script_file = repo_path / "bin" / "create_sample_data_sql.py"
-
-    if xss:
-        xss_arg = ["--xss", conf.get("XSS_PAYLOAD") or ""]
-    else:
-        xss_arg = []
-
-    # give also the repo_path as pythonpath to the subprocess, so it can find the test
-    # module
-    env = {**os.environ.copy(), "PYTHONPATH": str(repo_path)}
-    subprocess.run(
-        ["python3", script_file, "--infile", infile, "--outfile", outfile, *xss_arg],
-        check=True, env=env,
-    )
 
 
 def remove_prepared_transactions(conf: Config, secrets: SecretsConfig) -> None:
