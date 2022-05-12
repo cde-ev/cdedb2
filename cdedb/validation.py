@@ -93,7 +93,7 @@ from cdedb.common.query import (
 )
 from cdedb.common.roles import ADMIN_KEYS, extract_roles
 from cdedb.common.sorting import xsorted
-from cdedb.config import Config
+from cdedb.config import LazyConfig
 from cdedb.database.constants import FieldAssociations, FieldDatatypes
 from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS
 from cdedb.validationdata import (
@@ -106,7 +106,7 @@ NoneType = type(None)
 zxcvbn.matching.add_frequency_lists(FREQUENCY_LISTS)
 
 _LOGGER = logging.getLogger(__name__)
-_CONFIG = Config()
+_CONFIG = LazyConfig()
 
 T = TypeVar('T')
 F = TypeVar('F', bound=Callable[..., Any])

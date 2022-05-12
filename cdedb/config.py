@@ -40,11 +40,9 @@ def set_configpath(path: PathLike) -> None:
 
 def get_configpath() -> pathlib.Path:
     """Helper to get the config path from the environment."""
-    path = os.environ.get("CDEDB_CONFIGPATH")
-    if path:
+    if path := os.environ.get("CDEDB_CONFIGPATH"):
         return pathlib.Path(path)
-    else:
-        raise RuntimeError("No config path set!")
+    raise RuntimeError("No config path set!")
 
 
 # TODO where exactly does this log?
@@ -381,6 +379,43 @@ class Config(Mapping[str, Any]):
 
     def __len__(self) -> int:
         return self._configchain.__len__()
+
+
+class LazyConfig(Config):
+    """Lazy config object for usage global namespace.
+
+    It should be avoided in general, but sometimes a Config object needs to live in the
+    global namespace of a module. If this is the case, importing from this module would
+    cause the Config object to be initialized, which is an unwanted side effect which
+    may not happen during import (f.e. importing from this module and setting the
+    config path environment variable later on will fail).
+
+    To circumvent this, the LazyConfig object may be used instead – it behaves identical
+    to a Config object, beside the initialization happens not on instantiation but on
+    first access.
+    """
+
+    # noinspection PyMissingConstructor
+    def __init__(self) -> None:
+        self.__initialized = False
+
+    def __init(self) -> None:
+        """Perform the initialization decoupled from the instantiation."""
+        if not self.__initialized:
+            self.__initialized = True
+            super().__init__()
+
+    def __getitem__(self, key: str) -> Any:
+        self.__init()
+        return super().__getitem__(key)
+
+    def __iter__(self) -> Iterator[str]:
+        self.__init()
+        return super().__iter__()
+
+    def __len__(self) -> int:
+        self.__init()
+        return super().__len__()
 
 
 class TestConfig(Config):
