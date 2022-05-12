@@ -5,7 +5,9 @@ import copy
 import datetime
 import decimal
 import unittest
-from typing import Any, Dict, Iterable, List, Mapping, Tuple, Type, Union
+from typing import (
+    Any, Dict, Iterable, List, Mapping, Sequence, Tuple, Type, TypeVar, Union,
+)
 
 import pytz
 
@@ -20,11 +22,13 @@ from cdedb.validationtypes import (
     PrintableASCIIType, SafeStr, StringType, Vote,
 )
 
+T = TypeVar('T')
+
 
 class TestValidation(unittest.TestCase):
     def do_validator_test(
         self,
-        type_: Type[Any],
+        type_: Type[T],
         spec: Iterable[Tuple[Any, Any, Union[Type[Exception], Exception, None]]],
         extraparams: Mapping[str, Any] = None, ignore_warnings: bool = True
     ) -> None:
@@ -171,7 +175,7 @@ class TestValidation(unittest.TestCase):
         ))
 
     def test_mapping(self) -> None:
-        self.do_validator_test(Mapping, (
+        self.do_validator_test(Mapping, (  # type: ignore
             ({"a": "dict"}, {"a": "dict"}, None),
             ("something else", "", TypeError),
         ))
