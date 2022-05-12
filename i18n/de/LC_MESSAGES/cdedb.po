@@ -3322,8 +3322,8 @@ msgstr "Keine Änderung erforderlich."
 
 #: cdedb/frontend/core/base.py:1576
 #, python-format
-msgid "Revoked an active permit."
-msgstr "Ein aktives Lastschriftmandat wurde widerrufen."
+msgid "Revoked active permit."
+msgstr "Aktives Lastschriftmandat widerrufen."
 
 #: cdedb/frontend/core/base.py:1613
 msgid "Nothing changed."

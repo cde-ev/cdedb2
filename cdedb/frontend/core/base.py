@@ -1574,7 +1574,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 self.cdeproxy.change_membership(rs, persona_id, is_member))
             rs.notify_return_code(code)
             if revoked_permit:
-                rs.notify("success", n_("Revoked an active permit."))
+                rs.notify("success", n_("Revoked active permit."))
             if collateral_transactions:
                 subject = ("Einzugsermächtigung zu ausstehender "
                            "Lastschrift widerrufen.")
