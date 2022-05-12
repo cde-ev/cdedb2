@@ -396,6 +396,7 @@ class LazyConfig(Config):
     """
 
     # noinspection PyMissingConstructor
+    # pylint: disable=super-init-not-called
     def __init__(self) -> None:
         self.__initialized = False
 
