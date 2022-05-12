@@ -4,6 +4,7 @@
 
 {% block scripts %}
     {{ util.cdedb_script('cdedb_csv_tools.js') }}
+    {{ util.cdedb_script('cdedb_helper.js') }}
 {% endblock %}
 
 {% set jshint='strong' %}
@@ -93,6 +94,8 @@
                     $('.row-key').addClass('clickable').click(function() {
                         $textinput.jumpCsvPosition($(this).attr('data-row'),-1);
                     });
+                    /* protect form changes */
+                    $('#transfersform').cdedbProtectChanges();
                 });
             </script>
         {% endif %}
