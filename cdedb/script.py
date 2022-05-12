@@ -26,7 +26,9 @@ import psycopg2.extras
 from cdedb.common import AbstractBackend, PathLike, RequestState, User, make_proxy
 from cdedb.common.i18n import n_
 from cdedb.common.roles import ALL_ROLES
-from cdedb.config import Config, SecretsConfig, get_configpath, set_configpath
+from cdedb.config import (
+    DEFAULT_CONFIGPATH, Config, SecretsConfig, get_configpath, set_configpath,
+)
 from cdedb.database.connection import Atomizer, IrradiatedConnection
 from cdedb.frontend.common import setup_translations
 
@@ -40,7 +42,8 @@ class TempConfig:
     """Provide a thin wrapper around a temporary file.
 
     The advantage of this is that it works with both a given configpath xor config
-    keyword arguments.
+    keyword arguments. If either of both is given, the current config path is used.
+    If this is not set, we use the DEFAULT_CONFIGPATH.
 
     If config keyword arguments are given, the config options from the real configpath
     (taken from the environment) are used as fallback values.
@@ -49,9 +52,9 @@ class TempConfig:
     """
 
     def __init__(self, configpath: PathLike = None, **config: Any):
-        if (not configpath and not config) or (configpath and config):
-            raise ValueError(f"Provide exactly one of config ({config}) and"
-                             f" configpath ({configpath})!")
+        if configpath and config:
+            raise ValueError(f"Do not provide both config ({config}) and "
+                             f"configpath ({configpath}).")
         self._configpath = configpath
         self._config = config
         # this will be used to hold the current configpath from the environment
@@ -60,8 +63,16 @@ class TempConfig:
         self._f: Optional[IO[str]] = None
 
     def __enter__(self) -> None:
-        # store the real configpath
-        self._real_configpath = get_configpath()
+        # we do a little dance to access the current config path, since we want to fall
+        # back to the default one if no config path is set, instead of raising an error.
+        try:
+            get_configpath()
+        except RuntimeError:
+            set_configpath(DEFAULT_CONFIGPATH)
+        finally:
+            self._real_configpath = get_configpath()
+
+        # now, adjust the configpath to the specified config kwargs or configpath
         if self._config:
             secrets = SecretsConfig()
             self._f = tempfile.NamedTemporaryFile("w", suffix=".py")
@@ -80,7 +91,7 @@ class TempConfig:
                 f.write(f"\n{k} = {v}")
             f.flush()
             set_configpath(f.name)
-        else:
+        elif self._configpath:
             assert self._configpath is not None
             set_configpath(self._configpath)
 
@@ -144,10 +155,6 @@ class Script:
 
         # Read configurable data from environment and/or input.
         configpath = configpath or os.environ.get("SCRIPT_CONFIGPATH")
-        # if no special configpath and no config options are present, use the default
-        # way to obtain the configpath from the environment
-        if not configpath and not config:
-            configpath = get_configpath()
         # Allow overriding for evolution trial.
         if persona_id is None:
             persona_id = int(os.environ.get("SCRIPT_PERSONA_ID", -1))
