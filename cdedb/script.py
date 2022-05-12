@@ -28,6 +28,7 @@ from cdedb.common.i18n import n_
 from cdedb.common.roles import ALL_ROLES
 from cdedb.config import Config, SecretsConfig, get_configpath, set_configpath
 from cdedb.database.connection import Atomizer, IrradiatedConnection
+from cdedb.frontend.common import setup_translations
 
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
@@ -212,9 +213,6 @@ class Script:
         if ret := self._request_states.get(persona_id):
             return ret
         if self._translations is None:
-            from cdedb.frontend.common import (  # pylint: disable=import-outside-toplevel
-                setup_translations,
-            )
             self._translations = setup_translations(self.config)
         rs = RequestState(
             sessionkey=None,
