@@ -968,8 +968,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Status ändern'})
         f = self.response.forms['modifymembershipform']
         self.submit(f)
-        self.assertPresence("Lastschriftmandate widerrufen.",
-                            div="notifications")
+        self.assertPresence("Lastschriftmandat wurde widerrufen.", div="notifications")
         self.assertNonPresence("Einzugsermächtigung", div="balance")
         self.logout()
         self.login(USER_DICT["farin"])
