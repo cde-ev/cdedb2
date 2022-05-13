@@ -494,7 +494,7 @@ class NearlyNow(datetime.datetime):
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, datetime.datetime):
-            delta = self - other
+            delta = other - self
             return self._delta > delta > -1 * self._delta
         return False
 

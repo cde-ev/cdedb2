@@ -1172,7 +1172,7 @@ class CoreBaseBackend(AbstractBackend):
                 update['balance'] = decimal.Decimal(0)
             else:
                 delta = None
-                new_balance = None  # type: ignore
+                new_balance = None
                 code = const.FinanceLogCodes.gain_membership
             ret = self.set_persona(
                 rs, update, may_wait=False,

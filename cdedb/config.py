@@ -19,7 +19,7 @@ import logging
 import os
 import pathlib
 import subprocess
-from typing import Any, Iterator, Mapping, Union
+from typing import Any, Iterator, Mapping, MutableMapping, Union
 
 import pytz
 
@@ -331,7 +331,7 @@ _SECRECTS_DEFAULTS = {
 }
 
 
-def _import_from_file(path: pathlib.Path) -> Mapping[str, Any]:
+def _import_from_file(path: pathlib.Path) -> MutableMapping[str, Any]:
     """Import all variables from the given file and return them as dict."""
     spec = importlib.util.spec_from_file_location("override", str(path))
     if not spec:
@@ -365,7 +365,7 @@ class Config(Mapping[str, Any]):
         override = self._process_config_overwrite()
         self._configchain = collections.ChainMap(override, _DEFAULTS)
 
-    def _process_config_overwrite(self) -> Mapping[str, Any]:
+    def _process_config_overwrite(self) -> MutableMapping[str, Any]:
         """Import the config overwrites from the file specified by the configpath.
 
         Allow only keys which are already present in _DEFAULT.
@@ -391,7 +391,7 @@ class TestConfig(Config):
     all the configuration in our testsuite in a configfile.
     """
 
-    def _process_config_overwrite(self) -> Mapping[str, Any]:
+    def _process_config_overwrite(self) -> MutableMapping[str, Any]:
         """Import the config overwrites from the file specified by the configpath.
 
         Allow additional keys which are not present in _DEFAULT.
