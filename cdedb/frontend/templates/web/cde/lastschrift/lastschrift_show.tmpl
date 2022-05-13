@@ -74,9 +74,6 @@
             {% endif %}
             </dl>
             <dl class="dl-horizontal">
-                <dt>{% trans %}Amount{% endtrans %}</dt>
-                <dd id="amount">{{ lastschrift['amount']|money(lang=lang) }}</dd>
-
                 <dt>{% trans %}IBAN{% endtrans %}</dt>
                 {% if 'finance' in user.admin_views %}
                     <dd id="iban">{{ lastschrift['iban']|iban }}</dd>

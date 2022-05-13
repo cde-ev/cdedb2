@@ -1393,12 +1393,12 @@ class CoreBaseBackend(AbstractBackend):
             if any(not ls['revoked_at'] for ls in lastschrift):
                 raise ArchiveError(n_("Active lastschrift exists."))
             query = ("UPDATE cde.lastschrift"
-                     " SET (amount, iban, account_owner, account_address)"
-                     " = (%s, %s, %s, %s)"
+                     " SET (iban, account_owner, account_address)"
+                     " = (%s, %s, %s)"
                      " WHERE persona_id = %s"
                      " AND revoked_at < now() - interval '14 month'")
             if lastschrift:
-                self.query_exec(rs, query, (0, "", "", "", persona_id))
+                self.query_exec(rs, query, ("", "", "", persona_id))
             #
             # 3. Remove complicated attributes (membership, foto and password)
             #

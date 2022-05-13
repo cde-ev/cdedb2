@@ -307,7 +307,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
                 'period_id': period,
                 'mandate_reference': lastschrift_reference(
                     persona['id'], lastschrift['id']),
-                'amount': lastschrift['amount'],
+                'amount': self.cdeproxy.transaction_amount(rs, persona['id']),
                 'iban': lastschrift['iban'],
                 'type': "RCUR",  # TODO remove this, hardcode it in template
             }
@@ -382,7 +382,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             data = {
                 'persona': persona,
                 'payment_date': self._calculate_payment_date(),
-                'amount': lastschrift['amount'],
+                'amount': self.cdeproxy.transaction_amount(rs, persona['id']),
                 'iban': lastschrift['iban'],
                 'account_owner': lastschrift['account_owner'],
                 'mandate_reference': lastschrift_reference(
@@ -586,15 +586,15 @@ class CdELastschriftMixin(CdEBaseFrontend):
 
     @access("anonymous")
     @REQUESTdata("full_name", "db_id", "username", "not_minor", "address_supplement",
-                 "address", "postal_code", "location", "country", "amount",
-                 "iban", "account_holder")
+                 "address", "postal_code", "location", "country", "iban",
+                 "account_holder")
     def lastschrift_subscription_form(
             self, rs: RequestState, full_name: Optional[str],
             db_id: Optional[vtypes.CdedbID], username: Optional[vtypes.Email],
             not_minor: bool, address_supplement: Optional[str], address: Optional[str],
             postal_code: Optional[vtypes.GermanPostalCode], location: Optional[str],
-            country: Optional[str], amount: Optional[vtypes.PositiveDecimal],
-            iban: Optional[vtypes.IBAN], account_holder: Optional[str]) -> Response:
+            country: Optional[str], iban: Optional[vtypes.IBAN],
+            account_holder: Optional[str]) -> Response:
         """Fill the direct debit authorization template with information."""
 
         if rs.has_validation_errors():
@@ -610,7 +610,6 @@ class CdELastschriftMixin(CdEBaseFrontend):
             "postal_code": postal_code or "",
             "location": location or "",
             "country": country or "",
-            "amount": float(amount) if amount else None,
             "iban": iban or "",
             "account_holder": account_holder or "",
         }

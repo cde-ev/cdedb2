@@ -1734,7 +1734,6 @@ def _expuls(
 
 
 LASTSCHRIFT_COMMON_FIELDS: Mapping[str, Any] = {
-    'amount': PositiveDecimal,
     'iban': IBAN,
     'account_owner': Optional[str],
     'account_address': Optional[str],
@@ -1832,7 +1831,6 @@ def _iban(
 
 
 LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS: Mapping[str, Any] = {
-    'amount': PositiveDecimal,
     'status': const.LastschriftTransactionStati,
     'issued_at': datetime.datetime,
     'processed_at': Optional[datetime.datetime],

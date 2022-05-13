@@ -989,7 +989,6 @@ class TestCoreBackend(BackendTest):
         # Test correct handling of lastschrift during archival.
         self.login("anton")
         ls_data = {
-            "amount": decimal.Decimal("25.00"),
             "persona_id": persona_id,
             "iban": "DE12500105170648489890",
             "account_owner": "Der Opa",
@@ -1020,7 +1019,6 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(old_ls["iban"], "")
         self.assertEqual(old_ls["account_owner"], "")
         self.assertEqual(old_ls["account_address"], "")
-        self.assertEqual(old_ls["amount"], 0)
         self.assertEqual(old_ls["notes"], ls_data["notes"])
         self.core.dearchive_persona(self.key, persona_id,
                                     new_username="charly@example.cde")

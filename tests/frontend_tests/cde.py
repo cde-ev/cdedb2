@@ -855,10 +855,8 @@ class TestCdEFrontend(FrontendTest):
                       {'description': 'Einzugsermächtigungen'},
                       {'description': 'Bertålotta Beispiel'},)
         self.assertTitle("Einzugsermächtigung Bertålotta Beispiel")
-        self.assertPresence("42,23 €", div='amount', exact=True)
         self.get("/cde/user/2/lastschrift/create")
         f = self.response.forms['createlastschriftform']
-        f['amount'] = 25
         f['iban'] = "DE12 5001 0517 0648 4898 90"
         self.submit(f, check_notification=False)
         self.assertPresence(
@@ -986,7 +984,6 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Neue Einzugsermächtigung …'},
                       {'description': 'Anlegen'})
         f = self.response.forms["createlastschriftform"]
-        f["amount"] = 100.00
         f["iban"] = "DE12500105170648489890"
         self.submit(f)
         f = self.response.forms["generatetransactionform"]
@@ -1139,7 +1136,6 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['createlastschriftform']
         self.assertTitle("Neue Einzugsermächtigung")
         f['persona_id'] = "DB-3-5"
-        f['amount'] = "123.45"
         f['iban'] = "DE26370205000008068900"
         f['notes'] = "grosze Siebte: Take on me"
         self.submit(f)
@@ -1147,7 +1143,6 @@ class TestCdEFrontend(FrontendTest):
         self.assertIn("revokeform", self.response.forms)
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['changelastschriftform']
-        self.assertEqual("123.45", f['amount'].value)
         self.assertEqual("grosze Siebte: Take on me", f['notes'].value)
 
     @as_users("farin")
@@ -1156,14 +1151,11 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Einzugsermächtigung'},
                       {'description': 'Bearbeiten'})
         f = self.response.forms['changelastschriftform']
-        self.assertEqual("42.23", f['amount'].value)
         self.assertEqual('Dagobert Anatidae', f['account_owner'].value)
         self.assertEqual('reicher Onkel', f['notes'].value)
-        f['amount'] = "27.16"
         f['account_owner'] = "Dagobert Beetlejuice"
         f['notes'] = "reicher Onkel (neu verheiratet)"
         self.submit(f)
-        self.assertPresence("27,16 €", div='amount', exact=True)
         self.assertPresence('Dagobert Beetlejuice', div='account-holder',
                             exact=True)
         self.assertPresence('reicher Onkel (neu verheiratet)', div='notes',

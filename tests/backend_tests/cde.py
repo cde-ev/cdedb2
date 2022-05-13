@@ -184,7 +184,6 @@ class TestCdEBackend(BackendTest):
             2: {
                 'account_address': 'Im Geldspeicher 1',
                 'account_owner': 'Dagobert Anatidae',
-                'amount': decimal.Decimal('42.23'),
                 'granted_at': datetime.datetime(2002, 2, 22, 20, 22, 22, 222222,
                                                 tzinfo=pytz.utc),
                 'iban': 'DE12500105170648489890',
@@ -210,7 +209,6 @@ class TestCdEBackend(BackendTest):
         newdata = {
             'account_address': None,
             'account_owner': None,
-            'amount': decimal.Decimal('25.00'),
             'granted_at': datetime.datetime.now(pytz.utc),
             'iban': 'DE69370205000008068902',
             'notes': None,
@@ -259,7 +257,6 @@ class TestCdEBackend(BackendTest):
         newdata = {
             'account_address': None,
             'account_owner': None,
-            'amount': decimal.Decimal('25.00'),
             'granted_at': datetime.datetime.now(pytz.utc),
             'iban': 'DE69370205000008068902',
             'notes': None,
@@ -439,7 +436,6 @@ class TestCdEBackend(BackendTest):
         newdata = {
             'account_address': None,
             'account_owner': None,
-            'amount': decimal.Decimal('25.00'),
             'granted_at': datetime.datetime.now(pytz.utc),
             'iban': 'DE69370205000008068902',
             'notes': None,

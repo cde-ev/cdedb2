@@ -310,6 +310,29 @@ class CdELastschriftBackend(CdEBaseBackend):
         get_lastschrift_transactions)
 
     @access("finance_admin")
+    def annual_membership_fee(self, rs: RequestState) -> decimal.Decimal:
+        """The (expected) annual membership fee.
+
+        Care has to be taken if there is more than one period per year (currently two):
+        If the fee changes between two periods of the same year, this function needs to
+        be adjusted _in advance_ to reflect this change, so the right amount of money
+        can be issued as lastschrift transaction.
+        """
+        # We increase our fee from 2.5€ to 4€ between period 58 and 59.
+        # Since lastschrifts cover two semester fees, we need to special
+        # case those booked in period 58.
+        if self.current_period(rs) == 58:
+            return decimal.Decimal(2.5) + decimal.Decimal(4)
+        return self.conf["PERIODS_PER_YEAR"] * self.conf["MEMBERSHIP_FEE"]
+
+    @access("finance_admin")
+    def transaction_amount(self, rs: RequestState, persona_id: vtypes.ID
+                           ) -> decimal.Decimal:
+        """The amount of a lastschrift transaction."""
+        user = self.core.get_cde_user(rs, persona_id)
+        return user["donation"] + self.annual_membership_fee(rs)
+
+    @access("finance_admin")
     def issue_lastschrift_transaction(self, rs: RequestState, data: CdEDBObject,
                                       check_unique: bool = False
                                       ) -> DefaultReturnCode:
@@ -340,10 +363,9 @@ class CdELastschriftBackend(CdEBaseBackend):
                 'submitted_by': rs.user.persona_id,
                 'period_id': period,
                 'status': stati.issued,
+                'amount': self.transaction_amount(rs, lastschrift["persona_id"])
             }
             merge_dicts(data, update)
-            if 'amount' not in data:
-                data['amount'] = lastschrift['amount']
             ret = self.sql_insert(rs, "cde.lastschrift_transactions", data)
             self.core.finance_log(
                 rs, const.FinanceLogCodes.lastschrift_transaction_issue,
@@ -405,22 +427,14 @@ class CdELastschriftBackend(CdEBaseBackend):
             if status == const.LastschriftTransactionStati.success:
                 code = const.FinanceLogCodes.lastschrift_transaction_success
                 user = self.core.get_cde_user(rs, persona_id)
-                periods_per_year = self.conf["PERIODS_PER_YEAR"]
-                # We increase our fee from 2.5€ to 4€ between period 58 and 59.
-                # Since lastschrifts cover two semester fees, we need to special
-                # case those booked in period 58.
-                if self.current_period(rs) == 58:
-                    fee = decimal.Decimal(2.5) + decimal.Decimal(4)
-                else:
-                    fee = periods_per_year * self.conf["MEMBERSHIP_FEE"]
-                delta = min(tally, fee)
+                delta = self.annual_membership_fee(rs)
                 new_balance = user['balance'] + delta
                 ret *= self.core.change_persona_balance(
                     rs, persona_id, new_balance,
                     const.FinanceLogCodes.lastschrift_transaction_success,
                     change_note="Erfolgreicher Lastschrifteinzug.")
-                if new_balance >= self.conf["MEMBERSHIP_FEE"]:
-                    self.change_membership(rs, persona_id, is_member=True)
+                # We provide membership directly after the successful transaction.
+                self.change_membership(rs, persona_id, is_member=True)
                 # Return early since change_persona_balance does the logging
                 return ret
             elif status == const.LastschriftTransactionStati.failure:
@@ -482,10 +496,11 @@ class CdELastschriftBackend(CdEBaseBackend):
             }
             ret = self.sql_update(rs, "cde.lastschrift_transactions", update)
             persona_id = lastschrift['persona_id']
-            fee = self.conf["PERIODS_PER_YEAR"] * self.conf["MEMBERSHIP_FEE"]
-            delta = min(transaction['tally'], fee)
             current = self.core.get_cde_user(rs, persona_id)
-            new_balance = current['balance'] - delta
+            # ensure the balance does not get negative, f.e. if the MEMBERSHIP_FEE
+            # changed between finalization and rollback
+            new_balance = max(
+                decimal.Decimal(0), current['balance'] - self.annual_membership_fee(rs))
             self.core.change_persona_balance(
                 rs, persona_id, new_balance,
                 const.FinanceLogCodes.lastschrift_transaction_revoked,

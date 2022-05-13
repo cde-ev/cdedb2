@@ -497,7 +497,6 @@ CREATE TABLE cde.lastschrift (
         submitted_by            integer REFERENCES core.personas(id) NOT NULL,
         -- actual data
         persona_id              integer REFERENCES core.personas(id) NOT NULL,
-        amount                  numeric(8, 2) NOT NULL,
         iban                    varchar NOT NULL,
         -- if different from the paying member
         account_owner           varchar,
