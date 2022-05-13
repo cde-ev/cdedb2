@@ -85,7 +85,7 @@ class LDAPsqlBackend:
             async with conn.cursor() as cur:
                 await self.execute_db_query(cur, query, params)
                 return [cast(CdEDBObject, SqlQueryBackend._sanitize_db_output(x))
-                        async for x in cur.fetchall()]
+                        for x in await cur.fetchall()]
 
     @staticmethod
     def _dn_value(dn: DN, attribute: str) -> Optional[str]:
