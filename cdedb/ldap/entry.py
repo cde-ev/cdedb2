@@ -15,6 +15,7 @@ from ldaptor.protocols.ldap.ldaperrors import (
     LDAPInvalidCredentials, LDAPNoSuchObject, LDAPUnwillingToPerform,
 )
 from twisted.internet.defer import Deferred, fail, succeed
+from twisted.python import log
 
 from cdedb.common import unwrap
 from cdedb.ldap.backend import LDAPObject, LDAPObjectMap, LDAPsqlBackend
@@ -93,7 +94,9 @@ class CdEDBBaseLDAPEntry(
         raise NotImplementedError
 
     def fetch(self, *attributes) -> Deferred:
-        return succeed(self._fetch(attributes))
+        d = succeed(self._fetch(attributes))
+        d.addErrback(log.err)
+        return d
 
     # implemented in ldaptor.entryhelpers.SearchByTreeWalkingMixin
     # def search(...):
@@ -107,7 +110,9 @@ class CdEDBBaseLDAPEntry(
         raise NotImplementedError
 
     def children(self, callback=None) -> Deferred:
-        return Deferred.fromCoroutine(self._children(callback))
+        d = Deferred.fromCoroutine(self._children(callback))
+        d.addErrback(log.err)
+        return d
 
     # implemented by ldaptor.entryhelpers.SubtreeFromChildrenMixin
     # def subtree(self, callback=None):
@@ -125,7 +130,9 @@ class CdEDBBaseLDAPEntry(
         raise NotImplementedError
 
     def lookup(self, dn: str) -> Deferred:
-        return Deferred.fromCoroutine(self._lookup(dn))
+        d = Deferred.fromCoroutine(self._lookup(dn))
+        d.addErrback(log.err)
+        return d
 
     # implemented by ldaptor.entryhelpers.MatchMixin
     # def match(self, filter):
@@ -147,7 +154,9 @@ class CdEDBBaseLDAPEntry(
         raise NotImplementedError
 
     def parent(self) -> Deferred:
-        return succeed(self._parent())
+        d = succeed(self._parent())
+        d.addErrback(log.err)
+        return d
 
     # TODO where is this used?
     def hasMember(self, dn: DistinguishedName) -> bool:
@@ -214,7 +223,9 @@ class CdEDBBindableEntryMixing(CdEDBBaseLDAPEntry, metaclass=abc.ABCMeta):
         raise LDAPInvalidCredentials("Invalid Credentials")
 
     def bind(self, password: Union[str, bytes]) -> Deferred:
-        return succeed(self._bind(password))
+        d = succeed(self._bind(password))
+        d.addErrback(log.err)
+        return d
 
 
 class CdEPreLeafEntry(CdEDBStaticEntry, metaclass=abc.ABCMeta):
