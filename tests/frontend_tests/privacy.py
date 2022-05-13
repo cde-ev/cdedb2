@@ -21,7 +21,7 @@ class TestPrivacyFrontend(FrontendTest):
         "Geschlecht": 'personal-information', "CdEDB-ID": 'account',
         "Account aktiv": 'account', "Bereiche": 'account',
         "Admin-Privilegien": 'account', "Admin-Notizen": 'account',
-        "Gedruckter exPuls": 'paper-expuls',
+        "Gedruckter exPuls": 'paper-expuls', "Jährliche Spende": 'cde-membership',
         "Mitgliedschaft": 'cde-membership', "Guthaben": 'cde-membership',
         "Sichtbarkeit": 'cde-membership', "E-Mail": 'contact-information',
         "Telefon": 'contact-information', "Mobiltelefon": 'contact-information',
@@ -30,7 +30,7 @@ class TestPrivacyFrontend(FrontendTest):
         "Fachgebiet": 'additional', "Schule, Uni, …": 'additional',
         "Jahrgang, Matrikel, …": 'additional', "Interessen": 'additional',
         "Sonstiges": 'additional', "Verg. Veranstaltungen": 'past-events',
-        "VCard": 'vcard'
+        "VCard": 'vcard', "Aktive Lastschrift": 'cde-membership',
     }
 
     ALL_FIELDS = set(FIELD_TO_DIV.keys())
@@ -98,7 +98,7 @@ class TestPrivacyFrontend(FrontendTest):
     def _profile_cde_admin_view(self, inspected: UserObject) -> Set[str]:
         expected = {
             "Geschlecht", "Mitgliedschaft", "Guthaben", "Sichtbarkeit",
-            "Gedruckter exPuls"
+            "Gedruckter exPuls", "Jährliche Spende", "Aktive Lastschrift"
         }
         for field in expected:
             self.assertPresence(field, div=self.FIELD_TO_DIV[field])
@@ -154,7 +154,7 @@ class TestPrivacyFrontend(FrontendTest):
         expected = {
             "Account aktiv", "Bereiche", "Admin-Privilegien", "Admin-Notizen",
             "Gedruckter exPuls", "Guthaben", "Mitgliedschaft", "Geburtsname",
-            "Geschlecht", "Geburtsdatum", "VCard"
+            "Geschlecht", "Geburtsdatum", "VCard", "Jährliche Spende",
         }
         for field in expected:
             self.assertPresence(field, div=self.FIELD_TO_DIV[field])
