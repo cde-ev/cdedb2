@@ -248,6 +248,8 @@ _DEFAULTS = {
     # the minimal and maximal donation we accept per annual lastschrifts
     "MINIMAL_LASTSCHRIFT_DONATION": decimal.Decimal("2.00"),
     "MAXIMAL_LASTSCHRIFT_DONATION": decimal.Decimal("1000"),
+    # the predefined donation amount of a lastschrift, if the user didn't specified one
+    "TYPICAL_LASTSCHRIFT_DONATION": decimal.Decimal("20"),
 
     # Name of the organization where the SEPA transaction originated
     "SEPA_SENDER_NAME": "CdE e.V.",

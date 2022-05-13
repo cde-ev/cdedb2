@@ -155,6 +155,20 @@ class CdELastschriftMixin(CdEBaseFrontend):
                 'persona_id': persona_id})
         new_id = self.cdeproxy.create_lastschrift(rs, data)
         rs.notify_return_code(new_id)
+
+        # adjust the amount of donation if necessary
+        user = self.coreproxy.get_cde_user(rs, persona_id)
+        min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
+        typical_donation = self.conf["TYPICAL_LASTSCHRIFT_DONATION"]
+        if user["donation"] == decimal.Decimal(0):
+            update = {"id": persona_id, "donation": typical_donation}
+            code = self.coreproxy.change_persona(rs, update)
+            rs.notify_return_code(code, success=n_("Donation raised to typical value."))
+        elif user["donation"] < min_donation:
+            update = {"id": persona_id, "donation": min_donation}
+            code = self.coreproxy.change_persona(rs, update)
+            rs.notify_return_code(code, success=n_("Donation raised to minimal value."))
+
         return self.redirect(
             rs, "cde/lastschrift_show", {'persona_id': persona_id})
 
