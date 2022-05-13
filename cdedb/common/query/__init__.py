@@ -397,6 +397,7 @@ _QUERY_SPECS = {
             "is_searchable": QuerySpecEntry("bool", n_("Searchable")),
             "decided_search": QuerySpecEntry("bool", n_("Searchability Decided")),
             "balance": QuerySpecEntry("float", n_("Membership-Fee Balance")),
+            "donation": QuerySpecEntry("float", n_("Annual Donation")),
             **{
                 k: QuerySpecEntry("bool", k, n_("Admin"))
                 for k in ADMIN_KEYS

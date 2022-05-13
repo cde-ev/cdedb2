@@ -67,6 +67,8 @@
                                    anid="input_checkbox_is_searchable") }}
             {{ util.form_input_checkbox(name="paper_expuls", label=gettext("Printed exPuls"),
                                    anid="input_checkbox_is_searchable") }}
+            {{ util.form_input_text(name="donation", label=gettext("Annual Donation"), type="number",
+                                    attributes='min="0" step="0.01"'|s) }}
         {% endif %}
         {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="7", markdown=True) }}
 

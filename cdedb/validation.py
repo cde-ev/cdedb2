@@ -1058,6 +1058,7 @@ PERSONA_BASE_CREATION: Mapping[str, Any] = {
     'bub_search': NoneType,
     'foto': NoneType,
     'paper_expuls': NoneType,
+    'donation': NoneType,
 }
 
 PERSONA_CDE_CREATION: Mapping[str, Any] = {
@@ -1089,6 +1090,7 @@ PERSONA_CDE_CREATION: Mapping[str, Any] = {
     'bub_search': bool,
     # 'foto': Optional[str], # No foto -- this is another special
     'paper_expuls': bool,
+    'donation': NonNegativeDecimal,
 }
 
 PERSONA_EVENT_CREATION: Mapping[str, Any] = {

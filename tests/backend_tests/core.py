@@ -62,6 +62,7 @@ PERSONA_TEMPLATE = {
     'bub_search': None,
     'foto': None,
     'paper_expuls': None,
+    'donation': None,
 }
 # This can be used whenever an ip needs to be specified.
 IP = "127.0.0.0"
@@ -324,6 +325,7 @@ class TestCoreBackend(BackendTest):
             'bub_search': False,
             'foto': None,
             'paper_expuls': True,
+            'donation': decimal.Decimal(0)
         })
         new_id = self.core.create_persona(self.key, data)
         data["id"] = new_id
@@ -466,6 +468,9 @@ class TestCoreBackend(BackendTest):
             if key == "paper_expuls":
                 if persona[key] is None:
                     persona[key] = True
+            if key == "donation":
+                if persona[key] is None:
+                    persona[key] = decimal.Decimal(0)
         merge_dicts(data, persona)
         change_note = "Bereichsänderung"
         self.assertLess(0, self.core.change_persona_realms(self.key, data, change_note))
@@ -815,6 +820,7 @@ class TestCoreBackend(BackendTest):
             'name_supplement': None,
             'title': None,
             'balance': decimal.Decimal("0.00"),
+            'donation': decimal.Decimal("0.00"),
             'trial_member': True,
             'decided_search': False,
             'bub_search': False,
@@ -940,6 +946,7 @@ class TestCoreBackend(BackendTest):
             'address_supplement2': None,
             'affiliation': 'Jedermann',
             'balance': decimal.Decimal('12.50'),
+            'donation': decimal.Decimal('42.24'),
             'birth_name': 'Gemeinser',
             'bub_search': True,
             'country2': 'GB',

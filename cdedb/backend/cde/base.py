@@ -356,6 +356,7 @@ class CdEBaseBackend(AbstractBackend):
                 'is_member': True,
                 'trial_member': trial_membership,
                 'paper_expuls': True,
+                'donation': decimal.Decimal(0),
                 'is_searchable': consent,
             })
             persona_id = self.core.create_persona(rs, new_persona)
@@ -388,6 +389,7 @@ class CdEBaseBackend(AbstractBackend):
                     'decided_search': False,
                     'trial_member': False,
                     'paper_expuls': True,
+                    'donation': decimal.Decimal(0),
                     'bub_search': False,
                     'id': persona_id,
                 }
