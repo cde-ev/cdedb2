@@ -9,7 +9,8 @@ from typing import Collection, Mapping
 from werkzeug import Response
 
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, RequestState, n_
+from cdedb.common import CdEDBObject, RequestState
+from cdedb.common.i18n import n_
 from cdedb.frontend.common import REQUESTdata, access, mailinglist_guard, periodic
 from cdedb.frontend.ml.base import MlBaseFrontend
 from cdedb.frontend.ml.mailman import MlMailmanMixin

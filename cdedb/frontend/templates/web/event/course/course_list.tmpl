@@ -59,8 +59,12 @@
 
         <div id="list-courses">
         {% for anid, entry in courses|keydictsort(EntitySorter.course) if entry['segments'].intersection(track_ids) %}
-            <div class="hide-hover-container">
-                <h3>{{ entry['nr'] }}. {{ entry['title'] }}</h3>
+            <div class="hide-hover-container" id="course-{{ entry['id'] }}">
+                <h3>
+                    {{ entry['nr'] }}. {{ entry['title'] }}
+                    <a class="headerlink" href="#course-{{ entry['id'] }}"
+                       title="{% trans %}Permanent link{% endtrans %}">&para;</a>
+                </h3>
                 {% if ambience['event']['id'] in user.orga or 'event_orga' in user.admin_views %}
                     <div class="pull-right">
                         {{ util.href(cdedblink('event/show_course', {'course_id' : anid}), gettext("Details"),

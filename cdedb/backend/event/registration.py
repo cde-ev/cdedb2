@@ -24,11 +24,15 @@ from cdedb.backend.common import (
 )
 from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
-    REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS, REGISTRATION_TRACK_FIELDS,
     CdEDBObject, CdEDBObjectMap, CourseFilterPositions, DefaultReturnCode,
-    DeletionBlockers, InfiniteEnum, PrivilegeError, PsycoJson, RequestState, glue, n_,
-    unwrap, xsorted,
+    DeletionBlockers, InfiniteEnum, PsycoJson, RequestState, glue, unwrap,
 )
+from cdedb.common.exceptions import PrivilegeError
+from cdedb.common.fields import (
+    REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS, REGISTRATION_TRACK_FIELDS,
+)
+from cdedb.common.i18n import n_
+from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.filter import date_filter, money_filter
 
@@ -449,10 +453,10 @@ class EventRegistrationBackend(EventBaseBackend):
                                                    rs.user.persona_id).keys()
         if registration_ids:
             registration = self.get_registration(rs, unwrap(registration_ids))
-            if not any(part['status'].is_involved()
+            if not any(part['status'].has_to_pay()
                        for part in registration['parts'].values()):
-                # cancelled and rejected people are not really "registered" anymore
-                return False, False
+                return any(part['status'].is_involved()
+                           for part in registration['parts'].values()), False
             payment_pending = bool(
                 not registration['payment']
                 and self.calculate_fee(rs, unwrap(registration_ids)))

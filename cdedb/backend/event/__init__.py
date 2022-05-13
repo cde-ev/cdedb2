@@ -21,9 +21,11 @@ from cdedb.backend.event.query import EventQueryBackend
 from cdedb.backend.event.registration import EventRegistrationBackend
 from cdedb.common import (
     EVENT_SCHEMA_VERSION, CdEDBObject, CdEDBOptionalMap, DefaultReturnCode,
-    DeletionBlockers, PartialImportError, PrivilegeError, RequestState, build_msg,
-    get_hash, json_serialize, mixed_existence_sorter, n_, unwrap,
+    DeletionBlockers, RequestState, build_msg, get_hash, json_serialize, unwrap,
 )
+from cdedb.common.exceptions import PartialImportError, PrivilegeError
+from cdedb.common.i18n import n_
+from cdedb.common.sorting import mixed_existence_sorter
 from cdedb.database.connection import Atomizer
 
 __all__ = ['EventBackend']

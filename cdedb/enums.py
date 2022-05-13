@@ -8,14 +8,15 @@ one list instead of two.
 from enum import Enum
 from typing import Tuple, Type
 
+from subman.machine import SubscriptionAction, SubscriptionPolicy
+
 import cdedb.database.constants as const
 from cdedb.common import (
     Accounts, AgeClasses, ConfidenceLevel, CourseChoiceToolActions,
     CourseFilterPositions, GenesisDecision, LineResolutions, LodgementsSortkeys,
     TransactionType,
 )
-from cdedb.query import QueryOperators, QueryScope
-from cdedb.subman.machine import SubscriptionAction, SubscriptionPolicy
+from cdedb.common.query import QueryOperators, QueryScope
 
 #: The list of normal enums
 ALL_ENUMS: Tuple[Type[Enum], ...] = (

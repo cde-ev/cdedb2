@@ -14,13 +14,17 @@ from cdedb.backend.common import (
 )
 from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
-    COURSE_FIELDS, LODGEMENT_FIELDS, LODGEMENT_GROUP_FIELDS, REGISTRATION_FIELDS,
-    REGISTRATION_PART_FIELDS, STORED_EVENT_QUERY_FIELDS, CdEDBObject, CdEDBObjectMap,
-    DefaultReturnCode, PrivilegeError, RequestState, implying_realms, json_serialize,
-    n_,
+    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, RequestState, json_serialize,
 )
+from cdedb.common.exceptions import PrivilegeError
+from cdedb.common.fields import (
+    COURSE_FIELDS, LODGEMENT_FIELDS, LODGEMENT_GROUP_FIELDS, REGISTRATION_FIELDS,
+    REGISTRATION_PART_FIELDS, STORED_EVENT_QUERY_FIELDS,
+)
+from cdedb.common.i18n import n_
+from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
+from cdedb.common.roles import implying_realms
 from cdedb.database.connection import Atomizer
-from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 
 
 def _get_field_select_columns(fields: CdEDBObjectMap,
@@ -331,7 +335,8 @@ class EventQueryBackend(EventBaseBackend):
                     LEFT OUTER JOIN (
                         SELECT
                             c.id AS base_id, is_active IS NOT NULL AS is_offered,
-                            COALESCE(is_active, False) AS takes_place
+                            COALESCE(is_active, False) AS takes_place,
+                            NOT COALESCE(is_active, True) AS is_cancelled
                         FROM (
                             {base}
                             LEFT OUTER JOIN (
@@ -678,7 +683,7 @@ class EventQueryBackend(EventBaseBackend):
             'event_id': event_id,
             'query_name': query.name,
             'scope': query.scope,
-            'serialized_query': json_serialize(query.serialize()),
+            'serialized_query': json_serialize(query.serialize(timezone_aware=True)),
         }
         with Atomizer(rs):
             new_id = self.sql_insert(

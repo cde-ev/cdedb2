@@ -10,7 +10,6 @@ import collections
 import collections.abc
 import copy
 import csv
-import datetime
 import email
 import email.charset
 import email.encoders
@@ -48,7 +47,6 @@ from typing import (
     Type, TypeVar, Union, cast, overload,
 )
 
-import icu
 import jinja2
 import mailmanclient.restobjects.held_message
 import mailmanclient.restobjects.mailinglist
@@ -58,9 +56,10 @@ import werkzeug.datastructures
 import werkzeug.exceptions
 import werkzeug.utils
 import werkzeug.wrappers
+import werkzeug.wsgi
 
+import cdedb.common.query as query_mod
 import cdedb.database.constants as const
-import cdedb.query as query_mod
 import cdedb.validation as validate
 import cdedb.validationtypes as vtypes
 from cdedb.backend.assembly import AssemblyBackend
@@ -71,15 +70,22 @@ from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.common import (
-    ADMIN_KEYS, ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS, ANTI_CSRF_TOKEN_NAME,
-    ANTI_CSRF_TOKEN_PAYLOAD, IGNORE_WARNINGS_NAME, PERSONA_DEFAULTS,
-    REALM_SPECIFIC_GENESIS_FIELDS, CdEDBMultiDict, CdEDBObject, CustomJSONEncoder,
-    EntitySorter, Error, Notification, NotificationType, PathLike, PrivilegeError,
-    RequestState, Role, User, ValidationWarning, _tdelta, asciificator,
-    decode_parameter, encode_parameter, format_country_code,
-    get_localized_country_codes, glue, json_serialize, make_proxy, merge_dicts, n_, now,
-    roles_to_db_role, setup_logger, unwrap,
+    ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD, IGNORE_WARNINGS_NAME, CdEDBMultiDict,
+    CdEDBObject, CustomJSONEncoder, Error, Notification, NotificationType, PathLike,
+    RequestState, Role, User, _tdelta, asciificator, decode_parameter, encode_parameter,
+    glue, json_serialize, make_persona_forename, make_proxy, merge_dicts, now,
+    setup_logger, unwrap,
 )
+from cdedb.common.exceptions import PrivilegeError, ValidationWarning
+from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
+from cdedb.common.i18n import format_country_code, get_localized_country_codes, n_
+from cdedb.common.query import Query
+from cdedb.common.query.defaults import DEFAULT_QUERIES
+from cdedb.common.roles import (
+    ADMIN_KEYS, ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS, PERSONA_DEFAULTS,
+    roles_to_db_role,
+)
+from cdedb.common.sorting import EntitySorter
 from cdedb.config import Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -88,8 +94,6 @@ from cdedb.enums import ENUMS_DICT
 from cdedb.filter import (
     JINJA_FILTERS, cdedbid_filter, enum_entries_filter, safe_filter, sanitize_None,
 )
-from cdedb.query import Query
-from cdedb.query_defaults import DEFAULT_QUERIES
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -232,40 +236,6 @@ def raise_jinja(val: str) -> None:
     raise RuntimeError(val)
 
 
-_CONFIG = Config()
-
-
-# TODO move this back in filter.py
-def datetime_filter(val: Union[datetime.datetime, str, None],
-                    formatstr: str = "%Y-%m-%d %H:%M (%Z)", lang: str = None,
-                    passthrough: bool = False) -> Optional[str]:
-    """Custom jinja filter to format ``datetime.datetime`` objects.
-
-    :param formatstr: Formatting used, if no l10n happens.
-    :param lang: If not None, then localize to the passed language.
-    :param passthrough: If True return strings unmodified.
-    """
-    if val is None or val == '' or not isinstance(val, datetime.datetime):
-        if passthrough and isinstance(val, str) and val:
-            return val
-        return None
-
-    if val.tzinfo is not None:
-        val = val.astimezone(_CONFIG["DEFAULT_TIMEZONE"])
-    else:
-        _LOGGER.warning(f"Found naive datetime object {val}.")
-
-    if lang:
-        locale = icu.Locale(lang)
-        datetime_formatter = icu.DateFormat.createDateTimeInstance(
-            icu.DateFormat.MEDIUM, icu.DateFormat.MEDIUM, locale)
-        zone = _CONFIG["DEFAULT_TIMEZONE"].zone
-        datetime_formatter.setTimeZone(icu.TimeZone.createTimeZone(zone))
-        return datetime_formatter.format(val)
-    else:
-        return val.strftime(formatstr)
-
-
 PeriodicMethod = Callable[[Any, RequestState, CdEDBObject], CdEDBObject]
 
 
@@ -297,6 +267,19 @@ def periodic(name: str, period: int = 1
     return decorator
 
 
+class CdEDBUndefined(jinja2.StrictUndefined):
+    """An undefined that allows boolean tests and basic comparisons, but barks on
+    everything else.
+
+    This matches our needs to catch `{{ undefined }}`, while still allowing
+    comfortable `if` checks as well as `sidenav_active` comparisons.
+    """
+
+    __eq__ = jinja2.Undefined.__eq__
+    __ne__ = jinja2.Undefined.__ne__
+    __bool__ = jinja2.Undefined.__bool__
+
+
 class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     """Common base class for all frontends."""
     #: to be overridden by children
@@ -305,14 +288,19 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         super().__init__(*args, **kwargs)
         self.template_dir = pathlib.Path(self.conf["REPOSITORY_PATH"], "cdedb",
                                          "frontend", "templates")
+        if self.conf['CDEDB_DEV'] or self.conf['CDEDB_TEST']:
+            undefined = CdEDBUndefined
+        else:
+            undefined = jinja2.make_logging_undefined(self.logger, jinja2.Undefined)
+            undefined.__bool__ = jinja2.Undefined.__bool__
         self.jinja_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(str(self.template_dir)),
             extensions=['jinja2.ext.i18n', 'jinja2.ext.do', 'jinja2.ext.loopcontrols'],
-            finalize=sanitize_None, autoescape=True, auto_reload=self.conf["CDEDB_DEV"])
+            finalize=sanitize_None, autoescape=True, auto_reload=self.conf["CDEDB_DEV"],
+            undefined=undefined)
         self.jinja_env.policies['ext.i18n.trimmed'] = True  # type: ignore
         self.jinja_env.policies['json.dumps_kwargs']['cls'] = CustomJSONEncoder  # type: ignore
         self.jinja_env.filters.update(JINJA_FILTERS)
-        self.jinja_env.filters.update({'datetime': datetime_filter})
         self.jinja_env.globals.update({
             'now': now,
             'nbsp': "\u00A0",
@@ -571,7 +559,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
           tries to save the file to disk
         :param inline: Set content disposition to force display in browser (if
           True) or to force a download box (if False).
-        :param afile: should be opened in binary mode
+        :param afile: Should be opened in binary mode. Will be reset to start of file.
         :param encoding: The character encoding to be uses, if `data` is given
           as str
         """
@@ -585,6 +573,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             f = pathlib.Path(path).open("rb")
             payload = werkzeug.wsgi.wrap_file(rs.request.environ, f)
         elif afile:
+            # Setting the buffer to 0 might be technically wrong in some theoretical
+            # case, but this is much more easily usable.
+            afile.seek(0)
             payload = werkzeug.wsgi.wrap_file(rs.request.environ, afile)
         elif data:
             if isinstance(data, str):
@@ -2195,24 +2186,13 @@ def make_persona_name(persona: CdEDBObject,
     For a full specification, which name variant should be used in which context, see
     the documentation page about "User Experience Conventions".
     """
-    display_name: str = persona.get('display_name', "")
-    given_names: str = persona['given_names']
+    forename = make_persona_forename(
+        persona, only_given_names=only_given_names, only_display_name=only_display_name,
+        given_and_display_names=given_and_display_names)
     ret = []
     if with_titles and persona.get('title'):
         ret.append(persona['title'])
-    if only_given_names:
-        ret.append(given_names)
-    elif only_display_name:
-        ret.append(display_name)
-    elif given_and_display_names:
-        if not display_name or display_name == given_names:
-            ret.append(given_names)
-        else:
-            ret.append(f"{given_names} ({display_name})")
-    elif display_name and display_name in given_names:
-        ret.append(display_name)
-    else:
-        ret.append(given_names)
+    ret.append(forename)
     if with_family_name:
         ret.append(persona['family_name'])
     if with_titles and persona.get('name_supplement'):

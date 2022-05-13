@@ -206,21 +206,29 @@
                         <dl class="dl-horizontal">
                             <dt>{% trans %}Instructor of{% endtrans %}</dt>
                             <dd>
-                                {% if ambience['registration']['tracks'][track_id]['course_instructor'] %}
-                                    {{ courses[ambience['registration']['tracks'][track_id]['course_instructor']]['nr'] }}.
-                                    {{ courses[ambience['registration']['tracks'][track_id]['course_instructor']]['shortname'] }}
-                                {% else %}
-                                    —
-                                {% endif %}
+                                {% with course_id = ambience['registration']['tracks'][track_id]['course_instructor'] %}
+                                    {% if course_id %}
+                                        {{ util.href(cdedblink('event/show_course', {'course_id': course_id}),
+                                                     "{}. {}".format(courses[course_id]['nr'],
+                                                                     courses[course_id]['shortname'])) }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                {% endwith %}
                             </dd>
                             {% for i in range(track['num_choices']) %}
                                 <dt>{{ gettext("%s. Choice")|format(i + 1) }}</dt>
                                 <dd>
                                     {% if ambience['registration']['tracks'][track_id]['choices']|length > i  %}
-                                        {{ courses[ambience['registration']['tracks'][track_id]['choices'][i]]['nr'] }}.
-                                        {{ courses[ambience['registration']['tracks'][track_id]['choices'][i]]['shortname'] }}
-                                    {% else %}
-                                        —
+                                        {% with course_id = ambience['registration']['tracks'][track_id]['choices'][i] %}
+                                            {% if course_id %}
+                                                {{ util.href(cdedblink('event/show_course', {'course_id': course_id}),
+                                                             "{}. {}".format(courses[course_id]['nr'],
+                                                                             courses[course_id]['shortname'])) }}
+                                            {% else %}
+                                                —
+                                            {% endif %}
+                                        {% endwith %}
                                     {% endif %}
                                 </dd>
                             {% endfor %}
@@ -250,7 +258,7 @@
 
     <h3 class="heading-underline">{% trans %}Copy-Paste Template{% endtrans %}</h3>
     <pre>
-Beachte bitte, dass Deine Anmeldung erst mit Überweisung des Teilnehmerbeitrags gültig wird.
+Beachte bitte, dass Deine Anmeldung erst mit Überweisung des Teilnahmebeitrags gültig wird.
 Überweise dazu {{ fee|money(lang=lang) }} auf folgendes Konto.
 Achte bitte bei internationalen Überweisungen darauf, dass der Empfänger keine Gebühren zahlen muss.
 

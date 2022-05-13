@@ -10,7 +10,7 @@ their symbolic names provided by this module should be used.
 import enum
 from typing import Dict, Set
 
-from cdedb.subman.machine import (  # pylint: disable=unused-import # noqa: F401
+from subman.machine import (  # pylint: disable=unused-import # noqa: F401
     SubscriptionAction, SubscriptionState,
 )
 

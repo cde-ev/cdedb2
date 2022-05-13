@@ -16,12 +16,17 @@ from cdedb.backend.common import (
 )
 from cdedb.backend.event import EventBackend
 from cdedb.common import (
-    INSTITUTION_FIELDS, PAST_COURSE_FIELDS, PAST_EVENT_FIELDS, CdEDBLog, CdEDBObject,
-    CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, Error, PrivilegeError,
-    RequestState, glue, make_proxy, n_, now, unwrap, xsorted,
+    CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, Error,
+    RequestState, glue, make_proxy, now, unwrap,
 )
+from cdedb.common.exceptions import PrivilegeError
+from cdedb.common.fields import (
+    INSTITUTION_FIELDS, PAST_COURSE_FIELDS, PAST_EVENT_FIELDS,
+)
+from cdedb.common.i18n import n_
+from cdedb.common.query import Query, QueryScope
+from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
-from cdedb.query import Query, QueryScope
 
 
 class PastEventBackend(AbstractBackend):

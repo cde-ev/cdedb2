@@ -17,12 +17,17 @@ from cdedb.backend.common import (
     affirm_validation as affirm, internal, singularize,
 )
 from cdedb.common import (
-    COURSE_TRACK_FIELDS, EVENT_FIELD_SPEC, EVENT_PART_FIELDS, FEE_MODIFIER_FIELDS,
-    FIELD_DEFINITION_FIELDS, PART_GROUP_FIELDS, CdEDBObject, CdEDBObjectMap,
-    CdEDBOptionalMap, DefaultReturnCode, DeletionBlockers, PrivilegeError, PsycoJson,
-    RequestState, mixed_existence_sorter, n_, now, unwrap,
+    CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap, DefaultReturnCode, DeletionBlockers,
+    PsycoJson, RequestState, now, unwrap,
 )
-from cdedb.validation import parse_date, parse_datetime
+from cdedb.common.exceptions import PrivilegeError
+from cdedb.common.fields import (
+    COURSE_TRACK_FIELDS, EVENT_FIELD_SPEC, EVENT_PART_FIELDS, FEE_MODIFIER_FIELDS,
+    FIELD_DEFINITION_FIELDS, PART_GROUP_FIELDS,
+)
+from cdedb.common.i18n import n_
+from cdedb.common.sorting import mixed_existence_sorter
+from cdedb.validation import EVENT_FIELD_COMMON_FIELDS, parse_date, parse_datetime
 
 
 class EventLowLevelBackend(AbstractBackend):
@@ -828,8 +833,13 @@ class EventLowLevelBackend(AbstractBackend):
                 current = current_field_data[x]
                 if any(updated_field[k] != current[k] for k in updated_field):
                     if x in fee_modifier_fields:
-                        raise ValueError(n_("Cannot change field that is "
-                                            "associated with a fee modifier."))
+                        # Only optional fields of event fields associated with
+                        #  fee modifiers may be changed.
+                        if not all(updated_field[k] == current[k]
+                                   for k in EVENT_FIELD_COMMON_FIELDS
+                                   if k in updated_field):
+                            raise ValueError(n_("Cannot change field that is"
+                                                " associated with a fee modifier."))
                     kind = current_field_data[x]['kind']
                     if updated_field.get('kind', kind) != kind:
                         self._cast_field_values(rs, current, updated_field['kind'])

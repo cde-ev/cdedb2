@@ -19,12 +19,10 @@ import re
 import string
 import sys
 from typing import (
-    TYPE_CHECKING, Any, Callable, Collection, Dict, Generator, Generic, Iterable,
-    KeysView, List, Mapping, MutableMapping, Optional, Set, Tuple, Type, TypeVar, Union,
-    cast, overload,
+    TYPE_CHECKING, Any, Callable, Collection, Dict, Generic, Iterable, List, Mapping,
+    MutableMapping, Optional, Set, Tuple, Type, TypeVar, Union, cast, overload,
 )
 
-import icu
 import psycopg2.extras
 import pytz
 import werkzeug
@@ -33,19 +31,12 @@ import werkzeug.exceptions
 import werkzeug.routing
 from schulze_condorcet.types import Candidate
 
-import cdedb.database.constants as const
+from cdedb.common.exceptions import PrivilegeError, ValidationWarning
+from cdedb.common.i18n import n_
+from cdedb.common.roles import roles_to_admin_views
 from cdedb.database.connection import ConnectionContainer
-from cdedb.validationdata import COUNTRY_CODES
 
 _LOGGER = logging.getLogger(__name__)
-
-# Global unified collator to be used when sorting.
-# The locale provided here must exist as collation in SQL for this to
-# work properly.
-# 'de_DE.UTF-8@colNumeric=yes' is an equivalent choice for LOCAL, but is less
-# compatible to use as a collation name in postgresql.
-LOCALE = 'de-u-kn-true'
-COLLATOR = icu.Collator.createInstance(icu.Locale(LOCALE))
 
 # Pseudo objects like assembly, event, course, event part, etc.
 CdEDBObject = Dict[str, Any]
@@ -100,15 +91,6 @@ PathLike = Union[pathlib.Path, str]
 Path = pathlib.Path
 
 T = TypeVar("T")
-
-
-def n_(x: str) -> str:
-    """
-    Alias of the identity for i18n.
-    Identity function that shadows the gettext alias to trick pybabel into
-    adding string to the translated strings.
-    """
-    return x
 
 
 class User:
@@ -533,252 +515,31 @@ def nearly_now(delta: datetime.timedelta = _NEARLY_DELTA_DEFAULT) -> NearlyNow:
         minute=now.minute, second=now.second, tzinfo=pytz.utc, delta=delta)
 
 
-class QuotaException(werkzeug.exceptions.TooManyRequests):
+def make_persona_forename(persona: CdEDBObject,
+                          only_given_names: bool = False,
+                          only_display_name: bool = False,
+                          given_and_display_names: bool = False) -> str:
+    """Construct the forename of a persona according to the display name specification.
+
+    The name specification can be found at the documentation page about
+    "User Experience Conventions".
     """
-    Exception for signalling a quota excess. This is thrown in
-    :py:mod:`cdedb.backend.cde` and caught in
-    :py:mod:`cdedb.frontend.application`. We use a custom class so that
-    we can distinguish it from other exceptions.
-    """
-
-
-class PrivilegeError(RuntimeError):
-    """
-    Exception for signalling missing privileges. This Exception is thrown by the
-    backend to indicate an unprivileged call to a backend function. However,
-    this situation should be prevented by privilege checks in the frontend.
-    Thus, we typically consider this Exception as an unexpected programming
-    error. In some cases the frontend may catch and handle the exception
-    instead of preventing it in the first place.
-    """
-
-
-class ArchiveError(RuntimeError):
-    """
-    Exception for signalling an exact error when archiving a persona
-    goes awry.
-    """
-
-
-class PartialImportError(RuntimeError):
-    """Exception for signalling a checksum mismatch in the partial import.
-
-    Making this an exception rolls back the database transaction.
-    """
-
-
-class ValidationWarning(Exception):
-    """Exception which should be suppressable by the user."""
-
-
-def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
-            reverse: bool = False) -> List[T]:
-    """Wrapper for sorted() to achieve a natural sort.
-
-    This replaces all strings in possibly nested objects with a sortkey
-    matching an collation from the Unicode Collation Algorithm, provided
-    by the icu library.
-
-    In particular, this makes sure strings containing diacritics are
-    sorted correctly, e.g. with ß = ss, a = ä, s = S etc. Furthermore, numbers
-    (ints and decimals) are sorted correctly, even in midst of strings.
-    However, negative numbers in strings are sorted by absolute value, before
-    positive numbers, as minus and hyphens can not be distinguished.
-
-    For users, the interface of this function should be identical
-    to sorted().
-    """
-
-    def collate(sortkey: Any) -> Any:
-        if isinstance(sortkey, str):
-            return COLLATOR.getSortKey(sortkey)
-        if isinstance(sortkey, collections.abc.Iterable):
-            # Make sure strings in nested Iterables are sorted
-            # correctly as well.
-            return tuple(map(collate, sortkey))
-        return sortkey
-
-    return sorted(iterable, key=lambda x: collate(key(x)),  # pylint: disable=bad-builtin
-                  reverse=reverse)
-
-
-def format_country_code(code: str) -> str:
-    """Helper to make string hidden to pybabel.
-
-    All possible combined strings are given for translation
-    in `i18n_additional.py`
-    """
-    return f'CountryCodes.{code}'
-
-
-def get_localized_country_codes(rs: RequestState, lang: str = None
-                                ) -> List[Tuple[str, str]]:
-    """Generate a list of country code - name tuples in current language."""
-
-    if not hasattr(get_localized_country_codes, "localized_country_codes"):
-        localized_country_codes = {
-            lang: xsorted(
-                ((cc, rs.translations[lang].gettext(format_country_code(cc)))
-                 for cc in COUNTRY_CODES),
-                key=lambda x: x[1]
-            )
-            for lang in rs.translations
-        }
-        get_localized_country_codes.localized_country_codes = localized_country_codes  # type: ignore[attr-defined]
-    return get_localized_country_codes.localized_country_codes[lang or rs.lang]  # type: ignore[attr-defined]
-
-
-def get_country_code_from_country(rs: RequestState, country: str) -> str:
-    """Match a country to its country code."""
-
-    if not hasattr(get_country_code_from_country, "reverse_country_code_map"):
-        reverse_map = {
-            lang: {
-                rs.translations[lang].gettext(format_country_code(cc)): cc
-                for cc in COUNTRY_CODES
-            }
-            for lang in rs.translations
-        }
-        get_country_code_from_country.reverse_map = reverse_map  # type: ignore[attr-defined]
-    for lang, v in get_country_code_from_country.reverse_map.items():  # type: ignore[attr-defined]
-        if ret := v.get(country):
-            return ret
-    return country
-
-
-Sortkey = Tuple[Union[str, int, datetime.datetime], ...]
-KeyFunction = Callable[[CdEDBObject], Sortkey]
-
-
-# noinspection PyRedundantParentheses
-class EntitySorter:
-    """Provide a singular point for common sortkeys.
-
-    This class does not need to be instantiated. It's method can be passed to
-    `sorted` or `keydictsort_filter`.
-    """
-
-    @staticmethod
-    def given_names(persona: CdEDBObject) -> Sortkey:
-        return (persona['given_names'].lower(),)
-
-    @staticmethod
-    def family_name(persona: CdEDBObject) -> Sortkey:
-        return (persona['family_name'].lower(),)
-
-    @staticmethod
-    def given_names_first(persona: CdEDBObject) -> Sortkey:
-        return (persona['given_names'].lower(),
-                persona['family_name'].lower(),
-                persona['id'])
-
-    @staticmethod
-    def family_name_first(persona: CdEDBObject) -> Sortkey:
-        return (persona['family_name'].lower(),
-                persona['given_names'].lower(),
-                persona['id'])
-
-    # TODO decide whether we sort by first or last name
-    persona = family_name_first
-
-    @staticmethod
-    def email(persona: CdEDBObject) -> Sortkey:
-        return (str(persona['username']),)
-
-    @staticmethod
-    def address(persona: CdEDBObject) -> Sortkey:
-        # TODO sort by translated country instead of country code?
-        country = persona.get('country', "") or ""
-        postal_code = persona.get('postal_code', "") or ""
-        location = persona.get('location', "") or ""
-        address = persona.get('address', "") or ""
-        return (country, postal_code, location, address)
-
-    @staticmethod
-    def event(event: CdEDBObject) -> Sortkey:
-        return (event['begin'], event['end'], event['title'], event['id'])
-
-    @staticmethod
-    def course(course: CdEDBObject) -> Sortkey:
-        return (course['nr'], course['shortname'], course['id'])
-
-    @staticmethod
-    def lodgement(lodgement: CdEDBObject) -> Sortkey:
-        return (lodgement['title'], lodgement['id'])
-
-    @staticmethod
-    def lodgement_group(lodgement_group: CdEDBObject) -> Sortkey:
-        return (lodgement_group['title'], lodgement_group['id'])
-
-    @staticmethod
-    def event_part(event_part: CdEDBObject) -> Sortkey:
-        return (event_part['part_begin'], event_part['part_end'],
-                event_part['shortname'], event_part['id'])
-
-    @staticmethod
-    def event_part_group(part_group: CdEDBObject) -> Sortkey:
-        return (part_group['title'], part_group['id'])
-
-    @staticmethod
-    def course_track(course_track: CdEDBObject) -> Sortkey:
-        return (course_track['sortkey'], course_track['id'])
-
-    @staticmethod
-    def fee_modifier(fee_modifier: CdEDBObject) -> Sortkey:
-        return (fee_modifier['modifier_name'], fee_modifier['id'])
-
-    @staticmethod
-    def event_field(event_field: CdEDBObject) -> Sortkey:
-        return (event_field['sortkey'], event_field['field_name'], event_field['id'])
-
-    @staticmethod
-    def candidates(candidates: CdEDBObject) -> Sortkey:
-        return (candidates['shortname'], candidates['id'])
-
-    @staticmethod
-    def assembly(assembly: CdEDBObject) -> Sortkey:
-        return (assembly['signup_end'], assembly['id'])
-
-    @staticmethod
-    def ballot(ballot: CdEDBObject) -> Sortkey:
-        return (ballot['title'], ballot['id'])
-
-    @staticmethod
-    def attachment(attachment: CdEDBObject) -> Sortkey:
-        """This is used for dicts containing one version of different attachments."""
-        return (attachment["title"], attachment["attachment_id"])
-
-    @staticmethod
-    def attachment_version(version: CdEDBObject) -> Sortkey:
-        return (version['attachment_id'], version['version_nr'])
-
-    @staticmethod
-    def past_event(past_event: CdEDBObject) -> Sortkey:
-        return (past_event['tempus'], past_event['id'])
-
-    @staticmethod
-    def past_course(past_course: CdEDBObject) -> Sortkey:
-        return (past_course['nr'], past_course['title'], past_course['id'])
-
-    @staticmethod
-    def institution(institution: CdEDBObject) -> Sortkey:
-        return (institution['shortname'], institution['id'])
-
-    @staticmethod
-    def transaction(transaction: CdEDBObject) -> Sortkey:
-        return (transaction['issued_at'], transaction['id'])
-
-    @staticmethod
-    def genesis_case(genesis_case: CdEDBObject) -> Sortkey:
-        return (genesis_case['ctime'], genesis_case['id'])
-
-    @staticmethod
-    def changelog(changelog_entry: CdEDBObject) -> Sortkey:
-        return (changelog_entry['ctime'], changelog_entry['id'])
-
-    @staticmethod
-    def mailinglist(mailinglist: CdEDBObject) -> Sortkey:
-        return (mailinglist['title'], mailinglist['id'])
+    if only_display_name + only_given_names + given_and_display_names > 1:
+        raise RuntimeError(n_("Invalid use of keyword parameters."))
+    display_name: str = persona.get('display_name', "")
+    given_names: str = persona['given_names']
+    if only_given_names:
+        return given_names
+    elif only_display_name:
+        return display_name
+    elif given_and_display_names:
+        if not display_name or display_name == given_names:
+            return given_names
+        else:
+            return f"{given_names} ({display_name})"
+    elif display_name and display_name in given_names:
+        return display_name
+    return given_names
 
 
 def compute_checkdigit(value: int) -> str:
@@ -1281,7 +1042,7 @@ class TransactionType(enum.IntEnum):
                     TransactionType.EventExpenses,
                     TransactionType.EventFeeRefund,
                     TransactionType.InstructorRefund}:
-            return "Teilnehmerbeitrag"
+            return "Teilnahmebeitrag"
         if self == TransactionType.I25p:
             return "Initiative 25+"
         if self == TransactionType.Donation:
@@ -1298,7 +1059,7 @@ class TransactionType(enum.IntEnum):
         """
         display_str = {
             TransactionType.MembershipFee: "Mitgliedsbeitrag",
-            TransactionType.EventFee: "Teilnehmerbeitrag",
+            TransactionType.EventFee: "Teilnahmebeitrag",
             TransactionType.Donation: "Spende",
             TransactionType.I25p: "Initiative25+",
             TransactionType.Other: "Sonstiges",
@@ -1328,24 +1089,6 @@ class SemesterSteps(enum.Enum):
         if isinstance(other, str):
             return self.name == other  # pylint: disable=comparison-with-callable
         return super().__eq__(other)
-
-
-def mixed_existence_sorter(iterable: Union[Collection[int], KeysView[int]]
-                           ) -> Generator[int, None, None]:
-    """Iterate over a set of indices in the relevant way.
-
-    That is first over the non-negative indices in ascending order and
-    then over the negative indices in descending order.
-
-    This is the desired order if the UI offers the possibility to
-    create multiple new entities enumerated by negative IDs.
-    """
-    for i in xsorted(iterable):
-        if i >= 0:
-            yield i
-    for i in reversed(xsorted(iterable)):
-        if i < 0:
-            yield i
 
 
 UMLAUT_MAP = {
@@ -1577,210 +1320,6 @@ def decode_parameter(salt: str, target: str, name: str, param: str,
     return None, message[26:]
 
 
-def extract_roles(session: CdEDBObject, introspection_only: bool = False
-                  ) -> Set[Role]:
-    """Associate some roles to a data set.
-
-    The data contains the relevant portion of attributes from the
-    core.personas table. We have some more logic than simply grabbing
-    the flags from the dict like only allowing admin privileges in a
-    realm if access to the realm is already granted.
-
-    Note that this also works on non-personas (i.e. dicts of is_* flags).
-
-    :param introspection_only: If True the result should only be used to
-      take an extrinsic look on a persona and not the determine the privilege
-      level of the data set passed.
-    """
-    ret = {"anonymous"}
-    if session['is_active'] or introspection_only:
-        ret.add("persona")
-    elif not introspection_only:
-        return ret
-    realms = {"cde", "event", "ml", "assembly"}
-    for realm in realms:
-        if session["is_{}_realm".format(realm)]:
-            ret.add(realm)
-            if session.get("is_{}_admin".format(realm)):
-                ret.add("{}_admin".format(realm))
-    if "cde" in ret:
-        if session.get("is_core_admin"):
-            ret.add("core_admin")
-        if session.get("is_meta_admin"):
-            ret.add("meta_admin")
-        if session["is_member"]:
-            ret.add("member")
-            if session.get("is_searchable"):
-                ret.add("searchable")
-        if session.get("is_auditor"):
-            ret.add("auditor")
-    if "ml" in ret:
-        if session.get("is_cdelokal_admin"):
-            ret.add("cdelokal_admin")
-    if "cde_admin" in ret:
-        if session.get("is_finance_admin"):
-            ret.add("finance_admin")
-    return ret
-
-
-# The following droids are exempt from lockdown to keep our infrastructure
-# working
-INFRASTRUCTURE_DROIDS: Set[str] = {'resolve'}
-
-
-def droid_roles(identity: str) -> Set[Role]:
-    """Resolve droid identity to a complete set of roles.
-
-    Currently this is rather trivial, but could be more involved in the
-    future if more API capabilities are added to the DB.
-
-    :param identity: The name for the API functionality, e.g. ``resolve``.
-    """
-    ret = {'anonymous', 'droid', f'droid_{identity}'}
-    if identity in INFRASTRUCTURE_DROIDS:
-        ret.add('droid_infra')
-    return ret
-
-
-# The following dict defines the hierarchy of realms. This has direct impact on
-# the admin privileges: An admin of a specific realm can only query and edit
-# members of that realm, who are not member of another realm implying that
-# realm.
-#
-# This defines an ordering on the realms making the realms a partially
-# ordered set. Later we will use the notion of maximal elements of subsets,
-# which are those which have nothing above them. To clarify this two examples:
-#
-# * in the set {'assembly', 'event', 'ml'} the elements 'assembly' and
-#   'event' are maximal
-#
-# * in the set {'cde', 'assembly', 'event'} only 'cde' is maximal
-#
-# This dict is not evaluated recursively, so recursively implied realms must
-# be added manually to make the implication transitive.
-REALM_INHERITANCE: Dict[Realm, Set[Role]] = {
-    'cde': {'event', 'assembly', 'ml'},
-    'event': {'ml'},
-    'assembly': {'ml'},
-    'ml': set(),
-}
-
-
-def extract_realms(roles: Set[Role]) -> Set[Realm]:
-    """Get the set of realms from a set of user roles.
-
-    When checking admin privileges, we must often check, if the user's realms
-    are a subset of some other set of realms. To help with this, this function
-    helps with this task, by extracting only the actual realms from a user's
-    set of roles.
-
-    :param roles: All roles of a user
-    :return: The realms the user is member of
-    """
-    return roles & REALM_INHERITANCE.keys()
-
-
-def implied_realms(realm: Realm) -> Set[Realm]:
-    """Get additional realms implied by membership in one realm
-
-    :param realm: The name of the realm to check
-    :return: A set of the names of all implied realms
-    """
-    return REALM_INHERITANCE.get(realm, set())
-
-
-def implying_realms(realm: Realm) -> Set[Realm]:
-    """Get all realms where membership implies the given realm.
-
-    This can be used to determine the realms in which a user must *not* be to be
-    listed in a specific realm or be edited by its admins.
-
-    :param realm: The realm to search implying realms for
-    :return: A set of all realms implying
-    """
-    return set(r for r, implied in REALM_INHERITANCE.items()
-               if realm in implied)
-
-
-def privilege_tier(roles: Set[Role], conjunctive: bool = False
-                   ) -> List[Set[Role]]:
-    """Required admin privilege relative to a persona (signified by its roles)
-
-    Basically this answers the question: If a user has access to the passed
-    realms, what kind of admin privilege does one need to perform an
-    operation on the user?
-
-    First we determine the relevant subset of the passed roles. These are
-    the maximal elements according to the realm inheritance. These apex
-    roles regulate the access.
-
-    The answer now depends on whether the operation pertains to some
-    specific realm (editing a user is the prime example here) or affects all
-    realms (creating a user is the corresponding example). This distinction
-    is controlled by the conjunctive parameter, if it is True the operation
-    lies in the intersection of all realms.
-
-    Note that core admins and meta admins are always allowed access.
-
-    :returns: List of sets of admin roles. Any of these sets is sufficient.
-    """
-    # Get primary user realms (those, that don't imply other realms)
-    relevant = roles & REALM_INHERITANCE.keys()
-    if relevant:
-        implied_roles = set.union(*(
-            REALM_INHERITANCE.get(k, set()) for k in relevant))
-        relevant -= implied_roles
-    if conjunctive:
-        ret = [{realm + "_admin" for realm in relevant},
-               {"core_admin"}]
-    else:
-        ret = list({realm + "_admin"} for realm in relevant)
-        ret += [{"core_admin"}]
-    return ret
-
-
-#: Creating a persona requires one to supply values for nearly all fields,
-#: although in some realms they are meaningless. Here we provide a base skeleton
-#: which can be used, so that these realms do not need to have any knowledge of
-#: these fields.
-PERSONA_DEFAULTS = {
-    'is_cde_realm': False,
-    'is_event_realm': False,
-    'is_ml_realm': False,
-    'is_assembly_realm': False,
-    'is_member': False,
-    'is_searchable': False,
-    'is_active': True,
-    'title': None,
-    'name_supplement': None,
-    'gender': None,
-    'birthday': None,
-    'telephone': None,
-    'mobile': None,
-    'address_supplement': None,
-    'address': None,
-    'postal_code': None,
-    'location': None,
-    'country': None,
-    'birth_name': None,
-    'address_supplement2': None,
-    'address2': None,
-    'postal_code2': None,
-    'location2': None,
-    'country2': None,
-    'weblink': None,
-    'specialisation': None,
-    'affiliation': None,
-    'timeline': None,
-    'interests': None,
-    'free_form': None,
-    'trial_member': None,
-    'decided_search': None,
-    'bub_search': None,
-    'foto': None,
-    'paper_expuls': None,
-}
-
 #: Set of possible values for ``ntype`` in
 #: :py:meth:`RequestState.notify`. Must conform to the regex
 #: ``[a-z]+``.
@@ -1798,130 +1337,6 @@ ANTI_CSRF_TOKEN_PAYLOAD = "_anti_csrf_check"
 #: This is added on-the-fly by util.form_input_submit if needed
 IGNORE_WARNINGS_NAME = "_magic_ignore_warnings"
 
-#: Map of available privilege levels to those present in the SQL database
-#: (where we have less differentiation for the sake of simplicity).
-#:
-#: This is an ordered dict, so that we can select the highest privilege
-#: level.
-if TYPE_CHECKING:
-    role_map_type = collections.OrderedDict[Role, str]
-else:
-    role_map_type = collections.OrderedDict
-
-#: List of all roles we consider admin roles. Changes in these roles must be
-#: approved by two meta admins in total. Values are required roles.
-#: Translation of keys is needed for the privilege change page.
-ADMIN_KEYS = {
-    n_("is_meta_admin"): "is_cde_realm",
-    n_("is_core_admin"): "is_cde_realm",
-    n_("is_cde_admin"): "is_cde_realm",
-    n_("is_finance_admin"): "is_cde_admin",
-    n_("is_event_admin"): "is_event_realm",
-    n_("is_ml_admin"): "is_ml_realm",
-    n_("is_assembly_admin"): "is_assembly_realm",
-    n_("is_cdelokal_admin"): "is_ml_realm",
-    n_("is_auditor"): "is_cde_realm",
-}
-
-#: List of all admin roles who actually have a corresponding realm with a user role.
-REALM_ADMINS = {"core_admin", "cde_admin", "event_admin", "ml_admin", "assembly_admin"}
-
-DB_ROLE_MAPPING: role_map_type = collections.OrderedDict((
-    ("meta_admin", "cdb_admin"),
-    ("core_admin", "cdb_admin"),
-    ("cde_admin", "cdb_admin"),
-    ("ml_admin", "cdb_admin"),
-    ("assembly_admin", "cdb_admin"),
-    ("event_admin", "cdb_admin"),
-    ("finance_admin", "cdb_admin"),
-    ("cdelokal_admin", "cdb_admin"),
-
-    ("searchable", "cdb_member"),
-    ("member", "cdb_member"),
-    ("cde", "cdb_member"),
-    ("assembly", "cdb_member"),
-    ("auditor", "cdb_member"),
-
-    ("event", "cdb_persona"),
-    ("ml", "cdb_persona"),
-    ("persona", "cdb_persona"),
-    ("droid", "cdb_persona"),
-
-    ("anonymous", "cdb_anonymous"),
-))
-
-
-# All roles available to non-driod users. Can be used to create dummy users
-# with all roles, like for `cdedb.script` or `cdedb.frontend.cron`.
-ALL_ROLES: Set[Role] = set(DB_ROLE_MAPPING) - {"droid"}
-
-
-def roles_to_db_role(roles: Set[Role]) -> str:
-    """Convert a set of application level roles into a database level role."""
-    for role in DB_ROLE_MAPPING:
-        if role in roles:
-            return DB_ROLE_MAPPING[role]
-
-    raise RuntimeError(n_("Could not determine any db role."))
-
-
-ADMIN_VIEWS_COOKIE_NAME = "enabled_admin_views"
-
-#: every admin view with one admin role per row (except of genesis)
-ALL_ADMIN_VIEWS: Set[AdminView] = {
-    "meta_admin",
-    "core_user", "core",
-    "cde_user", "past_event", "ml_mgmt_cde", "ml_mod_cde",
-    "finance",
-    "event_user", "event_mgmt", "event_orga", "ml_mgmt_event", "ml_mod_event",
-    "ml_user", "ml_mgmt", "ml_mod",
-    "ml_mgmt_cdelokal", "ml_mod_cdelokal",
-    "assembly_user", "assembly_mgmt", "assembly_presider",
-    "ml_mgmt_assembly", "ml_mod_assembly",
-    "auditor",
-    "genesis",
-}
-
-ALL_MOD_ADMIN_VIEWS: Set[AdminView] = {
-    "ml_mod", "ml_mod_cde", "ml_mod_event", "ml_mod_cdelokal",
-    "ml_mod_assembly"}
-
-ALL_MGMT_ADMIN_VIEWS: Set[AdminView] = {
-    "ml_mgmt", "ml_mgmt_cde", "ml_mgmt_event", "ml_mgmt_cdelokal",
-    "ml_mgmt_assembly"}
-
-
-def roles_to_admin_views(roles: Set[Role]) -> Set[AdminView]:
-    """ Get the set of available admin views for a user with given roles."""
-    result: Set[Role] = set()
-    if "meta_admin" in roles:
-        result |= {"meta_admin"}
-    if "core_admin" in roles:
-        result |= {"core", "core_user", "cde_user", "event_user",
-                   "assembly_user", "ml_user"}
-    if "cde_admin" in roles:
-        result |= {"cde_user", "past_event", "ml_mgmt_cde", "ml_mod_cde"}
-    if "finance_admin" in roles:
-        result |= {"finance"}
-    if "event_admin" in roles:
-        result |= {"event_user", "event_mgmt", "event_orga", "ml_mgmt_event",
-                   "ml_mod_event"}
-    if "ml_admin" in roles:
-        result |= {"ml_user", "ml_mgmt", "ml_mod"}
-    if "cdelokal_admin" in roles:
-        result |= {"ml_mgmt_cdelokal", "ml_mod_cdelokal"}
-    if "assembly_admin" in roles:
-        result |= {"assembly_user", "assembly_mgmt", "assembly_presider",
-                   "ml_mgmt_assembly", "ml_mod_assembly"}
-    if "auditor" in roles:
-        result |= {"auditor"}
-    if roles & ({'core_admin'} | set(
-            "{}_admin".format(realm)
-            for realm in REALM_SPECIFIC_GENESIS_FIELDS)):
-        result |= {"genesis"}
-    return result
-
-
 #: Version tag, so we know that we don't run out of sync with exported event
 #: data. This has to be incremented whenever the event schema changes.
 #: If the partial export and import are unaffected the minor version may be
@@ -1931,321 +1346,6 @@ EVENT_SCHEMA_VERSION = (15, 5)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3
-
-META_INFO_FIELDS = (
-    n_("Finanzvorstand_Name"), n_("Finanzvorstand_Vorname"), n_("Finanzvorstand_Ort"),
-    n_("Finanzvorstand_Adresse_Einzeiler"), n_("Finanzvorstand_Adresse_Zeile2"),
-    n_("Finanzvorstand_Adresse_Zeile3"), n_("Finanzvorstand_Adresse_Zeile4"),
-    n_("CdE_Konto_Inhaber"), n_("CdE_Konto_IBAN"), n_("CdE_Konto_BIC"),
-    n_("CdE_Konto_Institut"), n_("Vorstand"),
-    n_("banner_before_login"), n_("banner_after_login"), n_("banner_genesis"),
-    n_("cde_misc")
-)
-
-#: All columns deciding on the current status of a persona
-PERSONA_STATUS_FIELDS = (
-    "is_active", "is_meta_admin", "is_core_admin", "is_cde_admin",
-    "is_finance_admin", "is_event_admin", "is_ml_admin", "is_assembly_admin",
-    "is_cde_realm", "is_event_realm", "is_ml_realm", "is_assembly_realm",
-    "is_cdelokal_admin", "is_auditor", "is_member", "is_searchable", "is_archived",
-    "is_purged",
-)
-
-#: Names of all columns associated to an abstract persona.
-#: This does not include the ``password_hash`` for security reasons.
-PERSONA_CORE_FIELDS = PERSONA_STATUS_FIELDS + (
-    "id", "username", "display_name", "family_name", "given_names",
-    "title", "name_supplement")
-
-#: Names of columns associated to a cde (former)member
-PERSONA_CDE_FIELDS = PERSONA_CORE_FIELDS + (
-    "gender", "birthday", "telephone", "mobile", "address_supplement",
-    "address", "postal_code", "location", "country", "birth_name",
-    "address_supplement2", "address2", "postal_code2", "location2",
-    "country2", "weblink", "specialisation", "affiliation", "timeline",
-    "interests", "free_form", "balance", "decided_search", "trial_member",
-    "bub_search", "foto", "paper_expuls")
-
-#: Names of columns associated to an event user. This should be a subset of
-#: :py:data:`PERSONA_CDE_FIELDS` to facilitate upgrading of event users to
-#: members.
-PERSONA_EVENT_FIELDS = PERSONA_CORE_FIELDS + (
-    "gender", "birthday", "telephone", "mobile", "address_supplement",
-    "address", "postal_code", "location", "country")
-
-#: Names of columns associated to a ml user.
-PERSONA_ML_FIELDS = PERSONA_CORE_FIELDS
-
-#: Names of columns associated to an assembly user.
-PERSONA_ASSEMBLY_FIELDS = PERSONA_CORE_FIELDS
-
-#: Names of all columns associated to an abstract persona.
-#: This does not include the ``password_hash`` for security reasons.
-PERSONA_ALL_FIELDS = PERSONA_CDE_FIELDS + ("notes",)
-
-#: Fields of a persona creation case.
-GENESIS_CASE_FIELDS = (
-    "id", "ctime", "username", "given_names", "family_name",
-    "gender", "birthday", "telephone", "mobile", "address_supplement",
-    "address", "postal_code", "location", "country", "birth_name", "attachment_hash",
-    "realm", "notes", "case_status", "reviewer", "pevent_id", "pcourse_id")
-
-# The following dict defines, which additional fields are required for genesis
-# request for distinct realms. Additionally, it is used to define for which
-# realms genesis requrests are allowed
-REALM_SPECIFIC_GENESIS_FIELDS: Dict[Realm, Tuple[str, ...]] = {
-    "ml": tuple(),
-    "event": ("gender", "birthday", "telephone", "mobile",
-              "address_supplement", "address", "postal_code", "location",
-              "country"),
-    "cde": ("gender", "birthday", "telephone", "mobile",
-            "address_supplement", "address", "postal_code", "location",
-            "country", "birth_name", "attachment_hash", "pevent_id", "pcourse_id"),
-}
-
-# This overrides the more general PERSONA_DEFAULTS dict with some realm-specific
-# defaults for genesis account creation.
-GENESIS_REALM_OVERRIDE = {
-    'event': {
-        'is_cde_realm': False,
-        'is_event_realm': True,
-        'is_assembly_realm': False,
-        'is_ml_realm': True,
-        'is_member': False,
-        'is_searchable': False,
-    },
-    'ml': {
-        'is_cde_realm': False,
-        'is_event_realm': False,
-        'is_assembly_realm': False,
-        'is_ml_realm': True,
-        'is_member': False,
-        'is_searchable': False,
-    },
-    'cde': {
-        'is_cde_realm': True,
-        'is_event_realm': True,
-        'is_assembly_realm': True,
-        'is_ml_realm': True,
-        'is_member': True,
-        'is_searchable': False,
-        'trial_member': True,
-        'decided_search': False,
-        'bub_search': False,
-        'paper_expuls': True,
-    }
-}
-
-# This defines which fields are available for which realm. They are cumulative.
-PERSONA_FIELDS_BY_REALM: Dict[Role, Set[str]] = {
-    'persona': {
-        "display_name", "family_name", "given_names", "title",
-        "name_supplement", "notes"
-    },
-    'ml': set(),
-    'assembly': set(),
-    'event': {
-        "gender", "birthday", "telephone", "mobile", "address_supplement",
-        "address", "postal_code", "location", "country"
-    },
-    'cde': {
-        "birth_name", "weblink", "specialisation", "affiliation", "timeline",
-        "interests", "free_form", "is_searchable", "paper_expuls",
-        "address_supplement2", "address2", "postal_code2", "location2",
-        "country2",
-    }
-}
-
-# Some of the above fields cannot be edited by the users themselves.
-# These are defined here.
-RESTRICTED_FIELDS_BY_REALM: Dict[Role, Set[str]] = {
-    'persona': {
-        "notes",
-    },
-    'ml': set(),
-    'assembly': set(),
-    'event': {
-        "gender", "birthday",
-    },
-    'cde': {
-        "is_searchable",
-    }
-}
-
-
-def get_persona_fields_by_realm(roles: Set[Role], restricted: bool = True
-                                ) -> Set[str]:
-    """Helper to retrieve the appropriate fields for a user.
-
-    :param restricted: If True, only return fields the user may change
-        themselves, i.e. remove the restricted fields."""
-    ret: Set[str] = set()
-    for role, fields in PERSONA_FIELDS_BY_REALM.items():
-        if role in roles:
-            ret |= fields
-            if restricted:
-                ret -= RESTRICTED_FIELDS_BY_REALM[role]
-    return ret
-
-
-#: Fields of a pending privilege change.
-PRIVILEGE_CHANGE_FIELDS = (
-    "id", "ctime", "ftime", "persona_id", "submitted_by", "status", "is_meta_admin",
-    "is_core_admin", "is_cde_admin", "is_finance_admin", "is_event_admin",
-    "is_ml_admin", "is_assembly_admin", "is_cdelokal_admin", "is_auditor", "notes",
-    "reviewer",
-)
-
-#: Fields for institutions of events
-INSTITUTION_FIELDS = ("id", "title", "shortname")
-
-#: Fields of a concluded event
-PAST_EVENT_FIELDS = ("id", "title", "shortname", "institution", "description",
-                     "tempus", "participant_info")
-
-#: Fields of an event organized via the CdEDB
-EVENT_FIELDS = (
-    "id", "title", "institution", "description", "shortname", "registration_start",
-    "registration_soft_limit", "registration_hard_limit", "iban", "nonmember_surcharge",
-    "orga_address", "registration_text", "mail_text", "use_additional_questionnaire",
-    "notes", "participant_info", "offline_lock", "is_visible",
-    "is_course_list_visible", "is_course_state_visible", "is_participant_list_visible",
-    "is_course_assignment_visible", "is_cancelled", "is_archived", "lodge_field",
-    "camping_mat_field", "course_room_field")
-
-#: Fields of an event part organized via CdEDB
-EVENT_PART_FIELDS = ("id", "event_id", "title", "shortname", "part_begin",
-                     "part_end", "fee", "waitlist_field")
-
-PART_GROUP_FIELDS = ("id", "event_id", "title", "shortname", "notes", "constraint_type")
-
-#: Fields of a track where courses can happen
-COURSE_TRACK_FIELDS = ("id", "part_id", "title", "shortname", "num_choices",
-                       "min_choices", "sortkey")
-
-#: Fields of an extended attribute associated to an event entity
-FIELD_DEFINITION_FIELDS = (
-    "id", "event_id", "field_name", "title", "sortkey", "kind", "association",
-    "checkin", "entries",
-)
-
-#: Fields of a modifier for an event_parts fee.
-FEE_MODIFIER_FIELDS = ("id", "part_id", "modifier_name", "amount", "field_id")
-
-#: Fields of a concluded course
-PAST_COURSE_FIELDS = ("id", "pevent_id", "nr", "title", "description")
-
-#: Fields of a course associated to an event organized via the CdEDB
-COURSE_FIELDS = ("id", "event_id", "title", "description", "nr", "shortname",
-                 "instructors", "max_size", "min_size", "notes", "fields")
-
-#: Fields specifying in which part a course is available
-COURSE_SEGMENT_FIELDS = ("id", "course_id", "track_id", "is_active")
-
-#: Fields of a registration to an event organized via the CdEDB
-REGISTRATION_FIELDS = (
-    "id", "persona_id", "event_id", "notes", "orga_notes", "payment",
-    "parental_agreement", "mixed_lodging", "checkin", "list_consent", "fields",
-    "real_persona_id", "amount_paid", "amount_owed")
-
-#: Fields of a registration which are specific for each part of the event
-REGISTRATION_PART_FIELDS = ("registration_id", "part_id", "status",
-                            "lodgement_id", "is_camping_mat")
-
-#: Fields of a registration which are specific for each course track
-REGISTRATION_TRACK_FIELDS = ("registration_id", "track_id", "course_id",
-                             "course_instructor")
-
-#: Fields of a lodgement group
-LODGEMENT_GROUP_FIELDS = ("id", "event_id", "title")
-
-#: Fields of a lodgement entry (one house/room)
-LODGEMENT_FIELDS = ("id", "event_id", "title", "regular_capacity",
-                    "camping_mat_capacity", "notes", "group_id", "fields")
-
-# Fields of a row in a questionnaire.
-# (This can be displayed in different places according to `kind`).
-QUESTIONNAIRE_ROW_FIELDS = ("event_id", "field_id", "pos", "title", "info",
-                            "input_size", "readonly", "default_value", "kind")
-
-#: Fields for a stored event query.
-STORED_EVENT_QUERY_FIELDS = (
-    "id", "event_id", "query_name", "scope", "serialized_query")
-
-#: Fields of a mailing list entry (that is one mailinglist)
-MAILINGLIST_FIELDS = (
-    "id", "title", "address", "local_part", "domain", "description",
-    "mod_policy", "notes", "attachment_policy", "ml_type",
-    "subject_prefix", "maxsize", "is_active", "event_id", "registration_stati",
-    "assembly_id")
-
-#: Fields of a mailinglist which may be changed by all moderators, even restricted ones
-RESTRICTED_MOD_ALLOWED_FIELDS = {
-    "description", "mod_policy", "notes", "attachment_policy", "subject_prefix",
-    "maxsize"}
-
-#: Fields of a mailinglist which require full moderator access to be changed
-FULL_MOD_REQUIRING_FIELDS = {
-    'registration_stati'}
-
-#: Fields of a mailinglist which may be changed by (full) moderators
-MOD_ALLOWED_FIELDS = RESTRICTED_MOD_ALLOWED_FIELDS | FULL_MOD_REQUIRING_FIELDS
-
-#: Fields of an assembly
-ASSEMBLY_FIELDS = ("id", "title", "shortname", "description", "presider_address",
-                   "signup_end", "is_active", "notes")
-
-#: Fields of a ballot
-BALLOT_FIELDS = (
-    "id", "assembly_id", "title", "description", "vote_begin", "vote_end",
-    "vote_extension_end", "extended", "use_bar", "abs_quorum", "rel_quorum", "quorum",
-    "votes", "is_tallied", "notes")
-
-#: Fields of an attachment in the assembly realm (attached either to an
-#: assembly or a ballot)
-ASSEMBLY_ATTACHMENT_FIELDS = ("id", "assembly_id")
-
-ASSEMBLY_ATTACHMENT_VERSION_FIELDS = ("attachment_id", "version_nr", "title",
-                                      "authors", "filename", "ctime", "dtime",
-                                      "file_hash")
-
-#: Fields of a semester
-ORG_PERIOD_FIELDS = (
-    "id", "billing_state", "billing_done", "billing_count",
-    "ejection_state", "ejection_done", "ejection_count", "ejection_balance",
-    "balance_state", "balance_done", "balance_trialmembers", "balance_total",
-    "archival_notification_state", "archival_notification_count",
-    "archival_notification_done", "archival_state", "archival_count", "archival_done",
-    "semester_done")
-
-#: Fielsd of an expuls
-EXPULS_PERIOD_FIELDS = (
-    "id", "addresscheck_state", "addresscheck_done", "addresscheck_count")
-
-#: Fields of one direct debit permit
-LASTSCHRIFT_FIELDS = (
-    "id", "submitted_by", "persona_id", "amount", "iban",
-    "account_owner", "account_address", "granted_at", "revoked_at", "notes")
-
-#: Fields of one interaction on behalf of a direct debit permit
-LASTSCHRIFT_TRANSACTION_FIELDS = (
-    "id", "submitted_by", "lastschrift_id", "period_id", "status", "amount",
-    "issued_at", "processed_at", "tally")
-
-#: Datatype and Association of special purpose event fields
-EVENT_FIELD_SPEC: Dict[
-    str, Tuple[Set[const.FieldDatatypes], Set[const.FieldAssociations]]] = {
-    'lodge_field': ({const.FieldDatatypes.str}, {const.FieldAssociations.registration}),
-    'camping_mat_field': (
-        {const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),
-    'course_room_field': ({const.FieldDatatypes.str}, {const.FieldAssociations.course}),
-    'waitlist': ({const.FieldDatatypes.int}, {const.FieldAssociations.registration}),
-    'fee_modifier': (
-        {const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),
-}
-
-LOG_FIELDS_COMMON = ("codes", "persona_id", "submitted_by", "change_note", "offset",
-                     "length", "time_start", "time_stop")
 
 EPSILON = 10 ** (-6)  #:
 

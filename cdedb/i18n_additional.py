@@ -2,7 +2,7 @@
 
 """Additional strings for i18n which do not occur literally."""
 
-from cdedb.common import n_
+from cdedb.common.i18n import n_
 
 I18N_STRINGS = (
     #
@@ -324,6 +324,29 @@ I18N_STRINGS = (
     n_("Reversed words aren't much harder to guess."),
     n_('Predictable substitutions like "@" instead of "a" don\'t help very '
        'much.'),
+
+    #
+    # subman localization
+    #
+    n_("subman_managing_not-pending"),
+    n_("subman_managing_is-subscribed"),
+    n_("subman_managing_is-unsubscribed"),
+    n_("subman_managing_is-subscription-overridden"),
+    n_("subman_managing_is-unsubscription-overridden"),
+    n_("subman_managing_is-pending"),
+    n_("subman_managing_not-subscription-overridden"),
+    n_("subman_managing_not-unsubscription-overridden"),
+    n_("subman_self_is-subscribed"),
+    n_("subman_self_is-unsubscribed"),
+    n_("subman_self_is-unsubscription-overridden"),
+    n_("subman_self_is-pending"),
+    n_("subman_self_not-pending"),
+    n_("subman_managing_not-subscribable"),
+    n_("subman_self_not-self-subscribable"),
+    n_("subman_self_not-requestable"),
+    n_("subman_managing_no-unsubscribe-possible"),
+    n_("subman_managing_not-privileged"),
+    n_("subman_managing_no-cleanup-necessary"),
 
     #
     # Default Strings

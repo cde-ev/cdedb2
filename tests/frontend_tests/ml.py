@@ -9,11 +9,12 @@ from typing import Any, List, Set, Tuple
 import webtest
 
 import cdedb.database.constants as const
-from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, CdEDBObject
+from cdedb.common import CdEDBObject
+from cdedb.common.query import QueryOperators
+from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
 from cdedb.devsamples import HELD_MESSAGE_SAMPLE, MockHeldMessage
 from cdedb.frontend.common import CustomCSVDialect
 from cdedb.ml_type_aux import CdeLokalMailinglist
-from cdedb.query import QueryOperators
 from tests.common import USER_DICT, FrontendTest, as_users, prepsql
 
 

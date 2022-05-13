@@ -133,10 +133,10 @@
                         {% if ambience['event']['parts']|length < 6 %}
                             <td class="nowrap b-left">
                                 {{ util.href(cdedblink("event/change_lodgement_form", {'lodgement_id': lodgement_id}),
-                                             readonly=is_locked, aclass='btn btn-xs btn-warning', icon='pen',
+                                             label=none, readonly=is_locked, aclass='btn btn-xs btn-warning', icon='pen',
                                              title=gettext("Edit")) }}
                                 {{ util.href(cdedblink("event/manage_inhabitants_form", {'lodgement_id': lodgement_id}),
-                                             readonly=is_locked, aclass='btn btn-xs btn-warning', icon='user',
+                                             label=none, readonly=is_locked, aclass='btn btn-xs btn-warning', icon='user',
                                              title=gettext("Manage Inhabitants")) }}
                             </td>
                         {% endif %}

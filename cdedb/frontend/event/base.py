@@ -26,16 +26,18 @@ from werkzeug import Response
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    EVENT_SCHEMA_VERSION, LOG_FIELDS_COMMON, CdEDBObject, CdEDBObjectMap, EntitySorter,
-    KeyFunction, RequestState, Sortkey, get_localized_country_codes, merge_dicts, n_,
-    unwrap, xsorted,
+    EVENT_SCHEMA_VERSION, CdEDBObject, CdEDBObjectMap, RequestState, merge_dicts,
+    unwrap,
 )
+from cdedb.common.fields import LOG_FIELDS_COMMON
+from cdedb.common.i18n import get_localized_country_codes, n_
+from cdedb.common.query import QueryScope
+from cdedb.common.sorting import EntitySorter, KeyFunction, Sortkey, xsorted
 from cdedb.filter import enum_entries_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access, calculate_db_logparams,
     calculate_loglinks, event_guard, periodic,
 )
-from cdedb.query import QueryScope
 from cdedb.validation import PERSONA_FULL_EVENT_CREATION, filter_none
 
 
@@ -208,20 +210,21 @@ class EventBaseFrontend(AbstractUserFrontend):
                       for e in registrations.values()), event_id)
 
         all_sortkeys = {
-            "given_names": EntitySorter.given_names,
-            "family_name": EntitySorter.family_name,
+            "given_names": EntitySorter.make_persona_sorter(family_name_first=False),
+            "family_name": EntitySorter.make_persona_sorter(family_name_first=True),
             "email": EntitySorter.email,
             "address": EntitySorter.address,
             "course": EntitySorter.course,
-            "persona": EntitySorter.persona,
+            # the default sorting is, in contrast to EntitySorter.persona, by forename
+            "persona": EntitySorter.make_persona_sorter(family_name_first=False),
         }
 
         # FIXME: the result can have different lengths depending an amount of
         #  courses someone is assigned to.
         def sort_rank(sortkey: str, anid: int) -> Sortkey:
             prim_sorter: KeyFunction = all_sortkeys.get(
-                sortkey, EntitySorter.persona)
-            sec_sorter: KeyFunction = EntitySorter.persona
+                sortkey, all_sortkeys["persona"])
+            sec_sorter: KeyFunction = all_sortkeys["persona"]
             if sortkey == "course":
                 if not len(part_ids) == 1:
                     raise werkzeug.exceptions.BadRequest(n_(

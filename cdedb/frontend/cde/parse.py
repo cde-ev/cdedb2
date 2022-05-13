@@ -21,9 +21,11 @@ from werkzeug.datastructures import FileStorage
 import cdedb.frontend.cde.parse_statement as parse
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    Accounts, CdEDBObject, EntitySorter, RequestState, TransactionType,
-    diacritic_patterns, get_hash, merge_dicts, n_, xsorted,
+    Accounts, CdEDBObject, RequestState, TransactionType, diacritic_patterns, get_hash,
+    merge_dicts,
 )
+from cdedb.common.i18n import n_
+from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
     CustomCSVDialect, REQUESTdata, REQUESTfile, TransactionObserver, access,

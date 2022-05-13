@@ -8,15 +8,17 @@ from typing import (
     TYPE_CHECKING, Collection, Dict, List, Literal, Mapping, Optional, Set, Type, Union,
 )
 
+from subman.machine import SubscriptionPolicy
+
 import cdedb.validationtypes as vtypes
-from cdedb.common import (
-    CdEDBObject, PrivilegeError, RequestState, User, extract_roles, n_,
-)
+from cdedb.common import CdEDBObject, RequestState, User
+from cdedb.common.exceptions import PrivilegeError
+from cdedb.common.i18n import n_
+from cdedb.common.query import Query, QueryOperators, QueryScope
+from cdedb.common.roles import extract_roles
 from cdedb.database.constants import (
     MailinglistDomain, MailinglistTypes, RegistrationPartStati,
 )
-from cdedb.query import Query, QueryOperators, QueryScope
-from cdedb.subman.machine import SubscriptionPolicy
 
 SubscriptionPolicyMap = Dict[int, SubscriptionPolicy]
 

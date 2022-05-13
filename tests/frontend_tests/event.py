@@ -4,6 +4,7 @@
 import copy
 import csv
 import datetime
+import decimal
 import json
 import re
 import tempfile
@@ -11,15 +12,17 @@ import unittest
 from typing import Sequence
 
 import lxml.etree
+import segno.helpers
 import webtest
 
 import cdedb.database.constants as const
-from cdedb.common import (
-    ADMIN_VIEWS_COOKIE_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, now, unwrap, xsorted,
-)
+from cdedb.common import IGNORE_WARNINGS_NAME, CdEDBObject, now, unwrap
+from cdedb.common.query import QueryOperators
+from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
+from cdedb.common.sorting import xsorted
 from cdedb.filter import iban_filter
-from cdedb.frontend.common import CustomCSVDialect
-from cdedb.query import QueryOperators
+from cdedb.frontend.common import CustomCSVDialect, make_event_fee_reference
+from cdedb.frontend.event import EventFrontend
 from tests.common import (
     USER_DICT, FrontendTest, UserObject, as_users, event_keeper, prepsql, storage,
 )
@@ -1285,6 +1288,9 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/course/list'},
+                      {'href': '/event/event/1/course/2/change'},
+                      {'href': '/event/event/1/course/2/show'},
+                      {'href': '/event/event/1/course/1/show'},
                       {'href': '/event/event/1/course/1/change'})
         self.assertTitle("Heldentum bearbeiten (Große Testakademie 2222)")
         f = self.response.forms['changecourseform']
@@ -1494,20 +1500,82 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Anmeldung durch Teilnehmer bearbeitet.",
                             div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
 
+    @as_users("berta")
+    def test_registration_fee_qrcode(self) -> None:
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Meine Anmeldung")
+        self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
+        self.assertPresence("Überweisung")
+        self.assertPresence("Betrag 10,50 €", div="registrationsummary")
+        self.assertPresence("QR", div="show-registration-fee-qr")
+        save = self.response
+        self.traverse("QR")
+        print(self.response.text[0])
+        self.response = save
+
+        event = self.event.get_event(self.key, 1)
+        persona = self.core.get_persona(self.key, self.user['id'])
+        payment_data = {
+            'meta_info': self.core.get_meta_info(self.key),
+            'reference': make_event_fee_reference(persona, event),
+            'to_pay': decimal.Decimal("10.50"), 'iban': event['iban'],
+        }
+
+        event_frontend: EventFrontend = self.app.app.event
+        qr_data = event_frontend._registration_fee_qr_data(payment_data)  # pylint: disable=protected-access
+
+        qr_expectation = b"""\
+BCD
+002
+2
+SCT
+BFSWDE33XXX
+CdE e.V.
+DE26370205000008068900
+EUR10.5
+
+
+Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
+        self.assertEqual(qr_expectation, segno.helpers._make_epc_qr_data(**qr_data))  # type: ignore[attr-defined]  # pylint: disable=protected-access
+
     @as_users("anton")
     def test_registration_status(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/registration/status'})
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
-        self.assertPresence(
-            "Anmeldung erst mit Überweisung des Teilnehmerbeitrags")
-        self.assertPresence("573,99 € (bereits bezahlt: 200,00 €)")
+
         self.assertNonPresence("Warteliste")
         self.assertNonPresence("Eingeteilt in")
         self.assertPresence("α. Planetenretten für Anfänger")
         self.assertPresence("β. Lustigsein für Fortgeschrittene")
         self.assertPresence("Ich stimme zu, dass meine Daten")
+
+        # Payment checks with iban
+        def _set_amount_paid(amount: float) -> None:
+            self.get('/event/event/1/registration/1/change')
+            f = self.response.forms['changeregistrationform']
+            f['reg.amount_paid'] = amount
+            f.submit()
+            self.traverse({'href': '/event/event/1/registration/status'})
+
+        _set_amount_paid(0)
+        self.assertPresence(
+            "Anmeldung erst mit Überweisung des Teilnahmebeitrags")
+        self.assertPresence("573,99 € auf folgendes Konto")
+        self.assertPresence(
+            "0,00 € eingegangen. Der volle Teilnahmebeitrag beträgt 573,99 €")
+        _set_amount_paid(100)
+        self.assertPresence("473,99 € auf folgendes Konto")
+        self.assertPresence(
+            "100,00 € eingegangen. Der volle Teilnahmebeitrag beträgt 573,99 €")
+        _set_amount_paid(1000)
+        self.assertNonPresence("Überweisung")
+        self.assertNonPresence("Konto")
+        self.assertNonPresence("1000,00")
+        self.assertPresence("573,99 € bereits bezahlt.")
+        _set_amount_paid(200)
+
+        # Payment checks without iban
         self.traverse({'href': '/event/event/1/change'})
         self.assertTitle("Große Testakademie 2222 – Konfiguration")
         f = self.response.forms['changeeventform']
@@ -1517,9 +1585,9 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/1/registration/status'})
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
         self.assertPresence("Eingeteilt in")
+        self.assertPresence("separat mitteilen, wie du deinen Teilnahmebeitrag")
         self.assertPresence(
-            "separat mitteilen, wie du deinen Teilnahmebeitrag von 573,99 €"
-            " bezahlen kannst. Du hast bereits 200,00 € bezahlt.")
+            "200,00 € eingegangen. Der volle Teilnahmebeitrag beträgt 573,99 €")
 
         # check payment messages for different registration stati
         payment_pending = "Bezahlung ausstehend"
@@ -2293,7 +2361,7 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/registration/1/show'})
         self.assertTitle("Anmeldung von Anton Administrator"
                          " (Große Testakademie 2222)")
-        self.assertPresence("Teilnehmerbeitrag ausstehend")
+        self.assertPresence("Teilnahmebeitrag ausstehend")
         self.assertPresence("Bereits Bezahlt 573,98 €")
         self.traverse({'href': '/event/event/1/show'},
                       {'href': '/event/event/1/registration/query'},
@@ -2856,6 +2924,8 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/lodgement/overview'})
         self.assertTitle("Unterkünfte (Große Testakademie 2222)")
         self.assertPresence("Kalte Kammer")
+        # Use the pager to navigate to Einzelzelle and test proper sorting
+        self.traverse("Einzelzelle", "Nächste")
         self.traverse({'href': '/event/event/1/lodgement/4/show'})
         self.assertTitle("Unterkunft Einzelzelle (Große Testakademie 2222)")
         self.assertPresence("Emilia")
@@ -3756,15 +3826,15 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Checkin (Große Testakademie 2222)")
 
         # Check the display of custom datafields.
-        self.assertPresence("anzahl_GROSSBUCHSTABEN 4", div="checkin-fields-1")
-        self.assertPresence("anzahl_GROSSBUCHSTABEN 3", div="checkin-fields-2")
-        self.assertPresence("anzahl_GROSSBUCHSTABEN 2", div="checkin-fields-6")
+        self.assertPresence("Anzahl Großbuchstaben 4", div="checkin-fields-1")
+        self.assertPresence("Anzahl Großbuchstaben 3", div="checkin-fields-2")
+        self.assertPresence("Anzahl Großbuchstaben 2", div="checkin-fields-6")
         self.traverse("Datenfelder konfigurieren")
         f = self.response.forms['fieldsummaryform']
         f['checkin_8'].checked = False
         self.submit(f)
         self.traverse("Checkin")
-        self.assertNonPresence("anzahl_GROSSBUCHSTABEN", div="checkin-list")
+        self.assertNonPresence("Anzahl Großbuchstaben", div="checkin-list")
 
         # Check the filtering per event part.
         self.assertPresence("Anton Armin", div="checkin-list")
@@ -4497,7 +4567,7 @@ etc;anything else""", f['entries_2'].value)
             f['fee'] = 0
             self.submit(f)
 
-        pay_request = "Anmeldung erst mit Überweisung des Teilnehmerbeitrags"
+        pay_request = "Anmeldung erst mit Überweisung des Teilnahmebeitrags"
         iban = iban_filter(self.app.app.conf['EVENT_BANK_ACCOUNTS'][0][0])
         no_member_surcharge = "zusätzlichen Beitrag in Höhe von 5,00"
 
@@ -4880,3 +4950,41 @@ etc;anything else""", f['entries_2'].value)
         f['submitted_by'] = "DB-1-9"
         self.submit(f)
         self.assertTitle("Veranstaltungen-Log [0–0 von 0]")
+
+    @as_users("garcia")
+    def test_registration_query_datetime_serialization(self) -> None:
+        reference_time = datetime.datetime(2000, 1, 1, 12, 0, 0)
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Anmeldungen")
+        f = self.response.forms['queryform']
+
+        # Submit a query using a timezone unaware datetime value.
+        f['qop_ctime.creation_time'] = QueryOperators.greater.value
+        f['qval_ctime.creation_time'] = reference_time.isoformat()
+        self.submit(f)
+
+        # Check that the value stayed the same.
+        f = self.response.forms['queryform']
+        self.assertEqual(
+            f['qval_ctime.creation_time'].value,
+            reference_time.isoformat()
+        )
+
+        # Now store that query.
+        f['query_name'] = "Timezone Storage Test"
+        self.submit(f, button="store_query", check_button_attrs=True)
+
+        # And check that the value didn't change
+        # Note that this is still the submitted value not the stored one.
+        f = self.response.forms['queryform']
+        self.assertEqual(
+            f['qval_ctime.creation_time'].value,
+            reference_time.isoformat()
+        )
+
+        # Now retrieve the stored query and check that the value is still the same.
+        self.traverse("Anmeldungen", "Timezone Storage Test")
+        f = self.response.forms['queryform']
+        self.assertEqual(
+            f['qval_ctime.creation_time'].value,
+            reference_time.isoformat()
+        )

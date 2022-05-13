@@ -14,16 +14,17 @@ from werkzeug import Response
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, EntitySorter, RequestState, build_msg, merge_dicts, n_,
-    xsorted,
+    CdEDBObject, CdEDBObjectMap, RequestState, build_msg, merge_dicts,
 )
+from cdedb.common.i18n import n_
+from cdedb.common.query import Query, QueryOperators, QueryScope
+from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.filter import safe_filter
 from cdedb.frontend.common import (
     REQUESTdata, access, drow_name, event_guard, make_persona_name,
     process_dynamic_input, request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
-from cdedb.query import Query, QueryOperators, QueryScope
 from cdedb.validation import EVENT_FIELD_ALL_FIELDS
 from cdedb.validationtypes import VALIDATOR_LOOKUP
 
@@ -339,4 +340,4 @@ class EventFieldMixin(EventBaseFrontend):
             raise NotImplementedError(f"Unknown kind {kind}.")
 
         redirect = self.FIELD_REDIRECT[kind]
-        return self.redirect(rs, redirect, query.serialize())
+        return self.redirect(rs, redirect, query.serialize_to_url())

@@ -9,9 +9,11 @@ from typing import (
     Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, cast, overload,
 )
 
+import subman
+from subman.machine import SubscriptionAction, SubscriptionPolicy
+
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
-import cdedb.subman as subman
 import cdedb.validationtypes as vtypes
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.common import (
@@ -21,14 +23,19 @@ from cdedb.backend.common import (
 )
 from cdedb.backend.event import EventBackend
 from cdedb.common import (
-    ADMIN_KEYS, MAILINGLIST_FIELDS, MOD_ALLOWED_FIELDS, RESTRICTED_MOD_ALLOWED_FIELDS,
     CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers,
-    PrivilegeError, RequestState, implying_realms, make_proxy, n_, unwrap, xsorted,
+    RequestState, make_proxy, unwrap,
 )
+from cdedb.common.exceptions import PrivilegeError
+from cdedb.common.fields import (
+    MAILINGLIST_FIELDS, MOD_ALLOWED_FIELDS, RESTRICTED_MOD_ALLOWED_FIELDS,
+)
+from cdedb.common.i18n import n_
+from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
+from cdedb.common.roles import ADMIN_KEYS, implying_realms
+from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.ml_type_aux import MLType, MLTypeLike
-from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
-from cdedb.subman.machine import SubscriptionAction, SubscriptionPolicy
 
 SubStates = Collection[const.SubscriptionState]
 

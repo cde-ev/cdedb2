@@ -6,6 +6,7 @@ import enum
 import logging
 import re
 import threading
+from collections import Counter
 from typing import (
     Any, Callable, Collection, Container, Dict, ItemsView, Iterable, List, Literal,
     Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, overload,
@@ -20,9 +21,12 @@ import markupsafe
 import phonenumbers
 
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, compute_checkdigit, xsorted
+from cdedb.common import CdEDBObject, compute_checkdigit
+from cdedb.common.sorting import xsorted
+from cdedb.config import Config
 
 _LOGGER = logging.getLogger(__name__)
+_CONFIG = Config()
 
 S = TypeVar("S")
 T = TypeVar("T")
@@ -107,6 +111,36 @@ def date_filter(val: Union[datetime.date, str, None],
             # detect freezegun was available.
             return date_formatter.format(effective)
     return val.strftime(formatstr)
+
+
+def datetime_filter(val: Union[datetime.datetime, str, None],
+                    formatstr: str = "%Y-%m-%d %H:%M (%Z)", lang: str = None,
+                    passthrough: bool = False) -> Optional[str]:
+    """Custom jinja filter to format ``datetime.datetime`` objects.
+
+    :param formatstr: Formatting used, if no l10n happens.
+    :param lang: If not None, then localize to the passed language.
+    :param passthrough: If True return strings unmodified.
+    """
+    if val is None or val == '' or not isinstance(val, datetime.datetime):
+        if passthrough and isinstance(val, str) and val:
+            return val
+        return None
+
+    if val.tzinfo is not None:
+        val = val.astimezone(_CONFIG["DEFAULT_TIMEZONE"])
+    else:
+        _LOGGER.warning(f"Found naive datetime object {val}.")
+
+    if lang:
+        locale = icu.Locale(lang)
+        datetime_formatter = icu.DateFormat.createDateTimeInstance(
+            icu.DateFormat.MEDIUM, icu.DateFormat.MEDIUM, locale)
+        zone = _CONFIG["DEFAULT_TIMEZONE"].zone
+        datetime_formatter.setTimeZone(icu.TimeZone.createTimeZone(zone))
+        return datetime_formatter.format(val)
+    else:
+        return val.strftime(formatstr)
 
 
 @overload
@@ -484,6 +518,11 @@ def md_filter(val: Optional[str]) -> Optional[markupsafe.Markup]:
     return markdown_parse_safe(val)
 
 
+def dict_count_filter(value: Mapping[T, S]) -> Counter[S]:
+    """Count the values of a dict and return a dict mapping entries to encounters."""
+    return Counter(value.values())
+
+
 @jinja2.environmentfilter
 def sort_filter(env: jinja2.Environment, value: Iterable[T],
                 reverse: bool = False, attribute: Any = None) -> List[T]:
@@ -643,6 +682,7 @@ def xdict_entries_filter(items: Sequence[Tuple[Any, CdEDBObject]], *args: str,
 #: Dictionary of custom filters we make available in the templates.
 JINJA_FILTERS = {
     'date': date_filter,
+    'datetime': datetime_filter,
     'money': money_filter,
     'decimal': decimal_filter,
     'cdedbid': cdedbid_filter,
@@ -656,6 +696,7 @@ JINJA_FILTERS = {
     'linebreaks': linebreaks_filter,
     'map_dict': map_dict_filter,
     'md': md_filter,
+    'dictcount': dict_count_filter,
     'enum': enum_filter,
     'sort': sort_filter,
     'dictsort': dictsort_filter,

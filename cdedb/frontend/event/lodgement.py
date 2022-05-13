@@ -13,9 +13,10 @@ from werkzeug import Response
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, EntitySorter, LodgementsSortkeys, RequestState,
-    Sortkey, merge_dicts, n_, xsorted,
+    CdEDBObject, CdEDBObjectMap, LodgementsSortkeys, RequestState, merge_dicts,
 )
+from cdedb.common.i18n import n_
+from cdedb.common.sorting import EntitySorter, Sortkey, xsorted
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, check_validation as check, drow_name,
@@ -362,10 +363,24 @@ class EventLodgementMxin(EventBaseFrontend):
         if not any(reg_ids for reg_ids in inhabitants.values()):
             merge_dicts(rs.values, {'ack_delete': True})
 
+        lodgement_ids = self.eventproxy.list_lodgements(rs, event_id).keys()
+        lodgement_groups = self.eventproxy.list_lodgement_groups(rs, event_id)
+        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        for lodge in lodgements.values():
+            lodge['group_title'] = lodgement_groups.get(lodge['group_id'])
+        sorted_ids = xsorted(
+            lodgement_ids,
+            key=lambda id_: EntitySorter.lodgement_by_group(lodgements[id_]))
+        i = sorted_ids.index(lodgement_id)
+
+        prev_lodge = lodgements[sorted_ids[i - 1]] if i > 0 else None
+        next_lodge = lodgements[sorted_ids[i + 1]] if i + 1 < len(sorted_ids) else None
+
         return self.render(rs, "lodgement/show_lodgement", {
             'registrations': registrations, 'personas': personas,
             'inhabitants': inhabitants, 'problems': problems,
-            'groups': groups,
+            'groups': groups, 'prev_lodgement': prev_lodge,
+            'next_lodgement': next_lodge,
         })
 
     @access("event")

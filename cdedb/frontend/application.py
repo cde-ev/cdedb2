@@ -21,9 +21,12 @@ from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.common import (
-    ADMIN_VIEWS_COOKIE_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, QuotaException,
-    RequestState, User, glue, make_proxy, n_, now, roles_to_db_role, setup_logger,
+    IGNORE_WARNINGS_NAME, CdEDBObject, RequestState, User, glue, make_proxy, now,
+    setup_logger,
 )
+from cdedb.common.exceptions import QuotaException
+from cdedb.common.i18n import n_
+from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME, roles_to_db_role
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -31,8 +34,7 @@ from cdedb.frontend.assembly import AssemblyFrontend
 from cdedb.frontend.cde import CdEFrontend
 from cdedb.frontend.common import (
     JINJA_FILTERS, AbstractFrontend, BaseApp, FrontendEndpoint, Response,
-    construct_redirect, datetime_filter, docurl, sanitize_None, setup_translations,
-    staticurl,
+    construct_redirect, docurl, sanitize_None, setup_translations, staticurl,
 )
 from cdedb.frontend.core import CoreFrontend
 from cdedb.frontend.event import EventFrontend
@@ -88,7 +90,6 @@ class Application(BaseApp):
             'glue': glue,
         })
         self.jinja_env.filters.update(JINJA_FILTERS)
-        self.jinja_env.filters.update({'datetime': datetime_filter})
         self.jinja_env.policies['ext.i18n.trimmed'] = True  # type: ignore
         self.translations = setup_translations(self.conf)
         if pathlib.Path("/PRODUCTIONVM").is_file():  # pragma: no cover

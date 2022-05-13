@@ -102,7 +102,7 @@
                                 <dl class="dl-horizontal small">
                                     {% for field_id, field in slice %}
                                         {% set field_key = ambience['event']['fields'][field_id]['field_name'] %}
-                                        <dt class="text-muted">{{ field['field_name'] }}</dt>
+                                        <dt class="text-muted">{{ field['title'] }}</dt>
                                         <dd class="text-muted">
                                             {{ generic_event.display_field(field, registration['fields'].get(field_key)) }}
                                         </dd>
@@ -116,10 +116,10 @@
                     <div class="col-sm-3 col-xs-12 button-par">
                         {{ util.href(cdedblink('event/change_registration',
                                                {'registration_id': registration_id, 'skip': 'reg.checkin'}),
-                                     title=gettext("Edit"), icon='pen', aclass="btn btn-sm btn-warning") }}
+                                     label=none, icon='pen', title=gettext("Edit"), aclass="btn btn-sm btn-warning") }}
                         {{ util.href(cdedblink('event/show_registration',
                                                {'registration_id': registration_id}),
-                                     title=gettext("Details"), icon='user', aclass="btn btn-sm btn-info") }}
+                                     label=none, icon='user', title=gettext("Details"), aclass="btn btn-sm btn-info") }}
 
                         <form action="{{ cdedblink('event/checkin') }}" method="POST" id="checkinform{{ registration_id }}"
                               style="display: inline;" class="checkinform">

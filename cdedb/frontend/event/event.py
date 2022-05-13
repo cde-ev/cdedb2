@@ -20,16 +20,18 @@ import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    DEFAULT_NUM_COURSE_CHOICES, EVENT_FIELD_SPEC, CdEDBObject, EntitySorter,
-    RequestState, merge_dicts, n_, now, unwrap, xsorted,
+    DEFAULT_NUM_COURSE_CHOICES, CdEDBObject, RequestState, merge_dicts, now, unwrap,
 )
+from cdedb.common.fields import EVENT_FIELD_SPEC
+from cdedb.common.i18n import n_
+from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
+from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access, cdedburl,
     check_validation as check, check_validation_optional as check_optional, drow_name,
     event_guard, inspect_validation as inspect, process_dynamic_input,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
-from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.validation import (
     EVENT_EXPOSED_FIELDS, EVENT_PART_COMMON_FIELDS,
     EVENT_PART_CREATION_MANDATORY_FIELDS, EVENT_PART_GROUP_COMMON_FIELDS,
@@ -75,7 +77,7 @@ class EventEventMixin(EventBaseFrontend):
                 ("persona.given_names", "persona.family_name"),
                 (),
                 (("persona.family_name", True), ("persona.given_names", True)))
-            params = query.serialize()
+            params = query.serialize_to_url()
             params['event_id'] = event_id
             return cdedburl(rs, 'event/registration_query', params)
 
@@ -989,8 +991,7 @@ class EventEventMixin(EventBaseFrontend):
                 return self.redirect(rs, "event/show_registration",
                                      {'registration_id': result[0]['id']})
             elif result:
-                params = query.serialize()
-                return self.redirect(rs, "event/registration_query",
-                                     params)
+                params = query.serialize_to_url()
+                return self.redirect(rs, "event/registration_query", params)
         rs.notify("warning", n_("No registration found."))
         return self.show_event(rs, event_id)

@@ -8,11 +8,9 @@ from typing import Dict, Optional
 import webtest
 
 import cdedb.database.constants as const
-from cdedb.common import (
-    ADMIN_VIEWS_COOKIE_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, GenesisDecision,
-    get_hash,
-)
-from cdedb.query import QueryOperators
+from cdedb.common import IGNORE_WARNINGS_NAME, CdEDBObject, GenesisDecision, get_hash
+from cdedb.common.query import QueryOperators
+from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
 from tests.common import (
     USER_DICT, FrontendTest, UserIdentifier, UserObject, as_users, execsql, get_user,
     storage,

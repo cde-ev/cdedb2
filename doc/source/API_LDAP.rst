@@ -31,7 +31,7 @@ Our LDAP Tree looks as follows::
     │   │   ├── cn=orgas-1
     │   │   └── ...
     │   ├── ou=ml-moderators
-    │   │   ├── cn=42@lists.cde-ev.de
+    │   │   ├── cn=42-owner@lists.cde-ev.de
     │   │   └── ...
     │   ├── ou=ml-subscribers
     │   │   ├── cn=42@lists.cde-ev.de
