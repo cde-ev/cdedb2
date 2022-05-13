@@ -302,7 +302,7 @@ class TestCdEBackend(BackendTest):
         self.assertLess(0, new_id)
         update = {
             'id': new_id,
-            'amount': decimal.Decimal('42.23'),
+            'amount': decimal.Decimal('42.23') + 2 * self.conf["MEMBERSHIP_FEE"],
             'processed_at': None,
             'status': 1,
             'submitted_by': self.user['id'],
@@ -332,7 +332,7 @@ class TestCdEBackend(BackendTest):
                 self.assertLess(0, new_id)
                 update = {
                     'id': new_id,
-                    'amount': decimal.Decimal('42.23'),
+                    'amount': decimal.Decimal('42.23') + 2*self.conf["MEMBERSHIP_FEE"],
                     'processed_at': None,
                     'status': 1,
                     'submitted_by': self.user['id'],
@@ -351,7 +351,7 @@ class TestCdEBackend(BackendTest):
                     self.key, USER_DICT["berta"]["id"])["balance"]
                 self.assertEqual(status, data['status'])
                 if status == ltstati.success:
-                    self.assertEqual(decimal.Decimal('42.23'), data['tally'])
+                    self.assertEqual(decimal.Decimal('47.23'), data['tally'])
                     self.assertEqual(
                         new_balance, old_balance + 2*self.conf["MEMBERSHIP_FEE"])
                 elif status == ltstati.cancelled:
@@ -365,35 +365,35 @@ class TestCdEBackend(BackendTest):
     @prepsql("""INSERT INTO cde.org_period (id) VALUES (58);""")
     def test_lastschrift_period_58(self) -> None:
         ltstati = const.LastschriftTransactionStati
+        annual_fee = decimal.Decimal(2.5 + 4.0)
         old_balance = self.core.get_cde_user(
             self.key, USER_DICT["berta"]["id"])["balance"]
-        newdata = {
+        transaction = {
             'issued_at': datetime.datetime.now(pytz.utc),
             'lastschrift_id': 2,
             'period_id': 58,
         }
-        new_id = self.cde.issue_lastschrift_transaction(self.key, newdata)
+        new_id = self.cde.issue_lastschrift_transaction(self.key, transaction)
         update = {
             'id': new_id,
-            'amount': decimal.Decimal('42.23'),
-            'processed_at': None,
-            'status': 1,
+            'amount': decimal.Decimal('42.23') + annual_fee,
+            'processed_at': nearly_now(),
+            'status': ltstati.success,
             'submitted_by': self.user['id'],
-            'tally': None,
+            'tally': decimal.Decimal('42.23') + annual_fee,
         }
-        newdata.update(update)
+        transaction.update(update)
         self.assertLess(
             0, self.cde.finalize_lastschrift_transaction(
                 self.key, new_id, ltstati.success))
         data = self.cde.get_lastschrift_transactions(self.key, (new_id,))
-        data = data[new_id]
+        self.assertEqual(transaction, data[new_id])
+
         new_balance = self.core.get_cde_user(
             self.key, USER_DICT["berta"]["id"])["balance"]
-        self.assertEqual(ltstati.success, data['status'])
-        self.assertEqual(decimal.Decimal('42.23'), data['tally'])
         self.assertNotEqual(
             new_balance, old_balance + 2 * self.conf["MEMBERSHIP_FEE"])
-        self.assertEqual(new_balance, old_balance + decimal.Decimal(2.5 + 4.0))
+        self.assertEqual(new_balance, old_balance + annual_fee)
 
     @as_users("farin")
     def test_lastschrift_transaction_rollback(self) -> None:
@@ -407,7 +407,7 @@ class TestCdEBackend(BackendTest):
         self.assertLess(0, new_id)
         update = {
             'id': new_id,
-            'amount': decimal.Decimal('42.23'),
+            'amount': decimal.Decimal('42.23') + 2 * self.conf["MEMBERSHIP_FEE"],
             'processed_at': None,
             'status': 1,
             'submitted_by': self.user['id'],
