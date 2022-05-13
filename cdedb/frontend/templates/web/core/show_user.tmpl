@@ -287,23 +287,32 @@
                             {{ util.href(cdedblink('core/modify_balance_form'), gettext("Modify Balance"), icon="pen",
                                          aclass="btn btn-xs btn-warning") }}
                         {% endif %}
-                        {% if data['has_lastschrift'] %}
-                            {% trans %}and{% endtrans %}
-                            {{ util.href(cdedblink("core/my_lastschrift") if data['id'] == user.persona_id
-                                         else cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
-                                    gettext("Direct Debit Authorization"), icon="euro-sign",
-                                    readonly=(data['id'] != user.persona_id
-                                              and "finance" not in user.admin_views)) }}
-                        {% elif "finance" in user.admin_views %}
-                            {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
-                                    gettext("New Direct Debit Authorization …"), icon="euro-sign") }}
-                        {% endif %}
                     </dd>
                 {% endif %}
 
                 {% if "donation" in data %}
                     <dt>{% trans %}Annual Donation{% endtrans %}</dt>
                     <dd>{{ data['donation']|money(lang=lang) }}</dd>
+                {% endif %}
+
+                {% if "has_lastschrift" in data %}
+                    <dt>{% trans %}Active Lastschrift{% endtrans %}</dt>
+                    <dd>
+                        {% if data["has_lastschrift"] %}
+                            {{ util.href(cdedblink("core/my_lastschrift") if data['id'] == user.persona_id
+                                         else cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
+                                         gettext("Direct Debit Authorization"), icon="euro-sign",
+                                         readonly=(data['id'] != user.persona_id and "finance" not in user.admin_views)) }}
+                        {% else %}
+                            {% trans %}No active Direct Debit Authorization.{% endtrans %}
+                            {% if "finance" in user.admin_views %}
+                                {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
+                                             gettext("New Direct Debit Authorization …"), icon="euro-sign") }}
+                            {% elif data['id'] == user.persona_id %}
+                                {{ util.href(cdedblink("cde/i25p_index"), gettext("More Information")) }}
+                            {% endif %}
+                        {% endif %}
+                    </dd>
                 {% endif %}
 
                 {% if data['is_member'] %}

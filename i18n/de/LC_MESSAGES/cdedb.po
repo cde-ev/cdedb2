@@ -1944,11 +1944,14 @@ msgstr "Lastschrift erteilt"
 
 #: cdedb/common/query/__init__.py:415
 msgid "Lastschrift Revoked"
-msgstr "Lastsrift widerrufen"
+msgstr "Lastschrift widerrufen"
 
 #: cdedb/common/query/__init__.py:417
 msgid "Active Lastschrift"
 msgstr "Aktive Lastschrift"
+
+msgid "No active Direct Debit Authorization."
+msgstr "Keine aktive Einzugsermächtigung."
 
 #: cdedb/common/query/__init__.py:418
 msgid "Lastschrift Amount"
