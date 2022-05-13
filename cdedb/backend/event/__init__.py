@@ -20,8 +20,9 @@ from cdedb.backend.event.lowlevel import EventLowLevelBackend
 from cdedb.backend.event.query import EventQueryBackend
 from cdedb.backend.event.registration import EventRegistrationBackend
 from cdedb.common import (
-    EVENT_SCHEMA_VERSION, CdEDBObject, CdEDBOptionalMap, DefaultReturnCode,
-    DeletionBlockers, RequestState, build_msg, get_hash, json_serialize, unwrap,
+    EVENT_SCHEMA_VERSION, CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap,
+    DefaultReturnCode, DeletionBlockers, RequestState, build_msg, get_hash,
+    json_serialize, unwrap,
 )
 from cdedb.common.exceptions import PartialImportError, PrivilegeError
 from cdedb.common.i18n import n_
@@ -547,7 +548,8 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
             cdelta: CdEDBOptionalMap = {}
             cprevious: CdEDBOptionalMap = {}
 
-            def check_seg(track_id, delta, original) -> bool:  # type: ignore
+            def check_seg(track_id: int, delta: CdEDBOptionalMap,
+                          original: CdEDBObjectMap) -> bool:
                 return ((track_id in delta and delta[track_id] is not None)
                         or (track_id not in delta and track_id in original))
 

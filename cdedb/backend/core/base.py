@@ -1865,7 +1865,7 @@ class CoreBaseBackend(AbstractBackend):
         # Validation is done inside.
         if num is None and ids is not None and set(ids) == {rs.user.persona_id}:
             return False
-        quota = self.quota(rs, ids=ids, num=num)  # type: ignore
+        quota = self.quota(rs, ids=ids, num=num)  # type: ignore[call-overload]
         return (quota > self.conf["QUOTA_VIEWS_PER_DAY"]
                 and not {"cde_admin", "core_admin"} & rs.user.roles)
 
@@ -2238,22 +2238,11 @@ class CoreBaseBackend(AbstractBackend):
             self.RESET_COOKIE_PAYLOAD, persona_id=None, timeout=timeout)
         return cookie
 
-    # # This should work but Literal seems to be broken.
-    # # https://github.com/python/mypy/issues/7399
-    # if TYPE_CHECKING:
-    #     from typing import Literal
-    #     ret_type = Union[Tuple[Literal[False], str],
-    #                      Tuple[Literal[True], None]]
-    # else:
-    #     ret_type = Tuple[bool, Optional[str]]
-    ret_type = Tuple[bool, Optional[str]]
-
     def _verify_reset_cookie(self, rs: RequestState, persona_id: int, salt: str,
-                             cookie: str) -> ret_type:  # pylint: disable=undefined-variable
+                             cookie: str) -> Optional[str]:
         """Check a provided cookie for correctness.
 
-        :returns: The bool signals success, the str is an error message or
-            None if successful.
+        :returns: None on success, an error message otherwise.
         """
         password_hash = unwrap(self.sql_select_one(
             rs, "core.personas", ("password_hash",), persona_id))
@@ -2264,12 +2253,12 @@ class CoreBaseBackend(AbstractBackend):
             salt, str(persona_id), password_hash, cookie, persona_id=None)
         if msg is None:
             if timeout:
-                return False, n_("Link expired.")
+                return n_("Link expired.")
             else:
-                return False, n_("Link invalid or already used.")
+                return n_("Link invalid or already used.")
         if msg != self.RESET_COOKIE_PAYLOAD:
-            return False, n_("Link invalid or already used.")
-        return True, None
+            return n_("Link invalid or already used.")
+        return None
 
     def modify_password(self, rs: RequestState, new_password: str,
                         old_password: str = None, reset_cookie: str = None,
@@ -2300,10 +2289,9 @@ class CoreBaseBackend(AbstractBackend):
             if not self.verify_persona_password(rs, old_password, persona_id):
                 return False, n_("Password verification failed.")
         if reset_cookie:
-            success, msg = self.verify_reset_cookie(
-                rs, persona_id, reset_cookie)
-            if not success:
-                return False, msg  # type: ignore
+            msg = self.verify_reset_cookie(rs, persona_id, reset_cookie)
+            if msg is not None:
+                return False, msg
         if not new_password:
             return False, n_("No new password provided.")
         _, errs = inspect(vtypes.PasswordStrength, new_password)

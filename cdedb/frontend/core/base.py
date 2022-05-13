@@ -39,11 +39,12 @@ from cdedb.common.roles import (
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.filter import date_filter, enum_entries_filter, markdown_parse_safe
 from cdedb.frontend.common import (
-    AbstractFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, TransactionObserver,
-    access, basic_redirect, calculate_db_logparams, calculate_loglinks,
-    check_validation as check, check_validation_optional as check_optional,
-    inspect_validation as inspect, make_membership_fee_reference, make_persona_name,
-    periodic, request_dict_extractor, request_extractor,
+    AbstractFrontend, Headers, REQUESTdata, REQUESTdatadict, REQUESTfile,
+    TransactionObserver, access, basic_redirect, calculate_db_logparams,
+    calculate_loglinks, check_validation as check,
+    check_validation_optional as check_optional, inspect_validation as inspect,
+    make_membership_fee_reference, make_persona_name, periodic, request_dict_extractor,
+    request_extractor,
 )
 from cdedb.ml_type_aux import MailinglistGroup
 from cdedb.validation import (
@@ -198,7 +199,7 @@ class CoreBaseFrontend(AbstractFrontend):
         """Change the meta info constants."""
         info = self.coreproxy.get_meta_info(rs)
         data_params: vtypes.TypeMapping = {
-            key: Optional[str]  # type: ignore
+            key: Optional[str]  # type: ignore[misc]
             for key in META_INFO_FIELDS
         }
         data = request_extractor(rs, data_params)
@@ -1417,7 +1418,7 @@ class CoreBaseFrontend(AbstractFrontend):
                         "core/do_password_reset_form", "email", email, persona_id=None,
                         timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
                     params["cookie"] = cookie
-            headers = {"To": {email}, "Subject": "Admin-Privilegien geändert"}
+            headers: Headers = {"To": {email}, "Subject": "Admin-Privilegien geändert"}
             self.do_mail(rs, "privilege_change_finalized", headers, params)
         return self.redirect(rs, "core/list_privilege_changes")
 

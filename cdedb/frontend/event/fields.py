@@ -254,7 +254,7 @@ class EventFieldMixin(EventBaseFrontend):
                   change_note: Optional[str] = None) -> Response:
         """Modify a specific field on the given entities."""
         if rs.has_validation_errors():
-            return self.field_set_form(  # type: ignore
+            return self.field_set_form(  # type: ignore[call-arg]
                 rs, event_id, kind=kind, change_note=change_note, internal=True)
         if ids is None:
             ids = cast(vtypes.IntCSVList, [])
@@ -271,13 +271,13 @@ class EventFieldMixin(EventBaseFrontend):
                 (None, ValueError(n_("change_note only supported for registrations."))))
 
         data_params: vtypes.TypeMapping = {
-            f"input{anid}": Optional[  # type: ignore
+            f"input{anid}": Optional[  # type: ignore[misc]
                 VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]
             for anid in entities
         }
         data = request_extractor(rs, data_params)
         if rs.has_validation_errors():
-            return self.field_set_form(  # type: ignore
+            return self.field_set_form(  # type: ignore[call-arg]
                 rs, event_id, kind=kind, internal=True)
 
         if kind == const.FieldAssociations.registration:
@@ -302,7 +302,7 @@ class EventFieldMixin(EventBaseFrontend):
                     'fields': {field['field_name']: data[f"input{anid}"]}
                 }
                 if msg:
-                    code *= entity_setter(rs, new, msg)  # type: ignore
+                    code *= entity_setter(rs, new, msg)  # type: ignore[call-arg]
                 else:
                     code *= entity_setter(rs, new)
         self.eventproxy.event_keeper_commit(rs, event_id, post_msg, after_change=True)

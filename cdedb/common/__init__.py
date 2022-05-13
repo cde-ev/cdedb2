@@ -342,7 +342,7 @@ def make_proxy(backend: B, internal: bool = False) -> B:
                 return fun(rs, *args, **kwargs)
             finally:
                 if not internal:
-                    rs.conn = None  # type: ignore
+                    rs.conn = None  # type: ignore[assignment]
         return cast(F, wrapper)
 
     class Proxy:

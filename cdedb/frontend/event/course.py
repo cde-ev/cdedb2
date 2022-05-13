@@ -131,7 +131,7 @@ class EventCourseMixin(EventBaseFrontend):
         data['segments'] = segments
         data['active_segments'] = active_segments
         field_params: vtypes.TypeMapping = {
-            f"fields.{field['field_name']}": Optional[  # type: ignore
+            f"fields.{field['field_name']}": Optional[  # type: ignore[misc]
                 VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]  # noqa: F821
             for field in rs.ambience['event']['fields'].values()
             if field['association'] == const.FieldAssociations.course
@@ -170,7 +170,7 @@ class EventCourseMixin(EventBaseFrontend):
         data['event_id'] = event_id
         data['segments'] = segments
         field_params: vtypes.TypeMapping = {
-            f"fields.{field['field_name']}": Optional[  # type: ignore
+            f"fields.{field['field_name']}": Optional[  # type: ignore[misc]
                 VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]  # noqa: F821
             for field in rs.ambience['event']['fields'].values()
             if field['association'] == const.FieldAssociations.course
@@ -478,7 +478,7 @@ class EventCourseMixin(EventBaseFrontend):
         their choices or a specific course.
         """
         if rs.has_validation_errors():
-            return self.course_choices_form(rs, event_id)  # type: ignore
+            return self.course_choices_form(rs, event_id)  # type: ignore[call-arg]
         if ids is None:
             ids = cast(vtypes.IntCSVList, [])
 

@@ -90,7 +90,7 @@ class Application(BaseApp):
             'glue': glue,
         })
         self.jinja_env.filters.update(JINJA_FILTERS)
-        self.jinja_env.policies['ext.i18n.trimmed'] = True  # type: ignore
+        self.jinja_env.policies['ext.i18n.trimmed'] = True  # type: ignore[attr-defined]
         self.translations = setup_translations(self.conf)
         if pathlib.Path("/PRODUCTIONVM").is_file():  # pragma: no cover
             # Sanity checks for the live instance
@@ -118,7 +118,7 @@ class Application(BaseApp):
             if isinstance(error, werkzeug.exceptions.NotFound) \
                     and (error.description
                          is werkzeug.exceptions.NotFound.description):
-                error.description = None  # type: ignore
+                error.description = None  # type: ignore[assignment]
 
             urls = self.urlmap.bind_to_environ(request.environ)
 
@@ -192,7 +192,7 @@ class Application(BaseApp):
                     fake_rs = types.SimpleNamespace()
                     fake_rs.user = user
                     notifications = json.dumps([
-                        self.encode_notification(fake_rs,  # type: ignore
+                        self.encode_notification(fake_rs,  # type: ignore[arg-type]
                                                  "error", n_("Session expired."))])
                     ret.set_cookie("displaynote", notifications)
                     return ret

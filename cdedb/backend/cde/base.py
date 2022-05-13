@@ -241,9 +241,8 @@ class CdEBaseBackend(AbstractBackend):
             n_("num_members"), n_("num_of_searchable"), n_("num_of_trial"),
             n_("num_of_printed_expuls"), n_("num_ex_members"), n_("num_all")))
 
-        # TODO: improve this type annotation with a new mypy version.
         def query_stats(select: str, condition: str, order: str, limit: int = 0
-                        ) -> OrderedDict:  # type: ignore
+                        ) -> OrderedDict[str, int]:
             query = (f"SELECT COUNT(*) AS num, {select} AS datum"
                      f" FROM core.personas"
                      f" WHERE is_member = True AND {condition} IS NOT NULL"

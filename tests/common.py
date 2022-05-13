@@ -192,13 +192,13 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
         rs._conn = connpool[roles_to_db_role(rs.user.roles)]
         rs.conn = rs._conn
         if "event" in rs.user.roles and hasattr(backend, "orga_info"):
-            rs.user.orga = backend.orga_info(  # type: ignore
+            rs.user.orga = backend.orga_info(  # type: ignore[attr-defined]
                 rs, rs.user.persona_id)
         if "ml" in rs.user.roles and hasattr(backend, "moderator_info"):
-            rs.user.moderator = backend.moderator_info(  # type: ignore
+            rs.user.moderator = backend.moderator_info(  # type: ignore[attr-defined]
                 rs, rs.user.persona_id)
         if "assembly" in rs.user.roles and hasattr(backend, "presider_info"):
-            rs.user.presider = backend.presider_info(  # type: ignore
+            rs.user.presider = backend.presider_info(  # type: ignore[attr-defined]
                 rs, rs.user.persona_id)
         return rs
 
@@ -387,7 +387,7 @@ class BackendTest(CdEDBTest):
         cls.ml = cls.initialize_backend(MlBackend)
         cls.assembly = cls.initialize_backend(AssemblyBackend)
         # Workaround to make orga info available for calls into the MLBackend.
-        cls.ml.orga_info = lambda rs, persona_id: cls.event.orga_info(  # type: ignore
+        cls.ml.orga_info = lambda rs, persona_id: cls.event.orga_info(  # type: ignore[attr-defined]
             rs.sessionkey, persona_id)
         cls.translations = setup_translations(cls.conf)
 
@@ -408,7 +408,7 @@ class BackendTest(CdEDBTest):
             self.user = user
         else:
             self.user = USER_DICT["anonymous"]
-        return self.key  # type: ignore
+        return self.key  # type: ignore[return-value]
 
     def logout(self) -> None:
         self.core.logout(self.key)
@@ -1038,7 +1038,7 @@ class FrontendTest(BackendTest):
         self.key = self.app.cookies.get('sessionkey', None)
         if not self.key:
             self.user = USER_DICT["anonymous"]
-        return self.key  # type: ignore
+        return self.key  # type: ignore[return-value]
 
     def logout(self, verbose: bool = False) -> None:  # pylint: disable=arguments-differ
         """Log out. Raises a KeyError if not currently logged in.
@@ -1502,7 +1502,7 @@ class FrontendTest(BackendTest):
         logs = all_logs[start-1:end]
         for index, log_entry in enumerate(logs, start=1):
             log_id, log_code = log_entry
-            log_code_str = self.gettext(str(log_code))  # type: ignore
+            log_code_str = self.gettext(str(log_code))  # type: ignore[call-arg, misc]
             self.assertPresence(log_code_str, div=f"{index}-{log_id}")
 
     def check_sidebar(self, ins: Set[str], out: Set[str]) -> None:

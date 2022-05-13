@@ -209,9 +209,9 @@ class CdEBaseFrontend(AbstractUserFrontend):
 
         events = self.pasteventproxy.list_past_events(rs)
         pevent_id = None
-        if rs.values.get('qval_pevent_id'):
+        if pevent_id := rs.values.get('qval_pevent_id'):
             try:
-                pevent_id = int(rs.values.get('qval_pevent_id'))  # type: ignore
+                pevent_id = int(pevent_id)
             except ValueError:
                 pass
         courses: Dict[int, str] = {}
@@ -656,12 +656,12 @@ class CdEBaseFrontend(AbstractUserFrontend):
             params: vtypes.TypeMapping = {
                 # as on the first submit no values for the resolution are transmitted,
                 # we have to cast None -> LineResolutions.none after extraction
-                f"resolution{lineno}": Optional[LineResolutions],  # type: ignore
-                f"doppelganger_id{lineno}": Optional[vtypes.ID],  # type: ignore
-                f"hash{lineno}": Optional[str],  # type: ignore
-                f"is_orga{lineno}": Optional[bool],  # type: ignore
-                f"is_instructor{lineno}": Optional[bool],  # type: ignore
-                f"update_username{lineno}": Optional[bool],  # type: ignore
+                f"resolution{lineno}": Optional[LineResolutions],  # type: ignore[dict-item]
+                f"doppelganger_id{lineno}": Optional[vtypes.ID],  # type: ignore[dict-item]
+                f"hash{lineno}": Optional[str],  # type: ignore[dict-item]
+                f"is_orga{lineno}": Optional[bool],  # type: ignore[dict-item]
+                f"is_instructor{lineno}": Optional[bool],  # type: ignore[dict-item]
+                f"update_username{lineno}": Optional[bool],  # type: ignore[dict-item]
             }
             tmp = request_extractor(rs, params)
             if tmp[f"resolution{lineno}"] is None:

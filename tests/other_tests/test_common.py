@@ -8,6 +8,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+from typing import Any, Iterator, List, Union
 
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
@@ -172,7 +173,7 @@ class TestCommon(BasicTest):
         for ncol in (1, 1.0, (i for i in range(1))):
             with self.subTest(ncol=ncol):
                 with self.assertRaises(TypeError) as cmt:
-                    unwrap(ncol)  # type: ignore
+                    unwrap(ncol)  # type: ignore[call-overload]
                 self.assertIn("Can only unwrap collections.", cmt.exception.args[0])
 
     def test_untranslated_strings(self) -> None:

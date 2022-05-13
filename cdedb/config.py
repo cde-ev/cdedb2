@@ -334,10 +334,10 @@ _SECRECTS_DEFAULTS = {
 def _import_from_file(path: pathlib.Path) -> MutableMapping[str, Any]:
     """Import all variables from the given file and return them as dict."""
     spec = importlib.util.spec_from_file_location("override", str(path))
-    if not spec:
+    if not spec or not spec.loader:
         raise ImportError
     override = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(override)  # type: ignore
+    spec.loader.exec_module(override)
     return {key: getattr(override, key) for key in dir(override)}
 
 
