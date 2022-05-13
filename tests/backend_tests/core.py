@@ -946,7 +946,7 @@ class TestCoreBackend(BackendTest):
             'address_supplement2': None,
             'affiliation': 'Jedermann',
             'balance': decimal.Decimal('12.50'),
-            'donation': decimal.Decimal('42.24'),
+            'donation': decimal.Decimal('42.23'),
             'birth_name': 'Gemeinser',
             'bub_search': True,
             'country2': 'GB',

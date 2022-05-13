@@ -297,7 +297,7 @@
 
                 {% if "has_lastschrift" in data %}
                     <dt>{% trans %}Active Lastschrift{% endtrans %}</dt>
-                    <dd>
+                    <dd id="lastschrift">
                         {% if data["has_lastschrift"] %}
                             {{ util.href(cdedblink("core/my_lastschrift") if data['id'] == user.persona_id
                                          else cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),

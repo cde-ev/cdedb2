@@ -961,7 +961,7 @@ class TestCdEFrontend(FrontendTest):
     def test_membership_lastschrift_revoke(self) -> None:
         self.login(USER_DICT["vera"])
         self.admin_view_profile('berta')
-        self.assertPresence("Einzugsermächtigung", div="balance")
+        self.assertPresence("Einzugsermächtigung", div="lastschrift", exact=True)
         self.assertNonPresence("Neue Einzugsermächtigung", div="balance")
         self.traverse({'description': 'Status ändern'})
         f = self.response.forms['modifymembershipform']

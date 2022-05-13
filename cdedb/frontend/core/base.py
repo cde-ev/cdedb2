@@ -1101,7 +1101,7 @@ class CoreBaseFrontend(AbstractFrontend):
             # value. However, admins may change this to arbitrary values, so we allow
             # to surpass the check if the user didn't change the donation's amount.
             if (current["donation"] != data["donation"]
-                    and not (min_donation <= data["donation"] <= max_donation)):
+                    and not min_donation <= data["donation"] <= max_donation):
                 rs.append_validation_error(("donation", ValueError(
                     n_("Lastschrift donation must be between %(min)s and %(max)s."),
                     {"min": money_filter(min_donation),
