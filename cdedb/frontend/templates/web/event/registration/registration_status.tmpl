@@ -93,14 +93,6 @@
                     </tr>
                 </tbody>
             </table>
-
-            <p class="text-muted">
-                {{ util.make_icon('info-circle') }}
-                {% trans %}
-                    Note: After your transfer has been received at our bank account, it may take some time
-                    (up to a few weeks) until the payment is registered here.
-                {% endtrans %}
-            </p>
         {% else %}
             <h3 class="heading-underline">{% trans %}Payment{% endtrans %}</h3>
             <p>
@@ -114,6 +106,15 @@
                 We have already registered a payment of {{ amount_paid }}. The total registration fee is {{ fee }}.
             {% endtrans %}
         </p>
+        {% if ambience['event']['iban'] %}
+            <p class="text-muted">
+                {{ util.make_icon('info-circle') }}
+                {% trans %}
+                    Note: After your transfer has been received at our bank account, it may take some time
+                    (up to a few weeks) until the payment is registered here.
+                {% endtrans %}
+            </p>
+        {% endif %}
         {% if "member" not in user.roles and ambience["event"]["nonmember_surcharge"] %}
             <div class="text-info" id="nonmember-surcharge" style="font-weight: bold;">
                 <p>
