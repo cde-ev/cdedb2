@@ -352,7 +352,7 @@ class Config(Mapping[str, Any]):
         self._configpath = configpath
 
         name = self.__class__.__name__
-        _LOGGER.debug(f"Initialise {name} object with path {configpath}.")
+        _LOGGER.debug(f"Initialize {name} object with path {configpath}.")
 
         if not configpath:
             raise RuntimeError(f"No configpath for {name} provided!")
