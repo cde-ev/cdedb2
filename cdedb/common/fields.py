@@ -46,7 +46,7 @@ PERSONA_CDE_FIELDS = PERSONA_CORE_FIELDS + (
     "address_supplement2", "address2", "postal_code2", "location2",
     "country2", "weblink", "specialisation", "affiliation", "timeline",
     "interests", "free_form", "balance", "decided_search", "trial_member",
-    "bub_search", "foto", "paper_expuls")
+    "bub_search", "foto", "paper_expuls", "donation")
 
 #: Names of columns associated to an event user. This should be a subset of
 #: :py:data:`PERSONA_CDE_FIELDS` to facilitate upgrading of event users to
@@ -101,7 +101,7 @@ PERSONA_FIELDS_BY_REALM: Dict[Role, Set[str]] = {
         "birth_name", "weblink", "specialisation", "affiliation", "timeline",
         "interests", "free_form", "is_searchable", "paper_expuls",
         "address_supplement2", "address2", "postal_code2", "location2",
-        "country2",
+        "country2", "donation"
     }
 }
 

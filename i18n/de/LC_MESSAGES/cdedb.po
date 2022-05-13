@@ -7169,6 +7169,9 @@ msgstr "Ersteller"
 msgid "Donation receipt"
 msgstr "Spendenbescheinigung"
 
+msgid "Annual Donation"
+msgstr "Jährliche Spende"
+
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:218
 msgid "Reverse"
 msgstr "Rückbuchung"

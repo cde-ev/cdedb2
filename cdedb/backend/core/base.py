@@ -1472,6 +1472,7 @@ class CoreBaseBackend(AbstractBackend):
                 'interests': None,
                 'free_form': None,
                 'balance': 0 if persona['balance'] is not None else None,
+                'donation': 0 if persona['donation'] is not None else None,
                 'decided_search': False,
                 'trial_member': False,
                 'bub_search': False,

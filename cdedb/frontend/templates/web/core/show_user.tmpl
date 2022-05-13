@@ -301,6 +301,11 @@
                     </dd>
                 {% endif %}
 
+                {% if "donation" in data %}
+                    <dt>{% trans %}Annual Donation{% endtrans %}</dt>
+                    <dd>{{ data['donation']|money(lang=lang) }}</dd>
+                {% endif %}
+
                 {% if data['is_member'] %}
                     <dt>{% trans %}Searchability{% endtrans %}</dt>
                     <dd id="searchability">

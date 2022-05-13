@@ -1162,6 +1162,7 @@ PERSONA_COMMON_FIELDS: Mapping[str, Any] = {
     'interests': Optional[str],
     'free_form': Optional[str],
     'balance': NonNegativeDecimal,
+    'donation': NonNegativeDecimal,
     'trial_member': bool,
     'decided_search': bool,
     'bub_search': bool,
