@@ -46,17 +46,17 @@
     {% else %}
         {% set to_pay=(fee - registration['amount_paid'])|money(lang=lang) %}
         {% if ambience['event']['iban'] %}
-            <h3 class="heading-underline">{% trans %}Bank Transfer{% endtrans %}</h3>
-
             {{ util.href(cdedblink('event/registration_fee_qr'), label=gettext("QR"), icon='qrcode',
-                         aclass="btn btn-default mosp pull-right", anid="show-registration-fee-qr",
+                         aclass="btn btn-sm btn-default pull-right", anid="show-registration-fee-qr",
                          title=gettext("Bank transfer data as QR code")) }}
+            <h3 class="heading-underline">{% trans %}Bank Transfer{% endtrans %}</h3>
             <script nonce="{{ csp_nonce }}">
                 $("#show-registration-fee-qr").cdedbQRCodeModal(
                     {{ {'title': ambience['event']['title'],
                         'loading': gettext("Loading..."),
                         'close': gettext("Close") }|tojson }})
             </script>
+
             <p>
                 {% trans %}
                     Please keep in mind that your Registration will only be complete, once
