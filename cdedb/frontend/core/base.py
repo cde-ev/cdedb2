@@ -26,7 +26,7 @@ from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Realm, RequestState, merge_dicts,
     now, pairwise, sanitize_filename, unwrap,
 )
-from cdedb.common.exceptions import ArchiveError, PrivilegeError
+from cdedb.common.exceptions import ArchiveError, PrivilegeError, ValidationWarning
 from cdedb.common.fields import (
     LOG_FIELDS_COMMON, META_INFO_FIELDS, REALM_SPECIFIC_GENESIS_FIELDS,
     get_persona_fields_by_realm,
@@ -38,7 +38,9 @@ from cdedb.common.roles import (
     REALM_INHERITANCE, extract_roles, implied_realms,
 )
 from cdedb.common.sorting import EntitySorter, xsorted
-from cdedb.filter import date_filter, enum_entries_filter, markdown_parse_safe
+from cdedb.filter import (
+    date_filter, enum_entries_filter, markdown_parse_safe, money_filter,
+)
 from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, TransactionObserver,
     access, basic_redirect, calculate_db_logparams, calculate_loglinks,
@@ -1088,6 +1090,30 @@ class CoreBaseFrontend(AbstractFrontend):
         data = request_dict_extractor(rs, attributes)
         data['id'] = rs.user.persona_id
         data = check(rs, vtypes.Persona, data, "persona")
+        # take special care for annual donations in combination with lastschrift
+        if (data and "donation" in data
+                and (lastschrift_ids := self.cdeproxy.list_lastschrift(
+                        rs, [rs.user.persona_id], active=True))):
+            current = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
+            min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
+            max_donation = self.conf["MAXIMAL_LASTSCHRIFT_DONATION"]
+            # The user may specify only donations between a specific minimal and maximal
+            # value. However, admins may change this to arbitrary values, so we allow
+            # to surpass the check if the user didn't change the donation's amount.
+            if (current["donation"] != data["donation"]
+                    and not (min_donation <= data["donation"] <= max_donation)):
+                rs.append_validation_error(("donation", ValueError(
+                    n_("Lastschrift donation must be between %(min)s and %(max)s."),
+                    {"min": money_filter(min_donation),
+                     "max": money_filter(max_donation)})))
+            lastschrift = self.cdeproxy.get_lastschrift(
+                rs, unwrap(lastschrift_ids.keys()))
+            # "Enforce" consent of the account holder if the user changed his donation.
+            if (current["donation"] != data["donation"]
+                    and lastschrift["account_owner"] and not rs.ignore_warnings):
+                msg = n_("You are not the owner of the linked bank account. Make sure"
+                         " the owner agreed to the change before submitting it here.")
+                rs.append_validation_error(("donation", ValidationWarning(msg)))
         if rs.has_validation_errors():
             return self.change_user_form(rs)
         assert data is not None
