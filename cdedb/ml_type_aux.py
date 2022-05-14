@@ -20,7 +20,6 @@ from cdedb.database.constants import (
     MailinglistDomain, MailinglistTypes, RegistrationPartStati,
 )
 
-CoreBackend, EventBackend, AssemblyBackend = None, None, None
 if TYPE_CHECKING:
     from cdedb.backend.assembly import AssemblyBackend
     from cdedb.backend.core import CoreBackend
@@ -31,11 +30,11 @@ SubscriptionPolicyMap = Dict[int, SubscriptionPolicy]
 
 class BackendContainer:
     """Helper class to pass multiple backends into the ml_type methods at once."""
-    def __init__(self, *, core: CoreBackend = None, event: EventBackend = None,
-                 assembly: AssemblyBackend = None):
-        self.core = cast(CoreBackend, core)
-        self.event = cast(EventBackend, event)
-        self.assembly = cast(AssemblyBackend, assembly)
+    def __init__(self, *, core: "CoreBackend" = None, event: "EventBackend" = None,
+                 assembly: "AssemblyBackend" = None):
+        self.core = cast("CoreBackend", core)
+        self.event = cast("EventBackend", event)
+        self.assembly = cast("AssemblyBackend", assembly)
 
 
 def get_full_address(val: CdEDBObject) -> vtypes.Email:
