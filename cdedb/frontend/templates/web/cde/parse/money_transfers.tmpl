@@ -42,7 +42,9 @@
 
         {% if data %}
             <h2>{% trans %}Validation results{% endtrans %}</h2>
+            <ol class="list-unstyled">
             {% for dataset in data %}
+                <li>
                 <strong>
                     <span class="row-key" data-row="{{ dataset['lineno'] }}">
                         {% trans lineno=dataset['lineno'] + 1 %}Line {{ lineno }}{% endtrans -%}
@@ -55,7 +57,7 @@
                     {% endtrans %}
                 </strong>
                 {% if dataset['problems'] or dataset['warnings'] %}
-                    <div class="batch-line-body">
+                    <div class="money-parse-line">
                         <ul class="list-unstyled">
                             {% for key, problem in dataset['problems'] %}
                                 <li class="text-danger">
@@ -83,10 +85,10 @@
                             {% endfor %}
                         </ul>
                     </div>
-                {% else %}
-                    <br />
                 {% endif %}
+                </li>
             {% endfor %}
+            </ol>
             <script nonce="{{ csp_nonce }}">
                 $(function() {
                     var $textinput = $('#input-data');
@@ -103,9 +105,9 @@
         {% endif %}
 
         {% if saldo %}
-             <div id="saldo" style="margin-top: 10px; color: green">
+             <p id="saldo" style="color: green">
                  {% trans %}Saldo{% endtrans %}: {{ saldo|money(lang=lang) }}
-             </div>
+             </p>
         {% endif %}
 
         {% if values['checksum'] %}
