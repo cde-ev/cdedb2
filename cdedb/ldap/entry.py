@@ -6,14 +6,17 @@ from typing import Any, Callable, List, Optional, Sequence, Type, Union
 import ldaptor.entry
 import ldaptor.entryhelpers
 import ldaptor.interfaces
+import ldaptor.ldapfilter as ldapfilter
 import ldaptor.ldiftree
+import ldaptor.protocols.pureldap as pureldap
 import zope.interface
 from ldaptor import entry
 from ldaptor.protocols.ldap.distinguishedname import (
     DistinguishedName, RelativeDistinguishedName,
 )
 from ldaptor.protocols.ldap.ldaperrors import (
-    LDAPInvalidCredentials, LDAPNoSuchObject, LDAPUnwillingToPerform,
+    LDAPException, LDAPInvalidCredentials, LDAPNoSuchObject, LDAPProtocolError,
+    LDAPUnwillingToPerform,
 )
 from twisted.internet.defer import Deferred, fail, succeed
 from twisted.python import log
@@ -36,7 +39,7 @@ class CdEDBBaseLDAPEntry(
     ldaptor.entryhelpers.DiffTreeMixin,  # TODO is this needed?
     ldaptor.entryhelpers.SubtreeFromChildrenMixin,
     ldaptor.entryhelpers.MatchMixin,
-    ldaptor.entryhelpers.SearchByTreeWalkingMixin,
+    #ldaptor.entryhelpers.SearchByTreeWalkingMixin,
     metaclass=abc.ABCMeta
 ):
     """Implement a custom LDAPEntry class for the CdEDB.
@@ -102,8 +105,66 @@ class CdEDBBaseLDAPEntry(
         d.addErrback(log.err)
         return d
 
-    # implemented in ldaptor.entryhelpers.SearchByTreeWalkingMixin
-    # def search(...):
+    def search(
+        self,
+        filterText=None,
+        filterObject=None,
+        attributes=(),
+        scope=None,
+        derefAliases=None,
+        sizeLimit=0,
+        timeLimit=0,
+        typesOnly=0,
+        callback=None,
+    ):
+        """Clone of ldaptor.entryhelpers.SearchByTreeWalkingMixin."""
+        if filterObject is None and filterText is None:
+            filterObject = pureldap.LDAPFilterMatchAll
+        elif filterObject is None and filterText is not None:
+            filterObject = ldapfilter.parseFilter(filterText)
+        elif filterObject is not None and filterText is None:
+            pass
+        elif filterObject is not None and filterText is not None:
+            f = ldapfilter.parseFilter(filterText)
+            filterObject = pureldap.LDAPFilter_and((f, filterObject))
+
+        if scope is None:
+            scope = pureldap.LDAP_SCOPE_wholeSubtree
+        if derefAliases is None:
+            derefAliases = pureldap.LDAP_DEREF_neverDerefAliases
+
+        # choose iterator: base/children/subtree
+        if scope == pureldap.LDAP_SCOPE_wholeSubtree:
+            iterator = self.subtree
+        elif scope == pureldap.LDAP_SCOPE_singleLevel:
+            iterator = self.children
+        elif scope == pureldap.LDAP_SCOPE_baseObject:
+
+            def iterateSelf(callback):
+                callback(self)
+                return succeed(None)
+
+            iterator = iterateSelf
+        else:
+            raise LDAPProtocolError("unknown search scope: %r" % scope)
+
+        results = []
+        if callback is None:
+            matchCallback = results.append
+        else:
+            matchCallback = callback
+
+        # gather results, send them
+        def _tryMatch(entry):
+            if entry.match(filterObject):
+                matchCallback(entry)
+
+        iterator(callback=_tryMatch)
+
+        if callback is None:
+            return succeed(results)
+        else:
+            return succeed(None)
 
     @abc.abstractmethod
     async def _children(self, callback: Callback = None) -> Optional[LDAPEntries]:
