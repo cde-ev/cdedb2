@@ -41,9 +41,9 @@ class CdEDBBaseLDAPEntry(
     # use BaseLDAPEntry, since the entries are not modifiable
     ldaptor.entry.BaseLDAPEntry,
     ldaptor.entryhelpers.DiffTreeMixin,  # TODO is this needed?
-    ldaptor.entryhelpers.SubtreeFromChildrenMixin,
+    # ldaptor.entryhelpers.SubtreeFromChildrenMixin,
     ldaptor.entryhelpers.MatchMixin,
-    #ldaptor.entryhelpers.SearchByTreeWalkingMixin,
+    # ldaptor.entryhelpers.SearchByTreeWalkingMixin,
     metaclass=abc.ABCMeta
 ):
     """Implement a custom LDAPEntry class for the CdEDB.
@@ -183,8 +183,24 @@ class CdEDBBaseLDAPEntry(
         d.addErrback(log.err)
         return d
 
-    # implemented by ldaptor.entryhelpers.SubtreeFromChildrenMixin
-    # def subtree(self, callback=None):
+    async def _subtree(self, callback):
+        """Apply a callback function to every entry of the current ones subtree.
+
+        This is especially needed in subtree searches.
+        """
+        if callback is None:
+            logger.error("No 'callback' in Subtree provided!")
+        callback(self)
+        children = await self._children(callback)
+        if children:
+            for child in children:
+                await child._subtree(callback)
+        return None
+
+    def subtree(self, callback=None):
+        d = Deferred.fromFuture(ensure_future(self._subtree(callback)))
+        d.addErrback(log.err)
+        return d
 
     @abc.abstractmethod
     async def _lookup(self, dn: DistinguishedName) -> "CdEDBBaseLDAPEntry":
