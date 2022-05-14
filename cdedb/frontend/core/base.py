@@ -1570,12 +1570,11 @@ class CoreBaseFrontend(AbstractFrontend):
             return self.modify_membership_form(rs, persona_id)
         # We really don't want to go halfway here.
         with TransactionObserver(rs, self, "modify_membership"):
-            code, revoked_permits, collateral_transactions = (
+            code, revoked_permit, collateral_transactions = (
                 self.cdeproxy.change_membership(rs, persona_id, is_member))
             rs.notify_return_code(code)
-            if revoked_permits:
-                rs.notify("success", n_("%(num)s permits revoked."),
-                          {'num': len(revoked_permits)})
+            if revoked_permit:
+                rs.notify("success", n_("Revoked active permit."))
             if collateral_transactions:
                 subject = ("Einzugsermächtigung zu ausstehender "
                            "Lastschrift widerrufen.")
