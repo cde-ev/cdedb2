@@ -3150,7 +3150,7 @@ def _json(
         msg = n_("Invalid JSON syntax (line %(line)s, col %(col)s).")
         raise ValidationSummary(ValueError(
             argname, msg, {'line': e.lineno, 'col': e.colno})) from e
-    return (data)
+    return JSON(data)
 
 
 @_add_typed_validator
