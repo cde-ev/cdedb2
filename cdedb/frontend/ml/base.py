@@ -4,7 +4,7 @@
 
 import collections
 from datetime import datetime
-from typing import Any, Collection, Dict, Optional, Set
+from typing import Any, Collection, Dict, Optional
 
 import werkzeug
 from subman.exceptions import SubscriptionError
