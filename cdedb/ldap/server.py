@@ -57,6 +57,7 @@ class CdEDBLDAPServer(LDAPServer):
             duas_dn = DistinguishedName(stringValue=backend.duas_dn)
             admin_dn = DistinguishedName(backend.dua_dn("admin"))
             cloud_dn = DistinguishedName(backend.dua_dn("cloud"))
+            apache_dn = DistinguishedName(backend.dua_dn("apache"))
 
             return_result = True
             # anonymous users have only very limited access
@@ -89,7 +90,7 @@ class CdEDBLDAPServer(LDAPServer):
                     pass
                 # the request comes from a dua
                 elif duas_dn.contains(self.boundUser.dn):
-                    if self.boundUser.dn == cloud_dn:
+                    if self.boundUser.dn in {apache_dn, cloud_dn}:
                         pass
                     else:
                         return_result = False
