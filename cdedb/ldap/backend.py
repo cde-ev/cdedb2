@@ -598,6 +598,7 @@ class LDAPsqlBackend:
 
     @staticmethod
     def moderator_group_address(cn: str) -> Optional[str]:
+        """Parse the regular address from an owner mailinglist address."""
         if match := re.match(r"(?P<local_part>[\w.-]*)-owner@(?P<domain>[\w.-]*)", cn):
             return f"{match.group('local_part')}@{match.group('domain')}"
         else:
