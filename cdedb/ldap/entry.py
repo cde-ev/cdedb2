@@ -9,7 +9,6 @@ import ldaptor.interfaces
 import ldaptor.ldiftree
 import zope.interface
 from ldaptor import entry
-from ldaptor.protocols.ldap import distinguishedname
 from ldaptor.protocols.ldap.distinguishedname import (
     DistinguishedName, RelativeDistinguishedName,
 )
@@ -131,7 +130,7 @@ class CdEDBBaseLDAPEntry(
     # def subtree(self, callback=None):
 
     @abc.abstractmethod
-    async def _lookup(self, dn_str: str) -> "CdEDBBaseLDAPEntry":
+    async def _lookup(self, dn: DistinguishedName) -> "CdEDBBaseLDAPEntry":
         """Lookup the given DN.
 
         This is used to find a specific entry in the ldap tree:
@@ -142,7 +141,7 @@ class CdEDBBaseLDAPEntry(
         """
         raise NotImplementedError
 
-    def lookup(self, dn: str) -> Deferred["CdEDBBaseLDAPEntry"]:
+    def lookup(self, dn: DistinguishedName) -> Deferred["CdEDBBaseLDAPEntry"]:
         d = Deferred.fromFuture(ensure_future(self._lookup(dn)))
         d.addErrback(log.err)
         return d
@@ -303,19 +302,18 @@ class CdEPreLeafEntry(CdEDBStaticEntry, metaclass=abc.ABCMeta):
         else:
             return ret
 
-    async def _lookup(self, dn_str: str) -> CdEDBBaseLDAPEntry:
-        dn = distinguishedname.DistinguishedName(dn_str)
+    async def _lookup(self, dn: DistinguishedName) -> CdEDBBaseLDAPEntry:
         if dn == self.dn:
             return self
         elif self.is_children_dn(dn):
             child_attributes = await self.children_getter([dn])
             if not child_attributes:
-                raise LDAPNoSuchObject(dn_str)
+                raise LDAPNoSuchObject(dn.getText())
             child = self.ChildGroup(dn, backend=self.backend,
                                     attributes=unwrap(child_attributes))
-            return await child._lookup(dn_str)
+            return await child._lookup(dn)
         else:
-            raise LDAPNoSuchObject(dn_str)
+            raise LDAPNoSuchObject(dn.getText())
 
 
 class CdEDBLeafEntry(CdEDBBaseLDAPEntry, metaclass=abc.ABCMeta):
@@ -336,12 +334,11 @@ class CdEDBLeafEntry(CdEDBBaseLDAPEntry, metaclass=abc.ABCMeta):
         """All dynamic entries do not have any children by design."""
         return None
 
-    async def _lookup(self, dn_str: str) -> "CdEDBBaseLDAPEntry":
-        dn = distinguishedname.DistinguishedName(dn_str)
+    async def _lookup(self, dn: DistinguishedName) -> CdEDBBaseLDAPEntry:
         if dn == self.dn:
             return self
         else:
-            raise LDAPNoSuchObject(dn_str)
+            raise LDAPNoSuchObject(dn.getText())
 
 
 class RootEntry(CdEDBStaticEntry):
@@ -368,19 +365,18 @@ class RootEntry(CdEDBStaticEntry):
         else:
             return [de, subschema]
 
-    async def _lookup(self, dn_str: str) -> CdEDBBaseLDAPEntry:
-        dn = distinguishedname.DistinguishedName(dn_str)
+    async def _lookup(self, dn: DistinguishedName) -> CdEDBBaseLDAPEntry:
         if dn == self.dn:
             self._fetch()
             return self
         elif DistinguishedName(self.backend.de_dn).contains(dn):
             de = DeEntry(self.backend)
-            return await de._lookup(dn_str)
+            return await de._lookup(dn)
         elif DistinguishedName(self.backend.subschema_dn).contains(dn):
             subschema = SubschemaEntry(self.backend)
-            return await subschema._lookup(dn_str)
+            return await subschema._lookup(dn)
         else:
-            raise LDAPNoSuchObject(dn_str)
+            raise LDAPNoSuchObject(dn.getText())
 
     def _parent(self) -> Optional["CdEDBBaseLDAPEntry"]:
         return None
@@ -411,12 +407,11 @@ class SubschemaEntry(CdEDBStaticEntry):
     def _children(self, callback: Callback = None) -> Optional[LDAPEntries]:
         return None
 
-    async def _lookup(self, dn_str: str) -> CdEDBBaseLDAPEntry:
-        dn = distinguishedname.DistinguishedName(dn_str)
+    async def _lookup(self, dn: DistinguishedName) -> CdEDBBaseLDAPEntry:
         if dn == self.dn:
             return self
         else:
-            raise LDAPNoSuchObject(dn_str)
+            raise LDAPNoSuchObject(dn.getText())
 
     def _parent(self) -> "CdEDBBaseLDAPEntry":
         return RootEntry(self.backend)
@@ -441,15 +436,14 @@ class DeEntry(CdEDBStaticEntry):
         else:
             return [cde]
 
-    async def _lookup(self, dn_str: str) -> CdEDBBaseLDAPEntry:
-        dn = distinguishedname.DistinguishedName(dn_str)
+    async def _lookup(self, dn: DistinguishedName) -> CdEDBBaseLDAPEntry:
         if dn == self.dn:
             return self
         elif DistinguishedName(self.backend.cde_dn).contains(dn):
             cde = CdeEvEntry(self.backend)
-            return await cde._lookup(dn_str)
+            return await cde._lookup(dn)
         else:
-            raise LDAPNoSuchObject(dn_str)
+            raise LDAPNoSuchObject(dn.getText())
 
     def _parent(self) -> "CdEDBBaseLDAPEntry":
         return RootEntry(self.backend)
@@ -480,21 +474,20 @@ class CdeEvEntry(CdEDBStaticEntry):
         else:
             return [duas, users, groups]
 
-    async def _lookup(self, dn_str: str) -> CdEDBBaseLDAPEntry:
-        dn = distinguishedname.DistinguishedName(dn_str)
+    async def _lookup(self, dn: DistinguishedName) -> CdEDBBaseLDAPEntry:
         if dn == self.dn:
             return self
         elif DistinguishedName(self.backend.duas_dn).contains(dn):
             duas = DuasEntry(self.backend)
-            return await duas._lookup(dn_str)
+            return await duas._lookup(dn)
         elif DistinguishedName(self.backend.users_dn).contains(dn):
             users = UsersEntry(self.backend)
-            return await users._lookup(dn_str)
+            return await users._lookup(dn)
         elif DistinguishedName(self.backend.groups_dn).contains(dn):
             groups = GroupsEntry(self.backend)
-            return await groups._lookup(dn_str)
+            return await groups._lookup(dn)
         else:
-            raise LDAPNoSuchObject(dn_str)
+            raise LDAPNoSuchObject(dn.getText())
 
     def _parent(self) -> "CdEDBBaseLDAPEntry":
         return DeEntry(self.backend)
@@ -593,27 +586,26 @@ class GroupsEntry(CdEDBStaticEntry):
         else:
             return [status, presiders, orgas, moderators, subscribers]
 
-    async def _lookup(self, dn_str: str) -> CdEDBBaseLDAPEntry:
-        dn = distinguishedname.DistinguishedName(dn_str)
+    async def _lookup(self, dn: DistinguishedName) -> CdEDBBaseLDAPEntry:
         if dn == self.dn:
             return self
         elif DistinguishedName(self.backend.status_groups_dn).contains(dn):
             status = StatusGroupsEntry(self.backend)
-            return await status._lookup(dn_str)
+            return await status._lookup(dn)
         elif DistinguishedName(self.backend.presider_groups_dn).contains(dn):
             presiders = PresiderGroupsEntry(self.backend)
-            return await presiders._lookup(dn_str)
+            return await presiders._lookup(dn)
         elif DistinguishedName(self.backend.orga_groups_dn).contains(dn):
             orgas = OrgaGroupsEntry(self.backend)
-            return await orgas._lookup(dn_str)
+            return await orgas._lookup(dn)
         elif DistinguishedName(self.backend.moderator_groups_dn).contains(dn):
             moderators = ModeratorGroupsEntry(self.backend)
-            return await moderators._lookup(dn_str)
+            return await moderators._lookup(dn)
         elif DistinguishedName(self.backend.subscriber_groups_dn).contains(dn):
             subscribers = SubscriberGroupsEntry(self.backend)
-            return await subscribers._lookup(dn_str)
+            return await subscribers._lookup(dn)
         else:
-            raise LDAPNoSuchObject(dn_str)
+            raise LDAPNoSuchObject(dn.getText())
 
     def _parent(self) -> "CdEDBBaseLDAPEntry":
         return CdeEvEntry(self.backend)
