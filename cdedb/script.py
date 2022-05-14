@@ -26,9 +26,7 @@ import psycopg2.extras
 from cdedb.common import AbstractBackend, PathLike, RequestState, User, make_proxy
 from cdedb.common.i18n import n_
 from cdedb.common.roles import ALL_ROLES
-from cdedb.config import (
-    DEFAULT_CONFIGPATH, Config, SecretsConfig, get_configpath, set_configpath,
-)
+from cdedb.config import Config, SecretsConfig, get_configpath, set_configpath
 from cdedb.database.connection import Atomizer, IrradiatedConnection
 from cdedb.frontend.common import setup_translations
 
