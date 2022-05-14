@@ -118,7 +118,7 @@ class Application(BaseApp):
             if isinstance(error, werkzeug.exceptions.NotFound) \
                     and (error.description
                          is werkzeug.exceptions.NotFound.description):
-                error.description = None  # type: ignore[assignment]
+                error.description = ""
 
             urls = self.urlmap.bind_to_environ(request.environ)
 
@@ -141,8 +141,7 @@ class Application(BaseApp):
                 'error': error,
                 'help': message,
             }
-            t = self.jinja_env.get_template(str(pathlib.Path("web",
-                                                             "error.tmpl")))
+            t = self.jinja_env.get_template(str(pathlib.Path("web", "error.tmpl")))
             html = t.render(**data)
             response = Response(html, mimetype='text/html', status=error.code)
             response.headers.add('X-Generation-Time', str(now() - begin))

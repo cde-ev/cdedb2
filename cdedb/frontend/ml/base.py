@@ -345,7 +345,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
         relevant_mls = self.mlproxy.list_mailinglists(rs, active_only=False,
                                                       managed='managed')
-        relevant_set: Set[vtypes.ID] = set(relevant_mls)  # type: ignore[arg-type]
+        relevant_set = set(relevant_mls)
         if not self.is_admin(rs):
             if db_mailinglist_ids is None:
                 db_mailinglist_ids = relevant_set

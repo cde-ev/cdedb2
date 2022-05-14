@@ -20,12 +20,11 @@ from cdedb.database.constants import (
     MailinglistDomain, MailinglistTypes, RegistrationPartStati,
 )
 
+CoreBackend, EventBackend, AssemblyBackend = None, None, None
 if TYPE_CHECKING:
     from cdedb.backend.assembly import AssemblyBackend
     from cdedb.backend.core import CoreBackend
     from cdedb.backend.event import EventBackend
-else:
-    CoreBackend, EventBackend, AssemblyBackend = None, None, None
 
 SubscriptionPolicyMap = Dict[int, SubscriptionPolicy]
 
@@ -39,7 +38,7 @@ class BackendContainer:
         self.assembly = cast(AssemblyBackend, assembly)
 
 
-def get_full_address(val: CdEDBObject) -> str:
+def get_full_address(val: CdEDBObject) -> vtypes.Email:
     """Construct the full address of a mailinglist."""
     if isinstance(val, dict):
         return val['local_part'] + '@' + MailinglistDomain(val['domain']).get_domain()

@@ -254,8 +254,9 @@ class EventFieldMixin(EventBaseFrontend):
                   change_note: Optional[str] = None) -> Response:
         """Modify a specific field on the given entities."""
         if rs.has_validation_errors():
-            return self.field_set_form(  # type: ignore[call-arg]
-                rs, event_id, kind=kind, change_note=change_note, internal=True)
+            return self.field_set_form(
+                rs, event_id, field_id=field_id, ids=ids, kind=kind,
+                change_note=change_note, internal=True)
         if ids is None:
             ids = cast(vtypes.IntCSVList, [])
 
@@ -277,8 +278,9 @@ class EventFieldMixin(EventBaseFrontend):
         }
         data = request_extractor(rs, data_params)
         if rs.has_validation_errors():
-            return self.field_set_form(  # type: ignore[call-arg]
-                rs, event_id, kind=kind, internal=True)
+            return self.field_set_form(
+                rs, event_id, field_id=field_id, ids=ids, kind=kind,
+                change_note=change_note, internal=True)
 
         if kind == const.FieldAssociations.registration:
             entity_setter: EntitySetter = self.eventproxy.set_registration

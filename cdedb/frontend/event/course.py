@@ -478,7 +478,9 @@ class EventCourseMixin(EventBaseFrontend):
         their choices or a specific course.
         """
         if rs.has_validation_errors():
-            return self.course_choices_form(rs, event_id)  # type: ignore[call-arg]
+            return self.course_choices_form(
+                rs, event_id, course_id=course_id, track_id=track_id, position=position,
+                ids=ids, include_active=include_active)
         if ids is None:
             ids = cast(vtypes.IntCSVList, [])
 
