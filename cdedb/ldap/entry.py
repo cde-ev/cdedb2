@@ -1,5 +1,6 @@
 import abc
 import asyncio
+import logging
 from asyncio import ensure_future
 from typing import Any, Callable, List, Optional, Sequence, Type, Union
 
@@ -30,6 +31,9 @@ LDAPEntries = List["CdEDBBaseLDAPEntry"]
 
 class LDAPTreeNoSuchEntry(Exception):
     """The ldap tree does not contain such an object."""
+
+
+logger = logging.getLogger(__name__)
 
 
 @zope.interface.implementer(ldaptor.interfaces.IConnectedLDAPEntry)
@@ -117,7 +121,18 @@ class CdEDBBaseLDAPEntry(
         typesOnly=0,
         callback=None,
     ):
-        """Clone of ldaptor.entryhelpers.SearchByTreeWalkingMixin."""
+        """Slightly modified version of ldaptor.entryhelpers.SearchByTreeWalkingMixin
+
+        The original function does not respect the correct execution order in
+        combination with the async _children function: It sends the 'SearchResultDone'
+        message before we have time to send the search results.
+
+        This function made the assumption that the given callback is never None (in
+        contrast to the original function) – until now, this seems a valid assumption.
+        """
+        if callback is None:
+            logger.error("No 'callback' in Search provided!")
+
         if filterObject is None and filterText is None:
             filterObject = pureldap.LDAPFilterMatchAll
         elif filterObject is None and filterText is not None:
@@ -148,23 +163,12 @@ class CdEDBBaseLDAPEntry(
         else:
             raise LDAPProtocolError("unknown search scope: %r" % scope)
 
-        results = []
-        if callback is None:
-            matchCallback = results.append
-        else:
-            matchCallback = callback
-
         # gather results, send them
         def _tryMatch(entry):
             if entry.match(filterObject):
-                matchCallback(entry)
+                callback(entry)
 
-        iterator(callback=_tryMatch)
-
-        if callback is None:
-            return succeed(results)
-        else:
-            return succeed(None)
+        return iterator(callback=_tryMatch)
 
     @abc.abstractmethod
     async def _children(self, callback: Callback = None) -> Optional[LDAPEntries]:
@@ -175,15 +179,7 @@ class CdEDBBaseLDAPEntry(
         raise NotImplementedError
 
     def children(self, callback: Callback = None) -> Deferred[Optional[LDAPEntries]]:
-        print(self.__class__.__name__, asyncio.iscoroutine(self._children), self._children)
-        # TODO why the hack is this check not working?
-        if asyncio.iscoroutine(self._children):
-            d = Deferred.fromFuture(ensure_future(self._children(callback)))
-        # since the above is not working, we use the following hack:
-        elif issubclass(self.__class__, CdEPreLeafEntry):
-            d = Deferred.fromFuture(ensure_future(self._children(callback)))
-        else:
-            d = succeed(self._children(callback))
+        d = Deferred.fromFuture(ensure_future(self._children(callback)))
         d.addErrback(log.err)
         return d
 
@@ -391,7 +387,7 @@ class CdEDBLeafEntry(CdEDBBaseLDAPEntry, metaclass=abc.ABCMeta):
         return {k: self._attributes[k] for k in
                 attributes} if attributes else self._attributes
 
-    def _children(self, callback: Callback = None) -> Optional[LDAPEntries]:
+    async def _children(self, callback: Callback = None) -> Optional[LDAPEntries]:
         """All dynamic entries do not have any children by design."""
         return None
 
@@ -416,7 +412,7 @@ class RootEntry(CdEDBStaticEntry):
         }
         return {k: attrs[k] for k in attributes} if attributes else attrs
 
-    def _children(self, callback: Callback = None) -> Optional[LDAPEntries]:
+    async def _children(self, callback: Callback = None) -> Optional[LDAPEntries]:
         de = DeEntry(self.backend)
         subschema = SubschemaEntry(self.backend)
         if callback:
@@ -465,7 +461,7 @@ class SubschemaEntry(CdEDBStaticEntry):
         }
         return {k: attrs[k] for k in attributes} if attributes else attrs
 
-    def _children(self, callback: Callback = None) -> Optional[LDAPEntries]:
+    async def _children(self, callback: Callback = None) -> Optional[LDAPEntries]:
         return None
 
     async def _lookup(self, dn: DistinguishedName) -> CdEDBBaseLDAPEntry:
@@ -489,7 +485,7 @@ class DeEntry(CdEDBStaticEntry):
         }
         return {k: attrs[k] for k in attributes} if attributes else attrs
 
-    def _children(self, callback: Callback = None) -> Optional[LDAPEntries]:
+    async def _children(self, callback: Callback = None) -> Optional[LDAPEntries]:
         cde = CdeEvEntry(self.backend)
         if callback:
             callback(cde)
@@ -522,7 +518,7 @@ class CdeEvEntry(CdEDBStaticEntry):
         }
         return {k: attrs[k] for k in attributes} if attributes else attrs
 
-    def _children(self, callback: Callback = None) -> Optional[LDAPEntries]:
+    async def _children(self, callback: Callback = None) -> Optional[LDAPEntries]:
         duas = DuasEntry(self.backend)
         users = UsersEntry(self.backend)
         groups = GroupsEntry(self.backend)
@@ -630,7 +626,7 @@ class GroupsEntry(CdEDBStaticEntry):
         }
         return {k: attrs[k] for k in attributes} if attributes else attrs
 
-    def _children(self, callback: Callback = None) -> Optional[LDAPEntries]:
+    async def _children(self, callback: Callback = None) -> Optional[LDAPEntries]:
         status = StatusGroupsEntry(self.backend)
         presiders = PresiderGroupsEntry(self.backend)
         orgas = OrgaGroupsEntry(self.backend)
