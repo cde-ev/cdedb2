@@ -151,6 +151,9 @@ class CdEDBBaseLDAPEntry(
 
         # choose iterator: base/children/subtree
         if scope == pureldap.LDAP_SCOPE_wholeSubtree:
+            # in the special case of subtree search, the base object shall be included
+            if self.match(filterObject):
+                callback(self)
             iterator = self._subtree
         elif scope == pureldap.LDAP_SCOPE_singleLevel:
             iterator = self._children
@@ -191,7 +194,6 @@ class CdEDBBaseLDAPEntry(
         """
         if callback is None:
             logger.error("No 'callback' in Subtree provided!")
-        callback(self)
         children = await self._children(callback)
         if children:
             for child in children:
