@@ -5,6 +5,7 @@ import signal
 # Install Twisted's asyncio-compatibility reactor.
 # It's important to do this before importing other things
 from twisted.internet import asyncioreactor
+
 asyncioreactor.install(asyncio.get_event_loop())
 
 import psycopg2.extras
@@ -23,7 +24,7 @@ assert isinstance(reactor, asyncioreactor.AsyncioSelectorReactor)
 logger = logging.getLogger(__name__)
 
 
-async def main():
+async def main() -> None:
     conf = Config()
     secrets = SecretsConfig()
 
@@ -49,8 +50,8 @@ async def main():
 
         # Create Server
         logger.info("Opening LDAP server ...")
-        reactor.listenTCP(20389, factory)
-        reactor.startRunning()
+        reactor.listenTCP(20389, factory)  # type: ignore[attr-defined]
+        reactor.startRunning()  # type: ignore[attr-defined]
 
         # Wait for shutdown via Signal handler and event
         shutdown = asyncio.Event()

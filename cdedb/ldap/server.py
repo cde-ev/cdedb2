@@ -20,7 +20,7 @@ class CdEDBLDAPServer(LDAPServer):
     modify the ldap tree are overwritten since we currently do not support them.
     """
 
-    def getRootDSE(self, request, reply):
+    def getRootDSE(self, request, reply):  # type: ignore[no-untyped-def]
         """Shortcut to retrieve the root entry."""
         root: CdEDBBaseLDAPEntry = interfaces.IConnectedLDAPEntry(self.factory)
         # prepare the attributes of the root entry as they are expected by the Result
@@ -33,7 +33,8 @@ class CdEDBLDAPServer(LDAPServer):
         )
         return pureldap.LDAPSearchResultDone(resultCode=ldaperrors.Success.resultCode)
 
-    def _cbSearchGotBase(self, base: CdEDBBaseLDAPEntry, dn: DistinguishedName, request: LDAPSearchRequest, reply) -> defer.Deferred:
+    def _cbSearchGotBase(self, base: CdEDBBaseLDAPEntry, dn: DistinguishedName,
+                         request: LDAPSearchRequest, reply) -> defer.Deferred:  # type: ignore
         """Callback which is invoked after a search was performed."""
 
         def _sendEntryToClient(entry: CdEDBBaseLDAPEntry) -> None:
@@ -143,27 +144,27 @@ class CdEDBLDAPServer(LDAPServer):
         d.addCallback(_done)
         return d
 
-    def handle_LDAPCompareRequest(self, request, controls, reply) -> defer.Deferred:
+    def handle_LDAPCompareRequest(self, request, controls, reply) -> defer.Deferred:  # type: ignore
         if self.boundUser is None:
             return defer.fail(ldaperrors.LDAPUnwillingToPerform("No anonymous compare"))
         return super().handle_LDAPCompareRequest(request, controls, reply)
 
-    def handle_LDAPDelRequest(self, request, controls, reply) -> defer.Deferred:
+    def handle_LDAPDelRequest(self, request, controls, reply) -> defer.Deferred:  # type: ignore
         return defer.fail(ldaperrors.LDAPUnwillingToPerform("Not implemented"))
 
-    def handle_LDAPAddRequest(self, request, controls, reply) -> defer.Deferred:
+    def handle_LDAPAddRequest(self, request, controls, reply) -> defer.Deferred:  # type: ignore
         return defer.fail(ldaperrors.LDAPUnwillingToPerform("Not implemented"))
 
-    def handle_LDAPModifyDNRequest(self, request, controls, reply) -> defer.Deferred:
+    def handle_LDAPModifyDNRequest(self, request, controls, reply) -> defer.Deferred:  # type: ignore
         return defer.fail(ldaperrors.LDAPUnwillingToPerform("Not implemented"))
 
-    def handle_LDAPModifyRequest(self, request, controls, reply) -> defer.Deferred:
+    def handle_LDAPModifyRequest(self, request, controls, reply) -> defer.Deferred:  # type: ignore
         return defer.fail(ldaperrors.LDAPUnwillingToPerform("Not implemented"))
 
-    def handle_LDAPExtendedRequest(self, request, controls, reply) -> defer.Deferred:
+    def handle_LDAPExtendedRequest(self, request, controls, reply) -> defer.Deferred:  # type: ignore
         return defer.fail(ldaperrors.LDAPUnwillingToPerform("Not implemented"))
 
-    def extendedRequest_LDAPPasswordModifyRequest(self, data, reply) -> defer.Deferred:
+    def extendedRequest_LDAPPasswordModifyRequest(self, data, reply) -> defer.Deferred:  # type: ignore
         return defer.fail(ldaperrors.LDAPUnwillingToPerform("Not implemented"))
 
 
@@ -171,11 +172,12 @@ class CdEDBLDAPServerFactory(ServerFactory):
     """Factory to provide a CdEDBLDAPServer instance per connection."""
 
     protocol = CdEDBLDAPServer
+    debug: bool
 
     def __init__(self, backend: LDAPsqlBackend) -> None:
         self.root = RootEntry(backend)
 
-    def buildProtocol(self, addr) -> CdEDBLDAPServer:
+    def buildProtocol(self, addr) -> CdEDBLDAPServer:  # type: ignore[no-untyped-def]
         proto = self.protocol()
         proto.debug = self.debug
         proto.factory = self

@@ -39,7 +39,7 @@ class LDAPsqlBackend:
 
     @staticmethod
     async def execute_db_query(cur: aiopg.connection.Cursor, query: str,
-                               params: Sequence) -> None:
+                               params: Sequence[DatabaseValue_s]) -> None:
         """Perform a database query. This low-level wrapper should be used
         for all explicit database queries, mostly because it invokes
         :py:meth:`_sanitize_db_input`. However in nearly all cases you want to
@@ -119,7 +119,7 @@ class LDAPsqlBackend:
         return True
 
     # TODO more fancy type annotations
-    def _to_bytes(self, object: Union[Dict[Any, Any], List[Any], str, int, bytes]
+    def _to_bytes(self, object: Union[Dict[Any, Any], List[Any], str, int, bytes, None]
                   ) -> Union[Dict[bytes, Any], List[Any], bytes]:
         """This takes a python data structure and convert all of its entries into bytes.
 

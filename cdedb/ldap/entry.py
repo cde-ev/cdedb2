@@ -1,7 +1,7 @@
 import abc
 import asyncio
 from asyncio import ensure_future
-from typing import List, Optional, Type, Union
+from typing import Any, Callable, List, Optional, Sequence, Type, Union
 
 import ldaptor.entry
 import ldaptor.entryhelpers
@@ -21,6 +21,9 @@ from twisted.python import log
 
 from cdedb.common import unwrap
 from cdedb.ldap.backend import LDAPObject, LDAPObjectMap, LDAPsqlBackend
+
+Callback = Callable
+LDAPEntries = List["CdEDBBaseLDAPEntry"]
 
 
 class LDAPTreeNoSuchEntry(Exception):
@@ -87,7 +90,7 @@ class CdEDBBaseLDAPEntry(
     #     raise NotImplementedError
 
     @abc.abstractmethod
-    def _fetch(self, *attributes) -> LDAPObject:
+    def _fetch(self, *attributes: bytes) -> LDAPObject:
         """Fetch the given attributes of the current entry.
 
         Attribute _loading_ is done before the entry is instantiated (see __init__).
@@ -95,8 +98,8 @@ class CdEDBBaseLDAPEntry(
         """
         raise NotImplementedError
 
-    def fetch(self, *attributes) -> Deferred:
-        d = succeed(self._fetch(attributes))
+    def fetch(self, *attributes: bytes) -> Deferred[LDAPObject]:
+        d = succeed(self._fetch(*attributes))
         d.addErrback(log.err)
         return d
 
@@ -104,14 +107,14 @@ class CdEDBBaseLDAPEntry(
     # def search(...):
 
     @abc.abstractmethod
-    async def _children(self, callback=None) -> Optional[List["CdEDBBaseLDAPEntry"]]:
+    async def _children(self, callback: Callback = None) -> Optional[LDAPEntries]:
         """List children entries of this entry.
 
         Note that the children are already instantiated.
         """
         raise NotImplementedError
 
-    def children(self, callback=None) -> Deferred:
+    def children(self, callback: Callback = None) -> Deferred[Optional[LDAPEntries]]:
         print(self.__class__.__name__, asyncio.iscoroutine(self._children), self._children)
         # TODO why the hack is this check not working?
         if asyncio.iscoroutine(self._children):
@@ -139,7 +142,7 @@ class CdEDBBaseLDAPEntry(
         """
         raise NotImplementedError
 
-    def lookup(self, dn: str) -> Deferred:
+    def lookup(self, dn: str) -> Deferred["CdEDBBaseLDAPEntry"]:
         d = Deferred.fromFuture(ensure_future(self._lookup(dn)))
         d.addErrback(log.err)
         return d
@@ -147,7 +150,7 @@ class CdEDBBaseLDAPEntry(
     # implemented by ldaptor.entryhelpers.MatchMixin
     # def match(self, filter):
 
-    def bind(self, password: Union[str, bytes]) -> Deferred:
+    def bind(self, password: Union[str, bytes]) -> Deferred["CdEDBBaseLDAPEntry"]:
         """Bind with this entry and the given password.
 
         In general, this is forbidden for all entries. Exceptions from this rule
@@ -163,7 +166,7 @@ class CdEDBBaseLDAPEntry(
         """
         raise NotImplementedError
 
-    def parent(self) -> Deferred:
+    def parent(self) -> Deferred[Optional["CdEDBBaseLDAPEntry"]]:
         d = succeed(self._parent())
         d.addErrback(log.err)
         return d
@@ -176,30 +179,32 @@ class CdEDBBaseLDAPEntry(
                 return True
         return False
 
-    def addChild(self, rdn, attributes) -> Deferred:
+    def addChild(self, rdn: RelativeDistinguishedName, attributes: Sequence[bytes]
+                 ) -> Deferred[LDAPUnwillingToPerform]:
         return fail(LDAPUnwillingToPerform("Not implemented."))
 
-    def delete(self) -> Deferred:
+    def delete(self) -> Deferred[LDAPUnwillingToPerform]:
         return fail(LDAPUnwillingToPerform("Not implemented."))
 
-    def deleteChild(self, rdn) -> Deferred:
+    def deleteChild(self, rdn: RelativeDistinguishedName
+                    ) -> Deferred[LDAPUnwillingToPerform]:
         return fail(LDAPUnwillingToPerform("Not implemented."))
 
     # TODO where is this used?
-    def __lt__(self, other) -> bool:
+    def __lt__(self, other: Any) -> bool:
         if not isinstance(other, CdEDBBaseLDAPEntry):
             return NotImplemented
         return self.dn < other.dn
 
-    def __gt__(self, other) -> bool:
+    def __gt__(self, other: Any) -> bool:
         if not isinstance(other, CdEDBBaseLDAPEntry):
             return NotImplemented
         return self.dn > other.dn
 
-    def commit(self) -> Deferred:
+    def commit(self) -> Deferred[LDAPUnwillingToPerform]:
         return fail(LDAPUnwillingToPerform("Not implemented."))
 
-    def move(self, newDN) -> Deferred:
+    def move(self, newDN: DistinguishedName) -> Deferred[LDAPUnwillingToPerform]:
         return fail(LDAPUnwillingToPerform("Not implemented."))
 
 
@@ -226,13 +231,15 @@ class CdEDBBindableEntryMixing(CdEDBBaseLDAPEntry, metaclass=abc.ABCMeta):
         This must be the same as used in CoreBackend.verify_password. Note that the
         entry must have one of the password attributes specified in _user_password_keys.
         """
+        if isinstance(password, bytes):
+            password = password.decode("utf-8")
         for key in self._user_password_keys:
             for digest in self.get(key, ()):
                 if self.backend.verify_password(password, digest):
                     return self
         raise LDAPInvalidCredentials("Invalid Credentials")
 
-    def bind(self, password: Union[str, bytes]) -> Deferred:
+    def bind(self, password: Union[str, bytes]) -> Deferred[CdEDBBaseLDAPEntry]:
         d = succeed(self._bind(password))
         d.addErrback(log.err)
         return d
@@ -281,7 +288,7 @@ class CdEPreLeafEntry(CdEDBStaticEntry, metaclass=abc.ABCMeta):
         """
         raise NotImplementedError
 
-    async def _children(self, callback=None) -> Optional[List[CdEDBBaseLDAPEntry]]:
+    async def _children(self, callback: Callback = None) -> Optional[LDAPEntries]:
         child_list = await self.children_lister()
         dns = [DistinguishedName(f"{child.getText()},{self.dn.getText()}") for child in
                child_list]
@@ -304,7 +311,8 @@ class CdEPreLeafEntry(CdEDBStaticEntry, metaclass=abc.ABCMeta):
             child_attributes = await self.children_getter([dn])
             if not child_attributes:
                 raise LDAPNoSuchObject(dn_str)
-            child = self.ChildGroup(dn, backend=self.backend, attributes=unwrap(child_attributes))
+            child = self.ChildGroup(dn, backend=self.backend,
+                                    attributes=unwrap(child_attributes))
             return await child._lookup(dn_str)
         else:
             raise LDAPNoSuchObject(dn_str)
@@ -317,14 +325,14 @@ class CdEDBLeafEntry(CdEDBBaseLDAPEntry, metaclass=abc.ABCMeta):
     Note however that the opposite is not true.
     """
 
-    def _fetch(self, *attributes) -> LDAPObject:
+    def _fetch(self, *attributes: bytes) -> LDAPObject:
         """Use the _attributes attribute to return the requested attributes."""
         if not self._attributes:
             raise RuntimeError
         return {k: self._attributes[k] for k in
                 attributes} if attributes else self._attributes
 
-    def _children(self, callback=None) -> Optional[List["CdEDBBaseLDAPEntry"]]:
+    def _children(self, callback: Callback = None) -> Optional[LDAPEntries]:
         """All dynamic entries do not have any children by design."""
         return None
 
@@ -341,7 +349,7 @@ class RootEntry(CdEDBStaticEntry):
         dn = DistinguishedName(backend.root_dn)
         super().__init__(dn, backend)
 
-    def _fetch(self, *attributes) -> LDAPObject:
+    def _fetch(self, *attributes: bytes) -> LDAPObject:
         attrs = {
             b"supportedLDAPVersion": [b"3"],
             # TODO right? Or is this rather dc=cde-ev,dc=de?
@@ -350,7 +358,7 @@ class RootEntry(CdEDBStaticEntry):
         }
         return {k: attrs[k] for k in attributes} if attributes else attrs
 
-    def _children(self, callback=None) -> Optional[List[CdEDBBaseLDAPEntry]]:
+    def _children(self, callback: Callback = None) -> Optional[LDAPEntries]:
         de = DeEntry(self.backend)
         subschema = SubschemaEntry(self.backend)
         if callback:
@@ -388,7 +396,7 @@ class SubschemaEntry(CdEDBStaticEntry):
         dn = DistinguishedName(backend.subschema_dn)
         super().__init__(dn, backend)
 
-    def _fetch(self, *attributes) -> LDAPObject:
+    def _fetch(self, *attributes: bytes) -> LDAPObject:
         attrs = {
             b"objectClass": [b"top", b"subschema"],
             b"attributeTypes": self.backend.schema.attribute_types,
@@ -400,7 +408,7 @@ class SubschemaEntry(CdEDBStaticEntry):
         }
         return {k: attrs[k] for k in attributes} if attributes else attrs
 
-    def _children(self, callback=None) -> Optional[List[CdEDBBaseLDAPEntry]]:
+    def _children(self, callback: Callback = None) -> Optional[LDAPEntries]:
         return None
 
     async def _lookup(self, dn_str: str) -> CdEDBBaseLDAPEntry:
@@ -419,13 +427,13 @@ class DeEntry(CdEDBStaticEntry):
         dn = DistinguishedName(backend.de_dn)
         super().__init__(dn, backend)
 
-    def _fetch(self, *attributes) -> LDAPObject:
+    def _fetch(self, *attributes: bytes) -> LDAPObject:
         attrs = {
             b"objectClass": [b"dcObject", b"top"],
         }
         return {k: attrs[k] for k in attributes} if attributes else attrs
 
-    def _children(self, callback=None) -> Optional[List[CdEDBBaseLDAPEntry]]:
+    def _children(self, callback: Callback = None) -> Optional[LDAPEntries]:
         cde = CdeEvEntry(self.backend)
         if callback:
             callback(cde)
@@ -452,14 +460,14 @@ class CdeEvEntry(CdEDBStaticEntry):
         dn = DistinguishedName(backend.cde_dn)
         super().__init__(dn, backend)
 
-    def _fetch(self, *attributes) -> LDAPObject:
+    def _fetch(self, *attributes: bytes) -> LDAPObject:
         attrs = {
             b"objectClass": [b"dcObject", b"organization"],
             b"o": [b"CdE e.V."],
         }
         return {k: attrs[k] for k in attributes} if attributes else attrs
 
-    def _children(self, callback=None) -> Optional[List[CdEDBBaseLDAPEntry]]:
+    def _children(self, callback: Callback = None) -> Optional[LDAPEntries]:
         duas = DuasEntry(self.backend)
         users = UsersEntry(self.backend)
         groups = GroupsEntry(self.backend)
@@ -504,7 +512,7 @@ class DuasEntry(CdEPreLeafEntry):
         dn = DistinguishedName(backend.duas_dn)
         super().__init__(dn, backend)
 
-    def _fetch(self, *attributes) -> LDAPObject:
+    def _fetch(self, *attributes: bytes) -> LDAPObject:
         attrs = {
             b"objectClass": [b"organizationalUnit"],
             b"o": [b"Directory User Agents"]
@@ -536,7 +544,7 @@ class UsersEntry(CdEPreLeafEntry):
         dn = DistinguishedName(backend.users_dn)
         super().__init__(dn, backend)
 
-    def _fetch(self, *attributes) -> LDAPObject:
+    def _fetch(self, *attributes: bytes) -> LDAPObject:
         attrs = {
             b"objectClass": [b"organizationalUnit"],
             b"o": [b"Users"]
@@ -561,14 +569,14 @@ class GroupsEntry(CdEDBStaticEntry):
         dn = DistinguishedName(backend.groups_dn)
         super().__init__(dn, backend)
 
-    def _fetch(self, *attributes) -> LDAPObject:
+    def _fetch(self, *attributes: bytes) -> LDAPObject:
         attrs = {
             b"objectClass": [b"organizationalUnit"],
             b"o": [b"Groups"]
         }
         return {k: attrs[k] for k in attributes} if attributes else attrs
 
-    def _children(self, callback=None) -> Optional[List[CdEDBBaseLDAPEntry]]:
+    def _children(self, callback: Callback = None) -> Optional[LDAPEntries]:
         status = StatusGroupsEntry(self.backend)
         presiders = PresiderGroupsEntry(self.backend)
         orgas = OrgaGroupsEntry(self.backend)
@@ -623,7 +631,7 @@ class StatusGroupsEntry(CdEPreLeafEntry):
         dn = DistinguishedName(backend.status_groups_dn)
         super().__init__(dn, backend)
 
-    def _fetch(self, *attributes) -> LDAPObject:
+    def _fetch(self, *attributes: bytes) -> LDAPObject:
         attrs = {
             b"objectClass": [b"organizationalUnit"],
             b"o": [b"Status"]
@@ -655,7 +663,7 @@ class PresiderGroupsEntry(CdEPreLeafEntry):
         dn = DistinguishedName(backend.presider_groups_dn)
         super().__init__(dn, backend)
 
-    def _fetch(self, *attributes) -> LDAPObject:
+    def _fetch(self, *attributes: bytes) -> LDAPObject:
         attrs = {
             b"objectClass": [b"organizationalUnit"],
             b"o": [b"Assembly Presiders"]
@@ -687,7 +695,7 @@ class OrgaGroupsEntry(CdEPreLeafEntry):
         dn = DistinguishedName(backend.orga_groups_dn)
         super().__init__(dn, backend)
 
-    def _fetch(self, *attributes) -> LDAPObject:
+    def _fetch(self, *attributes: bytes) -> LDAPObject:
         attrs = {
             b"objectClass": [b"organizationalUnit"],
             b"o": [b"Event Orgas"]
@@ -719,7 +727,7 @@ class ModeratorGroupsEntry(CdEPreLeafEntry):
         dn = DistinguishedName(backend.moderator_groups_dn)
         super().__init__(dn, backend)
 
-    def _fetch(self, *attributes) -> LDAPObject:
+    def _fetch(self, *attributes: bytes) -> LDAPObject:
         attrs = {
             b"objectClass": [b"organizationalUnit"],
             b"o": [b"Mailinglists Moderators"]
@@ -751,7 +759,7 @@ class SubscriberGroupsEntry(CdEPreLeafEntry):
         dn = DistinguishedName(backend.subscriber_groups_dn)
         super().__init__(dn, backend)
 
-    def _fetch(self, *attributes) -> LDAPObject:
+    def _fetch(self, *attributes: bytes) -> LDAPObject:
         attrs = {
             b"objectClass": [b"organizationalUnit"],
             b"o": [b"Mailinglists Subscribers"]
