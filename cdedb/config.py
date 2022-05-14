@@ -38,10 +38,17 @@ def set_configpath(path: PathLike) -> None:
     os.environ["CDEDB_CONFIGPATH"] = str(path)
 
 
-def get_configpath() -> pathlib.Path:
-    """Helper to get the config path from the environment."""
+def get_configpath(fallback: bool = False) -> pathlib.Path:
+    """Helper to get the config path from the environment.
+
+    :param fallback: Whether the DEFAULT_CONFIGPATH should be set and returned as config
+        path if CDEDB_CONFIGPATH is not set. This should only be used in helper scripts.
+    """
     if path := os.environ.get("CDEDB_CONFIGPATH"):
         return pathlib.Path(path)
+    if fallback:
+        set_configpath(DEFAULT_CONFIGPATH)
+        return DEFAULT_CONFIGPATH
     raise RuntimeError("No config path set!")
 
 

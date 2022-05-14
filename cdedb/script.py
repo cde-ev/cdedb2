@@ -63,16 +63,8 @@ class TempConfig:
         self._f: Optional[IO[str]] = None
 
     def __enter__(self) -> None:
-        # we do a little dance to access the current config path, since we want to fall
-        # back to the default one if no config path is set, instead of raising an error.
-        try:
-            get_configpath()
-        except RuntimeError:
-            set_configpath(DEFAULT_CONFIGPATH)
-        finally:
-            self._real_configpath = get_configpath()
-
-        # now, adjust the configpath to the specified config kwargs or configpath
+        # This also sets the config path to the default one if no config path is set.
+        self._real_configpath = get_configpath(fallback=True)
         if self._config:
             secrets = SecretsConfig()
             self._f = tempfile.NamedTemporaryFile("w", suffix=".py")
