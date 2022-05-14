@@ -150,16 +150,16 @@ class CdEDBBaseLDAPEntry(
 
         # choose iterator: base/children/subtree
         if scope == pureldap.LDAP_SCOPE_wholeSubtree:
-            iterator = self.subtree
+            iterator = self._subtree
         elif scope == pureldap.LDAP_SCOPE_singleLevel:
-            iterator = self.children
+            iterator = self._children
         elif scope == pureldap.LDAP_SCOPE_baseObject:
 
-            def iterateSelf(callback):
+            async def iterate_self(callback):
                 callback(self)
-                return succeed(None)
+                return None
 
-            iterator = iterateSelf
+            iterator = iterate_self
         else:
             raise LDAPProtocolError("unknown search scope: %r" % scope)
 
@@ -168,7 +168,7 @@ class CdEDBBaseLDAPEntry(
             if entry.match(filterObject):
                 callback(entry)
 
-        return iterator(callback=_tryMatch)
+        return Deferred.fromFuture(ensure_future(iterator(_tryMatch)))
 
     @abc.abstractmethod
     async def _children(self, callback: Callback = None) -> Optional[LDAPEntries]:
@@ -371,9 +371,7 @@ class CdEPreLeafEntry(CdEDBStaticEntry, metaclass=abc.ABCMeta):
         if callback:
             for child in ret:
                 callback(child)
-            return None
-        else:
-            return ret
+        return ret
 
     async def _lookup(self, dn: DistinguishedName) -> CdEDBBaseLDAPEntry:
         if dn == self.dn:
@@ -434,9 +432,7 @@ class RootEntry(CdEDBStaticEntry):
         if callback:
             callback(de)
             callback(subschema)
-            return None
-        else:
-            return [de, subschema]
+        return [de, subschema]
 
     async def _lookup(self, dn: DistinguishedName) -> CdEDBBaseLDAPEntry:
         if dn == self.dn:
@@ -505,9 +501,7 @@ class DeEntry(CdEDBStaticEntry):
         cde = CdeEvEntry(self.backend)
         if callback:
             callback(cde)
-            return None
-        else:
-            return [cde]
+        return [cde]
 
     async def _lookup(self, dn: DistinguishedName) -> CdEDBBaseLDAPEntry:
         if dn == self.dn:
@@ -543,9 +537,7 @@ class CdeEvEntry(CdEDBStaticEntry):
             callback(duas)
             callback(users)
             callback(groups)
-            return None
-        else:
-            return [duas, users, groups]
+        return [duas, users, groups]
 
     async def _lookup(self, dn: DistinguishedName) -> CdEDBBaseLDAPEntry:
         if dn == self.dn:
@@ -655,9 +647,7 @@ class GroupsEntry(CdEDBStaticEntry):
             callback(orgas)
             callback(moderators)
             callback(subscribers)
-            return None
-        else:
-            return [status, presiders, orgas, moderators, subscribers]
+        return [status, presiders, orgas, moderators, subscribers]
 
     async def _lookup(self, dn: DistinguishedName) -> CdEDBBaseLDAPEntry:
         if dn == self.dn:
