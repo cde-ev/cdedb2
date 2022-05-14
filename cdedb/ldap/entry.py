@@ -29,7 +29,8 @@ Callback = Callable
 LDAPEntries = List["CdEDBBaseLDAPEntry"]
 
 
-class LDAPTreeNoSuchEntry(Exception):
+# TODO where is the right place to catch (this) error if raised in an async function?
+class LDAPTreeNoSuchEntry(LDAPException):
     """The ldap tree does not contain such an object."""
 
 
