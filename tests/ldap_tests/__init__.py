@@ -36,7 +36,8 @@ class TestLDAP(BasicTest):
     # all users which have a password
     USERS = {
         f'uid={user["id"]},ou=users,dc=cde-ev,dc=de': user['password']
-        for user in USER_DICT.values() if user['password']
+        # take only non-archived users into account
+        for user in USER_DICT.values() if user['username']
     }
 
     @classmethod
