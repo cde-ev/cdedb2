@@ -162,11 +162,13 @@ class LDAPsqlBackend:
     @staticmethod
     def verify_password(password: str, password_hash: str) -> bool:
         """Mimic backend.core.base.verify_password"""
+        # TODO move into common and use it here
         return sha512_crypt.verify(password, password_hash)
 
     @staticmethod
     def encrypt_password(password: str) -> str:
         """Mimic backend.core.base.encrypt_password"""
+        # TODO move into common and use it here
         return sha512_crypt.hash(password)
 
     ###############
@@ -287,6 +289,7 @@ class LDAPsqlBackend:
         Since we do not want to have cross-dependencies between the web and ldap code
         base, we need this small logic duplication.
         """
+        # TODO move into common and use it here
         display_name: str = persona.get('display_name', "")
         given_names: str = persona['given_names']
         ret = []
