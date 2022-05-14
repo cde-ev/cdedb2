@@ -1,4 +1,6 @@
 import abc
+import asyncio
+from asyncio import ensure_future
 from typing import List, Optional, Type, Union
 
 import ldaptor.entry
@@ -110,7 +112,15 @@ class CdEDBBaseLDAPEntry(
         raise NotImplementedError
 
     def children(self, callback=None) -> Deferred:
-        d = Deferred.fromCoroutine(self._children(callback))
+        print(self.__class__.__name__, asyncio.iscoroutine(self._children), self._children)
+        # TODO why the hack is this check not working?
+        if asyncio.iscoroutine(self._children):
+            d = Deferred.fromFuture(ensure_future(self._children(callback)))
+        # since the above is not working, we use the following hack:
+        elif issubclass(self.__class__, CdEPreLeafEntry):
+            d = Deferred.fromFuture(ensure_future(self._children(callback)))
+        else:
+            d = succeed(self._children(callback))
         d.addErrback(log.err)
         return d
 
@@ -130,7 +140,7 @@ class CdEDBBaseLDAPEntry(
         raise NotImplementedError
 
     def lookup(self, dn: str) -> Deferred:
-        d = Deferred.fromCoroutine(self._lookup(dn))
+        d = Deferred.fromFuture(ensure_future(self._lookup(dn)))
         d.addErrback(log.err)
         return d
 
@@ -314,7 +324,7 @@ class CdEDBLeafEntry(CdEDBBaseLDAPEntry, metaclass=abc.ABCMeta):
         return {k: self._attributes[k] for k in
                 attributes} if attributes else self._attributes
 
-    async def _children(self, callback=None) -> Optional[List["CdEDBBaseLDAPEntry"]]:
+    def _children(self, callback=None) -> Optional[List["CdEDBBaseLDAPEntry"]]:
         """All dynamic entries do not have any children by design."""
         return None
 
@@ -340,7 +350,7 @@ class RootEntry(CdEDBStaticEntry):
         }
         return {k: attrs[k] for k in attributes} if attributes else attrs
 
-    async def _children(self, callback=None) -> Optional[List[CdEDBBaseLDAPEntry]]:
+    def _children(self, callback=None) -> Optional[List[CdEDBBaseLDAPEntry]]:
         de = DeEntry(self.backend)
         subschema = SubschemaEntry(self.backend)
         if callback:
@@ -390,7 +400,7 @@ class SubschemaEntry(CdEDBStaticEntry):
         }
         return {k: attrs[k] for k in attributes} if attributes else attrs
 
-    async def _children(self, callback=None) -> Optional[List[CdEDBBaseLDAPEntry]]:
+    def _children(self, callback=None) -> Optional[List[CdEDBBaseLDAPEntry]]:
         return None
 
     async def _lookup(self, dn_str: str) -> CdEDBBaseLDAPEntry:
@@ -415,7 +425,7 @@ class DeEntry(CdEDBStaticEntry):
         }
         return {k: attrs[k] for k in attributes} if attributes else attrs
 
-    async def _children(self, callback=None) -> Optional[List[CdEDBBaseLDAPEntry]]:
+    def _children(self, callback=None) -> Optional[List[CdEDBBaseLDAPEntry]]:
         cde = CdeEvEntry(self.backend)
         if callback:
             callback(cde)
@@ -449,7 +459,7 @@ class CdeEvEntry(CdEDBStaticEntry):
         }
         return {k: attrs[k] for k in attributes} if attributes else attrs
 
-    async def _children(self, callback=None) -> Optional[List[CdEDBBaseLDAPEntry]]:
+    def _children(self, callback=None) -> Optional[List[CdEDBBaseLDAPEntry]]:
         duas = DuasEntry(self.backend)
         users = UsersEntry(self.backend)
         groups = GroupsEntry(self.backend)
@@ -558,7 +568,7 @@ class GroupsEntry(CdEDBStaticEntry):
         }
         return {k: attrs[k] for k in attributes} if attributes else attrs
 
-    async def _children(self, callback=None) -> Optional[List[CdEDBBaseLDAPEntry]]:
+    def _children(self, callback=None) -> Optional[List[CdEDBBaseLDAPEntry]]:
         status = StatusGroupsEntry(self.backend)
         presiders = PresiderGroupsEntry(self.backend)
         orgas = OrgaGroupsEntry(self.backend)
