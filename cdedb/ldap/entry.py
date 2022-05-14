@@ -471,10 +471,10 @@ class CdeEvEntry(CdEDBStaticEntry):
             return await duas._lookup(dn_str)
         elif DistinguishedName(self.backend.users_dn).contains(dn):
             users = UsersEntry(self.backend)
-            return await users.lookup(dn_str)
+            return await users._lookup(dn_str)
         elif DistinguishedName(self.backend.groups_dn).contains(dn):
             groups = GroupsEntry(self.backend)
-            return await groups.lookup(dn_str)
+            return await groups._lookup(dn_str)
         else:
             raise LDAPNoSuchObject(dn_str)
 
@@ -584,16 +584,16 @@ class GroupsEntry(CdEDBStaticEntry):
             return await status._lookup(dn_str)
         elif DistinguishedName(self.backend.presider_groups_dn).contains(dn):
             presiders = PresiderGroupsEntry(self.backend)
-            return await presiders.lookup(dn_str)
+            return await presiders._lookup(dn_str)
         elif DistinguishedName(self.backend.orga_groups_dn).contains(dn):
             orgas = OrgaGroupsEntry(self.backend)
-            return await orgas.lookup(dn_str)
+            return await orgas._lookup(dn_str)
         elif DistinguishedName(self.backend.moderator_groups_dn).contains(dn):
             moderators = ModeratorGroupsEntry(self.backend)
-            return await moderators.lookup(dn_str)
+            return await moderators._lookup(dn_str)
         elif DistinguishedName(self.backend.subscriber_groups_dn).contains(dn):
             subscribers = SubscriberGroupsEntry(self.backend)
-            return await subscribers.lookup(dn_str)
+            return await subscribers._lookup(dn_str)
         else:
             raise LDAPNoSuchObject(dn_str)
 
