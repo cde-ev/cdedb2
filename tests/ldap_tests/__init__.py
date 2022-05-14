@@ -59,7 +59,7 @@ class TestLDAP(BasicTest):
                 search_filter=search_filter,
                 attributes=attributes
             )
-            self.assertEqual(len(conn.entries), 1)
+            self.assertEqual(len(conn.entries), 1, conn.entries)
             result = conn.entries[0].entry_attributes_as_dict
             self.assertEqual(result, expectation)
 
@@ -77,24 +77,21 @@ class TestLDAP(BasicTest):
         users: Dict[str, str] = {**self.DUAs, **self.USERS}
         except_users = except_users or set()
         for user, password in users.items():
-            identifier = user.split(sep=",", maxsplit=1)[0]
-            with ldap3.Connection(
-                self.server, user=user, password=password, raise_exceptions=True
-            ) as conn:
-                conn.search(
-                    search_base=search_base,
-                    search_filter=search_filter,
-                    attributes=attributes
-                )
-                try:
+            with self.subTest(user):
+                identifier = user.split(sep=",", maxsplit=1)[0]
+                with ldap3.Connection(
+                    self.server, user=user, password=password, raise_exceptions=True
+                ) as conn:
+                    conn.search(
+                        search_base=search_base,
+                        search_filter=search_filter,
+                        attributes=attributes
+                    )
                     # if the current user should access the entries, we check if he does
                     if identifier in except_users:
-                        self.assertNotEqual(len(conn.entries), 0)
+                        self.assertNotEqual(len(conn.entries), 0, conn.entries)
                     else:
-                        self.assertEqual(len(conn.entries), 0)
-                except AssertionError as e:
-                    raise RuntimeError(
-                        f"The above error occurred with user '{user}'") from e
+                        self.assertEqual(len(conn.entries), 0, conn.entries)
 
     def test_anonymous_bind(self) -> None:
         conn = ldap3.Connection(self.server)
