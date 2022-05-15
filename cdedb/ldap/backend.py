@@ -212,8 +212,8 @@ class LDAPsqlBackend:
     def dua_cn(name: str) -> str:
         return name
 
-    @staticmethod
-    def dua_name(cn: str) -> Optional[str]:
+    def dua_name(self, dn: DN) -> Optional[str]:
+        cn = self._dn_value(dn, attribute="cn")
         return cn or None
 
     def dua_dn(self, name: str) -> str:
@@ -235,10 +235,7 @@ class LDAPsqlBackend:
     async def get_duas(self, dns: List[DN]) -> LDAPObjectMap:
         dn_to_name = dict()
         for dn in dns:
-            cn = self._dn_value(dn, attribute="cn")
-            if cn is None:
-                continue
-            name = self.dua_name(cn)
+            name = self.dua_name(dn)
             if name is None:
                 continue
             dn_to_name[dn] = name
@@ -271,7 +268,10 @@ class LDAPsqlBackend:
     def user_uid(persona_id: int) -> str:
         return str(persona_id)
 
-    def user_id(self, uid: str) -> Optional[int]:
+    def user_id(self, dn: DN) -> Optional[int]:
+        uid = self._dn_value(dn, attribute="uid")
+        if uid is None:
+            return None
         return self._extract_id(uid, prefix="")
 
     def user_dn(self, persona_id: int) -> str:
@@ -413,10 +413,7 @@ class LDAPsqlBackend:
         """
         dn_to_persona_id = dict()
         for dn in dns:
-            uid = self._dn_value(dn, attribute="uid")
-            if uid is None:
-                continue
-            persona_id = self.user_id(uid)
+            persona_id = self.user_id(dn)
             if persona_id is None:
                 continue
             dn_to_persona_id[dn] = persona_id
@@ -467,7 +464,8 @@ class LDAPsqlBackend:
     def status_group_cn(name: str) -> str:
         return name
 
-    def status_group_name(self, cn: str) -> Optional[str]:
+    def status_group_name(self, dn: DN) -> Optional[str]:
+        cn = self._dn_value(dn, attribute="cn")
         return cn if cn in self.STATUS_GROUPS else None
 
     def status_group_dn(self, name: str) -> str:
@@ -505,10 +503,7 @@ class LDAPsqlBackend:
     async def get_status_groups(self, dns: List[DN]) -> LDAPObjectMap:
         dn_to_name = dict()
         for dn in dns:
-            cn = self._dn_value(dn, attribute="cn")
-            if cn is None:
-                continue
-            name = self.status_group_name(cn)
+            name = self.status_group_name(dn)
             if name is None:
                 continue
             dn_to_name[dn] = name
@@ -545,7 +540,10 @@ class LDAPsqlBackend:
     def presider_group_cn(assembly_id: int) -> str:
         return f"presiders-{assembly_id}"
 
-    def presider_group_id(self, cn: str) -> Optional[int]:
+    def presider_group_id(self, dn: DN) -> Optional[int]:
+        cn = self._dn_value(dn, attribute="cn")
+        if cn is None:
+            return None
         return self._extract_id(cn, prefix="presiders-")
 
     def presider_group_dn(self, assembly_id: int) -> str:
@@ -568,10 +566,7 @@ class LDAPsqlBackend:
     async def get_assembly_presider_groups(self, dns: List[DN]) -> LDAPObjectMap:
         dn_to_assembly_id = dict()
         for dn in dns:
-            cn = self._dn_value(dn, attribute="cn")
-            if cn is None:
-                continue
-            assembly_id = self.presider_group_id(cn)
+            assembly_id = self.presider_group_id(dn)
             if assembly_id is None:
                 continue
             dn_to_assembly_id[dn] = assembly_id
@@ -611,7 +606,10 @@ class LDAPsqlBackend:
     def orga_group_cn(event_id: int) -> str:
         return f"orgas-{event_id}"
 
-    def orga_group_id(self, cn: str) -> Optional[int]:
+    def orga_group_id(self, dn: DN) -> Optional[int]:
+        cn = self._dn_value(dn, attribute="cn")
+        if cn is None:
+            return None
         return self._extract_id(cn, prefix="orgas-")
 
     def orga_group_dn(self, event_id: int) -> str:
@@ -634,10 +632,7 @@ class LDAPsqlBackend:
     async def get_event_orga_groups(self, dns: List[DN]) -> LDAPObjectMap:
         dn_to_event_id = dict()
         for dn in dns:
-            cn = self._dn_value(dn, attribute="cn")
-            if cn is None:
-                continue
-            event_id = self.orga_group_id(cn)
+            event_id = self.orga_group_id(dn)
             if event_id is None:
                 continue
             dn_to_event_id[dn] = event_id
@@ -676,9 +671,11 @@ class LDAPsqlBackend:
     def moderator_group_cn(address: str) -> str:
         return address.replace("@", "-owner@")
 
-    @staticmethod
-    def moderator_group_address(cn: str) -> Optional[str]:
+    def moderator_group_address(self, dn: DN) -> Optional[str]:
         """Parse the regular address from an owner mailinglist address."""
+        cn = self._dn_value(dn, attribute="cn")
+        if cn is None:
+            return None
         if match := re.match(r"(?P<local_part>[\w.-]*)-owner@(?P<domain>[\w.-]*)", cn):
             return f"{match.group('local_part')}@{match.group('domain')}"
         else:
@@ -704,10 +701,7 @@ class LDAPsqlBackend:
     async def get_ml_moderator_groups(self, dns: List[DN]) -> LDAPObjectMap:
         dn_to_address = dict()
         for dn in dns:
-            cn = self._dn_value(dn, attribute="cn")
-            if cn is None:
-                continue
-            address = self.moderator_group_address(cn)
+            address = self.moderator_group_address(dn)
             if address is None:
                 continue
             dn_to_address[dn] = address
@@ -751,9 +745,8 @@ class LDAPsqlBackend:
     def subscriber_group_cn(address: str) -> str:
         return address
 
-    @staticmethod
-    def subscriber_group_address(cn: str) -> Optional[str]:
-        return cn
+    def subscriber_group_address(self, dn: DN) -> Optional[str]:
+        return self._dn_value(dn, attribute="cn")
 
     def subscriber_group_dn(self, address: str) -> str:
         return f"cn={self.subscriber_group_cn(address)},{self.subscriber_groups_dn}"
@@ -775,10 +768,7 @@ class LDAPsqlBackend:
     async def get_ml_subscriber_groups(self, dns: List[DN]) -> LDAPObjectMap:
         dn_to_address = dict()
         for dn in dns:
-            cn = self._dn_value(dn, attribute="cn")
-            if cn is None:
-                continue
-            address = self.subscriber_group_address(cn)
+            address = self.subscriber_group_address(dn)
             if address is None:
                 continue
             dn_to_address[dn] = address
