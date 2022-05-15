@@ -193,9 +193,9 @@ def run_ldap_tests(testpatterns: List[str] = None, *, verbose: bool = False) -> 
         # update the current ldap setting
         # note that this takes no changes of the base ldap setup into account,
         # since this would need to reinstall slapd to work.
-        subprocess.run(
-            ["make", "ldap-update-full", f"DATABASE_NAME={conf['CDB_DATABASE_NAME']}"],
-            check=True, stdout=subprocess.DEVNULL)
+        # subprocess.run(
+        #     ["make", "ldap-update-full", f"DATABASE_NAME={conf['CDB_DATABASE_NAME']}"],
+        #     check=True, stdout=subprocess.DEVNULL)
 
     # we need to setup the environment before we can import from cdedb or tests module
     import tests.ldap_tests as ldap_tests  # pylint: disable=import-outside-toplevel

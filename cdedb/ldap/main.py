@@ -50,7 +50,7 @@ async def main() -> None:
 
         # Create Server
         logger.info("Opening LDAP server ...")
-        reactor.listenTCP(20389, factory)  # type: ignore[attr-defined]
+        reactor.listenTCP(conf["LDAP_PORT"], factory)  # type: ignore[attr-defined]
         reactor.startRunning()  # type: ignore[attr-defined]
 
         # Wait for shutdown via Signal handler and event

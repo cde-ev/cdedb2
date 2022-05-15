@@ -327,6 +327,7 @@ _SECRECTS_DEFAULTS = {
         "cloud": "secret",
         "cyberaka": "secret",
         "dokuwiki": "secret",
+        "test": "secret",
     },
 }
 

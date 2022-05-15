@@ -89,9 +89,9 @@ def create_database_users(conf: Config) -> None:
 
     users_path = repo_path / "cdedb" / "database" / "cdedb-users.sql"
 
+    # TODO remove slapd once we removed opendlap
     stop_services("pgbouncer", "slapd")
     psql("-f", users_path.__fspath__())
-    # we do not restart slapd, since it needs a proper database structure to start
     restart_services("pgbouncer")
 
 
@@ -108,9 +108,9 @@ def create_database(conf: Config, secrets: SecretsConfig) -> None:
     tables_path = repo_path / "cdedb" / "database" / "cdedb-tables.sql"
     ldap_path = repo_path / "cdedb" / "database" / "cdedb-ldap.sql"
 
+    # TODO remove slapd once we removed opendlap
     stop_services("pgbouncer", "slapd")
     psql("-f", str(db_path), "-v", f"cdb_database_name={database}")
-    # we do not restart slapd, since it needs a proper populated database
     restart_services("pgbouncer")
 
     with connect(conf, secrets) as conn:
@@ -135,9 +135,6 @@ def populate_database(conf: Config, secrets: SecretsConfig, xss: bool = False) -
     with connect(conf, secrets) as conn:
         with conn.cursor() as cur:
             cur.execute(outfile.read_text())
-
-    if not xss:
-        restart_services("slapd")
 
 
 def compile_sample_data(conf: Config, infile: pathlib.Path, outfile: pathlib.Path,
