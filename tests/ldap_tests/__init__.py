@@ -50,7 +50,8 @@ class TestLDAP(BasicTest):
         self, search_filter: str, expectation: Dict[str, List[str]], *,
         user: str = test_dua_dn, password: str = test_dua_pw,
         search_base: str = root_dn,
-        attributes: Union[List[str], str] = ALL_ATTRIBUTES
+        attributes: Union[List[str], str] = ALL_ATTRIBUTES,
+        excluded_attributes: List[str] = None,
     ) -> None:
         with ldap3.Connection(
             self.server, user=user, password=password, raise_exceptions=True
@@ -61,7 +62,10 @@ class TestLDAP(BasicTest):
                 attributes=attributes
             )
             self.assertEqual(len(conn.entries), 1, conn.entries)
-            result = conn.entries[0].entry_attributes_as_dict
+            result: Dict[str, List[str]] = conn.entries[0].entry_attributes_as_dict
+            if excluded_attributes:
+                for attribute in excluded_attributes:
+                    result.pop(attribute)
             self.assertEqual(result, expectation)
 
     def no_result_search(
@@ -281,7 +285,8 @@ class TestLDAP(BasicTest):
             f"(uid={user_id})"
             ")"
         )
-        self.single_result_search(search_filter, expectation)
+        self.single_result_search(
+            search_filter, expectation, excluded_attributes=["memberOf"])
 
     def test_static_group_entity(self) -> None:
         """Check if all attributes of static groups are correctly present."""
