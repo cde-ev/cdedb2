@@ -27,6 +27,7 @@ from cdedb.ldap.backend import LDAPObject, LDAPObjectMap, LDAPsqlBackend
 
 Callback = Callable
 LDAPEntries = List["CdEDBBaseLDAPEntry"]
+BoundDn = Optional[Union[int, DistinguishedName]]
 
 
 # TODO where is the right place to catch (this) error if raised in an async function?
@@ -121,6 +122,7 @@ class CdEDBBaseLDAPEntry(
         timeLimit=0,
         typesOnly=0,
         callback=None,
+        bound_dn: BoundDn = -1,
     ):
         """Slightly modified version of ldaptor.entryhelpers.SearchByTreeWalkingMixin
 
@@ -130,6 +132,17 @@ class CdEDBBaseLDAPEntry(
 
         This function made the assumption that the given callback is never None (in
         contrast to the original function) – until now, this seems a valid assumption.
+
+        Note that our search accepted an additional kwarg "bound_dn". This should be
+        used to prevent ddos attacks: Instead of performing all database searches for
+        all searches and strip the results away during determining the returns, we
+        prevent the query in the first place.
+        Note that this is a derivation from the interface description, so this parameter
+        has a default value -1 signaling it should be ignored (since bound_dn can be
+        None for anonymous access).
+
+        :param bound_dn: Either the DN of the user performing the search, or None if
+            an anonymous search is performed, or -1 if it shall be ignored.
         """
         if callback is None:
             logger.error("No 'callback' in Search provided!")
@@ -159,7 +172,7 @@ class CdEDBBaseLDAPEntry(
             iterator = self._children
         elif scope == pureldap.LDAP_SCOPE_baseObject:
 
-            async def iterate_self(callback):
+            async def iterate_self(callback, bound_dn: BoundDn = -1):
                 callback(self)
                 return None
 
@@ -172,13 +185,18 @@ class CdEDBBaseLDAPEntry(
             if entry.match(filterObject):
                 callback(entry)
 
-        return Deferred.fromFuture(ensure_future(iterator(_tryMatch)))
+        return Deferred.fromFuture(
+            ensure_future(iterator(_tryMatch, bound_dn=bound_dn)))
 
     @abc.abstractmethod
-    async def _children(self, callback: Callback = None) -> Optional[LDAPEntries]:
+    async def _children(self, callback: Callback = None, bound_dn: BoundDn = -1
+                        ) -> Optional[LDAPEntries]:
         """List children entries of this entry.
 
         Note that the children are already instantiated.
+
+        :param bound_dn: Either the DN of the user performing the request, or None if
+            an anonymous search is performed, or -1 if it shall be ignored.
         """
         raise NotImplementedError
 
@@ -187,17 +205,20 @@ class CdEDBBaseLDAPEntry(
         d.addErrback(log.err)
         return d
 
-    async def _subtree(self, callback):
+    async def _subtree(self, callback, bound_dn: BoundDn = -1) -> None:
         """Apply a callback function to every entry of the current ones subtree.
 
         This is especially needed in subtree searches.
+
+        :param bound_dn: Either the DN of the user performing the search, or None if
+            an anonymous search is performed, or -1 if it shall be ignored.
         """
         if callback is None:
             logger.error("No 'callback' in Subtree provided!")
-        children = await self._children(callback)
+        children = await self._children(callback, bound_dn=bound_dn)
         if children:
             for child in children:
-                await child._subtree(callback)
+                await child._subtree(callback, bound_dn=bound_dn)
         return None
 
     def subtree(self, callback=None):
@@ -337,11 +358,15 @@ class CdEPreLeafEntry(CdEDBStaticEntry, metaclass=abc.ABCMeta):
     ChildGroup: Type["CdEDBLeafEntry"]
 
     @abc.abstractmethod
-    async def children_lister(self) -> List[RelativeDistinguishedName]:
+    async def children_lister(self, bound_dn: BoundDn = -1
+                              ) -> List[RelativeDistinguishedName]:
         """List all children of this entry.
 
         The real work is done in the backend, this is only used to link the correct
         function in place.
+
+        :param bound_dn: Either the DN of the user performing the search, or None if
+            an anonymous search is performed, or -1 if it shall be ignored.
         """
         raise NotImplementedError
 
@@ -363,8 +388,9 @@ class CdEPreLeafEntry(CdEDBStaticEntry, metaclass=abc.ABCMeta):
         """
         raise NotImplementedError
 
-    async def _children(self, callback: Callback = None) -> Optional[LDAPEntries]:
-        child_list = await self.children_lister()
+    async def _children(self, callback: Callback = None, bound_dn: BoundDn = -1
+                        ) -> Optional[LDAPEntries]:
+        child_list = await self.children_lister(bound_dn=bound_dn)
         dns = [DistinguishedName(f"{child.getText()},{self.dn.getText()}") for child in
                child_list]
         children = await self.children_getter(dns)
@@ -404,7 +430,8 @@ class CdEDBLeafEntry(CdEDBBaseLDAPEntry, metaclass=abc.ABCMeta):
         return {k: self._attributes[k] for k in
                 attributes} if attributes else self._attributes
 
-    async def _children(self, callback: Callback = None) -> Optional[LDAPEntries]:
+    async def _children(self, callback: Callback = None, bound_dn: BoundDn = -1
+                        ) -> Optional[LDAPEntries]:
         """All dynamic entries do not have any children by design."""
         return None
 
@@ -429,7 +456,8 @@ class RootEntry(CdEDBStaticEntry):
         }
         return {k: attrs[k] for k in attributes} if attributes else attrs
 
-    async def _children(self, callback: Callback = None) -> Optional[LDAPEntries]:
+    async def _children(self, callback: Callback = None, bound_dn: BoundDn = -1
+                        ) -> Optional[LDAPEntries]:
         de = DeEntry(self.backend)
         subschema = SubschemaEntry(self.backend)
         if callback:
@@ -476,7 +504,8 @@ class SubschemaEntry(CdEDBStaticEntry):
         }
         return {k: attrs[k] for k in attributes} if attributes else attrs
 
-    async def _children(self, callback: Callback = None) -> Optional[LDAPEntries]:
+    async def _children(self, callback: Callback = None, bound_dn: BoundDn = -1
+                        ) -> Optional[LDAPEntries]:
         return None
 
     async def _lookup(self, dn: DistinguishedName) -> CdEDBBaseLDAPEntry:
@@ -500,7 +529,8 @@ class DeEntry(CdEDBStaticEntry):
         }
         return {k: attrs[k] for k in attributes} if attributes else attrs
 
-    async def _children(self, callback: Callback = None) -> Optional[LDAPEntries]:
+    async def _children(self, callback: Callback = None, bound_dn: BoundDn = -1
+                        ) -> Optional[LDAPEntries]:
         cde = CdeEvEntry(self.backend)
         if callback:
             callback(cde)
@@ -531,7 +561,8 @@ class CdeEvEntry(CdEDBStaticEntry):
         }
         return {k: attrs[k] for k in attributes} if attributes else attrs
 
-    async def _children(self, callback: Callback = None) -> Optional[LDAPEntries]:
+    async def _children(self, callback: Callback = None, bound_dn: BoundDn = -1
+                        ) -> Optional[LDAPEntries]:
         duas = DuasEntry(self.backend)
         users = UsersEntry(self.backend)
         groups = GroupsEntry(self.backend)
@@ -583,7 +614,12 @@ class DuasEntry(CdEPreLeafEntry):
     def _parent(self) -> "CdEDBBaseLDAPEntry":
         return CdeEvEntry(self.backend)
 
-    async def children_lister(self) -> List[RelativeDistinguishedName]:
+    async def children_lister(self, bound_dn: BoundDn = -1
+                              ) -> List[RelativeDistinguishedName]:
+        if bound_dn != -1:
+            # Anonymous requests or personas may not access duas
+            if bound_dn is None or self.backend.is_user_dn(bound_dn):
+                return []
         return await self.backend.list_duas()
 
     async def children_getter(self, dns: List[DistinguishedName]) -> LDAPObjectMap:
@@ -615,7 +651,15 @@ class UsersEntry(CdEPreLeafEntry):
     def _parent(self) -> "CdEDBBaseLDAPEntry":
         return CdeEvEntry(self.backend)
 
-    async def children_lister(self) -> List[RelativeDistinguishedName]:
+    async def children_lister(self, bound_dn: BoundDn = -1
+                              ) -> List[RelativeDistinguishedName]:
+        if bound_dn != -1:
+            # Anonymous requests may access no user
+            if bound_dn is None:
+                return []
+            # Users may access only their own data
+            elif self.backend.is_user_dn(bound_dn):
+                return [self.backend.list_single_user(self.backend.user_id(bound_dn))]
         return await self.backend.list_users()
 
     async def children_getter(self, dns: List[DistinguishedName]) -> LDAPObjectMap:
@@ -637,7 +681,8 @@ class GroupsEntry(CdEDBStaticEntry):
         }
         return {k: attrs[k] for k in attributes} if attributes else attrs
 
-    async def _children(self, callback: Callback = None) -> Optional[LDAPEntries]:
+    async def _children(self, callback: Callback = None, bound_dn: BoundDn = -1
+                        ) -> Optional[LDAPEntries]:
         status = StatusGroupsEntry(self.backend)
         presiders = PresiderGroupsEntry(self.backend)
         orgas = OrgaGroupsEntry(self.backend)
@@ -699,7 +744,12 @@ class StatusGroupsEntry(CdEPreLeafEntry):
     def _parent(self) -> "CdEDBBaseLDAPEntry":
         return GroupsEntry(self.backend)
 
-    async def children_lister(self) -> List[RelativeDistinguishedName]:
+    async def children_lister(self, bound_dn: BoundDn = -1
+                              ) -> List[RelativeDistinguishedName]:
+        if bound_dn != -1:
+            # Anonymous requests or personas may not access groups
+            if bound_dn is None or self.backend.is_user_dn(bound_dn):
+                return []
         return await self.backend.list_status_groups()
 
     async def children_getter(self, dns: List[DistinguishedName]) -> LDAPObjectMap:
@@ -731,7 +781,12 @@ class PresiderGroupsEntry(CdEPreLeafEntry):
     def _parent(self) -> "CdEDBBaseLDAPEntry":
         return GroupsEntry(self.backend)
 
-    async def children_lister(self) -> List[RelativeDistinguishedName]:
+    async def children_lister(self, bound_dn: BoundDn = -1
+                              ) -> List[RelativeDistinguishedName]:
+        if bound_dn != -1:
+            # Anonymous requests or personas may not access groups
+            if bound_dn is None or self.backend.is_user_dn(bound_dn):
+                return []
         return await self.backend.list_assembly_presider_groups()
 
     async def children_getter(self, dns: List[DistinguishedName]) -> LDAPObjectMap:
@@ -763,7 +818,12 @@ class OrgaGroupsEntry(CdEPreLeafEntry):
     def _parent(self) -> "CdEDBBaseLDAPEntry":
         return GroupsEntry(self.backend)
 
-    async def children_lister(self) -> List[RelativeDistinguishedName]:
+    async def children_lister(self, bound_dn: BoundDn = -1
+                              ) -> List[RelativeDistinguishedName]:
+        if bound_dn != -1:
+            # Anonymous requests or personas may not access groups
+            if bound_dn is None or self.backend.is_user_dn(bound_dn):
+                return []
         return await self.backend.list_event_orga_groups()
 
     async def children_getter(self, dns: List[DistinguishedName]) -> LDAPObjectMap:
@@ -795,7 +855,12 @@ class ModeratorGroupsEntry(CdEPreLeafEntry):
     def _parent(self) -> "CdEDBBaseLDAPEntry":
         return GroupsEntry(self.backend)
 
-    async def children_lister(self) -> List[RelativeDistinguishedName]:
+    async def children_lister(self, bound_dn: BoundDn = -1
+                              ) -> List[RelativeDistinguishedName]:
+        if bound_dn != -1:
+            # Anonymous requests or personas may not access groups
+            if bound_dn is None or self.backend.is_user_dn(bound_dn):
+                return []
         return await self.backend.list_ml_moderator_groups()
 
     async def children_getter(self, dns: List[DistinguishedName]) -> LDAPObjectMap:
@@ -827,7 +892,12 @@ class SubscriberGroupsEntry(CdEPreLeafEntry):
     def _parent(self) -> "CdEDBBaseLDAPEntry":
         return GroupsEntry(self.backend)
 
-    async def children_lister(self) -> List[RelativeDistinguishedName]:
+    async def children_lister(self, bound_dn: BoundDn = -1
+                              ) -> List[RelativeDistinguishedName]:
+        if bound_dn != -1:
+            # Anonymous requests or personas may not access groups
+            if bound_dn is None or self.backend.is_user_dn(bound_dn):
+                return []
         return await self.backend.list_ml_subscriber_groups()
 
     async def children_getter(self, dns: List[DistinguishedName]) -> LDAPObjectMap:

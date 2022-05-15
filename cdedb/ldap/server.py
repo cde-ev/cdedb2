@@ -126,6 +126,8 @@ class CdEDBLDAPServer(LDAPServer):
                                                      attributes=filtered_attributes))
             # otherwise, return nothing
 
+        bound_dn = self.boundUser.dn if self.boundUser else None
+
         d = base.search(
             filterObject=request.filter,
             attributes=request.attributes,
@@ -135,6 +137,7 @@ class CdEDBLDAPServer(LDAPServer):
             timeLimit=request.timeLimit,
             typesOnly=request.typesOnly,
             callback=_sendEntryToClient,
+            bound_dn=bound_dn,  # derivates from the interface specification!
         )
 
         def _done(_: Any) -> pureldap.LDAPSearchResultDone:

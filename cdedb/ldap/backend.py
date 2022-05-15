@@ -317,16 +317,21 @@ class LDAPsqlBackend:
             ret.append(persona['name_supplement'])
         return " ".join(ret)
 
+    def list_single_user(self, persona_id: int) -> RDN:
+        """Uninlined code from list_users.
+
+        This is needed in entry.py for preventing ddos attacs, so we uninline it here.
+        """
+        return RDN(
+            attributeTypesAndValues=[
+                ATV(attributeType="uid", value=self.user_uid(persona_id))
+            ]
+        )
+
     async def list_users(self) -> List[RDN]:
         query = "SELECT id FROM core.personas WHERE NOT is_archived"
         data = await self.query_all(query, [])
-        return [
-            RDN(
-                attributeTypesAndValues=[
-                    ATV(attributeType="uid", value=self.user_uid(e["id"]))
-                ]
-            ) for e in data
-        ]
+        return [self.list_single_user(e["id"]) for e in data]
 
     async def get_users_groups(self, persona_ids: Collection[int]
                                ) -> Dict[int, List[str]]:
