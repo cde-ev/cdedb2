@@ -2,7 +2,9 @@ import logging
 import pathlib
 import re
 from collections import defaultdict
-from typing import Any, Callable, Dict, List, Optional, Sequence, TypedDict, Union, cast
+from typing import (
+    Any, Callable, Collection, Dict, List, Optional, Sequence, TypedDict, Union, cast,
+)
 
 import aiopg.connection
 from aiopg.pool import Pool, create_pool
@@ -325,6 +327,82 @@ class LDAPsqlBackend:
             ) for e in data
         ]
 
+    async def get_users_groups(self, persona_ids: Collection[int]
+                               ) -> Dict[int, List[str]]:
+        """Collect all groups of each given user.
+
+        This is complete redundant information – we could get the same information by
+        querying all groups for a given persona's membership. However, it is more
+        convenient to have this additional view on the privileges. Therefore, care has
+        to be taken that this produces always the same group memberships than the group
+        entries below!
+
+        Returns a dict, mapping persona_id to a list of their group dn strings.
+        """
+        ret: Dict[int, List[str]] = {anid: [] for anid in persona_ids}
+
+        # Status groups
+        query = """
+                SELECT id,
+                    is_active, is_member, is_searchable AND is_member AS is_searchable,
+                    is_ml_realm, is_event_realm, is_assembly_realm, is_cde_realm,
+                    is_ml_admin, is_event_admin, is_assembly_admin, is_cde_admin,
+                    is_core_admin, is_finance_admin, is_cdelokal_admin
+                FROM core.personas WHERE personas.id = ANY(%s)
+                """
+        for e in await self.query_all(query, (persona_ids,)):
+            ret[e["id"]].extend([self.status_group_dn(flag)
+                                 for flag in e.keys() if e[flag] and flag != "id"])
+
+        # Presider groups
+        query = """
+                SELECT persona_id, ARRAY_AGG(assembly_id) AS assembly_ids
+                FROM assembly.presiders
+                WHERE persona_id = ANY(%s)
+                GROUP BY persona_id
+                """
+        for e in await self.query_all(query, (persona_ids,)):
+            ret[e["persona_id"]].extend([self.presider_group_dn(assembly_id)
+                                         for assembly_id in e["assembly_ids"]])
+
+        # Orga groups
+        query = """
+                SELECT persona_id, ARRAY_AGG(event_id) AS event_ids
+                FROM event.orgas
+                WHERE persona_id = ANY(%s)
+                GROUP BY persona_id"""
+        for e in await self.query_all(query, (persona_ids,)):
+            ret[e["persona_id"]].extend([self.orga_group_dn(event_id)
+                                         for event_id in e["event_ids"]])
+
+        # Subscriber groups
+        query = """
+                SELECT persona_id, ARRAY_AGG(address) AS addresses
+                FROM ml.subscription_states, ml.mailinglists
+                WHERE ml.mailinglists.id = ml.subscription_states.mailinglist_id
+                    AND subscription_state = ANY(%s)
+                    AND persona_id = ANY(%s)
+                GROUP BY persona_id
+                """
+        states = SubscriptionState.subscribing_states()
+        for e in await self.query_all(query, (states, persona_ids,)):
+            ret[e["persona_id"]].extend([self.subscriber_group_dn(address)
+                                         for address in e["addresses"]])
+
+        # Moderator groups
+        query = """
+                SELECT persona_id, ARRAY_AGG(address) AS addresses
+                FROM ml.moderators, ml.mailinglists
+                WHERE ml.mailinglists.id = ml.moderators.mailinglist_id
+                    AND persona_id = ANY(%s)
+                GROUP BY persona_id
+                """
+        for e in await self.query_all(query, (persona_ids,)):
+            ret[e["persona_id"]].extend([self.moderator_group_dn(address)
+                                         for address in e["addresses"]])
+
+        return ret
+
     async def get_users(self, dns: List[DN]) -> LDAPObjectMap:
         """Get the users specified by dn.
 
@@ -347,6 +425,7 @@ class LDAPsqlBackend:
             " FROM core.personas WHERE id = ANY(%s) AND NOT is_archived")
         data = await self.query_all(query, (dn_to_persona_id.values(),))
         users = {e["id"]: e for e in data}
+        groups = await self.get_users_groups(dn_to_persona_id.values())
 
         ret = dict()
         for dn, persona_id in dn_to_persona_id.items():
@@ -362,7 +441,7 @@ class LDAPsqlBackend:
                 b"mail": [user['username']],
                 b"uid": [self.user_uid(persona_id)],
                 b"userPassword": [user['password_hash']],
-                #"memberOf": []  # TODO
+                b"memberOf": groups[persona_id],
             }
             ret[dn] = self._to_bytes(ldap_user)
         return ret
