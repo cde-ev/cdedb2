@@ -36,8 +36,9 @@ class LDAPsqlBackend:
     def __init__(self, pool: Pool) -> None:
         self.secrets = SecretsConfig()
         self.pool = pool
-        # load the ldap schemas which are supported
-        self.schema = self.load_schemas("core", "cosine", "inetorgperson")
+        # load the ldap schemas (and overlays) which are supported
+        self.schema = self.load_schemas(
+            "core.schema", "cosine.schema", "inetorgperson.schema", "memberof.overlay")
 
     @staticmethod
     async def execute_db_query(cur: aiopg.connection.Cursor, query: str,
@@ -154,7 +155,7 @@ class LDAPsqlBackend:
         data = []
         for schema in schemas:
             # TODO replace with pkgutil.get_data()
-            with (pathlib.Path(__file__).parent / "schema" / f"{schema}.schema").open() as f:
+            with (pathlib.Path(__file__).parent / "schema" / f"{schema}").open() as f:
                 data.append(f.read())
 
         # punch all files together to create a single schema object
