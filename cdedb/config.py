@@ -47,6 +47,7 @@ def get_configpath(fallback: bool = False) -> pathlib.Path:
     if path := os.environ.get("CDEDB_CONFIGPATH"):
         return pathlib.Path(path)
     if fallback:
+        _LOGGER.debug("CDEDB_CONFIGPATH not set, using the fallback.")
         set_configpath(DEFAULT_CONFIGPATH)
         return DEFAULT_CONFIGPATH
     raise RuntimeError("No config path set!")
