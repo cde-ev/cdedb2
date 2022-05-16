@@ -51,8 +51,8 @@ class TempConfig:
 
     def __init__(self, configpath: PathLike = None, **config: Any):
         if configpath and config:
-            raise ValueError(f"Do not provide both config ({config}) and "
-                             f"configpath ({configpath}).")
+            raise ValueError(f"Do not provide both config ({config}) and"
+                             f" configpath ({configpath}).")
         self._configpath = configpath
         self._config = config
         # this will be used to hold the current configpath from the environment

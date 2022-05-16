@@ -413,10 +413,10 @@ class LazyConfig(Config):
     def __init(self) -> None:
         """Perform the initialization decoupled from the instantiation."""
         if not self.__initialized:
-            self.__initialized = True
             name = self.__class__.__name__
             _LOGGER.debug(f"Initialize {name} object from {_LOGGER.findCaller()}.")
             super().__init__()
+            self.__initialized = True
 
     def __getitem__(self, key: str) -> Any:
         self.__init()
