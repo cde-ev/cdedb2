@@ -3773,10 +3773,10 @@ msgstr ""
 
 #: cdedb/frontend/event/lodgement.py:419
 msgid ""
-"Lodgement clusters can only be displayed if the graph is restricted to a "
+"Clusters can only be displayed if the graph is restricted to a "
 "specific part."
 msgstr ""
-"Unterkunft-Cluster können nur angezeigt werden, wenn der Graph auf einen "
+"Cluster können nur angezeigt werden, wenn der Graph auf einen "
 "einzelnen Veranstaltungsteil eingeschränkt wird."
 
 #: cdedb/frontend/event/lodgement_wishes.py:118
@@ -3802,7 +3802,7 @@ msgid ""
 msgstr ""
 "Unterdrücke Wunsche-Kante von %(from_name)s zu %(to_name)s da sie nicht "
 "gemeinsam anwesend sein werden (selbst, wenn man die Warteliste "
-"brücksichtigt)."
+"berücksichtigt)."
 
 #: cdedb/frontend/event/lodgement_wishes.py:392
 msgid "Waitlist: "
@@ -12092,7 +12092,7 @@ msgid ""
 "the mouse-over tooltip of the nodes. The nodes are hyperlinked to the "
 "details page of the participant."
 msgstr ""
-"Jeder Knoten repräsentiert einem Teilnehmer. Teilnehmer auf der Warteliste "
+"Jeder Knoten repräsentiert einen Teilnehmer. Teilnehmer auf der Warteliste "
 "sind ebenfalls im Graph enthalten, werden jedoch mit einer gestrichelten "
 "Umrandung dargestellt. Die Hintergrundfarbe der Knoten entspricht grob dem "
 "Alter der Teilnehmer. Weitere Informationen über einen Teilnehmer werden im "
@@ -12140,11 +12140,17 @@ msgstr "Schließe Teilnehmer ein, die nicht wünschen oder gewünscht wurden"
 msgid "Show Lodgements"
 msgstr "Zeige Unterkünfte"
 
+msgid "Show Lodgement Groups"
+msgstr "Zeige Unterkunftsgruppen"
+
 #: cdedb/frontend/templates/web/event/lodgement/lodgement_wishes_graph_form.tmpl:88
 msgid "Display assigned lodgements as clusters (reduces graph layout quality)"
 msgstr ""
 "Zeige die zugewiesenen Unterkünfte als Cluster an (verschlechtert die "
 "Qualität des Graph-Layouts)"
+
+msgid "Display the lodgement groups of the assigned lodgements as clusters (reduces graph layout quality)"
+msgstr "Zeige die Unterkunftsgruppen der zugewiesenen Unterkünfte als Cluster an (verschlechtert die Qualität des Graph-Layouts)"
 
 #: cdedb/frontend/templates/web/event/lodgement/lodgement_wishes_graph_form.tmpl:106
 msgid "No wish issues detected."
