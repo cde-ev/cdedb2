@@ -285,9 +285,7 @@ def create_lodgement_wishes_graph(
         subprocess and return the resulting graphic file.
     """
     if (cluster_by_lodgement_group or cluster_by_lodgement) and not filter_part_id:
-        raise ValueError(n_(
-            "Lodgement clusters can only be displayed if the graph is restricted to a"
-            " specific part."))
+        raise RuntimeError("Clusters can only be displayed if restricted to one part.")
 
     graph = graphviz.Digraph(
         engine=('fdp' if cluster_by_lodgement_group or cluster_by_lodgement
