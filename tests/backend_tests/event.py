@@ -1504,6 +1504,9 @@ class TestEventBackend(BackendTest):
                          self.event.list_lodgements(self.key, event_id))
         self.assertLess(0, self.event.delete_lodgement(self.key, new_id))
         del expectation_list[new_id]
+        self.assertLess(0, self.event.delete_lodgement(self.key, 1,
+                                                       cascade={"inhabitants"}))
+        del expectation_list[1]
         self.assertEqual(expectation_list,
                          self.event.list_lodgements(self.key, event_id))
 
