@@ -247,7 +247,7 @@ def create_lodgement_wishes_graph(
         lodgements: CdEDBObjectMap, event: CdEDBObject,
         personas: CdEDBObjectMap,
         filter_part_id: Optional[int], show_all: bool,
-        cluster_by_lodgement_in_part: Optional[int]) -> graphviz.Digraph:
+        cluster_by_lodgement: bool) -> graphviz.Digraph:
     """
     Plot the Lodgement Wishes Graph of the given event.
 
@@ -270,16 +270,21 @@ def create_lodgement_wishes_graph(
     :param show_all: If false, only participants who are referenced by a wish
         edge, i.e. wished another participants ore have been wished (in the
         relevant part).
-    :param cluster_by_lodgement_in_part: An event part id or None. If a part id
-        is given, participants are clustered into subgraphs based on their
+    :param cluster_by_lodgement: May only be true if filter_part_id provides a single
+        part id. If true, participants are clustered into subgraphs based on their
         assigned lodgment in that event part.
     :return: The fully constructed by not-yet rendered graph as a graphviz
         Digraph object. The graph can be rendered and layouted by calling
         `.pipe()` on the graph object which will run the graphviz program as a
         subprocess and return the resulting graphic file.
     """
+    if cluster_by_lodgement and not filter_part_id:
+        raise ValueError(n_(
+            "Lodgement clusters can only be displayed if the graph is restricted to a"
+            " specific part."))
+
     graph = graphviz.Digraph(
-        engine=('fdp' if cluster_by_lodgement_in_part else 'neato'),
+        engine=('fdp' if cluster_by_lodgement else 'neato'),
         graph_attr={'overlap': "false", 'splines': 'line', 'maxiter': "8000",
                     'sep': "+6", 'tooltip': " ", 'scale': "5",
                     'fontsize': "10pt",
@@ -300,7 +305,7 @@ def create_lodgement_wishes_graph(
 
     # If clustering is enabled, create new graphs as lodgement clusters
     lodgement_clusters: Dict[int, graphviz.Digraph] = {}
-    if cluster_by_lodgement_in_part:
+    if cluster_by_lodgement:
         for lodgement_id, lodgement in lodgements.items():
             lodgement_clusters[lodgement_id] = graphviz.Digraph(
                 name=f'cluster_{lodgement_id}',
@@ -324,12 +329,9 @@ def create_lodgement_wishes_graph(
             continue
         # Select correct subgraph
         subgraph = graph
-        if cluster_by_lodgement_in_part:
-            lodgement_id = registration['parts']\
-                .get(cluster_by_lodgement_in_part, {})\
-                .get('lodgement_id')
-            if lodgement_id:
-                subgraph = lodgement_clusters[lodgement_id]
+        if cluster_by_lodgement:
+            if lid := registration['parts'].get(filter_part_id, {}).get('lodgement_id'):
+                subgraph = lodgement_clusters[lid]
         # Create node
         is_present = (
             filter_part_id in present_parts if filter_part_id
