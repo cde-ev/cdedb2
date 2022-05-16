@@ -408,19 +408,19 @@ class EventLodgementMxin(EventBaseFrontend):
                                all_participants: bool, part_id: Optional[int],
                                show_lodgements: bool) -> Response:
         if rs.has_validation_errors():
-            return self.redirect(rs, 'event/lodgement_wishes_graph_form')
+            return self.lodgement_wishes_graph_form(rs, event_id)
         event = rs.ambience['event']
 
         if not event['lodge_field']:
             rs.notify('error', n_("Lodgement wishes graph is only available if "
                                   "the Field for Rooming Preferences is set in "
                                   "event configuration."))
-            return self.redirect(rs, 'event/lodgement_wishes_graph_form')
+            return self.lodgement_wishes_graph_form(rs, event_id)
         if show_lodgements and not part_id:
             rs.notify('error', n_("Lodgement clusters can only be displayed if "
                                   "the graph is restricted to a specific "
                                   "part."))
-            return self.redirect(rs, 'event/lodgement_wishes_graph_form')
+            return self.lodgement_wishes_graph_form(rs, event_id)
 
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
