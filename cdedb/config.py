@@ -43,8 +43,8 @@ def get_configpath() -> pathlib.Path:
     path = os.environ.get("CDEDB_CONFIGPATH")
     if path:
         return pathlib.Path(path)
-    else:
-        raise RuntimeError("No config path set!")
+    _LOGGER.debug("Initialising config without config path!")
+    return DEFAULT_CONFIGPATH
 
 
 # TODO where exactly does this log?

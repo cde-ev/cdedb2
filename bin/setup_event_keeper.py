@@ -22,7 +22,7 @@ with script:
 
     # Create root directory for event keeper
     root_dir: Path = script.config["STORAGE_DIR"] / "event_keeper"
-    root_dir.mkdir()
+    root_dir.mkdir(exist_ok=True)
 
     for event_id in events:
         event.event_keeper_create(rs, event_id)
