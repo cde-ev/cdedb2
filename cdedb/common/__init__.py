@@ -342,7 +342,7 @@ def make_proxy(backend: B, internal: bool = False) -> B:
                 return fun(rs, *args, **kwargs)
             finally:
                 if not internal:
-                    rs.conn = None  # type: ignore
+                    rs.conn = None  # type: ignore[assignment]
         return cast(F, wrapper)
 
     class Proxy:
@@ -494,7 +494,7 @@ class NearlyNow(datetime.datetime):
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, datetime.datetime):
-            delta = self - other
+            delta = other - self
             return self._delta > delta > -1 * self._delta
         return False
 

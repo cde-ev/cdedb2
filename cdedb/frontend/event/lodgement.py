@@ -198,7 +198,7 @@ class EventLodgementMxin(EventBaseFrontend):
             }
             for group_id, group
             in (keydictsort_filter(groups, EntitySorter.lodgement_group) +
-                [(None, None)])  # type: ignore
+                [(None, None)])  # type: ignore[list-item]
         }
 
         # Calculate group_regular_inhabitants_sum,
@@ -267,7 +267,7 @@ class EventLodgementMxin(EventBaseFrontend):
             ]))
             for group_id, group
             in (keydictsort_filter(groups, EntitySorter.lodgement_group) +
-                [(None, None)])  # type: ignore
+                [(None, None)])  # type: ignore[list-item]
         ])
 
         return self.render(rs, "lodgement/lodgements", {
@@ -453,7 +453,7 @@ class EventLodgementMxin(EventBaseFrontend):
         """Add a new lodgement."""
         data['event_id'] = event_id
         field_params: vtypes.TypeMapping = {
-            f"fields.{field['field_name']}": Optional[  # type: ignore
+            f"fields.{field['field_name']}": Optional[  # type: ignore[misc]
                 VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]  # noqa: F821
             for field in rs.ambience['event']['fields'].values()
             if field['association'] == const.FieldAssociations.lodgement
@@ -495,7 +495,7 @@ class EventLodgementMxin(EventBaseFrontend):
         """
         data['id'] = lodgement_id
         field_params: vtypes.TypeMapping = {
-            f"fields.{field['field_name']}": Optional[  # type: ignore
+            f"fields.{field['field_name']}": Optional[  # type: ignore[misc]
                 VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]  # noqa: F821
             for field in rs.ambience['event']['fields'].values()
             if field['association'] == const.FieldAssociations.lodgement
@@ -686,7 +686,7 @@ class EventLodgementMxin(EventBaseFrontend):
                          lodgement_id: int) -> Response:
         """Swap inhabitants of two lodgements of the same part."""
         params: vtypes.TypeMapping = {
-            f"swap_with_{part_id}": Optional[vtypes.ID]  # type: ignore
+            f"swap_with_{part_id}": Optional[vtypes.ID]  # type: ignore[misc]
             for part_id in rs.ambience['event']['parts']
         }
         data = request_extractor(rs, params)

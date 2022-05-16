@@ -695,7 +695,7 @@ def affirm_validation_optional(
     but also allows optional/falsy values.
     """
     return validate.validate_assert_optional(
-        Optional[assertion], value, ignore_warnings=True, **kwargs)  # type: ignore
+        Optional[assertion], value, ignore_warnings=True, **kwargs)  # type: ignore[arg-type]
 
 
 def affirm_array_validation(

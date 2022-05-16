@@ -90,7 +90,7 @@ class Application(BaseApp):
             'glue': glue,
         })
         self.jinja_env.filters.update(JINJA_FILTERS)
-        self.jinja_env.policies['ext.i18n.trimmed'] = True  # type: ignore
+        self.jinja_env.policies['ext.i18n.trimmed'] = True  # type: ignore[attr-defined]
         self.translations = setup_translations(self.conf)
         if pathlib.Path("/PRODUCTIONVM").is_file():  # pragma: no cover
             # Sanity checks for the live instance
@@ -118,7 +118,7 @@ class Application(BaseApp):
             if isinstance(error, werkzeug.exceptions.NotFound) \
                     and (error.description
                          is werkzeug.exceptions.NotFound.description):
-                error.description = None  # type: ignore
+                error.description = ""
 
             urls = self.urlmap.bind_to_environ(request.environ)
 
@@ -141,8 +141,7 @@ class Application(BaseApp):
                 'error': error,
                 'help': message,
             }
-            t = self.jinja_env.get_template(str(pathlib.Path("web",
-                                                             "error.tmpl")))
+            t = self.jinja_env.get_template(str(pathlib.Path("web", "error.tmpl")))
             html = t.render(**data)
             response = Response(html, mimetype='text/html', status=error.code)
             response.headers.add('X-Generation-Time', str(now() - begin))
@@ -192,7 +191,7 @@ class Application(BaseApp):
                     fake_rs = types.SimpleNamespace()
                     fake_rs.user = user
                     notifications = json.dumps([
-                        self.encode_notification(fake_rs,  # type: ignore
+                        self.encode_notification(fake_rs,  # type: ignore[arg-type]
                                                  "error", n_("Session expired."))])
                     ret.set_cookie("displaynote", notifications)
                     return ret

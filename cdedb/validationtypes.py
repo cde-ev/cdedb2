@@ -64,7 +64,8 @@ ProfilePicture = _NewType("ProfilePicture", bytes)
 PDFFile = _NewType("PDFFile", bytes)
 
 
-JSON = _NewType("JSON", Any)  # type: ignore  # TODO can we narrow this down?
+# While not technically correct, this should always be true.
+JSON = _NewType("JSON", CdEDBObject)
 
 # TODO this probably requires custom logic...
 ByFieldDatatype = _NewType("ByFieldDatatype", str)

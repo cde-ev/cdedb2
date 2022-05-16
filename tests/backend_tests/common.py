@@ -79,7 +79,7 @@ class TestBackendCommon(unittest.TestCase):
 
     def test_database_lock(self) -> None:
         manager: multiprocessing.managers.SyncManager
-        with multiprocessing.Manager() as manager:  # type: ignore[assignment]
+        with multiprocessing.Manager() as manager:
             semaphoreA = manager.Semaphore()
             semaphoreB = manager.Semaphore()
             control = manager.Semaphore()

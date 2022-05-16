@@ -4,7 +4,7 @@
 
 import collections
 from datetime import datetime
-from typing import Any, Collection, Dict, Optional, Set
+from typing import Any, Collection, Dict, Optional
 
 import werkzeug
 from subman.exceptions import SubscriptionError
@@ -345,7 +345,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
         relevant_mls = self.mlproxy.list_mailinglists(rs, active_only=False,
                                                       managed='managed')
-        relevant_set: Set[vtypes.ID] = set(relevant_mls)  # type: ignore
+        relevant_set = set(relevant_mls)
         if not self.is_admin(rs):
             if db_mailinglist_ids is None:
                 db_mailinglist_ids = relevant_set

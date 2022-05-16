@@ -35,7 +35,7 @@ from cdedb.common.i18n import n_
 from cdedb.common.query import QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.frontend.common import (
-    AbstractUserFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, access,
+    AbstractUserFrontend, Attachment, REQUESTdata, REQUESTdatadict, REQUESTfile, access,
     assembly_guard, calculate_db_logparams, calculate_loglinks, cdedburl,
     check_validation as check, drow_name, periodic, process_dynamic_input,
     request_extractor,
@@ -403,9 +403,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 rs.notify("info", n_("Given presider address ignored in favor of"
                                      " newly created mailinglist."))
             presider_ml_data = self._get_mailinglist_setter(data, presider=True)
-            presider_address = ml_type.get_full_address(  # type: ignore
-                presider_ml_data)
-            assert presider_address is not None
+            presider_address = ml_type.get_full_address(presider_ml_data)
             data["presider_address"] = presider_address
             if self.mlproxy.verify_existence(rs, presider_address):
                 presider_ml_data = None
@@ -1251,8 +1249,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             if finished and (result := self.assemblyproxy.tally_ballot(rs, ballot_id)):
                 afile = io.BytesIO(result)
                 my_hash = get_hash(result)
-                attachment_result: Dict[str, str] = {
-                    'file': afile,  # type: ignore
+                attachment_result: Attachment = {
+                    'file': afile,
                     'filename': 'result.json',
                     'mimetype': 'application/json'}
                 to = [self.conf["BALLOT_TALLY_ADDRESS"]]
@@ -1548,7 +1546,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                     vote = as_vote_string([rejected])
         else:
             # preferential voting
-            vote = unwrap(request_extractor(rs, {"vote": Optional[str]}))  # type: ignore
+            vote = unwrap(request_extractor(rs, {"vote": Optional[str]}))  # type: ignore[dict-item]
             # Empty preferential vote counts as abstaining
             if not vote:
                 if ballot['use_bar']:
