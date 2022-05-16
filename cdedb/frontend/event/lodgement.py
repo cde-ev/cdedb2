@@ -16,6 +16,7 @@ from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, LodgementsSortkeys, RequestState, merge_dicts,
 )
 from cdedb.common.i18n import n_
+from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, Sortkey, xsorted
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
@@ -363,6 +364,23 @@ class EventLodgementMxin(EventBaseFrontend):
         if not any(reg_ids for reg_ids in inhabitants.values()):
             merge_dicts(rs.values, {'ack_delete': True})
 
+        def make_inhabitants_query(part_id: int) -> Query:
+            return Query(
+                QueryScope.registration,
+                QueryScope.registration.get_spec(event=rs.ambience['event']),
+                fields_of_interest=[
+                    'persona.given_names', 'persona.family_name',
+                    f'part{part_id}.lodgement_id', f'part{part_id}.is_camping_mat',
+                ],
+                constraints=[
+                    (f'part{part_id}.lodgement_id', QueryOperators.equal, lodgement_id),
+                ],
+                order=[
+                    ('persona.family_name', True),
+                    ('persona.given_names', True),
+                ]
+            )
+
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id).keys()
         lodgement_groups = self.eventproxy.list_lodgement_groups(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
@@ -377,10 +395,10 @@ class EventLodgementMxin(EventBaseFrontend):
         next_lodge = lodgements[sorted_ids[i + 1]] if i + 1 < len(sorted_ids) else None
 
         return self.render(rs, "lodgement/show_lodgement", {
-            'registrations': registrations, 'personas': personas,
+            'groups': groups, 'registrations': registrations, 'personas': personas,
             'inhabitants': inhabitants, 'problems': problems,
-            'groups': groups, 'prev_lodgement': prev_lodge,
-            'next_lodgement': next_lodge,
+            'make_inhabitants_query': make_inhabitants_query,
+            'prev_lodgement': prev_lodge, 'next_lodgement': next_lodge,
         })
 
     @access("event")
