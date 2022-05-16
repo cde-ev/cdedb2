@@ -30,7 +30,7 @@ class TestValidation(unittest.TestCase):
     def do_validator_test(
         self,
         type_: Type[T],
-        spec: Iterable[Tuple[Any, Any, Union[Type[Exception], Exception, None]]],
+        spec: Iterable[Tuple[Any, T, Union[Type[Exception], Exception, None]]],
         extraparams: Mapping[str, Any] = None, ignore_warnings: bool = True
     ) -> None:
         """Perform extensive tests on a validator.
@@ -132,7 +132,7 @@ class TestValidation(unittest.TestCase):
             (True, 1, None),
             (False, 0, None),
             (2147483647, 2147483647, None),
-            (1e10, None, ValueError),
+            (1e10, None, ValueError),  # exceeds maximum value
         ))
         self.do_validator_test(vtypes.NonNegativeInt, (
             (0, 0, None),
@@ -165,7 +165,7 @@ class TestValidation(unittest.TestCase):
             ("garbage", None, ValueError),
             (12, 12.0, None),
             (9e6, 9e6, None),
-            (1e7, None, ValueError),
+            (1e7, None, ValueError),  # exceeds maximum value
         ))
 
     def test_decimal(self) -> None:
@@ -179,12 +179,12 @@ class TestValidation(unittest.TestCase):
             (12, None, TypeError),
             (12.3, None, TypeError),
             (decimal.Decimal(1e7) - 1, decimal.Decimal(1e7) - 1, None),
-            (decimal.Decimal(1e7), None, ValueError),
+            (decimal.Decimal(1e7), None, ValueError),  # exceeds maximum value
         ))
         self.do_validator_test(decimal.Decimal, (
             (decimal.Decimal(1e10) - 1, decimal.Decimal(1e10) - 1, None),
             (decimal.Decimal(-1e10) + 1, decimal.Decimal(-1e10) + 1, None),
-            (decimal.Decimal(1e10), None, ValueError),
+            (decimal.Decimal(1e10), None, ValueError),  # exceeds maximum value
         ), extraparams={"large": True})
         self.do_validator_test(vtypes.NonNegativeDecimal, (
             (decimal.Decimal(0), decimal.Decimal(0), None),
@@ -194,7 +194,7 @@ class TestValidation(unittest.TestCase):
         self.do_validator_test(vtypes.NonNegativeLargeDecimal, (
             (decimal.Decimal(1e10) - 1, decimal.Decimal(1e10) - 1, None),
             (decimal.Decimal(-1e10) + 1, None, ValueError),
-            (decimal.Decimal(1e10), None, ValueError),
+            (decimal.Decimal(1e10), None, ValueError),  # exceeds maximum value
         ))
 
     def test_str_type(self) -> None:
@@ -250,13 +250,13 @@ class TestValidation(unittest.TestCase):
                 bytes, "no encoding", ignore_warnings=True, encoding=None)
 
     def test_mapping(self) -> None:
-        self.do_validator_test(Mapping, (  # type: ignore
+        self.do_validator_test(Mapping, (  # type: ignore[misc]
             ({"a": "dict"}, {"a": "dict"}, None),
             ("something else", "", TypeError),
         ))
 
     def test_sequence(self) -> None:
-        self.do_validator_test(Sequence, (  # type: ignore
+        self.do_validator_test(Sequence, (  # type: ignore[misc]
             (("a", "b"), ("a", "b"), None),
         ))
 
