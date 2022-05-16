@@ -51,4 +51,3 @@ ldap/output/
 
 # bin processing data
 bin/**/*.json
-

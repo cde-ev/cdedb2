@@ -41,6 +41,7 @@ from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
+from cdedb.cli.dev.json2sql import json2sql
 from cdedb.cli.storage import create_storage, populate_storage
 from cdedb.common import (
     ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD, CdEDBLog, CdEDBObject,
@@ -343,7 +344,12 @@ class CdEDBTest(BasicTest):
         super().setUpClass()
         sample_data_dir = pathlib.Path("tests/ancillary_files")
         cls._clean_data = (sample_data_dir / "clean_data.sql").read_text()
-        cls._sample_data = (sample_data_dir / "sample_data.sql").read_text()
+
+        # compile the sample data
+        json_file = "/cdedb2/tests/ancillary_files/sample_data.json"
+        with open(json_file, "r", encoding="utf8") as f:
+            data: Dict[str, List[CdEDBObject]] = json.load(f)
+        cls._sample_data = "\n".join(json2sql(data))
 
     def setUp(self) -> None:
         with Script(
