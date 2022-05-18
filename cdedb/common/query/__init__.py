@@ -24,10 +24,10 @@ from cdedb.common import CdEDBObject, CdEDBObjectMap, RequestState
 from cdedb.common.n_ import n_
 from cdedb.common.roles import ADMIN_KEYS
 from cdedb.common.sorting import EntitySorter, xsorted
-from cdedb.config import Config
+from cdedb.config import LazyConfig
 from cdedb.filter import keydictsort_filter
 
-_CONFIG = Config()
+_CONFIG = LazyConfig()
 
 
 @enum.unique

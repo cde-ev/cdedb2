@@ -97,7 +97,7 @@ from cdedb.common.validation.data import (
     COUNTRY_CODES, FREQUENCY_LISTS, GERMAN_POSTAL_CODES, IBAN_LENGTHS,
 )
 from cdedb.common.validation.types import *  # pylint: disable=wildcard-import,unused-wildcard-import; # noqa: F403
-from cdedb.config import Config
+from cdedb.config import LazyConfig
 from cdedb.database.constants import FieldAssociations, FieldDatatypes
 from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS
 
@@ -106,7 +106,7 @@ NoneType = type(None)
 zxcvbn.matching.add_frequency_lists(FREQUENCY_LISTS)
 
 _LOGGER = logging.getLogger(__name__)
-_CONFIG = Config()
+_CONFIG = LazyConfig()
 
 T = TypeVar('T')
 F = TypeVar('F', bound=Callable[..., Any])

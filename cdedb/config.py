@@ -38,13 +38,19 @@ def set_configpath(path: PathLike) -> None:
     os.environ["CDEDB_CONFIGPATH"] = str(path)
 
 
-def get_configpath() -> pathlib.Path:
-    """Helper to get the config path from the environment."""
-    path = os.environ.get("CDEDB_CONFIGPATH")
-    if path:
+def get_configpath(fallback: bool = False) -> pathlib.Path:
+    """Helper to get the config path from the environment.
+
+    :param fallback: Whether the DEFAULT_CONFIGPATH should be set and returned as config
+        path if CDEDB_CONFIGPATH is not set. This should only be used in helper scripts.
+    """
+    if path := os.environ.get("CDEDB_CONFIGPATH"):
         return pathlib.Path(path)
-    _LOGGER.debug("Initialising config without config path!")
-    return DEFAULT_CONFIGPATH
+    if fallback:
+        _LOGGER.debug("CDEDB_CONFIGPATH not set, using the fallback.")
+        set_configpath(DEFAULT_CONFIGPATH)
+        return DEFAULT_CONFIGPATH
+    raise RuntimeError("No config path set!")
 
 
 # TODO where exactly does this log?
@@ -354,7 +360,7 @@ class Config(Mapping[str, Any]):
         self._configpath = configpath
 
         name = self.__class__.__name__
-        _LOGGER.debug(f"Initialising {name} with path {configpath}")
+        _LOGGER.debug(f"Initialize {name} object with path {configpath}.")
 
         if not configpath:
             raise RuntimeError(f"No configpath for {name} provided!")
@@ -381,6 +387,48 @@ class Config(Mapping[str, Any]):
 
     def __len__(self) -> int:
         return self._configchain.__len__()
+
+
+class LazyConfig(Config):
+    """Lazy config object for usage global namespace.
+
+    It should be avoided in general, but sometimes a Config object needs to live in the
+    global namespace of a module. If this is the case, importing from this module would
+    cause the Config object to be initialized, which is an unwanted side effect which
+    may not happen during import (f.e. importing from this module and setting the
+    config path environment variable later on will fail).
+
+    To circumvent this, the LazyConfig object may be used instead – it behaves identical
+    to a Config object, beside the initialization happens not on instantiation but on
+    first access.
+    """
+
+    # noinspection PyMissingConstructor
+    # pylint: disable=super-init-not-called
+    def __init__(self) -> None:
+        name = self.__class__.__name__
+        _LOGGER.debug(f"Instantiate {name} object from {_LOGGER.findCaller()}.")
+        self.__initialized = False
+
+    def __init(self) -> None:
+        """Perform the initialization decoupled from the instantiation."""
+        if not self.__initialized:
+            name = self.__class__.__name__
+            _LOGGER.debug(f"Initialize {name} object from {_LOGGER.findCaller()}.")
+            super().__init__()
+            self.__initialized = True
+
+    def __getitem__(self, key: str) -> Any:
+        self.__init()
+        return super().__getitem__(key)
+
+    def __iter__(self) -> Iterator[str]:
+        self.__init()
+        return super().__iter__()
+
+    def __len__(self) -> int:
+        self.__init()
+        return super().__len__()
 
 
 class TestConfig(Config):
