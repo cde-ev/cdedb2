@@ -12,6 +12,8 @@ import click
 import psycopg2.extensions
 import psycopg2.extras
 
+from cdedb.common import RequestState, User
+from cdedb.common.roles import ALL_ROLES
 from cdedb.config import Config, SecretsConfig, TestConfig
 
 pass_config = click.make_pass_decorator(TestConfig, ensure=True)
@@ -108,3 +110,26 @@ def connect(
     conn.set_session(autocommit=True)
 
     return conn
+
+
+def fake_rs(conn: psycopg2.extensions.connection, persona_id: int = 0) -> RequestState:
+    rs = RequestState(
+        sessionkey=None,
+        apitoken=None,
+        user=User(
+            persona_id=persona_id,
+            roles=ALL_ROLES,
+        ),
+        request=None,  # type: ignore[arg-type]
+        notifications=[],
+        mapadapter=None,  # type: ignore[arg-type]
+        requestargs=None,
+        errors=[],
+        values=None,
+        begin=None,
+        lang="de",
+        # translations=translations, TODO is this really necessary?
+        translations=None,  # type: ignore[arg-type]
+    )
+    rs.conn = rs._conn = conn
+    return rs

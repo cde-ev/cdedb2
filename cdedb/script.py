@@ -23,9 +23,9 @@ import psycopg2
 import psycopg2.extensions
 import psycopg2.extras
 
-from cdedb.common import AbstractBackend, PathLike, RequestState, User, make_proxy
+from cdedb.cli.util import fake_rs
+from cdedb.common import AbstractBackend, PathLike, RequestState, make_proxy
 from cdedb.common.n_ import n_
-from cdedb.common.roles import ALL_ROLES
 from cdedb.config import Config, SecretsConfig, get_configpath, set_configpath
 from cdedb.database.connection import Atomizer, IrradiatedConnection
 from cdedb.frontend.common import setup_translations
@@ -211,24 +211,7 @@ class Script:
             return ret
         if self._translations is None:
             self._translations = setup_translations(self.config)
-        rs = RequestState(
-            sessionkey=None,
-            apitoken=None,
-            user=User(
-                persona_id=persona_id,
-                roles=ALL_ROLES,
-            ),
-            request=None,  # type: ignore[arg-type]
-            notifications=[],
-            mapadapter=None,  # type: ignore[arg-type]
-            requestargs=None,
-            errors=[],
-            values=None,
-            begin=None,
-            lang="de",
-            translations=self._translations,
-        )
-        rs.conn = rs._conn = self._conn
+        rs = fake_rs(self._conn, persona_id)
         self._request_states[persona_id] = rs
         return rs
 
