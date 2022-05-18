@@ -95,7 +95,7 @@ python3 -m pip install --no-cache-dir \
 
 # devtools
 python3 -m pip install --no-cache-dir \
-    mypy==0.910 \
+    mypy==0.950 \
     flake8==3.8.4 \
     pylint==2.7.2 \
     types-werkzeug \

@@ -9,16 +9,16 @@ from typing import Any, Dict, Iterable, List, Mapping, Tuple, Type, Union
 
 import pytz
 
+import cdedb.common.validation as validate
 import cdedb.database.constants as const
-import cdedb.validation as validate
 from cdedb.common import now
 from cdedb.common.exceptions import ValidationWarning
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
-from cdedb.config import Config
-from cdedb.validationtypes import (
+from cdedb.common.validation.types import (
     IBAN, JSON, Email, GenesisCase, PasswordStrength, Persona, Phone, PrintableASCII,
     PrintableASCIIType, SafeStr, StringType, Vote,
 )
+from cdedb.config import Config
 
 
 class TestValidation(unittest.TestCase):

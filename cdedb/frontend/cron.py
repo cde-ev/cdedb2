@@ -11,7 +11,7 @@ import pathlib
 from typing import Collection, Iterator
 
 from cdedb.common import RequestState, User, now
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.roles import ALL_ROLES
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -62,7 +62,7 @@ class CronFrontend(BaseApp):
                                 url_scheme="https")
         # This is not a real request, so we can go without some of these.
         rs = RequestState(
-            sessionkey=None, apitoken=None, user=user, request=None,  # type: ignore
+            sessionkey=None, apitoken=None, user=user, request=None,  # type: ignore[arg-type]
             notifications=[], mapadapter=urls, requestargs={}, errors=[],
             values=None, begin=None, lang=lang, translations=self.translations,
         )

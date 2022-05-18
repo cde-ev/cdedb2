@@ -11,22 +11,22 @@ from typing import Collection, Optional, cast
 
 from werkzeug import Response
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.common import (
     CdEDBObject, CourseChoiceToolActions, CourseFilterPositions, InfiniteEnum,
     RequestState, merge_dicts, unwrap,
 )
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
+from cdedb.common.validation import COURSE_COMMON_FIELDS
+from cdedb.common.validation.types import VALIDATOR_LOOKUP
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, check_validation as check, event_guard,
     make_persona_name, request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
-from cdedb.validation import COURSE_COMMON_FIELDS
-from cdedb.validationtypes import VALIDATOR_LOOKUP
 
 
 class EventCourseMixin(EventBaseFrontend):
@@ -131,7 +131,7 @@ class EventCourseMixin(EventBaseFrontend):
         data['segments'] = segments
         data['active_segments'] = active_segments
         field_params: vtypes.TypeMapping = {
-            f"fields.{field['field_name']}": Optional[  # type: ignore
+            f"fields.{field['field_name']}": Optional[  # type: ignore[misc]
                 VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]  # noqa: F821
             for field in rs.ambience['event']['fields'].values()
             if field['association'] == const.FieldAssociations.course
@@ -170,7 +170,7 @@ class EventCourseMixin(EventBaseFrontend):
         data['event_id'] = event_id
         data['segments'] = segments
         field_params: vtypes.TypeMapping = {
-            f"fields.{field['field_name']}": Optional[  # type: ignore
+            f"fields.{field['field_name']}": Optional[  # type: ignore[misc]
                 VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]  # noqa: F821
             for field in rs.ambience['event']['fields'].values()
             if field['association'] == const.FieldAssociations.course
@@ -478,7 +478,9 @@ class EventCourseMixin(EventBaseFrontend):
         their choices or a specific course.
         """
         if rs.has_validation_errors():
-            return self.course_choices_form(rs, event_id)  # type: ignore
+            return self.course_choices_form(
+                rs, event_id, course_id=course_id, track_id=track_id, position=position,
+                ids=ids, include_active=include_active)
         if ids is None:
             ids = cast(vtypes.IntCSVList, [])
 
