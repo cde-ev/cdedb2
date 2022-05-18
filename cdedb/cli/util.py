@@ -77,6 +77,7 @@ def get_user() -> str:
         return getpass.getuser()
     return sudo_user
 
+
 # TODO is the nobody hack really necessary?
 def connect(
     config: Config, secrets: SecretsConfig, as_nobody: bool = False
@@ -113,6 +114,12 @@ def connect(
 
 
 def fake_rs(conn: psycopg2.extensions.connection, persona_id: int = 0) -> RequestState:
+    """Create a RequestState which may be used during more elaborated commands.
+
+    This is needed when we want to interact with the CdEDB on a higher level of
+    abstraction. Note that the capabilities of this RequestState are limited, f.e. only
+    backend functions may work properly due to missing translations.
+    """
     rs = RequestState(
         sessionkey=None,
         apitoken=None,
