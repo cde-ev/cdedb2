@@ -91,7 +91,7 @@ def populate_database(conf: TestConfig, secrets: SecretsConfig,
     with open(infile) as f:
         data = json.load(f)
     xss_payload = conf.get("XSS_PAYLOAD", "") if xss else ""
-    sql_commands = "\n".join(json2sql(data, xss_payload))
+    sql_commands = "\n".join(json2sql(conf, secrets, data, xss_payload=xss_payload))
 
     with connect(conf, secrets) as conn:
         with conn.cursor() as cur:

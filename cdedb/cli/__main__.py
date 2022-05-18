@@ -181,9 +181,11 @@ def compile_sample_data_json(config: TestConfig, secrets: SecretsConfig,
               type=click.Path(), help="the place to store the sql file")
 @click.option(
     "--xss/--no-xss", default=False, help="prepare sample data for xss checks")
+@pass_secrets
 @pass_config
 def compile_sample_data_sql(
-    config: TestConfig, infile: pathlib.Path, outfile: pathlib.Path, xss: bool
+    config: TestConfig, secrets: SecretsConfig, infile: pathlib.Path,
+    outfile: pathlib.Path, xss: bool
 ) -> None:
     """Parse sample data from a .json to a .sql file.
 
@@ -197,7 +199,7 @@ def compile_sample_data_sql(
         data: Dict[str, List[Any]] = json.load(f)
 
     xss_payload = config.get("XSS_PAYLOAD", "") if xss else ""
-    commands = json2sql(data, xss_payload)
+    commands = json2sql(config, secrets, data, xss_payload=xss_payload)
 
     with open(outfile, "w") as f:
         for cmd in commands:
