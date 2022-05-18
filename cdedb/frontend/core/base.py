@@ -19,8 +19,8 @@ import werkzeug.exceptions
 from subman.machine import SubscriptionPolicy
 from werkzeug import Response
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Realm, RequestState, merge_dicts,
     now, pairwise, sanitize_filename, unwrap,
@@ -30,13 +30,19 @@ from cdedb.common.fields import (
     LOG_FIELDS_COMMON, META_INFO_FIELDS, REALM_SPECIFIC_GENESIS_FIELDS,
     get_persona_fields_by_realm,
 )
-from cdedb.common.i18n import format_country_code, n_
+from cdedb.common.i18n import format_country_code
+from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.roles import (
     ADMIN_KEYS, ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, REALM_ADMINS,
     REALM_INHERITANCE, extract_roles, implied_realms,
 )
 from cdedb.common.sorting import EntitySorter, xsorted
+from cdedb.common.validation import (
+    PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
+    PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS,
+)
+from cdedb.common.validation.types import CdedbID
 from cdedb.filter import date_filter, enum_entries_filter, markdown_parse_safe
 from cdedb.frontend.common import (
     AbstractFrontend, Headers, REQUESTdata, REQUESTdatadict, REQUESTfile,
@@ -47,11 +53,6 @@ from cdedb.frontend.common import (
     request_extractor,
 )
 from cdedb.ml_type_aux import MailinglistGroup
-from cdedb.validation import (
-    PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
-    PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS,
-)
-from cdedb.validationtypes import CdedbID
 
 # Name of each realm
 USER_REALM_NAMES = {

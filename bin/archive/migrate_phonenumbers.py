@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 from functools import partial
 
-import cdedb.validationtypes as vtypes
+import cdedb.common.validation.types as vtypes
 from cdedb.common import CdEDBObject
+from cdedb.common.validation import validate_assert_optional
 from cdedb.script import Script
-from cdedb.validation import validate_assert_optional
 
 # persona_id should be set via the `SCRIPT_PERSONA_ID` environment variable.
 script = Script(dbuser="cdb_admin")

@@ -8,8 +8,8 @@ import collections
 import copy
 from typing import Any, Collection, Dict, Mapping, Set, Tuple
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     Silencer, access, affirm_set_validation as affirm_set, affirm_validation as affirm,
 )
@@ -25,7 +25,7 @@ from cdedb.common import (
     json_serialize, unwrap,
 )
 from cdedb.common.exceptions import PartialImportError, PrivilegeError
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.sorting import mixed_existence_sorter
 from cdedb.database.connection import Atomizer
 

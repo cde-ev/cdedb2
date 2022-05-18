@@ -10,13 +10,15 @@ from typing import Collection, Dict, List, NamedTuple, Optional, Tuple
 import werkzeug.exceptions
 from werkzeug import Response
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, LodgementsSortkeys, RequestState, merge_dicts,
 )
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.sorting import EntitySorter, Sortkey, xsorted
+from cdedb.common.validation import LODGEMENT_COMMON_FIELDS
+from cdedb.common.validation.types import VALIDATOR_LOOKUP
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, check_validation as check, drow_name,
@@ -26,8 +28,6 @@ from cdedb.frontend.event.base import EventBaseFrontend
 from cdedb.frontend.event.lodgement_wishes import (
     create_lodgement_wishes_graph, detect_lodgement_wishes,
 )
-from cdedb.validation import LODGEMENT_COMMON_FIELDS
-from cdedb.validationtypes import VALIDATOR_LOOKUP
 
 LodgementProblem = NamedTuple(
     "LodgementProblem", [("description", str), ("lodgement_id", int),

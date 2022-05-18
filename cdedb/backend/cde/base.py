@@ -19,8 +19,8 @@ from typing import Collection, List, Optional, Tuple
 
 import psycopg2.extensions
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_array_validation as affirm_array,
     affirm_validation as affirm,
@@ -31,12 +31,14 @@ from cdedb.common import (
     RequestState, glue, make_proxy, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError, QuotaException
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.roles import implying_realms
+from cdedb.common.validation import (
+    PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS, is_optional,
+)
 from cdedb.database.connection import Atomizer
 from cdedb.filter import money_filter
-from cdedb.validation import PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS, is_optional
 
 
 class CdEBaseBackend(AbstractBackend):

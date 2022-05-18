@@ -22,8 +22,8 @@ from typing import (
 
 from passlib.hash import sha512_crypt
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_set_validation as affirm_set,
     affirm_validation as affirm, affirm_validation_optional as affirm_optional,
@@ -40,7 +40,7 @@ from cdedb.common.fields import (
     PERSONA_CORE_FIELDS, PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, PERSONA_STATUS_FIELDS,
     PRIVILEGE_CHANGE_FIELDS,
 )
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.roles import (
     ADMIN_KEYS, ALL_ROLES, REALM_ADMINS, extract_roles, privilege_tier,

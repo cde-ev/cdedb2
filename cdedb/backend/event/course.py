@@ -7,8 +7,8 @@ for managing courses belonging to an event.
 
 from typing import Collection, Dict, List, Protocol
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     access, affirm_set_validation as affirm_set, affirm_validation as affirm,
     cast_fields, singularize,
@@ -20,7 +20,7 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import COURSE_FIELDS, COURSE_SEGMENT_FIELDS
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.database.connection import Atomizer
 
 

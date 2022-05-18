@@ -10,10 +10,9 @@ from typing import (
 
 from subman.machine import SubscriptionPolicy
 
-import cdedb.validationtypes as vtypes
-from cdedb.common import CdEDBObject, RequestState, User
+import cdedb.common.validation.types as vtypes
 from cdedb.common.exceptions import PrivilegeError
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.roles import extract_roles
 from cdedb.database.constants import (
@@ -24,6 +23,9 @@ if TYPE_CHECKING:
     from cdedb.backend.assembly import AssemblyBackend
     from cdedb.backend.core import CoreBackend
     from cdedb.backend.event import EventBackend
+    from cdedb.common import CdEDBObject, RequestState, User
+else:
+    CdEDBObject = RequestState = User = None
 
 SubscriptionPolicyMap = Dict[int, SubscriptionPolicy]
 

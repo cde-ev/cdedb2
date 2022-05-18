@@ -60,9 +60,9 @@ import werkzeug.wrappers
 import werkzeug.wsgi
 
 import cdedb.common.query as query_mod
+import cdedb.common.validation as validate
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validation as validate
-import cdedb.validationtypes as vtypes
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.common import AbstractBackend
@@ -79,7 +79,8 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
-from cdedb.common.i18n import format_country_code, get_localized_country_codes, n_
+from cdedb.common.i18n import format_country_code, get_localized_country_codes
+from cdedb.common.n_ import n_
 from cdedb.common.query import Query
 from cdedb.common.query.defaults import DEFAULT_QUERIES
 from cdedb.common.roles import (

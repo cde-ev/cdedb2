@@ -17,15 +17,16 @@ import segno.helpers
 import werkzeug.exceptions
 from werkzeug import Response
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, RequestState, build_msg, determine_age_class,
     diacritic_patterns, get_hash, merge_dicts, now, unwrap,
 )
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
+from cdedb.common.validation.types import VALIDATOR_LOOKUP
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     CustomCSVDialect, Headers, REQUESTdata, REQUESTfile, TransactionObserver, access,
@@ -33,7 +34,6 @@ from cdedb.frontend.common import (
     inspect_validation as inspect, make_event_fee_reference, request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
-from cdedb.validationtypes import VALIDATOR_LOOKUP
 
 
 class EventRegistrationMixin(EventBaseFrontend):
