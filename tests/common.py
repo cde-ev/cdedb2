@@ -36,13 +36,14 @@ from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.common import AbstractBackend
 from cdedb.backend.core import CoreBackend
-from cdedb.backend.entity_keeper import EntityKeeper
 from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.cli.dev.json2sql import json2sql
-from cdedb.cli.storage import create_storage, populate_storage
+from cdedb.cli.storage import (
+    create_storage, populate_sample_event_keepers, populate_storage,
+)
 from cdedb.common import (
     ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD, CdEDBLog, CdEDBObject,
     CdEDBObjectMap, PathLike, RequestState, merge_dicts, nearly_now, now,
@@ -264,11 +265,7 @@ class BasicTest(unittest.TestCase):
             create_storage(self.conf)
             populate_storage(self.conf)
         if getattr(test_method, self.needs_event_keeper_marker, False):
-            max_event_id = len(self.get_sample_data('event.events'))
-            keeper = EntityKeeper(self.conf, 'event_keeper')
-            for event_id in range(1, max_event_id + 1):
-                keeper.init(event_id)
-                keeper.commit(event_id, "", "Initialer Commit.")
+            populate_sample_event_keepers(self.conf)
 
     def tearDown(self) -> None:
         test_method = getattr(self, self._testMethodName)

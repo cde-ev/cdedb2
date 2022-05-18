@@ -18,6 +18,7 @@ from typing import Collection
 import psycopg2.extensions
 from psycopg2.extras import DictCursor, Json
 
+from cdedb.cli.storage import populate_event_keeper
 from cdedb.common import CdEDBObject
 from cdedb.config import (
     DEFAULT_CONFIGPATH, Config, TestConfig, get_configpath, set_configpath,
@@ -152,6 +153,10 @@ def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
     with connection as conn:
         with conn.cursor() as curr:
             curr.execute(clean_script.read_text())
+
+    print("Setup the event-keeper git.")
+    # TODO whats about the remaining storage?
+    populate_event_keeper(conf, {data['id']})
 
     print("Make orgas into admins")
     orgas = {e['persona_id'] for e in data['event.orgas'].values()}

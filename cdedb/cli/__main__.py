@@ -16,7 +16,10 @@ from cdedb.cli.database import (
 from cdedb.cli.dev.json2sql import json2sql
 from cdedb.cli.dev.serve import serve_debugger
 from cdedb.cli.dev.sql2json import sql2json
-from cdedb.cli.storage import create_log, create_storage, populate_storage, reset_config
+from cdedb.cli.storage import (
+    create_log, create_storage, populate_sample_event_keepers, populate_storage,
+    reset_config,
+)
 from cdedb.cli.util import get_user, pass_config, pass_secrets, switch_user
 from cdedb.common import CustomJSONEncoder
 from cdedb.config import DEFAULT_CONFIGPATH, SecretsConfig, TestConfig, set_configpath
@@ -92,6 +95,7 @@ def populate_storage_cmd(config: TestConfig, owner: str) -> None:
     """Populate the file storage with sample data."""
     with switch_user(owner):
         populate_storage(config)
+        populate_sample_event_keepers(config)
 
 
 @filesystem.group(name="log")
@@ -215,6 +219,7 @@ def apply_sample_data(config: TestConfig, owner: str) -> None:
         create_log(config)
         create_storage(config)
         populate_storage(config)
+        populate_sample_event_keepers(config)
         create_database_users(config)
         create_database(config, secrets)
         populate_database(config, secrets)
