@@ -9,8 +9,10 @@ from shutil import which
 from typing import Any, Callable, Generator
 
 import click
+import psycopg2.extensions
+import psycopg2.extras
 
-from cdedb.config import SecretsConfig, TestConfig
+from cdedb.config import Config, SecretsConfig, TestConfig
 
 pass_config = click.make_pass_decorator(TestConfig, ensure=True)
 pass_secrets = click.make_pass_decorator(SecretsConfig, ensure=True)
@@ -72,3 +74,37 @@ def get_user() -> str:
     if not sudo_user or sudo_user == "root":
         return getpass.getuser()
     return sudo_user
+
+# TODO is the nobody hack really necessary?
+def connect(
+    config: Config, secrets: SecretsConfig, as_nobody: bool = False
+) -> psycopg2.extensions.connection:
+    """Create a very basic database connection.
+
+    This allows to connect to the database specified as CDB_DATABASE_NAME in the given
+    config. The connecting user is 'cdb'.
+
+    Only exception from this is if the user wants to connect to the 'nobody' database,
+    which is used for very low-level setups (like generation of sample data).
+    """
+
+    if as_nobody:
+        dbname = user = "nobody"
+    else:
+        dbname = config["CDB_DATABASE_NAME"]
+        user = "cdb"
+
+    connection_parameters = {
+        "dbname": dbname,
+        "user": user,
+        "password": secrets["CDB_DATABASE_ROLES"][user],
+        "host": config["DB_HOST"],
+        "port": 5432,
+        "connection_factory": psycopg2.extensions.connection,
+        "cursor_factory": psycopg2.extras.RealDictCursor,
+    }
+    conn = psycopg2.connect(**connection_parameters)
+    conn.set_client_encoding("UTF8")
+    conn.set_session(autocommit=True)
+
+    return conn

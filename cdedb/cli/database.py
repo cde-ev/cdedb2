@@ -3,12 +3,8 @@ import json
 import pathlib
 import subprocess
 
-import psycopg2
-import psycopg2.extensions
-import psycopg2.extras
-
 from cdedb.cli.dev.json2sql import json2sql
-from cdedb.cli.util import has_systemd, is_docker, sanity_check
+from cdedb.cli.util import connect, has_systemd, is_docker, sanity_check
 from cdedb.config import Config, SecretsConfig, TestConfig
 
 
@@ -43,41 +39,6 @@ def psql(*args: str) -> subprocess.CompletedProcess[bytes]:
         # mypy does not know that run passes unknown arguments to Popen
         # return subprocess.run(["psql", *commands], check=True, user="postgres")
         return subprocess.run(["sudo", "-u", "postgres", "psql", *args], check=True)
-
-
-# TODO is the nobody hack really necessary?
-def connect(
-    config: Config, secrets: SecretsConfig, as_nobody: bool = False
-) -> psycopg2.extensions.connection:
-    """Create a very basic database connection.
-
-    This allows to connect to the database specified as CDB_DATABASE_NAME in the given
-    config. The connecting user is 'cdb'.
-
-    Only exception from this is if the user wants to connect to the 'nobody' database,
-    which is used for very low-level setups (like generation of sample data).
-    """
-
-    if as_nobody:
-        dbname = user = "nobody"
-    else:
-        dbname = config["CDB_DATABASE_NAME"]
-        user = "cdb"
-
-    connection_parameters = {
-        "dbname": dbname,
-        "user": user,
-        "password": secrets["CDB_DATABASE_ROLES"][user],
-        "host": config["DB_HOST"],
-        "port": 5432,
-        "connection_factory": psycopg2.extensions.connection,
-        "cursor_factory": psycopg2.extras.RealDictCursor,
-    }
-    conn = psycopg2.connect(**connection_parameters)
-    conn.set_client_encoding("UTF8")
-    conn.set_session(autocommit=True)
-
-    return conn
 
 
 @sanity_check
