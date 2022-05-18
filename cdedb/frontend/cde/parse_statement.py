@@ -496,7 +496,7 @@ class Transaction:
             f"event_confidence{suffix}": ConfidenceLevel,
         }
         if not hidden_only:
-            ret = dict(**ret, **{  # type: ignore[arg-type]
+            ret = dict(**ret, **{
                 f"type{suffix}": TransactionType,
                 f"type_confirm{suffix}": bool,
                 f"cdedbid{suffix}": Optional[vtypes.CdedbID],

@@ -400,9 +400,9 @@ class CdEParseMixin(CdEBaseFrontend):
             success, num, new_members = self.cdeproxy.perform_money_transfers(
                 rs, relevant_data)
             if success and sendmail:
+                persona_ids = tuple(e['persona_id'] for e in data)
+                personas = self.coreproxy.get_cde_users(rs, persona_ids)
                 for datum in data:
-                    persona_ids = tuple(e['persona_id'] for e in data)
-                    personas = self.coreproxy.get_cde_users(rs, persona_ids)
                     persona = personas[datum['persona_id']]
                     self.do_mail(rs, "parse/transfer_received",
                                  {'To': (persona['username'],),

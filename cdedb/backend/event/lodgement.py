@@ -351,7 +351,7 @@ class EventLodgementBackend(EventBaseBackend):
                     query = ("UPDATE event.registration_parts"
                              " SET lodgement_id = NULL"
                              " WHERE id = ANY(%s)")
-                    params = (blockers["inhabitants"])
+                    params = (blockers["inhabitants"], )
                     ret *= self.query_exec(rs, query, params)
 
                 blockers = self.delete_lodgement_blockers(rs, lodgement_id)

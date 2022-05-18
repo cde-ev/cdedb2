@@ -17,6 +17,7 @@ import email.header
 import email.mime
 import email.mime.application
 import email.mime.audio
+import email.mime.base
 import email.mime.image
 import email.mime.multipart
 import email.mime.text
@@ -43,8 +44,8 @@ from secrets import token_hex
 from types import TracebackType
 from typing import (
     IO, AbstractSet, Any, AnyStr, Callable, ClassVar, Collection, Dict, Iterable, List,
-    Literal, Mapping, MutableMapping, NamedTuple, Optional, Protocol, Sequence, Tuple,
-    Type, TypeVar, Union, cast, overload,
+    Literal, Mapping, NamedTuple, Optional, Protocol, Sequence, Tuple, Type, TypeVar,
+    Union, cast, overload,
 )
 
 import jinja2
@@ -94,6 +95,24 @@ from cdedb.devsamples import HELD_MESSAGE_SAMPLE
 from cdedb.enums import ENUMS_DICT
 from cdedb.filter import (
     JINJA_FILTERS, cdedbid_filter, enum_entries_filter, safe_filter, sanitize_None,
+)
+
+Attachment = typing.TypedDict(
+    "Attachment", {'path': PathLike, 'filename': str, 'mimetype': str,
+                   'file': Union[IO[str], IO[bytes]]}, total=False)
+Headers = typing.TypedDict(
+    "Headers", {
+        "From": str,
+        "Prefix": str,
+        "Reply-To": str,
+        "Return-Path": str,
+        "domain": str,
+        "Subject": str,
+        "Cc": Collection[str],
+        "Bcc": Collection[str],
+        "To": Collection[str],
+    },
+    total=False
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -299,8 +318,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             extensions=['jinja2.ext.i18n', 'jinja2.ext.do', 'jinja2.ext.loopcontrols'],
             finalize=sanitize_None, autoescape=True, auto_reload=self.conf["CDEDB_DEV"],
             undefined=undefined)
-        self.jinja_env.policies['ext.i18n.trimmed'] = True  # type: ignore
-        self.jinja_env.policies['json.dumps_kwargs']['cls'] = CustomJSONEncoder  # type: ignore
+        self.jinja_env.policies['ext.i18n.trimmed'] = True  # type: ignore[attr-defined]
+        self.jinja_env.policies['json.dumps_kwargs']['cls'] = CustomJSONEncoder  # type: ignore[attr-defined]
         self.jinja_env.filters.update(JINJA_FILTERS)
         self.jinja_env.globals.update({
             'now': now,
@@ -692,16 +711,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                              csp_header_template.format(csp_nonce))
         return response
 
-    # TODO use new typing feature to accurately define the following:
-    # from typing import TypedDict
-    # Attachment = TypedDict(
-    #     "Attachment", {'path': PathLike, 'filename': str, 'mimetype': str,
-    #                    'file': IO}, total=False)
-    Attachment = Dict[str, str]
-
     def do_mail(self, rs: RequestState, templatename: str,
-                headers: MutableMapping[str, Union[str, Collection[str]]],
-                params: CdEDBObject = None,
+                headers: Headers, params: CdEDBObject = None,
                 attachments: Collection[Attachment] = None) -> Optional[str]:
         """Wrapper around :py:meth:`fill_template` specialised to sending
         emails. This does generate the email and send it too.
@@ -731,8 +742,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         return ret
 
     def _create_mail(self, text: str,
-                     headers: MutableMapping[str, Union[str, Collection[str]]],
-                     attachments: Optional[Collection[Attachment]],
+                     headers: Headers, attachments: Optional[Collection[Attachment]],
                      ) -> Union[email.message.Message,
                                 email.mime.multipart.MIMEMultipart]:
         """Helper for actual email instantiation from a raw message."""
@@ -744,10 +754,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     "Bcc": tuple(),
                     "domain": self.conf["MAIL_DOMAIN"],
                     }
-        merge_dicts(headers, defaults)
+        merge_dicts(headers, defaults)  # type: ignore[arg-type]
         if headers["From"] == headers["Reply-To"]:
             del headers["Reply-To"]
-        msg = email.mime.text.MIMEText(text)
+        msg: email.mime.base.MIMEBase = email.mime.text.MIMEText(text)
         email.encoders.encode_quopri(msg)
         del msg['Content-Transfer-Encoding']
         msg['Content-Transfer-Encoding'] = 'quoted-printable'
@@ -766,16 +776,16 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             for attachment in attachments:
                 container.attach(self._create_attachment(attachment))
             # put the container in place as message to send
-            msg = container  # type: ignore
+            msg = container  #
         for header in ("To", "Cc", "Bcc"):
-            nonempty = {x for x in headers[header] if x}
-            if nonempty != set(headers[header]):
+            nonempty = {x for x in headers[header] if x}  # type: ignore[literal-required]
+            if nonempty != set(headers[header]):  # type: ignore[literal-required]
                 self.logger.warning("Empty values zapped in email recipients.")
-            if headers[header]:
+            if headers[header]:  # type: ignore[literal-required]
                 msg[header] = ", ".join(nonempty)
         for header in ("From", "Reply-To", "Return-Path"):
-            msg[header] = headers[header]
-        subject = headers["Prefix"] + " " + headers['Subject']  # type: ignore
+            msg[header] = headers[header]  # type: ignore[literal-required]
+        subject = headers["Prefix"] + " " + headers['Subject']  # type
         msg["Subject"] = subject
         msg["Message-ID"] = email.utils.make_msgid(
             domain=self.conf["MAIL_DOMAIN"])
@@ -855,7 +865,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             raise ValueError(n_("No input provided."))
         if attachment.get('file'):
             # noinspection PyUnresolvedReferences
-            data = attachment['file'].read()  # type: ignore
+            data = attachment['file'].read()
         else:
             if maintype == "text":
                 with open(attachment['path'], 'r') as ft:
@@ -1881,7 +1891,7 @@ def request_dict_extractor(rs: RequestState,
 
     # This looks wrong. but is correct, as the `REQUESTdatadict` decorator
     # constructs the data parameter `fun` expects.
-    return fun(None, rs)  # type: ignore
+    return fun(None, rs)  # type: ignore[call-arg]
 
 
 # noinspection PyPep8Naming
@@ -2293,7 +2303,7 @@ def process_dynamic_input(
             entry.update(additional)
             # apply the promised validation
             ret[anid] = check_validation(rs, type_, entry, field_prefix=field_prefix,
-                                         field_postfix=f"_{anid}")  # type: ignore
+                                         field_postfix=f"_{anid}")  # type: ignore[assignment]
 
     # extract the new entries which shall be created
     marker = 1
@@ -2309,7 +2319,7 @@ def process_dynamic_input(
             entry.update(additional)
             ret[-marker] = check_validation(
                 rs, type_, entry, field_prefix=field_prefix,
-                field_postfix=f"_{-marker}", creation=True)  # type: ignore
+                field_postfix=f"_{-marker}", creation=True)  # type: ignore[assignment]
         else:
             break
         marker += 1

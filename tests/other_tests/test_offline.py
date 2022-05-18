@@ -51,7 +51,7 @@ class TestOffline(FrontendTest):
                 check=True, env=env)
             # Reset web test app for changed configuration
             new_app = Application()
-            self.app = webtest.TestApp(  # type: ignore
+            self.__class__.app = webtest.TestApp(
                 new_app, extra_environ=self.app_extra_environ)
             self.app.reset()
             self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME,

@@ -313,7 +313,7 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def list_mailinglists(self, rs: RequestState, active_only: bool = True,
-                          managed: str = None) -> Dict[int, str]:
+                          managed: str = None) -> Dict[vtypes.ID, str]:
         """List all mailinglists you may view
 
         :param active_only: Toggle wether inactive lists should be included.

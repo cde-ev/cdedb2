@@ -3322,8 +3322,8 @@ msgstr "Keine Änderung erforderlich."
 
 #: cdedb/frontend/core/base.py:1576
 #, python-format
-msgid "%(num)s permits revoked."
-msgstr "%(num)s Lastschriftmandate widerrufen."
+msgid "Revoked active permit."
+msgstr "Aktives Lastschriftmandat widerrufen."
 
 #: cdedb/frontend/core/base.py:1613
 msgid "Nothing changed."
@@ -9301,6 +9301,11 @@ msgstr "Profilbild ändern"
 msgid "QR"
 msgstr "QR"
 
+
+#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:53
+msgid "Bank transfer data as QR code"
+msgstr "Überweisungsdaten als QR-Code"
+
 #: cdedb/frontend/templates/web/core/show_user.tmpl:154
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:95
 #: cdedb/frontend/templates/web/util.tmpl:333
@@ -12325,6 +12330,10 @@ msgstr "Teilnehmer-Statistik"
 #: cdedb/frontend/templates/web/event/query/stats.tmpl:73
 msgid "Course Statistics"
 msgstr "Kursstatistik"
+
+#: cdedb/frontend/templates/web/event/query/stats.tmpl:74
+msgid "Only includes participants."
+msgstr "Beinhaltet nur Teilnehmer."
 
 #: cdedb/frontend/templates/web/event/query/stats.tmpl:102
 #, python-format
