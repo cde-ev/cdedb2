@@ -163,10 +163,12 @@ def development() -> None:
 @development.command(name="compile-sample-data-json")
 @click.option("-o", "--outfile", default="/tmp/sample_data.json",
               type=click.Path(), help="the place to store the sql file")
+@pass_secrets
 @pass_config
-def compile_sample_data_json(config: TestConfig, outfile: pathlib.Path) -> None:
+def compile_sample_data_json(config: TestConfig, secrets: SecretsConfig,
+                             outfile: pathlib.Path) -> None:
     """Generate a JSON-file from the current state of the database."""
-    data = sql2json(config["CDB_DATABASE_NAME"])
+    data = sql2json(config, secrets)
     with open(outfile, "w") as f:
         json.dump(data, f, cls=CustomJSONEncoder, indent=4, ensure_ascii=False)
 
