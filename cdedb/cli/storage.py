@@ -6,7 +6,9 @@ import shutil
 from typing import Collection, Tuple
 
 from cdedb.backend.entity_keeper import EntityKeeper
-from cdedb.cli.util import SAMPLE_DATA_JSON, sanity_check, switch_user
+from cdedb.cli.util import (
+    SAMPLE_DATA_JSON, sanity_check, sanity_check_production, switch_user,
+)
 from cdedb.config import Config, SecretsConfig, get_configpath
 
 
@@ -120,6 +122,7 @@ def populate_storage(conf: Config) -> None:
         shutil.copy(testfile_dir / file, storage_dir / "testfiles")
 
 
+@sanity_check_production
 def populate_event_keeper(conf: Config, event_ids: Collection[int]) -> None:
     """Initialize the event keeper git for the given events.
 

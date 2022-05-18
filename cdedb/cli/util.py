@@ -47,6 +47,18 @@ def sanity_check(fun: Callable[..., Any]) -> Callable[..., Any]:
     return new_fun
 
 
+def sanity_check_production(fun: Callable[..., Any]) -> Callable[..., Any]:
+    """Decorator for invasive actions which are forbidden on production only."""
+
+    @functools.wraps(fun)
+    def new_fun(*args: Any, **kwargs: Any) -> Any:
+        if pathlib.Path("/PRODUCTIONVM").is_file():
+            raise RuntimeError("Refusing to touch live instance!")
+        return fun(*args, **kwargs)
+
+    return new_fun
+
+
 @contextlib.contextmanager
 def switch_user(user: str) -> Generator[None, None, None]:
     """Use as context manager to temporary switch the running user's effective uid."""
