@@ -155,7 +155,6 @@ def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
             curr.execute(clean_script.read_text())
 
     print("Setup the eventkeeper git repository.")
-    # TODO whats about the remaining storage?
     populate_event_keeper(conf, {data['id']})
 
     print("Make orgas into admins")

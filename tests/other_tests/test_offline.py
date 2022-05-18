@@ -11,10 +11,12 @@ from cdedb.cli.database import connect
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS
 from cdedb.config import SecretsConfig, get_configpath, set_configpath
 from cdedb.frontend.application import Application
-from tests.common import FrontendTest
+from tests.common import FrontendTest, storage
 
 
 class TestOffline(FrontendTest):
+
+    @storage
     def test_offline_vm(self) -> None:
         repopath = self.conf["REPOSITORY_PATH"]
         user = {
