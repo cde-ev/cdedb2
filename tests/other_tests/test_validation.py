@@ -17,8 +17,10 @@ from cdedb.common import now
 from cdedb.common.exceptions import ValidationWarning
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.validation.types import (
-    IBAN, JSON, Email, GenesisCase, PasswordStrength, Persona, Phone, PrintableASCII,
-    PrintableASCIIType, SafeStr, StringType, Vote,
+    IBAN, ID, JSON, Email, EmptyDict, EmptyList, GenesisCase, LegacyShortname,
+    NonNegativeDecimal, NonNegativeInt, NonNegativeLargeDecimal, PartialImportID,
+    PasswordStrength, Persona, Phone, PositiveInt, PrintableASCII, PrintableASCIIType,
+    Realm, SafeStr, ShortnameRestrictiveIdentifier, StringType, Vote,
 )
 from cdedb.config import Config
 
@@ -133,22 +135,22 @@ class TestValidation(unittest.TestCase):
             (2147483647, 2147483647, None),
             (1e10, None, ValueError),  # exceeds maximum value
         ))
-        self.do_validator_test(vtypes.NonNegativeInt, (
+        self.do_validator_test(NonNegativeInt, (
             (0, 0, None),
             (123, 123, None),
             (-123, None, ValueError),
         ))
-        self.do_validator_test(vtypes.PositiveInt, (
+        self.do_validator_test(PositiveInt, (
             (0, None, ValueError),
             (123, 123, None),
             (-123, None, ValueError),
         ))
-        self.do_validator_test(vtypes.ID, (
+        self.do_validator_test(ID, (
             (0, None, ValueError),
             (123, 123, None),
             (-123, None, ValueError),
         ))
-        self.do_validator_test(vtypes.PartialImportID, (
+        self.do_validator_test(PartialImportID, (
             (0, None, ValueError),
             (123, 123, None),
             (-123, -123, None),
@@ -185,12 +187,12 @@ class TestValidation(unittest.TestCase):
             (decimal.Decimal(-1e10) + 1, decimal.Decimal(-1e10) + 1, None),
             (decimal.Decimal(1e10), None, ValueError),  # exceeds maximum value
         ), extraparams={"large": True})
-        self.do_validator_test(vtypes.NonNegativeDecimal, (
+        self.do_validator_test(NonNegativeDecimal, (
             (decimal.Decimal(0), decimal.Decimal(0), None),
             (decimal.Decimal(12.3), decimal.Decimal(12.3), None),
             (decimal.Decimal(-12.3), None, ValueError),
         ))
-        self.do_validator_test(vtypes.NonNegativeLargeDecimal, (
+        self.do_validator_test(NonNegativeLargeDecimal, (
             (decimal.Decimal(1e10) - 1, decimal.Decimal(1e10) - 1, None),
             (decimal.Decimal(-1e10) + 1, None, ValueError),
             (decimal.Decimal(1e10), None, ValueError),  # exceeds maximum value
@@ -221,20 +223,20 @@ class TestValidation(unittest.TestCase):
         ))
 
     def test_shortname(self) -> None:
-        self.do_validator_test(vtypes.ShortnameRestrictiveIdentifier, (
+        self.do_validator_test(ShortnameRestrictiveIdentifier, (
             ("asdf", "asdf", None),
             ("a" * 11, None, ValidationWarning),
             ("^", None, ValueError),
         ), ignore_warnings=False)
-        self.do_validator_test(vtypes.ShortnameRestrictiveIdentifier, (
+        self.do_validator_test(ShortnameRestrictiveIdentifier, (
             ("asdf", "asdf", None),
             ("a" * 11, "a" * 11, None),
         ))
-        self.do_validator_test(vtypes.LegacyShortname, (
+        self.do_validator_test(LegacyShortname, (
             ("a" * 11, "a" * 11, None),
             ("a" * 31, None, ValidationWarning),
         ), ignore_warnings=False)
-        self.do_validator_test(vtypes.LegacyShortname, (
+        self.do_validator_test(LegacyShortname, (
             ("a" * 11, "a" * 11, None),
             ("a" * 31, "a" * 31, None),
         ))
@@ -272,14 +274,14 @@ class TestValidation(unittest.TestCase):
         ))
 
     def test_empty(self) -> None:
-        self.do_validator_test(vtypes.EmptyDict, (
+        self.do_validator_test(EmptyDict, (
             (dict(), dict(), None),
             ({"a": 1}, None, ValueError),
             ([], None, ValueError),
             (set(), None, ValueError),
             (tuple(), None, ValueError),
         ))
-        self.do_validator_test(vtypes.EmptyList, (
+        self.do_validator_test(EmptyList, (
             ([], [], None),
             ([1], None, ValueError),
             (dict(), [], None),
@@ -288,7 +290,7 @@ class TestValidation(unittest.TestCase):
         ))
 
     def test_realm(self) -> None:
-        self.do_validator_test(vtypes.Realm, (
+        self.do_validator_test(Realm, (
             ("assembly", "assembly", None),
             ("cde", "cde", None),
             ("core", "core", None),
