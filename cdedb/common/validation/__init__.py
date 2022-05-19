@@ -4323,7 +4323,7 @@ def _query_input(
             value = []
             for v in values:
                 # Validate every single value
-                # TODO do not allow None/falsy
+                # TODO do not allow None
                 try:
                     vv: Any = _ALL_TYPED[
                         Optional[VALIDATOR_LOOKUP[validator]]  # type: ignore[index]
@@ -4342,7 +4342,7 @@ def _query_input(
                         errs.extend(e)
                         continue
 
-                assert vv  # TODO check this (i.e. the above todos)
+                assert vv is not None
                 value.append(vv)
 
             if not value:
