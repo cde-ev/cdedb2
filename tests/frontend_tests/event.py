@@ -3166,12 +3166,28 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 
     @as_users("garcia")
     def test_stats_matches(self) -> None:
+        # Create a statistic part group containing all event parts
+        self.traverse(
+            "Veranstaltungen", "Große Testakademie 2222", "Veranstaltungsteile",
+            "Veranstaltungsteilgruppe", "Veranstaltungsteilgruppe hinzufügen")
+        f = self.response.forms['configurepartgroupform']
+        f['title'] = f['shortname'] = "3/3"
+        f['constraint_type'] = const.EventPartGroupType.Statistic
+        f['part_ids'] = ["1", "2", "3"]
+        self.submit(f)
+
+        # Create a statistic part group containing 2/3 event parts
+        self.traverse("Veranstaltungsteilgruppe hinzufügen")
+        f = self.response.forms['configurepartgroupform']
+        f['title'] = f['shortname'] = "2/3"
+        f['constraint_type'] = const.EventPartGroupType.Statistic
+        f['part_ids'] = ["2", "3"]
+        self.submit(f)
+
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/stats'}, )
         self.assertTitle("Statistik (Große Testakademie 2222)")
-
-        # TODO add one or more statistic part groups
 
         stats_page = self.response
 
@@ -3181,7 +3197,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             for link in table.find_all("a"):
                 self.get(link["href"])
                 # <a> is inside a <td> inside a <tr>, and the <th> contains the name
-                stat_name = link.parent.parent.find("th").text
+                # an indent is implemented as an <th> without text
+                stat_name = "".join(th.text for th in link.parent.parent.find_all("th"))
                 self.assertPresence(f"Ergebnis [{link.text}]",
                                     msg=f"{stat_name}: {link['href']}")
                 self.response = stats_page
