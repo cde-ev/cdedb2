@@ -3202,8 +3202,9 @@ def _serialized_event(
         'event.course_choices': Mapping,
         'event.questionnaire_rows': Mapping,
         'event.fee_modifiers': Mapping,
+        'event.stored_queries': Mapping,
     }
-    optional_fields = {
+    optional_fields: TypeMapping = {
         'core.personas': Mapping,
         'event.part_groups': Mapping,
         'event.part_group_parts': Mapping,
@@ -3261,6 +3262,10 @@ def _serialized_event(
             _questionnaire_row, {'id': ID, 'event_id': ID}),
         'event.fee_modifiers': _augment_dict_validator(
             _event_fee_modifier, {'id': ID, 'part_id': ID}),
+        # Is it easier to throw away broken ones at the end of the import.
+        'event.stored_queries': _augment_dict_validator(
+            _empty_dict, {'id': ID, 'event_id': ID, 'query_name': str,
+                          'scope': QueryScope, 'serialized_query': Mapping})
     }
 
     errs = ValidationSummary()

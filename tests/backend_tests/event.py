@@ -2391,6 +2391,17 @@ class TestEventBackend(BackendTest):
             'modifier_name': 'solidarity',
             'amount': decimal.Decimal("+7.50"),
         }
+        # This is an invalid stored query, which is just dropped silently on import.
+        new_data['event.stored_queries'][10000] = {
+            "event_id": 1,
+            "id": 1,
+            "query_name": "Test-Query",
+            "scope": 30,
+            "serialized_query": {
+                "invalid": True,
+                "superfluous_key": None,
+            }
+        }
         # Note that the changes above are not entirely consistent/complete (as
         # in some stuff is missing and another part may throw an error if we
         # used the resulting data set for real)
@@ -2606,6 +2617,8 @@ class TestEventBackend(BackendTest):
             'kind': const.QuestionnaireUsages.additional,
             'default_value': None,
         }
+        # stored_data['event.stored_queries'][10000]
+        # is already deleted due to the import deleting invalid queries
 
         result = self.event.export_event(self.key, 1)
         # because it's irrelevant anyway simply paste the result
