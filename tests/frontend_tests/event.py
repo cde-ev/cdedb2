@@ -4988,3 +4988,36 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             f['qval_ctime.creation_time'].value,
             reference_time.isoformat()
         )
+
+    @as_users("berta")
+    def test_part_group_part_order(self) -> None:
+        self.traverse("Veranstaltungen", "CdE-Party", "Veranstaltungsteile",
+                      "Teil hinzufügen")
+        f = self.response.forms['addpartform']
+        f['title'] = "Afterparty"
+        f['shortname'] = "Afterparty"
+        f['part_begin'] = "2050-01-16"
+        f['part_end'] = "2050-01-17"
+        f['fee'] = "1"
+        self.submit(f)
+
+        f['title'] = "Pregame"
+        f['shortname'] = "Pregame"
+        f['part_begin'] = "2050-01-14"
+        f['part_end'] = "2050-01-15"
+        self.submit(f)
+
+        self.traverse(
+            "Veranstaltungsteilgruppen", "Veranstaltungsteilgruppe hinzufügen")
+        f = self.response.forms['configurepartgroupform']
+        f['title'] = "All"
+        f['shortname'] = "all"
+        f['constraint_type'] = const.EventPartGroupType.Statistic
+        f['part_ids'] = [4, 1001, 1002]
+        self.submit(f)
+
+        self.traverse("Statistik", {'linkid': 'part_group_participant_1001'})
+        f = self.response.forms['queryform']
+        self.assertEqual(
+            f['qop_part4.status,part1001.status,part1002.status'].value,
+            str(QueryOperators.equal.value))

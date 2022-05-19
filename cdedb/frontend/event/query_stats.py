@@ -27,7 +27,7 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import (
     Query, QueryConstraint, QueryOperators, QueryOrder, QueryScope,
 )
-from cdedb.common.sorting import EntitySorter
+from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.filter import keydictsort_filter
 
 RPS = const.RegistrationPartStati
@@ -188,18 +188,18 @@ class StatisticMixin:
 
     @staticmethod
     def get_part_ids(event: CdEDBObject, *, part_group_id: int) -> Iterable[int]:
-        return event['part_groups'][part_group_id]['part_ids']
+        return xsorted(event['part_groups'][part_group_id]['part_ids'])
 
     @staticmethod
     def get_track_ids(event: CdEDBObject, *, part_id: int = None,
                       part_group_id: int = None) -> Iterable[int]:
         """Determine the relevant track ids for the given part (group) id."""
         if part_id:
-            return event['parts'][part_id]['tracks'].keys()
+            return xsorted(event['parts'][part_id]['tracks'].keys())
         if part_group_id:
             part_ids = event['part_groups'][part_group_id]['part_ids']
             parts = (p for part_id, p in event['parts'].items() if part_id in part_ids)
-            return itertools.chain.from_iterable(part['tracks'] for part in parts)
+            return xsorted(itertools.chain.from_iterable(p['tracks'] for p in parts))
         return ()
 
 
