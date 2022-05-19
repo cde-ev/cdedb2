@@ -342,7 +342,7 @@ class EventCourseMixin(EventBaseFrontend):
                         personas[registrations[problem[0]]['persona_id']]))
 
         constraint_violations = self.get_constraint_violations(
-            rs, event_id, registration_id=-1)
+            rs, event_id, registration_id=-1, course_id=None)
 
         return self.render(rs, "course/course_assignment_checks", {
             'registrations': registrations, 'personas': personas,

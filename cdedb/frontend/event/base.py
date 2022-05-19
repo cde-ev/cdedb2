@@ -19,9 +19,9 @@ import datetime
 import itertools
 import operator
 from collections import OrderedDict
+from dataclasses import dataclass
 from typing import (
-    Any, Collection, Dict, Iterable, List, Literal, NamedTuple, Optional, Set, Tuple,
-    Type, Union,
+    Any, Collection, Dict, Iterable, List, Literal, Optional, Set, Tuple, Type,
 )
 
 import werkzeug.exceptions
@@ -45,26 +45,29 @@ from cdedb.frontend.common import (
     calculate_loglinks, event_guard, periodic,
 )
 
-MEPViolation = NamedTuple(
-    "MEPViolation", [
-        ("constraint_type",
-         Literal[const.EventPartGroupType.mutually_exclusive_participants]),
-        ("reg_id", int),
-        ("persona_id", int),
-        ("pg_id", int),  # ID of the part group whose constraint is being violated.
-        ("part_ids", List[int]),  # Sorted IDs of the parts in violation.
-        ("parts_str", str)  # Locale agnostic string representation of said parts.
-    ])
 
-MECViolation = NamedTuple(
-    "MECViolation", [
-        ("constraint_type",
-         Literal[const.EventPartGroupType.mutually_exclusive_courses]),
-        ("course_id", int),
-        ("pg_id", int),  # ID of the part group whose constraint is being violated.
-        ("track_ids", List[int]),  # Sorted IDs of the tracks in violation.
-        ("tracks_str", str)  # Locale agnostic string representation of said tracks.
-    ])
+@dataclass(frozen=True)
+class ConstraintViolation:
+    constraint_type: const.EventPartGroupType
+    severity: int
+    part_group_id: int  # ID of the part group whose constraint is being violated.
+
+
+@dataclass(frozen=True)
+class MEPViolation(ConstraintViolation):
+    constraint_type: Literal[const.EventPartGroupType.mutually_exclusive_participants]
+    registration_id: int
+    persona_id: int
+    part_ids: List[int]  # Sorted IDs of the parts in violation.
+    parts_str: str  # Locale agnostic string representation of said parts.
+
+
+@dataclass(frozen=True)
+class MECViolation(ConstraintViolation):
+    constraint_type: Literal[const.EventPartGroupType.mutually_exclusive_courses]
+    course_id: int
+    track_ids: List[int]  # Sorted IDs of the tracks in violation.
+    tracks_str: str  # Locale agnostic string representation of said tracks.
 
 
 class EventBaseFrontend(AbstractUserFrontend):
@@ -385,9 +388,18 @@ class EventBaseFrontend(AbstractUserFrontend):
         parts = (p for part_id, p in event['parts'].items() if part_id in part_ids)
         return set(itertools.chain.from_iterable(part['tracks'] for part in parts))
 
-    def get_constraint_violations(self, rs: RequestState, event_id: int,
-                                  registration_id: int = None, course_id: int = None
-                                  ) -> CdEDBObject:
+    def get_constraint_violations(self, rs: RequestState, event_id: int, *,
+                                  registration_id: Optional[int],
+                                  course_id: Optional[int]) -> CdEDBObject:
+        """
+        Check constraints for violations.
+
+        :param registration_id: Can be a single id to only consider that registrations.
+            Can also be `-1` to check no registrations at all. Alternatively this can
+            be `None` in order to check all existing registrations.
+        :param course_id: Same as `registration_id`.
+        :return: A collection of data pertaining to the constraint violations.
+        """
 
         pgs_by_type: Dict[const.EventPartGroupType, List[Tuple[int, CdEDBObject]]] = {
             constraint: keydictsort_filter(
@@ -421,14 +433,28 @@ class EventBaseFrontend(AbstractUserFrontend):
 
         for reg_id, reg in registrations.items():
             for pg_id, part_group in pgs_by_type[mep]:
+                # Check for participant violations.
+                participant = const.RegistrationPartStati.participant
                 part_ids = set(part_id for part_id in part_group['part_ids']
-                               if reg['parts'][part_id]['status'].is_present())
-                self.logger.debug(f"{reg_id}, {part_ids}, {part_group['part_ids']}")
+                               if reg['parts'][part_id]['status'] == participant)
                 if len(part_ids) > 1:
                     sorted_part_ids = part_id_sorter(part_ids)
                     mep_violations.append(MEPViolation(
                         const.EventPartGroupType.mutually_exclusive_participants,
-                        reg_id, reg['persona_id'], pg_id, sorted_part_ids,
+                        mep.severity, pg_id, reg_id, reg['persona_id'], sorted_part_ids,
+                        ", ".join(rs.ambience['event']['parts'][part_id]['shortname']
+                                  for part_id in sorted_part_ids)))
+                    continue
+
+                # Check for guest violations.
+                part_ids = set(part_id for part_id in part_group['part_ids']
+                               if reg['parts'][part_id]['status'].is_present())
+                if len(part_ids) > 1:
+                    sorted_part_ids = part_id_sorter(part_ids)
+                    mep_violations.append(MEPViolation(
+                        const.EventPartGroupType.mutually_exclusive_participants,
+                        mep.severity - 1, pg_id, reg_id, reg['persona_id'],
+                        sorted_part_ids,
                         ", ".join(rs.ambience['event']['parts'][part_id]['shortname']
                                   for part_id in sorted_part_ids)))
 
@@ -458,20 +484,19 @@ class EventBaseFrontend(AbstractUserFrontend):
             part_ids = set(track_part_map[t_id] for t_id in track_ids)
             for pg_id, part_group in pgs_by_type[mec]:
                 if len(part_ids & part_group['part_ids']) > 1:
-                    # Filter those tracks, that belong to this part group.
+                    # Filter those tracks that belong to this part group.
                     sorted_track_ids = track_id_sorter(
                         t_id for t_id in track_ids
                         if track_part_map[t_id] in part_group['part_ids'])
                     mec_violations.append(MECViolation(
                         const.EventPartGroupType.mutually_exclusive_courses,
-                        course_id_, pg_id, sorted_track_ids,
+                        mec.severity, pg_id, course_id_, sorted_track_ids,
                         ", ".join(rs.ambience['event']['tracks'][track_id]['shortname']
                                   for track_id in sorted_track_ids)))
 
-        all_violations: Iterable[Union[MEPViolation, MECViolation]] = itertools.chain(
+        all_violations: Iterable[ConstraintViolation] = itertools.chain(
             mep_violations, mec_violations)
-        max_severity = max(
-            (v.constraint_type.severity for v in all_violations), default=0)
+        max_severity = max((v.severity for v in all_violations), default=0)
         return {
             'max_severity': max_severity,
             'mep_violations': mep_violations, 'registrations': registrations,
@@ -482,7 +507,8 @@ class EventBaseFrontend(AbstractUserFrontend):
     @access("event")
     @event_guard()
     def constraint_violations(self, rs: RequestState, event_id: int) -> Response:
-        params = self.get_constraint_violations(rs, event_id)
+        params = self.get_constraint_violations(
+            rs, event_id, registration_id=None, course_id=None)
         return self.render(rs, "base/constraint_violations", params)
 
     @access("event_admin", "auditor")

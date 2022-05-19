@@ -102,7 +102,8 @@ class EventEventMixin(EventBaseFrontend):
             params['institutions'] = self.pasteventproxy.list_institutions(rs)
             params['minor_form_present'] = (
                     self.eventproxy.get_minor_form(rs, event_id) is not None)
-            constraint_violations = self.get_constraint_violations(rs, event_id)
+            constraint_violations = self.get_constraint_violations(
+                rs, event_id, registration_id=None, course_id=None)
             params['mep_violations'] = constraint_violations['mep_violations']
             params['mec_violations'] = constraint_violations['mec_violations']
             params['violation_severity'] = constraint_violations['max_severity']

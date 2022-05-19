@@ -302,13 +302,13 @@
         {% for violation in violations %}
             {% set persona_name = util.persona_name(personas[violation.persona_id]) %}
             {% if link_registration %}
-                {% set reg_link = util.href(cdedblink("event/show_registration", {'registration_id': violation.reg_id}), persona_name) %}
+                {% set reg_link = util.href(cdedblink("event/show_registration", {'registration_id': violation.registration_id}), persona_name) %}
             {% else %}
                 {% set reg_link = persona_name %}
             {% endif %}
 
-            <li {% if violation.constraint_type.severity == 1 %} class="text-warning" {% elif violation.constraint_type.severity > 1 %} class="text-danger" {% endif %}>
-                {% trans reg_link=reg_link, constraint_shortname=ambience['event']['part_groups'][violation.pg_id]['shortname'] %}
+            <li {% if violation.severity == 1 %} class="text-warning" {% elif violation.severity > 1 %} class="text-danger" {% endif %}>
+                {% trans reg_link=reg_link, constraint_shortname=ambience['event']['part_groups'][violation.part_group_id]['shortname'] %}
                     {{ reg_link }} is in violation of the {{ constraint_shortname }} mutually exclusive participation constraint.
                 {% endtrans -%}
                 {# These are presorted. #}
@@ -330,8 +330,8 @@
                 {% set course_link = course_identifier %}
             {% endif %}
 
-            <li {% if violation.constraint_type.severity == 1 %} class="text-warning" {% elif violation.constraint_type.severity > 1 %} class="text-danger" {% endif %}>
-                {% trans course_link=course_link, constraint_shortname=ambience['event']['part_groups'][violation.pg_id]['shortname'] %}
+            <li {% if violation.severity == 1 %} class="text-warning" {% elif violation.severity > 1 %} class="text-danger" {% endif %}>
+                {% trans course_link=course_link, constraint_shortname=ambience['event']['part_groups'][violation.part_group_id]['shortname'] %}
                     {{ course_link }} is in violation of the {{ constraint_shortname }} mutually exclusive course constraint.
                 {% endtrans -%}
                 {# These are presorted. #}

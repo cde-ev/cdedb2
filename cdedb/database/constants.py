@@ -125,7 +125,7 @@ class EventPartGroupType(enum.IntEnum):
         return {
             EventPartGroupType.Statistic: "chart-bar",
             EventPartGroupType.mutually_exclusive_participants: "user-lock",
-            EventPartGroupType.mutually_exclusive_courses: "book",
+            EventPartGroupType.mutually_exclusive_courses: "comment-slash",
         }[self]
 
     def is_stats(self) -> bool:
