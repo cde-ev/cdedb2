@@ -14,7 +14,7 @@ from typing import Optional
 
 import psycopg2.extensions
 
-import cdedb.validationtypes as vtypes
+import cdedb.common.validation.types as vtypes
 from cdedb.backend.common import inspect_validation as inspect
 from cdedb.common import User, now, setup_logger
 from cdedb.common.fields import PERSONA_STATUS_FIELDS

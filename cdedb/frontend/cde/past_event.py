@@ -16,20 +16,20 @@ from typing import Collection, Dict, List, Optional, Sequence, Tuple
 import werkzeug.exceptions
 from werkzeug import Response
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.common import CdEDBObject, CdEDBObjectMap, RequestState, merge_dicts
 from cdedb.common.fields import LOG_FIELDS_COMMON
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
+from cdedb.common.validation import PAST_COURSE_COMMON_FIELDS, PAST_EVENT_FIELDS
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
     CustomCSVDialect, REQUESTdata, REQUESTdatadict, TransactionObserver, access,
     calculate_db_logparams, calculate_loglinks, check_validation as check, csv_output,
     drow_name, process_dynamic_input,
 )
-from cdedb.validation import PAST_COURSE_COMMON_FIELDS, PAST_EVENT_FIELDS
 
 COURSESEARCH_DEFAULTS = {
     'qsel_courses.title': True,

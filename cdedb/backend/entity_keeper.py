@@ -18,7 +18,7 @@ import tempfile
 from pathlib import Path
 from typing import List, Optional, Union
 
-import cdedb.validationtypes as vtypes
+import cdedb.common.validation.types as vtypes
 from cdedb.backend.common import affirm_validation as affirm
 from cdedb.common import PathLike, setup_logger
 from cdedb.config import Config

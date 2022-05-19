@@ -5,7 +5,7 @@ is needed for creation of validators and serializers and thus we keep
 one list instead of two.
 """
 
-from enum import Enum
+from enum import Enum, IntEnum
 from typing import Tuple, Type
 
 from subman.machine import SubscriptionAction, SubscriptionPolicy
@@ -56,7 +56,7 @@ ALL_ENUMS: Tuple[Type[Enum], ...] = (
 )
 
 #: The list of infinite enums
-ALL_INFINITE_ENUMS: Tuple[Type[Enum], ...] = (
+ALL_INFINITE_ENUMS: Tuple[Type[IntEnum], ...] = (
     CourseFilterPositions, CourseChoiceToolActions)
 
 #: A dict for enum lookup in the templates.

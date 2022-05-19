@@ -10,8 +10,8 @@ import datetime
 import decimal
 from typing import Any, Collection, Dict, List, Optional, Protocol, Tuple
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.backend.cde import CdEBaseBackend
 from cdedb.backend.common import (
     access, affirm_array_validation as affirm_array,
@@ -24,7 +24,7 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import LASTSCHRIFT_FIELDS, LASTSCHRIFT_TRANSACTION_FIELDS
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.database.connection import Atomizer
 
 

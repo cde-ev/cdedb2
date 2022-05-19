@@ -9301,6 +9301,11 @@ msgstr "Profilbild ändern"
 msgid "QR"
 msgstr "QR"
 
+
+#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:53
+msgid "Bank transfer data as QR code"
+msgstr "Überweisungsdaten als QR-Code"
+
 #: cdedb/frontend/templates/web/core/show_user.tmpl:154
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:95
 #: cdedb/frontend/templates/web/util.tmpl:333

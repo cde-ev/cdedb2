@@ -19,9 +19,7 @@
             $('#finalizationform').cdedbProtectAction("{{ gettext("This action cannot be undone.") }}",
                     function(){return $('#finalization-cancel')[0] == document.activeElement;});
             $('#generatetransactionsform').cdedbProtectAction("{{ gettext("Direct Debits will be created.") }}")
-                .on('submit', function(){window.location.reload();});
             $('.generatetransactionform').cdedbProtectAction("{{ gettext("Direct Debit will be created.") }}")
-                .on('submit', function(){window.location.reload();});
         });
     </script>
 

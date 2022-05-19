@@ -12,11 +12,11 @@ from typing import Any, Mapping, Optional, Set, Tuple
 import werkzeug.exceptions
 from werkzeug import Response
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.common import CdEDBObject, CdEDBObjectMap, RequestState, json_serialize
 from cdedb.common.exceptions import PartialImportError
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.sorting import xsorted
 from cdedb.filter import enum_entries_filter, safe_filter
 from cdedb.frontend.common import (
