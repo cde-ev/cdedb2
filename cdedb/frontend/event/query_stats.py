@@ -62,6 +62,11 @@ def _involved_constraint(part: CdEDBObject) -> QueryConstraint:
             tuple(status.value for status in RPS if status.is_involved()))
 
 
+def _has_to_pay_constraint(part: CdEDBObject) -> QueryConstraint:
+    return (f"part{part['id']}.status", QueryOperators.oneof,
+            tuple(status.value for status in RPS if status.has_to_pay()))
+
+
 def _present_constraint(part: CdEDBObject) -> QueryConstraint:
     return (f"part{part['id']}.status", QueryOperators.oneof,
             tuple(status.value for status in RPS if status.is_present()))
@@ -451,7 +456,7 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
             return (
                 [f"part{part['id']}.status"],
                 [
-                    _involved_constraint(part),
+                    _has_to_pay_constraint(part),
                     ('reg.payment', QueryOperators.empty, None),
                 ],
                 []
