@@ -3622,6 +3622,11 @@ msgstr "Keine Änderung erforderlich."
 msgid "%(num)s permits revoked."
 msgstr "%(num)s Lastschriftmandate widerrufen."
 
+#: cdedb/frontend/core/base.py:1576
+#, python-format
+msgid "Revoked active permit."
+msgstr "Aktives Lastschriftmandat widerrufen."
+
 #: cdedb/frontend/core/base.py:1610 cdedb/frontend/core/base.py:1613
 msgid "Nothing changed."
 msgstr "Keine Änderungen."
@@ -12914,6 +12919,10 @@ msgstr "Veranstaltungsteilgruppe"
 msgid "Course Statistics"
 msgstr "Kursstatistik"
 
+#: cdedb/frontend/templates/web/event/query/stats.tmpl:74
+msgid "Only includes participants."
+msgstr "Beinhaltet nur Teilnehmer."
+
 #: cdedb/frontend/templates/web/event/query/stats.tmpl:79
 msgid "Track"
 msgstr "Kurschiene"
@@ -13344,6 +13353,10 @@ msgstr ""
 "Teilnahmebeitrags gültig wird. Überweise dazu %(to_pay)s auf folgendes "
 "Konto. Achte bitte bei internationalen Überweisungen darauf, dass der "
 "Empfänger keine Gebühren zahlen muss."
+
+#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:53
+msgid "Bank transfer data as QR code"
+msgstr "Überweisungsdaten als QR-Code"
 
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:101
 msgid ""

@@ -12,6 +12,8 @@ from typing import (
 
 import icu
 
+from cdedb.common.n_ import n_
+
 # Global unified collator to be used when sorting.
 # The locale provided here must exist as collation in SQL for this to
 # work properly.
@@ -24,15 +26,6 @@ COLLATOR = icu.Collator.createInstance(icu.Locale(LOCALE))
 CdEDBObject = Dict[str, Any]
 
 T = TypeVar("T")
-
-
-def n_(x: str) -> str:
-    """
-    Alias of the identity for i18n.
-    Identity function that shadows the gettext alias to trick pybabel into
-    adding string to the translated strings.
-    """
-    return x
 
 
 def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,

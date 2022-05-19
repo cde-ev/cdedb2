@@ -1505,6 +1505,9 @@ class TestEventBackend(BackendTest):
                          self.event.list_lodgements(self.key, event_id))
         self.assertLess(0, self.event.delete_lodgement(self.key, new_id))
         del expectation_list[new_id]
+        self.assertLess(0, self.event.delete_lodgement(self.key, 1,
+                                                       cascade={"inhabitants"}))
+        del expectation_list[1]
         self.assertEqual(expectation_list,
                          self.event.list_lodgements(self.key, event_id))
 
@@ -2694,7 +2697,7 @@ class TestEventBackend(BackendTest):
                     new_key = key
                 if new_key not in old:
                     old[new_key] = {}
-                recursive_update(old[new_key], temp, new_key)  # type: ignore
+                recursive_update(old[new_key], temp, new_key)  # type: ignore[arg-type]
             for key in ('persona_id', 'real_persona_id'):
                 if key in new:
                     del new[key]

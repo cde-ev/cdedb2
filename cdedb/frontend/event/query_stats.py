@@ -23,7 +23,7 @@ from typing import Collection, Dict, Iterable, List, Optional, Set, Tuple
 
 import cdedb.database.constants as const
 from cdedb.common import AgeClasses, CdEDBObject, CdEDBObjectMap, deduct_years, unwrap
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.query import (
     Query, QueryConstraint, QueryOperators, QueryOrder, QueryScope,
 )
@@ -542,6 +542,8 @@ class EventCourseStatistic(StatisticTrackMixin, enum.Enum):
             raise RuntimeError(n_("Impossible."))
 
     def _get_query_aux(self, event: CdEDBObject, track_id: int) -> StatQueryAux:  # pylint: disable=arguments-differ
+        # Track specific constraints need to be single-field so the relation between
+        #  two constraints isn't spread across different fields for joined queries.
         if self == self.offered:
             return (
                 [],
@@ -552,10 +554,10 @@ class EventCourseStatistic(StatisticTrackMixin, enum.Enum):
             )
         elif self == self.cancelled:
             return (
-                [f"track{t_id}.takes_place" for t_id in event['tracks']],
+                [f"track{t_id}.takes_place" for t_id in event['tracks']]
+                + [f"track{t_id}.is_cancelled" for t_id in event['tracks']],
                 [
-                    (f"track{track_id}.is_offered", QueryOperators.equal, True),
-                    (f"track{track_id}.takes_place", QueryOperators.equal, False),
+                    (f"track{track_id}.is_cancelled", QueryOperators.equal, True),
                 ],
                 []
             )
@@ -563,7 +565,6 @@ class EventCourseStatistic(StatisticTrackMixin, enum.Enum):
             return (
                 [],
                 [
-                    (f"track{track_id}.is_offered", QueryOperators.equal, True),
                     (f"track{track_id}.takes_place", QueryOperators.equal, False),
                 ],
                 []

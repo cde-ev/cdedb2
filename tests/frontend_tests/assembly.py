@@ -17,8 +17,8 @@ from cdedb.common import (
 )
 from cdedb.common.query import QueryOperators
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
+from cdedb.common.validation import parse_datetime
 from cdedb.filter import datetime_filter
-from cdedb.validation import parse_datetime
 from tests.common import (
     USER_DICT, FrontendTest, MultiAppFrontendTest, UserIdentifier, as_users, get_user,
     storage,

@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
-import argparse
+"""Generate a JSON-file from the current state of the database."""
+
 import datetime
-import json
+import logging
 import re
 from typing import Any, Dict, List
 
-from cdedb.backend.core import CoreBackend
-from cdedb.common import CustomJSONEncoder, RequestState, nearly_now
+from cdedb.common import nearly_now
+from cdedb.database.query import SqlQueryBackend
 from cdedb.script import Script
 
 # per default, we sort entries in a table by their id. Here we can specify any arbitrary
@@ -57,12 +58,22 @@ implicit_columns = {
 }
 
 
-def dump_sql_data(rs: RequestState, core: CoreBackend
-                  ) -> Dict[str, List[Dict[str, Any]]]:
+def sql2json(dbname: str) -> Dict[str, List[Dict[str, Any]]]:
+    """Generate a valid JSON dict from the current state of the given database."""
+
+    script = Script(dbuser="cdb_admin", dbname=dbname, check_system_user=False)
+    rs = script.rs()
+
+    # avoid to spam the logs with unnecessary information
+    logger = logging.Logger("sql2json")
+    logger.addHandler(logging.NullHandler())
+    sql = SqlQueryBackend(logger)
+
     # extract the tables to be created from the database tables
     with open("/cdedb2/cdedb/database/cdedb-tables.sql", "r") as f:
-        tables = [table.group('name')
-                  for table in re.finditer(r'CREATE TABLE\s(?P<name>\w+\.\w+)', f.read())]
+        tables = [
+            table.group('name')
+            for table in re.finditer(r'CREATE TABLE\s(?P<name>\w+\.\w+)', f.read())]
 
     # extract the ldap tables from the separate file
     with open("/cdedb2/cdedb/database/cdedb-ldap.sql", "r") as f:
@@ -77,7 +88,7 @@ def dump_sql_data(rs: RequestState, core: CoreBackend
     for table in tables:
         order = ", ".join(sort_table_by.get(table, []) + ['id'])
         query = f"SELECT * FROM {table} ORDER BY {order}"
-        entities = core.query_all(rs, query, ())
+        entities = sql.query_all(rs, query, ())
         if table in ignored_tables:
             entities = tuple()
         print(f"{query:100} ==> {len(entities):3}", "" if entities else "!")
@@ -99,26 +110,3 @@ def dump_sql_data(rs: RequestState, core: CoreBackend
         full_sample_data[table] = sorted_entities
 
     return full_sample_data
-
-
-def main() -> None:
-    # Import output file location from commandline.
-    parser = argparse.ArgumentParser(
-        description="Generate a JSON-file from the current state of the database.")
-    parser.add_argument(
-        "-o", "--outfile", default="/tmp/sample_data.json")
-    args = parser.parse_args()
-
-    # Setup rs
-    script = Script(dbuser="cdb_admin")
-    rs = script.rs()
-    core = script.make_backend("core", proxy=False)
-
-    data = dump_sql_data(rs, core)
-
-    with open(args.outfile, "w") as f:
-        json.dump(data, f, cls=CustomJSONEncoder, indent=4, ensure_ascii=False)
-
-
-if __name__ == '__main__':
-    main()

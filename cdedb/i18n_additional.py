@@ -2,7 +2,7 @@
 
 """Additional strings for i18n which do not occur literally."""
 
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 
 I18N_STRINGS = (
     #

@@ -2,12 +2,16 @@
 
 import datetime
 import decimal
-from typing import Any, Dict, List, Mapping, NewType as _NewType, Type
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, NewType as _NewType, Type
 
 from subman import SubscriptionState
 
-from cdedb.common import CdEDBObject, CdEDBOptionalMap
 from cdedb.common.query import Query
+
+if TYPE_CHECKING:
+    from cdedb.common import CdEDBObject, CdEDBOptionalMap
+else:
+    CdEDBObject = CdEDBOptionalMap = None
 
 TypeMapping = Mapping[str, Type[Any]]
 
@@ -64,7 +68,8 @@ ProfilePicture = _NewType("ProfilePicture", bytes)
 PDFFile = _NewType("PDFFile", bytes)
 
 
-JSON = _NewType("JSON", Any)  # type: ignore  # TODO can we narrow this down?
+# While not technically correct, this should always be true.
+JSON = _NewType("JSON", CdEDBObject)
 
 # TODO this probably requires custom logic...
 ByFieldDatatype = _NewType("ByFieldDatatype", str)

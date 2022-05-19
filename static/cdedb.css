@@ -738,6 +738,11 @@ tr.drow-delete>td, tr.drow-delete1>td {
     margin-bottom: 30px;
     border-left: solid 4px #ddd;
 }
+.money-parse-line {
+    padding-left: 10px;
+    margin-bottom: 15px;
+    border-left: solid 4px #ddd;
+}
 
 /* Fancy preferential voting with JavaScript */
 .prefvote_container {

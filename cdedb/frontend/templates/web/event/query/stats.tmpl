@@ -71,6 +71,7 @@
         </table>
     {% if ambience['event']['tracks'] %}
         <h3>{% trans %}Course Statistics{% endtrans %}</h3>
+            <p class="text-muted">{{ util.make_icon('info-circle') }}{{ nbsp }}{% trans %}Only includes participants.{% endtrans %}</p>
             <table id="course-stats" class="table table-condensed table-slim table-stats">
                 <thead>
                     <tr>
