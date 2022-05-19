@@ -182,8 +182,9 @@ class StatisticMixin:
 
     def get_query_by_ids(self, event: CdEDBObject, entity_ids: Collection[int]
                          ) -> Query:
+        """This assumes the entities are registrations."""
         query = self._get_base_query(event)
-        query.constraints.append(("id", QueryOperators.oneof, list(entity_ids)))
+        query.constraints.append(("reg.id", QueryOperators.oneof, list(entity_ids)))
         return query
 
     @staticmethod
@@ -527,6 +528,13 @@ class EventCourseStatistic(StatisticTrackMixin, enum.Enum):
     offered = n_("Course Offers")
     cancelled = n_("Cancelled Courses")
     taking_place = n_("Courses Taking Place")
+
+    def get_query_by_ids(self, event: CdEDBObject, entity_ids: Collection[int]
+                         ) -> Query:
+        """This assumes the entities are courses."""
+        query = self._get_base_query(event)
+        query.constraints.append(("course.id", QueryOperators.oneof, list(entity_ids)))
+        return query
 
     def test(self, event: CdEDBObject, course: CdEDBObject, track_id: int) -> bool:  # pylint: disable=arguments-differ
         """Determine whether the course fits this stat for the given track."""
