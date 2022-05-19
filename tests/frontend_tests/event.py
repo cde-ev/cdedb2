@@ -3165,6 +3165,28 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("Ergebnis [1]")
 
     @as_users("garcia")
+    def test_stats_matches(self) -> None:
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/stats'}, )
+        self.assertTitle("Statistik (Große Testakademie 2222)")
+
+        # TODO add one or more statistic part groups
+
+        stats_page = self.response
+
+        participant_stats = self.response.html.find(id="participant-stats")
+        course_stats = self.response.html.find(id="course-stats")
+        for table in [participant_stats, course_stats]:
+            for link in table.find_all("a"):
+                self.get(link["href"])
+                # <a> is inside a <td> inside a <tr>, and the <th> contains the name
+                stat_name = link.parent.parent.find("th").text
+                self.assertPresence(f"Ergebnis [{link.text}]",
+                                    msg=f"{stat_name}: {link['href']}")
+                self.response = stats_page
+
+    @as_users("garcia")
     def test_course_stats(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
