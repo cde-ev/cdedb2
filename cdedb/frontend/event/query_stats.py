@@ -27,7 +27,7 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import (
     Query, QueryConstraint, QueryOperators, QueryOrder, QueryScope,
 )
-from cdedb.common.sorting import EntitySorter
+from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.filter import keydictsort_filter
 
 RPS = const.RegistrationPartStati
@@ -108,18 +108,16 @@ def merge_constraints(*constraints: QueryConstraint) -> Optional[QueryConstraint
     >>> merge_constraints(("part1.status", "=", 1), ("part1.status", "=", 2))
 
     """
-    # Fields will be collected via the keys of this dict, with all values being None.
-    # This ensures uniqueness, while preserving order, which is not possible with sets.
-    fields: Dict[str, None] = {}
-    operators, values = set(), set()
+    fields, operators, values = set(), set(), set()
     for con in constraints:
         field, op, value = con
-        fields[field] = None
+        fields.add(field)
         operators.add(op)
         values.add(value)
     if len(operators) != 1 or len(values) != 1:
         return None
-    return (",".join(fields), unwrap(operators), unwrap(values))
+    # take care to sort the fields before joining them
+    return (",".join(xsorted(fields)), unwrap(operators), unwrap(values))
 
 
 def merge_queries(base_query: Query, *queries: Query) -> Optional[Query]:
