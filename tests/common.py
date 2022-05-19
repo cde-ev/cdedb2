@@ -1204,7 +1204,7 @@ class FrontendTest(BackendTest):
             raise ValueError("Id doesnt belong to a checkbox", anid)
 
     def assertPresence(self, s: str, *, div: str = "content", regex: bool = False,
-                       exact: bool = False) -> None:
+                       exact: bool = False, msg: str = None) -> None:
         """Assert that a string is present in the element with the given id.
 
         The checked content is whitespace-normalized before comparison.
@@ -1215,11 +1215,11 @@ class FrontendTest(BackendTest):
         target = self.get_content(div)
         normalized = re.sub(r'\s+', ' ', target)
         if regex:
-            self.assertTrue(re.search(s.strip(), normalized))
+            self.assertTrue(re.search(s.strip(), normalized), msg=msg)
         elif exact:
-            self.assertEqual(s.strip(), normalized.strip())
+            self.assertEqual(s.strip(), normalized.strip(), msg=msg)
         else:
-            self.assertIn(s.strip(), normalized)
+            self.assertIn(s.strip(), normalized, msg=msg)
 
     def assertNonPresence(self, s: Optional[str], *, div: str = "content",
                           check_div: bool = True) -> None:
