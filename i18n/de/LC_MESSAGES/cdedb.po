@@ -10387,13 +10387,13 @@ msgid "There are currently no constraints being violated."
 msgstr "Es gibt derzeit keine Verstöße gegen Beschränkungen."
 
 #: cdedb/frontend/templates/web/event/base/constraint_violations.tmpl:25
-msgid "Participation Constraints"
-msgstr "Teilnahmebeschränkungen"
+msgid "Mutually Exclusive Participants"
+msgstr "Teilnahmeausschließlichkeitsbeschränkungen"
 
 #: cdedb/frontend/templates/web/event/base/constraint_violations.tmpl:33
 #: cdedb/frontend/templates/web/event/course/course_assignment_checks.tmpl:68
-msgid "Course Constraints"
-msgstr "Kursbeschränkungen"
+msgid "Mutually Exclusive Courses"
+msgstr "Kursausschließlichkeitsbeschränkungen"
 
 #: cdedb/frontend/templates/web/event/base/participant_info.tmpl:13
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:100
@@ -12017,8 +12017,8 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:346
 #, python-format
-msgid "There are %(count)s violations of participation constraints."
-msgstr "Es gibt %(count)s Verstöße gegen Teilnahmebeschränkungen."
+msgid "There are %(count)s violations of mutually exclusive participation constraints."
+msgstr "Es gibt %(count)s Verstöße gegen Teilnahmeausschließlichkeitsbeschränkungen."
 
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:349
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:377
@@ -12027,8 +12027,8 @@ msgstr "Orga-Mailingliste erstellen"
 
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:353
 #, python-format
-msgid "There are %(count)s violations of course constraints."
-msgstr "Es gibt %(count)s Verstöße gegen Kursbeschränkungen."
+msgid "There are %(count)s violations of mutually exclusive course constraints."
+msgstr "Es gibt %(count)s Verstöße gegen Kursausschließlichkeitsbeschränkungen."
 
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:358
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:386
@@ -12349,7 +12349,7 @@ msgid ""
 "%(reg_link)s is in violation of the %(constraint_shortname)s mutually "
 "exclusive participation constraint."
 msgstr ""
-"%(reg_link)s verstößt gegen die Teilnahmebeschränkung "
+"%(reg_link)s verstößt gegen die Teilnahmeausschließlichkeitsbeschränkung "
 "%(constraint_shortname)s."
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:315
@@ -12363,7 +12363,8 @@ msgid ""
 "%(course_link)s is in violation of the %(constraint_shortname)s mutually "
 "exclusive course constraint."
 msgstr ""
-"%(course_link)s verstößt gegen die Kursbeschränkung %(constraint_shortname)s."
+"%(course_link)s verstößt gegen die Kursausschließlichkeitsbeschränkung "
+"%(constraint_shortname)s."
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:338
 #, python-format
@@ -15412,11 +15413,11 @@ msgstr "Statistik"
 
 #: cdedb/i18n_additional.py:226
 msgid "EventPartGroupType.mutually_exclusive_participants"
-msgstr "Teilnahmebeschränkung"
+msgstr "Teilnahmeausschließlichkeit"
 
 #: cdedb/i18n_additional.py:227
 msgid "EventPartGroupType.mutually_exclusive_courses"
-msgstr "Kursbeschränkung"
+msgstr "Kursausschließlichkeit"
 
 #: cdedb/i18n_additional.py:228 cdedb/i18n_additional.py:230
 msgid "RegistrationPartStati.not_applied"

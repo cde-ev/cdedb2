@@ -344,14 +344,14 @@
                             {% if mep_violations %}
                                 <li>
                                     {% trans count=mep_violations|length %}
-                                        There are {{ count }} violations of participation constraints.
+                                        There are {{ count }} violations of mutually exclusive participation constraints.
                                     {% endtrans %}
                                 </li>
                             {% endif %}
                             {% if mec_violations %}
                                 <li>
                                     {% trans count=mec_violations|length %}
-                                        There are {{ count }} violations of course constraints.
+                                        There are {{ count }} violations of mutually exclusive course constraints.
                                     {% endtrans %}
                                 </li>
                             {% endif %}

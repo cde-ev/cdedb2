@@ -14584,11 +14584,11 @@ msgstr "Statistic"
 
 #: cdedb/i18n_additional.py:226
 msgid "EventPartGroupType.mutually_exclusive_participants"
-msgstr "Participation Constraint"
+msgstr "Mutually Exclusive Participation"
 
 #: cdedb/i18n_additional.py:227
 msgid "EventPartGroupType.mutually_exclusive_courses"
-msgstr "Course Constraint"
+msgstr "Mutually Exclusive Courses"
 
 #: cdedb/i18n_additional.py:228 cdedb/i18n_additional.py:230
 msgid "RegistrationPartStati.not_applied"

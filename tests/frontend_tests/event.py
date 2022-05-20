@@ -4996,30 +4996,36 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.traverse("TripelAkademie")
         self.assertPresence("Verstöße gegen Beschränkungen",
                             div="constraint-violations")
-        self.assertPresence("Es gibt 1 Verstöße gegen Teilnahmebeschränkungen.",
+        self.assertPresence("Es gibt 1 Verstöße gegen"
+                            " Teilnahmeausschließlichkeitsbeschränkungen.",
                             div="constraint-violations")
-        self.assertPresence("Es gibt 1 Verstöße gegen Kursbeschränkungen.",
+        self.assertPresence("Es gibt 1 Verstöße gegen"
+                            " Kursausschließlichkeitsbeschränkungen.",
                             div="constraint-violations")
         self.traverse("Verstöße gegen Beschränkungen")
         self.assertTitle("TripelAkademie – Verstöße gegen Beschränkungen")
-        self.assertPresence("Teilnahmebeschränkungen")
-        self.assertPresence("Emilia E. Eventis verstößt gegen die Teilnahmebeschränkung"
-                            " TN 1H. (Anwesend in K1, W1).", div="mep-violations")
+        self.assertPresence("Teilnahmeausschließlichkeitsbeschränkungen")
+        self.assertPresence("Emilia E. Eventis verstößt gegen die"
+                            " Teilnahmeausschließlichkeitsbeschränkung TN 1H."
+                            " (Anwesend in K1, W1).", div="mep-violations")
         self.assertNonPresence("TN 2H", div="mep-violations")
-        self.assertPresence("Kursbeschränkungen")
-        self.assertPresence("4. Akrobatik verstößt gegen die Kursbeschränkung"
-                            " Kurs 1H. (Findet statt in OK1, KK1).",
+        self.assertPresence("Kursausschließlichkeitsbeschränkungen")
+        self.assertPresence("4. Akrobatik verstößt gegen die"
+                            " Kursausschließlichkeitsbeschränkung Kurs 1H."
+                            " (Findet statt in OK1, KK1).",
                             div="mec-violations")
-        self.assertNonPresence("4. Akrobatik verstößt gegen die Kursbeschränkung"
-                               " Kurs 2H. (Findet statt in WK2m, WK2n).",
+        self.assertNonPresence("4. Akrobatik verstößt gegen die"
+                               " Kursausschließlichkeitsbeschränkung Kurs 2H."
+                               " (Findet statt in WK2m, WK2n).",
                                div="mec-violations")
 
         # Change Emilia's registration.
         self.traverse("Emilia E. Eventis")
         self.assertPresence("Verstöße gegen Beschränkungen",
                             div="constraint-violations")
-        self.assertPresence("Emilia E. Eventis verstößt gegen die Teilnahmebeschränkung"
-                            " TN 1H. (Anwesend in K1, W1).", div="mep-violations")
+        self.assertPresence("Emilia E. Eventis verstößt gegen die"
+                            " Teilnahmeausschließlichkeitsbeschränkung TN 1H."
+                            " (Anwesend in K1, W1).", div="mep-violations")
         self.assertNonPresence("TN 2H", div="mep-violations")
         self.traverse("Bearbeiten")
         f = self.response.forms['changeregistrationform']
@@ -5042,15 +5048,17 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("Verstöße gegen Beschränkungen",
                             div="constraint-violations")
         self.assertNonPresence("TN 1H", div="mep-violations")
-        self.assertPresence("Emilia E. Eventis verstößt gegen die Teilnahmebeschränkung"
-                            " TN 2H. (Anwesend in K2, O2).", div="mep-violations")
+        self.assertPresence("Emilia E. Eventis verstößt gegen die"
+                            " Teilnahmeausschließlichkeitsbeschränkung TN 2H."
+                            " (Anwesend in K2, O2).", div="mep-violations")
 
         f['part9.status'] = const.RegistrationPartStati.cancelled
         self.submit(f)
         self.assertNonPresence("Verstöße gegen Beschränkungen",
                                div="constraint-violations", check_div=False)
         self.assertNonPresence(
-            "Emilia E. Eventis verstößt gegen die Teilnahmebeschränkung")
+            "Emilia E. Eventis verstößt gegen die"
+            " Teilnahmeausschließlichkeitsbeschränkung")
 
         self.traverse("Verstöße gegen Beschränkungen")
         self.assertNonPresence("Teilnahmebeschränkungen")
@@ -5059,11 +5067,13 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.traverse("4. Akrobatik")
         self.assertPresence("Verstöße gegen Beschränkungen",
                             div="constraint-violations")
-        self.assertPresence("4. Akrobatik verstößt gegen die Kursbeschränkung"
-                            " Kurs 1H. (Findet statt in OK1, KK1).",
+        self.assertPresence("4. Akrobatik verstößt gegen die"
+                            " Kursausschließlichkeitsbeschränkung Kurs 1H."
+                            " (Findet statt in OK1, KK1).",
                             div="mec-violations")
-        self.assertNonPresence("4. Akrobatik verstößt gegen die Kursbeschränkung"
-                               " Kurs 2H. (Findet statt in WK2m, WK2n).",
+        self.assertNonPresence("4. Akrobatik verstößt gegen die"
+                               " Kursausschließlichtkeitsbeschränkung Kurs 2H."
+                               " (Findet statt in WK2m, WK2n).",
                                div="mec-violations")
         self.assertNonPresence("Kurs fällt aus")
 

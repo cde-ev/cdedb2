@@ -22,7 +22,7 @@
 
     {% if mep_violations %}
         <h2 class="heading-underline">
-            {% trans %}Participation Constraints{% endtrans %}
+            {% trans %}Mutually Exclusive Participants{% endtrans %}
         </h2>
         {# These are presorted by persona and constraint. #}
         {{ generic.list_mep_violations(mep_violations, personas, link_registration=True) }}
@@ -30,7 +30,7 @@
 
     {% if mec_violations %}
         <h2 class="heading-underline">
-            {% trans %}Course Constraints{% endtrans %}
+            {% trans %}Mutually Exclusive Courses{% endtrans %}
         </h2>
         {# These are presorted by course and constraint. #}
         {{ generic.list_mec_violations(mec_violations, courses, link_course=True) }}
