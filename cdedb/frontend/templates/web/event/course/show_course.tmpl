@@ -75,7 +75,7 @@
         {% for track_id, track in batch %}
             {% set num_track_learners = learners[(ambience['course']['id'], track_id)]|length %}
             <div class="col-md-4">
-                <div class="panel panel-info panel-condensed">
+                <div class="panel panel-info panel-condensed" id="attendees-{{ track_id }}">
                     <div class="panel-heading">
                         <div class="pull-right">
                             {{ util.href(cdedblink('event/course_choices', {
@@ -132,12 +132,25 @@
                         </ul>
                     </div>
                     <div class="panel-footer">
-                        {{ util.href(cdedblink('event/course_choices', {
-                                                    'track_id': track_id,
-                                                    'course_id': ambience['course']['id'],
-                                                    'position': enums.CourseFilterPositions.anywhere.value,
-                                                    'submitform': True}),
-                                     util.make_icon('crosshairs') + nbsp + gettext("Related Course Choices")) }}
+                        <ul class="list-unstyled">
+                            <li>
+                                {{ util.href(cdedblink('event/course_choices', {
+                                                            'track_id': track_id,
+                                                            'course_id': ambience['course']['id'],
+                                                            'position': enums.CourseFilterPositions.anywhere.value,
+                                                            'submitform': True}),
+                                             label=gettext("Related Course Choices"),
+                                             icon=util.make_icon('crosshairs')) }}
+                            </li>
+                        {% if num_track_learners %}
+                            <li>
+                                {{ util.href(cdedblink('event/registration_query',
+                                                       make_attendees_query(track_id).serialize_to_url()) + "#query-results",
+                                             label=gettext("Attendees"), icon=util.make_icon('users'),
+                                             anid="attendees-link-{}".format(track_id)) }}
+                            </li>
+                        {% endif %}
+                        </ul>
                     </div>
                 </div>
             </div>

@@ -88,6 +88,24 @@ class EventCourseMixin(EventBaseFrontend):
             params['instructor_emails'] = [p['username']
                                            for p in instructors.values()]
 
+            def make_attendees_query(track_id: int) -> Query:
+                return Query(
+                    QueryScope.registration,
+                    QueryScope.registration.get_spec(event=rs.ambience['event']),
+                    fields_of_interest=[
+                        'persona.given_names', 'persona.family_name',
+                        f'track{track_id}.course_id',
+                    ],
+                    constraints=[
+                        (f'track{track_id}.course_id', QueryOperators.equal, course_id),
+                    ],
+                    order=[
+                        ('persona.family_name', True),
+                        ('persona.given_names', True),
+                    ]
+                )
+            params['make_attendees_query'] = make_attendees_query
+
             course_ids = self.eventproxy.list_courses(rs, event_id=event_id).keys()
             courses = self.eventproxy.get_courses(rs, course_ids)
             sorted_ids = xsorted(
