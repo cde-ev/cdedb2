@@ -3195,13 +3195,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         course_stats = self.response.html.find(id="course-stats")
         for table in [participant_stats, course_stats]:
             for link in table.find_all("a"):
-                self.get(link["href"])
-                # <a> is inside a <td> inside a <tr>, and the <th> contains the name
-                # an indent is implemented as an <th> without text
-                stat_name = "".join(th.text for th in link.parent.parent.find_all("th"))
-                self.assertPresence(f"Ergebnis [{link.text}]",
-                                    msg=f"{stat_name}: {link['href']}")
-                self.response = stats_page
+                with self.subTest(linkid=link.attrs['id']):
+                    self.get(link["href"])
+                    self.assertPresence(f"Ergebnis [{link.text}]", div="query-results")
+        self.response = stats_page
 
     @as_users("garcia")
     def test_course_stats(self) -> None:
