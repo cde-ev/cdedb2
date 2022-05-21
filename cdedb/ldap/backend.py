@@ -50,7 +50,7 @@ class LDAPsqlBackend:
                                params: Sequence["DatabaseValue_s"]) -> None:
         """Perform a database query. This low-level wrapper should be used
         for all explicit database queries, mostly because it invokes
-        :py:meth:`_sanitize_db_input`. However in nearly all cases you want to
+        :py:meth:`to_db_input`. However in nearly all cases you want to
         call one of :py:meth:`query_exec`, :py:meth:`query_one`,
         :py:meth:`query_all` which utilize a transaction to do the query. If
         this is not called inside a transaction context (probably created by
@@ -110,7 +110,7 @@ class LDAPsqlBackend:
 
         This especially checks that the id is a valid base 10 integer.
         """
-        if match := re.match(f"^{prefix}(?P<id>\d+)$", cn):
+        if match := re.match(rf"^{prefix}(?P<id>\d+)$", cn):
             return int(match.group("id"))
         else:
             return None

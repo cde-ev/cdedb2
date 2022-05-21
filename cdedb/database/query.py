@@ -15,7 +15,7 @@ import psycopg2.extras
 
 from cdedb.common import CdEDBObject, DefaultReturnCode, PsycoJson, unwrap
 from cdedb.database.connection import ConnectionContainer, n_
-from cdedb.database.conversions import to_db_input, from_db_output
+from cdedb.database.conversions import from_db_output, to_db_input
 
 # The following are meant to be used for type hinting the sql backend methods.
 # DatabaseValue is for any singular value that should be written into the database or
@@ -48,7 +48,7 @@ class SqlQueryBackend:
                          params: Sequence[DatabaseValue_s]) -> None:
         """Perform a database query. This low-level wrapper should be used
         for all explicit database queries, mostly because it invokes
-        :py:meth:`_sanitize_db_input`. However in nearly all cases you want to
+        :py:meth:`to_db_input`. However in nearly all cases you want to
         call one of :py:meth:`query_exec`, :py:meth:`query_one`,
         :py:meth:`query_all` which utilize a transaction to do the query. If
         this is not called inside a transaction context (probably created by

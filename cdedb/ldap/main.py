@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import signal
 
 # Install Twisted's asyncio-compatibility reactor.
 # It's important to do this before importing other things

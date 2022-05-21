@@ -11,8 +11,9 @@ if TYPE_CHECKING:
 
 # mypy treats all imports from psycopg2 as `Any`, so we do not gain anything by
 # overloading the definition.
-def from_db_output(output: Optional[psycopg2.extras.RealDictRow]
-                        ) -> Optional["CdEDBObject"]:
+def from_db_output(
+    output: Optional[psycopg2.extras.RealDictRow]
+) -> Optional["CdEDBObject"]:
     """Convert a :py:class:`psycopg2.extras.RealDictRow` into a normal
     :py:class:`dict`. We only use the outputs as dictionaries and
     the psycopg variant has some rough edges (e.g. it does not survive

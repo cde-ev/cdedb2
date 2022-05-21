@@ -9,6 +9,7 @@ from psycopg2.extensions import connection
 from cdedb.backend.common import DatabaseValue_s
 from cdedb.backend.core import CoreBackend
 from cdedb.common import CdEDBObject, PsycoJson
+from cdedb.database.conversions import to_db_input
 from cdedb.script import Script
 
 
@@ -103,8 +104,7 @@ def format_inserts(table_name: str, table_data: Sized, keys: Tuple[str, ...],
                             * len(table_data))
     query = "INSERT INTO {table} ({keys}) VALUES {value_list};".format(
         table=table_name, keys=", ".join(keys), value_list=value_list)
-    # noinspection PyProtectedMember
-    params = tuple(aux["core"]._sanitize_db_input(p) for p in params)
+    params = tuple(to_db_input(p) for p in params)
 
     # This is a bit hacky, but it gives us access to a psycopg2.cursor
     # object so we can let psycopg2 take care of the heavy lifting
