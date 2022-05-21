@@ -158,7 +158,7 @@ def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
     for persona in data['core.personas'].values():
         if persona['id'] in orgas:
             bits = ["is_active", "is_core_admin", "is_cde_admin", "is_event_admin",
-                    "is_cde_realm", "is_event_realm", "is_ml_realm"]
+                    "is_cde_realm", "is_event_realm", "is_ml_realm", "is_assembly_realm"]
             for bit in bits:
                 persona[bit] = True
 
