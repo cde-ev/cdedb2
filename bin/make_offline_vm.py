@@ -49,7 +49,7 @@ DEFAULTS = {
         'interests': None,
         'free_form': None,
         'trial_member': False,
-        'decided_search': False,
+        'decided_search': True,
         'bub_search': False,
         'foto': None,
         'fulltext': '',
