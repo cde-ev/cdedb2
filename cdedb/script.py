@@ -183,9 +183,7 @@ class Script:
             "password": self._secrets["CDB_DATABASE_ROLES"][dbuser],
             # TODO default to DB_PORT and provide flag for skipping pgbouncer
             # Temporary workaround because we cannot pass config options correctly.
-            "host":
-                "cdb" if pathlib.Path("/CONTAINER").is_file()
-                else self.config["DB_HOST"],
+            "host": self.config["DB_HOST"],
             "port": 5432,
             "connection_factory": IrradiatedConnection,
             "cursor_factory": cursor,

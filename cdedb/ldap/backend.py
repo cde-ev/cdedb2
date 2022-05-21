@@ -3,22 +3,27 @@ import pathlib
 import re
 from collections import defaultdict
 from typing import (
-    Any, Callable, Collection, Dict, List, Optional, Sequence, TypedDict, Union, cast,
+    TYPE_CHECKING, Any, Callable, Collection, Dict, List, Optional, Sequence, TypedDict,
+    Union, cast,
 )
 
 import aiopg.connection
-from aiopg.pool import Pool, create_pool
+from aiopg.pool import Pool
 from ldaptor.protocols.ldap.distinguishedname import (
     DistinguishedName as DN, LDAPAttributeTypeAndValue as ATV,
     RelativeDistinguishedName as RDN,
 )
 from passlib.hash import sha512_crypt
 
-from cdedb.common import CdEDBObject, unwrap
 from cdedb.config import SecretsConfig
 from cdedb.database.constants import SubscriptionState
-from cdedb.database.query import DatabaseValue_s, SqlQueryBackend
+from cdedb.database.conversions import from_db_output, to_db_input
 from cdedb.ldap.schema import SchemaDescription
+
+if TYPE_CHECKING:
+    # Lazy import saves many dependecies for standalone mode
+    from cdedb.common import CdEDBObject
+    from cdedb.database.query import DatabaseValue_s
 
 LDAPObject = Dict[bytes, List[bytes]]
 LDAPObjectMap = Dict[DN, LDAPObject]
@@ -42,7 +47,7 @@ class LDAPsqlBackend:
 
     @staticmethod
     async def execute_db_query(cur: aiopg.connection.Cursor, query: str,
-                               params: Sequence[DatabaseValue_s]) -> None:
+                               params: Sequence["DatabaseValue_s"]) -> None:
         """Perform a database query. This low-level wrapper should be used
         for all explicit database queries, mostly because it invokes
         :py:meth:`_sanitize_db_input`. However in nearly all cases you want to
@@ -53,22 +58,21 @@ class LDAPsqlBackend:
 
         This doesn't return anything, but has a side-effect on ``cur``.
         """
-        # TODO extract _sanitize_db_input() etc. from SqlQueryBackend
         sanitized_params = tuple(
-            SqlQueryBackend._sanitize_db_input(p) for p in params)
+            to_db_input(p) for p in params)
         logger.debug(f"Execute PostgreSQL query"
                      f" {cur.mogrify(query, sanitized_params)}.")
         await cur.execute(query, sanitized_params)
 
-    async def query_exec(self, query: str, params: Sequence[DatabaseValue_s]) -> int:
+    async def query_exec(self, query: str, params: Sequence["DatabaseValue_s"]) -> int:
         """Execute a query in a safe way (inside a transaction)."""
         async with self.pool.acquire() as conn:
             async with conn.cursor() as cur:
                 await self.execute_db_query(cur, query, params)
                 return cur.rowcount
 
-    async def query_one(self, query: str, params: Sequence[DatabaseValue_s]
-                        ) -> Optional[CdEDBObject]:
+    async def query_one(self, query: str, params: Sequence["DatabaseValue_s"]
+                        ) -> Optional["CdEDBObject"]:
         """Execute a query in a safe way (inside a transaction).
 
         :returns: First result of query or None if there is none
@@ -76,10 +80,10 @@ class LDAPsqlBackend:
         async with self.pool.acquire() as conn:
             async with conn.cursor() as cur:
                 await self.execute_db_query(cur, query, params)
-                return SqlQueryBackend._sanitize_db_output(await cur.fetchone())
+                return from_db_output(await cur.fetchone())
 
-    async def query_all(self, query: str, params: Sequence[DatabaseValue_s]
-                        ) -> List[CdEDBObject]:
+    async def query_all(self, query: str, params: Sequence["DatabaseValue_s"]
+                        ) -> List["CdEDBObject"]:
         """Execute a query in a safe way (inside a transaction).
 
         :returns: all results of query
@@ -87,15 +91,14 @@ class LDAPsqlBackend:
         async with self.pool.acquire() as conn:
             async with conn.cursor() as cur:
                 await self.execute_db_query(cur, query, params)
-                return [cast(CdEDBObject, SqlQueryBackend._sanitize_db_output(x))
+                return [cast("CdEDBObject", from_db_output(x))
                         for x in await cur.fetchall()]
 
     @staticmethod
     def _dn_value(dn: DN, attribute: str) -> Optional[str]:
         """Retrieve the value of the RDN matching the given attribute type."""
         rdn = dn.split()[0]
-        # TODO unwrap() seems to be overkill here
-        attribute_value = unwrap(rdn.split())
+        [attribute_value] = rdn.split()
         if attribute_value.attributeType == attribute:
             return attribute_value.value
         else:
@@ -281,7 +284,7 @@ class LDAPsqlBackend:
         return self._is_entry_dn(dn, self.users_dn, "uid")
 
     @staticmethod
-    def make_persona_name(persona: CdEDBObject,
+    def make_persona_name(persona: "CdEDBObject",
                           only_given_names: bool = False,
                           only_display_name: bool = False,
                           given_and_display_names: bool = False,

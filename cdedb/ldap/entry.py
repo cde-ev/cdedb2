@@ -22,7 +22,6 @@ from ldaptor.protocols.ldap.ldaperrors import (
 from twisted.internet.defer import Deferred, fail, succeed
 from twisted.python import log
 
-from cdedb.common import unwrap
 from cdedb.ldap.backend import LDAPObject, LDAPObjectMap, LDAPsqlBackend
 
 Callback = Callable
@@ -409,8 +408,9 @@ class CdEPreLeafEntry(CdEDBStaticEntry, metaclass=abc.ABCMeta):
             child_attributes = await self.children_getter([dn])
             if not child_attributes:
                 raise LDAPNoSuchObject(dn.getText())
+            [attributes] = child_attributes.values()
             child = self.ChildGroup(dn, backend=self.backend,
-                                    attributes=unwrap(child_attributes))
+                                    attributes=attributes)
             return await child._lookup(dn)
         else:
             raise LDAPNoSuchObject(dn.getText())

@@ -5,17 +5,17 @@
 This is used by :py:class:`AbstractBackend` and ldaptor to access the database.
 """
 
-import collections.abc
 import datetime
 import enum
 import logging
-from typing import Any, Collection, List, Optional, Sequence, Tuple, Union, cast
+from typing import Collection, List, Optional, Sequence, Tuple, Union, cast
 
 import psycopg2.extensions
 import psycopg2.extras
 
 from cdedb.common import CdEDBObject, DefaultReturnCode, PsycoJson, unwrap
 from cdedb.database.connection import ConnectionContainer, n_
+from cdedb.database.conversions import to_db_input, from_db_output
 
 # The following are meant to be used for type hinting the sql backend methods.
 # DatabaseValue is for any singular value that should be written into the database or
@@ -44,46 +44,6 @@ class SqlQueryBackend:
     def __init__(self, logger: logging.Logger) -> None:
         self.logger = logger
 
-    # mypy treats all imports from psycopg2 as `Any`, so we do not gain anything by
-    # overloading the definition.
-    @staticmethod
-    def _sanitize_db_output(output: Optional[psycopg2.extras.RealDictRow]
-                            ) -> Optional[CdEDBObject]:
-        """Convert a :py:class:`psycopg2.extras.RealDictRow` into a normal
-        :py:class:`dict`. We only use the outputs as dictionaries and
-        the psycopg variant has some rough edges (e.g. it does not survive
-        serialization).
-
-        Also this wrapper allows future global modifications to the
-        outputs, if we want to add some.
-        """
-        if not output:
-            return None
-        return dict(output)
-
-    # mypy cannot really understand the intricacies of what this function does, so
-    # we keep this simple. instead of overloading the definition.
-    @staticmethod
-    def _sanitize_db_input(obj: Any) -> Union[Any, List[Any]]:
-        """Mangle data to make psycopg happy.
-
-        Convert :py:class:`tuple`s (and all other iterables, but not strings
-        or mappings) into :py:class:`list`s. This is necesary because
-        psycopg will fail to insert a tuple into an 'ANY(%s)' clause -- only
-        a list does the trick.
-
-        Convert :py:class:`enum.IntEnum` (and all other enums) into
-        their numeric value. Everywhere else these automagically work
-        like integers, but here they have to be handled explicitly.
-        """
-        if (isinstance(obj, collections.abc.Iterable)
-                and not isinstance(obj, (str, collections.abc.Mapping))):
-            return [SqlQueryBackend._sanitize_db_input(x) for x in obj]
-        elif isinstance(obj, enum.Enum):
-            return obj.value
-        else:
-            return obj
-
     def execute_db_query(self, cur: psycopg2.extensions.cursor, query: str,
                          params: Sequence[DatabaseValue_s]) -> None:
         """Perform a database query. This low-level wrapper should be used
@@ -96,8 +56,7 @@ class SqlQueryBackend:
 
         This doesn't return anything, but has a side-effect on ``cur``.
         """
-        sanitized_params = tuple(
-            self._sanitize_db_input(p) for p in params)
+        sanitized_params = tuple(to_db_input(p) for p in params)
         self.logger.debug(f"Execute PostgreSQL query"
                           f" {cur.mogrify(query, sanitized_params)}.")
         cur.execute(query, sanitized_params)
@@ -119,7 +78,7 @@ class SqlQueryBackend:
         with container.conn as conn:
             with conn.cursor() as cur:
                 self.execute_db_query(cur, query, params)
-                return self._sanitize_db_output(cur.fetchone())
+                return from_db_output(cur.fetchone())
 
     def query_all(self, container: ConnectionContainer, query: str,
                   params: Sequence[DatabaseValue_s]) -> Tuple[CdEDBObject, ...]:
@@ -131,7 +90,7 @@ class SqlQueryBackend:
             with conn.cursor() as cur:
                 self.execute_db_query(cur, query, params)
                 return tuple(
-                    cast(CdEDBObject, self._sanitize_db_output(x))
+                    cast(CdEDBObject, from_db_output(x))
                     for x in cur.fetchall())
 
     def sql_insert(self, container: ConnectionContainer, table: str, data: CdEDBObject,
