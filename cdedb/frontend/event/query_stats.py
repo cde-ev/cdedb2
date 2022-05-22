@@ -159,6 +159,13 @@ def merge_queries(base_query: Query, *queries: Query) -> Optional[Query]:
     )
 
 
+def get_id_constraint(id_field: str, entity_ids: Collection[int]) -> QueryConstraint:
+    if entity_ids:
+        return (id_field, QueryOperators.oneof, list(entity_ids))
+    else:
+        return (id_field, QueryOperators.empty, None)
+
+
 class StatisticMixin:
     """Helper class for basic query construction shared across"""
     id_field: str
@@ -190,7 +197,7 @@ class StatisticMixin:
                          ) -> Query:
         """This assumes the entities are registrations."""
         query = self._get_base_query(event)
-        query.constraints.append((self.id_field, QueryOperators.oneof, list(entity_ids)))
+        query.constraints.append(get_id_constraint(self.id_field, entity_ids))
         return query
 
     @abc.abstractmethod
@@ -838,7 +845,7 @@ class EventRegistrationInXChoiceGrouper:
             QueryScope.registration.get_spec(event=event),
             fields_of_interest=['reg.id', 'persona.given_names', 'persona.family_name',
                                 'persona.username'],
-            constraints=[('reg.id', QueryOperators.oneof, reg_ids or ())],
+            constraints=[get_id_constraint('reg.id', reg_ids)],
             order=[('persona.family_name', True), ('persona.given_names', True)]
         )
 
