@@ -712,7 +712,7 @@ class EventQueryBackend(EventBaseBackend):
 
     @access("event")
     def delete_invalid_stored_event_queries(self, rs: RequestState, event_id: int
-                                         ) -> int:
+                                            ) -> int:
         """Delete invalid stored event queries."""
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))

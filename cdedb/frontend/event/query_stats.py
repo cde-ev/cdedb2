@@ -566,7 +566,7 @@ class EventCourseStatistic(StatisticTrackMixin, enum.Enum):
 
     def __new__(cls, value: str) -> "EventCourseStatistic":
         obj = object.__new__(cls)
-        obj._value = value
+        obj._value_ = value
         obj.id_field = "course.id"
         return obj
 
@@ -639,7 +639,7 @@ class EventRegistrationTrackStatistic(StatisticTrackMixin, enum.Enum):
 
     def __new__(cls, value: str) -> "EventRegistrationTrackStatistic":
         obj = object.__new__(cls)
-        obj._value = value
+        obj._value_ = value
         obj.id_field = "reg.id"
         return obj
 
@@ -845,7 +845,7 @@ class EventRegistrationInXChoiceGrouper:
             QueryScope.registration.get_spec(event=event),
             fields_of_interest=['reg.id', 'persona.given_names', 'persona.family_name',
                                 'persona.username'],
-            constraints=[get_id_constraint('reg.id', reg_ids)],
+            constraints=[get_id_constraint('reg.id', reg_ids or ())],
             order=[('persona.family_name', True), ('persona.given_names', True)]
         )
 
