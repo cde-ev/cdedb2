@@ -65,7 +65,7 @@
 
         {% if mec_violations %}
             <div class="col-md-6">
-                {% call generic.constraint_violations_panel(mec_severity, title=gettext("Course Constraints")) %}
+                {% call generic.constraint_violations_panel(mec_severity, title=gettext("Mutually Exclusive Courses")) %}
                     {{ generic.list_mec_violations(mec_violations, courses) }}
                 {% endcall %}
             </div>

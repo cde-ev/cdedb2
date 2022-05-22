@@ -22,7 +22,7 @@
 
     {% if mep_violations %}
         <h2 class="heading-underline">
-            {% trans %}Mutually Exclusive Participants{% endtrans %}
+            {% trans %}Mutually Exclusive Participation{% endtrans %}
         </h2>
         {# These are presorted by persona and constraint. #}
         {{ generic.list_mep_violations(mep_violations, personas, link_registration=True) }}
