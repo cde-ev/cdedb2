@@ -4297,7 +4297,7 @@ def _query_input(
             operator: Optional[QueryOperators] = _ALL_TYPED[
                 Optional[QueryOperators]  # type: ignore[index]
             ](
-                val.get(f"qop_{field}"), field, **kwargs)
+                val.get("qop_{}".format(field)), field, **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
             continue
@@ -4315,9 +4315,10 @@ def _query_input(
             continue
 
         # Get value
-        value = val.get(f"qval_{field}")
-        if value is None:
+        value = val.get("qval_{}".format(field))
+        if value is None or value == "":
             # No value supplied means no constraint
+            # TODO: make empty string a valid constraint
             continue
 
         if operator in MULTI_VALUE_OPERATORS:
@@ -4348,6 +4349,9 @@ def _query_input(
 
                 assert vv is not None
                 value.append(vv)
+
+            if not value:
+                continue
 
             if (operator in (QueryOperators.between, QueryOperators.outside)
                     and len(value) != 2):
