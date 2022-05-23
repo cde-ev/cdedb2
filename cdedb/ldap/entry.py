@@ -1,6 +1,6 @@
 import abc
 import logging
-from asyncio import ensure_future
+from asyncio import get_running_loop
 from typing import Any, Callable, List, Optional, Sequence, Type, Union
 
 import ldaptor.entry
@@ -184,7 +184,7 @@ class CdEDBBaseLDAPEntry(
                 callback(entry)
 
         return Deferred.fromFuture(
-            ensure_future(iterator(_tryMatch, bound_dn=bound_dn)))
+            get_running_loop().create_task(iterator(_tryMatch, bound_dn=bound_dn)))
 
     @abc.abstractmethod
     async def _children(self, callback: Callback = None, bound_dn: BoundDn = -1
@@ -199,7 +199,8 @@ class CdEDBBaseLDAPEntry(
         raise NotImplementedError
 
     def children(self, callback: Callback = None) -> Deferred[Optional[LDAPEntries]]:
-        d = Deferred.fromFuture(ensure_future(self._children(callback)))
+        d = Deferred.fromFuture(
+            get_running_loop().create_task(self._children(callback)))
         d.addErrback(log.err)
         return d
 
@@ -220,7 +221,7 @@ class CdEDBBaseLDAPEntry(
         return None
 
     def subtree(self, callback=None):
-        d = Deferred.fromFuture(ensure_future(self._subtree(callback)))
+        d = Deferred.fromFuture(get_running_loop().create_task(self._subtree(callback)))
         d.addErrback(log.err)
         return d
 
@@ -237,7 +238,7 @@ class CdEDBBaseLDAPEntry(
         raise NotImplementedError
 
     def lookup(self, dn: DistinguishedName) -> Deferred["CdEDBBaseLDAPEntry"]:
-        d = Deferred.fromFuture(ensure_future(self._lookup(dn)))
+        d = Deferred.fromFuture(get_running_loop().create_task(self._lookup(dn)))
         d.addErrback(log.err)
         return d
 
