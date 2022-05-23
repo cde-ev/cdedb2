@@ -63,7 +63,7 @@
 
     <h2>{% trans %}Inhabitants{% endtrans %}</h2>
     {% for batch in ambience['event']['parts']|keydictsort(EntitySorter.event_part)|batch(3) %}
-        <div class="row">
+        <div class="row" id="inhabitants">
         {% for part_id, part in batch %}
             <div class="col-md-4" id="inhabitants-{{ part_id }}">
                 <div class="panel panel-info panel-condensed">
@@ -108,6 +108,14 @@
                             {% endfor %}
                         </ul>
                     </div>
+                    {% if inhabitants[(values['lodgement_id'], part_id)] %}
+                        <div class="panel-footer">
+                            {{ util.href(cdedblink('event/registration_query',
+                                                   make_inhabitants_query(part_id).serialize_to_url()) + "#query-results",
+                                         label=gettext("Inhabitants"), icon=util.make_icon('users'),
+                                         anid="inhabitants-link-{}".format(part_id)) }}
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         {% endfor %}

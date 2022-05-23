@@ -15,8 +15,8 @@ from typing import (
 
 import psycopg2.extensions
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     access, affirm_array_validation as affirm_array,
     affirm_set_validation as affirm_set, affirm_validation as affirm,
@@ -31,7 +31,7 @@ from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
     REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS, REGISTRATION_TRACK_FIELDS,
 )
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.filter import date_filter, money_filter

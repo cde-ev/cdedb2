@@ -4,6 +4,7 @@
 
 {% block scripts %}
     {{ util.cdedb_script('cdedb_csv_tools.js') }}
+    {{ util.cdedb_script('cdedb_helper.js') }}
 {% endblock %}
 
 {% set jshint='strong' %}
@@ -41,7 +42,9 @@
 
         {% if data %}
             <h2>{% trans %}Validation results{% endtrans %}</h2>
+            <ol class="list-unstyled">
             {% for dataset in data %}
+                <li>
                 <strong>
                     <span class="row-key" data-row="{{ dataset['lineno'] }}">
                         {% trans lineno=dataset['lineno'] + 1 %}Line {{ lineno }}{% endtrans -%}
@@ -53,8 +56,8 @@
                         {{ amount }} for {{ name }}
                     {% endtrans %}
                 </strong>
-                <div class="batch-line-body">
-                    {% if dataset['problems'] or dataset['warnings'] %}
+                {% if dataset['problems'] or dataset['warnings'] %}
+                    <div class="money-parse-line">
                         <ul class="list-unstyled">
                             {% for key, problem in dataset['problems'] %}
                                 <li class="text-danger">
@@ -81,9 +84,11 @@
                                 </li>
                             {% endfor %}
                         </ul>
-                    {% endif %}
-                </div>
+                    </div>
+                {% endif %}
+                </li>
             {% endfor %}
+            </ol>
             <script nonce="{{ csp_nonce }}">
                 $(function() {
                     var $textinput = $('#input-data');
@@ -93,22 +98,24 @@
                     $('.row-key').addClass('clickable').click(function() {
                         $textinput.jumpCsvPosition($(this).attr('data-row'),-1);
                     });
+                    /* protect form changes */
+                    $('#transfersform').cdedbProtectChanges();
                 });
             </script>
         {% endif %}
 
         {% if saldo %}
-             <div id="saldo">
+             <p id="saldo" style="color: green">
                  {% trans %}Saldo{% endtrans %}: {{ saldo|money(lang=lang) }}
-             </div>
+             </p>
         {% endif %}
 
         {% if values['checksum'] %}
+            {{ util.form_input_submit(label=gettext("Confirm"), horizontal=False) }}
             <p class="help-block">
                 {{ util.make_icon('info-circle') }}
                 {% trans %}If the input changed, the validation results will be displayed again.{% endtrans %}
             </p>
-            {{ util.form_input_submit(label=gettext("Confirm"), horizontal=False) }}
         {% else %}
             {{ util.form_input_submit(label=gettext("Validate"), horizontal=False) }}
         {% endif %}

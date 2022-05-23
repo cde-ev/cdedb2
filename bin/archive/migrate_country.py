@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 from typing import Any, Dict, Optional
 
-from cdedb.script import make_backend, setup, Script, CoreBackend
-from cdedb.validationdata import COUNTRY_CODES
+from cdedb.common.validation.data import COUNTRY_CODES
+from cdedb.script import CoreBackend, Script, make_backend, setup
 
 # Configuration
 

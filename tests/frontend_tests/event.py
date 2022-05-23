@@ -3921,24 +3921,40 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 
     @as_users("garcia")
     def test_manage_attendees(self) -> None:
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/course/list'},
-                      {'href': '/event/event/1/course/1/show'})
+        self.traverse("Veranstaltungen", "Große Testakademie", "Kursliste",
+                      {'description': "Details",
+                       'href': '/event/event/1/course/1/show'})
         self.assertTitle("Kurs Heldentum (Große Testakademie 2222)")
-        self.traverse({'href': '/event/event/1/course/1/manage'})
-        self.assertTitle("\nKursteilnehmer für Kurs Planetenretten für Anfänger"
-                         " verwalten (Große Testakademie 2222)\n")
+        self.assertNonPresence("Garcia", div='attendees-1')
+        # Check the attendees link in the footer.
+        self.assertNonPresence("Kurswahlen Kursteilnehmer", div='attendees-1')
+        self.assertPresence("Inga", div='attendees-3')
+
+        self.traverse("Kursteilnehmer verwalten")
+        self.assertTitle("Kursteilnehmer für Kurs Planetenretten für Anfänger"
+                         " verwalten (Große Testakademie 2222)")
         f = self.response.forms['manageattendeesform']
         f['new_1'] = "3"
         f['delete_3_4'] = True
         self.submit(f)
+
         self.assertTitle("Kurs Heldentum (Große Testakademie 2222)")
-        self.assertPresence("Garcia")
-        self.assertNonPresence("Inga")
+        self.assertPresence("Garcia", div='attendees-1')
+        self.assertPresence("Kursteilnehmer", div='attendees-1')
+        self.assertPresence("Akira", div='attendees-3')
+        self.assertPresence("Emilia", div='attendees-3')
+        self.assertNonPresence("Inga", div='attendees-3')
+
+        # Check the attendees link in the footer.
+        self.assertPresence("Kurswahlen Kursteilnehmer", div='attendees-3')
+        self.traverse({'description': "Kursteilnehmer", 'linkid': "attendees-link-3"})
+        self.assertTitle("Anmeldungen (Große Testakademie 2222)")
+        self.assertPresence("Ergebnis [2]", div='query-results')
+        self.assertPresence("Akira", div='result-container')
+        self.assertPresence("Emilia", div='result-container')
 
         # check log
-        self.get('/event/event/1/log')
+        self.traverse("Log")
         self.assertPresence("Kursteilnehmer von Heldentum geändert.",
                             div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
         self.assertPresence("Kursteilnehmer von Heldentum geändert.",
@@ -3946,18 +3962,19 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 
     @as_users("garcia")
     def test_manage_inhabitants(self) -> None:
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/lodgement/overview'},
-                      {'href': '/event/event/1/lodgement/2/show'})
+        self.traverse("Veranstaltungen", "Große Testakademie", "Unterkünfte",
+                      "Kalte Kammer")
         self.assertTitle("Unterkunft Kalte Kammer (Große Testakademie 2222)")
         self.assertPresence("Inga", div='inhabitants-3')
         self.assertPresence("Garcia", div='inhabitants-3')
+        self.assertPresence("Bewohner", div='inhabitants-3')
         self.assertPresence("Garcia", div='inhabitants-1')
-        self.assertNonPresence("Emilia")
-        self.traverse({'description': 'Bewohner verwalten'})
-        self.assertTitle("\nBewohner der Unterkunft Kalte Kammer verwalten"
-                         " (Große Testakademie 2222)\n")
+        self.assertPresence("Bewohner", div='inhabitants-1')
+        self.assertNonPresence("Emilia", div='inhabitants')
+        self.assertNonPresence("Bewohner", div='inhabitants-2')
+        self.traverse("Bewohner verwalten")
+        self.assertTitle("Bewohner der Unterkunft Kalte Kammer verwalten"
+                         " (Große Testakademie 2222)")
         self.assertCheckbox(False, "is_camping_mat_3_3")
         self.assertCheckbox(True, "is_camping_mat_3_4")
         f = self.response.forms['manageinhabitantsform']
@@ -3972,14 +3989,23 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("Inga", div='inhabitants-3')
 
         # check the status of the camping mat checkbox was not overridden
-        self.traverse({'description': 'Bewohner verwalten'})
-        self.assertTitle("\nBewohner der Unterkunft Kalte Kammer verwalten"
-                         " (Große Testakademie 2222)\n")
+        self.traverse("Bewohner verwalten")
+        self.assertTitle("Bewohner der Unterkunft Kalte Kammer verwalten"
+                         " (Große Testakademie 2222)")
         self.assertCheckbox(False, "is_camping_mat_3_3")
         self.assertCheckbox(True, "is_camping_mat_3_4")
 
+        # Check inhabitants link
+        self.traverse("Kalte Kammer",
+                      {'description': "Bewohner", 'linkid': "inhabitants-link-3"})
+        self.assertTitle("Anmeldungen (Große Testakademie 2222)")
+        self.assertPresence("Ergebnis [3]", div='query-results')
+        self.assertPresence("Emilia", div='result-container')
+        self.assertPresence("Garcia", div='result-container')
+        self.assertPresence("Inga", div='result-container')
+
         # check log
-        self.get('/event/event/1/log')
+        self.traverse("Log")
         self.assertPresence("Bewohner von Kalte Kammer geändert.",
                             div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
         self.assertPresence("Bewohner von Kalte Kammer geändert.",
@@ -4988,3 +5014,36 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             f['qval_ctime.creation_time'].value,
             reference_time.isoformat()
         )
+
+    @as_users("berta")
+    def test_part_group_part_order(self) -> None:
+        self.traverse("Veranstaltungen", "CdE-Party", "Veranstaltungsteile",
+                      "Teil hinzufügen")
+        f = self.response.forms['addpartform']
+        f['title'] = "Afterparty"
+        f['shortname'] = "Afterparty"
+        f['part_begin'] = "2050-01-16"
+        f['part_end'] = "2050-01-17"
+        f['fee'] = "1"
+        self.submit(f)
+
+        f['title'] = "Pregame"
+        f['shortname'] = "Pregame"
+        f['part_begin'] = "2050-01-14"
+        f['part_end'] = "2050-01-15"
+        self.submit(f)
+
+        self.traverse(
+            "Veranstaltungsteilgruppen", "Veranstaltungsteilgruppe hinzufügen")
+        f = self.response.forms['configurepartgroupform']
+        f['title'] = "All"
+        f['shortname'] = "all"
+        f['constraint_type'] = const.EventPartGroupType.Statistic
+        f['part_ids'] = [4, 1001, 1002]
+        self.submit(f)
+
+        self.traverse("Statistik", {'linkid': 'part_group_participant_1001'})
+        f = self.response.forms['queryform']
+        self.assertEqual(
+            f['qop_part4.status,part1001.status,part1002.status'].value,
+            str(QueryOperators.equal.value))

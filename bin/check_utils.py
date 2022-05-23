@@ -87,7 +87,7 @@ class MyTextTestResult(unittest.TextTestResult):
             output.append(s)
         if output:
             if self.showAll:
-                self.stream.writeln(", ".join(output))  # type: ignore
+                self.stream.writeln(", ".join(output))  # type: ignore[attr-defined]
             else:
                 self.stream.write("".join(output))
                 self.stream.flush()

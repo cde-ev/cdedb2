@@ -5,21 +5,12 @@
 from typing import TYPE_CHECKING, List, Tuple
 
 from cdedb.common.sorting import xsorted
-from cdedb.validationdata import COUNTRY_CODES
+from cdedb.common.validation.data import COUNTRY_CODES
 
 if TYPE_CHECKING:
     from cdedb.common import RequestState
 else:
     RequestState = None
-
-
-def n_(x: str) -> str:
-    """
-    Alias of the identity for i18n.
-    Identity function that shadows the gettext alias to trick pybabel into
-    adding string to the translated strings.
-    """
-    return x
 
 
 def format_country_code(code: str) -> str:

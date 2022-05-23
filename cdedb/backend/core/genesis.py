@@ -6,8 +6,8 @@ for "genesis", that is for account creation via anonymous account requests.
 """
 from typing import Any, Collection, List, Optional, Protocol, Tuple
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     access, affirm_set_validation as affirm_set, affirm_validation as affirm,
     affirm_validation_optional as affirm_optional, internal, singularize,
@@ -22,7 +22,7 @@ from cdedb.common.fields import (
     GENESIS_CASE_FIELDS, PERSONA_ALL_FIELDS, PERSONA_CORE_FIELDS,
     PERSONA_FIELDS_BY_REALM, REALM_SPECIFIC_GENESIS_FIELDS,
 )
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.roles import (
     GENESIS_REALM_OVERRIDE, PERSONA_DEFAULTS, REALM_ADMINS, extract_realms,
     extract_roles, implied_realms,

@@ -6,7 +6,7 @@ import collections
 from typing import TYPE_CHECKING, Any, Dict, List, Set
 
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 
 # Pseudo objects like assembly, event, course, event part, etc.
 CdEDBObject = Dict[str, Any]

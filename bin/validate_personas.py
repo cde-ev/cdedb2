@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from typing import Optional
 
-import cdedb.validationtypes as vtypes
+import cdedb.common.validation.types as vtypes
 from cdedb.backend.common import affirm_validation as affirm
 from cdedb.script import Script
 

@@ -11,7 +11,7 @@ extend-ignore =
     E501
     E731
 per-file-ignores =
-    cdedb/validation.py:F405
+    cdedb/common/validation/__init__.py:F405
     # Twisted reactor has to be set before other imports
     cdedb/ldap/main.py:E402
     tests/backend_tests/__init__.py:F401
