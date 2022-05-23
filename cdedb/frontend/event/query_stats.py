@@ -195,7 +195,7 @@ class StatisticMixin:
 
     def get_query_by_ids(self, event: CdEDBObject, entity_ids: Collection[int]
                          ) -> Query:
-        """This assumes the entities are registrations."""
+        """This queries information by exhaustion by listing all relevant ids."""
         query = self._get_base_query(event)
         query.constraints.append(get_id_constraint(self.id_field, entity_ids))
         return query
