@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import signal
 
 # Install Twisted's asyncio-compatibility reactor.
 # It's important to do this before importing other things
@@ -52,9 +53,14 @@ async def main() -> None:
         reactor.listenTCP(conf["LDAP_PORT"], factory)  # type: ignore[attr-defined]
         reactor.startRunning()  # type: ignore[attr-defined]
 
+        # Wait for shutdown via Signal handler and event
+        shutdown = asyncio.Event()
+        asyncio.get_event_loop().add_signal_handler(signal.SIGINT, shutdown.set)
+        logger.warning("Startup completed")
+        await shutdown.wait()
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     loop = asyncio.get_event_loop()
-    loop.create_task(main())
-    loop.run_forever()
+    loop.run_until_complete(main())
