@@ -44,6 +44,9 @@ class LDAPsqlBackend:
         # load the ldap schemas (and overlays) which are supported
         self.schema = self.load_schemas(
             "core.schema", "cosine.schema", "inetorgperson.schema", "memberof.overlay")
+        # encrypting dua passwords once at startup, to increase runtime performance
+        self._dua_pwds = {name: self.encrypt_password(pwd)
+                          for name, pwd in self.secrets["LDAP_DUA_PW"].items()}
 
     @staticmethod
     async def execute_db_query(cur: aiopg.connection.Cursor, query: str,
@@ -243,18 +246,15 @@ class LDAPsqlBackend:
                 continue
             dn_to_name[dn] = name
 
-        data = self.secrets["LDAP_DUA_PW"]
-        duas = {name: self.encrypt_password(pwd) for name, pwd in data.items()}
-
         ret = dict()
         for dn, name in dn_to_name.items():
-            if name not in duas:
+            if name not in self.secrets["LDAP_DUA_PW"]:
                 continue
             dua = {
                 # TODO find a better objectClass for duas then 'person'
                 b"objectClass": ["person", "simpleSecurityObject"],
                 b"cn": [self.dua_cn(name)],
-                b"userPassword": [duas[name]]
+                b"userPassword": [self._dua_pwds[name]]
             }
             ret[dn] = self._to_bytes(dua)
         return ret
