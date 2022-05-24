@@ -182,7 +182,7 @@ steps:
   - name: tmp_dir
     path: /tmp
   commands:
-  - sleep 40 # wait until the ldap server comes online
+  - sleep 10 # wait until the ldap server comes online
   - bin/check.py --verbose --all-ldap
 - name: coverage
   image: cdedb
