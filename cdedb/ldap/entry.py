@@ -111,17 +111,17 @@ class CdEDBBaseLDAPEntry(
 
     def search(
         self,
-        filterText=None,
-        filterObject=None,
-        attributes=(),
-        scope=None,
-        derefAliases=None,
-        sizeLimit=0,
-        timeLimit=0,
-        typesOnly=0,
-        callback=None,
+        filterText: Any = None,
+        filterObject: Any = None,
+        attributes: Any = (),
+        scope: Any = None,
+        derefAliases: Any = None,
+        sizeLimit: Any = 0,
+        timeLimit: Any = 0,
+        typesOnly: Any = 0,
+        callback: Callback = None,
         bound_dn: BoundDn = -1,
-    ):
+    ) -> Deferred[None]:
         """Slightly modified version of ldaptor.entryhelpers.SearchByTreeWalkingMixin
 
         The original function does not respect the correct execution order in
@@ -144,6 +144,7 @@ class CdEDBBaseLDAPEntry(
         """
         if callback is None:
             logger.error("No 'callback' in Search provided!")
+        assert callback is not None
 
         if filterObject is None and filterText is None:
             filterObject = pureldap.LDAPFilterMatchAll
@@ -167,20 +168,21 @@ class CdEDBBaseLDAPEntry(
                 callback(self)
             iterator = self._subtree
         elif scope == pureldap.LDAP_SCOPE_singleLevel:
-            iterator = self._children
+            iterator = self._children  # type: ignore[assignment]
         elif scope == pureldap.LDAP_SCOPE_baseObject:
 
-            async def iterate_self(callback, bound_dn: BoundDn = -1):
+            async def iterate_self(callback: Callback, bound_dn: BoundDn = -1) -> None:
                 callback(self)
                 return None
 
-            iterator = iterate_self
+            iterator = iterate_self  # type: ignore[assignment]
         else:
             raise LDAPProtocolError("unknown search scope: %r" % scope)
 
         # gather results, send them
-        def _tryMatch(entry):
+        def _tryMatch(entry: "CdEDBBaseLDAPEntry") -> None:
             if entry.match(filterObject):
+                assert callback is not None
                 callback(entry)
 
         return Deferred.fromFuture(
@@ -204,7 +206,8 @@ class CdEDBBaseLDAPEntry(
         d.addErrback(log.err)
         return d
 
-    async def _subtree(self, callback, bound_dn: BoundDn = -1) -> None:
+    async def _subtree(self, callback: Optional[Callback],
+                       bound_dn: BoundDn = -1) -> None:
         """Apply a callback function to every entry of the current ones subtree.
 
         This is especially needed in subtree searches.
@@ -220,7 +223,7 @@ class CdEDBBaseLDAPEntry(
                 await child._subtree(callback, bound_dn=bound_dn)
         return None
 
-    def subtree(self, callback=None):
+    def subtree(self, callback: Callback = None) -> Deferred[None]:
         d = Deferred.fromFuture(get_running_loop().create_task(self._subtree(callback)))
         d.addErrback(log.err)
         return d
@@ -502,7 +505,7 @@ class SubschemaEntry(CdEDBStaticEntry):
             b"matchingRules": self.backend.schema.matching_rules,
             b"matchingRuleUse": [],
         }
-        return {k: attrs[k] for k in attributes} if attributes else attrs
+        return {k: attrs[k] for k in attributes} if attributes else attrs  # type: ignore[misc, return-value]
 
     async def _children(self, callback: Callback = None, bound_dn: BoundDn = -1
                         ) -> Optional[LDAPEntries]:
@@ -659,7 +662,9 @@ class UsersEntry(CdEPreLeafEntry):
                 return []
             # Users may access only their own data
             elif self.backend.is_user_dn(bound_dn):
-                return [self.backend.list_single_user(self.backend.user_id(bound_dn))]
+                user_id = self.backend.user_id(bound_dn)
+                assert user_id is not None
+                return [self.backend.list_single_user(user_id)]
         return await self.backend.list_users()
 
     async def children_getter(self, dns: List[DistinguishedName]) -> LDAPObjectMap:

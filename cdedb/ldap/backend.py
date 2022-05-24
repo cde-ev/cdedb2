@@ -4,7 +4,7 @@ import re
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING, Any, Callable, Collection, Dict, List, Optional, Sequence, TypedDict,
-    Union, cast,
+    Union, cast, overload,
 )
 
 import aiopg.connection
@@ -127,7 +127,15 @@ class LDAPsqlBackend:
             return False
         return True
 
-    # TODO more fancy type annotations
+    @overload
+    def _to_bytes(self, object: Union[None, str, int, bytes]) -> bytes: ...
+
+    @overload
+    def _to_bytes(self, object: Dict[Any, Any]) -> Dict[bytes, Any]: ...
+
+    @overload
+    def _to_bytes(self, object: List[Any]) -> List[Any]: ...
+
     def _to_bytes(self, object: Union[Dict[Any, Any], List[Any], str, int, bytes, None]
                   ) -> Union[Dict[bytes, Any], List[Any], bytes]:
         """This takes a python data structure and convert all of its entries into bytes.

@@ -34,7 +34,7 @@ class CdEDBLDAPServer(LDAPServer):
         return pureldap.LDAPSearchResultDone(resultCode=ldaperrors.Success.resultCode)
 
     def _cbSearchGotBase(self, base: CdEDBBaseLDAPEntry, dn: DistinguishedName,
-                         request: LDAPSearchRequest, reply) -> defer.Deferred:  # type: ignore
+                         request: LDAPSearchRequest, reply) -> defer.Deferred:  # type: ignore[type-arg]
         """Callback which is invoked after a search was performed."""
 
         def _sendEntryToClient(entry: CdEDBBaseLDAPEntry) -> None:
@@ -148,27 +148,27 @@ class CdEDBLDAPServer(LDAPServer):
         d.addCallback(_done)
         return d
 
-    def handle_LDAPCompareRequest(self, request, controls, reply) -> defer.Deferred:  # type: ignore
+    def handle_LDAPCompareRequest(self, request, controls, reply) -> defer.Deferred:  # type: ignore[no-untyped-def, type-arg]
         if self.boundUser is None:
             return defer.fail(ldaperrors.LDAPUnwillingToPerform("No anonymous compare"))
         return super().handle_LDAPCompareRequest(request, controls, reply)
 
-    def handle_LDAPDelRequest(self, request, controls, reply) -> defer.Deferred:  # type: ignore
+    def handle_LDAPDelRequest(self, request, controls, reply) -> defer.Deferred:  # type: ignore[no-untyped-def, type-arg]
         return defer.fail(ldaperrors.LDAPUnwillingToPerform("Not implemented"))
 
-    def handle_LDAPAddRequest(self, request, controls, reply) -> defer.Deferred:  # type: ignore
+    def handle_LDAPAddRequest(self, request, controls, reply) -> defer.Deferred:  # type: ignore[no-untyped-def, type-arg]
         return defer.fail(ldaperrors.LDAPUnwillingToPerform("Not implemented"))
 
-    def handle_LDAPModifyDNRequest(self, request, controls, reply) -> defer.Deferred:  # type: ignore
+    def handle_LDAPModifyDNRequest(self, request, controls, reply) -> defer.Deferred:  # type: ignore[no-untyped-def, type-arg]
         return defer.fail(ldaperrors.LDAPUnwillingToPerform("Not implemented"))
 
-    def handle_LDAPModifyRequest(self, request, controls, reply) -> defer.Deferred:  # type: ignore
+    def handle_LDAPModifyRequest(self, request, controls, reply) -> defer.Deferred:  # type: ignore[no-untyped-def, type-arg]
         return defer.fail(ldaperrors.LDAPUnwillingToPerform("Not implemented"))
 
-    def handle_LDAPExtendedRequest(self, request, controls, reply) -> defer.Deferred:  # type: ignore
+    def handle_LDAPExtendedRequest(self, request, controls, reply) -> defer.Deferred:  # type: ignore[no-untyped-def, type-arg]
         return defer.fail(ldaperrors.LDAPUnwillingToPerform("Not implemented"))
 
-    def extendedRequest_LDAPPasswordModifyRequest(self, data, reply) -> defer.Deferred:  # type: ignore
+    def extendedRequest_LDAPPasswordModifyRequest(self, data, reply) -> defer.Deferred:  # type: ignore[no-untyped-def, type-arg]
         return defer.fail(ldaperrors.LDAPUnwillingToPerform("Not implemented"))
 
 
