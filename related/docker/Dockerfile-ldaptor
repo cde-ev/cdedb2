@@ -29,4 +29,5 @@ EXPOSE 389
 # mount the code here
 WORKDIR /cdedb2
 
+ENV CDEDB_CONFIGPATH /etc/cdedb/config.py
 CMD ["python3", "-m", "cdedb.ldap.main"]
