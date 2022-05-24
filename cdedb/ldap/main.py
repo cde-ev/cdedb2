@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import signal
 
 # Install Twisted's asyncio-compatibility reactor.
 # It's important to do this before importing other things
@@ -33,34 +32,30 @@ async def main() -> None:
     observer.start()
 
     logger.debug("Waiting for aiopg connection pool ...")
-    async with create_pool(
-            dbname=conf["CDB_DATABASE_NAME"],
-            user="cdb_admin",
-            password=secrets["CDB_DATABASE_ROLES"]["cdb_admin"],
-            host=conf["DB_HOST"],
-            port=conf["DB_PORT"],
-            cursor_factory=psycopg2.extras.RealDictCursor,
-    ) as pool:
-        logger.debug("Got aiopg connection pool.")
-        backend = LDAPsqlBackend(pool)
-        factory = CdEDBLDAPServerFactory(backend)
-        factory.debug = True
-        # Tell twisted, how to transform the factory into an IConnectedLDAPEntry
-        registerAdapter(lambda x: x.root, CdEDBLDAPServerFactory, IConnectedLDAPEntry)
+    pool = await create_pool(
+        dbname=conf["CDB_DATABASE_NAME"],
+        user="cdb_admin",
+        password=secrets["CDB_DATABASE_ROLES"]["cdb_admin"],
+        host=conf["DB_HOST"],
+        port=conf["DB_PORT"],
+        cursor_factory=psycopg2.extras.RealDictCursor,
+    )
+    logger.debug("Got aiopg connection pool.")
+    backend = LDAPsqlBackend(pool)
+    factory = CdEDBLDAPServerFactory(backend)
+    factory.debug = True
+    # Tell twisted, how to transform the factory into an IConnectedLDAPEntry
+    registerAdapter(lambda x: x.root, CdEDBLDAPServerFactory, IConnectedLDAPEntry)
 
-        # Create Server
-        logger.info("Opening LDAP server ...")
-        reactor.listenTCP(conf["LDAP_PORT"], factory)  # type: ignore[attr-defined]
-        reactor.startRunning()  # type: ignore[attr-defined]
-
-        # Wait for shutdown via Signal handler and event
-        shutdown = asyncio.Event()
-        asyncio.get_event_loop().add_signal_handler(signal.SIGINT, shutdown.set)
-        logger.warning("Startup completed")
-        await shutdown.wait()
+    # Create Server
+    logger.info("Opening LDAP server ...")
+    reactor.listenTCP(conf["LDAP_PORT"], factory)  # type: ignore[attr-defined]
+    reactor.startRunning()  # type: ignore[attr-defined]
+    logger.warning("Startup completed")
 
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.WARNING)
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
+    loop.create_task(main())
+    loop.run_forever()
