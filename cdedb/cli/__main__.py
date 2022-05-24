@@ -163,10 +163,12 @@ def development() -> None:
 @development.command(name="compile-sample-data-json")
 @click.option("-o", "--outfile", default="/tmp/sample_data.json",
               type=click.Path(), help="the place to store the sql file")
+@pass_secrets
 @pass_config
-def compile_sample_data_json(config: TestConfig, outfile: pathlib.Path) -> None:
+def compile_sample_data_json(config: TestConfig, secrets: SecretsConfig,
+                             outfile: pathlib.Path) -> None:
     """Generate a JSON-file from the current state of the database."""
-    data = sql2json(config["CDB_DATABASE_NAME"])
+    data = sql2json(config, secrets)
     with open(outfile, "w") as f:
         json.dump(data, f, cls=CustomJSONEncoder, indent=4, ensure_ascii=False)
 
@@ -179,9 +181,11 @@ def compile_sample_data_json(config: TestConfig, outfile: pathlib.Path) -> None:
               type=click.Path(), help="the place to store the sql file")
 @click.option(
     "--xss/--no-xss", default=False, help="prepare sample data for xss checks")
+@pass_secrets
 @pass_config
 def compile_sample_data_sql(
-    config: TestConfig, infile: pathlib.Path, outfile: pathlib.Path, xss: bool
+    config: TestConfig, secrets: SecretsConfig, infile: pathlib.Path,
+    outfile: pathlib.Path, xss: bool
 ) -> None:
     """Parse sample data from a .json to a .sql file.
 
@@ -195,7 +199,7 @@ def compile_sample_data_sql(
         data: Dict[str, List[Any]] = json.load(f)
 
     xss_payload = config.get("XSS_PAYLOAD", "") if xss else ""
-    commands = json2sql(data, xss_payload)
+    commands = json2sql(config, secrets, data, xss_payload=xss_payload)
 
     with open(outfile, "w") as f:
         for cmd in commands:

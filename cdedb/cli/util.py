@@ -9,8 +9,12 @@ from shutil import which
 from typing import Any, Callable, Generator
 
 import click
+import psycopg2.extensions
+import psycopg2.extras
 
-from cdedb.config import SecretsConfig, TestConfig
+from cdedb.common import RequestState, User
+from cdedb.common.roles import ALL_ROLES
+from cdedb.config import Config, SecretsConfig, TestConfig
 
 pass_config = click.make_pass_decorator(TestConfig, ensure=True)
 pass_secrets = click.make_pass_decorator(SecretsConfig, ensure=True)
@@ -72,3 +76,67 @@ def get_user() -> str:
     if not sudo_user or sudo_user == "root":
         return getpass.getuser()
     return sudo_user
+
+
+# TODO is the nobody hack really necessary?
+def connect(
+    config: Config, secrets: SecretsConfig, as_nobody: bool = False
+) -> psycopg2.extensions.connection:
+    """Create a very basic database connection.
+
+    This allows to connect to the database specified as CDB_DATABASE_NAME in the given
+    config. The connecting user is 'cdb'.
+
+    Only exception from this is if the user wants to connect to the 'nobody' database,
+    which is used for very low-level setups (like generation of sample data).
+    """
+
+    if as_nobody:
+        dbname = user = "nobody"
+    else:
+        dbname = config["CDB_DATABASE_NAME"]
+        user = "cdb"
+
+    connection_parameters = {
+        "dbname": dbname,
+        "user": user,
+        "password": secrets["CDB_DATABASE_ROLES"][user],
+        "host": config["DB_HOST"],
+        "port": 5432,
+        "connection_factory": psycopg2.extensions.connection,
+        "cursor_factory": psycopg2.extras.RealDictCursor,
+    }
+    conn = psycopg2.connect(**connection_parameters)
+    conn.set_client_encoding("UTF8")
+    conn.set_session(autocommit=True)
+
+    return conn
+
+
+def fake_rs(conn: psycopg2.extensions.connection, persona_id: int = 0) -> RequestState:
+    """Create a RequestState which may be used during more elaborated commands.
+
+    This is needed when we want to interact with the CdEDB on a higher level of
+    abstraction. Note that the capabilities of this RequestState are limited, f.e. only
+    backend functions may work properly due to missing translations.
+    """
+    rs = RequestState(
+        sessionkey=None,
+        apitoken=None,
+        user=User(
+            persona_id=persona_id,
+            roles=ALL_ROLES,
+        ),
+        request=None,  # type: ignore[arg-type]
+        notifications=[],
+        mapadapter=None,  # type: ignore[arg-type]
+        requestargs=None,
+        errors=[],
+        values=None,
+        begin=None,
+        lang="de",
+        # translations=translations, TODO is this really necessary?
+        translations=None,  # type: ignore[arg-type]
+    )
+    rs.conn = rs._conn = conn
+    return rs

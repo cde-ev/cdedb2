@@ -5,9 +5,10 @@ import logging
 import re
 from typing import Any, Dict, List
 
+from cdedb.cli.util import connect, fake_rs
 from cdedb.common import nearly_now
+from cdedb.config import Config, SecretsConfig
 from cdedb.database.query import SqlQueryBackend
-from cdedb.script import Script
 
 # per default, we sort entries in a table by their id. Here we can specify any arbitrary
 # columns which should be used as sorting key for the table.
@@ -56,11 +57,10 @@ implicit_columns = {
 }
 
 
-def sql2json(dbname: str) -> Dict[str, List[Dict[str, Any]]]:
+def sql2json(config: Config, secrets: SecretsConfig) -> Dict[str, List[Dict[str, Any]]]:
     """Generate a valid JSON dict from the current state of the given database."""
-
-    script = Script(dbuser="cdb_admin", dbname=dbname, check_system_user=False)
-    rs = script.rs()
+    conn = connect(config, secrets)
+    rs = fake_rs(conn)
 
     # avoid to spam the logs with unnecessary information
     logger = logging.Logger("sql2json")
