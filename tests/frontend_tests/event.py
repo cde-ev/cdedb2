@@ -3165,6 +3165,42 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("Ergebnis [1]")
 
     @as_users("garcia")
+    def test_stats_matches(self) -> None:
+        # Create a statistic part group containing all event parts
+        self.traverse(
+            "Veranstaltungen", "Große Testakademie 2222", "Veranstaltungsteile",
+            "Veranstaltungsteilgruppe", "Veranstaltungsteilgruppe hinzufügen")
+        f = self.response.forms['configurepartgroupform']
+        f['title'] = f['shortname'] = "3/3"
+        f['constraint_type'] = const.EventPartGroupType.Statistic
+        f['part_ids'] = ["1", "2", "3"]
+        self.submit(f)
+
+        # Create a statistic part group containing 2/3 event parts
+        self.traverse("Veranstaltungsteilgruppe hinzufügen")
+        f = self.response.forms['configurepartgroupform']
+        f['title'] = f['shortname'] = "2/3"
+        f['constraint_type'] = const.EventPartGroupType.Statistic
+        f['part_ids'] = ["2", "3"]
+        self.submit(f)
+
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/stats'}, )
+        self.assertTitle("Statistik (Große Testakademie 2222)")
+
+        stats_page = self.response
+
+        participant_stats = self.response.html.find(id="participant-stats")
+        course_stats = self.response.html.find(id="course-stats")
+        for table in [participant_stats, course_stats]:
+            for link in table.find_all("a"):
+                with self.subTest(linkid=link.attrs['id']):
+                    self.get(link["href"])
+                    self.assertPresence(f"Ergebnis [{link.text}]", div="query-results")
+        self.response = stats_page
+
+    @as_users("garcia")
     def test_course_stats(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
