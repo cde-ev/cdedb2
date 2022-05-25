@@ -423,7 +423,7 @@
     },
     "EVENT_SCHEMA_VERSION": [
         15,
-        5
+        6
     ],
     "event.registration_parts": {
         "2": {
@@ -1435,6 +1435,26 @@
     "event.part_groups": {
     },
     "event.part_group_parts": {
+    },
+    "event.stored_queries": {
+        "1": {
+            "event_id": 1,
+            "id": 1,
+            "query_name": "Test-Query",
+            "scope": 30,
+            "serialized_query": {
+                "is_search": true,
+                "qop_persona.birthday": 20,
+                "qord_primary": "persona.birthday",
+                "qord_primary_ascending": true,
+                "qsel_persona.birthday": true,
+                "qsel_persona.id": true,
+                "qsel_reg.id": true,
+                "query_name": "Test-Query",
+                "qval_persona.birthday": "2000-01-01",
+                "scope": 30
+            }
+        }
     },
     "timestamp": "2018-12-15T09:58:04.241360+00:00"
 }

@@ -5,7 +5,9 @@ import copy
 import datetime
 import decimal
 import unittest
-from typing import Any, Dict, Iterable, List, Mapping, Tuple, Type, Union
+from typing import (
+    Any, Dict, Iterable, List, Mapping, Sequence, Tuple, Type, TypeVar, Union,
+)
 
 import pytz
 
@@ -15,19 +17,32 @@ from cdedb.common import now
 from cdedb.common.exceptions import ValidationWarning
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.validation.types import (
-    IBAN, JSON, Email, GenesisCase, PasswordStrength, Persona, Phone, PrintableASCII,
-    PrintableASCIIType, SafeStr, StringType, Vote,
+    IBAN, ID, JSON, Email, EmptyDict, EmptyList, GenesisCase, LegacyShortname,
+    NonNegativeDecimal, NonNegativeInt, NonNegativeLargeDecimal, PartialImportID,
+    PasswordStrength, Persona, Phone, PositiveInt, PrintableASCII, PrintableASCIIType,
+    Realm, SafeStr, ShortnameRestrictiveIdentifier, StringType, Vote,
 )
 from cdedb.config import Config
+
+T = TypeVar('T')
 
 
 class TestValidation(unittest.TestCase):
     def do_validator_test(
         self,
-        type_: Type[Any],
-        spec: Iterable[Tuple[Any, Any, Union[Type[Exception], Exception, None]]],
+        type_: Type[T],
+        spec: Iterable[Tuple[Any, T, Union[Type[Exception], Exception, None]]],
         extraparams: Mapping[str, Any] = None, ignore_warnings: bool = True
     ) -> None:
+        """Perform extensive tests on a validator.
+
+        :param type_: The validation which shall be tested.
+        :param spec: An iterable, containing the different test cases. Each test case is
+            a tuple, containing the input_value, the expected return_value and an
+            exception (if the input_value does not pass the validator) or None.
+        :param extraparams: Additional parameters which are passed to each validator run
+        :param ignore_warnings: Whether warnings shall be ignored or not.
+        """
         extraparams = extraparams or {}
         for inval, retval, exception in spec:
             with self.subTest(inval=inval):
@@ -118,7 +133,27 @@ class TestValidation(unittest.TestCase):
             (True, 1, None),
             (False, 0, None),
             (2147483647, 2147483647, None),
-            (1e10, None, ValueError),
+            (1e10, None, ValueError),  # exceeds maximum value
+        ))
+        self.do_validator_test(NonNegativeInt, (
+            (0, 0, None),
+            (123, 123, None),
+            (-123, None, ValueError),
+        ))
+        self.do_validator_test(PositiveInt, (
+            (0, None, ValueError),
+            (123, 123, None),
+            (-123, None, ValueError),
+        ))
+        self.do_validator_test(ID, (
+            (0, None, ValueError),
+            (123, 123, None),
+            (-123, None, ValueError),
+        ))
+        self.do_validator_test(PartialImportID, (
+            (0, None, ValueError),
+            (123, 123, None),
+            (-123, -123, None),
         ))
 
     def test_float(self) -> None:
@@ -131,7 +166,7 @@ class TestValidation(unittest.TestCase):
             ("garbage", None, ValueError),
             (12, 12.0, None),
             (9e6, 9e6, None),
-            (1e7, None, ValueError),
+            (1e7, None, ValueError),  # exceeds maximum value
         ))
 
     def test_decimal(self) -> None:
@@ -144,6 +179,23 @@ class TestValidation(unittest.TestCase):
             ("garbage", None, ValueError),
             (12, None, TypeError),
             (12.3, None, TypeError),
+            (decimal.Decimal(1e7) - 1, decimal.Decimal(1e7) - 1, None),
+            (decimal.Decimal(1e7), None, ValueError),  # exceeds maximum value
+        ))
+        self.do_validator_test(decimal.Decimal, (
+            (decimal.Decimal(1e10) - 1, decimal.Decimal(1e10) - 1, None),
+            (decimal.Decimal(-1e10) + 1, decimal.Decimal(-1e10) + 1, None),
+            (decimal.Decimal(1e10), None, ValueError),  # exceeds maximum value
+        ), extraparams={"large": True})
+        self.do_validator_test(NonNegativeDecimal, (
+            (decimal.Decimal(0), decimal.Decimal(0), None),
+            (decimal.Decimal(12.3), decimal.Decimal(12.3), None),
+            (decimal.Decimal(-12.3), None, ValueError),
+        ))
+        self.do_validator_test(NonNegativeLargeDecimal, (
+            (decimal.Decimal(1e10) - 1, decimal.Decimal(1e10) - 1, None),
+            (decimal.Decimal(-1e10) + 1, None, ValueError),
+            (decimal.Decimal(1e10), None, ValueError),  # exceeds maximum value
         ))
 
     def test_str_type(self) -> None:
@@ -170,10 +222,43 @@ class TestValidation(unittest.TestCase):
             ("multiple\r\nlines\rof\ntext", "multiple\nlines\nof\ntext", None),
         ))
 
+    def test_shortname(self) -> None:
+        self.do_validator_test(ShortnameRestrictiveIdentifier, (
+            ("asdf", "asdf", None),
+            ("a" * 11, None, ValidationWarning),
+            ("^", None, ValueError),
+        ), ignore_warnings=False)
+        self.do_validator_test(ShortnameRestrictiveIdentifier, (
+            ("asdf", "asdf", None),
+            ("a" * 11, "a" * 11, None),
+        ))
+        self.do_validator_test(LegacyShortname, (
+            ("a" * 11, "a" * 11, None),
+            ("a" * 31, None, ValidationWarning),
+        ), ignore_warnings=False)
+        self.do_validator_test(LegacyShortname, (
+            ("a" * 11, "a" * 11, None),
+            ("a" * 31, "a" * 31, None),
+        ))
+
+    def test_bytes(self) -> None:
+        self.do_validator_test(bytes, (
+            ("asdf", b"asdf", None),
+            ("ödp", b'\xc3\xb6dp', None),
+        ))
+        with self.assertRaises(RuntimeError):
+            validate.validate_assert(
+                bytes, "no encoding", ignore_warnings=True, encoding=None)
+
     def test_mapping(self) -> None:
-        self.do_validator_test(Mapping, (
+        self.do_validator_test(Mapping, (  # type: ignore[misc]
             ({"a": "dict"}, {"a": "dict"}, None),
             ("something else", "", TypeError),
+        ))
+
+    def test_sequence(self) -> None:
+        self.do_validator_test(Sequence, (  # type: ignore[misc]
+            (("a", "b"), ("a", "b"), None),
         ))
 
     def test_bool(self) -> None:
@@ -185,6 +270,34 @@ class TestValidation(unittest.TestCase):
             ("True", True, None),
             ("False", False, None),
             (54, True, None),
+            (None, None, TypeError)
+        ))
+
+    def test_empty(self) -> None:
+        self.do_validator_test(EmptyDict, (
+            (dict(), dict(), None),
+            ({"a": 1}, None, ValueError),
+            ([], None, ValueError),
+            (set(), None, ValueError),
+            (tuple(), None, ValueError),
+        ))
+        self.do_validator_test(EmptyList, (
+            ([], [], None),
+            ([1], None, ValueError),
+            (dict(), [], None),
+            (set(), [], None),
+            (tuple(), [], None),
+        ))
+
+    def test_realm(self) -> None:
+        self.do_validator_test(Realm, (
+            ("assembly", "assembly", None),
+            ("cde", "cde", None),
+            ("core", "core", None),
+            ("event", "event", None),
+            ("ml", "ml", None),
+            ("session", "session", None),
+            ("asdf", None, ValueError),
         ))
 
     def test_printable_ascii_type(self) -> None:
