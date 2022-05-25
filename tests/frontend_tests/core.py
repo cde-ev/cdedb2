@@ -1905,6 +1905,12 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence(
             "Aktuell stehen keine Mailinglisten-Account-Anfragen zur Bestätigung aus.",
             div='no-ml-request')
+        self.logout()
+
+        self.login('annika')  # event-only admin
+        self.traverse("Accountanfragen")
+        self.assertPresence("Veranstaltungs-Account-Anfragen")
+        self.assertPresence("zorro@example.cde", div='request-1001')
         self.traverse({'href': '/core/genesis/1001/show'})
         self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
         f = self.response.forms['genesisdecisionform']
@@ -1936,15 +1942,11 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("12345", div='address')
 
     def test_genesis_ml(self) -> None:
-        user = USER_DICT['vera']
         self._genesis_request(self.ML_GENESIS_DATA_NO_REALM, realm='ml')
-        self.login(user)
+        self.login('nina')
         self.traverse('Accountanfragen')
         self.assertTitle("Accountanfragen")
         self.assertPresence("zelda@example.cde", div='request-1001')
-        self.assertPresence(
-            "Aktuell stehen keine Veranstaltungs-Account-Anfragen zur Bestätigung aus.",
-            div='no-event-request')
         self.assertNonPresence(
             "Aktuell stehen keine Mailinglisten-Account-Anfragen zur Bestätigung aus.")
         self.traverse("Details")
@@ -1972,7 +1974,10 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Zelda Zeruda-Hime")
 
     @storage
+    @as_users('quintus', 'paul')  # quintus is cde-only, paul core-only admin
     def test_genesis_cde(self) -> None:
+        user = self.user
+        self.logout()
         self.get('/core/genesis/request')
         self.assertTitle("Account anfordern")
         self.assertPresence("Die maximale Dateigröße ist 8 MB.")
@@ -2000,16 +2005,17 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         link = self.fetch_link()
         self.get(link)
-        self.login(USER_DICT["vera"])
+        self.login(user)
         self.traverse({'href': '/core'},
                       {'href': '/core/genesis/list'})
         self.assertTitle("Accountanfragen")
         self.assertPresence("zelda@example.cde")
         self.assertNonPresence("zorro@example.cde")
-        self.assertPresence(
-            "Aktuell stehen keine Veranstaltungs-Account-Anfragen zur Bestätigung aus.")
-        self.assertPresence(
-            "Aktuell stehen keine Mailinglisten-Account-Anfragen zur Bestätigung aus.")
+        if self.user_in('paul'):
+            self.assertPresence("Aktuell stehen keine Veranstaltungs-Account-Anfragen"
+                                " zur Bestätigung aus.")
+            self.assertPresence("Aktuell stehen keine Mailinglisten-Account-Anfragen"
+                                " zur Bestätigung aus.")
         self.assertNonPresence(
             "Aktuell stehen keine CdE-Mitglieds-Account-Anfragen zur Bestätigung aus.")
         self.traverse({'href': '/core/genesis/1001/show'})
@@ -2037,7 +2043,8 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Accountanfrage bearbeiten")
         f = self.response.forms['genesismodifyform']
         f['username'] = 'zorro@example.cde'
-        f['realm'] = 'ml'
+        if not self.user_in('quintus'):  # quintus is cde-only admin
+            f['realm'] = 'ml'
         self.submit(f)
         self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
         self.assertPresence("Anhang herunterladen")
@@ -2050,22 +2057,22 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("zorro@example.cde")
         self.traverse({'href': '/core/genesis/list'})
         self.assertTitle("Accountanfragen")
-        self.assertPresence(
-            "Aktuell stehen keine Veranstaltungs-Account-Anfragen zur Bestätigung aus.")
-        self.assertNonPresence(
-            "Aktuell stehen keine Mailinglisten-Account-Anfragen zur Bestätigung aus.")
-        self.assertPresence(
-            "Aktuell stehen keine CdE-Mitglieds-Account-Anfragen zur Bestätigung aus.")
+        if self.user_in('paul'):
+            self.assertPresence("Aktuell stehen keine Veranstaltungs-Account-Anfragen"
+                                " zur Bestätigung aus.")
+            self.assertNonPresence("Aktuell stehen keine Mailinglisten-Account-Anfragen"
+                                   " zur Bestätigung aus.")
+            self.assertPresence("Aktuell stehen keine CdE-Mitglieds-Account-Anfragen"
+                                " zur Bestätigung aus.")
+        elif self.user_in('quintus'):
+            self.assertNonPresence("Mailinglisten-Account-Anfragen")
+            self.assertPresence("CdE-Mitglieds-Account-Anfragen")
         self.traverse({'href': '/core/genesis/1001/modify'})
         f = self.response.forms['genesismodifyform']
         f['realm'] = 'cde'
         self.submit(f)
         self.traverse({'href': '/core/genesis/list'})
         self.assertTitle("Accountanfragen")
-        self.assertPresence(
-            "Aktuell stehen keine Veranstaltungs-Account-Anfragen zur Bestätigung aus.")
-        self.assertPresence(
-            "Aktuell stehen keine Mailinglisten-Account-Anfragen zur Bestätigung aus.")
         self.assertNonPresence(
             "Aktuell stehen keine CdE-Mitglieds-Account-Anfragen zur Bestätigung aus.")
         self.traverse({'href': '/core/genesis/1001/show'})
@@ -2079,13 +2086,14 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f, button="decision", value=str(GenesisDecision.approve))
         link = self.fetch_link()
         self.traverse({'href': '^/$'})
-        f = self.response.forms['adminshowuserform']
-        f['phrase'] = "Zelda Zeruda-Hime"
-        self.submit(f)
-        self.assertTitle("Zelda Zeruda-Hime")
-        self.assertPresence("0,00 €", div="balance")
-        self.assertPresence("CdE-Mitglied", div="cde-membership")
-        self.assertPresence("Probemitglied", div="cde-membership")
+        if not self.user_in('quintus'):
+            f = self.response.forms['adminshowuserform']
+            f['phrase'] = "Zelda Zeruda-Hime"
+            self.submit(f)
+            self.assertTitle("Zelda Zeruda-Hime")
+            self.assertPresence("0,00 €", div="balance")
+            self.assertPresence("CdE-Mitglied", div="cde-membership")
+            self.assertPresence("Probemitglied", div="cde-membership")
         self.logout()
         self.get(link)
         self.assertTitle("Neues Passwort setzen")
