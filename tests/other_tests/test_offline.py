@@ -109,6 +109,19 @@ class TestOffline(FrontendTest):
                 'registrations',
             }
             self.assertEqual(set(self.response.json["export"]), expectation)
+            self.login(user)
+
+            # Test event keeper works properly, by triggering a manual commit
+            self.get('/event/event/1/field/setselect?kind=1')
+            self.assertTitle("Datenfeld auswählen (Große Testakademie 2222)")
+            f = self.response.forms['selectfieldform']
+            f['field_id'] = 3
+            self.submit(f)
+            self.assertTitle("Datenfeld lodge setzen (Große Testakademie 2222)")
+            f = self.response.forms['fieldform']
+            f['input1'] = "Ich will auf jeden Fall mit Anton A. auf ein Zimmer!"
+            f['change_note'] = "EventKeeper test commit."
+            self.submit(f)
 
             # Additional tests can be added here.
             # Due to the expensive setup of this test these should not
