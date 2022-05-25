@@ -38,7 +38,7 @@ from cdedb.common.exceptions import ArchiveError, PrivilegeError, QuotaException
 from cdedb.common.fields import (
     META_INFO_FIELDS, PERSONA_ALL_FIELDS, PERSONA_ASSEMBLY_FIELDS, PERSONA_CDE_FIELDS,
     PERSONA_CORE_FIELDS, PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, PERSONA_STATUS_FIELDS,
-    PRIVILEGE_CHANGE_FIELDS,
+    PRIVILEGE_CHANGE_FIELDS, REALM_SPECIFIC_GENESIS_FIELDS,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
@@ -2454,7 +2454,8 @@ class CoreBaseBackend(AbstractBackend):
                           atomized=False)
         return success, msg
 
-    @access("core_admin")
+    @access("core_admin", *("{}_admin".format(realm)
+                            for realm in REALM_SPECIFIC_GENESIS_FIELDS))
     def find_doppelgangers(self, rs: RequestState,
                            persona: CdEDBObject) -> CdEDBObjectMap:
         """Look for accounts with data similar to the passed dataset.
