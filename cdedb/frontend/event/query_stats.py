@@ -62,6 +62,11 @@ def _involved_constraint(part: CdEDBObject) -> QueryConstraint:
             tuple(status.value for status in RPS if status.is_involved()))
 
 
+def _has_to_pay_constraint(part: CdEDBObject) -> QueryConstraint:
+    return (f"part{part['id']}.status", QueryOperators.oneof,
+            tuple(status.value for status in RPS if status.has_to_pay()))
+
+
 def _present_constraint(part: CdEDBObject) -> QueryConstraint:
     return (f"part{part['id']}.status", QueryOperators.oneof,
             tuple(status.value for status in RPS if status.is_present()))
@@ -154,8 +159,16 @@ def merge_queries(base_query: Query, *queries: Query) -> Optional[Query]:
     )
 
 
+def get_id_constraint(id_field: str, entity_ids: Collection[int]) -> QueryConstraint:
+    if entity_ids:
+        return (id_field, QueryOperators.oneof, list(entity_ids))
+    else:
+        return (id_field, QueryOperators.empty, None)
+
+
 class StatisticMixin:
     """Helper class for basic query construction shared across"""
+    id_field: str
 
     @abc.abstractmethod
     def test(self, event: CdEDBObject, entity: CdEDBObject, context_id: int) -> bool:
@@ -182,9 +195,18 @@ class StatisticMixin:
 
     def get_query_by_ids(self, event: CdEDBObject, entity_ids: Collection[int]
                          ) -> Query:
+        """This queries information by exhaustion by listing all relevant ids."""
         query = self._get_base_query(event)
-        query.constraints.append(("id", QueryOperators.oneof, list(entity_ids)))
+        query.constraints.append(get_id_constraint(self.id_field, entity_ids))
         return query
+
+    @abc.abstractmethod
+    def is_mergeable(self) -> bool:
+        """Determine whether or not queries of this type can be merged.
+
+        Queries with correlations between two of their constraints can syntactically be
+        merged but are semantically incorrect.
+        """
 
     @staticmethod
     def get_part_ids(event: CdEDBObject, *, part_group_id: int) -> Iterable[int]:
@@ -215,12 +237,15 @@ class StatisticPartMixin(StatisticMixin):  # pylint: disable=abstract-method
         return any(self.test(event, entity, track_id) for track_id
                    in self.get_part_ids(event, part_group_id=part_group_id))
 
-    def get_query_part_group(self, event: CdEDBObject, part_group_id: int
-                             ) -> Optional[Query]:
-        """Construct queries for every track in a given part group, then merge them."""
-        queries = [self.get_query(event, track_id) for track_id
-                   in self.get_part_ids(event, part_group_id=part_group_id)]
-        return merge_queries(self._get_base_query(event), *queries)
+    def get_query_part_group(self, event: CdEDBObject, part_group_id: int,
+                             registration_ids: Collection[int]) -> Query:
+        """Construct queries for every part in a given part group, then merge them."""
+        if self.is_mergeable():
+            queries = [self.get_query(event, part_id) for part_id
+                       in self.get_part_ids(event, part_group_id=part_group_id)]
+            if ret := merge_queries(self._get_base_query(event), *queries):
+                return ret
+        return self.get_query_by_ids(event, registration_ids)
 
 
 # This class is still abstract, but adding abc.ABC doesn't play nice with enum.Enum.
@@ -240,18 +265,25 @@ class StatisticTrackMixin(StatisticMixin):  # pylint: disable=abstract-method
         return any(self.test(event, entity, track_id) for track_id
                    in self.get_track_ids(event, part_group_id=part_group_id))
 
-    def get_query_part(self, event: CdEDBObject, part_id: int) -> Optional[Query]:
+    def get_query_part(self, event: CdEDBObject, part_id: int,
+                       registration_ids: Collection[int]) -> Query:
         """Construct queries for every track in a given part, then merge them."""
-        queries = [self.get_query(event, track_id) for track_id
-                   in self.get_track_ids(event, part_id=part_id)]
-        return merge_queries(self._get_base_query(event), *queries)
+        if self.is_mergeable():
+            queries = [self.get_query(event, track_id) for track_id
+                       in self.get_track_ids(event, part_id=part_id)]
+            if ret := merge_queries(self._get_base_query(event), *queries):
+                return ret
+        return self.get_query_by_ids(event, registration_ids)
 
-    def get_query_part_group(self, event: CdEDBObject, part_group_id: int
-                             ) -> Optional[Query]:
+    def get_query_part_group(self, event: CdEDBObject, part_group_id: int,
+                             registration_ids: Collection[int]) -> Query:
         """Construct queries for every track in a given part group, then merge them."""
-        queries = [self.get_query(event, track_id) for track_id
-                   in self.get_track_ids(event, part_group_id=part_group_id)]
-        return merge_queries(self._get_base_query(event), *queries)
+        if self.is_mergeable():
+            queries = [self.get_query(event, track_id) for track_id
+                       in self.get_track_ids(event, part_group_id=part_group_id)]
+            if ret := merge_queries(self._get_base_query(event), *queries):
+                return ret
+        return self.get_query_by_ids(event, registration_ids)
 
 
 # These enums each offer a collection of statistics for the stats page.
@@ -282,6 +314,7 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
         obj = object.__new__(cls)
         obj._value_ = value
         obj.indent = indent
+        obj.id_field = "reg.id"
         return obj
 
     pending = n_("Open Registrations")
@@ -305,6 +338,12 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
     cancelled = n_("Registration Cancelled")
     rejected = n_("Registration Rejected")
     total = n_("Total Registrations")
+
+    def is_mergeable(self) -> bool:
+        return self not in {
+            # The no lodgement query has a part correlation between two constraints.
+            EventRegistrationPartStatistic.no_lodgement,
+        }
 
     def test(self, event: CdEDBObject, reg: CdEDBObject, part_id: int) -> bool:  # pylint: disable=arguments-differ
         """
@@ -452,7 +491,7 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
             return (
                 [f"part{part['id']}.status"],
                 [
-                    _involved_constraint(part),
+                    _has_to_pay_constraint(part),
                     ('reg.payment', QueryOperators.empty, None),
                 ],
                 []
@@ -524,9 +563,20 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
 @enum.unique
 class EventCourseStatistic(StatisticTrackMixin, enum.Enum):
     """This enum implements statistics for courses in course tracks."""
+
+    def __new__(cls, value: str) -> "EventCourseStatistic":
+        obj = object.__new__(cls)
+        obj._value_ = value
+        obj.id_field = "course.id"
+        return obj
+
     offered = n_("Course Offers")
     cancelled = n_("Cancelled Courses")
     taking_place = n_("Courses Taking Place")
+
+    def is_mergeable(self) -> bool:
+        # All queries have only a single constraint.
+        return True
 
     def test(self, event: CdEDBObject, course: CdEDBObject, track_id: int) -> bool:  # pylint: disable=arguments-differ
         """Determine whether the course fits this stat for the given track."""
@@ -565,7 +615,7 @@ class EventCourseStatistic(StatisticTrackMixin, enum.Enum):
             return (
                 [],
                 [
-                    (f"track{track_id}.takes_place", QueryOperators.equal, False),
+                    (f"track{track_id}.takes_place", QueryOperators.equal, True),
                 ],
                 []
             )
@@ -586,10 +636,22 @@ class EventCourseStatistic(StatisticTrackMixin, enum.Enum):
 @enum.unique
 class EventRegistrationTrackStatistic(StatisticTrackMixin, enum.Enum):
     """This enum implements statistics for registration tracks."""
+
+    def __new__(cls, value: str) -> "EventRegistrationTrackStatistic":
+        obj = object.__new__(cls)
+        obj._value_ = value
+        obj.id_field = "reg.id"
+        return obj
+
     all_instructors = n_("(Potential) Instructor")
     instructors = n_("Instructor")
     attendees = n_("Attendees")
     no_course = n_("No Course")
+
+    def is_mergeable(self) -> bool:
+        # Since all these queries are limited to participants, they all have
+        #  correlations between constraints.
+        return False
 
     def test(self, event: CdEDBObject, reg: CdEDBObject, track_id: int) -> bool:  # pylint: disable=arguments-differ
         """Determine whether the registration fits this stat for the given track."""
@@ -783,7 +845,7 @@ class EventRegistrationInXChoiceGrouper:
             QueryScope.registration.get_spec(event=event),
             fields_of_interest=['reg.id', 'persona.given_names', 'persona.family_name',
                                 'persona.username'],
-            constraints=[('reg.id', QueryOperators.oneof, reg_ids or ())],
+            constraints=[get_id_constraint('reg.id', reg_ids or ())],
             order=[('persona.family_name', True), ('persona.given_names', True)]
         )
 

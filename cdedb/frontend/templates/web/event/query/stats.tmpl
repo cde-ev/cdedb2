@@ -50,7 +50,7 @@
                         {% for part_id, part in sorted_parts %}
                             <td class="text-right">
                                 {% set datum = row['parts'][part_id] %}
-                                {% set query = stat.get_query(ambience['event'], part_id) or stat.get_query_by_ids(ambience['event'], datum) %}
+                                {% set query = stat.get_query(ambience['event'], part_id) %}
                                 {{ util.href(
                                     cdedblink(query.scope.get_target(), query.serialize_to_url()) + "#query-results",
                                     datum|length, anid="part_" + stat.name + "_" + part_id|string) }}
@@ -59,7 +59,7 @@
                         {% for part_group_id, part_group in sorted_part_groups if part_group['part_ids']|length > 1 %}
                             <td class="text-right {% if loop.first %}b-left{% endif %}">
                                 {% set datum = row['part_groups'][part_group_id] %}
-                                {% set query = stat.get_query_part_group(ambience['event'], part_group_id) or stat.get_query_by_ids(ambience['event'], datum) %}
+                                {% set query = stat.get_query_part_group(ambience['event'], part_group_id, datum) %}
                                 {{ util.href(
                                     cdedblink(query.scope.get_target(), query.serialize_to_url()) + "#query-results",
                                     datum|length, anid="part_group_" + stat.name + "_" + part_group_id|string) }}
@@ -145,7 +145,7 @@
                             {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
                                 <td class="text-right">
                                     {% set datum = row['tracks'][track_id] %}
-                                    {% set query = stat.get_query(ambience['event'], track_id) or stat.get_query_by_ids(ambience['event'], datum) %}
+                                    {% set query = stat.get_query(ambience['event'], track_id) %}
                                     {{ util.href(
                                         cdedblink(query.scope.get_target(), query.serialize_to_url()) + "#query-results",
                                         datum|length, anid="track_" + stat.name + "_" + track_id|string) }}
@@ -154,7 +154,7 @@
                             {% for part_id, part in sorted_parts if part['tracks']|length > 1 %}
                                 <td class="text-right {% if loop.first %}b-left{% endif %}">
                                     {% set datum = row['parts'][part_id] %}
-                                    {% set query = stat.get_query_part(ambience['event'], part_id) or stat.get_query_by_ids(ambience['event'], datum) %}
+                                    {% set query = stat.get_query_part(ambience['event'], part_id, datum) %}
                                     {{ util.href(
                                         cdedblink(query.scope.get_target(), query.serialize_to_url()) + "#query-results",
                                         datum|length, anid="track_part_" + stat.name + "_" + part_id|string) }}
@@ -163,7 +163,7 @@
                             {% for part_group_id, part_group in sorted_part_groups if grouper._track_ids_per_part_group[part_group_id]|length > 1 %}
                                 <td class="text-right {% if loop.first %}b-left{% endif %}">
                                     {% set datum = row['part_groups'][part_group_id] %}
-                                    {% set query = stat.get_query_part_group(ambience['event'], part_group_id) or stat.get_query_by_ids(ambience['event'], datum) %}
+                                    {% set query = stat.get_query_part_group(ambience['event'], part_group_id, datum) %}
                                     {{ util.href(
                                         cdedblink(query.scope.get_target(), query.serialize_to_url()) + "#query-results",
                                         datum|length, anid="track_group_" + stat.name + "_" + part_group_id|string) }}

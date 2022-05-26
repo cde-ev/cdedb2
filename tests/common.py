@@ -247,6 +247,7 @@ class BasicTest(unittest.TestCase):
     configpath: ClassVar[pathlib.Path]
     _orig_configpath: ClassVar[pathlib.Path]
     conf: ClassVar[TestConfig]
+    secrets: ClassVar[SecretsConfig]
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -255,6 +256,7 @@ class BasicTest(unittest.TestCase):
         # save the configpath in an extra variable to reset it after each test
         cls._orig_configpath = configpath
         cls.conf = TestConfig()
+        cls.secrets = SecretsConfig()
         cls.storage_dir = cls.conf['STORAGE_DIR']
         cls.testfile_dir = cls.storage_dir / "testfiles"
 
@@ -349,7 +351,7 @@ class CdEDBTest(BasicTest):
         json_file = "/cdedb2/tests/ancillary_files/sample_data.json"
         with open(json_file, "r", encoding="utf8") as f:
             data: Dict[str, List[CdEDBObject]] = json.load(f)
-        cls._sample_data = "\n".join(json2sql(data))
+        cls._sample_data = "\n".join(json2sql(cls.conf, cls.secrets, data))
 
     def setUp(self) -> None:
         with Script(
@@ -1204,7 +1206,7 @@ class FrontendTest(BackendTest):
             raise ValueError("Id doesnt belong to a checkbox", anid)
 
     def assertPresence(self, s: str, *, div: str = "content", regex: bool = False,
-                       exact: bool = False) -> None:
+                       exact: bool = False, msg: str = None) -> None:
         """Assert that a string is present in the element with the given id.
 
         The checked content is whitespace-normalized before comparison.
@@ -1215,11 +1217,11 @@ class FrontendTest(BackendTest):
         target = self.get_content(div)
         normalized = re.sub(r'\s+', ' ', target)
         if regex:
-            self.assertTrue(re.search(s.strip(), normalized))
+            self.assertTrue(re.search(s.strip(), normalized), msg=msg)
         elif exact:
-            self.assertEqual(s.strip(), normalized.strip())
+            self.assertEqual(s.strip(), normalized.strip(), msg=msg)
         else:
-            self.assertIn(s.strip(), normalized)
+            self.assertIn(s.strip(), normalized, msg=msg)
 
     def assertNonPresence(self, s: Optional[str], *, div: str = "content",
                           check_div: bool = True) -> None:

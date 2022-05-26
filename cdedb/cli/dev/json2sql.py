@@ -9,9 +9,10 @@ from psycopg2.extensions import connection
 
 from cdedb.backend.common import DatabaseValue_s
 from cdedb.backend.core import CoreBackend
+from cdedb.cli.util import connect
 from cdedb.common import CdEDBObject, PsycoJson
+from cdedb.config import Config, SecretsConfig
 from cdedb.database.conversions import to_db_input
-from cdedb.script import Script
 
 
 class AuxData(TypedDict):
@@ -25,9 +26,9 @@ class AuxData(TypedDict):
     xss_table_excludes: Set[str]
 
 
-def prepare_aux(data: CdEDBObject) -> AuxData:
-    # Note that we do not care about the actual backend but only the db connection.
-    conn = Script(dbuser="nobody", dbname="nobody", check_system_user=False).rs().conn
+def prepare_aux(data: CdEDBObject, config: Config, secrets: SecretsConfig) -> AuxData:
+    # Set up a connection to the database
+    conn = connect(config, secrets, as_nobody=True)
 
     core = CoreBackend  # No need to instantiate, we only use statics.
 
@@ -112,7 +113,8 @@ def format_inserts(table_name: str, table_data: Sized, keys: Tuple[str, ...],
     return ret
 
 
-def json2sql(data: CdEDBObject, xss_payload: Optional[str] = None) -> List[str]:
+def json2sql(config: Config, secrets: SecretsConfig, data: CdEDBObject,
+             xss_payload: Optional[str] = None) -> List[str]:
     """Convert a dict loaded from a json file into sql statements.
 
     The dict contains tables, mapped to columns, mapped to values. The table and column
@@ -122,7 +124,7 @@ def json2sql(data: CdEDBObject, xss_payload: Optional[str] = None) -> List[str]:
     :param xss_payload: If not None, it will be used as xss payload for the database.
     :returns: A list of sql statements, inserting the given data.
     """
-    aux = prepare_aux(data)
+    aux = prepare_aux(data, config, secrets)
     commands: List[str] = []
 
     # Start off by resetting the sequential ids to 1.

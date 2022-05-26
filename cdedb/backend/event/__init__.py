@@ -328,6 +328,8 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                 'offline_lock': False,
             }
             ret *= self.sql_update(rs, "event.events", update)
+            # TODO: Find a way to do this before everything is saved into the database
+            self.delete_invalid_stored_event_queries(rs, data['id'])
             self.event_log(rs, const.EventLogCodes.event_unlocked, data['id'])
             self.event_keeper_commit(
                 rs, data['id'], "Entsperre Veranstaltung", after_change=True)

@@ -49,7 +49,7 @@ DEFAULTS = {
         'interests': None,
         'free_form': None,
         'trial_member': False,
-        'decided_search': False,
+        'decided_search': True,
         'bub_search': False,
         'foto': None,
         'fulltext': '',
@@ -122,7 +122,7 @@ def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
     with open(data_path, encoding='UTF-8') as infile:
         data = json.load(infile)
 
-    if data.get("EVENT_SCHEMA_VERSION") != [15, 5]:
+    if data.get("EVENT_SCHEMA_VERSION") != [15, 6]:
         raise RuntimeError("Version mismatch -- aborting.")
     if data["kind"] != "full":
         raise RuntimeError("Not a full export -- aborting.")
@@ -158,7 +158,7 @@ def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
     for persona in data['core.personas'].values():
         if persona['id'] in orgas:
             bits = ["is_active", "is_core_admin", "is_cde_admin", "is_event_admin",
-                    "is_cde_realm", "is_event_realm", "is_ml_realm"]
+                    "is_cde_realm", "is_event_realm", "is_ml_realm", "is_assembly_realm"]
             for bit in bits:
                 persona[bit] = True
 
@@ -179,11 +179,14 @@ def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
 
     tables = (
         'core.personas', 'event.events', 'event.event_parts',
+        'event.part_groups', 'event.part_group_parts',
         'event.courses', 'event.course_tracks', 'event.course_segments',
-        'event.orgas', 'event.field_definitions', 'event.lodgement_groups',
-        'event.lodgements', 'event.registrations',
+        'event.orgas', 'event.field_definitions', 'event.fee_modifiers',
+        'event.lodgement_groups', 'event.lodgements', 'event.registrations',
         'event.registration_parts', 'event.registration_tracks',
-        'event.course_choices', 'event.questionnaire_rows', 'event.log')
+        'event.course_choices', 'event.questionnaire_rows', 'event.log',
+        'event.stored_queries',
+    )
 
     print("Connect to database")
     with connection as conn:

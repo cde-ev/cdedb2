@@ -3202,8 +3202,9 @@ def _serialized_event(
         'event.course_choices': Mapping,
         'event.questionnaire_rows': Mapping,
         'event.fee_modifiers': Mapping,
+        'event.stored_queries': Mapping,
     }
-    optional_fields = {
+    optional_fields: TypeMapping = {
         'core.personas': Mapping,
         'event.part_groups': Mapping,
         'event.part_group_parts': Mapping,
@@ -3261,6 +3262,10 @@ def _serialized_event(
             _questionnaire_row, {'id': ID, 'event_id': ID}),
         'event.fee_modifiers': _augment_dict_validator(
             _event_fee_modifier, {'id': ID, 'part_id': ID}),
+        # Is it easier to throw away broken ones at the end of the import.
+        'event.stored_queries': _augment_dict_validator(
+            _empty_dict, {'id': ID, 'event_id': ID, 'query_name': str,
+                          'scope': QueryScope, 'serialized_query': Mapping})
     }
 
     errs = ValidationSummary()
@@ -4323,7 +4328,7 @@ def _query_input(
             value = []
             for v in values:
                 # Validate every single value
-                # TODO do not allow None/falsy
+                # TODO do not allow None
                 try:
                     vv: Any = _ALL_TYPED[
                         Optional[VALIDATOR_LOOKUP[validator]]  # type: ignore[index]
@@ -4342,7 +4347,7 @@ def _query_input(
                         errs.extend(e)
                         continue
 
-                assert vv  # TODO check this (i.e. the above todos)
+                assert vv is not None
                 value.append(vv)
 
             if not value:

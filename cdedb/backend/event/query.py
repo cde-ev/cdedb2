@@ -696,10 +696,12 @@ class EventQueryBackend(EventBaseBackend):
                            event_id=event_id, change_note=query.name)
         return new_id
 
-    @access("event_admin")
+    @access("event")
     def get_invalid_stored_event_queries(self, rs: RequestState, event_id: int
                                          ) -> CdEDBObjectMap:
         """Retrieve raw data for stored event queries that cannot be deserialized."""
+        if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
+            raise PrivilegeError(n_("Not privileged."))
         q = (f"SELECT {', '.join(STORED_EVENT_QUERY_FIELDS)}"
              f" FROM event.stored_queries WHERE event_id = %s AND NOT(id = ANY(%s))")
         with Atomizer(rs):
@@ -707,3 +709,14 @@ class EventQueryBackend(EventBaseBackend):
             params = (event_id, [q.query_id for q in retrievable_queries.values()])
             data = self.query_all(rs, q, params)
             return {e["id"]: e for e in data}
+
+    @access("event")
+    def delete_invalid_stored_event_queries(self, rs: RequestState, event_id: int
+                                            ) -> int:
+        """Delete invalid stored event queries."""
+        if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
+            raise PrivilegeError(n_("Not privileged."))
+        invalid_queries = self.get_invalid_stored_event_queries(rs, event_id)
+        self.logger.warning(f"Invalid stored queries were automatically deleted:"
+                            f" {invalid_queries}")
+        return self.sql_delete(rs, "event.stored_queries", invalid_queries.keys())
