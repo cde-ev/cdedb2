@@ -1,3 +1,5 @@
+"""The ldaptor backend, mediating all queries to the database."""
+
 import logging
 import pathlib
 import re
@@ -128,35 +130,35 @@ class LDAPsqlBackend:
         return True
 
     @overload
-    def _to_bytes(self, object: Union[None, str, int, bytes]) -> bytes: ...
+    def _to_bytes(self, data: Union[None, str, int, bytes]) -> bytes: ...
 
     @overload
-    def _to_bytes(self, object: Dict[Any, Any]) -> Dict[bytes, Any]: ...
+    def _to_bytes(self, data: Dict[Any, Any]) -> Dict[bytes, Any]: ...
 
     @overload
-    def _to_bytes(self, object: List[Any]) -> List[Any]: ...
+    def _to_bytes(self, data: List[Any]) -> List[Any]: ...
 
-    def _to_bytes(self, object: Union[Dict[Any, Any], List[Any], str, int, bytes, None]
+    def _to_bytes(self, data: Union[Dict[Any, Any], List[Any], str, int, bytes, None]
                   ) -> Union[Dict[bytes, Any], List[Any], bytes]:
         """This takes a python data structure and convert all of its entries into bytes.
 
         This is needed to send the ldap responses over the wire and ensure proper
         encoding, especially of strings.
         """
-        if object is None:
+        if data is None:
             return b""
-        elif isinstance(object, dict):
-            return {self._to_bytes(k): self._to_bytes(v) for k, v in object.items()}
-        elif isinstance(object, list):
-            return [self._to_bytes(entry) for entry in object]
-        elif isinstance(object, str):
-            return object.encode("utf-8")
-        elif isinstance(object, int):
-            return bytes(object)
-        elif isinstance(object, bytes):
-            return object
+        elif isinstance(data, dict):
+            return {self._to_bytes(k): self._to_bytes(v) for k, v in data.items()}
+        elif isinstance(data, list):
+            return [self._to_bytes(entry) for entry in data]
+        elif isinstance(data, str):
+            return data.encode("utf-8")
+        elif isinstance(data, int):
+            return bytes(data)
+        elif isinstance(data, bytes):
+            return data
         else:
-            raise NotImplementedError(object)
+            raise NotImplementedError(data)
 
     @property
     def anonymous_accessible_dns(self) -> List[DN]:
@@ -493,7 +495,8 @@ class LDAPsqlBackend:
     STATUS_GROUPS = {
         "is_active": "Aktive Nutzer.",
         "is_member": "Nutzer, die aktuell Mitglied im CdE sind.",
-        "is_searchable": "Nutzer, die aktuell Mitglied im CdE und und in der Datenbank suchbar sind.",
+        "is_searchable": ("Nutzer, die aktuell Mitglied im CdE und und in der Datenbank"
+                          " suchbar sind."),
         "is_ml_realm": "Nutzer, die auf Mailinglisten stehen dürfen.",
         "is_event_realm": "Nutzer, die an Veranstaltungen teilnehmen dürfen.",
         "is_assembly_realm": "Nutzer, die an Versammlungen teilnehmen dürfen.",
@@ -593,7 +596,8 @@ class LDAPsqlBackend:
         presiders = defaultdict(list)
         for e in data:
             presiders[e["assembly_id"]].append(e["persona_id"])
-        query = "SELECT id, title, shortname FROM assembly.assemblies WHERE id = ANY(%s)"
+        query = ("SELECT id, title, shortname FROM assembly.assemblies"
+                 " WHERE id = ANY(%s)")
         data = await self.query_all(query, (dn_to_assembly_id.values(),))
         assemblies = {e["id"]: e for e in data}
 
@@ -604,7 +608,8 @@ class LDAPsqlBackend:
             group = {
                 b"objectClass": ["groupOfUniqueNames"],
                 b"cn": [self.presider_group_cn(assembly_id)],
-                b"description": [f"{assemblies[assembly_id]['title']} ({assemblies[assembly_id]['shortname']})"],
+                b"description": [f"{assemblies[assembly_id]['title']}"
+                                 f" ({assemblies[assembly_id]['shortname']})"],
                 b"uniqueMember": [self.user_dn(e) for e in presiders[assembly_id]]
             }
             ret[dn] = self._to_bytes(group)
@@ -669,7 +674,8 @@ class LDAPsqlBackend:
             group = {
                 b"objectClass": ["groupOfUniqueNames"],
                 b"cn": [self.orga_group_cn(event_id)],
-                b"description": [f"{events[event_id]['title']} ({events[event_id]['shortname']})"],
+                b"description": [f"{events[event_id]['title']}"
+                                 f" ({events[event_id]['shortname']})"],
                 b"uniqueMember": [self.user_dn(e) for e in orgas[event_id]]
             }
             ret[dn] = self._to_bytes(group)
@@ -776,7 +782,8 @@ class LDAPsqlBackend:
         return [
             RDN(
                 attributeTypesAndValues=[
-                    ATV(attributeType="cn", value=self.subscriber_group_cn(e["address"]))
+                    ATV(attributeType="cn",
+                        value=self.subscriber_group_cn(e["address"]))
                 ]
             ) for e in data
         ]
@@ -789,7 +796,8 @@ class LDAPsqlBackend:
                 continue
             dn_to_address[dn] = address
 
-        query = ("SELECT persona_id, address FROM ml.subscription_states, ml.mailinglists"
+        query = ("SELECT persona_id, address"
+                 " FROM ml.subscription_states, ml.mailinglists"
                  " WHERE ml.mailinglists.id = ml.subscription_states.mailinglist_id"
                  " AND subscription_state = ANY(%s) AND address = ANY(%s)")
         states = SubscriptionState.subscribing_states()

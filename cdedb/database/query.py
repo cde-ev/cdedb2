@@ -2,7 +2,7 @@
 
 """Provide a generic interface to query the database.
 
-This is used by :py:class:`AbstractBackend` and ldaptor to access the database.
+This is used by :py:class:`AbstractBackend` to access the database.
 """
 
 import datetime

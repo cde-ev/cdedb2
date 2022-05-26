@@ -1,3 +1,6 @@
+"""Classes to represent ldap entries."""
+# pylint: disable=protected-access
+
 import abc
 import logging
 from asyncio import get_running_loop
@@ -10,7 +13,6 @@ import ldaptor.ldapfilter as ldapfilter
 import ldaptor.ldiftree
 import ldaptor.protocols.pureldap as pureldap
 import zope.interface
-from ldaptor import entry
 from ldaptor.protocols.ldap.distinguishedname import (
     DistinguishedName, RelativeDistinguishedName,
 )
@@ -89,7 +91,7 @@ class CdEDBBaseLDAPEntry(
         if not attributes:
             raise RuntimeError
         # initialize the entry
-        entry.BaseLDAPEntry.__init__(self, dn, attributes=attributes)
+        ldaptor.entry.BaseLDAPEntry.__init__(self, dn, attributes=attributes)
 
     # TODO this is specified in the interface, but what is this?
     # def namingContext(self):
@@ -278,14 +280,14 @@ class CdEDBBaseLDAPEntry(
         return False
 
     def addChild(self, rdn: RelativeDistinguishedName, attributes: Sequence[bytes]
-                 ) -> Deferred[LDAPUnwillingToPerform]:
+                 ) -> Deferred[LDAPUnwillingToPerform]:  # pylint: disable=no-self-use
         return fail(LDAPUnwillingToPerform("Not implemented."))
 
-    def delete(self) -> Deferred[LDAPUnwillingToPerform]:
+    def delete(self) -> Deferred[LDAPUnwillingToPerform]:  # pylint: disable=no-self-use
         return fail(LDAPUnwillingToPerform("Not implemented."))
 
     def deleteChild(self, rdn: RelativeDistinguishedName
-                    ) -> Deferred[LDAPUnwillingToPerform]:
+                    ) -> Deferred[LDAPUnwillingToPerform]:  # pylint: disable=no-self-use
         return fail(LDAPUnwillingToPerform("Not implemented."))
 
     # TODO where is this used?
@@ -299,10 +301,10 @@ class CdEDBBaseLDAPEntry(
             return NotImplemented
         return self.dn > other.dn
 
-    def commit(self) -> Deferred[LDAPUnwillingToPerform]:
+    def commit(self) -> Deferred[LDAPUnwillingToPerform]:  # pylint: disable=no-self-use
         return fail(LDAPUnwillingToPerform("Not implemented."))
 
-    def move(self, newDN: DistinguishedName) -> Deferred[LDAPUnwillingToPerform]:
+    def move(self, newDN: DistinguishedName) -> Deferred[LDAPUnwillingToPerform]:  # pylint: disable=no-self-use
         return fail(LDAPUnwillingToPerform("Not implemented."))
 
 

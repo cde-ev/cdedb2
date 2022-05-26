@@ -1,3 +1,5 @@
+"""Mangle data before inserting and after retrieving it from the database."""
+
 import collections.abc
 import enum
 from typing import TYPE_CHECKING, Any, List, Optional, Union

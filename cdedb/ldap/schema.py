@@ -1,3 +1,5 @@
+"""Process information about ldap schemas from specification files."""
+
 from typing import List
 
 from ldaptor.schema import AttributeTypeDescription, ObjectClassDescription

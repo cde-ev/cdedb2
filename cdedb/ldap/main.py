@@ -1,3 +1,7 @@
+"""Entrypoint for ldaptor."""
+
+# pylint: disable=wrong-import-position,ungrouped-imports
+
 import asyncio
 import logging
 

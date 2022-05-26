@@ -1,3 +1,5 @@
+"""Custom ldaptor server."""
+
 from typing import Any
 
 from ldaptor import interfaces
@@ -24,7 +26,7 @@ class CdEDBLDAPServer(LDAPServer):
         """Shortcut to retrieve the root entry."""
         root: CdEDBBaseLDAPEntry = interfaces.IConnectedLDAPEntry(self.factory)
         # prepare the attributes of the root entry as they are expected by the Result
-        attributes = [item for item in root._fetch().items()]
+        attributes = list(root._fetch().items())  # pylint: disable=protected-access
 
         reply(
             pureldap.LDAPSearchResultEntry(
