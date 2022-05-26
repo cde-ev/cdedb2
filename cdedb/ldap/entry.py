@@ -77,7 +77,8 @@ class CdEDBBaseLDAPEntry(
     out immediatly. They may not be overwritten in the child classes.
     """
 
-    def __init__(self, dn: DistinguishedName, backend: LDAPsqlBackend, attributes: LDAPObject) -> None:
+    def __init__(self, dn: DistinguishedName, backend: LDAPsqlBackend,
+                 attributes: LDAPObject) -> None:
         """Create a new entry object.
 
         Note that this gets an instance of the LDAPsqlBackend and the attributes of the
@@ -279,15 +280,15 @@ class CdEDBBaseLDAPEntry(
                 return True
         return False
 
-    def addChild(self, rdn: RelativeDistinguishedName, attributes: Sequence[bytes]
-                 ) -> Deferred[LDAPUnwillingToPerform]:  # pylint: disable=no-self-use
+    def addChild(self, rdn: RelativeDistinguishedName, attributes: Sequence[bytes]  # pylint: disable=no-self-use
+                 ) -> Deferred[LDAPUnwillingToPerform]:
         return fail(LDAPUnwillingToPerform("Not implemented."))
 
     def delete(self) -> Deferred[LDAPUnwillingToPerform]:  # pylint: disable=no-self-use
         return fail(LDAPUnwillingToPerform("Not implemented."))
 
-    def deleteChild(self, rdn: RelativeDistinguishedName
-                    ) -> Deferred[LDAPUnwillingToPerform]:  # pylint: disable=no-self-use
+    def deleteChild(self, rdn: RelativeDistinguishedName  # pylint: disable=no-self-use
+                    ) -> Deferred[LDAPUnwillingToPerform]:
         return fail(LDAPUnwillingToPerform("Not implemented."))
 
     # TODO where is this used?

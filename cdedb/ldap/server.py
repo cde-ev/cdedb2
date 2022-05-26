@@ -48,7 +48,7 @@ class CdEDBLDAPServer(LDAPServer):
             - which entries may access other entries
             - which attributes may be accessed by which entries
             """
-            attributes = {key: value for key, value in entry.items()}
+            attributes = {key: value for key, value in entry.items()}  # pylint: disable=unnecessary-comprehension
             # never ever return an userPassword in a search result
             if b"userPassword" in attributes:
                 del attributes[b"userPassword"]
