@@ -25,7 +25,7 @@ from twisted.python import log
 
 from cdedb.ldap.backend import LDAPObject, LDAPObjectMap, LDAPsqlBackend
 
-Callback = Callable
+Callback = Callable[[Any], None]
 LDAPEntries = List["CdEDBBaseLDAPEntry"]
 BoundDn = Optional[Union[int, DistinguishedName]]
 

@@ -36,7 +36,7 @@ class CdEDBLDAPServer(LDAPServer):
         return pureldap.LDAPSearchResultDone(resultCode=ldaperrors.Success.resultCode)
 
     def _cbSearchGotBase(self, base: CdEDBBaseLDAPEntry, dn: DistinguishedName,
-                         request: LDAPSearchRequest, reply) -> defer.Deferred:  # type: ignore[type-arg]
+                         request: LDAPSearchRequest, reply: Any) -> defer.Deferred:  # type: ignore[type-arg]
         """Callback which is invoked after a search was performed."""
 
         def _sendEntryToClient(entry: CdEDBBaseLDAPEntry) -> None:
@@ -116,7 +116,7 @@ class CdEDBLDAPServer(LDAPServer):
 
             # filter the attributes requested in the search
             if b"*" in request.attributes or len(request.attributes) == 0:
-                filtered_attributes = attributes.items()
+                filtered_attributes = list(attributes.items())
             else:
                 filtered_attributes = [
                     (key, attributes.get(key)) for key in request.attributes
