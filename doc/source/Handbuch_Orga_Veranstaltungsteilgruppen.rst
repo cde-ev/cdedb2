@@ -42,16 +42,20 @@ Sei folgende Veranstaltung gegeben:
 * WinterAkademie 3019/20
     * Veranstaltungsteile:
         * \1. Hälfte Oberwesel (O1, 27.12.3019 – 1.1.3020)
+            * Teilnahmebeitrag 100 €
             * Kursschienen:
                 * Vormittags (Kurs 1 O1)
                 * Nachmittags (Kurs 2 O1)
         * \1. Hälfte Kaub (K1, 27.12.3019 – 1.1.3020)
+            * Teilnahmebeitrag 120 €
             * Kursschienen:
                 * Kurs (Kurs K1)
         * \2. Hälfte Oberwesel (O2, 1.1.3020 – 6.1.3020)
+            * Teilnahmebeitrag 90 €
             * Kursschienen:
                 * Kurs (Kurs O2)
         * \2. Hälfte Kaub (K2, 1.1.3020 – 6.1.3020)
+            * Teilnahmebeitrag 110 €
             * Kursschienen:
                 * Vormittags (Kurs 1 K2)
                 * Nachmittags (Kurs 2 K2)
@@ -92,7 +96,12 @@ Typ: Teilnahmeausschließlichkeit
 
 Mit Veranstaltungsteilgruppen vom Typ "Teilnahmeausschließlichkeit" kann modelliert werden, dass nur eine Teilnahme an maximal einem der vernknüpften Veranstaltungsteile vorgesehen ist.
 
-Im obigen Beispiel könnte man beispielsweise folgende weitere Veranstaltungsteilgruppen hinzufügen:
+Für Teilnehmende die gegen diese Beschränkung verstoßen werden an geeigneten Stellen Warnmeldungen angezeigt.
+
+Potentielle Teilnehmende können sich trotz der Teilnahmeausschließlichkeit für mehrere Veranstaltungsteile der gleichen Gruppe anmelden.
+Da aber niemand an beiden Veranstaltungsteilen tatsächlich teilnehmen kann ist es nicht notwendig den Teilnahmebeitrag für beide Teile zu entrichten. Durch die Teilnahmeausschließlichkeitsbeschrönkung wird als Teilnahmebeitrag stattdessen der maximale zu zahlende Beitrag berechnet.
+
+Im obigen Beispiel könnte man folgende weitere Veranstaltungsteilgruppen hinzufügen:
 
 * Teilnahme 1. Hälfte (TN 1.H., Teilnahmeausschließlichkeit)
     * O1
@@ -107,6 +116,9 @@ Für Teilnehmende, die an mehreren Veranstaltungsteilen anwesend sind, z.B. "Tei
 Auf der Veranstaltungsübersichtsseite wird für Orgas die Gesamtanzahl der Warnungen angezeigt. Auf der Seite "Verstöße gegen Beschränkungen" werden die Warnungen für alle Anmeldungen angezeigt. Auf der Übersichtsseite einer einzelnen Anmeldung werden die Warnungen für diese Anmeldung angezeigt, sofern vorhanden.
 
 Die Warnungen sind rein kosmetisch und haben keinerlei weiteren Effekt.
+
+Meldet sich Person T für die Veranstaltungsteile O1 und K2 an zahlt T ganz normal die Teilnahmebeiträge von O1 und K2, also 100 € + 110 € = 210 €.
+Meldet T sich hingegen für O1, K1 und K2 an, muss T stattdessen 120 € + 110 € = 230 € bezahlen, das dies der maximale Teilnahmebeitrag ist, falls T einen Platz auf K1 und K2 erhält. Nimmt T stattdessen nur an O1 und K2 statt muss T später eine Erstattung für die Differenz (20 €) erhalten.
 
 
 Typ: Kursauschließlichkeit
