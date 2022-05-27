@@ -1,0 +1,27 @@
+# /etc/systemd/system/cde-ldap.service
+[Unit]
+Description=CdE LDAP Server
+# use @<cluster_name>.service if possible/necessary
+Requires=postgresql.service
+After=postgresql.service
+Documentation=https://db.cde-ev.de/doc/API_LDAP.html
+
+[Service]
+Type=exec
+Environment=CDEDB_CONFIGPATH=/etc/cdedb/config.py
+# we could set WorkingDirectory= though this should not be required
+# as 'cdedb' is globally available and the server does not write anything
+ExecStart=/usr/bin/python3 -m cdedb.ldap.main
+Restart=on-failure
+
+# we could also use User=nobody/Group=nobody
+DynamicUser=true
+# already implied by DynamicUser though unclear if 'full' or 'strict'
+ProtectSystem=strict
+# required so unprivileged user can bind to 389
+# using a systemd.socket would also work though probably require changes
+# to the twisted code...starting via twistd however might be rather clean
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target

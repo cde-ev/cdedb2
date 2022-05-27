@@ -144,6 +144,14 @@ python3 -m cdedb filesystem --owner www-data log create
 echo ""
 echo "Setting up ldap..."
 echo "--------------------------------------------"
+# copy the systemd service file to the right place
+cp /media/cdrom0/cde-ldap.service /etc/systemd/system/
+# create a separate service file for the test suite, with the right configpath
+# TODO this currently fails startup since the test module is not in global package space
+cp /media/cdrom0/cde-ldap.service /etc/systemd/system/cde-ldap-test.service
+sed -i -r -e "s|CDEDB_CONFIGPATH=/etc/cdedb/config.py|CDEDB_CONFIGPATH=/cdedb2/tests/config/test_ldap.py|g" /etc/systemd/system/cde-ldap-test.service
+
+# TODO remove once we switched to ldaptor
 # The following lines mirror the ldap-create make target.
 # We can not call the target directly, since ldap-create installs slapd
 # by itself, but in the auto-build all packages are installed in stage2.
