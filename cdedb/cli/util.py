@@ -19,6 +19,9 @@ from cdedb.config import Config, SecretsConfig, TestConfig
 pass_config = click.make_pass_decorator(TestConfig, ensure=True)
 pass_secrets = click.make_pass_decorator(SecretsConfig, ensure=True)
 
+# relative path to the sample_data.json file, from the repository root
+SAMPLE_DATA_JSON = pathlib.Path("tests") / "ancillary_files" / "sample_data.json"
+
 
 def has_systemd() -> bool:
     return which("systemctl") is not None
@@ -43,6 +46,18 @@ def sanity_check(fun: Callable[..., Any]) -> Callable[..., Any]:
             raise RuntimeError("Refusing to touch live instance!")
         if pathlib.Path("/OFFLINEVM").is_file():
             raise RuntimeError("Refusing to touch orga instance!")
+        return fun(*args, **kwargs)
+
+    return new_fun
+
+
+def sanity_check_production(fun: Callable[..., Any]) -> Callable[..., Any]:
+    """Decorator for invasive actions which are forbidden on production only."""
+
+    @functools.wraps(fun)
+    def new_fun(*args: Any, **kwargs: Any) -> Any:
+        if pathlib.Path("/PRODUCTIONVM").is_file():
+            raise RuntimeError("Refusing to touch live instance!")
         return fun(*args, **kwargs)
 
     return new_fun
