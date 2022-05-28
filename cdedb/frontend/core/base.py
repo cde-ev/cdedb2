@@ -404,7 +404,10 @@ class CoreBaseFrontend(AbstractFrontend):
                            persona['title'] or "", persona['name_supplement'] or "")),
             displayname=make_persona_name(persona, only_given_names=True),
             nickname=persona['display_name'],
-            birthday=persona['birthday'],
+            birthday=(
+                persona['birthday']
+                if persona['birthday'] != datetime.date.min else None
+            ),
             street=persona['address'],
             city=persona['location'],
             zipcode=persona['postal_code'],
