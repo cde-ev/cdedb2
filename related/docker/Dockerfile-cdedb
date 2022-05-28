@@ -57,7 +57,6 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3-zxcvbn \
     python3-markdown \
     python3-requests \
-    python3-vobject \
     python3-graphviz \
     python3-phonenumbers \
     \
@@ -78,6 +77,7 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     mailmanclient==3.3.3 \
     schulze_condorcet==2.0.0 \
     subman==0.1.0 \
+    segno==1.5.2 \
     \
     && python3 -m pip --no-cache-dir install \
     mypy==0.950 \
