@@ -883,7 +883,7 @@ class EventRegistrationBackend(EventBaseBackend):
         retrieving them via id.
 
         For the set of parts the registration has to pay for, every subset is checked.
-        If the subset does not violate any mep constraints, the total of all it's parts'
+        If the subset does not violate any MEP constraints, the total of all it's parts'
         fees is calculated. The final fee will be the maximum of all such totals.
 
         :param is_member: If this is None, retrieve membership status here.
@@ -891,8 +891,9 @@ class EventRegistrationBackend(EventBaseBackend):
         mep = const.EventPartGroupType.mutually_exclusive_participants
         zero = decimal.Decimal(0)
 
-        parts_per_mep = [pg['part_ids'] for pg in event['part_groups'].values()
-                        if pg['constraint_type'] == mep]
+        parts_per_mep = xsorted(
+            (pg['part_ids'] for pg in event['part_groups'].values()
+             if pg['constraint_type'] == mep), key=len, reverse=True)
 
         # Precompute fees including fee modifiers for every registered-for part.
         fees_to_pay: Dict[int, decimal.Decimal] = {
@@ -908,9 +909,13 @@ class EventRegistrationBackend(EventBaseBackend):
         def total_cost(part_ids: Collection[int]) -> decimal.Decimal:
             return sum((fees_to_pay[part_id] for part_id in part_ids), start=zero)
 
-        fee = max(
-            (total_cost(part_ids) for part_ids in self.powerset(fees_to_pay.keys())
-             if all(len(mep_parts & part_ids) <= 1 for mep_parts in parts_per_mep)),
+        mep_parts = set(itertools.chain.from_iterable(
+            pg['part_ids'] for pg in event['part_groups'].values()))
+        other_parts = set(event['parts']) - mep_parts
+
+        fee = total_cost(other_parts & fees_to_pay.keys()) + max(
+            (total_cost(ids_) for ids_ in self.powerset(mep_parts & fees_to_pay.keys())
+             if all(len(mep_parts & ids_) <= 1 for mep_parts in parts_per_mep)),
             default=zero)
 
         # Add nonmember surcharge if applicable.

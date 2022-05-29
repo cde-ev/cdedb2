@@ -392,7 +392,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                                   registration_id: Optional[int],
                                   course_id: Optional[int]) -> CdEDBObject:
         """
-        Check constraints for violations.
+        Check for violations of part group constraints.
 
         :param registration_id: Can be a single id to only consider that registrations.
             Can also be `-1` to check no registrations at all. Alternatively this can
