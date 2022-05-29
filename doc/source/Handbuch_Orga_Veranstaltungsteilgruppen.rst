@@ -1,8 +1,7 @@
 Veranstaltungsteilgruppen
 =========================
 
-Veranstaltungsteilgruppen bieten Orgas die Möglichkeit eine beliebige Teilmenge der Veranstaltungsteile ihrer Veranstaltung miteinander zu verknüpfen. Je nach Typ der Gruppe hat dies verschiedene Effekte, darunter Warnmeldungen unterschiedlicher
-Stärken, die bei Verstößen gegen Beschränkungen angezeigt werden.
+Veranstaltungsteilgruppen bieten Orgas die Möglichkeit eine beliebige Teilmenge der Veranstaltungsteile ihrer Veranstaltung miteinander zu verknüpfen. Je nach Typ der Gruppe hat dies verschiedene Effekte, darunter Warnmeldungen unterschiedlicher Stärken, die bei Verstößen gegen Beschränkungen angezeigt werden. Die Stärke der Warnmeldungen ist rein kosmetisch, "Warnungen" werden in gelb angezeigt, "Fehler" in rot.
 
 Eigenschaften
 -------------
@@ -94,12 +93,12 @@ Durch die Veranstaltungsteilgruppe "Alle" gibt es keine zusätzliche Spalte in d
 Typ: Teilnahmeausschließlichkeit
 --------------------------------
 
-Mit Veranstaltungsteilgruppen vom Typ "Teilnahmeausschließlichkeit" kann modelliert werden, dass nur eine Teilnahme an maximal einem der vernknüpften Veranstaltungsteile vorgesehen ist.
+Mit Veranstaltungsteilgruppen vom Typ "Teilnahmeausschließlichkeit" kann modelliert werden, dass nur eine Teilnahme an maximal einem der vernknüpften Veranstaltungsteile vorgesehen ist, bspw. weil diese gleichzeitig an verschiedenen Orten stattfinden.
 
 Für Teilnehmende die gegen diese Beschränkung verstoßen werden an geeigneten Stellen Warnmeldungen angezeigt.
 
 Potentielle Teilnehmende können sich trotz der Teilnahmeausschließlichkeit für mehrere Veranstaltungsteile der gleichen Gruppe anmelden.
-Da aber niemand an beiden Veranstaltungsteilen tatsächlich teilnehmen kann ist es nicht notwendig den Teilnahmebeitrag für beide Teile zu entrichten. Durch die Teilnahmeausschließlichkeitsbeschrönkung wird als Teilnahmebeitrag stattdessen der maximale zu zahlende Beitrag berechnet.
+Da aber niemand an beiden Veranstaltungsteilen tatsächlich teilnehmen kann ist es nicht notwendig den Teilnahmebeitrag für beide Teile zu entrichten. Durch die Teilnahmeausschließlichkeitsbeschränkung wird als Teilnahmebeitrag stattdessen der maximale zu zahlende Beitrag berechnet.
 
 Im obigen Beispiel könnte man folgende weitere Veranstaltungsteilgruppen hinzufügen:
 
@@ -111,7 +110,7 @@ Im obigen Beispiel könnte man folgende weitere Veranstaltungsteilgruppen hinzuf
     * K2
 
 Dadurch wird für Teilnehmende, deren Status in O1 und K1 "Teilnehmer" ist eine Warnung der Stufe "Fehler" angezeigt.
-Für Teilnehmende, die an mehreren Veranstaltungsteilen anwesend sind, z.B. "Teilnehmer" in K1 und "Gast" in K2 oder "Gast in O2 und K2, wird eine Warnung der Stufe "Warnung" angezeigt.
+Für Teilnehmende, die an mehreren Veranstaltungsteilen anwesend sind, z.B. "Teilnehmer" in K1 und "Gast" in O1 oder "Gast" in O2 und K2, wird eine Warnung der Stufe "Warnung" angezeigt.
 
 Auf der Veranstaltungsübersichtsseite wird für Orgas die Gesamtanzahl der Warnungen angezeigt. Auf der Seite "Verstöße gegen Beschränkungen" werden die Warnungen für alle Anmeldungen angezeigt. Auf der Übersichtsseite einer einzelnen Anmeldung werden die Warnungen für diese Anmeldung angezeigt, sofern vorhanden.
 
@@ -124,7 +123,9 @@ Meldet T sich hingegen für O1, K1 und K2 an, muss T stattdessen 120 € + 110 �
 Typ: Kursauschließlichkeit
 --------------------------
 
-Mit Veranstaltungsteilgruppen vom Typ "Kursausschließlichkeit" lässt sich modellieren, dass Kurse nur in maximal einer der Kursschienen der verknüpften Veranstaltungsteile stattfinden sollen.
+Mit Veranstaltungsteilgruppen vom Typ "Kursausschließlichkeit" lässt sich modellieren, dass Kurse nur in maximal einer der Kursschienen der verknüpften Veranstaltungsteile stattfinden sollen, bspw. weil diese gleichzeitig an verschiedenen Orten stattfinden.
+
+Der primäre Anwendungsfall ist für Kurse, die in mehreren Kurschienen angeboten werden, aber nur in einer davon stattfinden sollen.
 
 Kurse die in mehreren dieser Kursschienen angeboten werden, aber nur in einer davon stattfinden produzieren keine Warnung.
 Kurse die in mehreren dieser Kursschienen stattfinden erhalten eine Warnung der Stufe "Warnung".
