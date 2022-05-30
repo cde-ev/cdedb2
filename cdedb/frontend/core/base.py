@@ -14,7 +14,7 @@ from typing import Any, Collection, Dict, List, Optional, Set, Tuple
 
 import magic
 import segno
-import vobject
+import segno.helpers
 import werkzeug.exceptions
 from subman.machine import SubscriptionPolicy
 from werkzeug import Response
@@ -43,7 +43,7 @@ from cdedb.common.validation import (
     PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS,
 )
 from cdedb.common.validation.types import CdedbID
-from cdedb.filter import date_filter, enum_entries_filter, markdown_parse_safe
+from cdedb.filter import enum_entries_filter, markdown_parse_safe
 from cdedb.frontend.common import (
     AbstractFrontend, Headers, REQUESTdata, REQUESTdatadict, REQUESTfile,
     TransactionObserver, access, basic_redirect, calculate_db_logparams,
@@ -387,71 +387,36 @@ class CoreBaseFrontend(AbstractFrontend):
         """
         Generate a vCard string for a user to be delivered to a client.
 
-        The vcard is a vcard3, following https://tools.ietf.org/html/rfc2426
-        Where reasonable, we should consider the new RFC of vcard4, to increase
-        compatibility, see https://tools.ietf.org/html/rfc6350
-
         :return: The serialized vCard (as in a vcf file)
         """
         if not {'searchable', 'cde_admin'} & rs.user.roles:
             raise werkzeug.exceptions.Forbidden(n_("No cde access to profile."))
 
-        if (not self.coreproxy.verify_persona(rs, persona_id,
-                                              required_roles=['searchable'])
-                and "cde_admin" not in rs.user.roles):
+        if "cde_admin" not in rs.user.roles and not self.coreproxy.verify_persona(
+                rs, persona_id, required_roles=['searchable']):
             raise werkzeug.exceptions.Forbidden(n_(
                 "Access to non-searchable member data."))
 
         persona = self.coreproxy.get_cde_user(rs, persona_id)
 
-        vcard = vobject.vCard()
-
-        # Name
-        vcard.add('N')
-        vcard.n.value = vobject.vcard.Name(
-            family=persona['family_name'] or '',
-            given=persona['given_names'] or '',
-            prefix=persona['title'] or '',
-            suffix=persona['name_supplement'] or '')
-        vcard.add('FN')
-        vcard.fn.value = " ".join(
-            filter(None, (persona['given_names'], persona['family_name'])))
-        vcard.add('NICKNAME')
-        vcard.nickname.value = persona['display_name'] or ''
-
-        # Address data
-        if persona['address']:
-            vcard.add('adr')
-            # extended should be empty because of compatibility issues, see
-            # https://tools.ietf.org/html/rfc6350#section-6.3.1
-            vcard.adr.value = vobject.vcard.Address(
-                extended='',
-                street=persona['address'] or '',
-                city=persona['location'] or '',
-                code=persona['postal_code'] or '',
-                country=rs.gettext(format_country_code(persona['country'])))
-
-        # Contact data
-        if persona['username']:
-            # see https://tools.ietf.org/html/rfc2426#section-3.3.2
-            vcard.add('email')
-            vcard.email.value = persona['username']
-        if persona['telephone']:
-            # see https://tools.ietf.org/html/rfc2426#section-3.3.1
-            vcard.add(vobject.vcard.ContentLine('TEL', [('TYPE', 'home,voice')],
-                                                persona['telephone']))
-        if persona['mobile']:
-            # see https://tools.ietf.org/html/rfc2426#section-3.3.1
-            vcard.add(vobject.vcard.ContentLine('TEL', [('TYPE', 'cell,voice')],
-                                                persona['mobile']))
-
-        # Birthday
-        if persona['birthday']:
-            vcard.add('bday')
-            # see https://tools.ietf.org/html/rfc2426#section-3.1.5
-            vcard.bday.value = date_filter(persona['birthday'], formatstr="%Y-%m-%d")
-
-        return vcard.serialize()
+        vcard = segno.helpers.make_vcard_data(
+            name=";".join((persona['family_name'], persona['given_names'], "",
+                           persona['title'] or "", persona['name_supplement'] or "")),
+            displayname=make_persona_name(persona, only_given_names=True),
+            nickname=persona['display_name'],
+            birthday=(
+                persona['birthday']
+                if persona['birthday'] != datetime.date.min else None
+            ),
+            street=persona['address'],
+            city=persona['location'],
+            zipcode=persona['postal_code'],
+            country=rs.gettext(format_country_code(persona['country'])),
+            email=persona['username'],
+            homephone=persona['telephone'],
+            cellphone=persona['mobile'],
+        )
+        return vcard
 
     @access("persona")
     def mydata(self, rs: RequestState) -> Response:
