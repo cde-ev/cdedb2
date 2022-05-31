@@ -891,6 +891,9 @@ class EventRegistrationBackend(EventBaseBackend):
         mep = const.EventPartGroupType.mutually_exclusive_participants
         zero = decimal.Decimal(0)
 
+        # Reverse sorting by length slightly reduces runtime because of lazy evalution
+        #  of `all()` and the fact, that larger part groups are more likely to have
+        #  non-trivial intersections.
         parts_per_mep = xsorted(
             (pg['part_ids'] for pg in event['part_groups'].values()
              if pg['constraint_type'] == mep), key=len, reverse=True)
@@ -907,13 +910,26 @@ class EventRegistrationBackend(EventBaseBackend):
                     fees_to_pay[fee_mod['part_id']] += fee_mod['amount']
 
         def total_cost(part_ids: Collection[int]) -> decimal.Decimal:
+            """Calculate the total cost of the given parts for this registration."""
             return sum((fees_to_pay[part_id] for part_id in part_ids), start=zero)
 
+        # Split all parts into those belonging to at least one part group and others.
         mep_parts = set(itertools.chain.from_iterable(
             pg['part_ids'] for pg in event['part_groups'].values()))
         other_parts = set(event['parts']) - mep_parts
 
-        fee = total_cost(other_parts & fees_to_pay.keys()) + max(
+        # Compute constant fee from non-part-group parts.
+        fee = total_cost(other_parts & fees_to_pay.keys())
+
+        # The following calculation is somewhat complicated and scales very poorly with
+        #  the number of parts belonging to part groups.
+        #  This is deemed acceptable because the number of part groups is not expected
+        #  to exceed problematic threshholds.
+
+        # For every legal subset of the registered-for parts calculate the total cost.
+        #  Determine the maximum of those and add it to the fee.
+        #  Legal subsets are those that only trivially intersect with all part groups.
+        fee += max(
             (total_cost(ids_) for ids_ in self.powerset(mep_parts & fees_to_pay.keys())
              if all(len(mep_parts & ids_) <= 1 for mep_parts in parts_per_mep)),
             default=zero)
