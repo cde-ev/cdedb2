@@ -298,7 +298,7 @@
 
 
 {% macro list_mep_violations(violations, personas, link_registration=False) %}
-    <ul id="mep-violations">
+    <ul id="mep-violations-list">
         {% for violation in violations %}
             {% set persona_name = util.persona_name(personas[violation.persona_id]) %}
             {% if link_registration %}
@@ -321,7 +321,7 @@
 {% endmacro %}
 
 {% macro list_mec_violations(violations, courses, link_course=False) %}
-    <ul id="mec-violations">
+    <ul id="mec-violations-list">
         {% for violation in violations %}
             {% set course_identifier = courses[violation.course_id]['nr'] + ". " + courses[violation.course_id]['shortname'] %}
             {% if link_course %}
