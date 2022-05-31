@@ -52,11 +52,13 @@ class ConstraintViolation:
 
     @property
     @abc.abstractmethod
-    def severity(self) -> int: ...
+    def severity(self) -> int:
+        ...
 
     @property
     @abc.abstractmethod
-    def constraint_type(self) -> const.EventPartGroupType: ...
+    def constraint_type(self) -> const.EventPartGroupType:
+        ...
 
 
 @dataclass(frozen=True)
