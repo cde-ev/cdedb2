@@ -1,12 +1,13 @@
 """The ldaptor backend, mediating all queries to the database."""
 
+import asyncio
 import logging
 import pathlib
 import re
 from collections import defaultdict
 from typing import (
-    TYPE_CHECKING, Any, Callable, Collection, Dict, List, Optional, Sequence, TypedDict,
-    Union, cast, overload,
+    TYPE_CHECKING, Any, AsyncIterator, Callable, Collection, Dict, List, Optional,
+    Sequence, TypedDict, Union, cast, overload,
 )
 
 import aiopg.connection
@@ -24,7 +25,7 @@ from cdedb.ldap.schema import SchemaDescription
 
 if TYPE_CHECKING:
     # Lazy import saves many dependecies for standalone mode
-    from cdedb.common import CdEDBObject
+    from cdedb.common import CdEDBObject, CdEDBObjectMap
     from cdedb.database.query import DatabaseValue_s
 
 LDAPObject = Dict[bytes, List[bytes]]
@@ -63,8 +64,7 @@ class LDAPsqlBackend:
 
         This doesn't return anything, but has a side-effect on ``cur``.
         """
-        sanitized_params = tuple(
-            to_db_input(p) for p in params)
+        sanitized_params = tuple(to_db_input(p) for p in params)
         logger.debug(f"Execute PostgreSQL query"
                      f" {cur.mogrify(query, sanitized_params)}.")
         await cur.execute(query, sanitized_params)
@@ -88,7 +88,7 @@ class LDAPsqlBackend:
                 return from_db_output(await cur.fetchone())
 
     async def query_all(self, query: str, params: Sequence["DatabaseValue_s"]
-                        ) -> List["CdEDBObject"]:
+                        ) -> AsyncIterator["CdEDBObject"]:
         """Execute a query in a safe way (inside a transaction).
 
         :returns: all results of query
@@ -96,8 +96,8 @@ class LDAPsqlBackend:
         async with self.pool.acquire() as conn:
             async with conn.cursor() as cur:
                 await self.execute_db_query(cur, query, params)
-                return [cast("CdEDBObject", from_db_output(x))
-                        for x in await cur.fetchall()]
+                async for x in cur:
+                    yield cast("CdEDBObject", from_db_output(x))
 
     @staticmethod
     def _dn_value(dn: DN, attribute: str) -> Optional[str]:
@@ -343,8 +343,7 @@ class LDAPsqlBackend:
 
     async def list_users(self) -> List[RDN]:
         query = "SELECT id FROM core.personas WHERE NOT is_archived"
-        data = await self.query_all(query, [])
-        return [self.list_single_user(e["id"]) for e in data]
+        return [self.list_single_user(e["id"]) async for e in self.query_all(query, [])]
 
     async def get_users_groups(self, persona_ids: Collection[int]
                                ) -> Dict[int, List[str]]:
@@ -369,7 +368,7 @@ class LDAPsqlBackend:
                     is_core_admin, is_finance_admin, is_cdelokal_admin
                 FROM core.personas WHERE personas.id = ANY(%s)
                 """
-        for e in await self.query_all(query, (persona_ids,)):
+        async for e in self.query_all(query, (persona_ids,)):
             ret[e["id"]].extend([self.status_group_dn(flag)
                                  for flag in e.keys() if e[flag] and flag != "id"])
 
@@ -380,7 +379,7 @@ class LDAPsqlBackend:
                 WHERE persona_id = ANY(%s)
                 GROUP BY persona_id
                 """
-        for e in await self.query_all(query, (persona_ids,)):
+        async for e in self.query_all(query, (persona_ids,)):
             ret[e["persona_id"]].extend([self.presider_group_dn(assembly_id)
                                          for assembly_id in e["assembly_ids"]])
 
@@ -390,7 +389,7 @@ class LDAPsqlBackend:
                 FROM event.orgas
                 WHERE persona_id = ANY(%s)
                 GROUP BY persona_id"""
-        for e in await self.query_all(query, (persona_ids,)):
+        async for e in self.query_all(query, (persona_ids,)):
             ret[e["persona_id"]].extend([self.orga_group_dn(event_id)
                                          for event_id in e["event_ids"]])
 
@@ -404,7 +403,7 @@ class LDAPsqlBackend:
                 GROUP BY persona_id
                 """
         states = SubscriptionState.subscribing_states()
-        for e in await self.query_all(query, (states, persona_ids,)):
+        async for e in self.query_all(query, (states, persona_ids,)):
             ret[e["persona_id"]].extend([self.subscriber_group_dn(address)
                                          for address in e["addresses"]])
 
@@ -416,11 +415,19 @@ class LDAPsqlBackend:
                     AND persona_id = ANY(%s)
                 GROUP BY persona_id
                 """
-        for e in await self.query_all(query, (persona_ids,)):
+        async for e in self.query_all(query, (persona_ids,)):
             ret[e["persona_id"]].extend([self.moderator_group_dn(address)
                                          for address in e["addresses"]])
 
         return ret
+
+    async def get_users_data(self, user_ids: Collection[int]) -> "CdEDBObjectMap":
+        query = (
+            "SELECT id, username, display_name, given_names, family_name, password_hash"
+            " FROM core.personas WHERE id = ANY(%s) AND NOT is_archived")
+        return {
+            e["id"]: e async for e in self.query_all(query, (user_ids,))
+        }
 
     async def get_users(self, dns: List[DN]) -> LDAPObjectMap:
         """Get the users specified by dn.
@@ -436,12 +443,10 @@ class LDAPsqlBackend:
                 continue
             dn_to_persona_id[dn] = persona_id
 
-        query = (
-            "SELECT id, username, display_name, given_names, family_name, password_hash"
-            " FROM core.personas WHERE id = ANY(%s) AND NOT is_archived")
-        data = await self.query_all(query, (dn_to_persona_id.values(),))
-        users = {e["id"]: e for e in data}
-        groups = await self.get_users_groups(dn_to_persona_id.values())
+        users, groups = await asyncio.gather(
+            self.get_users_data(dn_to_persona_id.values()),
+            self.get_users_groups(dn_to_persona_id.values()),
+        )
 
         ret = dict()
         for dn, persona_id in dn_to_persona_id.items():
@@ -537,12 +542,12 @@ class LDAPsqlBackend:
             else:
                 condition = name
             query = f"SELECT id FROM core.personas WHERE {condition}"
-            members = await self.query_all(query, [])
+            members = self.query_all(query, [])
             group = {
                 b"cn": [self.status_group_cn(name)],
                 b"objectClass": ["groupOfUniqueNames"],
                 b"description": [self.STATUS_GROUPS[name]],
-                b"uniqueMember": [self.user_dn(e["id"]) for e in members]
+                b"uniqueMember": [self.user_dn(e["id"]) async for e in members]
             }
             ret[dn] = self._to_bytes(group)
         return ret
@@ -573,14 +578,30 @@ class LDAPsqlBackend:
 
     async def list_assembly_presider_groups(self) -> List[RDN]:
         query = "SELECT id FROM assembly.assemblies"
-        data = await self.query_all(query, [])
         return [
             RDN(
                 attributeTypesAndValues=[
                     ATV(attributeType="cn", value=self.presider_group_cn(e["id"]))
                 ]
-            ) for e in data
+            ) async for e in self.query_all(query, [])
         ]
+
+    async def get_presiders(self, assembly_ids: Collection[int]
+                            ) -> Dict[int, List[int]]:
+        query = ("SELECT persona_id, assembly_id FROM assembly.presiders"
+                 " WHERE assembly_id = ANY(%s)")
+        presiders = defaultdict(list)
+        async for e in self.query_all(query, (assembly_ids,)):
+            presiders[e["assembly_id"]].append(e["persona_id"])
+        return presiders
+
+    async def get_assemblies(self, assembly_ids: Collection[int]) -> "CdEDBObjectMap":
+        query = ("SELECT id, title, shortname FROM assembly.assemblies"
+                 " WHERE id = ANY(%s)")
+        return {
+            e["id"]: e
+            async for e in self.query_all(query, (assembly_ids,))
+        }
 
     async def get_assembly_presider_groups(self, dns: List[DN]) -> LDAPObjectMap:
         dn_to_assembly_id = dict()
@@ -590,16 +611,10 @@ class LDAPsqlBackend:
                 continue
             dn_to_assembly_id[dn] = assembly_id
 
-        query = ("SELECT persona_id, assembly_id FROM assembly.presiders"
-                 " WHERE assembly_id = ANY(%s)")
-        data = await self.query_all(query, (dn_to_assembly_id.values(),))
-        presiders = defaultdict(list)
-        for e in data:
-            presiders[e["assembly_id"]].append(e["persona_id"])
-        query = ("SELECT id, title, shortname FROM assembly.assemblies"
-                 " WHERE id = ANY(%s)")
-        data = await self.query_all(query, (dn_to_assembly_id.values(),))
-        assemblies = {e["id"]: e for e in data}
+        assemblies, presiders = await asyncio.gather(
+            self.get_assemblies(dn_to_assembly_id.values()),
+            self.get_presiders(dn_to_assembly_id.values()),
+        )
 
         ret = dict()
         for dn, assembly_id in dn_to_assembly_id.items():
@@ -641,14 +656,26 @@ class LDAPsqlBackend:
 
     async def list_event_orga_groups(self) -> List[RDN]:
         query = "SELECT id FROM event.events"
-        data = await self.query_all(query, [])
         return [
             RDN(
                 attributeTypesAndValues=[
                     ATV(attributeType="cn", value=self.orga_group_cn(e["id"]))
                 ]
-            ) for e in data
+            ) async for e in self.query_all(query, [])
         ]
+
+    async def get_orgas(self, event_ids: Collection[int]) -> Dict[int, List[int]]:
+        query = "SELECT persona_id, event_id FROM event.orgas WHERE event_id = ANY(%s)"
+        orgas = defaultdict(list)
+        async for e in self.query_all(query, (event_ids,)):
+            orgas[e["event_id"]].append(e["persona_id"])
+        return orgas
+
+    async def get_events(self, event_ids: Collection[int]) -> "CdEDBObjectMap":
+        query = "SELECT id, title, shortname FROM event.events WHERE id = ANY(%s)"
+        return {
+            e["id"]: e async for e in self.query_all(query, (event_ids,))
+        }
 
     async def get_event_orga_groups(self, dns: List[DN]) -> LDAPObjectMap:
         dn_to_event_id = dict()
@@ -658,14 +685,10 @@ class LDAPsqlBackend:
                 continue
             dn_to_event_id[dn] = event_id
 
-        query = "SELECT persona_id, event_id FROM event.orgas WHERE event_id = ANY(%s)"
-        data = await self.query_all(query, (dn_to_event_id.values(),))
-        orgas = defaultdict(list)
-        for e in data:
-            orgas[e["event_id"]].append(e["persona_id"])
-        query = "SELECT id, title, shortname FROM event.events WHERE id = ANY(%s)"
-        data = await self.query_all(query, (dn_to_event_id.values(),))
-        events = {e["id"]: e for e in data}
+        events, orgas = await asyncio.gather(
+            self.get_events(dn_to_event_id.values()),
+            self.get_orgas(dn_to_event_id.values()),
+        )
 
         ret = dict()
         for dn, event_id in dn_to_event_id.items():
@@ -711,14 +734,30 @@ class LDAPsqlBackend:
 
     async def list_ml_moderator_groups(self) -> List[RDN]:
         query = "SELECT address FROM ml.mailinglists"
-        data = await self.query_all(query, [])
         return [
             RDN(
                 attributeTypesAndValues=[
                     ATV(attributeType="cn", value=self.moderator_group_cn(e["address"]))
                 ]
-            ) for e in data
+            ) async for e in self.query_all(query, [])
         ]
+
+    async def get_moderators(self, ml_ids: Collection[str]) -> Dict[str, List[int]]:
+        query = ("SELECT persona_id, address FROM ml.moderators, ml.mailinglists"
+                 " WHERE ml.mailinglists.id = ml.moderators.mailinglist_id"
+                 " AND address = ANY(%s)")
+        moderators = defaultdict(list)
+        async for e in self.query_all(query, (ml_ids,)):
+            moderators[e["address"]].append(e["persona_id"])
+        return moderators
+
+    async def get_mailinglists(self, ml_ids: Collection[str]
+                               ) -> Dict[str, "CdEDBObject"]:
+        query = ("SELECT address, title FROM ml.mailinglists WHERE address = ANY(%s)")
+        return {
+            e["address"]: e
+            async for e in self.query_all(query, (ml_ids,))
+        }
 
     async def get_ml_moderator_groups(self, dns: List[DN]) -> LDAPObjectMap:
         dn_to_address = dict()
@@ -728,16 +767,10 @@ class LDAPsqlBackend:
                 continue
             dn_to_address[dn] = address
 
-        query = ("SELECT persona_id, address FROM ml.moderators, ml.mailinglists"
-                 " WHERE ml.mailinglists.id = ml.moderators.mailinglist_id"
-                 " AND address = ANY(%s)")
-        data = await self.query_all(query, (dn_to_address.values(),))
-        moderators = defaultdict(list)
-        for e in data:
-            moderators[e["address"]].append(e["persona_id"])
-        query = ("SELECT address, title FROM ml.mailinglists WHERE address = ANY(%s)")
-        data = await self.query_all(query, (dn_to_address.values(),))
-        mls = {e["address"]: e for e in data}
+        mls, moderators = await asyncio.gather(
+            self.get_mailinglists(dn_to_address.values()),
+            self.get_moderators(dn_to_address.values()),
+        )
 
         ret = dict()
         for dn, address in dn_to_address.items():
@@ -778,15 +811,25 @@ class LDAPsqlBackend:
 
     async def list_ml_subscriber_groups(self) -> List[RDN]:
         query = "SELECT address FROM ml.mailinglists"
-        data = await self.query_all(query, [])
         return [
             RDN(
                 attributeTypesAndValues=[
                     ATV(attributeType="cn",
                         value=self.subscriber_group_cn(e["address"]))
                 ]
-            ) for e in data
+            ) async for e in self.query_all(query, [])
         ]
+
+    async def get_subscribers(self, ml_ids: Collection[str]) -> Dict[str, List[int]]:
+        query = ("SELECT persona_id, address"
+                 " FROM ml.subscription_states, ml.mailinglists"
+                 " WHERE ml.mailinglists.id = ml.subscription_states.mailinglist_id"
+                 " AND subscription_state = ANY(%s) AND address = ANY(%s)")
+        states = SubscriptionState.subscribing_states()
+        subscribers = defaultdict(list)
+        async for e in self.query_all(query, (states, ml_ids,)):
+            subscribers[e["address"]].append(e["persona_id"])
+        return subscribers
 
     async def get_ml_subscriber_groups(self, dns: List[DN]) -> LDAPObjectMap:
         dn_to_address = dict()
@@ -796,18 +839,10 @@ class LDAPsqlBackend:
                 continue
             dn_to_address[dn] = address
 
-        query = ("SELECT persona_id, address"
-                 " FROM ml.subscription_states, ml.mailinglists"
-                 " WHERE ml.mailinglists.id = ml.subscription_states.mailinglist_id"
-                 " AND subscription_state = ANY(%s) AND address = ANY(%s)")
-        states = SubscriptionState.subscribing_states()
-        data = await self.query_all(query, (states, dn_to_address.values(),))
-        subscribers = defaultdict(list)
-        for e in data:
-            subscribers[e["address"]].append(e["persona_id"])
-        query = ("SELECT address, title FROM ml.mailinglists WHERE address = ANY(%s)")
-        data = await self.query_all(query, (dn_to_address.values(),))
-        mls = {e["address"]: e for e in data}
+        mls, subscribers = await asyncio.gather(
+            self.get_mailinglists(dn_to_address.values()),
+            self.get_subscribers(dn_to_address.values()),
+        )
 
         ret = dict()
         for dn, address in dn_to_address.items():
