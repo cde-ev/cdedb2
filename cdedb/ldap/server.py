@@ -53,18 +53,17 @@ class CdEDBLDAPServer(LDAPServer):
             if b"userPassword" in attributes:
                 del attributes[b"userPassword"]
 
-            backend = entry.backend
-            users_dn = DistinguishedName(stringValue=backend.users_dn)
-            groups_dn = DistinguishedName(stringValue=backend.groups_dn)
-            duas_dn = DistinguishedName(stringValue=backend.duas_dn)
-            admin_dn = DistinguishedName(backend.dua_dn("admin"))
-            cloud_dn = DistinguishedName(backend.dua_dn("cloud"))
-            apache_dn = DistinguishedName(backend.dua_dn("apache"))
+            users_dn = entry.backend.users_dn
+            groups_dn = entry.backend.groups_dn
+            duas_dn = entry.backend.duas_dn
+            admin_dn = entry.backend.dua_dn("admin")
+            cloud_dn = entry.backend.dua_dn("cloud")
+            apache_dn = entry.backend.dua_dn("apache")
 
             return_result = True
             # anonymous users have only very limited access
             if self.boundUser is None:
-                if entry.dn in backend.anonymous_accessible_dns:
+                if entry.dn in entry.backend.anonymous_accessible_dns:
                     pass
                 else:
                     return_result = False

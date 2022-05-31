@@ -450,8 +450,7 @@ class CdEDBLeafEntry(CdEDBBaseLDAPEntry, metaclass=abc.ABCMeta):
 
 class RootEntry(CdEDBStaticEntry):
     def __init__(self, backend: LDAPsqlBackend) -> None:
-        dn = DistinguishedName(backend.root_dn)
-        super().__init__(dn, backend)
+        super().__init__(backend.root_dn, backend)
 
     def _fetch(self, *attributes: bytes) -> LDAPObject:
         attrs = {
@@ -475,10 +474,10 @@ class RootEntry(CdEDBStaticEntry):
         if dn == self.dn:
             self._fetch()
             return self
-        elif DistinguishedName(self.backend.de_dn).contains(dn):
+        elif self.backend.de_dn.contains(dn):
             de = DeEntry(self.backend)
             return await de._lookup(dn)
-        elif DistinguishedName(self.backend.subschema_dn).contains(dn):
+        elif self.backend.subschema_dn.contains(dn):
             subschema = SubschemaEntry(self.backend)
             return await subschema._lookup(dn)
         else:
@@ -495,8 +494,7 @@ class SubschemaEntry(CdEDBStaticEntry):
     """
 
     def __init__(self, backend: LDAPsqlBackend) -> None:
-        dn = DistinguishedName(backend.subschema_dn)
-        super().__init__(dn, backend)
+        super().__init__(backend.subschema_dn, backend)
 
     def _fetch(self, *attributes: bytes) -> LDAPObject:
         attrs = {
@@ -526,8 +524,7 @@ class SubschemaEntry(CdEDBStaticEntry):
 
 class DeEntry(CdEDBStaticEntry):
     def __init__(self, backend: LDAPsqlBackend) -> None:
-        dn = DistinguishedName(backend.de_dn)
-        super().__init__(dn, backend)
+        super().__init__(backend.de_dn, backend)
 
     def _fetch(self, *attributes: bytes) -> LDAPObject:
         attrs = {
@@ -545,7 +542,7 @@ class DeEntry(CdEDBStaticEntry):
     async def _lookup(self, dn: DistinguishedName) -> CdEDBBaseLDAPEntry:
         if dn == self.dn:
             return self
-        elif DistinguishedName(self.backend.cde_dn).contains(dn):
+        elif self.backend.cde_dn.contains(dn):
             cde = CdeEvEntry(self.backend)
             return await cde._lookup(dn)
         else:
@@ -557,8 +554,7 @@ class DeEntry(CdEDBStaticEntry):
 
 class CdeEvEntry(CdEDBStaticEntry):
     def __init__(self, backend: LDAPsqlBackend) -> None:
-        dn = DistinguishedName(backend.cde_dn)
-        super().__init__(dn, backend)
+        super().__init__(backend.cde_dn, backend)
 
     def _fetch(self, *attributes: bytes) -> LDAPObject:
         attrs = {
@@ -582,13 +578,13 @@ class CdeEvEntry(CdEDBStaticEntry):
     async def _lookup(self, dn: DistinguishedName) -> CdEDBBaseLDAPEntry:
         if dn == self.dn:
             return self
-        elif DistinguishedName(self.backend.duas_dn).contains(dn):
+        elif self.backend.duas_dn.contains(dn):
             duas = DuasEntry(self.backend)
             return await duas._lookup(dn)
-        elif DistinguishedName(self.backend.users_dn).contains(dn):
+        elif self.backend.users_dn.contains(dn):
             users = UsersEntry(self.backend)
             return await users._lookup(dn)
-        elif DistinguishedName(self.backend.groups_dn).contains(dn):
+        elif self.backend.groups_dn.contains(dn):
             groups = GroupsEntry(self.backend)
             return await groups._lookup(dn)
         else:
@@ -607,8 +603,7 @@ class DuasEntry(CdEPreLeafEntry):
     ChildGroup = DuaEntry
 
     def __init__(self, backend: LDAPsqlBackend) -> None:
-        dn = DistinguishedName(backend.duas_dn)
-        super().__init__(dn, backend)
+        super().__init__(backend.duas_dn, backend)
 
     def _fetch(self, *attributes: bytes) -> LDAPObject:
         attrs = {
@@ -644,8 +639,7 @@ class UsersEntry(CdEPreLeafEntry):
     ChildGroup = UserEntry
 
     def __init__(self, backend: LDAPsqlBackend) -> None:
-        dn = DistinguishedName(backend.users_dn)
-        super().__init__(dn, backend)
+        super().__init__(backend.users_dn, backend)
 
     def _fetch(self, *attributes: bytes) -> LDAPObject:
         attrs = {
@@ -679,8 +673,7 @@ class UsersEntry(CdEPreLeafEntry):
 
 class GroupsEntry(CdEDBStaticEntry):
     def __init__(self, backend: LDAPsqlBackend) -> None:
-        dn = DistinguishedName(backend.groups_dn)
-        super().__init__(dn, backend)
+        super().__init__(backend.groups_dn, backend)
 
     def _fetch(self, *attributes: bytes) -> LDAPObject:
         attrs = {
@@ -708,19 +701,19 @@ class GroupsEntry(CdEDBStaticEntry):
     async def _lookup(self, dn: DistinguishedName) -> CdEDBBaseLDAPEntry:
         if dn == self.dn:
             return self
-        elif DistinguishedName(self.backend.status_groups_dn).contains(dn):
+        elif self.backend.status_groups_dn.contains(dn):
             status = StatusGroupsEntry(self.backend)
             return await status._lookup(dn)
-        elif DistinguishedName(self.backend.presider_groups_dn).contains(dn):
+        elif self.backend.presider_groups_dn.contains(dn):
             presiders = PresiderGroupsEntry(self.backend)
             return await presiders._lookup(dn)
-        elif DistinguishedName(self.backend.orga_groups_dn).contains(dn):
+        elif self.backend.orga_groups_dn.contains(dn):
             orgas = OrgaGroupsEntry(self.backend)
             return await orgas._lookup(dn)
-        elif DistinguishedName(self.backend.moderator_groups_dn).contains(dn):
+        elif self.backend.moderator_groups_dn.contains(dn):
             moderators = ModeratorGroupsEntry(self.backend)
             return await moderators._lookup(dn)
-        elif DistinguishedName(self.backend.subscriber_groups_dn).contains(dn):
+        elif self.backend.subscriber_groups_dn.contains(dn):
             subscribers = SubscriberGroupsEntry(self.backend)
             return await subscribers._lookup(dn)
         else:
@@ -739,8 +732,7 @@ class StatusGroupsEntry(CdEPreLeafEntry):
     ChildGroup = StatusGroupEntry
 
     def __init__(self, backend: LDAPsqlBackend) -> None:
-        dn = DistinguishedName(backend.status_groups_dn)
-        super().__init__(dn, backend)
+        super().__init__(backend.status_groups_dn, backend)
 
     def _fetch(self, *attributes: bytes) -> LDAPObject:
         attrs = {
@@ -776,8 +768,7 @@ class PresiderGroupsEntry(CdEPreLeafEntry):
     ChildGroup = PresiderGroupEntry
 
     def __init__(self, backend: LDAPsqlBackend) -> None:
-        dn = DistinguishedName(backend.presider_groups_dn)
-        super().__init__(dn, backend)
+        super().__init__(backend.presider_groups_dn, backend)
 
     def _fetch(self, *attributes: bytes) -> LDAPObject:
         attrs = {
@@ -813,8 +804,7 @@ class OrgaGroupsEntry(CdEPreLeafEntry):
     ChildGroup = OrgaGroupEntry
 
     def __init__(self, backend: LDAPsqlBackend) -> None:
-        dn = DistinguishedName(backend.orga_groups_dn)
-        super().__init__(dn, backend)
+        super().__init__(backend.orga_groups_dn, backend)
 
     def _fetch(self, *attributes: bytes) -> LDAPObject:
         attrs = {
@@ -850,8 +840,7 @@ class ModeratorGroupsEntry(CdEPreLeafEntry):
     ChildGroup = ModeratorGroupEntry
 
     def __init__(self, backend: LDAPsqlBackend) -> None:
-        dn = DistinguishedName(backend.moderator_groups_dn)
-        super().__init__(dn, backend)
+        super().__init__(backend.moderator_groups_dn, backend)
 
     def _fetch(self, *attributes: bytes) -> LDAPObject:
         attrs = {
@@ -887,8 +876,7 @@ class SubscriberGroupsEntry(CdEPreLeafEntry):
     ChildGroup = SubscriberGroupEntry
 
     def __init__(self, backend: LDAPsqlBackend) -> None:
-        dn = DistinguishedName(backend.subscriber_groups_dn)
-        super().__init__(dn, backend)
+        super().__init__(backend.subscriber_groups_dn, backend)
 
     def _fetch(self, *attributes: bytes) -> LDAPObject:
         attrs = {

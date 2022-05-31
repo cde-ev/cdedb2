@@ -121,7 +121,7 @@ class LDAPsqlBackend:
             return None
 
     @staticmethod
-    def _is_entry_dn(dn: DN, parent_dn: str, attribute_type: str) -> bool:
+    def _is_entry_dn(dn: DN, parent_dn: DN, attribute_type: str) -> bool:
         """Validate a given dn inside the ldap tree.
 
         We have different types of dynamic generated ldap entries. So, we need dynamic
@@ -131,7 +131,7 @@ class LDAPsqlBackend:
         have static parents) and check that the rdn of the entry has the expected
         unique attribute type.
         """
-        if dn.up().getText() != parent_dn:
+        if dn.up() != parent_dn:
             return False
         rdn = dn.split()[0]
         if len(rdn.split()) != 1 or rdn.split()[0].attributeType != attribute_type:
@@ -139,7 +139,7 @@ class LDAPsqlBackend:
         return True
 
     @overload
-    def _to_bytes(self, data: Union[None, str, int, bytes]) -> bytes: ...
+    def _to_bytes(self, data: Union[None, str, int, bytes, DN]) -> bytes: ...
 
     @overload
     def _to_bytes(self, data: Dict[Any, Any]) -> Dict[bytes, Any]: ...
@@ -147,8 +147,9 @@ class LDAPsqlBackend:
     @overload
     def _to_bytes(self, data: List[Any]) -> List[Any]: ...
 
-    def _to_bytes(self, data: Union[Dict[Any, Any], List[Any], str, int, bytes, None]
-                  ) -> Union[Dict[bytes, Any], List[Any], bytes]:
+    def _to_bytes(
+            self, data: Union[None, str, int, bytes, DN, Dict[Any, Any], List[Any]]
+    ) -> Union[bytes, Dict[bytes, Any], List[Any]]:
         """This takes a python data structure and convert all of its entries into bytes.
 
         This is needed to send the ldap responses over the wire and ensure proper
@@ -160,6 +161,8 @@ class LDAPsqlBackend:
             return {self._to_bytes(k): self._to_bytes(v) for k, v in data.items()}
         elif isinstance(data, list):
             return [self._to_bytes(entry) for entry in data]
+        elif isinstance(data, DN):
+            return self._to_bytes(data.getText())
         elif isinstance(data, str):
             return data.encode("utf-8")
         elif isinstance(data, int):
@@ -206,34 +209,34 @@ class LDAPsqlBackend:
     ###############
 
     @property
-    def root_dn(self) -> str:
+    def root_dn(self) -> DN:
         """The root entry of the ldap tree."""
-        return ""
+        return DN("")
 
     @property
-    def subschema_dn(self) -> str:
+    def subschema_dn(self) -> DN:
         """The DN containing information about the supported schemas.
 
         This is needed by f.e. Apache Directory Studio to determine which
         attributeTypes, objectClasses etc are supported.
         """
-        return "cn=subschema"
+        return DN("cn=subschema")
 
     @property
-    def de_dn(self) -> str:
-        return "dc=de"
+    def de_dn(self) -> DN:
+        return DN("dc=de")
 
     @property
-    def cde_dn(self) -> str:
-        return f"dc=cde-ev,{self.de_dn}"
+    def cde_dn(self) -> DN:
+        return DN(f"dc=cde-ev,{self.de_dn.getText()}")
 
     ########
     # duas #
     ########
 
     @property
-    def duas_dn(self) -> str:
-        return f"ou=duas,{self.cde_dn}"
+    def duas_dn(self) -> DN:
+        return DN(f"ou=duas,{self.cde_dn.getText()}")
 
     @staticmethod
     def dua_cn(name: str) -> str:
@@ -245,9 +248,9 @@ class LDAPsqlBackend:
         cn = self._dn_value(dn, attribute="cn")
         return cn or None
 
-    def dua_dn(self, name: str) -> str:
+    def dua_dn(self, name: str) -> DN:
         """Construct a duas dn from its 'name' attribute. Counterpart of 'dua_name'."""
-        return f"cn={self.dua_cn(name)},{self.duas_dn}"
+        return DN(f"cn={self.dua_cn(name)},{self.duas_dn.getText()}")
 
     def is_dua_dn(self, dn: DN) -> bool:
         return self._is_entry_dn(dn, self.duas_dn, "cn")
@@ -300,8 +303,8 @@ class LDAPsqlBackend:
     #########
 
     @property
-    def users_dn(self) -> str:
-        return f"ou=users,{self.cde_dn}"
+    def users_dn(self) -> DN:
+        return DN(f"ou=users,{self.cde_dn.getText()}")
 
     @staticmethod
     def user_uid(persona_id: int) -> str:
@@ -315,9 +318,9 @@ class LDAPsqlBackend:
             return None
         return self._extract_id(uid, prefix="")
 
-    def user_dn(self, persona_id: int) -> str:
+    def user_dn(self, persona_id: int) -> DN:
         """Construct a users dn from its id. Counterpart of 'user_id'."""
-        return f"uid={self.user_uid(persona_id)},{self.users_dn}"
+        return DN(f"uid={self.user_uid(persona_id)},{self.users_dn.getText()}")
 
     def is_user_dn(self, dn: DN) -> bool:
         return self._is_entry_dn(dn, self.users_dn, "uid")
@@ -505,16 +508,16 @@ class LDAPsqlBackend:
     ##########
 
     @property
-    def groups_dn(self) -> str:
-        return f"ou=groups,{self.cde_dn}"
+    def groups_dn(self) -> DN:
+        return DN(f"ou=groups,{self.cde_dn.getText()}")
 
     #
     # status
     #
 
     @property
-    def status_groups_dn(self) -> str:
-        return f"ou=status,{self.groups_dn}"
+    def status_groups_dn(self) -> DN:
+        return DN(f"ou=status,{self.groups_dn.getText()}")
 
     @staticmethod
     def status_group_cn(name: str) -> str:
@@ -529,12 +532,12 @@ class LDAPsqlBackend:
         cn = self._dn_value(dn, attribute="cn")
         return cn if cn in self.STATUS_GROUPS else None
 
-    def status_group_dn(self, name: str) -> str:
+    def status_group_dn(self, name: str) -> DN:
         """Construct the dn of a status group form its name.
 
         Counterpart of 'status_group_name'.
         """
-        return f"cn={self.status_group_cn(name)},{self.status_groups_dn}"
+        return DN(f"cn={self.status_group_cn(name)},{self.status_groups_dn.getText()}")
 
     def is_status_group_dn(self, dn: DN) -> bool:
         return self._is_entry_dn(dn, self.status_groups_dn, "cn")
@@ -599,8 +602,8 @@ class LDAPsqlBackend:
     #
 
     @property
-    def presider_groups_dn(self) -> str:
-        return f"ou=assembly-presiders,{self.groups_dn}"
+    def presider_groups_dn(self) -> DN:
+        return DN(f"ou=assembly-presiders,{self.groups_dn.getText()}")
 
     @staticmethod
     def presider_group_cn(assembly_id: int) -> str:
@@ -617,12 +620,13 @@ class LDAPsqlBackend:
             return None
         return self._extract_id(cn, prefix="presiders-")
 
-    def presider_group_dn(self, assembly_id: int) -> str:
+    def presider_group_dn(self, assembly_id: int) -> DN:
         """Construct a presider groups dn from its id.
 
         Counterpart to 'presider_group_id'.
         """
-        return f"cn={self.presider_group_cn(assembly_id)},{self.presider_groups_dn}"
+        return DN(f"cn={self.presider_group_cn(assembly_id)},"
+                  f"{self.presider_groups_dn.getText()}")
 
     def is_presider_group_dn(self, dn: DN) -> bool:
         return self._is_entry_dn(dn, self.presider_groups_dn, "cn")
@@ -686,8 +690,8 @@ class LDAPsqlBackend:
     #
 
     @property
-    def orga_groups_dn(self) -> str:
-        return f"ou=event-orgas,{self.groups_dn}"
+    def orga_groups_dn(self) -> DN:
+        return DN(f"ou=event-orgas,{self.groups_dn.getText()}")
 
     @staticmethod
     def orga_group_cn(event_id: int) -> str:
@@ -704,12 +708,12 @@ class LDAPsqlBackend:
             return None
         return self._extract_id(cn, prefix="orgas-")
 
-    def orga_group_dn(self, event_id: int) -> str:
+    def orga_group_dn(self, event_id: int) -> DN:
         """Construct the dn of an orga group from its id.
 
         Counterpart of 'orga_group_id'.
         """
-        return f"cn={self.orga_group_cn(event_id)},{self.orga_groups_dn}"
+        return DN(f"cn={self.orga_group_cn(event_id)},{self.orga_groups_dn.getText()}")
 
     def is_orga_group_dn(self, dn: DN) -> bool:
         return self._is_entry_dn(dn, self.orga_groups_dn, "cn")
@@ -769,8 +773,8 @@ class LDAPsqlBackend:
     #
 
     @property
-    def moderator_groups_dn(self) -> str:
-        return f"ou=ml-moderators,{self.groups_dn}"
+    def moderator_groups_dn(self) -> DN:
+        return DN(f"ou=ml-moderators,{self.groups_dn.getText()}")
 
     @staticmethod
     def moderator_group_cn(address: str) -> str:
@@ -792,12 +796,13 @@ class LDAPsqlBackend:
         else:
             return None
 
-    def moderator_group_dn(self, address: str) -> str:
+    def moderator_group_dn(self, address: str) -> DN:
         """Construct the dn of a moderator group from its address.
 
         Counterpart of 'moderator_group_address'.
         """
-        return f"cn={self.moderator_group_cn(address)},{self.moderator_groups_dn}"
+        return DN(f"cn={self.moderator_group_cn(address)},"
+                  f"{self.moderator_groups_dn.getText()}")
 
     def is_moderator_group_dn(self, dn: DN) -> bool:
         return self._is_entry_dn(dn, self.moderator_groups_dn, "cn")
@@ -863,8 +868,8 @@ class LDAPsqlBackend:
     #
 
     @property
-    def subscriber_groups_dn(self) -> str:
-        return f"ou=ml-subscribers,{self.groups_dn}"
+    def subscriber_groups_dn(self) -> DN:
+        return DN(f"ou=ml-subscribers,{self.groups_dn.getText()}")
 
     @staticmethod
     def subscriber_group_cn(address: str) -> str:
@@ -878,12 +883,13 @@ class LDAPsqlBackend:
         """
         return self._dn_value(dn, attribute="cn")
 
-    def subscriber_group_dn(self, address: str) -> str:
+    def subscriber_group_dn(self, address: str) -> DN:
         """Construct a subscriber groups dn from its address.
 
         Counterpart of 'subscriber_group_address'.
         """
-        return f"cn={self.subscriber_group_cn(address)},{self.subscriber_groups_dn}"
+        return DN(f"cn={self.subscriber_group_cn(address)},"
+                  f"{self.subscriber_groups_dn.getText()}")
 
     def is_subscriber_group_dn(self, dn: DN) -> bool:
         return self._is_entry_dn(dn, self.subscriber_groups_dn, "cn")
