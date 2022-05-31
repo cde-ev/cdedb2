@@ -35,8 +35,10 @@ class CdEDBLDAPServer(LDAPServer):
         )
         return pureldap.LDAPSearchResultDone(resultCode=ldaperrors.Success.resultCode)
 
-    def _cbSearchGotBase(self, base: CdEDBBaseLDAPEntry, dn: DistinguishedName,
-                         request: LDAPSearchRequest, reply: Any) -> defer.Deferred:  # type: ignore[type-arg]
+    def _cbSearchGotBase(
+            self, base: CdEDBBaseLDAPEntry, dn: DistinguishedName,
+            request: LDAPSearchRequest, reply: Any
+    ) -> defer.Deferred[None]:
         """Callback which is invoked after a search was performed."""
 
         def _sendEntryToClient(entry: CdEDBBaseLDAPEntry) -> None:
