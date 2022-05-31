@@ -359,6 +359,10 @@ class LDAPsqlBackend:
         """
         ret: Dict[int, List[str]] = {anid: [] for anid in persona_ids}
 
+        # TODO: This could each be turned into it's own coroutine to then be
+        #  executed concurrently. Maybe this could even be combined with the other
+        #  helpers, ensuring equivalency.
+
         # Status groups
         query = """
                 SELECT id,
