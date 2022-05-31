@@ -342,14 +342,14 @@
                     {% else %}
                         <ul>
                             {% if mep_violations %}
-                                <li>
+                                <li><a href="{{ cdedblink("event/constraint_violations") }}#mep-violations">
                                     {% trans count=mep_violations|length %}
                                         There are {{ count }} violations of mutually exclusive participation constraints.
                                     {% endtrans %}
-                                </li>
+                                </a></li>
                             {% endif %}
                             {% if mec_violations %}
-                                <li>
+                                <li><a href="{{ cdedblink("event/constraint_violations") }}#mec-violations">
                                     {% trans count=mec_violations|length %}
                                         There are {{ count }} violations of mutually exclusive course constraints.
                                     {% endtrans %}

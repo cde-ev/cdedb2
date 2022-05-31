@@ -23,12 +23,14 @@
 {% endblock %}
 
 {% block content %}
+    <!--
     <p class="text-danger">{{ util.make_icon('exclamation-triangle') }}
         {% trans %}
             This feature is still experimental. Use at your own risk, and only if you know what you are doing.
             You have been warned!
         {% endtrans %}
     </p>
+    -->
     <p>
         {{ util.href(cdedblink('event/add_part_group_form'), gettext("Add part group"),
                                icon='plus', aclass='btn btn-success') }}
