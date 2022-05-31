@@ -14,7 +14,7 @@ multiple of its subclasses.
 The base aswell as all its subclasses (the event frontend mixins) combine together to
 become the full `EventFrontend` in this modules `__init__.py`.
 """
-
+import abc
 import datetime
 import itertools
 import operator
@@ -46,28 +46,54 @@ from cdedb.frontend.common import (
 )
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True)  # type: ignore[misc]
 class ConstraintViolation:
-    constraint_type: const.EventPartGroupType
-    severity: int
     part_group_id: int  # ID of the part group whose constraint is being violated.
+
+    @property
+    @abc.abstractmethod
+    def severity(self) -> int: ...
+
+    @property
+    @abc.abstractmethod
+    def constraint_type(self) -> const.EventPartGroupType: ...
 
 
 @dataclass(frozen=True)
 class MEPViolation(ConstraintViolation):
-    constraint_type: Literal[const.EventPartGroupType.mutually_exclusive_participants]
     registration_id: int
     persona_id: int
     part_ids: List[int]  # Sorted IDs of the parts in violation.
     parts_str: str  # Locale agnostic string representation of said parts.
+    guest_violation: bool = False  # Whether the violation is cause by a "Guest" status.
+
+    @property
+    def severity(self) -> int:
+        return 1 if self.guest_violation else 2
+
+    @property
+    def constraint_type(
+            self
+    ) -> Literal[const.EventPartGroupType.mutually_exclusive_participants]:
+        return const.EventPartGroupType.mutually_exclusive_participants
 
 
 @dataclass(frozen=True)
 class MECViolation(ConstraintViolation):
-    constraint_type: Literal[const.EventPartGroupType.mutually_exclusive_courses]
     course_id: int
     track_ids: List[int]  # Sorted IDs of the tracks in violation.
     tracks_str: str  # Locale agnostic string representation of said tracks.
+
+    @property
+    def severity(self) -> int:
+        """MEC violations are always warnings."""
+        return 1
+
+    @property
+    def constraint_type(
+            self
+    ) -> Literal[const.EventPartGroupType.mutually_exclusive_courses]:
+        return const.EventPartGroupType.mutually_exclusive_courses
 
 
 class EventBaseFrontend(AbstractUserFrontend):
@@ -440,10 +466,10 @@ class EventBaseFrontend(AbstractUserFrontend):
                 if len(part_ids) > 1:
                     sorted_part_ids = part_id_sorter(part_ids)
                     mep_violations.append(MEPViolation(
-                        const.EventPartGroupType.mutually_exclusive_participants,
-                        mep.severity, pg_id, reg_id, reg['persona_id'], sorted_part_ids,
+                        pg_id, reg_id, reg['persona_id'], sorted_part_ids,
                         ", ".join(rs.ambience['event']['parts'][part_id]['shortname']
-                                  for part_id in sorted_part_ids)))
+                                  for part_id in sorted_part_ids),
+                    ))
                     continue
 
                 # Check for guest violations.
@@ -452,11 +478,11 @@ class EventBaseFrontend(AbstractUserFrontend):
                 if len(part_ids) > 1:
                     sorted_part_ids = part_id_sorter(part_ids)
                     mep_violations.append(MEPViolation(
-                        const.EventPartGroupType.mutually_exclusive_participants,
-                        mep.severity - 1, pg_id, reg_id, reg['persona_id'],
-                        sorted_part_ids,
+                        pg_id, reg_id, reg['persona_id'], sorted_part_ids,
                         ", ".join(rs.ambience['event']['parts'][part_id]['shortname']
-                                  for part_id in sorted_part_ids)))
+                                  for part_id in sorted_part_ids),
+                        guest_violation=True,
+                    ))
 
         # Check courses for violations against mutual exclusiveness constraints.
         mec = const.EventPartGroupType.mutually_exclusive_courses
@@ -489,10 +515,10 @@ class EventBaseFrontend(AbstractUserFrontend):
                         t_id for t_id in track_ids
                         if track_part_map[t_id] in part_group['part_ids'])
                     mec_violations.append(MECViolation(
-                        const.EventPartGroupType.mutually_exclusive_courses,
-                        mec.severity, pg_id, course_id_, sorted_track_ids,
+                        pg_id, course_id_, sorted_track_ids,
                         ", ".join(rs.ambience['event']['tracks'][track_id]['shortname']
-                                  for track_id in sorted_track_ids)))
+                                  for track_id in sorted_track_ids),
+                    ))
 
         all_violations: Iterable[ConstraintViolation] = itertools.chain(
             mep_violations, mec_violations)
