@@ -42,14 +42,13 @@ class LdapLeaf(TypedDict):
 class LDAPsqlBackend:
     """Provide the interface between ldap and database."""
     def __init__(self, pool: Pool) -> None:
-        self.secrets = SecretsConfig()
         self.pool = pool
         # load the ldap schemas (and overlays) which are supported
         self.schema = self.load_schemas(
             "core.schema", "cosine.schema", "inetorgperson.schema", "memberof.overlay")
         # encrypting dua passwords once at startup, to increase runtime performance
         self._dua_pwds = {name: self.encrypt_password(pwd)
-                          for name, pwd in self.secrets["LDAP_DUA_PW"].items()}
+                          for name, pwd in SecretsConfig()["LDAP_DUA_PW"].items()}
 
     @staticmethod
     async def execute_db_query(cur: aiopg.connection.Cursor, query: str,
@@ -239,7 +238,7 @@ class LDAPsqlBackend:
         return self._is_entry_dn(dn, self.duas_dn, "cn")
 
     async def list_duas(self) -> List[RDN]:
-        duas = self.secrets["LDAP_DUA_PW"]
+        duas = self._dua_pwds
         return [
             RDN(
                 attributeTypesAndValues=[
@@ -258,7 +257,7 @@ class LDAPsqlBackend:
 
         ret = dict()
         for dn, name in dn_to_name.items():
-            if name not in self.secrets["LDAP_DUA_PW"]:
+            if name not in self._dua_pwds:
                 continue
             dua = {
                 # TODO find a better objectClass for duas then 'person'
