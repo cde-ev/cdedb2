@@ -166,7 +166,8 @@ class LDAPsqlBackend:
         elif isinstance(data, str):
             return data.encode("utf-8")
         elif isinstance(data, int):
-            return bytes(data)
+            # TODO is there a better solution? And does this even work?
+            return self._to_bytes(str(data))
         elif isinstance(data, bytes):
             return data
         else:
