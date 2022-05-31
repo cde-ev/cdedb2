@@ -8,9 +8,11 @@ unterschiedlicher Stärken, die bei Verstößen gegen Beschränkungen angezeigt
 werden.
 
 Die Stärke der Meldungen ist rein kosmetisch; "Warnungen" werden in gelb
-angezeigt, "Fehler" in rot. Im wesentlichen hängt dies davon ab, für wie
-wahrscheinlich ein tatsächlicher Fehler im Vergleich zu einem Ausnahmefall
-eingestuft wird.
+angezeigt, "Fehler" in rot. "Warnungen" sind primär für seltene Fälle, die trotz
+ansonsten korrekter Daten auftreten (z.B. Teilnehmer die gleichzeitig Gäste auf einem
+anderen Veranstaltungsteil sind) oder Verstöße die zu bestimmten Zeitpunkten
+erwarteterweise auftreten (z.B. Kurse die in mehreren Kursschienen stattfinden, bevor
+eine finale Kurseinteilung existiert).
 
 Eigenschaften
 -------------
