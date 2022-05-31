@@ -46,8 +46,7 @@ async def main() -> None:
     )
     logger.debug("Got aiopg connection pool.")
     backend = LDAPsqlBackend(pool)
-    factory = CdEDBLDAPServerFactory(backend)
-    factory.debug = True
+    factory = CdEDBLDAPServerFactory(backend, debug=True)
     # Tell twisted, how to transform the factory into an IConnectedLDAPEntry
     registerAdapter(lambda x: x.root, CdEDBLDAPServerFactory, IConnectedLDAPEntry)
 

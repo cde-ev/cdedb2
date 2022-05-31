@@ -177,10 +177,12 @@ class CdEDBLDAPServerFactory(ServerFactory):
     """Factory to provide a CdEDBLDAPServer instance per connection."""
 
     protocol = CdEDBLDAPServer
+    root: RootEntry
     debug: bool
 
-    def __init__(self, backend: LDAPsqlBackend) -> None:
+    def __init__(self, backend: LDAPsqlBackend, debug: bool = False) -> None:
         self.root = RootEntry(backend)
+        self.debug = debug
 
     def buildProtocol(self, addr) -> CdEDBLDAPServer:  # type: ignore[no-untyped-def]
         proto = self.protocol()
