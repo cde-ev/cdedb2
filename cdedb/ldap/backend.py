@@ -113,7 +113,7 @@ class LDAPsqlBackend:
     def _extract_id(cn: str, prefix: str) -> Optional[int]:
         """Extract the id from a cn by stripping the prefix.
 
-        This especially checks that the id is a valid base 10 integer.
+        This especially checks that the id is a valid integer.
         """
         if match := re.match(rf"^{prefix}(?P<id>\d+)$", cn):
             return int(match.group("id"))
@@ -122,6 +122,15 @@ class LDAPsqlBackend:
 
     @staticmethod
     def _is_entry_dn(dn: DN, parent_dn: str, attribute_type: str) -> bool:
+        """Validate a given dn inside the ldap tree.
+
+        We have different types of dynamic generated ldap entries. So, we need dynamic
+        validation to check if a presented dn may be of a specific kind.
+
+        To check this, we compare the parent dn of the given dn (all dynamic entries
+        have static parents) and check that the rdn of the entry has the expected
+        unique attribute type.
+        """
         if dn.up().getText() != parent_dn:
             return False
         rdn = dn.split()[0]
@@ -228,19 +237,28 @@ class LDAPsqlBackend:
 
     @staticmethod
     def dua_cn(name: str) -> str:
+        """Construct the CN of a dua from its (database) 'name'."""
         return name
 
     def dua_name(self, dn: DN) -> Optional[str]:
+        """Extract the 'name' attribute from a duas dn. Counterpart of 'dua_dn'."""
         cn = self._dn_value(dn, attribute="cn")
         return cn or None
 
     def dua_dn(self, name: str) -> str:
+        """Construct a duas dn from its 'name' attribute. Counterpart of 'dua_name'."""
         return f"cn={self.dua_cn(name)},{self.duas_dn}"
 
     def is_dua_dn(self, dn: DN) -> bool:
         return self._is_entry_dn(dn, self.duas_dn, "cn")
 
     async def list_duas(self) -> List[RDN]:
+        """List all duas.
+
+        The abstraction layer of entry.py expects a coroutine to return the lists of
+        dynamic entries. Therefore, this is a coroutine, even if we do not do anything
+        async here.
+        """
         duas = self._dua_pwds
         return [
             RDN(
@@ -251,6 +269,12 @@ class LDAPsqlBackend:
         ]
 
     async def get_duas(self, dns: List[DN]) -> LDAPObjectMap:
+        """Get the data for the given duas.
+
+        The abstraction layer of entry.py expects a coroutine to return the data for
+        dynamic entries. Therefore, this is a coroutine, even if we do not do anything
+        async here.
+        """
         dn_to_name = dict()
         for dn in dns:
             name = self.dua_name(dn)
@@ -281,15 +305,18 @@ class LDAPsqlBackend:
 
     @staticmethod
     def user_uid(persona_id: int) -> str:
+        """Construct the 'uid' of a user from its (database) id."""
         return str(persona_id)
 
     def user_id(self, dn: DN) -> Optional[int]:
+        """Extract the id of a user from its dn. Counterpart of 'user_dn'."""
         uid = self._dn_value(dn, attribute="uid")
         if uid is None:
             return None
         return self._extract_id(uid, prefix="")
 
     def user_dn(self, persona_id: int) -> str:
+        """Construct a users dn from its id. Counterpart of 'user_id'."""
         return f"uid={self.user_uid(persona_id)},{self.users_dn}"
 
     def is_user_dn(self, dn: DN) -> bool:
@@ -351,7 +378,7 @@ class LDAPsqlBackend:
                                ) -> Dict[int, List[str]]:
         """Collect all groups of each given user.
 
-        This is complete redundant information – we could get the same information by
+        This is completely redundant information – we could get the same information by
         querying all groups for a given persona's membership. However, it is more
         convenient to have this additional view on the privileges. Therefore, care has
         to be taken that this produces always the same group memberships than the group
@@ -491,13 +518,22 @@ class LDAPsqlBackend:
 
     @staticmethod
     def status_group_cn(name: str) -> str:
+        """Construct the 'cn' of a status group from its (database) field name."""
         return name
 
     def status_group_name(self, dn: DN) -> Optional[str]:
+        """Extract the name of a status group from its dn.
+
+        Counterpart of 'status_group_dn'.
+        """
         cn = self._dn_value(dn, attribute="cn")
         return cn if cn in self.STATUS_GROUPS else None
 
     def status_group_dn(self, name: str) -> str:
+        """Construct the dn of a status group form its name.
+
+        Counterpart of 'status_group_name'.
+        """
         return f"cn={self.status_group_cn(name)},{self.status_groups_dn}"
 
     def is_status_group_dn(self, dn: DN) -> bool:
@@ -568,15 +604,24 @@ class LDAPsqlBackend:
 
     @staticmethod
     def presider_group_cn(assembly_id: int) -> str:
+        """Construct the 'cn' of a presider group from its (database) id."""
         return f"presiders-{assembly_id}"
 
     def presider_group_id(self, dn: DN) -> Optional[int]:
+        """Extract the id of a presider group from its dn.
+
+        Counterpart to 'presider_group_dn'.
+        """
         cn = self._dn_value(dn, attribute="cn")
         if cn is None:
             return None
         return self._extract_id(cn, prefix="presiders-")
 
     def presider_group_dn(self, assembly_id: int) -> str:
+        """Construct a presider groups dn from its id.
+
+        Counterpart to 'presider_group_id'.
+        """
         return f"cn={self.presider_group_cn(assembly_id)},{self.presider_groups_dn}"
 
     def is_presider_group_dn(self, dn: DN) -> bool:
@@ -646,15 +691,24 @@ class LDAPsqlBackend:
 
     @staticmethod
     def orga_group_cn(event_id: int) -> str:
+        """Construct the 'cn' of an orga group from its (database) id."""
         return f"orgas-{event_id}"
 
     def orga_group_id(self, dn: DN) -> Optional[int]:
+        """Extract the id of an orga group from its dn.
+
+        Counterpart to 'orga_group_dn'.
+        """
         cn = self._dn_value(dn, attribute="cn")
         if cn is None:
             return None
         return self._extract_id(cn, prefix="orgas-")
 
     def orga_group_dn(self, event_id: int) -> str:
+        """Construct the dn of an orga group from its id.
+
+        Counterpart of 'orga_group_id'.
+        """
         return f"cn={self.orga_group_cn(event_id)},{self.orga_groups_dn}"
 
     def is_orga_group_dn(self, dn: DN) -> bool:
@@ -720,10 +774,16 @@ class LDAPsqlBackend:
 
     @staticmethod
     def moderator_group_cn(address: str) -> str:
+        """Construct the 'cn' of an orga group from its address."""
         return address.replace("@", "-owner@")
 
     def moderator_group_address(self, dn: DN) -> Optional[str]:
-        """Parse the regular address from an owner mailinglist address."""
+        """Extract the address from a moderator group from its dn.
+
+        Note that this returns the regular address of the mailinglist, not the
+        owner address.
+        Counterpart of 'moderator_group_dn'.
+        """
         cn = self._dn_value(dn, attribute="cn")
         if cn is None:
             return None
@@ -733,6 +793,10 @@ class LDAPsqlBackend:
             return None
 
     def moderator_group_dn(self, address: str) -> str:
+        """Construct the dn of a moderator group from its address.
+
+        Counterpart of 'moderator_group_address'.
+        """
         return f"cn={self.moderator_group_cn(address)},{self.moderator_groups_dn}"
 
     def is_moderator_group_dn(self, dn: DN) -> bool:
@@ -804,12 +868,21 @@ class LDAPsqlBackend:
 
     @staticmethod
     def subscriber_group_cn(address: str) -> str:
+        """Construct the 'cn' of an subscriber group from its address."""
         return address
 
     def subscriber_group_address(self, dn: DN) -> Optional[str]:
+        """Extract the address of a subscriber group from its dn.
+
+        Counterpart of 'subscriber_group_dn'.
+        """
         return self._dn_value(dn, attribute="cn")
 
     def subscriber_group_dn(self, address: str) -> str:
+        """Construct a subscriber groups dn from its address.
+
+        Counterpart of 'subscriber_group_address'.
+        """
         return f"cn={self.subscriber_group_cn(address)},{self.subscriber_groups_dn}"
 
     def is_subscriber_group_dn(self, dn: DN) -> bool:
