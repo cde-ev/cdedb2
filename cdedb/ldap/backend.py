@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import pathlib
+import pkgutil
 import re
 from collections import defaultdict
 from typing import (
@@ -169,9 +170,11 @@ class LDAPsqlBackend:
         """Load the provided ldap schemas and parse their content from file."""
         data = []
         for schema in schemas:
-            # TODO replace with pkgutil.get_data()
-            with (pathlib.Path(__file__).parent / "schema" / f"{schema}").open() as f:
-                data.append(f.read())
+            datum = pkgutil.get_data("cdedb.ldap", f"schema/{schema}")
+            if datum is None:
+                logger.error(f"Schema {schema} could not be loaded.")
+                continue
+            data.append(datum.decode("utf-8"))
 
         # punch all files together to create a single schema object
         file = "\n\n\n".join(data)
