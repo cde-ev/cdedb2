@@ -16785,3 +16785,6 @@ msgstr "Ungültige Eingabe für Enumeration %(enum)s."
 #: cdedb/validation.py:4608
 msgid "SubscriptionState.none is not written into the database."
 msgstr "SubscriptionState.none wird nicht in die Datenbank geschrieben."
+
+msgid "Insufficient admin privileges."
+msgstr "Unzulängliche Adminrechte."
