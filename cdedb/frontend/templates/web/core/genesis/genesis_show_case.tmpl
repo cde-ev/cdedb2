@@ -147,7 +147,7 @@
                     {% for key, value in doppelgangers|keydictsort(EntitySorter.persona) %}
                         {% do entries.append((key, util.print_doppelganger(value))) %}
                     {% endfor %}
-                    {{ util.input_checkboxes("persona_id", entries, radio=True) }}
+                    {{ util.input_checkboxes("persona_id", entries, radio=True, readonly_map=disabled_radios, title_map=title_map) }}
                 </div>
 
             {% endif %}

@@ -296,9 +296,19 @@ class CoreGenesisMixin(CoreBaseFrontend):
         # We don't actually compare genders, so this is to make sure it is not empty.
         persona_data['gender'] = const.Genders.not_specified
         doppelgangers = self.coreproxy.find_doppelgangers(rs, persona_data)
+        relative_doppelgangers = {
+            persona_id: not persona['is_relative_admin']
+            for persona_id, persona in doppelgangers.items()
+        }
+        title_map = {
+            persona_id: rs.gettext("Insufficient admin privileges.")
+            for persona_id, not_relative_admin in relative_doppelgangers.items()
+            if not_relative_admin
+        }
         return self.render(rs, "genesis/genesis_show_case", {
             'reviewer': reviewer, 'pevent': pevent, 'pcourse': pcourse,
-            'doppelgangers': doppelgangers,
+            'doppelgangers': doppelgangers, 'disabled_radios': relative_doppelgangers,
+            'title_map': title_map,
         })
 
     @access("core_admin", *("{}_admin".format(realm)
