@@ -94,8 +94,13 @@ class CoreBaseBackend(AbstractBackend):
             return True
         if allow_meta_admin and "meta_admin" in rs.user.roles:
             return True
-        roles = extract_roles(unwrap(self.get_personas(rs, (persona_id,))),
-                              introspection_only=True)
+        persona = self.get_persona(rs, persona_id)
+        return self._is_relative_admin(rs, persona)
+
+    @internal
+    @access("persona")
+    def _is_relative_admin(self, rs: RequestState, persona: CdEDBObject) -> bool:
+        roles = extract_roles(persona, introspection_only=True)
         return any(admin <= rs.user.roles for admin in privilege_tier(roles))
 
     @access("persona")
@@ -2497,7 +2502,12 @@ class CoreBaseBackend(AbstractBackend):
         persona_ids = tuple(k for k, v in scores.items() if v > cutoff)
         persona_ids = xsorted(persona_ids, key=lambda k: -scores.get(k, 0))
         persona_ids = persona_ids[:max_entries]
-        return self.get_total_personas(rs, persona_ids)
+        # Circumvent privilege check, since this is a rather special case.
+        ret = self.retrieve_personas(
+            rs, persona_ids, PERSONA_CORE_FIELDS + ("birthday",))
+        for persona_id, persona in ret.items():
+            persona['is_relative_admin'] = self._is_relative_admin(rs, persona)
+        return ret
 
     @access("anonymous")
     def get_meta_info(self, rs: RequestState) -> CdEDBObject:
