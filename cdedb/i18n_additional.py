@@ -223,6 +223,8 @@ I18N_STRINGS = (
     n_("QuestionnaireUsages.registration"),
     n_("QuestionnaireUsages.additional"),
 
+    n_("EventPartGroupType.mutually_exclusive_participants"),
+    n_("EventPartGroupType.mutually_exclusive_courses"),
     n_("EventPartGroupType.Statistic"),
 
     n_("RegistrationPartStati.not_applied"),

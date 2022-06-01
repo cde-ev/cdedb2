@@ -13,6 +13,7 @@ Orgas
    Handbuch_Orga_Partieller-Import
    Handbuch_Orga_Fragebogenimport
    Handbuch_Orga_EventKeeper
+   Handbuch_Orga_Veranstaltungsteilgruppen
 
 .. hint:: Weitere Informationen zur Organisation von Veranstaltungen findet ihr im
           `Akademieleitfaden <https://wiki.cde-ev.de/dokuwiki/doku.php?id=akademieleitfaden:allgemeines:technik:db>`_.

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """Generate a JSON-file from the current state of the database."""
 
 import datetime
