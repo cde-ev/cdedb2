@@ -3980,6 +3980,16 @@
             "part_end": "3000-03-01",
             "fee": "0.00",
             "waitlist_field": null
+        },
+        {
+            "id": 12,
+            "event_id": 4,
+            "title": "Silvesterfeier",
+            "shortname": "Feier",
+            "part_begin": "2999-12-31",
+            "part_end": "3000-01-01",
+            "fee": "4.20",
+            "waitlist_field": null
         }
     ],
     "event.part_groups": [
@@ -4022,6 +4032,38 @@
             "notes": null,
             "event_id": 4,
             "constraint_type": 100
+        },
+        {
+            "id": 6,
+            "title": "Teilnehmer 1. Hälfte",
+            "shortname": "TN 1H",
+            "notes": null,
+            "event_id": 4,
+            "constraint_type": 1
+        },
+        {
+            "id": 7,
+            "title": "Teilnehmer 2. Hälfte",
+            "shortname": "TN 2H",
+            "notes": null,
+            "event_id": 4,
+            "constraint_type": 1
+        },
+        {
+            "id": 8,
+            "title": "Kurse 1. Hälfte",
+            "shortname": "Kurs 1H",
+            "notes": null,
+            "event_id": 4,
+            "constraint_type": 2
+        },
+        {
+            "id": 9,
+            "title": "Kurse 2. Hälfte",
+            "shortname": "Kurs 2H",
+            "notes": null,
+            "event_id": 4,
+            "constraint_type": 2
         }
     ],
     "event.part_group_parts": [
@@ -4071,6 +4113,54 @@
         },
         {
             "part_group_id": 5,
+            "part_id": 11
+        },
+        {
+            "part_group_id": 6,
+            "part_id": 6
+        },
+        {
+            "part_group_id": 6,
+            "part_id": 7
+        },
+        {
+            "part_group_id": 6,
+            "part_id": 8
+        },
+        {
+            "part_group_id": 7,
+            "part_id": 9
+        },
+        {
+            "part_group_id": 7,
+            "part_id": 10
+        },
+        {
+            "part_group_id": 7,
+            "part_id": 11
+        },
+        {
+            "part_group_id": 8,
+            "part_id": 6
+        },
+        {
+            "part_group_id": 8,
+            "part_id": 7
+        },
+        {
+            "part_group_id": 8,
+            "part_id": 8
+        },
+        {
+            "part_group_id": 9,
+            "part_id": 9
+        },
+        {
+            "part_group_id": 9,
+            "part_id": 10
+        },
+        {
+            "part_group_id": 9,
             "part_id": 11
         }
     ],
@@ -4451,97 +4541,115 @@
             "max_size": 1,
             "notes": null,
             "fields": {}
+        },
+        {
+            "id": 9,
+            "event_id": 4,
+            "nr": "4",
+            "title": "Akrobatik für Anfangende",
+            "description": null,
+            "shortname": "Akrobatik",
+            "instructors": "T. N.",
+            "min_size": 3,
+            "max_size": 11,
+            "notes": "Alle Teilnehmenden müssen mit dem Kurs nach Windischleuba umziehen.",
+            "fields": {}
         }
     ],
     "event.course_segments": [
         {
-            "id": 1,
             "course_id": 1,
             "track_id": 1,
             "is_active": true
         },
         {
-            "id": 2,
             "course_id": 1,
             "track_id": 3,
             "is_active": true
         },
         {
-            "id": 3,
             "course_id": 2,
             "track_id": 1,
             "is_active": true
         },
         {
-            "id": 4,
             "course_id": 2,
             "track_id": 2,
             "is_active": false
         },
         {
-            "id": 5,
             "course_id": 2,
             "track_id": 3,
             "is_active": true
         },
         {
-            "id": 6,
             "course_id": 3,
             "track_id": 2,
             "is_active": true
         },
         {
-            "id": 7,
             "course_id": 4,
             "track_id": 1,
             "is_active": true
         },
         {
-            "id": 8,
             "course_id": 4,
             "track_id": 2,
             "is_active": true
         },
         {
-            "id": 9,
             "course_id": 4,
             "track_id": 3,
             "is_active": true
         },
         {
-            "id": 10,
             "course_id": 5,
             "track_id": 1,
             "is_active": true
         },
         {
-            "id": 11,
             "course_id": 5,
             "track_id": 2,
             "is_active": true
         },
         {
-            "id": 12,
             "course_id": 5,
             "track_id": 3,
             "is_active": false
         },
         {
-            "id": 13,
             "course_id": 6,
             "track_id": 4,
             "is_active": true
         },
         {
-            "id": 14,
             "course_id": 7,
             "track_id": 4,
             "is_active": true
         },
         {
-            "id": 15,
             "course_id": 8,
             "track_id": 4,
+            "is_active": true
+        },
+        {
+            "course_id": 9,
+            "track_id": 8,
+            "is_active": true
+        },
+        {
+            "course_id": 9,
+            "track_id": 11,
+            "is_active": true
+        },
+        {
+            "course_id": 9,
+            "track_id": 12,
+            "is_active": true
+        },
+        {
+            "course_id": 9,
+            "track_id": 6,
             "is_active": true
         }
     ],
@@ -4808,11 +4916,26 @@
             "checkin": null,
             "list_consent": false,
             "fields": {}
+        },
+        {
+            "id": 10,
+            "persona_id": 5,
+            "real_persona_id": null,
+            "event_id": 4,
+            "notes": null,
+            "orga_notes": null,
+            "payment": null,
+            "amount_paid": "0.00",
+            "amount_owed": "0.00",
+            "parental_agreement": false,
+            "mixed_lodging": false,
+            "checkin": null,
+            "list_consent": false,
+            "fields": {}
         }
     ],
     "event.registration_parts": [
         {
-            "id": 1,
             "registration_id": 1,
             "part_id": 1,
             "status": -1,
@@ -4820,7 +4943,6 @@
             "is_camping_mat": false
         },
         {
-            "id": 2,
             "registration_id": 1,
             "part_id": 2,
             "status": 1,
@@ -4828,7 +4950,6 @@
             "is_camping_mat": false
         },
         {
-            "id": 3,
             "registration_id": 1,
             "part_id": 3,
             "status": 2,
@@ -4836,7 +4957,6 @@
             "is_camping_mat": false
         },
         {
-            "id": 4,
             "registration_id": 2,
             "part_id": 1,
             "status": 3,
@@ -4844,7 +4964,6 @@
             "is_camping_mat": false
         },
         {
-            "id": 5,
             "registration_id": 2,
             "part_id": 2,
             "status": 4,
@@ -4852,7 +4971,6 @@
             "is_camping_mat": false
         },
         {
-            "id": 6,
             "registration_id": 2,
             "part_id": 3,
             "status": 2,
@@ -4860,7 +4978,6 @@
             "is_camping_mat": false
         },
         {
-            "id": 7,
             "registration_id": 3,
             "part_id": 1,
             "status": 2,
@@ -4868,7 +4985,6 @@
             "is_camping_mat": false
         },
         {
-            "id": 8,
             "registration_id": 3,
             "part_id": 2,
             "status": 2,
@@ -4876,7 +4992,6 @@
             "is_camping_mat": false
         },
         {
-            "id": 9,
             "registration_id": 3,
             "part_id": 3,
             "status": 2,
@@ -4884,7 +4999,6 @@
             "is_camping_mat": false
         },
         {
-            "id": 10,
             "registration_id": 4,
             "part_id": 1,
             "status": 6,
@@ -4892,7 +5006,6 @@
             "is_camping_mat": false
         },
         {
-            "id": 11,
             "registration_id": 4,
             "part_id": 2,
             "status": 5,
@@ -4900,7 +5013,6 @@
             "is_camping_mat": false
         },
         {
-            "id": 12,
             "registration_id": 4,
             "part_id": 3,
             "status": 2,
@@ -4908,7 +5020,6 @@
             "is_camping_mat": true
         },
         {
-            "id": 13,
             "registration_id": 5,
             "part_id": 1,
             "status": 2,
@@ -4916,7 +5027,6 @@
             "is_camping_mat": false
         },
         {
-            "id": 14,
             "registration_id": 5,
             "part_id": 2,
             "status": 2,
@@ -4924,7 +5034,6 @@
             "is_camping_mat": false
         },
         {
-            "id": 15,
             "registration_id": 5,
             "part_id": 3,
             "status": 2,
@@ -4932,7 +5041,6 @@
             "is_camping_mat": false
         },
         {
-            "id": 16,
             "registration_id": 6,
             "part_id": 1,
             "status": 2,
@@ -4940,7 +5048,6 @@
             "is_camping_mat": false
         },
         {
-            "id": 17,
             "registration_id": 6,
             "part_id": 2,
             "status": -1,
@@ -4948,7 +5055,6 @@
             "is_camping_mat": false
         },
         {
-            "id": 18,
             "registration_id": 6,
             "part_id": 3,
             "status": -1,
@@ -4956,7 +5062,6 @@
             "is_camping_mat": false
         },
         {
-            "id": 19,
             "registration_id": 7,
             "part_id": 5,
             "status": 2,
@@ -4964,7 +5069,6 @@
             "is_camping_mat": false
         },
         {
-            "id": 20,
             "registration_id": 8,
             "part_id": 5,
             "status": 2,
@@ -4972,9 +5076,57 @@
             "is_camping_mat": false
         },
         {
-            "id": 21,
             "registration_id": 9,
             "part_id": 5,
+            "status": 2,
+            "lodgement_id": null,
+            "is_camping_mat": false
+        },
+        {
+            "registration_id": 10,
+            "part_id": 6,
+            "status": 3,
+            "lodgement_id": null,
+            "is_camping_mat": false
+        },
+        {
+            "registration_id": 10,
+            "part_id": 7,
+            "status": 4,
+            "lodgement_id": null,
+            "is_camping_mat": false
+        },
+        {
+            "registration_id": 10,
+            "part_id": 8,
+            "status": 2,
+            "lodgement_id": null,
+            "is_camping_mat": false
+        },
+        {
+            "registration_id": 10,
+            "part_id": 9,
+            "status": 4,
+            "lodgement_id": null,
+            "is_camping_mat": false
+        },
+        {
+            "registration_id": 10,
+            "part_id": 10,
+            "status": 6,
+            "lodgement_id": null,
+            "is_camping_mat": false
+        },
+        {
+            "registration_id": 10,
+            "part_id": 11,
+            "status": 3,
+            "lodgement_id": null,
+            "is_camping_mat": false
+        },
+        {
+            "registration_id": 10,
+            "part_id": 12,
             "status": 2,
             "lodgement_id": null,
             "is_camping_mat": false
@@ -4982,149 +5134,188 @@
     ],
     "event.registration_tracks": [
         {
-            "id": 1,
             "registration_id": 1,
             "track_id": 1,
             "course_id": null,
             "course_instructor": null
         },
         {
-            "id": 2,
             "registration_id": 1,
             "track_id": 2,
             "course_id": null,
             "course_instructor": null
         },
         {
-            "id": 3,
             "registration_id": 1,
             "track_id": 3,
             "course_id": null,
             "course_instructor": null
         },
         {
-            "id": 4,
             "registration_id": 2,
             "track_id": 1,
             "course_id": null,
             "course_instructor": null
         },
         {
-            "id": 5,
             "registration_id": 2,
             "track_id": 2,
             "course_id": null,
             "course_instructor": null
         },
         {
-            "id": 6,
             "registration_id": 2,
             "track_id": 3,
             "course_id": 1,
             "course_instructor": 1
         },
         {
-            "id": 7,
             "registration_id": 3,
             "track_id": 1,
             "course_id": null,
             "course_instructor": null
         },
         {
-            "id": 8,
             "registration_id": 3,
             "track_id": 2,
             "course_id": 2,
             "course_instructor": null
         },
         {
-            "id": 9,
             "registration_id": 3,
             "track_id": 3,
             "course_id": null,
             "course_instructor": null
         },
         {
-            "id": 10,
             "registration_id": 4,
             "track_id": 1,
             "course_id": null,
             "course_instructor": null
         },
         {
-            "id": 11,
             "registration_id": 4,
             "track_id": 2,
             "course_id": null,
             "course_instructor": null
         },
         {
-            "id": 12,
             "registration_id": 4,
             "track_id": 3,
             "course_id": 1,
             "course_instructor": null
         },
         {
-            "id": 13,
             "registration_id": 5,
             "track_id": 1,
             "course_id": null,
             "course_instructor": null
         },
         {
-            "id": 14,
             "registration_id": 5,
             "track_id": 2,
             "course_id": 2,
             "course_instructor": null
         },
         {
-            "id": 15,
             "registration_id": 5,
             "track_id": 3,
             "course_id": 1,
             "course_instructor": null
         },
         {
-            "id": 16,
             "registration_id": 6,
             "track_id": 1,
             "course_id": null,
             "course_instructor": null
         },
         {
-            "id": 17,
             "registration_id": 6,
             "track_id": 2,
             "course_id": null,
             "course_instructor": null
         },
         {
-            "id": 18,
             "registration_id": 6,
             "track_id": 3,
             "course_id": null,
             "course_instructor": null
         },
         {
-            "id": 19,
             "registration_id": 7,
             "track_id": 4,
             "course_id": null,
             "course_instructor": null
         },
         {
-            "id": 20,
             "registration_id": 8,
             "track_id": 4,
             "course_id": null,
             "course_instructor": null
         },
         {
-            "id": 21,
             "registration_id": 9,
             "track_id": 4,
+            "course_id": null,
+            "course_instructor": null
+        },
+        {
+            "registration_id": 10,
+            "track_id": 6,
+            "course_id": null,
+            "course_instructor": null
+        },
+        {
+            "registration_id": 10,
+            "track_id": 7,
+            "course_id": null,
+            "course_instructor": null
+        },
+        {
+            "registration_id": 10,
+            "track_id": 8,
+            "course_id": null,
+            "course_instructor": null
+        },
+        {
+            "registration_id": 10,
+            "track_id": 9,
+            "course_id": null,
+            "course_instructor": null
+        },
+        {
+            "registration_id": 10,
+            "track_id": 10,
+            "course_id": null,
+            "course_instructor": null
+        },
+        {
+            "registration_id": 10,
+            "track_id": 11,
+            "course_id": null,
+            "course_instructor": null
+        },
+        {
+            "registration_id": 10,
+            "track_id": 12,
+            "course_id": null,
+            "course_instructor": null
+        },
+        {
+            "registration_id": 10,
+            "track_id": 13,
+            "course_id": null,
+            "course_instructor": null
+        },
+        {
+            "registration_id": 10,
+            "track_id": 14,
+            "course_id": null,
+            "course_instructor": null
+        },
+        {
+            "registration_id": 10,
+            "track_id": 15,
             "course_id": null,
             "course_instructor": null
         }

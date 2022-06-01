@@ -17,7 +17,8 @@ import pytz
 import cdedb.database.constants as const
 from cdedb.backend.common import cast_fields
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, CourseFilterPositions, InfiniteEnum, nearly_now, now,
+    CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap, CourseFilterPositions, InfiniteEnum,
+    nearly_now, now,
 )
 from cdedb.common.exceptions import PartialImportError, PrivilegeError
 from cdedb.common.query import Query, QueryOperators, QueryScope
@@ -4038,6 +4039,12 @@ class TestEventBackend(BackendTest):
         event_id = 4
         event = self.event.get_event(self.key, event_id)
 
+        # Delete existing registrations so we are free to create and delete event parts.
+        registration_ids = self.event.list_registrations(self.key, event_id)
+        for reg_id in registration_ids:
+            self.event.delete_registration(
+                self.key, reg_id, cascade=("registration_parts", "registration_tracks"))
+
         # Load expected sample part groups.
         part_group_parts_data = self.get_sample_data("event.part_group_parts")
         part_group_expectation = {
@@ -4173,9 +4180,31 @@ class TestEventBackend(BackendTest):
                 'part_ids': [8, 11],
                 'shortname': 'KA',
                 'title': 'Kaub'},
+            6: {'constraint_type':
+                    const.EventPartGroupType.mutually_exclusive_participants,
+                'notes': None,
+                'part_ids': [7, 8],
+                'shortname': 'TN 1H',
+                'title': 'Teilnehmer 1. Hälfte'},
+            7: {'constraint_type':
+                    const.EventPartGroupType.mutually_exclusive_participants,
+                'notes': None,
+                'part_ids': [9, 10, 11],
+                'shortname': 'TN 2H',
+                'title': 'Teilnehmer 2. Hälfte'},
+            8: {'constraint_type': const.EventPartGroupType.mutually_exclusive_courses,
+                'notes': None,
+                'part_ids': [7, 8],
+                'shortname': 'Kurs 1H',
+                'title': 'Kurse 1. Hälfte'},
+            9: {'constraint_type': const.EventPartGroupType.mutually_exclusive_courses,
+                'notes': None,
+                'part_ids': [9, 10, 11],
+                'shortname': 'Kurs 2H',
+                'title': 'Kurse 2. Hälfte'},
             1005: {'constraint_type': const.EventPartGroupType.Statistic,
                    'notes': "Let's see what happens",
-                   'part_ids': [7, 8, 9, 10, 11],
+                   'part_ids': [7, 8, 9, 10, 11, 12],
                    'shortname': 'all',
                    'title': 'All'},
             1006: {'constraint_type': const.EventPartGroupType.Statistic,
@@ -4193,6 +4222,157 @@ class TestEventBackend(BackendTest):
             self.assertEqual(
                 set(blockers),
                 {"orgas", "event_parts", "course_tracks", "part_groups",
-                 "part_group_parts", "log"}
+                 "part_group_parts", "courses", "log"}
             )
             self.assertTrue(self.event.delete_event(self.key, event_id, blockers))
+
+    @as_users("annika")
+    @storage
+    def test_calculate_fee_mep(self) -> None:
+        # Create a new event with some part groups, have someone register and
+        #  check the calculated fees.
+        e_data = {
+            "title": "Fragmentierte Akademie",
+            "shortname": "frAka",
+            "institution": 1,
+            "description": None,
+            "nonmember_surcharge": "0",
+            "parts": {
+                -1: {
+                    "title": "A",
+                    "shortname": "A",
+                    "part_begin": "3000-01-01",
+                    "part_end": "3000-01-02",
+                    "fee": "1",
+                    "waitlist_field": None,
+                },
+                -2: {
+                    "title": "B",
+                    "shortname": "B",
+                    "part_begin": "3000-01-01",
+                    "part_end": "3000-01-02",
+                    "fee": "2",
+                    "waitlist_field": None,
+                },
+                -3: {
+                    "title": "C",
+                    "shortname": "C",
+                    "part_begin": "3000-01-01",
+                    "part_end": "3000-01-02",
+                    "fee": "3",
+                    "waitlist_field": None,
+                },
+                -4: {
+                    "title": "D",
+                    "shortname": "D",
+                    "part_begin": "3000-01-01",
+                    "part_end": "3000-01-02",
+                    "fee": "4",
+                    "waitlist_field": None,
+                },
+            },
+        }
+        event_id = self.event.create_event(self.key, e_data)
+
+        mep = const.EventPartGroupType.mutually_exclusive_participants
+        pg_data: CdEDBOptionalMap = {
+            -1: {
+                "title": "A+B",
+                "shortname": "A+B",
+                "part_ids": [1001, 1002],
+                "constraint_type": mep,
+                "notes": None,
+            },
+            -2: {
+                "title": "B+C",
+                "shortname": "B+C",
+                "part_ids": [1002, 1003],
+                "constraint_type": mep,
+                "notes": None,
+            },
+            -3: {
+                "title": "C+D",
+                "shortname": "C+D",
+                "part_ids": [1003, 1004],
+                "constraint_type": mep,
+                "notes": None,
+            },
+        }
+        self.event.set_part_groups(self.key, event_id, pg_data)
+
+        r_data = {
+            "event_id": event_id,
+            "persona_id": self.user['id'],
+            "mixed_lodging": True,
+            "list_consent": True,
+            "notes": None,
+            "parts": {
+                1001: {
+                    "status": const.RegistrationPartStati.participant,
+                    "lodgement_id": None,
+                    "is_camping_mat": False,
+                },
+                1002: {
+                    "status": const.RegistrationPartStati.participant,
+                    "lodgement_id": None,
+                    "is_camping_mat": False,
+                },
+                1003: {
+                    "status": const.RegistrationPartStati.participant,
+                    "lodgement_id": None,
+                    "is_camping_mat": False,
+                },
+                1004: {
+                    "status": const.RegistrationPartStati.participant,
+                    "lodgement_id": None,
+                    "is_camping_mat": False,
+                },
+            },
+            "tracks": {},
+        }
+        reg_id = self.event.create_registration(self.key, r_data)
+
+        c = const.RegistrationPartStati.cancelled
+        p = const.RegistrationPartStati.participant
+        expectation = {
+            (c, c, c, c): 0,
+            (c, c, c, p): 4,
+            (c, c, p, c): 3,
+            (c, c, p, p): 4,
+            (c, p, c, c): 2,
+            (c, p, c, p): 6,
+            (c, p, p, c): 3,
+            (c, p, p, p): 6,
+            (p, c, c, c): 1,
+            (p, c, c, p): 5,
+            (p, c, p, c): 4,
+            (p, c, p, p): 5,
+            (p, p, c, c): 2,
+            (p, p, c, p): 6,
+            (p, p, p, c): 4,
+            (p, p, p, p): 6,
+        }
+
+        for stati, expected_fee in expectation.items():
+            r_data = {
+                "id": reg_id,
+                "parts": {
+                    1001: {
+                        "status": stati[0],
+                    },
+                    1002: {
+                        "status": stati[1],
+                    },
+                    1003: {
+                        "status": stati[2],
+                    },
+                    1004: {
+                        "status": stati[3],
+                    },
+                },
+            }
+            self.event.set_registration(self.key, r_data)
+            combination = ", ".join(str(int(x == p)) for x in stati)
+            fee = self.event.calculate_fee(self.key, reg_id)
+            with self.subTest(combination=combination):
+                self.assertEqual(fee, decimal.Decimal(expected_fee))

@@ -264,8 +264,8 @@ class TestCoreFrontend(FrontendTest):
                  "FN:Bertålotta Beispiel",
                  "N:Beispiel;Bertålotta;;Dr.;MdB",
                  "NICKNAME:Bertå",
-                 "TEL;TYPE=\"home,voice\":+495432987654321",
-                 "TEL;TYPE=\"cell,voice\":+4916312345678",
+                 "TEL;TYPE=HOME:+495432987654321",
+                 "TEL;TYPE=CELL:+4916312345678",
                  "END:VCARD"]
         for line in vcard:
             self.assertIn(line, self.response.text)
