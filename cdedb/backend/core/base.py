@@ -97,9 +97,9 @@ class CoreBaseBackend(AbstractBackend):
         persona = self.get_persona(rs, persona_id)
         return self._is_relative_admin(rs, persona)
 
+    @staticmethod
     @internal
-    @access("persona")
-    def _is_relative_admin(self, rs: RequestState, persona: CdEDBObject) -> bool:
+    def _is_relative_admin(rs: RequestState, persona: CdEDBObject) -> bool:
         roles = extract_roles(persona, introspection_only=True)
         return any(admin <= rs.user.roles for admin in privilege_tier(roles))
 
@@ -2505,8 +2505,8 @@ class CoreBaseBackend(AbstractBackend):
         # Circumvent privilege check, since this is a rather special case.
         ret = self.retrieve_personas(
             rs, persona_ids, PERSONA_CORE_FIELDS + ("birthday",))
-        for persona_id, persona in ret.items():
-            persona['is_relative_admin'] = self._is_relative_admin(rs, persona)
+        for persona_id, persona_ in ret.items():
+            persona_['is_relative_admin'] = self._is_relative_admin(rs, persona_)
         return ret
 
     @access("anonymous")
