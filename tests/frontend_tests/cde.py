@@ -145,7 +145,8 @@ class TestCdEFrontend(FrontendTest):
         member = {"Sonstiges", "Datenschutzerklärung"}
         searchable = {"CdE-Mitglied suchen"}
         cde_admin_or_member = {"Mitglieder-Statistik"}
-        cde_admin = {"Nutzer verwalten", "Archivsuche", "Organisationen verwalten"}
+        cde_admin = {"Nutzer verwalten", "Alle Nutzer verwalten",
+                     "Organisationen verwalten"}
         cde_admin_or_auditor = {"Finanz-Log", "CdE-Log", "Verg.-Veranstaltungen-Log"}
         finance_admin = {"Einzugsermächtigungen", "Kontoauszug parsen",
                          "Überweisungen eintragen", "Semesterverwaltung"}
@@ -919,8 +920,8 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("vera")
     def test_archived_user_search(self) -> None:
-        self.traverse({'href': '/cde/$'}, "Search All Users")
-        self.assertTitle("Full User Search")
+        self.traverse({'href': '/cde/$'}, "Alle Nutzer verwalten")
+        self.assertTitle("Vollständige Nutzerverwaltung")
         f = self.response.forms['queryform']
         f['qval_birthday'] = '31.12.2000'
         f['qop_birthday'] = QueryOperators.less.value
@@ -928,7 +929,7 @@ class TestCdEFrontend(FrontendTest):
             if field and field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
-        self.assertTitle("Full User Search")
+        self.assertTitle("Vollständige Nutzerverwaltung")
         self.assertPresence("Ergebnis [2]", div='query-results')
         self.assertNonPresence("Anton", div='query-result')
         self.assertPresence("Hell", div='query-result')

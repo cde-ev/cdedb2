@@ -589,7 +589,7 @@ class TestPrivacyFrontend(FrontendTest):
 
                 if self.user_in(*archive):
                     self.get('/core/search/fulluser')
-                    self.assertTitle("Full User Search")
+                    self.assertTitle("Vollständige Nutzerverwaltung")
                 else:
                     self.get('/core/search/fulluser', status="403 FORBIDDEN")
                     self.assertTitle("403: Forbidden")

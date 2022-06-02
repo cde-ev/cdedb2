@@ -80,14 +80,14 @@ class TestEventFrontend(FrontendTest):
         # not event admins (also orgas!)
         if self.user_in('emilia', 'martin', 'werner'):
             ins = everyone
-            out = admin | {"Nutzer verwalten", "Archivsuche"}
+            out = admin | {"Nutzer verwalten", "Alle Nutzer verwalten"}
         # core admins
         elif self.user_in('vera'):
-            ins = everyone | {"Nutzer verwalten", "Archivsuche"}
+            ins = everyone | {"Nutzer verwalten", "Alle Nutzer verwalten"}
             out = admin
         # event admins
         elif self.user_in('annika'):
-            ins = everyone | admin | {"Nutzer verwalten", "Archivsuche"}
+            ins = everyone | admin | {"Nutzer verwalten", "Alle Nutzer verwalten"}
             out = set()
         # auditors
         elif self.user_in('katarina'):

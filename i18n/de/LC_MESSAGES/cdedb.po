@@ -18873,3 +18873,9 @@ msgstr "Teilnehmer"
 #: cdedb/query.py:1029 cdedb/query.py:1033
 msgid "instructors"
 msgstr "Kursleiter"
+
+msgid "Search All Users"
+msgstr "Alle Nutzer verwalten"
+
+msgid "Full User Search"
+msgstr "Vollständige Nutzerverwaltung"
