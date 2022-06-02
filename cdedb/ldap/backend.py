@@ -2,7 +2,6 @@
 
 import asyncio
 import logging
-import pathlib
 import pkgutil
 import re
 from collections import defaultdict
@@ -139,7 +138,7 @@ class LDAPsqlBackend:
         return True
 
     @overload
-    def _to_bytes(self, data: Union[None, str, int, bytes, DN]) -> bytes: ...
+    def _to_bytes(self, data: Union[None, str, int, bytes]) -> bytes: ...
 
     @overload
     def _to_bytes(self, data: Dict[Any, Any]) -> Dict[bytes, Any]: ...
