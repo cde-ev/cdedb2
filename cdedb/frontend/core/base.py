@@ -831,7 +831,8 @@ class CoreBaseFrontend(AbstractFrontend):
             params = query.serialize_to_url()
             rs.values.update(params)
             if include_archived:
-                return self.full_user_search(rs, is_search=True, download=None, query=query)
+                return self.full_user_search(
+                    rs, is_search=True, download=None, query=query)
             return self.user_search(rs, is_search=True, download=None, query=query)
         else:
             rs.notify("warning", n_("No account found."))

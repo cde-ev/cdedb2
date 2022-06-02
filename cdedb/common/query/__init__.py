@@ -150,7 +150,7 @@ class QueryScope(enum.IntEnum):
     """
     realm: str
 
-    def __new__(cls, value: str, realm: str = "core") -> "QueryScope":
+    def __new__(cls, value: int, realm: str = "core") -> "QueryScope":
         """Custom creation method for this enum.
 
         Achieves that value and realm of new members can be written using tuple
