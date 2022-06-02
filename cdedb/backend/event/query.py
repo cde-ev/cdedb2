@@ -258,14 +258,14 @@ class EventQueryBackend(EventBaseBackend):
             if not self.is_admin(rs) and "core_admin" not in rs.user.roles:
                 raise PrivilegeError(n_("Admin only."))
 
+            # Include only (un)archived users, depending on query scope.
+            if not query.scope.includes_archived():
+                query.constraints.append(("is_archived", QueryOperators.equal, False))
+                query.spec["is_archived"] = QuerySpecEntry("bool", "")
+
             # Include only event-users
             query.constraints.append(("is_event_realm", QueryOperators.equal, True))
             query.spec["is_event_realm"] = QuerySpecEntry("bool", "")
-
-            # Include only (un)archived users, depending on query scope.
-            if query.scope == QueryScope.event_user:
-                query.constraints.append(("is_archived", QueryOperators.equal, False))
-                query.spec["is_archived"] = QuerySpecEntry("bool", "")
 
             # Exclude users of any higher realm (implying event)
             for realm in implying_realms('event'):

@@ -535,9 +535,7 @@ class CdEBaseBackend(AbstractBackend):
                 raise PrivilegeError(n_("Admin only."))
 
             # Potentially restrict to non-archived users.
-            if query.scope == QueryScope.all_cde_users:
-                pass
-            else:
+            if not query.scope.includes_archived():
                 query.constraints.append(("is_archived", QueryOperators.equal, False))
                 query.spec["is_archived"] = QuerySpecEntry("bool", "")
 
