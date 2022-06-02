@@ -12,9 +12,10 @@ import tempfile
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
 from cdedb.common import (
-    NearlyNow, extract_roles, int_to_words, inverse_diacritic_patterns,
-    mixed_existence_sorter, nearly_now, now, unwrap, xsorted,
+    NearlyNow, int_to_words, inverse_diacritic_patterns, nearly_now, now, unwrap,
 )
+from cdedb.common.roles import extract_roles
+from cdedb.common.sorting import mixed_existence_sorter, xsorted
 from cdedb.enums import ALL_ENUMS
 from tests.common import ANONYMOUS, BasicTest
 
@@ -171,7 +172,7 @@ class TestCommon(BasicTest):
         for ncol in (1, 1.0, (i for i in range(1))):
             with self.subTest(ncol=ncol):
                 with self.assertRaises(TypeError) as cmt:
-                    unwrap(ncol)  # type: ignore
+                    unwrap(ncol)  # type: ignore[call-overload]
                 self.assertIn("Can only unwrap collections.", cmt.exception.args[0])
 
     def test_untranslated_strings(self) -> None:

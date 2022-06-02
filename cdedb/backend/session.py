@@ -14,11 +14,11 @@ from typing import Optional
 
 import psycopg2.extensions
 
-import cdedb.validationtypes as vtypes
+import cdedb.common.validation.types as vtypes
 from cdedb.backend.common import inspect_validation as inspect
-from cdedb.common import (
-    PERSONA_STATUS_FIELDS, User, droid_roles, extract_roles, now, setup_logger,
-)
+from cdedb.common import User, now, setup_logger
+from cdedb.common.fields import PERSONA_STATUS_FIELDS
+from cdedb.common.roles import droid_roles, extract_roles
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import connection_pool_factory
 

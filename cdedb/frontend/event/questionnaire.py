@@ -12,18 +12,20 @@ from typing import Any, Callable, Collection, Dict, List, Mapping, Optional, Tup
 import werkzeug.exceptions
 from werkzeug import Response
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Error, RequestState, merge_dicts,
-    mixed_existence_sorter, n_, unwrap,
+    unwrap,
 )
+from cdedb.common.n_ import n_
+from cdedb.common.sorting import mixed_existence_sorter
+from cdedb.common.validation import QUESTIONNAIRE_ROW_MANDATORY_FIELDS
 from cdedb.frontend.common import (
     RequestConstraint, REQUESTdata, access, check_validation_optional as check_optional,
     event_guard, request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
-from cdedb.validation import QUESTIONNAIRE_ROW_MANDATORY_FIELDS
 
 
 class EventQuestionnaireMixin(EventBaseFrontend):

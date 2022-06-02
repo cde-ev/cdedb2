@@ -48,3 +48,6 @@ ldap/output/
 
 # virtual environment
 .venv
+
+# bin processing data
+bin/**/*.json

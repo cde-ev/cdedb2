@@ -8,11 +8,9 @@ from typing import Dict, Optional
 import webtest
 
 import cdedb.database.constants as const
-from cdedb.common import (
-    ADMIN_VIEWS_COOKIE_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, GenesisDecision,
-    get_hash,
-)
-from cdedb.query import QueryOperators
+from cdedb.common import IGNORE_WARNINGS_NAME, CdEDBObject, GenesisDecision, get_hash
+from cdedb.common.query import QueryOperators
+from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
 from tests.common import (
     USER_DICT, FrontendTest, UserIdentifier, UserObject, as_users, execsql, get_user,
     storage,
@@ -266,8 +264,8 @@ class TestCoreFrontend(FrontendTest):
                  "FN:Bertålotta Beispiel",
                  "N:Beispiel;Bertålotta;;Dr.;MdB",
                  "NICKNAME:Bertå",
-                 "TEL;TYPE=\"home,voice\":+495432987654321",
-                 "TEL;TYPE=\"cell,voice\":+4916312345678",
+                 "TEL;TYPE=HOME:+495432987654321",
+                 "TEL;TYPE=CELL:+4916312345678",
                  "END:VCARD"]
         for line in vcard:
             self.assertIn(line, self.response.text)

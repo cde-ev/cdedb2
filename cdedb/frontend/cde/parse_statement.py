@@ -7,11 +7,13 @@ import json
 import re
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
-import cdedb.validationtypes as vtypes
+import cdedb.common.validation.types as vtypes
 from cdedb.common import (
     PARSE_OUTPUT_DATEFORMAT, Accounts, CdEDBObject, CdEDBObjectMap, ConfidenceLevel,
-    EntitySorter, Error, TransactionType, diacritic_patterns, n_, now, xsorted,
+    Error, TransactionType, diacritic_patterns, now,
 )
+from cdedb.common.n_ import n_
+from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.filter import cdedbid_filter
 from cdedb.frontend.common import inspect_validation as inspect
 
@@ -494,7 +496,7 @@ class Transaction:
             f"event_confidence{suffix}": ConfidenceLevel,
         }
         if not hidden_only:
-            ret = dict(**ret, **{  # type: ignore[arg-type]
+            ret = dict(**ret, **{
                 f"type{suffix}": TransactionType,
                 f"type_confirm{suffix}": bool,
                 f"cdedbid{suffix}": Optional[vtypes.CdedbID],

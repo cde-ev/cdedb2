@@ -13,8 +13,8 @@ import graphviz
 
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, Notification, RequestState, inverse_diacritic_patterns,
-    n_,
 )
+from cdedb.common.n_ import n_
 from cdedb.database.constants import Genders, RegistrationPartStati
 from cdedb.frontend.common import cdedburl, make_persona_name
 
@@ -198,10 +198,12 @@ def make_identifying_regex(persona: CdEDBObject) -> Pattern[str]:
     ]
     patterns.append(inverse_diacritic_patterns(re.escape(
         f"{persona['display_name']} {persona['family_name']}")))
+    patterns.append(inverse_diacritic_patterns(re.escape(
+        f"{persona['family_name']}, {persona['display_name']}")))
     patterns.append(re.escape(f"DB-{persona['id']}\\b"))
     if persona['username']:
         patterns.append(re.escape(persona['username']))
-    return re.compile('|'.join(patterns))
+    return re.compile('|'.join(patterns), flags=re.I)
 
 
 PRESENT_STATI = {status for status in RegistrationPartStati

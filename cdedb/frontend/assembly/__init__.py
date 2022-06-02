@@ -23,26 +23,28 @@ from schulze_condorcet.util import (
 )
 from werkzeug import Response
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
-import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    ASSEMBLY_BAR_SHORTNAME, LOG_FIELDS_COMMON, CdEDBObject, CdEDBObjectMap,
-    DefaultReturnCode, EntitySorter, RequestState, get_hash, merge_dicts, n_, now,
-    unwrap, xsorted,
+    ASSEMBLY_BAR_SHORTNAME, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
+    RequestState, get_hash, merge_dicts, now, unwrap,
 )
+from cdedb.common.fields import LOG_FIELDS_COMMON
+from cdedb.common.n_ import n_
+from cdedb.common.query import QueryScope
+from cdedb.common.sorting import EntitySorter, xsorted
+from cdedb.common.validation import (
+    ASSEMBLY_COMMON_FIELDS, BALLOT_EXPOSED_FIELDS, PERSONA_FULL_ASSEMBLY_CREATION,
+    filter_none,
+)
+from cdedb.common.validation.types import CdedbID, Email
 from cdedb.frontend.common import (
-    AbstractUserFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, access,
+    AbstractUserFrontend, Attachment, REQUESTdata, REQUESTdatadict, REQUESTfile, access,
     assembly_guard, calculate_db_logparams, calculate_loglinks, cdedburl,
     check_validation as check, drow_name, periodic, process_dynamic_input,
     request_extractor,
 )
-from cdedb.query import QueryScope
-from cdedb.validation import (
-    ASSEMBLY_COMMON_FIELDS, BALLOT_EXPOSED_FIELDS, PERSONA_FULL_ASSEMBLY_CREATION,
-    filter_none,
-)
-from cdedb.validationtypes import CdedbID, Email
 
 #: Magic value to signal abstention during _classical_ voting.
 #: This can not occur as a shortname since it contains forbidden characters.
@@ -401,9 +403,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 rs.notify("info", n_("Given presider address ignored in favor of"
                                      " newly created mailinglist."))
             presider_ml_data = self._get_mailinglist_setter(data, presider=True)
-            presider_address = ml_type.get_full_address(  # type: ignore
-                presider_ml_data)
-            assert presider_address is not None
+            presider_address = ml_type.get_full_address(presider_ml_data)
             data["presider_address"] = presider_address
             if self.mlproxy.verify_existence(rs, presider_address):
                 presider_ml_data = None
@@ -1249,8 +1249,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             if finished and (result := self.assemblyproxy.tally_ballot(rs, ballot_id)):
                 afile = io.BytesIO(result)
                 my_hash = get_hash(result)
-                attachment_result: Dict[str, str] = {
-                    'file': afile,  # type: ignore
+                attachment_result: Attachment = {
+                    'file': afile,
                     'filename': 'result.json',
                     'mimetype': 'application/json'}
                 to = [self.conf["BALLOT_TALLY_ADDRESS"]]
@@ -1546,7 +1546,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                     vote = as_vote_string([rejected])
         else:
             # preferential voting
-            vote = unwrap(request_extractor(rs, {"vote": Optional[str]}))  # type: ignore
+            vote = unwrap(request_extractor(rs, {"vote": Optional[str]}))  # type: ignore[dict-item]
             # Empty preferential vote counts as abstaining
             if not vote:
                 if ballot['use_bar']:

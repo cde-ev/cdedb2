@@ -33,7 +33,7 @@
                      aclass="btn btn-sm btn-warning", icon="pen") }}
         {{ util.href(cdedblink('event/manage_attendees_form'), gettext("Manage Attendees"), readonly=is_locked,
                      aclass="btn btn-sm btn-warning", icon="users") }}
-        {{ util.href(util.mailto(address="", to="; ".join(instructor_emails)), gettext("Email to course instructors"),
+        {{ util.href(util.mailto(address="", to=";".join(instructor_emails)), gettext("Email to course instructors"),
                             icon="envelope", aclass="btn btn-sm btn-default", readonly=not instructor_emails,
                             title=(gettext("Send Mail to all course instructors.")
                                    if instructor_emails else
@@ -64,6 +64,12 @@
         {% endcall %}
     {% endif %}
 
+    {% if mec_violations %}
+        {% call generic_event.constraint_violations_panel(violation_severity) %}
+            {{ generic_event.list_mec_violations(mec_violations, {ambience['course']['id']: ambience['course']}) }}
+        {% endcall %}
+    {% endif %}
+
     <h2>{% trans %}Attendees{% endtrans %}</h2>
     {% set relevant_tracks = [] %}
     {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track)
@@ -75,7 +81,7 @@
         {% for track_id, track in batch %}
             {% set num_track_learners = learners[(ambience['course']['id'], track_id)]|length %}
             <div class="col-md-4">
-                <div class="panel panel-info panel-condensed">
+                <div class="panel panel-info panel-condensed" id="track{{ track_id }}-attendees">
                     <div class="panel-heading">
                         <div class="pull-right">
                             {{ util.href(cdedblink('event/course_choices', {
@@ -131,6 +137,27 @@
                             {% endfor %}
                         </ul>
                     </div>
+                    <div class="panel-footer">
+                        <ul class="list-unstyled">
+                            <li>
+                                {{ util.href(cdedblink('event/course_choices', {
+                                                            'track_id': track_id,
+                                                            'course_id': ambience['course']['id'],
+                                                            'position': enums.CourseFilterPositions.anywhere.value,
+                                                            'submitform': True}),
+                                             label=gettext("Related Course Choices"),
+                                             icon=util.make_icon('crosshairs')) }}
+                            </li>
+                        {% if num_track_learners %}
+                            <li>
+                                {{ util.href(cdedblink('event/registration_query',
+                                                       make_attendees_query(track_id).serialize_to_url()) + "#query-results",
+                                             label=gettext("Attendees"), icon=util.make_icon('users'),
+                                             anid="attendees-link-{}".format(track_id)) }}
+                            </li>
+                        {% endif %}
+                        </ul>
+                    </div>
                 </div>
             </div>
         {% endfor %}
@@ -139,6 +166,9 @@
     {% call util.bootstrap_panel(title=gettext("Description"), icon="thumbtack", aclass="panel-default panel-condensed") %}
         {{ ambience['course']['description']|md }}
     {% endcall %}
+
+    {{ util.pager('event/show_course', 'course_id', prev_course, next_course, "label") }}
+
     {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
         <div class="row">
             <div class="col-sm-4">

@@ -273,7 +273,6 @@ CREATE INDEX privilege_changes_status_idx ON core.privilege_changes(status);
 GRANT SELECT, INSERT, UPDATE, DELETE ON core.privilege_changes TO cdb_admin;
 GRANT SELECT, UPDATE ON core.privilege_changes_id_seq TO cdb_admin;
 
--- this table serves as access log, so entries are never deleted
 CREATE TABLE core.sessions (
         id                      bigserial PRIMARY KEY,
         persona_id              integer NOT NULL REFERENCES core.personas(id),

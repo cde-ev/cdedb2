@@ -13,13 +13,13 @@ from typing import Set, Tuple, cast
 import webtest
 
 import cdedb.database.constants as const
-from cdedb.common import (
-    ADMIN_VIEWS_COOKIE_NAME, CdEDBObject, LineResolutions, RequestState, Role,
-    extract_roles, format_country_code, get_country_code_from_country,
-    get_localized_country_codes, now,
+from cdedb.common import CdEDBObject, LineResolutions, RequestState, Role, now
+from cdedb.common.i18n import (
+    format_country_code, get_country_code_from_country, get_localized_country_codes,
 )
+from cdedb.common.query import QueryOperators
+from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME, extract_roles
 from cdedb.frontend.common import Worker, make_postal_address
-from cdedb.query import QueryOperators
 from tests.common import (
     USER_DICT, FrontendTest, UserIdentifier, as_users, get_user, prepsql, storage,
 )
@@ -968,8 +968,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Status ändern'})
         f = self.response.forms['modifymembershipform']
         self.submit(f)
-        self.assertPresence("Lastschriftmandate widerrufen.",
-                            div="notifications")
+        self.assertPresence("Aktives Lastschriftmandat widerrufen", div="notifications")
         self.assertNonPresence("Einzugsermächtigung", div="balance")
         self.logout()
         self.login(USER_DICT["farin"])

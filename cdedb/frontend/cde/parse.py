@@ -18,12 +18,14 @@ from typing import List, Optional, Sequence, Tuple, cast
 from werkzeug import Response
 from werkzeug.datastructures import FileStorage
 
+import cdedb.common.validation.types as vtypes
 import cdedb.frontend.cde.parse_statement as parse
-import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    Accounts, CdEDBObject, EntitySorter, RequestState, TransactionType,
-    diacritic_patterns, get_hash, merge_dicts, n_, xsorted,
+    Accounts, CdEDBObject, RequestState, TransactionType, diacritic_patterns, get_hash,
+    merge_dicts,
 )
+from cdedb.common.n_ import n_
+from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
     CustomCSVDialect, REQUESTdata, REQUESTfile, TransactionObserver, access,
@@ -398,9 +400,9 @@ class CdEParseMixin(CdEBaseFrontend):
             success, num, new_members = self.cdeproxy.perform_money_transfers(
                 rs, relevant_data)
             if success and sendmail:
+                persona_ids = tuple(e['persona_id'] for e in data)
+                personas = self.coreproxy.get_cde_users(rs, persona_ids)
                 for datum in data:
-                    persona_ids = tuple(e['persona_id'] for e in data)
-                    personas = self.coreproxy.get_cde_users(rs, persona_ids)
                     persona = personas[datum['persona_id']]
                     self.do_mail(rs, "parse/transfer_received",
                                  {'To': (persona['username'],),

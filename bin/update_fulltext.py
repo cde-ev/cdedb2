@@ -3,7 +3,7 @@
 
 Should not be archived after use.
 """
-from cdedb.common import PERSONA_ALL_FIELDS
+from cdedb.common.fields import PERSONA_ALL_FIELDS
 from cdedb.script import Script
 
 # config

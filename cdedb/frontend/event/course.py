@@ -11,20 +11,22 @@ from typing import Collection, Optional, cast
 
 from werkzeug import Response
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    CdEDBObject, CourseChoiceToolActions, CourseFilterPositions, EntitySorter,
-    InfiniteEnum, RequestState, merge_dicts, n_, unwrap, xsorted,
+    CdEDBObject, CourseChoiceToolActions, CourseFilterPositions, InfiniteEnum,
+    RequestState, merge_dicts, unwrap,
 )
+from cdedb.common.n_ import n_
+from cdedb.common.query import Query, QueryOperators, QueryScope
+from cdedb.common.sorting import EntitySorter, xsorted
+from cdedb.common.validation import COURSE_COMMON_FIELDS
+from cdedb.common.validation.types import VALIDATOR_LOOKUP
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, check_validation as check, event_guard,
     make_persona_name, request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
-from cdedb.query import Query, QueryOperators, QueryScope
-from cdedb.validation import COURSE_COMMON_FIELDS
-from cdedb.validationtypes import VALIDATOR_LOOKUP
 
 
 class EventCourseMixin(EventBaseFrontend):
@@ -35,6 +37,7 @@ class EventCourseMixin(EventBaseFrontend):
         """List courses from an event."""
         if (not rs.ambience['event']['is_course_list_visible']
                 and not (event_id in rs.user.orga or self.is_admin(rs))):
+            rs.ignore_validation_errors()
             rs.notify("warning", n_("Course list not published yet."))
             return self.redirect(rs, "event/show_event")
         if rs.has_validation_errors() or not track_ids:
@@ -84,6 +87,42 @@ class EventCourseMixin(EventBaseFrontend):
             instructors = self.coreproxy.get_personas(rs, instructor_ids)
             params['instructor_emails'] = [p['username']
                                            for p in instructors.values()]
+
+            def make_attendees_query(track_id: int) -> Query:
+                return Query(
+                    QueryScope.registration,
+                    QueryScope.registration.get_spec(event=rs.ambience['event']),
+                    fields_of_interest=[
+                        'persona.given_names', 'persona.family_name',
+                        f'track{track_id}.course_id',
+                    ],
+                    constraints=[
+                        (f'track{track_id}.course_id', QueryOperators.equal, course_id),
+                    ],
+                    order=[
+                        ('persona.family_name', True),
+                        ('persona.given_names', True),
+                    ]
+                )
+            params['make_attendees_query'] = make_attendees_query
+
+            course_ids = self.eventproxy.list_courses(rs, event_id=event_id).keys()
+            courses = self.eventproxy.get_courses(rs, course_ids)
+            sorted_ids = xsorted(
+                course_ids, key=lambda id_: EntitySorter.course(courses[id_]))
+            i = sorted_ids.index(course_id)
+            for c in courses.values():
+                c['label'] = f"{c['nr']}. {c['shortname']}"
+
+            params['prev_course'] = courses[sorted_ids[i - 1]] if i > 0 else None
+            params['next_course'] =\
+                courses[sorted_ids[i + 1]] if i + 1 < len(sorted_ids) else None
+
+            constraint_violations = self.get_constraint_violations(
+                rs, event_id, registration_id=-1, course_id=course_id)
+            params['mec_violations'] = constraint_violations['mec_violations']
+            params['violation_severity'] = constraint_violations['max_severity']
+
         return self.render(rs, "course/show_course", params)
 
     @access("event")
@@ -115,7 +154,7 @@ class EventCourseMixin(EventBaseFrontend):
         data['segments'] = segments
         data['active_segments'] = active_segments
         field_params: vtypes.TypeMapping = {
-            f"fields.{field['field_name']}": Optional[  # type: ignore
+            f"fields.{field['field_name']}": Optional[  # type: ignore[misc]
                 VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]  # noqa: F821
             for field in rs.ambience['event']['fields'].values()
             if field['association'] == const.FieldAssociations.course
@@ -154,7 +193,7 @@ class EventCourseMixin(EventBaseFrontend):
         data['event_id'] = event_id
         data['segments'] = segments
         field_params: vtypes.TypeMapping = {
-            f"fields.{field['field_name']}": Optional[  # type: ignore
+            f"fields.{field['field_name']}": Optional[  # type: ignore[misc]
                 VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]  # noqa: F821
             for field in rs.ambience['event']['fields'].values()
             if field['association'] == const.FieldAssociations.course
@@ -320,10 +359,16 @@ class EventCourseMixin(EventBaseFrontend):
                     EntitySorter.persona(
                         personas[registrations[problem[0]]['persona_id']]))
 
+        constraint_violations = self.get_constraint_violations(
+            rs, event_id, registration_id=-1, course_id=None)
+
         return self.render(rs, "course/course_assignment_checks", {
             'registrations': registrations, 'personas': personas,
             'courses': courses, 'course_problems': course_problems,
-            'reg_problems': reg_problems})
+            'reg_problems': reg_problems,
+            'mec_violations': constraint_violations['mec_violations'],
+            'mec_severity': constraint_violations['max_severity'],
+        })
 
     @access("event")
     @event_guard()
@@ -462,7 +507,9 @@ class EventCourseMixin(EventBaseFrontend):
         their choices or a specific course.
         """
         if rs.has_validation_errors():
-            return self.course_choices_form(rs, event_id)  # type: ignore
+            return self.course_choices_form(
+                rs, event_id, course_id=course_id, track_id=track_id, position=position,
+                ids=ids, include_active=include_active)
         if ids is None:
             ids = cast(vtypes.IntCSVList, [])
 

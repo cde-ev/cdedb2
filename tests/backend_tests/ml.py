@@ -8,7 +8,8 @@ from subman.machine import SubscriptionAction as SA
 
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
-from cdedb.common import CdEDBObject, PrivilegeError, RequestState, nearly_now
+from cdedb.common import CdEDBObject, RequestState, nearly_now
+from cdedb.common.exceptions import PrivilegeError
 from cdedb.database.constants import SubscriptionState as SS
 from tests.common import USER_DICT, BackendTest, as_users, prepsql
 

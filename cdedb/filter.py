@@ -21,11 +21,12 @@ import markupsafe
 import phonenumbers
 
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, compute_checkdigit, xsorted
-from cdedb.config import Config
+from cdedb.common import CdEDBObject, compute_checkdigit
+from cdedb.common.sorting import xsorted
+from cdedb.config import LazyConfig
 
 _LOGGER = logging.getLogger(__name__)
-_CONFIG = Config()
+_CONFIG = LazyConfig()
 
 S = TypeVar("S")
 T = TypeVar("T")

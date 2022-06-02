@@ -10,8 +10,8 @@ import datetime
 import decimal
 from typing import Any, Collection, Dict, List, Optional, Protocol, Tuple
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.backend.cde import CdEBaseBackend
 from cdedb.backend.common import (
     access, affirm_array_validation as affirm_array,
@@ -19,10 +19,12 @@ from cdedb.backend.common import (
     affirm_validation_optional as affirm_optional, batchify, singularize,
 )
 from cdedb.common import (
-    LASTSCHRIFT_FIELDS, LASTSCHRIFT_TRANSACTION_FIELDS, CdEDBObject, CdEDBObjectMap,
-    DefaultReturnCode, DeletionBlockers, PrivilegeError, RequestState, merge_dicts, n_,
-    now, unwrap,
+    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, RequestState,
+    merge_dicts, now, unwrap,
 )
+from cdedb.common.exceptions import PrivilegeError
+from cdedb.common.fields import LASTSCHRIFT_FIELDS, LASTSCHRIFT_TRANSACTION_FIELDS
+from cdedb.common.n_ import n_
 from cdedb.database.connection import Atomizer
 
 
@@ -30,7 +32,7 @@ class CdELastschriftBackend(CdEBaseBackend):
     @access("core_admin", "cde_admin")
     def change_membership(
             self, rs: RequestState, persona_id: int, is_member: bool
-    ) -> Tuple[DefaultReturnCode, List[int], bool]:
+    ) -> Tuple[DefaultReturnCode, Optional[int], bool]:
         """Special modification function for membership.
 
         This is similar to the version from the core backend, but can
@@ -39,42 +41,36 @@ class CdELastschriftBackend(CdEBaseBackend):
         In the general situation this variant should be used.
 
         :param is_member: Desired target state of membership.
-        :returns: A tuple containing the return code, a list of ids of
-            revoked lastschrift permits and whether any in-flight
+        :returns: A tuple containing the return code, the id of the
+            revoked lastschrift permit or None, and whether any in-flight
             transactions are affected.
         """
         persona_id = affirm(vtypes.ID, persona_id)
         is_member = affirm(bool, is_member)
         code = 1
-        revoked_permits = []
+        revoked_permit = None
         collateral_transactions = False
         with Atomizer(rs):
             if not is_member:
                 lastschrift_ids = self.list_lastschrift(
-                    rs, persona_ids=(persona_id,), active=None)
-                lastschrifts = self.get_lastschrifts(
-                    rs, lastschrift_ids.keys())
-                active_permits = []
-                for lastschrift in lastschrifts.values():
-                    if not lastschrift['revoked_at']:
-                        active_permits.append(lastschrift['id'])
-                if active_permits:
+                    rs, persona_ids=(persona_id,), active=True)
+                # at most one active lastschrift per user is allowed
+                if lastschrift_id := unwrap(lastschrift_ids or None):
                     if self.list_lastschrift_transactions(
-                            rs, lastschrift_ids=active_permits,
+                            rs, lastschrift_ids=(lastschrift_id,),
                             stati=(const.LastschriftTransactionStati.issued,)):
                         collateral_transactions = True
-                    for active_permit in active_permits:
-                        data = {
-                            'id': active_permit,
-                            'revoked_at': now(),
-                        }
-                        lastschrift_code = self.set_lastschrift(rs, data)
-                        if lastschrift_code <= 0:
-                            raise ValueError(n_(
-                                "Failed to revoke active lastschrift permit"))
-                        revoked_permits.append(active_permit)
+                    data = {
+                        'id': lastschrift_id,
+                        'revoked_at': now(),
+                    }
+                    lastschrift_code = self.set_lastschrift(rs, data)
+                    if lastschrift_code <= 0:
+                        raise ValueError(n_(
+                            "Failed to revoke active lastschrift permit"))
+                    revoked_permit = lastschrift_id
             code = self.core.change_membership_easy_mode(rs, persona_id, is_member)
-        return code, revoked_permits, collateral_transactions
+        return code, revoked_permit, collateral_transactions
 
     @access("member", "core_admin", "cde_admin")
     def list_lastschrift(self, rs: RequestState,

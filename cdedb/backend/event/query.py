@@ -6,21 +6,25 @@ for querying information about an event aswell as storing and retrieving such qu
 """
 from typing import Collection, Dict, List, Optional, Tuple
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     PYTHON_TO_SQL_MAP, DatabaseValue_s, access, affirm_set_validation as affirm_set,
     affirm_validation as affirm,
 )
 from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
-    COURSE_FIELDS, LODGEMENT_FIELDS, LODGEMENT_GROUP_FIELDS, REGISTRATION_FIELDS,
-    REGISTRATION_PART_FIELDS, STORED_EVENT_QUERY_FIELDS, CdEDBObject, CdEDBObjectMap,
-    DefaultReturnCode, PrivilegeError, RequestState, implying_realms, json_serialize,
-    n_,
+    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, RequestState, json_serialize,
 )
+from cdedb.common.exceptions import PrivilegeError
+from cdedb.common.fields import (
+    COURSE_FIELDS, LODGEMENT_FIELDS, LODGEMENT_GROUP_FIELDS, REGISTRATION_FIELDS,
+    REGISTRATION_PART_FIELDS, STORED_EVENT_QUERY_FIELDS,
+)
+from cdedb.common.n_ import n_
+from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
+from cdedb.common.roles import implying_realms
 from cdedb.database.connection import Atomizer
-from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 
 
 def _get_field_select_columns(fields: CdEDBObjectMap,
@@ -331,7 +335,8 @@ class EventQueryBackend(EventBaseBackend):
                     LEFT OUTER JOIN (
                         SELECT
                             c.id AS base_id, is_active IS NOT NULL AS is_offered,
-                            COALESCE(is_active, False) AS takes_place
+                            COALESCE(is_active, False) AS takes_place,
+                            NOT COALESCE(is_active, True) AS is_cancelled
                         FROM (
                             {base}
                             LEFT OUTER JOIN (
@@ -678,7 +683,7 @@ class EventQueryBackend(EventBaseBackend):
             'event_id': event_id,
             'query_name': query.name,
             'scope': query.scope,
-            'serialized_query': json_serialize(query.serialize()),
+            'serialized_query': json_serialize(query.serialize(timezone_aware=True)),
         }
         with Atomizer(rs):
             new_id = self.sql_insert(
@@ -691,10 +696,12 @@ class EventQueryBackend(EventBaseBackend):
                            event_id=event_id, change_note=query.name)
         return new_id
 
-    @access("event_admin")
+    @access("event")
     def get_invalid_stored_event_queries(self, rs: RequestState, event_id: int
                                          ) -> CdEDBObjectMap:
         """Retrieve raw data for stored event queries that cannot be deserialized."""
+        if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
+            raise PrivilegeError(n_("Not privileged."))
         q = (f"SELECT {', '.join(STORED_EVENT_QUERY_FIELDS)}"
              f" FROM event.stored_queries WHERE event_id = %s AND NOT(id = ANY(%s))")
         with Atomizer(rs):
@@ -702,3 +709,14 @@ class EventQueryBackend(EventBaseBackend):
             params = (event_id, [q.query_id for q in retrievable_queries.values()])
             data = self.query_all(rs, q, params)
             return {e["id"]: e for e in data}
+
+    @access("event")
+    def delete_invalid_stored_event_queries(self, rs: RequestState, event_id: int
+                                            ) -> int:
+        """Delete invalid stored event queries."""
+        if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
+            raise PrivilegeError(n_("Not privileged."))
+        invalid_queries = self.get_invalid_stored_event_queries(rs, event_id)
+        self.logger.warning(f"Invalid stored queries were automatically deleted:"
+                            f" {invalid_queries}")
+        return self.sql_delete(rs, "event.stored_queries", invalid_queries.keys())

@@ -19,8 +19,8 @@ import copy
 import datetime
 from typing import Any, Collection, Dict, Iterable, List, Optional, Protocol, Set, Tuple
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     Silencer, access, affirm_set_validation as affirm_set, affirm_validation as affirm,
     affirm_validation_optional as affirm_optional, cast_fields, internal, singularize,
@@ -28,15 +28,19 @@ from cdedb.backend.common import (
 from cdedb.backend.entity_keeper import EntityKeeper
 from cdedb.backend.event.lowlevel import EventLowLevelBackend
 from cdedb.common import (
-    COURSE_FIELDS, COURSE_SEGMENT_FIELDS, COURSE_TRACK_FIELDS, EVENT_FIELDS,
-    EVENT_PART_FIELDS, EVENT_SCHEMA_VERSION, FEE_MODIFIER_FIELDS,
-    FIELD_DEFINITION_FIELDS, LODGEMENT_FIELDS, LODGEMENT_GROUP_FIELDS,
-    PART_GROUP_FIELDS, PERSONA_EVENT_FIELDS, PERSONA_STATUS_FIELDS,
-    QUESTIONNAIRE_ROW_FIELDS, REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS,
-    REGISTRATION_TRACK_FIELDS, CdEDBLog, CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap,
-    DefaultReturnCode, PrivilegeError, RequestState, glue, json_serialize,
-    mixed_existence_sorter, n_, now, unwrap, xsorted,
+    EVENT_SCHEMA_VERSION, CdEDBLog, CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap,
+    DefaultReturnCode, RequestState, glue, json_serialize, now, unwrap,
 )
+from cdedb.common.exceptions import PrivilegeError
+from cdedb.common.fields import (
+    COURSE_FIELDS, COURSE_SEGMENT_FIELDS, COURSE_TRACK_FIELDS, EVENT_FIELDS,
+    EVENT_PART_FIELDS, FEE_MODIFIER_FIELDS, FIELD_DEFINITION_FIELDS, LODGEMENT_FIELDS,
+    LODGEMENT_GROUP_FIELDS, PART_GROUP_FIELDS, PERSONA_EVENT_FIELDS,
+    PERSONA_STATUS_FIELDS, QUESTIONNAIRE_ROW_FIELDS, REGISTRATION_FIELDS,
+    REGISTRATION_PART_FIELDS, REGISTRATION_TRACK_FIELDS, STORED_EVENT_QUERY_FIELDS,
+)
+from cdedb.common.n_ import n_
+from cdedb.common.sorting import mixed_existence_sorter, xsorted
 from cdedb.database.connection import Atomizer
 
 # type alias for questionnaire specification.
@@ -734,6 +738,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 ('event.course_choices', "track_id", (
                     'id', 'registration_id', 'track_id', 'course_id', 'rank',)),
                 ('event.questionnaire_rows', "event_id", QUESTIONNAIRE_ROW_FIELDS),
+                ('event.stored_queries', "event_id", STORED_EVENT_QUERY_FIELDS),
                 ('event.log', "event_id", (
                     'id', 'ctime', 'code', 'submitted_by', 'event_id',
                     'persona_id', 'change_note')),

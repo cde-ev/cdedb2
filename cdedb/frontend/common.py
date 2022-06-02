@@ -17,6 +17,7 @@ import email.header
 import email.mime
 import email.mime.application
 import email.mime.audio
+import email.mime.base
 import email.mime.image
 import email.mime.multipart
 import email.mime.text
@@ -43,8 +44,8 @@ from secrets import token_hex
 from types import TracebackType
 from typing import (
     IO, AbstractSet, Any, AnyStr, Callable, ClassVar, Collection, Dict, Iterable, List,
-    Literal, Mapping, MutableMapping, NamedTuple, Optional, Protocol, Sequence, Tuple,
-    Type, TypeVar, Union, cast, overload,
+    Literal, Mapping, NamedTuple, Optional, Protocol, Sequence, Tuple, Type, TypeVar,
+    Union, cast, overload,
 )
 
 import jinja2
@@ -58,10 +59,10 @@ import werkzeug.utils
 import werkzeug.wrappers
 import werkzeug.wsgi
 
+import cdedb.common.query as query_mod
+import cdedb.common.validation as validate
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.query as query_mod
-import cdedb.validation as validate
-import cdedb.validationtypes as vtypes
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.common import AbstractBackend
@@ -70,15 +71,23 @@ from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.common import (
-    ADMIN_KEYS, ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS, ANTI_CSRF_TOKEN_NAME,
-    ANTI_CSRF_TOKEN_PAYLOAD, IGNORE_WARNINGS_NAME, PERSONA_DEFAULTS,
-    REALM_SPECIFIC_GENESIS_FIELDS, CdEDBMultiDict, CdEDBObject, CustomJSONEncoder,
-    EntitySorter, Error, Notification, NotificationType, PathLike, PrivilegeError,
-    RequestState, Role, User, ValidationWarning, _tdelta, asciificator,
-    decode_parameter, encode_parameter, format_country_code,
-    get_localized_country_codes, glue, json_serialize, make_proxy, merge_dicts, n_, now,
-    roles_to_db_role, setup_logger, unwrap,
+    ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD, IGNORE_WARNINGS_NAME, CdEDBMultiDict,
+    CdEDBObject, CustomJSONEncoder, Error, Notification, NotificationType, PathLike,
+    RequestState, Role, User, _tdelta, asciificator, decode_parameter, encode_parameter,
+    glue, json_serialize, make_persona_forename, make_proxy, merge_dicts, now,
+    setup_logger, unwrap,
 )
+from cdedb.common.exceptions import PrivilegeError, ValidationWarning
+from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
+from cdedb.common.i18n import format_country_code, get_localized_country_codes
+from cdedb.common.n_ import n_
+from cdedb.common.query import Query
+from cdedb.common.query.defaults import DEFAULT_QUERIES
+from cdedb.common.roles import (
+    ADMIN_KEYS, ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS, PERSONA_DEFAULTS,
+    roles_to_db_role,
+)
+from cdedb.common.sorting import EntitySorter
 from cdedb.config import Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -87,8 +96,24 @@ from cdedb.enums import ENUMS_DICT
 from cdedb.filter import (
     JINJA_FILTERS, cdedbid_filter, enum_entries_filter, safe_filter, sanitize_None,
 )
-from cdedb.query import Query
-from cdedb.query_defaults import DEFAULT_QUERIES
+
+Attachment = typing.TypedDict(
+    "Attachment", {'path': PathLike, 'filename': str, 'mimetype': str,
+                   'file': Union[IO[str], IO[bytes]]}, total=False)
+Headers = typing.TypedDict(
+    "Headers", {
+        "From": str,
+        "Prefix": str,
+        "Reply-To": str,
+        "Return-Path": str,
+        "domain": str,
+        "Subject": str,
+        "Cc": Collection[str],
+        "Bcc": Collection[str],
+        "To": Collection[str],
+    },
+    total=False
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -293,8 +318,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             extensions=['jinja2.ext.i18n', 'jinja2.ext.do', 'jinja2.ext.loopcontrols'],
             finalize=sanitize_None, autoescape=True, auto_reload=self.conf["CDEDB_DEV"],
             undefined=undefined)
-        self.jinja_env.policies['ext.i18n.trimmed'] = True  # type: ignore
-        self.jinja_env.policies['json.dumps_kwargs']['cls'] = CustomJSONEncoder  # type: ignore
+        self.jinja_env.policies['ext.i18n.trimmed'] = True  # type: ignore[attr-defined]
+        self.jinja_env.policies['json.dumps_kwargs']['cls'] = CustomJSONEncoder  # type: ignore[attr-defined]
         self.jinja_env.filters.update(JINJA_FILTERS)
         self.jinja_env.globals.update({
             'now': now,
@@ -554,7 +579,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
           tries to save the file to disk
         :param inline: Set content disposition to force display in browser (if
           True) or to force a download box (if False).
-        :param afile: should be opened in binary mode
+        :param afile: Should be opened in binary mode. Will be reset to start of file.
         :param encoding: The character encoding to be uses, if `data` is given
           as str
         """
@@ -568,6 +593,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             f = pathlib.Path(path).open("rb")
             payload = werkzeug.wsgi.wrap_file(rs.request.environ, f)
         elif afile:
+            # Setting the buffer to 0 might be technically wrong in some theoretical
+            # case, but this is much more easily usable.
+            afile.seek(0)
             payload = werkzeug.wsgi.wrap_file(rs.request.environ, afile)
         elif data:
             if isinstance(data, str):
@@ -683,16 +711,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                              csp_header_template.format(csp_nonce))
         return response
 
-    # TODO use new typing feature to accurately define the following:
-    # from typing import TypedDict
-    # Attachment = TypedDict(
-    #     "Attachment", {'path': PathLike, 'filename': str, 'mimetype': str,
-    #                    'file': IO}, total=False)
-    Attachment = Dict[str, str]
-
     def do_mail(self, rs: RequestState, templatename: str,
-                headers: MutableMapping[str, Union[str, Collection[str]]],
-                params: CdEDBObject = None,
+                headers: Headers, params: CdEDBObject = None,
                 attachments: Collection[Attachment] = None) -> Optional[str]:
         """Wrapper around :py:meth:`fill_template` specialised to sending
         emails. This does generate the email and send it too.
@@ -722,8 +742,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         return ret
 
     def _create_mail(self, text: str,
-                     headers: MutableMapping[str, Union[str, Collection[str]]],
-                     attachments: Optional[Collection[Attachment]],
+                     headers: Headers, attachments: Optional[Collection[Attachment]],
                      ) -> Union[email.message.Message,
                                 email.mime.multipart.MIMEMultipart]:
         """Helper for actual email instantiation from a raw message."""
@@ -735,10 +754,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     "Bcc": tuple(),
                     "domain": self.conf["MAIL_DOMAIN"],
                     }
-        merge_dicts(headers, defaults)
+        merge_dicts(headers, defaults)  # type: ignore[arg-type]
         if headers["From"] == headers["Reply-To"]:
             del headers["Reply-To"]
-        msg = email.mime.text.MIMEText(text)
+        msg: email.mime.base.MIMEBase = email.mime.text.MIMEText(text)
         email.encoders.encode_quopri(msg)
         del msg['Content-Transfer-Encoding']
         msg['Content-Transfer-Encoding'] = 'quoted-printable'
@@ -757,16 +776,16 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             for attachment in attachments:
                 container.attach(self._create_attachment(attachment))
             # put the container in place as message to send
-            msg = container  # type: ignore
+            msg = container  #
         for header in ("To", "Cc", "Bcc"):
-            nonempty = {x for x in headers[header] if x}
-            if nonempty != set(headers[header]):
+            nonempty = {x for x in headers[header] if x}  # type: ignore[literal-required]
+            if nonempty != set(headers[header]):  # type: ignore[literal-required]
                 self.logger.warning("Empty values zapped in email recipients.")
-            if headers[header]:
+            if headers[header]:  # type: ignore[literal-required]
                 msg[header] = ", ".join(nonempty)
         for header in ("From", "Reply-To", "Return-Path"):
-            msg[header] = headers[header]
-        subject = headers["Prefix"] + " " + headers['Subject']  # type: ignore
+            msg[header] = headers[header]  # type: ignore[literal-required]
+        subject = headers["Prefix"] + " " + headers['Subject']  # type
         msg["Subject"] = subject
         msg["Message-ID"] = email.utils.make_msgid(
             domain=self.conf["MAIL_DOMAIN"])
@@ -846,7 +865,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             raise ValueError(n_("No input provided."))
         if attachment.get('file'):
             # noinspection PyUnresolvedReferences
-            data = attachment['file'].read()  # type: ignore
+            data = attachment['file'].read()
         else:
             if maintype == "text":
                 with open(attachment['path'], 'r') as ft:
@@ -1872,7 +1891,7 @@ def request_dict_extractor(rs: RequestState,
 
     # This looks wrong. but is correct, as the `REQUESTdatadict` decorator
     # constructs the data parameter `fun` expects.
-    return fun(None, rs)  # type: ignore
+    return fun(None, rs)  # type: ignore[call-arg]
 
 
 # noinspection PyPep8Naming
@@ -2178,24 +2197,13 @@ def make_persona_name(persona: CdEDBObject,
     For a full specification, which name variant should be used in which context, see
     the documentation page about "User Experience Conventions".
     """
-    display_name: str = persona.get('display_name', "")
-    given_names: str = persona['given_names']
+    forename = make_persona_forename(
+        persona, only_given_names=only_given_names, only_display_name=only_display_name,
+        given_and_display_names=given_and_display_names)
     ret = []
     if with_titles and persona.get('title'):
         ret.append(persona['title'])
-    if only_given_names:
-        ret.append(given_names)
-    elif only_display_name:
-        ret.append(display_name)
-    elif given_and_display_names:
-        if not display_name or display_name == given_names:
-            ret.append(given_names)
-        else:
-            ret.append(f"{given_names} ({display_name})")
-    elif display_name and display_name in given_names:
-        ret.append(display_name)
-    else:
-        ret.append(given_names)
+    ret.append(forename)
     if with_family_name:
         ret.append(persona['family_name'])
     if with_titles and persona.get('name_supplement'):
@@ -2295,7 +2303,7 @@ def process_dynamic_input(
             entry.update(additional)
             # apply the promised validation
             ret[anid] = check_validation(rs, type_, entry, field_prefix=field_prefix,
-                                         field_postfix=f"_{anid}")  # type: ignore
+                                         field_postfix=f"_{anid}")  # type: ignore[assignment]
 
     # extract the new entries which shall be created
     marker = 1
@@ -2311,7 +2319,7 @@ def process_dynamic_input(
             entry.update(additional)
             ret[-marker] = check_validation(
                 rs, type_, entry, field_prefix=field_prefix,
-                field_postfix=f"_{-marker}", creation=True)  # type: ignore
+                field_postfix=f"_{-marker}", creation=True)  # type: ignore[assignment]
         else:
             break
         marker += 1

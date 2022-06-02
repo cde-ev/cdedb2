@@ -115,12 +115,21 @@ class QuestionnaireUsages(enum.IntEnum):
 
 @enum.unique
 class EventPartGroupType(enum.IntEnum):
+    # Weak constraints that only produce warnings:
+    mutually_exclusive_participants = 1
+    mutually_exclusive_courses = 2
+    # Special type that imposes no constraints:
     Statistic = 100
 
     def get_icon(self) -> str:
         return {
             EventPartGroupType.Statistic: "chart-bar",
+            EventPartGroupType.mutually_exclusive_participants: "user-lock",
+            EventPartGroupType.mutually_exclusive_courses: "comment-slash",
         }[self]
+
+    def is_stats(self) -> bool:
+        return self == EventPartGroupType.Statistic
 
 
 @enum.unique

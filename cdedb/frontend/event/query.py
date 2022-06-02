@@ -5,619 +5,34 @@ The `EventQueryMixin` subclasses the `EventBaseFrontend` and provides endpoints 
 querying registrations, courses and lodgements.
 """
 import collections
-import datetime
-import enum
 import pprint
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Union
 
 import werkzeug.exceptions
 from werkzeug import Response
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
-from cdedb.common import (
-    AgeClasses, CdEDBObject, CdEDBObjectMap, EntitySorter, RequestState, deduct_years,
-    determine_age_class, get_localized_country_codes, n_, unwrap, xsorted,
+from cdedb.common import CdEDBObject, RequestState, determine_age_class, unwrap
+from cdedb.common.i18n import get_localized_country_codes
+from cdedb.common.n_ import n_
+from cdedb.common.query import (
+    Query, QueryConstraint, QueryOperators, QueryScope, QuerySpec, QuerySpecEntry,
 )
+from cdedb.common.query.defaults import (
+    generate_event_course_default_queries, generate_event_registration_default_queries,
+)
+from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.filter import enum_entries_filter
 from cdedb.frontend.common import (
     REQUESTdata, access, check_validation as check, event_guard,
     inspect_validation as inspect, periodic,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
-from cdedb.query import (
-    Query, QueryConstraint, QueryOperators, QueryOrder, QueryScope, QuerySpec,
-    QuerySpecEntry,
+from cdedb.frontend.event.query_stats import (
+    EventCourseStatistic, EventRegistrationInXChoiceGrouper,
+    EventRegistrationPartStatistic, EventRegistrationTrackStatistic,
 )
-from cdedb.query_defaults import (
-    generate_event_course_default_queries, generate_event_registration_default_queries,
-)
-
-RPS = const.RegistrationPartStati
-
-StatQueryAux = Tuple[List[str], List[QueryConstraint], List[QueryOrder]]
-
-
-# Helper functions that are frequently used when testing stats.
-def _is_participant(reg_part: CdEDBObject) -> bool:
-    return reg_part['status'] == RPS.participant
-
-
-# Helper functions to build query constraints frequently used by stats.
-def _status_constraint(part: CdEDBObject, status: RPS, negate: bool = False
-                       ) -> QueryConstraint:
-    return (
-        f"part{part['id']}.status",
-        QueryOperators.unequal if negate else QueryOperators.equal,
-        status.value
-    )
-
-
-def _participant_constraint(part: CdEDBObject) -> QueryConstraint:
-    return _status_constraint(part, RPS.participant)
-
-
-def _involved_constraint(part: CdEDBObject) -> QueryConstraint:
-    return (f"part{part['id']}.status", QueryOperators.oneof,
-            tuple(status.value for status in RPS if status.is_involved()))
-
-
-def _present_constraint(part: CdEDBObject) -> QueryConstraint:
-    return (f"part{part['id']}.status", QueryOperators.oneof,
-            tuple(status.value for status in RPS if status.is_present()))
-
-
-def _age_constraint(part: CdEDBObject, max_age: int, min_age: int = None
-                    ) -> QueryConstraint:
-    min_date = deduct_years(part['part_begin'], max_age)
-    if min_age is None:
-        return ('persona.birthday', QueryOperators.greater, min_date)
-    else:
-        # Add an offset of one, because `between` is inclusive on both ends.
-        min_date += datetime.timedelta(days=1)
-        max_date = deduct_years(part['part_begin'], min_age)
-        return ('persona.birthday', QueryOperators.between, (min_date, max_date))
-
-
-# Helper function to construct ordering for waitlist queries.
-def _waitlist_order(event: CdEDBObject, part: CdEDBObject) -> List[QueryOrder]:
-    ret = []
-    if field_id := part['waitlist_field']:
-        field_name = event['fields'][field_id]['field_name']
-        ret.append((f'reg_fields.xfield_{field_name}', True))
-    return ret + [('reg.payment', True), ('ctime.creation_time', True)]
-
-
-def merge_constraints(*constraints: QueryConstraint) -> Optional[QueryConstraint]:
-    """
-    Helper function to try to merge a collection of query constraints into a single one.
-
-    In order to be mergable all constraints must have the same `QueryOperator` and the
-    same value. All differing constraint fields are joined together, respecting order.
-
-    The fields are collected in a dict, with ensures uniqueness, while preserving the
-    original order, which sets don't.
-    """
-    fields: Dict[str, None] = {}
-    operators, values = set(), set()
-    for con in constraints:
-        field, op, value = con
-        fields[field] = None
-        operators.add(op)
-        values.add(value)
-    if len(operators) != 1 or len(values) != 1:
-        return None
-    return (",".join(fields), unwrap(operators), unwrap(values))
-
-
-# These enums each offer a collection of statistics for the stats page.
-# They implement a test and query building interface:
-# A `.test` method that takes the event data and a registrations, returning
-# a bool indicating whether the given registration fits that statistic.
-# A `.get_query` method that builds a `Query` object of the appropriate query scope
-# that will show all fitting entities for that statistic.
-# The enum member values are translatable strings to be used as labels for that
-# statistic. The order of member definition inidicates the order they will be displayed.
-
-@enum.unique
-class EventRegistrationPartStatistic(enum.Enum):
-    """This enum implements statistics for registration parts.
-
-    In addition to their string value, all members have an additional `.indent`
-    attribute, which specifies the level of indentation of that statistic.
-    """
-    indent: int
-
-    def __new__(cls, value: str, indent: int = 0) -> "EventRegistrationPartStatistic":
-        """Custom creation method for this enum.
-
-        Achieves that value and indentation of new members can be written using tuple
-        syntax. Indentation defaults to 0.
-        """
-        obj = object.__new__(cls)
-        obj._value_ = value
-        obj.indent = indent
-        return obj
-
-    pending = n_("Open Registrations")
-    paid = n_("Paid"), 1
-    participant = n_("Participants")
-    minors = n_("All minors"), 1
-    u18 = n_("U18"), 1
-    u16 = n_("U16"), 1
-    u14 = n_("U14"), 1
-    checked_in = n_("Checked-In"), 1
-    not_checked_in = n_("Not Checked-In"), 1
-    orgas = n_("Orgas"), 1
-    waitlist = n_("Waitinglist")
-    guest = n_("Guests")
-    involved = n_("Total Active Registrations")
-    not_paid = n_("Not Paid"), 1
-    orgas_not_paid = n_("thereof Orgas"), 2
-    no_parental_agreement = n_("Parental Consent Pending"), 1
-    present = n_("Present")
-    no_lodgement = n_("No Lodgement"), 1
-    cancelled = n_("Registration Cancelled")
-    rejected = n_("Registration Rejected")
-    total = n_("Total Registrations")
-
-    def test(self, event: CdEDBObject, reg: CdEDBObject, part_id: int) -> bool:
-        """
-        Test wether the given registration fits into this statistic for the given part.
-        """
-        part = reg['parts'][part_id]
-        if self == self.pending:
-            return part['status'] == RPS.applied
-        elif self == self.paid:
-            return part['status'] == RPS.applied and reg['payment']
-        elif self == self.participant:
-            return _is_participant(part)
-        elif self == self.minors:
-            return _is_participant(part) and part['age_class'].is_minor()
-        elif self == self.u18:
-            return _is_participant(part) and part['age_class'] == AgeClasses.u18
-        elif self == self.u16:
-            return _is_participant(part) and part['age_class'] == AgeClasses.u16
-        elif self == self.u14:
-            return _is_participant(part) and part['age_class'] == AgeClasses.u14
-        elif self == self.checked_in:
-            return _is_participant(part) and reg['checkin']
-        elif self == self.not_checked_in:
-            return _is_participant(part) and not reg['checkin']
-        elif self == self.orgas:
-            return _is_participant(part) and reg['persona_id'] in event['orgas']
-        elif self == self.waitlist:
-            return part['status'] == RPS.waitlist
-        elif self == self.guest:
-            return part['status'] == RPS.guest
-        elif self == self.involved:
-            return part['status'].is_involved()
-        elif self == self.not_paid:
-            return part['status'].has_to_pay() and not reg['payment']
-        elif self == self.orgas_not_paid:
-            return (
-                EventRegistrationPartStatistic.orgas.test(event, reg, part_id)
-                and EventRegistrationPartStatistic.not_paid.test(event, reg, part_id))
-        elif self == self.no_parental_agreement:
-            return (part['status'].is_involved() and part['age_class'].is_minor()
-                    and not reg['parental_agreement'])
-        elif self == self.present:
-            return part['status'].is_present()
-        elif self == self.no_lodgement:
-            return part['status'].is_present() and not part['lodgement_id']
-        elif self == self.cancelled:
-            return part['status'] == RPS.cancelled
-        elif self == self.rejected:
-            return part['status'] == RPS.rejected
-        elif self == self.total:
-            return part['status'] != RPS.not_applied
-        else:
-            raise RuntimeError(n_("Impossible."))
-
-    def test_part_group(self, event: CdEDBObject, reg: CdEDBObject, part_group_id: int
-                        ) -> bool:
-        """
-        Similar to the `test` method, but for determining whether the registration fits
-        this statistic for any of the parts in the given part group.
-        """
-        part_group = event['part_groups'][part_group_id]
-        return any(self.test(event, reg, part_id) for part_id in part_group['part_ids'])
-
-    def _get_query_aux(self, event: CdEDBObject, part_id: int) -> StatQueryAux:
-        """
-        Return fields of interest, constraints and order for this statistic for a part.
-        """
-        part = event['parts'][part_id]
-        if self == self.pending:
-            return ([], [_status_constraint(part, RPS.applied)], [])
-        elif self == self.paid:
-            return (
-                ['reg.payment'],
-                [
-                    _status_constraint(part, RPS.applied),
-                    ('reg.payment', QueryOperators.nonempty, None),
-                ],
-                []
-            )
-        elif self == self.participant:
-            return ([], [_participant_constraint(part)], [])
-        elif self == self.minors:
-            return (
-                ['persona.birthday'],
-                [_participant_constraint(part), _age_constraint(part, 18)],
-                []
-            )
-        elif self == self.u18:
-            return (
-                ['persona.birthday'],
-                [
-                    _participant_constraint(part),
-                    _age_constraint(part, 18, 16),
-                ],
-                []
-            )
-        elif self == self.u16:
-            return (
-                ['persona.birthday'],
-                [
-                    _participant_constraint(part),
-                    _age_constraint(part, 16, 14),
-                ],
-                []
-            )
-        elif self == self.u14:
-            return (
-                ['persona.birthday'],
-                [
-                    _participant_constraint(part),
-                    _age_constraint(part, 14),
-                ],
-                []
-            )
-        elif self == self.checked_in:
-            return (
-                ['reg.checkin'],
-                [
-                    _participant_constraint(part),
-                    ('reg.checkin', QueryOperators.nonempty, None),
-                ],
-                []
-            )
-        elif self == self.not_checked_in:
-            return (
-                [],
-                [
-                    _participant_constraint(part),
-                    ('reg.checkin', QueryOperators.empty, None),
-                ],
-                []
-            )
-        elif self == self.orgas:
-            return (
-                [],
-                [
-                    _participant_constraint(part),
-                    ('persona.id', QueryOperators.oneof, tuple(event['orgas'])),
-                ],
-                []
-            )
-        elif self == self.waitlist:
-            return (
-                ['reg.payment', 'ctime.creation_time'],
-                [_status_constraint(part, RPS.waitlist)],
-                _waitlist_order(event, part)
-            )
-        elif self == self.guest:
-            return ([], [_status_constraint(part, RPS.guest)], [])
-        elif self == self.involved:
-            return ([f"part{part['id']}.status"], [_involved_constraint(part)], [])
-        elif self == self.not_paid:
-            return (
-                [f"part{part['id']}.status"],
-                [
-                    _involved_constraint(part),
-                    ('reg.payment', QueryOperators.empty, None),
-                ],
-                []
-            )
-        elif self == self.orgas_not_paid:
-            return (
-                [f"part{part['id']}.status"],
-                [
-                    _participant_constraint(part),
-                    ('persona.id', QueryOperators.oneof, tuple(event['orgas'])),
-                    ('reg.payment', QueryOperators.empty, None),
-                ],
-                []
-            )
-        elif self == self.no_parental_agreement:
-            return (
-                [f"part{part['id']}.status"],
-                [
-                    _involved_constraint(part),
-                    _age_constraint(part, 18),
-                    ('reg.parental_agreement', QueryOperators.equal, False),
-                ],
-                []
-            )
-        elif self == self.present:
-            return ([f"part{part['id']}.status"], [_present_constraint(part)], [])
-        elif self == self.no_lodgement:
-            return (
-                [f"part{part['id']}.status"],
-                [
-                    _present_constraint(part),
-                    (f"part{part['id']}.lodgement_id", QueryOperators.empty, None),
-                ],
-                []
-            )
-        elif self == self.cancelled:
-            return (
-                ['reg.amount_paid'],
-                [_status_constraint(part, RPS.cancelled)],
-                []
-            )
-        elif self == self.rejected:
-            return (
-                ['reg.amount_paid'],
-                [_status_constraint(part, RPS.rejected)],
-                []
-            )
-        elif self == self.total:
-            return (
-                [f"part{part['id']}.status"],
-                [_status_constraint(part, RPS.not_applied, negate=True)],
-                []
-            )
-        else:
-            raise RuntimeError(n_("Impossible."))
-
-    def get_query(self, event: CdEDBObject, part_id: int) -> Query:
-        """Return a `Query` object for this statistic for the given part."""
-        query = Query(
-            QueryScope.registration,
-            QueryScope.registration.get_spec(event=event),
-            fields_of_interest=['reg.id', 'persona.given_names', 'persona.family_name',
-                                'persona.username'],
-            constraints=[],
-            order=[('persona.family_name', True), ('persona.given_names', True)]
-        )
-        fields, constraints, order = self._get_query_aux(event, part_id)
-        query.fields_of_interest.extend(fields)
-        query.constraints.extend(constraints)
-        # Prepend the specific order.
-        query.order = order + query.order
-        return query
-
-    def get_query_part_group(self, event: CdEDBObject, part_group_id: int
-                             ) -> Optional[Query]:
-        """
-        Similar to `get_query`, but return q `Query` object for this statistics for the
-        given part group.
-
-        This means that all the individual constraints for the individual parts need to
-        be merged together. This is not always possible. For example the constraints
-        for determining minor participants might differ between parts if these parts
-        begin at different dates.
-        """
-        query = Query(
-            QueryScope.registration,
-            QueryScope.registration.get_spec(event=event),
-            fields_of_interest=['reg.id', 'persona.given_names', 'persona.family_name',
-                                'persona.username'],
-            constraints=[],
-            order=[('persona.family_name', True), ('persona.given_names', True)]
-        )
-        all_fields, all_constraints = [], []
-        for part_id in xsorted(event['part_groups'][part_group_id]['part_ids']):
-            fields, constraints, _ = self._get_query_aux(event, part_id)
-            all_fields.extend(fields)
-            all_constraints.append(constraints)
-        for i in range(len(all_constraints[0])):
-            new_constraint = merge_constraints(*(clist[i] for clist in all_constraints))
-            # Make sure that the constraints could be merged and that the new constraint
-            # is part of the spec.
-            if new_constraint is None or new_constraint[0] not in query.spec:
-                return None
-            query.constraints.append(new_constraint)
-        return query
-
-
-@enum.unique
-class EventCourseStatistic(enum.Enum):
-    """This enum implements statistics for courses in course tracks."""
-    offered = n_("Course Offers")
-    cancelled = n_("Cancelled Courses")
-
-    def test(self, course: CdEDBObject, track_id: int) -> bool:
-        if self == self.offered:
-            return track_id in course['segments']
-        elif self == self.cancelled:
-            return (track_id in course['segments']
-                    and track_id not in course['active_segments'])
-        else:
-            raise RuntimeError(n_("Impossible."))
-
-    def _get_query_aux(self, track_id: int) -> StatQueryAux:
-        if self == self.offered:
-            return (
-                ['course.instructors'],
-                [(f"track{track_id}.is_offered", QueryOperators.equal, True)],
-                []
-            )
-        elif self == self.cancelled:
-            return (
-                ['course.instructors'],
-                [
-                    (f"track{track_id}.is_offered", QueryOperators.equal, True),
-                    (f"track{track_id}.takes_place", QueryOperators.equal, False),
-                ],
-                []
-            )
-        else:
-            raise RuntimeError(n_("Impossible."))
-
-    def get_query(self, event: CdEDBObject, track_id: int) -> Query:
-        query = Query(
-            QueryScope.event_course,
-            QueryScope.event_course.get_spec(event=event),
-            fields_of_interest=['course.course_id'],
-            constraints=[],
-            order=[('course.nr', True)]
-        )
-        fields, constraints, order = self._get_query_aux(track_id)
-        query.fields_of_interest.extend(fields)
-        query.constraints.extend(constraints)
-        # Prepend the specific order.
-        query.order = order + query.order
-        return query
-
-
-@enum.unique
-class EventRegistrationTrackStatistic(enum.Enum):
-    """This enum implements statistics for registration tracks."""
-    all_instructors = n_("(Potential) Instructor")
-    instructors = n_("Instructor")
-    attendees = n_("Attendees")
-    no_course = n_("No Course")
-
-    def test(self, event: CdEDBObject, reg: CdEDBObject, track_id: int) -> bool:
-        track = reg['tracks'][track_id]
-        part = reg['parts'][event['tracks'][track_id]['part_id']]
-
-        # All checks require the registration to be a participant in the given track.
-        if part['status'] != RPS.participant:
-            return False
-
-        if self == self.all_instructors:
-            return track['course_instructor']
-        elif self == self.instructors:
-            return (track['course_id']
-                    and track['course_id'] == track['course_instructor'])
-        elif self == self.attendees:
-            return (track['course_id']
-                    and track['course_id'] != track['course_instructor'])
-        elif self == self.no_course:
-            return not track['course_id'] and reg['persona_id'] not in event['orgas']
-        else:
-            raise RuntimeError(n_("Impossible."))
-
-    def _get_query_aux(self, event: CdEDBObject, track_id: int) -> StatQueryAux:
-        track = event['tracks'][track_id]
-        part = event['parts'][track['part_id']]
-        if self == self.all_instructors:
-            return (
-                [f"track{track_id}.course_id", f"track{track_id}.course_instructor"],
-                [
-                    _participant_constraint(part),
-                    (f"track{track_id}.course_instructor",
-                     QueryOperators.nonempty, None),
-                ],
-                [(f"course_instructor{track_id}.nr", True)]
-            )
-        elif self == self.instructors:
-            return (
-                [f"track{track_id}.course_instructor"],
-                [
-                    _participant_constraint(part),
-                    (f"track{track_id}.is_course_instructor",
-                     QueryOperators.equal, True),
-                ],
-                [(f"course_instructor{track_id}.nr", True)]
-            )
-        elif self == self.attendees:
-            return (
-                [f"track{track_id}.course_id"],
-                [
-                    _participant_constraint(part),
-                    (f"track{track_id}.course_id", QueryOperators.nonempty, None),
-                    (f"track{track_id}.is_course_instructor",
-                     QueryOperators.equalornull, False),
-                ],
-                [(f"course{track_id}.nr", True)]
-            )
-        elif self == self.no_course:
-            return (
-                [],
-                [
-                    _participant_constraint(part),
-                    (f"track{track_id}.course_id", QueryOperators.empty, None),
-                    ('persona.id', QueryOperators.otherthan, event['orgas']),
-                ],
-                []
-            )
-        else:
-            raise RuntimeError(n_("Impossible."))
-
-    def get_query(self, event: CdEDBObject, track_id: int) -> Query:
-        query = Query(
-            QueryScope.registration,
-            QueryScope.registration.get_spec(event=event),
-            fields_of_interest=['reg.id', 'persona.given_names', 'persona.family_name',
-                                'persona.username'],
-            constraints=[],
-            order=[('persona.family_name', True), ('persona.given_names', True)]
-        )
-        fields, constraints, order = self._get_query_aux(event, track_id)
-        query.fields_of_interest.extend(fields)
-        query.constraints.extend(constraints)
-        # Prepend the specific order.
-        query.order = order + query.order
-        return query
-
-
-class EventRegistrationInXChoiceGrouper:
-    """This class helps group registrations by their course choices for each track.
-
-    Instantiating the `EventRegistrationInXChoiceGrouper` will populate a dictionary
-    accessible via the `choice_track_map` attribute, mapping choice rank to a mapping
-    of track id to list of regisration ids.
-
-    Iterating over the outer mapping will yield ranks and row data to be displayed on
-    the stats page.
-    """
-    def __init__(self, event: CdEDBObject, regs: CdEDBObjectMap):
-        tracks = event['tracks']
-        max_choices = max(track['num_choices'] for track in tracks.values())
-        self.choice_track_map: Dict[int, Dict[int, Optional[List[int]]]] = {
-            x: {
-                track_id: [] if track['num_choices'] > x else None
-                for track_id, track in tracks.items()
-            }
-            for x in range(max_choices)
-        }
-
-        for reg_id, reg in regs.items():
-            for track_id, track in tracks.items():
-                for x in range(track['num_choices']):
-                    if self.test(event, reg, track_id, x):
-                        target = self.choice_track_map[x][track_id]
-                        assert target is not None
-                        target.append(reg_id)
-                        break
-
-    @staticmethod
-    def test(event: CdEDBObject, reg: CdEDBObject, track_id: int, x: int) -> bool:
-        course_track = event['tracks'][track_id]
-        event_part = event['parts'][course_track['part_id']]
-        part = reg['parts'][event_part['id']]
-        track = reg['tracks'][track_id]
-        return (_is_participant(part) and track['course_id']
-                and len(track['choices']) > x
-                and track['choices'][x] == track['course_id'])
-
-    def get_query(self, event: CdEDBObject, track_id: int, x: int) -> Query:
-        return Query(
-            QueryScope.registration,
-            QueryScope.registration.get_spec(event=event),
-            fields_of_interest=['reg.id', 'persona.given_names', 'persona.family_name',
-                                'persona.username', f"track{track_id}.course_id"],
-            constraints=[
-                ('reg.id', QueryOperators.oneof, self.choice_track_map[x][track_id]),
-            ],
-            order=[(f"course{track_id}.nr", True), ('persona.family_name', True),
-                   ('persona.given_names', True)]
-        )
 
 
 class EventQueryMixin(EventBaseFrontend):
@@ -627,6 +42,12 @@ class EventQueryMixin(EventBaseFrontend):
         """Present an overview of the basic stats."""
         event_parts = rs.ambience['event']['parts']
         tracks = rs.ambience['event']['tracks']
+        stat_part_groups = {
+            part_group_id: part_group
+            for part_group_id, part_group in rs.ambience['event']['part_groups'].items()
+            if part_group['constraint_type'] == const.EventPartGroupType.Statistic
+        }
+
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         course_ids = self.eventproxy.list_courses(rs, event_id)
@@ -640,45 +61,80 @@ class EventQueryMixin(EventBaseFrontend):
                     personas[reg['persona_id']]['birthday'],
                     event_parts[part_id]['part_begin'])
 
-        per_part_statistics: Dict[EventRegistrationPartStatistic, Dict[int, int]]
+        per_part_statistics: Dict[
+            EventRegistrationPartStatistic, Dict[str, Dict[int, Set[int]]]]
         per_part_statistics = collections.OrderedDict()
         for reg_stat in EventRegistrationPartStatistic:
             per_part_statistics[reg_stat] = {
-                part_id: sum(
-                    1 for reg in registrations.values()
-                    if reg_stat.test(rs.ambience['event'], reg, part_id))
-                for part_id in event_parts
+                'parts': {
+                    part_id: set(
+                        reg['id'] for reg in registrations.values()
+                        if reg_stat.test(rs.ambience['event'], reg, part_id))
+                    for part_id in event_parts
+                },
+                'part_groups': {
+                    part_group_id: set(
+                        reg['id'] for reg in registrations.values()
+                        if reg_stat.test_part_group(
+                            rs.ambience['event'], reg, part_group_id))
+                    for part_group_id in stat_part_groups
+                }
             }
-            per_part_statistics[reg_stat].update({
-                -part_group_id: sum(
-                    1 for reg in registrations.values()
-                    if reg_stat.test_part_group(
-                        rs.ambience['event'], reg, part_group_id))
-                for part_group_id in rs.ambience['event']['part_groups']
-            })
         # Needed for formatting in template. We do it here since it's ugly in jinja
         # without list comprehension.
         per_part_max_indent = max(stat.indent for stat in per_part_statistics)
 
         per_track_statistics: Dict[
             Union[EventRegistrationTrackStatistic, EventCourseStatistic],
-            Dict[int, int]]
+            Dict[str, Dict[int, Set[int]]]]
         per_track_statistics = collections.OrderedDict()
         grouper = None
         if tracks:
             for course_stat in EventCourseStatistic:
                 per_track_statistics[course_stat] = {
-                    track_id: sum(
-                        1 for course in courses.values()
-                        if course_stat.test(course, track_id))
-                    for track_id in tracks
+                    'tracks': {
+                        track_id: set(
+                            course['id'] for course in courses.values()
+                            if course_stat.test(rs.ambience['event'], course, track_id))
+                        for track_id in tracks
+                    },
+                    'parts': {
+                        part_id: set(
+                            course['id'] for course in courses.values()
+                            if course_stat.test_part(
+                                rs.ambience['event'], course, part_id))
+                        for part_id in event_parts
+                    },
+                    'part_groups': {
+                        part_group_id: set(
+                            course['id'] for course in courses.values()
+                            if course_stat.test_part_group(
+                                rs.ambience['event'], course, part_group_id))
+                        for part_group_id in stat_part_groups
+                    }
                 }
             for reg_track_stat in EventRegistrationTrackStatistic:
                 per_track_statistics[reg_track_stat] = {
-                    track_id: sum(
-                        1 for reg in registrations.values()
-                        if reg_track_stat.test(rs.ambience['event'], reg, track_id))
-                    for track_id in tracks
+                    'tracks': {
+                        track_id: set(
+                            reg['id'] for reg in registrations.values()
+                            if reg_track_stat.test(rs.ambience['event'], reg, track_id))
+                        for track_id in tracks
+                    },
+                    'parts': {
+                        part_id: set(
+                            reg['id'] for reg in registrations.values()
+                            if reg_track_stat.test_part(
+                                rs.ambience['event'], reg, part_id))
+                        for part_id in event_parts
+                    },
+                    'part_groups': {
+                        part_group_id: set(
+                            reg['id'] for reg in registrations.values()
+                            if reg_track_stat.test_part_group(
+                                rs.ambience['event'], reg, part_group_id))
+                        for part_group_id in stat_part_groups
+                    }
                 }
 
             grouper = EventRegistrationInXChoiceGrouper(
@@ -783,7 +239,7 @@ class EventQueryMixin(EventBaseFrontend):
                 self.eventproxy.get_event_queries(rs, event_id, query_ids=(query_id,))
                 or None)
             if stored_query:
-                query_input = stored_query.serialize()
+                query_input = stored_query.serialize_to_url()
             code = self.eventproxy.delete_event_query(rs, query_id)
             rs.notify_return_code(code)
         if query_scope and query_scope.get_target():
@@ -827,11 +283,11 @@ class EventQueryMixin(EventBaseFrontend):
             query = check(rs, vtypes.QueryInput, query_input,
                           "query", spec=spec, allow_empty=False)
 
-        tracks = rs.ambience['event']['tracks']
-        selection_default = ["course.shortname", ]
-        for col in ("is_offered", "takes_place", "attendees"):
-            selection_default += list("track{}.{}".format(t_id, col)
-                                      for t_id in tracks)
+        selection_default = ["course.nr", "course.shortname", "course.instructors"]
+        for col in ("takes_place",):
+            selection_default.extend(
+                f"track{t_id}.{col}" for t_id in rs.ambience['event']['tracks'])
+
         stored_queries = self.eventproxy.get_event_queries(
             rs, event_id, scopes=(scope,))
         default_queries = generate_event_course_default_queries(

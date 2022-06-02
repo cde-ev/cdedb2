@@ -10,18 +10,17 @@ import magic
 import werkzeug.exceptions
 from werkzeug import Response
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
-from cdedb.common import (
-    REALM_SPECIFIC_GENESIS_FIELDS, CdEDBObject, GenesisDecision, RequestState,
-    merge_dicts, n_, now,
-)
+from cdedb.common import CdEDBObject, GenesisDecision, RequestState, merge_dicts, now
+from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
+from cdedb.common.n_ import n_
+from cdedb.common.validation import GENESIS_CASE_EXPOSED_FIELDS, PERSONA_COMMON_FIELDS
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access, check_validation as check,
     periodic,
 )
 from cdedb.frontend.core.base import CoreBaseFrontend
-from cdedb.validation import GENESIS_CASE_EXPOSED_FIELDS, PERSONA_COMMON_FIELDS
 
 # Name of each realm's option in the genesis form
 GenesisRealmOptionName = collections.namedtuple(

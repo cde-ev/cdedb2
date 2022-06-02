@@ -19,8 +19,8 @@ from typing import Collection, List, Optional, Tuple
 
 import psycopg2.extensions
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_array_validation as affirm_array,
     affirm_validation as affirm,
@@ -28,13 +28,17 @@ from cdedb.backend.common import (
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.common import (
     PARSE_OUTPUT_DATEFORMAT, CdEDBLog, CdEDBObject, DefaultReturnCode, LineResolutions,
-    PrivilegeError, QuotaException, RequestState, glue, implying_realms, make_proxy, n_,
-    unwrap,
+    RequestState, glue, make_proxy, unwrap,
+)
+from cdedb.common.exceptions import PrivilegeError, QuotaException
+from cdedb.common.n_ import n_
+from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
+from cdedb.common.roles import implying_realms
+from cdedb.common.validation import (
+    PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS, is_optional,
 )
 from cdedb.database.connection import Atomizer
 from cdedb.filter import money_filter
-from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
-from cdedb.validation import PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS, is_optional
 
 
 class CdEBaseBackend(AbstractBackend):
@@ -239,9 +243,8 @@ class CdEBaseBackend(AbstractBackend):
             n_("num_members"), n_("num_of_searchable"), n_("num_of_trial"),
             n_("num_of_printed_expuls"), n_("num_ex_members"), n_("num_all")))
 
-        # TODO: improve this type annotation with a new mypy version.
         def query_stats(select: str, condition: str, order: str, limit: int = 0
-                        ) -> OrderedDict:  # type: ignore
+                        ) -> OrderedDict[str, int]:
             query = (f"SELECT COUNT(*) AS num, {select} AS datum"
                      f" FROM core.personas"
                      f" WHERE is_member = True AND {condition} IS NOT NULL"

@@ -4,19 +4,29 @@
 
 import collections
 from datetime import datetime
-from typing import Any, Collection, Dict, Optional, Set
+from typing import Any, Collection, Dict, Optional
 
 import werkzeug
 from subman.exceptions import SubscriptionError
 from subman.machine import SubscriptionAction
 from werkzeug import Response
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.common import (
+    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, RequestState, merge_dicts, now,
+    unwrap,
+)
+from cdedb.common.exceptions import PrivilegeError
+from cdedb.common.fields import (
     FULL_MOD_REQUIRING_FIELDS, LOG_FIELDS_COMMON, MOD_ALLOWED_FIELDS,
-    RESTRICTED_MOD_ALLOWED_FIELDS, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
-    EntitySorter, PrivilegeError, RequestState, merge_dicts, n_, now, unwrap, xsorted,
+    RESTRICTED_MOD_ALLOWED_FIELDS,
+)
+from cdedb.common.n_ import n_
+from cdedb.common.query import QueryScope
+from cdedb.common.sorting import EntitySorter, xsorted
+from cdedb.common.validation import (
+    ALL_MAILINGLIST_FIELDS, PERSONA_FULL_ML_CREATION, filter_none,
 )
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
@@ -26,10 +36,6 @@ from cdedb.frontend.common import (
 )
 from cdedb.ml_type_aux import (
     ADDITIONAL_TYPE_FIELDS, TYPE_MAP, MailinglistGroup, get_type,
-)
-from cdedb.query import QueryScope
-from cdedb.validation import (
-    ALL_MAILINGLIST_FIELDS, PERSONA_FULL_ML_CREATION, filter_none,
 )
 
 
@@ -339,7 +345,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
         relevant_mls = self.mlproxy.list_mailinglists(rs, active_only=False,
                                                       managed='managed')
-        relevant_set: Set[vtypes.ID] = set(relevant_mls)  # type: ignore
+        relevant_set = set(relevant_mls)
         if not self.is_admin(rs):
             if db_mailinglist_ids is None:
                 db_mailinglist_ids = relevant_set

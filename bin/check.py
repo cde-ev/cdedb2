@@ -19,11 +19,19 @@ sys.path.append(str(root))
 os.chdir(root)
 
 from bin.check_utils import MyTextTestResult, MyTextTestRunner
+from bin.escape_fuzzing import work as xss_check
 
+import tests.backend_tests as backend_tests
+import tests.frontend_tests as frontend_tests
+import tests.ldap_tests as ldap_tests
+import tests.other_tests as other_tests
 from cdedb.cli.database import create_database, populate_database
-from cdedb.cli.storage import create_log, create_storage, populate_storage
+from cdedb.cli.storage import (
+    create_log, create_storage, populate_sample_event_keepers, populate_storage,
+)
 from cdedb.cli.util import is_docker
 from cdedb.config import SecretsConfig, TestConfig, set_configpath
+from tests.common import BasicTest
 
 
 class CdEDBTestLock:
@@ -123,11 +131,6 @@ def run_application_tests(testpatterns: List[str] = None, *,
     create_database(conf, secrets)
     populate_database(conf, secrets)
 
-    # we need to setup the environment before we can import from cdedb or tests module
-    import tests.backend_tests as backend_tests  # pylint: disable=import-outside-toplevel
-    import tests.frontend_tests as frontend_tests  # pylint: disable=import-outside-toplevel
-    import tests.other_tests as other_tests  # pylint: disable=import-outside-toplevel
-
     # load all tests which are not meant to be run separately (f.e. the ldap tests)
     test_modules = [backend_tests, frontend_tests, other_tests]
     test_suite = _load_tests(testpatterns, test_modules)
@@ -148,23 +151,9 @@ def run_xss_tests(*, verbose: bool = False) -> int:
     create_log(conf)
     create_storage(conf)
     populate_storage(conf)
+    populate_sample_event_keepers(conf)
     create_database(conf, secrets)
     populate_database(conf, secrets, xss=True)
-
-    # we need to setup the environment before we can import from cdedb or tests module
-    from bin.escape_fuzzing import (  # pylint: disable=import-outside-toplevel
-        work as xss_check,
-    )
-
-    from cdedb.backend.entity_keeper import EntityKeeper
-    from tests.common import BasicTest
-
-    # setup the event keepers
-    max_event_id = len(BasicTest.get_sample_data('event.events'))
-    keeper = EntityKeeper(conf, 'event_keeper')
-    for event_id in range(1, max_event_id + 1):
-        keeper.init(event_id)
-        keeper.commit(event_id, "", "Initialer Commit.")
 
     ret = xss_check(
         conf["XSS_OUTDIR"], verbose=verbose, payload=conf["XSS_PAYLOAD"],
@@ -196,9 +185,6 @@ def run_ldap_tests(testpatterns: List[str] = None, *, verbose: bool = False) -> 
         subprocess.run(
             ["make", "ldap-update-full", f"DATABASE_NAME={conf['CDB_DATABASE_NAME']}"],
             check=True, stdout=subprocess.DEVNULL)
-
-    # we need to setup the environment before we can import from cdedb or tests module
-    import tests.ldap_tests as ldap_tests  # pylint: disable=import-outside-toplevel
 
     test_suite = _load_tests(testpatterns, [ldap_tests])
 

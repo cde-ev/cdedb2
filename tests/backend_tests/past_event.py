@@ -6,7 +6,8 @@ import datetime
 import pytz
 
 import cdedb.database.constants as const
-from cdedb.common import nearly_now, xsorted
+from cdedb.common import nearly_now
+from cdedb.common.sorting import xsorted
 from tests.common import BackendTest, as_users
 
 

@@ -8,29 +8,32 @@ for managing registrations both by orgas and participants.
 import csv
 import datetime
 import decimal
+import io
 import re
 from collections import OrderedDict
-from typing import Collection, Dict, Optional, Tuple, Union
+from typing import Collection, Dict, Optional, Tuple
 
+import segno.helpers
 import werkzeug.exceptions
 from werkzeug import Response
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, EntitySorter, RequestState, build_msg,
-    determine_age_class, diacritic_patterns, get_hash, merge_dicts, n_, now, unwrap,
-    xsorted,
+    CdEDBObject, CdEDBObjectMap, RequestState, build_msg, determine_age_class,
+    diacritic_patterns, get_hash, merge_dicts, now, unwrap,
 )
+from cdedb.common.n_ import n_
+from cdedb.common.query import Query, QueryOperators, QueryScope
+from cdedb.common.sorting import EntitySorter, xsorted
+from cdedb.common.validation.types import VALIDATOR_LOOKUP
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
-    CustomCSVDialect, REQUESTdata, REQUESTfile, TransactionObserver, access,
+    CustomCSVDialect, Headers, REQUESTdata, REQUESTfile, TransactionObserver, access,
     cdedbid_filter, check_validation_optional as check_optional, event_guard,
     inspect_validation as inspect, make_event_fee_reference, request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
-from cdedb.query import Query, QueryOperators, QueryScope
-from cdedb.validationtypes import VALIDATOR_LOOKUP
 
 
 class EventRegistrationMixin(EventBaseFrontend):
@@ -169,14 +172,13 @@ class EventRegistrationMixin(EventBaseFrontend):
                 subject = "Überweisung für {} eingetroffen".format(
                     rs.ambience['event']['title'])
                 for persona in personas.values():
-                    headers: Dict[str, Union[str, Collection[str]]] = {
+                    headers: Headers = {
                         'To': (persona['username'],),
                         'Subject': subject,
                     }
                     if rs.ambience['event']['orga_address']:
                         headers['Reply-To'] = rs.ambience['event']['orga_address']
-                    self.do_mail(rs, "transfer_received", headers,
-                                 {'persona': persona})
+                    self.do_mail(rs, "transfer_received", headers, {'persona': persona})
             return success, number
 
     @access("event", modi={"POST"})
@@ -321,25 +323,24 @@ class EventRegistrationMixin(EventBaseFrontend):
         tracks = event['tracks']
         standard_params: vtypes.TypeMapping = {
             "mixed_lodging": bool,
-            "notes": Optional[str],  # type: ignore
-            "list_consent": bool
+            "notes": Optional[str],  # type: ignore[dict-item]
+            "list_consent": bool,
+            **({"parts": Collection[int]} if parts is None else {}),
         }
-        if parts is None:
-            standard_params["parts"] = Collection[int]  # type: ignore
         standard = request_extractor(rs, standard_params)
         if parts is not None:
             standard['parts'] = tuple(
                 part_id for part_id, entry in parts.items()
                 if const.RegistrationPartStati(entry['status']).is_involved())
         choice_params: vtypes.TypeMapping = {
-            f"course_choice{track_id}_{i}": Optional[vtypes.ID]  # type: ignore
+            f"course_choice{track_id}_{i}": Optional[vtypes.ID]  # type: ignore[misc]
             for part_id in standard['parts']
             for track_id in event['parts'][part_id]['tracks']
             for i in range(event['tracks'][track_id]['num_choices'])
         }
         choices = request_extractor(rs, choice_params)
         instructor_params: vtypes.TypeMapping = {
-            f"course_instructor{track_id}": Optional[vtypes.ID]  # type: ignore
+            f"course_instructor{track_id}": Optional[vtypes.ID]  # type: ignore[misc]
             for part_id in standard['parts']
             for track_id in event['parts'][part_id]['tracks']
         }
@@ -475,23 +476,17 @@ class EventRegistrationMixin(EventBaseFrontend):
     @access("event")
     def registration_status(self, rs: RequestState, event_id: int) -> Response:
         """Present current state of own registration."""
-        reg_list = self.eventproxy.list_registrations(
-            rs, event_id, persona_id=rs.user.persona_id)
-        if not reg_list:
+        payment_data = self._get_payment_data(rs, event_id)
+        if not payment_data:
             rs.notify("warning", n_("Not registered for event."))
             return self.redirect(rs, "event/show_event")
-        registration_id = unwrap(reg_list.keys())
-        registration = self.eventproxy.get_registration(rs, registration_id)
-        persona = self.coreproxy.get_event_user(
-            rs, rs.user.persona_id, event_id)
+        persona = payment_data.pop('persona')
+        registration = payment_data.pop('registration')
+
         age = determine_age_class(
             persona['birthday'], rs.ambience['event']['begin'])
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
-        meta_info = self.coreproxy.get_meta_info(rs)
-        reference = make_event_fee_reference(persona, rs.ambience['event'])
-        fee = self.eventproxy.calculate_fee(rs, registration_id)
-        semester_fee = self.conf["MEMBERSHIP_FEE"]
         part_order = xsorted(
             registration['parts'].keys(),
             key=lambda anid:
@@ -502,11 +497,12 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs, event_id, (const.QuestionnaireUsages.registration,)))
         waitlist_position = self.eventproxy.get_waitlist_position(
             rs, event_id, persona_id=rs.user.persona_id)
+
         return self.render(rs, "registration/registration_status", {
             'registration': registration, 'age': age, 'courses': courses,
-            'meta_info': meta_info, 'fee': fee, 'semester_fee': semester_fee,
-            'reg_questionnaire': reg_questionnaire, 'reference': reference,
+            'reg_questionnaire': reg_questionnaire,
             'waitlist_position': waitlist_position,
+            **payment_data
         })
 
     @access("event")
@@ -634,10 +630,14 @@ class EventRegistrationMixin(EventBaseFrontend):
         fee = self.eventproxy.calculate_fee(rs, registration_id)
         waitlist_position = self.eventproxy.get_waitlist_position(
             rs, event_id, persona_id=persona['id'])
+        constraint_violations = self.get_constraint_violations(
+            rs, event_id, registration_id=registration_id, course_id=-1)
         return self.render(rs, "registration/show_registration", {
             'persona': persona, 'age': age, 'courses': courses,
             'lodgements': lodgements, 'meta_info': meta_info, 'fee': fee,
             'reference': reference, 'waitlist_position': waitlist_position,
+            'mep_violations': constraint_violations['mep_violations'],
+            'violation_severity': constraint_violations['max_severity'],
         })
 
     @access("event")
@@ -740,34 +740,34 @@ class EventRegistrationMixin(EventBaseFrontend):
         # Extract parameters from request
         tracks = event['tracks']
         reg_params: vtypes.TypeMapping = {
-            "reg.notes": Optional[str],  # type: ignore
-            "reg.orga_notes": Optional[str],  # type: ignore
-            "reg.payment": Optional[datetime.date],  # type: ignore
+            "reg.notes": Optional[str],  # type: ignore[dict-item]
+            "reg.orga_notes": Optional[str],  # type: ignore[dict-item]
+            "reg.payment": Optional[datetime.date],  # type: ignore[dict-item]
             "reg.amount_paid": vtypes.NonNegativeDecimal,
             "reg.parental_agreement": bool,
             "reg.mixed_lodging": bool,
-            "reg.checkin": Optional[datetime.datetime],  # type: ignore
+            "reg.checkin": Optional[datetime.datetime],  # type: ignore[dict-item]
             "reg.list_consent": bool,
         }
         part_params: vtypes.TypeMapping = {}
         for part_id in event['parts']:
-            part_params.update({  # type: ignore
+            part_params.update({  # type: ignore[attr-defined]
                 f"part{part_id}.status": const.RegistrationPartStati,
                 f"part{part_id}.lodgement_id": Optional[vtypes.ID],
                 f"part{part_id}.is_camping_mat": bool
             })
         track_params: vtypes.TypeMapping = {}
         for track_id, track in tracks.items():
-            track_params.update({  # type: ignore
+            track_params.update({  # type: ignore[attr-defined]
                 f"track{track_id}.{key}": Optional[vtypes.ID]
                 for key in ("course_id", "course_instructor")
             })
-            track_params.update({  # type: ignore
+            track_params.update({  # type: ignore[attr-defined]
                 f"track{track_id}.course_choice_{i}": Optional[vtypes.ID]
                 for i in range(track['num_choices'])
             })
         field_params: vtypes.TypeMapping = {
-            f"fields.{field['field_name']}": Optional[  # type: ignore
+            f"fields.{field['field_name']}": Optional[  # type: ignore[misc]
                 VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]  # noqa: F821
             for field in event['fields'].values()
             if field['association'] == const.FieldAssociations.registration
@@ -776,7 +776,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         raw_reg = request_extractor(rs, filter_parameters(reg_params))
         if do_real_persona_id:
             raw_reg.update(request_extractor(rs, filter_parameters({
-                "reg.real_persona_id": Optional[vtypes.CdedbID]  # type: ignore
+                "reg.real_persona_id": Optional[vtypes.CdedbID]  # type: ignore[dict-item]
             })))
         raw_parts = request_extractor(rs, filter_parameters(part_params))
         raw_tracks = request_extractor(rs, filter_parameters(track_params))
@@ -1081,7 +1081,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             (("reg.id", QueryOperators.oneof, reg_ids),),
             (("persona.family_name", True), ("persona.given_names", True),)
         )
-        return self.redirect(rs, scope.get_target(), query.serialize())
+        return self.redirect(rs, scope.get_target(), query.serialize_to_url())
 
     @access("event")
     @event_guard(check_offline=True)
@@ -1146,3 +1146,59 @@ class EventRegistrationMixin(EventBaseFrontend):
         code = self.eventproxy.set_registration(rs, new_reg, "Eingecheckt.")
         rs.notify_return_code(code)
         return self.redirect(rs, 'event/checkin', {'part_ids': part_ids})
+
+    def _get_payment_data(self, rs: RequestState, event_id: int
+                          ) -> Optional[CdEDBObject]:
+        reg_list = self.eventproxy.list_registrations(
+            rs, event_id, persona_id=rs.user.persona_id)
+        if not reg_list:
+            return None
+        registration_id = unwrap(reg_list.keys())
+        registration = self.eventproxy.get_registration(rs, registration_id)
+        persona = self.coreproxy.get_event_user(rs, rs.user.persona_id, event_id)
+
+        meta_info = self.coreproxy.get_meta_info(rs)
+        reference = make_event_fee_reference(persona, rs.ambience['event'])
+        fee = self.eventproxy.calculate_fee(rs, registration_id)
+        to_pay = fee - registration['amount_paid']
+
+        return {
+            'registration': registration, 'persona': persona,
+            'meta_info': meta_info, 'reference': reference, 'to_pay': to_pay,
+            'iban': rs.ambience['event']['iban'], 'fee': fee,
+            'semester_fee': self.conf['MEMBERSHIP_FEE']
+        }
+
+    @access("event")
+    def registration_fee_qr(self, rs: RequestState, event_id: int) -> Response:
+        payment_data = self._get_payment_data(rs, event_id)
+        if not payment_data:
+            return self.redirect(rs, "event/show_event")
+        qrcode = self._registration_fee_qr(payment_data)
+        if not qrcode:
+            return self.redirect(rs, "event/show_event")
+
+        buffer = io.BytesIO()
+        qrcode.save(buffer, kind='svg', scale=4)
+
+        return self.send_file(rs, afile=buffer, mimetype="image/svg+xml")
+
+    @staticmethod
+    def _registration_fee_qr_data(payment_data: CdEDBObject) -> Optional[CdEDBObject]:
+        if not payment_data['iban']:
+            return None
+        # Ensure that the "free-"text parts are not too long. The exact size is limited
+        # by third parties.
+        return {
+            'name': payment_data['meta_info']['CdE_Konto_Inhaber'][:70],
+            'text': payment_data['reference'][:140],
+            'amount': payment_data['to_pay'],
+            'iban': payment_data['iban'],
+            'bic': payment_data['meta_info']['CdE_Konto_BIC'],
+        }
+
+    def _registration_fee_qr(self, payment_data: CdEDBObject) -> Optional[segno.QRCode]:
+        data = self._registration_fee_qr_data(payment_data)
+        if not data:
+            return None
+        return segno.helpers.make_epc_qr(**data)

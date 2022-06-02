@@ -4,6 +4,7 @@
 
 import collections
 import datetime
+import io
 import itertools
 import operator
 import pathlib
@@ -12,38 +13,46 @@ import tempfile
 from typing import Any, Collection, Dict, List, Optional, Set, Tuple
 
 import magic
-import qrcode
-import qrcode.image.svg
-import vobject
+import segno
+import segno.helpers
 import werkzeug.exceptions
 from subman.machine import SubscriptionPolicy
 from werkzeug import Response
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    ADMIN_KEYS, ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, LOG_FIELDS_COMMON,
-    META_INFO_FIELDS, REALM_ADMINS, REALM_INHERITANCE, REALM_SPECIFIC_GENESIS_FIELDS,
-    ArchiveError, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, EntitySorter,
-    PrivilegeError, Realm, RequestState, extract_roles, format_country_code,
-    get_persona_fields_by_realm, implied_realms, merge_dicts, n_, now, pairwise,
-    sanitize_filename, unwrap, xsorted,
+    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Realm, RequestState, merge_dicts,
+    now, pairwise, sanitize_filename, unwrap,
 )
-from cdedb.filter import date_filter, enum_entries_filter, markdown_parse_safe
-from cdedb.frontend.common import (
-    AbstractFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, TransactionObserver,
-    access, basic_redirect, calculate_db_logparams, calculate_loglinks,
-    check_validation as check, check_validation_optional as check_optional,
-    inspect_validation as inspect, make_membership_fee_reference, make_persona_name,
-    periodic, request_dict_extractor, request_extractor,
+from cdedb.common.exceptions import ArchiveError, PrivilegeError
+from cdedb.common.fields import (
+    LOG_FIELDS_COMMON, META_INFO_FIELDS, REALM_SPECIFIC_GENESIS_FIELDS,
+    get_persona_fields_by_realm,
 )
-from cdedb.ml_type_aux import MailinglistGroup
-from cdedb.query import Query, QueryOperators, QueryScope, QuerySpecEntry
-from cdedb.validation import (
+from cdedb.common.i18n import format_country_code
+from cdedb.common.n_ import n_
+from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
+from cdedb.common.roles import (
+    ADMIN_KEYS, ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, REALM_ADMINS,
+    REALM_INHERITANCE, extract_roles, implied_realms,
+)
+from cdedb.common.sorting import EntitySorter, xsorted
+from cdedb.common.validation import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
     PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS,
 )
-from cdedb.validationtypes import CdedbID
+from cdedb.common.validation.types import CdedbID
+from cdedb.filter import enum_entries_filter, markdown_parse_safe
+from cdedb.frontend.common import (
+    AbstractFrontend, Headers, REQUESTdata, REQUESTdatadict, REQUESTfile,
+    TransactionObserver, access, basic_redirect, calculate_db_logparams,
+    calculate_loglinks, check_validation as check,
+    check_validation_optional as check_optional, inspect_validation as inspect,
+    make_membership_fee_reference, make_persona_name, periodic, request_dict_extractor,
+    request_extractor,
+)
+from cdedb.ml_type_aux import MailinglistGroup
 
 # Name of each realm
 USER_REALM_NAMES = {
@@ -191,7 +200,7 @@ class CoreBaseFrontend(AbstractFrontend):
         """Change the meta info constants."""
         info = self.coreproxy.get_meta_info(rs)
         data_params: vtypes.TypeMapping = {
-            key: Optional[str]  # type: ignore
+            key: Optional[str]  # type: ignore[misc]
             for key in META_INFO_FIELDS
         }
         data = request_extractor(rs, data_params)
@@ -369,88 +378,45 @@ class CoreBaseFrontend(AbstractFrontend):
 
         vcard = self._create_vcard(rs, persona_id)
 
-        qr = qrcode.QRCode()
-        qr.add_data(vcard)
-        qr.make(fit=True)
-        qr_image = qr.make_image(qrcode.image.svg.SvgPathFillImage)
+        buffer = io.BytesIO()
+        segno.make_qr(vcard).save(buffer, kind='svg', scale=4)
 
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            temppath = pathlib.Path(tmp_dir, f"vcard-{persona_id}")
-            qr_image.save(str(temppath))
-            with open(temppath) as f:
-                data = f.read()
-
-        return self.send_file(rs, data=data, mimetype="image/svg+xml")
+        return self.send_file(rs, afile=buffer, mimetype="image/svg+xml")
 
     def _create_vcard(self, rs: RequestState, persona_id: int) -> str:
         """
         Generate a vCard string for a user to be delivered to a client.
-
-        The vcard is a vcard3, following https://tools.ietf.org/html/rfc2426
-        Where reasonable, we should consider the new RFC of vcard4, to increase
-        compatibility, see https://tools.ietf.org/html/rfc6350
 
         :return: The serialized vCard (as in a vcf file)
         """
         if not {'searchable', 'cde_admin'} & rs.user.roles:
             raise werkzeug.exceptions.Forbidden(n_("No cde access to profile."))
 
-        if (not self.coreproxy.verify_persona(rs, persona_id,
-                                              required_roles=['searchable'])
-                and "cde_admin" not in rs.user.roles):
+        if "cde_admin" not in rs.user.roles and not self.coreproxy.verify_persona(
+                rs, persona_id, required_roles=['searchable']):
             raise werkzeug.exceptions.Forbidden(n_(
                 "Access to non-searchable member data."))
 
         persona = self.coreproxy.get_cde_user(rs, persona_id)
 
-        vcard = vobject.vCard()
-
-        # Name
-        vcard.add('N')
-        vcard.n.value = vobject.vcard.Name(
-            family=persona['family_name'] or '',
-            given=persona['given_names'] or '',
-            prefix=persona['title'] or '',
-            suffix=persona['name_supplement'] or '')
-        vcard.add('FN')
-        vcard.fn.value = " ".join(
-            filter(None, (persona['given_names'], persona['family_name'])))
-        vcard.add('NICKNAME')
-        vcard.nickname.value = persona['display_name'] or ''
-
-        # Address data
-        if persona['address']:
-            vcard.add('adr')
-            # extended should be empty because of compatibility issues, see
-            # https://tools.ietf.org/html/rfc6350#section-6.3.1
-            vcard.adr.value = vobject.vcard.Address(
-                extended='',
-                street=persona['address'] or '',
-                city=persona['location'] or '',
-                code=persona['postal_code'] or '',
-                country=rs.gettext(format_country_code(persona['country'])))
-
-        # Contact data
-        if persona['username']:
-            # see https://tools.ietf.org/html/rfc2426#section-3.3.2
-            vcard.add('email')
-            vcard.email.value = persona['username']
-        if persona['telephone']:
-            # see https://tools.ietf.org/html/rfc2426#section-3.3.1
-            vcard.add(vobject.vcard.ContentLine('TEL', [('TYPE', 'home,voice')],
-                                                persona['telephone']))
-        if persona['mobile']:
-            # see https://tools.ietf.org/html/rfc2426#section-3.3.1
-            vcard.add(vobject.vcard.ContentLine('TEL', [('TYPE', 'cell,voice')],
-                                                persona['mobile']))
-
-        # Birthday
-        if persona['birthday']:
-            vcard.add('bday')
-            # see https://tools.ietf.org/html/rfc2426#section-3.1.5
-            vcard.bday.value = date_filter(persona['birthday'], formatstr="%Y-%m-%d")
-
-        return vcard.serialize()
+        vcard = segno.helpers.make_vcard_data(
+            name=";".join((persona['family_name'], persona['given_names'], "",
+                           persona['title'] or "", persona['name_supplement'] or "")),
+            displayname=make_persona_name(persona, only_given_names=True),
+            nickname=persona['display_name'],
+            birthday=(
+                persona['birthday']
+                if persona['birthday'] != datetime.date.min else None
+            ),
+            street=persona['address'],
+            city=persona['location'],
+            zipcode=persona['postal_code'],
+            country=rs.gettext(format_country_code(persona['country'])),
+            email=persona['username'],
+            homephone=persona['telephone'],
+            cellphone=persona['mobile'],
+        )
+        return vcard
 
     @access("persona")
     def mydata(self, rs: RequestState) -> Response:
@@ -862,7 +828,7 @@ class CoreBaseFrontend(AbstractFrontend):
         if len(result) == 1:
             return self.redirect_show_user(rs, result[0]["id"])
         elif result:
-            params = query.serialize()
+            params = query.serialize_to_url()
             rs.values.update(params)
             return self.user_search(rs, is_search=True, download=None, query=query,
                                     include_archived=include_archived)
@@ -1427,7 +1393,7 @@ class CoreBaseFrontend(AbstractFrontend):
                         "core/do_password_reset_form", "email", email, persona_id=None,
                         timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
                     params["cookie"] = cookie
-            headers = {"To": {email}, "Subject": "Admin-Privilegien geändert"}
+            headers: Headers = {"To": {email}, "Subject": "Admin-Privilegien geändert"}
             self.do_mail(rs, "privilege_change_finalized", headers, params)
         return self.redirect(rs, "core/list_privilege_changes")
 
@@ -1580,12 +1546,11 @@ class CoreBaseFrontend(AbstractFrontend):
             return self.modify_membership_form(rs, persona_id)
         # We really don't want to go halfway here.
         with TransactionObserver(rs, self, "modify_membership"):
-            code, revoked_permits, collateral_transactions = (
+            code, revoked_permit, collateral_transactions = (
                 self.cdeproxy.change_membership(rs, persona_id, is_member))
             rs.notify_return_code(code)
-            if revoked_permits:
-                rs.notify("success", n_("%(num)s permits revoked."),
-                          {'num': len(revoked_permits)})
+            if revoked_permit:
+                rs.notify("success", n_("Revoked active permit."))
             if collateral_transactions:
                 subject = ("Einzugsermächtigung zu ausstehender "
                            "Lastschrift widerrufen.")

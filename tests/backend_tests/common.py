@@ -7,7 +7,8 @@ import unittest
 
 from cdedb.backend.common import DatabaseLock
 from cdedb.backend.core import CoreBackend
-from cdedb.common import PrivilegeError, RequestState, User, make_proxy, now
+from cdedb.common import RequestState, User, make_proxy, now
+from cdedb.common.exceptions import PrivilegeError
 from cdedb.config import Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -78,7 +79,7 @@ class TestBackendCommon(unittest.TestCase):
 
     def test_database_lock(self) -> None:
         manager: multiprocessing.managers.SyncManager
-        with multiprocessing.Manager() as manager:  # type: ignore[assignment]
+        with multiprocessing.Manager() as manager:
             semaphoreA = manager.Semaphore()
             semaphoreB = manager.Semaphore()
             control = manager.Semaphore()

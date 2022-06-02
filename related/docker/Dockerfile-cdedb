@@ -52,22 +52,21 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3-passlib \
     python3-bleach \
     python3-magic \
+    python3-segno \
     python3-sphinx-rtd-theme \
     python3-zxcvbn \
     python3-markdown \
     python3-requests \
-    python3-qrcode \
     python3-vobject \
     python3-graphviz \
     python3-phonenumbers \
     \
     python3-pip \
     python3-click \
-    \
+    python3-freezegun \
     flake8 \
     isort \
     pylint \
-    python3-freezegun \
     wget \
     unzip \
     \
@@ -79,9 +78,10 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     mailmanclient==3.3.3 \
     schulze_condorcet==2.0.0 \
     subman==0.1.0 \
+    segno==1.5.2 \
     \
     && python3 -m pip --no-cache-dir install \
-    mypy==0.910 \
+    mypy==0.950 \
     types-werkzeug \
     types-pytz \
     types-jinja2 \

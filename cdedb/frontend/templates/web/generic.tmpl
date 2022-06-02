@@ -416,7 +416,7 @@
                         {% for query_name in list %}
                             {% with query = queries[query_name] -%}
                                 <li>
-                                    {{ util.href(cdedblink(target, query.serialize()) + '#query-results',
+                                    {{ util.href(cdedblink(target, query.serialize_to_url()) + '#query-results',
                                             query.name if query.name else gettext(query_name), aclass="default-query") }}
                                     {% if query.query_id %}
                                         <form action="{{ cdedblink('event/delete_event_query') }}" method="post" class="display-inline" id="deletequeryform{{ query.query_id }}">

@@ -231,6 +231,6 @@
             {% endfor %}
         </div>
 
-    {{ ballot_meta.show_navigation(page_name="assembly/show_ballot_result") }}
+    {{ util.pager("assembly/show_ballot_result", 'ballot_id', prev_ballot, next_ballot) }}
 
 {% endblock %}

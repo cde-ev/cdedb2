@@ -282,3 +282,63 @@
         </div>
     </div>
 {% endmacro %}
+
+{% macro constraint_violations_panel(severity, title=gettext("Constraint Violations"), icon='exclamation-circle', anid="constraint-violations", link_title=False) %}
+    {% set caller_content = caller() %}
+    {% if link_title %}
+        {% set title = util.href(cdedblink("event/constraint_violations"), title, icon=icon) %}
+        {% set icon = none %}
+    {% endif %}
+    {% call util.bootstrap_panel(
+            title=title, icon=icon, anid=anid,
+            aclass="panel-default" if severity <= 0 else ("panel-danger" if severity > 1 else "panel-warning")) %}
+        {{ caller_content }}
+    {% endcall %}
+{% endmacro %}
+
+
+{% macro list_mep_violations(violations, personas, link_registration=False) %}
+    <ul id="mep-violations-list">
+        {% for violation in violations %}
+            {% set persona_name = util.persona_name(personas[violation.persona_id]) %}
+            {% if link_registration %}
+                {% set reg_link = util.href(cdedblink("event/show_registration", {'registration_id': violation.registration_id}), persona_name) %}
+            {% else %}
+                {% set reg_link = persona_name %}
+            {% endif %}
+
+            <li {% if violation.severity == 1 %} class="text-warning" {% elif violation.severity > 1 %} class="text-danger" {% endif %}>
+                {% trans reg_link=reg_link, constraint_shortname=ambience['event']['part_groups'][violation.part_group_id]['shortname'] %}
+                    {{ reg_link }} is in violation of the {{ constraint_shortname }} mutually exclusive participation constraint.
+                {% endtrans -%}
+                {# These are presorted. #}
+                {% trans parts = violation.parts_str %}
+                    (Present in {{ parts }}).
+                {% endtrans %}
+            </li>
+        {% endfor %}
+    </ul>
+{% endmacro %}
+
+{% macro list_mec_violations(violations, courses, link_course=False) %}
+    <ul id="mec-violations-list">
+        {% for violation in violations %}
+            {% set course_identifier = courses[violation.course_id]['nr'] + ". " + courses[violation.course_id]['shortname'] %}
+            {% if link_course %}
+                {% set course_link = util.href(cdedblink("event/show_course", {'course_id': violation.course_id}), course_identifier) %}
+            {% else %}
+                {% set course_link = course_identifier %}
+            {% endif %}
+
+            <li {% if violation.severity == 1 %} class="text-warning" {% elif violation.severity > 1 %} class="text-danger" {% endif %}>
+                {% trans course_link=course_link, constraint_shortname=ambience['event']['part_groups'][violation.part_group_id]['shortname'] %}
+                    {{ course_link }} is in violation of the {{ constraint_shortname }} mutually exclusive course constraint.
+                {% endtrans -%}
+                {# These are presorted. #}
+                {% trans tracks = violation.tracks_str %}
+                    (Taking place in {{ tracks }}).
+                {% endtrans %}
+            </li>
+        {% endfor %}
+    </ul>
+{% endmacro %}

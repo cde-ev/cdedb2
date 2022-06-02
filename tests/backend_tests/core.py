@@ -6,15 +6,17 @@ import datetime
 import decimal
 from typing import List, Optional, cast
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.backend.common import affirm_validation as affirm
 from cdedb.common import (
-    PERSONA_CDE_FIELDS, PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, ArchiveError,
-    CdEDBObject, GenesisDecision, PrivilegeError, RequestState, get_hash, merge_dicts,
-    nearly_now, now,
+    CdEDBObject, GenesisDecision, RequestState, get_hash, merge_dicts, nearly_now, now,
 )
-from cdedb.validation import PERSONA_CDE_CREATION
+from cdedb.common.exceptions import ArchiveError, PrivilegeError
+from cdedb.common.fields import (
+    PERSONA_CDE_FIELDS, PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS,
+)
+from cdedb.common.validation import PERSONA_CDE_CREATION
 from tests.common import (
     ANONYMOUS, USER_DICT, BackendTest, as_users, create_mock_image, prepsql, storage,
 )

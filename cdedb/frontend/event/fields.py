@@ -11,21 +11,22 @@ from typing import Any, Callable, Collection, Dict, List, Optional, Tuple, cast
 import werkzeug.exceptions
 from werkzeug import Response
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, EntitySorter, RequestState, build_msg, merge_dicts, n_,
-    xsorted,
+    CdEDBObject, CdEDBObjectMap, RequestState, build_msg, merge_dicts,
 )
+from cdedb.common.n_ import n_
+from cdedb.common.query import Query, QueryOperators, QueryScope
+from cdedb.common.sorting import EntitySorter, xsorted
+from cdedb.common.validation import EVENT_FIELD_ALL_FIELDS
+from cdedb.common.validation.types import VALIDATOR_LOOKUP
 from cdedb.filter import safe_filter
 from cdedb.frontend.common import (
     REQUESTdata, access, drow_name, event_guard, make_persona_name,
     process_dynamic_input, request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
-from cdedb.query import Query, QueryOperators, QueryScope
-from cdedb.validation import EVENT_FIELD_ALL_FIELDS
-from cdedb.validationtypes import VALIDATOR_LOOKUP
 
 EntitySetter = Callable[[RequestState, Dict[str, Any]], int]
 
@@ -253,8 +254,9 @@ class EventFieldMixin(EventBaseFrontend):
                   change_note: Optional[str] = None) -> Response:
         """Modify a specific field on the given entities."""
         if rs.has_validation_errors():
-            return self.field_set_form(  # type: ignore
-                rs, event_id, kind=kind, change_note=change_note, internal=True)
+            return self.field_set_form(
+                rs, event_id, field_id=field_id, ids=ids, kind=kind,
+                change_note=change_note, internal=True)
         if ids is None:
             ids = cast(vtypes.IntCSVList, [])
 
@@ -270,14 +272,15 @@ class EventFieldMixin(EventBaseFrontend):
                 (None, ValueError(n_("change_note only supported for registrations."))))
 
         data_params: vtypes.TypeMapping = {
-            f"input{anid}": Optional[  # type: ignore
+            f"input{anid}": Optional[  # type: ignore[misc]
                 VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]
             for anid in entities
         }
         data = request_extractor(rs, data_params)
         if rs.has_validation_errors():
-            return self.field_set_form(  # type: ignore
-                rs, event_id, kind=kind, internal=True)
+            return self.field_set_form(
+                rs, event_id, field_id=field_id, ids=ids, kind=kind,
+                change_note=change_note, internal=True)
 
         if kind == const.FieldAssociations.registration:
             entity_setter: EntitySetter = self.eventproxy.set_registration
@@ -301,7 +304,7 @@ class EventFieldMixin(EventBaseFrontend):
                     'fields': {field['field_name']: data[f"input{anid}"]}
                 }
                 if msg:
-                    code *= entity_setter(rs, new, msg)  # type: ignore
+                    code *= entity_setter(rs, new, msg)  # type: ignore[call-arg]
                 else:
                     code *= entity_setter(rs, new)
         self.eventproxy.event_keeper_commit(rs, event_id, post_msg, after_change=True)
@@ -339,4 +342,4 @@ class EventFieldMixin(EventBaseFrontend):
             raise NotImplementedError(f"Unknown kind {kind}.")
 
         redirect = self.FIELD_REDIRECT[kind]
-        return self.redirect(rs, redirect, query.serialize())
+        return self.redirect(rs, redirect, query.serialize_to_url())
