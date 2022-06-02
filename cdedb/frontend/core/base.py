@@ -1120,8 +1120,7 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.generic_user_search(
             rs, download, is_search,
             QueryScope.all_core_users, QueryScope.all_core_users,
-            self.coreproxy.submit_general_query, choices=choices, query=query,
-            endpoint="full_user_search")
+            self.coreproxy.submit_general_query, choices=choices, query=query)
 
     @staticmethod
     def admin_bits(rs: RequestState) -> Set[Realm]:

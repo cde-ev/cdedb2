@@ -36,8 +36,7 @@
         </div>
     </div>
 
-    {{ generic.format_query(enums['QueryScope'].lodgement, spec, cdedblink('event/lodgement_query'),
-                            selection_default=selection_default) }}
+    {{ generic.format_query(enums['QueryScope'].lodgement, spec, selection_default=selection_default) }}
 
     {% if values['is_search'] %}
         <h3 id="query-results">{% trans %}Result{% endtrans %} [{{ result|length }}]</h3>

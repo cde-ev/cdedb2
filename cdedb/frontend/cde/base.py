@@ -311,8 +311,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
         return self.generic_user_search(
             rs, download, is_search,
             QueryScope.all_cde_users, QueryScope.all_core_users,
-            self.cdeproxy.submit_general_query, choices=choices,
-            endpoint="full_user_search")
+            self.cdeproxy.submit_general_query, choices=choices)
 
     @access("core_admin", "cde_admin")
     def create_user_form(self, rs: RequestState) -> Response:

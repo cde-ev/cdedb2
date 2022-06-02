@@ -266,3 +266,9 @@ DEFAULT_QUERIES = {
                  ("personas.id", True))),
         },
 }
+
+DEFAULT_QUERIES[QueryScope.all_assembly_users] = DEFAULT_QUERIES[
+    QueryScope.all_core_users]
+DEFAULT_QUERIES[QueryScope.all_cde_users] = DEFAULT_QUERIES[QueryScope.all_core_users]
+DEFAULT_QUERIES[QueryScope.all_event_users] = DEFAULT_QUERIES[QueryScope.all_core_users]
+DEFAULT_QUERIES[QueryScope.all_ml_users] = DEFAULT_QUERIES[QueryScope.all_core_users]

@@ -140,7 +140,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         return self.generic_user_search(
             rs, download, is_search,
             QueryScope.all_ml_users, QueryScope.all_ml_users,
-            self.mlproxy.submit_general_query, endpoint="full_user_search")
+            self.mlproxy.submit_general_query)
 
     @access("ml")
     def list_mailinglists(self, rs: RequestState) -> Response:

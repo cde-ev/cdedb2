@@ -17,6 +17,6 @@
     {{ util.breadcrumb_link(cdedblink("event/full_user_search"), gettext("Search All Users"), active="True") }}
 {% endblock %}
 {% block content %}
-    {{ generic.user_search("event", result, query, archived=True, info=gettext(
+    {{ generic.user_search(scope, result, query, info=gettext(
             "This search will only show archived pure event users.")) }}
 {% endblock %}

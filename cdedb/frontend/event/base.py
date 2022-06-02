@@ -168,8 +168,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         }
         return self.generic_user_search(
             rs, download, is_search, QueryScope.event_user, QueryScope.event_user,
-            self.eventproxy.submit_general_query, choices=choices,
-            endpoint="user/user_search")
+            self.eventproxy.submit_general_query, choices=choices)
 
     @access("core_admin", "event_admin")
     @REQUESTdata("download", "is_search")
@@ -191,9 +190,8 @@ class EventBaseFrontend(AbstractUserFrontend):
         }
         return self.generic_user_search(
             rs, download, is_search,
-            QueryScope.all_cde_users, QueryScope.all_cde_users,
-            self.eventproxy.submit_general_query, choices=choices,
-            endpoint="user/full_user_search")
+            QueryScope.all_event_users, QueryScope.all_event_users,
+            self.eventproxy.submit_general_query, choices=choices)
 
     @access("event")
     @REQUESTdata("part_id", "sortkey", "reverse")

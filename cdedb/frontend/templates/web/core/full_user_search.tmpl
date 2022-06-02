@@ -17,5 +17,5 @@
     {{ util.breadcrumb_link(cdedblink("core/full_user_search"), gettext("Search All Users"), active="True") }}
 {% endblock %}
 {% block content %}
-    {{ generic.user_search("core", result, query, archived=True) }}
+    {{ generic.user_search(scope, result, query) }}
 {% endblock %}

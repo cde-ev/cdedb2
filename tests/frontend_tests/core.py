@@ -1474,17 +1474,17 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Full User Search")
         f = self.response.forms['queryform']
         self.submit(f)
-        self.assertPresence("Ergebnis [25]", div='query-results')
-        self.assertPresence("Anton", div='query-result')
+        self.assertPresence("Ergebnis [2]", div='query-results')
+        self.assertNonPresence("Anton", div='query-result')
         self.assertPresence("Hell", div='query-result')
         self.assertPresence("Lost", div='query-result')
         self.assertNonPresence("N/A", div='query-result')
 
-        f['qop_is_archived'] = QueryOperators.equal.value
-        f['qval_is_archived'] = True
+        f['qop_is_archived'] = ""
+        f['qval_is_archived'] = ""
         self.submit(f)
-        self.assertPresence("Ergebnis [2", div='query-results')
-        self.assertNonPresence("Anton", div='query-result')
+        self.assertPresence("Ergebnis [25]", div='query-results')
+        self.assertPresence("Anton", div='query-result')
 
         f['qop_given_names'] = QueryOperators.match.value
         f['qval_given_names'] = 'des'

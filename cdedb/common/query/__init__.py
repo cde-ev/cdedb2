@@ -148,25 +148,38 @@ class QueryScope(enum.IntEnum):
     This is used in conjunction with the `Query` class and bundles together a lot of
     constant and some dynamic things for the individual scopes.
     """
+    realm: str
+
+    def __new__(cls, value: str, realm: str = "core") -> "QueryScope":
+        """Custom creation method for this enum.
+
+        Achieves that value and realm of new members can be written using tuple
+        syntax. Realm defaults to "core".
+        """
+        obj = int.__new__(cls, value)
+        obj._value_ = value
+        obj.realm = realm
+        return obj
+
     persona = 1
     core_user = 2
-    assembly_user = 3
-    cde_user = 4
-    event_user = 5
-    ml_user = 6
-    past_event_user = 7
+    assembly_user = 3, "assembly"
+    cde_user = 4, "cde"
+    event_user = 5, "event"
+    ml_user = 6, "ml"
+    past_event_user = 7, "cde"
     archived_persona = 10
     all_core_users = 11
-    all_assembly_users = 12
-    all_cde_users = 13
-    all_event_users = 14
-    all_ml_users = 15
-    cde_member = 20
-    registration = 30
-    quick_registration = 31
-    lodgement = 32
-    event_course = 33
-    past_event_course = 40
+    all_assembly_users = 12, "assembly"
+    all_cde_users = 13, "cde"
+    all_event_users = 14, "event"
+    all_ml_users = 15, "ml"
+    cde_member = 20, "cde"
+    registration = 30, "event"
+    quick_registration = 31, "event"
+    lodgement = 32, "event"
+    event_course = 33, "event"
+    past_event_course = 40, "cde"
 
     def get_view(self) -> str:
         """Return the SQL FROM target associated with this scope.
@@ -224,17 +237,52 @@ class QueryScope(enum.IntEnum):
         return self in {QueryScope.registration, QueryScope.lodgement,
                         QueryScope.event_course}
 
+    def includes_archived(self) -> bool:
+        """Whether or not this scope includes archived users."""
+        return self in {
+            QueryScope.all_core_users,
+            QueryScope.all_assembly_users,
+            QueryScope.all_cde_users,
+            QueryScope.all_event_users,
+            QueryScope.all_ml_users,
+        }
+
     def get_target(self, *, redirect: bool = True) -> str:
         """For scopes that support storing, where to redirect to after storing."""
+        prefix = ""
         if self == QueryScope.registration:
-            realm, target = "event", "registration_query"
+            prefix, target = "query", "registration_query"
         elif self == QueryScope.lodgement:
-            realm, target = "event", "lodgement_query"
+            prefix, target = "query", "lodgement_query"
         elif self == QueryScope.event_course:
-            realm, target = "event", "course_query"
+            prefix, target = "query", "course_query"
+        elif self == QueryScope.event_user:
+            prefix, target = "user", "user_search"
+        elif self == QueryScope.all_event_users:
+            prefix, target = "user", "full_user_search"
+        elif self == QueryScope.core_user:
+            target = "user_search"
+        elif self == QueryScope.assembly_user:
+            target = "user_search"
+        elif self == QueryScope.cde_user:
+            target = "user_search"
+        elif self == QueryScope.ml_user:
+            target = "user_search"
+        elif self == QueryScope.all_core_users:
+            target = "full_user_search"
+        elif self == QueryScope.all_assembly_users:
+            target = "full_user_search"
+        elif self == QueryScope.all_cde_users:
+            target = "full_user_search"
+        elif self == QueryScope.all_ml_users:
+            target = "full_user_search"
         else:
-            realm, target = "", ""
-        return f"{realm if redirect else 'query'}/{target}"
+            prefix, target = "", ""
+        if redirect and self.realm:
+            return f"{self.realm}/{target}"
+        elif prefix:
+            return f"{prefix}/{target}"
+        return target
 
     def mangle_query_input(self, rs: RequestState, defaults: CdEDBObject = None,
                            ) -> Dict[str, str]:

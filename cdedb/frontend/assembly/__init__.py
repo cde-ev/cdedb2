@@ -115,8 +115,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         return self.generic_user_search(
             rs, download, is_search,
             QueryScope.all_assembly_users, QueryScope.all_core_users,
-            self.assemblyproxy.submit_general_query,
-            endpoint="full_user_search")
+            self.assemblyproxy.submit_general_query)
 
     @access("assembly_admin", "auditor")
     @REQUESTdata(*LOG_FIELDS_COMMON, "assembly_id")
