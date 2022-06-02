@@ -253,8 +253,7 @@ class EventQueryBackend(EventBaseBackend):
                 raise PrivilegeError(n_("Not privileged."))
             query.constraints.append(("event_id", QueryOperators.equal, event_id))
             query.spec['event_id'] = QuerySpecEntry("bool", "")
-        elif query.scope in {QueryScope.event_user,
-                             QueryScope.all_cde_users}:
+        elif query.scope in {QueryScope.event_user, QueryScope.all_event_users}:
             if not self.is_admin(rs) and "core_admin" not in rs.user.roles:
                 raise PrivilegeError(n_("Admin only."))
 
@@ -579,7 +578,7 @@ class EventQueryBackend(EventBaseBackend):
 
             view = lodgement_view()
         else:
-            raise RuntimeError(n_("Bad scope."))
+            raise RuntimeError(n_("Bad scope."), query.scope)
         return self.general_query(rs, query, view=view)
 
     @access("event")
