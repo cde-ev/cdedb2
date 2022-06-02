@@ -41,7 +41,7 @@ from cdedb.common.fields import (
     PRIVILEGE_CHANGE_FIELDS,
 )
 from cdedb.common.n_ import n_
-from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
+from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.roles import (
     ADMIN_KEYS, ALL_ROLES, REALM_ADMINS, extract_roles, privilege_tier,
 )
