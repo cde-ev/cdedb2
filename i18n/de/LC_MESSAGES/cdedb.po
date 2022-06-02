@@ -921,7 +921,7 @@ msgstr "Nicht alle Accounts zurückübertragen."
 
 #: cdedb/backend/event/__init__.py:421
 msgid "Referential integrity of lodgement groups violated."
-msgstr "Referentielle Integrität der Unterkunftgruppen wurde verletzt."
+msgstr "Referentielle Integrität der Unterkunftsgruppen wurde verletzt."
 
 #: cdedb/backend/event/base.py:79
 msgid "Event does not exist"
@@ -980,7 +980,7 @@ msgstr "Kurse sind nur in Veranstaltungen mit Kursschienen möglich."
 
 #: cdedb/backend/event/lodgement.py:57
 msgid "Only lodgement groups from exactly one event allowed!"
-msgstr "Nur Unterkunftgruppen eines einzelnen Events sind erlaubt!"
+msgstr "Nur Unterkunftsgruppen eines einzelnen Events sind erlaubt!"
 
 #: cdedb/backend/event/lodgement.py:215
 msgid "Only lodgements from exactly one event allowed!"
@@ -2157,7 +2157,7 @@ msgstr "Unterkunft {field}"
 
 #: cdedb/common/query/__init__.py:892
 msgid "lodgement group ID"
-msgstr "Unterkunftgruppen-ID"
+msgstr "Unterkunftsgruppen-ID"
 
 #: cdedb/common/query/__init__.py:894
 msgid "lodgement group title"
@@ -2292,7 +2292,7 @@ msgstr "Unterkunftsnotizen"
 #: cdedb/frontend/templates/web/event/lodgement/create_lodgement.tmpl:30
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:36
 msgid "Lodgement Group"
-msgstr "Unterkunftgruppe"
+msgstr "Unterkunftsgruppe"
 
 #: cdedb/common/query/__init__.py:1168
 msgid "Lodgement Group ID"
@@ -2320,7 +2320,7 @@ msgstr "Unterkunftsgruppe: Reguläre Bewohner"
 
 #: cdedb/common/query/__init__.py:1186
 msgid "Group Camping Mat Inhabitants"
-msgstr "Unterkufntsgruppe: Isomattenschläfer"
+msgstr "Unterkunftsgruppe: Isomattenschläfer"
 
 #: cdedb/common/query/__init__.py:1188
 msgid "Group Total Inhabitants"
@@ -12554,7 +12554,7 @@ msgstr "Gelöschte Unterkünfte"
 #: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:346
 #: cdedb/frontend/templates/web/event/lodgement/lodgement_group_summary.tmpl:18
 msgid "Lodgement Groups"
-msgstr "Unterkunftgruppen"
+msgstr "Unterkunftsgruppen"
 
 #: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:351
 msgid "Added"
@@ -12644,16 +12644,16 @@ msgstr "Unterkunft anlegen"
 #: cdedb/frontend/templates/web/event/lodgement/lodgement_group_summary.tmpl:7
 #, python-format
 msgid "Lodgement Groups (%(title)s)"
-msgstr "Unterkunftgruppen (%(title)s)"
+msgstr "Unterkunftsgruppen (%(title)s)"
 
 #: cdedb/frontend/templates/web/event/lodgement/lodgement_group_summary.tmpl:15
 #: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:42
 msgid "Manage Lodgement Groups"
-msgstr "Unterkunftgruppen verwalten"
+msgstr "Unterkunftsgruppen verwalten"
 
 #: cdedb/frontend/templates/web/event/lodgement/lodgement_group_summary.tmpl:60
 msgid "Add Lodgement Group"
-msgstr "Unterkunftgruppe hinzufügen"
+msgstr "Unterkunftsgruppe hinzufügen"
 
 #: cdedb/frontend/templates/web/event/lodgement/lodgement_wishes_graph_form.tmpl:6
 #, python-format
@@ -15004,15 +15004,15 @@ msgstr "Partieller Import"
 
 #: cdedb/i18n_additional.py:107
 msgid "EventLogCodes.lodgement_group_created"
-msgstr "Unterkunftgruppe erstellt"
+msgstr "Unterkunftsgruppe erstellt"
 
 #: cdedb/i18n_additional.py:108
 msgid "EventLogCodes.lodgement_group_changed"
-msgstr "Unterkunftgruppe geändert"
+msgstr "Unterkunftsgruppe geändert"
 
 #: cdedb/i18n_additional.py:109
 msgid "EventLogCodes.lodgement_group_deleted"
-msgstr "Unterkunftgruppe gelöscht"
+msgstr "Unterkunftsgruppe gelöscht"
 
 #: cdedb/i18n_additional.py:110
 msgid "EventLogCodes.fee_modifier_created"
