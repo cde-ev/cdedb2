@@ -830,8 +830,9 @@ class CoreBaseFrontend(AbstractFrontend):
         elif result:
             params = query.serialize_to_url()
             rs.values.update(params)
-            return self.user_search(rs, is_search=True, download=None, query=query,
-                                    include_archived=include_archived)
+            if include_archived:
+                return self.full_user_search(rs, is_search=True, download=None, query=query)
+            return self.user_search(rs, is_search=True, download=None, query=query)
         else:
             rs.notify("warning", n_("No account found."))
             return self.index(rs)
@@ -1070,10 +1071,9 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.redirect_show_user(rs, rs.user.persona_id)
 
     @access("core_admin")
-    @REQUESTdata("download", "is_search", "include_archived")
+    @REQUESTdata("download", "is_search")
     def user_search(self, rs: RequestState, download: Optional[str], is_search: bool,
-                    include_archived: Optional[bool] = False, query: Query = None
-                    ) -> Response:
+                    query: Query = None) -> Response:
         """Perform search."""
         events = self.pasteventproxy.list_past_events(rs)
         choices: Dict[str, Dict[Any, str]] = {
@@ -1084,10 +1084,8 @@ class CoreBaseFrontend(AbstractFrontend):
                     const.Genders,
                     rs.gettext if download is None else rs.default_gettext)),
         }
-        rs.values['include_archived'] = include_archived
-        scope = QueryScope.all_core_users if include_archived else QueryScope.core_user
         return self.generic_user_search(
-            rs, download, is_search, scope, QueryScope.core_user,
+            rs, download, is_search, QueryScope.core_user, QueryScope.core_user,
             self.coreproxy.submit_general_query, choices=choices, query=query)
 
     @access("core_admin")
@@ -1110,13 +1108,9 @@ class CoreBaseFrontend(AbstractFrontend):
 
     @access("core_admin")
     @REQUESTdata("download", "is_search")
-    def archived_user_search(self, rs: RequestState, download: Optional[str],
-                             is_search: bool) -> Response:
-        """Perform search.
-
-        Archived users are somewhat special since they are not visible
-        otherwise.
-        """
+    def full_user_search(self, rs: RequestState, download: Optional[str],
+                         is_search: bool, query: Query = None) -> Response:
+        """Search all users, both archived and not archived."""
         choices: Dict[str, Dict[Any, str]] = {
             'gender': collections.OrderedDict(
                 enum_entries_filter(
@@ -1125,9 +1119,9 @@ class CoreBaseFrontend(AbstractFrontend):
         }
         return self.generic_user_search(
             rs, download, is_search,
-            QueryScope.archived_core_user, QueryScope.archived_persona,
-            self.coreproxy.submit_general_query, choices=choices,
-            endpoint="archived_user_search")
+            QueryScope.all_core_users, QueryScope.all_core_users,
+            self.coreproxy.submit_general_query, choices=choices, query=query,
+            endpoint="full_user_search")
 
     @staticmethod
     def admin_bits(rs: RequestState) -> Set[Realm]:

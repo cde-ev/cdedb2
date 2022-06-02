@@ -1,5 +1,5 @@
-{% set sidenav_active='event_manage_archive' %}
-{% extends "web/event/base.tmpl" %}
+{% set sidenav_active='ml_manage_archive' %}
+{% extends "web/ml/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/generic.tmpl" as generic with context %}
 {% set jshint='strong' %}
@@ -9,14 +9,14 @@
 {% endblock %}
 {% block title %}
     {% trans %}
-        Search Archived Users
+        Full User Search
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("event/archived_user_search"), gettext("Search Archived Users"), active="True") }}
+    {{ util.breadcrumb_link(cdedblink("ml/full_user_search"), gettext("Search All Users"), active="True") }}
 {% endblock %}
 {% block content %}
-    {{ generic.user_search("event", result, query, archived=True, info=gettext(
-            "This search will only show archived pure event users.")) }}
+    {{ generic.user_search("ml", result, query, archived=True, info=gettext(
+            "This search will only show archived pure Mailinglist-Users.")) }}
 {% endblock %}

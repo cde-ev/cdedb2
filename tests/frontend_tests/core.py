@@ -670,7 +670,6 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Annika", div='query-result')
         self.assertNonPresence("Hades", div='query-result')
         f = self.response.forms['queryform']
-        self.assertFalse(f['include_archived'].checked)
 
         # Including archived users
         self.traverse({'href': '^/$'})
@@ -678,7 +677,7 @@ class TestCoreFrontend(FrontendTest):
         f['phrase'] = "ad"
         f['include_archived'].checked = True
         self.submit(f)
-        self.assertTitle("Allgemeine Nutzerverwaltung")
+        self.assertTitle("Full User Search")
         self.assertPresence("Anton Armin A.", div='query-result')
         self.assertPresence("Beispiel", div='query-result')
         self.assertPresence("Charly C.", div='query-result')
@@ -688,7 +687,6 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Annika", div='query-result')
         self.assertPresence("Hades", div='query-result')
         f = self.response.forms['queryform']
-        self.assertTrue(f['include_archived'].checked)
 
     @as_users("vera", "berta", "garcia")
     def test_changedata(self) -> None:
@@ -1472,14 +1470,21 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("vera")
     def test_archived_user_search(self) -> None:
-        self.traverse({'description': 'Archivsuche'})
-        self.assertTitle("Archivsuche")
+        self.traverse("Search All Users")
+        self.assertTitle("Full User Search")
         f = self.response.forms['queryform']
         self.submit(f)
-        self.assertPresence("Ergebnis [2]", div='query-results')
+        self.assertPresence("Ergebnis [25]", div='query-results')
+        self.assertPresence("Anton", div='query-result')
         self.assertPresence("Hell", div='query-result')
         self.assertPresence("Lost", div='query-result')
         self.assertNonPresence("N/A", div='query-result')
+
+        f['qop_is_archived'] = QueryOperators.equal.value
+        f['qval_is_archived'] = True
+        self.submit(f)
+        self.assertPresence("Ergebnis [2", div='query-results')
+        self.assertNonPresence("Anton", div='query-result')
 
         f['qop_given_names'] = QueryOperators.match.value
         f['qval_given_names'] = 'des'
@@ -1487,7 +1492,7 @@ class TestCoreFrontend(FrontendTest):
             if field and field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
-        self.assertTitle("Archivsuche")
+        self.assertTitle("Full User Search")
         self.assertPresence("Ergebnis [1]", div='query-results')
         self.assertPresence("Hell", div='query-result')
 

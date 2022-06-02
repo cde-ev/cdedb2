@@ -9,12 +9,12 @@
 {% endblock %}
 {% block title %}
     {% trans %}
-        Search Archived Users
+        Full User Search
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("cde/archived_user_search"), gettext("Search Archived Users"), active="True") }}
+    {{ util.breadcrumb_link(cdedblink("cde/full_user_search"), gettext("Search All Users"), active="True") }}
 {% endblock %}
 {% block content %}
     {{ generic.user_search("cde", result, query, archived=True) }}

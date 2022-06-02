@@ -173,7 +173,7 @@ class EventBaseFrontend(AbstractUserFrontend):
 
     @access("core_admin", "event_admin")
     @REQUESTdata("download", "is_search")
-    def archived_user_search(self, rs: RequestState, download: Optional[str],
+    def full_user_search(self, rs: RequestState, download: Optional[str],
                              is_search: bool) -> Response:
         """Perform search.
 
@@ -191,9 +191,9 @@ class EventBaseFrontend(AbstractUserFrontend):
         }
         return self.generic_user_search(
             rs, download, is_search,
-            QueryScope.archived_past_event_user, QueryScope.archived_persona,
+            QueryScope.all_cde_users, QueryScope.all_cde_users,
             self.eventproxy.submit_general_query, choices=choices,
-            endpoint="user/archived_user_search")
+            endpoint="user/full_user_search")
 
     @access("event")
     @REQUESTdata("part_id", "sortkey", "reverse")

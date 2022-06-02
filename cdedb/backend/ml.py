@@ -294,19 +294,21 @@ class MlBackend(AbstractBackend):
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
         """
         query = affirm(Query, query)
-        if query.scope in {QueryScope.ml_user, QueryScope.archived_persona}:
-            # Include only un-archived ml users.
-            query.constraints.append(("is_ml_realm", QueryOperators.equal,
-                                      True))
-            query.constraints.append(("is_archived", QueryOperators.equal,
-                                      query.scope == QueryScope.archived_persona))
+        if query.scope in {QueryScope.ml_user, QueryScope.all_ml_users}:
+            # Potentially restrict to non-archived users.
+            if query.scope == QueryScope.ml_user:
+                query.constraints.append(
+                    ("is_archived", QueryOperators.equal, False))
+                query.spec["is_archived"] = QuerySpecEntry("bool", "")
+
+            # Restict to ml users.
+            query.constraints.append(("is_ml_realm", QueryOperators.equal, True))
             query.spec["is_ml_realm"] = QuerySpecEntry("bool", "")
-            query.spec["is_archived"] = QuerySpecEntry("bool", "")
             # Exclude users of any higher realm (implying event)
             for realm in implying_realms('ml'):
                 query.constraints.append(
-                    ("is_{}_realm".format(realm), QueryOperators.equal, False))
-                query.spec["is_{}_realm".format(realm)] = QuerySpecEntry("bool", "")
+                    (f"is_{realm}_realm", QueryOperators.equal, False))
+                query.spec[f"is_{realm}_realm"] = QuerySpecEntry("bool", "")
         else:
             raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query)

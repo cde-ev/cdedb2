@@ -309,19 +309,23 @@ class AssemblyBackend(AbstractBackend):
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
         """
         query = affirm(Query, query)
-        if query.scope in {QueryScope.assembly_user, QueryScope.archived_persona}:
-            # Include only un-archived assembly-users
-            query.constraints.append(("is_assembly_realm", QueryOperators.equal,
-                                      True))
-            query.constraints.append(("is_archived", QueryOperators.equal,
-                                      query.scope == QueryScope.archived_persona))
+        if query.scope in {QueryScope.assembly_user, QueryScope.all_assembly_users}:
+            # Potentially restrict to non-archived users.
+            if query.scope == QueryScope.assembly_user:
+                query.constraints.append(
+                    ("is_archived", QueryOperators.equal, False))
+                query.spec["is_archived"] = QuerySpecEntry("bool", "")
+
+            # Restrict to assembly users.
+            query.constraints.append(
+                ("is_assembly_realm", QueryOperators.equal, True))
             query.spec["is_assembly_realm"] = QuerySpecEntry("bool", "")
-            query.spec["is_archived"] = QuerySpecEntry("bool", "")
+
             # Exclude users of any higher realm (implying event)
             for realm in implying_realms('assembly'):
                 query.constraints.append(
-                    ("is_{}_realm".format(realm), QueryOperators.equal, False))
-                query.spec["is_{}_realm".format(realm)] = QuerySpecEntry("bool", "")
+                    (f"is_{realm}_realm", QueryOperators.equal, False))
+                query.spec[f"is_{realm}_realm"] = QuerySpecEntry("bool", "")
         else:
             raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query)

@@ -2555,10 +2555,8 @@ class CoreBaseBackend(AbstractBackend):
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.
         """
         query = affirm(Query, query)
-        if query.scope in {QueryScope.core_user, QueryScope.archived_core_user}:
-            query.constraints.append(("is_archived", QueryOperators.equal,
-                                      query.scope == QueryScope.archived_core_user))
-            query.spec["is_archived"] = QuerySpecEntry("bool", "")
+        if query.scope == QueryScope.core_user:
+            query.constraints.append(("is_archived", QueryOperators.equal, False))
         elif query.scope == QueryScope.all_core_users:
             pass
         else:

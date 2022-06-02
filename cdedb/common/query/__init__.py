@@ -156,15 +156,17 @@ class QueryScope(enum.IntEnum):
     ml_user = 6
     past_event_user = 7
     archived_persona = 10
-    archived_core_user = 11
-    archived_past_event_user = 12
+    all_core_users = 11
+    all_assembly_users = 12
+    all_cde_users = 13
+    all_event_users = 14
+    all_ml_users = 15
     cde_member = 20
     registration = 30
     quick_registration = 31
     lodgement = 32
     event_course = 33
     past_event_course = 40
-    all_core_users = 50
 
     def get_view(self) -> str:
         """Return the SQL FROM target associated with this scope.
@@ -294,8 +296,6 @@ _QUERY_VIEWS = {
             )
         ) AS lastschrift ON personas.id = lastschrift.persona_id
         """,
-    QueryScope.archived_persona:
-        "core.personas",
     QueryScope.registration:
         None,  # This will be generated on the fly.
     QueryScope.quick_registration:
@@ -399,6 +399,7 @@ _QUERY_SPECS = {
             "is_searchable": QuerySpecEntry("bool", n_("Searchable")),
             "decided_search": QuerySpecEntry("bool", n_("Searchability Decided")),
             "balance": QuerySpecEntry("float", n_("Membership-Fee Balance")),
+            "is_archived": QuerySpecEntry("bool", n_("Archived Account")),
             **{
                 k: QuerySpecEntry("bool", k, n_("Admin"))
                 for k in ADMIN_KEYS
@@ -451,68 +452,6 @@ _QUERY_SPECS = {
             "pcourse_id": QuerySpecEntry("id", n_("Past Course")),
             "notes": QuerySpecEntry("str", n_("Admin-Notes")),
         },
-    QueryScope.past_event_user:
-        {
-            "personas.id": QuerySpecEntry("id", n_("ID")),
-            "given_names": QuerySpecEntry("str", n_("Given Names")),
-            "family_name": QuerySpecEntry("str", n_("Family Name")),
-            "username": QuerySpecEntry("str", n_("E-Mail")),
-            "display_name": QuerySpecEntry("str", n_("Known as (Forename)")),
-            "birth_name": QuerySpecEntry("str", n_("Birth Name")),
-            "title": QuerySpecEntry("str", n_("Title_[[of a persona]]")),
-            "name_supplement": QuerySpecEntry("str", n_("Name Affix")),
-            "birthday": QuerySpecEntry("date", n_("Birthday")),
-            "telephone": QuerySpecEntry("str", n_("Phone")),
-            "mobile": QuerySpecEntry("str", n_("Mobile Phone")),
-            "address": QuerySpecEntry("str", n_("Address")),
-            "address_supplement": QuerySpecEntry("str", n_("Address Supplement")),
-            "postal_code": QuerySpecEntry("str", n_("ZIP")),
-            "location": QuerySpecEntry("str", n_("City")),
-            "country": QuerySpecEntry("str", n_("Country")),
-            "is_cde_realm": QuerySpecEntry("bool", n_("cde_realm"), n_("Realm")),
-            "pevent_id": QuerySpecEntry("id", n_("Past Event")),
-            "pcourse_id": QuerySpecEntry("id", n_("Past Course")),
-            "notes": QuerySpecEntry("str", n_("Admin-Notes")),
-        },
-    QueryScope.archived_persona:
-        {
-            "personas.id": QuerySpecEntry("id", n_("ID")),
-            "given_names": QuerySpecEntry("str", n_("Given Names")),
-            "family_name": QuerySpecEntry("str", n_("Family Name")),
-            "display_name": QuerySpecEntry("str", n_("Known as (Forename)")),
-            "notes": QuerySpecEntry("str", n_("Admin-Notes")),
-        },
-    QueryScope.archived_core_user:
-        {
-            "personas.id": QuerySpecEntry("id", n_("ID")),
-            "given_names": QuerySpecEntry("str", n_("Given Names")),
-            "family_name": QuerySpecEntry("str", n_("Family Name")),
-            "display_name": QuerySpecEntry("str", n_("Known as (Forename)")),
-            "birth_name": QuerySpecEntry("str", n_("Birth Name")),
-            "gender": QuerySpecEntry("int", n_("Gender")),
-            "birthday": QuerySpecEntry("date", n_("Birthday")),
-            "is_ml_realm": QuerySpecEntry("bool", n_("Mailinglists"), n_("Realm")),
-            "is_event_realm": QuerySpecEntry("bool", n_("Events"), n_("Realm")),
-            "is_assembly_realm": QuerySpecEntry("bool", n_("Assemblies"), n_("Realm")),
-            "is_cde_realm": QuerySpecEntry("bool", n_("cde_realm"), n_("Realm")),
-            "pevent_id": QuerySpecEntry("id", n_("Past Event")),
-            "pcourse_id": QuerySpecEntry("id", n_("Past Course")),
-            "notes": QuerySpecEntry("str", n_("Admin-Notes")),
-        },
-    QueryScope.archived_past_event_user:
-        {
-            "personas.id": QuerySpecEntry("id", n_("ID")),
-            "given_names": QuerySpecEntry("str", n_("Given Names")),
-            "family_name": QuerySpecEntry("str", n_("Family Name")),
-            "display_name": QuerySpecEntry("str", n_("Known as (Forename)")),
-            "birth_name": QuerySpecEntry("str", n_("Birth Name")),
-            "gender": QuerySpecEntry("int", n_("Gender")),
-            "birthday": QuerySpecEntry("date", n_("Birthday")),
-            "is_cde_realm": QuerySpecEntry("bool", n_("cde_realm"), n_("Realm")),
-            "pevent_id": QuerySpecEntry("id", n_("Past Event")),
-            "pcourse_id": QuerySpecEntry("id", n_("Past Course")),
-            "notes": QuerySpecEntry("str", n_("Admin-Notes")),
-        },
     QueryScope.cde_member:
         {
             "personas.id": QuerySpecEntry("id", n_("ID")),
@@ -557,7 +496,14 @@ _QUERY_SPECS = {
 }
 _QUERY_SPECS[QueryScope.ml_user] = _QUERY_SPECS[QueryScope.persona]
 _QUERY_SPECS[QueryScope.assembly_user] = _QUERY_SPECS[QueryScope.persona]
+_QUERY_SPECS[QueryScope.past_event_user] = _QUERY_SPECS[QueryScope.event_user]
 _QUERY_SPECS[QueryScope.all_core_users] = _QUERY_SPECS[QueryScope.core_user]
+_QUERY_SPECS[QueryScope.all_assembly_users] = _QUERY_SPECS[QueryScope.assembly_user]
+# TODO: Fix all_cde_users spec. The cde_user spec includes lastschrift fields, which
+#  might be unwanted here.
+_QUERY_SPECS[QueryScope.all_cde_users] = _QUERY_SPECS[QueryScope.core_user]
+_QUERY_SPECS[QueryScope.all_event_users] = _QUERY_SPECS[QueryScope.event_user]
+_QUERY_SPECS[QueryScope.all_ml_users] = _QUERY_SPECS[QueryScope.ml_user]
 
 
 class QueryResultEntryFormat(enum.Enum):

@@ -919,8 +919,8 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("vera")
     def test_archived_user_search(self) -> None:
-        self.traverse({'href': '/cde/$'}, "Archivsuche")
-        self.assertTitle("Archivsuche")
+        self.traverse({'href': '/cde/$'}, "Search All Users")
+        self.assertTitle("Full User Search")
         f = self.response.forms['queryform']
         f['qval_birthday'] = '31.12.2000'
         f['qop_birthday'] = QueryOperators.less.value
@@ -928,8 +928,17 @@ class TestCdEFrontend(FrontendTest):
             if field and field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
-        self.assertTitle("Archivsuche")
+        self.assertTitle("Full User Search")
+        self.assertPresence("Ergebnis [16]", div='query-results')
+        self.assertPresence("Anton", div='query-result')
+        self.assertPresence("Hell", div='query-result')
+        self.assertPresence("Lost", div='query-result')
+
+        f['qop_is_archived'] = QueryOperators.equal.value
+        f['qval_is_archived'] = True
+        self.submit(f)
         self.assertPresence("Ergebnis [2]", div='query-results')
+        self.assertNonPresence("Anton", div='query-result')
         self.assertPresence("Hell", div='query-result')
         self.assertPresence("Lost", div='query-result')
 

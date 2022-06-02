@@ -29,7 +29,7 @@
                 {% if "cde_user" in user.admin_views %}
                     {{ util.href(cdedblink("cde/user_search"), gettext("Manage Users"), aclass="list-group-item", icon="users",
                             active=(sidenav_active=='cde_manage_users')) }}
-                    {{ util.href(cdedblink("cde/archived_user_search"), gettext("Search Archived Users"), aclass="list-group-item",
+                    {{ util.href(cdedblink("cde/full_user_search"), gettext("Search All Users"), aclass="list-group-item",
                             icon="inbox", active=(sidenav_active=='cde_manage_archive')) }}
                 {% endif %}
                 {% if "finance" in user.admin_views %}
