@@ -2,7 +2,9 @@
 To test the backend itself we need to use aiounittest, which is hard, so for now
 this only tests some static backend methods.
 """
-from typing import Any, Union
+from typing import Any
+
+from ldaptor.protocols.ldap.distinguishedname import DistinguishedName as DN
 
 from tests.common import BasicTest
 from cdedb.ldap.backend import LDAPsqlBackend
@@ -20,7 +22,11 @@ class LDAPBackendTest(BasicTest):
             ("123", b"123"),
             ("abcdef", b"abcdef"),
             ("äöü", "äöü".encode()),
+            ("äöü", b"\xc3\xa4\xc3\xb6\xc3\xbc"),
             (123, b"123"),
+            (b"1234", b"1234"),
+            (DN("cn=xyz"), b"cn=xyz"),
+            (DN("cn=äöü"), "cn=äöü".encode()),
             (["a", "b", "c"], [b"a", b"b", b"c"]),
             ({"abc": 123}, {b"abc": b"123"}),
             ([123, "abc", "äöü", [456, "def", "ßÄÖÜ"], {"ghi": -42, 2222: "jkl"}],
