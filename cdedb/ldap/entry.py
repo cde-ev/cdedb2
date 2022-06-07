@@ -4,7 +4,7 @@
 import abc
 import logging
 from asyncio import get_running_loop
-from typing import Any, Callable, List, Optional, Sequence, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union
 
 import ldaptor.entry
 import ldaptor.entryhelpers
@@ -453,12 +453,12 @@ class RootEntry(CdEDBStaticEntry):
         super().__init__(backend.root_dn, backend)
 
     def _fetch(self, *attributes: bytes) -> LDAPObject:
-        attrs = {
+        attrs: Dict[bytes, List[bytes]] = self.backend._to_bytes({
             b"supportedLDAPVersion": [b"3"],
             # TODO right? Or is this rather dc=cde-ev,dc=de?
-            b"namingContexts": [self.backend._to_bytes(self.backend.root_dn)],
-            b"subschemaSubentry": [self.backend._to_bytes(self.backend.subschema_dn)],
-        }
+            b"namingContexts": [self.backend.root_dn],
+            b"subschemaSubentry": [self.backend.subschema_dn],
+        })
         return {k: attrs[k] for k in attributes} if attributes else attrs
 
     async def _children(self, callback: Callback = None, bound_dn: BoundDn = -1

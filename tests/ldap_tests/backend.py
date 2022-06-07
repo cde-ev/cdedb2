@@ -11,11 +11,7 @@ from cdedb.ldap.backend import LDAPsqlBackend
 
 
 class LDAPBackendTest(BasicTest):
-
-    @classmethod
-    def setUpClass(cls) -> None:
-        super().setUpClass()
-        cls.ldap_backend_class = LDAPsqlBackend  # Instantiation needs an async object.
+    ldap_backend_class = LDAPsqlBackend
 
     def test_to_bytes(self) -> None:
         values: tuple[tuple[Any, Any], ...] = (
@@ -25,6 +21,7 @@ class LDAPBackendTest(BasicTest):
             ("äöü", b"\xc3\xa4\xc3\xb6\xc3\xbc"),
             (123, b"123"),
             (b"1234", b"1234"),
+            (None, b""),
             (DN("cn=xyz"), b"cn=xyz"),
             (DN("cn=äöü"), "cn=äöü".encode()),
             (["a", "b", "c"], [b"a", b"b", b"c"]),

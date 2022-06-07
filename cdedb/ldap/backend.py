@@ -30,16 +30,18 @@ if TYPE_CHECKING:
 
 LDAPObject = Dict[bytes, List[bytes]]
 LDAPObjectMap = Dict[DN, LDAPObject]
+TO_BYTES_RETURN = Any  # Placeholder because of very annoying recursive return type.
+
 
 logger = logging.getLogger(__name__)
 
 
 @overload
-def _to_bytes(data: Union[None, str, int, bytes]) -> bytes: ...
+def _to_bytes(data: Dict[Any, Any]) -> Dict[bytes, Any]: ...
 
 
 @overload
-def _to_bytes(data: Dict[Any, Any]) -> Dict[bytes, Any]: ...
+def _to_bytes(data: Union[None, str, int, bytes]) -> bytes: ...
 
 
 @overload
@@ -48,7 +50,7 @@ def _to_bytes(data: List[Any]) -> List[Any]: ...
 
 def _to_bytes(
         data: Union[None, str, int, bytes, DN, Dict[Any, Any], List[Any]]
-) -> Union[bytes, Dict[bytes, Any], List[Any]]:
+) -> TO_BYTES_RETURN:
     """This takes a python data structure and convert all of its entries into bytes.
 
     This is needed to send the ldap responses over the wire and ensure proper
