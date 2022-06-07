@@ -34,6 +34,45 @@ LDAPObjectMap = Dict[DN, LDAPObject]
 logger = logging.getLogger(__name__)
 
 
+@overload
+def _to_bytes(data: Union[None, str, int, bytes]) -> bytes: ...
+
+
+@overload
+def _to_bytes(data: Dict[Any, Any]) -> Dict[bytes, Any]: ...
+
+
+@overload
+def _to_bytes(data: List[Any]) -> List[Any]: ...
+
+
+def _to_bytes(
+        data: Union[None, str, int, bytes, DN, Dict[Any, Any], List[Any]]
+) -> Union[bytes, Dict[bytes, Any], List[Any]]:
+    """This takes a python data structure and convert all of its entries into bytes.
+
+    This is needed to send the ldap responses over the wire and ensure proper
+    encoding, especially of strings.
+    """
+    if data is None:
+        return b""
+    elif isinstance(data, dict):
+        return {_to_bytes(k): _to_bytes(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [_to_bytes(entry) for entry in data]
+    elif isinstance(data, DN):
+        return _to_bytes(data.getText())
+    elif isinstance(data, str):
+        return data.encode("utf-8")
+    elif isinstance(data, int):
+        # TODO is there a better solution? And does this even work?
+        return _to_bytes(str(data))
+    elif isinstance(data, bytes):
+        return data
+    else:
+        raise NotImplementedError(data)
+
+
 class LdapLeaf(TypedDict):
     get_entities: Callable[[List[DN]], LDAPObjectMap]
     list_entities: Callable[[], List[RDN]]
@@ -137,40 +176,7 @@ class LDAPsqlBackend:
             return False
         return True
 
-    @overload
-    def _to_bytes(self, data: Union[None, str, int, bytes]) -> bytes: ...
-
-    @overload
-    def _to_bytes(self, data: Dict[Any, Any]) -> Dict[bytes, Any]: ...
-
-    @overload
-    def _to_bytes(self, data: List[Any]) -> List[Any]: ...
-
-    def _to_bytes(
-            self, data: Union[None, str, int, bytes, DN, Dict[Any, Any], List[Any]]
-    ) -> Union[bytes, Dict[bytes, Any], List[Any]]:
-        """This takes a python data structure and convert all of its entries into bytes.
-
-        This is needed to send the ldap responses over the wire and ensure proper
-        encoding, especially of strings.
-        """
-        if data is None:
-            return b""
-        elif isinstance(data, dict):
-            return {self._to_bytes(k): self._to_bytes(v) for k, v in data.items()}
-        elif isinstance(data, list):
-            return [self._to_bytes(entry) for entry in data]
-        elif isinstance(data, DN):
-            return self._to_bytes(data.getText())
-        elif isinstance(data, str):
-            return data.encode("utf-8")
-        elif isinstance(data, int):
-            # TODO is there a better solution? And does this even work?
-            return self._to_bytes(str(data))
-        elif isinstance(data, bytes):
-            return data
-        else:
-            raise NotImplementedError(data)
+    _to_bytes = staticmethod(_to_bytes)
 
     @property
     def anonymous_accessible_dns(self) -> List[DN]:
