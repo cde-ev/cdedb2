@@ -144,7 +144,7 @@ class AsyncLDAPBackendTest(AsyncBasicTest):
         disable debugmode for the pool creation.
         """
         asyncio.get_running_loop().set_debug(False)
-        pool = await create_pool(  # type: ignore[unreachable]
+        pool = await create_pool(
             dbname=self.conf["CDB_DATABASE_NAME"],
             user="cdb_admin",
             password=self.secrets["CDB_DATABASE_ROLES"]["cdb_admin"],

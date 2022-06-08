@@ -183,7 +183,7 @@ steps:
     path: /tmp
   commands:
   - sleep 10 # wait until the ldap server comes online
-  - bin/check.py --verbose --all-ldap
+  - COVERAGE_FILE=/coverage/.coverage.4 python3 -m coverage run -p bin/check.py --verbose --all-ldap
 - name: coverage
   image: cdedb
   pull: never
@@ -191,6 +191,7 @@ steps:
   - frontend tests a-d
   - frontend tests e-z
   - non-frontend tests
+  - ldap tests
   when:
     status:
       - failure
