@@ -12,10 +12,7 @@ from typing import (
 
 import aiopg.connection
 from aiopg.pool import Pool
-from ldaptor.protocols.ldap.distinguishedname import (
-    DistinguishedName as DN, LDAPAttributeTypeAndValue as ATV,
-    RelativeDistinguishedName as RDN,
-)
+from ldaptor.protocols.ldap.distinguishedname import DistinguishedName as DN
 from passlib.hash import sha512_crypt
 
 from cdedb.config import SecretsConfig
@@ -96,7 +93,7 @@ def _to_bytes(
 
 class LdapLeaf(TypedDict):
     get_entities: Callable[[List[DN]], LDAPObjectMap]
-    list_entities: Callable[[], List[RDN]]
+    list_entities: Callable[[], List[DN]]
 
 
 class LDAPsqlBackend:
@@ -285,7 +282,7 @@ class LDAPsqlBackend:
     def is_dua_dn(cls, dn: DN) -> bool:
         return cls._is_entry_dn(dn, cls.duas_dn, "cn")
 
-    async def list_duas(self) -> List[RDN]:
+    async def list_duas(self) -> List[DN]:
         """List all duas.
 
         The abstraction layer of entry.py expects a coroutine to return the lists of
@@ -293,13 +290,7 @@ class LDAPsqlBackend:
         async here.
         """
         duas = self._dua_pwds
-        return [
-            RDN(
-                attributeTypesAndValues=[
-                    ATV(attributeType="cn", value=self.dua_cn(cn))
-                ]
-            ) for cn in duas
-        ]
+        return [self.dua_dn(cn) for cn in duas]
 
     async def get_duas(self, dns: List[DN]) -> LDAPObjectMap:
         """Get the data for the given duas.
@@ -396,18 +387,14 @@ class LDAPsqlBackend:
         return " ".join(ret)
 
     @classmethod
-    def list_single_user(cls, persona_id: int) -> RDN:
+    def list_single_user(cls, persona_id: int) -> DN:
         """Uninlined code from list_users.
 
         This is needed in entry.py for preventing ddos attacs, so we uninline it here.
         """
-        return RDN(
-            attributeTypesAndValues=[
-                ATV(attributeType="uid", value=cls.user_uid(persona_id))
-            ]
-        )
+        return cls.user_dn(persona_id)
 
-    async def list_users(self) -> List[RDN]:
+    async def list_users(self) -> List[DN]:
         query = "SELECT id FROM core.personas WHERE NOT is_archived"
         return [self.list_single_user(e["id"]) async for e in self.query_all(query, [])]
 
@@ -597,14 +584,8 @@ class LDAPsqlBackend:
         "is_cdelokal_admin": "CdELokal-Administratoren",
     }
 
-    async def list_status_groups(self) -> List[RDN]:
-        return [
-            RDN(
-                attributeTypesAndValues=[
-                    ATV(attributeType="cn", value=self.status_group_cn(name))
-                ]
-            ) for name in self.STATUS_GROUPS
-        ]
+    async def list_status_groups(self) -> List[DN]:
+        return [self.status_group_dn(name) for name in self.STATUS_GROUPS]
 
     async def get_status_groups(self, dns: List[DN]) -> LDAPObjectMap:
         dn_to_name = dict()
@@ -671,14 +652,11 @@ class LDAPsqlBackend:
     def is_presider_group_dn(cls, dn: DN) -> bool:
         return cls._is_entry_dn(dn, cls.presider_groups_dn, "cn")
 
-    async def list_assembly_presider_groups(self) -> List[RDN]:
+    async def list_assembly_presider_groups(self) -> List[DN]:
         query = "SELECT id FROM assembly.assemblies"
         return [
-            RDN(
-                attributeTypesAndValues=[
-                    ATV(attributeType="cn", value=self.presider_group_cn(e["id"]))
-                ]
-            ) async for e in self.query_all(query, [])
+            self.presider_group_dn(e['id'])
+            async for e in self.query_all(query, [])
         ]
 
     async def get_presiders(self, assembly_ids: Collection[int]
@@ -761,15 +739,9 @@ class LDAPsqlBackend:
     def is_orga_group_dn(cls, dn: DN) -> bool:
         return cls._is_entry_dn(dn, cls.orga_groups_dn, "cn")
 
-    async def list_event_orga_groups(self) -> List[RDN]:
+    async def list_event_orga_groups(self) -> List[DN]:
         query = "SELECT id FROM event.events"
-        return [
-            RDN(
-                attributeTypesAndValues=[
-                    ATV(attributeType="cn", value=self.orga_group_cn(e["id"]))
-                ]
-            ) async for e in self.query_all(query, [])
-        ]
+        return [self.orga_group_dn(e['id']) async for e in self.query_all(query, [])]
 
     async def get_orgas(self, event_ids: Collection[int]) -> Dict[int, List[int]]:
         query = "SELECT persona_id, event_id FROM event.orgas WHERE event_id = ANY(%s)"
@@ -853,14 +825,11 @@ class LDAPsqlBackend:
     def is_moderator_group_dn(cls, dn: DN) -> bool:
         return cls._is_entry_dn(dn, cls.moderator_groups_dn, "cn")
 
-    async def list_ml_moderator_groups(self) -> List[RDN]:
+    async def list_ml_moderator_groups(self) -> List[DN]:
         query = "SELECT address FROM ml.mailinglists"
         return [
-            RDN(
-                attributeTypesAndValues=[
-                    ATV(attributeType="cn", value=self.moderator_group_cn(e["address"]))
-                ]
-            ) async for e in self.query_all(query, [])
+            self.moderator_group_dn(e['address'])
+            async for e in self.query_all(query, [])
         ]
 
     async def get_moderators(self, ml_ids: Collection[str]) -> Dict[str, List[int]]:
@@ -943,15 +912,11 @@ class LDAPsqlBackend:
     def is_subscriber_group_dn(cls, dn: DN) -> bool:
         return cls._is_entry_dn(dn, cls.subscriber_groups_dn, "cn")
 
-    async def list_ml_subscriber_groups(self) -> List[RDN]:
+    async def list_ml_subscriber_groups(self) -> List[DN]:
         query = "SELECT address FROM ml.mailinglists"
         return [
-            RDN(
-                attributeTypesAndValues=[
-                    ATV(attributeType="cn",
-                        value=self.subscriber_group_cn(e["address"]))
-                ]
-            ) async for e in self.query_all(query, [])
+            self.subscriber_group_dn(e['address'])
+            async for e in self.query_all(query, [])
         ]
 
     async def get_subscribers(self, ml_ids: Collection[str]) -> Dict[str, List[int]]:

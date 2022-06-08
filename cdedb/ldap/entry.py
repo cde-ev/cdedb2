@@ -395,9 +395,7 @@ class CdEPreLeafEntry(CdEDBStaticEntry, metaclass=abc.ABCMeta):
 
     async def _children(self, callback: Callback = None, bound_dn: BoundDn = -1
                         ) -> Optional[LDAPEntries]:
-        child_list = await self.children_lister(bound_dn=bound_dn)
-        dns = [DistinguishedName(f"{child.getText()},{self.dn.getText()}") for child in
-               child_list]
+        dns = await self.children_lister(bound_dn=bound_dn)
         children = await self.children_getter(dns)
         ret = [self.ChildGroup(dn, backend=self.backend, attributes=attributes) for
                dn, attributes in children.items()]
