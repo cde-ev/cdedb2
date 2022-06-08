@@ -107,6 +107,10 @@ class LDAPsqlBackend:
         self._dua_pwds = {name: self.encrypt_password(pwd)
                           for name, pwd in SecretsConfig()["LDAP_DUA_PW"].items()}
 
+    async def close_pool(self) -> None:
+        self.pool.close()
+        await self.pool.wait_closed()
+
     @staticmethod
     async def execute_db_query(cur: aiopg.connection.Cursor, query: str,
                                params: Sequence["DatabaseValue_s"]) -> None:

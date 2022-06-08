@@ -2,13 +2,12 @@
 To test the backend itself we need to use aiounittest, which is hard, so for now
 this only tests some static backend methods.
 """
-from typing import Any, ClassVar
+import asyncio
+from typing import Any
 
 import psycopg2.extras
 from aiopg import create_pool
-from ldaptor.protocols.ldap.distinguishedname import (
-    DistinguishedName as DN, RelativeDistinguishedName as RDN,
-)
+from ldaptor.protocols.ldap.distinguishedname import DistinguishedName as DN
 
 from cdedb.ldap.backend import LDAPsqlBackend, classproperty
 from tests.common import AsyncBasicTest, BasicTest
@@ -136,26 +135,66 @@ class LDAPBackendTest(BasicTest):
 
 
 class AsyncLDAPBackendTest(AsyncBasicTest):
-    ldap: ClassVar[LDAPsqlBackend]
-
-    @classmethod
-    def setUpClass(cls) -> None:
-        super().setUpClass()
-        cls.ldap = None  # type: ignore[assignment]
+    ldap: LDAPsqlBackend
 
     async def asyncSetUp(self) -> None:
-        if self.ldap is None:
-            pool = await create_pool(  # type: ignore[unreachable]
-                dbname=self.conf["CDB_DATABASE_NAME"],
-                user="cdb_admin",
-                password=self.secrets["CDB_DATABASE_ROLES"]["cdb_admin"],
-                host=self.conf["DB_HOST"],
-                port=self.conf["DB_PORT"],
-                cursor_factory=psycopg2.extras.RealDictCursor,
-            )
-            self.__class__.ldap = LDAPsqlBackend(pool)
+        """Since each test has it's own event loop, we need to create a pool each time.
 
-    async def test_list_duas(self) -> None:
-        duas = await self.ldap.list_duas()
-        for dua in duas:
-            self.assertIsInstance(dua, RDN)
+        This is somewhat expensive and asyncio complains when in debugmode, so we
+        disable debugmode for the pool creation.
+        """
+        asyncio.get_running_loop().set_debug(False)
+        pool = await create_pool(  # type: ignore[unreachable]
+            dbname=self.conf["CDB_DATABASE_NAME"],
+            user="cdb_admin",
+            password=self.secrets["CDB_DATABASE_ROLES"]["cdb_admin"],
+            host=self.conf["DB_HOST"],
+            port=self.conf["DB_PORT"],
+            cursor_factory=psycopg2.extras.RealDictCursor,
+        )
+        asyncio.get_running_loop().set_debug(True)
+        self.ldap = LDAPsqlBackend(pool)
+
+    async def asyncTearDown(self) -> None:
+        """Close the pool of the ldap backend."""
+        await self.ldap.close_pool()
+
+    async def test_duas(self) -> None:
+        dua_dns = await self.ldap.list_duas()
+        for dua in dua_dns:
+            self.assertIsInstance(dua, DN)
+        duas = await self.ldap.get_duas(dua_dns)
+
+    async def test_users(self) -> None:
+        persona_ids = {1, 3, 10}
+        user_dns = await self.ldap.list_users()
+        for user in user_dns:
+            self.assertIsInstance(user, DN)
+        users = await self.ldap.get_users(user_dns)
+        users_data = await self.ldap.get_users_data(persona_ids)
+        user_groups = await self.ldap.get_users_groups(persona_ids)
+
+    async def test_get_status_groups(self) -> None:
+        status_group_dns = await self.ldap.list_status_groups()
+        for status_group in status_group_dns:
+            self.assertIsInstance(status_group, DN)
+        status_groups = await self.ldap.get_status_groups(status_group_dns)
+
+    async def test_assembly_presiders(self) -> None:
+        assembly_ids = {1, 2}
+        presider_group_dns = await self.ldap.list_assembly_presider_groups()
+        for presider in presider_group_dns:
+            self.assertIsInstance(presider, DN)
+        presider_groups = await self.ldap.get_assembly_presider_groups(
+            presider_group_dns)
+        presiders = await self.ldap.get_presiders(assembly_ids)
+        assemblies = await self.ldap.get_assemblies(assembly_ids)
+
+    async def test_orgas(self) -> None:
+        event_ids = {1, 2, 3, 4}
+        orga_group_dns = await self.ldap.list_event_orga_groups()
+        for orga in orga_group_dns:
+            self.assertIsInstance(orga, DN)
+        orga_groups = await self.ldap.get_event_orga_groups(orga_group_dns)
+        orgas = await self.ldap.get_orgas(event_ids)
+        events = await self.ldap.get_events(event_ids)
