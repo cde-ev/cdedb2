@@ -335,6 +335,10 @@ class BasicTest(unittest.TestCase):
         return self.get_sample_data(table, [id_])[id_]
 
 
+class AsyncBasicTest(unittest.IsolatedAsyncioTestCase, BasicTest):
+    pass
+
+
 class CdEDBTest(BasicTest):
     """Reset the DB for every test."""
     longMessage = False
