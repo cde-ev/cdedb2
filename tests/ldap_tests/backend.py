@@ -36,13 +36,13 @@ class LDAPBackendTest(BasicTest):
 
         for in_, out in values:
             with self.subTest(in_):
-                self.assertEqual(out, self.ldap_backend_class._to_bytes(in_))
+                self.assertEqual(out, self.ldap_backend_class._to_bytes(in_))  # pylint: disable=protected-access
 
     def test_encrypt_verify_password(self) -> None:
         pw = "abcdefghij1234567890"
-        hash = self.ldap_backend_class.encrypt_password(pw)
-        self.assertNotEqual(pw, hash)
-        self.assertTrue(self.ldap_backend_class.verify_password(pw, hash))
+        pw_hash = self.ldap_backend_class.encrypt_password(pw)
+        self.assertNotEqual(pw, pw_hash)
+        self.assertTrue(self.ldap_backend_class.verify_password(pw, pw_hash))
 
     def test_classproperties(self) -> None:
         classproperties = {
@@ -61,7 +61,7 @@ class LDAPBackendTest(BasicTest):
     def test_dn_value(self) -> None:
         dn_attr, dn_value = "cn", "cde-ev"
         dn = DN(f"{dn_attr}={dn_value}")
-        self.assertEqual(self.ldap_backend_class._dn_value(dn, dn_attr), dn_value)
+        self.assertEqual(self.ldap_backend_class._dn_value(dn, dn_attr), dn_value)  # pylint: disable=protected-access
 
     def test_user_id(self) -> None:
         persona_id = 42
