@@ -277,6 +277,26 @@
                     </dd>
                 {% endif %}
 
+                {% if data['is_member'] %}
+                    <dt>{% trans %}Searchability{% endtrans %}</dt>
+                    <dd id="searchability">
+                        {{ util.deko_checkbox(checked=data['is_searchable']) }}
+                        {% if data['is_searchable'] %}
+                            {% trans %}Data is visible for other Members.{% endtrans %}
+                        {% else %}
+                            {% if not data['decided_search'] %}
+                                {% trans %}Not yet decided. (Data is not visible){% endtrans %}
+                                {% if data['id'] == user.persona_id %}
+                                    {{ util.href(cdedblink('cde/consent_decision'), gettext("Give Consent"),
+                                                 icon="hand-point-right", aclass="btn btn-xs btn-primary") }}
+                                {% endif %}
+                            {% else %}
+                                {% trans %}Data is not visible.{% endtrans %}
+                            {% endif %}
+                        {% endif %}
+                    </dd>
+                {% endif %}
+
                 {% if "balance" in data %}
                     <dt>{% trans %}Balance{% endtrans %}</dt>
                     <dd id="balance">
@@ -313,26 +333,6 @@
                                 gettext("You may issue a new %(direct_debit_link)s instead.")|format(
                                     direct_debit_link=util.href(cdedblink("cde/i25p_index"),
                                                                 gettext("Direct Debit Authorization")))|s) }}
-                        {% endif %}
-                    </dd>
-                {% endif %}
-
-                {% if data['is_member'] %}
-                    <dt>{% trans %}Searchability{% endtrans %}</dt>
-                    <dd id="searchability">
-                        {{ util.deko_checkbox(checked=data['is_searchable']) }}
-                        {% if data['is_searchable'] %}
-                            {% trans %}Data is visible for other Members.{% endtrans %}
-                        {% else %}
-                            {% if not data['decided_search'] %}
-                                {% trans %}Not yet decided. (Data is not visible){% endtrans %}
-                                {% if data['id'] == user.persona_id %}
-                                    {{ util.href(cdedblink('cde/consent_decision'), gettext("Give Consent"),
-                                                 icon="hand-point-right", aclass="btn btn-xs btn-primary") }}
-                                {% endif %}
-                            {% else %}
-                                {% trans %}Data is not visible.{% endtrans %}
-                            {% endif %}
                         {% endif %}
                     </dd>
                 {% endif %}
