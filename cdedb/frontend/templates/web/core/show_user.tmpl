@@ -292,11 +292,11 @@
 
                 {% if "donation" in data %}
                     <dt>{% trans %}Annual Donation{% endtrans %}</dt>
-                    <dd>{{ data['donation']|money(lang=lang) }}</dd>
+                    <dd>{{ data['donation']|money(lang=lang) if data['donation'] else "–" }}</dd>
                 {% endif %}
 
                 {% if "has_lastschrift" in data %}
-                    <dt>{% trans %}Active Lastschrift{% endtrans %}</dt>
+                    <dt>{% trans %}Method of Payment{% endtrans %}</dt>
                     <dd id="lastschrift">
                         {% if data["has_lastschrift"] %}
                             {{ util.href(cdedblink("core/my_lastschrift") if data['id'] == user.persona_id
@@ -304,13 +304,15 @@
                                          gettext("Direct Debit Authorization"), icon="euro-sign",
                                          readonly=(data['id'] != user.persona_id and "finance" not in user.admin_views)) }}
                         {% else %}
-                            {% trans %}No active Direct Debit Authorization.{% endtrans %}
+                            {% trans %}Balance{% endtrans %}
                             {% if "finance" in user.admin_views %}
                                 {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
                                              gettext("New Direct Debit Authorization …"), icon="euro-sign") }}
-                            {% elif data['id'] == user.persona_id %}
-                                {{ util.href(cdedblink("cde/i25p_index"), gettext("More Information")) }}
                             {% endif %}
+                            {{ util.output_info(
+                                gettext("You may issue a new %(direct_debit_link)s instead.")|format(
+                                    direct_debit_link=util.href(cdedblink("cde/i25p_index"),
+                                                                gettext("Direct Debit Authorization")))|s) }}
                         {% endif %}
                     </dd>
                 {% endif %}
