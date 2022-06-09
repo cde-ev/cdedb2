@@ -75,8 +75,7 @@ apt-get install --yes --no-install-recommends                       \
     python3-lxml python3-pil python3-webtest python3-werkzeug       \
     python3-ldap3 python3-passlib python3-bleach python3-magic      \
     python3-sphinx-rtd-theme python3-zxcvbn python3-markdown        \
-    python3-requests python3-segno python3-vobject                  \
-    python3-graphviz python3-phonenumbers                           \
+    python3-requests python3-graphviz python3-phonenumbers          \
     \
     python3-pip python3-click isort python3-freezegun
 # some packages interpret "recommends" very narrowly, breaking if they are missing
@@ -92,7 +91,8 @@ python3 -m pip install --no-cache-dir \
     async_timeout==4.0.2 \
     mailmanclient==3.3.3 \
     schulze_condorcet==2.0.0 \
-    subman==0.1.0
+    subman==0.1.0 \
+    segno==1.5.2
 
 # devtools
 python3 -m pip install --no-cache-dir \

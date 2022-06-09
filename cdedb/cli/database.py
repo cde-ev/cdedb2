@@ -4,7 +4,9 @@ import pathlib
 import subprocess
 
 from cdedb.cli.dev.json2sql import json2sql
-from cdedb.cli.util import connect, has_systemd, is_docker, sanity_check
+from cdedb.cli.util import (
+    SAMPLE_DATA_JSON, connect, has_systemd, is_docker, sanity_check,
+)
 from cdedb.config import Config, SecretsConfig, TestConfig
 
 
@@ -87,7 +89,7 @@ def populate_database(conf: TestConfig, secrets: SecretsConfig,
     """Populate the database with sample data."""
     repo_path: pathlib.Path = conf['REPOSITORY_PATH']
 
-    infile = repo_path / "tests" / "ancillary_files" / "sample_data.json"
+    infile = repo_path / SAMPLE_DATA_JSON
     with open(infile) as f:
         data = json.load(f)
     xss_payload = conf.get("XSS_PAYLOAD", "") if xss else ""

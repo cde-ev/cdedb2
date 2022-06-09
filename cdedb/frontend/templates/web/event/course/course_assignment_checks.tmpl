@@ -1,6 +1,7 @@
 {% set sidenav_active='event_course_choices' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/event/generic.tmpl" as generic with context %}
 {% block title %}
     {% trans title=ambience['event']['title']%}
         Course Assignment Checks ({{ title }})
@@ -9,7 +10,7 @@
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
-{{ util.breadcrumb_link(cdedblink("event/course_choices"), gettext("Course Assignment")) }}
+{{ util.breadcrumb_link(cdedblink("event/course_choices"), gettext("Course Assignment"), icon="crosshairs") }}
 {{ util.breadcrumb_link(cdedblink("event/course_assignment_checks"), gettext("Checks"), active=True) }}
 {% endblock %}
 {% block heading %}
@@ -61,6 +62,14 @@
                 {% endcall %}
             </div>
         {% endfor %}
+
+        {% if mec_violations %}
+            <div class="col-md-6">
+                {% call generic.constraint_violations_panel(mec_severity, title=gettext("Mutually Exclusive Courses")) %}
+                    {{ generic.list_mec_violations(mec_violations, courses) }}
+                {% endcall %}
+            </div>
+        {% endif %}
 
         {% for key, heading, icon, panelclass in (
                 ('no_course', gettext("Participants without course"), 'question-circle', 'danger'),
