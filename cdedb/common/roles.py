@@ -353,7 +353,7 @@ def roles_to_admin_views(roles: Set[Role]) -> Set[AdminView]:
 
 # This overrides the more general PERSONA_DEFAULTS dict with some realm-specific
 # defaults for genesis account creation.
-GENESIS_REALM_OVERRIDE = {
+GENESIS_REALM_OVERRIDE: Dict[str, Dict[str, Any]] = {
     'event': {
         'is_cde_realm': False,
         'is_event_realm': True,
