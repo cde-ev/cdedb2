@@ -629,8 +629,10 @@ class CdELastschriftMixin(CdEBaseFrontend):
         }
 
         meta_info = self.coreproxy.get_meta_info(rs)
+        annual_fee = self.conf["MEMBERSHIP_FEE"] * self.conf["PERIODS_PER_YEAR"]
         tex = self.fill_template(rs, "tex", "lastschrift_subscription_form",
-                                 {'meta_info': meta_info, 'data': data})
+                                 {'meta_info': meta_info, 'data': data,
+                                  "annual_fee": annual_fee})
         errormsg = n_("Form could not be created. Please refrain from using "
                       "special characters if possible.")
         pdf = self.serve_latex_document(
