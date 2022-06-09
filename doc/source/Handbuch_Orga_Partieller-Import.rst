@@ -152,7 +152,7 @@ Beispiel
 
 Das folgende Beispiel bearbeitet, löscht und erschafft jeweils einen Eintrag
 aus jeder der Kategorien Kurs, Unterkunft und Anmeldung. Außerdem wird eine
-neue Unterkunftgruppe angelegt. Die verwendeten
+neue Unterkunftsgruppe angelegt. Die verwendeten
 nutzerdefinierten Felder müssen vorher definiert sein.
 
 .. literalinclude:: ../../tests/ancillary_files/partial_event_import.json
@@ -165,6 +165,7 @@ Hier sind die Änderungen gelistet, die in den jeweiligen Inkrementierungen der
 Export-Version neu eingeführt wurden. Für jede Version ist angegeben, ob die
 Version für den partiellen Import strikt abwärtskompatibel sind oder nicht.
 
+* Version (15, 6): Keine Änderungen am partiellen Export.
 * Version (15, 5): Veranstaltungsteilgruppen sind nun im vollen und im partiellen Export
   enthalten. Sie können derzeit __nicht__ importiert werden und werden, falls vorhanden,
   beim Import ignoriert.

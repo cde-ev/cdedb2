@@ -19,8 +19,8 @@ import copy
 import datetime
 from typing import Any, Collection, Dict, Iterable, List, Optional, Protocol, Set, Tuple
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     Silencer, access, affirm_set_validation as affirm_set, affirm_validation as affirm,
     affirm_validation_optional as affirm_optional, cast_fields, internal, singularize,
@@ -37,9 +37,9 @@ from cdedb.common.fields import (
     EVENT_PART_FIELDS, FEE_MODIFIER_FIELDS, FIELD_DEFINITION_FIELDS, LODGEMENT_FIELDS,
     LODGEMENT_GROUP_FIELDS, PART_GROUP_FIELDS, PERSONA_EVENT_FIELDS,
     PERSONA_STATUS_FIELDS, QUESTIONNAIRE_ROW_FIELDS, REGISTRATION_FIELDS,
-    REGISTRATION_PART_FIELDS, REGISTRATION_TRACK_FIELDS,
+    REGISTRATION_PART_FIELDS, REGISTRATION_TRACK_FIELDS, STORED_EVENT_QUERY_FIELDS,
 )
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.sorting import mixed_existence_sorter, xsorted
 from cdedb.database.connection import Atomizer
 
@@ -738,6 +738,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 ('event.course_choices', "track_id", (
                     'id', 'registration_id', 'track_id', 'course_id', 'rank',)),
                 ('event.questionnaire_rows', "event_id", QUESTIONNAIRE_ROW_FIELDS),
+                ('event.stored_queries', "event_id", STORED_EVENT_QUERY_FIELDS),
                 ('event.log', "event_id", (
                     'id', 'ctime', 'code', 'submitted_by', 'event_id',
                     'persona_id', 'change_note')),

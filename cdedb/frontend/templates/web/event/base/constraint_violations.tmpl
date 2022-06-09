@@ -1,0 +1,38 @@
+{% set sidenav_active = 'constraint_violations' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/event/generic.tmpl" as generic with context %}
+{% block title %}
+    {{ ambience['event']['title'] }} – {% trans %}Constraint Violations{% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon='chalkboard-teacher') }}
+    {{ util.breadcrumb_link(cdedblink("event/constraint_violations"), gettext("Constraint Violations"), active=True) }}
+{% endblock %}
+{% block heading %}
+    {{ util.context_heading(gettext("Constraint Violations"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+{% endblock %}
+{% block content %}
+    {% if not mep_violations and not mec_violations %}
+        {% trans %}
+            There are currently no constraints being violated.
+        {% endtrans %}
+    {% endif %}
+
+    {% if mep_violations %}
+        <h2 class="heading-underline" id="mep-violations">
+            {% trans %}Mutually Exclusive Participation{% endtrans %}
+        </h2>
+        {# These are presorted by persona and constraint. #}
+        {{ generic.list_mep_violations(mep_violations, personas, link_registration=True) }}
+    {% endif %}
+
+    {% if mec_violations %}
+        <h2 class="heading-underline" id="mec-violations">
+            {% trans %}Mutually Exclusive Courses{% endtrans %}
+        </h2>
+        {# These are presorted by course and constraint. #}
+        {{ generic.list_mec_violations(mec_violations, courses, link_course=True) }}
+    {% endif %}
+{% endblock %}

@@ -2,36 +2,44 @@
 
 import enum
 import itertools
-import typing
 from collections import OrderedDict
 from typing import (
     TYPE_CHECKING, Collection, Dict, List, Literal, Mapping, Optional, Set, Type, Union,
+    cast, get_origin,
 )
 
 from subman.machine import SubscriptionPolicy
 
-import cdedb.validationtypes as vtypes
-from cdedb.common import CdEDBObject, RequestState, User
+import cdedb.common.validation.types as vtypes
 from cdedb.common.exceptions import PrivilegeError
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.roles import extract_roles
 from cdedb.database.constants import (
     MailinglistDomain, MailinglistTypes, RegistrationPartStati,
 )
 
+if TYPE_CHECKING:
+    from cdedb.backend.assembly import AssemblyBackend
+    from cdedb.backend.core import CoreBackend
+    from cdedb.backend.event import EventBackend
+    from cdedb.common import CdEDBObject, RequestState, User
+else:
+    CdEDBObject = RequestState = User = None
+
 SubscriptionPolicyMap = Dict[int, SubscriptionPolicy]
 
 
 class BackendContainer:
     """Helper class to pass multiple backends into the ml_type methods at once."""
-    def __init__(self, *, core=None, event=None, assembly=None):  # type: ignore
-        self.core = core
-        self.event = event
-        self.assembly = assembly
+    def __init__(self, *, core: "CoreBackend" = None, event: "EventBackend" = None,
+                 assembly: "AssemblyBackend" = None):
+        self.core = cast("CoreBackend", core)
+        self.event = cast("EventBackend", event)
+        self.assembly = cast("AssemblyBackend", assembly)
 
 
-def get_full_address(val: CdEDBObject) -> str:
+def get_full_address(val: CdEDBObject) -> vtypes.Email:
     """Construct the full address of a mailinglist."""
     if isinstance(val, dict):
         return val['local_part'] + '@' + MailinglistDomain(val['domain']).get_domain()
@@ -98,7 +106,7 @@ class GeneralMailinglist:
             **cls.mandatory_validation_fields,
             **cls.optional_validation_fields,
         }.items():
-            if typing.get_origin(argtype) is list:
+            if get_origin(argtype) is list:
                 ret[field] = "[str]"
             else:
                 ret[field] = "str"
@@ -284,7 +292,7 @@ class EventAssociatedMeta(GeneralMailinglist):
     """Metaclass for all event associated mailinglists."""
     # Allow empty event_id to mark legacy event-lists.
     mandatory_validation_fields: vtypes.TypeMapping = {
-        "event_id": Optional[vtypes.ID]  # type: ignore
+        "event_id": Optional[vtypes.ID]  # type: ignore[dict-item]
     }
 
     @classmethod
@@ -449,13 +457,13 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         if mailinglist["event_id"] is None:
             return {anid: SubscriptionPolicy.invitation_only for anid in persona_ids}
 
-        ret = bc.event.check_registrations_status(
+        data = bc.event.check_registrations_status(
             rs, persona_ids, mailinglist['event_id'],
             mailinglist['registration_stati'])
-        for k, v in ret.items():
-            ret[k] = SubscriptionPolicy.subscribable if v else SubscriptionPolicy.none
-
-        return ret
+        return {
+            k: SubscriptionPolicy.subscribable if v else SubscriptionPolicy.none
+            for k, v in data.items()
+        }
 
     @classmethod
     def get_implicit_subscribers(cls, rs: RequestState, bc: BackendContainer,
@@ -529,7 +537,7 @@ class EventOrgaMailinglist(EventAssociatedMeta, ImplicitsSubscribableMeta,
 class AssemblyAssociatedMailinglist(ImplicitsSubscribableMeta, AssemblyMailinglist):
     # Allow empty assembly_id to mark legacy assembly-lists.
     mandatory_validation_fields: vtypes.TypeMapping = {
-        "assembly_id": Optional[vtypes.ID]  # type: ignore
+        "assembly_id": Optional[vtypes.ID]  # type: ignore[dict-item]
     }
 
     @classmethod

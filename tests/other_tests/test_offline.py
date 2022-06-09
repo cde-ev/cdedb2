@@ -11,10 +11,12 @@ from cdedb.cli.database import connect
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS
 from cdedb.config import SecretsConfig, get_configpath, set_configpath
 from cdedb.frontend.application import Application
-from tests.common import FrontendTest
+from tests.common import FrontendTest, storage
 
 
 class TestOffline(FrontendTest):
+
+    @storage
     def test_offline_vm(self) -> None:
         repopath = self.conf["REPOSITORY_PATH"]
         user = {
@@ -51,7 +53,7 @@ class TestOffline(FrontendTest):
                 check=True, env=env)
             # Reset web test app for changed configuration
             new_app = Application()
-            self.app = webtest.TestApp(  # type: ignore
+            self.__class__.app = webtest.TestApp(
                 new_app, extra_environ=self.app_extra_environ)
             self.app.reset()
             self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME,
@@ -107,6 +109,19 @@ class TestOffline(FrontendTest):
                 'registrations',
             }
             self.assertEqual(set(self.response.json["export"]), expectation)
+            self.login(user)
+
+            # Test event keeper works properly, by triggering a manual commit
+            self.get('/event/event/1/field/setselect?kind=1')
+            self.assertTitle("Datenfeld auswählen (Große Testakademie 2222)")
+            f = self.response.forms['selectfieldform']
+            f['field_id'] = 3
+            self.submit(f)
+            self.assertTitle("Datenfeld lodge setzen (Große Testakademie 2222)")
+            f = self.response.forms['fieldform']
+            f['input1'] = "Ich will auf jeden Fall mit Anton A. auf ein Zimmer!"
+            f['change_note'] = "EventKeeper test commit."
+            self.submit(f)
 
             # Additional tests can be added here.
             # Due to the expensive setup of this test these should not

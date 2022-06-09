@@ -1,10 +1,14 @@
 """Set up the file system related stuff, like upload-storage, loggers and log dirs."""
+import json
 import os
 import pathlib
 import shutil
-from typing import Tuple
+from typing import Collection, Tuple
 
-from cdedb.cli.util import sanity_check, switch_user
+from cdedb.backend.entity_keeper import EntityKeeper
+from cdedb.cli.util import (
+    SAMPLE_DATA_JSON, sanity_check, sanity_check_production, switch_user,
+)
 from cdedb.config import Config, SecretsConfig, get_configpath
 
 
@@ -116,6 +120,27 @@ def populate_storage(conf: Config) -> None:
     shutil.copy(testfile_dir / "kandidaten.pdf", attachment_dir / "3_v1")
     for file in files:
         shutil.copy(testfile_dir / file, storage_dir / "testfiles")
+
+
+@sanity_check_production
+def populate_event_keeper(conf: Config, event_ids: Collection[int]) -> None:
+    """Initialize the event keeper git for the given events.
+
+    This is needed for instances populated with sample data, and for offline instances.
+    """
+    keeper = EntityKeeper(conf, 'event_keeper')
+    for event_id in event_ids:
+        keeper.init(event_id)
+        keeper.commit(event_id, "", "Initialer Commit.")
+
+
+@sanity_check
+def populate_sample_event_keepers(conf: Config) -> None:
+    """Initialize the event keeper git for all events from the sample data."""
+    with open(conf["REPOSITORY_PATH"] / SAMPLE_DATA_JSON, "r", encoding="UTF-8") as f:
+        sample_data = json.load(f)
+    max_event_id = len(sample_data.get('event.events'))
+    populate_event_keeper(conf, range(1, max_event_id + 1))
 
 
 @sanity_check

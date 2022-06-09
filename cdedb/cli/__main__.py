@@ -3,20 +3,26 @@
 Most of these are just wrappers around methods in their resepective submodule
 and should not be called directly.
 """
+import json
 import pathlib
+from typing import Any, Dict, List
 
 import click
 
 from cdedb.cli.database import (
-    compile_sample_data, connect, create_database, create_database_users,
-    populate_database, remove_prepared_transactions,
+    connect, create_database, create_database_users, populate_database,
+    remove_prepared_transactions,
 )
-from cdedb.cli.storage import create_log, create_storage, populate_storage, reset_config
-from cdedb.cli.util import get_user, switch_user
+from cdedb.cli.dev.json2sql import json2sql
+from cdedb.cli.dev.serve import serve_debugger
+from cdedb.cli.dev.sql2json import sql2json
+from cdedb.cli.storage import (
+    create_log, create_storage, populate_sample_event_keepers, populate_storage,
+    reset_config,
+)
+from cdedb.cli.util import get_user, pass_config, pass_secrets, switch_user
+from cdedb.common import CustomJSONEncoder
 from cdedb.config import DEFAULT_CONFIGPATH, SecretsConfig, TestConfig, set_configpath
-
-pass_config = click.make_pass_decorator(TestConfig, ensure=True)
-pass_secrets = click.make_pass_decorator(SecretsConfig, ensure=True)
 
 
 @click.group()
@@ -31,14 +37,6 @@ def cli(configpath: pathlib.Path) -> None:
     file. This may also be done by setting the CDEDB_CONFIGPATH environment variable.
     """
     set_configpath(configpath)
-
-
-@cli.command("serve")
-def serve_cmd() -> None:
-    """Serve an interactive debugging instance."""
-    # this is an inline import to encapsulate the heavy dependencies of the server setup
-    from cdedb.cli.server import serve  # pylint: disable=import-outside-toplevel
-    serve()
 
 
 @cli.group(name="config")
@@ -97,6 +95,7 @@ def populate_storage_cmd(config: TestConfig, owner: str) -> None:
     """Populate the file storage with sample data."""
     with switch_user(owner):
         populate_storage(config)
+        populate_sample_event_keepers(config)
 
 
 @filesystem.group(name="log")
@@ -135,6 +134,7 @@ def create_database_cmd(config: TestConfig, secrets: SecretsConfig) -> None:
     remove_prepared_transactions(config, secrets)
 
 
+# TODO move this in development section
 @database.command(name="populate")
 @click.option(
     "--xss/--no-xss", default=False, help="prepare the database for xss checks")
@@ -155,13 +155,29 @@ def remove_transactions_cmd(config: TestConfig, secrets: SecretsConfig) -> None:
     remove_prepared_transactions(config, secrets)
 
 
+#
+# Development commands
+#
+
 @cli.group(name="dev")
 def development() -> None:
-    """High-level helpers for development."""
+    """Helpers for development, expecting a running CdEDBv2."""
 
 
-# TODO in which category should we do this?
-@development.command(name="compile-sample-data")
+@development.command(name="compile-sample-data-json")
+@click.option("-o", "--outfile", default="/tmp/sample_data.json",
+              type=click.Path(), help="the place to store the sql file")
+@pass_secrets
+@pass_config
+def compile_sample_data_json(config: TestConfig, secrets: SecretsConfig,
+                             outfile: pathlib.Path) -> None:
+    """Generate a JSON-file from the current state of the database."""
+    data = sql2json(config, secrets)
+    with open(outfile, "w") as f:
+        json.dump(data, f, cls=CustomJSONEncoder, indent=4, ensure_ascii=False)
+
+
+@development.command(name="compile-sample-data-sql")
 @click.option("-i", "--infile",
               default="/cdedb2/tests/ancillary_files/sample_data.json",
               type=click.Path(), help="the json file containing the sample data")
@@ -169,12 +185,29 @@ def development() -> None:
               type=click.Path(), help="the place to store the sql file")
 @click.option(
     "--xss/--no-xss", default=False, help="prepare sample data for xss checks")
+@pass_secrets
 @pass_config
-def compile_sample_data_cmd(
-    config: TestConfig, infile: str, outfile: str, xss: bool
+def compile_sample_data_sql(
+    config: TestConfig, secrets: SecretsConfig, infile: pathlib.Path,
+    outfile: pathlib.Path, xss: bool
 ) -> None:
-    """Parse sample data from a .json to a .sql file."""
-    compile_sample_data(config, pathlib.Path(infile), pathlib.Path(outfile), xss=xss)
+    """Parse sample data from a .json to a .sql file.
+
+    The latter can then directly be applied to a database, to populate it with the
+    respective sample data.
+
+    The xss-switch decides if the sample data should be contaminated with script
+    tags, to check proper escaping afterwards.
+    """
+    with open(infile, "r", encoding="utf8") as f:
+        data: Dict[str, List[Any]] = json.load(f)
+
+    xss_payload = config.get("XSS_PAYLOAD", "") if xss else ""
+    commands = json2sql(config, secrets, data, xss_payload=xss_payload)
+
+    with open(outfile, "w") as f:
+        for cmd in commands:
+            print(cmd, file=f)
 
 
 @development.command(name="apply-sample-data")
@@ -190,9 +223,16 @@ def apply_sample_data(config: TestConfig, owner: str) -> None:
         create_log(config)
         create_storage(config)
         populate_storage(config)
+        populate_sample_event_keepers(config)
         create_database_users(config)
         create_database(config, secrets)
         populate_database(config, secrets)
+
+
+@development.command(name="serve")
+def serve_debugger_cmd() -> None:
+    """Serve the cdedb using the werkzeug development server"""
+    serve_debugger()
 
 
 @development.command(name="execute-sql-script")

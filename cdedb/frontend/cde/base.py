@@ -19,28 +19,27 @@ from typing import Any, Collection, Dict, List, Optional, Sequence, Set, Tuple
 from werkzeug import Response
 from werkzeug.datastructures import FileStorage
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, Error, LineResolutions, RequestState, deduct_years,
     get_hash, merge_dicts, now,
 )
 from cdedb.common.fields import LOG_FIELDS_COMMON
-from cdedb.common.i18n import (
-    get_country_code_from_country, get_localized_country_codes, n_,
-)
+from cdedb.common.i18n import get_country_code_from_country, get_localized_country_codes
+from cdedb.common.n_ import n_
 from cdedb.common.query import QueryConstraint, QueryOperators, QueryScope
 from cdedb.common.roles import PERSONA_DEFAULTS
 from cdedb.common.sorting import xsorted
+from cdedb.common.validation import (
+    PERSONA_FULL_CDE_CREATION, filter_none, get_errors, get_warnings,
+)
 from cdedb.filter import enum_entries_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, CustomCSVDialect, REQUESTdata, REQUESTdatadict, REQUESTfile,
     TransactionObserver, access, calculate_db_logparams, calculate_loglinks,
     check_validation as check, check_validation_optional as check_optional,
     inspect_validation as inspect, make_membership_fee_reference, request_extractor,
-)
-from cdedb.validation import (
-    PERSONA_FULL_CDE_CREATION, filter_none, get_errors, get_warnings,
 )
 
 MEMBERSEARCH_DEFAULTS = {
@@ -210,9 +209,9 @@ class CdEBaseFrontend(AbstractUserFrontend):
 
         events = self.pasteventproxy.list_past_events(rs)
         pevent_id = None
-        if rs.values.get('qval_pevent_id'):
+        if pevent_id := rs.values.get('qval_pevent_id'):
             try:
-                pevent_id = int(rs.values.get('qval_pevent_id'))  # type: ignore
+                pevent_id = int(pevent_id)
             except ValueError:
                 pass
         courses: Dict[int, str] = {}
@@ -660,12 +659,12 @@ class CdEBaseFrontend(AbstractUserFrontend):
             params: vtypes.TypeMapping = {
                 # as on the first submit no values for the resolution are transmitted,
                 # we have to cast None -> LineResolutions.none after extraction
-                f"resolution{lineno}": Optional[LineResolutions],  # type: ignore
-                f"doppelganger_id{lineno}": Optional[vtypes.ID],  # type: ignore
-                f"hash{lineno}": Optional[str],  # type: ignore
-                f"is_orga{lineno}": Optional[bool],  # type: ignore
-                f"is_instructor{lineno}": Optional[bool],  # type: ignore
-                f"update_username{lineno}": Optional[bool],  # type: ignore
+                f"resolution{lineno}": Optional[LineResolutions],  # type: ignore[dict-item]
+                f"doppelganger_id{lineno}": Optional[vtypes.ID],  # type: ignore[dict-item]
+                f"hash{lineno}": Optional[str],  # type: ignore[dict-item]
+                f"is_orga{lineno}": Optional[bool],  # type: ignore[dict-item]
+                f"is_instructor{lineno}": Optional[bool],  # type: ignore[dict-item]
+                f"update_username{lineno}": Optional[bool],  # type: ignore[dict-item]
             }
             tmp = request_extractor(rs, params)
             if tmp[f"resolution{lineno}"] is None:

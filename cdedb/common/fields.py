@@ -5,7 +5,7 @@
 from typing import Dict, Set, Tuple
 
 import cdedb.database.constants as const
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 
 # A set of roles a user may have.
 Role = str

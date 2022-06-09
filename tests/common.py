@@ -36,12 +36,14 @@ from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.common import AbstractBackend
 from cdedb.backend.core import CoreBackend
-from cdedb.backend.entity_keeper import EntityKeeper
 from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
-from cdedb.cli.storage import create_storage, populate_storage
+from cdedb.cli.dev.json2sql import json2sql
+from cdedb.cli.storage import (
+    create_storage, populate_sample_event_keepers, populate_storage,
+)
 from cdedb.common import (
     ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD, CdEDBLog, CdEDBObject,
     CdEDBObjectMap, PathLike, RequestState, merge_dicts, nearly_now, now,
@@ -192,13 +194,13 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
         rs._conn = connpool[roles_to_db_role(rs.user.roles)]
         rs.conn = rs._conn
         if "event" in rs.user.roles and hasattr(backend, "orga_info"):
-            rs.user.orga = backend.orga_info(  # type: ignore
+            rs.user.orga = backend.orga_info(  # type: ignore[attr-defined]
                 rs, rs.user.persona_id)
         if "ml" in rs.user.roles and hasattr(backend, "moderator_info"):
-            rs.user.moderator = backend.moderator_info(  # type: ignore
+            rs.user.moderator = backend.moderator_info(  # type: ignore[attr-defined]
                 rs, rs.user.persona_id)
         if "assembly" in rs.user.roles and hasattr(backend, "presider_info"):
-            rs.user.presider = backend.presider_info(  # type: ignore
+            rs.user.presider = backend.presider_info(  # type: ignore[attr-defined]
                 rs, rs.user.persona_id)
         return rs
 
@@ -246,6 +248,7 @@ class BasicTest(unittest.TestCase):
     configpath: ClassVar[pathlib.Path]
     _orig_configpath: ClassVar[pathlib.Path]
     conf: ClassVar[TestConfig]
+    secrets: ClassVar[SecretsConfig]
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -254,6 +257,7 @@ class BasicTest(unittest.TestCase):
         # save the configpath in an extra variable to reset it after each test
         cls._orig_configpath = configpath
         cls.conf = TestConfig()
+        cls.secrets = SecretsConfig()
         cls.storage_dir = cls.conf['STORAGE_DIR']
         cls.testfile_dir = cls.storage_dir / "testfiles"
 
@@ -263,11 +267,7 @@ class BasicTest(unittest.TestCase):
             create_storage(self.conf)
             populate_storage(self.conf)
         if getattr(test_method, self.needs_event_keeper_marker, False):
-            max_event_id = len(self.get_sample_data('event.events'))
-            keeper = EntityKeeper(self.conf, 'event_keeper')
-            for event_id in range(1, max_event_id + 1):
-                keeper.init(event_id)
-                keeper.commit(event_id, "", "Initialer Commit.")
+            populate_sample_event_keepers(self.conf)
 
     def tearDown(self) -> None:
         test_method = getattr(self, self._testMethodName)
@@ -345,7 +345,12 @@ class CdEDBTest(BasicTest):
         super().setUpClass()
         sample_data_dir = pathlib.Path("tests/ancillary_files")
         cls._clean_data = (sample_data_dir / "clean_data.sql").read_text()
-        cls._sample_data = (sample_data_dir / "sample_data.sql").read_text()
+
+        # compile the sample data
+        json_file = "/cdedb2/tests/ancillary_files/sample_data.json"
+        with open(json_file, "r", encoding="utf8") as f:
+            data: Dict[str, List[CdEDBObject]] = json.load(f)
+        cls._sample_data = "\n".join(json2sql(cls.conf, cls.secrets, data))
 
     def setUp(self) -> None:
         with Script(
@@ -389,7 +394,7 @@ class BackendTest(CdEDBTest):
         cls.ml = cls.initialize_backend(MlBackend)
         cls.assembly = cls.initialize_backend(AssemblyBackend)
         # Workaround to make orga info available for calls into the MLBackend.
-        cls.ml.orga_info = lambda rs, persona_id: cls.event.orga_info(  # type: ignore
+        cls.ml.orga_info = lambda rs, persona_id: cls.event.orga_info(  # type: ignore[attr-defined]
             rs.sessionkey, persona_id)
         cls.translations = setup_translations(cls.conf)
 
@@ -410,7 +415,7 @@ class BackendTest(CdEDBTest):
             self.user = user
         else:
             self.user = USER_DICT["anonymous"]
-        return self.key  # type: ignore
+        return self.key  # type: ignore[return-value]
 
     def logout(self) -> None:
         self.core.logout(self.key)
@@ -1040,7 +1045,7 @@ class FrontendTest(BackendTest):
         self.key = self.app.cookies.get('sessionkey', None)
         if not self.key:
             self.user = USER_DICT["anonymous"]
-        return self.key  # type: ignore
+        return self.key  # type: ignore[return-value]
 
     def logout(self, verbose: bool = False) -> None:  # pylint: disable=arguments-differ
         """Log out. Raises a KeyError if not currently logged in.
@@ -1200,7 +1205,7 @@ class FrontendTest(BackendTest):
             raise ValueError("Id doesnt belong to a checkbox", anid)
 
     def assertPresence(self, s: str, *, div: str = "content", regex: bool = False,
-                       exact: bool = False) -> None:
+                       exact: bool = False, msg: str = None) -> None:
         """Assert that a string is present in the element with the given id.
 
         The checked content is whitespace-normalized before comparison.
@@ -1211,11 +1216,11 @@ class FrontendTest(BackendTest):
         target = self.get_content(div)
         normalized = re.sub(r'\s+', ' ', target)
         if regex:
-            self.assertTrue(re.search(s.strip(), normalized))
+            self.assertTrue(re.search(s.strip(), normalized), msg=msg)
         elif exact:
-            self.assertEqual(s.strip(), normalized.strip())
+            self.assertEqual(s.strip(), normalized.strip(), msg=msg)
         else:
-            self.assertIn(s.strip(), normalized)
+            self.assertIn(s.strip(), normalized, msg=msg)
 
     def assertNonPresence(self, s: Optional[str], *, div: str = "content",
                           check_div: bool = True) -> None:
@@ -1504,7 +1509,7 @@ class FrontendTest(BackendTest):
         logs = all_logs[start-1:end]
         for index, log_entry in enumerate(logs, start=1):
             log_id, log_code = log_entry
-            log_code_str = self.gettext(str(log_code))  # type: ignore
+            log_code_str = self.gettext(str(log_code))  # type: ignore[call-arg, misc]
             self.assertPresence(log_code_str, div=f"{index}-{log_id}")
 
     def check_sidebar(self, ins: Set[str], out: Set[str]) -> None:

@@ -374,7 +374,8 @@ class TestEventFrontend(FrontendTest):
             "Teilnehmerliste", "Anmeldungen", "Statistik", "Kurse", "Kurseinteilung",
             "Unterkünfte", "Downloads", "Partieller Import", "Überweisungen eintragen",
             "Konfiguration", "Veranstaltungsteile", "Datenfelder konfigurieren",
-            "Anmeldung konfigurieren", "Fragebogen konfigurieren", "Log", "Checkin"}
+            "Anmeldung konfigurieren", "Fragebogen konfigurieren",
+            "Verstöße gegen Beschränkungen", "Log", "Checkin"}
 
         # TODO this could be more expanded (event without courses, distinguish
         #  between registered and participant, ...
@@ -3003,7 +3004,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/lodgement/overview'},
                       {'href': '/event/event/1/lodgement/group/summary'})
-        self.assertTitle("Unterkunftgruppen (Große Testakademie 2222)")
+        self.assertTitle("Unterkunftsgruppen (Große Testakademie 2222)")
 
         # First try with invalid (empty name)
         f = self.response.forms["lodgementgroupsummaryform"]
@@ -3012,7 +3013,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f['title_1'] = "Hauptgebäude"
         f['delete_2'] = True
         self.submit(f, check_notification=False)
-        self.assertTitle("Unterkunftgruppen (Große Testakademie 2222)")
+        self.assertTitle("Unterkunftsgruppen (Große Testakademie 2222)")
         self.assertValidationError('title_-1', "Darf nicht leer sein.")
 
         # Now, it should work
@@ -3163,6 +3164,42 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 
         self.traverse({'href': '/event/event/1/registration/query', 'index': 2})
         self.assertPresence("Ergebnis [1]")
+
+    @as_users("garcia")
+    def test_stats_matches(self) -> None:
+        # Create a statistic part group containing all event parts
+        self.traverse(
+            "Veranstaltungen", "Große Testakademie 2222", "Veranstaltungsteile",
+            "Veranstaltungsteilgruppe", "Veranstaltungsteilgruppe hinzufügen")
+        f = self.response.forms['configurepartgroupform']
+        f['title'] = f['shortname'] = "3/3"
+        f['constraint_type'] = const.EventPartGroupType.Statistic
+        f['part_ids'] = ["1", "2", "3"]
+        self.submit(f)
+
+        # Create a statistic part group containing 2/3 event parts
+        self.traverse("Veranstaltungsteilgruppe hinzufügen")
+        f = self.response.forms['configurepartgroupform']
+        f['title'] = f['shortname'] = "2/3"
+        f['constraint_type'] = const.EventPartGroupType.Statistic
+        f['part_ids'] = ["2", "3"]
+        self.submit(f)
+
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/stats'}, )
+        self.assertTitle("Statistik (Große Testakademie 2222)")
+
+        stats_page = self.response
+
+        participant_stats = self.response.html.find(id="participant-stats")
+        course_stats = self.response.html.find(id="course-stats")
+        for table in [participant_stats, course_stats]:
+            for link in table.find_all("a"):
+                with self.subTest(linkid=link.attrs['id']):
+                    self.get(link["href"])
+                    self.assertPresence(f"Ergebnis [{link.text}]", div="query-results")
+        self.response = stats_page
 
     @as_users("garcia")
     def test_course_stats(self) -> None:
@@ -3921,24 +3958,40 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 
     @as_users("garcia")
     def test_manage_attendees(self) -> None:
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/course/list'},
-                      {'href': '/event/event/1/course/1/show'})
+        self.traverse("Veranstaltungen", "Große Testakademie", "Kursliste",
+                      {'description': "Details",
+                       'href': '/event/event/1/course/1/show'})
         self.assertTitle("Kurs Heldentum (Große Testakademie 2222)")
-        self.traverse({'href': '/event/event/1/course/1/manage'})
-        self.assertTitle("\nKursteilnehmer für Kurs Planetenretten für Anfänger"
-                         " verwalten (Große Testakademie 2222)\n")
+        self.assertNonPresence("Garcia", div='track1-attendees')
+        # Check the attendees link in the footer.
+        self.assertNonPresence("Kurswahlen Kursteilnehmer", div='track1-attendees')
+        self.assertPresence("Inga", div='track3-attendees')
+
+        self.traverse("Kursteilnehmer verwalten")
+        self.assertTitle("Kursteilnehmer für Kurs Planetenretten für Anfänger"
+                         " verwalten (Große Testakademie 2222)")
         f = self.response.forms['manageattendeesform']
         f['new_1'] = "3"
         f['delete_3_4'] = True
         self.submit(f)
+
         self.assertTitle("Kurs Heldentum (Große Testakademie 2222)")
-        self.assertPresence("Garcia")
-        self.assertNonPresence("Inga")
+        self.assertPresence("Garcia", div='track1-attendees')
+        self.assertPresence("Kursteilnehmer", div='track1-attendees')
+        self.assertPresence("Akira", div='track3-attendees')
+        self.assertPresence("Emilia", div='track3-attendees')
+        self.assertNonPresence("Inga", div='track3-attendees')
+
+        # Check the attendees link in the footer.
+        self.assertPresence("Kurswahlen Kursteilnehmer", div='track3-attendees')
+        self.traverse({'description': "Kursteilnehmer", 'linkid': "attendees-link-3"})
+        self.assertTitle("Anmeldungen (Große Testakademie 2222)")
+        self.assertPresence("Ergebnis [2]", div='query-results')
+        self.assertPresence("Akira", div='result-container')
+        self.assertPresence("Emilia", div='result-container')
 
         # check log
-        self.get('/event/event/1/log')
+        self.traverse("Log")
         self.assertPresence("Kursteilnehmer von Heldentum geändert.",
                             div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
         self.assertPresence("Kursteilnehmer von Heldentum geändert.",
@@ -3946,18 +3999,19 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 
     @as_users("garcia")
     def test_manage_inhabitants(self) -> None:
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/lodgement/overview'},
-                      {'href': '/event/event/1/lodgement/2/show'})
+        self.traverse("Veranstaltungen", "Große Testakademie", "Unterkünfte",
+                      "Kalte Kammer")
         self.assertTitle("Unterkunft Kalte Kammer (Große Testakademie 2222)")
         self.assertPresence("Inga", div='inhabitants-3')
         self.assertPresence("Garcia", div='inhabitants-3')
+        self.assertPresence("Bewohner", div='inhabitants-3')
         self.assertPresence("Garcia", div='inhabitants-1')
-        self.assertNonPresence("Emilia")
-        self.traverse({'description': 'Bewohner verwalten'})
-        self.assertTitle("\nBewohner der Unterkunft Kalte Kammer verwalten"
-                         " (Große Testakademie 2222)\n")
+        self.assertPresence("Bewohner", div='inhabitants-1')
+        self.assertNonPresence("Emilia", div='inhabitants')
+        self.assertNonPresence("Bewohner", div='inhabitants-2')
+        self.traverse("Bewohner verwalten")
+        self.assertTitle("Bewohner der Unterkunft Kalte Kammer verwalten"
+                         " (Große Testakademie 2222)")
         self.assertCheckbox(False, "is_camping_mat_3_3")
         self.assertCheckbox(True, "is_camping_mat_3_4")
         f = self.response.forms['manageinhabitantsform']
@@ -3972,14 +4026,23 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("Inga", div='inhabitants-3')
 
         # check the status of the camping mat checkbox was not overridden
-        self.traverse({'description': 'Bewohner verwalten'})
-        self.assertTitle("\nBewohner der Unterkunft Kalte Kammer verwalten"
-                         " (Große Testakademie 2222)\n")
+        self.traverse("Bewohner verwalten")
+        self.assertTitle("Bewohner der Unterkunft Kalte Kammer verwalten"
+                         " (Große Testakademie 2222)")
         self.assertCheckbox(False, "is_camping_mat_3_3")
         self.assertCheckbox(True, "is_camping_mat_3_4")
 
+        # Check inhabitants link
+        self.traverse("Kalte Kammer",
+                      {'description': "Bewohner", 'linkid': "inhabitants-link-3"})
+        self.assertTitle("Anmeldungen (Große Testakademie 2222)")
+        self.assertPresence("Ergebnis [3]", div='query-results')
+        self.assertPresence("Emilia", div='result-container')
+        self.assertPresence("Garcia", div='result-container')
+        self.assertPresence("Inga", div='result-container')
+
         # check log
-        self.get('/event/event/1/log')
+        self.traverse("Log")
         self.assertPresence("Bewohner von Kalte Kammer geändert.",
                             div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
         self.assertPresence("Bewohner von Kalte Kammer geändert.",
@@ -4988,3 +5051,175 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             f['qval_ctime.creation_time'].value,
             reference_time.isoformat()
         )
+
+    @as_users("emilia")
+    def test_part_group_constraints(self) -> None:
+        # pylint: disable=protected-access
+        self.traverse("TripelAkademie")
+        self.assertPresence("Verstöße gegen Beschränkungen",
+                            div="constraint-violations")
+        self.assertPresence("Es gibt 1 Verstöße gegen"
+                            " Teilnahmeausschließlichkeitsbeschränkungen.",
+                            div="constraint-violations")
+        self.assertPresence("Es gibt 1 Verstöße gegen"
+                            " Kursausschließlichkeitsbeschränkungen.",
+                            div="constraint-violations")
+        self.traverse("Verstöße gegen Beschränkungen")
+        self.assertTitle("TripelAkademie – Verstöße gegen Beschränkungen")
+        self.assertPresence("Teilnahmeausschließlichkeitsbeschränkungen")
+        self.assertPresence("Emilia E. Eventis verstößt gegen die"
+                            " Teilnahmeausschließlichkeitsbeschränkung TN 1H."
+                            " (Anwesend in K1, W1).", div="mep-violations-list")
+        self.assertNonPresence("TN 2H", div="mep-violations-list")
+        self.assertPresence("Kursausschließlichkeitsbeschränkungen")
+        self.assertPresence("4. Akrobatik verstößt gegen die"
+                            " Kursausschließlichkeitsbeschränkung Kurs 1H."
+                            " (Findet statt in OK1, KK1).",
+                            div="mec-violations-list")
+        self.assertNonPresence("4. Akrobatik verstößt gegen die"
+                               " Kursausschließlichkeitsbeschränkung Kurs 2H."
+                               " (Findet statt in WK2m, WK2n).",
+                               div="mec-violations-list")
+
+        # Change Emilia's registration.
+        self.traverse("Emilia E. Eventis")
+        self.assertPresence("Verstöße gegen Beschränkungen",
+                            div="constraint-violations")
+        self.assertPresence("Emilia E. Eventis verstößt gegen die"
+                            " Teilnahmeausschließlichkeitsbeschränkung TN 1H."
+                            " (Anwesend in K1, W1).", div="mep-violations-list")
+        self.assertNonPresence("TN 2H", div="mep-violations-list")
+        self.traverse("Bearbeiten")
+        f = self.response.forms['changeregistrationform']
+        self.assertEqual(
+            f['part8.status'].value, str(const.RegistrationPartStati.participant))
+        self.assertEqual(
+            f['part6.status'].value, str(const.RegistrationPartStati.waitlist))
+        self.assertEqual(
+            f['part7.status'].value, str(const.RegistrationPartStati.guest))
+        self.assertEqual(
+            f['part11.status'].value, str(const.RegistrationPartStati.waitlist))
+        self.assertEqual(
+            f['part9.status'].value, str(const.RegistrationPartStati.guest))
+        self.assertEqual(
+            f['part10.status'].value, str(const.RegistrationPartStati.rejected))
+        f['part7.status'] = const.RegistrationPartStati.rejected
+        f['part11.status'] = const.RegistrationPartStati.participant
+        self.submit(f)
+
+        self.assertPresence("Verstöße gegen Beschränkungen",
+                            div="constraint-violations")
+        self.assertNonPresence("TN 1H", div="mep-violations-list")
+        self.assertPresence("Emilia E. Eventis verstößt gegen die"
+                            " Teilnahmeausschließlichkeitsbeschränkung TN 2H."
+                            " (Anwesend in K2, O2).", div="mep-violations-list")
+
+        f['part9.status'] = const.RegistrationPartStati.cancelled
+        self.submit(f)
+        self.assertNonPresence("Verstöße gegen Beschränkungen",
+                               div="constraint-violations", check_div=False)
+        self.assertNonPresence(
+            "Emilia E. Eventis verstößt gegen die"
+            " Teilnahmeausschließlichkeitsbeschränkung")
+
+        self.traverse("Verstöße gegen Beschränkungen")
+        self.assertNonPresence("Teilnahmebeschränkungen")
+
+        # Change the Akrobatik course's active segments.
+        self.traverse("4. Akrobatik")
+        self.assertPresence("Verstöße gegen Beschränkungen",
+                            div="constraint-violations")
+        self.assertPresence("4. Akrobatik verstößt gegen die"
+                            " Kursausschließlichkeitsbeschränkung Kurs 1H."
+                            " (Findet statt in OK1, KK1).",
+                            div="mec-violations-list")
+        self.assertNonPresence("4. Akrobatik verstößt gegen die"
+                               " Kursausschließlichtkeitsbeschränkung Kurs 2H."
+                               " (Findet statt in WK2m, WK2n).",
+                               div="mec-violations-list")
+        self.assertNonPresence("Kurs fällt aus")
+
+        self.traverse("Bearbeiten")
+        f = self.response.forms['changecourseform']
+        # Disabled checkboxes have a `value` of None, but have their `_value` set.
+        self.assertEqual(
+            f.get('active_segments', index=0).value, "6")
+        self.assertEqual(
+            f.get('active_segments', index=0).checked, True)
+        self.assertEqual(
+            f.get('active_segments', index=1)._value, "7")
+        self.assertEqual(
+            f.get('active_segments', index=1)._checked, False)
+        self.assertEqual(
+            f.get('active_segments', index=2).value, "8")
+        self.assertEqual(
+            f.get('active_segments', index=2).checked, True)
+        self.assertEqual(
+            f.get('active_segments', index=3)._value, "9")
+        self.assertEqual(
+            f.get('active_segments', index=3)._checked, False)
+        self.assertEqual(
+            f.get('active_segments', index=4)._value, "10")
+        self.assertEqual(
+            f.get('active_segments', index=4)._checked, False)
+        self.assertEqual(
+            f.get('active_segments', index=5).value, "11")
+        self.assertEqual(
+            f.get('active_segments', index=5).checked, True)
+        self.assertEqual(
+            f.get('active_segments', index=6)._value, "12")
+        self.assertEqual(
+            f.get('active_segments', index=6)._checked, True)
+        self.assertEqual(
+            f.get('active_segments', index=7)._value, "13")
+        self.assertEqual(
+            f.get('active_segments', index=7)._checked, False)
+        self.assertEqual(
+            f.get('active_segments', index=8)._value, "14")
+        self.assertEqual(
+            f.get('active_segments', index=8)._checked, False)
+        self.assertEqual(
+            f.get('active_segments', index=9)._value, "15")
+        self.assertEqual(
+            f.get('active_segments', index=9)._checked, False)
+
+        f['active_segments'] = [6, 11, 12]
+        self.submit(f)
+        self.assertNonPresence("Verstöße gegen Beschränkungen",
+                               div="constraint-violations", check_div=False)
+        self.assertPresence("Kurs fällt aus", div="track8-attendees")
+        self.traverse("Verstöße gegen Beschränkungen")
+        self.assertPresence("Es gibt derzeit keine Verstöße gegen Beschränkungen.")
+
+    @as_users("berta")
+    def test_part_group_part_order(self) -> None:
+        self.traverse("Veranstaltungen", "CdE-Party", "Veranstaltungsteile",
+                      "Teil hinzufügen")
+        f = self.response.forms['addpartform']
+        f['title'] = "Afterparty"
+        f['shortname'] = "Afterparty"
+        f['part_begin'] = "2050-01-16"
+        f['part_end'] = "2050-01-17"
+        f['fee'] = "1"
+        self.submit(f)
+
+        f['title'] = "Pregame"
+        f['shortname'] = "Pregame"
+        f['part_begin'] = "2050-01-14"
+        f['part_end'] = "2050-01-15"
+        self.submit(f)
+
+        self.traverse(
+            "Veranstaltungsteilgruppen", "Veranstaltungsteilgruppe hinzufügen")
+        f = self.response.forms['configurepartgroupform']
+        f['title'] = "All"
+        f['shortname'] = "all"
+        f['constraint_type'] = const.EventPartGroupType.Statistic
+        f['part_ids'] = [4, 1001, 1002]
+        self.submit(f)
+
+        self.traverse("Statistik", {'linkid': 'part_group_participant_1001'})
+        f = self.response.forms['queryform']
+        self.assertEqual(
+            f['qop_part4.status,part1001.status,part1002.status'].value,
+            str(QueryOperators.equal.value))
