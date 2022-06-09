@@ -8,6 +8,7 @@ from typing import Any
 import psycopg2.extras
 from aiopg import create_pool
 from ldaptor.protocols.ldap.distinguishedname import DistinguishedName as DN
+from ldaptor.protocols.pureber import ber2int, int2ber
 
 from cdedb.ldap.backend import LDAPsqlBackend, classproperty
 from tests.common import AsyncBasicTest, BasicTest
@@ -22,21 +23,28 @@ class LDAPBackendTest(BasicTest):
             ("abcdef", b"abcdef"),
             ("äöü", "äöü".encode()),
             ("äöü", b"\xc3\xa4\xc3\xb6\xc3\xbc"),
-            (123, b"123"),
+            (123, int2ber(123)),
             (b"1234", b"1234"),
             (None, b""),
             (DN("cn=xyz"), b"cn=xyz"),
             (DN("cn=äöü"), "cn=äöü".encode()),
             (["a", "b", "c"], [b"a", b"b", b"c"]),
-            ({"abc": 123}, {b"abc": b"123"}),
+            ({"abc": 123}, {b"abc": int2ber(123)}),
             ([123, "abc", "äöü", [456, "def", "ßÄÖÜ"], {"ghi": -42, 2222: "jkl"}],
-             [b"123", b"abc", "äöü".encode(), [b"456", b"def", "ßÄÖÜ".encode()],
-              {b"ghi": b"-42", b"2222": b"jkl"}]),
+             [int2ber(123), b"abc", "äöü".encode(),
+              [int2ber(456), b"def", "ßÄÖÜ".encode()],
+              {b"ghi": int2ber(-42), int2ber(2222): b"jkl"}]),
         )
 
         for in_, out in values:
             with self.subTest(in_):
                 self.assertEqual(out, self.ldap_backend_class._to_bytes(in_))  # pylint: disable=protected-access
+
+    def test_int2ber(self) -> None:
+        values = [123, -123, 232423, 0, -1112423]
+        for value in values:
+            with self.subTest(value):
+                self.assertEqual(value, ber2int(int2ber(value)))
 
     def test_encrypt_verify_password(self) -> None:
         pw = "abcdefghij1234567890"

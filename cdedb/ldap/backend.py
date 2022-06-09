@@ -13,6 +13,7 @@ from typing import (
 import aiopg.connection
 from aiopg.pool import Pool
 from ldaptor.protocols.ldap.distinguishedname import DistinguishedName as DN
+from ldaptor.protocols.pureber import int2ber
 from passlib.hash import sha512_crypt
 
 from cdedb.config import SecretsConfig
@@ -83,8 +84,7 @@ def _to_bytes(
     elif isinstance(data, str):
         return data.encode("utf-8")
     elif isinstance(data, int):
-        # TODO is there a better solution? And does this even work?
-        return _to_bytes(str(data))
+        return int2ber(data)
     elif isinstance(data, bytes):
         return data
     else:
