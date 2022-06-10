@@ -591,6 +591,21 @@ class LDAPsqlBackend:
     async def list_status_groups(self) -> List[DN]:
         return [self.status_group_dn(name) for name in self.STATUS_GROUPS]
 
+    async def _get_status_group(self, dn: DN, name: str) -> tuple[DN, LDAPObject]:
+        if name == "is_searchable":
+            condition = "is_member AND is_searchable"
+        else:
+            condition = name
+        query = f"SELECT id FROM core.personas WHERE {condition}"
+        return dn, self._to_bytes({
+            b"cn": [self.status_group_cn(name)],
+            b"objectClass": ["groupOfUniqueNames"],
+            b"description": [self.STATUS_GROUPS[name]],
+            b"uniqueMember": [
+                self.user_dn(e["id"]) async for e in self.query_all(query, ())
+            ]
+        })
+
     async def get_status_groups(self, dns: List[DN]) -> LDAPObjectMap:
         dn_to_name = dict()
         for dn in dns:
@@ -599,25 +614,14 @@ class LDAPsqlBackend:
                 continue
             dn_to_name[dn] = name
 
-        # since we have only a small group of status groups, we query them one by one
-        ret = dict()
-        for dn, name in dn_to_name.items():
-            if name not in self.STATUS_GROUPS:
-                continue
-            if name == "is_searchable":
-                condition = "is_member AND is_searchable"
-            else:
-                condition = name
-            query = f"SELECT id FROM core.personas WHERE {condition}"
-            members = self.query_all(query, [])
-            group = {
-                b"cn": [self.status_group_cn(name)],
-                b"objectClass": ["groupOfUniqueNames"],
-                b"description": [self.STATUS_GROUPS[name]],
-                b"uniqueMember": [self.user_dn(e["id"]) async for e in members]
-            }
-            ret[dn] = self._to_bytes(group)
-        return ret
+        # Schedule all tasks at the same time and wait for them all to complete.
+        # For convenience, the `_get_status_group` helper returns the dn as the key.
+        # For some reason the generator expression needs to be unpacked explicitly.
+        return dict(await asyncio.gather(*(
+            self._get_status_group(dn, name)
+            for dn, name in dn_to_name.items()
+            if name in self.STATUS_GROUPS
+        )))
 
     #
     # presiders
