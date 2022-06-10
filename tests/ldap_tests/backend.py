@@ -71,11 +71,6 @@ class LDAPBackendTest(BasicTest):
         dn = DN(f"{dn_attr}={dn_value}")
         self.assertEqual(self.ldap_backend_class._dn_value(dn, dn_attr), dn_value)  # pylint: disable=protected-access
 
-    def test_user_id(self) -> None:
-        persona_id = 42
-        dn = self.ldap_backend_class.user_dn(persona_id)
-        self.assertEqual(self.ldap_backend_class.user_id(dn), persona_id)
-
     def test_anonymous_accessible_dns(self) -> None:
         expectation = [DN("cn=subschema")]
         dns = self.ldap_backend_class.anonymous_accessible_dns
@@ -106,10 +101,28 @@ class LDAPBackendTest(BasicTest):
         dn = self.ldap_backend_class.duas_dn
         self.assertEqual(expectation, dn)
 
+    def test_dua_dn(self) -> None:
+        name = "admin"
+        expectation = DN(f"cn={name},ou=duas,dc=cde-ev,dc=de")
+        self.assertEqual(name, self.ldap_backend_class.dua_cn(name))
+        dn = self.ldap_backend_class.dua_dn(name)
+        self.assertEqual(dn, expectation)
+        self.assertTrue(self.ldap_backend_class.is_dua_dn(dn))
+        self.assertEqual(self.ldap_backend_class.dua_name(dn), name)
+
     def test_users_dn(self) -> None:
         expectation = DN("ou=users,dc=cde-ev,dc=de")
         dn = self.ldap_backend_class.users_dn
         self.assertEqual(expectation, dn)
+
+    def test_user_dn(self) -> None:
+        persona_id = 42
+        expectation = DN(f"uid={persona_id},ou=users,dc=cde-ev,dc=de")
+        self.assertEqual(f"{persona_id}", self.ldap_backend_class.user_uid(persona_id))
+        dn = self.ldap_backend_class.user_dn(persona_id)
+        self.assertEqual(dn, expectation)
+        self.assertTrue(self.ldap_backend_class.is_user_dn(dn))
+        self.assertEqual(self.ldap_backend_class.user_id(dn), persona_id)
 
     def test_groups_dn(self) -> None:
         expectation = DN("ou=groups,dc=cde-ev,dc=de")
@@ -121,25 +134,79 @@ class LDAPBackendTest(BasicTest):
         dn = self.ldap_backend_class.status_groups_dn
         self.assertEqual(expectation, dn)
 
+    def test_status_group_dn(self) -> None:
+        name = "is_member"
+        expectation = DN(f"cn={name},ou=status,ou=groups,dc=cde-ev,dc=de")
+        self.assertEqual(name, self.ldap_backend_class.status_group_cn(name))
+        dn = self.ldap_backend_class.status_group_dn(name)
+        self.assertEqual(dn, expectation)
+        self.assertTrue(self.ldap_backend_class.is_status_group_dn(dn))
+        self.assertEqual(self.ldap_backend_class.status_group_name(dn), name)
+
     def test_presider_groups_dn(self) -> None:
         expectation = DN("ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de")
         dn = self.ldap_backend_class.presider_groups_dn
         self.assertEqual(expectation, dn)
+
+    def test_presider_group_dn(self) -> None:
+        assembly_id = 5
+        expectation = DN(f"cn=presiders-{assembly_id},ou=assembly-presiders,ou=groups,"
+                         f"dc=cde-ev,dc=de")
+        self.assertEqual(f"presiders-{assembly_id}",
+                         self.ldap_backend_class.presider_group_cn(assembly_id))
+        dn = self.ldap_backend_class.presider_group_dn(assembly_id)
+        self.assertEqual(dn, expectation)
+        self.assertTrue(self.ldap_backend_class.is_presider_group_dn(dn))
+        self.assertEqual(self.ldap_backend_class.presider_group_id(dn), assembly_id)
 
     def test_orgas_groups_dn(self) -> None:
         expectation = DN("ou=event-orgas,ou=groups,dc=cde-ev,dc=de")
         dn = self.ldap_backend_class.orga_groups_dn
         self.assertEqual(expectation, dn)
 
+    def test_orga_group_dn(self) -> None:
+        event_id = 100
+        expectation = DN(
+            f"cn=orgas-{event_id},ou=event-orgas,ou=groups,dc=cde-ev,dc=de")
+        self.assertEqual(f"orgas-{event_id}",
+                         self.ldap_backend_class.orga_group_cn(event_id))
+        dn = self.ldap_backend_class.orga_group_dn(event_id)
+        self.assertEqual(dn, expectation)
+        self.assertTrue(self.ldap_backend_class.is_orga_group_dn(dn))
+        self.assertEqual(self.ldap_backend_class.orga_group_id(dn), event_id)
+
     def test_moderator_groups_dn(self) -> None:
         expectation = DN("ou=ml-moderators,ou=groups,dc=cde-ev,dc=de")
         dn = self.ldap_backend_class.moderator_groups_dn
         self.assertEqual(expectation, dn)
 
+    def test_moderator_group_dn(self) -> None:
+        address = "test@lists.cde-ev.de"
+        owner_address = "test-owner@lists.cde-ev.de"
+        expectation = DN(
+            f"cn={owner_address},ou=ml-moderators,ou=groups,dc=cde-ev,dc=de")
+        self.assertEqual(
+            owner_address, self.ldap_backend_class.moderator_group_cn(address))
+        dn = self.ldap_backend_class.moderator_group_dn(address)
+        self.assertEqual(dn, expectation)
+        self.assertTrue(self.ldap_backend_class.is_moderator_group_dn(dn))
+        self.assertFalse(self.ldap_backend_class.is_subscriber_group_dn(dn))
+        self.assertEqual(self.ldap_backend_class.moderator_group_address(dn), address)
+
     def test_subscriber_groups_dn(self) -> None:
         expectation = DN("ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de")
         dn = self.ldap_backend_class.subscriber_groups_dn
         self.assertEqual(expectation, dn)
+
+    def test_subscriber_group_dn(self) -> None:
+        address = "test@lists.cde-ev.de"
+        expectation = DN(f"cn={address},ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de")
+        self.assertEqual(address, self.ldap_backend_class.subscriber_group_cn(address))
+        dn = self.ldap_backend_class.subscriber_group_dn(address)
+        self.assertEqual(dn, expectation)
+        self.assertTrue(self.ldap_backend_class.is_subscriber_group_dn(dn))
+        self.assertFalse(self.ldap_backend_class.is_moderator_group_dn(dn))
+        self.assertEqual(self.ldap_backend_class.subscriber_group_address(dn), address)
 
 
 class AsyncLDAPBackendTest(AsyncBasicTest):
