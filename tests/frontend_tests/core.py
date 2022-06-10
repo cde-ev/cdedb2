@@ -8,7 +8,9 @@ from typing import Dict, Optional
 import webtest
 
 import cdedb.database.constants as const
-from cdedb.common import IGNORE_WARNINGS_NAME, CdEDBObject, GenesisDecision, get_hash
+from cdedb.common import (
+    IGNORE_WARNINGS_NAME, CdEDBObject, GenesisDecision, PrivilegeError, get_hash,
+)
 from cdedb.common.query import QueryOperators
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
 from tests.common import (
@@ -2446,6 +2448,20 @@ class TestCoreFrontend(FrontendTest):
         f['persona_id'] = hades['id']
         self.submit(f, button="decision", value=str(GenesisDecision.update))
         self.assertPresence("Benutzer aktualisiert.", div="notifications")
+
+    @as_users("nina")
+    def test_genesis_insufficient_admin(self) -> None:
+        existing_user = get_user("berta")
+        self._create_genesis_doppelganger(existing_user)
+        self.traverse("Accountanfragen", "Details")
+        self.assertPresence(existing_user['given_names'], div="doppelgangers")
+        self.assertPresence(existing_user['family_name'], div="doppelgangers")
+        self.assertPresence(existing_user['username'], div="doppelgangers")
+        f = self.response.forms['genesisdecisionform']
+        # This option is disabled, but webtest allows it anyway.
+        f['persona_id'] = existing_user['id']
+        with self.assertRaises(PrivilegeError):
+            self.submit(f, button="decision", value=str(GenesisDecision.update))
 
     def test_resolve_api(self) -> None:
         at = urllib.parse.quote_plus('@')
