@@ -430,8 +430,8 @@ class LDAPsqlBackend:
                 FROM core.personas WHERE personas.id = ANY(%s)
                 """
         async for e in self.query_all(query, (persona_ids,)):
-            ret[e["id"]].extend([self.status_group_dn(flag)
-                                 for flag in e.keys() if e[flag] and flag != "id"])
+            ret[e["id"]].extend(self.status_group_dn(flag)
+                                for flag in e.keys() if e[flag] and flag != "id")
 
         # Presider groups
         query = """
@@ -441,8 +441,8 @@ class LDAPsqlBackend:
                 GROUP BY persona_id
                 """
         async for e in self.query_all(query, (persona_ids,)):
-            ret[e["persona_id"]].extend([self.presider_group_dn(assembly_id)
-                                         for assembly_id in e["assembly_ids"]])
+            ret[e["persona_id"]].extend(self.presider_group_dn(assembly_id)
+                                        for assembly_id in e["assembly_ids"])
 
         # Orga groups
         query = """
@@ -451,8 +451,8 @@ class LDAPsqlBackend:
                 WHERE persona_id = ANY(%s)
                 GROUP BY persona_id"""
         async for e in self.query_all(query, (persona_ids,)):
-            ret[e["persona_id"]].extend([self.orga_group_dn(event_id)
-                                         for event_id in e["event_ids"]])
+            ret[e["persona_id"]].extend(self.orga_group_dn(event_id)
+                                        for event_id in e["event_ids"])
 
         # Subscriber groups
         query = """
@@ -465,8 +465,8 @@ class LDAPsqlBackend:
                 """
         states = SubscriptionState.subscribing_states()
         async for e in self.query_all(query, (states, persona_ids,)):
-            ret[e["persona_id"]].extend([self.subscriber_group_dn(address)
-                                         for address in e["addresses"]])
+            ret[e["persona_id"]].extend(self.subscriber_group_dn(address)
+                                        for address in e["addresses"])
 
         # Moderator groups
         query = """
@@ -477,8 +477,8 @@ class LDAPsqlBackend:
                 GROUP BY persona_id
                 """
         async for e in self.query_all(query, (persona_ids,)):
-            ret[e["persona_id"]].extend([self.moderator_group_dn(address)
-                                         for address in e["addresses"]])
+            ret[e["persona_id"]].extend(self.moderator_group_dn(address)
+                                        for address in e["addresses"])
 
         return ret
 

@@ -13,12 +13,16 @@ class SchemaDescription:
 
     For processing the entries of the schema, the `ldaptor.schema` classes are used.
     """
-    attribute_types: List[bytes] = list()
-    matching_rules: List[bytes] = list()
-    object_classes: List[bytes] = list()
-    syntaxes: List[bytes] = list()
+    attribute_types: List[bytes]
+    matching_rules: List[bytes]
+    object_classes: List[bytes]
+    syntaxes: List[bytes]
 
     def __init__(self, file: str) -> None:
+        self.attribute_types = []
+        self.matching_rules = []
+        self.object_classes = []
+        self.syntaxes = []
         for block in self.split_file(file):
             self.process_chunk(block)
 
@@ -27,17 +31,16 @@ class SchemaDescription:
         """Split a given file into blocks separated by whitespace."""
         lines = file.split(sep="\n")
 
-        # first, strip all comments
-        lines = [line for line in lines if not line.startswith("#")]
-
         # next, group all blocks separated by one or more blank lines together
-        blocks: List[List[str]] = list()
-        block: List[str] = list()
+        blocks: List[List[str]] = []
+        block: List[str] = []
         for line in lines:
+            if line.startswith("#"):
+                continue
             if line.strip() == "":
                 if block:
                     blocks.append(block)
-                    block = list()
+                    block = []
             else:
                 block.append(line)
 

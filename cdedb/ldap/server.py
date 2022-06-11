@@ -62,16 +62,22 @@ class CdEDBLDAPServer(LDAPServer):
             cloud_dn = entry.backend.dua_dn("cloud")
             apache_dn = entry.backend.dua_dn("apache")
 
-            return_result = True
+            # Return nothing if requesting user (self.boundUser) is not privileged.
             # anonymous users have only very limited access
             if self.boundUser is None:
                 if entry.dn in entry.backend.anonymous_accessible_dns:
                     pass
                 else:
-                    return_result = False
+                    return None
             # TODO do we need an admin dn?
             elif self.boundUser.dn == admin_dn:
-                return_result = True
+                pass
+            elif entry.dn == entry.backend.subschema_dn:
+                pass
+            elif entry.dn == entry.backend.de_dn:
+                pass
+            elif entry.dn == entry.backend.cde_dn:
+                pass
             # the requested entry is a user
             elif users_dn.contains(entry.dn):
                 # the contains check succeeds also on equality
@@ -85,7 +91,7 @@ class CdEDBLDAPServer(LDAPServer):
                     pass
                 # disallow other requests
                 else:
-                    return_result = False
+                    return None
             # the requested entry is a group
             elif groups_dn.contains(entry.dn):
                 # the contains check succeeds also on equality
@@ -93,13 +99,14 @@ class CdEDBLDAPServer(LDAPServer):
                     pass
                 # the request comes from a dua
                 elif duas_dn.contains(self.boundUser.dn):
+                    # TODO: expose this more
                     if self.boundUser.dn in {apache_dn, cloud_dn}:
                         pass
                     else:
-                        return_result = False
+                        return None
                 # disallow other requests
                 else:
-                    return_result = False
+                    return None
             elif duas_dn.contains(entry.dn):
                 # the contains check succeeds also on equality
                 if duas_dn == entry.dn:
@@ -110,10 +117,12 @@ class CdEDBLDAPServer(LDAPServer):
                     if self.boundUser.dn == entry.dn:
                         pass
                     else:
-                        return_result = False
+                        return None
                 # disallow other requests
                 else:
-                    return_result = False
+                    return None
+            else:
+                raise RuntimeError("Impossible.")
 
             # filter the attributes requested in the search
             if b"*" in request.attributes or len(request.attributes) == 0:
@@ -124,9 +133,8 @@ class CdEDBLDAPServer(LDAPServer):
                     if key in attributes]
 
             # return a result only if the boundUser is allowed to access it
-            if return_result:
-                reply(pureldap.LDAPSearchResultEntry(objectName=entry.dn.getText(),
-                                                     attributes=filtered_attributes))
+            reply(pureldap.LDAPSearchResultEntry(objectName=entry.dn.getText(),
+                                                 attributes=filtered_attributes))
             # otherwise, return nothing
 
         bound_dn = self.boundUser.dn if self.boundUser else None
