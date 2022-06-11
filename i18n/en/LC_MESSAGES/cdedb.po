@@ -14831,6 +14831,12 @@ msgstr "Public (Mandatory)"
 msgid "MailinglistTypes.general_opt_in"
 msgstr "Public (Opt-in)"
 
+msgid "MailinglistTypes.general_moderated_opt_in"
+msgstr "Public (Moderated Opt-in)"
+
+msgid "MailinglistTypes.general_invitation_only"
+msgstr "Public (Invitation Only)"
+
 #: cdedb/i18n_additional.py:289
 msgid "MailinglistTypes.general_moderators"
 msgstr "All Moderators"
