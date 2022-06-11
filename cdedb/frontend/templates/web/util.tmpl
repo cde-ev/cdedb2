@@ -529,7 +529,7 @@
                                     {{ " " + checkboxclass if checkboxclass }}">
                     {%- endif -%}
                         {{ input_checkbox(name, entry_label, entry_value, defaultvalue,
-                                          readonly=readonly or readonly_map[entry_value], actualreadonly=actualreadonly,
+                                          readonly=(readonly_map or {}).get(entry_value, readonly), actualreadonly=actualreadonly,
                                           inline=inline, radio=radio, aclass=aclass, title=title_map[entry_value]) }}
                     {%- if not inline %}</div>{% endif %}
                 {%- endfor %}
