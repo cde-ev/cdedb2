@@ -2,10 +2,9 @@
 
 import enum
 import itertools
-from collections import OrderedDict
 from typing import (
-    TYPE_CHECKING, Collection, Dict, List, Literal, Mapping, Optional, Set, Type, Union,
-    cast, get_origin,
+    TYPE_CHECKING, Collection, Dict, List, Literal, Mapping, Optional, OrderedDict, Set,
+    Type, Union, cast, get_origin,
 )
 
 from subman.machine import SubscriptionPolicy
