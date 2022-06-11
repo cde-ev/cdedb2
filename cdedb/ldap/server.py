@@ -132,10 +132,10 @@ class CdEDBLDAPServer(LDAPServer):
                     (key, attributes.get(key)) for key in request.attributes
                     if key in attributes]
 
-            # return a result only if the boundUser is allowed to access it
+            # Sent a reply then return.
             reply(pureldap.LDAPSearchResultEntry(objectName=entry.dn.getText(),
                                                  attributes=filtered_attributes))
-            # otherwise, return nothing
+            return None
 
         bound_dn = self.boundUser.dn if self.boundUser else None
 
