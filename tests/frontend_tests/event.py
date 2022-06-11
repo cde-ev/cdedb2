@@ -3004,7 +3004,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/lodgement/overview'},
                       {'href': '/event/event/1/lodgement/group/summary'})
-        self.assertTitle("Unterkunftgruppen (Große Testakademie 2222)")
+        self.assertTitle("Unterkunftsgruppen (Große Testakademie 2222)")
 
         # First try with invalid (empty name)
         f = self.response.forms["lodgementgroupsummaryform"]
@@ -3013,7 +3013,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f['title_1'] = "Hauptgebäude"
         f['delete_2'] = True
         self.submit(f, check_notification=False)
-        self.assertTitle("Unterkunftgruppen (Große Testakademie 2222)")
+        self.assertTitle("Unterkunftsgruppen (Große Testakademie 2222)")
         self.assertValidationError('title_-1', "Darf nicht leer sein.")
 
         # Now, it should work
