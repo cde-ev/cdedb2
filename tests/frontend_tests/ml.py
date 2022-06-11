@@ -1386,6 +1386,30 @@ class TestMlFrontend(FrontendTest):
         reality = _get_registration_part_stati(f)
         self.assertEqual({str(x) for x in stati}, reality)
 
+    @as_users("nina")
+    def test_mailinglist_types(self) -> None:
+        self.traverse("Mailinglisten", "Mailingliste anlegen")
+        select_type_form = self.response.forms['selectmltypeform']
+
+        for ml_type in const.MailinglistTypes:
+            with self.subTest(str(ml_type)):
+                select_type_form['ml_type'] = ml_type
+                self.submit(select_type_form)
+                create_ml_form = self.response.forms['createlistform']
+                create_ml_form['title'] = str(ml_type)
+                create_ml_form['local_part'] = str(ml_type)
+                create_ml_form['moderators'] = self.user['DB-ID']
+                self.submit(create_ml_form)
+                self.traverse("Verwaltung")
+                f = self.response.forms['addsubscriberform']
+                f['subscriber_ids'] = ",".join(
+                    u['DB-ID'] for u in USER_DICT.values() if u['DB-ID'])
+                self.submit(f, check_notification=False)
+
+        self.traverse("Mailinglisten")
+        f = self.response.forms['writesubscriptionstates']
+        self.submit(f)
+
     @staticmethod
     def _prepare_moderation_mock(client_class: unittest.mock.Mock) -> Tuple[
             List[MockHeldMessage], unittest.mock.MagicMock, Any]:
