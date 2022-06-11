@@ -90,6 +90,7 @@ class CoreBaseBackend(AbstractBackend):
             access where they should not normally have it. This is to allow that
             override.
         """
+        # Shortcuts to avoid having to retrieve the persona in easy cases.
         if self.is_admin(rs):
             return True
         if allow_meta_admin and "meta_admin" in rs.user.roles:
@@ -97,9 +98,14 @@ class CoreBaseBackend(AbstractBackend):
         persona = self.get_persona(rs, persona_id)
         return self._is_relative_admin(rs, persona)
 
-    @staticmethod
     @internal
-    def _is_relative_admin(rs: RequestState, persona: CdEDBObject) -> bool:
+    def _is_relative_admin(self, rs: RequestState, persona: CdEDBObject) -> bool:
+        """Internal helper to check relative admin privileges if the persona is already
+        available.
+
+        Apart from meta admins, the only difference to `is_relative_admin` is that
+        this accepts a full persona, rather than a persona id.
+        """
         roles = extract_roles(persona, introspection_only=True)
         return any(admin <= rs.user.roles for admin in privilege_tier(roles))
 
