@@ -2512,7 +2512,7 @@ class CoreBaseBackend(AbstractBackend):
         ret = self.retrieve_personas(
             rs, persona_ids, PERSONA_CORE_FIELDS + ("birthday",))
         for persona_id, persona_ in ret.items():
-            persona_['is_relative_admin'] = self._is_relative_admin(rs, persona_)
+            persona_['may_be_edited'] = self._is_relative_admin(rs, persona_)
         return ret
 
     @access("anonymous")
