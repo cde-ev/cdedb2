@@ -53,7 +53,7 @@
                                 {% set query = stat.get_query(ambience['event'], part_id) %}
                                 {{ util.href(
                                     cdedblink(query.scope.get_target(), query.serialize_to_url()) + "#query-results",
-                                    datum|length, anid="part_" + stat.name + "_" + part_id|string) }}
+                                    datum|length, anid=stat.get_link_id(part_id=part_id)) }}
                             </td>
                         {% endfor %}
                         {% for part_group_id, part_group in sorted_part_groups if part_group['part_ids']|length > 1 and part_group['constraint_type'].is_stats() %}
@@ -62,7 +62,7 @@
                                 {% set query = stat.get_query_part_group(ambience['event'], part_group_id, datum) %}
                                 {{ util.href(
                                     cdedblink(query.scope.get_target(), query.serialize_to_url()) + "#query-results",
-                                    datum|length, anid="part_group_" + stat.name + "_" + part_group_id|string) }}
+                                    datum|length, anid=stat.get_link_id(part_group_id=part_group_id)) }}
                             </td>
                         {% endfor %}
                     </tr>
@@ -109,7 +109,7 @@
                                         {% set query = grouper.get_query(ambience['event'], track_id, x) %}
                                         {{ util.href(
                                             cdedblink(query.scope.get_target(), query.serialize_to_url()) + "#query-results",
-                                            reg_ids|length, anid="track_in_" + x|string +  "_choice_" + track_id|string) }}
+                                            reg_ids|length, anid=grouper.get_link_id(x, part_id=part_id)) }}
                                     {% endif %}
                                 </td>
                             {% endfor %}
@@ -121,7 +121,7 @@
                                         {% set query = grouper.get_query_part(ambience['event'], part_id, x) %}
                                         {{ util.href(
                                             cdedblink(query.scope.get_target(), query.serialize_to_url()) + "#query-results",
-                                            reg_ids|length, anid="part_in_" + x|string +  "_choice_" + part_id|string) }}
+                                            reg_ids|length, anid=grouper.get_link_id(x, part_id=part_id)) }}
                                     {% endif %}
                                 </td>
                             {% endfor %}
@@ -133,7 +133,7 @@
                                         {% set query = grouper.get_query_part_group(ambience['event'], part_group_id, x) %}
                                         {{ util.href(
                                             cdedblink(query.scope.get_target(), query.serialize_to_url()) + "#query-results",
-                                            reg_ids|length, anid="part_group_in_" + x|string +  "_choice_" + part_group_id|string) }}
+                                            reg_ids|length, anid=grouper.get_link_id(x, part_group_id=part_group_id)) }}
                                     {% endif %}
                                 </td>
                             {% endfor %}
@@ -148,7 +148,7 @@
                                     {% set query = stat.get_query(ambience['event'], track_id) %}
                                     {{ util.href(
                                         cdedblink(query.scope.get_target(), query.serialize_to_url()) + "#query-results",
-                                        datum|length, anid="track_" + stat.name + "_" + track_id|string) }}
+                                        datum|length, anid=stat.get_link_id(track_id=track_id)) }}
                                 </td>
                             {% endfor %}
                             {% for part_id, part in sorted_parts if part['tracks']|length > 1 %}
@@ -157,7 +157,7 @@
                                     {% set query = stat.get_query_part(ambience['event'], part_id, datum) %}
                                     {{ util.href(
                                         cdedblink(query.scope.get_target(), query.serialize_to_url()) + "#query-results",
-                                        datum|length, anid="track_part_" + stat.name + "_" + part_id|string) }}
+                                        datum|length, anid=stat.get_link_id(part_id=part_id)) }}
                                 </td>
                             {% endfor %}
                             {% for part_group_id, part_group in sorted_part_groups if grouper._track_ids_per_part_group[part_group_id]|length > 1 and part_group['constraint_type'].is_stats() %}
@@ -166,7 +166,7 @@
                                     {% set query = stat.get_query_part_group(ambience['event'], part_group_id, datum) %}
                                     {{ util.href(
                                         cdedblink(query.scope.get_target(), query.serialize_to_url()) + "#query-results",
-                                        datum|length, anid="track_group_" + stat.name + "_" + part_group_id|string) }}
+                                        datum|length, anid=stat.get_link_id(part_group_id=part_group_id)) }}
                                 </td>
                             {% endfor %}
                         </tr>
