@@ -9,7 +9,7 @@ import json
 import re
 import tempfile
 import unittest
-from typing import Sequence
+from typing import Sequence, Union
 
 import lxml.etree
 import segno.helpers
@@ -23,6 +23,9 @@ from cdedb.common.sorting import xsorted
 from cdedb.filter import iban_filter
 from cdedb.frontend.common import CustomCSVDialect, make_event_fee_reference
 from cdedb.frontend.event import EventFrontend
+from cdedb.frontend.event.query_stats import (
+    EventRegistrationPartStatistic, EventRegistrationTrackStatistic, get_id_constraint,
+)
 from tests.common import (
     USER_DICT, FrontendTest, UserObject, as_users, event_keeper, prepsql, storage,
 )
@@ -3168,6 +3171,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
     @as_users("garcia")
     def test_stats_matches(self) -> None:
         # Create a statistic part group containing all event parts
+        event_id = 1
         self.traverse(
             "Veranstaltungen", "Große Testakademie 2222", "Veranstaltungsteile",
             "Veranstaltungsteilgruppe", "Veranstaltungsteilgruppe hinzufügen")
@@ -3190,16 +3194,60 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                       {'href': '/event/event/1/stats'}, )
         self.assertTitle("Statistik (Große Testakademie 2222)")
 
-        stats_page = self.response
+        event = self.event.get_event(self.key, event_id)
 
-        participant_stats = self.response.html.find(id="participant-stats")
-        course_stats = self.response.html.find(id="course-stats")
-        for table in [participant_stats, course_stats]:
-            for link in table.find_all("a"):
-                with self.subTest(linkid=link.attrs['id']):
-                    self.get(link["href"])
-                    self.assertPresence(f"Ergebnis [{link.text}]", div="query-results")
-        self.response = stats_page
+        def _test_one_stat(
+                stat: Union[EventRegistrationPartStatistic,
+                            EventRegistrationTrackStatistic],
+                *, track_id: int = 0, part_id: int = 0, part_group_id: int = 0
+        ) -> None:
+            if track_id:
+                assert isinstance(stat, EventRegistrationTrackStatistic)
+                query = stat.get_query(event, track_id)
+            elif part_id:
+                if isinstance(stat, EventRegistrationTrackStatistic):
+                    query = stat.get_query_part(event, part_id, [-1])
+                else:
+                    query = stat.get_query(event, part_id)
+            else:
+                query = stat.get_query_part_group(event, part_group_id, [-1])
+
+            if get_id_constraint(stat.id_field, [-1]) in query.constraints:
+                num = None
+            else:
+                num = len(self.event.submit_general_query(self.key, query, event_id))
+
+            link_id = stat.get_link_id(
+                track_id=track_id, part_id=part_id, part_group_id=part_group_id)
+
+            with self.subTest(link_id=link_id):
+                [link] = self.response.html.find_all(id=link_id)
+                if num is not None:
+                    self.assertEqual(int(link.text), num)
+
+        for track_id, track in event['tracks'].items():
+            for stat in EventRegistrationTrackStatistic:
+                _test_one_stat(stat, track_id=track_id)
+        for part_id, part in event['parts'].items():
+            for stat_ in EventRegistrationPartStatistic:
+                _test_one_stat(stat_, part_id=part_id)
+            if len(EventRegistrationTrackStatistic.get_track_ids(
+                    event, part_id=part_id
+            )) <= 1:
+                continue
+            for stat in EventRegistrationTrackStatistic:
+                _test_one_stat(stat, part_id=part_id)
+        for part_group_id, part_group in event['part_groups'].items():
+            if len(part_group['part_ids']) <= 1:
+                continue
+            for stat_ in EventRegistrationPartStatistic:
+                _test_one_stat(stat_, part_group_id=part_group_id)
+            if len(EventRegistrationTrackStatistic.get_track_ids(
+                    event, part_group_id=part_group_id
+            )) <= 1:
+                continue
+            for stat in EventRegistrationTrackStatistic:
+                _test_one_stat(stat, part_group_id=part_group_id)
 
     @as_users("garcia")
     def test_course_stats(self) -> None:
