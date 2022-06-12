@@ -4,8 +4,8 @@
 The `EventLodgementBackend` subclasses the `EventBaseBackend` and provides
 functionality for managing lodgements and lodgement groups belonging to an event.
 """
-
-from typing import Collection, Dict, Protocol
+import collections
+from typing import Collection, Dict, List, Protocol, Tuple
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -19,9 +19,10 @@ from cdedb.common import (
     RequestState, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
-from cdedb.common.fields import LODGEMENT_FIELDS, LODGEMENT_GROUP_FIELDS
+from cdedb.common.fields import LODGEMENT_FIELDS
 from cdedb.common.n_ import n_
 from cdedb.database.connection import Atomizer
+from cdedb.database.query import DatabaseValue_s
 
 
 class EventLodgementBackend(EventBaseBackend):
@@ -48,8 +49,18 @@ class EventLodgementBackend(EventBaseBackend):
         """
         group_ids = affirm_set(vtypes.ID, group_ids)
         with Atomizer(rs):
-            data = self.sql_select(
-                rs, "event.lodgement_groups", LODGEMENT_GROUP_FIELDS, group_ids)
+            query = """
+                SELECT
+                    lg.id, lg.event_id, lg.title,
+                    ARRAY_REMOVE(ARRAY_AGG(l.id), NULL) AS lodgement_ids,
+                    COALESCE(SUM(l.regular_capacity), 0) as regular_capacity,
+                    COALESCE(SUM(l.camping_mat_capacity), 0) AS camping_mat_capacity
+                FROM event.lodgement_groups AS lg
+                    LEFT JOIN event.lodgements AS l on lg.id = l.group_id
+                WHERE lg.id = ANY(%s)
+                GROUP BY lg.id
+            """
+            data = self.query_all(rs, query, (group_ids,))
             if not data:
                 return {}
             events = {e['event_id'] for e in data}
@@ -57,8 +68,7 @@ class EventLodgementBackend(EventBaseBackend):
                 raise ValueError(n_(
                     "Only lodgement groups from exactly one event allowed!"))
             event_id = unwrap(events)
-            if (not self.is_orga(rs, event_id=event_id)
-                    and not self.is_admin(rs)):
+            if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
                 raise PrivilegeError(n_("Not privileged."))
         return {e['id']: e for e in data}
 
@@ -364,4 +374,36 @@ class EventLodgementBackend(EventBaseBackend):
                 raise ValueError(
                     n_("Deletion of %(type)s blocked by %(block)s."),
                     {"type": "lodgement", "block": blockers.keys()})
+        return ret
+
+    @access("event")
+    def get_grouped_inhabitants(
+            self, rs: RequestState, event_id: int,
+            lodgement_ids: Collection[int] = None,
+    ) -> Dict[int, Dict[int, Dict[bool, Tuple[int, ...]]]]:
+        """Group number of inhabitants by lodg'ement, part and camping mat status."""
+        event_id = affirm(vtypes.ID, event_id)
+        if not self.is_orga(rs, event_id=event_id):
+            raise PrivilegeError
+        params: List[DatabaseValue_s] = [event_id]
+        if lodgement_ids is None:
+            condition = "rp.lodgement_id IS NOT NULL"
+        else:
+            lodgement_ids = affirm_set(vtypes.ID, lodgement_ids)
+            condition = "rp.lodgement_id = ANY(%s)"
+            params.append(lodgement_ids)
+        query = f"""
+            SELECT
+                lodgement_id, part_id, is_camping_mat AS is_cm,
+                COUNT(*) AS num, ARRAY_AGG(rp.registration_id) AS inhabitants
+            FROM event.registration_parts AS rp
+                JOIN event.event_parts AS ep ON rp.part_id = ep.id
+            WHERE ep.event_id = %s AND {condition}
+            GROUP BY lodgement_id, part_id, is_camping_mat
+        """
+        ret: Dict[int, Dict[int, Dict[bool, Tuple[int, ...]]]]
+        ret = collections.defaultdict(
+            lambda: collections.defaultdict(lambda: {False: (), True: ()}))
+        for e in self.query_all(rs, query, params):
+            ret[e['lodgement_id']][e['part_id']][e['is_cm']] = tuple(e['inhabitants'])
         return ret

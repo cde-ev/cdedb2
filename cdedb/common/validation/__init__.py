@@ -2934,7 +2934,7 @@ LODGEMENT_COMMON_FIELDS: Mapping[str, Any] = {
     'regular_capacity': NonNegativeInt,
     'camping_mat_capacity': NonNegativeInt,
     'notes': Optional[str],
-    'group_id': Optional[ID],
+    'group_id': ID,
 }
 
 LODGEMENT_OPTIONAL_FIELDS: TypeMapping = {
