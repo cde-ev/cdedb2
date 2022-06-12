@@ -49,6 +49,8 @@ class EventLowLevelBackend(AbstractBackend):
 
         Exactly one of the inputs has to be provided.
         """
+        if self.is_admin(rs):
+            return True
         num_inputs = sum(1 for anid in (event_id, course_id, registration_id)
                          if anid is not None)
         if num_inputs < 1:
