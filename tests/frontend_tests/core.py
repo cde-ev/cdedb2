@@ -2474,7 +2474,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesisdecisionform']
         if persona_id:
             f['persona_id'] = persona_id
-        self.submit(f, button='decision', value=str(decision), check_notification=check, verbose=True)
+        self.submit(f, button='decision', value=str(decision), check_notification=check)
 
     @as_users("annika")
     def test_genesis_insufficient_admin(self) -> None:
@@ -2498,7 +2498,6 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence(dg_data_2['username'], div="doppelgangers")
 
         # Update exisitng accounts.
-        f = self.response.forms['genesisdecisionform']
 
         # The original user. This option is disabled, but webtest allows it anyway.
         self.assertFalse(self.core.is_relative_admin(self.key, existing_user['id']))
