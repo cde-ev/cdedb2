@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # pylint: disable=missing-module-docstring
-
+import random
 import re
 import urllib.parse
 from typing import Dict, Optional
@@ -2265,13 +2265,33 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f, button="decision", value=str(GenesisDecision.approve),
                     check_notification=False)
 
-    def _create_genesis_doppelganger(self, user: UserIdentifier = None) -> UserObject:
+    def _create_genesis_doppelganger(self, user: UserIdentifier = None,
+                                     realm: str = "ml", unique_username: bool = False
+                                     ) -> UserObject:
+        # Create a new request almost identical to the current or given user.
         user = get_user(user or self.user)
-        # Create a new request almost identical to the current user.
-        dg_data = {k: user[k] for k in self.ML_GENESIS_DATA if k in user}
-        dg_data["username"] = "notme@example.cde"
+
+        # Decide on data fields depending on realm.
+        if realm == "ml":
+            data_fields = self.ML_GENESIS_DATA
+        elif realm == "event":
+            data_fields = self.EVENT_GENESIS_DATA
+        elif realm == "cde":
+            data_fields = self.CDE_GENESIS_DATA
+        else:
+            data_fields = {}
+
+        # Override default fields with current user.
+        dg_data = data_fields.copy()
+        for k in dg_data.keys() & user.keys():
+            dg_data[k] = user[k]
+
         dg_data["notes"] = "Bestimmt jemand anderes1"
-        dg_data["realm"] = "ml"
+        dg_data["realm"] = realm
+        # Select a unique username. For repeated use, specify `unique_username=True`.
+        prefix = str(random.randint(10 ** 5, 10 ** 7)) if unique_username else ""
+        dg_data["username"] = prefix + "notme@example.cde"
+
         self._genesis_request(dg_data)
         return dg_data
 
@@ -2449,19 +2469,51 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f, button="decision", value=str(GenesisDecision.update))
         self.assertPresence("Benutzer aktualisiert.", div="notifications")
 
-    @as_users("nina")
+    def _decide_genesis_case(self, decision: GenesisDecision, persona_id: int = None,
+                             check: bool = True) -> None:
+        f = self.response.forms['genesisdecisionform']
+        if persona_id:
+            f['persona_id'] = persona_id
+        self.submit(f, button='decision', value=str(decision), check_notification=check, verbose=True)
+
+    @as_users("annika")
     def test_genesis_insufficient_admin(self) -> None:
         existing_user = get_user("berta")
-        self._create_genesis_doppelganger(existing_user)
+        with self.switch_user("anton"):
+            dg_data_1 = self._create_genesis_doppelganger(existing_user, realm="ml")
+            self.traverse("Accountanfragen", "Details")
+            self._decide_genesis_case(GenesisDecision.approve)
+            dg_data_2 = self._create_genesis_doppelganger(
+                existing_user, realm="event", unique_username=True)
+            self.traverse("Accountanfragen", "Details")
+            self._decide_genesis_case(GenesisDecision.approve)
+        self._create_genesis_doppelganger(
+            existing_user, realm="event", unique_username=True)
         self.traverse("Accountanfragen", "Details")
+
         self.assertPresence(existing_user['given_names'], div="doppelgangers")
         self.assertPresence(existing_user['family_name'], div="doppelgangers")
         self.assertPresence(existing_user['username'], div="doppelgangers")
+        self.assertPresence(dg_data_1['username'], div="doppelgangers")
+        self.assertPresence(dg_data_2['username'], div="doppelgangers")
+
+        # Update exisitng accounts.
         f = self.response.forms['genesisdecisionform']
-        # This option is disabled, but webtest allows it anyway.
-        f['persona_id'] = existing_user['id']
+
+        # The original user. This option is disabled, but webtest allows it anyway.
+        self.assertFalse(self.core.is_relative_admin(self.key, existing_user['id']))
         with self.assertRaises(PrivilegeError):
-            self.submit(f, button="decision", value=str(GenesisDecision.update))
+            self._decide_genesis_case(GenesisDecision.update, existing_user['id'])
+
+        # The ml-user. This option is disabled, butw ebtest allows it anyway.
+        self.assertFalse(self.core.is_relative_admin(self.key, 1001))
+        self._decide_genesis_case(GenesisDecision.update, persona_id=1001, check=False)
+        self.assertPresence(
+            "Ungültiger Benutzer für Aktualisierung.", div="notifications")
+
+        # The event-user. This option should work.
+        self.assertTrue(self.core.is_relative_admin(self.key, 1002))
+        self._decide_genesis_case(GenesisDecision.update, persona_id=1002)
 
     def test_resolve_api(self) -> None:
         at = urllib.parse.quote_plus('@')
