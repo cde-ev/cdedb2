@@ -1929,8 +1929,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 
         f['fee_modifier_field_id_-1'].force_value('')
         self.submit(f, check_notification=False)
-        self.assertValidationError('fee_modifier_field_id_-1',
-                                   "Ungültige Eingabe für eine Ganzzahl")
+        self.assertValidationError('fee_modifier_field_id_-1', "Darf nicht leer sein.")
 
         f['fee_modifier_field_id_-1'] = '1001'
         self.submit(f)
