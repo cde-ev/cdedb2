@@ -18,6 +18,12 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "Generated-By: Babel 2.6.0\n"
 
+msgid "MailinglistTypes.general_invitation_only"
+msgstr "Public (Invitation Only)"
+
+msgid "MailinglistTypes.general_moderated_opt_in"
+msgstr "Public (Moderated Opt-in)"
+
 #: bin/archive/migrate_execute.py:394
 msgid "Initial import."
 msgstr ""
