@@ -4693,6 +4693,11 @@
             "id": 2,
             "event_id": 1,
             "title": "AußenWohnGruppe"
+        },
+        {
+            "id": 3,
+            "event_id": 1,
+            "title": "Sonstige"
         }
     ],
     "event.lodgements": [
@@ -4727,7 +4732,7 @@
             "regular_capacity": 0,
             "camping_mat_capacity": 100,
             "notes": "Nur für Notfälle.",
-            "group_id": null,
+            "group_id": 3,
             "fields": {
                 "contamination": "low"
             }
