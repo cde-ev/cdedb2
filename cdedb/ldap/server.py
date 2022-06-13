@@ -72,11 +72,9 @@ class CdEDBLDAPServer(LDAPServer):
             # TODO do we need an admin dn?
             elif self.boundUser.dn == admin_dn:
                 pass
-            elif entry.dn == entry.backend.subschema_dn:
-                pass
-            elif entry.dn == entry.backend.de_dn:
-                pass
-            elif entry.dn == entry.backend.cde_dn:
+            # handle requests to not-restricted entries
+            elif entry.dn in {entry.backend.subschema_dn, entry.backend.de_dn,
+                              entry.backend.cde_dn}:
                 pass
             # the requested entry is a user
             elif users_dn.contains(entry.dn):
@@ -107,6 +105,7 @@ class CdEDBLDAPServer(LDAPServer):
                 # disallow other requests
                 else:
                     return None
+            # the requested entry is a dua
             elif duas_dn.contains(entry.dn):
                 # the contains check succeeds also on equality
                 if duas_dn == entry.dn:

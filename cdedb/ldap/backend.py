@@ -108,6 +108,7 @@ class LDAPsqlBackend:
                           for name, pwd in SecretsConfig()["LDAP_DUA_PW"].items()}
 
     async def close_pool(self) -> None:
+        """Provide a convenient shutdown method."""
         self.pool.close()
         await self.pool.wait_closed()
 
@@ -483,6 +484,7 @@ class LDAPsqlBackend:
         return ret
 
     async def get_users_data(self, user_ids: Collection[int]) -> "CdEDBObjectMap":
+        """Helper function to get basic data about users from core.personas."""
         query = (
             "SELECT id, username, display_name, given_names, family_name, password_hash"
             " FROM core.personas WHERE id = ANY(%s) AND NOT is_archived")
@@ -592,6 +594,7 @@ class LDAPsqlBackend:
         return [self.status_group_dn(name) for name in self.STATUS_GROUPS]
 
     async def _get_status_group(self, dn: DN, name: str) -> tuple[DN, LDAPObject]:
+        """Uninlined code from get_status_groups."""
         if name == "is_searchable":
             condition = "is_member AND is_searchable"
         else:
@@ -669,6 +672,7 @@ class LDAPsqlBackend:
 
     async def get_presiders(self, assembly_ids: Collection[int]
                             ) -> Dict[int, List[int]]:
+        """Helper function to get the presiders of the given assemblies."""
         query = ("SELECT persona_id, assembly_id FROM assembly.presiders"
                  " WHERE assembly_id = ANY(%s)")
         presiders = defaultdict(list)
@@ -677,6 +681,7 @@ class LDAPsqlBackend:
         return presiders
 
     async def get_assemblies(self, assembly_ids: Collection[int]) -> "CdEDBObjectMap":
+        """Helper function to get some information about the given assemblies."""
         query = ("SELECT id, title, shortname FROM assembly.assemblies"
                  " WHERE id = ANY(%s)")
         return {
@@ -752,6 +757,7 @@ class LDAPsqlBackend:
         return [self.orga_group_dn(e['id']) async for e in self.query_all(query, [])]
 
     async def get_orgas(self, event_ids: Collection[int]) -> Dict[int, List[int]]:
+        """Helper functions to get the orgas of the given events."""
         query = "SELECT persona_id, event_id FROM event.orgas WHERE event_id = ANY(%s)"
         orgas = defaultdict(list)
         async for e in self.query_all(query, (event_ids,)):
@@ -759,6 +765,7 @@ class LDAPsqlBackend:
         return orgas
 
     async def get_events(self, event_ids: Collection[int]) -> "CdEDBObjectMap":
+        """Helper function to get some information about the given events."""
         query = "SELECT id, title, shortname FROM event.events WHERE id = ANY(%s)"
         return {
             e["id"]: e async for e in self.query_all(query, (event_ids,))
@@ -841,6 +848,7 @@ class LDAPsqlBackend:
         ]
 
     async def get_moderators(self, ml_ids: Collection[str]) -> Dict[str, List[int]]:
+        """Helper function to get the moderators of the given mailinglists."""
         query = ("SELECT persona_id, address FROM ml.moderators, ml.mailinglists"
                  " WHERE ml.mailinglists.id = ml.moderators.mailinglist_id"
                  " AND address = ANY(%s)")
@@ -851,6 +859,7 @@ class LDAPsqlBackend:
 
     async def get_mailinglists(self, ml_ids: Collection[str]
                                ) -> Dict[str, "CdEDBObject"]:
+        """Helper function to get some information about the given mailinglists."""
         query = ("SELECT address, title FROM ml.mailinglists WHERE address = ANY(%s)")
         return {
             e["address"]: e
@@ -928,6 +937,7 @@ class LDAPsqlBackend:
         ]
 
     async def get_subscribers(self, ml_ids: Collection[str]) -> Dict[str, List[int]]:
+        """Helper function to get the subscribers of the given mailinglists."""
         query = ("SELECT persona_id, address"
                  " FROM ml.subscription_states, ml.mailinglists"
                  " WHERE ml.mailinglists.id = ml.subscription_states.mailinglist_id"
