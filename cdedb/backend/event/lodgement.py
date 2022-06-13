@@ -5,7 +5,8 @@ The `EventLodgementBackend` subclasses the `EventBaseBackend` and provides
 functionality for managing lodgements and lodgement groups belonging to an event.
 """
 import collections
-from typing import Collection, Dict, List, Protocol, Tuple
+import dataclasses
+from typing import Any, Collection, Dict, Iterator, List, Protocol, Tuple
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -23,6 +24,26 @@ from cdedb.common.fields import LODGEMENT_FIELDS
 from cdedb.common.n_ import n_
 from cdedb.database.connection import Atomizer
 from cdedb.database.query import DatabaseValue_s
+
+
+@dataclasses.dataclass(frozen=True)
+class LodgementInhabitants:
+    regular: Tuple[int, ...] = dataclasses.field(default_factory=tuple)
+    camping_mat: Tuple[int, ...] = dataclasses.field(default_factory=tuple)
+
+    @property
+    def all(self) -> Tuple[int, ...]:
+        return self.regular + self.camping_mat
+
+    def __add__(self, other: Any) -> "LodgementInhabitants":
+        if not isinstance(other, LodgementInhabitants):
+            return NotImplemented
+        return self.__class__(self.regular + other.regular,
+                              self.camping_mat + other.camping_mat)
+
+    def __iter__(self) -> Iterator[Tuple[int, ...]]:
+        """Enable tuple unpacking."""
+        return iter((self.regular, self.camping_mat))
 
 
 class EventLodgementBackend(EventBaseBackend):
@@ -380,7 +401,7 @@ class EventLodgementBackend(EventBaseBackend):
     def get_grouped_inhabitants(
             self, rs: RequestState, event_id: int,
             lodgement_ids: Collection[int] = None,
-    ) -> Dict[int, Dict[int, Dict[bool, Tuple[int, ...]]]]:
+    ) -> Dict[int, Dict[int, LodgementInhabitants]]:
         """Group number of inhabitants by lodg'ement, part and camping mat status."""
         event_id = affirm(vtypes.ID, event_id)
         if not self.is_orga(rs, event_id=event_id):
@@ -401,9 +422,13 @@ class EventLodgementBackend(EventBaseBackend):
             WHERE ep.event_id = %s AND {condition}
             GROUP BY lodgement_id, part_id, is_camping_mat
         """
-        ret: Dict[int, Dict[int, Dict[bool, Tuple[int, ...]]]]
+        ret: Dict[int, Dict[int, LodgementInhabitants]]
         ret = collections.defaultdict(
-            lambda: collections.defaultdict(lambda: {False: (), True: ()}))
+            lambda: collections.defaultdict(LodgementInhabitants))
         for e in self.query_all(rs, query, params):
-            ret[e['lodgement_id']][e['part_id']][e['is_cm']] = tuple(e['inhabitants'])
+            if e['is_cm']:
+                inhabitants = LodgementInhabitants(camping_mat=tuple(e['inhabitants']))
+            else:
+                inhabitants = LodgementInhabitants(regular=tuple(e['inhabitants']))
+            ret[e['lodgement_id']][e['part_id']] += inhabitants
         return ret

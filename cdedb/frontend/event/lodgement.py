@@ -4,13 +4,14 @@
 for managings lodgements, lodgement groups and lodgements' inhabitants."""
 
 import itertools
-from typing import Collection, Dict, List, NamedTuple, Optional, Tuple
+from typing import Collection, Dict, List, NamedTuple, Optional
 
 import werkzeug.exceptions
 from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+from cdedb.backend.event.lodgement import LodgementInhabitants
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, LodgementsSortkeys, RequestState, merge_dicts,
 )
@@ -40,7 +41,7 @@ class EventLodgementMxin(EventBaseFrontend):
     def check_lodgement_problems(
             event: CdEDBObject, lodgements: CdEDBObjectMap,
             registrations: CdEDBObjectMap, personas: CdEDBObjectMap,
-            all_inhabitants: Dict[int, Dict[int, Dict[bool, Tuple[int, ...]]]]
+            all_inhabitants: Dict[int, Dict[int, LodgementInhabitants]]
     ) -> List[LodgementProblem]:
         """Un-inlined code to examine the current lodgements of an event for
         spots with room for improvement.
@@ -67,7 +68,7 @@ class EventLodgementMxin(EventBaseFrontend):
             for part_id in event['parts']:
                 lodgement = lodgements[lodgement_id]
                 inhabitants = all_inhabitants[lodgement_id][part_id]
-                reg, cm = inhabitants[False], inhabitants[True]
+                reg, cm = inhabitants
                 if len(reg) + len(cm) > (lodgement['regular_capacity']
                                          + lodgement['camping_mat_capacity']):
                     ret.append(LodgementProblem(
@@ -126,14 +127,11 @@ class EventLodgementMxin(EventBaseFrontend):
         # Sum inhabitants per group, part and status.
         inhabitants_per_group = {
             group_id: {
-                part_id: {
-                    is_camping_mat: sum(
-                        (inhabitants[lodgement_id][part_id][is_camping_mat]
-                         for lodgement_id in group['lodgement_ids']),
-                        start=()
-                    )
-                    for is_camping_mat in (True, False)
-                }
+                part_id: sum(
+                    (inhabitants[lodgement_id][part_id]
+                     for lodgement_id in group['lodgement_ids']),
+                    start=LodgementInhabitants()
+                )
                 for part_id in parts
             }
             for group_id, group in groups.items()
@@ -141,14 +139,10 @@ class EventLodgementMxin(EventBaseFrontend):
 
         # Sum inhabitants per part and status.
         total_inhabitants = {
-            part_id: {
-                is_camping_mat: sum(
-                    (inhabitants_per_group[group_id][part_id][is_camping_mat]
-                     for group_id in groups),
-                    start=()
-                )
-                for is_camping_mat in (True, False)
-            }
+            part_id: sum(
+                (inhabitants_per_group[group_id][part_id] for group_id in groups),
+                start=LodgementInhabitants()
+            )
             for part_id in parts
         }
         # Calculate sum of lodgement regular and camping mat capacities
@@ -157,8 +151,7 @@ class EventLodgementMxin(EventBaseFrontend):
 
         # Calculate problems_condensed (worst problem)
         problems = self.check_lodgement_problems(
-            rs.ambience['event'], lodgements, registrations, personas,
-            inhabitants)
+            rs.ambience['event'], lodgements, registrations, personas, inhabitants)
         problems_condensed = {}
         for lodgement_id, part_id in itertools.product(lodgement_ids, parts.keys()):
             problems_here = [p for p in problems
@@ -175,8 +168,10 @@ class EventLodgementMxin(EventBaseFrontend):
                 if sort_part_id not in parts.keys():
                     raise werkzeug.exceptions.NotFound(n_("Invalid part id."))
                 assert sort_part_id is not None
-                camping_mat = sortkey == LodgementsSortkeys.used_camping_mat
-                num = len(inhabitants[lodgement['id']][sort_part_id][camping_mat])
+                if sortkey == LodgementsSortkeys.used_regular:
+                    num = len(inhabitants[lodgement['id']][sort_part_id].regular)
+                else:
+                    num = len(inhabitants[lodgement['id']][sort_part_id].camping_mat)
                 primary_sort = (num,)
             elif sortkey.is_total_sorting():
                 lodgement_group = groups[lodgement['group_id']]
@@ -276,7 +271,7 @@ class EventLodgementMxin(EventBaseFrontend):
         raw_inhabitants = self.eventproxy.get_grouped_inhabitants(
             rs, event_id, lodgement_ids=(lodgement_id,))
         inhabitants = {
-            part_id: sum(raw_inhabitants[lodgement_id][part_id].values(), start=())
+            part_id: raw_inhabitants[lodgement_id][part_id].all
             for part_id in rs.ambience['event']['parts']
         }
         registrations = self.eventproxy.get_registrations(
