@@ -361,6 +361,8 @@ class CoreGenesisBackend(CoreBaseBackend):
             elif decision.is_update():
                 assert persona_id is not None
                 persona = self.get_persona(rs, persona_id)
+                if not self._is_relative_admin(rs, persona):
+                    raise PrivilegeError(n_("Not privileged."))
                 if persona['is_archived']:
                     code = self.dearchive_persona(rs, persona_id, case['username'])
                     if not code:  # pragma: no cover

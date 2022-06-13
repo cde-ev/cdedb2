@@ -20,6 +20,11 @@ export CDEDB_CONFIGPATH=$tmp_configfile
 # silence git output after switching to a detached head
 git config advice.detachedHead false
 
+if [[ "$(git rev-parse $OLDREVISION)" = "$(git rev-parse $NEWREVISION)" ]]; then
+    echo "Source and target are identical."
+    exit 0
+fi
+
 # old revision
 echo ""
 echo "Checkout $OLDREVISION"
@@ -44,7 +49,7 @@ git checkout $NEWREVISION
 
 # determine evolutions to apply.
 ls cdedb/database/evolutions | sort > /tmp/newevolutions.txt
-grep /tmp/newevolutions.txt -v -f /tmp/oldevolutions.txt || true > /tmp/todoevolutions.txt
+grep /tmp/newevolutions.txt -v -f /tmp/oldevolutions.txt > /tmp/todoevolutions.txt
 
 # apply all evolutions and gather the output.
 truncate -s0 /tmp/output-evolution.txt
