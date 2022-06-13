@@ -193,22 +193,18 @@ class EventLodgementBackend(EventBaseBackend):
             if cascade:
                 if "lodgements" in cascade:
                     with Silencer(rs):
+                        lodgement_cascade = ("inhabitants",)
                         for lodgement_id in blockers["lodgements"]:
-                            deletor = {
-                                "id": lodgement_id,
-                                "group_id": None,
-                            }
-                            ret *= self.set_lodgement(rs, deletor)
+                            ret *= self.delete_lodgement(
+                                rs, lodgement_id, lodgement_cascade)
 
                 blockers = self.delete_lodgement_group_blockers(rs, group_id)
 
             if not blockers:
-                group = unwrap(self.get_lodgement_groups(rs, (group_id,)))
-                ret *= self.sql_delete_one(
-                    rs, "event.lodgement_groups", group_id)
+                group = self.get_lodgement_group(rs, group_id)
+                ret *= self.sql_delete_one(rs, "event.lodgement_groups", group_id)
                 self.event_log(rs, const.EventLogCodes.lodgement_group_deleted,
-                               event_id=group['event_id'],
-                               change_note=group['title'])
+                               event_id=group['event_id'], change_note=group['title'])
             else:
                 raise ValueError(
                     n_("Deletion of %(type)s blocked by %(block)s."),
