@@ -277,7 +277,7 @@ class EventLodgementMxin(EventBaseFrontend):
         registrations = self.eventproxy.get_registrations(
             rs, tuple(itertools.chain.from_iterable(inhabitants.values())))
         personas = self.coreproxy.get_event_users(
-            rs, tuple(r['persona_id'] for r in registrations.values()))
+            rs, [r['persona_id'] for r in registrations.values()], event_id=event_id)
 
         problems = self.check_lodgement_problems(
             rs.ambience['event'], {lodgement_id: rs.ambience['lodgement']},
