@@ -6,6 +6,7 @@ import os
 import pathlib
 import subprocess
 import sys
+import time
 import unittest
 from types import ModuleType, TracebackType
 from typing import List, Optional, TextIO, Type
@@ -25,7 +26,7 @@ import tests.backend_tests as backend_tests
 import tests.frontend_tests as frontend_tests
 import tests.ldap_tests as ldap_tests
 import tests.other_tests as other_tests
-from cdedb.cli.database import create_database, populate_database
+from cdedb.cli.database import create_database, populate_database, restart_services
 from cdedb.cli.storage import (
     create_log, create_storage, populate_sample_event_keepers, populate_storage,
 )
@@ -178,6 +179,12 @@ def run_ldap_tests(testpatterns: List[str] = None, *, verbose: bool = False) -> 
     else:
         create_database(conf, secrets)
         populate_database(conf, secrets)
+
+        # ensure the test ldap server is running
+        restart_services("cde-ldap-test")
+        # wait until the ldap server is ready
+        # TODO is there a better solution?
+        time.sleep(5)
 
         # update the current ldap setting
         # note that this takes no changes of the base ldap setup into account,
