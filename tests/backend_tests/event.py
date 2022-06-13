@@ -3753,7 +3753,7 @@ class TestEventBackend(BackendTest):
             'title': 'HY',
             'notes': "Notizen",
             'camping_mat_capacity': 11,
-            'group_id': None,
+            'group_id': 1,
         }
         new_id = self.event.create_lodgement(self.key, new)
         update = {
