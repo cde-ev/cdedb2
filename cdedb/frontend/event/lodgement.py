@@ -387,9 +387,10 @@ class EventLodgementMxin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
+    @REQUESTdata("new_group_title")
     @REQUESTdatadict(*LODGEMENT_COMMON_FIELDS)
-    def create_lodgement(self, rs: RequestState, event_id: int,
-                         data: CdEDBObject) -> Response:
+    def create_lodgement(self, rs: RequestState, event_id: int, data: CdEDBObject,
+                         new_group_title: Optional[str]) -> Response:
         """Add a new lodgement."""
         data['event_id'] = event_id
         field_params: vtypes.TypeMapping = {
@@ -402,10 +403,27 @@ class EventLodgementMxin(EventBaseFrontend):
         data['fields'] = {
             key.split('.', 1)[1]: value for key, value in raw_fields.items()
         }
+
+        # Check if a new group should be created.
+        create_new_group = False
+        if not data.get('group_id') and new_group_title:
+            create_new_group = True
+            data['group_id'] = 1  # Placeholder id for validation.
+
         data = check(rs, vtypes.Lodgement, data, creation=True)
         if rs.has_validation_errors():
             return self.create_lodgement_form(rs, event_id)
         assert data is not None
+
+        # Create the new group.
+        if create_new_group:
+            new_group_data = {'title': new_group_title, 'event_id': event_id}
+            new_group_data = check(
+                rs, vtypes.LodgementGroup, new_group_data, creation=True)
+            if rs.has_validation_errors():
+                return self.create_lodgement_form(rs, event_id)
+            data['group_id'] = self.eventproxy.create_lodgement_group(
+                rs, new_group_data)
 
         new_id = self.eventproxy.create_lodgement(rs, data)
         rs.notify_return_code(new_id)

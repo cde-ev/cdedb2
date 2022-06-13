@@ -17748,3 +17748,12 @@ msgstr "Kann aus {} keinen ml_type bestimmen"
 #, python-format
 msgid "%(ml_type)s is not an appropriate type for this mailinglist."
 msgstr "%(ml_type)s ist kein geeigneter Typ für diese Mailingliste."
+
+msgid "New Lodgement Group Title"
+msgstr "Titel der neuen Unterkunftsgruppe"
+
+msgid "Only for creating a new group."
+msgstr "Nur für das Erstellen einer neuen Gruppe."
+
+msgid "– create new group –"
+msgstr "– neue Gruppe erstellen –"
