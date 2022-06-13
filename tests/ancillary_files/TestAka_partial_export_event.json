@@ -101,6 +101,9 @@
         },
         "2": {
             "title": "Au\u00dfenWohnGruppe"
+        },
+        "3": {
+            "title": "Sonstige"
         }
     },
     "lodgements": {
@@ -129,7 +132,7 @@
             "regular_capacity": 0,
             "camping_mat_capacity": 100,
             "notes": "Nur f\u00fcr Notf\u00e4lle.",
-            "group_id": null,
+            "group_id": 3,
             "fields": {
                 "contamination": "low"
             }

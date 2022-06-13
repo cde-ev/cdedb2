@@ -2999,10 +2999,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 
     @as_users("garcia")
     def test_lodgement_groups(self) -> None:
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/lodgement/overview'},
-                      {'href': '/event/event/1/lodgement/group/summary'})
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Unterkünfte",
+                      "Unterkunftsgruppen verwalten")
         self.assertTitle("Unterkunftsgruppen (Große Testakademie 2222)")
 
         # First try with invalid (empty name)
@@ -3023,21 +3021,18 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.submit(f)
 
         # Check (non-)existence of groups in lodgement overview
-        self.traverse({'href': '/event/event/1/lodgement/overview'})
+        self.traverse("Unterkünfte")
         self.assertPresence("Hauptgebäude")
         self.assertPresence("Altes Schloss")
         self.assertNonPresence("AußenWohnGruppe")
-        self.assertPresence("Warme Stube")
-        # Check correct unassignment of "Warme Stube"
-        self.traverse({'href': '/event/event/1/lodgement/1/change'})
-        f = self.response.forms['changelodgementform']
-        self.assertEqual(f['group_id'].value, "")
+        # "Warme Stube" was deleted along with the group.
+        self.assertNonPresence("Warme Stube")
 
         # Assign "Kellerverlies" to "Altes Schloss"
         self.traverse({'href': '/event/event/1/lodgement/overview'},
                       {'href': '/event/event/1/lodgement/3/change'})
         f = self.response.forms['changelodgementform']
-        self.assertEqual(f['group_id'].value, "")
+        self.assertEqual(f['group_id'].value, "3")
         f['group_id'] = "1002"  # Should be the "Altes Schloss"
         self.submit(f)
         self.assertTitle("Unterkunft Kellerverlies (Große Testakademie 2222)")

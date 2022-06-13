@@ -379,7 +379,12 @@ class TestEventBackend(BackendTest):
         }
         new_group_id = self.event.create_lodgement_group(self.key, new_group)
         self.assertLess(0, new_group_id)
-        new_group['id'] = new_group_id
+        new_group.update({
+            'id': new_group_id,
+            'lodgement_ids': [],
+            'regular_capacity': 0,
+            'camping_mat_capacity': 0,
+        })
         self.assertEqual(
             new_group, self.event.get_lodgement_group(self.key, new_group_id))
 
@@ -1373,6 +1378,7 @@ class TestEventBackend(BackendTest):
         expectation_list = {
             1: "Haupthaus",
             2: "AußenWohnGruppe",
+            3: "Sonstige",
         }
         group_ids = self.event.list_lodgement_groups(self.key, event_id)
         self.assertEqual(expectation_list, group_ids)
@@ -1382,12 +1388,26 @@ class TestEventBackend(BackendTest):
                 'id': 1,
                 'event_id': 1,
                 'title': "Haupthaus",
+                'lodgement_ids': [2, 4],
+                'camping_mat_capacity': 2,
+                'regular_capacity': 11,
             },
             2: {
                 'id': 2,
                 'event_id': 1,
                 'title': "AußenWohnGruppe",
+                'lodgement_ids': [1],
+                'camping_mat_capacity': 1,
+                'regular_capacity': 5,
             },
+            3: {
+                'id': 3,
+                'event_id': 1,
+                'title': "Sonstige",
+                'lodgement_ids': [3],
+                'camping_mat_capacity': 100,
+                'regular_capacity': 0,
+            }
         }
         self.assertEqual(expectation_groups,
                          self.event.get_lodgement_groups(self.key, group_ids))
@@ -1398,7 +1418,12 @@ class TestEventBackend(BackendTest):
         }
         new_group_id = self.event.create_lodgement_group(self.key, new_group)
         self.assertLess(0, new_group_id)
-        new_group['id'] = new_group_id
+        new_group.update({
+            'id': new_group_id,
+            'lodgement_ids': [],
+            'camping_mat_capacity': 0,
+            'regular_capacity': 0,
+        })
         self.assertEqual(
             new_group, self.event.get_lodgement_group(self.key, new_group_id))
         update = {
@@ -1420,10 +1445,20 @@ class TestEventBackend(BackendTest):
         }
         new_lodgement_id = self.event.create_lodgement(self.key, new_lodgement)
         self.assertLess(0, new_lodgement_id)
-        new_lodgement['id'] = new_lodgement_id
-        new_lodgement['fields'] = {}
+        new_lodgement.update({
+            'id': new_lodgement_id,
+            'fields': {},
+        })
         self.assertEqual(
             new_lodgement, self.event.get_lodgement(self.key, new_lodgement_id))
+
+        new_group.update({
+            'camping_mat_capacity': new_lodgement['camping_mat_capacity'],
+            'regular_capacity': new_lodgement['regular_capacity'],
+            'lodgement_ids': [new_lodgement_id],
+        })
+        self.assertEqual(
+            new_group, self.event.get_lodgement_group(self.key, new_group_id))
 
         expectation_list[new_group_id] = new_group['title']
         self.assertEqual(expectation_list,
@@ -1432,12 +1467,11 @@ class TestEventBackend(BackendTest):
             0, self.event.delete_lodgement_group(
                 self.key, new_group_id, ("lodgements",)))
         del expectation_list[new_group_id]
-        self.assertEqual(expectation_list,
-                         self.event.list_lodgement_groups(self.key, event_id))
-
-        new_lodgement['group_id'] = None
         self.assertEqual(
-            new_lodgement, self.event.get_lodgement(self.key, new_lodgement_id))
+            expectation_list, self.event.list_lodgement_groups(self.key, event_id))
+
+        self.assertNotIn(
+            new_lodgement_id, self.event.list_lodgements(self.key, event_id))
 
     @as_users("annika", "garcia")
     def test_entity_lodgement(self) -> None:
@@ -1479,7 +1513,7 @@ class TestEventBackend(BackendTest):
             'title': 'HY',
             'notes': "Notizen",
             'camping_mat_capacity': 11,
-            'group_id': None,
+            'group_id': 3,
         }
         new_id = self.event.create_lodgement(self.key, new)
         self.assertLess(0, new_id)
@@ -3031,7 +3065,7 @@ class TestEventBackend(BackendTest):
                      'fields': {'contamination': 'low'},
                      'title': 'Handtuchraum',
                      'notes': 'Hier gibt es Handtücher für jeden.',
-                     'group_id': None,
+                     'group_id': 2,
                      'camping_mat_capacity': 0,
                      },
                 3: None,
