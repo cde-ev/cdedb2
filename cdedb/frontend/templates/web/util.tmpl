@@ -365,9 +365,9 @@
 {% endmacro %}
 
 {% macro form_input_general(name=none, label='', anid=none, small=False, info='', displayerrors=True,
-        horizontal=True, labelid=none, addon='', markdown=False, wide=False) %}
-    <div class="form-group {% if name in errors %}
-                               {% if is_warning(name) %}
+        horizontal=True, labelid=none, addon='', markdown=False, wide=False, errorname=none) %}
+    <div class="form-group {% if (errorname or name) in errors %}
+                               {% if is_warning(errorname or name) %}
                                    has-warning
                                {% else %}
                                    has-error
@@ -389,7 +389,7 @@
         {% if addon %}<div class="input-group">{% endif %}
             {{- caller() }}
         {% if addon %}<span class="input-group-addon">{{ addon }}</span></div>{% endif %}
-            {{- output_errors(name, displayerrors) }}
+            {{- output_errors(errorname or name, displayerrors) }}
             {{- output_info(info) }}
         {%- if markdown %}{{ markdown_preview(anid) }}{% endif %}
         {%- if horizontal %}</div>{% endif %}
@@ -434,9 +434,10 @@
 
 {% macro form_input_text(name, label='', info='', displayerrors=True, readonly=False, actualreadonly=False,
         defaultvalue='', anid=none, maxlength=none, type='text', placeholder=none, small=False, horizontal=True,
-        aclass="", attributes='', addon='', markdown=False) %}
+        aclass="", attributes='', addon='', markdown=False, errorname=none) %}
     {%- set anid = anid or "input-text-{}".format(name) %}
-    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, addon=addon, markdown=markdown) %}
+    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, addon=addon,
+                                markdown=markdown, errorname=errorname) %}
         {{- input_text(name, readonly, actualreadonly, defaultvalue, anid, maxlength=maxlength, type=type,
                 placeholder=placeholder, aclass="form-control " + aclass, attributes=attributes) }}
     {%- endcall %}
