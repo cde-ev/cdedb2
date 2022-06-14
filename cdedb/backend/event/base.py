@@ -42,6 +42,7 @@ from cdedb.common.fields import (
 from cdedb.common.n_ import n_
 from cdedb.common.sorting import mixed_existence_sorter, xsorted
 from cdedb.database.connection import Atomizer
+from cdedb.filter import datetime_filter
 
 # type alias for questionnaire specification.
 CdEDBQuestionnaire = Dict[const.QuestionnaireUsages, List[CdEDBObject]]
@@ -50,7 +51,9 @@ CdEDBQuestionnaire = Dict[const.QuestionnaireUsages, List[CdEDBObject]]
 class EventBaseBackend(EventLowLevelBackend):
     def __init__(self) -> None:
         super().__init__()
-        self._event_keeper = EntityKeeper(self.conf, 'event_keeper')
+        # define which keys of log entries will show up in commit messages
+        log_keys = ["timestamp", "code", "submitted_by", "affected", "change_note"]
+        self._event_keeper = EntityKeeper(self.conf, 'event_keeper', log_keys=log_keys)
 
     @access("event")
     def is_offline_locked(self, rs: RequestState, *, event_id: int = None,
@@ -1022,7 +1025,50 @@ class EventBaseBackend(EventLowLevelBackend):
         if rs.user.persona_id:
             author_name = f"{rs.user.given_names} {rs.user.family_name}"
             author_email = rs.user.username
+        logs = self._get_event_keeper_logs(rs, event_id)
         may_drop = False if is_initial else not after_change
-        self._event_keeper.commit(event_id, json_serialize(export), commit_msg,
-                                  author_name, author_email, may_drop=may_drop)
+        self._event_keeper.commit(
+            event_id, json_serialize(export), commit_msg, author_name, author_email,
+            may_drop=may_drop, logs=logs)
         return export
+
+    @internal
+    def _get_event_keeper_logs(self, rs: RequestState,
+                               event_id: int) -> Optional[CdEDBLog]:
+        """Retrieve all log entries since the last event keeper commit.
+
+        This also enhances the log entries to make them more readable.
+        """
+        with Atomizer(rs):
+            last_log_id = unwrap(self.sql_select_one(
+                rs, "event.events", ["event_keeper_log_id"], event_id))
+            q = "SELECT * FROM event.log WHERE id > %s AND event_id = %s ORDER BY id"
+            entries = self.query_all(rs, q, (last_log_id, event_id))
+            # short circuit if there are no new log entries
+            if not entries:
+                return None
+
+            # adjust the last event keeper log id
+            setter = {
+                'id': event_id,
+                'event_keeper_log_id': entries[-1]["id"]
+            }
+            self.sql_update(rs, "event.events", setter)
+
+            # pimp up the log entries to be actually useful
+            persona_ids = (
+                {entry['submitted_by'] for entry in entries if entry['submitted_by']}
+                | {entry['persona_id'] for entry in entries if entry['persona_id']})
+            personas = self.core.get_personas(rs, persona_ids)
+
+        # the name of the fields which will show up in the log are defined
+        # during instantiation of the entity keeper.
+        for entry in entries:
+            persona = personas.get(entry["persona_id"])
+            entry["affected"] = f"{persona['given_names']} {persona['family_name']}"
+            persona = personas.get(entry["submitted_by"])
+            entry["submitted_by"] = f"{persona['given_names']} {persona['family_name']}"
+            entry["code"] = const.EventLogCodes(entry["code"]).name
+            entry["timestamp"] = datetime_filter(
+                entry["ctime"], formatstr="%Y-%m-%d %H:%M:%S (%Z)")
+        return len(entries), entries

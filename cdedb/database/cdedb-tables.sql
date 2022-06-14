@@ -700,8 +700,10 @@ CREATE TABLE event.events (
         -- reference to special purpose custom data fields
         lodge_field                  integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
         camping_mat_field            integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
-        course_room_field            integer DEFAULT NULL  -- REFERENCES event.field_definitions(id)
+        course_room_field            integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
         -- The references above are not yet possible, but will be added later on.
+        -- This refers in theory to event.log(id), but adding this would be quite a hassle
+        event_keeper_log_id         integer NOT NULL DEFAULT 0
 );
 -- TODO: ADD indexes for is_visible, is_archived, etc.?
 GRANT SELECT, UPDATE ON event.events TO cdb_persona;
