@@ -79,6 +79,7 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     schulze_condorcet==2.0.0 \
     subman==0.1.0 \
     segno==1.5.2 \
+    tabulate==0.8.9 \
     \
     && python3 -m pip --no-cache-dir install \
     mypy==0.950 \
