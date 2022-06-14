@@ -18,18 +18,21 @@ import tempfile
 from pathlib import Path
 from typing import List, Optional, Union
 
+from tabulate import tabulate
+
 import cdedb.common.validation.types as vtypes
 from cdedb.backend.common import affirm_validation as affirm
-from cdedb.common import PathLike, setup_logger
+from cdedb.common import CdEDBLog, PathLike, setup_logger
 from cdedb.config import Config
 
 
 class EntityKeeper:
-    def __init__(self, conf: Config, directory: PathLike):
+    def __init__(self, conf: Config, directory: PathLike, log_keys: List[str] = None):
         """This specifies the base directory where the individual entity repositories
         will be located."""
         self.conf = conf
         self._dir = self.conf['STORAGE_DIR'] / directory
+        self.log_keys = log_keys
 
         # Initialize logger.
         logger_name = "cdedb.backend.entitykeeper"
@@ -100,7 +103,8 @@ class EntityKeeper:
 
     def commit(self, entity_id: int, file_text: str, commit_msg: str,
                author_name: str = "", author_email: str = "", *,
-               may_drop: bool = True) -> Optional[subprocess.CompletedProcess[bytes]]:
+               may_drop: bool = True, logs: CdEDBLog = None
+               ) -> Optional[subprocess.CompletedProcess[bytes]]:
         """Commit a single file representing an entity to a git repository.
 
         In contrast to its friends, we allow some wiggle room for errors here right now
@@ -127,6 +131,9 @@ class EntityKeeper:
             # Then commit everything as if we were in the repository directory.
             commit: List[Union[PathLike, bytes]]
             commit = ["git", "-C", full_dir, "commit", "-m", commit_msg.encode("utf8")]
+            if logs and (formated_logs := self._format_logs(logs)):
+                commit.append("-m")
+                commit.append(formated_logs)
             if author_name or author_email:
                 commit.append("--author")
                 commit.append(f"{author_name} <{author_email}>".encode("utf8"))
@@ -147,3 +154,16 @@ class EntityKeeper:
             # Do not check here such that an error does not drag the whole request down
             # In particular, this is expected for empty commits.
             return self._run(commit, check=False)
+
+    def _format_logs(self, logs: CdEDBLog) -> Optional[bytes]:
+        if self.log_keys is None:
+            return None
+
+        count, entries = logs
+        summary = f"Es gab {count} neue Logeinträge seit dem letzten Commit."
+
+        headers = self.log_keys
+        body = [[entry.get(key, "") for key in headers] for entry in entries]
+        table = tabulate(body, headers=headers)
+
+        return "\n\n".join([summary, table]).encode("utf8")
