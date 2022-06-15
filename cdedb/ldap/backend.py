@@ -202,11 +202,6 @@ class LDAPsqlBackend:
 
     _to_bytes = staticmethod(_to_bytes)
 
-    @classproperty
-    def anonymous_accessible_dns(self) -> List[DN]:
-        """A closed list of all dns which may be accessed by anonymous binds."""
-        return [self.subschema_dn]
-
     @staticmethod
     def load_schemas(*schemas: str) -> SchemaDescription:
         """Load the provided ldap schemas and parse their content from file."""
@@ -237,6 +232,11 @@ class LDAPsqlBackend:
     #######################
     # Access restrictions #
     #######################
+
+    @classproperty
+    def anonymous_accessible_dns(self) -> List[DN]:
+        """A closed list of all dns which may be accessed by anonymous binds."""
+        return [self.subschema_dn]
 
     @classmethod
     def may_dua_access_user(cls, dua: DN, user: "CdEDBBaseLDAPEntry") -> bool:
