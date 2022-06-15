@@ -627,6 +627,9 @@ class EventBaseFrontend(AbstractUserFrontend):
             state = {
                 'EVENT_SCHEMA_VERSION': None,
             }
+        # TODO this can be dropped once this got deployed
+        if "events" in state:
+            del state["events"]
         event_ids = self.eventproxy.list_events(rs, archived=False)
         if state.get("EVENT_SCHEMA_VERSION") != list(EVENT_SCHEMA_VERSION):
             self.logger.info("Event schema version changed, creating new commit for"
