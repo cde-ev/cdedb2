@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     # Lazy import saves many dependecies for standalone mode
     from cdedb.common import CdEDBObject, CdEDBObjectMap
     from cdedb.database.query import DatabaseValue_s
+    from cdedb.ldap.entry import CdEDBBaseLDAPEntry
 
 LDAPObject = Dict[bytes, List[bytes]]
 LDAPObjectMap = Dict[DN, LDAPObject]
@@ -232,6 +233,34 @@ class LDAPsqlBackend:
         """Mimic backend.core.base.encrypt_password"""
         # TODO move into common and use it here
         return sha512_crypt.hash(password)
+
+    #######################
+    # Access restrictions #
+    #######################
+
+    @classmethod
+    def may_dua_access_user(cls, dua: DN, user: "CdEDBBaseLDAPEntry") -> bool:
+        """Decide if the given dua may access the data of the given user."""
+        if not cls.users_dn.contains(user.dn):
+            raise ValueError("The given LDAPEntry is no user!")
+        if not (cls.duas_dn.contains(dua) and cls.duas_dn != dua):
+            raise ValueError("The given DN is no dua!")
+
+        # TODO we may restrict access of duas to users by f.e. group membership.
+        return True
+
+    @classmethod
+    def may_dua_access_group(cls, dua: DN, group: "CdEDBBaseLDAPEntry") -> bool:
+        """Decide if the given dua may access the data of the given group."""
+        if not cls.groups_dn.contains(group.dn):
+            raise ValueError("The given LDAPEntry is no group!")
+        if not (cls.duas_dn.contains(dua) and cls.duas_dn != dua):
+            raise ValueError("The given DN is no dua!")
+
+        # TODO we may restrict access of duas to type of groups
+        if dua in {cls.dua_dn("apache"), cls.dua_dn("cloud")}:
+            return True
+        return False
 
     ###############
     # operational #

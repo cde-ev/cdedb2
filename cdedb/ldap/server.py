@@ -59,8 +59,6 @@ class CdEDBLDAPServer(LDAPServer):
             groups_dn = entry.backend.groups_dn
             duas_dn = entry.backend.duas_dn
             admin_dn = entry.backend.dua_dn("admin")
-            cloud_dn = entry.backend.dua_dn("cloud")
-            apache_dn = entry.backend.dua_dn("apache")
 
             # Return nothing if requesting user (self.boundUser) is not privileged.
             # anonymous users have only very limited access
@@ -86,7 +84,10 @@ class CdEDBLDAPServer(LDAPServer):
                     pass
                 # the request comes from a dua
                 elif duas_dn.contains(self.boundUser.dn):
-                    pass
+                    if entry.backend.may_dua_access_user(self.boundUser.dn, entry):
+                        pass
+                    else:
+                        return None
                 # disallow other requests
                 else:
                     return None
@@ -97,8 +98,7 @@ class CdEDBLDAPServer(LDAPServer):
                     pass
                 # the request comes from a dua
                 elif duas_dn.contains(self.boundUser.dn):
-                    # TODO: expose this more
-                    if self.boundUser.dn in {apache_dn, cloud_dn}:
+                    if entry.backend.may_dua_access_group(self.boundUser.dn, entry):
                         pass
                     else:
                         return None
@@ -124,6 +124,7 @@ class CdEDBLDAPServer(LDAPServer):
                 raise RuntimeError("Impossible.")
 
             # filter the attributes requested in the search
+            # TODO maybe restrict some attributes depending on the requesting entity
             if b"*" in request.attributes or len(request.attributes) == 0:
                 filtered_attributes = list(attributes.items())
             else:
