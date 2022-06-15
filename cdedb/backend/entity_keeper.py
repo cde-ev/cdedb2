@@ -18,12 +18,15 @@ import tempfile
 from pathlib import Path
 from typing import List, Optional, Sequence, Union
 
-from tabulate import tabulate
+import tabulate
 
 import cdedb.common.validation.types as vtypes
 from cdedb.backend.common import affirm_validation as affirm
 from cdedb.common import CdEDBObject, PathLike, setup_logger
 from cdedb.config import Config
+
+# We use whitespace to force column length, so we do not want it to be stripped away.
+tabulate.PRESERVE_WHITESPACE = True
 
 
 class EntityKeeper:
@@ -164,6 +167,6 @@ class EntityKeeper:
 
         headers = self.log_keys
         body = [[entry.get(key, "") for key in headers] for entry in logs]
-        table = tabulate(body, headers=headers)
+        table = tabulate.tabulate(body, headers=headers)
 
         return "\n\n".join([summary, table]).encode("utf8")

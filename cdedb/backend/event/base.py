@@ -1082,7 +1082,9 @@ class EventBaseBackend(EventLowLevelBackend):
         for entry in entries:
             entry["Zeitstempel"] = datetime_filter(
                 entry["ctime"], formatstr="%Y-%m-%d %H:%M:%S (%Z)")
-            entry["Code"] = const.EventLogCodes(entry["code"]).name
+            # pad the log code column to a fixed width. 31 chars is the current length
+            # of our longest log code.
+            entry["Code"] = str(const.EventLogCodes(entry["code"]).name).ljust(31)
             if entry["submitted_by"]:
                 s_p = personas[entry["submitted_by"]]
                 entry["Verantwortlich"] = f"{s_p['given_names']} {s_p['family_name']}"
