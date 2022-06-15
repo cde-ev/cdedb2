@@ -52,7 +52,8 @@ class EventBaseBackend(EventLowLevelBackend):
     def __init__(self) -> None:
         super().__init__()
         # define which keys of log entries will show up in commit messages
-        log_keys = ["timestamp", "code", "submitted_by", "affected", "change_note"]
+        # they are translated to german, since commit messages are always in german
+        log_keys = ["Zeitstempel", "Code", "Verantwortlich", "Betroffen", "Zusatz"]
         self._event_keeper = EntityKeeper(self.conf, 'event_keeper', log_keys=log_keys)
 
     @access("event")
@@ -1064,11 +1065,12 @@ class EventBaseBackend(EventLowLevelBackend):
         # the name of the fields which will show up in the log are defined
         # during instantiation of the entity keeper.
         for entry in entries:
-            persona = personas.get(entry["persona_id"])
-            entry["affected"] = f"{persona['given_names']} {persona['family_name']}"
-            persona = personas.get(entry["submitted_by"])
-            entry["submitted_by"] = f"{persona['given_names']} {persona['family_name']}"
-            entry["code"] = const.EventLogCodes(entry["code"]).name
-            entry["timestamp"] = datetime_filter(
+            entry["Zeitstempel"] = datetime_filter(
                 entry["ctime"], formatstr="%Y-%m-%d %H:%M:%S (%Z)")
+            entry["Code"] = const.EventLogCodes(entry["code"]).name
+            submitter = personas.get(entry["submitted_by"])
+            entry["Verantwortlich"] = f"{submitter['given_names']} {submitter['family_name']}"
+            affected = personas.get(entry["persona_id"])
+            entry["Betroffen"] = f"{affected['given_names']} {affected['family_name']}"
+            entry["Zusatz"] = entry["change_note"]
         return len(entries), entries
