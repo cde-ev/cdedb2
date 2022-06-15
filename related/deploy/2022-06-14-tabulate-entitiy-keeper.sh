@@ -1,1 +1,2 @@
-sudo pip install tabulate==0.8.9
+sudo apt install python3-tabulate
+sudo pip install types-tabulate
