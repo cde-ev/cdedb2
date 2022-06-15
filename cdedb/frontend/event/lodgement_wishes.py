@@ -262,7 +262,7 @@ def create_lodgement_wishes_graph(
     :param lodgements: The lodgements of the event. Required for drawing the
         assigned lodgements as subgraphs when required.
     :param lodgement_groups: The lodgement groups of the event. Required for drawing
-        lodgement group subgraphs when required.
+        lodgement group subgraphs when requested.
     :param event: The event data as returned by
         :meth:`cdedb.backend.event.EventBackend.get_event`
     :param personas: All personas referenced by any of the registrations.
@@ -282,7 +282,8 @@ def create_lodgement_wishes_graph(
     :param cluster_by_lodgement: May only be true if cluster_part_id provides a single
         part id. If true, participants are clustered into subgraphs based on their
         assigned lodgment in that event part.
-    :param cluster_by_lodgement_group: Works analogously to cluster_by_lodgement.
+    :param cluster_by_lodgement_group: Works analogously to cluster_by_lodgement. Both
+        can be combined to produce sub-sub-graphs of lodgements and lodgement groups.
     :return: The fully constructed by not-yet rendered graph as a graphviz
         Digraph object. The graph can be rendered and layouted by calling
         `.pipe()` on the graph object which will run the graphviz program as a
