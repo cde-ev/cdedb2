@@ -1026,7 +1026,7 @@ class EventBaseBackend(EventLowLevelBackend):
         if rs.user.persona_id:
             author_name = f"{rs.user.given_names} {rs.user.family_name}"
             author_email = rs.user.username
-        logs = self._get_event_keeper_logs(rs, event_id)
+        logs = self._process_event_keeper_logs(rs, event_id)
         may_drop = False if is_initial else not after_change
         self._event_keeper.commit(
             event_id, json_serialize(export), commit_msg, author_name, author_email,
@@ -1034,17 +1034,32 @@ class EventBaseBackend(EventLowLevelBackend):
         return export
 
     @internal
-    def _get_event_keeper_logs(self, rs: RequestState,
-                               event_id: int) -> Optional[Tuple[CdEDBObject, ...]]:
-        """Retrieve all log entries since the last event keeper commit.
-
-        This also enhances the log entries to make them more readable.
-        """
+    def _get_latest_event_keeper_logs(self, rs, event_id: int
+                                      ) -> Tuple[CdEDBObject, ...]:
+        """Retrieve all log entries since the last event keeper commit."""
         with Atomizer(rs):
-            last_log_id = unwrap(self.sql_select_one(
+            latest_log_id = unwrap(self.sql_select_one(
                 rs, "event.events", ["event_keeper_log_id"], event_id))
             q = "SELECT * FROM event.log WHERE id > %s AND event_id = %s ORDER BY id"
-            entries = self.query_all(rs, q, (last_log_id, event_id))
+            entries = self.query_all(rs, q, (latest_log_id, event_id))
+        return entries
+
+    @access("event")
+    def has_event_keeper_new_logs(self, rs, event_id: int) -> bool:
+        """Are there any new log entries since the last commit?"""
+        event_id = affirm(int, event_id)
+        return bool(self._get_latest_event_keeper_logs(rs, event_id))
+
+    @internal
+    def _process_event_keeper_logs(self, rs: RequestState,
+                                   event_id: int) -> Optional[Tuple[CdEDBObject, ...]]:
+        """Format the log entries since the last commit to make them more readable.
+
+        This also takes care of the bookkeeping and updates the id of the latest
+        log entry which was recorded by event keeper.
+        """
+        with Atomizer(rs):
+            entries = self._get_latest_event_keeper_logs(rs, event_id)
             # short circuit if there are no new log entries
             if not entries:
                 return None
@@ -1056,7 +1071,7 @@ class EventBaseBackend(EventLowLevelBackend):
             }
             self.sql_update(rs, "event.events", setter)
 
-            # pimp up the log entries to be actually useful
+            # retrieve additional information to pimp up the log entries
             persona_ids = (
                 {entry['submitted_by'] for entry in entries if entry['submitted_by']}
                 | {entry['persona_id'] for entry in entries if entry['persona_id']})
