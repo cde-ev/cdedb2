@@ -8259,7 +8259,7 @@ msgstr "mensura pecuniae"
 #: cdedb/frontend/templates/web/core/view_changelog_meta.tmpl:27
 #: cdedb/frontend/templates/web/logging.tmpl:35
 #: cdedb/frontend/templates/web/logging.tmpl:121
-msgid "Additional Info"
+msgid "Annotation"
 msgstr "addita"
 
 #: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:29
