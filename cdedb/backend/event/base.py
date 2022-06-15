@@ -1068,9 +1068,11 @@ class EventBaseBackend(EventLowLevelBackend):
             entry["Zeitstempel"] = datetime_filter(
                 entry["ctime"], formatstr="%Y-%m-%d %H:%M:%S (%Z)")
             entry["Code"] = const.EventLogCodes(entry["code"]).name
-            submitter = personas.get(entry["submitted_by"])
-            entry["Verantwortlich"] = f"{submitter['given_names']} {submitter['family_name']}"
-            affected = personas.get(entry["persona_id"])
-            entry["Betroffen"] = f"{affected['given_names']} {affected['family_name']}"
+            if entry["submitted_by"]:
+                s_p = personas[entry["submitted_by"]]
+                entry["Verantwortlich"] = f"{s_p['given_names']} {s_p['family_name']}"
+            if entry["persona_id"]:
+                a_p = personas[entry["persona_id"]]
+                entry["Betroffen"] = f"{a_p['given_names']} {a_p['family_name']}"
             entry["Zusatz"] = entry["change_note"]
         return len(entries), entries
