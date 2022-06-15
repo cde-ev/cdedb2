@@ -357,6 +357,11 @@ class EventLodgementMxin(EventBaseFrontend):
             (lodgement_id,), rs.ambience['event'], registrations,
             key="lodgement_id", personas=personas)
 
+        if f_id := rs.ambience["event"]["camping_mat_field"]:
+            camping_mat_field_name = rs.ambience["event"]["fields"][f_id]["field_name"]
+        else:
+            camping_mat_field_name = None
+
         problems = self.check_lodgement_problems(
             rs.ambience['event'], {lodgement_id: rs.ambience['lodgement']},
             registrations, personas, inhabitants)
@@ -398,6 +403,7 @@ class EventLodgementMxin(EventBaseFrontend):
             'groups': groups, 'registrations': registrations, 'personas': personas,
             'inhabitants': inhabitants, 'problems': problems,
             'make_inhabitants_query': make_inhabitants_query,
+            'camping_mat_field_name': camping_mat_field_name,
             'prev_lodgement': prev_lodge, 'next_lodgement': next_lodge,
         })
 
