@@ -38,7 +38,7 @@ from cdedb.common.exceptions import ArchiveError, PrivilegeError, QuotaException
 from cdedb.common.fields import (
     META_INFO_FIELDS, PERSONA_ALL_FIELDS, PERSONA_ASSEMBLY_FIELDS, PERSONA_CDE_FIELDS,
     PERSONA_CORE_FIELDS, PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, PERSONA_STATUS_FIELDS,
-    PRIVILEGE_CHANGE_FIELDS,
+    PRIVILEGE_CHANGE_FIELDS, REALM_SPECIFIC_GENESIS_FIELDS,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
@@ -90,12 +90,24 @@ class CoreBaseBackend(AbstractBackend):
             access where they should not normally have it. This is to allow that
             override.
         """
+        # Shortcuts to avoid having to retrieve the persona in easy cases.
         if self.is_admin(rs):
             return True
         if allow_meta_admin and "meta_admin" in rs.user.roles:
             return True
-        roles = extract_roles(unwrap(self.get_personas(rs, (persona_id,))),
-                              introspection_only=True)
+        persona = self.get_persona(rs, persona_id)
+        return self._is_relative_admin(rs, persona)
+
+    @staticmethod
+    @internal
+    def _is_relative_admin(rs: RequestState, persona: CdEDBObject) -> bool:
+        """Internal helper to check relative admin privileges if the persona is already
+        available.
+
+        Apart from meta admins, the only difference to `is_relative_admin` is that
+        this accepts a full persona, rather than a persona id.
+        """
+        roles = extract_roles(persona, introspection_only=True)
         return any(admin <= rs.user.roles for admin in privilege_tier(roles))
 
     @access("persona")
@@ -2455,7 +2467,8 @@ class CoreBaseBackend(AbstractBackend):
                           atomized=False)
         return success, msg
 
-    @access("core_admin")
+    @access("core_admin", *("{}_admin".format(realm)
+                            for realm in REALM_SPECIFIC_GENESIS_FIELDS))
     def find_doppelgangers(self, rs: RequestState,
                            persona: CdEDBObject) -> CdEDBObjectMap:
         """Look for accounts with data similar to the passed dataset.
@@ -2497,7 +2510,12 @@ class CoreBaseBackend(AbstractBackend):
         persona_ids = tuple(k for k, v in scores.items() if v > cutoff)
         persona_ids = xsorted(persona_ids, key=lambda k: -scores.get(k, 0))
         persona_ids = persona_ids[:max_entries]
-        return self.get_total_personas(rs, persona_ids)
+        # Circumvent privilege check, since this is a rather special case.
+        ret = self.retrieve_personas(
+            rs, persona_ids, PERSONA_CORE_FIELDS + ("birthday",))
+        for persona_id, persona_ in ret.items():
+            persona_['may_be_edited'] = self._is_relative_admin(rs, persona_)
+        return ret
 
     @access("anonymous")
     def get_meta_info(self, rs: RequestState) -> CdEDBObject:

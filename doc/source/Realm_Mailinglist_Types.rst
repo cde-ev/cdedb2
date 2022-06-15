@@ -103,6 +103,8 @@ General Mailinglists
     The following subtypes are supported:
 
     * Opt-in
+    * Moderated Opt-in
+    * Invitation only
 
 Semi-public Mailinglists
     Mailinglists that are Opt-in for CdE members, but have Moderated Opt-in

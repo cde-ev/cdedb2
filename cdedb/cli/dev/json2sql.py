@@ -12,6 +12,7 @@ from cdedb.backend.core import CoreBackend
 from cdedb.cli.util import connect
 from cdedb.common import CdEDBObject, PsycoJson
 from cdedb.config import Config, SecretsConfig
+from cdedb.database.conversions import to_db_input
 
 
 class AuxData(TypedDict):
@@ -101,8 +102,7 @@ def format_inserts(table_name: str, table_data: Sized, keys: Tuple[str, ...],
     # Create len(data) many row placeholders for len(keys) many values.
     value_list = ",\n".join((f"({', '.join(('%s',) * len(keys))})",) * len(table_data))
     query = f"INSERT INTO {table_name} ({', '.join(keys)}) VALUES {value_list};"
-    # noinspection PyProtectedMember
-    params = tuple(aux["core"]._sanitize_db_input(p) for p in params)  # pylint: disable=protected-access
+    params = tuple(to_db_input(p) for p in params)
 
     # This is a bit hacky, but it gives us access to a psycopg2.cursor
     # object so we can let psycopg2 take care of the heavy lifting

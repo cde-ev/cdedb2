@@ -490,9 +490,9 @@
 
 {# list as default value is not supported yet #}
 {% macro input_checkbox(name, label='', value=True, defaultvalue='', readonly=False, actualreadonly=False, anid=none,
-        aclass=none, inline=False, radio=False, arialabel=none, attributes='') -%}
+        aclass=none, inline=False, radio=False, arialabel=none, attributes='', title='') -%}
     {% set selected = value|stringIn(values.getlist(name)) or (not name in values and value|string == defaultvalue) %}
-    <label{% if inline %} class="{{"radio" if radio else "checkbox"}}-inline"{% endif %}>
+    <label {{ dict(title=title)|xmlattr }} {% if inline %} class="{{"radio" if radio else "checkbox"}}-inline"{% endif %}>
         <input{{ dict(
             type="radio" if radio else "checkbox",
             name=name if not actualreadonly else ("readonly" + name),
@@ -512,7 +512,8 @@
 {%- endmacro %}
 
 {% macro input_checkboxes(name, entries, readonly=False, actualreadonly=False, defaultvalue='', inline=False,
-        radio=False, aclass=none, arialabeledby='', sort=False, slice=1, checkboxclass='') %}
+        radio=False, aclass=none, arialabeledby='', sort=False, slice=1, checkboxclass='', readonly_map=none,
+        title_map=none) %}
     <div{{ dict(
         class="row",
         role="radiogroup" if radio else "group",
@@ -528,8 +529,8 @@
                                     {{ " " + checkboxclass if checkboxclass }}">
                     {%- endif -%}
                         {{ input_checkbox(name, entry_label, entry_value, defaultvalue,
-                                          readonly=readonly, actualreadonly=actualreadonly,
-                                          inline=inline, radio=radio, aclass=aclass) }}
+                                          readonly=(readonly_map or {}).get(entry_value, readonly), actualreadonly=actualreadonly,
+                                          inline=inline, radio=radio, aclass=aclass, title=title_map[entry_value]) }}
                     {%- if not inline %}</div>{% endif %}
                 {%- endfor %}
             </div>

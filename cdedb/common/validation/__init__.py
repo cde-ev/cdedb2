@@ -511,6 +511,8 @@ def _id(
     This is just a wrapper around `_positive_int`, to differentiate this
     semantically.
     """
+    if val is None or isinstance(val, str) and not val:
+        raise ValidationSummary(ValueError(argname, n_("Must not be empty.")))
     return ID(_positive_int(val, argname, **kwargs))
 
 
@@ -4523,7 +4525,7 @@ def _query(
     for idx, entry in enumerate(val.order):
         try:
             # TODO use generic tuple here once implemented
-            entry = _ALL_TYPED[Iterable](entry, 'order', **kwargs)  # type: ignore[assignment,misc]
+            entry = _ALL_TYPED[Iterable](entry, 'order', **kwargs)  # type: ignore[assignment, misc]
         except ValidationSummary as e:
             errs.extend(e)
             continue

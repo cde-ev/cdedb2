@@ -2,10 +2,9 @@
 
 import enum
 import itertools
-from collections import OrderedDict
 from typing import (
-    TYPE_CHECKING, Collection, Dict, List, Literal, Mapping, Optional, Set, Type, Union,
-    cast, get_origin,
+    TYPE_CHECKING, Collection, Dict, List, Literal, Mapping, Optional, OrderedDict, Set,
+    Type, Union, cast, get_origin,
 )
 
 from subman.machine import SubscriptionPolicy
@@ -758,6 +757,8 @@ TYPE_MAP = {
     MailinglistTypes.assembly_presider: AssemblyPresiderMailinglist,
     MailinglistTypes.general_mandatory: GeneralMandatoryMailinglist,
     MailinglistTypes.general_opt_in: GeneralOptInMailinglist,
+    MailinglistTypes.general_moderated_opt_in: GeneralModeratedOptInMailinglist,
+    MailinglistTypes.general_invitation_only: GeneralInvitationOnlyMailinglist,
     MailinglistTypes.general_moderators: GeneralModeratorMailinglist,
     MailinglistTypes.cdelokal_moderators: CdELokalModeratorMailinglist,
     MailinglistTypes.semi_public: SemiPublicMailinglist,
