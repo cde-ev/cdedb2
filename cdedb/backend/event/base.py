@@ -53,7 +53,7 @@ class EventBaseBackend(EventLowLevelBackend):
         super().__init__()
         # define which keys of log entries will show up in commit messages
         # they are translated to german, since commit messages are always in german
-        log_keys = ["Zeitstempel", "Code", "Verantwortlich", "Betroffen", "Zusatz"]
+        log_keys = ["Zeitstempel", "Code", "Verantwortlich", "Betroffen", "Erläuterung"]
         self._event_keeper = EntityKeeper(self.conf, 'event_keeper', log_keys=log_keys)
 
     @access("event")
@@ -1089,5 +1089,5 @@ class EventBaseBackend(EventLowLevelBackend):
             if entry["persona_id"]:
                 a_p = personas[entry["persona_id"]]
                 entry["Betroffen"] = f"{a_p['given_names']} {a_p['family_name']}"
-            entry["Zusatz"] = entry["change_note"]
+            entry["Erläuterung"] = entry["change_note"]
         return entries

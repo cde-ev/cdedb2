@@ -9366,7 +9366,7 @@ msgstr "Guthaben"
 #: cdedb/frontend/templates/web/logging.tmpl:35
 #: cdedb/frontend/templates/web/logging.tmpl:121
 msgid "Additional Info"
-msgstr "Zusatz"
+msgstr "Erläuterung"
 
 #: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:29
 msgid "Overall Balance"
