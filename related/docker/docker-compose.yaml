@@ -31,21 +31,18 @@ services:
     depends_on:
       - cdb
   ldap:
-    image: ldap
+    image: ldaptor
     build:
       context: ../..
-      dockerfile: ./related/docker/Dockerfile-ldap
+      dockerfile: ./related/docker/Dockerfile-ldaptor
     volumes:
-      - ldap:/etc/ldap # ldap data and first run flag/file
+      - ../..:/cdedb2:z # the :z is for SELinux (see #2053)
     ports:
       - 127.0.0.1:8389:389
     environment:
-        DATABASE_NAME: cdb # database on which ldap will run
-        DATABASE_HOST: cdb # server on which ldap will listen
-        DATABASE_CDB_ADMIN_PASSWORD: 9876543210abcdefghijklmnopqrst
+        CDEDB_CONFIGPATH: /etc/cdedb/config.py # DEFAULT_CONFIGPATH from cdedb.config
     depends_on:
       - cdb
-      - app # not really necessary but app creates the sample-data
   adminer:
     image: adminer
     ports:

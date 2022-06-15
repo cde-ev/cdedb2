@@ -16,8 +16,8 @@ For every step "foo" of semester management, there are the following methods:
 
 from typing import Optional, Tuple
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.backend.cde import CdELastschriftBackend
 from cdedb.backend.common import access, affirm_validation as affirm
 from cdedb.common import (
@@ -25,7 +25,7 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import ArchiveError
 from cdedb.common.fields import EXPULS_PERIOD_FIELDS, ORG_PERIOD_FIELDS
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.database.connection import Atomizer
 from cdedb.filter import money_filter
 

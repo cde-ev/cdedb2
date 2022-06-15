@@ -7,8 +7,8 @@ functionality for managing lodgements and lodgement groups belonging to an event
 
 from typing import Collection, Dict, Protocol
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     Silencer, access, affirm_set_validation as affirm_set, affirm_validation as affirm,
     cast_fields, read_conditional_write_composer, singularize,
@@ -20,7 +20,7 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import LODGEMENT_FIELDS, LODGEMENT_GROUP_FIELDS
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.database.connection import Atomizer
 
 
@@ -351,7 +351,7 @@ class EventLodgementBackend(EventBaseBackend):
                     query = ("UPDATE event.registration_parts"
                              " SET lodgement_id = NULL"
                              " WHERE id = ANY(%s)")
-                    params = (blockers["inhabitants"])
+                    params = (blockers["inhabitants"], )
                     ret *= self.query_exec(rs, query, params)
 
                 blockers = self.delete_lodgement_blockers(rs, lodgement_id)

@@ -17,7 +17,7 @@ import psycopg2.extensions
 import psycopg2.extras
 from psycopg2.extensions import ISOLATION_LEVEL_SERIALIZABLE as SERIALIZABLE
 
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 
 # We cannot import cdedb.config here.
 # from cdedb.config import SecretsConfig

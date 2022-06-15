@@ -10,17 +10,17 @@ import magic
 import werkzeug.exceptions
 from werkzeug import Response
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.common import CdEDBObject, GenesisDecision, RequestState, merge_dicts, now
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
+from cdedb.common.validation import GENESIS_CASE_EXPOSED_FIELDS, PERSONA_COMMON_FIELDS
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access, check_validation as check,
     periodic,
 )
 from cdedb.frontend.core.base import CoreBaseFrontend
-from cdedb.validation import GENESIS_CASE_EXPOSED_FIELDS, PERSONA_COMMON_FIELDS
 
 # Name of each realm's option in the genesis form
 GenesisRealmOptionName = collections.namedtuple(
@@ -296,9 +296,19 @@ class CoreGenesisMixin(CoreBaseFrontend):
         # We don't actually compare genders, so this is to make sure it is not empty.
         persona_data['gender'] = const.Genders.not_specified
         doppelgangers = self.coreproxy.find_doppelgangers(rs, persona_data)
+        non_editable_doppelgangers = {
+            persona_id: not persona['may_be_edited']
+            for persona_id, persona in doppelgangers.items()
+        }
+        title_map = {
+            persona_id: rs.gettext("Insufficient admin privileges.")
+            for persona_id, not_relative_admin in non_editable_doppelgangers.items()
+            if not_relative_admin
+        }
         return self.render(rs, "genesis/genesis_show_case", {
             'reviewer': reviewer, 'pevent': pevent, 'pcourse': pcourse,
             'doppelgangers': doppelgangers,
+            'disabled_radios': non_editable_doppelgangers, 'title_map': title_map,
         })
 
     @access("core_admin", *("{}_admin".format(realm)

@@ -13,12 +13,11 @@ repopath = currentpath.parent
 
 sys.path.append(str(repopath))
 
+from cdedb.config import DEFAULT_CONFIGPATH, set_configpath
+from cdedb.frontend.application import Application
+
 # set the configpath to the default, since apache does not propagate environment
 # variables consciously
-from cdedb.config import DEFAULT_CONFIGPATH, set_configpath
-
 set_configpath(DEFAULT_CONFIGPATH)
-
-from cdedb.frontend.application import Application
 
 application = Application()

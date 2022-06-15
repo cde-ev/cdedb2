@@ -16,26 +16,26 @@ from typing import Collection, Optional, Set
 import werkzeug.exceptions
 from werkzeug import Response
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
-import cdedb.validationtypes as vtypes
 from cdedb.common import (
     DEFAULT_NUM_COURSE_CHOICES, CdEDBObject, RequestState, merge_dicts, now, unwrap,
 )
 from cdedb.common.fields import EVENT_FIELD_SPEC
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.sorting import EntitySorter, xsorted
+from cdedb.common.validation import (
+    EVENT_EXPOSED_FIELDS, EVENT_PART_COMMON_FIELDS,
+    EVENT_PART_CREATION_MANDATORY_FIELDS, EVENT_PART_GROUP_COMMON_FIELDS,
+)
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access, cdedburl,
     check_validation as check, check_validation_optional as check_optional, drow_name,
     event_guard, inspect_validation as inspect, process_dynamic_input,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
-from cdedb.validation import (
-    EVENT_EXPOSED_FIELDS, EVENT_PART_COMMON_FIELDS,
-    EVENT_PART_CREATION_MANDATORY_FIELDS, EVENT_PART_GROUP_COMMON_FIELDS,
-)
 
 
 class EventEventMixin(EventBaseFrontend):
@@ -102,6 +102,11 @@ class EventEventMixin(EventBaseFrontend):
             params['institutions'] = self.pasteventproxy.list_institutions(rs)
             params['minor_form_present'] = (
                     self.eventproxy.get_minor_form(rs, event_id) is not None)
+            constraint_violations = self.get_constraint_violations(
+                rs, event_id, registration_id=None, course_id=None)
+            params['mep_violations'] = constraint_violations['mep_violations']
+            params['mec_violations'] = constraint_violations['mec_violations']
+            params['violation_severity'] = constraint_violations['max_severity']
         elif not rs.ambience['event']['is_visible']:
             raise werkzeug.exceptions.Forbidden(n_("The event is not published yet."))
         return self.render(rs, "event/show_event", params)

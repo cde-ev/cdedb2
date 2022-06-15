@@ -2,7 +2,7 @@
 
 """Additional strings for i18n which do not occur literally."""
 
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 
 I18N_STRINGS = (
     #
@@ -223,6 +223,8 @@ I18N_STRINGS = (
     n_("QuestionnaireUsages.registration"),
     n_("QuestionnaireUsages.additional"),
 
+    n_("EventPartGroupType.mutually_exclusive_participants"),
+    n_("EventPartGroupType.mutually_exclusive_courses"),
     n_("EventPartGroupType.Statistic"),
 
     n_("RegistrationPartStati.not_applied"),
@@ -284,6 +286,8 @@ I18N_STRINGS = (
     n_("MailinglistTypes.assembly_presider"),
     n_("MailinglistTypes.general_mandatory"),
     n_("MailinglistTypes.general_opt_in"),
+    n_("MailinglistTypes.general_moderated_opt_in"),
+    n_("MailinglistTypes.general_invitation_only"),
     n_("MailinglistTypes.general_moderators"),
     n_("MailinglistTypes.cdelokal_moderators"),
     n_("MailinglistTypes.semi_public"),

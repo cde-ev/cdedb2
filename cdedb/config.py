@@ -19,7 +19,7 @@ import logging
 import os
 import pathlib
 import subprocess
-from typing import Any, Iterator, Mapping, Union
+from typing import Any, Iterator, Mapping, MutableMapping, Union
 
 import pytz
 
@@ -38,13 +38,19 @@ def set_configpath(path: PathLike) -> None:
     os.environ["CDEDB_CONFIGPATH"] = str(path)
 
 
-def get_configpath() -> pathlib.Path:
-    """Helper to get the config path from the environment."""
-    path = os.environ.get("CDEDB_CONFIGPATH")
-    if path:
+def get_configpath(fallback: bool = False) -> pathlib.Path:
+    """Helper to get the config path from the environment.
+
+    :param fallback: Whether the DEFAULT_CONFIGPATH should be set and returned as config
+        path if CDEDB_CONFIGPATH is not set. This should only be used in helper scripts.
+    """
+    if path := os.environ.get("CDEDB_CONFIGPATH"):
         return pathlib.Path(path)
-    else:
-        raise RuntimeError("No config path set!")
+    if fallback:
+        _LOGGER.debug("CDEDB_CONFIGPATH not set, using the fallback.")
+        set_configpath(DEFAULT_CONFIGPATH)
+        return DEFAULT_CONFIGPATH
+    raise RuntimeError("No config path set!")
 
 
 # TODO where exactly does this log?
@@ -327,17 +333,18 @@ _SECRECTS_DEFAULTS = {
         "cloud": "secret",
         "cyberaka": "secret",
         "dokuwiki": "secret",
+        "test": "secret",
     },
 }
 
 
-def _import_from_file(path: pathlib.Path) -> Mapping[str, Any]:
+def _import_from_file(path: pathlib.Path) -> MutableMapping[str, Any]:
     """Import all variables from the given file and return them as dict."""
     spec = importlib.util.spec_from_file_location("override", str(path))
-    if not spec:
+    if not spec or not spec.loader:
         raise ImportError
     override = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(override)  # type: ignore
+    spec.loader.exec_module(override)
     return {key: getattr(override, key) for key in dir(override)}
 
 
@@ -354,7 +361,7 @@ class Config(Mapping[str, Any]):
         self._configpath = configpath
 
         name = self.__class__.__name__
-        _LOGGER.debug(f"Initialising {name} with path {configpath}")
+        _LOGGER.debug(f"Initialize {name} object with path {configpath}.")
 
         if not configpath:
             raise RuntimeError(f"No configpath for {name} provided!")
@@ -365,7 +372,7 @@ class Config(Mapping[str, Any]):
         override = self._process_config_overwrite()
         self._configchain = collections.ChainMap(override, _DEFAULTS)
 
-    def _process_config_overwrite(self) -> Mapping[str, Any]:
+    def _process_config_overwrite(self) -> MutableMapping[str, Any]:
         """Import the config overwrites from the file specified by the configpath.
 
         Allow only keys which are already present in _DEFAULT.
@@ -383,6 +390,48 @@ class Config(Mapping[str, Any]):
         return self._configchain.__len__()
 
 
+class LazyConfig(Config):
+    """Lazy config object for usage global namespace.
+
+    It should be avoided in general, but sometimes a Config object needs to live in the
+    global namespace of a module. If this is the case, importing from this module would
+    cause the Config object to be initialized, which is an unwanted side effect which
+    may not happen during import (f.e. importing from this module and setting the
+    config path environment variable later on will fail).
+
+    To circumvent this, the LazyConfig object may be used instead – it behaves identical
+    to a Config object, beside the initialization happens not on instantiation but on
+    first access.
+    """
+
+    # noinspection PyMissingConstructor
+    # pylint: disable=super-init-not-called
+    def __init__(self) -> None:
+        name = self.__class__.__name__
+        _LOGGER.debug(f"Instantiate {name} object from {_LOGGER.findCaller()}.")
+        self.__initialized = False
+
+    def __init(self) -> None:
+        """Perform the initialization decoupled from the instantiation."""
+        if not self.__initialized:
+            name = self.__class__.__name__
+            _LOGGER.debug(f"Initialize {name} object from {_LOGGER.findCaller()}.")
+            super().__init__()
+            self.__initialized = True
+
+    def __getitem__(self, key: str) -> Any:
+        self.__init()
+        return super().__getitem__(key)
+
+    def __iter__(self) -> Iterator[str]:
+        self.__init()
+        return super().__iter__()
+
+    def __len__(self) -> int:
+        self.__init()
+        return super().__len__()
+
+
 class TestConfig(Config):
     """Main configuration for tests.
 
@@ -391,7 +440,7 @@ class TestConfig(Config):
     all the configuration in our testsuite in a configfile.
     """
 
-    def _process_config_overwrite(self) -> Mapping[str, Any]:
+    def _process_config_overwrite(self) -> MutableMapping[str, Any]:
         """Import the config overwrites from the file specified by the configpath.
 
         Allow additional keys which are not present in _DEFAULT.

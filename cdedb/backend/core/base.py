@@ -22,8 +22,8 @@ from typing import (
 
 from passlib.hash import sha512_crypt
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_set_validation as affirm_set,
     affirm_validation as affirm, affirm_validation_optional as affirm_optional,
@@ -38,9 +38,9 @@ from cdedb.common.exceptions import ArchiveError, PrivilegeError, QuotaException
 from cdedb.common.fields import (
     META_INFO_FIELDS, PERSONA_ALL_FIELDS, PERSONA_ASSEMBLY_FIELDS, PERSONA_CDE_FIELDS,
     PERSONA_CORE_FIELDS, PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, PERSONA_STATUS_FIELDS,
-    PRIVILEGE_CHANGE_FIELDS,
+    PRIVILEGE_CHANGE_FIELDS, REALM_SPECIFIC_GENESIS_FIELDS,
 )
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.roles import (
     ADMIN_KEYS, ALL_ROLES, REALM_ADMINS, extract_roles, privilege_tier,
@@ -90,12 +90,24 @@ class CoreBaseBackend(AbstractBackend):
             access where they should not normally have it. This is to allow that
             override.
         """
+        # Shortcuts to avoid having to retrieve the persona in easy cases.
         if self.is_admin(rs):
             return True
         if allow_meta_admin and "meta_admin" in rs.user.roles:
             return True
-        roles = extract_roles(unwrap(self.get_personas(rs, (persona_id,))),
-                              introspection_only=True)
+        persona = self.get_persona(rs, persona_id)
+        return self._is_relative_admin(rs, persona)
+
+    @staticmethod
+    @internal
+    def _is_relative_admin(rs: RequestState, persona: CdEDBObject) -> bool:
+        """Internal helper to check relative admin privileges if the persona is already
+        available.
+
+        Apart from meta admins, the only difference to `is_relative_admin` is that
+        this accepts a full persona, rather than a persona id.
+        """
+        roles = extract_roles(persona, introspection_only=True)
         return any(admin <= rs.user.roles for admin in privilege_tier(roles))
 
     @access("persona")
@@ -1172,7 +1184,7 @@ class CoreBaseBackend(AbstractBackend):
                 update['balance'] = decimal.Decimal(0)
             else:
                 delta = None
-                new_balance = None  # type: ignore
+                new_balance = None
                 code = const.FinanceLogCodes.gain_membership
             ret = self.set_persona(
                 rs, update, may_wait=False,
@@ -1865,7 +1877,7 @@ class CoreBaseBackend(AbstractBackend):
         # Validation is done inside.
         if num is None and ids is not None and set(ids) == {rs.user.persona_id}:
             return False
-        quota = self.quota(rs, ids=ids, num=num)  # type: ignore
+        quota = self.quota(rs, ids=ids, num=num)  # type: ignore[call-overload]
         return (quota > self.conf["QUOTA_VIEWS_PER_DAY"]
                 and not {"cde_admin", "core_admin"} & rs.user.roles)
 
@@ -2238,22 +2250,11 @@ class CoreBaseBackend(AbstractBackend):
             self.RESET_COOKIE_PAYLOAD, persona_id=None, timeout=timeout)
         return cookie
 
-    # # This should work but Literal seems to be broken.
-    # # https://github.com/python/mypy/issues/7399
-    # if TYPE_CHECKING:
-    #     from typing import Literal
-    #     ret_type = Union[Tuple[Literal[False], str],
-    #                      Tuple[Literal[True], None]]
-    # else:
-    #     ret_type = Tuple[bool, Optional[str]]
-    ret_type = Tuple[bool, Optional[str]]
-
     def _verify_reset_cookie(self, rs: RequestState, persona_id: int, salt: str,
-                             cookie: str) -> ret_type:  # pylint: disable=undefined-variable
+                             cookie: str) -> Optional[str]:
         """Check a provided cookie for correctness.
 
-        :returns: The bool signals success, the str is an error message or
-            None if successful.
+        :returns: None on success, an error message otherwise.
         """
         password_hash = unwrap(self.sql_select_one(
             rs, "core.personas", ("password_hash",), persona_id))
@@ -2264,12 +2265,12 @@ class CoreBaseBackend(AbstractBackend):
             salt, str(persona_id), password_hash, cookie, persona_id=None)
         if msg is None:
             if timeout:
-                return False, n_("Link expired.")
+                return n_("Link expired.")
             else:
-                return False, n_("Link invalid or already used.")
+                return n_("Link invalid or already used.")
         if msg != self.RESET_COOKIE_PAYLOAD:
-            return False, n_("Link invalid or already used.")
-        return True, None
+            return n_("Link invalid or already used.")
+        return None
 
     def modify_password(self, rs: RequestState, new_password: str,
                         old_password: str = None, reset_cookie: str = None,
@@ -2300,10 +2301,9 @@ class CoreBaseBackend(AbstractBackend):
             if not self.verify_persona_password(rs, old_password, persona_id):
                 return False, n_("Password verification failed.")
         if reset_cookie:
-            success, msg = self.verify_reset_cookie(
-                rs, persona_id, reset_cookie)
-            if not success:
-                return False, msg  # type: ignore
+            msg = self.verify_reset_cookie(rs, persona_id, reset_cookie)
+            if msg is not None:
+                return False, msg
         if not new_password:
             return False, n_("No new password provided.")
         _, errs = inspect(vtypes.PasswordStrength, new_password)
@@ -2466,7 +2466,8 @@ class CoreBaseBackend(AbstractBackend):
                           atomized=False)
         return success, msg
 
-    @access("core_admin")
+    @access("core_admin", *("{}_admin".format(realm)
+                            for realm in REALM_SPECIFIC_GENESIS_FIELDS))
     def find_doppelgangers(self, rs: RequestState,
                            persona: CdEDBObject) -> CdEDBObjectMap:
         """Look for accounts with data similar to the passed dataset.
@@ -2508,7 +2509,12 @@ class CoreBaseBackend(AbstractBackend):
         persona_ids = tuple(k for k, v in scores.items() if v > cutoff)
         persona_ids = xsorted(persona_ids, key=lambda k: -scores.get(k, 0))
         persona_ids = persona_ids[:max_entries]
-        return self.get_total_personas(rs, persona_ids)
+        # Circumvent privilege check, since this is a rather special case.
+        ret = self.retrieve_personas(
+            rs, persona_ids, PERSONA_CORE_FIELDS + ("birthday",))
+        for persona_id, persona_ in ret.items():
+            persona_['may_be_edited'] = self._is_relative_admin(rs, persona_)
+        return ret
 
     @access("anonymous")
     def get_meta_info(self, rs: RequestState) -> CdEDBObject:

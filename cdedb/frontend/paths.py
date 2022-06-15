@@ -494,6 +494,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                     sub('/group', (
                         rule("/summary", methods=_GET,
                              endpoint="part_group_summary"),
+                        rule("/violations", methods=_GET,
+                             endpoint="constraint_violations"),
                         rule("/add", methods=_GET,
                              endpoint="add_part_group_form"),
                         rule("/add", methods=_POST,

@@ -8,8 +8,8 @@ import collections
 import copy
 from typing import Any, Collection, Dict, Mapping, Set, Tuple
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     Silencer, access, affirm_set_validation as affirm_set, affirm_validation as affirm,
 )
@@ -20,11 +20,12 @@ from cdedb.backend.event.lowlevel import EventLowLevelBackend
 from cdedb.backend.event.query import EventQueryBackend
 from cdedb.backend.event.registration import EventRegistrationBackend
 from cdedb.common import (
-    EVENT_SCHEMA_VERSION, CdEDBObject, CdEDBOptionalMap, DefaultReturnCode,
-    DeletionBlockers, RequestState, build_msg, get_hash, json_serialize, unwrap,
+    EVENT_SCHEMA_VERSION, CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap,
+    DefaultReturnCode, DeletionBlockers, RequestState, build_msg, get_hash,
+    json_serialize, unwrap,
 )
 from cdedb.common.exceptions import PartialImportError, PrivilegeError
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.sorting import mixed_existence_sorter
 from cdedb.database.connection import Atomizer
 
@@ -327,6 +328,8 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                 'offline_lock': False,
             }
             ret *= self.sql_update(rs, "event.events", update)
+            # TODO: Find a way to do this before everything is saved into the database
+            self.delete_invalid_stored_event_queries(rs, data['id'])
             self.event_log(rs, const.EventLogCodes.event_unlocked, data['id'])
             self.event_keeper_commit(
                 rs, data['id'], "Entsperre Veranstaltung", after_change=True)
@@ -547,7 +550,8 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
             cdelta: CdEDBOptionalMap = {}
             cprevious: CdEDBOptionalMap = {}
 
-            def check_seg(track_id, delta, original) -> bool:  # type: ignore
+            def check_seg(track_id: int, delta: CdEDBOptionalMap,
+                          original: CdEDBObjectMap) -> bool:
                 return ((track_id in delta and delta[track_id] is not None)
                         or (track_id not in delta and track_id in original))
 

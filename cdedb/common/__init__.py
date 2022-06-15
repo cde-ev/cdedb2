@@ -32,7 +32,7 @@ import werkzeug.routing
 from schulze_condorcet.types import Candidate
 
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
-from cdedb.common.i18n import n_
+from cdedb.common.n_ import n_
 from cdedb.common.roles import roles_to_admin_views
 from cdedb.database.connection import ConnectionContainer
 
@@ -342,7 +342,7 @@ def make_proxy(backend: B, internal: bool = False) -> B:
                 return fun(rs, *args, **kwargs)
             finally:
                 if not internal:
-                    rs.conn = None  # type: ignore
+                    rs.conn = None  # type: ignore[assignment]
         return cast(F, wrapper)
 
     class Proxy:
@@ -494,7 +494,7 @@ class NearlyNow(datetime.datetime):
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, datetime.datetime):
-            delta = self - other
+            delta = other - self
             return self._delta > delta > -1 * self._delta
         return False
 
@@ -1342,7 +1342,7 @@ IGNORE_WARNINGS_NAME = "_magic_ignore_warnings"
 #: If the partial export and import are unaffected the minor version may be
 #: incremented.
 #: If you increment this, it must be incremented in make_offline_vm.py as well.
-EVENT_SCHEMA_VERSION = (15, 5)
+EVENT_SCHEMA_VERSION = (15, 6)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3
