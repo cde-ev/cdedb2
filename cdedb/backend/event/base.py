@@ -1034,7 +1034,7 @@ class EventBaseBackend(EventLowLevelBackend):
         return export
 
     @internal
-    def _get_latest_event_keeper_logs(self, rs, event_id: int
+    def _get_latest_event_keeper_logs(self, rs: RequestState, event_id: int
                                       ) -> Tuple[CdEDBObject, ...]:
         """Retrieve all log entries since the last event keeper commit."""
         with Atomizer(rs):
@@ -1045,7 +1045,7 @@ class EventBaseBackend(EventLowLevelBackend):
         return entries
 
     @access("event")
-    def has_event_keeper_new_logs(self, rs, event_id: int) -> bool:
+    def has_event_keeper_new_logs(self, rs: RequestState, event_id: int) -> bool:
         """Are there any new log entries since the last commit?"""
         event_id = affirm(int, event_id)
         return bool(self._get_latest_event_keeper_logs(rs, event_id))
