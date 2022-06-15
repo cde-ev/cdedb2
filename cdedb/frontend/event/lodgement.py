@@ -441,7 +441,9 @@ class EventLodgementMxin(EventBaseFrontend):
             registrations, personas, event, part_id)
         graph = create_lodgement_wishes_graph(
             rs, registrations, wishes, lodgements, lodgement_groups, event, personas,
-            part_id, all_participants, show_lodgements, show_lodgement_groups)
+            filter_part_id=part_id, show_all=all_participants, cluster_part_id=part_id,
+            cluster_by_lodgement=show_lodgements,
+            cluster_by_lodgement_group=show_lodgement_groups)
         data: bytes = graph.pipe('svg')
         return self.send_file(rs, "image/svg+xml", data=data)
 

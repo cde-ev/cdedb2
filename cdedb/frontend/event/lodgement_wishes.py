@@ -249,6 +249,7 @@ def create_lodgement_wishes_graph(
         event: CdEDBObject,
         personas: CdEDBObjectMap,
         filter_part_id: Optional[int], show_all: bool,
+        cluster_part_id: Optional[int],
         cluster_by_lodgement: bool,
         cluster_by_lodgement_group: bool) -> graphviz.Digraph:
     """
@@ -275,7 +276,10 @@ def create_lodgement_wishes_graph(
     :param show_all: If false, only participants who are referenced by a wish
         edge, i.e. wished another participants ore have been wished (in the
         relevant part).
-    :param cluster_by_lodgement: May only be true if filter_part_id provides a single
+    :param cluster_part_id: An event part id or None. Is required for clustering, since
+        the lodgement assignment of this part is used to sort participants into
+        lodgements and lodgement groups.
+    :param cluster_by_lodgement: May only be true if cluster_part_id provides a single
         part id. If true, participants are clustered into subgraphs based on their
         assigned lodgment in that event part.
     :param cluster_by_lodgement_group: Works analogously to cluster_by_lodgement.
@@ -284,7 +288,7 @@ def create_lodgement_wishes_graph(
         `.pipe()` on the graph object which will run the graphviz program as a
         subprocess and return the resulting graphic file.
     """
-    if (cluster_by_lodgement_group or cluster_by_lodgement) and not filter_part_id:
+    if (cluster_by_lodgement_group or cluster_by_lodgement) and not cluster_part_id:
         raise RuntimeError("Clusters can only be displayed if restricted to one part.")
 
     graph = graphviz.Digraph(
@@ -340,7 +344,7 @@ def create_lodgement_wishes_graph(
             continue
         # Select correct subgraph
         subgraph = graph
-        if lodgement_id := registration['parts'].get(filter_part_id, {}).get(
+        if lodgement_id := registration['parts'].get(cluster_part_id, {}).get(
                 'lodgement_id'):
             if cluster_by_lodgement:
                 subgraph = lodgement_clusters[lodgement_id]
