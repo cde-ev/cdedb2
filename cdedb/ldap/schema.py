@@ -8,10 +8,9 @@ from ldaptor.schema import AttributeTypeDescription, ObjectClassDescription
 class SchemaDescription:
     """Process all information provided by an LDAP schema.
 
-    This is a slim wrapper to handle various definitions in the same file. Those are
-    for example provided by the openldap project.
-
-    For processing the entries of the schema, the `ldaptor.schema` classes are used.
+    This is a slim wrapper around the schema parsers from `ldaptor.schema` to parse
+    RFC ldap schema definitions from files. Those files are for example provided by the
+    openldap project.
     """
     attribute_types: List[bytes]
     matching_rules: List[bytes]

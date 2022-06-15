@@ -5,7 +5,7 @@ This provides read-only access to users, including
 - mailinglists they are subscribed to
 - mailinglists they moderate
 - events they organize
-- assemblies the lead
+- assemblies they lead
 
 For more information, look at the corresponding doc page.
 
