@@ -22,7 +22,7 @@ from tabulate import tabulate
 
 import cdedb.common.validation.types as vtypes
 from cdedb.backend.common import affirm_validation as affirm
-from cdedb.common import CdEDBLog, PathLike, setup_logger
+from cdedb.common import CdEDBObject, PathLike, setup_logger
 from cdedb.config import Config
 
 
@@ -104,7 +104,7 @@ class EntityKeeper:
 
     def commit(self, entity_id: int, file_text: str, commit_msg: str,
                author_name: str = "", author_email: str = "", *,
-               may_drop: bool = True, logs: CdEDBLog = None
+               may_drop: bool = True, logs: Sequence[CdEDBObject] = None
                ) -> Optional[subprocess.CompletedProcess[bytes]]:
         """Commit a single file representing an entity to a git repository.
 
@@ -156,15 +156,14 @@ class EntityKeeper:
             # In particular, this is expected for empty commits.
             return self._run(commit, check=False)
 
-    def _format_logs(self, logs: CdEDBLog) -> Optional[bytes]:
+    def _format_logs(self, logs: Sequence[CdEDBObject]) -> Optional[bytes]:
         if self.log_keys is None:
             return None
 
-        count, entries = logs
-        summary = f"Es gab {count} neue Logeinträge seit dem letzten Commit."
+        summary = f"Es gab {len(logs)} neue Logeinträge seit dem letzten Commit."
 
         headers = self.log_keys
-        body = [[entry.get(key, "") for key in headers] for entry in entries]
+        body = [[entry.get(key, "") for key in headers] for entry in logs]
         table = tabulate(body, headers=headers)
 
         return "\n\n".join([summary, table]).encode("utf8")

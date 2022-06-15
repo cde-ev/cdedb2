@@ -1035,7 +1035,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
     @internal
     def _get_event_keeper_logs(self, rs: RequestState,
-                               event_id: int) -> Optional[CdEDBLog]:
+                               event_id: int) -> Optional[Tuple[CdEDBObject, ...]]:
         """Retrieve all log entries since the last event keeper commit.
 
         This also enhances the log entries to make them more readable.
@@ -1075,4 +1075,4 @@ class EventBaseBackend(EventLowLevelBackend):
                 a_p = personas[entry["persona_id"]]
                 entry["Betroffen"] = f"{a_p['given_names']} {a_p['family_name']}"
             entry["Zusatz"] = entry["change_note"]
-        return len(entries), entries
+        return entries
