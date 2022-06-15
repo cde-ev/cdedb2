@@ -16,7 +16,7 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import List, Optional, Sequence, Union
 
 from tabulate import tabulate
 
@@ -27,7 +27,8 @@ from cdedb.config import Config
 
 
 class EntityKeeper:
-    def __init__(self, conf: Config, directory: PathLike, log_keys: List[str] = None):
+    def __init__(self, conf: Config, directory: PathLike,
+                 log_keys: Sequence[str] = None):
         """This specifies the base directory where the individual entity repositories
         will be located."""
         self.conf = conf
