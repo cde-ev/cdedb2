@@ -100,7 +100,11 @@
                         <td class="text-right" id="group_regular_capacity_{{ group_id }}">{{ groups[group_id]['regular_capacity'] }}</td>
                         <td class="text-right" id="group_camping_mat_capacity_{{ group_id }}">+ {{ groups[group_id]['camping_mat_capacity'] }}</td>
                         {% if ambience['event']['parts']|length < 6 %}
-                            <td class="b-left"> </td>
+                            <td class="b-left">
+                                {{ util.href(cdedblink("event/create_lodgement_form", {'group_id': group_id}),
+                                             label=none, readonly=is_locked, aclass='btn btn-xs btn-success', icon='plus',
+                                             title=gettext("Add Lodgement"), anid="create_lodgement_in_group_" + group_id|string) }}
+                            </td>
                         {% endif %}
                     </tr>
                 {% endif %}

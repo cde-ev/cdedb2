@@ -2956,6 +2956,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f['notes'] = "oder gleich unter dem Sternenhimmel?"
         f['fields.contamination'] = "low"
         f['group_id'] = ""
+        self.assertEqual("", f['group_id'].value)
         f['new_group_title'] = "Draußen"
         self.submit(f)
         self.assertTitle("Unterkunft Zelte (Große Testakademie 2222)")
@@ -2967,6 +2968,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertEqual('20', f['camping_mat_capacity'].value)
         self.assertEqual("oder gleich unter dem Sternenhimmel?",
                          f['notes'].value)
+        self.traverse("Unterkünfte", {'linkid': f"create_lodgement_in_group_{1001}"})
+        self.assertTitle("Unterkunft anlegen (Große Testakademie 2222)")
+        f = self.response.forms['createlodgementform']
+        self.assertEqual("1001", f['group_id'].value)
 
     @as_users("garcia")
     def test_lodgement_capacities(self) -> None:

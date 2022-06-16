@@ -13,7 +13,7 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.backend.event.lodgement import LodgementInhabitants
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, LodgementsSortkeys, RequestState, merge_dicts,
+    CdEDBObject, CdEDBObjectMap, LodgementsSortkeys, RequestState, merge_dicts, unwrap,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
@@ -379,10 +379,16 @@ class EventLodgementMxin(EventBaseFrontend):
 
     @access("event")
     @event_guard(check_offline=True)
-    def create_lodgement_form(self, rs: RequestState, event_id: int
-                              ) -> Response:
+    @REQUESTdata("group_id")
+    def create_lodgement_form(self, rs: RequestState, event_id: int,
+                              group_id: int = None) -> Response:
         """Render form."""
+        rs.ignore_validation_errors()
         groups = self.eventproxy.list_lodgement_groups(rs, event_id)
+        if len(groups) == 1:
+            group_id = unwrap(groups.keys())
+        if group_id:
+            rs.values['group_id'] = group_id
         return self.render(rs, "lodgement/create_lodgement", {'groups': groups})
 
     @access("event", modi={"POST"})
