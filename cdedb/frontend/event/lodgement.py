@@ -420,7 +420,7 @@ class EventLodgementMxin(EventBaseFrontend):
             new_group_data = {'title': new_group_title, 'event_id': event_id}
             new_group_data = check(
                 rs, vtypes.LodgementGroup, new_group_data, creation=True)
-            if rs.has_validation_errors():
+            if rs.has_validation_errors() or not new_group_data:
                 return self.create_lodgement_form(rs, event_id)
             data['group_id'] = self.eventproxy.create_lodgement_group(
                 rs, new_group_data)
