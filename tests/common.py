@@ -57,7 +57,9 @@ from cdedb.config import SecretsConfig, TestConfig, get_configpath, set_configpa
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.application import Application
-from cdedb.frontend.common import AbstractFrontend, Worker, setup_translations
+from cdedb.frontend.common import (
+    AbstractFrontend, Worker, make_persona_name, setup_translations,
+)
 from cdedb.frontend.cron import CronFrontend
 from cdedb.frontend.paths import CDEDB_PATHS
 from cdedb.script import Script
@@ -1403,6 +1405,54 @@ class FrontendTest(BackendTest):
             raise AssertionError(
                 "{} tag with {} == {} and content \"{}\" has been found."
                 .format(tag, href_attr, element[href_attr], el_content))
+
+    def assertLogEqual(self, log_expectation: Sequence[CdEDBObject], *,
+                       realm: str = None, **kwargs: Any) -> None:
+        saved_response = self.response
+        if not realm:
+            raise RuntimeError("Need to specify realm.")
+
+        # Check raw log.
+        super().assertLogEqual(log_expectation, realm=realm, **kwargs)
+
+        persona_ids = [p_id for e in log_expectation if (p_id := e['persona_id'])]
+        personas = self.core.get_personas(self.key, persona_ids)
+        entity_key = "mailinglist_id" if realm == "ml" else f"{realm}_id"
+        entity_ids = [e_id for e in log_expectation if (e_id := e.get(entity_key))]
+        if realm == "event":
+            entities = self.event.get_events(self.key, entity_ids)
+            self.traverse("Veranstaltungen", "Log")
+        elif realm == "assembly":
+            entities = self.assembly.get_assemblies(self.key, entity_ids)
+            self.traverse("Versammlungen", "Log")
+        elif realm == "ml":
+            entities = self.ml.get_mailinglists(self.key, entity_ids)
+            self.traverse("Mailinglisten", "Log")
+        else:
+            self.get(f"/{realm}/log")
+            entities = {}
+
+        # Retrieve frontend log.
+        f = self.response.forms['logshowform']
+        for field_name in f.fields:
+            if v := kwargs.get(field_name):
+                f[field_name] = v
+        f['length'] = len(log_expectation)
+        self.submit(f)
+
+        # Check frontend log.
+        for i, entry in enumerate(log_expectation, start=1):
+            # TODO: This is an assumption, that won't work if log entries are missing.
+            log_id = 1000 + i
+            self.assertPresence(entry['change_note'] or "", div=f"{i}-{log_id}")
+            self.assertPresence(self.gettext(str(entry['code'])), div=f"{i}-{log_id}")
+            if entry['persona_id']:
+                name = make_persona_name(personas[entry['persona_id']])
+                self.assertPresence(name, div=f"{i}-{log_id}")
+            if entity_id := entry.get(entity_key):
+                self.assertPresence(entities[entity_id]['title'], div=f"{i}-{log_id}")
+
+        self.response = saved_response
 
     def log_pagination(self, title: str, logs: Tuple[Tuple[int, enum.IntEnum], ...]
                        ) -> None:

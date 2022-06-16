@@ -1193,14 +1193,32 @@ etc;anything else""", f['entries_2'].value)
 
         # Check log
         self.get('/event/event/log')
-        self.assertPresence("Veranstaltung erstellt",
-                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
-        self.assertPresence("Orga hinzugefügt",
-                            div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
-        self.assertPresence("Orga hinzugefügt",
-                            div=str(self.EVENT_LOG_OFFSET + 3) + "-1003")
-        self.assertPresence("Veranstaltungsteil erstellt",
-                            div=str(self.EVENT_LOG_OFFSET + 4) + "-1004")
+        log_expectation = [
+            {
+                'code': const.EventLogCodes.event_created,
+                'event_id': 1001,
+            },
+            {
+                'code': const.EventLogCodes.orga_added,
+                'persona_id': 2,
+                'event_id': 1001,
+            },
+            {
+                'code': const.EventLogCodes.orga_added,
+                'persona_id': 7,
+                'event_id': 1001,
+            },
+            {
+                'change_note': "Universale Akademie",
+                'code': const.EventLogCodes.part_created,
+                'event_id': 1001,
+            },
+            {
+                'change_note': "Universale Akademie",
+                'code': const.EventLogCodes.lodgement_group_created,
+                'event_id': 1001,
+            }
+        ]
 
         # Create another event with course track and orga mailinglist
         self.traverse({'description': 'Veranstaltungen'},
@@ -1237,17 +1255,39 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence("", div="trackrow1002_1002", check_div=False)
 
         # Check event log
-        self.get('/event/event/log')
-        self.assertPresence("Veranstaltung erstellt",
-                            div=str(self.EVENT_LOG_OFFSET + 5) + "-1005")
-        self.assertPresence("Orga hinzugefügt",
-                            div=str(self.EVENT_LOG_OFFSET + 6) + "-1006")
-        self.assertPresence("Orga hinzugefügt",
-                            div=str(self.EVENT_LOG_OFFSET + 7) + "-1007")
-        self.assertPresence("Veranstaltungsteil erstellt",
-                            div=str(self.EVENT_LOG_OFFSET + 8) + "-1008")
-        self.assertPresence("Kursschiene hinzugefügt",
-                            div=str(self.EVENT_LOG_OFFSET + 9) + "-1009")
+        log_expectation.extend([
+            {
+                'code': const.EventLogCodes.event_created,
+                'event_id': 1002,
+            },
+            {
+                'code': const.EventLogCodes.orga_added,
+                'persona_id': 1,
+                'event_id': 1002,
+            },
+            {
+                'code': const.EventLogCodes.orga_added,
+                'persona_id': 5,
+                'event_id': 1002,
+            },
+            {
+                'change_note': "Alternative Akademie",
+                'code': const.EventLogCodes.part_created,
+                'event_id': 1002,
+            },
+            {
+                'change_note': "Alternative Akademie",
+                'code': const.EventLogCodes.track_added,
+                'event_id': 1002,
+            },
+            {
+                'change_note': "Alternative Akademie",
+                'code': const.EventLogCodes.lodgement_group_created,
+                'event_id': 1002,
+            }
+        ])
+        self.assertLogEqual(
+            log_expectation, realm="event", offset=self.EVENT_LOG_OFFSET)
 
         # Check mailinglist creation
         # first the orga list
@@ -1275,14 +1315,38 @@ etc;anything else""", f['entries_2'].value)
 
         # Check ml log
         self.get('/ml/log')
-        self.assertPresence("Mailingliste erstellt", div="1-1001")
-        self.assertPresence("Alternative Akademie Orgateam", div="1-1001")
-        self.assertPresence("Moderator hinzugefügt", div="2-1002")
-        self.assertPresence("Moderator hinzugefügt", div="3-1003")
-        self.assertPresence("Mailingliste erstellt", div="4-1004")
-        self.assertPresence("Alternative Akademie Teilnehmer", div="4-1004")
-        self.assertPresence("Moderator hinzugefügt", div="5-1005")
-        self.assertPresence("Moderator hinzugefügt", div="6-1006")
+        ml_log_expectation = [
+            {
+                'code': const.MlLogCodes.list_created,
+                'mailinglist_id': 1001,
+            },
+            {
+                'code': const.MlLogCodes.moderator_added,
+                'persona_id': 1,
+                'mailinglist_id': 1001,
+            },
+            {
+                'code': const.MlLogCodes.moderator_added,
+                'persona_id': 5,
+                'mailinglist_id': 1001,
+            },
+            {
+                'code': const.MlLogCodes.list_created,
+                'mailinglist_id': 1002,
+            },
+            {
+                'code': const.MlLogCodes.moderator_added,
+                'persona_id': 1,
+                'mailinglist_id': 1002,
+            },
+            {
+                'code': const.MlLogCodes.moderator_added,
+                'persona_id': 5,
+                'mailinglist_id': 1002,
+            },
+        ]
+        self.assertLogEqual(
+            ml_log_expectation, realm="ml", mailinglist_ids={1001, 1002})
 
     @as_users("annika", "garcia")
     def test_change_course(self) -> None:
