@@ -1191,7 +1191,6 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence("", div="trackrow1001_1001", check_div=False)
 
         # Check log
-        self.get('/event/event/log')
         log_expectation: list[CdEDBObject] = [
             {
                 'code': const.EventLogCodes.event_created,
@@ -1313,7 +1312,6 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual('AltAka', f['subject_prefix'].value)
 
         # Check ml log
-        self.get('/ml/log')
         ml_log_expectation = [
             {
                 'code': const.MlLogCodes.list_created,
@@ -2044,27 +2042,61 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("field_is_child2", div='feemodifierrow_4_1003')
 
         # check log
-        self.get("/event/event/log")
-        self.assertPresence("Feld hinzugefügt",
-                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
-        self.assertPresence("Feld hinzugefügt",
-                            div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
-        self.assertPresence("Feld hinzugefügt",
-                            div=str(self.EVENT_LOG_OFFSET + 3) + "-1003")
-        self.assertPresence("Beitragsmodifikator angelegt",
-                            div=str(self.EVENT_LOG_OFFSET + 4) + "-1004")
-        self.assertPresence("Feld geändert",
-                            div=str(self.EVENT_LOG_OFFSET + 5) + "-1005")
-        self.assertPresence("Feld geändert",
-                            div=str(self.EVENT_LOG_OFFSET + 6) + "-1006")
-        self.assertPresence("Beitragsmodifikator angelegt",
-                            div=str(self.EVENT_LOG_OFFSET + 7) + "-1007")
-        self.assertPresence("Beitragsmodifikator entfernt",
-                            div=str(self.EVENT_LOG_OFFSET + 8) + "-1008")
-        self.assertPresence("Beitragsmodifikator geändert",
-                            div=str(self.EVENT_LOG_OFFSET + 9) + "-1009")
-        self.assertPresence("Beitragsmodifikator angelegt",
-                            div=str(self.EVENT_LOG_OFFSET + 10) + "-1010")
+        log_expectation = [
+            {
+                'change_note': "field_is_child1",
+                'code': const.EventLogCodes.field_added,
+                'event_id': 2,
+            },
+            {
+                'change_note': "field_is_child2",
+                'code': const.EventLogCodes.field_added,
+                'event_id': 2,
+            },
+            {
+                'change_note': "field_is_child3",
+                'code': const.EventLogCodes.field_added,
+                'event_id': 2,
+            },
+            {
+                'change_note': "modifier_is_child1",
+                'code': const.EventLogCodes.fee_modifier_created,
+                'event_id': 2,
+            },
+            {
+                'change_note': "field_is_child2",
+                'code': const.EventLogCodes.field_updated,
+                'event_id': 2,
+            },
+            {
+                'change_note': "field_is_child3",
+                'code': const.EventLogCodes.field_updated,
+                'event_id': 2,
+            },
+            {
+                'change_note': "modifier_is_child2",
+                'code': const.EventLogCodes.fee_modifier_created,
+                'event_id': 2,
+            },
+            {
+                'change_note': "modifier_is_child1",
+                'code': const.EventLogCodes.fee_modifier_deleted,
+                'event_id': 2,
+            },
+            {
+                'change_note': "modifier_is_child2",
+                'code': const.EventLogCodes.fee_modifier_changed,
+                'event_id': 2,
+            },
+            {
+                'change_note': "modifier_is_child3",
+                'code': const.EventLogCodes.fee_modifier_created,
+                'event_id': 2,
+            },
+
+        ]
+        self.assertLogEqual(
+            log_expectation, realm="event", offset=self.EVENT_LOG_OFFSET)
 
     @event_keeper
     @as_users("garcia")
@@ -4354,11 +4386,25 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.submit(f)
 
         # Check that there are logs for this event
-        self.get("/event/event/log")
-        self.assertPresence("Veranstaltungsteil geändert",
-                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
-        self.assertPresence("Große Testakademie 2222",
-                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
+        log_expectation = [
+            {
+                'change_note': "Warmup",
+                'code': const.EventLogCodes.part_changed,
+                'event_id': 1,
+            },
+            {
+                'change_note': "Erste Hälfte",
+                'code': const.EventLogCodes.part_changed,
+                'event_id': 1,
+            },
+            {
+                'change_note': "Zweite Hälfte",
+                'code': const.EventLogCodes.part_changed,
+                'event_id': 1,
+            },
+        ]
+        self.assertLogEqual(
+            log_expectation, realm="event", offset=self.EVENT_LOG_OFFSET)
 
         # Delete the event
         self.traverse("Veranstaltungen", "Große Testakademie 2222")
@@ -4369,7 +4415,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertNonPresence("Testakademie")
 
         # Check that all old logs are deleted and there is only a deletion log entry
-        self.get("/event/event/log")
         log_expectation = [
             {
                 'change_note': "Große Testakademie 2222",
