@@ -794,7 +794,6 @@ class TestEventFrontend(FrontendTest):
         self.assertNonPresence("Größere Hälfte")
 
         # check log
-        self.get('/event/event/log')
         self.assertLogEqual(log_expectation, realm="event", event_id=event_id)
 
     @as_users("garcia")

@@ -1423,16 +1423,24 @@ class FrontendTest(BackendTest):
         if realm == "event":
             entities = self.event.get_events(self.key, entity_ids)
             if event_id := kwargs.get('event_id'):
-                self.traverse("Veranstaltungen", entities[event_id]['title'], "Log")
                 specific_log = True
+                self.get(f"/event/event/{event_id}/log")
             else:
-                self.traverse("Veranstaltungen", "Log")
+                self.get("/event/log")
         elif realm == "assembly":
             entities = self.assembly.get_assemblies(self.key, entity_ids)
-            self.traverse("Versammlungen", "Log")
+            if assembly_id := kwargs.get('assembly_id'):
+                specific_log = True
+                self.get(f"/assembly/assembly/{assembly_id}/log")
+            else:
+                self.get("/assembly/log")
         elif realm == "ml":
             entities = self.ml.get_mailinglists(self.key, entity_ids)
-            self.traverse("Mailinglisten", "Log")
+            if ml_id := kwargs.get('mailinglist_id'):
+                self.get(f"/ml/mailinglist/{ml_id}/log")
+                specific_log = True
+            else:
+                self.get("/ml/log")
         else:
             self.get(f"/{realm}/log")
             entities = {}
