@@ -14,6 +14,7 @@ import psycopg2.errorcodes
 import psycopg2.errors
 import pytz
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.backend.common import cast_fields
 from cdedb.common import (
@@ -377,7 +378,8 @@ class TestEventBackend(BackendTest):
             'event_id': new_id,
             'title': "Nebenan",
         }
-        new_group_id = self.event.create_lodgement_group(self.key, new_group)
+        new_group_id = self.event.create_lodgement_group(
+            self.key, vtypes.LodgementGroup(new_group))
         self.assertLess(0, new_group_id)
         new_group.update({
             'id': new_group_id,
@@ -1416,7 +1418,8 @@ class TestEventBackend(BackendTest):
             'event_id': event_id,
             'title': "Nebenan",
         }
-        new_group_id = self.event.create_lodgement_group(self.key, new_group)
+        new_group_id = self.event.create_lodgement_group(
+            self.key, vtypes.LodgementGroup(new_group))
         self.assertLess(0, new_group_id)
         new_group.update({
             'id': new_group_id,
