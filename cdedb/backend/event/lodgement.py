@@ -127,23 +127,6 @@ class EventLodgementBackend(EventBaseBackend):
         get_lodgement_group, set_lodgement_group, id_param_name='group_id')
 
     @access("event")
-    def create_lodgement_group(self, rs: RequestState,
-                               data: CdEDBObject) -> DefaultReturnCode:
-        """Make a new lodgement group."""
-        data = affirm(vtypes.LodgementGroup, data, creation=True)
-
-        if (not self.is_orga(rs, event_id=data['event_id'])
-                and not self.is_admin(rs)):
-            raise PrivilegeError(n_("Not privileged."))
-        self.assert_offline_lock(rs, event_id=data['event_id'])
-        with Atomizer(rs):
-            new_id = self.sql_insert(rs, "event.lodgement_groups", data)
-            self.event_log(
-                rs, const.EventLogCodes.lodgement_group_created,
-                data['event_id'], change_note=data['title'])
-        return new_id
-
-    @access("event")
     def delete_lodgement_group_blockers(self, rs: RequestState,
                                         group_id: int) -> DeletionBlockers:
         """Determine what keeps a lodgement group from being deleted.

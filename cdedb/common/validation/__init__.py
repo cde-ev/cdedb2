@@ -2159,6 +2159,29 @@ EVENT_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'fields': Mapping,
 }
 
+EVENT_CREATION_OPTIONAL_FIELDS: TypeMapping = {
+    'lodgement_groups': Mapping,
+}
+
+
+def _optional_object_mapping_helper(
+    val_dict: Mapping[Any, Any], atype: Type[T], argname: str,
+    errs: ValidationSummary, creation_only: bool, **kwargs: Any
+) -> Mapping[int, Optional[T]]:
+    ret = {}
+    for anid, val in val_dict.items():
+        try:
+            anid = _ALL_TYPED[PartialImportID](anid, argname, **kwargs)
+            creation = (anid < 0)
+            if creation_only and not creation:
+                raise ValidationSummary(ValueError(
+                    argname, n_("Only creation allowed.")))
+            val = _ALL_TYPED[Optional[atype]](val, argname, creation=creation, **kwargs)  # type: ignore[index]
+            ret[anid] = val
+        except ValidationSummary as e:
+            errs.extend(e)
+    return ret
+
 
 @_add_typed_validator
 def _event(
@@ -2173,7 +2196,7 @@ def _event(
 
     if creation:
         mandatory_fields = {**EVENT_COMMON_FIELDS}
-        optional_fields = {**EVENT_OPTIONAL_FIELDS}
+        optional_fields = {**EVENT_OPTIONAL_FIELDS, **EVENT_CREATION_OPTIONAL_FIELDS}
     else:
         mandatory_fields = {'id': ID}
         optional_fields = {**EVENT_COMMON_FIELDS, **EVENT_OPTIONAL_FIELDS}
@@ -2207,41 +2230,17 @@ def _event(
         val['orgas'] = orgas
 
     if 'parts' in val:
-        newparts = {}
-        for anid, part in val['parts'].items():
-            try:
-                anid = _int(anid, 'parts', **kwargs)
-            except ValidationSummary as e:
-                errs.extend(e)
-            else:  # TODO maybe use continue instead of else or move into try block
-                creation = (anid < 0)
-                try:
-                    part = _ALL_TYPED[Optional[EventPart]](  # type: ignore[index]
-                        part, 'parts', creation=creation, **kwargs)
-                except ValidationSummary as e:
-                    errs.extend(e)
-                else:
-                    newparts[anid] = part
-        val['parts'] = newparts
+        val['parts'] = _optional_object_mapping_helper(
+            val['parts'], EventPart, 'parts', errs, creation_only=creation, **kwargs)
 
     if 'fields' in val:
-        newfields = {}
-        # TODO maybe replace all these loops with a helper function
-        for anid, field in val['fields'].items():
-            try:
-                anid = _int(anid, 'fields', **kwargs)
-            except ValidationSummary as e:
-                errs.extend(e)
-            else:
-                creation = (anid < 0)
-                try:
-                    field = _ALL_TYPED[Optional[EventField]](  # type: ignore[index]
-                        field, 'fields', creation=creation, **kwargs)
-                except ValidationSummary as e:
-                    errs.extend(e)
-                else:
-                    newfields[anid] = field
-        val['fields'] = newfields
+        val['fields'] = _optional_object_mapping_helper(
+            val['fields'], EventField, 'fields', errs, creation_only=creation, **kwargs)
+
+    if 'lodgement_groups' in val:
+        val['lodgement_groups'] = _optional_object_mapping_helper(
+            val['lodgement_groups'], LodgementGroup, 'lodgement_groups', errs,
+            creation_only=creation, nested_creation=creation, **kwargs)
 
     if errs:
         raise errs
@@ -2908,7 +2907,7 @@ LODGEMENT_GROUP_FIELDS: TypeMapping = {
 @_add_typed_validator
 def _lodgement_group(
     val: Any, argname: str = "lodgement_group", *,
-    creation: bool = False, **kwargs: Any
+    creation: bool = False, nested_creation: bool = False, **kwargs: Any
 ) -> LodgementGroup:
     """
     :param creation: If ``True`` test the data set for fitness for creation
@@ -2918,7 +2917,9 @@ def _lodgement_group(
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        mandatory_fields = dict(LODGEMENT_GROUP_FIELDS, event_id=ID)
+        mandatory_fields = dict(LODGEMENT_GROUP_FIELDS)
+        if not nested_creation:
+            mandatory_fields['event_id'] = ID
         optional_fields: TypeMapping = {}
     else:
         # no event_id, since the associated event should be fixed.
