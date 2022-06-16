@@ -20,10 +20,18 @@ export CDEDB_CONFIGPATH=$tmp_configfile
 # silence git output after switching to a detached head
 git config advice.detachedHead false
 
+if [[ "$(git rev-parse $OLDREVISION)" = "$(git rev-parse $NEWREVISION)" ]]; then
+    echo "Source and target are identical."
+    exit 0
+fi
+
 # old revision
 echo ""
 echo "Checkout $OLDREVISION"
 git checkout $OLDREVISION
+
+echo ""
+echo "Creating pristine database and gathering list of evolutions."
 ls cdedb/database/evolutions > /tmp/oldevolutions.txt
 # Leave this setting in place – the history shows that there will be a time the syntax
 # changes and we need this again...
@@ -43,8 +51,11 @@ echo "Checkout $NEWREVISION"
 git checkout $NEWREVISION
 
 # determine evolutions to apply.
+echo ""
+echo "Compiling list of evolutions to apply."
+truncate -s0 /tmp/todoevolutions.txt
 ls cdedb/database/evolutions | sort > /tmp/newevolutions.txt
-grep /tmp/newevolutions.txt -v -f /tmp/oldevolutions.txt > /tmp/todoevolutions.txt
+(grep /tmp/newevolutions.txt -v -f /tmp/oldevolutions.txt > /tmp/todoevolutions.txt) || true
 
 # apply all evolutions and gather the output.
 truncate -s0 /tmp/output-evolution.txt
@@ -74,12 +85,11 @@ echo "Creating database description."
 python3 -m cdedb dev execute-sql-script -v \
      -f bin/describe_database.sql > /tmp/evolved-description.txt
 
-make i18n-compile
-python3 -m cdedb dev compile-sample-data-sql --outfile - > tests/ancillary_files/sample_data.sql
-
 # new db
 echo ""
 echo "Resetting and creating database description again."
+make i18n-compile
+python3 -m cdedb dev compile-sample-data-sql --outfile - > tests/ancillary_files/sample_data.sql
 python3 -m cdedb db create
 python3 -m cdedb db populate
 python3 -m cdedb dev execute-sql-script -v \
