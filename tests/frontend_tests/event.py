@@ -1193,7 +1193,7 @@ etc;anything else""", f['entries_2'].value)
 
         # Check log
         self.get('/event/event/log')
-        log_expectation = [
+        log_expectation: list[CdEDBObject] = [
             {
                 'code': const.EventLogCodes.event_created,
                 'event_id': 1001,

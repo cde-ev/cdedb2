@@ -455,7 +455,7 @@ class BackendTest(CdEDBTest):
 
         for real, exp in zip(log, log_expectation):
             if 'id' not in exp:
-                del real['id']
+                exp['id'] = real['id']
             if 'ctime' not in exp:
                 exp['ctime'] = nearly_now()
             if 'submitted_by' not in exp:
@@ -837,7 +837,7 @@ class FrontendTest(BackendTest):
     """
     lang = "de"
     app: ClassVar[webtest.TestApp]
-    gettext: ClassVar[Callable[[str], str]]
+    gettext: "staticmethod[str]"
     do_scrap: ClassVar[bool]
     scrap_path: ClassVar[str]
     response: webtest.TestResponse
@@ -851,7 +851,7 @@ class FrontendTest(BackendTest):
     def setUpClass(cls) -> None:
         super().setUpClass()
         app = Application()
-        cls.gettext = app.translations[cls.lang].gettext
+        cls.gettext = staticmethod(app.translations[cls.lang].gettext)
         cls.app = webtest.TestApp(app, extra_environ=cls.app_extra_environ)
 
         # set `do_scrap` to True to capture a snapshot of all visited pages
@@ -1419,9 +1419,14 @@ class FrontendTest(BackendTest):
         personas = self.core.get_personas(self.key, persona_ids)
         entity_key = "mailinglist_id" if realm == "ml" else f"{realm}_id"
         entity_ids = [e_id for e in log_expectation if (e_id := e.get(entity_key))]
+        specific_log = False
         if realm == "event":
             entities = self.event.get_events(self.key, entity_ids)
-            self.traverse("Veranstaltungen", "Log")
+            if event_id := kwargs.get('event_id'):
+                self.traverse("Veranstaltungen", entities[event_id]['title'], "Log")
+                specific_log = True
+            else:
+                self.traverse("Veranstaltungen", "Log")
         elif realm == "assembly":
             entities = self.assembly.get_assemblies(self.key, entity_ids)
             self.traverse("Versammlungen", "Log")
@@ -1442,14 +1447,13 @@ class FrontendTest(BackendTest):
 
         # Check frontend log.
         for i, entry in enumerate(log_expectation, start=1):
-            # TODO: This is an assumption, that won't work if log entries are missing.
-            log_id = 1000 + i
+            log_id = entry['id']
             self.assertPresence(entry['change_note'] or "", div=f"{i}-{log_id}")
             self.assertPresence(self.gettext(str(entry['code'])), div=f"{i}-{log_id}")
             if entry['persona_id']:
                 name = make_persona_name(personas[entry['persona_id']])
                 self.assertPresence(name, div=f"{i}-{log_id}")
-            if entity_id := entry.get(entity_key):
+            if (entity_id := entry.get(entity_key)) and not specific_log:
                 self.assertPresence(entities[entity_id]['title'], div=f"{i}-{log_id}")
 
         self.response = saved_response
@@ -1561,7 +1565,7 @@ class FrontendTest(BackendTest):
         logs = all_logs[start-1:end]
         for index, log_entry in enumerate(logs, start=1):
             log_id, log_code = log_entry
-            log_code_str = self.gettext(str(log_code))  # type: ignore[call-arg, misc]
+            log_code_str = self.gettext(str(log_code))
             self.assertPresence(log_code_str, div=f"{index}-{log_id}")
 
     def check_sidebar(self, ins: Set[str], out: Set[str]) -> None:
