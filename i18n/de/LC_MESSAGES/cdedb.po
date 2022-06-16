@@ -17757,3 +17757,6 @@ msgstr "Nur für das Erstellen einer neuen Gruppe."
 
 msgid "– create new group –"
 msgstr "– neue Gruppe erstellen –"
+
+msgid "Only creation allowed."
+msgstr "Nur Erstellen möglich."
