@@ -479,17 +479,17 @@ class EventBaseBackend(EventLowLevelBackend):
             if update_data:
                 update_data['id'] = new_id
                 self.set_event(rs, update_data)
+            # lg_data: vtypes.LodgementGroup
             if groups := data.get('lodgement_groups'):
                 for creation_id in mixed_existence_sorter(groups):
                     lg_data = groups[creation_id]
                     lg_data['event_id'] = new_id
                     self.create_lodgement_group(rs, lg_data)
             else:
-                lg_data = {
+                lg_data = vtypes.LodgementGroup({
                     'title': data['title'],
                     'event_id': new_id,
-                }
-                lg_data = affirm(vtypes.LodgementGroup, lg_data, creation=True)
+                })
                 self.create_lodgement_group(rs, lg_data)
             self.event_keeper_create(rs, new_id)
         return new_id
