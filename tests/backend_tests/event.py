@@ -1476,6 +1476,31 @@ class TestEventBackend(BackendTest):
         self.assertNotIn(
             new_lodgement_id, self.event.list_lodgements(self.key, event_id))
 
+    @storage
+    @as_users("annika")
+    def test_implicit_lodgement_group(self) -> None:
+        new_event_data = {
+            'title': "KreativAkademie",
+            'shortname': "KreAka",
+            'institution': 1,
+            'description': None,
+            'nonmember_surcharge': "0",
+            'parts': {
+                -1: {
+                    'part_begin': "2222-02-02",
+                    'part_end': "2222-02-22",
+                    'title': "KreativAkademie",
+                    'shortname': "KreAka",
+                    'fee': "0",
+                    'waitlist_field': None,
+                },
+            },
+        }
+        new_event_id = self.event.create_event(self.key, new_event_data)
+        groups = self.event.list_lodgement_groups(self.key, new_event_id)
+        groups_expectation = {1001: new_event_data['title']}
+        self.assertEqual(groups_expectation, groups)
+
     @as_users("annika", "garcia")
     def test_entity_lodgement(self) -> None:
         event_id = 1
