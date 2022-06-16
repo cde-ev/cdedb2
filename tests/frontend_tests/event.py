@@ -2919,17 +2919,14 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
     @event_keeper
     @as_users("garcia")
     def test_lodgements(self) -> None:
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/lodgement/overview'})
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Unterkünfte")
         self.assertTitle("Unterkünfte (Große Testakademie 2222)")
         self.assertPresence("Kalte Kammer")
         # Use the pager to navigate to Einzelzelle and test proper sorting
-        self.traverse("Einzelzelle", "Nächste")
-        self.traverse({'href': '/event/event/1/lodgement/4/show'})
+        self.traverse("Einzelzelle", "Nächste", "Vorherige")
         self.assertTitle("Unterkunft Einzelzelle (Große Testakademie 2222)")
         self.assertPresence("Emilia")
-        self.traverse({'href': '/event/event/1/lodgement/4/change'})
+        self.traverse("Bearbeiten")
         self.assertTitle("Unterkunft Einzelzelle bearbeiten (Große Testakademie 2222)")
         f = self.response.forms['changelodgementform']
         self.assertEqual("1", f['regular_capacity'].value)
@@ -2939,29 +2936,31 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertEqual("high", f['fields.contamination'].value)
         f['fields.contamination'] = "medium"
         self.submit(f)
-        self.traverse({'href': '/event/event/1/lodgement/4/change'})
+        self.traverse("Bearbeiten")
         self.assertTitle("Unterkunft Einzelzelle bearbeiten (Große Testakademie 2222)")
         f = self.response.forms['changelodgementform']
         self.assertEqual("3", f['regular_capacity'].value)
         self.assertEqual("neu mit Anbau", f['notes'].value)
         self.assertEqual("medium", f['fields.contamination'].value)
-        self.traverse({'href': '/event/event/1/lodgement/overview'})
-        self.traverse({'href': '/event/event/1/lodgement/3/show'})
+        self.traverse("Unterkünfte", "Kellerverlies")
         self.assertTitle("Unterkunft Kellerverlies (Große Testakademie 2222)")
         f = self.response.forms['deletelodgementform']
         self.submit(f)
         self.assertTitle("Unterkünfte (Große Testakademie 2222)")
         self.assertNonPresence("Kellerverlies")
-        self.traverse({'href': '/event/event/1/lodgement/create'})
+        self.traverse("Unterkunft anlegen")
         f = self.response.forms['createlodgementform']
         f['title'] = "Zelte"
         f['regular_capacity'] = 0
         f['camping_mat_capacity'] = 20
         f['notes'] = "oder gleich unter dem Sternenhimmel?"
         f['fields.contamination'] = "low"
+        f['group_id'] = ""
+        f['new_group_title'] = "Draußen"
         self.submit(f)
         self.assertTitle("Unterkunft Zelte (Große Testakademie 2222)")
-        self.traverse({'description': 'Bearbeiten'})
+        self.assertPresence("Unterkunftsgruppe Draußen")
+        self.traverse("Bearbeiten")
         self.assertTitle("Unterkunft Zelte bearbeiten (Große Testakademie 2222)")
         self.assertPresence("some radiation")
         f = self.response.forms['changelodgementform']
