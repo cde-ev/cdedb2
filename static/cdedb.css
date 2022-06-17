@@ -1050,6 +1050,11 @@ span.color-legend {
     margin-bottom: 2px;
 }
 
+/* Colour classes */
+span.camping-mat-volunteer {
+    color: #aaaaaa;
+}
+
 
 /* ************** *
  * Helper classes *
