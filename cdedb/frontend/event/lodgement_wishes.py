@@ -44,7 +44,9 @@ class LodgementWish:
 def detect_lodgement_wishes(registrations: CdEDBObjectMap,
                             personas: CdEDBObjectMap,
                             event: CdEDBObject,
-                            restrict_part_id: Optional[int]) \
+                            restrict_part_id: Optional[int],
+                            restrict_registration_id: int = None
+                            ) \
         -> Tuple[List[LodgementWish], List[Notification]]:
     """ Detect lodgement wish graph edges from all registrations' raw rooming
     preferences text.
@@ -76,6 +78,8 @@ def detect_lodgement_wishes(registrations: CdEDBObjectMap,
         :meth:`cdedb.backend.event.EventBackend.get_event`
     :param restrict_part_id: A part id of the event to filter wishes by presence
         and waitlist at/of this event part or None to consider all event parts.
+    :param restrict_registration_id: A registration id to limit wish checking to.
+        If given, only determine wishes *from* this registration to other registrations.
     :return: The list of detected wish edges for the lodgement wishes graph and
         a list of localizable problem notification messages.
     """
@@ -88,8 +92,18 @@ def detect_lodgement_wishes(registrations: CdEDBObjectMap,
     wish_field_name = event['fields'][event['lodge_field']]['field_name']
     wishes: Dict[Tuple[int, int], LodgementWish] = {}
     problems: List[Notification] = []
+
+    # Limit registrations to check for matches if necessary.
+    registrations_to_check = registrations.items()
+    if restrict_registration_id:
+        if restrict_registration_id in registrations:
+            registrations_to_check = [
+                (restrict_registration_id, registrations[restrict_registration_id])]
+        else:
+            return [], []
+
     # For each registration, analyze wishes
-    for registration_id, registration in registrations.items():
+    for registration_id, registration in registrations_to_check:
         # Skip registrations with emtpy wishes field
         if not registration['fields'].get(wish_field_name):
             continue
