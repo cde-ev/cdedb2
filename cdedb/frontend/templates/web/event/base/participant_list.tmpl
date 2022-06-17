@@ -147,7 +147,8 @@
                     </tr>
                 </thead>
                 <tbody>
-                {% for registration_id in ordered if registrations[registration_id]['list_consent'] %}
+                {# Registrations without list consent are already filtered out. #}
+                {% for registration_id in ordered %}
                     {% with persona = personas[registrations[registration_id]['persona_id']] %}
                     <tr id="row-{{ loop.index }}">
                         {% if persona['is_searchable'] and persona['is_member'] %}

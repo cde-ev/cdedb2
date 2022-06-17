@@ -255,16 +255,17 @@ class EventBaseFrontend(AbstractUserFrontend):
         parts = {anid: rs.ambience['event']['parts'][anid]
                  for anid in part_ids}
 
-        participant = const.RegistrationPartStati.participant
+        def check(reg: CdEDBObject) -> bool:
+            if not reg['list_consent']:
+                return False
+            participant = const.RegistrationPartStati.participant
+            return any(
+                reg['parts'][part_id]['status'] == participant for part_id in parts)
+
         registrations = {
-            k: v
-            for k, v in registrations.items()
-            if any(v['parts'][part_id]
-                   and v['parts'][part_id]['status'] == participant
-                   for part_id in parts)}
+            reg_id: reg for reg_id, reg in registrations.items() if check(reg)}
         personas = self.coreproxy.get_event_users(
-            rs, tuple(e['persona_id']
-                      for e in registrations.values()), event_id)
+            rs, tuple(e['persona_id'] for e in registrations.values()), event_id)
 
         all_sortkeys = {
             "given_names": EntitySorter.make_persona_sorter(family_name_first=False),
