@@ -5015,6 +5015,9 @@ msgstr "Unterkunft"
 msgid "Camping Mat"
 msgstr "Isomatte"
 
+msgid "May sleep on a Camping Mat."
+msgstr "Kann auf einer Isomatte schlafen."
+
 #: cdedb/frontend/event/query.py:214 cdedb/frontend/event/query.py:215
 msgid "Invalid query name."
 msgstr "Ungültiger Name für eine Suchabfrage."
