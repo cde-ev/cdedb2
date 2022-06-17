@@ -94,7 +94,7 @@ def detect_lodgement_wishes(registrations: CdEDBObjectMap,
     problems: List[Notification] = []
 
     # Limit registrations to check for matches if necessary.
-    registrations_to_check = registrations.items()
+    registrations_to_check = list(registrations.items())
     if restrict_registration_id:
         if restrict_registration_id in registrations:
             registrations_to_check = [

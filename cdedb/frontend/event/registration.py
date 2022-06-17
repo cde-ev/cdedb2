@@ -499,6 +499,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         waitlist_position = self.eventproxy.get_waitlist_position(
             rs, event_id, persona_id=rs.user.persona_id)
 
+        assert rs.user.persona_id is not None
         wish_data = {}
         if (rs.ambience['event']['is_participant_list_visible']
                 and rs.ambience['event']['lodge_field']
