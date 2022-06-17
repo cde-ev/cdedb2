@@ -501,7 +501,10 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         wish_data = {}
         if (rs.ambience['event']['is_participant_list_visible']
-                and rs.ambience['event']['lodge_field']):
+                and rs.ambience['event']['lodge_field']
+                and self.eventproxy.check_registration_status(
+                    rs, rs.user.persona_id, event_id,
+                    [const.RegistrationPartStati.participant])):
             wish_data = self._get_participant_list_data(rs, event_id)
             wishes, problems = detect_lodgement_wishes(
                 wish_data['registrations'], wish_data['personas'], rs.ambience['event'],
