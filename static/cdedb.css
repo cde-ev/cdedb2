@@ -1050,11 +1050,6 @@ span.color-legend {
     margin-bottom: 2px;
 }
 
-/* Colour classes */
-span.camping-mat-volunteer {
-    color: #aaaaaa;
-}
-
 
 /* ************** *
  * Helper classes *
@@ -1135,6 +1130,11 @@ ul.styleless {
 
 .clear-both {
     clear: both;
+}
+
+/* Display icons in light gray. */
+span.fag {
+    color: #aaaaaa;
 }
 
 /*
