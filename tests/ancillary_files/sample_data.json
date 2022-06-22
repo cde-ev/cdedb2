@@ -5707,6 +5707,20 @@
             }
         }
     ],
+    "event.keeper": [
+        {
+            "event_id": 1
+        },
+        {
+            "event_id": 2
+        },
+        {
+            "event_id": 3
+        },
+        {
+            "event_id": 4
+        }
+    ],
     "event.log": [
         {
             "ctime": "2014-01-01T01:04:05+00:00",

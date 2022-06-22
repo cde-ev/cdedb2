@@ -990,14 +990,14 @@ class EventBaseBackend(EventLowLevelBackend):
         """Create a new git repository for keeping track of event changes."""
         event_id = affirm(vtypes.ID, event_id)
         self._event_keeper.init(event_id)
+        self.sql_insert(rs, "event.keeper", {"event_id": event_id})
         return self.event_keeper_commit(rs, event_id, "Initialer Commit",
                                         is_initial=True)
 
     @access("event_admin")
     def event_keeper_drop(self, rs: RequestState, event_id: int) -> None:
-        """Published version of EntityKeeper.delete.
-
-        :param rs: Required for access check."""
+        """Published version of EntityKeeper.delete."""
+        self.sql_delete(rs, "event.keeper", [event_id], entity_key="event_id")
         return self._event_keeper.delete(event_id)
 
     @access("event")
@@ -1039,7 +1039,7 @@ class EventBaseBackend(EventLowLevelBackend):
         """Retrieve all log entries since the last event keeper commit."""
         with Atomizer(rs):
             latest_log_id = unwrap(self.sql_select_one(
-                rs, "event.events", ["event_keeper_log_id"], event_id))
+                rs, "event.keeper", ["log_id"], event_id, entity_key="event_id"))
             q = "SELECT * FROM event.log WHERE id > %s AND event_id = %s ORDER BY id"
             entries = self.query_all(rs, q, (latest_log_id, event_id))
         return entries
@@ -1066,10 +1066,10 @@ class EventBaseBackend(EventLowLevelBackend):
 
             # adjust the last event keeper log id
             setter = {
-                'id': event_id,
-                'event_keeper_log_id': entries[-1]["id"]
+                'event_id': event_id,
+                'log_id': entries[-1]["id"]
             }
-            self.sql_update(rs, "event.events", setter)
+            self.sql_update(rs, "event.keeper", setter, entity_key="event_id")
 
             # retrieve additional information to pimp up the log entries
             persona_ids = (
