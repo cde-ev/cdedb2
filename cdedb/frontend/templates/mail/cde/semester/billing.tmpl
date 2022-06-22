@@ -131,12 +131,9 @@ neuen Online-Ausgabe benachrichtigt.
 == Guthabenstatus ==
 {% if persona['balance'] %}
 
-{#
 Dein momentanes Guthaben beträgt {{ persona['balance']|money }}. Somit
 sind Deine Mitgliedsbeiträge bei der derzeitigen Beitragshöhe
 von {{ fee|money }} noch {{ persona['balance'] // fee }} Halbjahre bezahlt.
-#}
-Dein momentanes Guthaben beträgt {{ persona['balance']|money }}.
 {% else %}
 
 Du bist für dieses Halbjahr Probemitglied im CdE. Du bekommst in
