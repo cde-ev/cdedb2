@@ -74,8 +74,8 @@ from cdedb.common import (
     ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD, IGNORE_WARNINGS_NAME, CdEDBMultiDict,
     CdEDBObject, CustomJSONEncoder, Error, Notification, NotificationType, PathLike,
     RequestState, Role, User, _tdelta, asciificator, decode_parameter, encode_parameter,
-    glue, json_serialize, make_persona_forename, make_proxy, merge_dicts, now,
-    setup_logger, unwrap,
+    glue, json_serialize, make_persona_name, make_proxy, merge_dicts, now, setup_logger,
+    unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
