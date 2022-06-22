@@ -5015,6 +5015,9 @@ msgstr "Unterkunft"
 msgid "Camping Mat"
 msgstr "Isomatte"
 
+msgid "Assigned to sleep on a Camping Mat."
+msgstr "Auf eine Isomatte eingeteilt."
+
 msgid "May sleep on a Camping Mat."
 msgstr "Kann auf einer Isomatte schlafen."
 
