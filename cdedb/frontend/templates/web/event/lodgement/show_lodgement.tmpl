@@ -102,7 +102,9 @@
                                                  util.persona_name(personas[registrations[registration_id]
                                                         ['persona_id']])) }}
                                     {% if registrations[registration_id]['parts'][part_id]['is_camping_mat'] %}
-                                        {{ util.make_icon('campground', title=gettext("Camping Mat")) }}
+                                        {{ util.make_icon('campground', title=gettext("Assigned to sleep on a Camping Mat.")) }}
+                                    {% elif registrations[registration_id]["fields"].get(camping_mat_field_name) %}
+                                        {{ util.make_icon('campground', aclass='fag', title=gettext("May sleep on a Camping Mat.")) }}
                                     {% endif %}
                                 </li>
                             {% endfor %}

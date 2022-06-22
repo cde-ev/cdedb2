@@ -63,7 +63,7 @@ steps:
     - sleep 3 # wait for posgres container to start up
     - pg_isready --host=cdb --timeout=15 # wait for database to come online
     - python3 -m cdedb db create-users # basic setup of the database for all following tests
-    - bin/evolution-trial.sh origin/$DRONE_TARGET_BRANCH $DRONE_COMMIT || (git checkout ci/workdir && exit 1)
+    - bin/evolution-trial.sh origin/$DRONE_TARGET_BRANCH ci/workdir || (git checkout ci/workdir && exit 1)
     - git checkout ci/workdir
 - name: mypy
   image: cdedb
