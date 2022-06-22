@@ -13,7 +13,8 @@ from werkzeug import Response
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, LodgementsSortkeys, RequestState, merge_dicts,
+    CdEDBObject, CdEDBObjectMap, LodgementsSortkeys, RequestState, make_persona_name,
+    merge_dicts,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
@@ -23,7 +24,7 @@ from cdedb.common.validation.types import VALIDATOR_LOOKUP
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, check_validation as check, drow_name,
-    event_guard, make_persona_name, process_dynamic_input, request_extractor,
+    event_guard, process_dynamic_input, request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
 from cdedb.frontend.event.lodgement_wishes import (

@@ -390,7 +390,7 @@ class LDAPsqlBackend:
                           given_and_display_names: bool = False,
                           with_family_name: bool = True,
                           with_titles: bool = False) -> str:
-        """Mimic the implementation of frontend.common.make_persona_name.
+        """Mimic the implementation of common.make_persona_name.
 
         Since we do not want to have cross-dependencies between the web and ldap code
         base, we need this small logic duplication.

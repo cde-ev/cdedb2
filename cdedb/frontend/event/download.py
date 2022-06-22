@@ -17,12 +17,13 @@ from werkzeug import Response
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import (
-    RequestState, asciificator, determine_age_class, json_serialize, unwrap,
+    RequestState, asciificator, determine_age_class, json_serialize, make_persona_name,
+    unwrap,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
-from cdedb.frontend.common import REQUESTdata, access, event_guard, make_persona_name
+from cdedb.frontend.common import REQUESTdata, access, event_guard
 from cdedb.frontend.event.base import EventBaseFrontend
 from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
 
