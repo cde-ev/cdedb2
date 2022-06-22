@@ -416,8 +416,9 @@ class EventLodgementMxin(EventBaseFrontend):
                 registrations, personas, event, restrict_part_id=None)
         else:
             problems = []
+        lodgement_groups = self.eventproxy.list_lodgement_groups(rs, event_id)
         return self.render(rs, "lodgement/lodgement_wishes_graph_form",
-                           {'problems': problems})
+                           {'problems': problems, 'lodgement_groups': lodgement_groups})
 
     @access("event")
     @event_guard()

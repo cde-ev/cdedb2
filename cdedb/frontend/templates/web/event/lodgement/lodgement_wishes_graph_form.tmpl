@@ -87,9 +87,11 @@
         {{ util.form_input_checkbox('show_lodgements', gettext("Show Lodgements"),
                                     info=gettext("Display assigned lodgements as clusters (reduces graph layout "
                                                  "quality)")) }}
-        {{ util.form_input_checkbox('show_lodgement_groups', gettext("Show Lodgement Groups"),
-                                    info=gettext("Display the lodgement groups of the assigned lodgements as clusters"
-                                                 " (reduces graph layout quality)")) }}
+        {% if lodgement_groups|length > 1 %}
+            {{ util.form_input_checkbox('show_lodgement_groups', gettext("Show Lodgement Groups"),
+                                        info=gettext("Display the lodgement groups of the assigned lodgements as clusters"
+                                                     " (reduces graph layout quality)")) }}
+        {% endif %}
         {{ util.form_input_submit(label=gettext("Go!"), readonly=not has_lodge_field) }}
     </form>
 
