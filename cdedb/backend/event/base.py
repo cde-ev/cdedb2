@@ -29,7 +29,8 @@ from cdedb.backend.entity_keeper import EntityKeeper
 from cdedb.backend.event.lowlevel import EventLowLevelBackend
 from cdedb.common import (
     EVENT_SCHEMA_VERSION, CdEDBLog, CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap,
-    DefaultReturnCode, RequestState, glue, json_serialize, now, unwrap,
+    DefaultReturnCode, RequestState, glue, json_serialize, make_persona_name, now,
+    unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
@@ -1086,10 +1087,10 @@ class EventBaseBackend(EventLowLevelBackend):
             # of our longest log code.
             entry["Code"] = str(const.EventLogCodes(entry["code"]).name).ljust(31)
             if entry["submitted_by"]:
-                s_p = personas[entry["submitted_by"]]
-                entry["Verantwortlich"] = f"{s_p['given_names']} {s_p['family_name']}"
+                submitter = personas[entry["submitted_by"]]
+                entry["Verantwortlich"] = make_persona_name(submitter)
             if entry["persona_id"]:
-                a_p = personas[entry["persona_id"]]
-                entry["Betroffen"] = f"{a_p['given_names']} {a_p['family_name']}"
+                affected = personas[entry["persona_id"]]
+                entry["Betroffen"] = make_persona_name(affected)
             entry["Erläuterung"] = entry["change_note"]
         return entries
