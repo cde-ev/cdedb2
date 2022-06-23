@@ -4,8 +4,10 @@ BEGIN;
     GRANT cdb_ldap TO cdb;
 
     GRANT USAGE ON SCHEMA core TO cdb_ldap;
-    GRANT SELECT (id, username, password_hash, is_active, is_meta_admin, is_core_admin, is_cde_admin, is_finance_admin, is_event_admin, is_ml_admin, is_assembly_admin, is_cdelokal_admin, is_a
-uditor, is_cde_realm, is_event_realm, is_ml_realm, is_assembly_realm, is_member, is_searchable, is_archived, is_purged) ON core.personas TO cdb_ldap;
+    GRANT SELECT (id, username, password_hash, is_active, is_meta_admin, is_core_admin, is_cde_admin, is_finance_admin,
+                  is_event_admin, is_ml_admin, is_assembly_admin, is_cdelokal_admin, is_auditor, is_cde_realm,
+                  is_event_realm, is_ml_realm, is_assembly_realm, is_member, is_searchable, is_archived, is_purged
+                 ) ON core.personas TO cdb_ldap;
     GRANT SELECT (display_name, given_names, family_name, title, name_supplement) ON core.personas TO cdb_ldap;
 
     GRANT USAGE ON SCHEMA event TO cdb_ldap;
