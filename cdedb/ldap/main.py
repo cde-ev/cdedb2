@@ -38,8 +38,8 @@ async def main() -> None:
     logger.debug("Waiting for aiopg connection pool ...")
     pool = await create_pool(
         dbname=conf["CDB_DATABASE_NAME"],
-        user="cdb_admin",
-        password=secrets["CDB_DATABASE_ROLES"]["cdb_admin"],
+        user="cdb_ldap",
+        password=secrets["CDB_DATABASE_ROLES"]["cdb_ldap"],
         host=conf["DB_HOST"],
         port=conf["DB_PORT"],
         cursor_factory=psycopg2.extras.RealDictCursor,

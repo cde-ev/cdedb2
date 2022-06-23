@@ -223,8 +223,8 @@ class AsyncLDAPBackendTest(AsyncBasicTest):
         asyncio.get_running_loop().set_debug(False)
         pool = await create_pool(
             dbname=self.conf["CDB_DATABASE_NAME"],
-            user="cdb_admin",
-            password=self.secrets["CDB_DATABASE_ROLES"]["cdb_admin"],
+            user="cdb_ldap",
+            password=self.secrets["CDB_DATABASE_ROLES"]["cdb_ldap"],
             host=self.conf["DB_HOST"],
             port=self.conf["DB_PORT"],
             cursor_factory=psycopg2.extras.RealDictCursor,
