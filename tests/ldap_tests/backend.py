@@ -298,7 +298,8 @@ class AsyncLDAPBackendTest(AsyncBasicTest):
         subscriber_group_dns = await self.ldap.list_ml_subscriber_groups()
         for subscriber in subscriber_group_dns:
             self.assertIsInstance(subscriber, DN)
-        subscriber_groups = await self.ldap.get_ml_moderator_groups(subscriber_group_dns)
+        subscriber_groups = await self.ldap.get_ml_moderator_groups(
+            subscriber_group_dns)
         subscribers = await self.ldap.get_moderators(ml_addresses)
         self.assertIn("42@lists.cde-ev.de", subscribers)
         mls = await self.ldap.get_mailinglists(ml_addresses)
