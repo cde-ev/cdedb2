@@ -1,0 +1,8 @@
+The other files of this folder originate from the OpenLDAP Project. They hold RFC
+specifications for ldap attributetypes and objectclasses.
+
+The source can be downloaded from https://www.openldap.org/software/download/ .
+The .schema files are taken from
+openldap-2.6.1 / servers / slapd / schema .
+The memberof.overlay is taken from
+openldap-2.6.1 / servers / slapd / overlays / memberof.c (line 2128 ff.)
