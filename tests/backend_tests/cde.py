@@ -13,7 +13,7 @@ from cdedb.common.fields import (
     PERSONA_CDE_FIELDS, PERSONA_CORE_FIELDS, PERSONA_EVENT_FIELDS,
 )
 from cdedb.common.query import Query, QueryOperators, QueryScope
-from tests.common import USER_DICT, BackendTest, as_users, nearly_now, prepsql
+from tests.common import USER_DICT, BackendTest, as_users, nearly_now
 
 
 class TestCdEBackend(BackendTest):
@@ -360,40 +360,6 @@ class TestCdEBackend(BackendTest):
                 elif status == ltstati.failure:
                     self.assertEqual(decimal.Decimal('-4.50'), data['tally'])
                     self.assertEqual(new_balance, old_balance)
-
-    @as_users("farin")
-    @prepsql("""INSERT INTO cde.org_period (id) VALUES (58);""")
-    def test_lastschrift_period_58(self) -> None:
-        ltstati = const.LastschriftTransactionStati
-        annual_fee = decimal.Decimal(2.5 + 4.0)
-        old_balance = self.core.get_cde_user(
-            self.key, USER_DICT["berta"]["id"])["balance"]
-        transaction = {
-            'issued_at': datetime.datetime.now(pytz.utc),
-            'lastschrift_id': 2,
-            'period_id': 58,
-        }
-        new_id = self.cde.issue_lastschrift_transaction(self.key, transaction)
-        update = {
-            'id': new_id,
-            'amount': decimal.Decimal('42.23') + annual_fee,
-            'processed_at': nearly_now(),
-            'status': ltstati.success,
-            'submitted_by': self.user['id'],
-            'tally': decimal.Decimal('42.23') + annual_fee,
-        }
-        transaction.update(update)
-        self.assertLess(
-            0, self.cde.finalize_lastschrift_transaction(
-                self.key, new_id, ltstati.success))
-        data = self.cde.get_lastschrift_transactions(self.key, (new_id,))
-        self.assertEqual(transaction, data[new_id])
-
-        new_balance = self.core.get_cde_user(
-            self.key, USER_DICT["berta"]["id"])["balance"]
-        self.assertNotEqual(
-            new_balance, old_balance + 2 * self.conf["MEMBERSHIP_FEE"])
-        self.assertEqual(new_balance, old_balance + annual_fee)
 
     @as_users("farin")
     def test_lastschrift_transaction_rollback(self) -> None:

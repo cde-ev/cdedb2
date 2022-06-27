@@ -671,4 +671,5 @@ class CdELastschriftMixin(CdEBaseFrontend):
     @access("anonymous")
     def i25p_index(self, rs: RequestState) -> Response:
         """Show information about 'Initiative 25+'."""
-        return self.render(rs, "lastschrift/i25p_index")
+        annual_fee = self.conf["MEMBERSHIP_FEE"] * self.conf["PERIODS_PER_YEAR"]
+        return self.render(rs, "lastschrift/i25p_index", {"annual_fee": annual_fee})
