@@ -1,8 +1,4 @@
 BEGIN;
-    DROP ROLE IF EXISTS cdb_ldap;
-    CREATE USER cdb_ldap            PASSWORD '1234567890zyxwvutsrqponmlkjihg';
-    GRANT cdb_ldap TO cdb;
-
     GRANT USAGE ON SCHEMA core TO cdb_ldap;
     GRANT SELECT (id, username, password_hash, is_active, is_meta_admin, is_core_admin, is_cde_admin, is_finance_admin,
                   is_event_admin, is_ml_admin, is_assembly_admin, is_cdelokal_admin, is_auditor, is_cde_realm,
