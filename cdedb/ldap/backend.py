@@ -14,6 +14,7 @@ from ldaptor.protocols.ldap.distinguishedname import DistinguishedName as DN
 from ldaptor.protocols.pureber import int2ber
 from passlib.hash import sha512_crypt
 from psycopg import AsyncConnection, AsyncCursor
+from psycopg.rows import DictRow
 
 from cdedb.config import SecretsConfig
 from cdedb.database.constants import SubscriptionState
@@ -98,7 +99,7 @@ class LdapLeaf(TypedDict):
 
 class LDAPsqlBackend:
     """Provide the interface between ldap and database."""
-    def __init__(self, conn: AsyncConnection) -> None:
+    def __init__(self, conn: AsyncConnection[DictRow]) -> None:
         self.conn = conn
         # load the ldap schemas (and overlays) which are supported
         self.schema = self.load_schemas(
@@ -108,7 +109,7 @@ class LDAPsqlBackend:
                           for name, pwd in SecretsConfig()["LDAP_DUA_PW"].items()}
 
     @staticmethod
-    async def execute_db_query(cur: AsyncCursor, query: str,
+    async def execute_db_query(cur: AsyncCursor[DictRow], query: str,
                                params: Sequence["DatabaseValue_s"]) -> None:
         """Perform a database query. This low-level wrapper should be used
         for all explicit database queries, mostly because it invokes

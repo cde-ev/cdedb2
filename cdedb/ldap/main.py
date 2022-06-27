@@ -11,10 +11,10 @@ from twisted.internet import asyncioreactor
 
 asyncioreactor.install()
 
-import psycopg.rows
 import twisted.python.log
 from ldaptor.interfaces import IConnectedLDAPEntry
 from psycopg import AsyncConnection
+from psycopg.rows import DictRow, dict_row
 from twisted.internet import reactor
 from twisted.python.components import registerAdapter
 
@@ -44,7 +44,8 @@ async def main() -> None:
         port=conf["DB_PORT"],
     )
     conn_info = " ".join([f"{k}={v}" for k, v in conn_params.items()])
-    conn = await AsyncConnection.connect(conn_info, row_factory=psycopg.rows.dict_row)
+    conn: AsyncConnection[DictRow] = await AsyncConnection.connect(
+        conn_info, row_factory=dict_row)
     logger.debug("Got database connection.")
     backend = LDAPsqlBackend(conn)
     factory = CdEDBLDAPServerFactory(backend, debug=True)
