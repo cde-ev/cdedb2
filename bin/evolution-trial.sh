@@ -52,22 +52,29 @@ git checkout $NEWREVISION
 
 # determine evolutions to apply.
 echo ""
-echo "Compiling list of evolutions to apply."
+echo "Compiling list of evolutions to apply:"
 truncate -s0 /tmp/todoevolutions.txt
 ls cdedb/database/evolutions | sort > /tmp/newevolutions.txt
 (grep /tmp/newevolutions.txt -v -f /tmp/oldevolutions.txt > /tmp/todoevolutions.txt) || true
+echo ""
+cat /tmp/todoevolutions.txt
 
 # apply all evolutions and gather the output.
 truncate -s0 /tmp/output-evolution.txt
 while read -r evolution; do
-    if [[ $evolution == *.sql ]]; then
+    if [[ $evolution == *.postgres.sql ]]; then
+        echo ""
+        echo "Apply evolution $evolution as postgres database user."| tee -a /tmp/output-evolution.txt
+        sudo -u postgres python3 -m cdedb dev execute-sql-script --as-postgres -v \
+             -f cdedb/database/evolutions/$evolution \
+             2>&1 | tee -a /tmp/output-evolution.txt
+    elif [[ $evolution == *.sql ]]; then
         echo ""
         echo "Apply evolution $evolution" | tee -a /tmp/output-evolution.txt
         python3 -m cdedb dev execute-sql-script -v \
              -f cdedb/database/evolutions/$evolution \
              2>&1 | tee -a /tmp/output-evolution.txt
-    fi
-    if [[ $evolution == *.py ]]; then
+    elif [[ $evolution == *.py ]]; then
         echo ""
         echo "Run migration script $evolution" | tee -a /tmp/output-evolution.txt
         sudo -u www-data \
@@ -76,6 +83,8 @@ while read -r evolution; do
             EVOLUTION_TRIAL_OVERRIDE_PERSONA_ID=1 \
             python3 cdedb/database/evolutions/$evolution \
             2>&1 | tee -a /tmp/output-evolution.txt
+    else
+        echo "Unhandled evolution $evolution" | tee -a /tmp/output-evolution.txt
     fi
 done < /tmp/todoevolutions.txt
 

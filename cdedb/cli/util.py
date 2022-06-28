@@ -95,7 +95,8 @@ def get_user() -> str:
 
 # TODO is the nobody hack really necessary?
 def connect(
-    config: Config, secrets: SecretsConfig, as_nobody: bool = False
+    config: Config, secrets: SecretsConfig, as_nobody: bool = False,
+    as_postgres: bool = False,
 ) -> psycopg2.extensions.connection:
     """Create a very basic database connection.
 
@@ -106,22 +107,35 @@ def connect(
     which is used for very low-level setups (like generation of sample data).
     """
 
-    if as_nobody:
-        dbname = user = "nobody"
-    else:
-        dbname = config["CDB_DATABASE_NAME"]
-        user = "cdb"
+    conn_factory = psycopg2.extensions.connection
+    curser_factory = psycopg2.extras.RealDictCursor
 
-    connection_parameters = {
-        "dbname": dbname,
-        "user": user,
-        "password": secrets["CDB_DATABASE_ROLES"][user],
-        "host": config["DB_HOST"],
-        "port": 5432,
-        "connection_factory": psycopg2.extensions.connection,
-        "cursor_factory": psycopg2.extras.RealDictCursor,
-    }
-    conn = psycopg2.connect(**connection_parameters)
+    if as_postgres:
+        if pathlib.Path("/CONTAINER").is_file():
+            # In container mode a password is set for the postgres user.
+            conn = psycopg2.connect(
+                database=config["CDB_DATABASE_NAME"],
+                user="postgres", password="passwd",
+                host=config["DB_HOST"], port=config["DIRECT_DB_PORT"],
+                connection_factory=conn_factory, cursor_factory=curser_factory,
+            )
+        else:
+            # In non-container mode, we have to omit the host to connect to the
+            # UNIX-socket relying on peer authentication.
+            with switch_user("postgres"):
+                conn = psycopg2.connect(
+                    database=config["CDB_DATABASE_NAME"],
+                    user="postgres",
+                    connection_factory=conn_factory, cursor_factory=curser_factory,
+                )
+    else:
+        user = "nobody" if as_nobody else "cdb"
+        conn = psycopg2.connect(
+            database="nobody" if as_nobody else config["CDB_DATABASE_NAME"],
+            user=user, password=secrets["CDB_DATABASE_ROLES"][user],
+            host=config["DB_HOST"], port=config["DIRECT_DB_PORT"],
+            connection_factory=conn_factory, cursor_factory=curser_factory,
+        )
     conn.set_client_encoding("UTF8")
     conn.set_session(autocommit=True)
 

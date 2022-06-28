@@ -238,12 +238,14 @@ def serve_debugger_cmd() -> None:
 @development.command(name="execute-sql-script")
 @click.option("--file", "-f", type=pathlib.Path, help="the script to execute")
 @click.option('-v', '--verbose', count=True)
+@click.option("--as-postgres", is_flag=True)
 @pass_secrets
 @pass_config
 def execute_sql_script(
-    config: TestConfig, secrets: SecretsConfig, file: pathlib.Path, verbose: int
+    config: TestConfig, secrets: SecretsConfig, file: pathlib.Path, verbose: int,
+    as_postgres: bool,
 ) -> None:
-    with connect(config, secrets) as conn:
+    with connect(config, secrets, as_postgres=as_postgres) as conn:
         with conn.cursor() as cur:
             cur.execute(file.read_text())
             if verbose > 0:
