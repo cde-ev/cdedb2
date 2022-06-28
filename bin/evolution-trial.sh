@@ -35,13 +35,13 @@ echo "Creating pristine database and gathering list of evolutions."
 ls cdedb/database/evolutions > /tmp/oldevolutions.txt
 # Leave this setting in place – the history shows that there will be a time the syntax
 # changes and we need this again...
-if git merge-base --is-ancestor ci/postgres-evolutions $OLDREVISION; then
+if git merge-base --is-ancestor 5f18f7e5239fc4c10b6c79dfdd4b68a260a99e00 $OLDREVISION; then
+    python3 -m cdedb dev apply-evolution-trial
+else
     python3 -m cdedb dev compile-sample-data-sql --outfile - > tests/ancillary_files/sample_data.sql
     python3 -m cdedb db create-users
     python3 -m cdedb db create
     python3 -m cdedb db populate
-else
-    python3 -m cdedb dev apply-evolution-trial
 fi
 
 # new revision
