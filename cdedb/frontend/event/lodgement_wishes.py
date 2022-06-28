@@ -127,7 +127,7 @@ def detect_lodgement_wishes(registrations: CdEDBObjectMap,
                              make_persona_name(personas[registrations[reg_id]
                                                             ['persona_id']])
                              for reg_id in ambiguous_match_ids)}))
-                match_positions.append((match.span(), registration_id))
+                match_positions.append((match.span(), other_registration_id))
 
                 # TODO detect negated edges
                 # Check if wish graph edge is already present in the reverse
