@@ -115,7 +115,7 @@ def connect(
             # In container mode a password is set for the postgres user.
             conn = psycopg2.connect(
                 database=config["CDB_DATABASE_NAME"],
-                user="postgres", password="passwd",
+                user="postgres", password=os.environ.get('POSTGRES_PASSWORD'),
                 host=config["DB_HOST"], port=config["DIRECT_DB_PORT"],
                 connection_factory=conn_factory, cursor_factory=curser_factory,
             )
