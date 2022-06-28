@@ -5,7 +5,7 @@ and should not be called directly.
 """
 import json
 import pathlib
-from typing import Any, Dict, List
+from typing import Any, Callable, Dict, List
 
 import click
 
@@ -215,10 +215,14 @@ def compile_sample_data_sql(
     help="Use this user as the owner of storage and logs.",
     default=get_user,
     show_default="current user")
+@click.option("--no-reset-config", is_flag=True)
 @pass_config
-def apply_sample_data(config: TestConfig, owner: str) -> None:
+def apply_sample_data(config: TestConfig, owner: str, no_reset_config: bool) -> None:
     """Repopulates the application with sample data."""
-    config, secrets = reset_config(config)
+    if no_reset_config:
+        secrets = SecretsConfig()
+    else:
+        config, secrets = reset_config(config)
     with switch_user(owner):
         create_log(config)
         create_storage(config)
@@ -227,6 +231,15 @@ def apply_sample_data(config: TestConfig, owner: str) -> None:
         create_database_users(config)
         create_database(config, secrets)
         populate_database(config, secrets)
+
+
+@development.command(name="apply-evolution-trial")
+@pass_secrets
+def apply_evolution_trial(secrets: SecretsConfig) -> None:
+    config = TestConfig()
+    create_database_users(config)
+    create_database(config, secrets)
+    populate_database(config, secrets)
 
 
 @development.command(name="serve")
@@ -241,20 +254,41 @@ def serve_debugger_cmd() -> None:
 @click.option("--as-postgres", is_flag=True)
 @pass_secrets
 @pass_config
+def execute_sql_script_cmd(
+        config: TestConfig, secrets: SecretsConfig, file: pathlib.Path, verbose: int,
+        as_postgres: bool,
+) -> None:
+    execute_sql_script(config, secrets, file, write_callback=click.echo,
+                       verbose=verbose, as_postgres=as_postgres)
+
+
+@development.command(name="describe-database")
+@click.option("--outfile", "-o", type=pathlib.Path)
+@pass_secrets
+@pass_config
+def describe_database(config: TestConfig, secrets: SecretsConfig,
+                      outfile: pathlib.Path) -> None:
+    description_file = pathlib.Path("/cdedb2/bin/describe_database.sql")
+    with outfile.open("w") as f:
+        def writeln(s: str) -> None:
+            f.write(s + "\n")
+        execute_sql_script(config, secrets, description_file, writeln)
+
+
 def execute_sql_script(
-    config: TestConfig, secrets: SecretsConfig, file: pathlib.Path, verbose: int,
-    as_postgres: bool,
+    config: TestConfig, secrets: SecretsConfig, file: pathlib.Path,
+    write_callback: Callable[[str], None], verbose: int = 0, as_postgres: bool = False
 ) -> None:
     with connect(config, secrets, as_postgres=as_postgres) as conn:
         with conn.cursor() as cur:
             cur.execute(file.read_text())
             if verbose > 0:
                 if verbose > 1:
-                    click.echo(cur.query)
-                    click.echo(cur.statusmessage)
+                    write_callback(str(cur.query))
+                    write_callback(str(cur.statusmessage))
                 if cur.rowcount != -1:
                     for x in cur:
-                        click.echo(x)
+                        write_callback(str(x))
 
 
 def main() -> None:

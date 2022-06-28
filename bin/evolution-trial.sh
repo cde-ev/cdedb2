@@ -35,14 +35,13 @@ echo "Creating pristine database and gathering list of evolutions."
 ls cdedb/database/evolutions > /tmp/oldevolutions.txt
 # Leave this setting in place – the history shows that there will be a time the syntax
 # changes and we need this again...
-if git merge-base --is-ancestor 3879ebfc9c573100ec6ef82fac324f37fd0e0f09 $OLDREVISION; then
+if git merge-base --is-ancestor ci/postgres-evolutions $OLDREVISION; then
     python3 -m cdedb dev compile-sample-data-sql --outfile - > tests/ancillary_files/sample_data.sql
+    python3 -m cdedb db create-users
     python3 -m cdedb db create
     python3 -m cdedb db populate
 else
-    python3 -m cdedb dev compile-sample-data --outfile - > tests/ancillary_files/sample_data.sql
-    python3 -m cdedb db create
-    python3 -m cdedb db populate
+    python3 -m cdedb dev apply-evolution-trial
 fi
 
 # new revision
@@ -91,18 +90,14 @@ done < /tmp/todoevolutions.txt
 # evolved db
 echo ""
 echo "Creating database description."
-python3 -m cdedb dev execute-sql-script -v \
-     -f bin/describe_database.sql > /tmp/evolved-description.txt
+python3 -m cdedb dev describe-database -o /tmp/evolved-description.txt
 
 # new db
 echo ""
 echo "Resetting and creating database description again."
 make i18n-compile
-python3 -m cdedb dev compile-sample-data-sql --outfile - > tests/ancillary_files/sample_data.sql
-python3 -m cdedb db create
-python3 -m cdedb db populate
-python3 -m cdedb dev execute-sql-script -v \
-     -f bin/describe_database.sql > /tmp/pristine-description.txt
+python3 -m cdedb dev apply-evolution-trial
+python3 -m cdedb dev describe-database -o /tmp/pristine-description.txt
 
 # perform check
 echo ""
