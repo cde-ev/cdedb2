@@ -182,7 +182,7 @@ class Script:
             # TODO default to DB_PORT and provide flag for skipping pgbouncer
             # Temporary workaround because we cannot pass config options correctly.
             "host": self.config["DB_HOST"],
-            "port": 5432,
+            "port": self.config["DIRECT_DB_PORT"],
             "connection_factory": IrradiatedConnection,
             "cursor_factory": cursor,
         }
