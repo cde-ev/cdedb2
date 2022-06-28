@@ -252,14 +252,28 @@ def serve_debugger_cmd() -> None:
 @click.option("--file", "-f", type=pathlib.Path, help="the script to execute")
 @click.option('-v', '--verbose', count=True)
 @click.option("--as-postgres", is_flag=True)
+@click.option("--outfile", "-o", type=pathlib.Path, help="file to write the output to",
+              default=None)
+@click.option("--outfile-append", is_flag=True)
 @pass_secrets
 @pass_config
 def execute_sql_script_cmd(
         config: TestConfig, secrets: SecretsConfig, file: pathlib.Path, verbose: int,
-        as_postgres: bool,
+        as_postgres: bool, outfile: pathlib.Path, outfile_append: bool
 ) -> None:
-    execute_sql_script(config, secrets, file, write_callback=click.echo,
+    lines = []
+    if outfile:
+        def callback(s: str) -> None:
+            lines.append(s)
+    else:
+        callback = print  # type: ignore[assignment]
+
+    execute_sql_script(config, secrets, file, write_callback=callback,
                        verbose=verbose, as_postgres=as_postgres)
+
+    if outfile:
+        with outfile.open("a" if outfile_append else "w") as f:
+            f.writelines(lines)
 
 
 @development.command(name="describe-database")
@@ -281,14 +295,18 @@ def execute_sql_script(
 ) -> None:
     with connect(config, secrets, as_postgres=as_postgres) as conn:
         with conn.cursor() as cur:
-            cur.execute(file.read_text())
-            if verbose > 0:
-                if verbose > 1:
-                    write_callback(str(cur.query))
-                    write_callback(str(cur.statusmessage))
-                if cur.rowcount != -1:
-                    for x in cur:
-                        write_callback(str(x))
+            for line in file.read_text().split(";"):
+                if not line.strip():
+                    continue
+                cur.execute(line)
+                if verbose > 0:
+                    if verbose > 1:
+                        if verbose > 2:
+                            write_callback(cur.query)
+                        write_callback(cur.statusmessage)
+                    if cur.rowcount != -1:
+                        for x in cur:
+                            write_callback(str(x))
 
 
 def main() -> None:

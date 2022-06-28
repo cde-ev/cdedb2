@@ -66,13 +66,13 @@ while read -r evolution; do
         echo "Apply evolution $evolution as postgres database user."| tee -a /tmp/output-evolution.txt
 
         sudo CDEDB_CONFIGPATH=$tmp_configfile python3 -m cdedb dev \
-             execute-sql-script --as-postgres -v \
+             execute-sql-script --as-postgres -vv \
              -f cdedb/database/evolutions/$evolution \
              2>&1 | tee -a /tmp/output-evolution.txt
     elif [[ $evolution == *.sql ]]; then
         echo ""
         echo "Apply evolution $evolution" | tee -a /tmp/output-evolution.txt
-        python3 -m cdedb dev execute-sql-script -v \
+        python3 -m cdedb dev execute-sql-script -vv \
              -f cdedb/database/evolutions/$evolution \
              2>&1 | tee -a /tmp/output-evolution.txt
     elif [[ $evolution == *.py ]]; then
