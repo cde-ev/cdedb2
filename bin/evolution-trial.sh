@@ -64,7 +64,9 @@ while read -r evolution; do
     if [[ $evolution == *.postgres.sql ]]; then
         echo ""
         echo "Apply evolution $evolution as postgres database user."| tee -a /tmp/output-evolution.txt
-        sudo -u postgres python3 -m cdedb dev execute-sql-script --as-postgres -v \
+
+        sudo CDEDB_CONFIGPATH=$tmp_configfile python3 -m cdedb dev \
+             execute-sql-script --as-postgres -v \
              -f cdedb/database/evolutions/$evolution \
              2>&1 | tee -a /tmp/output-evolution.txt
     elif [[ $evolution == *.sql ]]; then
