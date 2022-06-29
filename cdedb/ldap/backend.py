@@ -15,6 +15,7 @@ from ldaptor.protocols.pureber import int2ber
 from passlib.hash import sha512_crypt
 from psycopg import AsyncConnection, AsyncCursor
 from psycopg.rows import DictRow
+from psycopg_pool import AsyncConnectionPool
 
 from cdedb.config import SecretsConfig
 from cdedb.database.constants import SubscriptionState
@@ -99,8 +100,12 @@ class LdapLeaf(TypedDict):
 
 class LDAPsqlBackend:
     """Provide the interface between ldap and database."""
-    def __init__(self, conn: AsyncConnection[DictRow]) -> None:
-        self.conn = conn
+    def __init__(self, pool: AsyncConnectionPool) -> None:
+        # notice that we also do pooling with pg_bouncer. However, since we have no
+        # concept of 'sessions' in this backend, we can not create one database
+        # connection per session. So, to avoid creating a new connection for each
+        # transaction, we utilize the psycopg connection pool for this.
+        self.pool = pool
         # load the ldap schemas (and overlays) which are supported
         self.schema = self.load_schemas(
             "core.schema", "cosine.schema", "inetorgperson.schema", "memberof.overlay")
@@ -130,9 +135,10 @@ class LDAPsqlBackend:
 
     async def query_exec(self, query: str, params: Sequence["DatabaseValue_s"]) -> int:
         """Execute a query in a safe way (inside a transaction)."""
-        async with self.conn.cursor() as cur:
-            await self.execute_db_query(cur, query, params)
-            return cur.rowcount
+        async with self.pool.connection() as conn:
+            async with conn.cursor() as cur:
+                await self.execute_db_query(cur, query, params)
+                return cur.rowcount
 
     async def query_one(self, query: str, params: Sequence["DatabaseValue_s"]
                         ) -> Optional["CdEDBObject"]:
@@ -140,9 +146,10 @@ class LDAPsqlBackend:
 
         :returns: First result of query or None if there is none
         """
-        async with self.conn.cursor() as cur:
-            await self.execute_db_query(cur, query, params)
-            return from_db_output(await cur.fetchone())
+        async with self.pool.connection() as conn:
+            async with conn.cursor() as cur:
+                await self.execute_db_query(cur, query, params)
+                return from_db_output(await cur.fetchone())
 
     async def query_all(self, query: str, params: Sequence["DatabaseValue_s"]
                         ) -> AsyncIterator["CdEDBObject"]:
@@ -150,10 +157,11 @@ class LDAPsqlBackend:
 
         :returns: all results of query
         """
-        async with self.conn.cursor() as cur:
-            await self.execute_db_query(cur, query, params)
-            async for x in cur:
-                yield cast("CdEDBObject", from_db_output(x))
+        async with self.pool.connection() as conn:
+            async with conn.cursor() as cur:
+                await self.execute_db_query(cur, query, params)
+                async for x in cur:
+                    yield cast("CdEDBObject", from_db_output(x))
 
     @staticmethod
     def _dn_value(dn: DN, attribute: str) -> Optional[str]:
