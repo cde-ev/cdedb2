@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 # pylint: disable=missing-module-docstring
-import contextlib
 import io
 import sys
 import tempfile
 import typing
 import unittest
-from contextlib import redirect_stdout
 from pkgutil import resolve_name
 from typing import Any, Callable, ClassVar
 
 from cdedb.backend.core import CoreBackend
+from cdedb.cli.util import redirect_to_file
 from cdedb.common import unwrap
 from cdedb.config import TestConfig, get_configpath
 from cdedb.script import DryRunError, Script, ScriptAtomizer
@@ -49,19 +48,18 @@ class TestScript(unittest.TestCase):
 
     def test_outfile(self) -> None:
         buffer = io.StringIO()
-        with contextlib.redirect_stdout(buffer):
-            with contextlib.redirect_stderr(buffer):
-                with tempfile.NamedTemporaryFile("w") as f:
-                    s = self.get_script(outfile=f.name)
-                    print("Not writing this to file.")
-                    print("Not writing this to file either.", file=sys.stderr)
-                    with s:
-                        print("Writing this to file.")
-                        print("This too!", file=sys.stderr)
-                    with open(f.name, "r") as fr:
-                        self.check_buffer(
-                            fr, self.assertEqual, "Writing this to file.\nThis too!\n",
-                            truncate=False)
+        with redirect_to_file(buffer):
+            with tempfile.NamedTemporaryFile("w") as f:
+                s = self.get_script(outfile=f.name)
+                print("Not writing this to file.")
+                print("Not writing this to file either.", file=sys.stderr)
+                with s:
+                    print("Writing this to file.")
+                    print("This too!", file=sys.stderr)
+                with open(f.name, "r") as fr:
+                    self.check_buffer(
+                        fr, self.assertEqual, "Writing this to file.\nThis too!\n",
+                        truncate=False)
 
         expectation = """Not writing this to file.
 Not writing this to file either.
@@ -101,7 +99,7 @@ Aborting Dry Run! Time taken: 0.000 seconds.
         configured_script = self.get_script(SYSLOG_LEVEL=42)
         self.assertEqual(42, configured_script.config["SYSLOG_LEVEL"])
         self.assertEqual(real_configpath, get_configpath())
-        self.assertEqual(str(configured_script._tempconfig), str({"SYSLOG_LEVEL": 42}))
+        self.assertEqual(str(configured_script._tempconfig), str({"SYSLOG_LEVEL": 42}))  # pylint: disable=protected-access
 
         # check overwriting per config file
         # here, we need to set the relevant flags from the real_config manually
@@ -157,7 +155,7 @@ Aborting Dry Run! Time taken: 0.000 seconds.
     def test_script_atomizer(self) -> None:
         rs = self.script.rs()
         buffer = io.StringIO()
-        with redirect_stdout(buffer):
+        with redirect_to_file(buffer):
             with ScriptAtomizer(rs):
                 pass
             self.check_buffer(buffer, self.assertIn,
