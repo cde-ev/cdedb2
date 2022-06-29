@@ -153,6 +153,9 @@ def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
     with connection as conn:
         with conn.cursor() as curr:
             curr.execute(clean_script.read_text())
+    # Also clean out the event keeper storage
+    for thing in (conf['STORAGE_DIR'] / 'event_keeper').iterdir():
+        subprocess.run(["sudo", "rm", "-rf", str(thing)], check=True)
 
     print("Setup the eventkeeper git repository.")
     populate_event_keeper(conf, {data['id']})
