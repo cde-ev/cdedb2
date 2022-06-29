@@ -13,7 +13,7 @@ from typing import (
 from ldaptor.protocols.ldap.distinguishedname import DistinguishedName as DN
 from ldaptor.protocols.pureber import int2ber
 from passlib.hash import sha512_crypt
-from psycopg import AsyncConnection, AsyncCursor
+from psycopg import AsyncCursor
 from psycopg.rows import DictRow
 from psycopg_pool import AsyncConnectionPool
 
