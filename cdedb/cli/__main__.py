@@ -239,8 +239,8 @@ def apply_sample_data(config: TestConfig, owner: str, no_reset_config: bool) -> 
 
 @development.command(name="apply-evolution-trial")
 @pass_secrets
-def apply_evolution_trial(secrets: SecretsConfig) -> None:
-    config = TestConfig()
+@pass_config
+def apply_evolution_trial(config: TestConfig, secrets: SecretsConfig) -> None:
     create_database_users(config)
     create_database(config, secrets)
     populate_database(config, secrets)
