@@ -8,7 +8,7 @@ on boilerplate.
 Additionally this provides some level of guidance on how to interact
 with the production environment.
 """
-
+import contextlib
 import getpass
 import gettext
 import os
@@ -23,7 +23,7 @@ import psycopg2
 import psycopg2.extensions
 import psycopg2.extras
 
-from cdedb.cli.util import fake_rs
+from cdedb.cli.util import fake_rs, redirect_to_file
 from cdedb.common import AbstractBackend, PathLike, RequestState, make_proxy
 from cdedb.common.n_ import n_
 from cdedb.config import Config, SecretsConfig, get_configpath, set_configpath
@@ -115,6 +115,7 @@ class Script:
 
     def __init__(self, *, persona_id: int = None, dry_run: bool = None,
                  dbuser: str = 'cdb_anonymous', dbname: str = 'cdb',
+                 outfile: PathLike = None, outfile_append: bool = None,
                  cursor: psycopg2.extensions.cursor = psycopg2.extras.RealDictCursor,
                  check_system_user: bool = True, configpath: Optional[PathLike] = None,
                  **config: Any):
@@ -132,6 +133,8 @@ class Script:
         :param dbuser: Database user for the connection. Defaults to `'cdb_anonymous'`
         :param dbname: Database against which to run the script. Defaults to `'cdb'`.
             May be overridden via environment variable during the evolution trial.
+        :param outfile: If given, redirect stdout and stderr into this file.
+        :param outfile_append: If True, append to the outfile, rather than replace.
         :param cursor: CursorFactory for the cursor used by this connection.
         :param check_system_user: Whether or not ot check for the correct invoking user,
             you need to have a really good reason to turn this off.
@@ -144,8 +147,15 @@ class Script:
             raise RuntimeError("Must be run as user www-data.")
 
         # Read configurable data from environment and/or input.
+        # Priority is "parameter > environment variable".
         configpath = configpath or os.environ.get("SCRIPT_CONFIGPATH")
+        outfile = outfile or os.environ.get("SCRIPT_OUTFILE")
+        self.outfile = pathlib.Path(outfile) if outfile else None
+        self.outfile_append = (bool(os.environ.get("SCRIPT_OUTFILE_APPEND"))
+                               if outfile_append is None else outfile_append)
+
         # Allow overriding for evolution trial.
+        # Priority is "override > parameter > environment variable".
         if persona_id is None:
             persona_id = int(os.environ.get("SCRIPT_PERSONA_ID", -1))
         self.persona_id = int(
@@ -156,6 +166,7 @@ class Script:
         dbname = os.environ.get("EVOLUTION_TRIAL_OVERRIDE_DBNAME", dbname)
 
         # Setup internals.
+        self._redirect: Optional[contextlib.AbstractContextManager[None]] = None
         self._atomizer: Optional[ScriptAtomizer] = None
         self._conn: psycopg2.extensions.connection = None
         self._tempconfig = TempConfig(configpath, **config)
@@ -215,6 +226,9 @@ class Script:
         """Thin wrapper around `ScriptAtomizer`."""
         if not self._atomizer:
             self._atomizer = ScriptAtomizer(self.rs(), dry_run=self.dry_run)
+        if self.outfile:
+            self._redirect = redirect_to_file(self.outfile, self.outfile_append)
+            self._redirect.__enter__()
         return self._atomizer.__enter__()
 
     def __exit__(self, exc_type: Optional[Type[Exception]],
@@ -223,6 +237,8 @@ class Script:
         """Thin wrapper around `ScriptAtomizer`."""
         if self._atomizer is None:
             raise RuntimeError(n_("Impossible."))
+        if self._redirect:
+            self._redirect.__exit__(exc_type, exc_val, exc_tb)
         return self._atomizer.__exit__(exc_type, exc_val, exc_tb)
 
 

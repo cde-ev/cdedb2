@@ -6,7 +6,7 @@ import os
 import pathlib
 import pwd
 from shutil import which
-from typing import Any, Callable, Generator
+from typing import Any, Callable, Generator, Iterator, Optional
 
 import click
 import psycopg2.extensions
@@ -169,3 +169,43 @@ def fake_rs(conn: psycopg2.extensions.connection, persona_id: int = 0) -> Reques
     )
     rs.conn = rs._conn = conn
     return rs
+
+
+@contextlib.contextmanager
+def redirect_to_file(outfile: Optional[pathlib.Path], append: bool) -> Iterator[None]:
+    """Context manager to open a file in either append or write mode and redirect both
+    stdout and std err into the file.
+
+    If no file is given, don't do anything.
+    """
+    if not outfile:
+        yield
+    else:
+        with outfile.open("a" if append else "w") as f:
+            with contextlib.redirect_stdout(f):
+                with contextlib.redirect_stderr(f):
+                    yield
+
+
+def execute_sql_script(
+    config: TestConfig, secrets: SecretsConfig, file: pathlib.Path, verbose: int = 0,
+    as_postgres: bool = False,
+) -> None:
+    """Execute any number of SQL statements one at a time from a file.
+    Depending on verbosity print a certain amount of output.
+
+    In order to redirect this to a file wrap the call in `redirect_to_file`."""
+    with connect(config, secrets, as_postgres=as_postgres) as conn:
+        with conn.cursor() as cur:
+            for statement in file.read_text().split(";"):
+                if not statement.strip():
+                    continue
+                cur.execute(statement)
+                if verbose > 0:
+                    if verbose > 1:
+                        if verbose > 2:
+                            print(cur.query)
+                        print(cur.statusmessage)
+                    if cur.rowcount != -1:
+                        for x in cur:
+                            print(str(x))

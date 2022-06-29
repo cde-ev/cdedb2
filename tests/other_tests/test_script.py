@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 # pylint: disable=missing-module-docstring
-
+import contextlib
 import io
+import sys
 import tempfile
+import typing
 import unittest
 from contextlib import redirect_stdout
 from pkgutil import resolve_name
@@ -36,13 +38,40 @@ class TestScript(unittest.TestCase):
                       dbuser="cdb_admin", check_system_user=False, **config)
 
     @staticmethod
-    def check_buffer(buffer: io.StringIO, assertion: Callable[[str, str], None],
-                     value: str) -> None:
+    def check_buffer(buffer: typing.IO[str], assertion: Callable[[str, str], None],
+                     value: str, truncate: bool = True) -> None:
         """Check the buffer's content and empty it."""
         buffer.seek(0)  # go to start of buffer
         assertion(value, buffer.read())
         buffer.seek(0)  # go back to start of buffer
-        buffer.truncate()  # cut off content after the current position -> empty buffer
+        if truncate:
+            buffer.truncate()  # cut off content after current position -> empty buffer
+
+    def test_outfile(self) -> None:
+        buffer = io.StringIO()
+        with contextlib.redirect_stdout(buffer):
+            with contextlib.redirect_stderr(buffer):
+                with tempfile.NamedTemporaryFile("w") as f:
+                    s = Script(check_system_user=False, outfile=f.name)
+                    print("Not writing this to file.")
+                    print("Not writing this to file either.", file=sys.stderr)
+                    with s:
+                        print("Writing this to file.")
+                        print("This too!", file=sys.stderr)
+                    with open(f.name, "r") as fr:
+                        self.check_buffer(
+                            fr, self.assertEqual, "Writing this to file.\nThis too!\n",
+                            truncate=False)
+
+        expectation = """Not writing this to file.
+Not writing this to file either.
+
+================================================================================
+
+Aborting Dry Run! Time taken: 0.000 seconds.
+
+"""
+        self.check_buffer(buffer, self.assertEqual, expectation)
 
     def test_rs_factory(self) -> None:
         rs_factory = self.script.rs

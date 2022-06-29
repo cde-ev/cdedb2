@@ -59,22 +59,25 @@ echo ""
 cat /tmp/todoevolutions.txt
 
 # apply all evolutions and gather the output.
-truncate -s0 /tmp/output-evolution.txt
+evolution_output=/tmp/output-evolution.txt
+touch $evolution_output
+sudo chown root $evolution_output
+sudo chmod a+rw $evolution_output
+truncate -s0 $evolution_output
 while read -r evolution; do
     if [[ $evolution == *.postgres.sql ]]; then
         echo ""
         echo "Apply evolution $evolution as postgres database user."| tee -a /tmp/output-evolution.txt
-
         sudo CDEDB_CONFIGPATH=$tmp_configfile python3 -m cdedb dev \
              execute-sql-script --as-postgres -vv \
              -f cdedb/database/evolutions/$evolution \
-             2>&1 | tee -a /tmp/output-evolution.txt
+             -o $evolution_output --outfile-append
     elif [[ $evolution == *.sql ]]; then
         echo ""
         echo "Apply evolution $evolution" | tee -a /tmp/output-evolution.txt
         python3 -m cdedb dev execute-sql-script -vv \
              -f cdedb/database/evolutions/$evolution \
-             2>&1 | tee -a /tmp/output-evolution.txt
+             -o $evolution_output --outfile-append
     elif [[ $evolution == *.py ]]; then
         echo ""
         echo "Run migration script $evolution" | tee -a /tmp/output-evolution.txt
@@ -82,8 +85,8 @@ while read -r evolution; do
             EVOLUTION_TRIAL_OVERRIDE_DBNAME=$DATABASE_NAME \
             EVOLUTION_TRIAL_OVERRIDE_DRY_RUN='' \
             EVOLUTION_TRIAL_OVERRIDE_PERSONA_ID=1 \
-            python3 cdedb/database/evolutions/$evolution \
-            2>&1 | tee -a /tmp/output-evolution.txt
+            SCRIPT_OUTFILE=$evolution_output SCRIPT_OUTFILE_APPEND=1 \
+            python3 cdedb/database/evolutions/$evolution
     else
         echo "Unhandled evolution $evolution" | tee -a /tmp/output-evolution.txt
     fi

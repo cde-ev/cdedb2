@@ -5,7 +5,8 @@ and should not be called directly.
 """
 import json
 import pathlib
-from typing import Any, Callable, Dict, List
+from contextlib import redirect_stdout
+from typing import Any, Dict, List
 
 import click
 
@@ -20,7 +21,10 @@ from cdedb.cli.storage import (
     create_log, create_storage, populate_sample_event_keepers, populate_storage,
     reset_config,
 )
-from cdedb.cli.util import get_user, pass_config, pass_secrets, switch_user
+from cdedb.cli.util import (
+    execute_sql_script, get_user, pass_config, pass_secrets, redirect_to_file,
+    switch_user,
+)
 from cdedb.common import CustomJSONEncoder
 from cdedb.config import DEFAULT_CONFIGPATH, SecretsConfig, TestConfig, set_configpath
 
@@ -261,19 +265,9 @@ def execute_sql_script_cmd(
         config: TestConfig, secrets: SecretsConfig, file: pathlib.Path, verbose: int,
         as_postgres: bool, outfile: pathlib.Path, outfile_append: bool
 ) -> None:
-    lines = []
-    if outfile:
-        def callback(s: str) -> None:
-            lines.append(s)
-    else:
-        callback = print  # type: ignore[assignment]
-
-    execute_sql_script(config, secrets, file, write_callback=callback,
-                       verbose=verbose, as_postgres=as_postgres)
-
-    if outfile:
-        with outfile.open("a" if outfile_append else "w") as f:
-            f.writelines(lines)
+    with redirect_to_file(outfile, outfile_append):
+        execute_sql_script(config, secrets, file, verbose=verbose,
+                           as_postgres=as_postgres)
 
 
 @development.command(name="describe-database")
@@ -283,30 +277,8 @@ def execute_sql_script_cmd(
 def describe_database(config: TestConfig, secrets: SecretsConfig,
                       outfile: pathlib.Path) -> None:
     description_file = pathlib.Path("/cdedb2/bin/describe_database.sql")
-    with outfile.open("w") as f:
-        def writeln(s: str) -> None:
-            f.write(s + "\n")
-        execute_sql_script(config, secrets, description_file, writeln)
-
-
-def execute_sql_script(
-    config: TestConfig, secrets: SecretsConfig, file: pathlib.Path,
-    write_callback: Callable[[str], None], verbose: int = 0, as_postgres: bool = False
-) -> None:
-    with connect(config, secrets, as_postgres=as_postgres) as conn:
-        with conn.cursor() as cur:
-            for line in file.read_text().split(";"):
-                if not line.strip():
-                    continue
-                cur.execute(line)
-                if verbose > 0:
-                    if verbose > 1:
-                        if verbose > 2:
-                            write_callback(cur.query)
-                        write_callback(cur.statusmessage)
-                    if cur.rowcount != -1:
-                        for x in cur:
-                            write_callback(str(x))
+    with redirect_to_file(outfile, append=False):
+        execute_sql_script(config, secrets, description_file, verbose=2)
 
 
 def main() -> None:
