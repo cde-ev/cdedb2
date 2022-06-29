@@ -5,13 +5,12 @@ and should not be called directly.
 """
 import json
 import pathlib
-from contextlib import redirect_stdout
 from typing import Any, Dict, List
 
 import click
 
 from cdedb.cli.database import (
-    connect, create_database, create_database_users, populate_database,
+    create_database, create_database_users, populate_database,
     remove_prepared_transactions,
 )
 from cdedb.cli.dev.json2sql import json2sql
