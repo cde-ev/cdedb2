@@ -219,14 +219,10 @@ def compile_sample_data_sql(
     help="Use this user as the owner of storage and logs.",
     default=get_user,
     show_default="current user")
-@click.option("--no-reset-config", is_flag=True)
 @pass_config
-def apply_sample_data(config: TestConfig, owner: str, no_reset_config: bool) -> None:
+def apply_sample_data(config: TestConfig, owner: str) -> None:
     """Repopulates the application with sample data."""
-    if no_reset_config:
-        secrets = SecretsConfig()
-    else:
-        config, secrets = reset_config(config)
+    config, secrets = reset_config(config)
     with switch_user(owner):
         create_log(config)
         create_storage(config)
