@@ -78,6 +78,7 @@ Aborting Dry Run! Time taken: 0.000 seconds.
         self.assertTrue(callable(rs_factory))
         self.assertEqual(-1, rs_factory().user.persona_id)
         self.assertEqual(23, rs_factory(23).user.persona_id)
+        self.assertIs(rs_factory(42), rs_factory(42))
 
         with self.assertRaises(ValueError) as cm:
             Script(dbname=self.conf["CDB_DATABASE_NAME"], dbuser="cdb_admin",
@@ -100,6 +101,7 @@ Aborting Dry Run! Time taken: 0.000 seconds.
         configured_script = self.get_script(SYSLOG_LEVEL=42)
         self.assertEqual(42, configured_script.config["SYSLOG_LEVEL"])
         self.assertEqual(real_configpath, get_configpath())
+        self.assertEqual(str(configured_script._tempconfig), str({"SYSLOG_LEVEL": 42}))
 
         # check overwriting per config file
         # here, we need to set the relevant flags from the real_config manually
@@ -147,8 +149,10 @@ Aborting Dry Run! Time taken: 0.000 seconds.
             backend_class = resolve_name(f"cdedb.backend.{realm}.{backend_name}")
             backendproxy = self.script.make_backend(realm, proxy=True)
             self.assertIs(backend_class, backendproxy.get_backend_class())
+            self.assertIs(backendproxy, self.script.make_backend(realm, proxy=True))
             backend = self.script.make_backend(realm, proxy=False)
             self.assertIsInstance(backend, backend_class)
+            self.assertIs(backend, self.script.make_backend(realm, proxy=False))
 
     def test_script_atomizer(self) -> None:
         rs = self.script.rs()

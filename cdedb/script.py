@@ -50,7 +50,7 @@ class TempConfig:
     """
 
     def __init__(self, configpath: PathLike = None, **config: Any):
-        if configpath and config:
+        if configpath and config:  # pragma: no cover
             raise ValueError(f"Do not provide both config ({config}) and"
                              f" configpath ({configpath}).")
         self._configpath = configpath
@@ -144,7 +144,7 @@ class Script:
             exclusive with `configpath`.
         """
         if check_system_user and getpass.getuser() != "www-data":
-            raise RuntimeError("Must be run as user www-data.")
+            raise RuntimeError("Must be run as user www-data.")  # pragma: no cover
 
         # Read configurable data from environment and/or input.
         # Priority is "parameter > environment variable".
@@ -184,7 +184,7 @@ class Script:
                  ) -> None:
         """Create and save a database connection."""
         if self._conn:
-            return
+            return  # pragma: no cover
 
         connection_parameters = {
             "dbname": dbname,
