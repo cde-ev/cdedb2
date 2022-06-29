@@ -261,7 +261,7 @@ def execute_sql_script_cmd(
         as_postgres: bool, outfile: pathlib.Path, outfile_append: bool
 ) -> None:
     with redirect_to_file(outfile, outfile_append):
-        execute_sql_script(config, secrets, file, verbose=verbose,
+        execute_sql_script(config, secrets, file.read_text(), verbose=verbose,
                            as_postgres=as_postgres)
 
 
@@ -273,7 +273,7 @@ def describe_database(config: TestConfig, secrets: SecretsConfig,
                       outfile: pathlib.Path) -> None:
     description_file = pathlib.Path("/cdedb2/bin/describe_database.sql")
     with redirect_to_file(outfile, append=False):
-        execute_sql_script(config, secrets, description_file, verbose=2)
+        execute_sql_script(config, secrets, description_file.read_text(), verbose=2)
 
 
 def main() -> None:

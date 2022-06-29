@@ -44,6 +44,7 @@ from cdedb.cli.dev.json2sql import json2sql
 from cdedb.cli.storage import (
     create_storage, populate_sample_event_keepers, populate_storage,
 )
+from cdedb.cli.util import execute_sql_script
 from cdedb.common import (
     ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD, CdEDBLog, CdEDBObject,
     CdEDBObjectMap, PathLike, RequestState, merge_dicts, nearly_now, now,
@@ -810,17 +811,7 @@ def event_keeper(fun: F) -> F:
 
 def execsql(sql: AnyStr) -> None:
     """Execute arbitrary SQL-code on the test database."""
-    conf = TestConfig()
-
-    with Script(
-        persona_id=-1,
-        dbuser="cdb",
-        dbname=conf["CDB_DATABASE_NAME"],
-        check_system_user=False,
-    ).rs().conn as conn:
-        conn.set_session(autocommit=True)
-        with conn.cursor() as curr:
-            curr.execute(sql)
+    execute_sql_script(TestConfig(), SecretsConfig(), sql)
 
 
 class FrontendTest(BackendTest):

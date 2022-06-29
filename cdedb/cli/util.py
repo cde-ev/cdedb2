@@ -188,16 +188,16 @@ def redirect_to_file(outfile: Optional[pathlib.Path], append: bool) -> Iterator[
 
 
 def execute_sql_script(
-    config: TestConfig, secrets: SecretsConfig, file: pathlib.Path, verbose: int = 0,
+    config: TestConfig, secrets: SecretsConfig, sql_text: str, verbose: int = 0,
     as_postgres: bool = False,
 ) -> None:
-    """Execute any number of SQL statements one at a time from a file.
+    """Execute any number of SQL statements one at a time.
     Depending on verbosity print a certain amount of output.
 
     In order to redirect this to a file wrap the call in `redirect_to_file`."""
     with connect(config, secrets, as_postgres=as_postgres) as conn:
         with conn.cursor() as cur:
-            for statement in file.read_text().split(";"):
+            for statement in sql_text.split(";"):
                 if not statement.strip():
                     continue
                 cur.execute(statement)
