@@ -267,7 +267,7 @@ def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
     config_path = get_configpath()
     # make sure to unset the development vm config option, so we do not clash
     subprocess.run(
-        ["sed", "-i", "-e", "s/CDEDB_DEV = True/CDEDB_DEV = False/",
+        ["sudo", "sed", "-i", "-e", "s/CDEDB_DEV = True/CDEDB_DEV = False/",
          str(config_path)], check=True)
     # mark the config as offline vm
     with open(str(config_path), 'a', encoding='UTF-8') as conf:
