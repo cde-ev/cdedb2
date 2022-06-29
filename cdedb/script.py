@@ -179,8 +179,6 @@ class Script:
             "dbname": dbname,
             "user": dbuser,
             "password": self._secrets["CDB_DATABASE_ROLES"][dbuser],
-            # TODO default to DB_PORT and provide flag for skipping pgbouncer
-            # Temporary workaround because we cannot pass config options correctly.
             "host": self.config["DB_HOST"],
             "port": self.config["DIRECT_DB_PORT"],
             "connection_factory": IrradiatedConnection,
