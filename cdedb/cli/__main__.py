@@ -17,12 +17,13 @@ from cdedb.cli.dev.json2sql import json2sql
 from cdedb.cli.dev.serve import serve_debugger
 from cdedb.cli.dev.sql2json import sql2json
 from cdedb.cli.storage import (
-    create_log, create_storage, populate_sample_event_keepers, populate_storage,
-    reset_config,
+    create_log, create_storage, populate_event_keeper,
+    populate_sample_event_keepers, populate_storage, reset_config,
 )
 from cdedb.cli.util import get_user, pass_config, pass_secrets, switch_user
 from cdedb.common import CustomJSONEncoder
-from cdedb.config import DEFAULT_CONFIGPATH, SecretsConfig, TestConfig, set_configpath
+from cdedb.config import (Config, DEFAULT_CONFIGPATH, SecretsConfig, TestConfig,
+                          set_configpath)
 
 
 @click.group()
@@ -96,6 +97,20 @@ def populate_storage_cmd(config: TestConfig, owner: str) -> None:
     with switch_user(owner):
         populate_storage(config)
         populate_sample_event_keepers(config)
+
+
+@storage.command(name="populate-event-keeper")
+@click.option("--owner",
+    help="Use this user as the owner of storage and logs.",
+    default=get_user,
+    show_default="current user")
+@click.argument('event_id', type=int)
+def populate_event_keeper_cmd(event_id: int, owner: str) -> None:
+    """Populate the event keeper."""
+    set_configpath(DEFAULT_CONFIGPATH)
+    config = Config()
+    with switch_user(owner):
+        populate_event_keeper(config, [event_id])
 
 
 @filesystem.group(name="log")

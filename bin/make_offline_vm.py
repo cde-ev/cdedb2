@@ -10,6 +10,7 @@ import argparse
 import collections.abc
 import copy
 import json
+import logging
 import pathlib
 import subprocess
 import sys
@@ -158,7 +159,10 @@ def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
         subprocess.run(["sudo", "rm", "-rf", str(thing)], check=True)
 
     print("Setup the eventkeeper git repository.")
-    populate_event_keeper(conf, {data['id']})
+    subprocess.run(
+        ['sudo', 'python3', '-m', 'cdedb', 'filesystem', 'storage',
+         'populate-event-keeper', str(data['id']), '--owner', 'www-data'],
+        check=True)
 
     print("Make orgas into admins")
     orgas = {e['persona_id'] for e in data['event.orgas'].values()}
