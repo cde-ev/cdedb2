@@ -52,7 +52,7 @@ class TestScript(unittest.TestCase):
         with contextlib.redirect_stdout(buffer):
             with contextlib.redirect_stderr(buffer):
                 with tempfile.NamedTemporaryFile("w") as f:
-                    s = Script(check_system_user=False, outfile=f.name)
+                    s = self.get_script(outfile=f.name)
                     print("Not writing this to file.")
                     print("Not writing this to file either.", file=sys.stderr)
                     with s:
