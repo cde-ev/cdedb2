@@ -17,13 +17,14 @@ from cdedb.cli.dev.json2sql import json2sql
 from cdedb.cli.dev.serve import serve_debugger
 from cdedb.cli.dev.sql2json import sql2json
 from cdedb.cli.storage import (
-    create_log, create_storage, populate_event_keeper,
-    populate_sample_event_keepers, populate_storage, reset_config,
+    create_log, create_storage, populate_event_keeper, populate_sample_event_keepers,
+    populate_storage, reset_config,
 )
 from cdedb.cli.util import get_user, pass_config, pass_secrets, switch_user
 from cdedb.common import CustomJSONEncoder
-from cdedb.config import (Config, DEFAULT_CONFIGPATH, SecretsConfig, TestConfig,
-                          set_configpath)
+from cdedb.config import (
+    DEFAULT_CONFIGPATH, Config, SecretsConfig, TestConfig, set_configpath,
+)
 
 
 @click.group()
