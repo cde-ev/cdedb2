@@ -10,7 +10,6 @@ import argparse
 import collections.abc
 import copy
 import json
-import logging
 import pathlib
 import subprocess
 import sys
@@ -156,13 +155,14 @@ def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
             curr.execute(clean_script.read_text())
     # Also clean out the event keeper storage
     for thing in (conf['STORAGE_DIR'] / 'event_keeper').iterdir():
-        subprocess.run(["sudo", "rm", "-rf", str(thing)], check=True)
+        subprocess.run(["sudo", "rm", "-r", str(thing)], check=True)
 
     print("Setup the eventkeeper git repository.")
-    subprocess.run(
-        ['sudo', 'python3', '-m', 'cdedb', 'filesystem', 'storage',
-         'populate-event-keeper', str(data['id']), '--owner', 'www-data'],
-        check=True)
+    cmd = ['sudo', '-E', 'python3', '-m', 'cdedb', 'filesystem', 'storage',
+           'populate-event-keeper', str(data['id'])]
+    if not args.test:
+        cmd.extend(['--owner', 'www-data'])
+    subprocess.run(cmd, check=True)
 
     print("Make orgas into admins")
     orgas = {e['persona_id'] for e in data['event.orgas'].values()}

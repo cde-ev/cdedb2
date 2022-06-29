@@ -23,7 +23,7 @@ from cdedb.cli.storage import (
 from cdedb.cli.util import get_user, pass_config, pass_secrets, switch_user
 from cdedb.common import CustomJSONEncoder
 from cdedb.config import (
-    DEFAULT_CONFIGPATH, Config, SecretsConfig, TestConfig, set_configpath,
+    DEFAULT_CONFIGPATH, Config, SecretsConfig, TestConfig, set_configpath
 )
 
 
@@ -108,10 +108,8 @@ def populate_storage_cmd(config: TestConfig, owner: str) -> None:
 @click.argument('event_id', type=int)
 def populate_event_keeper_cmd(event_id: int, owner: str) -> None:
     """Populate the event keeper."""
-    set_configpath(DEFAULT_CONFIGPATH)
-    config = Config()
     with switch_user(owner):
-        populate_event_keeper(config, [event_id])
+        populate_event_keeper(Config(), [event_id])
 
 
 @filesystem.group(name="log")
