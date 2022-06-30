@@ -17753,8 +17753,8 @@ msgstr "%(ml_type)s ist kein geeigneter Typ für diese Mailingliste."
 msgid "Lodgement Wishes"
 msgstr "Unterbringungswünsche"
 
-msgid "The following lodgment wishes were detected"
-msgstr "Folgende Unterbringungswünsche wurden erkannt"
+msgid "The following lodgement wishes were detected from your input. If a wish is missing from this list, check that you spelled the name correctly and that they are a participant of this event."
+msgstr "Folgende Unterbringungswünsche wurden aus deiner Eingabe erkannt. Falls ein Wunsch fehlen sollte, prüfe bitte ob Du den Namen richtig geschrieben hast und ob die Person an dieser Veranstaltung teilnimmt."
 
 msgid "The following problems with your lodgement wishes were detected"
 msgstr "Bei der Bestimmung der Unterbringungswünsche traten folgende Probleme auf"

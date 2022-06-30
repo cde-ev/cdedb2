@@ -330,12 +330,13 @@ class EventBaseFrontend(AbstractUserFrontend):
             registration = self.eventproxy.get_registration(rs, registration_id)
             wish_data = self._get_participant_list_data(rs, event_id)
             wish_data['field'] = rs.ambience['event']['fields'][field_id]
-            wishes, _ = detect_lodgement_wishes(
+            wishes, problems = detect_lodgement_wishes(
                 wish_data['registrations'], wish_data['personas'], rs.ambience['event'],
                 restrict_part_id=None, restrict_registration_id=registration_id,
                 check_edges=False)
             if registration['list_consent']:
                 wish_data['wishes'] = wishes
+                wish_data['problems'] = problems
             else:
                 msg = n_(
                     "You can not access the Participant List as you have not agreed to"
