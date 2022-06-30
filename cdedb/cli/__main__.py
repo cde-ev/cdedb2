@@ -105,8 +105,11 @@ def populate_storage_cmd(config: TestConfig, owner: str) -> None:
 @click.pass_obj
 def populate_event_keeper_cmd(owner: str, event_id: int) -> None:
     """Populate the event keeper."""
+    config = Config()
+    path = config['STORAGE_DIR'] / 'event_keeper'
     with switch_user(owner):
-        populate_event_keeper(Config(), [event_id])
+        path.mkdir(parents=True, exist_ok=True)
+        populate_event_keeper(config, [event_id])
 
 
 @filesystem.group(name="log")
