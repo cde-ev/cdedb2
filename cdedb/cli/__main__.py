@@ -101,12 +101,9 @@ def populate_storage_cmd(config: TestConfig, owner: str) -> None:
 
 
 @storage.command(name="populate-event-keeper")
-@click.option("--owner",
-    help="Use this user as the owner of storage and logs.",
-    default=get_user,
-    show_default="current user")
 @click.argument('event_id', type=int)
-def populate_event_keeper_cmd(event_id: int, owner: str) -> None:
+@click.pass_obj
+def populate_event_keeper_cmd(owner: str, event_id: int) -> None:
     """Populate the event keeper."""
     with switch_user(owner):
         populate_event_keeper(Config(), [event_id])

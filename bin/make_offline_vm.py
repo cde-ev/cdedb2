@@ -161,7 +161,8 @@ def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
     cmd = ['sudo', '-E', 'python3', '-m', 'cdedb', 'filesystem', 'storage',
            'populate-event-keeper', str(data['id'])]
     if not args.test:
-        cmd.extend(['--owner', 'www-data'])
+        cmd.insert(6, '--owner')
+        cmd.insert(7, 'www-data')
     subprocess.run(cmd, check=True)
 
     print("Make orgas into admins")
