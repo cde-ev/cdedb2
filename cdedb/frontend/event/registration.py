@@ -34,7 +34,6 @@ from cdedb.frontend.common import (
     inspect_validation as inspect, make_event_fee_reference, request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
-from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
 
 
 class EventRegistrationMixin(EventBaseFrontend):
