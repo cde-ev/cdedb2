@@ -38,7 +38,6 @@ ls cdedb/database/evolutions > /tmp/oldevolutions.txt
 if git merge-base --is-ancestor 5f18f7e5239fc4c10b6c79dfdd4b68a260a99e00 $OLDREVISION; then
     python3 -m cdedb dev apply-evolution-trial
 else
-    python3 -m cdedb dev compile-sample-data-sql --outfile - > tests/ancillary_files/sample_data.sql
     python3 -m cdedb db create-users
     python3 -m cdedb db create
     python3 -m cdedb db populate
