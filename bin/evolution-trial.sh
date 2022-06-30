@@ -85,7 +85,8 @@ while read -r evolution; do
             EVOLUTION_TRIAL_OVERRIDE_DBNAME=$DATABASE_NAME \
             EVOLUTION_TRIAL_OVERRIDE_DRY_RUN='' \
             EVOLUTION_TRIAL_OVERRIDE_PERSONA_ID=1 \
-            SCRIPT_OUTFILE=$evolution_output SCRIPT_OUTFILE_APPEND=1 \
+            EVOLUTION_TRIAL_OVERRIDE_OUTFILE=$evolution_output \
+            EVOLUTION_TRIAL_OVERRIDE_OUTFILE_APPEND=1 \
             python3 cdedb/database/evolutions/$evolution
     else
         echo "Unhandled evolution $evolution" | tee -a /tmp/output-evolution.txt

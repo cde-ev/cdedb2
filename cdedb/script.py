@@ -133,7 +133,8 @@ class Script:
         :param dbuser: Database user for the connection. Defaults to `'cdb_anonymous'`
         :param dbname: Database against which to run the script. Defaults to `'cdb'`.
             May be overridden via environment variable during the evolution trial.
-        :param outfile: If given, redirect stdout and stderr into this file.
+        :param outfile: If given, redirect stdout and stderr into this file, while
+            using the Script as a contextmanager.
         :param outfile_append: If True, append to the outfile, rather than replace.
         :param cursor: CursorFactory for the cursor used by this connection.
         :param check_system_user: Whether or not ot check for the correct invoking user,
@@ -149,10 +150,6 @@ class Script:
         # Read configurable data from environment and/or input.
         # Priority is "parameter > environment variable".
         configpath = configpath or os.environ.get("SCRIPT_CONFIGPATH")
-        outfile = outfile or os.environ.get("SCRIPT_OUTFILE")
-        self.outfile = pathlib.Path(outfile) if outfile else None
-        self.outfile_append = (bool(os.environ.get("SCRIPT_OUTFILE_APPEND"))
-                               if outfile_append is None else outfile_append)
 
         # Allow overriding for evolution trial.
         # Priority is "override > parameter > environment variable".
@@ -163,7 +160,13 @@ class Script:
         if dry_run is None:
             dry_run = bool(os.environ.get("SCRIPT_DRY_RUN", True))
         self.dry_run = bool(os.environ.get("EVOLUTION_TRIAL_OVERRIDE_DRY_RUN", dry_run))
+
+        # These parameters can be overridden but are otherwise not taken via env:
         dbname = os.environ.get("EVOLUTION_TRIAL_OVERRIDE_DBNAME", dbname)
+        outfile = os.environ.get("EVOLUTION_TRIAL_OVERRIDE_OUTFILE", outfile)
+        self.outfile = pathlib.Path(outfile) if outfile else None
+        self.outfile_append = bool(
+            os.environ.get("EVOLUTION_TRIAL_OVERRIDE_OUTFILE_APPEND", outfile_append))
 
         # Setup internals.
         self._redirect: Optional[contextlib.AbstractContextManager[None]] = None
