@@ -12,7 +12,7 @@ services:
     ports:
       - 127.0.0.1:5432:5432
     environment:
-      POSTGRES_PASSWORD: passwd  # needs to be the same as for the `app` container.
+      POSTGRES_PASSWORD: passwd
   app:
     image: cdedb
     build:
@@ -28,7 +28,6 @@ services:
       - 127.0.0.1:8443:443 # apache
     environment:
         CDEDB_CONFIGPATH: /etc/cdedb/config.py # DEFAULT_CONFIGPATH from cdedb.config
-        POSTGRES_PASSWORD: passwd  # needs to be the same as for the `cdb` container.
     depends_on:
       - cdb
   ldap:
