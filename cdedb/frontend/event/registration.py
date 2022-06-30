@@ -499,30 +499,10 @@ class EventRegistrationMixin(EventBaseFrontend):
         waitlist_position = self.eventproxy.get_waitlist_position(
             rs, event_id, persona_id=rs.user.persona_id)
 
-        assert rs.user.persona_id is not None
-        wish_data = {}
-        if (rs.ambience['event']['is_participant_list_visible']
-                and rs.ambience['event']['lodge_field']
-                and self.eventproxy.check_registration_status(
-                    rs, rs.user.persona_id, event_id,
-                    [const.RegistrationPartStati.participant])):
-            wish_data = self._get_participant_list_data(rs, event_id)
-            wishes, problems = detect_lodgement_wishes(
-                wish_data['registrations'], wish_data['personas'], rs.ambience['event'],
-                restrict_part_id=None, restrict_registration_id=registration['id'])
-            if registration['list_consent']:
-                wish_data.update({'wishes': wishes, 'problems': problems})
-            else:
-                msg = n_(
-                    "You can not access the Participant List as you have not agreed to"
-                    " have your own data sent to other participants before the event.")
-                wish_data.update({'wishes': [], 'problems': [("error", msg, {})]})
-
         return self.render(rs, "registration/registration_status", {
             'registration': registration, 'age': age, 'courses': courses,
             'reg_questionnaire': reg_questionnaire,
             'waitlist_position': waitlist_position,
-            'wish_data': wish_data,
             **payment_data
         })
 

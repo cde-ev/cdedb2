@@ -283,32 +283,4 @@
         </dl>
     {% endif %}
 
-    {% if wish_data['wishes'] or wish_data['problems'] %}
-        <h4 class="heading-underline">{% trans %}Lodgement Wishes{% endtrans %}</h4>
-            {% if wish_data['wishes'] %}
-                <div class="p">
-                    {% trans %}The following lodgment wishes were detected{% endtrans %}:
-                </div>
-                <ul>
-                    {% for wish in wish_data['wishes'] %}
-                        {% set persona_id = wish_data['registrations'][wish.wished]['persona_id'] %}
-                        <li class="text-info">
-                            {{ util.persona_name(wish_data['personas'][persona_id]) }}
-                        </li>
-                    {% endfor %}
-                </ul>
-            {% endif %}
-            {% if wish_data['problems'] %}
-                <div class="p">
-                    {% trans %}The following problems with your lodgement wishes were detected{% endtrans %}:
-                </div>
-                <ul>
-                    {% with texttypes = {"success": "success", "info": "info", "warning": "warning", "error": "danger"} %}
-                        {% for ntype, message, params in wish_data['problems'] %}
-                            <li class="text-{{ texttypes[ntype] }}">{{ gettext(message)|e|format(**params) }}</li>
-                        {% endfor %}
-                    {% endwith %}
-                </ul>
-            {% endif %}
-    {% endif %}
 {% endblock %}

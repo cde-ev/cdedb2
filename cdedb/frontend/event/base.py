@@ -44,6 +44,7 @@ from cdedb.frontend.common import (
     AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access, calculate_db_logparams,
     calculate_loglinks, event_guard, periodic,
 )
+from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
 
 
 @dataclass(frozen=True)  # type: ignore[misc]
@@ -315,6 +316,32 @@ class EventBaseFrontend(AbstractUserFrontend):
             'courses': courses, 'registrations': registrations,
             'personas': personas, 'ordered': ordered, 'parts': parts,
         }
+
+    def _get_user_lodgement_wishes(self, rs: RequestState, event_id: int) -> CdEDBObject:
+        assert rs.user.persona_id is not None
+        wish_data = {}
+        if (rs.ambience['event']['is_participant_list_visible']
+                and (field_id := rs.ambience['event']['lodge_field'])
+                and self.eventproxy.check_registration_status(
+                    rs, rs.user.persona_id, event_id,
+                    [const.RegistrationPartStati.participant])):
+            registration_id = unwrap(self.eventproxy.list_registrations(
+                rs, event_id, rs.user.persona_id).keys())
+            registration = self.eventproxy.get_registration(rs, registration_id)
+            wish_data = self._get_participant_list_data(rs, event_id)
+            wish_data['field'] = rs.ambience['event']['fields'][field_id]
+            wishes, _ = detect_lodgement_wishes(
+                wish_data['registrations'], wish_data['personas'], rs.ambience['event'],
+                restrict_part_id=None, restrict_registration_id=registration_id,
+                check_edges=False)
+            if registration['list_consent']:
+                wish_data['wishes'] = wishes
+            else:
+                msg = n_(
+                    "You can not access the Participant List as you have not agreed to"
+                    " have your own data sent to other participants before the event.")
+                wish_data['problems'] = [("error", msg, {})]
+        return wish_data
 
     @access("event")
     def participant_info(self, rs: RequestState, event_id: int) -> Response:

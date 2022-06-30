@@ -1,3 +1,4 @@
+
 # German translations for CdEDBv2.
 # Copyright (C) 2016 CdE Datenbank Team
 # This file is distributed under the same license as the CdEDBv2 project.
@@ -17757,3 +17758,12 @@ msgstr "Folgende Unterbringungswünsche wurden erkannt"
 
 msgid "The following problems with your lodgement wishes were detected"
 msgstr "Bei der Bestimmung der Unterbringungswünsche traten folgende Probleme auf"
+
+msgid "questionnaire field"
+msgstr "Fragebogenfeld"
+
+msgid "You can enter lodgement wishes in the respective %(link)s in the following formats:"
+msgstr "Du kanst Zimmerwünsche im entsprechenden %(link)s in einem der folgenden Formate angeben:"
+
+msgid "Full name (any given name plus family name), forename/display name plus family name, email address or CdEDB-ID (\"DB-0000-X\")"
+msgstr "Vollständiger Name (ein beliebiger Vorname plus Nachnem), Rufname plus Nachname, E-Mail-Adresse oder CdEDB-ID (\"DB-0000-X\")"
