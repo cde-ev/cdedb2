@@ -1469,9 +1469,17 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                     self.traverse({'description': 'Abstimmungen'},
                                   {'description': bdata['title']},
                                   {'description': 'Ergebnisdetails'})
-                    self.assertPresence("Du hast für die folgenden Kandidaten "
-                                        "gestimmt: Arthur Dent = Ford Prefect",
-                                        div='own-vote', exact=True)
+                    # try both variants as this is non-deterministic
+                    try:
+                        self.assertPresence(
+                            "Du hast für die folgenden Kandidaten "
+                            "gestimmt: Arthur Dent = Ford Prefect",
+                            div='own-vote', exact=True)
+                    except AssertionError:
+                        self.assertPresence(
+                            "Du hast für die folgenden Kandidaten "
+                            "gestimmt: Ford Prefect = Arthur Dent",
+                            div='own-vote', exact=True)
 
     @storage
     @as_users("werner", "inga", "kalif")

@@ -143,7 +143,7 @@ def detect_lodgement_wishes(registrations: CdEDBObjectMap,
                              make_persona_name(personas[registrations[reg_id]
                                                             ['persona_id']])
                              for reg_id in ambiguous_match_ids)}))
-                match_positions.append((match.span(), registration_id))
+                match_positions.append((match.span(), other_registration_id))
 
                 # TODO detect negated edges
                 # Check if wish graph edge is already present in the reverse
@@ -262,10 +262,14 @@ def _gender_equality(first: Genders, second: Genders) -> bool:
 def create_lodgement_wishes_graph(
         rs: RequestState,
         registrations: CdEDBObjectMap, wishes: List[LodgementWish],
-        lodgements: CdEDBObjectMap, event: CdEDBObject,
+        lodgements: CdEDBObjectMap,
+        lodgement_groups: CdEDBObjectMap,
+        event: CdEDBObject,
         personas: CdEDBObjectMap,
         filter_part_id: Optional[int], show_all: bool,
-        cluster_by_lodgement_in_part: Optional[int]) -> graphviz.Digraph:
+        cluster_part_id: Optional[int],
+        cluster_by_lodgement: bool,
+        cluster_by_lodgement_group: bool) -> graphviz.Digraph:
     """
     Plot the Lodgement Wishes Graph of the given event.
 
@@ -275,6 +279,8 @@ def create_lodgement_wishes_graph(
         :func:`detect_lodgement_wishes`
     :param lodgements: The lodgements of the event. Required for drawing the
         assigned lodgements as subgraphs when required.
+    :param lodgement_groups: The lodgement groups of the event. Required for drawing
+        lodgement group subgraphs when requested.
     :param event: The event data as returned by
         :meth:`cdedb.backend.event.EventBackend.get_event`
     :param personas: All personas referenced by any of the registrations.
@@ -288,16 +294,25 @@ def create_lodgement_wishes_graph(
     :param show_all: If false, only participants who are referenced by a wish
         edge, i.e. wished another participants ore have been wished (in the
         relevant part).
-    :param cluster_by_lodgement_in_part: An event part id or None. If a part id
-        is given, participants are clustered into subgraphs based on their
+    :param cluster_part_id: An event part id or None. Is required for clustering, since
+        the lodgement assignment of this part is used to sort participants into
+        lodgements and lodgement groups.
+    :param cluster_by_lodgement: May only be true if cluster_part_id provides a single
+        part id. If true, participants are clustered into subgraphs based on their
         assigned lodgment in that event part.
+    :param cluster_by_lodgement_group: Works analogously to cluster_by_lodgement. Both
+        can be combined to produce sub-sub-graphs of lodgements and lodgement groups.
     :return: The fully constructed by not-yet rendered graph as a graphviz
         Digraph object. The graph can be rendered and layouted by calling
         `.pipe()` on the graph object which will run the graphviz program as a
         subprocess and return the resulting graphic file.
     """
+    if (cluster_by_lodgement_group or cluster_by_lodgement) and not cluster_part_id:
+        raise RuntimeError("Clusters can only be displayed if restricted to one part.")
+
     graph = graphviz.Digraph(
-        engine=('fdp' if cluster_by_lodgement_in_part else 'neato'),
+        engine=('fdp' if cluster_by_lodgement_group or cluster_by_lodgement
+                else 'neato'),
         graph_attr={'overlap': "false", 'splines': 'line', 'maxiter': "8000",
                     'sep': "+6", 'tooltip': " ", 'scale': "5",
                     'fontsize': "10pt",
@@ -316,15 +331,21 @@ def create_lodgement_wishes_graph(
         referenced_registraion_ids.add(wish.wished)
         referenced_registraion_ids.add(wish.wishing)
 
-    # If clustering is enabled, create new graphs as lodgement clusters
+    # We offer clustering by lodgement and/or by lodgement group.
     lodgement_clusters: Dict[int, graphviz.Digraph] = {}
-    if cluster_by_lodgement_in_part:
+    if cluster_by_lodgement:
         for lodgement_id, lodgement in lodgements.items():
             lodgement_clusters[lodgement_id] = graphviz.Digraph(
-                name=f'cluster_{lodgement_id}',
+                name=f'cluster_lodgement_{lodgement_id}',
                 graph_attr={'label': lodgement['title'],
                             'URL': cdedburl(rs, 'event/show_lodgement',
                                             {'lodgement_id': lodgement_id})})
+    lodgement_group_clusters: Dict[int, graphviz.Digraph] = {}
+    if cluster_by_lodgement_group:
+        for lodgement_group_id, lodgement_group in lodgement_groups.items():
+            lodgement_group_clusters[lodgement_group_id] = graphviz.Digraph(
+                name=f'cluster_lodgement_group_{lodgement_group_id}',
+                graph_attr={'label': lodgement_group['title']})
 
     # Add registrations as nodes to graph (or correct lodgement cluster)
     for registration_id, registration in registrations.items():
@@ -342,12 +363,13 @@ def create_lodgement_wishes_graph(
             continue
         # Select correct subgraph
         subgraph = graph
-        if cluster_by_lodgement_in_part:
-            lodgement_id = registration['parts']\
-                .get(cluster_by_lodgement_in_part, {})\
-                .get('lodgement_id')
-            if lodgement_id:
+        if lodgement_id := registration['parts'].get(cluster_part_id, {}).get(
+                'lodgement_id'):
+            if cluster_by_lodgement:
                 subgraph = lodgement_clusters[lodgement_id]
+            elif cluster_by_lodgement_group:
+                if lodgement_group_id := lodgements[lodgement_id]["group_id"]:
+                    subgraph = lodgement_group_clusters[lodgement_group_id]
         # Create node
         is_present = (
             filter_part_id in present_parts if filter_part_id
@@ -365,9 +387,20 @@ def create_lodgement_wishes_graph(
             URL=cdedburl(rs, 'event/show_registration',
                          {'registration_id': registration_id}))
 
-    # Add lodgement clusters as subgraphs
-    for lodgement_cluster in lodgement_clusters.values():
-        graph.subgraph(lodgement_cluster)
+    # Add lodgement and lodgement group clusters as subgraphs
+    if cluster_by_lodgement and cluster_by_lodgement_group:
+        for lodgement_id, lodgement_cluster in lodgement_clusters.items():
+            # some lodgements may be in no lodgement group
+            if lodgement_group_id := lodgements[lodgement_id]["group_id"]:
+                lodgement_group_clusters[lodgement_group_id].subgraph(lodgement_cluster)
+            else:
+                graph.subgraph(lodgement_cluster)
+    if cluster_by_lodgement and not cluster_by_lodgement_group:
+        for lodgement_cluster in lodgement_clusters.values():
+            graph.subgraph(lodgement_cluster)
+    if cluster_by_lodgement_group:
+        for lodgement_group_cluster in lodgement_group_clusters.values():
+            graph.subgraph(lodgement_group_cluster)
 
     # Add wishes as edges
     for wish in wishes:
