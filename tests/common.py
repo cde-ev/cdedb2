@@ -23,9 +23,9 @@ import tempfile
 import unittest
 import urllib.parse
 from typing import (
-    Any, AnyStr, Callable, ClassVar, Dict, Generator, Iterable, List, Mapping,
-    MutableMapping, NamedTuple, Optional, Pattern, Sequence, Set, Tuple, Type, TypeVar,
-    Union, cast, no_type_check,
+    Any, Callable, ClassVar, Dict, Generator, Iterable, List, Mapping, MutableMapping,
+    NamedTuple, Optional, Pattern, Sequence, Set, Tuple, Type, TypeVar, Union, cast,
+    no_type_check,
 )
 
 import PIL.Image
