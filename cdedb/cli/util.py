@@ -2,11 +2,12 @@
 import contextlib
 import functools
 import getpass
+import io
 import os
 import pathlib
 import pwd
 from shutil import which
-from typing import Any, Callable, Generator, Iterator, Optional
+from typing import Any, Callable, Generator, Iterator, Union
 
 import click
 import psycopg2.extensions
@@ -172,19 +173,26 @@ def fake_rs(conn: psycopg2.extensions.connection, persona_id: int = 0) -> Reques
 
 
 @contextlib.contextmanager
-def redirect_to_file(outfile: Optional[pathlib.Path], append: bool) -> Iterator[None]:
+def redirect_to_file(outfile: Union[pathlib.Path, io.StringIO, None],
+                     append: bool = False) -> Iterator[None]:
     """Context manager to open a file in either append or write mode and redirect both
     stdout and std err into the file.
 
     If no file is given, don't do anything.
     """
-    if not outfile:
-        yield
-    else:
+    if isinstance(outfile, pathlib.Path):
         with outfile.open("a" if append else "w") as f:
             with contextlib.redirect_stdout(f):
                 with contextlib.redirect_stderr(f):
                     yield
+    elif isinstance(outfile, io.IOBase):
+        with contextlib.redirect_stdout(outfile):
+            with contextlib.redirect_stderr(outfile):
+                yield
+    elif outfile is None:
+        yield
+    else:
+        raise ValueError("Can only redirect outpur to file or buffer.")
 
 
 def execute_sql_script(
@@ -201,11 +209,10 @@ def execute_sql_script(
                 if not statement.strip():
                     continue
                 cur.execute(statement)
-                if verbose > 0:
-                    if verbose > 1:
-                        if verbose > 2:
-                            print(cur.query)
-                        print(cur.statusmessage)
-                    if cur.rowcount != -1:
-                        for x in cur:
-                            print(str(x))
+                if verbose > 2:
+                    click.echo(cur.query)
+                if verbose > 1:
+                    click.echo(cur.statusmessage)
+                if verbose > 0 and cur.rowcount != -1:
+                    for x in cur:
+                        click.echo(x)
