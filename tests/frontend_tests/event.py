@@ -2100,7 +2100,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertNonPresence("Kurs")
 
         self.traverse({'href': r'event/event/1/registration/list\?part_id=1'})
-        self.assertPresence("Es gibt in Summe 3 Teilnehmer.")
+        self.assertPresence("Es gibt in Summe 2 Teilnehmer.")
         self.assertNonPresence("Garcia")
         self.assertNonPresence("Kurs")
         self.assertNonPresence("Veranstaltungsteile")
@@ -2177,6 +2177,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertTitle("Neue Anmeldung (CdE-Party 2050)")
         f = self.response.forms['addregistrationform']
         f['persona.persona_id'] = "DB-1-9"
+        f['reg.list_consent'] = True
         self.submit(f)
 
         # now test participant list

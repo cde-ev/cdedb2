@@ -238,7 +238,7 @@ class EventBaseFrontend(AbstractUserFrontend):
 
     def _get_participant_list_data(
             self, rs: RequestState, event_id: int,
-            part_ids: Collection[int] = (),
+            part_ids: Collection[int] = (), orga_list: bool = False,
             sortkey: str = "persona", reverse: bool = False) -> CdEDBObject:
         """This provides data for download and online participant list.
 
@@ -253,11 +253,12 @@ class EventBaseFrontend(AbstractUserFrontend):
             part_ids = rs.ambience['event']['parts'].keys()
         if any(anid not in rs.ambience['event']['parts'] for anid in part_ids):
             raise werkzeug.exceptions.NotFound(n_("Invalid part id."))
-        parts = {anid: rs.ambience['event']['parts'][anid]
-                 for anid in part_ids}
+        if orga_list and event_id not in rs.user.orga and not self.is_admin(rs):
+            raise PermissionError
+        parts = {anid: rs.ambience['event']['parts'][anid] for anid in part_ids}
 
         def check(reg: CdEDBObject) -> bool:
-            if not reg['list_consent']:
+            if not reg['list_consent'] and not orga_list:
                 return False
             participant = const.RegistrationPartStati.participant
             return any(
