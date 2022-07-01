@@ -9,7 +9,7 @@ from ldaptor.protocols.ldap import ldaperrors
 from ldaptor.protocols.ldap.distinguishedname import DistinguishedName
 from ldaptor.protocols.ldap.ldaperrors import LDAPException
 from ldaptor.protocols.ldap.ldapserver import LDAPServer
-from ldaptor.protocols.pureldap import LDAPSearchRequest
+from ldaptor.protocols.pureldap import LDAPCompareRequest, LDAPSearchRequest
 from twisted.internet import defer
 from twisted.internet.protocol import ServerFactory
 from twisted.python import log
@@ -189,10 +189,54 @@ class CdEDBLDAPServer(LDAPServer):
         d.addErrback(log.err)
         return d
 
+    async def _handle_compare_request(self, request: LDAPCompareRequest, controls, # type: ignore[no-untyped-def]
+                                      reply) -> None:
+        self.checkControls(controls)
+        base_dn = DistinguishedName(request.entry)
+        root: CdEDBBaseLDAPEntry = interfaces.IConnectedLDAPEntry(self.factory)
+
+        try:
+            base = await root._lookup(base_dn)
+        except LDAPException as e:
+            logger.error(f"Compare: Encountered {e}.")
+            reply(pureldap.LDAPCompareResponse(resultCode=e.resultCode))
+            return None
+        except Exception as e:
+            logger.error(
+                f"Compare: Encountered {e} during compare of {base_dn.getText()}.")
+            reply(pureldap.LDAPCompareResponse(resultCode=ldaperrors.other))
+            return None
+
+        bound_dn = self.boundUser.dn if self.boundUser else None
+        # base.search only works with Filter Objects, and not with
+        # AttributeValueAssertion objects. Here we convert the AVA to an
+        # equivalent Filter so we can re-use the existing search
+        # functionality we require.
+        search_filter = pureldap.LDAPFilter_equalityMatch(
+            attributeDesc=request.ava.attributeDesc,
+            assertionValue=request.ava.assertionValue
+        )
+        search_results = await base._search(
+            filterObject=search_filter,
+            scope=pureldap.LDAP_SCOPE_baseObject,
+            derefAliases=pureldap.LDAP_DEREF_neverDerefAliases,
+            bound_dn=bound_dn,  # derivates from the interface specification!
+        )
+
+        if search_results:
+            reply(pureldap.LDAPCompareResponse(ldaperrors.LDAPCompareTrue.resultCode))
+        else:
+            reply(pureldap.LDAPCompareResponse(ldaperrors.LDAPCompareFalse.resultCode))
+
+        return None
+
     def handle_LDAPCompareRequest(self, request, controls, reply) -> defer.Deferred:  # type: ignore[no-untyped-def, type-arg]
         if self.boundUser is None:
             return defer.fail(ldaperrors.LDAPUnwillingToPerform("No anonymous compare"))
-        return super().handle_LDAPCompareRequest(request, controls, reply)
+        d = defer.Deferred.fromFuture(get_running_loop().create_task(
+            self._handle_compare_request(request, controls, reply)))
+        d.addErrback(log.err)
+        return d
 
     def handle_LDAPDelRequest(self, request, controls, reply) -> defer.Deferred:  # type: ignore[no-untyped-def, type-arg]
         return defer.fail(ldaperrors.LDAPUnwillingToPerform("Not implemented"))

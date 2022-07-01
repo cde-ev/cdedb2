@@ -142,6 +142,22 @@ class TestLDAP(BasicTest):
         #     'dn:' + 'uid=1,ou=users,dc=cde-ev,dc=de', conn.extend.standard.who_am_i())
         self.assertTrue(conn.unbind())
 
+    def test_anonymous_compare(self) -> None:
+        conn = ldap3.Connection(self.server)
+        conn.bind()
+        conn.compare("dc=de", "dc", "asdf")
+        self.assertEqual("unwillingToPerform", conn.result["description"])
+
+    def test_compare(self) -> None:
+        user = "uid=1,ou=users,dc=cde-ev,dc=de"
+        with ldap3.Connection(
+            self.server, user=user, password=self.USERS[user], raise_exceptions=True
+        ) as conn:
+            conn.compare(user, "sn", "Administrator")
+            self.assertEqual("compareTrue", conn.result["description"])
+            conn.compare(user, "sn", "Beispiel")
+            self.assertEqual("compareFalse", conn.result["description"])
+
     def test_anonymous_search(self) -> None:
         """Anonymous clients are only allowed to bind."""
         conn = ldap3.Connection(self.server)
