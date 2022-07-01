@@ -19,7 +19,7 @@ import abc
 import datetime
 import enum
 import itertools
-from typing import Collection, Dict, Iterable, List, Optional, Sequence, Set, Tuple
+from typing import Collection, Dict, Iterator, List, Optional, Sequence, Set, Tuple
 
 import cdedb.database.constants as const
 from cdedb.common import AgeClasses, CdEDBObject, CdEDBObjectMap, deduct_years, unwrap
@@ -841,7 +841,7 @@ class EventRegistrationInXChoiceGrouper:
 
     def __iter__(
             self
-    ) -> Iterable[Tuple[int, Dict[str, Dict[int, Optional[Set[int]]]]]]:
+    ) -> Iterator[Tuple[int, Dict[str, Dict[int, Optional[Set[int]]]]]]:
         """Iterate over all x choices, for each one return sorted counts by type."""
         ret = {
             x: {
