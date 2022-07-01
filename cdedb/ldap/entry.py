@@ -17,8 +17,7 @@ from ldaptor.protocols.ldap.distinguishedname import (
     DistinguishedName, RelativeDistinguishedName,
 )
 from ldaptor.protocols.ldap.ldaperrors import (
-    LDAPException, LDAPInvalidCredentials, LDAPNoSuchObject, LDAPProtocolError,
-    LDAPUnwillingToPerform,
+    LDAPInvalidCredentials, LDAPNoSuchObject, LDAPProtocolError, LDAPUnwillingToPerform,
 )
 from twisted.internet.defer import Deferred, fail, succeed
 from twisted.python import log
@@ -28,11 +27,6 @@ from cdedb.ldap.backend import LDAPObject, LDAPObjectMap, LDAPsqlBackend
 Callback = Callable[[Any], None]
 LDAPEntries = List["CdEDBBaseLDAPEntry"]
 BoundDn = Optional[Union[int, DistinguishedName]]
-
-
-# TODO where is the right place to catch (this) error if raised in an async function?
-class LDAPTreeNoSuchEntry(LDAPException):
-    """The ldap tree does not contain such an object."""
 
 
 logger = logging.getLogger(__name__)
@@ -112,27 +106,19 @@ class CdEDBBaseLDAPEntry(
         d.addErrback(log.err)
         return d
 
-    def search(
+    async def _search(
         self,
         filterText: Any = None,
         filterObject: Any = None,
-        attributes: Any = (),
+        # attributes: Any = (),
         scope: Any = None,
         derefAliases: Any = None,
-        sizeLimit: Any = 0,
-        timeLimit: Any = 0,
-        typesOnly: Any = 0,
-        callback: Callback = None,
+        # sizeLimit: Any = 0,
+        # timeLimit: Any = 0,
+        # typesOnly: Any = 0,
         bound_dn: BoundDn = -1,
-    ) -> Deferred[None]:
-        """Slightly modified version of ldaptor.entryhelpers.SearchByTreeWalkingMixin
-
-        The original function does not respect the correct execution order in
-        combination with the async _children function: It sends the 'SearchResultDone'
-        message before we have time to send the search results.
-
-        This function made the assumption that the given callback is never None (in
-        contrast to the original function) – until now, this seems a valid assumption.
+    ) -> List["CdEDBBaseLDAPEntry"]:
+        """Asyncio analogon to ldaptor.entryhelpers.SearchByTreeWalkingMixin.
 
         Note that our search accepted an additional kwarg "bound_dn". This should be
         used to prevent ddos attacks: Instead of performing all database searches for
@@ -145,10 +131,6 @@ class CdEDBBaseLDAPEntry(
         :param bound_dn: Either the DN of the user performing the search, or None if
             an anonymous search is performed, or -1 if it shall be ignored.
         """
-        if callback is None:
-            logger.error("No 'callback' in Search provided!")
-        assert callback is not None
-
         if filterObject is None and filterText is None:
             filterObject = pureldap.LDAPFilterMatchAll
         elif filterObject is None and filterText is not None:
@@ -166,34 +148,35 @@ class CdEDBBaseLDAPEntry(
 
         # choose iterator: base/children/subtree
         if scope == pureldap.LDAP_SCOPE_wholeSubtree:
+            entries = await self._subtree(bound_dn)
             # in the special case of subtree search, the base object shall be included
-            if self.match(filterObject):
-                callback(self)
-            iterator = self._subtree
+            entries.insert(0, self)
         elif scope == pureldap.LDAP_SCOPE_singleLevel:
-            iterator = self._children  # type: ignore[assignment]
+            entries = await self._children(bound_dn)
         elif scope == pureldap.LDAP_SCOPE_baseObject:
-
-            async def iterate_self(callback: Callback, bound_dn: BoundDn = -1) -> None:
-                callback(self)
-                return None
-
-            iterator = iterate_self  # type: ignore[assignment]
+            entries = [self]
         else:
             raise LDAPProtocolError("unknown search scope: %r" % scope)
 
-        # gather results, send them
-        def _tryMatch(entry: "CdEDBBaseLDAPEntry") -> None:
-            if entry.match(filterObject):
-                assert callback is not None
-                callback(entry)
+        matched = [entry for entry in entries if entry.match(filterObject)]
+        return matched
 
-        return Deferred.fromFuture(
-            get_running_loop().create_task(iterator(_tryMatch, bound_dn=bound_dn)))
+    def search(
+        self,
+        filterText: Any = None,
+        filterObject: Any = None,
+        attributes: Any = (),
+        scope: Any = None,
+        derefAliases: Any = None,
+        sizeLimit: Any = 0,
+        timeLimit: Any = 0,
+        typesOnly: Any = 0,
+    ) -> Deferred[None]:
+        """This will not be implemented by children classes, use _search instead."""
+        raise NotImplementedError
 
     @abc.abstractmethod
-    async def _children(self, callback: Callback = None, bound_dn: BoundDn = -1
-                        ) -> Optional[LDAPEntries]:
+    async def _children(self, bound_dn: BoundDn = -1) -> LDAPEntries:
         """List children entries of this entry.
 
         Note that the children are already instantiated.
@@ -205,31 +188,26 @@ class CdEDBBaseLDAPEntry(
 
     def children(self, callback: Callback = None) -> Deferred[Optional[LDAPEntries]]:
         d = Deferred.fromFuture(
-            get_running_loop().create_task(self._children(callback)))
+            get_running_loop().create_task(self._children()))
         d.addErrback(log.err)
         return d
 
-    async def _subtree(self, callback: Optional[Callback],
-                       bound_dn: BoundDn = -1) -> None:
-        """Apply a callback function to every entry of the current ones subtree.
+    async def _subtree(self, bound_dn: BoundDn = -1) -> List["CdEDBBaseLDAPEntry"]:
+        """Retrieve every entry of this entries subtree.
 
         This is especially needed in subtree searches.
 
         :param bound_dn: Either the DN of the user performing the search, or None if
             an anonymous search is performed, or -1 if it shall be ignored.
         """
-        if callback is None:
-            logger.error("No 'callback' in Subtree provided!")
-        children = await self._children(callback, bound_dn=bound_dn)
-        if children:
-            for child in children:
-                await child._subtree(callback, bound_dn=bound_dn)
-        return None
+        children = await self._children(bound_dn=bound_dn)
+        for child in children:
+            children.extend(await child._subtree(bound_dn))
+        return children
 
     def subtree(self, callback: Callback = None) -> Deferred[None]:
-        d = Deferred.fromFuture(get_running_loop().create_task(self._subtree(callback)))
-        d.addErrback(log.err)
-        return d
+        """This will not be implemented by children classes, use _subtree instead."""
+        raise NotImplementedError
 
     @abc.abstractmethod
     async def _lookup(self, dn: DistinguishedName) -> "CdEDBBaseLDAPEntry":
@@ -393,16 +371,11 @@ class CdEPreLeafEntry(CdEDBStaticEntry, metaclass=abc.ABCMeta):
         """
         raise NotImplementedError
 
-    async def _children(self, callback: Callback = None, bound_dn: BoundDn = -1
-                        ) -> Optional[LDAPEntries]:
+    async def _children(self, bound_dn: BoundDn = -1) -> LDAPEntries:
         dns = await self.children_lister(bound_dn=bound_dn)
         children = await self.children_getter(dns)
         ret = [self.ChildGroup(dn, backend=self.backend, attributes=attributes) for
                dn, attributes in children.items()]
-
-        if callback:
-            for child in ret:
-                callback(child)
         return ret
 
     async def _lookup(self, dn: DistinguishedName) -> CdEDBBaseLDAPEntry:
@@ -434,10 +407,9 @@ class CdEDBLeafEntry(CdEDBBaseLDAPEntry, metaclass=abc.ABCMeta):
         return {k: self._attributes[k] for k in
                 attributes} if attributes else self._attributes
 
-    async def _children(self, callback: Callback = None, bound_dn: BoundDn = -1
-                        ) -> Optional[LDAPEntries]:
+    async def _children(self, bound_dn: BoundDn = -1) -> LDAPEntries:
         """All dynamic entries do not have any children by design."""
-        return None
+        return []
 
     async def _lookup(self, dn: DistinguishedName) -> CdEDBBaseLDAPEntry:
         if dn == self.dn:
@@ -459,13 +431,9 @@ class RootEntry(CdEDBStaticEntry):
         })
         return {k: attrs[k] for k in attributes} if attributes else attrs
 
-    async def _children(self, callback: Callback = None, bound_dn: BoundDn = -1
-                        ) -> Optional[LDAPEntries]:
+    async def _children(self, bound_dn: BoundDn = -1) -> LDAPEntries:
         de = DeEntry(self.backend)
         subschema = SubschemaEntry(self.backend)
-        if callback:
-            callback(de)
-            callback(subschema)
         return [de, subschema]
 
     async def _lookup(self, dn: DistinguishedName) -> CdEDBBaseLDAPEntry:
@@ -506,9 +474,8 @@ class SubschemaEntry(CdEDBStaticEntry):
         }
         return {k: attrs[k] for k in attributes} if attributes else attrs  # type: ignore[misc, return-value]
 
-    async def _children(self, callback: Callback = None, bound_dn: BoundDn = -1
-                        ) -> Optional[LDAPEntries]:
-        return None
+    async def _children(self, bound_dn: BoundDn = -1) -> LDAPEntries:
+        return []
 
     async def _lookup(self, dn: DistinguishedName) -> CdEDBBaseLDAPEntry:
         if dn == self.dn:
@@ -530,11 +497,8 @@ class DeEntry(CdEDBStaticEntry):
         }
         return {k: attrs[k] for k in attributes} if attributes else attrs
 
-    async def _children(self, callback: Callback = None, bound_dn: BoundDn = -1
-                        ) -> Optional[LDAPEntries]:
+    async def _children(self, bound_dn: BoundDn = -1) -> LDAPEntries:
         cde = CdeEvEntry(self.backend)
-        if callback:
-            callback(cde)
         return [cde]
 
     async def _lookup(self, dn: DistinguishedName) -> CdEDBBaseLDAPEntry:
@@ -561,16 +525,10 @@ class CdeEvEntry(CdEDBStaticEntry):
         }
         return {k: attrs[k] for k in attributes} if attributes else attrs
 
-    async def _children(self, callback: Callback = None, bound_dn: BoundDn = -1
-                        ) -> Optional[LDAPEntries]:
+    async def _children(self, bound_dn: BoundDn = -1) -> LDAPEntries:
         duas = DuasEntry(self.backend)
         users = UsersEntry(self.backend)
         groups = GroupsEntry(self.backend)
-
-        if callback:
-            callback(duas)
-            callback(users)
-            callback(groups)
         return [duas, users, groups]
 
     async def _lookup(self, dn: DistinguishedName) -> CdEDBBaseLDAPEntry:
@@ -680,20 +638,12 @@ class GroupsEntry(CdEDBStaticEntry):
         }
         return {k: attrs[k] for k in attributes} if attributes else attrs
 
-    async def _children(self, callback: Callback = None, bound_dn: BoundDn = -1
-                        ) -> Optional[LDAPEntries]:
+    async def _children(self, bound_dn: BoundDn = -1) -> LDAPEntries:
         status = StatusGroupsEntry(self.backend)
         presiders = PresiderGroupsEntry(self.backend)
         orgas = OrgaGroupsEntry(self.backend)
         moderators = ModeratorGroupsEntry(self.backend)
         subscribers = SubscriberGroupsEntry(self.backend)
-
-        if callback:
-            callback(status)
-            callback(presiders)
-            callback(orgas)
-            callback(moderators)
-            callback(subscribers)
         return [status, presiders, orgas, moderators, subscribers]
 
     async def _lookup(self, dn: DistinguishedName) -> CdEDBBaseLDAPEntry:

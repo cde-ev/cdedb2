@@ -1,18 +1,23 @@
 """Custom ldaptor server."""
 
-from typing import Any
+import logging
+from asyncio import get_running_loop
 
 from ldaptor import interfaces
 from ldaptor.protocols import pureldap
 from ldaptor.protocols.ldap import ldaperrors
 from ldaptor.protocols.ldap.distinguishedname import DistinguishedName
+from ldaptor.protocols.ldap.ldaperrors import LDAPException
 from ldaptor.protocols.ldap.ldapserver import LDAPServer
 from ldaptor.protocols.pureldap import LDAPSearchRequest
 from twisted.internet import defer
 from twisted.internet.protocol import ServerFactory
+from twisted.python import log
 
 from cdedb.ldap.backend import LDAPsqlBackend
 from cdedb.ldap.entry import CdEDBBaseLDAPEntry, RootEntry
+
+logger = logging.getLogger(__name__)
 
 
 class CdEDBLDAPServer(LDAPServer):
@@ -23,55 +28,61 @@ class CdEDBLDAPServer(LDAPServer):
     """
 
     def getRootDSE(self, request, reply):  # type: ignore[no-untyped-def]
-        """Shortcut to retrieve the root entry."""
-        root: CdEDBBaseLDAPEntry = interfaces.IConnectedLDAPEntry(self.factory)
-        # prepare the attributes of the root entry as they are expected by the Result
-        attributes = list(root._fetch().items())  # pylint: disable=protected-access
+        """Helper function which should never be called from outside."""
+        raise NotImplementedError
 
-        reply(
-            pureldap.LDAPSearchResultEntry(
-                objectName=root.dn.getText(), attributes=attributes
-            )
-        )
-        return pureldap.LDAPSearchResultDone(resultCode=ldaperrors.Success.resultCode)
+    def _cbSearchLDAPError(self, reason):  # type: ignore[no-untyped-def]
+        """Helper function which should never be called from outside."""
+        raise NotImplementedError
 
-    def _cbSearchLDAPError(self, reason):
-        reason.trap(ldaperrors.LDAPException)
-        return pureldap.LDAPSearchResultDone(resultCode=reason.value.resultCode)
-
-    def _cbSearchOtherError(self, reason):
-        return pureldap.LDAPSearchResultDone(
-            resultCode=ldaperrors.other, errorMessage=reason.getErrorMessage()
-        )
+    def _cbSearchOtherError(self, reason):  # type: ignore[no-untyped-def]
+        """Helper function which should never be called from outside."""
+        raise NotImplementedError
 
     fail_LDAPSearchRequest = pureldap.LDAPSearchResultDone
 
-    def handle_LDAPSearchRequest(self, request, controls, reply):
+    async def _handle_search_request(self, request: LDAPSearchRequest, controls,  # type: ignore[no-untyped-def]
+                                     reply) -> None:
         self.checkControls(controls)
 
+        root: CdEDBBaseLDAPEntry = interfaces.IConnectedLDAPEntry(self.factory)
+        base_dn = DistinguishedName(request.baseObject)
+
+        # short-circuit if the requested entry is the root entry
         if (
             request.baseObject == b""
             and request.scope == pureldap.LDAP_SCOPE_baseObject
             and request.filter == pureldap.LDAPFilter_present("objectClass")
         ):
-            return self.getRootDSE(request, reply)
-        dn = DistinguishedName(request.baseObject)
-        root = interfaces.IConnectedLDAPEntry(self.factory)
-        d = root.lookup(dn)
-        d.addCallback(self._cbSearchGotBase, dn, request, reply)
-        d.addErrback(self._cbSearchLDAPError)
-        d.addErrback(defer.logError)
-        d.addErrback(self._cbSearchOtherError)
-        return d
+            # prepare the attributes of the root entry as they are expected
+            attributes = list(root._fetch().items())  # pylint: disable=protected-access
+            reply(pureldap.LDAPSearchResultEntry(
+                objectName=root.dn.getText(), attributes=attributes))
+            reply(pureldap.LDAPSearchResultDone(
+                resultCode=ldaperrors.Success.resultCode))
+            return None
 
-    def _cbSearchGotBase(
-            self, base: CdEDBBaseLDAPEntry, dn: DistinguishedName,
-            request: LDAPSearchRequest, reply: Any
-    ) -> defer.Deferred[None]:
-        """Callback which is invoked after a search was performed."""
+        try:
+            base = await root._lookup(base_dn)
+        except LDAPException as e:
+            logger.error(f"Search: Encountered {e}.")
+            reply(pureldap.LDAPSearchResultDone(resultCode=e.resultCode))
+            return None
 
-        def _sendEntryToClient(entry: CdEDBBaseLDAPEntry) -> None:
-            """The callback function which sends the entry after it was found.
+        bound_dn = self.boundUser.dn if self.boundUser else None
+        search_results = await base._search(
+            filterObject=request.filter,
+            # attributes=request.attributes,
+            scope=request.scope,
+            derefAliases=request.derefAliases,
+            # sizeLimit=request.sizeLimit,
+            # timeLimit=request.timeLimit,
+            # typesOnly=request.typesOnly,
+            bound_dn=bound_dn,  # derivates from the interface specification!
+        )
+
+        def send_entry_to_client(entry: CdEDBBaseLDAPEntry) -> None:
+            """Sent an entry to the client.
 
             This is the main place where our security restrictions are implemented.
             We currently restrict:
@@ -166,26 +177,16 @@ class CdEDBLDAPServer(LDAPServer):
                                                  attributes=filtered_attributes))
             return None
 
-        bound_dn = self.boundUser.dn if self.boundUser else None
+        for result in search_results:
+            send_entry_to_client(result)
+        reply(pureldap.LDAPSearchResultDone(resultCode=ldaperrors.Success.resultCode))
 
-        d = base.search(
-            filterObject=request.filter,
-            attributes=request.attributes,
-            scope=request.scope,
-            derefAliases=request.derefAliases,
-            sizeLimit=request.sizeLimit,
-            timeLimit=request.timeLimit,
-            typesOnly=request.typesOnly,
-            callback=_sendEntryToClient,
-            bound_dn=bound_dn,  # derivates from the interface specification!
-        )
+        return None
 
-        def _done(_: Any) -> pureldap.LDAPSearchResultDone:
-            return pureldap.LDAPSearchResultDone(
-                resultCode=ldaperrors.Success.resultCode
-            )
-
-        d.addCallback(_done)
+    def handle_LDAPSearchRequest(self, request: LDAPSearchRequest, controls, reply) -> defer.Deferred:  # type: ignore[no-untyped-def, type-arg]
+        d = defer.Deferred.fromFuture(get_running_loop().create_task(
+            self._handle_search_request(request, controls, reply)))
+        d.addErrback(log.err)
         return d
 
     def handle_LDAPCompareRequest(self, request, controls, reply) -> defer.Deferred:  # type: ignore[no-untyped-def, type-arg]
