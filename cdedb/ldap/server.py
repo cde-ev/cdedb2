@@ -68,6 +68,11 @@ class CdEDBLDAPServer(LDAPServer):
             logger.error(f"Search: Encountered {e}.")
             reply(pureldap.LDAPSearchResultDone(resultCode=e.resultCode))
             return None
+        except Exception as e:
+            logger.error(
+                f"Search: Encountered {e} during compare of {base_dn.getText()}.")
+            reply(pureldap.LDAPSearchResultDone(resultCode=ldaperrors.other))
+            return None
 
         bound_dn = self.boundUser.dn if self.boundUser else None
         search_results = await base._search(
