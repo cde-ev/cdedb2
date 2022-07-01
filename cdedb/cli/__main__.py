@@ -18,7 +18,7 @@ from cdedb.cli.dev.serve import serve_debugger
 from cdedb.cli.dev.sql2json import sql2json
 from cdedb.cli.storage import (
     create_log, create_storage, populate_event_keeper, populate_sample_event_keepers,
-    populate_storage, reset_config,
+    populate_storage, reset_config
 )
 from cdedb.cli.util import get_user, pass_config, pass_secrets, switch_user
 from cdedb.common import CustomJSONEncoder
@@ -103,9 +103,9 @@ def populate_storage_cmd(config: TestConfig, owner: str) -> None:
 @storage.command(name="populate-event-keeper")
 @click.argument('event_id', type=int)
 @click.pass_obj
-def populate_event_keeper_cmd(owner: str, event_id: int) -> None:
+@pass_config
+def populate_event_keeper_cmd(config: TestConfig, owner: str, event_id: int) -> None:
     """Populate the event keeper."""
-    config = Config()
     path = config['STORAGE_DIR'] / 'event_keeper'
     with switch_user(owner):
         path.mkdir(parents=True, exist_ok=True)
