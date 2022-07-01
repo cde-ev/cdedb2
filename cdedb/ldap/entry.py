@@ -200,9 +200,11 @@ class CdEDBBaseLDAPEntry(
         :param bound_dn: Either the DN of the user performing the search, or None if
             an anonymous search is performed, or -1 if it shall be ignored.
         """
+        subtree = []
         children = await self._children(bound_dn=bound_dn)
         for child in children:
-            children.extend(await child._subtree(bound_dn))
+            subtree.extend(await child._subtree(bound_dn))
+        children.extend(subtree)
         return children
 
     def subtree(self, callback: Callback = None) -> Deferred[None]:
