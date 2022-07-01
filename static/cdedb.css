@@ -1132,6 +1132,11 @@ ul.styleless {
     clear: both;
 }
 
+/* Display icons in light gray. */
+span.fag {
+    color: #aaaaaa;
+}
+
 /*
  * the following should be replaced with
  * display: inline-flex; width: auto;

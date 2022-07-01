@@ -18,6 +18,13 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "Generated-By: Babel 2.6.0\n"
 
+msgid ""
+"Display the lodgement groups of the assigned lodgements as clusters (reduces "
+"graph layout quality)"
+msgstr ""
+"Zeige die Unterkunftsgruppen der zugewiesenen Unterkünfte als Cluster an "
+"(verschlechtert die Qualität des Graph-Layouts)"
+
 msgid "Insufficient admin privileges."
 msgstr "Unzulängliche Adminrechte."
 
@@ -26,6 +33,9 @@ msgstr "Öffentlich (Nur durch Moderatoren)"
 
 msgid "MailinglistTypes.general_moderated_opt_in"
 msgstr "Öffentlich (Moderiertes Opt-in)"
+
+msgid "Show Lodgement Groups"
+msgstr "Zeige Unterkunftsgruppen"
 
 #: bin/archive/migrate_execute.py:394
 msgid "Initial import."
@@ -4821,6 +4831,13 @@ msgstr ""
 "Der Hauswünsche-Graph ist nur verfügbar, wenn in der Veranstaltungs-"
 "Konfiguration ein Feld für Hauswünsche festgelegt wurde."
 
+#: cdedb/frontend/event/lodgement.py:419
+msgid ""
+"Clusters can only be displayed if the graph is restricted to a specific part."
+msgstr ""
+"Cluster können nur angezeigt werden, wenn der Graph auf einen einzelnen "
+"Veranstaltungsteil eingeschränkt wird."
+
 #: cdedb/frontend/event/lodgement.py:419 cdedb/frontend/event/lodgement.py:420
 msgid ""
 "Lodgement clusters can only be displayed if the graph is restricted to a "
@@ -4852,7 +4869,7 @@ msgid ""
 msgstr ""
 "Unterdrücke Wunsche-Kante von %(from_name)s zu %(to_name)s da sie nicht "
 "gemeinsam anwesend sein werden (selbst, wenn man die Warteliste "
-"brücksichtigt)."
+"berücksichtigt)."
 
 #: cdedb/frontend/event/lodgement_wishes.py:392
 msgid "Waitlist: "
@@ -5014,6 +5031,12 @@ msgstr "Unterkunft"
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:105
 msgid "Camping Mat"
 msgstr "Isomatte"
+
+msgid "Assigned to sleep on a Camping Mat."
+msgstr "Auf eine Isomatte eingeteilt."
+
+msgid "May sleep on a Camping Mat."
+msgstr "Kann auf einer Isomatte schlafen."
 
 #: cdedb/frontend/event/query.py:214 cdedb/frontend/event/query.py:215
 msgid "Invalid query name."
@@ -13536,7 +13559,7 @@ msgid ""
 "the mouse-over tooltip of the nodes. The nodes are hyperlinked to the "
 "details page of the participant."
 msgstr ""
-"Jeder Knoten repräsentiert einem Teilnehmer. Teilnehmer auf der Warteliste "
+"Jeder Knoten repräsentiert einen Teilnehmer. Teilnehmer auf der Warteliste "
 "sind ebenfalls im Graph enthalten, werden jedoch mit einer gestrichelten "
 "Umrandung dargestellt. Die Hintergrundfarbe der Knoten entspricht grob dem "
 "Alter der Teilnehmer. Weitere Informationen über einen Teilnehmer werden im "

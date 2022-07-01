@@ -1068,7 +1068,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Übersicht Einzugsermächtigungen")
         # self.traverse({'href': '^/$'})
         self.admin_view_profile('berta')
-        self.assertPresence("17,50 €")
+        self.assertPresence("20,50 €")
         self.traverse({'description': 'Einzugsermächtigung'})
         f = self.response.forms['transactionrollbackform1001']
         self.submit(f)
@@ -1837,8 +1837,8 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Später zu erledigen.", div='next-semester')
 
         self.assertPresence(
-            "Derzeit haben 0 Mitglieder ein zu niedriges Guthaben "
-            "(insgesamt 0,00 €, davon 0 mit einer aktiven Einzugsermächtigung)."
+            "Derzeit haben 2 Mitglieder ein zu niedriges Guthaben "
+            "(insgesamt 6,44 €, davon 0 mit einer aktiven Einzugsermächtigung)."
             " Zusätzlich gibt es 2 Probemitglieder.", div='eject-members')
         # Check error handling for bill
         self.submit(f, check_notification=False)
@@ -1856,7 +1856,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Erledigt am", div='eject-members')
         self.assertPresence("Später zu erledigen.", div='next-semester')
 
-        self.assertPresence("Insgesamt 8 Mitglieder, 2 davon haben eine "
+        self.assertPresence("Insgesamt 6 Mitglieder, 2 davon haben eine "
                             "Probemitgliedschaft", div='balance-update')
         # Check error handling for eject
         self.submit(f, check_notification=False)
@@ -1900,8 +1900,8 @@ class TestCdEFrontend(FrontendTest):
 
         # 2.2 Remove Inactive Members
         self.assertPresence(
-            "Derzeit haben 3 Mitglieder ein zu niedriges Guthaben "
-            "(insgesamt 2,44 €, davon 0 mit einer aktiven Einzugsermächtigung)."
+            "Derzeit haben 1 Mitglieder ein zu niedriges Guthaben "
+            "(insgesamt 1,00 €, davon 0 mit einer aktiven Einzugsermächtigung)."
             " Zusätzlich gibt es 0 Probemitglieder.", div='eject-members')
 
         f = self.response.forms['ejectform']
@@ -1931,14 +1931,14 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'CdE-Log'})
         self.assertTitle("CdE-Log [1–12 von 12]")
         self.assertPresence("1 E-Mails versandt.", div="2-1002")
-        self.assertPresence("0 inaktive Mitglieder gestrichen.", div="3-1003")
+        self.assertPresence("2 inaktive Mitglieder gestrichen.", div="3-1003")
         self.assertPresence("1 Accounts archiviert.", div="4-1004")
         self.assertPresence("2 Probemitgliedschaften beendet", div="5-1005")
-        self.assertPresence("15.00 € Guthaben abgebucht.", div="5-1005")
+        self.assertPresence("16.00 € Guthaben abgebucht.", div="5-1005")
 
-        self.assertPresence("3 inaktive Mitglieder gestrichen.", div="9-1009")
+        self.assertPresence("1 inaktive Mitglieder gestrichen.", div="9-1009")
         self.assertPresence("0 Probemitgliedschaften beendet", div="11-1011")
-        self.assertPresence("12.50 € Guthaben abgebucht.", div="11-1011")
+        self.assertPresence("20.00 € Guthaben abgebucht.", div="11-1011")
 
         # Check that the weak references to all workers are dead.
         for name, ref in Worker.active_workers.items():

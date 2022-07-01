@@ -38,7 +38,7 @@ steps:
   # which would not be cleared from docker cache
   - docker build --file related/docker/Dockerfile-postgres --tag cdepostgres .
   - docker build --file related/docker/Dockerfile-cdedb --tag cdedb .
-  - docker build --file related/docker/Dockerfile-ldap --tag ldap .
+  - docker build --file related/docker/Dockerfile-ldaptor --tag ldaptor .
 - name: cdb # is used as the hostname for the container
   image: cdepostgres
   pull: never # do not try to pull image from docker hub
@@ -57,13 +57,14 @@ steps:
     - cdb
   environment:
     CDEDB_CONFIGPATH: tests/config/test_1.py
+    POSTGRES_PASSWORD: passwd
   commands:
     - make i18n-compile # needed for sample-data creation in evolution-trial.sh
     - python3 -m cdedb filesystem log create # TODO needed during dependencies of script.py
     - sleep 3 # wait for posgres container to start up
     - pg_isready --host=cdb --timeout=15 # wait for database to come online
     - python3 -m cdedb db create-users # basic setup of the database for all following tests
-    - bin/evolution-trial.sh origin/$DRONE_TARGET_BRANCH $DRONE_COMMIT || (git checkout ci/workdir && exit 1)
+    - bin/evolution-trial.sh origin/$DRONE_TARGET_BRANCH ci/workdir || (git checkout ci/workdir && exit 1)
     - git checkout ci/workdir
 - name: mypy
   image: cdedb
@@ -106,7 +107,7 @@ steps:
   - python3 -m cdedb dev compile-sample-data-sql --outfile - > tests/ancillary_files/sample_data.sql
   - python3 -m cdedb db populate # ... and populates it
 - name: ldap # is used as the hostname for the container
-  image: ldap
+  image: ldaptor
   pull: never # do not try to pull image from docker hub
   detach: true # detach to keep running for the following steps
   depends_on:
@@ -116,11 +117,7 @@ steps:
       - failure
       - success
   environment:
-    # we use the database without a name as only readonly access is required
-    # and this will work regardless of the id the testing container gets
-    DATABASE_NAME: cdb_test_ldap
-    DATABASE_HOST: cdb # server on which ldap will listen
-    DATABASE_CDB_ADMIN_PASSWORD: 9876543210abcdefghijklmnopqrst
+    CDEDB_CONFIGPATH: tests/config/test_ldap.py
 - name: frontend tests a-d
   image: cdedb
   pull: never # do not try to pull image from docker hub
@@ -185,9 +182,11 @@ steps:
   volumes:
   - name: tmp_dir
     path: /tmp
+  - name: coverage
+    path: /coverage
   commands:
-  - sleep 40 # wait until the ldap server comes online
-  - bin/check.py --verbose --all-ldap
+  - sleep 10 # wait until the ldap server comes online
+  - COVERAGE_FILE=/coverage/.coverage.4 python3 -m coverage run -p bin/check.py --verbose --all-ldap
 - name: coverage
   image: cdedb
   pull: never
@@ -195,6 +194,7 @@ steps:
   - frontend tests a-d
   - frontend tests e-z
   - non-frontend tests
+  - ldap tests
   when:
     status:
       - failure
