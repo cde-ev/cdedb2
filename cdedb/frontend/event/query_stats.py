@@ -194,6 +194,11 @@ class StatisticMixin:
         query.order = order + query.order
         return query
 
+    @abc.abstractmethod
+    def get_query_part_group(self, event: CdEDBObject, part_group_id: int,
+                             registration_ids: Collection[int]) -> Query:
+        """Construct a merged query for all things in a part group."""
+
     def get_query_by_ids(self, event: CdEDBObject, entity_ids: Collection[int]
                          ) -> Query:
         """This queries information by exhaustion by listing all relevant ids."""
