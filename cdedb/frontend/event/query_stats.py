@@ -911,3 +911,7 @@ class EventRegistrationInXChoiceGrouper:
         elif part_group_id:
             return f"part_group_in_{x}_choice_{part_group_id}"
         return ""
+
+
+PART_STATISTICS = (EventRegistrationPartStatistic,)
+TRACK_STATISTICS = (EventRegistrationTrackStatistic, EventCourseStatistic)
