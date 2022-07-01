@@ -227,7 +227,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             part_ids = rs.ambience['event']['parts'].keys()
 
         data = self._get_participant_list_data(
-            rs, event_id, part_ids, sortkey or "persona", reverse=reverse)
+            rs, event_id, part_ids, sortkey=sortkey or "persona", reverse=reverse)
         if len(rs.ambience['event']['parts']) == 1:
             part_id = unwrap(rs.ambience['event']['parts'].keys())
         data['part_id'] = part_id
@@ -318,7 +318,8 @@ class EventBaseFrontend(AbstractUserFrontend):
             'personas': personas, 'ordered': ordered, 'parts': parts,
         }
 
-    def _get_user_lodgement_wishes(self, rs: RequestState, event_id: int) -> CdEDBObject:
+    def _get_user_lodgement_wishes(self, rs: RequestState, event_id: int
+                                   ) -> CdEDBObject:
         assert rs.user.persona_id is not None
         wish_data = {}
         if (rs.ambience['event']['is_participant_list_visible']
