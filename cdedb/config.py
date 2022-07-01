@@ -94,6 +94,9 @@ _DEFAULTS = {
     # port on which the database listens, preferably a pooler like pgbouncer
     "DB_PORT": 6432,
 
+    # port of the db itself, for skipping pooler during tests or deploys.
+    "DIRECT_DB_PORT": 5432,
+
     # host name where the ldap server is running
     "LDAP_HOST": "localhost",
 
