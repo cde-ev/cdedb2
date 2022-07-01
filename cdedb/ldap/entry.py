@@ -341,8 +341,7 @@ class CdEPreLeafEntry(CdEDBStaticEntry, metaclass=abc.ABCMeta):
     ChildGroup: Type["CdEDBLeafEntry"]
 
     @abc.abstractmethod
-    async def children_lister(self, bound_dn: BoundDn = -1
-                              ) -> List[RelativeDistinguishedName]:
+    async def children_lister(self, bound_dn: BoundDn = -1) -> List[DistinguishedName]:
         """List all children of this entry.
 
         The real work is done in the backend, this is only used to link the correct
@@ -571,8 +570,7 @@ class DuasEntry(CdEPreLeafEntry):
     def _parent(self) -> "CdEDBBaseLDAPEntry":
         return CdeEvEntry(self.backend)
 
-    async def children_lister(self, bound_dn: BoundDn = -1
-                              ) -> List[RelativeDistinguishedName]:
+    async def children_lister(self, bound_dn: BoundDn = -1) -> List[DistinguishedName]:
         if bound_dn != -1:
             # Anonymous requests or personas may not access duas
             if bound_dn is None or self.backend.is_user_dn(bound_dn):
@@ -607,8 +605,7 @@ class UsersEntry(CdEPreLeafEntry):
     def _parent(self) -> "CdEDBBaseLDAPEntry":
         return CdeEvEntry(self.backend)
 
-    async def children_lister(self, bound_dn: BoundDn = -1
-                              ) -> List[RelativeDistinguishedName]:
+    async def children_lister(self, bound_dn: BoundDn = -1) -> List[DistinguishedName]:
         if bound_dn != -1:
             # Anonymous requests may access no user
             if bound_dn is None:
@@ -692,8 +689,7 @@ class StatusGroupsEntry(CdEPreLeafEntry):
     def _parent(self) -> "CdEDBBaseLDAPEntry":
         return GroupsEntry(self.backend)
 
-    async def children_lister(self, bound_dn: BoundDn = -1
-                              ) -> List[RelativeDistinguishedName]:
+    async def children_lister(self, bound_dn: BoundDn = -1) -> List[DistinguishedName]:
         if bound_dn != -1:
             # Anonymous requests or personas may not access groups
             if bound_dn is None or self.backend.is_user_dn(bound_dn):
@@ -728,8 +724,7 @@ class PresiderGroupsEntry(CdEPreLeafEntry):
     def _parent(self) -> "CdEDBBaseLDAPEntry":
         return GroupsEntry(self.backend)
 
-    async def children_lister(self, bound_dn: BoundDn = -1
-                              ) -> List[RelativeDistinguishedName]:
+    async def children_lister(self, bound_dn: BoundDn = -1) -> List[DistinguishedName]:
         if bound_dn != -1:
             # Anonymous requests or personas may not access groups
             if bound_dn is None or self.backend.is_user_dn(bound_dn):
@@ -764,8 +759,7 @@ class OrgaGroupsEntry(CdEPreLeafEntry):
     def _parent(self) -> "CdEDBBaseLDAPEntry":
         return GroupsEntry(self.backend)
 
-    async def children_lister(self, bound_dn: BoundDn = -1
-                              ) -> List[RelativeDistinguishedName]:
+    async def children_lister(self, bound_dn: BoundDn = -1) -> List[DistinguishedName]:
         if bound_dn != -1:
             # Anonymous requests or personas may not access groups
             if bound_dn is None or self.backend.is_user_dn(bound_dn):
@@ -800,8 +794,7 @@ class ModeratorGroupsEntry(CdEPreLeafEntry):
     def _parent(self) -> "CdEDBBaseLDAPEntry":
         return GroupsEntry(self.backend)
 
-    async def children_lister(self, bound_dn: BoundDn = -1
-                              ) -> List[RelativeDistinguishedName]:
+    async def children_lister(self, bound_dn: BoundDn = -1) -> List[DistinguishedName]:
         if bound_dn != -1:
             # Anonymous requests or personas may not access groups
             if bound_dn is None or self.backend.is_user_dn(bound_dn):
@@ -836,8 +829,7 @@ class SubscriberGroupsEntry(CdEPreLeafEntry):
     def _parent(self) -> "CdEDBBaseLDAPEntry":
         return GroupsEntry(self.backend)
 
-    async def children_lister(self, bound_dn: BoundDn = -1
-                              ) -> List[RelativeDistinguishedName]:
+    async def children_lister(self, bound_dn: BoundDn = -1) -> List[DistinguishedName]:
         if bound_dn != -1:
             # Anonymous requests or personas may not access groups
             if bound_dn is None or self.backend.is_user_dn(bound_dn):
