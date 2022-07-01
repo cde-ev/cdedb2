@@ -10,10 +10,10 @@ e.g. `self.assertEqual("123", str(123))`.
 import asyncio
 from typing import Any
 
-import psycopg2.extras
-from aiopg import create_pool
 from ldaptor.protocols.ldap.distinguishedname import DistinguishedName as DN
 from ldaptor.protocols.pureber import ber2int, int2ber
+from psycopg.rows import dict_row
+from psycopg_pool import AsyncConnectionPool
 
 from cdedb.ldap.backend import LDAPsqlBackend, classproperty
 from tests.common import AsyncBasicTest, BasicTest
@@ -215,26 +215,26 @@ class AsyncLDAPBackendTest(AsyncBasicTest):
     ldap: LDAPsqlBackend
 
     async def asyncSetUp(self) -> None:
-        """Since each test has it's own event loop, we need to create a pool each time.
+        """Since each test has it's own event loop, we need to create a database
+        pool each time.
 
         This is somewhat expensive and asyncio complains when in debugmode, so we
         disable debugmode for the pool creation.
         """
         asyncio.get_running_loop().set_debug(False)
-        pool = await create_pool(
+        conn_params = dict(
             dbname=self.conf["CDB_DATABASE_NAME"],
             user="cdb_admin",
             password=self.secrets["CDB_DATABASE_ROLES"]["cdb_admin"],
             host=self.conf["DB_HOST"],
             port=self.conf["DB_PORT"],
-            cursor_factory=psycopg2.extras.RealDictCursor,
         )
+        conn_info = " ".join([f"{k}={v}" for k, v in conn_params.items()])
+        connect_kwargs = {"row_factory": dict_row}
+        pool = AsyncConnectionPool(conn_info, min_size=1, kwargs=connect_kwargs)
+        await pool.open(wait=True)
         asyncio.get_running_loop().set_debug(True)
         self.ldap = LDAPsqlBackend(pool)
-
-    async def asyncTearDown(self) -> None:
-        """Close the pool of the ldap backend."""
-        await self.ldap.close_pool()
 
     async def test_duas(self) -> None:
         dua_dns = await self.ldap.list_duas()

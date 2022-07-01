@@ -11,10 +11,10 @@ from twisted.internet import asyncioreactor
 
 asyncioreactor.install()
 
-import psycopg2.extras
 import twisted.python.log
-from aiopg import create_pool
 from ldaptor.interfaces import IConnectedLDAPEntry
+from psycopg.rows import dict_row
+from psycopg_pool import AsyncConnectionPool
 from twisted.internet import reactor
 from twisted.python.components import registerAdapter
 
@@ -35,16 +35,19 @@ async def main() -> None:
     observer = twisted.python.log.PythonLoggingObserver()
     observer.start()
 
-    logger.debug("Waiting for aiopg connection pool ...")
-    pool = await create_pool(
+    logger.debug("Waiting for database connection ...")
+    conn_params = dict(
         dbname=conf["CDB_DATABASE_NAME"],
         user="cdb_admin",
         password=secrets["CDB_DATABASE_ROLES"]["cdb_admin"],
         host=conf["DB_HOST"],
         port=conf["DB_PORT"],
-        cursor_factory=psycopg2.extras.RealDictCursor,
     )
-    logger.debug("Got aiopg connection pool.")
+    conn_info = " ".join([f"{k}={v}" for k, v in conn_params.items()])
+    conn_kwargs = {"row_factory": dict_row}
+    pool = AsyncConnectionPool(conn_info, min_size=1, max_size=10, kwargs=conn_kwargs)
+    await pool.open(wait=True)
+    logger.debug("Got database connection.")
     backend = LDAPsqlBackend(pool)
     factory = CdEDBLDAPServerFactory(backend, debug=True)
     # Tell twisted, how to transform the factory into an IConnectedLDAPEntry
