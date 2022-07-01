@@ -1516,7 +1516,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         ballot = rs.ambience['ballot']
         # sorting here ensures stable ordering for classical voting below
         candidates = xsorted(
-            [Candidate(e['shortname']) for e in ballot['candidates'].values()])
+            Candidate(e['shortname']) for e in ballot['candidates'].values())
         vote: Optional[str]
         if ballot['votes']:
             # classical voting
