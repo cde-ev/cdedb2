@@ -5,11 +5,12 @@ import copy
 import csv
 import datetime
 import decimal
+import itertools
 import json
 import re
 import tempfile
 import unittest
-from typing import Sequence, Union
+from typing import Collection, Optional, Sequence
 
 import lxml.etree
 import segno.helpers
@@ -24,7 +25,8 @@ from cdedb.filter import iban_filter
 from cdedb.frontend.common import CustomCSVDialect, make_event_fee_reference
 from cdedb.frontend.event import EventFrontend
 from cdedb.frontend.event.query_stats import (
-    EventRegistrationPartStatistic, EventRegistrationTrackStatistic, get_id_constraint,
+    PART_STATISTICS, TRACK_STATISTICS, EventRegistrationInXChoiceGrouper,
+    StatisticMixin, StatisticPartMixin, StatisticTrackMixin, get_id_constraint,
 )
 from tests.common import (
     USER_DICT, FrontendTest, UserObject, as_users, event_keeper, prepsql, storage,
@@ -3197,21 +3199,25 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         event = self.event.get_event(self.key, event_id)
 
         def _test_one_stat(
-                stat: Union[EventRegistrationPartStatistic,
-                            EventRegistrationTrackStatistic],
+                stat: StatisticMixin,
                 *, track_id: int = 0, part_id: int = 0, part_group_id: int = 0
         ) -> None:
+            """Only one of track_id, part_id and part_group_id should be given."""
+
+            # First retrieve the query for the given context id.
             if track_id:
-                assert isinstance(stat, EventRegistrationTrackStatistic)
+                assert isinstance(stat, StatisticTrackMixin)
                 query = stat.get_query(event, track_id)
             elif part_id:
-                if isinstance(stat, EventRegistrationTrackStatistic):
+                if isinstance(stat, StatisticTrackMixin):
                     query = stat.get_query_part(event, part_id, [-1])
                 else:
                     query = stat.get_query(event, part_id)
             else:
                 query = stat.get_query_part_group(event, part_group_id, [-1])
 
+            # Take special care if the query filters by id. Since we do not supply
+            #  valid ids, we cannot execute those queries.
             if get_id_constraint(stat.id_field, [-1]) in query.constraints:
                 num = None
             else:
@@ -3221,33 +3227,84 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                 track_id=track_id, part_id=part_id, part_group_id=part_group_id)
 
             with self.subTest(link_id=link_id):
+                # Find the single link with matching id.
                 [link] = self.response.html.find_all(id=link_id)
+                # If the query is not by id, check that the result equals the link text.
                 if num is not None:
                     self.assertEqual(int(link.text), num)
 
+        stat: StatisticMixin
+        part_stats: Collection[StatisticPartMixin] = tuple(
+            itertools.chain.from_iterable(PART_STATISTICS))
+        track_stats: Collection[StatisticTrackMixin] = tuple(
+            itertools.chain.from_iterable(TRACK_STATISTICS))
+
+        # Test single track stats.
         for track_id, track in event['tracks'].items():
-            for stat in EventRegistrationTrackStatistic:
+            for stat in track_stats:
                 _test_one_stat(stat, track_id=track_id)
+
+        # Test single part stats.
         for part_id, part in event['parts'].items():
-            for stat_ in EventRegistrationPartStatistic:
-                _test_one_stat(stat_, part_id=part_id)
-            if len(EventRegistrationTrackStatistic.get_track_ids(
-                    event, part_id=part_id
-            )) <= 1:
-                continue
-            for stat in EventRegistrationTrackStatistic:
+            for stat in part_stats:
                 _test_one_stat(stat, part_id=part_id)
+
+            # Skip track-based stats for parts with at most one track.
+            if len(StatisticMixin.get_track_ids(event, part_id=part_id)) <= 1:
+                continue
+            for stat in track_stats:
+                _test_one_stat(stat, part_id=part_id)
+
+        # Test single part group stats.
         for part_group_id, part_group in event['part_groups'].items():
+            # Skip all part groups with at most one part.
             if len(part_group['part_ids']) <= 1:
                 continue
-            for stat_ in EventRegistrationPartStatistic:
-                _test_one_stat(stat_, part_group_id=part_group_id)
-            if len(EventRegistrationTrackStatistic.get_track_ids(
-                    event, part_group_id=part_group_id
-            )) <= 1:
-                continue
-            for stat in EventRegistrationTrackStatistic:
+            for stat in part_stats:
                 _test_one_stat(stat, part_group_id=part_group_id)
+
+            if len(StatisticMixin.get_track_ids(
+                    event, part_group_id=part_group_id)) <= 1:
+                continue
+            for stat in track_stats:
+                _test_one_stat(stat, part_group_id=part_group_id)
+
+        registration_ids = self.event.list_registrations(self.key, event_id)
+        registrations = self.event.get_registrations(self.key, registration_ids)
+        grouper = EventRegistrationInXChoiceGrouper(event, registrations)
+
+        def _test_grouper_link(reg_ids: Optional[set[int]], link_id: str) -> None:
+            with self.subTest(link_id=link_id):
+                links = self.response.html.find_all(id=link_id)
+                if reg_ids is None:
+                    self.assertEqual(links, [])
+                else:
+                    [link] = links
+                    self.assertEqual(int(link.text), len(reg_ids))
+
+        for x, row in grouper:
+            for track_id, reg_ids in row['tracks'].items():
+                _test_grouper_link(reg_ids, grouper.get_link_id(x, track_id=track_id))
+            for part_id, reg_ids in row['parts'].items():
+                if len(StatisticMixin.get_track_ids(event, part_id=part_id)) <= 1:
+                    continue
+                _test_grouper_link(reg_ids, grouper.get_link_id(x, part_id=part_id))
+            for pg_id, reg_ids in row['part_groups'].items():
+                if len(StatisticMixin.get_track_ids(event, part_group_id=pg_id)) <= 1:
+                    continue
+                _test_grouper_link(reg_ids, grouper.get_link_id(x, part_group_id=pg_id))
+
+        part_stats_table = self.response.html.find(id="participant-stats")
+        track_stats_table = self.response.html.find(id="course-stats")
+
+        # Sporadically click on a few links.
+        n = 5
+        for table in (part_stats_table, track_stats_table):
+            for link in table.findAll("a")[::n]:
+                with self.subTest(clicked_link_id=link.attrs['id']):
+                    self.get(link["href"])
+                    self.assertPresence(f"Ergebnis [{link.text}]", div="query-results")
+
 
     @as_users("garcia")
     def test_course_stats(self) -> None:
