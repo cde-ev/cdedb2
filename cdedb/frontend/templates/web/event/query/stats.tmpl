@@ -109,7 +109,7 @@
                                         {% set query = grouper.get_query(ambience['event'], track_id, x) %}
                                         {{ util.href(
                                             cdedblink(query.scope.get_target(), query.serialize_to_url()) + "#query-results",
-                                            reg_ids|length, anid=grouper.get_link_id(x, part_id=part_id)) }}
+                                            reg_ids|length, anid=grouper.get_link_id(x, track_id=track_id)) }}
                                     {% endif %}
                                 </td>
                             {% endfor %}
