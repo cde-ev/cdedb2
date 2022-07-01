@@ -22,9 +22,7 @@ from cdedb.cli.storage import (
 )
 from cdedb.cli.util import get_user, pass_config, pass_secrets, switch_user
 from cdedb.common import CustomJSONEncoder
-from cdedb.config import (
-    DEFAULT_CONFIGPATH, Config, SecretsConfig, TestConfig, set_configpath,
-)
+from cdedb.config import DEFAULT_CONFIGPATH, SecretsConfig, TestConfig, set_configpath
 
 
 @click.group()
