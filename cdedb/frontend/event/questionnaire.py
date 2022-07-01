@@ -137,6 +137,8 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         """
         if rs.has_validation_errors() and not internal:
             return self.redirect(rs, "event/show_event")
+        add_questionnaire = unwrap(self.eventproxy.get_questionnaire(
+            rs, event_id, kinds=(const.QuestionnaireUsages.additional,)))
         wish_data = {}
         if not preview:
             registration_id = self.eventproxy.list_registrations(
@@ -152,14 +154,14 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             if self.is_locked(rs.ambience['event']):
                 rs.notify("info", n_("Event locked."))
             merge_dicts(rs.values, registration['fields'])
-            wish_data = self._get_user_lodgement_wishes(rs, event_id)
+            if field_id := rs.ambience['event']['lodge_field']:
+                if any(row['field_id'] == field_id for row in add_questionnaire):
+                    wish_data = self._get_user_lodgement_wishes(rs, event_id)
         else:
             if event_id not in rs.user.orga and not self.is_admin(rs):
                 raise werkzeug.exceptions.Forbidden(n_("Must be Orga to use preview."))
             if not rs.ambience['event']['use_additional_questionnaire']:
                 rs.notify("info", n_("Questionnaire is not enabled yet."))
-        add_questionnaire = unwrap(self.eventproxy.get_questionnaire(
-            rs, event_id, kinds=(const.QuestionnaireUsages.additional,)))
         return self.render(rs, "questionnaire/additional_questionnaire", {
             'add_questionnaire': add_questionnaire,
             'preview': preview,
