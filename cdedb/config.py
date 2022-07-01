@@ -94,6 +94,9 @@ _DEFAULTS = {
     # port on which the database listens, preferably a pooler like pgbouncer
     "DB_PORT": 6432,
 
+    # port of the db itself, for skipping pooler during tests or deploys.
+    "DIRECT_DB_PORT": 5432,
+
     # host name where the ldap server is running
     "LDAP_HOST": "localhost",
 
@@ -248,7 +251,7 @@ _DEFAULTS = {
     # maximal number of results for a member search
     "MAX_MEMBER_SEARCH_RESULTS": 200,
     # amount deducted from balance each period (semester)
-    "MEMBERSHIP_FEE": decimal.Decimal('2.50'),
+    "MEMBERSHIP_FEE": decimal.Decimal('4.00'),
     # probably always 1 or 2
     "PERIODS_PER_YEAR": 2,
 

@@ -57,6 +57,7 @@ steps:
     - cdb
   environment:
     CDEDB_CONFIGPATH: tests/config/test_1.py
+    POSTGRES_PASSWORD: passwd
   commands:
     - make i18n-compile # needed for sample-data creation in evolution-trial.sh
     - python3 -m cdedb filesystem log create # TODO needed during dependencies of script.py
