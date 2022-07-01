@@ -35,6 +35,35 @@ class CdEDBLDAPServer(LDAPServer):
         )
         return pureldap.LDAPSearchResultDone(resultCode=ldaperrors.Success.resultCode)
 
+    def _cbSearchLDAPError(self, reason):
+        reason.trap(ldaperrors.LDAPException)
+        return pureldap.LDAPSearchResultDone(resultCode=reason.value.resultCode)
+
+    def _cbSearchOtherError(self, reason):
+        return pureldap.LDAPSearchResultDone(
+            resultCode=ldaperrors.other, errorMessage=reason.getErrorMessage()
+        )
+
+    fail_LDAPSearchRequest = pureldap.LDAPSearchResultDone
+
+    def handle_LDAPSearchRequest(self, request, controls, reply):
+        self.checkControls(controls)
+
+        if (
+            request.baseObject == b""
+            and request.scope == pureldap.LDAP_SCOPE_baseObject
+            and request.filter == pureldap.LDAPFilter_present("objectClass")
+        ):
+            return self.getRootDSE(request, reply)
+        dn = DistinguishedName(request.baseObject)
+        root = interfaces.IConnectedLDAPEntry(self.factory)
+        d = root.lookup(dn)
+        d.addCallback(self._cbSearchGotBase, dn, request, reply)
+        d.addErrback(self._cbSearchLDAPError)
+        d.addErrback(defer.logError)
+        d.addErrback(self._cbSearchOtherError)
+        return d
+
     def _cbSearchGotBase(
             self, base: CdEDBBaseLDAPEntry, dn: DistinguishedName,
             request: LDAPSearchRequest, reply: Any
