@@ -3305,7 +3305,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                     self.get(link["href"])
                     self.assertPresence(f"Ergebnis [{link.text}]", div="query-results")
 
-
     @as_users("garcia")
     def test_course_stats(self) -> None:
         self.traverse({'href': '/event/$'},
