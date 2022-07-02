@@ -1303,12 +1303,12 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.submit(f)
         self.assertPresence("Du hast Dich enthalten.", div='status')
         f = self.response.forms['voteform']
-        self.assertEqual("e=pi=i=1=0", f['vote'].value)
+        self.assertEqual("0=1=e=i=pi", f['vote'].value)
         self.traverse("Abstimmungen", "Wahl des Innenvorstand")
         self.assertTitle("Wahl des Innenvorstand (Internationaler Kongress)")
         self.submit(self.response.forms['voteform'])
         f = self.response.forms['voteform']
-        self.assertEqual(f"Anton=Berta=Akira={ASSEMBLY_BAR_SHORTNAME}", f['vote'].value)
+        self.assertEqual(f"Akira=Anton=Berta={ASSEMBLY_BAR_SHORTNAME}", f['vote'].value)
         # invalid candidates - test validation errors
         f['vote'] = "Werner>Anton"
         self.submit(f, check_notification=False)
@@ -1469,9 +1469,10 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                     self.traverse({'description': 'Abstimmungen'},
                                   {'description': bdata['title']},
                                   {'description': 'Ergebnisdetails'})
-                    self.assertPresence("Du hast für die folgenden Kandidaten "
-                                        "gestimmt: Arthur Dent = Ford Prefect",
-                                        div='own-vote', exact=True)
+                    self.assertPresence(
+                        "Du hast für die folgenden Kandidaten "
+                        "gestimmt: Arthur Dent = Ford Prefect",
+                        div='own-vote', exact=True)
 
     @storage
     @as_users("werner", "inga", "kalif")

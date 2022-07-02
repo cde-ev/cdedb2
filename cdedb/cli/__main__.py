@@ -10,7 +10,7 @@ from typing import Any, Dict, List
 import click
 
 from cdedb.cli.database import (
-    connect, create_database, create_database_users, populate_database,
+    create_database, create_database_users, populate_database,
     remove_prepared_transactions,
 )
 from cdedb.cli.dev.json2sql import json2sql
@@ -20,7 +20,10 @@ from cdedb.cli.storage import (
     create_log, create_storage, populate_sample_event_keepers, populate_storage,
     reset_config,
 )
-from cdedb.cli.util import get_user, pass_config, pass_secrets, switch_user
+from cdedb.cli.util import (
+    execute_sql_script, get_user, pass_config, pass_secrets, redirect_to_file,
+    switch_user,
+)
 from cdedb.common import CustomJSONEncoder
 from cdedb.config import DEFAULT_CONFIGPATH, SecretsConfig, TestConfig, set_configpath
 
@@ -229,6 +232,15 @@ def apply_sample_data(config: TestConfig, owner: str) -> None:
         populate_database(config, secrets)
 
 
+@development.command(name="apply-evolution-trial")
+@pass_secrets
+@pass_config
+def apply_evolution_trial(config: TestConfig, secrets: SecretsConfig) -> None:
+    create_database_users(config)
+    create_database(config, secrets)
+    populate_database(config, secrets)
+
+
 @development.command(name="serve")
 def serve_debugger_cmd() -> None:
     """Serve the cdedb using the werkzeug development server"""
@@ -238,21 +250,30 @@ def serve_debugger_cmd() -> None:
 @development.command(name="execute-sql-script")
 @click.option("--file", "-f", type=pathlib.Path, help="the script to execute")
 @click.option('-v', '--verbose', count=True)
+@click.option("--as-postgres", is_flag=True)
+@click.option("--outfile", "-o", type=pathlib.Path, help="file to write the output to",
+              default=None)
+@click.option("--outfile-append", is_flag=True)
 @pass_secrets
 @pass_config
-def execute_sql_script(
-    config: TestConfig, secrets: SecretsConfig, file: pathlib.Path, verbose: int
+def execute_sql_script_cmd(
+        config: TestConfig, secrets: SecretsConfig, file: pathlib.Path, verbose: int,
+        as_postgres: bool, outfile: pathlib.Path, outfile_append: bool
 ) -> None:
-    with connect(config, secrets) as conn:
-        with conn.cursor() as cur:
-            cur.execute(file.read_text())
-            if verbose > 0:
-                if verbose > 1:
-                    click.echo(cur.query)
-                    click.echo(cur.statusmessage)
-                if cur.rowcount != -1:
-                    for x in cur:
-                        click.echo(x)
+    with redirect_to_file(outfile, outfile_append):
+        execute_sql_script(config, secrets, file.read_text(), verbose=verbose,
+                           as_postgres=as_postgres)
+
+
+@development.command(name="describe-database")
+@click.option("--outfile", "-o", type=pathlib.Path)
+@pass_secrets
+@pass_config
+def describe_database(config: TestConfig, secrets: SecretsConfig,
+                      outfile: pathlib.Path) -> None:
+    description_file = pathlib.Path("/cdedb2/bin/describe_database.sql")
+    with redirect_to_file(outfile, append=False):
+        execute_sql_script(config, secrets, description_file.read_text(), verbose=2)
 
 
 def main() -> None:

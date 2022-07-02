@@ -1929,8 +1929,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 
         f['fee_modifier_field_id_-1'].force_value('')
         self.submit(f, check_notification=False)
-        self.assertValidationError('fee_modifier_field_id_-1',
-                                   "Ungültige Eingabe für eine Ganzzahl")
+        self.assertValidationError('fee_modifier_field_id_-1', "Darf nicht leer sein.")
 
         f['fee_modifier_field_id_-1'] = '1001'
         self.submit(f)
@@ -3529,7 +3528,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                          edge_link_title[0])
         # Emilia has no wishes and has not been wished
         self.assertNotIn("Emilia", self.response.text)
-        # We don't display lodgement clusters this time
+        # We don't display lodgement group / lodgement clusters this time
+        self.assertNotIn("Haupthaus", self.response.text)
         self.assertNotIn("Einzelzelle", self.response.text)
 
         # Second time
@@ -3543,10 +3543,41 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 
         self.assertIn("Emilia", self.response.text)
         self.assertIn("Einzelzelle", self.response.text)
+        # Again no lodgement groups
+        self.assertNotIn("Haupthaus", self.response.text)
         # Anton is not present in 1. Hälfte
         self.assertNotIn("Anton", self.response.text)
         edge_group = xml.xpath('//svg:g[@class="edge"]', namespaces=xml_namespaces)
         self.assertEqual(0, len(edge_group))
+
+        # Only lodgement groups
+        self.get('/event/event/1/lodgement/graph/form')
+        f = self.response.forms['settingsform']
+        f['all_participants'] = True
+        f['show_lodgement_groups'] = True
+        f['part_id'] = 2
+        self.submit(f, check_notification=False)
+        xml = lxml.etree.XML(self.response.body)  # pylint: disable=c-extension-no-member
+
+        self.assertIn("Emilia", self.response.text)
+        # No lodgements, but  lodgement groups
+        self.assertNotIn("Einzelzelle", self.response.text)
+        self.assertIn("Haupthaus", self.response.text)
+
+        # Lodgement and lodgement groups
+        self.get('/event/event/1/lodgement/graph/form')
+        f = self.response.forms['settingsform']
+        f['all_participants'] = True
+        f['show_lodgements'] = True
+        f['show_lodgement_groups'] = True
+        f['part_id'] = 2
+        self.submit(f, check_notification=False)
+        xml = lxml.etree.XML(
+            self.response.body)  # pylint: disable=c-extension-no-member
+
+        self.assertIn("Emilia", self.response.text)
+        self.assertIn("Einzelzelle", self.response.text)
+        self.assertIn("Haupthaus", self.response.text)
 
     @storage
     @as_users("garcia")

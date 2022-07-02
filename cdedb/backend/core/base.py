@@ -98,8 +98,9 @@ class CoreBaseBackend(AbstractBackend):
         persona = self.get_persona(rs, persona_id)
         return self._is_relative_admin(rs, persona)
 
+    @staticmethod
     @internal
-    def _is_relative_admin(self, rs: RequestState, persona: CdEDBObject) -> bool:
+    def _is_relative_admin(rs: RequestState, persona: CdEDBObject) -> bool:
         """Internal helper to check relative admin privileges if the persona is already
         available.
 

@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 """Custom exceptions for the CdEDB."""
+from typing import Any
+
 import werkzeug.exceptions
 
 
@@ -22,6 +24,8 @@ class PrivilegeError(RuntimeError):
     error. In some cases the frontend may catch and handle the exception
     instead of preventing it in the first place.
     """
+    def __init__(self, msg: str = "Not privileged", *args: Any):  # pylint: disable=keyword-arg-before-vararg
+        super().__init__(msg, *args)
 
 
 class ArchiveError(RuntimeError):

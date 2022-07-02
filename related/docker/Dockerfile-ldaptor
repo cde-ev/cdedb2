@@ -1,0 +1,34 @@
+FROM debian:bullseye-20210816
+
+RUN apt-get update && apt-get install --yes --no-install-recommends \
+    python3 \
+    python3-pip \
+    \
+    && rm -rf /var/lib/apt/lists/* \
+    \
+    && python3 -m pip --no-cache-dir install \
+    ldaptor==21.2.0 \
+    psycopg[binary]==3.0.15 \
+    psycopg_pool==3.1.1 \
+    subman==0.1.0 \
+    Twisted==22.4.0 \
+    pytz==2022.1
+
+COPY ./related/auto-build/files/stage3 /tmp/autobuild/
+
+RUN install -D /tmp/autobuild/localconfig.py /etc/cdedb/config.py \
+    && touch /etc/cdedb/public-secrets.py \
+    && touch /CONTAINER \
+    \
+    && rm -rf /tmp/autobuild
+
+# make config persistent
+VOLUME /etc/cdedb
+
+EXPOSE 389
+
+# mount the code here
+WORKDIR /cdedb2
+
+ENV CDEDB_CONFIGPATH /etc/cdedb/config.py
+CMD ["python3", "-m", "cdedb.ldap.main"]

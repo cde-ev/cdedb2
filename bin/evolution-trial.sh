@@ -20,19 +20,25 @@ export CDEDB_CONFIGPATH=$tmp_configfile
 # silence git output after switching to a detached head
 git config advice.detachedHead false
 
+if [[ "$(git rev-parse $OLDREVISION)" = "$(git rev-parse $NEWREVISION)" ]]; then
+    echo "Source and target are identical."
+    exit 0
+fi
+
 # old revision
 echo ""
 echo "Checkout $OLDREVISION"
 git checkout $OLDREVISION
+
+echo ""
+echo "Creating pristine database and gathering list of evolutions."
 ls cdedb/database/evolutions > /tmp/oldevolutions.txt
 # Leave this setting in place – the history shows that there will be a time the syntax
 # changes and we need this again...
-if git merge-base --is-ancestor 3879ebfc9c573100ec6ef82fac324f37fd0e0f09 $OLDREVISION; then
-    python3 -m cdedb dev compile-sample-data-sql --outfile - > tests/ancillary_files/sample_data.sql
-    python3 -m cdedb db create
-    python3 -m cdedb db populate
+if git merge-base --is-ancestor 5f18f7e5239fc4c10b6c79dfdd4b68a260a99e00 $OLDREVISION; then
+    python3 -m cdedb dev apply-evolution-trial
 else
-    python3 -m cdedb dev compile-sample-data --outfile - > tests/ancillary_files/sample_data.sql
+    python3 -m cdedb db create-users
     python3 -m cdedb db create
     python3 -m cdedb db populate
 fi
@@ -43,47 +49,60 @@ echo "Checkout $NEWREVISION"
 git checkout $NEWREVISION
 
 # determine evolutions to apply.
+echo ""
+echo "Compiling list of evolutions to apply:"
+truncate -s0 /tmp/todoevolutions.txt
 ls cdedb/database/evolutions | sort > /tmp/newevolutions.txt
-grep /tmp/newevolutions.txt -v -f /tmp/oldevolutions.txt || true > /tmp/todoevolutions.txt
+(grep /tmp/newevolutions.txt -v -f /tmp/oldevolutions.txt > /tmp/todoevolutions.txt) || true
+echo ""
+cat /tmp/todoevolutions.txt
 
 # apply all evolutions and gather the output.
-truncate -s0 /tmp/output-evolution.txt
+evolution_output=/tmp/output-evolution.txt
+touch $evolution_output
+sudo chown root $evolution_output
+sudo chmod a+rw $evolution_output
+truncate -s0 $evolution_output
 while read -r evolution; do
-    if [[ $evolution == *.sql ]]; then
+    if [[ $evolution == *.postgres.sql ]]; then
+        echo ""
+        echo "Apply evolution $evolution as postgres database user."| tee -a /tmp/output-evolution.txt
+        sudo CDEDB_CONFIGPATH=$tmp_configfile POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
+             python3 -m cdedb dev execute-sql-script --as-postgres -vv \
+             -f cdedb/database/evolutions/$evolution \
+             -o $evolution_output --outfile-append
+    elif [[ $evolution == *.sql ]]; then
         echo ""
         echo "Apply evolution $evolution" | tee -a /tmp/output-evolution.txt
-        python3 -m cdedb dev execute-sql-script -v \
+        python3 -m cdedb dev execute-sql-script -vv \
              -f cdedb/database/evolutions/$evolution \
-             2>&1 | tee -a /tmp/output-evolution.txt
-    fi
-    if [[ $evolution == *.py ]]; then
+             -o $evolution_output --outfile-append
+    elif [[ $evolution == *.py ]]; then
         echo ""
         echo "Run migration script $evolution" | tee -a /tmp/output-evolution.txt
         sudo -u www-data \
             EVOLUTION_TRIAL_OVERRIDE_DBNAME=$DATABASE_NAME \
             EVOLUTION_TRIAL_OVERRIDE_DRY_RUN='' \
             EVOLUTION_TRIAL_OVERRIDE_PERSONA_ID=1 \
-            python3 cdedb/database/evolutions/$evolution \
-            2>&1 | tee -a /tmp/output-evolution.txt
+            EVOLUTION_TRIAL_OVERRIDE_OUTFILE=$evolution_output \
+            EVOLUTION_TRIAL_OVERRIDE_OUTFILE_APPEND=1 \
+            python3 cdedb/database/evolutions/$evolution
+    else
+        echo "Unhandled evolution $evolution" | tee -a /tmp/output-evolution.txt
     fi
 done < /tmp/todoevolutions.txt
 
 # evolved db
 echo ""
 echo "Creating database description."
-python3 -m cdedb dev execute-sql-script -v \
-     -f bin/describe_database.sql > /tmp/evolved-description.txt
-
-make i18n-compile
-python3 -m cdedb dev compile-sample-data-sql --outfile - > tests/ancillary_files/sample_data.sql
+python3 -m cdedb dev describe-database -o /tmp/evolved-description.txt
 
 # new db
 echo ""
 echo "Resetting and creating database description again."
-python3 -m cdedb db create
-python3 -m cdedb db populate
-python3 -m cdedb dev execute-sql-script -v \
-     -f bin/describe_database.sql > /tmp/pristine-description.txt
+make i18n-compile
+python3 -m cdedb dev apply-evolution-trial
+python3 -m cdedb dev describe-database -o /tmp/pristine-description.txt
 
 # perform check
 echo ""

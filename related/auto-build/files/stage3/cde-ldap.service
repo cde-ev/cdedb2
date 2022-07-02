@@ -1,0 +1,33 @@
+# /etc/systemd/system/cde-ldap.service
+[Unit]
+Description=CdE LDAP Server
+# use @<cluster_name>.service if possible/necessary
+Requires=postgresql.service
+After=postgresql.service
+Documentation=https://db.cde-ev.de/doc/API_LDAP.html
+
+[Service]
+Type=exec
+Environment=CDEDB_CONFIGPATH=/etc/cdedb/config.py
+# we could set WorkingDirectory= though this should not be required
+# as 'cdedb' is globally available and the server does not write anything
+ExecStart=/usr/bin/python3 -m cdedb.ldap.main
+Restart=on-failure
+
+# we need to access the /etc/cdedb/secrets.py file which is only accessible to www-data
+User=www-data
+Group=www-data
+# restrict the privileges of the running process
+RemoveIPC=true
+PrivateTmp=true
+NoNewPrivileges=true
+RestrictSUIDSGID=true
+ProtectHome=read-only
+ProtectSystem=strict
+# required so unprivileged user can bind to 389
+# using a systemd.socket would also work though probably require changes
+# to the twisted code...starting via twistd however might be rather clean
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target
