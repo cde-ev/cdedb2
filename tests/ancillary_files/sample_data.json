@@ -4685,19 +4685,36 @@
     ],
     "event.lodgement_groups": [
         {
-            "id": 1,
             "event_id": 1,
             "title": "Haupthaus"
         },
         {
-            "id": 2,
             "event_id": 1,
             "title": "AußenWohnGruppe"
         },
         {
-            "id": 3,
             "event_id": 1,
             "title": "Sonstige"
+        },
+        {
+            "event_id": 2,
+            "title": "CdE-Party"
+        },
+        {
+            "event_id": 3,
+            "title": "CyberTestAkademie"
+        },
+        {
+            "event_id": 4,
+            "title": "Kaub"
+        },
+        {
+            "event_id": 4,
+            "title": "Oberwesel"
+        },
+        {
+            "event_id": 4,
+            "title": "Windischleuba"
         }
     ],
     "event.lodgements": [
