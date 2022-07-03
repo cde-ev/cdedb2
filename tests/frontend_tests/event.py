@@ -3096,6 +3096,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("42", div="group_regular_capacity_2")
         self.assertPresence("53", div="total_regular")
 
+    @event_keeper
     @as_users("garcia")
     def test_lodgement_groups(self) -> None:
         self.traverse("Veranstaltungen", "Große Testakademie 2222", "Unterkünfte",
