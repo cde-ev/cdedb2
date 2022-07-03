@@ -36,7 +36,7 @@
     </div>
 
     {{ generic.format_query(enums['QueryScope'].registration, spec,
-                                selection_default=('persona.username', 'persona.family_name', 'persona.given_names')) }}
+                            selection_default=('persona.username', 'persona.family_name', 'persona.given_names')) }}
 
     {% if values['is_search'] %}
         <h3 id="query-results">{% trans %}Result{% endtrans %} [{{ result|length }}]</h3>

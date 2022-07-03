@@ -85,10 +85,10 @@
                 {% if not scope.includes_archived() %}
                     {{ util.href(cdedblink("{}/create_user_form".format(scope.realm)), gettext("Create User"),
                             icon="plus", aclass="btn btn-success btn-sm") }}
-                {% endif %}
-                {% if scope.realm == 'cde' %}
-                    {{ util.href(cdedblink('cde/batch_admission'), gettext("Batch Admission"), icon="file-import",
-                             aclass="btn btn-default btn-sm") }}
+                    {% if scope.realm == 'cde' %}
+                        {{ util.href(cdedblink('cde/batch_admission'), gettext("Batch Admission"), icon="file-import",
+                                 aclass="btn btn-default btn-sm") }}
+                    {% endif %}
                 {% endif %}
             </div>
             {% if info %}

@@ -705,6 +705,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Nutzer verwalten'})
         self.assertTitle("CdE-Nutzerverwaltung")
+        self.assertPresence('Massenaufnahme')
         f = self.response.forms['queryform']
         f['qop_address'] = QueryOperators.match.value
         f['qval_address'] = 'Garten'
@@ -922,6 +923,7 @@ class TestCdEFrontend(FrontendTest):
     def test_archived_user_search(self) -> None:
         self.traverse({'href': '/cde/$'}, "Alle Nutzer verwalten")
         self.assertTitle("Vollständige Nutzerverwaltung")
+        self.assertNonPresence("Massenaufnahme")
         f = self.response.forms['queryform']
         f['qval_birthday'] = '31.12.2000'
         f['qop_birthday'] = QueryOperators.less.value
