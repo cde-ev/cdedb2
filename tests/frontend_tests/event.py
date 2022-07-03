@@ -3126,11 +3126,11 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 
         # Move all lodgements from Hautpgebäude to Altes Schloss.
         self.traverse({'linkid': 'move_or_delete_lodgements_in_group_1$'})
-        self.assertTitle("Move or Delete Lodgements from Hauptgebäude"
+        self.assertTitle("Verschiebe oder lösche Unterkünfte aus Hauptgebäude"
                          " (Große Testakademie 2222)")
         f = self.response.forms['movelodgementsform']
         self.submit(f, value='False', button='delete_group', check_notification=False)
-        self.assertPresence("Nothing to do.", div='notifications')
+        self.assertPresence("Nichts zu tun.", div='notifications')
         f['target_group_id'] = 1002
         self.submit(f, value='False', button='delete_group')
         self.assertPresence("Hauptgebäude")
@@ -3142,9 +3142,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 
         # Delete Sonstige with all lodgements.
         self.traverse("Unterkünfte", {'linkid': 'move_or_delete_lodgements_in_group_3'})
-        self.assertTitle("Move or Delete Lodgements from Sonstige"
+        self.assertTitle("Verschiebe oder lösche Unterkünfte aus Sonstige"
                          " (Große Testakademie 2222)")
-        self.assertPresence("There are 1 lodgements in this group.")
+        self.assertPresence("Es gibt 1 Unterkünfte in dieser Gruppe.")
         f = self.response.forms['movelodgementsform']
         self.submit(f, value='True', button='delete_group')
         self.assertNonPresence("Sonstige")
