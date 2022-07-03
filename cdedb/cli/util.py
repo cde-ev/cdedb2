@@ -213,6 +213,9 @@ def execute_sql_script(
                     click.echo(cur.query)
                 if verbose > 1:
                     click.echo(cur.statusmessage)
-                if verbose > 0 and cur.rowcount != -1:
-                    for x in cur:
-                        click.echo(x)
+                if verbose > 0:
+                    try:
+                        for x in cur:
+                            click.echo(x)
+                    except psycopg2.ProgrammingError:
+                        pass
