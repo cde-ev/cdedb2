@@ -431,6 +431,8 @@ class EventLodgementBackend(EventBaseBackend):
         ret = 1
         with Atomizer(rs):
             group = self.get_lodgement_group(rs, group_id)
+            msg = "Snapshot vor Verschieben/Löschen von Unterkünften."
+            self.event_keeper_commit(rs, group['event_id'], msg)
             if target_group_id:
                 lodgement_ids = self.list_lodgements(rs, group['event_id'], group_id)
                 for l_id in xsorted(lodgement_ids):
@@ -442,4 +444,6 @@ class EventLodgementBackend(EventBaseBackend):
             if delete_group:
                 cascade = ("lodgements",)
                 ret *= self.delete_lodgement_group(rs, group_id, cascade)
+            msg = "Verschiebe/Lösche Unterkünfte."
+            self.event_keeper_commit(rs, group['event_id'], msg, after_change=True)
         return ret
