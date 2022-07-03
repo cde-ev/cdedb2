@@ -723,7 +723,7 @@ class EventLodgementMxin(EventBaseFrontend):
     @REQUESTdata("lodgement_ids", "target_group_id", "delete_group")
     def move_lodgements(self, rs: RequestState, event_id: int, group_id: int,
                         lodgement_ids: Collection[int], target_group_id: Optional[int],
-                        delete_group: bool) -> None:
+                        delete_group: bool) -> Response:
         """Move lodgements from one group to another or delete them with the group."""
         groups = self.eventproxy.list_lodgement_groups(rs, event_id)
         lodgements_in_group = self.eventproxy.list_lodgements(rs, event_id, group_id)

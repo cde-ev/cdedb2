@@ -211,11 +211,14 @@ class EventLodgementBackend(EventBaseBackend):
                 rs, "event.lodgement_groups", ("event_id", "title"), group_id)
             if not group_data or group_data['event_id'] != event_id:
                 raise ValueError(n_("Invalid lodgement group."))
-            kwargs = {'entities': (group_id,), 'entity_key': 'group_id'}
+            entities = (group_id,)
+            entity_key = 'group_id'
         else:
-            kwargs = {'entities': (event_id,), 'entity_key': 'event_id'}
+            entities = (event_id,)
+            entity_key = 'event_id'
 
-        data = self.sql_select(rs, "event.lodgements", ("id", "title"), **kwargs)
+        data = self.sql_select(rs, "event.lodgements", ("id", "title"),
+                               entities=entities, entity_key=entity_key)
         return {e['id']: e['title'] for e in data}
 
     @access("event")
