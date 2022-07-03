@@ -3231,6 +3231,11 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                 # If the query is not by id, check that the result equals the link text.
                 if num is not None:
                     self.assertEqual(int(link.text), num)
+                else:
+                    response = self.response
+                    self.get(link['href'])
+                    self.assertPresence(f"Ergebnis [{link.text}]", div="query-results")
+                    self.response = response
 
         stat: StatisticMixin
         part_stats: Collection[StatisticPartMixin] = tuple(
@@ -3293,10 +3298,14 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                     continue
                 _test_grouper_link(reg_ids, grouper.get_link_id(x, part_group_id=pg_id))
 
+    @as_users("garcia")
+    def test_stats_links(self) -> None:
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Statistik")
         part_stats_table = self.response.html.find(id="participant-stats")
         track_stats_table = self.response.html.find(id="course-stats")
 
         # Sporadically click on a few links.
+        # Do this, because they take a very long time otherwise.
         n = 5
         for table in (part_stats_table, track_stats_table):
             for link in table.findAll("a")[::n]:
