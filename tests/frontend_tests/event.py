@@ -3107,7 +3107,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertEqual(f['title_1'].value, "Haupthaus")
         f['create_-1'] = True
         f['title_1'] = "Hauptgebäude"
-        f['delete_2'] = True
         self.submit(f, check_notification=False)
         self.assertTitle("Unterkunftsgruppen (Große Testakademie 2222)")
         self.assertValidationError('title_-1', "Darf nicht leer sein.")
@@ -3123,19 +3122,33 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.traverse("Unterkünfte")
         self.assertPresence("Hauptgebäude")
         self.assertPresence("Altes Schloss")
-        self.assertNonPresence("AußenWohnGruppe")
-        # "Warme Stube" was deleted along with the group.
-        self.assertNonPresence("Warme Stube")
+        self.assertPresence("AußenWohnGruppe")
 
-        # Assign "Kellerverlies" to "Altes Schloss"
-        self.traverse({'href': '/event/event/1/lodgement/overview'},
-                      {'href': '/event/event/1/lodgement/3/change'})
-        f = self.response.forms['changelodgementform']
-        self.assertEqual(f['group_id'].value, "3")
-        f['group_id'] = "1002"  # Should be the "Altes Schloss"
-        self.submit(f)
-        self.assertTitle("Unterkunft Kellerverlies (Große Testakademie 2222)")
+        # Move all lodgements from Hautpgebäude to Altes Schloss.
+        self.traverse({'linkid': 'move_or_delete_lodgements_in_group_1$'})
+        self.assertTitle("Move or Delete Lodgements from Hauptgebäude"
+                         " (Große Testakademie 2222)")
+        f = self.response.forms['movelodgementsform']
+        self.submit(f, value='False', button='delete_group', check_notification=False)
+        self.assertPresence("Nothing to do.", div='notifications')
+        f['target_group_id'] = 1002
+        self.submit(f, value='False', button='delete_group')
+        self.assertPresence("Hauptgebäude")
         self.assertPresence("Altes Schloss")
+        self.traverse("Einzelzelle")
+        self.assertPresence("Altes Schloss")
+        self.assertNonPresence("Hauptgebäude")
+        self.assertNonPresence("Haupthaus")
+
+        # Delete Sonstige with all lodgements.
+        self.traverse("Unterkünfte", {'linkid': 'move_or_delete_lodgements_in_group_3'})
+        self.assertTitle("Move or Delete Lodgements from Sonstige"
+                         " (Große Testakademie 2222)")
+        self.assertPresence("There are 1 lodgements in this group.")
+        f = self.response.forms['movelodgementsform']
+        self.submit(f, value='True', button='delete_group')
+        self.assertNonPresence("Sonstige")
+        self.assertNonPresence("Kellerverlies")
 
     @event_keeper
     @as_users("garcia")

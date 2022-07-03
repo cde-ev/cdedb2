@@ -232,7 +232,7 @@ class EventLodgementMxin(EventBaseFrontend):
         merge_dicts(rs.values, current)
 
         return self.render(rs, "lodgement/lodgement_group_summary", {
-            'sorted_group_ids': sorted_group_ids
+            'sorted_group_ids': sorted_group_ids, 'groups': groups,
         })
 
     @access("event", modi={"POST"})
@@ -251,8 +251,7 @@ class EventLodgementMxin(EventBaseFrontend):
         code = 1
         for group_id, group in groups.items():
             if group is None:
-                code *= self.eventproxy.delete_lodgement_group(
-                    rs, group_id, cascade=("lodgements",))
+                code *= self.eventproxy.delete_lodgement_group(rs, group_id)
             elif group_id < 0:
                 code *= self.eventproxy.create_lodgement_group(rs, group)
             else:
@@ -690,3 +689,43 @@ class EventLodgementMxin(EventBaseFrontend):
             code *= self.eventproxy.set_registration(rs, new_reg, change_note)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/show_lodgement")
+
+    @access("event")
+    @event_guard(check_offline=True)
+    def move_lodgements_form(self, rs: RequestState, event_id: int, group_id: int
+                             ) -> Response:
+        """Move lodgements from one group to another or delete them with the group."""
+        groups = self.eventproxy.list_lodgement_groups(rs, event_id)
+        lodgements_in_group = self.eventproxy.list_lodgements(rs, event_id, group_id)
+        return self.render(rs, "lodgement/move_lodgements", {
+            'groups': groups, 'lodgements_in_group': lodgements_in_group,
+        })
+
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
+    @REQUESTdata("lodgement_ids", "target_group_id", "delete_group")
+    def move_lodgements(self, rs: RequestState, event_id: int, group_id: int,
+                        lodgement_ids: Collection[int], target_group_id: Optional[int],
+                        delete_group: bool) -> None:
+        """Move lodgements from one group to another or delete them with the group."""
+        groups = self.eventproxy.list_lodgement_groups(rs, event_id)
+        lodgements_in_group = self.eventproxy.list_lodgements(rs, event_id, group_id)
+        if rs.has_validation_errors():
+            return self.move_lodgements_form(rs, event_id, group_id)
+        if target_group_id:
+            if target_group_id not in groups or target_group_id == group_id:
+                rs.append_validation_error(
+                    ('target_group_id', KeyError(n_("Invalid lodgement group."))))
+        if not target_group_id and not delete_group:
+            rs.notify("info", n_("Nothing to do."))
+            return self.redirect(rs, "event/lodgements")
+        if set(lodgement_ids) != set(lodgements_in_group):
+            rs.notify("error", n_("Lodgements in this group changed in the meantime."))
+            return self.move_lodgements_form(rs, event_id, group_id)
+        if rs.has_validation_errors():
+            return self.move_lodgements_form(rs, event_id, group_id)
+
+        code = self.eventproxy.move_lodgements(
+            rs, group_id, target_group_id, delete_group)
+        rs.notify_return_code(code)
+        return self.redirect(rs, "event/lodgements")

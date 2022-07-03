@@ -6,7 +6,7 @@ functionality for managing lodgements and lodgement groups belonging to an event
 """
 import collections
 import dataclasses
-from typing import Any, Collection, Dict, Iterator, List, Protocol, Tuple
+from typing import Any, Collection, Dict, Iterator, List, Optional, Protocol, Tuple
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -22,6 +22,7 @@ from cdedb.common import (
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import LODGEMENT_FIELDS
 from cdedb.common.n_ import n_
+from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.database.query import DatabaseValue_s
 
@@ -195,16 +196,26 @@ class EventLodgementBackend(EventBaseBackend):
         return ret
 
     @access("event")
-    def list_lodgements(self, rs: RequestState, event_id: int) -> Dict[int, str]:
+    def list_lodgements(self, rs: RequestState, event_id: int, group_id: int = None
+                        ) -> Dict[int, str]:
         """List all lodgements for an event.
 
+        :param group_id: If given, limit to lodgements in this group.
         :returns: dict mapping ids to names
         """
         event_id = affirm(vtypes.ID, event_id)
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
-        data = self.sql_select(rs, "event.lodgements", ("id", "title"),
-                               (event_id,), entity_key="event_id")
+        if group_id:
+            group_data = self.sql_select_one(
+                rs, "event.lodgement_groups", ("event_id", "title"), group_id)
+            if not group_data or group_data['event_id'] != event_id:
+                raise ValueError(n_("Invalid lodgement group."))
+            kwargs = {'entities': (group_id,), 'entity_key': 'group_id'}
+        else:
+            kwargs = {'entities': (event_id,), 'entity_key': 'event_id'}
+
+        data = self.sql_select(rs, "event.lodgements", ("id", "title"), **kwargs)
         return {e['id']: e['title'] for e in data}
 
     @access("event")
@@ -410,4 +421,25 @@ class EventLodgementBackend(EventBaseBackend):
             else:
                 inhabitants = LodgementInhabitants(regular=tuple(e['inhabitants']))
             ret[e['lodgement_id']][e['part_id']] += inhabitants
+        return ret
+
+    @access("event")
+    def move_lodgements(self, rs: RequestState, group_id: int,
+                        target_group_id: Optional[int], delete_group: bool
+                        ) -> DefaultReturnCode:
+        """Move lodgements from one group to another or delete them with the group."""
+        ret = 1
+        with Atomizer(rs):
+            group = self.get_lodgement_group(rs, group_id)
+            if target_group_id:
+                lodgement_ids = self.list_lodgements(rs, group['event_id'], group_id)
+                for l_id in xsorted(lodgement_ids):
+                    update = {
+                        'id': l_id,
+                        'group_id': target_group_id,
+                    }
+                    ret *= self.set_lodgement(rs, update)
+            if delete_group:
+                cascade = ("lodgements",)
+                ret *= self.delete_lodgement_group(rs, group_id, cascade)
         return ret
