@@ -4241,7 +4241,7 @@ class TestEventBackend(BackendTest):
             self.assertEqual(
                 set(blockers),
                 {"orgas", "event_parts", "course_tracks", "part_groups",
-                 "part_group_parts", "courses", "log"}
+                 "part_group_parts", "courses", "log", "lodgement_groups"}
             )
             self.assertTrue(self.event.delete_event(self.key, event_id, blockers))
 
