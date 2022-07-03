@@ -10,10 +10,10 @@ e.g. `self.assertEqual("123", str(123))`.
 import asyncio
 from typing import Any
 
-import psycopg2.extras
-from aiopg import create_pool
 from ldaptor.protocols.ldap.distinguishedname import DistinguishedName as DN
 from ldaptor.protocols.pureber import ber2int, int2ber
+from psycopg.rows import dict_row
+from psycopg_pool import AsyncConnectionPool
 
 from cdedb.ldap.backend import LDAPsqlBackend, classproperty
 from tests.common import AsyncBasicTest, BasicTest
@@ -215,26 +215,26 @@ class AsyncLDAPBackendTest(AsyncBasicTest):
     ldap: LDAPsqlBackend
 
     async def asyncSetUp(self) -> None:
-        """Since each test has it's own event loop, we need to create a pool each time.
+        """Since each test has it's own event loop, we need to create a database
+        pool each time.
 
         This is somewhat expensive and asyncio complains when in debugmode, so we
         disable debugmode for the pool creation.
         """
         asyncio.get_running_loop().set_debug(False)
-        pool = await create_pool(
+        conn_params = dict(
             dbname=self.conf["CDB_DATABASE_NAME"],
-            user="cdb_admin",
-            password=self.secrets["CDB_DATABASE_ROLES"]["cdb_admin"],
+            user="cdb_ldap",
+            password=self.secrets["CDB_DATABASE_ROLES"]["cdb_ldap"],
             host=self.conf["DB_HOST"],
             port=self.conf["DB_PORT"],
-            cursor_factory=psycopg2.extras.RealDictCursor,
         )
+        conn_info = " ".join([f"{k}={v}" for k, v in conn_params.items()])
+        connect_kwargs = {"row_factory": dict_row}
+        pool = AsyncConnectionPool(conn_info, min_size=1, kwargs=connect_kwargs)
+        await pool.open(wait=True)
         asyncio.get_running_loop().set_debug(True)
         self.ldap = LDAPsqlBackend(pool)
-
-    async def asyncTearDown(self) -> None:
-        """Close the pool of the ldap backend."""
-        await self.ldap.close_pool()
 
     async def test_duas(self) -> None:
         dua_dns = await self.ldap.list_duas()
@@ -249,7 +249,9 @@ class AsyncLDAPBackendTest(AsyncBasicTest):
             self.assertIsInstance(user, DN)
         users = await self.ldap.get_users(user_dns)
         users_data = await self.ldap.get_users_data(persona_ids)
+        self.assertIn(1, users_data)
         user_groups = await self.ldap.get_users_groups(persona_ids)
+        self.assertIn(1, user_groups)
 
     async def test_get_status_groups(self) -> None:
         status_group_dns = await self.ldap.list_status_groups()
@@ -265,7 +267,9 @@ class AsyncLDAPBackendTest(AsyncBasicTest):
         presider_groups = await self.ldap.get_assembly_presider_groups(
             presider_group_dns)
         presiders = await self.ldap.get_presiders(assembly_ids)
+        self.assertIn(1, presiders)
         assemblies = await self.ldap.get_assemblies(assembly_ids)
+        self.assertIn(1, assemblies)
 
     async def test_orgas(self) -> None:
         event_ids = {1, 2, 3, 4}
@@ -274,4 +278,29 @@ class AsyncLDAPBackendTest(AsyncBasicTest):
             self.assertIsInstance(orga, DN)
         orga_groups = await self.ldap.get_event_orga_groups(orga_group_dns)
         orgas = await self.ldap.get_orgas(event_ids)
+        self.assertIn(1, orgas)
         events = await self.ldap.get_events(event_ids)
+        self.assertIn(1, events)
+
+    async def test_moderators(self) -> None:
+        ml_addresses = {"42@lists.cde-ev.de"}
+        moderator_group_dns = await self.ldap.list_ml_moderator_groups()
+        for moderator in moderator_group_dns:
+            self.assertIsInstance(moderator, DN)
+        moderator_groups = await self.ldap.get_ml_moderator_groups(moderator_group_dns)
+        moderators = await self.ldap.get_moderators(ml_addresses)
+        self.assertIn("42@lists.cde-ev.de", moderators)
+        mls = await self.ldap.get_mailinglists(ml_addresses)
+        self.assertIn("42@lists.cde-ev.de", mls)
+
+    async def test_subscribers(self) -> None:
+        ml_addresses = {"42@lists.cde-ev.de"}
+        subscriber_group_dns = await self.ldap.list_ml_subscriber_groups()
+        for subscriber in subscriber_group_dns:
+            self.assertIsInstance(subscriber, DN)
+        subscriber_groups = await self.ldap.get_ml_moderator_groups(
+            subscriber_group_dns)
+        subscribers = await self.ldap.get_moderators(ml_addresses)
+        self.assertIn("42@lists.cde-ev.de", subscribers)
+        mls = await self.ldap.get_mailinglists(ml_addresses)
+        self.assertIn("42@lists.cde-ev.de", mls)

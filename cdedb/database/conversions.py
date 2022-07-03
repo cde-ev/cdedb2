@@ -4,17 +4,17 @@ import collections.abc
 import enum
 from typing import TYPE_CHECKING, Any, List, Optional, Union
 
-import psycopg2.extras
-
 if TYPE_CHECKING:
     # Lazy import saves many dependecies for standalone ldaptor mode
+    import psycopg2.extras
+
     from cdedb.common import CdEDBObject
 
 
 # mypy treats all imports from psycopg2 as `Any`, so we do not gain anything by
 # overloading the definition.
 def from_db_output(
-    output: Optional[psycopg2.extras.RealDictRow]
+    output: Optional["psycopg2.extras.RealDictRow"]
 ) -> Optional["CdEDBObject"]:
     """Convert a :py:class:`psycopg2.extras.RealDictRow` into a normal
     :py:class:`dict`. We only use the outputs as dictionaries and

@@ -1514,7 +1514,9 @@ class AssemblyFrontend(AbstractUserFrontend):
             rs.notify("error", n_("Ballot is outside its voting period."))
             return self.redirect(rs, "assembly/show_ballot", {'ballot_id': ballot_id})
         ballot = rs.ambience['ballot']
-        candidates = [Candidate(e['shortname']) for e in ballot['candidates'].values()]
+        # sorting here ensures stable ordering for classical voting below
+        candidates = xsorted(
+            Candidate(e['shortname']) for e in ballot['candidates'].values())
         vote: Optional[str]
         if ballot['votes']:
             # classical voting

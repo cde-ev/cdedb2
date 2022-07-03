@@ -138,6 +138,7 @@ class Application(BaseApp):
                 'notifications': tuple(),
                 'user': user,
                 'values': {},
+                'nbsp': "\u00A0",
                 'error': error,
                 'help': message,
             }

@@ -23,9 +23,9 @@ import tempfile
 import unittest
 import urllib.parse
 from typing import (
-    Any, AnyStr, Callable, ClassVar, Dict, Generator, Iterable, List, Mapping,
-    MutableMapping, NamedTuple, Optional, Pattern, Sequence, Set, Tuple, Type, TypeVar,
-    Union, cast, no_type_check,
+    Any, Callable, ClassVar, Dict, Generator, Iterable, List, Mapping, MutableMapping,
+    NamedTuple, Optional, Pattern, Sequence, Set, Tuple, Type, TypeVar, Union, cast,
+    no_type_check,
 )
 
 import PIL.Image
@@ -44,6 +44,7 @@ from cdedb.cli.dev.json2sql import json2sql
 from cdedb.cli.storage import (
     create_storage, populate_sample_event_keepers, populate_storage,
 )
+from cdedb.cli.util import execute_sql_script
 from cdedb.common import (
     ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD, CdEDBLog, CdEDBObject,
     CdEDBObjectMap, PathLike, RequestState, merge_dicts, nearly_now, now,
@@ -787,7 +788,7 @@ def admin_views(*views: str) -> Callable[[F], F]:
     return decorator
 
 
-def prepsql(sql: AnyStr) -> Callable[[F], F]:
+def prepsql(sql: str) -> Callable[[F], F]:
     """Decorate a test to run some arbitrary SQL-code beforehand."""
     def decorator(fun: F) -> F:
         @functools.wraps(fun)
@@ -810,19 +811,9 @@ def event_keeper(fun: F) -> F:
     return storage(fun)
 
 
-def execsql(sql: AnyStr) -> None:
+def execsql(sql: str) -> None:
     """Execute arbitrary SQL-code on the test database."""
-    conf = TestConfig()
-
-    with Script(
-        persona_id=-1,
-        dbuser="cdb",
-        dbname=conf["CDB_DATABASE_NAME"],
-        check_system_user=False,
-    ).rs().conn as conn:
-        conn.set_session(autocommit=True)
-        with conn.cursor() as curr:
-            curr.execute(sql)
+    execute_sql_script(TestConfig(), SecretsConfig(), sql)
 
 
 class FrontendTest(BackendTest):

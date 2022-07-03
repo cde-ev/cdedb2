@@ -278,6 +278,11 @@ class EventLodgementMxin(EventBaseFrontend):
         personas = self.coreproxy.get_event_users(
             rs, [r['persona_id'] for r in registrations.values()], event_id=event_id)
 
+        if f_id := rs.ambience["event"]["camping_mat_field"]:
+            camping_mat_field_name = rs.ambience["event"]["fields"][f_id]["field_name"]
+        else:
+            camping_mat_field_name = None
+
         problems = self.check_lodgement_problems(
             rs.ambience['event'], {lodgement_id: rs.ambience['lodgement']},
             registrations, personas, raw_inhabitants)
@@ -319,6 +324,7 @@ class EventLodgementMxin(EventBaseFrontend):
             'groups': groups, 'registrations': registrations, 'personas': personas,
             'inhabitants': inhabitants, 'problems': problems,
             'make_inhabitants_query': make_inhabitants_query,
+            'camping_mat_field_name': camping_mat_field_name,
             'prev_lodgement': prev_lodge, 'next_lodgement': next_lodge,
         })
 
@@ -337,42 +343,53 @@ class EventLodgementMxin(EventBaseFrontend):
                 registrations, personas, event, restrict_part_id=None)
         else:
             problems = []
+        lodgement_groups = self.eventproxy.list_lodgement_groups(rs, event_id)
         return self.render(rs, "lodgement/lodgement_wishes_graph_form",
-                           {'problems': problems})
+                           {'problems': problems, 'lodgement_groups': lodgement_groups})
 
     @access("event")
     @event_guard()
-    @REQUESTdata('all_participants', 'part_id', 'show_lodgements')
-    def lodgement_wishes_graph(self, rs: RequestState, event_id: int,
-                               all_participants: bool, part_id: Optional[int],
-                               show_lodgements: bool) -> Response:
+    @REQUESTdata('all_participants', 'part_id', 'show_lodgements',
+                 'show_lodgement_groups')
+    def lodgement_wishes_graph(
+            self, rs: RequestState, event_id: int, all_participants: bool,
+            part_id: Optional[int], show_lodgements: bool, show_lodgement_groups: bool
+    ) -> Response:
         if rs.has_validation_errors():
-            return self.redirect(rs, 'event/lodgement_wishes_graph_form')
+            return self.lodgement_wishes_graph_form(rs, event_id)
         event = rs.ambience['event']
 
         if not event['lodge_field']:
             rs.notify('error', n_("Lodgement wishes graph is only available if "
                                   "the Field for Rooming Preferences is set in "
                                   "event configuration."))
-            return self.redirect(rs, 'event/lodgement_wishes_graph_form')
+            return self.lodgement_wishes_graph_form(rs, event_id)
+
+        msg = n_("Clusters can only be displayed if the graph is restricted to a"
+                 " specific part.")
         if show_lodgements and not part_id:
-            rs.notify('error', n_("Lodgement clusters can only be displayed if "
-                                  "the graph is restricted to a specific "
-                                  "part."))
-            return self.redirect(rs, 'event/lodgement_wishes_graph_form')
+            rs.append_validation_error(("show_lodgements", ValueError(msg)))
+        if show_lodgement_groups and not part_id:
+            rs.append_validation_error(("show_lodgement_groups", ValueError(msg)))
+        if rs.has_validation_errors():
+            return self.lodgement_wishes_graph_form(rs, event_id)
 
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        lodgement_group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
+        lodgement_groups = self.eventproxy.get_lodgement_groups(rs, lodgement_group_ids)
         personas = self.coreproxy.get_event_users(rs, tuple(
             reg['persona_id'] for reg in registrations.values()), event_id)
 
         wishes, _problems = detect_lodgement_wishes(
             registrations, personas, event, part_id)
         graph = create_lodgement_wishes_graph(
-            rs, registrations, wishes, lodgements, event, personas, part_id,
-            all_participants, part_id if show_lodgements else None)
+            rs, registrations, wishes, lodgements, lodgement_groups, event, personas,
+            filter_part_id=part_id, show_all=all_participants, cluster_part_id=part_id,
+            cluster_by_lodgement=show_lodgements,
+            cluster_by_lodgement_group=show_lodgement_groups)
         data: bytes = graph.pipe('svg')
         return self.send_file(rs, "image/svg+xml", data=data)
 
