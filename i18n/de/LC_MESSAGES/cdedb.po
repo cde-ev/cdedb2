@@ -32,7 +32,7 @@ msgid ""
 "Full name (any given name plus family name), forename/display name plus "
 "family name, email address or CdEDB-ID (\"DB-0000-X\")"
 msgstr ""
-"Vollständiger Name (ein beliebiger Vorname plus Nachnem), Rufname plus "
+"Vollständiger Name (ein beliebiger Vorname plus Nachname), Rufname plus "
 "Nachname, E-Mail-Adresse oder CdEDB-ID (\"DB-0000-X\")"
 
 msgid "Insufficient admin privileges."
