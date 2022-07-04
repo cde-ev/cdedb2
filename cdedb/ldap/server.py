@@ -194,7 +194,7 @@ class CdEDBLDAPServer(LDAPServer):
         d.addErrback(log.err)
         return d
 
-    async def _handle_compare_request(self, request: LDAPCompareRequest, controls, # type: ignore[no-untyped-def]
+    async def _handle_compare_request(self, request: LDAPCompareRequest, controls,  # type: ignore[no-untyped-def]
                                       reply) -> None:
         self.checkControls(controls)
         base_dn = DistinguishedName(request.entry)
