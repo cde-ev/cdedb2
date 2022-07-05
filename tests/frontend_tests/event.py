@@ -375,7 +375,7 @@ class TestEventFrontend(FrontendTest):
             "Unterkünfte", "Downloads", "Partieller Import", "Überweisungen eintragen",
             "Konfiguration", "Veranstaltungsteile", "Datenfelder konfigurieren",
             "Anmeldung konfigurieren", "Fragebogen konfigurieren",
-            "Verstöße gegen Beschränkungen", "Log", "Checkin"}
+            "Log", "Checkin"}
 
         # TODO this could be more expanded (event without courses, distinguish
         #  between registered and participant, ...
