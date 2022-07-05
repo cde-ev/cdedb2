@@ -848,7 +848,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     rs, result, query, kind=download,
                     filename=scope.get_target() + "_result")
         else:
-            if not is_search and scope.includes_archived():
+            if not is_search and scope.includes_archived:
                 rs.values['qop_is_archived'] = query_mod.QueryOperators.equal.value
                 rs.values['qval_is_archived'] = True
             rs.values['is_search'] = False

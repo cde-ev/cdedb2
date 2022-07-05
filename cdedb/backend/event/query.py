@@ -258,7 +258,7 @@ class EventQueryBackend(EventBaseBackend):
                 raise PrivilegeError(n_("Admin only."))
 
             # Include only (un)archived users, depending on query scope.
-            if not query.scope.includes_archived():
+            if not query.scope.includes_archived:
                 query.constraints.append(("is_archived", QueryOperators.equal, False))
                 query.spec["is_archived"] = QuerySpecEntry("bool", "")
 

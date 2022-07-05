@@ -311,7 +311,7 @@ class AssemblyBackend(AbstractBackend):
         query = affirm(Query, query)
         if query.scope in {QueryScope.assembly_user, QueryScope.all_assembly_users}:
             # Potentially restrict to non-archived users.
-            if not query.scope.includes_archived():
+            if not query.scope.includes_archived:
                 query.constraints.append(("is_archived", QueryOperators.equal, False))
                 query.spec["is_archived"] = QuerySpecEntry("bool", "")
 

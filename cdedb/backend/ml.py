@@ -296,7 +296,7 @@ class MlBackend(AbstractBackend):
         query = affirm(Query, query)
         if query.scope in {QueryScope.ml_user, QueryScope.all_ml_users}:
             # Potentially restrict to non-archived users.
-            if not query.scope.includes_archived():
+            if not query.scope.includes_archived:
                 query.constraints.append(("is_archived", QueryOperators.equal, False))
                 query.spec["is_archived"] = QuerySpecEntry("bool", "")
 

@@ -149,8 +149,10 @@ class QueryScope(enum.IntEnum):
     constant and some dynamic things for the individual scopes.
     """
     realm: str
+    includes_archived: bool
 
-    def __new__(cls, value: int, realm: str = "core") -> "QueryScope":
+    def __new__(cls, value: int, realm: str = "core", includes_archived: bool = False
+                ) -> "QueryScope":
         """Custom creation method for this enum.
 
         Achieves that value and realm of new members can be written using tuple
@@ -159,6 +161,7 @@ class QueryScope(enum.IntEnum):
         obj = int.__new__(cls, value)
         obj._value_ = value
         obj.realm = realm
+        obj.includes_archived = includes_archived
         return obj
 
     persona = 1
@@ -169,11 +172,11 @@ class QueryScope(enum.IntEnum):
     ml_user = 6, "ml"
     past_event_user = 7, "cde"
     archived_persona = 10
-    all_core_users = 11
-    all_assembly_users = 12, "assembly"
-    all_cde_users = 13, "cde"
-    all_event_users = 14, "event"
-    all_ml_users = 15, "ml"
+    all_core_users = 11, "core", True
+    all_assembly_users = 12, "assembly", True
+    all_cde_users = 13, "cde", True
+    all_event_users = 14, "event", True
+    all_ml_users = 15, "ml", True
     cde_member = 20, "cde"
     registration = 30, "event"
     quick_registration = 31, "event"
@@ -236,16 +239,6 @@ class QueryScope(enum.IntEnum):
         """Whether or not storing queries with this scope is supported."""
         return self in {QueryScope.registration, QueryScope.lodgement,
                         QueryScope.event_course}
-
-    def includes_archived(self) -> bool:
-        """Whether or not this scope includes archived users."""
-        return self in {
-            QueryScope.all_core_users,
-            QueryScope.all_assembly_users,
-            QueryScope.all_cde_users,
-            QueryScope.all_event_users,
-            QueryScope.all_ml_users,
-        }
 
     def get_target(self, *, redirect: bool = True) -> str:
         """For scopes that support storing, where to redirect to after storing."""
