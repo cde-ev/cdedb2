@@ -190,9 +190,7 @@ class QueryScope(enum.IntEnum):
         Supstitute for SQL views. We cannot use SQL views since they do not allow
         multiple columns with the same name, but each join brings in an id column.
         """
-        default_view = ("core.personas LEFT OUTER JOIN past_event.participants"
-                        " ON personas.id = participants.persona_id")
-        return _QUERY_VIEWS.get(self, default_view)  # type: ignore[return-value]
+        return _QUERY_VIEWS.get(self, "core.personas")
 
     def get_primary_key(self, short: bool = False) -> str:
         """Return the primary key of the view associated with the scope.
@@ -319,10 +317,7 @@ class QueryScope(enum.IntEnum):
 
 # See `QueryScope.get_view().
 _QUERY_VIEWS = {
-    QueryScope.persona:
-        "core.personas",
-    QueryScope.cde_user:
-        """core.personas
+    QueryScope.cde_user: (_CDE_USER_VIEW := """core.personas
         LEFT OUTER JOIN past_event.participants
             ON personas.id = participants.persona_id
         LEFT OUTER JOIN (
@@ -336,19 +331,26 @@ _QUERY_VIEWS = {
                 FROM cde.lastschrift GROUP BY persona_id
             )
         ) AS lastschrift ON personas.id = lastschrift.persona_id
-        """,
-    QueryScope.registration:
-        None,  # This will be generated on the fly.
+        """),
+    QueryScope.all_cde_users: _CDE_USER_VIEW,
+    QueryScope.cde_member: (_PERSONAS_PAST_EVENT_VIEW := """core.personas
+        LEFT OUTER JOIN past_event.participants
+            ON personas.id = participants.persona_id
+        """),
+    QueryScope.past_event_user: _PERSONAS_PAST_EVENT_VIEW,
     QueryScope.quick_registration:
-        "core.personas INNER JOIN event.registrations"
-        " ON personas.id = registrations.persona_id",
-    QueryScope.lodgement:
-        None,  # This will be generated on the fly.
-    QueryScope.event_course:
-        None,  # This will be generated on the fly.
+        """core.personas
+        INNER JOIN event.registrations
+            ON personas.id = registrations.persona_id
+        """,
+    QueryScope.registration: "",  # This will be generated on the fly.
+    QueryScope.lodgement: "",  # This will be generated on the fly.
+    QueryScope.event_course: "",  # This will be generated on the fly.
     QueryScope.past_event_course:
-        "past_event.courses LEFT OUTER JOIN past_event.events"
-        " ON courses.pevent_id = events.id",
+        """past_event.courses
+        LEFT OUTER JOIN past_event.events
+            ON courses.pevent_id = events.id
+        """,
 }
 
 # See QueryScope.get_primary_key().
