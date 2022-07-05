@@ -363,6 +363,7 @@ PRIMARY_KEYS = {
 
 # See QueryScope.get_spec().
 _QUERY_SPECS = {
+    # The most basic view on a persona.
     QueryScope.persona:
         {
             "personas.id": QuerySpecEntry("id", n_("ID")),
@@ -371,9 +372,12 @@ _QUERY_SPECS = {
             "username": QuerySpecEntry("str", n_("E-Mail")),
             "display_name": QuerySpecEntry("str", n_("Known as (Forename)")),
             "is_active": QuerySpecEntry("bool", n_("Active Account")),
+            "is_archived": QuerySpecEntry("bool", n_("Archived Account")),
             "notes": QuerySpecEntry("str", n_("Admin-Notes")),
             "fulltext": QuerySpecEntry("str", n_("Fulltext")),
         },
+    # More complete view of a persona. Includes most event-realm things, but not all
+    #  cde-realm things.
     QueryScope.core_user:
         {
             "personas.id": QuerySpecEntry("id", n_("ID")),
@@ -409,6 +413,7 @@ _QUERY_SPECS = {
             "notes": QuerySpecEntry("str", n_("Admin-Notes")),
             "fulltext": QuerySpecEntry("str", n_("Fulltext")),
         },
+    # The most complete view on a persona. Most is only available for cde-realm users.
     QueryScope.cde_user:
         {
             "personas.id": QuerySpecEntry("id", n_("ID")),
@@ -463,6 +468,7 @@ _QUERY_SPECS = {
             "lastschrift.amount": QuerySpecEntry("float", n_("Lastschrift Amount")),
             "notes": QuerySpecEntry("str", n_("Admin-Notes")),
         },
+    # Basic view of an event-realm user.
     QueryScope.event_user:
         {
             "personas.id": QuerySpecEntry("id", n_("ID")),
@@ -482,6 +488,7 @@ _QUERY_SPECS = {
             "location": QuerySpecEntry("str", n_("City")),
             "country": QuerySpecEntry("str", n_("Country")),
             "is_active": QuerySpecEntry("bool", n_("Active Account")),
+            "is_archived": QuerySpecEntry("bool", n_("Archived Account")),
             "is_member": QuerySpecEntry("bool", n_("CdE-Member")),
             "is_searchable": QuerySpecEntry("bool", n_("Searchable")),
             **{
@@ -493,6 +500,7 @@ _QUERY_SPECS = {
             "pcourse_id": QuerySpecEntry("id", n_("Past Course")),
             "notes": QuerySpecEntry("str", n_("Admin-Notes")),
         },
+    # Special view of a cde member for the member search.
     QueryScope.cde_member:
         {
             "personas.id": QuerySpecEntry("id", n_("ID")),
@@ -511,6 +519,7 @@ _QUERY_SPECS = {
             "pcourse_id": QuerySpecEntry("id", n_("Past Course")),
             "fulltext": QuerySpecEntry("str", n_("Fulltext")),
         },
+    # Special view on a `event.regisrations` entry for registration quicksearch.
     QueryScope.quick_registration:
         {
             "registrations.id": QuerySpecEntry("id", n_("ID")),
@@ -521,6 +530,7 @@ _QUERY_SPECS = {
             "title": QuerySpecEntry("str", n_("Title_[[of a persona]]")),
             "name_supplement": QuerySpecEntry("str", n_("Name Affix")),
         },
+    # Special view on `past_event.courses` and `past_event.events` for course search.
     QueryScope.past_event_course:
         {
             "courses.id": QuerySpecEntry("id", n_("course ID")),
@@ -535,14 +545,18 @@ _QUERY_SPECS = {
                 "date", n_("Cutoff date"), n_("Past Event")),
         },
 }
+
+# ml and assembly users contain very little data, so the basic view suffices.
 _QUERY_SPECS[QueryScope.ml_user] = _QUERY_SPECS[QueryScope.persona]
 _QUERY_SPECS[QueryScope.assembly_user] = _QUERY_SPECS[QueryScope.persona]
+
+# Past event users are event users plus implicit event users, viewed as event users.
 _QUERY_SPECS[QueryScope.past_event_user] = _QUERY_SPECS[QueryScope.event_user]
+
+# The all_<realm>_users scopes should offer the same view, with different constraints.
 _QUERY_SPECS[QueryScope.all_core_users] = _QUERY_SPECS[QueryScope.core_user]
 _QUERY_SPECS[QueryScope.all_assembly_users] = _QUERY_SPECS[QueryScope.assembly_user]
-# TODO: Fix all_cde_users spec. The cde_user spec includes lastschrift fields, which
-#  might be unwanted here.
-_QUERY_SPECS[QueryScope.all_cde_users] = _QUERY_SPECS[QueryScope.core_user]
+_QUERY_SPECS[QueryScope.all_cde_users] = _QUERY_SPECS[QueryScope.cde_user]
 _QUERY_SPECS[QueryScope.all_event_users] = _QUERY_SPECS[QueryScope.event_user]
 _QUERY_SPECS[QueryScope.all_ml_users] = _QUERY_SPECS[QueryScope.ml_user]
 
