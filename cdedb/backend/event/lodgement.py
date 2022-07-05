@@ -29,6 +29,7 @@ from cdedb.database.query import DatabaseValue_s
 
 @dataclasses.dataclass(frozen=True)
 class LodgementInhabitants:
+    """Small helper class to store and add inhabitants of a lodgement."""
     regular: Tuple[int, ...] = dataclasses.field(default_factory=tuple)
     camping_mat: Tuple[int, ...] = dataclasses.field(default_factory=tuple)
 
@@ -68,6 +69,9 @@ class EventLodgementBackend(EventBaseBackend):
         """Retrieve data for some lodgement groups.
 
         All have to be from the same event.
+
+        For all lodgements belonging to a group, their ids are collected into a set of
+        lodgement_ids their capacities (regular and camping mat) are summed.
         """
         group_ids = affirm_set(vtypes.ID, group_ids)
         with Atomizer(rs):
