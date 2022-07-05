@@ -139,7 +139,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         """
         return self.generic_user_search(
             rs, download, is_search,
-            QueryScope.all_ml_users, QueryScope.all_ml_users,
+            QueryScope.all_ml_users, QueryScope.all_core_users,
             self.mlproxy.submit_general_query)
 
     @access("ml")

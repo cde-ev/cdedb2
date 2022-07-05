@@ -190,7 +190,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         }
         return self.generic_user_search(
             rs, download, is_search,
-            QueryScope.all_event_users, QueryScope.all_event_users,
+            QueryScope.all_event_users, QueryScope.all_core_users,
             self.eventproxy.submit_general_query, choices=choices)
 
     @access("event")
