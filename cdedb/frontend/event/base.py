@@ -119,6 +119,9 @@ class EventBaseFrontend(AbstractUserFrontend):
                            == const.RegistrationPartStati.participant
                            for part in registration['parts'].values()):
                         params['is_participant'] = True
+            params['has_constraints'] = any(
+                not pg['constraint_type'].is_stats()
+                for pg in rs.ambience['event']['part_groups'].values())
         return super().render(rs, templatename, params=params)
 
     @classmethod
