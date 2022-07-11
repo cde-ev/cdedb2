@@ -144,8 +144,14 @@
                         {%- for pcourse_id, pcourse in participant['pcourses']|keydictsort(EntitySorter.past_course) %}
                             {%- if pcourse_id -%}
                                 {{ pcourse['nr'] }}.
+                                {% if pcourse_id in participant['instructor'] -%}
+                                    <strong>
+                                {%- endif -%}
                                 {{ util.href(cdedblink('cde/show_past_course', {'pcourse_id' : pcourse_id}),
                                     pcourse['title']) }}
+                                {%- if pcourse_id in participant['instructor'] -%}
+                                    </strong>
+                                {%- endif -%}
                                 {%- if not loop.last %}, {% endif -%}
                             {% endif -%}
                         {% endfor -%}
