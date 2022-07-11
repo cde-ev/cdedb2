@@ -4014,8 +4014,11 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertNonPresence("Inga", div='track3-attendees')
 
         # Check the attendees link in the footer.
-        self.assertPresence("Kurswahlen Kursteilnehmer", div='track3-attendees')
-        self.traverse({'description': "Kursteilnehmer", 'linkid': "attendees-link-3"})
+        self.assertPresence("Alle Kurswahlen", div='track3-attendees')
+        self.assertPresence("Kursteilnehmer", div='track3-attendees')
+        self.assertPresence("In Anmeldungsliste", div='track3-attendees')
+        self.traverse({'description': "In Anmeldungsliste anzeigen",
+                       'linkid': "attendees-link-3"})
         self.assertTitle("Anmeldungen (Große Testakademie 2222)")
         self.assertPresence("Ergebnis [2]", div='query-results')
         self.assertPresence("Akira", div='result-container')
@@ -4035,11 +4038,11 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertTitle("Unterkunft Kalte Kammer (Große Testakademie 2222)")
         self.assertPresence("Inga", div='inhabitants-3')
         self.assertPresence("Garcia", div='inhabitants-3')
-        self.assertPresence("Bewohner", div='inhabitants-3')
+        self.assertPresence("In Anmeldungsliste", div='inhabitants-3')
         self.assertPresence("Garcia", div='inhabitants-1')
-        self.assertPresence("Bewohner", div='inhabitants-1')
+        self.assertPresence("In Anmeldungsliste", div='inhabitants-1')
         self.assertNonPresence("Emilia", div='inhabitants')
-        self.assertNonPresence("Bewohner", div='inhabitants-2')
+        self.assertNonPresence("In Anmeldungsliste", div='inhabitants-2')
         self.traverse("Bewohner verwalten")
         self.assertTitle("Bewohner der Unterkunft Kalte Kammer verwalten"
                          " (Große Testakademie 2222)")
@@ -4065,7 +4068,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 
         # Check inhabitants link
         self.traverse("Kalte Kammer",
-                      {'description': "Bewohner", 'linkid': "inhabitants-link-3"})
+                      {'description': "In Anmeldungsliste anzeigen",
+                       'linkid': "inhabitants-link-3"})
         self.assertTitle("Anmeldungen (Große Testakademie 2222)")
         self.assertPresence("Ergebnis [3]", div='query-results')
         self.assertPresence("Emilia", div='result-container')
