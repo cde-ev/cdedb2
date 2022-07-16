@@ -1,15 +1,22 @@
 """Custom ldaptor server."""
 
+import asyncio
 import logging
-from asyncio import get_running_loop
+from asyncio.transports import BaseTransport, Transport
+from typing import Any, Callable, Coroutine, List, Optional, Tuple
 
 from ldaptor import interfaces
-from ldaptor.protocols import pureldap
+from ldaptor.protocols import pureber, pureldap
 from ldaptor.protocols.ldap import ldaperrors
 from ldaptor.protocols.ldap.distinguishedname import DistinguishedName
-from ldaptor.protocols.ldap.ldaperrors import LDAPException
-from ldaptor.protocols.ldap.ldapserver import LDAPServer
-from ldaptor.protocols.pureldap import LDAPCompareRequest, LDAPSearchRequest
+from ldaptor.protocols.ldap.ldaperrors import LDAPException, LDAPProtocolError
+from ldaptor.protocols.ldap.ldapserver import (
+    LDAPServer, LDAPServerConnectionLostException,
+)
+from ldaptor.protocols.pureldap import (
+    LDAPCompareRequest, LDAPControls, LDAPMessage, LDAPProtocolRequest,
+    LDAPProtocolResponse, LDAPSearchRequest,
+)
 from twisted.internet import defer
 from twisted.internet.protocol import ServerFactory
 from twisted.python import log
@@ -17,7 +24,165 @@ from twisted.python import log
 from cdedb.ldap.backend import LDAPsqlBackend
 from cdedb.ldap.entry import CdEDBBaseLDAPEntry, RootEntry
 
+ReplyCallback = Callable[[pureldap.LDAPProtocolResponse], None]
+
 logger = logging.getLogger(__name__)
+
+
+class LdapServer(asyncio.Protocol):
+    """Implementation of the ldap protocol via asyncio.
+
+    Each time a new client connects to the server, a new instance of this class will
+    be spawned. This instance is then associated to the whole communication with this
+    client, and this client alone.
+    """
+
+    def __init__(self, root: CdEDBBaseLDAPEntry):
+        self.buffer = b""
+        self.connected = False
+        self.transport: Transport = None  # type: ignore[assignment]
+        self.root = root
+
+    berdecoder = pureldap.LDAPBERDecoderContext_TopLevel(
+        inherit=pureldap.LDAPBERDecoderContext_LDAPMessage(
+            fallback=pureldap.LDAPBERDecoderContext(
+                fallback=pureber.BERDecoderContext()
+            ),
+            inherit=pureldap.LDAPBERDecoderContext(
+                fallback=pureber.BERDecoderContext()
+            ),
+        )
+    )
+
+    def connection_made(self, transport: BaseTransport) -> None:
+        """Called once this instance of LdapServer was connected to its client."""
+        self.connected = True
+        assert isinstance(transport, Transport)
+        self.transport = transport
+
+    def connection_lost(self, exc: Optional[Exception]) -> None:
+        """Called once this instance of LdapServer lost the connection to its client."""
+        # TODO maybe handle the exception or proper close the connection
+        self.connected = False
+        self.transport.close()
+
+    def data_received(self, data: bytes) -> None:
+        """Called each time the server received binary data from its client.
+
+        Note that this makes no guarantee about receiving semantic messages in one part.
+        So, buffering the received data and decoding it manually is mandatory.
+        """
+        self.buffer += data
+        while 1:
+            try:
+                msg, len_decoded = pureber.berDecodeObject(self.berdecoder, self.buffer)
+            except pureber.BERExceptionInsufficientData:
+                msg, len_decoded = None, 0
+            self.buffer = self.buffer[len_decoded:]
+            if msg is None:
+                break
+            # this is some very obscure code path, related to the construction of the
+            # berdecoder object, but always guaranteed ...
+            assert isinstance(msg, LDAPMessage)
+            asyncio.create_task(self.handle(msg))
+
+    def queue(self, msg_id: int, op: pureldap.LDAPProtocolResponse) -> None:
+        """Queuing messages which shall be sent to the client.
+
+        Note that order of messages is important.
+        """
+        if not self.connected:
+            raise LDAPServerConnectionLostException()
+        msg = pureldap.LDAPMessage(op, id=msg_id)
+        logger.debug("S->C %s" % repr(msg))
+        self.transport.write(msg.toWire())
+
+    def unsolicited_notification(self, msg: LDAPProtocolRequest) -> None:
+        """Special kind of ldap request which might be ignored by the server."""
+        logger.error("Got unsolicited notification: %s" % repr(msg))
+
+    def check_controls(self, controls: Optional[Tuple[Any, Any, Any]]) -> None:
+        """Check controls which are sent together with the current request.
+
+        Controls are an ldap mechanism to give additional parameters or information
+        to requests. For example, a search request may contain a control to tell the
+        client if the server knows a different ldap server which might know the
+        requested entry.
+
+        Controls have a 'criticality' property. If this is set to true, the server must
+        abort the current request if the control is unknown to the server. Otherwise,
+        it must ignore unknown controls.
+
+        Currently, no controls are supported by this ldap server.
+        """
+        if controls is not None:
+            for controlType, criticality, controlValue in controls:
+                if criticality:
+                    raise ldaperrors.LDAPUnavailableCriticalExtension(
+                        b"Unknown control %s" % controlType
+                    )
+
+    async def handle_unknown(
+        self,
+        request: pureldap.LDAPProtocolRequest,
+        controls: Optional[pureldap.LDAPControls],
+        reply: ReplyCallback,
+    ) -> None:
+        """Fallback handler if the current request to the server is not known."""
+        logger.error("Unknown request: %r" % request)
+        msg = pureldap.LDAPExtendedResponse(
+            resultCode=ldaperrors.LDAPProtocolError.resultCode,
+            responseName="1.3.6.1.4.1.1466.20036",
+            errorMessage="Unknown request",
+        )
+        reply(msg)
+
+    def fail_default(
+        self, resultCode: int, errorMessage: str
+    ) -> pureldap.LDAPProtocolResponse:
+        """Fallback error handler."""
+        return pureldap.LDAPExtendedResponse(
+            resultCode=resultCode,
+            responseName="1.3.6.1.4.1.1466.20036",
+            errorMessage=errorMessage,
+        )
+
+    async def handle(self, msg: LDAPMessage) -> None:
+        """Handle one request to the ldap server.
+
+        A request is always contained in an LDAPMessage object. For further information,
+        please consult the specific RFCs or the implementation details of ldaptor.
+        """
+        assert isinstance(msg.value, pureldap.LDAPProtocolRequest)
+        logger.debug("S<-C %s" % repr(msg))
+
+        # exactly unsolicited notifications have a message id of 0
+        if msg.id == 0:
+            self.unsolicited_notification(msg.value)
+            return
+
+        name = msg.value.__class__.__name__
+        handler: Callable[
+            [LDAPProtocolRequest, Optional[LDAPControls], ReplyCallback],
+            Coroutine[None, None, None],
+        ]
+        handler = getattr(self, "handle_" + name, self.handle_unknown)
+        error_handler: Callable[[int, str], LDAPProtocolResponse]
+        error_handler = getattr(self, "fail_" + name, self.fail_default)
+        try:
+            await handler(
+                msg.value,
+                msg.controls,
+                lambda response_msg: self.queue(msg.id, response_msg),
+            )
+        except LDAPException as e:
+            logger.error(f"During handling of {name} (msg.id {msg.id}): {repr(e)}")
+            response = error_handler(e.resultCode, e.message)
+            self.queue(msg.id, response)
+        except Exception as e:
+            logger.error(f"During handling of {name} (msg.id {msg.id}): {repr(e)}")
+            response = error_handler(LDAPProtocolError.resultCode, str(e))
+            self.queue(msg.id, response)
 
 
 class CdEDBLDAPServer(LDAPServer):
