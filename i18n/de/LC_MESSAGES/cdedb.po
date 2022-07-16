@@ -1,3 +1,37 @@
+msgid "All Course Choices"
+msgstr "Alle Kurswahlen"
+
+msgid "Show Lodgement Groups"
+msgstr "Zeige Unterkunftsgruppen"
+
+msgid "Search All Users"
+msgstr "Alle Nutzer verwalten"
+
+msgid "May sleep on a Camping Mat."
+msgstr "Kann auf einer Isomatte schlafen."
+
+msgid "MailinglistTypes.general_moderated_opt_in"
+msgstr "Öffentlich (Moderiertes Opt-in)"
+
+msgid "MailinglistTypes.general_invitation_only"
+msgstr "Öffentlich (Nur durch Moderatoren)"
+
+msgid "Insufficient admin privileges."
+msgstr "Unzulängliche Adminrechte."
+
+msgid "Full User Search"
+msgstr "Vollständige Nutzerverwaltung"
+
+msgid ""
+"Display the lodgement groups of the assigned lodgements as clusters (reduces "
+"graph layout quality)"
+msgstr ""
+"Zeige die Unterkunftsgruppen der zugewiesenen Unterkünfte als Cluster an "
+"(verschlechtert die Qualität des Graph-Layouts)"
+
+msgid "Assigned to sleep on a Camping Mat."
+msgstr "Auf eine Isomatte eingeteilt."
+
 # German translations for CdEDBv2.
 # Copyright (C) 2016 CdE Datenbank Team
 # This file is distributed under the same license as the CdEDBv2 project.
@@ -17,37 +51,6 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "Generated-By: Babel 2.6.0\n"
-
-msgid "Assigned to sleep on a Camping Mat."
-msgstr "Auf eine Isomatte eingeteilt."
-
-msgid ""
-"Display the lodgement groups of the assigned lodgements as clusters (reduces "
-"graph layout quality)"
-msgstr ""
-"Zeige die Unterkunftsgruppen der zugewiesenen Unterkünfte als Cluster an "
-"(verschlechtert die Qualität des Graph-Layouts)"
-
-msgid "Full User Search"
-msgstr "Vollständige Nutzerverwaltung"
-
-msgid "Insufficient admin privileges."
-msgstr "Unzulängliche Adminrechte."
-
-msgid "MailinglistTypes.general_invitation_only"
-msgstr "Öffentlich (Nur durch Moderatoren)"
-
-msgid "MailinglistTypes.general_moderated_opt_in"
-msgstr "Öffentlich (Moderiertes Opt-in)"
-
-msgid "May sleep on a Camping Mat."
-msgstr "Kann auf einer Isomatte schlafen."
-
-msgid "Search All Users"
-msgstr "Alle Nutzer verwalten"
-
-msgid "Show Lodgement Groups"
-msgstr "Zeige Unterkunftsgruppen"
 
 #: bin/archive/migrate_execute.py:394
 msgid "Initial import."

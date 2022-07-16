@@ -153,9 +153,17 @@ def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
     with connection as conn:
         with conn.cursor() as curr:
             curr.execute(clean_script.read_text())
+    # Also clean out the event keeper storage
+    for thing in (conf['STORAGE_DIR'] / 'event_keeper').iterdir():
+        subprocess.run(["sudo", "rm", "-r", str(thing)], check=True)
 
     print("Setup the eventkeeper git repository.")
-    populate_event_keeper(conf, {data['id']})
+    cmd = ['sudo', '-E', 'python3', '-m', 'cdedb', 'filesystem', 'storage',
+           'populate-event-keeper', str(data['id'])]
+    if not args.test:
+        cmd.insert(6, '--owner')
+        cmd.insert(7, 'www-data')
+    subprocess.run(cmd, check=True)
 
     print("Make orgas into admins")
     orgas = {e['persona_id'] for e in data['event.orgas'].values()}
@@ -260,7 +268,7 @@ def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
     config_path = get_configpath()
     # make sure to unset the development vm config option, so we do not clash
     subprocess.run(
-        ["sed", "-i", "-e", "s/CDEDB_DEV = True/CDEDB_DEV = False/",
+        ["sudo", "sed", "-i", "-e", "s/CDEDB_DEV = True/CDEDB_DEV = False/",
          str(config_path)], check=True)
     # mark the config as offline vm
     with open(str(config_path), 'a', encoding='UTF-8') as conf:

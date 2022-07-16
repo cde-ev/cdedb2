@@ -304,6 +304,7 @@ _SECRECTS_DEFAULTS = {
         "cdb_persona": "abcdefghijklmnopqrstuvwxyzabcd",
         "cdb_member": "zyxwvutsrqponmlkjihgfedcbazyxw",
         "cdb_admin": "9876543210abcdefghijklmnopqrst",
+        "cdb_ldap": "1234567890zyxwvutsrqponmlkjihg",
         "cdb": "987654321098765432109876543210",  # only used for testsuite
     },
 

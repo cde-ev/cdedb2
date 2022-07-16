@@ -224,8 +224,8 @@ class AsyncLDAPBackendTest(AsyncBasicTest):
         asyncio.get_running_loop().set_debug(False)
         conn_params = dict(
             dbname=self.conf["CDB_DATABASE_NAME"],
-            user="cdb_admin",
-            password=self.secrets["CDB_DATABASE_ROLES"]["cdb_admin"],
+            user="cdb_ldap",
+            password=self.secrets["CDB_DATABASE_ROLES"]["cdb_ldap"],
             host=self.conf["DB_HOST"],
             port=self.conf["DB_PORT"],
         )
@@ -249,7 +249,9 @@ class AsyncLDAPBackendTest(AsyncBasicTest):
             self.assertIsInstance(user, DN)
         users = await self.ldap.get_users(user_dns)
         users_data = await self.ldap.get_users_data(persona_ids)
+        self.assertIn(1, users_data)
         user_groups = await self.ldap.get_users_groups(persona_ids)
+        self.assertIn(1, user_groups)
 
     async def test_get_status_groups(self) -> None:
         status_group_dns = await self.ldap.list_status_groups()
@@ -265,7 +267,9 @@ class AsyncLDAPBackendTest(AsyncBasicTest):
         presider_groups = await self.ldap.get_assembly_presider_groups(
             presider_group_dns)
         presiders = await self.ldap.get_presiders(assembly_ids)
+        self.assertIn(1, presiders)
         assemblies = await self.ldap.get_assemblies(assembly_ids)
+        self.assertIn(1, assemblies)
 
     async def test_orgas(self) -> None:
         event_ids = {1, 2, 3, 4}
@@ -274,4 +278,29 @@ class AsyncLDAPBackendTest(AsyncBasicTest):
             self.assertIsInstance(orga, DN)
         orga_groups = await self.ldap.get_event_orga_groups(orga_group_dns)
         orgas = await self.ldap.get_orgas(event_ids)
+        self.assertIn(1, orgas)
         events = await self.ldap.get_events(event_ids)
+        self.assertIn(1, events)
+
+    async def test_moderators(self) -> None:
+        ml_addresses = {"42@lists.cde-ev.de"}
+        moderator_group_dns = await self.ldap.list_ml_moderator_groups()
+        for moderator in moderator_group_dns:
+            self.assertIsInstance(moderator, DN)
+        moderator_groups = await self.ldap.get_ml_moderator_groups(moderator_group_dns)
+        moderators = await self.ldap.get_moderators(ml_addresses)
+        self.assertIn("42@lists.cde-ev.de", moderators)
+        mls = await self.ldap.get_mailinglists(ml_addresses)
+        self.assertIn("42@lists.cde-ev.de", mls)
+
+    async def test_subscribers(self) -> None:
+        ml_addresses = {"42@lists.cde-ev.de"}
+        subscriber_group_dns = await self.ldap.list_ml_subscriber_groups()
+        for subscriber in subscriber_group_dns:
+            self.assertIsInstance(subscriber, DN)
+        subscriber_groups = await self.ldap.get_ml_moderator_groups(
+            subscriber_group_dns)
+        subscribers = await self.ldap.get_moderators(ml_addresses)
+        self.assertIn("42@lists.cde-ev.de", subscribers)
+        mls = await self.ldap.get_mailinglists(ml_addresses)
+        self.assertIn("42@lists.cde-ev.de", mls)

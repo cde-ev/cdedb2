@@ -70,9 +70,11 @@
             {{ util.href(cdedblink("event/configure_additional_questionnaire_form", {"event_id": data['id']}),
                          gettext("Configure Questionnaire"), aclass="list-group-item",
                          active=(sidenav_active == 'event_configure_additional_questionnaire'), icon='plus-square') }}
-            {{ util.href(cdedblink("event/constraint_violations", {"event_id": data['id']}),
-                         gettext("Constraint Violations"), aclass="list-group-item",
-                         active=(sidenav_active == 'event_constraint_violations'), icon='exclamation-circle') }}
+            {% if has_constraints %}
+                {{ util.href(cdedblink("event/constraint_violations", {"event_id": data['id']}),
+                             gettext("Constraint Violations"), aclass="list-group-item",
+                             active=(sidenav_active == 'event_constraint_violations'), icon='exclamation-circle') }}
+            {% endif %}
             {{ util.href(cdedblink("event/view_event_log", {"event_id": data['id']}), gettext("Log"), aclass="list-group-item",
                          icon="far fa-list-alt", active=(sidenav_active == 'event_event_log')) }}
         </div>

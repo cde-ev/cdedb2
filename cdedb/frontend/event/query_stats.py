@@ -19,7 +19,7 @@ import abc
 import datetime
 import enum
 import itertools
-from typing import Collection, Dict, Iterable, List, Optional, Set, Tuple
+from typing import Collection, Dict, Iterator, List, Optional, Sequence, Set, Tuple
 
 import cdedb.database.constants as const
 from cdedb.common import AgeClasses, CdEDBObject, CdEDBObjectMap, deduct_years, unwrap
@@ -169,6 +169,7 @@ def get_id_constraint(id_field: str, entity_ids: Collection[int]) -> QueryConstr
 class StatisticMixin:
     """Helper class for basic query construction shared across"""
     id_field: str
+    name: str
 
     @abc.abstractmethod
     def test(self, event: CdEDBObject, entity: CdEDBObject, context_id: int) -> bool:
@@ -193,6 +194,11 @@ class StatisticMixin:
         query.order = order + query.order
         return query
 
+    @abc.abstractmethod
+    def get_query_part_group(self, event: CdEDBObject, part_group_id: int,
+                             registration_ids: Collection[int]) -> Query:
+        """Construct a merged query for all things in a part group."""
+
     def get_query_by_ids(self, event: CdEDBObject, entity_ids: Collection[int]
                          ) -> Query:
         """This queries information by exhaustion by listing all relevant ids."""
@@ -209,12 +215,12 @@ class StatisticMixin:
         """
 
     @staticmethod
-    def get_part_ids(event: CdEDBObject, *, part_group_id: int) -> Iterable[int]:
+    def get_part_ids(event: CdEDBObject, *, part_group_id: int) -> Sequence[int]:
         return xsorted(event['part_groups'][part_group_id]['part_ids'])
 
     @staticmethod
     def get_track_ids(event: CdEDBObject, *, part_id: int = None,
-                      part_group_id: int = None) -> Iterable[int]:
+                      part_group_id: int = None) -> Sequence[int]:
         """Determine the relevant track ids for the given part (group) id."""
         if part_id:
             return xsorted(event['parts'][part_id]['tracks'].keys())
@@ -223,6 +229,11 @@ class StatisticMixin:
             parts = (p for part_id, p in event['parts'].items() if part_id in part_ids)
             return xsorted(itertools.chain.from_iterable(p['tracks'] for p in parts))
         return ()
+
+    @abc.abstractmethod
+    def get_link_id(self, *, track_id: int = None, part_id: int = None,
+                    part_group_id: int = None) -> str:
+        """Build an id for the link to the related query."""
 
 
 # This class is still abstract, but adding abc.ABC doesn't play nice with enum.Enum.
@@ -246,6 +257,15 @@ class StatisticPartMixin(StatisticMixin):  # pylint: disable=abstract-method
             if ret := merge_queries(self._get_base_query(event), *queries):
                 return ret
         return self.get_query_by_ids(event, registration_ids)
+
+    def get_link_id(self, *, track_id: int = None, part_id: int = None,
+                    part_group_id: int = None) -> str:
+        """Build an id for the link to the related query."""
+        if part_id:
+            return f"part_{self.name}_{part_id}"
+        elif part_group_id:
+            return f"part_group_{self.name}_{part_group_id}"
+        return ""
 
 
 # This class is still abstract, but adding abc.ABC doesn't play nice with enum.Enum.
@@ -284,6 +304,17 @@ class StatisticTrackMixin(StatisticMixin):  # pylint: disable=abstract-method
             if ret := merge_queries(self._get_base_query(event), *queries):
                 return ret
         return self.get_query_by_ids(event, registration_ids)
+
+    def get_link_id(self, *, track_id: int = None, part_id: int = None,
+                    part_group_id: int = None) -> str:
+        """Build an id for the link to the related query."""
+        if track_id:
+            return f"track_{self.name}_{track_id}"
+        elif part_id:
+            return f"track_part_{self.name}_{part_id}"
+        elif part_group_id:
+            return f"track_group_{self.name}_{part_group_id}"
+        return ""
 
 
 # These enums each offer a collection of statistics for the stats page.
@@ -815,7 +846,7 @@ class EventRegistrationInXChoiceGrouper:
 
     def __iter__(
             self
-    ) -> Iterable[Tuple[int, Dict[str, Dict[int, Optional[Set[int]]]]]]:
+    ) -> Iterator[Tuple[int, Dict[str, Dict[int, Optional[Set[int]]]]]]:
         """Iterate over all x choices, for each one return sorted counts by type."""
         ret = {
             x: {
@@ -869,3 +900,18 @@ class EventRegistrationInXChoiceGrouper:
         query.fields_of_interest.extend(
             f"track{track_id}.course_id" for track_id in track_ids)
         return query
+
+    @staticmethod
+    def get_link_id(x: int, *, track_id: int = None, part_id: int = None,
+                    part_group_id: int = None) -> str:
+        if track_id:
+            return f"track_in_{x}_choice_{track_id}"
+        elif part_id:
+            return f"part_in_{x}_choice_{part_id}"
+        elif part_group_id:
+            return f"part_group_in_{x}_choice_{part_group_id}"
+        return ""
+
+
+PART_STATISTICS = (EventRegistrationPartStatistic,)
+TRACK_STATISTICS = (EventRegistrationTrackStatistic, EventCourseStatistic)

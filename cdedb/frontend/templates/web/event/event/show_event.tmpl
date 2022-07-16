@@ -333,6 +333,7 @@
                 {% endcall %}
             </div>
 
+            {% if has_constraints %}
             <div class="col-md-6" id="constraint-violations">
                 {% call generic.constraint_violations_panel(violation_severity, link_title=True) %}
                     {% if not mep_violations and not mec_violations %}
@@ -359,6 +360,7 @@
                     {% endif %}
                 {% endcall %}
             </div>
+            {% endif %}
         {% endif %}
     </div>
 

@@ -1,0 +1,21 @@
+# run the database evolution. Remember to insert the correct password first!
+sudo -u postgres psql -U postgres -d postgres -f /cdedb2/cdedb/database/evolutions/2022-06-23_ldap_create_database_user.postgres.sql
+sudo -u cdb psql -U cdb -d cdb -f /cdedb2/cdedb/database/evolutions/2022-06-23_ldap_grant_database_user.sql
+
+# add the key-value pair to the CDB_DATABASE_ROLES dict /etc/cdedb/secrets.py
+"cdb_ldap": "password"
+
+# read the md5 hashed (and salted?) password from cdb_ldap from postgres:
+sudo -u postgres psql -U postgres -d postgres -c "SELECT usename, passwd FROM pg_shadow WHERE usename = 'cdb_ldap'"
+
+# add the md5 password hash to the pgbouncer user file
+sudo nano /etc/pgbouncer/userlist.txt
+# add the following line
+"cdb_ldap" "md5passworthash" ""
+
+# restart pgbouncer and postgres
+sudo systemctl restart postgresql
+sudo systemctl restart pgbouncer
+
+# restart the ldap server
+sudo systemctl restart cde-ldap
