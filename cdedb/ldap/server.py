@@ -5,24 +5,19 @@ import logging
 from asyncio.transports import BaseTransport, Transport
 from typing import Any, Callable, Coroutine, List, Optional, Tuple
 
-from ldaptor import interfaces
 from ldaptor.protocols import pureber, pureldap
 from ldaptor.protocols.ldap import ldaperrors
 from ldaptor.protocols.ldap.distinguishedname import DistinguishedName
-from ldaptor.protocols.ldap.ldaperrors import LDAPException, LDAPProtocolError
-from ldaptor.protocols.ldap.ldapserver import (
-    LDAPServer, LDAPServerConnectionLostException,
+from ldaptor.protocols.ldap.ldaperrors import (
+    LDAPException, LDAPProtocolError, LDAPUnwillingToPerform,
 )
+from ldaptor.protocols.ldap.ldapserver import LDAPServerConnectionLostException
 from ldaptor.protocols.pureldap import (
     LDAPCompareRequest, LDAPControls, LDAPMessage, LDAPProtocolRequest,
     LDAPProtocolResponse, LDAPSearchRequest,
 )
-from twisted.internet import defer
-from twisted.internet.protocol import ServerFactory
-from twisted.python import log
 
-from cdedb.ldap.backend import LDAPsqlBackend
-from cdedb.ldap.entry import CdEDBBaseLDAPEntry, RootEntry
+from cdedb.ldap.entry import CdEDBBaseLDAPEntry
 
 ReplyCallback = Callable[[pureldap.LDAPProtocolResponse], None]
 
@@ -42,6 +37,7 @@ class LdapServer(asyncio.Protocol):
         self.connected = False
         self.transport: Transport = None  # type: ignore[assignment]
         self.root = root
+        self.bound_user: Optional[CdEDBBaseLDAPEntry] = None
 
     berdecoder = pureldap.LDAPBERDecoderContext_TopLevel(
         inherit=pureldap.LDAPBERDecoderContext_LDAPMessage(
@@ -184,33 +180,109 @@ class LdapServer(asyncio.Protocol):
             response = error_handler(LDAPProtocolError.resultCode, str(e))
             self.queue(msg.id, response)
 
+    #
+    # Below this follows the real stuff.
+    #
 
-class CdEDBLDAPServer(LDAPServer):
-    """Subclass the LDAPServer to add some security restrictions.
+    fail_LDAPBindRequest = pureldap.LDAPBindResponse
 
-    This mainly involve searches. Note that some handlers performing actions which
-    modify the ldap tree are overwritten since we currently do not support them.
-    """
+    async def handle_LDAPBindRequest(
+        self,
+        request: pureldap.LDAPBindRequest,
+        controls: Optional[pureldap.LDAPControls],
+        reply: ReplyCallback,
+    ) -> None:
+        """Bind with a specific ldap entry to the server.
 
-    def getRootDSE(self, request, reply):  # type: ignore[no-untyped-def]
-        """Helper function which should never be called from outside."""
-        raise NotImplementedError
+        The client may use this to get elevated access to the server. Otherwise, the
+        connected server gets access level 'anonymous', with bound_user = None.
+        """
+        if request.version != 3:
+            raise ldaperrors.LDAPProtocolError(
+                "Version %u not supported" % request.version
+            )
 
-    def _cbSearchLDAPError(self, reason):  # type: ignore[no-untyped-def]
-        """Helper function which should never be called from outside."""
-        raise NotImplementedError
+        self.check_controls(controls)
 
-    def _cbSearchOtherError(self, reason):  # type: ignore[no-untyped-def]
-        """Helper function which should never be called from outside."""
-        raise NotImplementedError
+        if request.dn == b"":
+            # anonymous bind
+            self.bound_user = None
+            reply(pureldap.LDAPBindResponse(resultCode=ldaperrors.Success.resultCode))
+            return
+
+        dn = DistinguishedName(request.dn)
+
+        # masquerade the NoSuchObject as InvalidCredentials error, to not leak
+        # information about the existence of ldap entries to non-privileged users
+        try:
+            entry = await self.root.lookup(dn)
+        except ldaperrors.LDAPNoSuchObject:
+            raise ldaperrors.LDAPInvalidCredentials
+
+        self.bound_user = entry.bind(request.auth)
+
+        msg = pureldap.LDAPBindResponse(
+            resultCode=ldaperrors.Success.resultCode, matchedDN=entry.dn.getText()
+        )
+        reply(msg)
+
+    async def handle_LDAPUnbindRequest(
+        self,
+        request: pureldap.LDAPUnbindRequest,
+        controls: Optional[pureldap.LDAPControls],
+        reply: ReplyCallback,
+    ) -> None:
+        """Notification to close the connection to the client."""
+        # explicitly do not check unsupported critical controls -- we
+        # have no way to return an error, anyway.
+        self.connection_lost(None)
+
+    fail_LDAPCompareRequest = pureldap.LDAPCompareResponse
+
+    async def handle_LDAPCompareRequest(
+        self,
+        request: LDAPCompareRequest,
+        controls: Optional[pureldap.LDAPControls],
+        reply: ReplyCallback,
+    ) -> None:
+        """Check if a given ldap entry matches a given filter."""
+        if self.bound_user is None:
+            raise LDAPUnwillingToPerform("Anonymous compare is forbidden.")
+
+        self.check_controls(controls)
+        dn = DistinguishedName(request.entry)
+        base = await self.root.lookup(dn)
+
+        # base.search only works with Filter Objects, and not with
+        # AttributeValueAssertion objects. Here we convert the AVA to an
+        # equivalent Filter, so we can re-use the existing search
+        # functionality we require.
+        search_filter = pureldap.LDAPFilter_equalityMatch(
+            attributeDesc=request.ava.attributeDesc,
+            assertionValue=request.ava.assertionValue,
+        )
+        search_results = await base.search(
+            filterObject=search_filter,
+            scope=pureldap.LDAP_SCOPE_baseObject,
+            derefAliases=pureldap.LDAP_DEREF_neverDerefAliases,
+            bound_dn=self.bound_user.dn if self.bound_user else None,
+        )
+        if search_results:
+            reply(pureldap.LDAPCompareResponse(ldaperrors.LDAPCompareTrue.resultCode))
+        else:
+            reply(pureldap.LDAPCompareResponse(ldaperrors.LDAPCompareFalse.resultCode))
+        return None
 
     fail_LDAPSearchRequest = pureldap.LDAPSearchResultDone
 
-    async def _handle_search_request(self, request: LDAPSearchRequest, controls,  # type: ignore[no-untyped-def]
-                                     reply) -> None:
-        self.checkControls(controls)
-
-        root: CdEDBBaseLDAPEntry = interfaces.IConnectedLDAPEntry(self.factory)
+    async def handle_LDAPSearchRequest(
+        self,
+        request: LDAPSearchRequest,
+        controls: Optional[pureldap.LDAPControls],
+        reply: ReplyCallback,
+    ) -> None:
+        """Perform a search in the ldap tree."""
+        self.check_controls(controls)
         base_dn = DistinguishedName(request.baseObject)
 
         # short-circuit if the requested entry is the root entry
@@ -219,28 +291,18 @@ class CdEDBLDAPServer(LDAPServer):
             and request.scope == pureldap.LDAP_SCOPE_baseObject
             and request.filter == pureldap.LDAPFilter_present("objectClass")
         ):
-            # prepare the attributes of the root entry as they are expected
-            attributes = list(root._fetch().items())  # pylint: disable=protected-access
-            reply(pureldap.LDAPSearchResultEntry(
-                objectName=root.dn.getText(), attributes=attributes))
-            reply(pureldap.LDAPSearchResultDone(
-                resultCode=ldaperrors.Success.resultCode))
+            msg = pureldap.LDAPSearchResultEntry(
+                objectName=self.root.dn.getText(), attributes=list(self.root.items())
+            )
+            reply(msg)
+            msg = pureldap.LDAPSearchResultDone(
+                resultCode=ldaperrors.Success.resultCode
+            )
+            reply(msg)
             return None
 
-        try:
-            base = await root._lookup(base_dn)
-        except LDAPException as e:
-            logger.error(f"Search: Encountered {e}.")
-            reply(pureldap.LDAPSearchResultDone(resultCode=e.resultCode))
-            return None
-        except Exception as e:
-            logger.error(
-                f"Search: Encountered {e} during compare of {base_dn.getText()}.")
-            reply(pureldap.LDAPSearchResultDone(resultCode=ldaperrors.other))
-            return None
-
-        bound_dn = self.boundUser.dn if self.boundUser else None
-        search_results = await base._search(
+        base = await self.root.lookup(base_dn)
+        search_results = await base.search(
             filterObject=request.filter,
             # attributes=request.attributes,
             scope=request.scope,
@@ -248,11 +310,11 @@ class CdEDBLDAPServer(LDAPServer):
             # sizeLimit=request.sizeLimit,
             # timeLimit=request.timeLimit,
             # typesOnly=request.typesOnly,
-            bound_dn=bound_dn,  # derivates from the interface specification!
+            bound_dn=self.bound_user.dn if self.bound_user else None,
         )
 
-        def send_entry_to_client(entry: CdEDBBaseLDAPEntry) -> None:
-            """Sent an entry to the client.
+        def filter_entry(entry: CdEDBBaseLDAPEntry) -> Optional[List[Any]]:
+            """Filter an entry before sending it to the client.
 
             This is the main place where our security restrictions are implemented.
             We currently restrict:
@@ -270,15 +332,15 @@ class CdEDBLDAPServer(LDAPServer):
             duas_dn = entry.backend.duas_dn
             admin_dn = entry.backend.dua_dn("admin")
 
-            # Return nothing if requesting user (self.boundUser) is not privileged.
+            # Return nothing if requesting user (self.bound_user) is not privileged.
             # anonymous users have only very limited access
-            if self.boundUser is None:
+            if self.bound_user is None:
                 if entry.dn in entry.backend.anonymous_accessible_dns:
                     pass
                 else:
                     return None
             # TODO do we need an admin dn?
-            elif self.boundUser.dn == admin_dn:
+            elif self.bound_user.dn == admin_dn:
                 pass
             # handle requests to not-restricted entries
             elif entry.dn in {entry.backend.subschema_dn, entry.backend.de_dn,
@@ -290,11 +352,11 @@ class CdEDBLDAPServer(LDAPServer):
                 if users_dn == entry.dn:
                     pass
                 # the user is requesting his own data
-                elif self.boundUser.dn == entry.dn:
+                elif self.bound_user.dn == entry.dn:
                     pass
                 # the request comes from a dua
-                elif duas_dn.contains(self.boundUser.dn):
-                    if entry.backend.may_dua_access_user(self.boundUser.dn, entry):
+                elif duas_dn.contains(self.bound_user.dn):
+                    if entry.backend.may_dua_access_user(self.bound_user.dn, entry):
                         pass
                     else:
                         return None
@@ -307,8 +369,8 @@ class CdEDBLDAPServer(LDAPServer):
                 if groups_dn == entry.dn:
                     pass
                 # the request comes from a dua
-                elif duas_dn.contains(self.boundUser.dn):
-                    if entry.backend.may_dua_access_group(self.boundUser.dn, entry):
+                elif duas_dn.contains(self.bound_user.dn):
+                    if entry.backend.may_dua_access_group(self.bound_user.dn, entry):
                         pass
                     else:
                         return None
@@ -321,9 +383,9 @@ class CdEDBLDAPServer(LDAPServer):
                 if duas_dn == entry.dn:
                     pass
                 # the request comes from a dua
-                elif duas_dn.contains(self.boundUser.dn):
+                elif duas_dn.contains(self.bound_user.dn):
                     # the dua is requesting its own data
-                    if self.boundUser.dn == entry.dn:
+                    if self.bound_user.dn == entry.dn:
                         pass
                     else:
                         return None
@@ -336,110 +398,18 @@ class CdEDBLDAPServer(LDAPServer):
             # filter the attributes requested in the search
             # TODO maybe restrict some attributes depending on the requesting entity
             if b"*" in request.attributes or len(request.attributes) == 0:
-                filtered_attributes = list(attributes.items())
+                return list(attributes.items())
             else:
-                filtered_attributes = [
+                return [
                     (key, attributes.get(key)) for key in request.attributes
                     if key in attributes]
 
-            # Sent a reply then return.
-            reply(pureldap.LDAPSearchResultEntry(objectName=entry.dn.getText(),
-                                                 attributes=filtered_attributes))
-            return None
-
         for result in search_results:
-            send_entry_to_client(result)
+            filtered_attributes = filter_entry(result)
+            if filtered_attributes is not None:
+                reply(pureldap.LDAPSearchResultEntry(
+                    objectName=result.dn.getText(), attributes=filtered_attributes))
+
         reply(pureldap.LDAPSearchResultDone(resultCode=ldaperrors.Success.resultCode))
 
         return None
-
-    def handle_LDAPSearchRequest(self, request: LDAPSearchRequest, controls, reply) -> defer.Deferred:  # type: ignore[no-untyped-def, type-arg]
-        d = defer.Deferred.fromFuture(get_running_loop().create_task(
-            self._handle_search_request(request, controls, reply)))
-        d.addErrback(log.err)
-        return d
-
-    async def _handle_compare_request(self, request: LDAPCompareRequest, controls,  # type: ignore[no-untyped-def]
-                                      reply) -> None:
-        self.checkControls(controls)
-        base_dn = DistinguishedName(request.entry)
-        root: CdEDBBaseLDAPEntry = interfaces.IConnectedLDAPEntry(self.factory)
-
-        try:
-            base = await root._lookup(base_dn)
-        except LDAPException as e:
-            logger.error(f"Compare: Encountered {e}.")
-            reply(pureldap.LDAPCompareResponse(resultCode=e.resultCode))
-            return None
-        except Exception as e:
-            logger.error(
-                f"Compare: Encountered {e} during compare of {base_dn.getText()}.")
-            reply(pureldap.LDAPCompareResponse(resultCode=ldaperrors.other))
-            return None
-
-        bound_dn = self.boundUser.dn if self.boundUser else None
-        # base.search only works with Filter Objects, and not with
-        # AttributeValueAssertion objects. Here we convert the AVA to an
-        # equivalent Filter so we can re-use the existing search
-        # functionality we require.
-        search_filter = pureldap.LDAPFilter_equalityMatch(
-            attributeDesc=request.ava.attributeDesc,
-            assertionValue=request.ava.assertionValue
-        )
-        search_results = await base._search(
-            filterObject=search_filter,
-            scope=pureldap.LDAP_SCOPE_baseObject,
-            derefAliases=pureldap.LDAP_DEREF_neverDerefAliases,
-            bound_dn=bound_dn,  # derivates from the interface specification!
-        )
-
-        if search_results:
-            reply(pureldap.LDAPCompareResponse(ldaperrors.LDAPCompareTrue.resultCode))
-        else:
-            reply(pureldap.LDAPCompareResponse(ldaperrors.LDAPCompareFalse.resultCode))
-
-        return None
-
-    def handle_LDAPCompareRequest(self, request, controls, reply) -> defer.Deferred:  # type: ignore[no-untyped-def, type-arg]
-        if self.boundUser is None:
-            return defer.fail(ldaperrors.LDAPUnwillingToPerform("No anonymous compare"))
-        d = defer.Deferred.fromFuture(get_running_loop().create_task(
-            self._handle_compare_request(request, controls, reply)))
-        d.addErrback(log.err)
-        return d
-
-    def handle_LDAPDelRequest(self, request, controls, reply) -> defer.Deferred:  # type: ignore[no-untyped-def, type-arg]
-        return defer.fail(ldaperrors.LDAPUnwillingToPerform("Not implemented"))
-
-    def handle_LDAPAddRequest(self, request, controls, reply) -> defer.Deferred:  # type: ignore[no-untyped-def, type-arg]
-        return defer.fail(ldaperrors.LDAPUnwillingToPerform("Not implemented"))
-
-    def handle_LDAPModifyDNRequest(self, request, controls, reply) -> defer.Deferred:  # type: ignore[no-untyped-def, type-arg]
-        return defer.fail(ldaperrors.LDAPUnwillingToPerform("Not implemented"))
-
-    def handle_LDAPModifyRequest(self, request, controls, reply) -> defer.Deferred:  # type: ignore[no-untyped-def, type-arg]
-        return defer.fail(ldaperrors.LDAPUnwillingToPerform("Not implemented"))
-
-    def handle_LDAPExtendedRequest(self, request, controls, reply) -> defer.Deferred:  # type: ignore[no-untyped-def, type-arg]
-        return defer.fail(ldaperrors.LDAPUnwillingToPerform("Not implemented"))
-
-    def extendedRequest_LDAPPasswordModifyRequest(self, data, reply) -> defer.Deferred:  # type: ignore[no-untyped-def, type-arg]
-        return defer.fail(ldaperrors.LDAPUnwillingToPerform("Not implemented"))
-
-
-class CdEDBLDAPServerFactory(ServerFactory):
-    """Factory to provide a CdEDBLDAPServer instance per connection."""
-
-    protocol = CdEDBLDAPServer
-    root: RootEntry
-    debug: bool
-
-    def __init__(self, backend: LDAPsqlBackend, debug: bool = False) -> None:
-        self.root = RootEntry(backend)
-        self.debug = debug
-
-    def buildProtocol(self, addr) -> CdEDBLDAPServer:  # type: ignore[no-untyped-def]
-        proto = self.protocol()
-        proto.debug = self.debug
-        proto.factory = self
-        return proto
