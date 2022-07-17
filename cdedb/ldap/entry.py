@@ -179,8 +179,6 @@ class CdEDBBaseLDAPEntry(
         # choose iterator: base/children/subtree
         if scope == pureldap.LDAP_SCOPE_wholeSubtree:
             entries = await self.subtree(bound_dn)
-            # in the special case of subtree search, the base object shall be included
-            entries.insert(0, self)
         elif scope == pureldap.LDAP_SCOPE_singleLevel:
             entries = await self.children(bound_dn)
         elif scope == pureldap.LDAP_SCOPE_baseObject:
@@ -202,20 +200,13 @@ class CdEDBBaseLDAPEntry(
         """
         raise NotImplementedError
 
-    async def subtree(self, bound_dn: BoundDn = -1) -> List["CdEDBBaseLDAPEntry"]:
-        """Retrieve every entry of this entries subtree.
-
-        This is especially needed in subtree searches.
-
-        :param bound_dn: Either the DN of the user performing the search, or None if
-            an anonymous search is performed.
-        """
-        subtree = []
+    async def subtree(self, bound_dn: BoundDn = None) -> List["CdEDBBaseLDAPEntry"]:
+        """List the subtree rooted at this entry, including this entry."""
+        subtree = [self]
         children = await self.children(bound_dn=bound_dn)
         for child in children:
-            subtree.extend(await child.subtree(bound_dn))
-        children.extend(subtree)
-        return children
+            subtree.extend(await child.subtree(bound_dn=bound_dn))
+        return subtree
 
     @abc.abstractmethod
     async def lookup(self, dn: DistinguishedName) -> "CdEDBBaseLDAPEntry":
