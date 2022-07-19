@@ -82,7 +82,7 @@ class LdapServer(asyncio.Protocol):
     @staticmethod
     def unsolicited_notification(msg: LDAPProtocolRequest) -> None:
         """Special kind of ldap request which might be ignored by the server."""
-        logger.error("Got unsolicited notification: %s" % repr(msg))
+        logger.error(f"Got unsolicited notification: f{repr(msg)}")
 
     @staticmethod
     def check_controls(controls: Optional[Tuple[Any, Any, Any]]) -> None:
@@ -114,7 +114,7 @@ class LdapServer(asyncio.Protocol):
         reply: ReplyCallback,
     ) -> None:
         """Fallback handler if the current request to the server is not known."""
-        logger.error("Unknown request: %r" % request)
+        logger.error(f"Unknown request: {repr(request)}")
         msg = pureldap.LDAPExtendedResponse(
             resultCode=ldaperrors.LDAPProtocolError.resultCode,
             responseName="1.3.6.1.4.1.1466.20036",
@@ -140,12 +140,12 @@ class LdapServer(asyncio.Protocol):
         please consult the specific RFCs or the implementation details of ldaptor.
         """
         assert isinstance(msg.value, pureldap.LDAPProtocolRequest)
-        logger.debug("S<-C %s" % repr(msg))
+        logger.debug(f"S<-C {repr(msg)}")
 
         def reply(response: pureldap.LDAPProtocolResponse) -> None:
             """Send a message back to the client."""
             response_msg = pureldap.LDAPMessage(response, id=msg.id)
-            logger.debug("S->C %s" % repr(response_msg))
+            logger.debug(f"S->C {repr(response_msg)}")
             self.transport.write(response_msg.toWire())
 
         # exactly unsolicited notifications have a message id of 0
@@ -207,7 +207,7 @@ class LdapServer(asyncio.Protocol):
         # information about the existence of ldap entries to non-privileged users
         try:
             entry = await self.root.lookup(dn)
-        except ldaperrors.LDAPNoSuchObject:
+        except ldaperrors.LDAPNoSuchObject:  # pylint: disable=raise-missing-from
             raise ldaperrors.LDAPInvalidCredentials
 
         self.bound_user = entry.bind(request.auth)
