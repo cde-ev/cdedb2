@@ -79,11 +79,13 @@ class LdapServer(asyncio.Protocol):
             assert isinstance(msg, LDAPMessage)
             asyncio.create_task(self.handle(msg))
 
-    def unsolicited_notification(self, msg: LDAPProtocolRequest) -> None:
+    @staticmethod
+    def unsolicited_notification(msg: LDAPProtocolRequest) -> None:
         """Special kind of ldap request which might be ignored by the server."""
         logger.error("Got unsolicited notification: %s" % repr(msg))
 
-    def check_controls(self, controls: Optional[Tuple[Any, Any, Any]]) -> None:
+    @staticmethod
+    def check_controls(controls: Optional[Tuple[Any, Any, Any]]) -> None:
         """Check controls which are sent together with the current request.
 
         Controls are an ldap mechanism to give additional parameters or information
@@ -105,8 +107,8 @@ class LdapServer(asyncio.Protocol):
                 raise ldaperrors.LDAPUnavailableCriticalExtension(
                     b"Unknown control %s" % controlType)
 
+    @staticmethod
     async def handle_unknown(
-        self,
         request: pureldap.LDAPProtocolRequest,
         controls: Optional[pureldap.LDAPControls],
         reply: ReplyCallback,
@@ -120,8 +122,9 @@ class LdapServer(asyncio.Protocol):
         )
         reply(msg)
 
+    @staticmethod
     def fail_default(
-        self, resultCode: int, errorMessage: str
+        resultCode: int, errorMessage: str
     ) -> pureldap.LDAPProtocolResponse:
         """Fallback error handler."""
         return pureldap.LDAPExtendedResponse(
