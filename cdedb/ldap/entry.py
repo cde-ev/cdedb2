@@ -1,6 +1,7 @@
 """Classes to represent ldap entries."""
 
 import abc
+import asyncio
 import logging
 from typing import (
     Any, Callable, Dict, ItemsView, Iterator, KeysView, List, Optional, Type, Union,
@@ -193,11 +194,13 @@ class CdEDBBaseLDAPEntry(
 
     async def subtree(self, bound_dn: BoundDn = None) -> List["CdEDBBaseLDAPEntry"]:
         """List the subtree rooted at this entry, including this entry."""
-        subtree = [self]
+        result = [self]
         children = await self.children(bound_dn=bound_dn)
-        for child in children:
-            subtree.extend(await child.subtree(bound_dn=bound_dn))
-        return subtree
+        subtrees = await asyncio.gather(
+            *[child.subtree(bound_dn=bound_dn) for child in children])
+        for tree in subtrees:
+            result.extend(tree)
+        return result
 
     @abc.abstractmethod
     async def lookup(self, dn: DistinguishedName) -> "CdEDBBaseLDAPEntry":
