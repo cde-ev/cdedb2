@@ -34,7 +34,6 @@ class LdapServer(asyncio.Protocol):
 
     def __init__(self, root: CdEDBBaseLDAPEntry):
         self.buffer = b""
-        self.connected = False
         self.transport: Transport = None  # type: ignore[assignment]
         self.root = root
         self.bound_user: Optional[CdEDBBaseLDAPEntry] = None
@@ -52,14 +51,12 @@ class LdapServer(asyncio.Protocol):
 
     def connection_made(self, transport: BaseTransport) -> None:
         """Called once this instance of LdapServer was connected to its client."""
-        self.connected = True
         assert isinstance(transport, Transport)
         self.transport = transport
 
     def connection_lost(self, exc: Optional[Exception]) -> None:
         """Called once this instance of LdapServer lost the connection to its client."""
         # TODO maybe handle the exception or proper close the connection
-        self.connected = False
         self.transport.close()
 
     def data_received(self, data: bytes) -> None:
@@ -81,17 +78,6 @@ class LdapServer(asyncio.Protocol):
             # berdecoder object, but always guaranteed ...
             assert isinstance(msg, LDAPMessage)
             asyncio.create_task(self.handle(msg))
-
-    def queue(self, msg_id: int, op: pureldap.LDAPProtocolResponse) -> None:
-        """Queuing messages which shall be sent to the client.
-
-        Note that order of messages is important.
-        """
-        if not self.connected:
-            raise LDAPServerConnectionLostException()
-        msg = pureldap.LDAPMessage(op, id=msg_id)
-        logger.debug("S->C %s" % repr(msg))
-        self.transport.write(msg.toWire())
 
     def unsolicited_notification(self, msg: LDAPProtocolRequest) -> None:
         """Special kind of ldap request which might be ignored by the server."""
@@ -153,6 +139,12 @@ class LdapServer(asyncio.Protocol):
         assert isinstance(msg.value, pureldap.LDAPProtocolRequest)
         logger.debug("S<-C %s" % repr(msg))
 
+        def reply(response: pureldap.LDAPProtocolResponse) -> None:
+            """Send a message back to the client."""
+            response_msg = pureldap.LDAPMessage(response, id=msg.id)
+            logger.debug("S->C %s" % repr(response_msg))
+            self.transport.write(response_msg.toWire())
+
         # exactly unsolicited notifications have a message id of 0
         if msg.id == 0:
             self.unsolicited_notification(msg.value)
@@ -167,19 +159,14 @@ class LdapServer(asyncio.Protocol):
         error_handler: Callable[[int, str], LDAPProtocolResponse]
         error_handler = getattr(self, "fail_" + name, self.fail_default)
         try:
-            await handler(
-                msg.value,
-                msg.controls,
-                lambda response_msg: self.queue(msg.id, response_msg),
-            )
+            await handler(msg.value, msg.controls, reply)
         except LDAPException as e:
             logger.error(f"During handling of {name} (msg.id {msg.id}): {repr(e)}")
-            response = error_handler(e.resultCode, e.message)
-            self.queue(msg.id, response)
+            reply(error_handler(e.resultCode, e.message))
         except Exception as e:
             logger.error(f"During handling of {name} (msg.id {msg.id}): {repr(e)}")
-            response = error_handler(LDAPProtocolError.resultCode, str(e))
-            self.queue(msg.id, response)
+            reply(error_handler(LDAPProtocolError.resultCode, str(e)))
+        return
 
     #
     # Below this follows the real stuff.
