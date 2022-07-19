@@ -111,12 +111,13 @@ class LdapServer(asyncio.Protocol):
 
         Currently, no controls are supported by this ldap server.
         """
-        if controls is not None:
-            for controlType, criticality, controlValue in controls:
-                if criticality:
-                    raise ldaperrors.LDAPUnavailableCriticalExtension(
-                        b"Unknown control %s" % controlType
-                    )
+        if controls is None:
+            return
+
+        for controlType, criticality, controlValue in controls:
+            if criticality:
+                raise ldaperrors.LDAPUnavailableCriticalExtension(
+                    b"Unknown control %s" % controlType)
 
     async def handle_unknown(
         self,

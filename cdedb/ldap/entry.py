@@ -83,7 +83,7 @@ class CdEDBBaseLDAPEntry(
         self.backend = backend
 
     def __getitem__(self, key: bytes) -> LDAPAttributeSet:
-        return self.attributes.__getitem__(key)
+        return self.attributes[key]
 
     def get(self, key: bytes, default: LDAPAttributeSet = None) -> LDAPAttributeSet:
         if key in self:
@@ -91,10 +91,10 @@ class CdEDBBaseLDAPEntry(
         return default
 
     def __contains__(self, key: bytes) -> bool:
-        return self.attributes.__contains__(key)
+        return key in self.attributes
 
     def __iter__(self) -> Iterator[bytes]:
-        return self.attributes.__iter__()
+        return iter(self.attributes)
 
     def keys(self) -> KeysView[bytes]:
         return self.attributes.keys()
@@ -110,22 +110,13 @@ class CdEDBBaseLDAPEntry(
             return NotImplemented
         if self.dn != other.dn:
             return False
-
-        my_keys = sorted(self.keys())
-        others_keys = sorted(other.keys())
-
-        if my_keys != others_keys:
-            return False
-        for key in my_keys:
-            if self[key] != other[key]:
-                return False
-        return True
+        return self.attributes == other.attributes
 
     def __ne__(self, other: Any) -> bool:
         return not self == other
 
     def __len__(self) -> int:
-        return self.attributes.__len__()
+        return len(self.attributes)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.dn.getText()})"
