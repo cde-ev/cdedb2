@@ -47,7 +47,7 @@ class TestLDAP(BasicTest):
             cls.conf['LDAP_HOST'], port=cls.conf['LDAP_PORT'], get_info=ldap3.ALL)
 
     def single_result_search(
-        self, search_filter: str, expectation: Dict[str, List[str]], *,
+        self, search_filter: str, raw_expectation: Dict[str, List[str]], *,
         user: str = test_dua_dn, password: str = test_dua_pw,
         search_base: str = root_dn,
         attributes: Union[List[str], str] = ALL_ATTRIBUTES,
@@ -61,8 +61,13 @@ class TestLDAP(BasicTest):
                 search_filter=search_filter,
                 attributes=attributes
             )
-            self.assertEqual(len(conn.entries), 1, conn.entries)
-            result: Dict[str, List[str]] = conn.entries[0].entry_attributes_as_dict
+            self.assertEqual(1, len(conn.entries), conn.entries)
+            raw_result: Dict[str, List[str]] = conn.entries[0].entry_attributes_as_dict
+            # Accordingly to RFC 4511, attributes and values of attributes are unordered
+            result = {key: {value for value in values}
+                      for key, values in raw_result.items()}
+            expectation = {key: {value for value in values}
+                           for key, values in raw_expectation.items()}
             if excluded_attributes:
                 for attribute in excluded_attributes:
                     result.pop(attribute)
