@@ -66,7 +66,7 @@ class TestLDAP(BasicTest):
             if excluded_attributes:
                 for attribute in excluded_attributes:
                     result.pop(attribute)
-            self.assertEqual(result, expectation)
+            self.assertEqual(expectation, result)
 
     def no_result_search(
         self,
@@ -94,9 +94,9 @@ class TestLDAP(BasicTest):
                     )
                     # if the current user should access the entries, we check if he does
                     if identifier in except_users:
-                        self.assertNotEqual(len(conn.entries), 0, conn.entries)
+                        self.assertNotEqual(0, len(conn.entries), conn.entries)
                     else:
-                        self.assertEqual(len(conn.entries), 0, conn.entries)
+                        self.assertEqual(0, len(conn.entries), conn.entries)
 
     def test_anonymous_bind(self) -> None:
         conn = ldap3.Connection(self.server)
@@ -482,7 +482,7 @@ class TestLDAP(BasicTest):
         ) as conn:
             conn.search(search_base=self.root_dn, search_filter=search_filter)
             result_names: Set[str] = {entry.entry_dn for entry in conn.entries}
-            self.assertEqual(result_names, expectation)
+            self.assertEqual(expectation, result_names)
 
         # Kalif has status fields, is presider, subscriber and moderator
         user_id = 23
@@ -521,7 +521,7 @@ class TestLDAP(BasicTest):
         ) as conn:
             conn.search(search_base=self.root_dn, search_filter=search_filter)
             result_names = {entry.entry_dn for entry in conn.entries}
-            self.assertEqual(result_names, expectation)
+            self.assertEqual(expectation, result_names)
 
     def test_search_attributes_of_groups_of_user(self) -> None:
         user_id = 10
