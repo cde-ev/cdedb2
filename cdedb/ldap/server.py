@@ -11,7 +11,6 @@ from ldaptor.protocols.ldap.distinguishedname import DistinguishedName
 from ldaptor.protocols.ldap.ldaperrors import (
     LDAPException, LDAPProtocolError, LDAPUnwillingToPerform,
 )
-from ldaptor.protocols.ldap.ldapserver import LDAPServerConnectionLostException
 from ldaptor.protocols.pureldap import (
     LDAPCompareRequest, LDAPControls, LDAPMessage, LDAPProtocolRequest,
     LDAPProtocolResponse, LDAPSearchRequest,
