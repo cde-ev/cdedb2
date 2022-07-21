@@ -206,8 +206,8 @@ class LdapServer(asyncio.Protocol):
         # information about the existence of ldap entries to non-privileged users
         try:
             entry = await self.root.lookup(dn)
-        except ldaperrors.LDAPNoSuchObject:  # pylint: disable=raise-missing-from
-            raise ldaperrors.LDAPInvalidCredentials
+        except ldaperrors.LDAPNoSuchObject:
+            raise ldaperrors.LDAPInvalidCredentials  # pylint: disable=raise-missing-from
 
         self.bound_user = entry.bind(request.auth)
 

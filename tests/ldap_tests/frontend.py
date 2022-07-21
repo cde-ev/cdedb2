@@ -64,10 +64,8 @@ class TestLDAP(BasicTest):
             self.assertEqual(1, len(conn.entries), conn.entries)
             raw_result: Dict[str, List[str]] = conn.entries[0].entry_attributes_as_dict
             # Accordingly to RFC 4511, attributes and values of attributes are unordered
-            result = {key: {value for value in values}
-                      for key, values in raw_result.items()}
-            expectation = {key: {value for value in values}
-                           for key, values in raw_expectation.items()}
+            result = {key: set(values) for key, values in raw_result.items()}
+            expectation = {key: set(values) for key, values in raw_expectation.items()}
             if excluded_attributes:
                 for attribute in excluded_attributes:
                     result.pop(attribute)

@@ -217,7 +217,7 @@ class CdEDBBaseLDAPEntry(
     # implemented by ldaptor.entryhelpers.MatchMixin
     # def match(self, filter):
 
-    def bind(self, password: Union[str, bytes]) -> "CdEDBBaseLDAPEntry":
+    def bind(self, password: Union[str, bytes]) -> "CdEDBBaseLDAPEntry":  # pylint: disable=no-self-use
         """Bind with this entry and the given password.
 
         In general, this is forbidden for all entries. Exceptions from this rule
@@ -365,7 +365,7 @@ class RootEntry(CdEDBStaticEntry):
         super().__init__(backend.root_dn, backend)
 
     def fetch(self, *attributes: bytes) -> LDAPObject:
-        attrs: Dict[bytes, List[bytes]] = self.backend._to_bytes({
+        attrs: Dict[bytes, List[bytes]] = self.backend._to_bytes({  # pylint: disable=protected-access
             b"supportedLDAPVersion": [b"3"],
             # TODO right? Or is this rather dc=cde-ev,dc=de?
             b"namingContexts": [self.backend.root_dn],
