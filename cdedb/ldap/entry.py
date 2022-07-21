@@ -22,7 +22,7 @@ from cdedb.ldap.backend import LDAPObject, LDAPObjectMap, LDAPsqlBackend
 
 Callback = Callable[[Any], None]
 LDAPEntries = List["CdEDBBaseLDAPEntry"]
-BoundDn = Optional[Union[int, DistinguishedName]]
+BoundDn = Optional[DistinguishedName]
 
 
 logger = logging.getLogger(__name__)
@@ -516,10 +516,9 @@ class DuasEntry(CdEPreLeafEntry):
     async def children_lister(
         self, bound_dn: BoundDn = None
     ) -> List[DistinguishedName]:
-        if bound_dn != -1:
-            # Anonymous requests or personas may not access duas
-            if bound_dn is None or self.backend.is_user_dn(bound_dn):
-                return []
+        # Anonymous requests or personas may not access duas
+        if bound_dn is None or self.backend.is_user_dn(bound_dn):
+            return []
         return await self.backend.list_duas()
 
     async def children_getter(self, dns: List[DistinguishedName]) -> LDAPObjectMap:
@@ -553,15 +552,14 @@ class UsersEntry(CdEPreLeafEntry):
     async def children_lister(
         self, bound_dn: BoundDn = None
     ) -> List[DistinguishedName]:
-        if bound_dn != -1:
-            # Anonymous requests may access no user
-            if bound_dn is None:
-                return []
-            # Users may access only their own data
-            elif self.backend.is_user_dn(bound_dn):
-                user_id = self.backend.user_id(bound_dn)
-                assert user_id is not None
-                return [self.backend.list_single_user(user_id)]
+        # Anonymous requests may access no user
+        if bound_dn is None:
+            return []
+        # Users may access only their own data
+        elif self.backend.is_user_dn(bound_dn):
+            user_id = self.backend.user_id(bound_dn)
+            assert user_id is not None
+            return [self.backend.list_single_user(user_id)]
         return await self.backend.list_users()
 
     async def children_getter(self, dns: List[DistinguishedName]) -> LDAPObjectMap:
@@ -639,10 +637,9 @@ class StatusGroupsEntry(CdEPreLeafEntry):
     async def children_lister(
         self, bound_dn: BoundDn = None
     ) -> List[DistinguishedName]:
-        if bound_dn != -1:
-            # Anonymous requests or personas may not access groups
-            if bound_dn is None or self.backend.is_user_dn(bound_dn):
-                return []
+        # Anonymous requests or personas may not access groups
+        if bound_dn is None or self.backend.is_user_dn(bound_dn):
+            return []
         return await self.backend.list_status_groups()
 
     async def children_getter(self, dns: List[DistinguishedName]) -> LDAPObjectMap:
@@ -676,10 +673,9 @@ class PresiderGroupsEntry(CdEPreLeafEntry):
     async def children_lister(
         self, bound_dn: BoundDn = None
     ) -> List[DistinguishedName]:
-        if bound_dn != -1:
-            # Anonymous requests or personas may not access groups
-            if bound_dn is None or self.backend.is_user_dn(bound_dn):
-                return []
+        # Anonymous requests or personas may not access groups
+        if bound_dn is None or self.backend.is_user_dn(bound_dn):
+            return []
         return await self.backend.list_assembly_presider_groups()
 
     async def children_getter(self, dns: List[DistinguishedName]) -> LDAPObjectMap:
@@ -713,10 +709,9 @@ class OrgaGroupsEntry(CdEPreLeafEntry):
     async def children_lister(
         self, bound_dn: BoundDn = None
     ) -> List[DistinguishedName]:
-        if bound_dn != -1:
-            # Anonymous requests or personas may not access groups
-            if bound_dn is None or self.backend.is_user_dn(bound_dn):
-                return []
+        # Anonymous requests or personas may not access groups
+        if bound_dn is None or self.backend.is_user_dn(bound_dn):
+            return []
         return await self.backend.list_event_orga_groups()
 
     async def children_getter(self, dns: List[DistinguishedName]) -> LDAPObjectMap:
@@ -750,10 +745,9 @@ class ModeratorGroupsEntry(CdEPreLeafEntry):
     async def children_lister(
         self, bound_dn: BoundDn = None
     ) -> List[DistinguishedName]:
-        if bound_dn != -1:
-            # Anonymous requests or personas may not access groups
-            if bound_dn is None or self.backend.is_user_dn(bound_dn):
-                return []
+        # Anonymous requests or personas may not access groups
+        if bound_dn is None or self.backend.is_user_dn(bound_dn):
+            return []
         return await self.backend.list_ml_moderator_groups()
 
     async def children_getter(self, dns: List[DistinguishedName]) -> LDAPObjectMap:
@@ -787,10 +781,9 @@ class SubscriberGroupsEntry(CdEPreLeafEntry):
     async def children_lister(
         self, bound_dn: BoundDn = None
     ) -> List[DistinguishedName]:
-        if bound_dn != -1:
-            # Anonymous requests or personas may not access groups
-            if bound_dn is None or self.backend.is_user_dn(bound_dn):
-                return []
+        # Anonymous requests or personas may not access groups
+        if bound_dn is None or self.backend.is_user_dn(bound_dn):
+            return []
         return await self.backend.list_ml_subscriber_groups()
 
     async def children_getter(self, dns: List[DistinguishedName]) -> LDAPObjectMap:
