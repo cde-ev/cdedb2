@@ -283,6 +283,8 @@ class CoreGenesisBackend(CoreBaseBackend):
                 if f"{e['realm']}_admin" not in rs.user.roles:
                     raise PrivilegeError(n_("Not privileged."))
             e['case_status'] = const.GenesisStati(e['case_status'])
+            if e['gender']:
+                e['gender'] = const.Genders(e['gender'])
             ret[e['id']] = e
         return ret
 
