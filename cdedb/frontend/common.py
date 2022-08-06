@@ -1149,7 +1149,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         new_id = self.coreproxy.create_persona(rs, data)
         if new_id:
             success, message = self.coreproxy.make_reset_cookie(rs, data[
-                'username'])
+                'username'], timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
             email = self.encode_parameter(
                 "core/do_password_reset_form", "email", data['username'],
                 persona_id=None, timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
