@@ -802,6 +802,11 @@ class TestMlFrontend(FrontendTest):
         f['moderators'] = ""
         self.submit(f, check_notification=False)
         self.assertValidationError("moderators", errormsg)
+        # Check that invalid DB-IDs are catched (regression test #2632)
+        errormsg = "Falsches Format."
+        f['moderators'] = "DB-1"
+        self.submit(f, check_notification=False)
+        self.assertValidationError("moderators", errormsg)
         # Check that you cannot add non-existing or archived moderators.
         errormsg = "Einige dieser Nutzer existieren nicht oder sind archiviert"
         f['moderators'] = "DB-100000-4"
