@@ -3677,6 +3677,13 @@
             "nr": "Ω",
             "title": "Goethe zum Anfassen",
             "description": "Hier werden die Reime getanzt. Und anfassen kann man sie auch!"
+        },
+        {
+            "id": 3,
+            "pevent_id": 4,
+            "nr": "-",
+            "title": "Torheiten im Zwiebelrouter",
+            "description": "Hier wird niemand gefasst."
         }
     ],
     "past_event.participants": [
