@@ -686,7 +686,6 @@ tr.drow-delete>td, tr.drow-delete1>td {
 /* Profile history */
 .history-row {
     border-bottom: solid 1px #ddd;
-    margin-top: -1px;
     position: relative;
 }
 .history-row:nth-child(even) {
