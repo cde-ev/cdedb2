@@ -2,6 +2,7 @@ import csv
 import pathlib
 
 from cdedb.backend.past_event import PastEventBackend
+from cdedb.common import CdEDBObject
 from cdedb.frontend.common import CustomCSVDialect
 from cdedb.script import Script
 
@@ -34,7 +35,7 @@ with infile_events.open("r") as f:
     }
 
 with infile_courses.open("r") as f:
-    course_data = {}
+    course_data: CdEDBObject = {}
     for course_line in csv.DictReader(f, dialect=CustomCSVDialect):
         event_id = course_line['FK_GLStandorte']
         if event_id not in course_data:
