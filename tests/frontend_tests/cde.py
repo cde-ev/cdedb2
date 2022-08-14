@@ -2230,6 +2230,11 @@ class TestCdEFrontend(FrontendTest):
         self.get("/cde/past/event/list", status=403)
         self.get("/cde/past/event/1/show", status=403)
 
+    @as_users("berta")
+    def test_past_course_counting(self) -> None:
+        self.get("/cde/past/event/4/course/3/show")
+        self.assertPresence("Keine Teilnehmer eingetragen.")
+
     @as_users("berta", "charly")
     def test_show_past_event_own_link(self) -> None:
         self.traverse({'description': 'Mitglieder'},

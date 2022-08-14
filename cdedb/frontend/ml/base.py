@@ -249,6 +249,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         data["moderators"] = moderators
         data['ml_type'] = ml_type
         data = check(rs, vtypes.Mailinglist, data, creation=True)
+        if rs.has_validation_errors():
+            return self.create_mailinglist_form(rs, ml_type=ml_type)
         if not self.coreproxy.verify_ids(rs, moderators, is_archived=False):
             rs.append_validation_error(
                 ("moderators", ValueError(n_(
