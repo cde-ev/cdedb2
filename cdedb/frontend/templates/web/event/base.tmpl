@@ -70,9 +70,11 @@
             {{ util.href(cdedblink("event/configure_additional_questionnaire_form", {"event_id": data['id']}),
                          gettext("Configure Questionnaire"), aclass="list-group-item",
                          active=(sidenav_active == 'event_configure_additional_questionnaire'), icon='plus-square') }}
-            {{ util.href(cdedblink("event/constraint_violations", {"event_id": data['id']}),
-                         gettext("Constraint Violations"), aclass="list-group-item",
-                         active=(sidenav_active == 'event_constraint_violations'), icon='exclamation-circle') }}
+            {% if has_constraints %}
+                {{ util.href(cdedblink("event/constraint_violations", {"event_id": data['id']}),
+                             gettext("Constraint Violations"), aclass="list-group-item",
+                             active=(sidenav_active == 'event_constraint_violations'), icon='exclamation-circle') }}
+            {% endif %}
             {{ util.href(cdedblink("event/view_event_log", {"event_id": data['id']}), gettext("Log"), aclass="list-group-item",
                          icon="far fa-list-alt", active=(sidenav_active == 'event_event_log')) }}
         </div>
@@ -133,7 +135,7 @@
                 {% if 'event_user' in user.admin_views %}
                         {{ util.href(cdedblink("event/user_search"), gettext("Manage Users"),
                                      aclass="list-group-item", icon="users", active=(sidenav_active == 'event_users')) }}
-                        {{ util.href(cdedblink("event/archived_user_search"), gettext("Search Archived Users"),
+                        {{ util.href(cdedblink("event/full_user_search"), gettext("Search All Users"),
                                      aclass="list-group-item", icon="inbox", active=(sidenav_active=='event_manage_archive')) }}
                 {% endif %}
                 {% if user.admin_views.intersection(('event_mgmt', 'auditor')) %}

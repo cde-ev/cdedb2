@@ -17,8 +17,8 @@ from cdedb.cli.dev.json2sql import json2sql
 from cdedb.cli.dev.serve import serve_debugger
 from cdedb.cli.dev.sql2json import sql2json
 from cdedb.cli.storage import (
-    create_log, create_storage, populate_sample_event_keepers, populate_storage,
-    reset_config,
+    create_log, create_storage, populate_event_keeper, populate_sample_event_keepers,
+    populate_storage, reset_config,
 )
 from cdedb.cli.util import (
     execute_sql_script, get_user, pass_config, pass_secrets, redirect_to_file,
@@ -99,6 +99,18 @@ def populate_storage_cmd(config: TestConfig, owner: str) -> None:
     with switch_user(owner):
         populate_storage(config)
         populate_sample_event_keepers(config)
+
+
+@storage.command(name="populate-event-keeper")
+@click.argument('event_id', type=int)
+@click.pass_obj
+@pass_config
+def populate_event_keeper_cmd(config: TestConfig, owner: str, event_id: int) -> None:
+    """Populate the event keeper."""
+    path = config['STORAGE_DIR'] / 'event_keeper'
+    with switch_user(owner):
+        path.mkdir(parents=True, exist_ok=True)
+        populate_event_keeper(config, [event_id])
 
 
 @filesystem.group(name="log")

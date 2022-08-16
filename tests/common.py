@@ -1639,13 +1639,13 @@ class FrontendTest(BackendTest):
         _check_deleted_data()
         # 2. Find user via archived search
         self.traverse({'href': '/' + realm + '/$'})
-        self.traverse({'description': 'Archivsuche'})
-        self.assertTitle("Archivsuche")
+        self.traverse("Alle Nutzer verwalten")
+        self.assertTitle("Vollständige Nutzerverwaltung")
         f = self.response.forms['queryform']
         f['qop_given_names'] = QueryOperators.match.value
         f['qval_given_names'] = 'Zelda'
         self.submit(f)
-        self.assertTitle("Archivsuche")
+        self.assertTitle("Vollständige Nutzerverwaltung")
         self.assertPresence("Ergebnis [1]", div='query-results')
         self.assertPresence("Zeruda", div='query-result')
         self.traverse({'description': 'Profil', 'href': '/core/persona/1001/show'})

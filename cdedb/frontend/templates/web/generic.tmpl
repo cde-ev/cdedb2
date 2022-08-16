@@ -78,17 +78,17 @@
     </script>
 {% endmacro %}
 
-{% macro user_search(realm, result, query, info="", archived=False) %}
+{% macro user_search(scope, result, query, info="") %}
     <div class="row">
         <div class="col-md-4">
             <div class="p button-par">
-                {% if not archived %}
-                    {{ util.href(cdedblink("{}/create_user_form".format(realm)), gettext("Create User"),
+                {% if not scope.includes_archived %}
+                    {{ util.href(cdedblink("{}/create_user_form".format(scope.realm)), gettext("Create User"),
                             icon="plus", aclass="btn btn-success btn-sm") }}
-                {% endif %}
-                {% if realm == 'cde' %}
-                    {{ util.href(cdedblink('cde/batch_admission'), gettext("Batch Admission"), icon="file-import",
-                             aclass="btn btn-default btn-sm") }}
+                    {% if scope.realm == 'cde' %}
+                        {{ util.href(cdedblink('cde/batch_admission'), gettext("Batch Admission"), icon="file-import",
+                                 aclass="btn btn-default btn-sm") }}
+                    {% endif %}
                 {% endif %}
             </div>
             {% if info %}
@@ -96,15 +96,11 @@
             {% endif %}
         </div>
         <div class="col-md-8">
-            {% if archived %}
-                {{ place_default_queries("{}/archived_user_search".format(realm), default_queries) }}
-            {% else %}
-                {{ place_default_queries("{}/user_search".format(realm), default_queries) }}
-            {% endif %}
+            {{ place_default_queries(scope, default_queries) }}
         </div>
     </div>
 
-    {{ user_search_mask(realm, archived=archived, selection_blacklist=("pevent_id", "pcourse_id")) }}
+    {{ user_search_mask(scope, selection_blacklist=("pevent_id", "pcourse_id")) }}
 
     {% if values['is_search'] %}
         <h3 id="query-results">{% trans %}Result{% endtrans %} [{{ result|length }}]</h3>
@@ -113,20 +109,14 @@
 {% endmacro %}
 
 
-{% macro user_search_mask(realm, archived=False, selection_blacklist=[]) %}
-    {% if archived %}
-        {% set target=cdedblink('{}/archived_user_search'.format(realm)) %}
-    {% else %}
-        {% set target=cdedblink('{}/user_search'.format(realm)) %}
-    {% endif %}
-    {{ format_query(scope, spec, target + '#query-results', selection_blacklist=selection_blacklist,
+{% macro user_search_mask(scope, selection_blacklist=[]) %}
+    {{ format_query(scope, spec, selection_blacklist=selection_blacklist,
                     selection_default=('personas.id', 'username', 'family_name', 'given_names')) }}
 {% endmacro %}
 
 
-{% macro format_query(scope, spec, target, output_selection=True, selection_blacklist=[],
-                      selection_default=[]) %}
-    <form action="{{ target }}" method="GET" id="queryform" aria-labelledby="qf_title">
+{% macro format_query(scope, spec, output_selection=True, selection_blacklist=[], selection_default=[]) %}
+    <form action="{{ cdedblink(scope.get_target()) }}#query-results" method="GET" id="queryform" aria-labelledby="qf_title">
         {{ util.input_hidden(name="is_search", value=True) }}
         <div class="panel panel-primary">
             <div class="panel-heading">
@@ -228,7 +218,10 @@
                         <div class="col-lg-5">
                             <table class="query-form-sort table table-superdense">
                             <thead>
-                                <tr><th colspan="3">Sortierung</th></tr>
+                                <tr>
+                                    <th>{{ util.make_icon('sort-alpha-down', title=gettext("Sorting")) }}</th>
+                                    <th colspan="2">{% trans %}Sorting{% endtrans %}</th>
+                                </tr>
                             </thead>
                             <tbody>
                                 {% for title, name in (("1.", "qord_primary"), ("2.", "qord_secondary"),
@@ -374,7 +367,7 @@
     </form>
 {% endmacro %}
 
-{% macro place_default_queries(target, queries) %}
+{% macro place_default_queries(scope, queries) %}
     {% if queries %}
         {% call util.bootstrap_panel(title=gettext("Default Queries"), anid="default_queries_container") %}
             <div class="row">
@@ -384,7 +377,7 @@
                         {% for query_name in list %}
                             {% with query = queries[query_name] -%}
                                 <li>
-                                    {{ util.href(cdedblink(target, query.serialize_to_url()) + '#query-results',
+                                    {{ util.href(cdedblink(scope.get_target(), query.serialize_to_url()) + '#query-results',
                                             query.name if query.name else gettext(query_name), aclass="default-query") }}
                                     {% if query.query_id %}
                                         <form action="{{ cdedblink('event/delete_event_query') }}" method="post" class="display-inline" id="deletequeryform{{ query.query_id }}">

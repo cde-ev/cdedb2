@@ -253,19 +253,18 @@ class EventQueryBackend(EventBaseBackend):
                 raise PrivilegeError(n_("Not privileged."))
             query.constraints.append(("event_id", QueryOperators.equal, event_id))
             query.spec['event_id'] = QuerySpecEntry("bool", "")
-        elif query.scope in {QueryScope.event_user,
-                             QueryScope.archived_past_event_user}:
+        elif query.scope in {QueryScope.event_user, QueryScope.all_event_users}:
             if not self.is_admin(rs) and "core_admin" not in rs.user.roles:
                 raise PrivilegeError(n_("Admin only."))
+
+            # Include only (un)archived users, depending on query scope.
+            if not query.scope.includes_archived:
+                query.constraints.append(("is_archived", QueryOperators.equal, False))
+                query.spec["is_archived"] = QuerySpecEntry("bool", "")
 
             # Include only event-users
             query.constraints.append(("is_event_realm", QueryOperators.equal, True))
             query.spec["is_event_realm"] = QuerySpecEntry("bool", "")
-
-            # Include only (un)archived users, depending on query scope.
-            is_archived = query.scope == QueryScope.archived_past_event_user
-            query.constraints.append(("is_archived", QueryOperators.equal, is_archived))
-            query.spec["is_archived"] = QuerySpecEntry("bool", "")
 
             # Exclude users of any higher realm (implying event)
             for realm in implying_realms('event'):
@@ -579,7 +578,7 @@ class EventQueryBackend(EventBaseBackend):
 
             view = lodgement_view()
         else:
-            raise RuntimeError(n_("Bad scope."))
+            raise RuntimeError(n_("Bad scope."), query.scope)
         return self.general_query(rs, query, view=view)
 
     @access("event")
