@@ -7,9 +7,9 @@
 {% block title %}{% trans %}Assembly-User Management{%  endtrans %}{% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("assembly/create_assembly"), gettext("Manage Users"), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("assembly/user_search"), gettext("Manage Users"), active=True) }}
 {% endblock %}
 {% block content %}
-    {{ generic.user_search('assembly', result, query, info=gettext(
-            "This search will only show pure assembly users. This does not include members, not even past members.")) }}
+    {{ generic.user_search(scope, result, query, info=gettext(
+            "This search will only show pure assembly users.")) }}
 {% endblock %}

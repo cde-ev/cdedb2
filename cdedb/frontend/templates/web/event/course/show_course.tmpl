@@ -83,15 +83,6 @@
             <div class="col-md-4">
                 <div class="panel panel-info panel-condensed" id="track{{ track_id }}-attendees">
                     <div class="panel-heading">
-                        <div class="pull-right">
-                            {{ util.href(cdedblink('event/course_choices', {
-                                             'track_id': track_id,
-                                             'course_id': ambience['course']['id'],
-                                             'position': enums.CourseFilterPositions.assigned.value,
-                                             'submitform': True}),
-                                         num_track_learners,
-                                         title=gettext("Participants’ Course Choices")) }}
-                        </div>
                         <h3 class="panel-title">
                             {% if ambience['event']['tracks']|length > 1 %}
                                 {{ track['title'] }}
@@ -138,21 +129,30 @@
                         </ul>
                     </div>
                     <div class="panel-footer">
-                        <ul class="list-unstyled">
+                        <ul class="list-unstyled nosp">
                             <li>
                                 {{ util.href(cdedblink('event/course_choices', {
                                                             'track_id': track_id,
                                                             'course_id': ambience['course']['id'],
                                                             'position': enums.CourseFilterPositions.anywhere.value,
                                                             'submitform': True}),
-                                             label=gettext("Related Course Choices"),
+                                             label=gettext("All Course Choices"),
                                              icon=util.make_icon('crosshairs')) }}
                             </li>
                         {% if num_track_learners %}
                             <li>
+                                {{ util.href(cdedblink('event/course_choices', {
+                                                 'track_id': track_id,
+                                                 'course_id': ambience['course']['id'],
+                                                 'position': enums.CourseFilterPositions.assigned.value,
+                                                 'submitform': True}),
+                                             label=gettext("Attendees"),
+                                             icon=util.make_icon('crosshairs')) }}
+                            </li>
+                            <li>
                                 {{ util.href(cdedblink('event/registration_query',
                                                        make_attendees_query(track_id).serialize_to_url()) + "#query-results",
-                                             label=gettext("Attendees"), icon=util.make_icon('users'),
+                                             label=gettext("View Registrations"), icon=util.make_icon('list'),
                                              anid="attendees-link-{}".format(track_id)) }}
                             </li>
                         {% endif %}

@@ -130,7 +130,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("core_admin", "ml_admin")
     @REQUESTdata("download", "is_search")
-    def archived_user_search(self, rs: RequestState, download: Optional[str],
+    def full_user_search(self, rs: RequestState, download: Optional[str],
                              is_search: bool) -> Response:
         """Perform search.
 
@@ -139,8 +139,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         """
         return self.generic_user_search(
             rs, download, is_search,
-            QueryScope.archived_persona, QueryScope.archived_persona,
-            self.mlproxy.submit_general_query, endpoint="archived_user_search")
+            QueryScope.all_ml_users, QueryScope.all_core_users,
+            self.mlproxy.submit_general_query)
 
     @access("ml")
     def list_mailinglists(self, rs: RequestState) -> Response:
@@ -249,6 +249,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         data["moderators"] = moderators
         data['ml_type'] = ml_type
         data = check(rs, vtypes.Mailinglist, data, creation=True)
+        if rs.has_validation_errors():
+            return self.create_mailinglist_form(rs, ml_type=ml_type)
         if not self.coreproxy.verify_ids(rs, moderators, is_archived=False):
             rs.append_validation_error(
                 ("moderators", ValueError(n_(

@@ -166,47 +166,51 @@ class CdEPastEventMixin(CdEBaseFrontend):
         # We are privileged to see other participants if we are admin (and have
         # the relevant admin view enabled) or participant by ourselves
         privileged = is_participant or "past_event" in rs.user.admin_views
+        proto_participants = {}
         participants = {}
         personas: CdEDBObjectMap = {}
         extra_participants = 0
-        if privileged or ("searchable" in rs.user.roles):
-            persona_ids = {persona_id
-                           for persona_id, _ in participant_infos.keys()}
-            for persona_id in persona_ids:
-                base_set = tuple(x for x in participant_infos.values()
-                                 if x['persona_id'] == persona_id)
-                entry: CdEDBObject = {
-                    'pevent_id': pevent_id,
-                    'persona_id': persona_id,
-                    'is_orga': any(x['is_orga'] for x in base_set),
-                    'pcourse_ids': tuple(x['pcourse_id'] for x in base_set),
-                    'instructor': set(
+
+        persona_ids = {persona_id
+                       for persona_id, _ in participant_infos.keys()}
+        for persona_id in persona_ids:
+            base_set = tuple(x for x in participant_infos.values()
+                             if x['persona_id'] == persona_id)
+            entry: CdEDBObject = {
+                'pevent_id': pevent_id,
+                'persona_id': persona_id,
+                'is_orga': any(x['is_orga'] for x in base_set),
+                'pcourse_ids': tuple(x['pcourse_id'] for x in base_set),
+                'instructor': set(
                         x['pcourse_id'] for x in base_set if (
                             x['is_instructor'] and (x['pcourse_id'] == pcourse_id
-                                                    or not pcourse_id)))
-                }
-                if pcourse_id and pcourse_id not in entry['pcourse_ids']:
-                    # remove non-participants with respect to the relevant
-                    # course if there is a relevant course
-                    continue
-                if orgas_only and not entry['is_orga']:
-                    # remove non-orgas
-                    continue
-                participants[persona_id] = entry
+                                                    or not pcourse_id))),
+            }
+            if pcourse_id and pcourse_id not in entry['pcourse_ids']:
+                # remove non-participants with respect to the relevant
+                # course if there is a relevant course
+                continue
+            if orgas_only and not entry['is_orga']:
+                # remove non-orgas
+                continue
+            proto_participants[persona_id] = entry
 
+        if privileged or ("searchable" in rs.user.roles):
+            # Commit to releasing the information
+            participants = proto_participants
             personas = self.coreproxy.get_personas(rs, participants.keys())
             participants = OrderedDict(xsorted(
                 participants.items(),
                 key=lambda x: EntitySorter.persona(personas[x[0]])))
-        # Delete unsearchable participants if we are not privileged
-        if not privileged:
-            if participants:
+
+            # Delete unsearchable participants if we are not privileged
+            if not privileged:
                 for anid, persona in personas.items():
                     if not persona['is_searchable'] or not persona['is_member']:
                         del participants[anid]
                         extra_participants += 1
-            else:
-                extra_participants = len(participant_infos)
+        else:
+            extra_participants = len(proto_participants)
         # Flag linkable user profiles (own profile + all searchable profiles
         # + all (if we are admin))
         for anid in participants:
