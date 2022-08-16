@@ -145,7 +145,8 @@ class TestCdEFrontend(FrontendTest):
         member = {"Sonstiges", "Datenschutzerklärung"}
         searchable = {"CdE-Mitglied suchen"}
         cde_admin_or_member = {"Mitglieder-Statistik"}
-        cde_admin = {"Nutzer verwalten", "Archivsuche", "Organisationen verwalten"}
+        cde_admin = {"Nutzer verwalten", "Alle Nutzer verwalten",
+                     "Organisationen verwalten"}
         cde_admin_or_auditor = {"Finanz-Log", "CdE-Log", "Verg.-Veranstaltungen-Log"}
         finance_admin = {"Einzugsermächtigungen", "Kontoauszug parsen",
                          "Überweisungen eintragen", "Semesterverwaltung"}
@@ -704,6 +705,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Nutzer verwalten'})
         self.assertTitle("CdE-Nutzerverwaltung")
+        self.assertPresence('Massenaufnahme')
         f = self.response.forms['queryform']
         f['qop_address'] = QueryOperators.match.value
         f['qval_address'] = 'Garten'
@@ -919,8 +921,9 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("vera")
     def test_archived_user_search(self) -> None:
-        self.traverse({'href': '/cde/$'}, "Archivsuche")
-        self.assertTitle("Archivsuche")
+        self.traverse({'href': '/cde/$'}, "Alle Nutzer verwalten")
+        self.assertTitle("Vollständige Nutzerverwaltung")
+        self.assertNonPresence("Massenaufnahme")
         f = self.response.forms['queryform']
         f['qval_birthday'] = '31.12.2000'
         f['qop_birthday'] = QueryOperators.less.value
@@ -928,8 +931,17 @@ class TestCdEFrontend(FrontendTest):
             if field and field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
-        self.assertTitle("Archivsuche")
+        self.assertTitle("Vollständige Nutzerverwaltung")
         self.assertPresence("Ergebnis [2]", div='query-results')
+        self.assertNonPresence("Anton", div='query-result')
+        self.assertPresence("Hell", div='query-result')
+        self.assertPresence("Lost", div='query-result')
+
+        f['qop_is_archived'] = ""
+        f['qval_is_archived'] = ""
+        self.submit(f)
+        self.assertPresence("Ergebnis [16]", div='query-results')
+        self.assertPresence("Anton", div='query-result')
         self.assertPresence("Hell", div='query-result')
         self.assertPresence("Lost", div='query-result')
 

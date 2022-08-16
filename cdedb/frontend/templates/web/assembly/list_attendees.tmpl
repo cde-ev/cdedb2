@@ -45,7 +45,7 @@
                 $('#addattendeeform').cdedbProtectAction(
                     "{{ gettext("The user will be added as a participant. This cannot be undone.") }}");
                 $('#input-add-attendee').cdedbSearchPerson(
-                    '{{ (cdedblink('core/select_persona')|e) + ('?kind=pure_assembly_user&phrase=%s'|s) }}',
+                    '{{ cdedblink('core/select_persona') }}', {'kind' : 'pure_assembly_user'},
                     {{ attendees|list|tojson }}, false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                 );
             </script>

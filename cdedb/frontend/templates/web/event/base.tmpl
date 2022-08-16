@@ -135,7 +135,7 @@
                 {% if 'event_user' in user.admin_views %}
                         {{ util.href(cdedblink("event/user_search"), gettext("Manage Users"),
                                      aclass="list-group-item", icon="users", active=(sidenav_active == 'event_users')) }}
-                        {{ util.href(cdedblink("event/archived_user_search"), gettext("Search Archived Users"),
+                        {{ util.href(cdedblink("event/full_user_search"), gettext("Search All Users"),
                                      aclass="list-group-item", icon="inbox", active=(sidenav_active=='event_manage_archive')) }}
                 {% endif %}
                 {% if user.admin_views.intersection(('event_mgmt', 'auditor')) %}

@@ -37,7 +37,7 @@
                                 placeholder="DB-XXXX-X", anid="input-source-persona") }}
         <script nonce="{{ csp_nonce }}">
             $('#input-source-persona').cdedbSearchPerson(
-                '{{ (cdedblink('core/select_persona')|e) + ('?kind=pure_ml_user&phrase=%s'|s) }}', [],
+                '{{ cdedblink('core/select_persona') }}', {'kind': 'pure_ml_user'}, [],
                 false, false, '{{ gettext("CdEDB-ID, Name or E-Mail") }}'
             );
         </script>
@@ -45,7 +45,7 @@
                                 placeholder="DB-XXXX-X", anid="input-target-persona") }}
         <script nonce="{{ csp_nonce }}">
             $('#input-target-persona').cdedbSearchPerson(
-                '{{ (cdedblink('core/select_persona')|e) + ('?kind=ml_user&phrase=%s'|s) }}', [],
+                '{{ cdedblink('core/select_persona') }}', {'kind': 'ml_user'}, [],
                 false, false, '{{ gettext("CdEDB-ID, Name or E-Mail") }}'
             );
         </script>

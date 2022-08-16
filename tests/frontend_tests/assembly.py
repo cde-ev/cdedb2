@@ -174,19 +174,19 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         # not assembly admins
         if self.user_in("annika", "martin", "werner"):
             ins = everyone
-            out = {"Nutzer verwalten", "Archivsuche", "Log"}
+            out = {"Nutzer verwalten", "Alle Nutzer verwalten", "Log"}
         # core admins
         elif self.user_in("vera"):
-            ins = everyone | {"Nutzer verwalten", "Archivsuche"}
+            ins = everyone | {"Nutzer verwalten", "Alle Nutzer verwalten"}
             out = {"Log"}
         # assembly admins
         elif self.user_in("anton"):
-            ins = everyone | {"Nutzer verwalten", "Archivsuche", "Log"}
+            ins = everyone | {"Nutzer verwalten", "Alle Nutzer verwalten", "Log"}
             out = set()
         # auditors
         elif self.user_in("katarina"):
             ins = everyone | {"Log"}
-            out = {"Nutzer verwalten", "Archivsuche"}
+            out = {"Nutzer verwalten", "Alle Nutzer verwalten"}
         else:
             self.fail("Please adjust users for this tests.")
 
