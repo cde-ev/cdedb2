@@ -181,9 +181,11 @@ class CdEPastEventMixin(CdEBaseFrontend):
                 'persona_id': persona_id,
                 'is_orga': any(x['is_orga'] for x in base_set),
                 'pcourse_ids': tuple(x['pcourse_id'] for x in base_set),
-                'is_instructor': any(x['is_instructor'] for x in base_set
-                                     if (x['pcourse_id'] == pcourse_id
-                                         or not pcourse_id))}
+                'instructor': set(
+                        x['pcourse_id'] for x in base_set if (
+                            x['is_instructor'] and (x['pcourse_id'] == pcourse_id
+                                                    or not pcourse_id))),
+            }
             if pcourse_id and pcourse_id not in entry['pcourse_ids']:
                 # remove non-participants with respect to the relevant
                 # course if there is a relevant course
