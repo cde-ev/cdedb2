@@ -71,7 +71,7 @@ class EventLodgementBackend(EventBaseBackend):
         All have to be from the same event.
 
         For all lodgements belonging to a group, their ids are collected into a set of
-        lodgement_ids their capacities (regular and camping mat) are summed.
+        lodgement_ids and their capacities (regular and camping mat) are summed.
         """
         group_ids = affirm_set(vtypes.ID, group_ids)
         with Atomizer(rs):
@@ -399,7 +399,7 @@ class EventLodgementBackend(EventBaseBackend):
             self, rs: RequestState, event_id: int,
             lodgement_ids: Collection[int] = None,
     ) -> Dict[int, Dict[int, LodgementInhabitants]]:
-        """Group number of inhabitants by lodg'ement, part and camping mat status."""
+        """Group number of inhabitants by lodgement, part and camping mat status."""
         event_id = affirm(vtypes.ID, event_id)
         if not self.is_orga(rs, event_id=event_id):
             raise PrivilegeError
