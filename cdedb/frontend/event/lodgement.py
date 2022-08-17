@@ -157,8 +157,8 @@ class EventLodgementMxin(EventBaseFrontend):
             problems_here = [p for p in problems
                              if p.lodgement_id == lodgement_id and p.part_id == part_id]
             problems_condensed[(lodgement_id, part_id)] = (
-                max(p[4] for p in problems_here) if problems_here else 0,
-                "; ".join(rs.gettext(p[0]) for p in problems_here),)
+                max(p.severeness for p in problems_here) if problems_here else 0,
+                "; ".join(rs.gettext(p.description) for p in problems_here),)
 
         def sort_lodgement(lodgement: CdEDBObject) -> Sortkey:
             primary_sort: Sortkey
