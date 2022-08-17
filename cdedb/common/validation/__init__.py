@@ -63,6 +63,7 @@ import re
 import string
 import typing
 from enum import Enum, IntEnum
+from types import TracebackType
 from typing import (
     Callable, Iterable, Optional, Protocol, Sequence, Set, Tuple, TypeVar, Union, cast,
     get_args, get_origin, get_type_hints, overload,
@@ -134,6 +135,17 @@ class ValidationSummary(ValueError, Sequence[Exception]):
 
     def append(self, error: Exception) -> None:
         self.args = self.args + (error,)
+
+    def __enter__(self) -> None:
+        pass
+
+    def __exit__(self, exc_type: Optional[Type[Exception]],
+                 exc_val: Optional[Exception],
+                 exc_tb: Optional[TracebackType]) -> bool:
+        if isinstance(exc_val, self.__class__):
+            self.extend(exc_val)
+            return True
+        return False
 
 
 class ValidatorStorage(Dict[Type[Any], Callable[..., Any]]):
@@ -380,10 +392,8 @@ def _augment_dict_validator(
                 del tmp[field]
 
         v = None
-        try:
+        with errs:
             v = validator(tmp, argname=argname, **kwargs)
-        except ValidationSummary as e:
-            errs.extend(e)
 
         if v is not None:
             ret.update(v)
@@ -896,10 +906,8 @@ def _list_of(
     vals: List[T] = []
     errs = ValidationSummary()
     for v in val:
-        try:
+        with errs:
             vals.append(_ALL_TYPED[atype](v, argname, **kwargs))
-        except ValidationSummary as e:
-            errs.extend(e)
     if errs:
         raise errs
 
@@ -2166,11 +2174,21 @@ EVENT_CREATION_OPTIONAL_FIELDS: TypeMapping = {
 
 def _optional_object_mapping_helper(
     val_dict: Mapping[Any, Any], atype: Type[T], argname: str,
-    errs: ValidationSummary, creation_only: bool, **kwargs: Any
+    creation_only: bool, **kwargs: Any
 ) -> Mapping[int, Optional[T]]:
+    """Helper to validate a `CdEDBOptionalMap` of a given type.
+
+    The map may contain positive or negative IDs. Positive IDs may be either None,
+    indicating an existing object should be deleted, or a partial dataset containing
+    changes to an existing object. Negative IDs should contain a full dataset for
+    creation of a new object.
+
+    :param creation_only: If True, only allow negative IDs.
+    """
     ret = {}
+    errs = ValidationSummary()
     for anid, val in val_dict.items():
-        try:
+        with errs:
             anid = _ALL_TYPED[PartialImportID](anid, argname, **kwargs)
             creation = (anid < 0)
             if creation_only and not creation:
@@ -2178,8 +2196,9 @@ def _optional_object_mapping_helper(
                     argname, n_("Only creation allowed.")))
             val = _ALL_TYPED[Optional[atype]](val, argname, creation=creation, **kwargs)  # type: ignore[index]
             ret[anid] = val
-        except ValidationSummary as e:
-            errs.extend(e)
+
+    if errs:
+        raise errs
     return ret
 
 
@@ -2230,17 +2249,20 @@ def _event(
         val['orgas'] = orgas
 
     if 'parts' in val:
-        val['parts'] = _optional_object_mapping_helper(
-            val['parts'], EventPart, 'parts', errs, creation_only=creation, **kwargs)
+        with errs:
+            val['parts'] = _optional_object_mapping_helper(
+                val['parts'], EventPart, 'parts', creation_only=creation, **kwargs)
 
     if 'fields' in val:
-        val['fields'] = _optional_object_mapping_helper(
-            val['fields'], EventField, 'fields', errs, creation_only=creation, **kwargs)
+        with errs:
+            val['fields'] = _optional_object_mapping_helper(
+                val['fields'], EventField, 'fields', creation_only=creation, **kwargs)
 
     if 'lodgement_groups' in val:
-        val['lodgement_groups'] = _optional_object_mapping_helper(
-            val['lodgement_groups'], LodgementGroup, 'lodgement_groups', errs,
-            creation_only=creation, nested_creation=creation, **kwargs)
+        with errs:
+            val['lodgement_groups'] = _optional_object_mapping_helper(
+                val['lodgement_groups'], LodgementGroup, 'lodgement_groups',
+                creation_only=creation, nested_creation=creation, **kwargs)
 
     if errs:
         raise errs
@@ -2912,6 +2934,8 @@ def _lodgement_group(
     """
     :param creation: If ``True`` test the data set for fitness for creation
         of a new entity.
+    :param nested_creation: If ``True`` do not require an event_id for creation,
+        because the event is being created at the same time as the group.
     """
 
     val = _mapping(val, argname, **kwargs)
@@ -4450,22 +4474,16 @@ def _query(
 
     # spec
     for field, spec_entry in val.spec.items():
-        try:
+        with errs:
             _csv_identifier(field, "spec", **kwargs)
-        except ValidationSummary as e:
-            errs.extend(e)
 
-        try:
+        with errs:
             _printable_ascii(spec_entry.type, "spec", **kwargs)
-        except ValidationSummary as e:
-            errs.extend(e)
 
     # fields_of_interest
     for field in val.fields_of_interest:
-        try:
+        with errs:
             _csv_identifier(field, "fields_of_interest", **kwargs)
-        except ValidationSummary as e:
-            errs.extend(e)
     if not val.fields_of_interest:
         errs.append(ValueError("fields_of_interest", n_("Must not be empty.")))
 
@@ -4478,10 +4496,8 @@ def _query(
             errs.append(ValueError("constraints", msg, {"index": idx}))
             continue
 
-        try:
+        with errs:
             field = _csv_identifier(field, "constraints", **kwargs)
-        except ValidationSummary as e:
-            errs.extend(e)
 
         if field not in val.spec:
             errs.append(KeyError("constraints", n_("Invalid field.")))
@@ -4505,10 +4521,8 @@ def _query(
             validator: Callable[..., Any] = _ALL_TYPED[
                 Optional[VALIDATOR_LOOKUP[val.spec[field].type]]]  # type: ignore[index]
             for v in value:
-                try:
+                with errs:
                     validator(v, f"constraints/{field}", **kwargs)
-                except ValidationSummary as e:
-                    errs.extend(e)
         else:
             try:
                 _ALL_TYPED[
