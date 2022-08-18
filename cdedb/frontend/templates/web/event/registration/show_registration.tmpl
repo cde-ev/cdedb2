@@ -43,6 +43,8 @@
         </dd>
         <dt>{% trans %}Gender{% endtrans %}</dt>
         <dd>{{ gettext(enums['Genders'](persona['gender'])|string) }}</dd>
+        <dt>{% trans %}Pronouns{% endtrans %}</dt>
+        <dd>{{ data['pronouns'] }}</dd>
     </dl>
     <dl class="dl-horizontal">
         <dt>{% trans %}E-Mail{% endtrans %}</dt>

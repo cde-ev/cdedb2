@@ -389,6 +389,7 @@ _QUERY_SPECS = {
             "display_name": QuerySpecEntry("str", n_("Known as (Forename)")),
             "birth_name": QuerySpecEntry("str", n_("Birth Name")),
             "gender": QuerySpecEntry("int", n_("Gender")),
+            "pronouns": QuerySpecEntry("str", n_("Pronons")),
             "birthday": QuerySpecEntry("date", n_("Birthday")),
             "telephone": QuerySpecEntry("str", n_("Phone")),
             "mobile": QuerySpecEntry("str", n_("Mobile Phone")),
@@ -427,6 +428,7 @@ _QUERY_SPECS = {
             "name_supplement": QuerySpecEntry("str", n_("Name Affix")),
             "birth_name": QuerySpecEntry("str", n_("Birth Name")),
             "gender": QuerySpecEntry("int", n_("Gender")),
+            "pronouns": QuerySpecEntry("str", n_("Pronons")),
             "birthday": QuerySpecEntry("date", n_("Birthday")),
             "telephone": QuerySpecEntry("str", n_("Phone")),
             "mobile": QuerySpecEntry("str", n_("Mobile Phone")),
@@ -481,6 +483,7 @@ _QUERY_SPECS = {
             "title": QuerySpecEntry("str", n_("Title_[[of a persona]]")),
             "name_supplement": QuerySpecEntry("str", n_("Name Affix")),
             "gender": QuerySpecEntry("int", n_("Gender")),
+            "pronouns": QuerySpecEntry("str", n_("Pronons")),
             "birthday": QuerySpecEntry("date", n_("Birthday")),
             "telephone": QuerySpecEntry("str", n_("Phone")),
             "mobile": QuerySpecEntry("str", n_("Mobile Phone")),
@@ -847,6 +850,7 @@ def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = N
         "persona.name_supplement": QuerySpecEntry("str", n_("Name Affix")),
         # Choices for the gender will be manually set when displaying the result.
         "persona.gender": QuerySpecEntry("int", n_("Gender"), choices=None),  # type: ignore[arg-type]
+        "persona.pronouns": QuerySpecEntry("str", n_("Pronons")),
         "persona.birthday": QuerySpecEntry("date", n_("Birthday")),
         "persona.telephone": QuerySpecEntry("str", n_("Phone")),
         "persona.mobile": QuerySpecEntry("str", n_("Mobile Phone")),

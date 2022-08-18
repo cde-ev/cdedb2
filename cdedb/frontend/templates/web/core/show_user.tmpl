@@ -186,6 +186,10 @@
                 <dt>{% trans %}Gender{% endtrans %}</dt>
                 <dd>{{ gettext(enums['Genders'](data['gender'])|string) }}</dd>
             {% endif %}
+            {% if data['pronouns'] and data['pronouns_profile'] %}
+                <dt>{% trans %}Pronouns{% endtrans %}</dt>
+                <dd>{{ data['pronouns'] }}</dd>
+            {% endif %}
         </dl>
 
 
