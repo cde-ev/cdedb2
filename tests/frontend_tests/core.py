@@ -2693,3 +2693,21 @@ class TestCoreFrontend(FrontendTest):
             for log in logs:
                 self.assertNonPresence(log, div="sidebar-navigation")
             self._click_admin_view_button("Kassenprüfer")
+
+    @as_users("berta")
+    def test_change_gender(self) -> None:
+        self.traverse("Meine Daten", "Bearbeiten")
+        f = self.response.forms['changedataform']
+        self.assertEqual(str(const.Genders.female), f['gender'].value)
+        f['gender'] = const.Genders.male
+        self.submit(f, check_notification=False)
+        self.assertPresence("Änderung wartet auf Bestätigung", div="notifications")
+        with self.switch_user("anton"):
+            self.admin_view_profile("berta")
+            self.assertPresence("Geschlecht weiblich")
+            self.traverse("Änderungen prüfen", "lotta Beispiel")
+            self.assertPresence("Geschlecht weiblich männlich", div="diff-view")
+            f = self.response.forms['ackchangeform']
+            self.submit(f)
+            self.admin_view_profile("berta")
+            self.assertPresence("Geschlecht männlich")
