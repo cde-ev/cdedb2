@@ -47,7 +47,7 @@ class TestLDAP(BasicTest):
             cls.conf['LDAP_HOST'], port=cls.conf['LDAP_PORT'], get_info=ldap3.ALL)
 
     def single_result_search(
-        self, search_filter: str, expectation: Dict[str, List[str]], *,
+        self, search_filter: str, raw_expectation: Dict[str, List[str]], *,
         user: str = test_dua_dn, password: str = test_dua_pw,
         search_base: str = root_dn,
         attributes: Union[List[str], str] = ALL_ATTRIBUTES,
@@ -61,12 +61,15 @@ class TestLDAP(BasicTest):
                 search_filter=search_filter,
                 attributes=attributes
             )
-            self.assertEqual(len(conn.entries), 1, conn.entries)
-            result: Dict[str, List[str]] = conn.entries[0].entry_attributes_as_dict
+            self.assertEqual(1, len(conn.entries), conn.entries)
+            raw_result: Dict[str, List[str]] = conn.entries[0].entry_attributes_as_dict
+            # Accordingly to RFC 4511, attributes and values of attributes are unordered
+            result = {key: set(values) for key, values in raw_result.items()}
+            expectation = {key: set(values) for key, values in raw_expectation.items()}
             if excluded_attributes:
                 for attribute in excluded_attributes:
                     result.pop(attribute)
-            self.assertEqual(result, expectation)
+            self.assertEqual(expectation, result)
 
     def no_result_search(
         self,
@@ -94,9 +97,9 @@ class TestLDAP(BasicTest):
                     )
                     # if the current user should access the entries, we check if he does
                     if identifier in except_users:
-                        self.assertNotEqual(len(conn.entries), 0, conn.entries)
+                        self.assertNotEqual(0, len(conn.entries), conn.entries)
                     else:
-                        self.assertEqual(len(conn.entries), 0, conn.entries)
+                        self.assertEqual(0, len(conn.entries), conn.entries)
 
     def test_anonymous_bind(self) -> None:
         conn = ldap3.Connection(self.server)
@@ -141,6 +144,22 @@ class TestLDAP(BasicTest):
         # self.assertEqual(
         #     'dn:' + 'uid=1,ou=users,dc=cde-ev,dc=de', conn.extend.standard.who_am_i())
         self.assertTrue(conn.unbind())
+
+    def test_anonymous_compare(self) -> None:
+        conn = ldap3.Connection(self.server)
+        conn.bind()
+        conn.compare("dc=de", "dc", "asdf")
+        self.assertEqual("unwillingToPerform", conn.result["description"])
+
+    def test_compare(self) -> None:
+        user = "uid=1,ou=users,dc=cde-ev,dc=de"
+        with ldap3.Connection(
+            self.server, user=user, password=self.USERS[user], raise_exceptions=True
+        ) as conn:
+            conn.compare(user, "sn", "Administrator")
+            self.assertEqual("compareTrue", conn.result["description"])
+            conn.compare(user, "sn", "Beispiel")
+            self.assertEqual("compareFalse", conn.result["description"])
 
     def test_anonymous_search(self) -> None:
         """Anonymous clients are only allowed to bind."""
@@ -466,7 +485,7 @@ class TestLDAP(BasicTest):
         ) as conn:
             conn.search(search_base=self.root_dn, search_filter=search_filter)
             result_names: Set[str] = {entry.entry_dn for entry in conn.entries}
-            self.assertEqual(result_names, expectation)
+            self.assertEqual(expectation, result_names)
 
         # Kalif has status fields, is presider, subscriber and moderator
         user_id = 23
@@ -505,7 +524,7 @@ class TestLDAP(BasicTest):
         ) as conn:
             conn.search(search_base=self.root_dn, search_filter=search_filter)
             result_names = {entry.entry_dn for entry in conn.entries}
-            self.assertEqual(result_names, expectation)
+            self.assertEqual(expectation, result_names)
 
     def test_search_attributes_of_groups_of_user(self) -> None:
         user_id = 10

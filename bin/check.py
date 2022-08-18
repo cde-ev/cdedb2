@@ -26,7 +26,9 @@ import tests.backend_tests as backend_tests
 import tests.frontend_tests as frontend_tests
 import tests.ldap_tests as ldap_tests
 import tests.other_tests as other_tests
-from cdedb.cli.database import create_database, populate_database, restart_services
+from cdedb.cli.database import (
+    create_database, populate_database, restart_services, stop_services,
+)
 from cdedb.cli.storage import (
     create_log, create_storage, populate_sample_event_keepers, populate_storage,
 )
@@ -177,6 +179,7 @@ def run_ldap_tests(testpatterns: List[str] = None, *, verbose: bool = False) -> 
         print(f"Database {conf['CDB_DATABASE_NAME']} must already been set up.")
         # TODO verify this somehow
     else:
+        stop_services("cde-ldap-test")
         create_database(conf, secrets)
         populate_database(conf, secrets)
 
