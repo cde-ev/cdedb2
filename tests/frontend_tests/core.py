@@ -2699,6 +2699,9 @@ class TestCoreFrontend(FrontendTest):
         self.traverse("Meine Daten", "Bearbeiten")
         f = self.response.forms['changedataform']
         self.assertEqual(str(const.Genders.female), f['gender'].value)
+        f['gender'] = const.Genders.not_specified
+        self.submit(f, check_notification=False)
+        self.assertValidationError('gender', "Darf nicht leer sein.")
         f['gender'] = const.Genders.male
         self.submit(f, check_notification=False)
         self.assertPresence("Änderung wartet auf Bestätigung", div="notifications")
