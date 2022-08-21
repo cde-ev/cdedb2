@@ -379,8 +379,8 @@ class CdEBaseBackend(AbstractBackend):
                 # Promote to cde realm dependent on current realm
                 promotion: CdEDBObject = {
                     field: None for field in CDE_TRANSITION_FIELDS}
-                # The ream independent upgrades of the persona. They are applied at last
-                # to prevent unintentional overrides
+                # The realm independent upgrades of the persona.
+                # They are applied last to prevent unintentional overrides.
                 upgrades = {
                     'is_cde_realm': True,
                     'is_event_realm': True,
@@ -390,6 +390,8 @@ class CdEBaseBackend(AbstractBackend):
                     'trial_member': False,
                     'paper_expuls': True,
                     'bub_search': False,
+                    'pronouns_nametag': False,
+                    'pronouns_profile': False,
                     'id': persona_id,
                 }
                 # This applies a part of the newly imported data necessary for realm
