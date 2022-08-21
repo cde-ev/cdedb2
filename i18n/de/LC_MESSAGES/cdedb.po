@@ -16907,3 +16907,6 @@ msgstr "Pronomen auf Profil anzeigen"
 
 msgid "Pronouns on Nametag"
 msgstr "Pronomen auf Namenschild"
+
+msgid "he/him, she/her, they/them, …"
+msgstr "er/ihm, sie/ihr, they/them, o.ä."
