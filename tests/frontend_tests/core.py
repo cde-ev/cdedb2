@@ -1659,13 +1659,13 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertPresence("Änderung wartet auf Bestätigung", div="notifications")
         with self.switch_user("vera"):
-            self.admin_view_profile("berta")
+            self.admin_view_profile("berta", check=False)
             self.assertPresence("Geschlecht weiblich")
-            self.traverse("Änderungen prüfen", "lotta Beispiel")
+            self.traverse("Änderungen prüfen", "Ganondorf")
             self.assertPresence("Geschlecht weiblich männlich", div="diff-view")
             f = self.response.forms['ackchangeform']
             self.submit(f)
-            self.admin_view_profile("berta")
+            self.admin_view_profile("berta", check=False)
             self.assertPresence("Geschlecht männlich")
 
     @as_users("vera")
