@@ -10,7 +10,7 @@
     \newcommand\debugbox[1]{#1} % no debugging
     % \renewcommand\debugbox[1]{\fbox{#1}} % frames around content
 
-    \newcommand\nametag[6]{\color{black}%\color{white}% eliminate frame
+    \newcommand\nametag[7]{\color{black}%\color{white}% eliminate frame
         \framebox{\color{black}\parbox[t][5.3cm][t]{8.7cm}{%
             % name
             \parbox[t][0pt][t]{0pt}{%
@@ -20,6 +20,7 @@
                     \raggedright%
                     {\fontsize{30}{30}\selectfont \textbf{#1}\par}%
                     \Large\textbf{#2}%
+                    \textbf{#7}%
                 }}%
             }%
             % course
@@ -118,6 +119,10 @@
                     }{
                         <<%- if registration['age'].is_minor() -%>>
                             ./minor-pictogram
+                        <<%- endif -%>>
+                    }{
+                        <<%- if persona['pronouns'] and persona['pronouns_nametag'] -%>>
+                            (<<< persona['pronouns']|te ->>>)
                         <<%- endif -%>>
                     }% <<< registration_id|te >>> / <<< mycourses|te >>>
             <<% endif -%>>
