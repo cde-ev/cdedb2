@@ -173,6 +173,11 @@
             <dt>{% trans %}Name{% endtrans %}</dt>
             <dd>
                 {{ util.persona_name(data, given_and_display_names=True, with_titles=True) }}
+                {% if data['pronouns'] and data['pronouns_profile'] %}
+                    <small class="text-muted">
+                        ({{ data['pronouns'] }})
+                    </small>
+                {% endif %}
             </dd>
             {% if data['birth_name'] %}
                 <dt>{% trans %}Birth Name{% endtrans %}</dt>
@@ -185,10 +190,6 @@
             {% if data['gender'] %}
                 <dt>{% trans %}Gender{% endtrans %}</dt>
                 <dd>{{ gettext(enums['Genders'](data['gender'])|string) }}</dd>
-            {% endif %}
-            {% if data['pronouns'] and data['pronouns_profile'] %}
-                <dt>{% trans %}Pronouns{% endtrans %}</dt>
-                <dd>{{ data['pronouns'] }}</dd>
             {% endif %}
         </dl>
 
