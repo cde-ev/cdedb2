@@ -78,7 +78,9 @@
                 if (!query.length) return callback();
 
                 let target_url = new URL(url, document.location);
-                params['phrase'] = encodeURIComponent(query);
+                // no URI-encoding here, as URLSearchParams below does this internally:
+                // https://url.spec.whatwg.org/#interface-urlsearchparams
+                params['phrase'] = query;
                 if (toggle && toggle['toggle'].is(':checked')) {
                     let new_params = $.extend({}, params, toggle);  // values from toggle take precedence
                     delete new_params['toggle'];
