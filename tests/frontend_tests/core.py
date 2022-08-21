@@ -2151,6 +2151,13 @@ class TestCoreFrontend(FrontendTest):
         execsql("SELECT setval('core.personas_id_seq', 2000);")
 
         self.submit(f, button="decision", value=str(GenesisDecision.approve))
+
+        # check for correct welcome mail
+        mail = self.fetch_mail_content()
+        self.assertIn("Zelda", mail)
+        self.assertIn("Ein herzliches Willkommen", mail)
+        self.assertIn("zum ersten Mal in unserer Datenbank anmeldest", mail)  # consent
+
         link = self.fetch_link()
         self.traverse({'href': '^/$'})
         if not self.user_in('quintus'):

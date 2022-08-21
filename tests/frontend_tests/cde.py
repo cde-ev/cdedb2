@@ -900,6 +900,13 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Daten sind für andere Mitglieder sichtbar.",
                             div='searchability')
         self.assertCheckbox(True, "paper_expuls_checkbox")
+
+        # check for correct welcome mail
+        mail = self.fetch_mail_content()
+        self.assertIn("Zelda", mail)
+        self.assertIn("Ein herzliches Willkommen", mail)
+        self.assertIn("kostenlos", mail)  # trial membership
+
         link = self.fetch_link()
         self.logout()
         self.get(link)
