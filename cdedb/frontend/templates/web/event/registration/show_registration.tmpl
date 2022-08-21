@@ -46,9 +46,7 @@
         <dt>{% trans %}Pronouns{% endtrans %}</dt>
         <dd>{{ persona['pronouns'] }}</dd>
         <dt>{% trans %}Show pronouns on nametags{% endtrans %}</dt>
-        <dd>{{ persona['pronouns_nametag'] }}</dd>
-        <dt>{% trans %}Show pronouns on profile{% endtrans %}</dt>
-        <dd>{{ persona['pronouns_profile'] }}</dd>
+        <dd>{{ util.deko_checkbox(persona['pronouns_nametag']) }}</dd>
 
     </dl>
     <dl class="dl-horizontal">
