@@ -16904,3 +16904,6 @@ msgstr "Pronomen auf Namenschildern anzeigen"
 
 msgid "Show pronouns on profile"
 msgstr "Pronomen auf Profil anzeigen"
+
+msgid "Pronouns on Nametag"
+msgstr "Pronomen auf Namenschild"

@@ -851,6 +851,7 @@ def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = N
         # Choices for the gender will be manually set when displaying the result.
         "persona.gender": QuerySpecEntry("int", n_("Gender"), choices=None),  # type: ignore[arg-type]
         "persona.pronouns": QuerySpecEntry("str", n_("Pronouns")),
+        "persona.pronouns_nametag": QuerySpecEntry("bool", n_("Pronouns on Nametag")),
         "persona.birthday": QuerySpecEntry("date", n_("Birthday")),
         "persona.telephone": QuerySpecEntry("str", n_("Phone")),
         "persona.mobile": QuerySpecEntry("str", n_("Mobile Phone")),
