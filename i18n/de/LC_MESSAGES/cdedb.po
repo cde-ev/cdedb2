@@ -16894,3 +16894,13 @@ msgstr "Kann aus {} keinen ml_type bestimmen"
 #, python-format
 msgid "%(ml_type)s is not an appropriate type for this mailinglist."
 msgstr "%(ml_type)s ist kein geeigneter Typ für diese Mailingliste."
+
+
+msgid "Pronouns"
+msgstr "Pronomen"
+
+msgid "Show pronouns on nametags"
+msgstr "Pronomen auf Namenschildern anzeigen"
+
+msgid "Show pronouns on profile"
+msgstr "Pronomen auf Profil anzeigen"
