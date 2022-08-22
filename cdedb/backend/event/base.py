@@ -642,7 +642,8 @@ class EventBaseBackend(EventLowLevelBackend):
                         raise ValueError(n_("Unknown track for the given event."))
                     ret *= self._set_track_group_tracks(
                         rs, event_id, track_group_id=new_id, track_ids=track_ids,
-                        tracks=tracks, track_group_title=new_track_group['title'])
+                        tracks=tracks, track_group_title=new_track_group['title'],
+                        constraint_type=new_track_group['constraint_type'])
 
             # updated
             if updated_track_groups:
@@ -667,7 +668,8 @@ class EventBaseBackend(EventLowLevelBackend):
                             raise ValueError(n_("Unknown track for the given event."))
                         ret *= self._set_track_group_tracks(
                             rs, event_id, track_group_id=x, track_ids=track_ids,
-                            tracks=tracks, track_group_title=title)
+                            tracks=tracks, track_group_title=title,
+                            constraint_type=new_track_group['constraint_type'])
 
             if deleted_track_groups:
                 cascade = ("track_group_tracks",)

@@ -710,11 +710,22 @@ class EventLowLevelBackend(AbstractBackend):
     @internal
     def _set_track_group_tracks(self, rs: RequestState, event_id: int,
                                 track_group_id: int, track_group_title: str,
-                                track_ids: Set[int], tracks: CdEDBObjectMap
+                                track_ids: Set[int], tracks: CdEDBObjectMap,
+                                constraint_type: const.CourseTrackGroupType,
                                 ) -> DefaultReturnCode:
         """Helper to link the given course traks to the given track group."""
         ret = 1
         self.affirm_atomized_context(rs)
+
+        # TODO: Do this check too for changes to tracks.
+        # For Course Choice Sync, all tracks must have the same number of choices.
+        if constraint_type.is_sync():
+            track_params = {
+                (tracks[t_id]['num_choices'], tracks[t_id]['min_choices'])
+                for t_id in track_ids
+            }
+            if len(track_params) > 1:
+                raise ValueError(n_("Incompatible tracks."))
 
         current_track_ids = {e['track_id'] for e in self.sql_select(
             rs, "event.track_group_tracks", ("track_group_id",), (track_group_id,),

@@ -4249,8 +4249,8 @@
             "part_id": 9,
             "title": "Oberwesel Kurs 2 nachmittags",
             "shortname": "OK2n",
-            "num_choices": 5,
-            "min_choices": 2,
+            "num_choices": 3,
+            "min_choices": 1,
             "sortkey": 1
         },
         {
@@ -4258,7 +4258,7 @@
             "part_id": 10,
             "title": "Windischleuba Kurs 2 morgens",
             "shortname": "WK2m",
-            "num_choices": 3,
+            "num_choices": 5,
             "min_choices": 2,
             "sortkey": 1
         },
@@ -4268,7 +4268,7 @@
             "title": "Windischleuba Kurs 2 nachmittags",
             "shortname": "WK2n",
             "num_choices": 3,
-            "min_choices": 2,
+            "min_choices": 1,
             "sortkey": 1
         },
         {
@@ -4276,7 +4276,7 @@
             "part_id": 11,
             "title": "Kaub Kurs 2 morgens",
             "shortname": "KK2m",
-            "num_choices": 4,
+            "num_choices": 5,
             "min_choices": 2,
             "sortkey": 1
         },
@@ -4285,8 +4285,8 @@
             "part_id": 11,
             "title": "Kaub Kurs 2 nachmittags",
             "shortname": "KK2n",
-            "num_choices": 4,
-            "min_choices": 2,
+            "num_choices": 3,
+            "min_choices": 1,
             "sortkey": 1
         },
         {
