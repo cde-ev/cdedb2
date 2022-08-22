@@ -617,6 +617,7 @@ class TestEventBackend(BackendTest):
         self.event.set_event(self.key, update_event)
         new_track['id'] = new_track_id
         new_track['part_id'] = part_id
+        new_track['track_groups'] = {}
 
         for reg in regs.values():
             reg['tracks'][new_track_id] = {
@@ -4303,7 +4304,8 @@ class TestEventBackend(BackendTest):
             self.assertEqual(
                 set(blockers),
                 {"orgas", "event_parts", "course_tracks", "part_groups",
-                 "part_group_parts", "courses", "log"}
+                 "part_group_parts", "track_groups", "track_group_tracks",
+                 "courses", "log"}
             )
             self.assertTrue(self.event.delete_event(self.key, event_id, blockers))
 
