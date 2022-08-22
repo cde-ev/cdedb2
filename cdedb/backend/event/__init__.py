@@ -49,6 +49,8 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
         * course_tracks: A course track of the event, belonging to an event part.
         * part_groups: A group of event parts.
         * part_group_parts: A link between an event part and a part group.
+        * track_groups: A group of course tracks.
+        * track_group_tracks: A link between a course track and a track group.
         * orgas: An orga of the event.
         * lodgement_groups: A lodgement group associated with the event.
                             This can have it's own blockers.
@@ -103,6 +105,16 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                 entity_key="part_group_id")
             if part_group_parts:
                 blockers["part_group_parts"] = [e["id"] for e in part_group_parts]
+
+        track_groups = self.sql_select(
+            rs, "event.track_groups", ("id",), (event_id,), entity_key="event_id")
+        if track_groups:
+            blockers["track_groups"] = [e["id"] for e in track_groups]
+            track_group_tracks = self.sql_select(
+                rs, "event.track_group_tracks", ("id",), blockers["track_groups"],
+                entity_key="track_group_id")
+            if track_group_tracks:
+                blockers["track_group_tracks"] = [e["id"] for e in track_group_tracks]
 
         orgas = self.sql_select(
             rs, "event.orgas", ("id",), (event_id,), entity_key="event_id")
@@ -204,6 +216,11 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                     with Silencer(rs):
                         for anid in blockers["event_parts"]:
                             self._delete_event_part(rs, anid, part_cascade)
+                if "track_groups" in cascade:
+                    with Silencer(rs):
+                        track_group_cascade = {"track_group_parts"} & cascade
+                        for anid in blockers["track_groups"]:
+                            self._delete_track_group(rs, anid, track_group_cascade)
                 if "questionnaire" in cascade:
                     ret *= self.sql_delete(
                         rs, "event.questionnaire_rows",

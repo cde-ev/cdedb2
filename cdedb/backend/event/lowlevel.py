@@ -159,6 +159,11 @@ class EventLowLevelBackend(AbstractBackend):
         if course_choices:
             blockers["course_choices"] = [e["id"] for e in course_choices]
 
+        track_group_tracks = self.sql_select(
+            rs, "event.track_group_tracks", ("id",), (track_id,), entity_key="track_id")
+        if track_group_tracks:
+            blockers["track_group_tracks"] = [e["id"] for e in track_group_tracks]
+
         return blockers
 
     @internal
@@ -200,6 +205,9 @@ class EventLowLevelBackend(AbstractBackend):
             if "course_choices" in cascade:
                 ret *= self.sql_delete(rs, "event.course_choices",
                                        blockers["course_choices"])
+            if "track_group_tracks" in cascade:
+                ret *= self.sql_delete(rs, "event.track_group_tracks",
+                                       blockers["track_group_tracks"])
 
             blockers = self._delete_course_track_blockers(rs, track_id)
 
@@ -440,7 +448,7 @@ class EventLowLevelBackend(AbstractBackend):
                                        blockers["fee_modifiers"])
             if "course_tracks" in cascade:
                 track_cascade = ("course_segments", "registration_tracks",
-                                 "course_choices")
+                                 "course_choices", "track_group_tracks")
                 for anid in blockers["course_tracks"]:
                     ret *= self._delete_course_track(rs, anid, track_cascade)
             if "registration_parts" in cascade:
