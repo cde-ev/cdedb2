@@ -129,8 +129,14 @@
         {% endif %}
 
         <h3 class="sr-only">{% trans %}Course Choices{% endtrans %}</h3>
-        {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) if track['num_choices'] %}
-            {{ generic_event.select_course_choice(track, courses, course_choices) }}
+        {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) if track['num_choices'] and track_id in simple_tracks %}
+            {{ generic_event.select_course_choice(track, courses, courses_per_track[track_id], ambience['event']['tracks']|length > 1) }}
+        {% endfor %}
+
+        {% for track_group_id, track_group in ambience['event']['track_groups'].items() if track_group['constraint_type'].is_sync() and track_group['track_ids'] %}
+            {{ generic_event.select_course_choice(
+                    reference_track[track_group_id], courses, courses_per_track_group[track_group_id],
+                    show_track_title=True, track_group=track_group) }}
         {% endfor %}
 
         <h3 class="heading-underline">{% trans %}Additional Information{% endtrans %}</h3>

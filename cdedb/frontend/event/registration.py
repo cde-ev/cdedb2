@@ -285,24 +285,35 @@ class EventRegistrationMixin(EventBaseFrontend):
                 raise werkzeug.exceptions.Forbidden(n_("Must be Orga to use preview."))
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
-        course_choices = {
-            track_id: [course_id
-                       for course_id, course
-                       in keydictsort_filter(courses, EntitySorter.course)
-                       if track_id in course['active_segments']
-                           or (not event['is_course_state_visible']
-                               and track_id in course['segments'])]
-            for track_id in tracks}
         semester_fee = self.conf["MEMBERSHIP_FEE"]
         # by default select all parts
         if 'parts' not in rs.values:
             rs.values.setlist('parts', event['parts'])
+
+        courses_per_track = self.eventproxy.get_course_segments_per_track(
+            rs, event_id, event['is_course_state_visible'])
+        courses_per_track_group = {}
+        reference_track = {}
+        simple_tracks = set(tracks)
+        for track_group_id, track_group in event['track_groups'].items():
+            if not track_group['constraint_type'].is_sync():
+                continue
+            simple_tracks.difference_update(track_group['track_ids'])
+            courses_per_track_group[track_group_id] = set()
+            for track_id in track_group['track_ids']:
+                courses_per_track_group[track_group_id] = courses_per_track[track_id]
+                reference_track[track_group_id] = tracks[track_id]
+                break
+
         reg_questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(const.QuestionnaireUsages.registration,)))
         return self.render(rs, "registration/register", {
             'persona': persona, 'age': age, 'courses': courses,
-            'course_choices': course_choices, 'semester_fee': semester_fee,
-            'reg_questionnaire': reg_questionnaire, 'preview': preview})
+            'semester_fee': semester_fee, 'simple_tracks': simple_tracks,
+            'reference_track': reference_track, 'courses_per_track': courses_per_track,
+            'courses_per_track_group': courses_per_track_group,
+            'reg_questionnaire': reg_questionnaire, 'preview': preview,
+        })
 
     def process_registration_input(
             self, rs: RequestState, event: CdEDBObject, courses: CdEDBObjectMap,

@@ -42,7 +42,7 @@ T = TypeVar("T")
 
 class EventRegistrationBackend(EventBaseBackend):
     def _get_event_course_segments(self, rs: RequestState,
-                                   event_id: int) -> Dict[int, List[int]]:
+                                   event: CdEDBObject) -> Dict[int, Set[int]]:
         """
         Helper function to get course segments of all courses of an event.
 
@@ -62,8 +62,58 @@ class EventRegistrationBackend(EventBaseBackend):
             )
             WHERE courses.event_id = %s
             GROUP BY courses.id"""
-        return {row['id']: row['segments']
-                for row in self.query_all(rs, query, (event_id,))}
+
+        ret = {row['id']: set(row['segments'])
+               for row in self.query_all(rs, query, (event['id'],))}
+
+        # For tracks in a course choice sync track group, treat a course as offered if
+        # it is offered in at least one track.
+        for track_group in event['track_groups'].values():
+            if not track_group['constraint_type'].is_sync():
+                continue
+            for course_id, segments in ret.items():
+                if segments & track_group['track_ids']:
+                    segments.update(track_group['track_ids'])
+
+        return ret
+
+    @access("event")
+    def get_course_segments_per_track(self, rs: RequestState, event_id: int,
+                                      active_only: bool = False) -> Dict[int, Set[int]]:
+        query = """
+            SELECT ct.id, ARRAY_REMOVE(ARRAY_AGG(segments.course_id), NULL) AS courses
+            FROM (
+                event.course_tracks AS ct
+                LEFT JOIN event.event_parts AS ep ON ct.part_id = ep.id
+                LEFT JOIN (
+                    SELECT course_id, track_id, is_active
+                    FROM event.course_segments AS segments
+                    {}
+                ) AS segments ON ct.id = segments.track_id
+            )
+            WHERE ep.event_id = %s
+            GROUP BY ct.id
+        """
+
+        event_id = affirm(vtypes.ID, event_id)
+        active_only = affirm(bool, active_only)
+        query = query.format("WHERE is_active = True" if active_only else "")
+
+        ret = {
+            e['id']: set(e['courses'])
+            for e in self.query_all(rs, query, (event_id,))
+        }
+
+        event = self.get_event(rs, event_id)
+        for track_group in event['track_groups'].values():
+            if not track_group['constraint_type'].is_sync():
+                continue
+            all_courses = set(itertools.chain.from_iterable(
+                ret[track_id] for track_id in track_group['track_ids']))
+            for track_id in track_group['track_ids']:
+                ret[track_id] = set(all_courses)
+
+        return ret
 
     def _set_course_choices(self, rs: RequestState, registration_id: int,
                             track_id: int, choices: Optional[Sequence[int]],
@@ -615,7 +665,7 @@ class EventRegistrationBackend(EventBaseBackend):
                     and not self.is_admin(rs)):
                 raise PrivilegeError(n_("Not privileged."))
             event = self.get_event(rs, event_id)
-            course_segments = self._get_event_course_segments(rs, event_id)
+            course_segments = self._get_event_course_segments(rs, event)
             if "amount_owed" in data:
                 del data["amount_owed"]
 
@@ -738,7 +788,7 @@ class EventRegistrationBackend(EventBaseBackend):
             data['fields'] = fdata
             data['amount_owed'] = self._calculate_single_fee(rs, data, event=event)
             data['fields'] = PsycoJson(fdata)
-            course_segments = self._get_event_course_segments(rs, data['event_id'])
+            course_segments = self._get_event_course_segments(rs, event)
             part_ids = {e['id'] for e in self.sql_select(
                 rs, "event.event_parts", ("id",), (data['event_id'],),
                 entity_key="event_id")}
