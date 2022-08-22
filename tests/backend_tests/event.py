@@ -466,6 +466,87 @@ class TestEventBackend(BackendTest):
             self.event.delete_event(
                 self.key, 1, self.event.delete_event_blockers(self.key, 1)))
 
+    @as_users("annika")
+    def test_get_event_part_groups(self) -> None:
+        expectation_part = {
+            'id': 6,
+            'event_id': 4,
+            'title': "1. Hälfte Oberwesel",
+            'shortname': "O1",
+            'part_begin': datetime.date(3000, 1, 1),
+            'part_end': datetime.date(3000, 2, 1),
+            'fee': decimal.Decimal("0.00"),
+            'waitlist_field': None,
+            'fee_modifiers': {},
+            'tracks': {
+                6: {
+                    'id': 6,
+                    'part_id': 6,
+                    'title': "Oberwesel Kurs 1",
+                    'shortname': "OK1",
+                    'num_choices': 4,
+                    'min_choices': 2,
+                    'sortkey': 1,
+                    'track_groups': {
+                        1: {
+                            'id': 1,
+                            'event_id': 4,
+                            'title': "Kurs 1 Sync",
+                            'shortname': "K1S",
+                            'notes': None,
+                            'constraint_type':
+                                const.CourseTrackGroupType.course_choice_sync,
+                            'track_ids': {6, 7, 8},
+                        }
+                    },
+                },
+            },
+            'part_groups': {
+                1: {
+                    'id': 1,
+                    'title': "1. Hälfte",
+                    'shortname': "1.H.",
+                    'notes': None,
+                    'event_id': 4,
+                    'constraint_type': const.EventPartGroupType.Statistic,
+                    'part_ids': {6, 7, 8},
+                },
+                3: {
+                    'id': 3,
+                    'title': "Oberwesel",
+                    'shortname': "OW",
+                    'notes': None,
+                    'event_id': 4,
+                    'constraint_type': const.EventPartGroupType.Statistic,
+                    'part_ids': {6, 9},
+                },
+                6: {
+                    'id': 6,
+                    'title': "Teilnehmer 1. Hälfte",
+                    'shortname': "TN 1H",
+                    'notes': None,
+                    'event_id': 4,
+                    'constraint_type':
+                        const.EventPartGroupType.mutually_exclusive_participants,
+                    'part_ids': {6, 7, 8},
+                },
+                8: {
+                    'id': 8,
+                    'title': "Kurse 1. Hälfte",
+                    'shortname': "Kurs 1H",
+                    'notes': None,
+                    'event_id': 4,
+                    'constraint_type':
+                        const.EventPartGroupType.mutually_exclusive_courses,
+                    'part_ids': {6, 7, 8},
+                },
+            }
+        }
+        self.assertEqual(
+            expectation_part,
+            self.event.get_event(self.key, 4)['parts'][6]
+        )
+
     @storage
     @as_users("annika", "garcia")
     def test_change_minor_form(self) -> None:

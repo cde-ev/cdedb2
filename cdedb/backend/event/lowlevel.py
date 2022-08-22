@@ -639,6 +639,106 @@ class EventLowLevelBackend(AbstractBackend):
             ret *= self.sql_insert_many(rs, "event.part_group_parts", inserter)
         return ret
 
+    @internal
+    def _delete_track_group_blockers(self, rs: RequestState,
+                                     track_group_id: int) -> DeletionBlockers:
+        """Determine what keeps a track group from being deleted.
+
+        Possible blockers:
+
+        * track_group_tracks: A link between an course track and the track group.
+
+        :return: List of blockers, separated by type. The values of the dict
+            are the ids of the blockers.
+        """
+        track_group_id = affirm(vtypes.ID, track_group_id)
+        blockers = {}
+
+        track_group_tracks = self.sql_select(
+            rs, "event.track_group_tracks", ("id",), (track_group_id,),
+            entity_key="track_group_id")
+        if track_group_tracks:
+            blockers["track_group_tracks"] = [e["id"] for e in track_group_tracks]
+
+        return blockers
+
+    @internal
+    def _delete_track_group(self, rs: RequestState, track_group_id: int,
+                            cascade: Collection[str] = None) -> DefaultReturnCode:
+        """Helper to delete one track group.
+
+        :note: This has to be called inside an atomized context.
+
+        :param cascade: Specify which deletion blockers to cascadingly
+            remove or ignore. If None or empty, cascade none.
+        """
+        track_group_id = affirm(vtypes.ID, track_group_id)
+        blockers = self._delete_track_group_blockers(rs, track_group_id)
+        cascade = affirm_set(str, cascade or set()) & blockers.keys()
+        if blockers.keys() - cascade:
+            raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),  # pragma: no cover
+                             {
+                                 "type": "track group",
+                                 "block": blockers.keys() - cascade,
+                             })
+
+        ret = 1
+        self.affirm_atomized_context(rs)
+        if cascade:
+            if "track_group_tracks" in cascade:
+                ret *= self.sql_delete(
+                    rs, "event.track_group_tracks", blockers["track_group_tracks"])
+
+            blockers = self._delete_track_group_blockers(rs, track_group_id)
+
+        if not blockers:
+            track_group = self.sql_select_one(
+                rs, "event.track_groups", PART_GROUP_FIELDS, track_group_id)
+            if track_group is None:  # pragma: no cover
+                return 0
+            type_ = const.CourseTrackGroupType(track_group['constraint_type'])
+            ret *= self.sql_delete_one(rs, "event.track_groups", track_group_id)
+            self.event_log(rs, const.EventLogCodes.track_group_deleted,
+                           event_id=track_group["event_id"],
+                           change_note=f"{track_group['title']} ({type_.name})")
+        else:
+            raise ValueError(  # pragma: no cover
+                n_("Deletion of %(type)s blocked by %(block)s."),
+                {"type": "track group", "block": blockers.keys()})
+        return ret
+
+    @internal
+    def _set_track_group_tracks(self, rs: RequestState, event_id: int,
+                                track_group_id: int, track_group_title: str,
+                                track_ids: Set[int], tracks: CdEDBObjectMap
+                                ) -> DefaultReturnCode:
+        """Helper to link the given course traks to the given track group."""
+        ret = 1
+        self.affirm_atomized_context(rs)
+
+        current_track_ids = {e['track_id'] for e in self.sql_select(
+            rs, "event.track_group_tracks", ("track_group_id",), (track_group_id,),
+            entity_key="track_group_id")}
+
+        if deleted_track_ids := current_track_ids - track_ids:
+            query = ("DELETE FROM event.track_group_tracks"
+                     " WHERE track_group_id = %s AND track_id = ANY(%s)")
+            ret *= self.query_exec(rs, query, (track_group_id, deleted_track_ids))
+            for x in mixed_existence_sorter(deleted_track_ids):
+                self.event_log(
+                    rs, const.EventLogCodes.track_group_link_deleted, event_id,
+                    change_note=f"{tracks[x]['title']} -> {track_group_title}")
+
+        if new_track_ids := track_ids - current_track_ids:
+            inserter = []
+            for x in mixed_existence_sorter(new_track_ids):
+                inserter.append({'track_group_id': track_group_id, 'track_id': x})
+                self.event_log(
+                    rs, const.EventLogCodes.track_group_link_created, event_id,
+                    change_note=f"{tracks[x]['title']} -> {track_group_title}")
+            ret *= self.sql_insert_many(rs, "event.track_group_tracks", inserter)
+        return ret
+
     def _delete_event_field_blockers(self, rs: RequestState,
                                      field_id: int) -> DeletionBlockers:
         """Determine what keeps an event part from being deleted.

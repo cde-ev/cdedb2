@@ -2460,6 +2460,67 @@ def _event_track(
     return EventTrack(val)
 
 
+EVENT_TRACK_GROUP_COMMON_FIELDS: TypeMapping = {
+    'title': str,
+    'shortname': Shortname,
+    'constraint_type': const.CourseTrackGroupType,
+    'notes': Optional[str],  # type: ignore[dict-item]
+    'part_ids': List[ID],
+}
+
+
+@_add_typed_validator
+def _event_track_group(
+    val: Any, argname: str = "track_group", *,
+    creation: bool = False, **kwargs: Any
+) -> EventTrackGroup:
+    val = _mapping(val, argname, **kwargs)
+
+    if creation:
+        mandatory_fields = {**EVENT_TRACK_GROUP_COMMON_FIELDS}
+        optional_fields: TypeMapping = {}
+    else:
+        mandatory_fields = {}
+        optional_fields = {**EVENT_TRACK_GROUP_COMMON_FIELDS}
+
+    val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
+
+    return EventTrackGroup(val)
+
+
+@_add_typed_validator
+def _event_track_group_setter(
+    val: Any, argname: str = "track_groups",
+    **kwargs: Any
+) -> EventTrackGroupSetter:
+    """Validate a `CdEDBOptionalMap` of track groups."""
+    val = _mapping(val, argname)
+
+    errs = ValidationSummary()
+    new_track_groups = {}
+    for anid, track_group in val.items():
+        try:
+            anid = _partial_import_id(anid, 'track_group_id', **kwargs)
+        except ValidationSummary as e:
+            errs.extend(e)
+            continue
+        creation = (anid < 0)
+        try:
+            if creation:
+                track_group = _ALL_TYPED[EventTrackGroup](
+                    track_group, creation=True, **kwargs)
+            else:
+                track_group = _ALL_TYPED[Optional[EventTrackGroup]](  # type: ignore[index]
+                    track_group, **kwargs)
+        except ValidationSummary as e:
+            errs.extend(e)
+        else:
+            new_track_groups[anid] = track_group
+    if errs:
+        raise errs
+    return EventTrackGroupSetter(new_track_groups)
+
+
 EVENT_FIELD_COMMON_FIELDS: TypeMapping = {
     'kind': const.FieldDatatypes,
     'association': const.FieldAssociations,

@@ -4299,6 +4299,79 @@
             "sortkey": 1
         }
     ],
+    "event.track_groups": [
+        {
+            "id": 1,
+            "event_id": 4,
+            "title": "Kurs 1 Sync",
+            "shortname": "K1S",
+            "notes": null,
+            "constraint_type": 1
+        },
+        {
+            "id": 2,
+            "event_id": 4,
+            "title": "Kurs 2 morgens Sync",
+            "shortname": "K2mS",
+            "notes": null,
+            "constraint_type": 1
+        },
+        {
+            "id": 3,
+            "event_id": 4,
+            "title": "Kurs 2 nachmittags Sync",
+            "shortname": "K2nS",
+            "notes": null,
+            "constraint_type": 1
+        }
+    ],
+    "event.track_group_tracks": [
+        {
+            "id": 1,
+            "track_group_id": 1,
+            "track_id": 6
+        },
+        {
+            "id": 2,
+            "track_group_id": 1,
+            "track_id": 7
+        },
+        {
+            "id": 3,
+            "track_group_id": 1,
+            "track_id": 8
+        },
+        {
+            "id": 4,
+            "track_group_id": 2,
+            "track_id": 9
+        },
+        {
+            "id": 5,
+            "track_group_id": 2,
+            "track_id": 11
+        },
+        {
+            "id": 6,
+            "track_group_id": 2,
+            "track_id": 13
+        },
+        {
+            "id": 7,
+            "track_group_id": 3,
+            "track_id": 10
+        },
+        {
+            "id": 8,
+            "track_group_id": 3,
+            "track_id": 12
+        },
+        {
+            "id": 9,
+            "track_group_id": 3,
+            "track_id": 14
+        }
+    ],
     "event.field_definitions": [
         {
             "id": 1,
