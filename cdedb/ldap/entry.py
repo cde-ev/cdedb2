@@ -17,6 +17,7 @@ from ldaptor.protocols.ldap.distinguishedname import DistinguishedName
 from ldaptor.protocols.ldap.ldaperrors import (
     LDAPInvalidCredentials, LDAPNoSuchObject, LDAPProtocolError, LDAPUnwillingToPerform,
 )
+from twisted.python.util import InsensitiveDict
 
 from cdedb.ldap.backend import LDAPObject, LDAPObjectMap, LDAPsqlBackend
 
@@ -76,8 +77,9 @@ class CdEDBBaseLDAPEntry(
         """
         self.dn = dn
 
-        # TODO replace with a dict implementation with case-insensitive keys
-        self.attributes = dict()
+        # TODO this is no nice solution. One may thing about normalizing the attributes
+        #  instead, but this is somewhat tricky.
+        self.attributes = InsensitiveDict()  # type: ignore[assignment]
         for attribute, values in attributes.items():
             self.attributes[attribute] = LDAPAttributeSet(attribute, values)
 
