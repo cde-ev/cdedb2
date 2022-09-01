@@ -908,7 +908,7 @@ class TestAssemblyBackend(BackendTest):
         # Test log
         entry = {'change_note': 'Antwort auf die letzte aller Fragen',
                  'code': const.AssemblyLogCodes.ballot_changed}
-        expectation = (entry, entry)
+        expectation = (entry, entry.copy())
         self.assertLogEqual(expectation, realm="assembly", assembly_id=1)
 
     @storage

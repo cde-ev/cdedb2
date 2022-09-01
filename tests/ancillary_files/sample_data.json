@@ -4863,14 +4863,36 @@
     ],
     "event.lodgement_groups": [
         {
-            "id": 1,
             "event_id": 1,
             "title": "Haupthaus"
         },
         {
-            "id": 2,
             "event_id": 1,
             "title": "AußenWohnGruppe"
+        },
+        {
+            "event_id": 1,
+            "title": "Sonstige"
+        },
+        {
+            "event_id": 2,
+            "title": "CdE-Party"
+        },
+        {
+            "event_id": 3,
+            "title": "CyberTestAkademie"
+        },
+        {
+            "event_id": 4,
+            "title": "Kaub"
+        },
+        {
+            "event_id": 4,
+            "title": "Oberwesel"
+        },
+        {
+            "event_id": 4,
+            "title": "Windischleuba"
         }
     ],
     "event.lodgements": [
@@ -4905,7 +4927,7 @@
             "regular_capacity": 0,
             "camping_mat_capacity": 100,
             "notes": "Nur für Notfälle.",
-            "group_id": null,
+            "group_id": 3,
             "fields": {
                 "contamination": "low"
             }

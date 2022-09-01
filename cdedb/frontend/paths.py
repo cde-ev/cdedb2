@@ -359,6 +359,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                  endpoint="create_user_form"),
             rule("/user/create", methods=_POST,
                  endpoint="create_user"),
+            rule("/log", methods=_GET,
+                 endpoint="view_log"),
             sub('/event', (
                 rule("/list", methods=_GET,
                      endpoint="list_events"),
@@ -366,8 +368,6 @@ CDEDB_PATHS = werkzeug.routing.Map((
                      endpoint="create_event_form"),
                 rule("/create", methods=_POST,
                      endpoint="create_event"),
-                rule("/log", methods=_GET,
-                     endpoint="view_log"),
             )),
             sub('/event/<int:event_id>', (
                 rule("/show", methods=_GET,
@@ -594,6 +594,12 @@ CDEDB_PATHS = werkzeug.routing.Map((
                              endpoint="lodgement_group_summary_form"),
                         rule("/summary", methods=_POST,
                              endpoint="lodgement_group_summary"),
+                        sub('/<int:group_id>', (
+                            rule("/move", methods=_GET,
+                                 endpoint="move_lodgements_form"),
+                            rule("/move", methods=_POST,
+                                 endpoint="move_lodgements"),
+                        )),
                     )),
                     sub('/graph', (
                         rule("/show", methods=_GET,

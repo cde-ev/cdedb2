@@ -96,6 +96,11 @@
             "id": 2,
             "event_id": 1,
             "title": "AußenWohnGruppe"
+        },
+        "3": {
+            "id": 3,
+            "event_id": 1,
+            "title": "Sonstige"
         }
     },
     "event.lodgements": {
@@ -130,7 +135,7 @@
             "title": "Kellerverlies",
             "event_id": 1,
             "notes": "Nur f\u00fcr Notf\u00e4lle.",
-            "group_id": null,
+            "group_id": 3,
             "fields": {
                 "contamination": "low"
             }

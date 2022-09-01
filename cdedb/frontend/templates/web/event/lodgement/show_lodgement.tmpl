@@ -33,14 +33,12 @@
                 <dd>{{ ambience['lodgement']['regular_capacity'] }}</dd>
                 <dt>{% trans %}Camping Mat Capacity{% endtrans %}</dt>
                 <dd>{{ ambience['lodgement']['camping_mat_capacity'] }}</dd>
-                <dt>{% trans %}Lodgement Group{% endtrans %}</dt>
-                <dd>
-                    {% if ambience['lodgement']['group_id'] %}
+                {% if groups|length > 1 %}
+                    <dt>{% trans %}Lodgement Group{% endtrans %}</dt>
+                    <dd>
                         {{ groups[ambience['lodgement']['group_id']]['title'] }}
-                    {% else %}
-                        —
-                    {% endif %}
-                </dd>
+                    </dd>
+                {% endif %}
             </dl>
 
             <dl class="dl-horizontal">
@@ -68,7 +66,7 @@
             <div class="col-md-4" id="inhabitants-{{ part_id }}">
                 <div class="panel panel-info panel-condensed">
                     <div class="panel-heading">
-                        <div class="pull-right">{{ inhabitants[(values['lodgement_id'], part_id)]|length }}</div>
+                        <div class="pull-right">{{ inhabitants[part_id]|length }}</div>
                         <h3 class="panel-title">
                             {% if ambience['event']['parts']|length > 1 %}
                                 {{ part['title'] }}
@@ -95,7 +93,7 @@
                         {% endfor %}
 
                         <ul class="slim">
-                            {% for registration_id in inhabitants[(values['lodgement_id'], part_id)] %}
+                            {% for registration_id in inhabitants[part_id] %}
                                 <li>
                                     {{ util.href(cdedblink('event/show_registration',
                                                            {'registration_id': registration_id}),
@@ -110,7 +108,7 @@
                             {% endfor %}
                         </ul>
                     </div>
-                    {% if inhabitants[(values['lodgement_id'], part_id)] %}
+                    {% if inhabitants[part_id] %}
                         <div class="panel-footer">
                             {{ util.href(cdedblink('event/registration_query',
                                                    make_inhabitants_query(part_id).serialize_to_url()) + "#query-results",

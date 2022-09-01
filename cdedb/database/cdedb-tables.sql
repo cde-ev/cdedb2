@@ -891,7 +891,7 @@ CREATE TABLE event.lodgements (
         camping_mat_capacity    integer NOT NULL DEFAULT 0,
         -- orga remarks
         notes                   varchar,
-        group_id                integer REFERENCES event.lodgement_groups(id),
+        group_id                integer NOT NULL REFERENCES event.lodgement_groups(id),
         -- additional data, customized by each orga team
         fields                  jsonb NOT NULL DEFAULT '{}'::jsonb
 );
