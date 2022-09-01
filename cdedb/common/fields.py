@@ -119,7 +119,7 @@ RESTRICTED_FIELDS_BY_REALM: Dict[Role, Set[str]] = {
     'ml': set(),
     'assembly': set(),
     'event': {
-        "gender", "birthday",
+        "birthday",
     },
     'cde': {
         "is_searchable",

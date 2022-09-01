@@ -38,6 +38,10 @@
                "If it is part of your official given name(s), it will also be used instead of your full given names in "
                "most other places in the CdE Datenbank.")) }}
 
+        {% if 'gender' in shown_fields %}
+            {{ util.form_input_select(name="gender", entries=enums['Genders']|enum_entries(processing=gettext),
+                                      label=gettext("Gender")) }}
+        {% endif %}
         {% if "pronouns" in shown_fields %}
             {{ util.form_input_text(name="pronouns", label=gettext("Pronouns"), placeholder=gettext("he/him, she/her, they/them, …")) }}
             {{ util.form_input_checkbox(name="pronouns_nametag", label=gettext("Show pronouns on nametags")) }}
