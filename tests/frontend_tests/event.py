@@ -29,7 +29,7 @@ from tests.common import (
 
 
 class TestEventFrontend(FrontendTest):
-    EVENT_LOG_OFFSET = 4
+    EVENT_LOG_OFFSET = 6
 
     @as_users("anton", "emilia")
     def test_index(self) -> None:
@@ -650,7 +650,7 @@ class TestEventFrontend(FrontendTest):
     @as_users("annika", "garcia")
     def test_part_summary_trivial(self) -> None:
         self.traverse("Veranstaltungen", "Große Testakademie 2222", "Log")
-        self.assertTitle("Große Testakademie 2222: Log [1–4 von 4]")
+        self.assertTitle("Große Testakademie 2222: Log [1–6 von 6]")
 
         # check there is no log generation if nothing changes
         self.traverse("Veranstaltungsteile")
@@ -667,7 +667,7 @@ class TestEventFrontend(FrontendTest):
 
         # check the that no log entries were added
         self.traverse("Log")
-        self.assertTitle("Große Testakademie 2222: Log [1–4 von 4]")
+        self.assertTitle("Große Testakademie 2222: Log [1–6 von 6]")
 
     @as_users("annika")
     def test_part_summary_complex(self) -> None:
@@ -3702,6 +3702,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             expectation = json.load(datafile)
         result = json.loads(self.response.text)
         expectation['timestamp'] = result['timestamp']  # nearly_now() won't do
+        for log_entry in result['event.log'].values():
+            del log_entry['ctime']
+        for log_entry in expectation['event.log'].values():
+            del log_entry['ctime']
         self.assertEqual(expectation, result)
 
     @as_users("garcia")
@@ -4404,6 +4408,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         with open(self.testfile_dir / "TestAka_partial_export_event.json") as f:
             expectation = json.load(f)
         expectation['timestamp'] = result['timestamp']
+        for reg_id, reg in result['registrations'].items():
+            expectation['registrations'][reg_id]['ctime'] = reg['ctime']
+            expectation['registrations'][reg_id]['mtime'] = reg['mtime']
         self.assertEqual(expectation, result)
 
     @event_keeper
@@ -4420,6 +4427,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         del upload['event']
         for reg in upload['registrations'].values():
             del reg['persona']
+            del reg['ctime']
+            del reg['mtime']
         self.get('/')
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
