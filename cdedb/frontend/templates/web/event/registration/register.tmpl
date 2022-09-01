@@ -76,6 +76,10 @@
             <dd>{{ persona['birthday']|date(lang=lang) }}</dd>
             <dt>{% trans %}Gender{% endtrans %}</dt>
             <dd>{{ gettext(enums['Genders'](persona['gender'])|string) }}</dd>
+            <dt>{% trans %}Pronouns{% endtrans %}</dt>
+            <dd>{{ persona['pronouns'] }}</dd>
+            <dt>{% trans %}Show pronouns on nametags{% endtrans %}</dt>
+            <dd>{{ util.deko_checkbox(persona['pronouns_nametag']) }}</dd>
             <dt>{% trans %}E-Mail{% endtrans %}</dt>
             <dd> {{ persona['username'] }} </dd>
             <dt>{% trans %}Phone{% endtrans %}</dt>

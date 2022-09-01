@@ -114,6 +114,10 @@ CREATE TABLE core.personas (
         title                   varchar DEFAULT NULL,
         -- after name
         name_supplement         varchar DEFAULT NULL,
+        -- preferred pronouns (optional)
+        pronouns                varchar DEFAULT NULL,
+        pronouns_nametag        boolean NOT NULL DEFAULT FALSE,
+        pronouns_profile        boolean NOT NULL DEFAULT FALSE,
         -- see cdedb.database.constants.Genders
         gender                  integer,
         CONSTRAINT personas_realm_gender
@@ -384,6 +388,9 @@ CREATE TABLE core.changelog (
         title                   varchar,
         name_supplement         varchar,
         gender                  integer,
+        pronouns                varchar DEFAULT NULL,
+        pronouns_nametag        boolean NOT NULL DEFAULT FALSE,
+        pronouns_profile        boolean NOT NULL DEFAULT FALSE,
         birthday                date,
         telephone               varchar,
         mobile                  varchar,
