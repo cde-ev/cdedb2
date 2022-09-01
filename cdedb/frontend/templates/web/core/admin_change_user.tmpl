@@ -44,7 +44,7 @@
                                           label=gettext("Gender")) }}
             {% endif %}
             {% if "pronouns" in shown_fields %}
-                {{ util.form_input_text(name="pronouns", label=gettext("Pronouns")) }}
+                {{ util.form_input_text(name="pronouns", label=gettext("Pronouns"), placeholder=gettext("he/him, she/her, they/them, …")) }}
                 {{ util.form_input_checkbox(name="pronouns_nametag", label=gettext("Show pronouns on nametags")) }}
                 {{ util.form_input_checkbox(name="pronouns_profile", label=gettext("Show pronouns on profile")) }}
             {% endif %}
