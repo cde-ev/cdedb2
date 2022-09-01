@@ -42,6 +42,11 @@
             {{ util.form_input_select(name="gender", entries=enums['Genders']|enum_entries(processing=gettext),
                                       label=gettext("Gender")) }}
         {% endif %}
+        {% if "pronouns" in shown_fields %}
+            {{ util.form_input_text(name="pronouns", label=gettext("Pronouns"), placeholder=gettext("he/him, she/her, they/them, …")) }}
+            {{ util.form_input_checkbox(name="pronouns_nametag", label=gettext("Show pronouns on nametags")) }}
+            {{ util.form_input_checkbox(name="pronouns_profile", label=gettext("Show pronouns on profile")) }}
+        {% endif %}
 
         {% if "paper_expuls" in shown_fields and values['is_member'] %}
             <h4 class="heading-underline">{% trans %}Membership{% endtrans %}</h4>

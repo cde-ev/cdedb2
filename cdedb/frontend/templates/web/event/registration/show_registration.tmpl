@@ -43,6 +43,11 @@
         </dd>
         <dt>{% trans %}Gender{% endtrans %}</dt>
         <dd>{{ gettext(enums['Genders'](persona['gender'])|string) }}</dd>
+        <dt>{% trans %}Pronouns{% endtrans %}</dt>
+        <dd>{{ persona['pronouns'] }}</dd>
+        <dt>{% trans %}Show pronouns on nametags{% endtrans %}</dt>
+        <dd>{{ util.deko_checkbox(persona['pronouns_nametag']) }}</dd>
+
     </dl>
     <dl class="dl-horizontal">
         <dt>{% trans %}E-Mail{% endtrans %}</dt>

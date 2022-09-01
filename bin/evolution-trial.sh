@@ -20,7 +20,7 @@ export CDEDB_CONFIGPATH=$tmp_configfile
 # silence git output after switching to a detached head
 git config advice.detachedHead false
 
-if [[ "$(git rev-parse $OLDREVISION)" = "$(git rev-parse $NEWREVISION)" ]]; then
+if [[ "$(git rev-parse $OLDREVISION^{})" = "$(git rev-parse $NEWREVISION^{})" ]]; then
     echo "Source and target are identical."
     exit 0
 fi
