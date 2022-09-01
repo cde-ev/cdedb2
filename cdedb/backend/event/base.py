@@ -803,31 +803,7 @@ class EventBaseBackend(EventLowLevelBackend):
             lodgements = list_to_dict(self.sql_select(
                 rs, 'event.lodgements', LODGEMENT_FIELDS, (event_id,),
                 entity_key='event_id'))
-            # TODO: this is duplicated almost exactly from get_registrations.
-            #  This could be avoided by moving the partial export to `__init__.py` and
-            #  using `get_registrations`, etc. instead.
-            registrations_query = f"""
-                SELECT {", ".join(REGISTRATION_FIELDS)}, ctime, mtime
-                FROM event.registrations
-                LEFT OUTER JOIN (
-                    SELECT persona_id AS log_persona_id, MAX(ctime) AS ctime
-                    FROM event.log WHERE code = %s AND event_id = %s
-                    GROUP BY log_persona_id
-                ) AS ctime
-                ON event.registrations.persona_id = ctime.log_persona_id
-                LEFT OUTER JOIN (
-                    SELECT persona_id AS log_persona_id, MAX(ctime) AS mtime
-                    FROM event.log WHERE code = %s AND event_id = %s
-                    GROUP BY log_persona_id
-                ) AS mtime
-                ON event.registrations.persona_id = mtime.log_persona_id
-                WHERE event.registrations.event_id = %s
-            """
-            registration_params = (
-                const.EventLogCodes.registration_created, event_id,
-                const.EventLogCodes.registration_changed, event_id, event_id)
-            registrations = list_to_dict(self.query_all(
-                rs, registrations_query, registration_params))
+            registrations = self._get_registration_data(rs, event_id)
             registration_parts = self.sql_select(
                 rs, 'event.registration_parts',
                 REGISTRATION_PART_FIELDS, registrations.keys(),
