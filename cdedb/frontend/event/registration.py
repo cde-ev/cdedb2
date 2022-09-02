@@ -280,7 +280,6 @@ class EventRegistrationMixin(EventBaseFrontend):
                       preview: bool = False) -> Response:
         """Render form."""
         event = rs.ambience['event']
-        tracks = event['tracks']
         registrations = self.eventproxy.list_registrations(
             rs, event_id, persona_id=rs.user.persona_id)
         persona = self.coreproxy.get_event_user(rs, rs.user.persona_id, event_id)
