@@ -2532,7 +2532,7 @@ def _event_track_group_setter(
     new_track_groups = _optional_object_mapping_helper(
         val, EventTrackGroup, argname, creation_only=False)
 
-    return EventTrackGroupSetter(new_track_groups)
+    return EventTrackGroupSetter(dict(new_track_groups))
 
 
 EVENT_FIELD_COMMON_FIELDS: TypeMapping = {
