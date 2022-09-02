@@ -2529,28 +2529,9 @@ def _event_track_group_setter(
     """Validate a `CdEDBOptionalMap` of track groups."""
     val = _mapping(val, argname)
 
-    errs = ValidationSummary()
-    new_track_groups = {}
-    for anid, track_group in val.items():
-        try:
-            anid = _partial_import_id(anid, 'track_group_id', **kwargs)
-        except ValidationSummary as e:
-            errs.extend(e)
-            continue
-        creation = (anid < 0)
-        try:
-            if creation:
-                track_group = _ALL_TYPED[EventTrackGroup](
-                    track_group, creation=True, **kwargs)
-            else:
-                track_group = _ALL_TYPED[Optional[EventTrackGroup]](  # type: ignore[index]
-                    track_group, **kwargs)
-        except ValidationSummary as e:
-            errs.extend(e)
-        else:
-            new_track_groups[anid] = track_group
-    if errs:
-        raise errs
+    new_track_groups = _optional_object_mapping_helper(
+        val, EventTrackGroup, argname, creation_only=False)
+
     return EventTrackGroupSetter(new_track_groups)
 
 
