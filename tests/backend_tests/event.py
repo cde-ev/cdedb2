@@ -180,6 +180,7 @@ class TestEventBackend(BackendTest):
         data['parts'][-2]['fee_modifiers'][-1].update({'id': 1001, 'part_id': 1002})
         data['fee_modifiers'] = {1001: data['parts'][-2]['fee_modifiers'][-1]}
         data['part_groups'] = {}
+        data['track_groups'] = {}
         # correct part and field ids
         tmp = self.event.get_event(self.key, new_id)
         part_map = {}
@@ -190,6 +191,7 @@ class TestEventBackend(BackendTest):
                     data['parts'][part] = data['parts'][oldpart]
                     data['parts'][part]['id'] = part
                     data['parts'][part]['event_id'] = new_id
+                    data['parts'][part]['part_groups'] = {}
                     self.assertEqual(
                         set(x['title'] for x in data['parts'][part]['tracks'].values()),
                         set(x['title'] for x in tmp['parts'][part]['tracks'].values()))
@@ -203,6 +205,8 @@ class TestEventBackend(BackendTest):
                         tmp['parts'][part]['fee_modifiers'])
                     del data['parts'][oldpart]
                     break
+        for track in data['tracks'].values():
+            track['track_groups'] = {}
         field_map = {}
         for field in tmp['fields']:
             for oldfield in data['fields']:
@@ -310,6 +314,10 @@ class TestEventBackend(BackendTest):
         changed_part['tracks'][1002].update({'part_id': 1002, 'id': 1002})
         changed_part['fee_modifiers'][1001].update({'part_id': 1002, 'id': 1001})
         data['parts'][part_map["Second coming"]] = changed_part
+        for part in data['parts'].values():
+            part['part_groups'] = {}
+            for track in part['tracks'].values():
+                track['track_groups'] = {}
         for field in tmp['fields']:
             if tmp['fields'][field]['field_name'] == "kuea":
                 field_map[tmp['fields'][field]['field_name']] = field
@@ -333,6 +341,7 @@ class TestEventBackend(BackendTest):
                 'num_choices': 5,
                 'min_choices': 4,
                 'sortkey': 3,
+                'track_groups': {},
             },
             1003: {
                 'id': 1003,
@@ -342,6 +351,7 @@ class TestEventBackend(BackendTest):
                 'num_choices': 2,
                 'min_choices': 2,
                 'sortkey': 2,
+                'track_groups': {},
             },
         }
         data['fee_modifiers'] = changed_part['fee_modifiers']
