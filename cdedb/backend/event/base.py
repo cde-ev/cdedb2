@@ -678,6 +678,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 current_track_group_data = {e['id']: e for e in self.sql_select(
                     rs, "event.track_groups", TRACK_GROUP_FIELDS, updated_track_groups)}
                 for x in mixed_existence_sorter(updated_track_groups):
+                    current = current_track_group_data[x]
                     updated = track_groups[x]
                     assert updated is not None
                     # Changing constraint type is not allowed.
@@ -697,7 +698,8 @@ class EventBaseBackend(EventLowLevelBackend):
                         ret *= self._set_track_group_tracks(
                             rs, event_id, track_group_id=x, track_ids=track_ids,
                             tracks=tracks, track_group_title=title,
-                            constraint_type=new_track_group['constraint_type'])
+                            constraint_type=const.CourseTrackGroupType(
+                                current['constraint_type']))
 
             if deleted_track_groups:
                 cascade = ("track_group_tracks",)
