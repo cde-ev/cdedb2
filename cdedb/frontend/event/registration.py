@@ -256,7 +256,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         courses_per_track = self.eventproxy.get_course_segments_per_track(
             rs, event_id, event['is_course_state_visible'])
-        courses_per_track_group = {}
+        courses_per_track_group: dict[int, set[int]] = {}
         reference_track = {}
         simple_tracks = set(tracks)
         for track_group_id, track_group in event['track_groups'].items():
