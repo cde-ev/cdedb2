@@ -14,6 +14,7 @@ import psycopg2.errorcodes
 import psycopg2.errors
 import pytz
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.backend.common import cast_fields
 from cdedb.common import (
@@ -377,9 +378,15 @@ class TestEventBackend(BackendTest):
             'event_id': new_id,
             'title': "Nebenan",
         }
-        new_group_id = self.event.create_lodgement_group(self.key, new_group)
+        new_group_id = self.event.create_lodgement_group(
+            self.key, vtypes.LodgementGroup(new_group))
         self.assertLess(0, new_group_id)
-        new_group['id'] = new_group_id
+        new_group.update({
+            'id': new_group_id,
+            'lodgement_ids': [],
+            'regular_capacity': 0,
+            'camping_mat_capacity': 0,
+        })
         self.assertEqual(
             new_group, self.event.get_lodgement_group(self.key, new_group_id))
 
@@ -1455,6 +1462,7 @@ class TestEventBackend(BackendTest):
         expectation_list = {
             1: "Haupthaus",
             2: "AußenWohnGruppe",
+            3: "Sonstige",
         }
         group_ids = self.event.list_lodgement_groups(self.key, event_id)
         self.assertEqual(expectation_list, group_ids)
@@ -1464,12 +1472,26 @@ class TestEventBackend(BackendTest):
                 'id': 1,
                 'event_id': 1,
                 'title': "Haupthaus",
+                'lodgement_ids': [2, 4],
+                'camping_mat_capacity': 2,
+                'regular_capacity': 11,
             },
             2: {
                 'id': 2,
                 'event_id': 1,
                 'title': "AußenWohnGruppe",
+                'lodgement_ids': [1],
+                'camping_mat_capacity': 1,
+                'regular_capacity': 5,
             },
+            3: {
+                'id': 3,
+                'event_id': 1,
+                'title': "Sonstige",
+                'lodgement_ids': [3],
+                'camping_mat_capacity': 100,
+                'regular_capacity': 0,
+            }
         }
         self.assertEqual(expectation_groups,
                          self.event.get_lodgement_groups(self.key, group_ids))
@@ -1478,9 +1500,15 @@ class TestEventBackend(BackendTest):
             'event_id': event_id,
             'title': "Nebenan",
         }
-        new_group_id = self.event.create_lodgement_group(self.key, new_group)
+        new_group_id = self.event.create_lodgement_group(
+            self.key, vtypes.LodgementGroup(new_group))
         self.assertLess(0, new_group_id)
-        new_group['id'] = new_group_id
+        new_group.update({
+            'id': new_group_id,
+            'lodgement_ids': [],
+            'camping_mat_capacity': 0,
+            'regular_capacity': 0,
+        })
         self.assertEqual(
             new_group, self.event.get_lodgement_group(self.key, new_group_id))
         update = {
@@ -1502,10 +1530,20 @@ class TestEventBackend(BackendTest):
         }
         new_lodgement_id = self.event.create_lodgement(self.key, new_lodgement)
         self.assertLess(0, new_lodgement_id)
-        new_lodgement['id'] = new_lodgement_id
-        new_lodgement['fields'] = {}
+        new_lodgement.update({
+            'id': new_lodgement_id,
+            'fields': {},
+        })
         self.assertEqual(
             new_lodgement, self.event.get_lodgement(self.key, new_lodgement_id))
+
+        new_group.update({
+            'camping_mat_capacity': new_lodgement['camping_mat_capacity'],
+            'regular_capacity': new_lodgement['regular_capacity'],
+            'lodgement_ids': [new_lodgement_id],
+        })
+        self.assertEqual(
+            new_group, self.event.get_lodgement_group(self.key, new_group_id))
 
         expectation_list[new_group_id] = new_group['title']
         self.assertEqual(expectation_list,
@@ -1514,12 +1552,36 @@ class TestEventBackend(BackendTest):
             0, self.event.delete_lodgement_group(
                 self.key, new_group_id, ("lodgements",)))
         del expectation_list[new_group_id]
-        self.assertEqual(expectation_list,
-                         self.event.list_lodgement_groups(self.key, event_id))
-
-        new_lodgement['group_id'] = None
         self.assertEqual(
-            new_lodgement, self.event.get_lodgement(self.key, new_lodgement_id))
+            expectation_list, self.event.list_lodgement_groups(self.key, event_id))
+
+        self.assertNotIn(
+            new_lodgement_id, self.event.list_lodgements(self.key, event_id))
+
+    @storage
+    @as_users("annika")
+    def test_implicit_lodgement_group(self) -> None:
+        new_event_data = {
+            'title': "KreativAkademie",
+            'shortname': "KreAka",
+            'institution': 1,
+            'description': None,
+            'nonmember_surcharge': "0",
+            'parts': {
+                -1: {
+                    'part_begin': "2222-02-02",
+                    'part_end': "2222-02-22",
+                    'title': "KreativAkademie",
+                    'shortname': "KreAka",
+                    'fee': "0",
+                    'waitlist_field': None,
+                },
+            },
+        }
+        new_event_id = self.event.create_event(self.key, new_event_data)
+        groups = self.event.list_lodgement_groups(self.key, new_event_id)
+        groups_expectation = {1001: new_event_data['title']}
+        self.assertEqual(groups_expectation, groups)
 
     @as_users("annika", "garcia")
     def test_entity_lodgement(self) -> None:
@@ -1561,7 +1623,7 @@ class TestEventBackend(BackendTest):
             'title': 'HY',
             'notes': "Notizen",
             'camping_mat_capacity': 11,
-            'group_id': None,
+            'group_id': 3,
         }
         new_id = self.event.create_lodgement(self.key, new)
         self.assertLess(0, new_id)
@@ -3113,7 +3175,7 @@ class TestEventBackend(BackendTest):
                      'fields': {'contamination': 'low'},
                      'title': 'Handtuchraum',
                      'notes': 'Hier gibt es Handtücher für jeden.',
-                     'group_id': None,
+                     'group_id': 2,
                      'camping_mat_capacity': 0,
                      },
                 3: None,
@@ -3618,6 +3680,14 @@ class TestEventBackend(BackendTest):
                     'checkin': True,
                 },
             },
+            'lodgement_groups': {
+                -1: {
+                    'title': "Draußen",
+                },
+                -2: {
+                    'title': "Drinnen",
+                }
+            }
         }
         new_id = self.event.create_event(self.key, data)
         # correct part and field ids
@@ -3801,7 +3871,7 @@ class TestEventBackend(BackendTest):
             'title': 'HY',
             'notes': "Notizen",
             'camping_mat_capacity': 11,
-            'group_id': None,
+            'group_id': 1,
         }
         new_id = self.event.create_lodgement(self.key, new)
         update = {
@@ -3860,220 +3930,169 @@ class TestEventBackend(BackendTest):
 
         # now check it
         expectation = (
-            {'id': 1001,
-             'change_note': None,
-             'code': const.EventLogCodes.event_created,
-             'ctime': nearly_now(),
-             'event_id': 1001,
-             'persona_id': None,
-             'submitted_by': self.user['id']},
-            {'id': 1002,
-             'change_note': None,
-             'code': const.EventLogCodes.orga_added,
-             'ctime': nearly_now(),
-             'event_id': 1001,
-             'persona_id': 2,
-             'submitted_by': self.user['id']},
-            {'id': 1003,
-             'change_note': None,
-             'code': const.EventLogCodes.orga_added,
-             'ctime': nearly_now(),
-             'event_id': 1001,
-             'persona_id': 7,
-             'submitted_by': self.user['id']},
-            {'id': 1004,
-             'change_note': 'instrument',
-             'code': const.EventLogCodes.field_added,
-             'ctime': nearly_now(),
-             'event_id': 1001,
-             'persona_id': None,
-             'submitted_by': self.user['id']},
-            {'id': 1005,
-             'change_note': 'preferred_excursion_date',
-             'code': const.EventLogCodes.field_added,
-             'ctime': nearly_now(),
-             'event_id': 1001,
-             'persona_id': None,
-             'submitted_by': self.user['id']},
-            {'id': 1006,
-             'change_note': 'First coming',
-             'code': const.EventLogCodes.part_created,
-             'ctime': nearly_now(),
-             'event_id': 1001,
-             'persona_id': None,
-             'submitted_by': self.user['id']},
-            {'id': 1007,
-             'change_note': 'First lecture',
-             'code': const.EventLogCodes.track_added,
-             'ctime': nearly_now(),
-             'event_id': 1001,
-             'persona_id': None,
-             'submitted_by': self.user['id']},
-            {'id': 1008,
-             'change_note': 'Second coming',
-             'code': const.EventLogCodes.part_created,
-             'ctime': nearly_now(),
-             'event_id': 1001,
-             'persona_id': None,
-             'submitted_by': self.user['id']},
-            {'id': 1009,
-             'change_note': 'Second lecture',
-             'code': const.EventLogCodes.track_added,
-             'ctime': nearly_now(),
-             'event_id': 1001,
-             'persona_id': None,
-             'submitted_by': self.user['id']},
-            {'id': 1010,
-             'change_note': None,
-             'code': const.EventLogCodes.orga_added,
-             'ctime': nearly_now(),
-             'event_id': 1001,
-             'persona_id': 1,
-             'submitted_by': self.user['id']},
-            {'id': 1011,
-             'change_note': None,
-             'code': const.EventLogCodes.orga_removed,
-             'ctime': nearly_now(),
-             'event_id': 1001,
-             'persona_id': 2,
-             'submitted_by': self.user['id']},
-            {'id': 1012,
-             'change_note': None,
-             'code': const.EventLogCodes.event_changed,
-             'ctime': nearly_now(),
-             'event_id': 1001,
-             'persona_id': None,
-             'submitted_by': self.user['id']},
-            {'change_note': 'instrument',
-             'code': const.EventLogCodes.field_removed,
-             'ctime': nearly_now(),
-             'event_id': 1001,
-             'persona_id': None,
-             'submitted_by': self.user['id']},
-            {'change_note': 'kuea',
-             'code': const.EventLogCodes.field_added,
-             'ctime': nearly_now(),
-             'event_id': 1001,
-             'persona_id': None,
-             'submitted_by': self.user['id']},
-            {'change_note': 'preferred_excursion_date',
-             'code': const.EventLogCodes.field_updated,
-             'ctime': nearly_now(),
-             'event_id': 1001,
-             'persona_id': None,
-             'submitted_by': self.user['id']},
-            {'id': 1016,
-             'change_note': 'Third coming',
-             'code': const.EventLogCodes.part_created,
-             'ctime': nearly_now(),
-             'event_id': 1001,
-             'persona_id': None,
-             'submitted_by': self.user['id']},
-            {'id': 1017,
-             'change_note': 'Third lecture',
-             'code': const.EventLogCodes.track_added,
-             'ctime': nearly_now(),
-             'event_id': 1001,
-             'persona_id': None,
-             'submitted_by': self.user['id']},
-            {'id': 1018,
-             'change_note': 'Second coming',
-             'code': const.EventLogCodes.part_changed,
-             'ctime': nearly_now(),
-             'event_id': 1001,
-             'persona_id': None,
-             'submitted_by': self.user['id']},
-            {'id': 1019,
-             'change_note': 'Second lecture v2',
-             'code': const.EventLogCodes.track_updated,
-             'ctime': nearly_now(),
-             'event_id': 1001,
-             'persona_id': None,
-             'submitted_by': self.user['id']},
-            {'id': 1020,
-             'change_note': 'First lecture',
-             'code': const.EventLogCodes.track_removed,
-             'ctime': nearly_now(),
-             'event_id': 1001,
-             'persona_id': None,
-             'submitted_by': self.user['id']},
-            {'id': 1021,
-             'change_note': 'First coming',
-             'code': const.EventLogCodes.part_deleted,
-             'ctime': nearly_now(),
-             'event_id': 1001,
-             'persona_id': None,
-             'submitted_by': self.user['id']},
-            {'id': 1022,
-             'change_note': 'Topos theory for the kindergarden',
-             'code': const.EventLogCodes.course_segments_changed,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'persona_id': None,
-             'submitted_by': self.user['id']},
-            {'id': 1023,
-             'change_note': 'Topos theory for the kindergarden',
-             'code': const.EventLogCodes.course_created,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'persona_id': None,
-             'submitted_by': self.user['id']},
-            {'id': 1024,
-             'change_note': 'Topos theory for the kindergarden',
-             'code': const.EventLogCodes.course_changed,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'persona_id': None,
-             'submitted_by': self.user['id']},
-            {'id': 1025,
-             'change_note': 'Topos theory for the kindergarden',
-             'code': const.EventLogCodes.course_segments_changed,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'persona_id': None,
-             'submitted_by': self.user['id']},
-            {'id': 1026,
-             'change_note': None,
-             'code': const.EventLogCodes.registration_created,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'persona_id': 3,
-             'submitted_by': self.user['id']},
-            {'id': 1027,
-             'change_note': "Boring change.",
-             'code': const.EventLogCodes.registration_changed,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'persona_id': 9,
-             'submitted_by': self.user['id']},
-            {'id': 1028,
-             'change_note': 'HY',
-             'code': const.EventLogCodes.lodgement_created,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'persona_id': None,
-             'submitted_by': self.user['id']},
-            {'id': 1029,
-             'change_note': 'HY',
-             'code': const.EventLogCodes.lodgement_changed,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'persona_id': None,
-             'submitted_by': self.user['id']},
-            {'id': 1030,
-             'change_note': 'HY',
-             'code': const.EventLogCodes.lodgement_deleted,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'persona_id': None,
-             'submitted_by': self.user['id']},
-            {'id': 1031,
-             'change_note': None,
-             'code': const.EventLogCodes.questionnaire_changed,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'persona_id': None,
-             'submitted_by': self.user['id']},
+            {
+                'code': const.EventLogCodes.event_created,
+                'event_id': 1001,
+            },
+            {
+                'code': const.EventLogCodes.orga_added,
+                'event_id': 1001,
+                'persona_id': 2,
+            },
+            {
+                'code': const.EventLogCodes.orga_added,
+                'event_id': 1001,
+                'persona_id': 7,
+            },
+            {
+                'change_note': 'instrument',
+                'code': const.EventLogCodes.field_added,
+                'event_id': 1001,
+            },
+            {
+                'change_note': 'preferred_excursion_date',
+                'code': const.EventLogCodes.field_added,
+                'event_id': 1001,
+            },
+            {
+                'change_note': 'First coming',
+                'code': const.EventLogCodes.part_created,
+                'event_id': 1001,
+            },
+            {
+                'change_note': 'First lecture',
+                'code': const.EventLogCodes.track_added,
+                'event_id': 1001,
+            },
+            {
+                'change_note': 'Second coming',
+                'code': const.EventLogCodes.part_created,
+                'event_id': 1001,
+            },
+            {
+                'change_note': 'Second lecture',
+                'code': const.EventLogCodes.track_added,
+                'event_id': 1001,
+            },
+            {
+                'change_note': "Draußen",
+                'code': const.EventLogCodes.lodgement_group_created,
+                'event_id': 1001,
+            },
+            {
+                'change_note': "Drinnen",
+                'code': const.EventLogCodes.lodgement_group_created,
+                'event_id': 1001,
+            },
+            {
+                'code': const.EventLogCodes.orga_added,
+                'event_id': 1001,
+                'persona_id': 1,
+            },
+            {
+                'code': const.EventLogCodes.orga_removed,
+                'event_id': 1001,
+                'persona_id': 2,
+            },
+            {
+                'code': const.EventLogCodes.event_changed,
+                'event_id': 1001,
+            },
+            {
+                'change_note': 'instrument',
+                'code': const.EventLogCodes.field_removed,
+                'event_id': 1001,
+            },
+            {
+                'change_note': 'kuea',
+                'code': const.EventLogCodes.field_added,
+                'event_id': 1001,
+            },
+            {
+                'change_note': 'preferred_excursion_date',
+                'code': const.EventLogCodes.field_updated,
+                'event_id': 1001,
+            },
+            {
+                'change_note': 'Third coming',
+                'code': const.EventLogCodes.part_created,
+                'event_id': 1001,
+            },
+            {
+                'change_note': 'Third lecture',
+                'code': const.EventLogCodes.track_added,
+                'event_id': 1001,
+            },
+            {
+                'change_note': 'Second coming',
+                'code': const.EventLogCodes.part_changed,
+                'event_id': 1001,
+            },
+            {
+                'change_note': 'Second lecture v2',
+                'code': const.EventLogCodes.track_updated,
+                'event_id': 1001,
+            },
+            {
+                'change_note': 'First lecture',
+                'code': const.EventLogCodes.track_removed,
+                'event_id': 1001,
+            },
+            {
+                'change_note': 'First coming',
+                'code': const.EventLogCodes.part_deleted,
+                'event_id': 1001,
+            },
+            {
+                'change_note': 'Topos theory for the kindergarden',
+                'code': const.EventLogCodes.course_segments_changed,
+                'event_id': 1,
+            },
+            {
+                'change_note': 'Topos theory for the kindergarden',
+                'code': const.EventLogCodes.course_created,
+                'event_id': 1,
+            },
+            {
+                'change_note': 'Topos theory for the kindergarden',
+                'code': const.EventLogCodes.course_changed,
+                'event_id': 1,
+            },
+            {
+                'change_note': 'Topos theory for the kindergarden',
+                'code': const.EventLogCodes.course_segments_changed,
+                'event_id': 1,
+            },
+            {
+                'code': const.EventLogCodes.registration_created,
+                'event_id': 1,
+                'persona_id': 3,
+            },
+            {
+                'change_note': "Boring change.",
+                'code': const.EventLogCodes.registration_changed,
+                'event_id': 1,
+                'persona_id': 9,
+            },
+            {
+                'change_note': 'HY',
+                'code': const.EventLogCodes.lodgement_created,
+                'event_id': 1,
+            },
+            {
+                'change_note': 'HY',
+                'code': const.EventLogCodes.lodgement_changed,
+                'event_id': 1,
+            },
+            {
+                'change_note': 'HY',
+                'code': const.EventLogCodes.lodgement_deleted,
+                'event_id': 1,
+            },
+            {
+                'code': const.EventLogCodes.questionnaire_changed,
+                'event_id': 1,
+            },
         )
 
         self.assertLogEqual(expectation, realm="event", offset=offset)
@@ -4305,7 +4324,7 @@ class TestEventBackend(BackendTest):
                 set(blockers),
                 {"orgas", "event_parts", "course_tracks", "part_groups",
                  "part_group_parts", "track_groups", "track_group_tracks",
-                 "courses", "log"}
+                 "courses", "log", "lodgement_groups"}
             )
             self.assertTrue(self.event.delete_event(self.key, event_id, blockers))
 

@@ -1615,46 +1615,58 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['changeinfoform']
         self.assertEqual("Zelda", f["Finanzvorstand_Name"].value)
 
+    @as_users("berta")
     def test_changelog(self) -> None:
-        user = USER_DICT["berta"]
-        self.login(user)
-        self.traverse({'description': user['display_name']},
-                      {'description': 'Bearbeiten'})
+        self.traverse("Meine Daten", "Bearbeiten")
         f = self.response.forms['changedataform']
         f['family_name'] = "Ganondorf"
         f['birth_name'] = ""
         self.submit(f, check_notification=False)
         self.assertPresence("Die Änderung wartet auf Bestätigung.",
                             div='notifications')
-        self.assertPresence(user['family_name'], div='personal-information')
+        self.assertPresence(self.user['family_name'], div='personal-information')
         self.assertPresence("Gemeinser", div='personal-information')
         self.assertNonPresence('Ganondorf')
-        self.logout()
-        user = USER_DICT["vera"]
-        self.login(user)
-        self.traverse({'description': 'Änderungen prüfen'})
-        self.assertTitle("Zu prüfende Profiländerungen [1]")
-        self.traverse({'description': 'Ganondorf'},
-                      {'description': 'Änderungen bearbeiten'})
-        self.assertTitle("Bertå Ganondorf bearbeiten")
-        self.traverse({'description': 'Änderungen prüfen'},
-                      {'description': 'Ganondorf'})
-        f = self.response.forms['ackchangeform']
-        self.submit(f)
-        self.assertTitle("Zu prüfende Profiländerungen [0]")
-        self.traverse({'description': 'Nutzerdaten-Log'})
-        f = self.response.forms['logshowform']
-        f['reviewed_by'] = 'DB-22-1'
-        self.submit(f)
-        self.assertTitle('Nutzerdaten-Log [1–1 von 1]')
-        self.assertPresence("Bertå Ganondorf")
-        self.logout()
-        user = USER_DICT["berta"]
-        self.login(user)
-        self.traverse({'description': user['display_name']})
-        self.assertNonPresence(user['family_name'])
+        with self.switch_user("vera"):
+            self.traverse({'description': 'Änderungen prüfen'})
+            self.assertTitle("Zu prüfende Profiländerungen [1]")
+            self.traverse({'description': 'Ganondorf'},
+                          {'description': 'Änderungen bearbeiten'})
+            self.assertTitle("Bertå Ganondorf bearbeiten")
+            self.traverse({'description': 'Änderungen prüfen'},
+                          {'description': 'Ganondorf'})
+            f = self.response.forms['ackchangeform']
+            self.submit(f)
+            self.assertTitle("Zu prüfende Profiländerungen [0]")
+            self.traverse({'description': 'Nutzerdaten-Log'})
+            f = self.response.forms['logshowform']
+            f['reviewed_by'] = 'DB-22-1'
+            self.submit(f)
+            self.assertTitle('Nutzerdaten-Log [1–1 von 1]')
+            self.assertPresence("Bertå Ganondorf")
+        self.traverse(self.user['display_name'])
+        self.assertNonPresence(self.user['family_name'])
         self.assertNonPresence("Gemeinser")
         self.assertPresence('Ganondorf', div='personal-information')
+
+        self.traverse("Meine Daten", "Bearbeiten")
+        f = self.response.forms['changedataform']
+        self.assertEqual(str(const.Genders.female), f['gender'].value)
+        f['gender'] = const.Genders.not_specified
+        self.submit(f, check_notification=False)
+        self.assertValidationError('gender', "Darf nicht leer sein.")
+        f['gender'] = const.Genders.male
+        self.submit(f, check_notification=False)
+        self.assertPresence("Änderung wartet auf Bestätigung", div="notifications")
+        with self.switch_user("vera"):
+            self.admin_view_profile("berta", check=False)
+            self.assertPresence("Geschlecht weiblich")
+            self.traverse("Änderungen prüfen", "Ganondorf")
+            self.assertPresence("Geschlecht weiblich männlich", div="diff-view")
+            f = self.response.forms['ackchangeform']
+            self.submit(f)
+            self.admin_view_profile("berta", check=False)
+            self.assertPresence("Geschlecht männlich")
 
     @as_users("vera")
     def test_history(self) -> None:

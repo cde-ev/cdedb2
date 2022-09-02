@@ -2229,17 +2229,20 @@ def drow_last_index(prefix: str = "") -> str:
     return f"{prefix}create_last_index"
 
 
+C = TypeVar('C', bound=CdEDBObject)
+
+
 # TODO maybe retrieve the spec from the type_?
 def process_dynamic_input(
     rs: RequestState,
-    type_: Type[T],
+    type_: Type[C],
     existing: Collection[int],
     spec: vtypes.TypeMapping,
     *,
     additional: CdEDBObject = None,
     creation_spec: vtypes.TypeMapping = None,
     prefix: str = "",
-) -> Dict[int, Optional[CdEDBObject]]:
+) -> Dict[int, Optional[C]]:
     """Retrieve data from rs provided by 'dynamic_row_meta' macros.
 
     This takes a 'spec' of field_names mapped to their validation. Each field_name is
@@ -2288,8 +2291,8 @@ def process_dynamic_input(
     data = request_extractor(rs, existing_data_spec, postpone_validation=True)
 
     # build the return dict of all existing entries and check if they pass validation
-    ret: Dict[int, Optional[CdEDBObject]] = {
-        anid: {key: data[drow_name(key, anid, prefix)] for key in spec}
+    ret: Dict[int, Optional[C]] = {
+        anid: type_({key: data[drow_name(key, anid, prefix)] for key in spec})
         for anid in non_deleted_existing
     }
     for anid in existing:
@@ -2304,7 +2307,7 @@ def process_dynamic_input(
             entry.update(additional)
             # apply the promised validation
             ret[anid] = check_validation(rs, type_, entry, field_prefix=field_prefix,
-                                         field_postfix=f"_{anid}")  # type: ignore[assignment]
+                                         field_postfix=f"_{anid}")
 
     # extract the new entries which shall be created
     marker = 1
@@ -2315,12 +2318,12 @@ def process_dynamic_input(
             params = {drow_name(key, -marker, prefix): value
                       for key, value in creation_spec.items()}
             data = request_extractor(rs, params, postpone_validation=True)
-            entry = {
-                key: data[drow_name(key, -marker, prefix)] for key in creation_spec}
+            entry = type_({
+                key: data[drow_name(key, -marker, prefix)] for key in creation_spec})
             entry.update(additional)
             ret[-marker] = check_validation(
                 rs, type_, entry, field_prefix=field_prefix,
-                field_postfix=f"_{-marker}", creation=True)  # type: ignore[assignment]
+                field_postfix=f"_{-marker}", creation=True)
         else:
             break
         marker += 1

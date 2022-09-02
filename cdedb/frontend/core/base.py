@@ -1062,6 +1062,8 @@ class CoreBaseFrontend(AbstractFrontend):
         data = request_dict_extractor(rs, attributes)
         data['id'] = rs.user.persona_id
         data = check(rs, vtypes.Persona, data, "persona")
+        if data and data.get('gender') == const.Genders.not_specified:
+            rs.append_validation_error(('gender', ValueError(n_("Must not be empty."))))
         if rs.has_validation_errors():
             return self.change_user_form(rs)
         assert data is not None

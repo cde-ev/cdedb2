@@ -4,16 +4,16 @@
 for managings lodgements, lodgement groups and lodgements' inhabitants."""
 
 import itertools
-from collections import OrderedDict
-from typing import Collection, Dict, List, NamedTuple, Optional, Tuple
+from typing import Collection, Dict, List, NamedTuple, Optional
 
 import werkzeug.exceptions
 from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+from cdedb.backend.event.lodgement import LodgementInhabitants
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, LodgementsSortkeys, RequestState, merge_dicts,
+    CdEDBObject, CdEDBObjectMap, LodgementsSortkeys, RequestState, merge_dicts, unwrap,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
@@ -41,7 +41,7 @@ class EventLodgementMxin(EventBaseFrontend):
     def check_lodgement_problems(
             event: CdEDBObject, lodgements: CdEDBObjectMap,
             registrations: CdEDBObjectMap, personas: CdEDBObjectMap,
-            inhabitants: Dict[Tuple[int, int], Collection[int]]
+            all_inhabitants: Dict[int, Dict[int, LodgementInhabitants]]
     ) -> List[LodgementProblem]:
         """Un-inlined code to examine the current lodgements of an event for
         spots with room for improvement.
@@ -53,69 +53,50 @@ class EventLodgementMxin(EventBaseFrontend):
 
         # first some un-inlined code pieces (otherwise nesting is a bitch)
         def _mixed(group: Collection[int]) -> bool:
-            """Un-inlined check whether both genders are present."""
-            return any({personas[registrations[a]['persona_id']]['gender'],
-                        personas[registrations[b]['persona_id']]['gender']} ==
-                       {const.Genders.male, const.Genders.female}
-                       for a, b in itertools.combinations(group, 2))
+            """Un-inlined check whether both genders are present.
 
-        def _mixing_problem(lodgement_id: int, part_id: int
-                            ) -> LodgementProblem:
-            """Un-inlined code to generate an entry for mixing problems."""
-            return LodgementProblem(
-                n_("Mixed lodgement with non-mixing participants."),
-                lodgement_id, part_id, tuple(
-                    reg_id for reg_id in inhabitants[(lodgement_id, part_id)]
-                    if not registrations[reg_id]['mixed_lodging']),
-                3)
+            This ignores non-binary people.
+            """
+            return set(
+                personas[registrations[reg_id]['persona_id']]['gender']
+                for reg_id in group
+            ) >= {const.Genders.male, const.Genders.female}
 
-        def _camping_mat(group: Collection[int], part_id: int) -> int:
-            """Un-inlined code to count the number of registrations assigned
-            to a lodgement as camping_mat lodgers."""
-            return sum(
-                registrations[reg_id]['parts'][part_id]['is_camping_mat']
-                for reg_id in group)
-
-        def _camping_mat_problem(lodgement_id: int, part_id: int
-                                 ) -> LodgementProblem:
-            """Un-inlined code to generate an entry for camping_mat problems."""
-            return LodgementProblem(
-                n_("Too many camping mats used."), lodgement_id,
-                part_id, tuple(
-                    reg_id for reg_id in inhabitants[(lodgement_id, part_id)]
-                    if registrations[reg_id]['parts'][part_id]['is_camping_mat']),
-                1)
-
+        complex_genders = {const.Genders.other, const.Genders.not_specified}
         # now the actual work
         for lodgement_id in lodgements:
             for part_id in event['parts']:
-                group = inhabitants[(lodgement_id, part_id)]
                 lodgement = lodgements[lodgement_id]
-                num_camping_mat = _camping_mat(group, part_id)
-                if len(group) > (lodgement['regular_capacity'] +
-                                 lodgement['camping_mat_capacity']):
+                inhabitants = all_inhabitants[lodgement_id][part_id]
+                reg, cm = inhabitants
+                if len(reg) + len(cm) > (lodgement['regular_capacity']
+                                         + lodgement['camping_mat_capacity']):
                     ret.append(LodgementProblem(
-                        n_("Overful lodgement."), lodgement_id, part_id,
-                        tuple(), 2))
-                elif lodgement['regular_capacity'] < (len(group) -
-                                                      num_camping_mat):
+                        n_("Overful lodgement."),
+                        lodgement_id, part_id, tuple(), 2))
+                elif len(reg) > lodgement['regular_capacity']:
                     ret.append(LodgementProblem(
-                        n_("Too few camping mats used."), lodgement_id,
-                        part_id, tuple(), 2))
-                if num_camping_mat > lodgement['camping_mat_capacity']:
-                    ret.append(_camping_mat_problem(lodgement_id, part_id))
-                if _mixed(group) and any(
-                        not registrations[reg_id]['mixed_lodging']
-                        for reg_id in group):
-                    ret.append(_mixing_problem(lodgement_id, part_id))
+                        n_("Too few camping mats used."),
+                        lodgement_id, part_id, tuple(), 2))
+                if len(cm) > lodgement['camping_mat_capacity']:
+                    ret.append(LodgementProblem(
+                        n_("Too many camping mats used."),
+                        lodgement_id, part_id, cm, 1))
+                non_mixed_lodging_people = tuple(
+                    reg_id for reg_id in reg + cm
+                    if not registrations[reg_id]['mixed_lodging'])
+                if _mixed(reg + cm) and non_mixed_lodging_people:
+                    ret.append(LodgementProblem(
+                        n_("Mixed lodgement with non-mixing participants."),
+                        lodgement_id, part_id, non_mixed_lodging_people, 3))
                 complex_gender_people = tuple(
-                    reg_id for reg_id in group
+                    reg_id for reg_id in reg + cm
                     if (personas[registrations[reg_id]['persona_id']]['gender']
-                        in (const.Genders.other, const.Genders.not_specified)))
+                        in complex_genders))
                 if complex_gender_people:
                     ret.append(LodgementProblem(
-                        n_("Non-Binary Participant."), lodgement_id, part_id,
-                        complex_gender_people, 1))
+                        n_("Non-Binary Participant."),
+                        lodgement_id, part_id, complex_gender_people, 1))
         return ret
 
     @access("event")
@@ -138,98 +119,48 @@ class EventLodgementMxin(EventBaseFrontend):
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         personas = self.coreproxy.get_event_users(
-            rs, tuple(e['persona_id'] for e in registrations.values()),
-            event_id)
+            rs, tuple(e['persona_id'] for e in registrations.values()), event_id)
 
-        # All inhabitants (regular and camping_mat) of all lodgements and
-        # all parts
-        inhabitants = self.calculate_groups(
-            lodgements, rs.ambience['event'], registrations, key="lodgement_id")
-        regular_inhabitant_nums = {
-            k: sum(1 for r in v
-                   if not registrations[r]['parts'][k[1]]['is_camping_mat'])
-            for k, v in inhabitants.items()}
-        camping_mat_inhabitant_nums = {
-            k: sum(1 for r in v
-                   if registrations[r]['parts'][k[1]]['is_camping_mat'])
-            for k, v in inhabitants.items()}
-        problems = self.check_lodgement_problems(
-            rs.ambience['event'], lodgements, registrations, personas,
-            inhabitants)
-        problems_condensed = {}
+        # Get inhabitants per lodgement, part and status.
+        inhabitants = self.eventproxy.get_grouped_inhabitants(rs, event_id)
 
-        # Calculate regular_inhabitant_sum and camping_mat_inhabitant_sum
-        # per part
-        regular_inhabitant_sum = {}
-        camping_mat_inhabitant_sum = {}
-        for part_id in parts:
-            regular_lodgement_sum = 0
-            camping_mat_lodgement_sum = 0
-            for lodgement_id in lodgement_ids:
-                regular_lodgement_sum += regular_inhabitant_nums[
-                    (lodgement_id, part_id)]
-                camping_mat_lodgement_sum += camping_mat_inhabitant_nums[
-                    (lodgement_id, part_id)]
-            regular_inhabitant_sum[part_id] = regular_lodgement_sum
-            camping_mat_inhabitant_sum[part_id] = camping_mat_lodgement_sum
-
-        # Calculate sum of lodgement regular and camping mat capacities
-        regular_sum = 0
-        camping_mat_sum = 0
-        for lodgement in lodgements.values():
-            regular_sum += lodgement['regular_capacity']
-            camping_mat_sum += lodgement['camping_mat_capacity']
-
-        # Calculate problems_condensed (worst problem)
-        for lodgement_id, part_id in itertools.product(
-                lodgement_ids, parts.keys()):
-            problems_here = [p for p in problems
-                             if p[1] == lodgement_id and p[2] == part_id]
-            problems_condensed[(lodgement_id, part_id)] = (
-                max(p[4] for p in problems_here) if problems_here else 0,
-                "; ".join(rs.gettext(p[0]) for p in problems_here),)
-
-        # Calculate groups
-        grouped_lodgements = {
+        # Sum inhabitants per group, part and status.
+        inhabitants_per_group = {
             group_id: {
-                lodgement_id: lodgement
-                for lodgement_id, lodgement
-                in keydictsort_filter(lodgements, EntitySorter.lodgement)
-                if lodgement['group_id'] == group_id
+                part_id: sum(
+                    (inhabitants[lodgement_id][part_id]
+                     for lodgement_id in group['lodgement_ids']),
+                    start=LodgementInhabitants()
+                )
+                for part_id in parts
             }
-            for group_id, group
-            in (keydictsort_filter(groups, EntitySorter.lodgement_group) +
-                [(None, None)])  # type: ignore[list-item]
+            for group_id, group in groups.items()
         }
 
-        # Calculate group_regular_inhabitants_sum,
-        #           group_camping_mat_inhabitants_sum,
-        #           group_regular_sum and group_camping_mat_sum
-        group_regular_inhabitants_sum = {
-            (group_id, part_id):
-                sum(regular_inhabitant_nums[(lodgement_id, part_id)]
-                    for lodgement_id in group)
+        # Sum inhabitants per part and status.
+        total_inhabitants = {
+            part_id: sum(
+                (inhabitants_per_group[group_id][part_id] for group_id in groups),
+                start=LodgementInhabitants()
+            )
             for part_id in parts
-            for group_id, group in grouped_lodgements.items()}
-        group_camping_mat_inhabitants_sum = {
-            (group_id, part_id):
-                sum(camping_mat_inhabitant_nums[(lodgement_id, part_id)]
-                    for lodgement_id in group)
-            for part_id in parts
-            for group_id, group in grouped_lodgements.items()}
-        group_regular_sum = {
-            group_id: sum(lodgement['regular_capacity']
-                          for lodgement in group.values())
-            for group_id, group in grouped_lodgements.items()}
-        group_camping_mat_sum = {
-            group_id: sum(lodgement['camping_mat_capacity']
-                          for lodgement in group.values())
-            for group_id, group in grouped_lodgements.items()}
+        }
+        # Calculate sum of lodgement regular and camping mat capacities
+        total_reg_capacity = sum(g['regular_capacity'] for g in groups.values())
+        total_cm_capacity = sum(g['camping_mat_capacity'] for g in groups.values())
 
-        def sort_lodgement(lodgement_tuple: Tuple[int, CdEDBObject],
-                           group_id: int) -> Sortkey:
-            anid, lodgement = lodgement_tuple
-            lodgement_group = grouped_lodgements[group_id]
+        # Calculate problems_condensed (worst problem)
+        problems = self.check_lodgement_problems(
+            rs.ambience['event'], lodgements, registrations, personas, inhabitants)
+        problems_condensed = {}
+        for lodgement_id, part_id in itertools.product(lodgement_ids, parts.keys()):
+            problems_here = [p for p in problems
+                             if p.lodgement_id == lodgement_id and p.part_id == part_id]
+            problems_condensed[(lodgement_id, part_id)] = (
+                max(p.severeness for p in problems_here) if problems_here else 0,
+                "; ".join(rs.gettext(p.description) for p in problems_here),)
+
+        def sort_lodgement(lodgement: CdEDBObject) -> Sortkey:
             primary_sort: Sortkey
             if sortkey is None:
                 primary_sort = ()
@@ -237,19 +168,18 @@ class EventLodgementMxin(EventBaseFrontend):
                 if sort_part_id not in parts.keys():
                     raise werkzeug.exceptions.NotFound(n_("Invalid part id."))
                 assert sort_part_id is not None
-                regular = regular_inhabitant_nums[(anid, sort_part_id)]
-                camping_mat = camping_mat_inhabitant_nums[(anid, sort_part_id)]
-                primary_sort = (
-                    regular if sortkey == LodgementsSortkeys.used_regular
-                    else camping_mat,)
+                if sortkey == LodgementsSortkeys.used_regular:
+                    num = len(inhabitants[lodgement['id']][sort_part_id].regular)
+                else:
+                    num = len(inhabitants[lodgement['id']][sort_part_id].camping_mat)
+                primary_sort = (num,)
             elif sortkey.is_total_sorting():
-                regular = (lodgement_group[anid]['regular_capacity']
-                           if anid in lodgement_group else 0)
-                camping_mat = (lodgement_group[anid]['camping_mat_capacity']
-                               if anid in lodgement_group else 0)
-                primary_sort = (
-                    regular if sortkey == LodgementsSortkeys.total_regular
-                    else camping_mat,)
+                lodgement_group = groups[lodgement['group_id']]
+                if sortkey == LodgementsSortkeys.total_regular:
+                    num = lodgement_group['regular_capacity']
+                else:
+                    num = lodgement_group['camping_mat_capacity']
+                primary_sort = (num,)
             elif sortkey == LodgementsSortkeys.title:
                 primary_sort = (lodgement["title"],)
             else:
@@ -258,33 +188,28 @@ class EventLodgementMxin(EventBaseFrontend):
             return primary_sort + secondary_sort
 
         # now sort the lodgements inside their group
-        sorted_grouped_lodgements = OrderedDict([
-            (group_id, OrderedDict([
-                (lodgement_id, lodgement)
-                for lodgement_id, lodgement
-                in xsorted(lodgements.items(), reverse=reverse,
-                           key=lambda e: sort_lodgement(e, group_id))  # pylint: disable=cell-var-from-loop
-                if lodgement['group_id'] == group_id
-            ]))
-            for group_id, group
-            in (keydictsort_filter(groups, EntitySorter.lodgement_group) +
-                [(None, None)])  # type: ignore[list-item]
-        ])
+        grouped_lodgements = {
+            group_id: dict(keydictsort_filter(
+                {
+                    lodgement_id: lodgements[lodgement_id]
+                    for lodgement_id in group['lodgement_ids']
+                },
+                sortkey=sort_lodgement
+            ))
+            for group_id, group in keydictsort_filter(
+                groups, EntitySorter.lodgement_group)
+        }
+        sorted_parts = keydictsort_filter(parts, EntitySorter.event_part)
 
         return self.render(rs, "lodgement/lodgements", {
+            'sorted_event_parts': sorted_parts,
             'groups': groups,
-            'grouped_lodgements': sorted_grouped_lodgements,
-            'regular_inhabitants': regular_inhabitant_nums,
-            'regular_inhabitants_sum': regular_inhabitant_sum,
-            'group_regular_inhabitants_sum': group_regular_inhabitants_sum,
-            'camping_mat_inhabitants': camping_mat_inhabitant_nums,
-            'camping_mat_inhabitants_sum': camping_mat_inhabitant_sum,
-            'group_camping_mat_inhabitants_sum':
-                group_camping_mat_inhabitants_sum,
-            'group_regular_sum': group_regular_sum,
-            'group_camping_mat_sum': group_camping_mat_sum,
-            'regular_sum': regular_sum,
-            'camping_mat_sum': camping_mat_sum,
+            'grouped_lodgements': grouped_lodgements,
+            'inhabitants': inhabitants,
+            'inhabitants_per_group': inhabitants_per_group,
+            'total_inhabitants': total_inhabitants,
+            'total_regular_capacity': total_reg_capacity,
+            'total_camping_mat_capacity': total_cm_capacity,
             'problems': problems_condensed,
             'last_sortkey': sortkey,
             'last_sort_part_id': sort_part_id,
@@ -307,7 +232,7 @@ class EventLodgementMxin(EventBaseFrontend):
         merge_dicts(rs.values, current)
 
         return self.render(rs, "lodgement/lodgement_group_summary", {
-            'sorted_group_ids': sorted_group_ids
+            'sorted_group_ids': sorted_group_ids, 'groups': groups,
         })
 
     @access("event", modi={"POST"})
@@ -326,8 +251,7 @@ class EventLodgementMxin(EventBaseFrontend):
         code = 1
         for group_id, group in groups.items():
             if group is None:
-                code *= self.eventproxy.delete_lodgement_group(
-                    rs, group_id, cascade=("lodgements",))
+                code *= self.eventproxy.delete_lodgement_group(rs, group_id)
             elif group_id < 0:
                 code *= self.eventproxy.create_lodgement_group(rs, group)
             else:
@@ -343,19 +267,16 @@ class EventLodgementMxin(EventBaseFrontend):
         """Display details of one lodgement."""
         group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
         groups = self.eventproxy.get_lodgement_groups(rs, group_ids)
-        registration_ids = self.eventproxy.list_registrations(rs, event_id)
-        registrations = {
-            k: v
-            for k, v in (self.eventproxy.get_registrations(rs, registration_ids)
-                         .items())
-            if any(part['lodgement_id'] == lodgement_id
-                   for part in v['parts'].values())}
+        raw_inhabitants = self.eventproxy.get_grouped_inhabitants(
+            rs, event_id, lodgement_ids=(lodgement_id,))
+        inhabitants = {
+            part_id: raw_inhabitants[lodgement_id][part_id].all
+            for part_id in rs.ambience['event']['parts']
+        }
+        registrations = self.eventproxy.get_registrations(
+            rs, tuple(itertools.chain.from_iterable(inhabitants.values())))
         personas = self.coreproxy.get_event_users(
-            rs, tuple(e['persona_id'] for e in registrations.values()),
-            event_id)
-        inhabitants = self.calculate_groups(
-            (lodgement_id,), rs.ambience['event'], registrations,
-            key="lodgement_id", personas=personas)
+            rs, [r['persona_id'] for r in registrations.values()], event_id=event_id)
 
         if f_id := rs.ambience["event"]["camping_mat_field"]:
             camping_mat_field_name = rs.ambience["event"]["fields"][f_id]["field_name"]
@@ -364,7 +285,7 @@ class EventLodgementMxin(EventBaseFrontend):
 
         problems = self.check_lodgement_problems(
             rs.ambience['event'], {lodgement_id: rs.ambience['lodgement']},
-            registrations, personas, inhabitants)
+            registrations, personas, raw_inhabitants)
 
         if not any(reg_ids for reg_ids in inhabitants.values()):
             merge_dicts(rs.values, {'ack_delete': True})
@@ -474,17 +395,24 @@ class EventLodgementMxin(EventBaseFrontend):
 
     @access("event")
     @event_guard(check_offline=True)
-    def create_lodgement_form(self, rs: RequestState, event_id: int
-                              ) -> Response:
+    @REQUESTdata("group_id")
+    def create_lodgement_form(self, rs: RequestState, event_id: int,
+                              group_id: int = None) -> Response:
         """Render form."""
+        rs.ignore_validation_errors()
         groups = self.eventproxy.list_lodgement_groups(rs, event_id)
+        if len(groups) == 1:
+            group_id = unwrap(groups.keys())
+        if group_id:
+            rs.values['group_id'] = group_id
         return self.render(rs, "lodgement/create_lodgement", {'groups': groups})
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
+    @REQUESTdata("new_group_title")
     @REQUESTdatadict(*LODGEMENT_COMMON_FIELDS)
-    def create_lodgement(self, rs: RequestState, event_id: int,
-                         data: CdEDBObject) -> Response:
+    def create_lodgement(self, rs: RequestState, event_id: int, data: CdEDBObject,
+                         new_group_title: Optional[str]) -> Response:
         """Add a new lodgement."""
         data['event_id'] = event_id
         field_params: vtypes.TypeMapping = {
@@ -497,10 +425,27 @@ class EventLodgementMxin(EventBaseFrontend):
         data['fields'] = {
             key.split('.', 1)[1]: value for key, value in raw_fields.items()
         }
+
+        # Check if a new group should be created.
+        create_new_group = False
+        if not data.get('group_id') and new_group_title:
+            create_new_group = True
+            data['group_id'] = 1  # Placeholder id for validation.
+
         data = check(rs, vtypes.Lodgement, data, creation=True)
         if rs.has_validation_errors():
             return self.create_lodgement_form(rs, event_id)
         assert data is not None
+
+        # Create the new group.
+        if create_new_group:
+            new_group_data = {'title': new_group_title, 'event_id': event_id}
+            new_group_data = check(
+                rs, vtypes.LodgementGroup, new_group_data, creation=True)
+            if rs.has_validation_errors() or not new_group_data:
+                return self.create_lodgement_form(rs, event_id)
+            data['group_id'] = self.eventproxy.create_lodgement_group(
+                rs, new_group_data)
 
         new_id = self.eventproxy.create_lodgement(rs, data)
         rs.notify_return_code(new_id)
@@ -514,8 +459,8 @@ class EventLodgementMxin(EventBaseFrontend):
         """Render form."""
         groups = self.eventproxy.list_lodgement_groups(rs, event_id)
         field_values = {
-            "fields.{}".format(key): value
-            for key, value in rs.ambience['lodgement']['fields'].items()}
+            f"fields.{field_name}": value
+            for field_name, value in rs.ambience['lodgement']['fields'].items()}
         merge_dicts(rs.values, rs.ambience['lodgement'], field_values)
         return self.render(rs, "lodgement/change_lodgement", {'groups': groups})
 
@@ -761,3 +706,43 @@ class EventLodgementMxin(EventBaseFrontend):
             code *= self.eventproxy.set_registration(rs, new_reg, change_note)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/show_lodgement")
+
+    @access("event")
+    @event_guard(check_offline=True)
+    def move_lodgements_form(self, rs: RequestState, event_id: int, group_id: int
+                             ) -> Response:
+        """Move lodgements from one group to another or delete them with the group."""
+        groups = self.eventproxy.list_lodgement_groups(rs, event_id)
+        lodgements_in_group = self.eventproxy.list_lodgements(rs, event_id, group_id)
+        return self.render(rs, "lodgement/move_lodgements", {
+            'groups': groups, 'lodgements_in_group': lodgements_in_group,
+        })
+
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
+    @REQUESTdata("lodgement_ids", "target_group_id", "delete_group")
+    def move_lodgements(self, rs: RequestState, event_id: int, group_id: int,
+                        lodgement_ids: Collection[int], target_group_id: Optional[int],
+                        delete_group: bool) -> Response:
+        """Move lodgements from one group to another or delete them with the group."""
+        groups = self.eventproxy.list_lodgement_groups(rs, event_id)
+        lodgements_in_group = self.eventproxy.list_lodgements(rs, event_id, group_id)
+        if rs.has_validation_errors():
+            return self.move_lodgements_form(rs, event_id, group_id)
+        if target_group_id:
+            if target_group_id not in groups or target_group_id == group_id:
+                rs.append_validation_error(
+                    ('target_group_id', KeyError(n_("Invalid lodgement group."))))
+        if not target_group_id and not delete_group:
+            rs.notify("info", n_("Nothing to do."))
+            return self.redirect(rs, "event/lodgements")
+        if set(lodgement_ids) != set(lodgements_in_group):
+            rs.notify("error", n_("Lodgements in this group changed in the meantime."))
+            return self.move_lodgements_form(rs, event_id, group_id)
+        if rs.has_validation_errors():
+            return self.move_lodgements_form(rs, event_id, group_id)
+
+        code = self.eventproxy.move_lodgements(
+            rs, group_id, target_group_id, delete_group)
+        rs.notify_return_code(code)
+        return self.redirect(rs, "event/lodgements")

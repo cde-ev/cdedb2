@@ -485,20 +485,48 @@ class EventBaseBackend(EventLowLevelBackend):
                      data: CdEDBObject) -> DefaultReturnCode:
         """Make a new event organized via DB."""
         data = affirm(vtypes.Event, data, creation=True)
-        if 'parts' not in data:
+        if not data.get('parts'):
             raise ValueError(n_("At least one event part required."))
         with Atomizer(rs):
             edata = {k: v for k, v in data.items() if k in EVENT_FIELDS}
             new_id = self.sql_insert(rs, "event.events", edata)
             self.event_log(rs, const.EventLogCodes.event_created, new_id)
             update_data = {aspect: data[aspect]
-                           for aspect in ('parts', 'orgas', 'fields',
-                                          'fee_modifiers')
+                           for aspect in ('parts', 'orgas', 'fields')
                            if aspect in data}
             if update_data:
                 update_data['id'] = new_id
                 self.set_event(rs, update_data)
+            # lg_data: vtypes.LodgementGroup
+            if groups := data.get('lodgement_groups'):
+                for creation_id in mixed_existence_sorter(groups):
+                    lg_data = groups[creation_id]
+                    lg_data['event_id'] = new_id
+                    self.create_lodgement_group(rs, lg_data)
+            else:
+                lg_data = vtypes.LodgementGroup({
+                    'title': data['title'],
+                    'event_id': new_id,
+                })
+                self.create_lodgement_group(rs, lg_data)
             self.event_keeper_create(rs, new_id)
+        return new_id
+
+    @access("event")
+    def create_lodgement_group(self, rs: RequestState,
+                               data: vtypes.LodgementGroup) -> DefaultReturnCode:
+        """Make a new lodgement group."""
+        data = affirm(vtypes.LodgementGroup, data, creation=True)
+
+        if (not self.is_orga(rs, event_id=data['event_id'])
+                and not self.is_admin(rs)):
+            raise PrivilegeError(n_("Not privileged."))
+        self.assert_offline_lock(rs, event_id=data['event_id'])
+        with Atomizer(rs):
+            new_id = self.sql_insert(rs, "event.lodgement_groups", data)
+            self.event_log(
+                rs, const.EventLogCodes.lodgement_group_created,
+                data['event_id'], change_note=data['title'])
         return new_id
 
     @access("event")
