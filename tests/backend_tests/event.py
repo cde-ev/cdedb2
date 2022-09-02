@@ -564,6 +564,45 @@ class TestEventBackend(BackendTest):
             self.event.get_event(self.key, 4)['parts'][6]
         )
 
+    @as_users("annika")
+    def test_track_groups(self) -> None:
+        event_id = 4
+        event = self.event.get_event(self.key, event_id)
+        track_group_ids = self.event.get_event(
+            self.key, event_id)['track_groups'].keys()
+        self.assertTrue(self.event.set_track_groups(self.key, event_id, {
+            tg_id: None
+            for tg_id in track_group_ids
+        }))
+        tg_data = {
+            -1: {
+                'title': "Test",
+                'shortname': "Test",
+                'constraint_type': const.CourseTrackGroupType.course_choice_sync,
+                'notes': None,
+                'track_ids': event['tracks'].keys(),
+            },
+        }
+        with self.assertRaises(ValueError):
+            self.event.set_track_groups(self.key, event_id, tg_data)
+        tg_data[-1]['track_ids'] = {1, 2}
+        with self.assertRaises(ValueError):
+            self.event.set_track_groups(self.key, event_id, tg_data)
+        tg_data[-1]['track_ids'] = {6, 7}
+        self.assertTrue(self.event.set_track_groups(self.key, event_id, tg_data))
+        tg_data[-1]['id'] = 1003
+        tg_data[-1]['event_id'] = event_id
+        self.assertEqual(
+            tg_data[-1],
+            self.event.get_event(self.key, event_id)['track_groups'][1003])
+        tg_data = {
+            1003: {
+                'title': "tEST",
+                'track_ids': [7, 8],
+            },
+        }
+        self.assertTrue(self.event.set_track_groups(self.key, event_id, tg_data))
+
     @storage
     @as_users("annika", "garcia")
     def test_change_minor_form(self) -> None:

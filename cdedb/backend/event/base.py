@@ -631,9 +631,12 @@ class EventBaseBackend(EventLowLevelBackend):
             return ret
 
         with Atomizer(rs):
-            tracks = {e['id']: e for e in self.sql_select(
-                rs, "event.course_tracks", COURSE_TRACK_FIELDS, (event_id,),
+            parts = {e['id']: e for e in self.sql_select(
+                rs, "event.event_parts", EVENT_PART_FIELDS, (event_id,),
                 entity_key="event_id")}
+            tracks = {e['id']: e for e in self.sql_select(
+                rs, "event.course_tracks", COURSE_TRACK_FIELDS, parts.keys(),
+                entity_key="part_id")}
 
             existing_track_groups = {unwrap(e) for e in self.sql_select(
                 rs, "event.track_groups", ("id",), (event_id,), entity_key="event_id")}
@@ -681,6 +684,7 @@ class EventBaseBackend(EventLowLevelBackend):
                     current = current_track_group_data[x]
                     updated = track_groups[x]
                     assert updated is not None
+                    updated['id'] = x
                     # Changing constraint type is not allowed.
                     updated.pop('contraint_type', None)
                     track_ids = updated.pop('track_ids', None)

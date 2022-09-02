@@ -736,7 +736,7 @@ class EventLowLevelBackend(AbstractBackend):
                 raise ValueError(n_("Incompatible tracks."))
 
         current_track_ids = {e['track_id'] for e in self.sql_select(
-            rs, "event.track_group_tracks", ("track_group_id",), (track_group_id,),
+            rs, "event.track_group_tracks", ("track_id",), (track_group_id,),
             entity_key="track_group_id")}
 
         if deleted_track_ids := current_track_ids - track_ids:
