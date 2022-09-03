@@ -2050,20 +2050,20 @@ class CoreBaseBackend(AbstractBackend):
 
         # Escalate db privilege role in case of successful login.
         # This will not be deescalated.
-        if rs.conn.is_contaminated:
-            raise RuntimeError(n_("Atomized – impossible to escalate."))
+        # if rs.conn.is_contaminated:
+        #     raise RuntimeError(n_("Atomized – impossible to escalate."))
 
         # TODO: This is needed because of an implementation detail of the login in the
         #  frontend. Namely wanting to check consent decision status for cde users.
         #  Maybe rework this somehow.
         is_cde = unwrap(self.sql_select_one(rs, "core.personas",
                                             ("is_cde_realm",), data["id"]))
-        if is_cde:
-            rs.conn = self.connpool['cdb_member']
-        else:
-            rs.conn = self.connpool['cdb_persona']
-        # Necessary to keep the mechanics happy.
-        rs._conn = rs.conn  # pylint: disable=protected-access
+        # if is_cde:
+        #     rs.conn = self.connpool['cdb_member']
+        # else:
+        #     rs.conn = self.connpool['cdb_persona']
+        # # Necessary to keep the mechanics happy.
+        # rs._conn = rs.conn  # pylint: disable=protected-access
 
         # Get more information about user (for immediate use in frontend)
         data = self.sql_select_one(rs, "core.personas",

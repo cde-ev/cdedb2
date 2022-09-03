@@ -40,7 +40,7 @@ from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
-from cdedb.cli.dev.json2sql import json2sql
+from cdedb.cli.dev.json2sql import json2sql, sequence_restarts
 from cdedb.cli.storage import (
     create_storage, populate_sample_event_keepers, populate_storage,
 )
@@ -51,12 +51,9 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.query import QueryOperators
-from cdedb.common.roles import (
-    ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, roles_to_db_role,
-)
+from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS
 from cdedb.config import SecretsConfig, TestConfig, get_configpath, set_configpath
-from cdedb.database import DATABASE_ROLES
-from cdedb.database.connection import connection_pool_factory
+from cdedb.database.connection import Atomizer, ConnectionContainer
 from cdedb.frontend.application import Application
 from cdedb.frontend.common import (
     AbstractFrontend, Worker, make_persona_name, setup_translations,
@@ -138,7 +135,7 @@ _SAMPLE_DATA = _read_sample_data()
 B = TypeVar("B", bound=AbstractBackend)
 
 
-def _make_backend_shim(backend: B, internal: bool = False) -> B:
+def _make_backend_shim(backend: B, conn, internal: bool = False) -> B:
     """Wrap a backend to only expose functions with an access decorator.
 
     If we used an actual RPC mechanism, this would do some additional
@@ -152,11 +149,19 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
     """
     # pylint: disable=protected-access
 
-    sessionproxy = SessionBackend()
+    class TestSessionBackend(SessionBackend):
+        def __init__(self):
+            super().__init__()
+            self.connpool = {
+                'cdb_persona': conn,
+                'cdb_anonymous': conn,
+            }
+
+    sessionproxy = TestSessionBackend()
     secrets = SecretsConfig()
-    connpool = connection_pool_factory(
-        backend.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
-        secrets, backend.conf["DB_HOST"], backend.conf["DB_PORT"])
+    # connpool = connection_pool_factory(
+    #     backend.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
+    #     secrets, backend.conf["DB_HOST"], backend.conf["DB_PORT"])
     translations = setup_translations(backend.conf)
 
     def setup_requeststate(key: Optional[str], ip: str = "127.0.0.0"
@@ -194,7 +199,8 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
             lang="de",
             translations=translations,
         )
-        rs._conn = connpool[roles_to_db_role(rs.user.roles)]
+        # rs._conn = connpool[roles_to_db_role(rs.user.roles)]
+        rs._conn = conn
         rs.conn = rs._conn
         if "event" in rs.user.roles and hasattr(backend, "orga_info"):
             rs.user.orga = backend.orga_info(  # type: ignore[attr-defined]
@@ -344,6 +350,7 @@ class CdEDBTest(BasicTest):
     longMessage = False
     _clean_data: ClassVar[str]
     _sample_data: ClassVar[str]
+    rs: ClassVar[ConnectionContainer]
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -356,20 +363,32 @@ class CdEDBTest(BasicTest):
         with open(json_file, "r", encoding="utf8") as f:
             data: Dict[str, List[CdEDBObject]] = json.load(f)
         cls._sample_data = "\n".join(json2sql(cls.conf, cls.secrets, data))
+        cls._sequence_restarts = "\n".join(
+            sequence_restarts(cls.conf, cls.secrets, data))
+        cls.rs = cls.get_connection_container()
+        cls.rs.conn.set_session(autocommit=False)
 
-    def setUp(self) -> None:
-        with Script(
+    def run(self, result: unittest.TestResult = None) -> None:
+        with self.transaction():
+            super().run(result)
+
+    @classmethod
+    def get_connection_container(cls) -> ConnectionContainer:
+        return Script(
             persona_id=-1,
             dbuser="cdb",
-            dbname=self.conf["CDB_DATABASE_NAME"],
+            dbname=cls.conf["CDB_DATABASE_NAME"],
             check_system_user=False,
-        ).rs().conn as conn:
-            conn.set_session(autocommit=True)
-            with conn.cursor() as curr:
-                curr.execute(self._clean_data)
-                curr.execute(self._sample_data)
+        ).rs()
 
-        super().setUp()
+    @contextlib.contextmanager
+    def transaction(self) -> None:
+        with self.rs.conn.cursor() as cur:
+            cur.execute(self._sequence_restarts)
+            self.rs.conn.commit()
+        with Atomizer(self.rs, allow_exception_suppress=True) as conn:
+            yield
+            self.rs.conn.rollback()
 
 
 class BackendTest(CdEDBTest):
@@ -479,7 +498,7 @@ class BackendTest(CdEDBTest):
 
     @classmethod
     def initialize_backend(cls, backendcls: Type[B]) -> B:
-        return _make_backend_shim(backendcls(), internal=True)
+        return _make_backend_shim(backendcls(), cls.rs.conn, internal=True)
 
 
 # A reference of the most important attributes for all users. This is used for
@@ -769,10 +788,9 @@ def as_users(*users: UserIdentifier) -> Callable[[Callable[..., None]],
                     ) -> None:
             for i, user in enumerate(users):
                 with self.subTest(user=user):
-                    if i > 0:
-                        self.setUp()
                     self.login(user)
-                    fun(self, *args, **kwargs)
+                    with self.transaction():
+                        fun(self, *args, **kwargs)
         return new_fun
     return wrapper
 

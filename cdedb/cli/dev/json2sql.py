@@ -191,3 +191,14 @@ def json2sql(config: Config, secrets: SecretsConfig, data: CdEDBObject,
         ret.append(cmd)
 
     return ret
+
+
+def sequence_restarts(config, secrets, data) -> List[str]:
+    aux = prepare_aux(data, config, secrets)
+    commands: List[str] = []
+
+    # Start off by resetting the sequential ids to 1.
+    commands.extend(f"ALTER SEQUENCE IF EXISTS {table}_id_seq RESTART WITH 1001;"
+                    for table in aux["seq_id_tables"])
+
+    return commands

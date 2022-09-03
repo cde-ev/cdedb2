@@ -127,6 +127,10 @@ def connection_pool_factory(dbname: str, roles: Collection[Role],
     return InstantConnectionPool(roles)
 
 
+class SuppressedExceptionError(Exception):
+    pass
+
+
 # noinspection PyProtectedMember
 class Atomizer:
     """Helper to create atomic transactions.
@@ -161,8 +165,9 @@ class Atomizer:
     about them, however they are still a bad idea.
     """
 
-    def __init__(self, rs: ConnectionContainer):
+    def __init__(self, rs: ConnectionContainer, allow_exception_suppress: bool = False):
         self.rs = rs
+        self.allow_exeption_suppress = allow_exception_suppress
 
     def __enter__(self) -> "IrradiatedConnection":
         self.rs._conn.contaminate()
@@ -170,9 +175,14 @@ class Atomizer:
 
     def __exit__(self, atype: Optional[Type[Exception]],
                  value: Optional[Exception],
-                 tb: Optional[TracebackType]) -> Literal[False]:
+                 tb: Optional[TracebackType]) -> bool:
         self.rs._conn.decontaminate()
-        return self.rs._conn.__exit__(atype, value, tb)
+        try:
+            return self.rs._conn.__exit__(atype, value, tb)
+        except SuppressedExceptionError:
+            if not self.allow_exeption_suppress:
+                raise
+            return True
 
 
 class IrradiatedConnection(psycopg2.extensions.connection):
@@ -224,7 +234,7 @@ class IrradiatedConnection(psycopg2.extensions.connection):
                 super().__exit__(self._saved_etype, self._saved_evalue,
                                  self._saved_tb)
                 # second we raise an exception to complain
-                raise RuntimeError(n_("Suppressed exception detected"))
+                raise SuppressedExceptionError(n_("Suppressed exception detected"))
             return super().__exit__(etype, evalue, tb)
 
     def contaminate(self) -> None:
