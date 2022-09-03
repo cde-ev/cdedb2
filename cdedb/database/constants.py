@@ -144,6 +144,11 @@ class CourseTrackGroupType(enum.IntEnum):
     def is_sync(self) -> bool:
         return self == CourseTrackGroupType.course_choice_sync
 
+    def locked_track_keys(self) -> list[str]:
+        return {
+            CourseTrackGroupType.course_choice_sync: ["num_choices", "min_choices"],
+        }[self]
+
 
 @enum.unique
 class GenesisStati(enum.IntEnum):

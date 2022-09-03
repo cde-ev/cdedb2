@@ -275,11 +275,27 @@ class EventLowLevelBackend(AbstractBackend):
                 }
                 ret *= self.sql_insert(
                     rs, "event.registration_tracks", reg_track)
+
+        q = """
+            SELECT tgt.track_id
+            FROM event.track_group_tracks tgt
+            JOIN event.track_groups tg on tg.id = tgt.track_group_id
+            WHERE tg.constraint_type = %s AND tgt.track_id = ANY(%s)
+        """
+        ccs = const.CourseTrackGroupType.course_choice_sync
+        params = (ccs, updated | deleted)
+        synced_tracks = {e['track_id'] for e in self.query_all(rs, q, params)}
+
         # updated
         for x in mixed_existence_sorter(updated):
             updated_track = copy.copy(data[x])
             assert updated_track is not None
             if any(updated_track[k] != current[x][k] for k in updated_track):
+                if x in synced_tracks:
+                    if any(updated_track[k] != current[x][k]
+                           for k in ccs.locked_track_keys()):
+                        raise ValueError(n_(
+                            "May not change number of choices for synced track."))
                 updated_track['id'] = x
                 ret *= self.sql_update(rs, "event.course_tracks", updated_track)
                 self.event_log(
