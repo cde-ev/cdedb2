@@ -35,6 +35,7 @@
         {% endif %}
 
         <h3 class="sr-only">{% trans %}Course Choices{% endtrans %}</h3>
+        {# TODO: fix involved tracks. #}
         {% for cco in choice_objects %}
             {% if 'constraint_type' in cco %}
                 {% if cco['track_ids'] %}
