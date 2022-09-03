@@ -711,6 +711,17 @@ class EventBaseBackend(EventLowLevelBackend):
                     ret *= self._delete_track_group(
                         rs, track_group_id=x, cascade=cascade)
 
+            # Check if any track is linked to more than one ccs track group.
+            q = """SELECT track_id
+                FROM event.track_group_tracks tgt
+                JOIN event.track_groups tg ON tg.id = tgt.track_group_id
+                WHERE tg.constraint_type = %s AND tg.event_id = %s
+                GROUP BY tgt.track_id
+                HAVING COUNT(tgt.track_group_id) > 1
+            """
+            ccs = const.CourseTrackGroupType.course_choice_sync
+            if self.query_all(rs, q, (ccs, event_id)):
+                raise ValueError(n_("Track synced to more than one ccs track group."))
         return ret
 
     @access("event")
