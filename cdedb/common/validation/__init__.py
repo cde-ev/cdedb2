@@ -2499,6 +2499,7 @@ EVENT_TRACK_GROUP_COMMON_FIELDS: TypeMapping = {
     'constraint_type': const.CourseTrackGroupType,
     'notes': Optional[str],  # type: ignore[dict-item]
     'track_ids': List[ID],
+    'sortkey': int,
 }
 
 

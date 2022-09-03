@@ -514,6 +514,7 @@ class TestEventBackend(BackendTest):
                             'constraint_type':
                                 const.CourseTrackGroupType.course_choice_sync,
                             'track_ids': {6, 7, 8},
+                            'sortkey': 0,
                         }
                     },
                 },
@@ -581,6 +582,7 @@ class TestEventBackend(BackendTest):
                 'constraint_type': const.CourseTrackGroupType.course_choice_sync,
                 'notes': None,
                 'track_ids': event['tracks'].keys(),
+                'sortkey': 1,
             },
         }
         assert tg_data[-1] is not None

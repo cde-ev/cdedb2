@@ -174,7 +174,7 @@ EVENT_PART_FIELDS = ("id", "event_id", "title", "shortname", "part_begin",
 PART_GROUP_FIELDS = ("id", "event_id", "title", "shortname", "notes", "constraint_type")
 
 TRACK_GROUP_FIELDS = (
-    "id", "event_id", "title", "shortname", "notes", "constraint_type",
+    "id", "event_id", "title", "shortname", "notes", "constraint_type", "sortkey",
 )
 
 #: Fields of a track where courses can happen

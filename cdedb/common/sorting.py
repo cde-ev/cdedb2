@@ -184,6 +184,10 @@ class EntitySorter:
         return (course_track['sortkey'], course_track['id'])
 
     @staticmethod
+    def course_choice_object(cco: CdEDBObject) -> Sortkey:
+        return (cco['sortkey'], 'constraint_type' in cco, cco['title'], cco['id'])
+
+    @staticmethod
     def fee_modifier(fee_modifier: CdEDBObject) -> Sortkey:
         return (fee_modifier['modifier_name'], fee_modifier['id'])
 

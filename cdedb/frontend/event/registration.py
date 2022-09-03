@@ -251,6 +251,7 @@ class EventRegistrationMixin(EventBaseFrontend):
     def get_course_choice_params(self, rs: RequestState, event_id: int) -> CdEDBObject:
         event = rs.ambience['event']
         tracks = event['tracks']
+        track_groups = event['track_groups']
 
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
@@ -259,7 +260,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         courses_per_track_group: dict[int, set[int]] = {}
         reference_track = {}
         simple_tracks = set(tracks)
-        for track_group_id, track_group in event['track_groups'].items():
+        for track_group_id, track_group in track_groups.items():
             if not track_group['constraint_type'].is_sync():
                 continue
             simple_tracks.difference_update(track_group['track_ids'])
@@ -268,10 +269,14 @@ class EventRegistrationMixin(EventBaseFrontend):
                 courses_per_track_group[track_group_id] = courses_per_track[track_id]
                 reference_track[track_group_id] = tracks[track_id]
                 break
+        choice_objects = [t for t_id, t in tracks.items() if t_id in simple_tracks] + [
+            tg for tg in track_groups.values() if tg['constraint_type'].is_sync()]
+        choice_objects = xsorted(choice_objects, key=EntitySorter.course_choice_object)
         return {
             'courses': courses, 'courses_per_track': courses_per_track,
             'courses_per_track_group': courses_per_track_group,
             'reference_track': reference_track, 'simple_tracks': simple_tracks,
+            'choice_objects': choice_objects,
         }
 
     @access("event")

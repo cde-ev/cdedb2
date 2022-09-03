@@ -784,6 +784,7 @@ CREATE TABLE event.track_groups (
         shortname               varchar NOT NULL,
         notes                   varchar,
         constraint_type         integer NOT NULL,
+        sortkey                 integer NOT NULL,
         UNIQUE (event_id, shortname) DEFERRABLE INITIALLY IMMEDIATE,
         UNIQUE (event_id, title) DEFERRABLE INITIALLY IMMEDIATE
 );

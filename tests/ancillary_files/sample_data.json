@@ -4477,7 +4477,8 @@
             "title": "Kurs 1 Sync",
             "shortname": "K1S",
             "notes": null,
-            "constraint_type": 1
+            "constraint_type": 1,
+            "sortkey": 2
         },
         {
             "id": 2,
@@ -4485,7 +4486,8 @@
             "title": "Kurs 2 morgens Sync",
             "shortname": "K2mS",
             "notes": null,
-            "constraint_type": 1
+            "constraint_type": 1,
+            "sortkey": 1
         },
         {
             "id": 3,
@@ -4493,7 +4495,8 @@
             "title": "Kurs 2 nachmittags Sync",
             "shortname": "K2nS",
             "notes": null,
-            "constraint_type": 1
+            "constraint_type": 1,
+            "sortkey": 0
         }
     ],
     "event.track_group_tracks": [
