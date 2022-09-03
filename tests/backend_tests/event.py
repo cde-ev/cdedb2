@@ -574,7 +574,7 @@ class TestEventBackend(BackendTest):
             tg_id: None
             for tg_id in track_group_ids
         }))
-        tg_data = {
+        tg_data: CdEDBOptionalMap = {
             -1: {
                 'title': "Test",
                 'shortname': "Test",
@@ -583,25 +583,46 @@ class TestEventBackend(BackendTest):
                 'track_ids': event['tracks'].keys(),
             },
         }
+        assert tg_data[-1] is not None
+        # Test incompatible tracks.
         with self.assertRaises(ValueError):
             self.event.set_track_groups(self.key, event_id, tg_data)
+        # Test unknown tracks.
         tg_data[-1]['track_ids'] = {1, 2}
         with self.assertRaises(ValueError):
             self.event.set_track_groups(self.key, event_id, tg_data)
+
+        # Test correct tracks.
         tg_data[-1]['track_ids'] = {6, 7}
         self.assertTrue(self.event.set_track_groups(self.key, event_id, tg_data))
-        tg_data[-1]['id'] = 1003
-        tg_data[-1]['event_id'] = event_id
+        tg = tg_data[-1].copy()
+        tg['id'] = 1003
+        tg['event_id'] = event_id
         self.assertEqual(
-            tg_data[-1],
-            self.event.get_event(self.key, event_id)['track_groups'][1003])
-        tg_data = {
+            tg, self.event.get_event(self.key, event_id)['track_groups'][1003])
+
+        # Test duplicate tracks.
+        with self.assertRaises(ValueError):
+            self.event.set_track_groups(self.key, event_id, tg_data)
+        # Test dupliclate title.
+        with self.assertRaises(psycopg2.errors.UniqueViolation):
+            tmp = copy.deepcopy(tg_data)
+            assert tmp[-1] is not None
+            tmp[-1]['track_ids'] = []
+            self.event.set_track_groups(self.key, event_id, tmp)
+
+        # Test update
+        tg_update: CdEDBOptionalMap = {
             1003: {
                 'title': "tEST",
-                'track_ids': [7, 8],
+                'track_ids': {7, 8},
             },
         }
-        self.assertTrue(self.event.set_track_groups(self.key, event_id, tg_data))
+        assert tg_update[1003] is not None
+        self.assertTrue(self.event.set_track_groups(self.key, event_id, tg_update))
+        tg.update(tg_update[1003])
+        self.assertEqual(
+            tg, self.event.get_event(self.key, event_id)['track_groups'][1003])
 
     @storage
     @as_users("annika", "garcia")
