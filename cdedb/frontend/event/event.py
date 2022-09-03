@@ -295,6 +295,9 @@ class EventEventMixin(EventBaseFrontend):
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         for course in courses.values():
             blocked_tracks.update(course['segments'])
+        event = self.eventproxy.get_event(rs, event_id)
+        for tg in event['track_groups'].values():
+            blocked_tracks.update(tg['track_ids'])
         return blocked_tracks
 
     @access("event")
