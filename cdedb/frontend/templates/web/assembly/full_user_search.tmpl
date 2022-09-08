@@ -9,14 +9,14 @@
 {% endblock %}
 {% block title %}
     {% trans %}
-        Search Archived Users
+        Full User Search
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("assembly/archived_user_search"), gettext("Search Archived Users"), active="True") }}
+    {{ util.breadcrumb_link(cdedblink("assembly/full_user_search"), gettext("Search All Users"), active="True") }}
 {% endblock %}
 {% block content %}
-    {{ generic.user_search("assembly", result, query, archived=True, info=gettext(
-            "This search will only show archived pure assembly users.")) }}
+    {{ generic.user_search(scope, result, query, info=gettext(
+            "This search will only show pure assembly users.")) }}
 {% endblock %}

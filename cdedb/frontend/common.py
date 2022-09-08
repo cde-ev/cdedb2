@@ -797,7 +797,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                             default_scope: query_mod.QueryScope,
                             submit_general_query: Callable[[RequestState, Query],
                                                            Tuple[CdEDBObject, ...]], *,
-                            endpoint: str = "user_search",
                             choices: Mapping[str, Mapping[Any, str]] = None,
                             query: Query = None) -> werkzeug.Response:
         """Perform user search.
@@ -809,8 +808,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             query or just to display the search form.
         :param scope: The query scope of the search.
         :param default_scope: Use the default queries associated with this scope.
-        :param endpoint: Name of the template family to use to render search. To be
-            changed for archived user searches.
         :param choices: Mapping of replacements of primary keys by human-readable
             strings for select fields in the javascript query form.
         :param submit_general_query: The backend query function to use to retrieve the
@@ -848,10 +845,14 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             params['result'] = result
             if download:
                 return self.send_query_download(
-                    rs, result, query, kind=download, filename=endpoint + "_result")
+                    rs, result, query, kind=download,
+                    filename=scope.get_target() + "_result")
         else:
+            if not is_search and scope.includes_archived:
+                rs.values['qop_is_archived'] = query_mod.QueryOperators.equal.value
+                rs.values['qval_is_archived'] = True
             rs.values['is_search'] = False
-        return self.render(rs, endpoint, params)
+        return self.render(rs, scope.get_target(redirect=False), params)
 
     @staticmethod
     def _create_attachment(attachment: Attachment) -> MIMENonMultipart:
@@ -1149,7 +1150,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         new_id = self.coreproxy.create_persona(rs, data)
         if new_id:
             success, message = self.coreproxy.make_reset_cookie(rs, data[
-                'username'])
+                'username'], timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
             email = self.encode_parameter(
                 "core/do_password_reset_form", "email", data['username'],
                 persona_id=None, timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
@@ -2228,17 +2229,20 @@ def drow_last_index(prefix: str = "") -> str:
     return f"{prefix}create_last_index"
 
 
+C = TypeVar('C', bound=CdEDBObject)
+
+
 # TODO maybe retrieve the spec from the type_?
 def process_dynamic_input(
     rs: RequestState,
-    type_: Type[T],
+    type_: Type[C],
     existing: Collection[int],
     spec: vtypes.TypeMapping,
     *,
     additional: CdEDBObject = None,
     creation_spec: vtypes.TypeMapping = None,
     prefix: str = "",
-) -> Dict[int, Optional[CdEDBObject]]:
+) -> Dict[int, Optional[C]]:
     """Retrieve data from rs provided by 'dynamic_row_meta' macros.
 
     This takes a 'spec' of field_names mapped to their validation. Each field_name is
@@ -2287,8 +2291,8 @@ def process_dynamic_input(
     data = request_extractor(rs, existing_data_spec, postpone_validation=True)
 
     # build the return dict of all existing entries and check if they pass validation
-    ret: Dict[int, Optional[CdEDBObject]] = {
-        anid: {key: data[drow_name(key, anid, prefix)] for key in spec}
+    ret: Dict[int, Optional[C]] = {
+        anid: type_({key: data[drow_name(key, anid, prefix)] for key in spec})
         for anid in non_deleted_existing
     }
     for anid in existing:
@@ -2303,7 +2307,7 @@ def process_dynamic_input(
             entry.update(additional)
             # apply the promised validation
             ret[anid] = check_validation(rs, type_, entry, field_prefix=field_prefix,
-                                         field_postfix=f"_{anid}")  # type: ignore[assignment]
+                                         field_postfix=f"_{anid}")
 
     # extract the new entries which shall be created
     marker = 1
@@ -2314,12 +2318,12 @@ def process_dynamic_input(
             params = {drow_name(key, -marker, prefix): value
                       for key, value in creation_spec.items()}
             data = request_extractor(rs, params, postpone_validation=True)
-            entry = {
-                key: data[drow_name(key, -marker, prefix)] for key in creation_spec}
+            entry = type_({
+                key: data[drow_name(key, -marker, prefix)] for key in creation_spec})
             entry.update(additional)
             ret[-marker] = check_validation(
                 rs, type_, entry, field_prefix=field_prefix,
-                field_postfix=f"_{-marker}", creation=True)  # type: ignore[assignment]
+                field_postfix=f"_{-marker}", creation=True)
         else:
             break
         marker += 1

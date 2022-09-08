@@ -29,7 +29,13 @@ CREATE USER cdb_member          PASSWORD 'zyxwvutsrqponmlkjihgfedcbazyxw';
 DROP ROLE IF EXISTS cdb_admin;
 CREATE USER cdb_admin           PASSWORD '9876543210abcdefghijklmnopqrst';
 
+-- cdb_ldap is used by ldaptor to perform SELECTs on the database.
+-- therefore, it is outside of the privilege tier and directly below cdb
+DROP ROLE IF EXISTS cdb_ldap;
+CREATE USER cdb_ldap            PASSWORD '1234567890zyxwvutsrqponmlkjihg';
+
 GRANT cdb_anonymous TO cdb_persona;
 GRANT cdb_persona TO cdb_member;
 GRANT cdb_member TO cdb_admin;
 GRANT cdb_admin TO cdb;
+GRANT cdb_ldap TO cdb;

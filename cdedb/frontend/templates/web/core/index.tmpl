@@ -39,11 +39,17 @@
                             {{ util.input_submit("", icon='search', title=gettext("Search")) }}
                         </span>
                     </div>
+                    <div class="checkbox">
+                        {{ util.input_checkbox('include_archived', gettext("Include Archived Users"),
+                                               anid='adminshowuser_archived_toggle') }}
+                    </div>
                 </form>
                 <script nonce="{{ csp_nonce }}">
                     var $i = $('#input-showuser-id');
-                    $i.cdedbSearchPerson('{{ (cdedblink('core/select_persona')|e) + ('?kind=admin_persona&phrase=%s'|s) }}', [],
-                                         true, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}");
+                    $i.cdedbSearchPerson('{{ cdedblink('core/select_persona') }}', {'kind' : 'admin_persona'}, [],
+                                         true, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}",
+                                         {'toggle': $('#adminshowuser_archived_toggle'), 'kind': 'admin_all_users'}
+                    );
                     $i.change(function(){
                         if ($(this).val()) {
                             $('#adminshowuserform').submit();

@@ -23,9 +23,9 @@ import tempfile
 import unittest
 import urllib.parse
 from typing import (
-    Any, AnyStr, Callable, ClassVar, Dict, Generator, Iterable, List, Mapping,
-    MutableMapping, NamedTuple, Optional, Pattern, Sequence, Set, Tuple, Type, TypeVar,
-    Union, cast, no_type_check,
+    Any, Callable, ClassVar, Dict, Generator, Iterable, List, Mapping, MutableMapping,
+    NamedTuple, Optional, Pattern, Sequence, Set, Tuple, Type, TypeVar, Union, cast,
+    no_type_check,
 )
 
 import PIL.Image
@@ -44,6 +44,7 @@ from cdedb.cli.dev.json2sql import json2sql
 from cdedb.cli.storage import (
     create_storage, populate_sample_event_keepers, populate_storage,
 )
+from cdedb.cli.util import execute_sql_script
 from cdedb.common import (
     ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD, CdEDBLog, CdEDBObject,
     CdEDBObjectMap, PathLike, RequestState, merge_dicts, nearly_now, now,
@@ -57,7 +58,9 @@ from cdedb.config import SecretsConfig, TestConfig, get_configpath, set_configpa
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.application import Application
-from cdedb.frontend.common import AbstractFrontend, Worker, setup_translations
+from cdedb.frontend.common import (
+    AbstractFrontend, Worker, make_persona_name, setup_translations,
+)
 from cdedb.frontend.cron import CronFrontend
 from cdedb.frontend.paths import CDEDB_PATHS
 from cdedb.script import Script
@@ -453,7 +456,7 @@ class BackendTest(CdEDBTest):
 
         for real, exp in zip(log, log_expectation):
             if 'id' not in exp:
-                del real['id']
+                exp['id'] = real['id']
             if 'ctime' not in exp:
                 exp['ctime'] = nearly_now()
             if 'submitted_by' not in exp:
@@ -785,7 +788,7 @@ def admin_views(*views: str) -> Callable[[F], F]:
     return decorator
 
 
-def prepsql(sql: AnyStr) -> Callable[[F], F]:
+def prepsql(sql: str) -> Callable[[F], F]:
     """Decorate a test to run some arbitrary SQL-code beforehand."""
     def decorator(fun: F) -> F:
         @functools.wraps(fun)
@@ -808,19 +811,9 @@ def event_keeper(fun: F) -> F:
     return storage(fun)
 
 
-def execsql(sql: AnyStr) -> None:
+def execsql(sql: str) -> None:
     """Execute arbitrary SQL-code on the test database."""
-    conf = TestConfig()
-
-    with Script(
-        persona_id=-1,
-        dbuser="cdb",
-        dbname=conf["CDB_DATABASE_NAME"],
-        check_system_user=False,
-    ).rs().conn as conn:
-        conn.set_session(autocommit=True)
-        with conn.cursor() as curr:
-            curr.execute(sql)
+    execute_sql_script(TestConfig(), SecretsConfig(), sql)
 
 
 class FrontendTest(BackendTest):
@@ -835,7 +828,7 @@ class FrontendTest(BackendTest):
     """
     lang = "de"
     app: ClassVar[webtest.TestApp]
-    gettext: ClassVar[Callable[[str], str]]
+    gettext: "staticmethod[str]"
     do_scrap: ClassVar[bool]
     scrap_path: ClassVar[str]
     response: webtest.TestResponse
@@ -849,7 +842,7 @@ class FrontendTest(BackendTest):
     def setUpClass(cls) -> None:
         super().setUpClass()
         app = Application()
-        cls.gettext = app.translations[cls.lang].gettext
+        cls.gettext = staticmethod(app.translations[cls.lang].gettext)
         cls.app = webtest.TestApp(app, extra_environ=cls.app_extra_environ)
 
         # set `do_scrap` to True to capture a snapshot of all visited pages
@@ -1404,6 +1397,66 @@ class FrontendTest(BackendTest):
                 "{} tag with {} == {} and content \"{}\" has been found."
                 .format(tag, href_attr, element[href_attr], el_content))
 
+    def assertLogEqual(self, log_expectation: Sequence[CdEDBObject], *,
+                       realm: str = None, **kwargs: Any) -> None:
+        saved_response = self.response
+        if not realm:
+            raise RuntimeError("Need to specify realm.")
+
+        # Check raw log.
+        super().assertLogEqual(log_expectation, realm=realm, **kwargs)
+
+        persona_ids = [p_id for e in log_expectation if (p_id := e['persona_id'])]
+        personas = self.core.get_personas(self.key, persona_ids)
+        entity_key = "mailinglist_id" if realm == "ml" else f"{realm}_id"
+        entity_ids = [e_id for e in log_expectation if (e_id := e.get(entity_key))]
+        specific_log = False
+        if realm == "event":
+            entities = self.event.get_events(self.key, entity_ids)
+            if event_id := kwargs.get('event_id'):
+                specific_log = True
+                self.get(f"/event/event/{event_id}/log")
+            else:
+                self.get("/event/log")
+        elif realm == "assembly":
+            entities = self.assembly.get_assemblies(self.key, entity_ids)
+            if assembly_id := kwargs.get('assembly_id'):
+                specific_log = True
+                self.get(f"/assembly/assembly/{assembly_id}/log")
+            else:
+                self.get("/assembly/log")
+        elif realm == "ml":
+            entities = self.ml.get_mailinglists(self.key, entity_ids)
+            if ml_id := kwargs.get('mailinglist_id'):
+                self.get(f"/ml/mailinglist/{ml_id}/log")
+                specific_log = True
+            else:
+                self.get("/ml/log")
+        else:
+            self.get(f"/{realm}/log")
+            entities = {}
+
+        # Retrieve frontend log.
+        f = self.response.forms['logshowform']
+        for field_name in f.fields:
+            if v := kwargs.get(field_name):
+                f[field_name] = v
+        f['length'] = len(log_expectation)
+        self.submit(f)
+
+        # Check frontend log.
+        for i, entry in enumerate(log_expectation, start=1):
+            log_id = entry['id']
+            self.assertPresence(entry['change_note'] or "", div=f"{i}-{log_id}")
+            self.assertPresence(self.gettext(str(entry['code'])), div=f"{i}-{log_id}")
+            if entry['persona_id']:
+                name = make_persona_name(personas[entry['persona_id']])
+                self.assertPresence(name, div=f"{i}-{log_id}")
+            if (entity_id := entry.get(entity_key)) and not specific_log:
+                self.assertPresence(entities[entity_id]['title'], div=f"{i}-{log_id}")
+
+        self.response = saved_response
+
     def log_pagination(self, title: str, logs: Tuple[Tuple[int, enum.IntEnum], ...]
                        ) -> None:
         """Helper function to test the logic of the log pagination.
@@ -1511,7 +1564,7 @@ class FrontendTest(BackendTest):
         logs = all_logs[start-1:end]
         for index, log_entry in enumerate(logs, start=1):
             log_id, log_code = log_entry
-            log_code_str = self.gettext(str(log_code))  # type: ignore[call-arg, misc]
+            log_code_str = self.gettext(str(log_code))
             self.assertPresence(log_code_str, div=f"{index}-{log_id}")
 
     def check_sidebar(self, ins: Set[str], out: Set[str]) -> None:
@@ -1586,13 +1639,13 @@ class FrontendTest(BackendTest):
         _check_deleted_data()
         # 2. Find user via archived search
         self.traverse({'href': '/' + realm + '/$'})
-        self.traverse({'description': 'Archivsuche'})
-        self.assertTitle("Archivsuche")
+        self.traverse("Alle Nutzer verwalten")
+        self.assertTitle("Vollständige Nutzerverwaltung")
         f = self.response.forms['queryform']
         f['qop_given_names'] = QueryOperators.match.value
         f['qval_given_names'] = 'Zelda'
         self.submit(f)
-        self.assertTitle("Archivsuche")
+        self.assertTitle("Vollständige Nutzerverwaltung")
         self.assertPresence("Ergebnis [1]", div='query-results')
         self.assertPresence("Zeruda", div='query-result')
         self.traverse({'description': 'Profil', 'href': '/core/persona/1001/show'})

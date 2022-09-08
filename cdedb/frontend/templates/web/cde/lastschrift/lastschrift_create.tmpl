@@ -46,7 +46,7 @@
                                     placeholder=gettext("DB-XXXX-X")) }}
             <script nonce="{{ csp_nonce }}">
                 $('#input-persona_id').cdedbSearchPerson(
-                    '{{ (cdedblink('core/select_persona')|e) + ('?kind=cde_user&phrase=%s'|s) }}',
+                    '{{ cdedblink('core/select_persona') }}', {'kind' : 'cde_user'},
                     {{ []|list|tojson }}, false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                 );
             </script>

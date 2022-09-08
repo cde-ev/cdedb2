@@ -82,7 +82,7 @@
                                            anid='input-add-presiders', arialabel=gettext("IDs of the new Presiders.")) }}
                         <script nonce="{{ csp_nonce }}">
                             $('#input-add-presiders').cdedbSearchPerson(
-                                '{{ (cdedblink('core/select_persona')|e) + ('?kind=assembly_user&phrase=%s'|s) }}',
+                                '{{ cdedblink('core/select_persona') }}', {'kind' : 'assembly_user'},
                                 {{ ambience['assembly']['presiders']|list|tojson }}, false, true,
                                 "{{ gettext("ID, name, email") }}"
                             );

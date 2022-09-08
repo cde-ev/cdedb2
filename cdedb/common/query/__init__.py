@@ -148,22 +148,41 @@ class QueryScope(enum.IntEnum):
     This is used in conjunction with the `Query` class and bundles together a lot of
     constant and some dynamic things for the individual scopes.
     """
+    realm: str
+    includes_archived: bool
+
+    def __new__(cls, value: int, realm: str = "core", includes_archived: bool = False
+                ) -> "QueryScope":
+        """Custom creation method for this enum.
+
+        Achieves that value and realm of new members can be written using tuple
+        syntax. Realm defaults to "core".
+        """
+        obj = int.__new__(cls, value)
+        obj._value_ = value
+        obj.realm = realm
+        obj.includes_archived = includes_archived
+        return obj
+
     persona = 1
     core_user = 2
-    assembly_user = 3
-    cde_user = 4
-    event_user = 5
-    ml_user = 6
-    past_event_user = 7
+    assembly_user = 3, "assembly"
+    cde_user = 4, "cde"
+    event_user = 5, "event"
+    ml_user = 6, "ml"
+    past_event_user = 7, "cde"
     archived_persona = 10
-    archived_core_user = 11
-    archived_past_event_user = 12
-    cde_member = 20
-    registration = 30
-    quick_registration = 31
-    lodgement = 32
-    event_course = 33
-    past_event_course = 40
+    all_core_users = 11, "core", True
+    all_assembly_users = 12, "assembly", True
+    all_cde_users = 13, "cde", True
+    all_event_users = 14, "event", True
+    all_ml_users = 15, "ml", True
+    cde_member = 20, "cde"
+    registration = 30, "event"
+    quick_registration = 31, "event"
+    lodgement = 32, "event"
+    event_course = 33, "event"
+    past_event_course = 40, "cde"
 
     def get_view(self) -> str:
         """Return the SQL FROM target associated with this scope.
@@ -171,9 +190,7 @@ class QueryScope(enum.IntEnum):
         Supstitute for SQL views. We cannot use SQL views since they do not allow
         multiple columns with the same name, but each join brings in an id column.
         """
-        default_view = ("core.personas LEFT OUTER JOIN past_event.participants"
-                        " ON personas.id = participants.persona_id")
-        return _QUERY_VIEWS.get(self, default_view)  # type: ignore[return-value]
+        return _QUERY_VIEWS.get(self, "core.personas")
 
     def get_primary_key(self, short: bool = False) -> str:
         """Return the primary key of the view associated with the scope.
@@ -223,15 +240,40 @@ class QueryScope(enum.IntEnum):
 
     def get_target(self, *, redirect: bool = True) -> str:
         """For scopes that support storing, where to redirect to after storing."""
+        prefix = ""
         if self == QueryScope.registration:
-            realm, target = "event", "registration_query"
+            prefix, target = "query", "registration_query"
         elif self == QueryScope.lodgement:
-            realm, target = "event", "lodgement_query"
+            prefix, target = "query", "lodgement_query"
         elif self == QueryScope.event_course:
-            realm, target = "event", "course_query"
+            prefix, target = "query", "course_query"
+        elif self == QueryScope.event_user:
+            prefix, target = "user", "user_search"
+        elif self == QueryScope.all_event_users:
+            prefix, target = "user", "full_user_search"
+        elif self == QueryScope.core_user:
+            target = "user_search"
+        elif self == QueryScope.assembly_user:
+            target = "user_search"
+        elif self == QueryScope.cde_user:
+            target = "user_search"
+        elif self == QueryScope.ml_user:
+            target = "user_search"
+        elif self == QueryScope.all_core_users:
+            target = "full_user_search"
+        elif self == QueryScope.all_assembly_users:
+            target = "full_user_search"
+        elif self == QueryScope.all_cde_users:
+            target = "full_user_search"
+        elif self == QueryScope.all_ml_users:
+            target = "full_user_search"
         else:
-            realm, target = "", ""
-        return f"{realm if redirect else 'query'}/{target}"
+            prefix, target = "", ""
+        if redirect and self.realm:
+            return f"{self.realm}/{target}"
+        elif prefix:
+            return f"{prefix}/{target}"
+        return target
 
     def mangle_query_input(self, rs: RequestState, defaults: CdEDBObject = None,
                            ) -> Dict[str, str]:
@@ -275,10 +317,7 @@ class QueryScope(enum.IntEnum):
 
 # See `QueryScope.get_view().
 _QUERY_VIEWS = {
-    QueryScope.persona:
-        "core.personas",
-    QueryScope.cde_user:
-        """core.personas
+    QueryScope.cde_user: (_CDE_USER_VIEW := """core.personas
         LEFT OUTER JOIN past_event.participants
             ON personas.id = participants.persona_id
         LEFT OUTER JOIN (
@@ -292,21 +331,26 @@ _QUERY_VIEWS = {
                 FROM cde.lastschrift GROUP BY persona_id
             )
         ) AS lastschrift ON personas.id = lastschrift.persona_id
-        """,
-    QueryScope.archived_persona:
-        "core.personas",
-    QueryScope.registration:
-        None,  # This will be generated on the fly.
+        """),
+    QueryScope.all_cde_users: _CDE_USER_VIEW,
+    QueryScope.cde_member: (_PERSONAS_PAST_EVENT_VIEW := """core.personas
+        LEFT OUTER JOIN past_event.participants
+            ON personas.id = participants.persona_id
+        """),
+    QueryScope.past_event_user: _PERSONAS_PAST_EVENT_VIEW,
     QueryScope.quick_registration:
-        "core.personas INNER JOIN event.registrations"
-        " ON personas.id = registrations.persona_id",
-    QueryScope.lodgement:
-        None,  # This will be generated on the fly.
-    QueryScope.event_course:
-        None,  # This will be generated on the fly.
+        """core.personas
+        INNER JOIN event.registrations
+            ON personas.id = registrations.persona_id
+        """,
+    QueryScope.registration: "",  # This will be generated on the fly.
+    QueryScope.lodgement: "",  # This will be generated on the fly.
+    QueryScope.event_course: "",  # This will be generated on the fly.
     QueryScope.past_event_course:
-        "past_event.courses LEFT OUTER JOIN past_event.events"
-        " ON courses.pevent_id = events.id",
+        """past_event.courses
+        LEFT OUTER JOIN past_event.events
+            ON courses.pevent_id = events.id
+        """,
 }
 
 # See QueryScope.get_primary_key().
@@ -321,6 +365,7 @@ PRIMARY_KEYS = {
 
 # See QueryScope.get_spec().
 _QUERY_SPECS = {
+    # The most basic view on a persona.
     QueryScope.persona:
         {
             "personas.id": QuerySpecEntry("id", n_("ID")),
@@ -329,9 +374,12 @@ _QUERY_SPECS = {
             "username": QuerySpecEntry("str", n_("E-Mail")),
             "display_name": QuerySpecEntry("str", n_("Known as (Forename)")),
             "is_active": QuerySpecEntry("bool", n_("Active Account")),
+            "is_archived": QuerySpecEntry("bool", n_("Archived Account")),
             "notes": QuerySpecEntry("str", n_("Admin-Notes")),
             "fulltext": QuerySpecEntry("str", n_("Fulltext")),
         },
+    # More complete view of a persona. Includes most event-realm things, but not all
+    #  cde-realm things.
     QueryScope.core_user:
         {
             "personas.id": QuerySpecEntry("id", n_("ID")),
@@ -341,6 +389,7 @@ _QUERY_SPECS = {
             "display_name": QuerySpecEntry("str", n_("Known as (Forename)")),
             "birth_name": QuerySpecEntry("str", n_("Birth Name")),
             "gender": QuerySpecEntry("int", n_("Gender")),
+            "pronouns": QuerySpecEntry("str", n_("Pronouns")),
             "birthday": QuerySpecEntry("date", n_("Birthday")),
             "telephone": QuerySpecEntry("str", n_("Phone")),
             "mobile": QuerySpecEntry("str", n_("Mobile Phone")),
@@ -356,6 +405,7 @@ _QUERY_SPECS = {
             "is_cde_realm": QuerySpecEntry("bool", n_("cde_realm"), n_("Realm")),
             "is_member": QuerySpecEntry("bool", n_("CdE-Member")),
             "is_searchable": QuerySpecEntry("bool", n_("Searchable")),
+            "is_archived": QuerySpecEntry("bool", n_("Archived Account")),
             **{
                 k: QuerySpecEntry("bool", k, n_("Admin"))
                 for k in ADMIN_KEYS
@@ -366,6 +416,7 @@ _QUERY_SPECS = {
             "notes": QuerySpecEntry("str", n_("Admin-Notes")),
             "fulltext": QuerySpecEntry("str", n_("Fulltext")),
         },
+    # The most complete view on a persona. Most is only available for cde-realm users.
     QueryScope.cde_user:
         {
             "personas.id": QuerySpecEntry("id", n_("ID")),
@@ -377,6 +428,7 @@ _QUERY_SPECS = {
             "name_supplement": QuerySpecEntry("str", n_("Name Affix")),
             "birth_name": QuerySpecEntry("str", n_("Birth Name")),
             "gender": QuerySpecEntry("int", n_("Gender")),
+            "pronouns": QuerySpecEntry("str", n_("Pronouns")),
             "birthday": QuerySpecEntry("date", n_("Birthday")),
             "telephone": QuerySpecEntry("str", n_("Phone")),
             "mobile": QuerySpecEntry("str", n_("Mobile Phone")),
@@ -397,6 +449,7 @@ _QUERY_SPECS = {
             "is_searchable": QuerySpecEntry("bool", n_("Searchable")),
             "decided_search": QuerySpecEntry("bool", n_("Searchability Decided")),
             "balance": QuerySpecEntry("float", n_("Membership-Fee Balance")),
+            "is_archived": QuerySpecEntry("bool", n_("Archived Account")),
             **{
                 k: QuerySpecEntry("bool", k, n_("Admin"))
                 for k in ADMIN_KEYS
@@ -419,6 +472,7 @@ _QUERY_SPECS = {
             "lastschrift.amount": QuerySpecEntry("float", n_("Lastschrift Amount")),
             "notes": QuerySpecEntry("str", n_("Admin-Notes")),
         },
+    # Basic view of an event-realm user.
     QueryScope.event_user:
         {
             "personas.id": QuerySpecEntry("id", n_("ID")),
@@ -429,6 +483,7 @@ _QUERY_SPECS = {
             "title": QuerySpecEntry("str", n_("Title_[[of a persona]]")),
             "name_supplement": QuerySpecEntry("str", n_("Name Affix")),
             "gender": QuerySpecEntry("int", n_("Gender")),
+            "pronouns": QuerySpecEntry("str", n_("Pronouns")),
             "birthday": QuerySpecEntry("date", n_("Birthday")),
             "telephone": QuerySpecEntry("str", n_("Phone")),
             "mobile": QuerySpecEntry("str", n_("Mobile Phone")),
@@ -438,6 +493,7 @@ _QUERY_SPECS = {
             "location": QuerySpecEntry("str", n_("City")),
             "country": QuerySpecEntry("str", n_("Country")),
             "is_active": QuerySpecEntry("bool", n_("Active Account")),
+            "is_archived": QuerySpecEntry("bool", n_("Archived Account")),
             "is_member": QuerySpecEntry("bool", n_("CdE-Member")),
             "is_searchable": QuerySpecEntry("bool", n_("Searchable")),
             **{
@@ -449,68 +505,7 @@ _QUERY_SPECS = {
             "pcourse_id": QuerySpecEntry("id", n_("Past Course")),
             "notes": QuerySpecEntry("str", n_("Admin-Notes")),
         },
-    QueryScope.past_event_user:
-        {
-            "personas.id": QuerySpecEntry("id", n_("ID")),
-            "given_names": QuerySpecEntry("str", n_("Given Names")),
-            "family_name": QuerySpecEntry("str", n_("Family Name")),
-            "username": QuerySpecEntry("str", n_("E-Mail")),
-            "display_name": QuerySpecEntry("str", n_("Known as (Forename)")),
-            "birth_name": QuerySpecEntry("str", n_("Birth Name")),
-            "title": QuerySpecEntry("str", n_("Title_[[of a persona]]")),
-            "name_supplement": QuerySpecEntry("str", n_("Name Affix")),
-            "birthday": QuerySpecEntry("date", n_("Birthday")),
-            "telephone": QuerySpecEntry("str", n_("Phone")),
-            "mobile": QuerySpecEntry("str", n_("Mobile Phone")),
-            "address": QuerySpecEntry("str", n_("Address")),
-            "address_supplement": QuerySpecEntry("str", n_("Address Supplement")),
-            "postal_code": QuerySpecEntry("str", n_("ZIP")),
-            "location": QuerySpecEntry("str", n_("City")),
-            "country": QuerySpecEntry("str", n_("Country")),
-            "is_cde_realm": QuerySpecEntry("bool", n_("cde_realm"), n_("Realm")),
-            "pevent_id": QuerySpecEntry("id", n_("Past Event")),
-            "pcourse_id": QuerySpecEntry("id", n_("Past Course")),
-            "notes": QuerySpecEntry("str", n_("Admin-Notes")),
-        },
-    QueryScope.archived_persona:
-        {
-            "personas.id": QuerySpecEntry("id", n_("ID")),
-            "given_names": QuerySpecEntry("str", n_("Given Names")),
-            "family_name": QuerySpecEntry("str", n_("Family Name")),
-            "display_name": QuerySpecEntry("str", n_("Known as (Forename)")),
-            "notes": QuerySpecEntry("str", n_("Admin-Notes")),
-        },
-    QueryScope.archived_core_user:
-        {
-            "personas.id": QuerySpecEntry("id", n_("ID")),
-            "given_names": QuerySpecEntry("str", n_("Given Names")),
-            "family_name": QuerySpecEntry("str", n_("Family Name")),
-            "display_name": QuerySpecEntry("str", n_("Known as (Forename)")),
-            "birth_name": QuerySpecEntry("str", n_("Birth Name")),
-            "gender": QuerySpecEntry("int", n_("Gender")),
-            "birthday": QuerySpecEntry("date", n_("Birthday")),
-            "is_ml_realm": QuerySpecEntry("bool", n_("Mailinglists"), n_("Realm")),
-            "is_event_realm": QuerySpecEntry("bool", n_("Events"), n_("Realm")),
-            "is_assembly_realm": QuerySpecEntry("bool", n_("Assemblies"), n_("Realm")),
-            "is_cde_realm": QuerySpecEntry("bool", n_("cde_realm"), n_("Realm")),
-            "pevent_id": QuerySpecEntry("id", n_("Past Event")),
-            "pcourse_id": QuerySpecEntry("id", n_("Past Course")),
-            "notes": QuerySpecEntry("str", n_("Admin-Notes")),
-        },
-    QueryScope.archived_past_event_user:
-        {
-            "personas.id": QuerySpecEntry("id", n_("ID")),
-            "given_names": QuerySpecEntry("str", n_("Given Names")),
-            "family_name": QuerySpecEntry("str", n_("Family Name")),
-            "display_name": QuerySpecEntry("str", n_("Known as (Forename)")),
-            "birth_name": QuerySpecEntry("str", n_("Birth Name")),
-            "gender": QuerySpecEntry("int", n_("Gender")),
-            "birthday": QuerySpecEntry("date", n_("Birthday")),
-            "is_cde_realm": QuerySpecEntry("bool", n_("cde_realm"), n_("Realm")),
-            "pevent_id": QuerySpecEntry("id", n_("Past Event")),
-            "pcourse_id": QuerySpecEntry("id", n_("Past Course")),
-            "notes": QuerySpecEntry("str", n_("Admin-Notes")),
-        },
+    # Special view of a cde member for the member search.
     QueryScope.cde_member:
         {
             "personas.id": QuerySpecEntry("id", n_("ID")),
@@ -529,6 +524,7 @@ _QUERY_SPECS = {
             "pcourse_id": QuerySpecEntry("id", n_("Past Course")),
             "fulltext": QuerySpecEntry("str", n_("Fulltext")),
         },
+    # Special view on a `event.regisrations` entry for registration quicksearch.
     QueryScope.quick_registration:
         {
             "registrations.id": QuerySpecEntry("id", n_("ID")),
@@ -539,6 +535,7 @@ _QUERY_SPECS = {
             "title": QuerySpecEntry("str", n_("Title_[[of a persona]]")),
             "name_supplement": QuerySpecEntry("str", n_("Name Affix")),
         },
+    # Special view on `past_event.courses` and `past_event.events` for course search.
     QueryScope.past_event_course:
         {
             "courses.id": QuerySpecEntry("id", n_("course ID")),
@@ -553,8 +550,20 @@ _QUERY_SPECS = {
                 "date", n_("Cutoff date"), n_("Past Event")),
         },
 }
+
+# ml and assembly users contain very little data, so the basic view suffices.
 _QUERY_SPECS[QueryScope.ml_user] = _QUERY_SPECS[QueryScope.persona]
 _QUERY_SPECS[QueryScope.assembly_user] = _QUERY_SPECS[QueryScope.persona]
+
+# Past event users are event users plus implicit event users, viewed as event users.
+_QUERY_SPECS[QueryScope.past_event_user] = _QUERY_SPECS[QueryScope.event_user]
+
+# The all_<realm>_users scopes should offer the same view, with different constraints.
+_QUERY_SPECS[QueryScope.all_core_users] = _QUERY_SPECS[QueryScope.core_user]
+_QUERY_SPECS[QueryScope.all_assembly_users] = _QUERY_SPECS[QueryScope.assembly_user]
+_QUERY_SPECS[QueryScope.all_cde_users] = _QUERY_SPECS[QueryScope.cde_user]
+_QUERY_SPECS[QueryScope.all_event_users] = _QUERY_SPECS[QueryScope.event_user]
+_QUERY_SPECS[QueryScope.all_ml_users] = _QUERY_SPECS[QueryScope.ml_user]
 
 
 class QueryResultEntryFormat(enum.Enum):
@@ -841,6 +850,8 @@ def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = N
         "persona.name_supplement": QuerySpecEntry("str", n_("Name Affix")),
         # Choices for the gender will be manually set when displaying the result.
         "persona.gender": QuerySpecEntry("int", n_("Gender"), choices=None),  # type: ignore[arg-type]
+        "persona.pronouns": QuerySpecEntry("str", n_("Pronouns")),
+        "persona.pronouns_nametag": QuerySpecEntry("bool", n_("Pronouns on Nametag")),
         "persona.birthday": QuerySpecEntry("date", n_("Birthday")),
         "persona.telephone": QuerySpecEntry("str", n_("Phone")),
         "persona.mobile": QuerySpecEntry("str", n_("Mobile Phone")),

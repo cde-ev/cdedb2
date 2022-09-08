@@ -46,14 +46,18 @@ PERSONA_CDE_FIELDS = PERSONA_CORE_FIELDS + (
     "address_supplement2", "address2", "postal_code2", "location2",
     "country2", "weblink", "specialisation", "affiliation", "timeline",
     "interests", "free_form", "balance", "decided_search", "trial_member",
-    "bub_search", "foto", "paper_expuls")
+    "bub_search", "foto", "paper_expuls", "pronouns", "pronouns_nametag",
+    "pronouns_profile",
+)
 
 #: Names of columns associated to an event user. This should be a subset of
 #: :py:data:`PERSONA_CDE_FIELDS` to facilitate upgrading of event users to
 #: members.
 PERSONA_EVENT_FIELDS = PERSONA_CORE_FIELDS + (
     "gender", "birthday", "telephone", "mobile", "address_supplement",
-    "address", "postal_code", "location", "country")
+    "address", "postal_code", "location", "country", "pronouns",
+    "pronouns_nametag", "pronouns_profile",
+)
 
 #: Names of columns associated to a ml user.
 PERSONA_ML_FIELDS = PERSONA_CORE_FIELDS
@@ -95,7 +99,8 @@ PERSONA_FIELDS_BY_REALM: Dict[Role, Set[str]] = {
     'assembly': set(),
     'event': {
         "gender", "birthday", "telephone", "mobile", "address_supplement",
-        "address", "postal_code", "location", "country"
+        "address", "postal_code", "location", "country", "pronouns",
+        "pronouns_nametag", "pronouns_profile",
     },
     'cde': {
         "birth_name", "weblink", "specialisation", "affiliation", "timeline",
@@ -114,7 +119,7 @@ RESTRICTED_FIELDS_BY_REALM: Dict[Role, Set[str]] = {
     'ml': set(),
     'assembly': set(),
     'event': {
-        "gender", "birthday",
+        "birthday",
     },
     'cde': {
         "is_searchable",

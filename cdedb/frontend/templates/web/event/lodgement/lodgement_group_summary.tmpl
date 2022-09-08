@@ -46,7 +46,7 @@
                                             attributes=util.drow_basename("create"), aclass='drow-indicator') }}
                                 {% else %}
                                     {{ util.input_checkbox(drow_delete(id), label=gettext("Delete"),
-                                            readonly=False, aclass='drow-indicator') }}
+                                            readonly=groups[id]['lodgement_ids']|length, aclass='drow-indicator') }}
                                 {% endif %}
                             </span>
                         </td>

@@ -379,8 +379,8 @@ class CdEBaseBackend(AbstractBackend):
                 # Promote to cde realm dependent on current realm
                 promotion: CdEDBObject = {
                     field: None for field in CDE_TRANSITION_FIELDS}
-                # The ream independent upgrades of the persona. They are applied at last
-                # to prevent unintentional overrides
+                # The realm independent upgrades of the persona.
+                # They are applied last to prevent unintentional overrides.
                 upgrades = {
                     'is_cde_realm': True,
                     'is_event_realm': True,
@@ -390,6 +390,8 @@ class CdEBaseBackend(AbstractBackend):
                     'trial_member': False,
                     'paper_expuls': True,
                     'bub_search': False,
+                    'pronouns_nametag': False,
+                    'pronouns_profile': False,
                     'id': persona_id,
                 }
                 # This applies a part of the newly imported data necessary for realm
@@ -526,27 +528,31 @@ class CdEBaseBackend(AbstractBackend):
             query.spec['is_member'] = QuerySpecEntry("bool", "")
             query.spec['is_searchable'] = QuerySpecEntry("bool", "")
             query.spec["is_archived"] = QuerySpecEntry("bool", "")
-        elif query.scope in {QueryScope.cde_user, QueryScope.archived_past_event_user}:
+        elif query.scope in {
+            QueryScope.cde_user,
+            QueryScope.past_event_user,
+            QueryScope.all_cde_users,
+        }:
             if not {'core_admin', 'cde_admin'} & rs.user.roles:
                 raise PrivilegeError(n_("Admin only."))
-            query.constraints.append(("is_cde_realm", QueryOperators.equal, True))
-            query.constraints.append(
-                ("is_archived", QueryOperators.equal,
-                 query.scope == QueryScope.archived_past_event_user))
-            query.spec['is_cde_realm'] = QuerySpecEntry("bool", "")
-            query.spec["is_archived"] = QuerySpecEntry("bool", "")
-            # Exclude users of any higher realm (implying event)
-            for realm in implying_realms('cde'):
-                query.constraints.append(
-                    ("is_{}_realm".format(realm), QueryOperators.equal, False))
-                query.spec["is_{}_realm".format(realm)] = QuerySpecEntry("bool", "")
-        elif query.scope == QueryScope.past_event_user:
-            if not self.is_admin(rs):
-                raise PrivilegeError(n_("Admin only."))
-            query.constraints.append(("is_event_realm", QueryOperators.equal, True))
-            query.constraints.append(("is_archived", QueryOperators.equal, False))
-            query.spec['is_event_realm'] = QuerySpecEntry("bool", "")
-            query.spec["is_archived"] = QuerySpecEntry("bool", "")
+
+            # Potentially restrict to non-archived users.
+            if not query.scope.includes_archived:
+                query.constraints.append(("is_archived", QueryOperators.equal, False))
+                query.spec["is_archived"] = QuerySpecEntry("bool", "")
+
+            if query.scope == QueryScope.past_event_user:
+                # Restrict to event users (or higher).
+                query.constraints.append(("is_event_realm", QueryOperators.equal, True))
+                query.spec['is_event_realm'] = QuerySpecEntry("bool", "")
+            else:
+                # Restrict to exactly cde users (not higher).
+                query.constraints.append(("is_cde_realm", QueryOperators.equal, True))
+                query.spec['is_cde_realm'] = QuerySpecEntry("bool", "")
+                for realm in implying_realms('cde'):
+                    query.constraints.append(
+                        (f"is_{realm}_realm", QueryOperators.equal, False))
+                    query.spec[f"is_{realm}_realm"] = QuerySpecEntry("bool", "")
         else:
             raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query)

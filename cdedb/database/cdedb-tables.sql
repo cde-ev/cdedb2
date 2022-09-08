@@ -7,7 +7,7 @@
 
 DROP SCHEMA IF EXISTS core CASCADE;
 CREATE SCHEMA core;
-GRANT USAGE ON SCHEMA core TO cdb_anonymous;
+GRANT USAGE ON SCHEMA core TO cdb_anonymous, cdb_ldap;
 
 -- Store all user attributes, many attributes are only meaningful if the
 -- persona has the access bit to the corresponding realm.
@@ -114,6 +114,10 @@ CREATE TABLE core.personas (
         title                   varchar DEFAULT NULL,
         -- after name
         name_supplement         varchar DEFAULT NULL,
+        -- preferred pronouns (optional)
+        pronouns                varchar DEFAULT NULL,
+        pronouns_nametag        boolean NOT NULL DEFAULT FALSE,
+        pronouns_profile        boolean NOT NULL DEFAULT FALSE,
         -- see cdedb.database.constants.Genders
         gender                  integer,
         CONSTRAINT personas_realm_gender
@@ -185,9 +189,10 @@ CREATE INDEX personas_is_ml_realm_idx ON core.personas(is_ml_realm);
 CREATE INDEX personas_is_assembly_realm_idx ON core.personas(is_assembly_realm);
 CREATE INDEX personas_is_member_idx ON core.personas(is_member);
 CREATE INDEX personas_is_searchable_idx ON core.personas(is_searchable);
-GRANT SELECT (id, username, password_hash, is_active, is_meta_admin, is_core_admin, is_cde_admin, is_finance_admin, is_event_admin, is_ml_admin, is_assembly_admin, is_cdelokal_admin, is_auditor, is_cde_realm, is_event_realm, is_ml_realm, is_assembly_realm, is_member, is_searchable, is_archived, is_purged) ON core.personas TO cdb_anonymous;
+GRANT SELECT (id, username, password_hash, is_active, is_meta_admin, is_core_admin, is_cde_admin, is_finance_admin, is_event_admin, is_ml_admin, is_assembly_admin, is_cdelokal_admin, is_auditor, is_cde_realm, is_event_realm, is_ml_realm, is_assembly_realm, is_member, is_searchable, is_archived, is_purged) ON core.personas TO cdb_anonymous, cdb_ldap;
 GRANT UPDATE (username, password_hash) ON core.personas TO cdb_persona;
 GRANT SELECT, UPDATE (display_name, given_names, family_name, title, name_supplement, gender, birthday, telephone, mobile, address_supplement, address, postal_code, location, country, fulltext) ON core.personas TO cdb_persona;
+GRANT SELECT (display_name, given_names, family_name, title, name_supplement) ON core.personas TO cdb_ldap;
 GRANT SELECT, UPDATE ON core.personas TO cdb_member; -- TODO maybe restrict notes to cdb_admin
 GRANT INSERT ON core.personas TO cdb_admin;
 GRANT SELECT, UPDATE ON core.personas_id_seq TO cdb_admin;
@@ -383,6 +388,9 @@ CREATE TABLE core.changelog (
         title                   varchar,
         name_supplement         varchar,
         gender                  integer,
+        pronouns                varchar DEFAULT NULL,
+        pronouns_nametag        boolean NOT NULL DEFAULT FALSE,
+        pronouns_profile        boolean NOT NULL DEFAULT FALSE,
         birthday                date,
         telephone               varchar,
         mobile                  varchar,
@@ -660,7 +668,7 @@ GRANT SELECT, UPDATE ON past_event.log_id_seq TO cdb_admin;
 ---
 DROP SCHEMA IF EXISTS event CASCADE;
 CREATE SCHEMA event;
-GRANT USAGE ON SCHEMA event TO cdb_persona, cdb_anonymous;
+GRANT USAGE ON SCHEMA event TO cdb_persona, cdb_anonymous, cdb_ldap;
 
 CREATE TABLE event.events (
         id                           serial PRIMARY KEY,
@@ -704,6 +712,7 @@ CREATE TABLE event.events (
         -- The references above are not yet possible, but will be added later on.
 );
 -- TODO: ADD indexes for is_visible, is_archived, etc.?
+GRANT SELECT (id, title, shortname) ON event.events TO cdb_ldap;
 GRANT SELECT, UPDATE ON event.events TO cdb_persona;
 GRANT INSERT, DELETE ON event.events TO cdb_admin;
 GRANT SELECT, UPDATE ON event.events_id_seq TO cdb_admin;
@@ -862,7 +871,7 @@ CREATE TABLE event.orgas (
 CREATE INDEX orgas_event_id_idx ON event.orgas(event_id);
 GRANT INSERT, UPDATE, DELETE ON event.orgas TO cdb_admin;
 GRANT SELECT, UPDATE ON event.orgas_id_seq TO cdb_admin;
-GRANT SELECT ON event.orgas TO cdb_anonymous;
+GRANT SELECT ON event.orgas TO cdb_anonymous, cdb_ldap;
 
 CREATE TABLE event.lodgement_groups (
         id                      serial PRIMARY KEY,
@@ -882,7 +891,7 @@ CREATE TABLE event.lodgements (
         camping_mat_capacity    integer NOT NULL DEFAULT 0,
         -- orga remarks
         notes                   varchar,
-        group_id                integer REFERENCES event.lodgement_groups(id),
+        group_id                integer NOT NULL REFERENCES event.lodgement_groups(id),
         -- additional data, customized by each orga team
         fields                  jsonb NOT NULL DEFAULT '{}'::jsonb
 );
@@ -1023,7 +1032,7 @@ GRANT DELETE ON event.log TO cdb_admin;
 ---
 DROP SCHEMA IF EXISTS assembly CASCADE;
 CREATE SCHEMA assembly;
-GRANT USAGE ON SCHEMA assembly TO cdb_persona;
+GRANT USAGE ON SCHEMA assembly TO cdb_persona, cdb_ldap;
 
 CREATE TABLE assembly.assemblies (
         id                      serial PRIMARY KEY,
@@ -1040,6 +1049,7 @@ CREATE TABLE assembly.assemblies (
         notes                   varchar
 );
 GRANT SELECT ON assembly.assemblies TO cdb_persona;
+GRANT SELECT (id, title, shortname) ON assembly.assemblies TO cdb_ldap;
 GRANT INSERT, DELETE ON assembly.assemblies TO cdb_admin;
 GRANT UPDATE ON assembly.assemblies TO cdb_member;
 GRANT SELECT, UPDATE ON assembly.assemblies_id_seq TO cdb_admin;
@@ -1051,7 +1061,7 @@ CREATE TABLE assembly.presiders (
         UNIQUE(persona_id, assembly_id)
 );
 CREATE INDEX ON assembly.presiders(assembly_id);
-GRANT SELECT ON assembly.presiders TO cdb_persona;
+GRANT SELECT ON assembly.presiders TO cdb_persona, cdb_ldap;
 GRANT INSERT, DELETE ON assembly.presiders TO cdb_admin;
 GRANT SELECT, UPDATE ON assembly.presiders_id_seq TO cdb_admin;
 
@@ -1214,7 +1224,7 @@ GRANT SELECT, UPDATE ON assembly.log_id_seq TO cdb_member;
 ---
 DROP SCHEMA IF EXISTS ml CASCADE;
 CREATE SCHEMA ml;
-GRANT USAGE ON SCHEMA ml TO cdb_persona;
+GRANT USAGE ON SCHEMA ml TO cdb_persona, cdb_ldap;
 
 CREATE TABLE ml.mailinglists (
         id                      serial PRIMARY KEY,
@@ -1254,6 +1264,7 @@ CREATE TABLE ml.mailinglists (
         -- assembly_id is not NULL if associated to an assembly
         assembly_id             integer REFERENCES assembly.assemblies(id)
 );
+GRANT SELECT (id, address, title) ON ml.mailinglists TO cdb_ldap;
 GRANT SELECT, UPDATE ON ml.mailinglists TO cdb_persona;
 GRANT INSERT, DELETE ON ml.mailinglists TO cdb_admin;
 GRANT SELECT, UPDATE ON ml.mailinglists_id_seq TO cdb_admin;
@@ -1277,6 +1288,7 @@ CREATE TABLE ml.subscription_states (
         UNIQUE (persona_id, mailinglist_id)
 );
 CREATE INDEX subscription_states_mailinglist_id_idx ON ml.subscription_states(mailinglist_id);
+GRANT SELECT ON ml.subscription_states TO cdb_ldap;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ml.subscription_states TO cdb_persona;
 GRANT SELECT, UPDATE ON ml.subscription_states_id_seq TO cdb_persona;
 
@@ -1307,6 +1319,7 @@ CREATE TABLE ml.moderators (
         UNIQUE (persona_id, mailinglist_id)
 );
 CREATE INDEX moderators_mailinglist_id_idx ON ml.moderators(mailinglist_id);
+GRANT SELECT ON ml.moderators TO cdb_ldap;
 GRANT SELECT, UPDATE, INSERT, DELETE ON ml.moderators TO cdb_persona;
 GRANT SELECT, UPDATE ON ml.moderators_id_seq TO cdb_persona;
 
