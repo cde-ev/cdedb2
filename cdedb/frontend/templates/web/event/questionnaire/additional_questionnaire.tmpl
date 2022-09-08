@@ -47,7 +47,7 @@
             {{ generic_event.print_questionnaire_entry(entry) }}
         {% endfor %}
         {% if lodgement_wishes %}
-            {% call util.bootstrap_panel(gettext("Lodgement Wishes"), aclass="panel-info", icon="home") %}
+            {% call util.bootstrap_panel(gettext("Lodgement Wishes"), aclass="panel-info", icon="home", anid="lodgement-wishes") %}
                 <div class="p">
                     {% trans link=util.href("#questionnaire_field_entry_{}".format(lodgement_wishes['field']['field_name']), label=gettext("questionnaire field")) %}
                         You can enter lodgement wishes in the respective {{ link }} in the following formats:
@@ -60,11 +60,13 @@
                     <div class="p">
                         {% trans %}
                             The following lodgement wishes were detected from your input.
+                        {% endtrans %}
+                        {% trans %}
                             If a wish is missing from this list, check that you spelled the name
-                            correctly and that they are a participant of this event.
+                            correctly and that both you and they are a participant of this event.
                         {% endtrans %}
                     </div>
-                    <ul>
+                    <ul id="lodgement-wishes-list">
                         {% for wish in lodgement_wishes['wishes'] %}
                             {% set persona_id = lodgement_wishes['registrations'][wish.wished]['persona_id'] %}
                             <li class="text-info">
@@ -72,6 +74,16 @@
                             </li>
                         {% endfor %}
                     </ul>
+                {% else %}
+                    <div class="p">
+                        {% trans %}
+                            Detected wishes will be shown here. No wishes have currently been detected.
+                        {% endtrans %}
+                        {% trans %}
+                            If a wish is missing from this list, check that you spelled the name
+                            correctly and that both you and they are a participant of this event.
+                        {% endtrans %}
+                    </div>
                 {% endif %}
                 {% if lodgement_wishes['problems'] %}
                     <div class="p">

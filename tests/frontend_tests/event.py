@@ -2377,6 +2377,42 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             # orga of this event
             self.assertPresence("akira@example.cde", div='contact-email')
 
+    @as_users("berta", "emilia")
+    def test_lodgement_wish_detection(self) -> None:
+        with self.switch_user("garcia"):
+            self.event.set_event(self.key, {
+                'id': 1,
+                'is_participant_list_visible': True,
+                'use_additional_questionnaire': True,
+            })
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Fragebogen")
+        f = self.response.forms['questionnaireform']
+        f['lodge'] = ""
+        self.submit(f)
+        self.assertPresence("Du kannst Zimmerwünsche im entsprechenden Fragebogenfeld",
+                            div="lodgement-wishes")
+        self.assertNonPresence("Folgende Unterbringungswünsche wurden aus Deiner"
+                               " Eingabe erkannt.", div="lodgement-wishes")
+        self.assertPresence("Erkannte Unterbringungswünsche werden hier angezeigt",
+                            div="lodgement-wishes")
+        self.assertPresence("Falls ein Wunsch fehlen sollte", div="lodgement-wishes")
+        f['lodge'] = """
+            Anton Armin A. Administrator, garcia@example.cde, DB-100-Y, Daniel D. Dino
+        """
+        self.submit(f)
+        self.assertPresence("Folgende Unterbringungswünsche", div="lodgement-wishes")
+        self.assertPresence("Anton Administrator", div="lodgement-wishes-list")
+        self.assertNonPresence("Garcia", div="lodgement-wishes-list")
+        self.assertPresence("Akira Abukara", div="lodgement-wishes-list")
+        self.assertNonPresence("Daniel", div="lodgement-wishes-list")
+        with self.switch_user("garcia"):
+            reg_id = unwrap(
+                self.event.list_registrations(
+                    self.key, event_id=1, persona_id=self.user['id']).keys())
+            self.event.set_registration(self.key, {'id': reg_id, 'list_consent': True})
+        self.submit(f)
+        self.assertPresence("Garcia Generalis", div="lodgement-wishes-list")
+
     @as_users("annika", "garcia")
     def test_cancellation(self) -> None:
         self.traverse({'href': '/event/$'})

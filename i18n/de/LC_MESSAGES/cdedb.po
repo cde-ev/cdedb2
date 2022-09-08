@@ -13099,7 +13099,7 @@ msgid ""
 "You can enter lodgement wishes in the respective %(link)s in the following "
 "formats:"
 msgstr ""
-"Du kanst Zimmerwünsche im entsprechenden %(link)s in einem der folgenden "
+"Du kannst Zimmerwünsche im entsprechenden %(link)s in einem der folgenden "
 "Formate angeben:"
 
 #: cdedb/frontend/templates/web/event/questionnaire/additional_questionnaire.tmpl:52
@@ -13115,14 +13115,16 @@ msgstr ""
 "Nachname, E-Mail-Adresse oder CdEDB-ID (\"DB-0000-X\")"
 
 #: cdedb/frontend/templates/web/event/questionnaire/additional_questionnaire.tmpl:61
+msgid "The following lodgement wishes were detected from your input."
+msgstr "Folgende Unterbringungswünsche wurden aus Deiner Eingabe erkannt."
+
+msgid "Detected wishes will be shown here. No wishes have currently been detected."
+msgstr "Erkannte Unterbringungswünsche werden hier angezeigt. Derzeit wurden keine Wünsche erkannt."
+
 msgid ""
-"The following lodgement wishes were detected from your input. If a wish is "
-"missing from this list, check that you spelled the name correctly and that "
-"they are a participant of this event."
+"If a wish is missing from this list, check that you spelled the name correctly and that both you and they are a participant of this event."
 msgstr ""
-"Folgende Unterbringungswünsche wurden aus deiner Eingabe erkannt. Falls ein "
-"Wunsch fehlen sollte, prüfe bitte ob Du den Namen richtig geschrieben hast "
-"und ob die Person an dieser Veranstaltung teilnimmt."
+"Falls ein Wunsch fehlen sollte, prüfe bitte ob Du den Namen richtig geschrieben hast und ob Du, sowie die Person an dieser Veranstaltung teilnehmen."
 
 #: cdedb/frontend/templates/web/event/questionnaire/additional_questionnaire.tmpl:78
 msgid "The following problems with your lodgement wishes were detected"
