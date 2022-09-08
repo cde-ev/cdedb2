@@ -158,7 +158,7 @@ class CdEParseMixin(CdEBaseFrontend):
                                 ))
                 rs.append_validation_error(p)
                 continue
-            line["id"] = i  # type: ignore[assignment]
+            line["id"] = i
             t = parse.Transaction.from_csv(line)
             t.analyze(events, get_persona)
             t.inspect()
