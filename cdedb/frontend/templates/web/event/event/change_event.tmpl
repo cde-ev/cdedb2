@@ -52,7 +52,8 @@
                                        else "")) }}
         {{ util.form_input_checkbox(name="is_participant_list_visible", label=gettext("Visibility of the Participant List"),
                                 info=gettext("If checked, a participant list containg name, email, postal code and city is "
-                                "shown to all participants.")) }}
+                                "shown to all participants. Also, if the lodge field is set (see below) and part of the "
+                                "Questionnaire, people will be shown a list of successfully detected lodgement wishes.")) }}
         {{ util.form_input_checkbox(name="is_course_assignment_visible", label=gettext("Visibility of Course Assignment"),
                                 info=gettext("If checked, the course assignment is shown to the participants. "
                                 "In particular, it is shown to each participant on the registration status and on the "
@@ -86,12 +87,12 @@
         <h4 class="heading-underline">{% trans %}Special Purpose Custom Fields{% endtrans %}</h4>
         {{ util.form_input_select(name="lodge_field", label=gettext("Field for Rooming Preferences"), entries=lodge_fields,
                                   nulloption=nbsp, info=gettext("The custom field in which the participants’ "
-                                  "rooming preferences will be saved. It is used for the PDF lodgement puzzle "
-                                  "download. Fieldtype: Text")) }}
+                                  "rooming preferences will be saved. It is used for the automatic detection "
+                                  "of lodgement wishes and the lodgement graph. Fieldtype: Text")) }}
         {{ util.form_input_select(name="camping_mat_field", label=gettext("Field for Camping Mat"), entries=camping_mat_fields,
                                   nulloption=nbsp, info=gettext("The custom field in which the participants’ "
-                                  "willingness to sleep on a camping mat will be saved. It is used for the PDF "
-                                  "lodgement puzzle download. Fieldtype: Yes/No")) }}
+                                  "willingness to sleep on a camping mat will be saved. It is displayed on "
+                                  "lodgement and inhabitant pages. Fieldtype: Yes/No")) }}
         {{ util.form_input_select(name="course_room_field", label=gettext("Field for Course Room"), entries=course_room_fields,
                                   nulloption=nbsp, info=gettext("The custom field in which the course’s "
                                   "assigned course room will be saved. It is used for PDF participant lists and "
