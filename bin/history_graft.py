@@ -15,7 +15,7 @@ import copy
 import datetime
 import decimal
 import zoneinfo
-from typing import Any, Dict, List, Mapping, Optional, Sequence
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Set
 
 import psycopg2
 import psycopg2.extensions
@@ -296,7 +296,7 @@ for persona_id in persona_ids:
         if not previous:
             previous = change
             continue
-        print(" {}".format(num), end="")
+        print(" {}".format(num), end="")  # type: ignore[unreachable]
         current = change
         data = {
             'persona_id': persona_id,
@@ -427,10 +427,10 @@ for persona_id in persona_ids:
 
 # Gather information about lastschrifts
 query = "SELECT * FROM lastschrift ORDER BY erteilt ASC"
-data = query_all(cdedbxy, query, tuple())
+data = query_all(cdedbxy, query, tuple())  # type: ignore[assignment]
 LASTSCHRIFTS = collections.defaultdict(list)
 for entry in data:
-    LASTSCHRIFTS[entry['user_id']].append(entry)
+    LASTSCHRIFTS[entry['user_id']].append(entry)  # type: ignore[index]
 
 #
 # Adjust new dataset
@@ -456,7 +456,7 @@ MISSING = Missing()
 
 
 def diff_changes(new: Mapping[str, Any], old: Optional[Mapping[str, Any]]) -> Mapping[str, Any]:
-    ret = {}
+    ret: Dict[str, Any] = {}
     if old is None:
         return ret
     irrelevant_keys = {
@@ -472,7 +472,7 @@ def diff_changes(new: Mapping[str, Any], old: Optional[Mapping[str, Any]]) -> Ma
 
 
 def compare_datum(new: Mapping[str, Any], old: Mapping[str, Any],
-                  additional_suppress=set()) -> bool:
+                  additional_suppress: Set[str] = set()) -> bool:
     suppress = {
         # finicky values which undergo automatic adjustments
         'mobile', 'telephone',
@@ -540,7 +540,7 @@ with cdb as cdb_conn:
 
         old_changes = OLD_CHANGES[persona_id]
         candidate_old = 0
-        for change, previous in zip(changes, [None] + changes):
+        for change, previous in zip(changes, [None] + changes):  # type: ignore[operator]
             if change['ctime'] > MIGRATION_TIME:
                 break
             if ((change['change_note'] == 'Admin-Privilegien geändert.')):
@@ -553,7 +553,7 @@ with cdb as cdb_conn:
             while retry:
                 retry = False
                 old_change = old_changes[candidate_old]
-                old_previous = ([None] + old_changes)[candidate_old]
+                old_previous = ([None] + old_changes)[candidate_old]  # type: ignore[operator]
                 old_diff = diff_changes(old_change, old_previous)
                 if compare_datum(change, old_change) and compare_datum(diff, old_diff):
                     print(f' [{change["generation"]}->{old_change["ctime"]}]', end="")
@@ -657,8 +657,8 @@ with cdb as cdb_conn:
             if change['code'] == 20:
                 # Lastschrift
                 lastschrift = LASTSCHRIFTS[persona_id][candidate_lastschrift]
-                print(f' [{change["id"]}->{lastschrift["erteilt"]}]', end="")
-                update = {'id': change['id'], 'ctime': lastschrift['erteilt']}
+                print(f' [{change["id"]}->{lastschrift["erteilt"]}]', end="")  # type: ignore[index]
+                update = {'id': change['id'], 'ctime': lastschrift['erteilt']}  # type: ignore[index]
                 sql_update(cdb_conn, 'cde.finance_log', update)
                 candidate_lastschrift += 1
                 continue
