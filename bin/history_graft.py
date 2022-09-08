@@ -14,8 +14,8 @@ import collections
 import copy
 import datetime
 import decimal
-from typing import Sequence, List, Any, Mapping
 import zoneinfo
+from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 import psycopg2
 import psycopg2.extensions
@@ -129,7 +129,7 @@ def query_exec(sql: Any, query: str, params: Sequence[Any]) -> int:
             return cur.rowcount
 
 
-def query_one(sql: Any, query: str, params: Sequence[Any]) -> Mapping[str, Any]:
+def query_one(sql: Any, query: str, params: Sequence[Any]) -> Dict[str, Any]:
     sanitized_params = tuple(sanitize_db_input(p) for p in params)
     with sql as conn:
         with conn.cursor() as cur:
@@ -137,7 +137,7 @@ def query_one(sql: Any, query: str, params: Sequence[Any]) -> Mapping[str, Any]:
             return cur.fetchone()
 
 
-def query_all(sql: Any, query: str, params: Sequence[Any]) -> List[Mapping[str, Any]]:
+def query_all(sql: Any, query: str, params: Sequence[Any]) -> List[Dict[str, Any]]:
     sanitized_params = tuple(sanitize_db_input(p) for p in params)
     with sql as conn:
         with conn.cursor() as cur:
@@ -145,7 +145,7 @@ def query_all(sql: Any, query: str, params: Sequence[Any]) -> List[Mapping[str, 
             return list(x for x in cur.fetchall())
 
 
-def sql_update(sql: Any, table: str, data: Mapping[str, Any]) -> None:
+def sql_update(sql: Any, table: str, data: Dict[str, Any]) -> None:
     id = data.pop('id')
     keys = tuple(data.keys())
     query = "UPDATE {table} SET {setters} WHERE id = %s"
@@ -455,7 +455,7 @@ class Missing():
 MISSING = Missing()
 
 
-def diff_changes(new: Mapping[str, Any], old: Mapping[str, Any]) -> Mapping[str, Any]:
+def diff_changes(new: Mapping[str, Any], old: Optional[Mapping[str, Any]]) -> Mapping[str, Any]:
     ret = {}
     if old is None:
         return ret
