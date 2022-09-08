@@ -14,6 +14,7 @@ import collections
 import copy
 import datetime
 import decimal
+from typing import Sequence, List, Any, Mapping
 import zoneinfo
 
 import psycopg2
@@ -109,7 +110,7 @@ FIXES = {
 #
 
 
-def sanitize_db_input(obj):
+def sanitize_db_input(obj: Any) -> Any:
     if isinstance(obj, str):
         if not obj:
             return None
@@ -120,7 +121,7 @@ def sanitize_db_input(obj):
         return obj
 
 
-def query_exec(sql, query, params):
+def query_exec(sql: Any, query: str, params: Sequence[Any]) -> int:
     sanitized_params = tuple(sanitize_db_input(p) for p in params)
     with sql as conn:
         with conn.cursor() as cur:
@@ -128,7 +129,7 @@ def query_exec(sql, query, params):
             return cur.rowcount
 
 
-def query_one(sql, query, params):
+def query_one(sql: Any, query: str, params: Sequence[Any]) -> Mapping[str, Any]:
     sanitized_params = tuple(sanitize_db_input(p) for p in params)
     with sql as conn:
         with conn.cursor() as cur:
@@ -136,7 +137,7 @@ def query_one(sql, query, params):
             return cur.fetchone()
 
 
-def query_all(sql, query, params):
+def query_all(sql: Any, query: str, params: Sequence[Any]) -> List[Mapping[str, Any]]:
     sanitized_params = tuple(sanitize_db_input(p) for p in params)
     with sql as conn:
         with conn.cursor() as cur:
@@ -144,7 +145,7 @@ def query_all(sql, query, params):
             return list(x for x in cur.fetchall())
 
 
-def sql_update(sql, table, data):
+def sql_update(sql: Any, table: str, data: Mapping[str, Any]) -> None:
     id = data.pop('id')
     keys = tuple(data.keys())
     query = "UPDATE {table} SET {setters} WHERE id = %s"
@@ -440,13 +441,13 @@ MIGRATION_TIME = datetime.datetime(2019, 3, 3, 3, 3,
 
 
 class Missing():
-    def __str__(self):
+    def __str__(self: "Missing") -> str:
         return "-- MISSING --"
 
-    def __repr__(self):
+    def __repr__(self: "Missing") -> str:
         return "-- MISSING --"
 
-    def __eq__(self, o):
+    def __eq__(self: "Missing", o: Any) -> bool:
         # Nasty hack to suppress noisy errors
         return True
 
@@ -454,7 +455,7 @@ class Missing():
 MISSING = Missing()
 
 
-def diff_changes(new, old):
+def diff_changes(new: Mapping[str, Any], old: Mapping[str, Any]) -> Mapping[str, Any]:
     ret = {}
     if old is None:
         return ret
@@ -470,7 +471,8 @@ def diff_changes(new, old):
     return ret
 
 
-def compare_datum(new, old, additional_suppress=set()):
+def compare_datum(new: Mapping[str, Any], old: Mapping[str, Any],
+                  additional_suppress=set()) -> bool:
     suppress = {
         # finicky values which undergo automatic adjustments
         'mobile', 'telephone',
@@ -522,7 +524,7 @@ def compare_datum(new, old, additional_suppress=set()):
 with cdb as cdb_conn:
 
     # Update new changelog
-    ARCHIVED_PERSONAS = set()
+    ARCHIVED_PERSONAS = set()  # not necessaryly still archived, just at some point in time
     NEWLY_INTRODUCED_CHANGES = collections.defaultdict(list)
     SKIPPED_CHANGES = collections.defaultdict(list)
     for persona_id in persona_ids:
