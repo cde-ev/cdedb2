@@ -249,6 +249,8 @@ class EventBaseFrontend(AbstractUserFrontend):
         courses = self.eventproxy.get_courses(rs, course_ids)
         registration_ids = self.eventproxy.list_participants(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
+        reg_counts = self.eventproxy.get_num_registrations_by_part(
+            rs, event_id, (const.RegistrationPartStati.participant,))
 
         if not part_ids:
             part_ids = rs.ambience['event']['parts'].keys()
@@ -265,7 +267,6 @@ class EventBaseFrontend(AbstractUserFrontend):
             return any(
                 reg['parts'][part_id]['status'] == participant for part_id in parts)
 
-        num_all_regs = len(registrations)
         registrations = {
             reg_id: reg for reg_id, reg in registrations.items() if check(reg)}
         personas = self.coreproxy.get_event_users(
@@ -318,7 +319,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         return {
             'courses': courses, 'registrations': registrations,
             'personas': personas, 'ordered': ordered, 'parts': parts,
-            'num_all': num_all_regs,
+            'reg_counts': reg_counts,
         }
 
     def _get_user_lodgement_wishes(self, rs: RequestState, event_id: int

@@ -443,6 +443,24 @@ class EventRegistrationBackend(EventBaseBackend):
         return {e['id']: e['persona_id'] for e in data}
 
     @access("event")
+    def get_num_registrations_by_part(self, rs: RequestState, event_id: int,
+                                      stati: Collection[const.RegistrationPartStati],
+                                      ) -> Dict[int, int]:
+        event_id = affirm(vtypes.ID, event_id)
+        stati = affirm_set(const.RegistrationPartStati, stati)
+        q = """
+            SELECT part_id, COUNT(*) AS num
+            FROM event.registration_parts rp
+            JOIN event.event_parts ep on ep.id = rp.part_id
+            WHERE ep.event_id = %s AND rp.status = ANY(%s)
+            GROUP BY part_id
+        """
+        return {
+            e['part_id']: e['num']
+            for e in self.query_all(rs, q, (event_id, stati))
+        }
+
+    @access("event")
     def get_registration_payment_info(self, rs: RequestState, event_id: int
                                       ) -> Tuple[Optional[bool], bool]:
         """Small helper to get information for the dashboard pages.
