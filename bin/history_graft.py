@@ -14,6 +14,7 @@ import collections
 import copy
 import datetime
 import decimal
+import os
 import zoneinfo
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Set
 
@@ -687,6 +688,6 @@ with cdb as cdb_conn:
             raise RuntimeError('Unconsumed changes!')
         print()
 
-    if True:
+    if os.environ.get('DO_HISTORY_GRAFT') != "1":
         # Roll back
         raise RuntimeError("Dry run")
