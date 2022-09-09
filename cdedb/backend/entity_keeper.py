@@ -175,7 +175,7 @@ class EntityKeeper:
             # In particular, this is expected for empty commits.
             return self._run(commit, check=False)
 
-    def latest_logtime(self, entity_id: int) -> datetime.datetime:
+    def latest_logtime(self, entity_id: int) -> Optional[datetime.datetime]:
         """Retrieve the ctime of the latest log entry.
 
         This is determined by the timestamp of the commit, which is set to the ctime
@@ -183,6 +183,11 @@ class EntityKeeper:
         """
         entity_id = affirm(int, entity_id)
         full_dir = self._dir / str(entity_id)
+        # This has a non-zero exit code if HEAD does not point to any commit. This is
+        # the case if there are no commits present yet.
+        if self._run(["git", "rev-parse", "HEAD"],
+                     check=False, cwd=full_dir).returncode:
+            return None
         # get the timestamp of the last commit in ISO 8601 format
         # sadly, git show does not return proper iso format, so this does not work:
         # self._run(["git", "show", "-s", "--format=%ci", "HEAD"], cwd=full_dir)

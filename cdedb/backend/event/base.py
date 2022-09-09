@@ -1069,6 +1069,8 @@ class EventBaseBackend(EventLowLevelBackend):
         """Retrieve all log entries since the last event keeper commit."""
         # TODO time_start does a <= compare to ctime, maybe need to increase timestamp
         timestamp = self._event_keeper.latest_logtime(event_id)
+        if timestamp is None:
+            return tuple()
         _, entries = self.retrieve_log(rs, event_id=event_id, time_start=timestamp)
         return entries
 
