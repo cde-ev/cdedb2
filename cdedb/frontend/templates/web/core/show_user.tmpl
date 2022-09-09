@@ -173,6 +173,11 @@
             <dt>{% trans %}Name{% endtrans %}</dt>
             <dd>
                 {{ util.persona_name(data, given_and_display_names=True, with_titles=True) }}
+                {% if data['pronouns'] and data['pronouns_profile'] %}
+                    <small class="text-muted">
+                        ({{ data['pronouns'] }})
+                    </small>
+                {% endif %}
             </dd>
             {% if data['birth_name'] %}
                 <dt>{% trans %}Birth Name{% endtrans %}</dt>

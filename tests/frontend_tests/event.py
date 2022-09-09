@@ -5,11 +5,12 @@ import copy
 import csv
 import datetime
 import decimal
+import itertools
 import json
 import re
 import tempfile
 import unittest
-from typing import Sequence
+from typing import Collection, Optional, Sequence
 
 import lxml.etree
 import segno.helpers
@@ -23,6 +24,10 @@ from cdedb.common.sorting import xsorted
 from cdedb.filter import iban_filter
 from cdedb.frontend.common import CustomCSVDialect, make_event_fee_reference
 from cdedb.frontend.event import EventFrontend
+from cdedb.frontend.event.query_stats import (
+    PART_STATISTICS, TRACK_STATISTICS, EventRegistrationInXChoiceGrouper,
+    StatisticMixin, StatisticPartMixin, StatisticTrackMixin, get_id_constraint,
+)
 from tests.common import (
     USER_DICT, FrontendTest, UserObject, as_users, event_keeper, prepsql, storage,
 )
@@ -80,14 +85,14 @@ class TestEventFrontend(FrontendTest):
         # not event admins (also orgas!)
         if self.user_in('emilia', 'martin', 'werner'):
             ins = everyone
-            out = admin | {"Nutzer verwalten", "Archivsuche"}
+            out = admin | {"Nutzer verwalten", "Alle Nutzer verwalten"}
         # core admins
         elif self.user_in('vera'):
-            ins = everyone | {"Nutzer verwalten", "Archivsuche"}
+            ins = everyone | {"Nutzer verwalten", "Alle Nutzer verwalten"}
             out = admin
         # event admins
         elif self.user_in('annika'):
-            ins = everyone | admin | {"Nutzer verwalten", "Archivsuche"}
+            ins = everyone | admin | {"Nutzer verwalten", "Alle Nutzer verwalten"}
             out = set()
         # auditors
         elif self.user_in('katarina'):
@@ -375,7 +380,7 @@ class TestEventFrontend(FrontendTest):
             "Unterkünfte", "Downloads", "Partieller Import", "Überweisungen eintragen",
             "Konfiguration", "Veranstaltungsteile", "Datenfelder konfigurieren",
             "Anmeldung konfigurieren", "Fragebogen konfigurieren",
-            "Verstöße gegen Beschränkungen", "Log", "Checkin"}
+            "Log", "Checkin"}
 
         # TODO this could be more expanded (event without courses, distinguish
         #  between registered and participant, ...
@@ -794,7 +799,6 @@ class TestEventFrontend(FrontendTest):
         self.assertNonPresence("Größere Hälfte")
 
         # check log
-        self.get('/event/event/log')
         self.assertLogEqual(log_expectation, realm="event", event_id=event_id)
 
     @as_users("garcia")
@@ -1192,15 +1196,32 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence("", div="trackrow1001_1001", check_div=False)
 
         # Check log
-        self.get('/event/event/log')
-        self.assertPresence("Veranstaltung erstellt",
-                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
-        self.assertPresence("Orga hinzugefügt",
-                            div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
-        self.assertPresence("Orga hinzugefügt",
-                            div=str(self.EVENT_LOG_OFFSET + 3) + "-1003")
-        self.assertPresence("Veranstaltungsteil erstellt",
-                            div=str(self.EVENT_LOG_OFFSET + 4) + "-1004")
+        log_expectation: list[CdEDBObject] = [
+            {
+                'code': const.EventLogCodes.event_created,
+                'event_id': 1001,
+            },
+            {
+                'code': const.EventLogCodes.orga_added,
+                'persona_id': 2,
+                'event_id': 1001,
+            },
+            {
+                'code': const.EventLogCodes.orga_added,
+                'persona_id': 7,
+                'event_id': 1001,
+            },
+            {
+                'change_note': "Universale Akademie",
+                'code': const.EventLogCodes.part_created,
+                'event_id': 1001,
+            },
+            {
+                'change_note': "Universale Akademie",
+                'code': const.EventLogCodes.lodgement_group_created,
+                'event_id': 1001,
+            }
+        ]
 
         # Create another event with course track and orga mailinglist
         self.traverse({'description': 'Veranstaltungen'},
@@ -1237,17 +1258,39 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence("", div="trackrow1002_1002", check_div=False)
 
         # Check event log
-        self.get('/event/event/log')
-        self.assertPresence("Veranstaltung erstellt",
-                            div=str(self.EVENT_LOG_OFFSET + 5) + "-1005")
-        self.assertPresence("Orga hinzugefügt",
-                            div=str(self.EVENT_LOG_OFFSET + 6) + "-1006")
-        self.assertPresence("Orga hinzugefügt",
-                            div=str(self.EVENT_LOG_OFFSET + 7) + "-1007")
-        self.assertPresence("Veranstaltungsteil erstellt",
-                            div=str(self.EVENT_LOG_OFFSET + 8) + "-1008")
-        self.assertPresence("Kursschiene hinzugefügt",
-                            div=str(self.EVENT_LOG_OFFSET + 9) + "-1009")
+        log_expectation.extend([
+            {
+                'code': const.EventLogCodes.event_created,
+                'event_id': 1002,
+            },
+            {
+                'code': const.EventLogCodes.orga_added,
+                'persona_id': 1,
+                'event_id': 1002,
+            },
+            {
+                'code': const.EventLogCodes.orga_added,
+                'persona_id': 5,
+                'event_id': 1002,
+            },
+            {
+                'change_note': "Alternative Akademie",
+                'code': const.EventLogCodes.part_created,
+                'event_id': 1002,
+            },
+            {
+                'change_note': "Alternative Akademie",
+                'code': const.EventLogCodes.track_added,
+                'event_id': 1002,
+            },
+            {
+                'change_note': "Alternative Akademie",
+                'code': const.EventLogCodes.lodgement_group_created,
+                'event_id': 1002,
+            }
+        ])
+        self.assertLogEqual(
+            log_expectation, realm="event", offset=self.EVENT_LOG_OFFSET)
 
         # Check mailinglist creation
         # first the orga list
@@ -1274,15 +1317,38 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual('AltAka', f['subject_prefix'].value)
 
         # Check ml log
-        self.get('/ml/log')
-        self.assertPresence("Mailingliste erstellt", div="1-1001")
-        self.assertPresence("Alternative Akademie Orgateam", div="1-1001")
-        self.assertPresence("Moderator hinzugefügt", div="2-1002")
-        self.assertPresence("Moderator hinzugefügt", div="3-1003")
-        self.assertPresence("Mailingliste erstellt", div="4-1004")
-        self.assertPresence("Alternative Akademie Teilnehmer", div="4-1004")
-        self.assertPresence("Moderator hinzugefügt", div="5-1005")
-        self.assertPresence("Moderator hinzugefügt", div="6-1006")
+        ml_log_expectation = [
+            {
+                'code': const.MlLogCodes.list_created,
+                'mailinglist_id': 1001,
+            },
+            {
+                'code': const.MlLogCodes.moderator_added,
+                'persona_id': 1,
+                'mailinglist_id': 1001,
+            },
+            {
+                'code': const.MlLogCodes.moderator_added,
+                'persona_id': 5,
+                'mailinglist_id': 1001,
+            },
+            {
+                'code': const.MlLogCodes.list_created,
+                'mailinglist_id': 1002,
+            },
+            {
+                'code': const.MlLogCodes.moderator_added,
+                'persona_id': 1,
+                'mailinglist_id': 1002,
+            },
+            {
+                'code': const.MlLogCodes.moderator_added,
+                'persona_id': 5,
+                'mailinglist_id': 1002,
+            },
+        ]
+        self.assertLogEqual(
+            ml_log_expectation, realm="ml", mailinglist_ids={1001, 1002})
 
     @as_users("annika", "garcia")
     def test_change_course(self) -> None:
@@ -1981,27 +2047,61 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("field_is_child2", div='feemodifierrow_4_1003')
 
         # check log
-        self.get("/event/event/log")
-        self.assertPresence("Feld hinzugefügt",
-                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
-        self.assertPresence("Feld hinzugefügt",
-                            div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
-        self.assertPresence("Feld hinzugefügt",
-                            div=str(self.EVENT_LOG_OFFSET + 3) + "-1003")
-        self.assertPresence("Beitragsmodifikator angelegt",
-                            div=str(self.EVENT_LOG_OFFSET + 4) + "-1004")
-        self.assertPresence("Feld geändert",
-                            div=str(self.EVENT_LOG_OFFSET + 5) + "-1005")
-        self.assertPresence("Feld geändert",
-                            div=str(self.EVENT_LOG_OFFSET + 6) + "-1006")
-        self.assertPresence("Beitragsmodifikator angelegt",
-                            div=str(self.EVENT_LOG_OFFSET + 7) + "-1007")
-        self.assertPresence("Beitragsmodifikator entfernt",
-                            div=str(self.EVENT_LOG_OFFSET + 8) + "-1008")
-        self.assertPresence("Beitragsmodifikator geändert",
-                            div=str(self.EVENT_LOG_OFFSET + 9) + "-1009")
-        self.assertPresence("Beitragsmodifikator angelegt",
-                            div=str(self.EVENT_LOG_OFFSET + 10) + "-1010")
+        log_expectation = [
+            {
+                'change_note': "field_is_child1",
+                'code': const.EventLogCodes.field_added,
+                'event_id': 2,
+            },
+            {
+                'change_note': "field_is_child2",
+                'code': const.EventLogCodes.field_added,
+                'event_id': 2,
+            },
+            {
+                'change_note': "field_is_child3",
+                'code': const.EventLogCodes.field_added,
+                'event_id': 2,
+            },
+            {
+                'change_note': "modifier_is_child1",
+                'code': const.EventLogCodes.fee_modifier_created,
+                'event_id': 2,
+            },
+            {
+                'change_note': "field_is_child2",
+                'code': const.EventLogCodes.field_updated,
+                'event_id': 2,
+            },
+            {
+                'change_note': "field_is_child3",
+                'code': const.EventLogCodes.field_updated,
+                'event_id': 2,
+            },
+            {
+                'change_note': "modifier_is_child2",
+                'code': const.EventLogCodes.fee_modifier_created,
+                'event_id': 2,
+            },
+            {
+                'change_note': "modifier_is_child1",
+                'code': const.EventLogCodes.fee_modifier_deleted,
+                'event_id': 2,
+            },
+            {
+                'change_note': "modifier_is_child2",
+                'code': const.EventLogCodes.fee_modifier_changed,
+                'event_id': 2,
+            },
+            {
+                'change_note': "modifier_is_child3",
+                'code': const.EventLogCodes.fee_modifier_created,
+                'event_id': 2,
+            },
+
+        ]
+        self.assertLogEqual(
+            log_expectation, realm="event", offset=self.EVENT_LOG_OFFSET)
 
     @event_keeper
     @as_users("garcia")
@@ -2919,17 +3019,14 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
     @event_keeper
     @as_users("garcia")
     def test_lodgements(self) -> None:
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/lodgement/overview'})
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Unterkünfte")
         self.assertTitle("Unterkünfte (Große Testakademie 2222)")
         self.assertPresence("Kalte Kammer")
         # Use the pager to navigate to Einzelzelle and test proper sorting
-        self.traverse("Einzelzelle", "Nächste")
-        self.traverse({'href': '/event/event/1/lodgement/4/show'})
+        self.traverse("Einzelzelle", "Nächste", "Vorherige")
         self.assertTitle("Unterkunft Einzelzelle (Große Testakademie 2222)")
         self.assertPresence("Emilia")
-        self.traverse({'href': '/event/event/1/lodgement/4/change'})
+        self.traverse("Bearbeiten")
         self.assertTitle("Unterkunft Einzelzelle bearbeiten (Große Testakademie 2222)")
         f = self.response.forms['changelodgementform']
         self.assertEqual("1", f['regular_capacity'].value)
@@ -2939,35 +3036,42 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertEqual("high", f['fields.contamination'].value)
         f['fields.contamination'] = "medium"
         self.submit(f)
-        self.traverse({'href': '/event/event/1/lodgement/4/change'})
+        self.traverse("Bearbeiten")
         self.assertTitle("Unterkunft Einzelzelle bearbeiten (Große Testakademie 2222)")
         f = self.response.forms['changelodgementform']
         self.assertEqual("3", f['regular_capacity'].value)
         self.assertEqual("neu mit Anbau", f['notes'].value)
         self.assertEqual("medium", f['fields.contamination'].value)
-        self.traverse({'href': '/event/event/1/lodgement/overview'})
-        self.traverse({'href': '/event/event/1/lodgement/3/show'})
+        self.traverse("Unterkünfte", "Kellerverlies")
         self.assertTitle("Unterkunft Kellerverlies (Große Testakademie 2222)")
         f = self.response.forms['deletelodgementform']
         self.submit(f)
         self.assertTitle("Unterkünfte (Große Testakademie 2222)")
         self.assertNonPresence("Kellerverlies")
-        self.traverse({'href': '/event/event/1/lodgement/create'})
+        self.traverse("Unterkunft anlegen")
         f = self.response.forms['createlodgementform']
         f['title'] = "Zelte"
         f['regular_capacity'] = 0
         f['camping_mat_capacity'] = 20
         f['notes'] = "oder gleich unter dem Sternenhimmel?"
         f['fields.contamination'] = "low"
+        f['group_id'] = ""
+        self.assertEqual("", f['group_id'].value)
+        f['new_group_title'] = "Draußen"
         self.submit(f)
         self.assertTitle("Unterkunft Zelte (Große Testakademie 2222)")
-        self.traverse({'description': 'Bearbeiten'})
+        self.assertPresence("Unterkunftsgruppe Draußen")
+        self.traverse("Bearbeiten")
         self.assertTitle("Unterkunft Zelte bearbeiten (Große Testakademie 2222)")
         self.assertPresence("some radiation")
         f = self.response.forms['changelodgementform']
         self.assertEqual('20', f['camping_mat_capacity'].value)
         self.assertEqual("oder gleich unter dem Sternenhimmel?",
                          f['notes'].value)
+        self.traverse("Unterkünfte", {'linkid': f"create_lodgement_in_group_{1001}"})
+        self.assertTitle("Unterkunft anlegen (Große Testakademie 2222)")
+        f = self.response.forms['createlodgementform']
+        self.assertEqual("1001", f['group_id'].value)
 
     @as_users("garcia")
     def test_lodgement_capacities(self) -> None:
@@ -2997,12 +3101,11 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("42", div="group_regular_capacity_2")
         self.assertPresence("53", div="total_regular")
 
+    @event_keeper
     @as_users("garcia")
     def test_lodgement_groups(self) -> None:
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/lodgement/overview'},
-                      {'href': '/event/event/1/lodgement/group/summary'})
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Unterkünfte",
+                      "Unterkunftsgruppen verwalten")
         self.assertTitle("Unterkunftsgruppen (Große Testakademie 2222)")
 
         # First try with invalid (empty name)
@@ -3010,7 +3113,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertEqual(f['title_1'].value, "Haupthaus")
         f['create_-1'] = True
         f['title_1'] = "Hauptgebäude"
-        f['delete_2'] = True
         self.submit(f, check_notification=False)
         self.assertTitle("Unterkunftsgruppen (Große Testakademie 2222)")
         self.assertValidationError('title_-1', "Darf nicht leer sein.")
@@ -3023,25 +3125,36 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.submit(f)
 
         # Check (non-)existence of groups in lodgement overview
-        self.traverse({'href': '/event/event/1/lodgement/overview'})
+        self.traverse("Unterkünfte")
         self.assertPresence("Hauptgebäude")
         self.assertPresence("Altes Schloss")
-        self.assertNonPresence("AußenWohnGruppe")
-        self.assertPresence("Warme Stube")
-        # Check correct unassignment of "Warme Stube"
-        self.traverse({'href': '/event/event/1/lodgement/1/change'})
-        f = self.response.forms['changelodgementform']
-        self.assertEqual(f['group_id'].value, "")
+        self.assertPresence("AußenWohnGruppe")
 
-        # Assign "Kellerverlies" to "Altes Schloss"
-        self.traverse({'href': '/event/event/1/lodgement/overview'},
-                      {'href': '/event/event/1/lodgement/3/change'})
-        f = self.response.forms['changelodgementform']
-        self.assertEqual(f['group_id'].value, "")
-        f['group_id'] = "1002"  # Should be the "Altes Schloss"
-        self.submit(f)
-        self.assertTitle("Unterkunft Kellerverlies (Große Testakademie 2222)")
+        # Move all lodgements from Hautpgebäude to Altes Schloss.
+        self.traverse({'linkid': 'move_or_delete_lodgements_in_group_1$'})
+        self.assertTitle("Verschiebe oder lösche Unterkünfte aus Hauptgebäude"
+                         " (Große Testakademie 2222)")
+        f = self.response.forms['movelodgementsform']
+        self.submit(f, value='False', button='delete_group', check_notification=False)
+        self.assertPresence("Nichts zu tun.", div='notifications')
+        f['target_group_id'] = 1002
+        self.submit(f, value='False', button='delete_group')
+        self.assertPresence("Hauptgebäude")
         self.assertPresence("Altes Schloss")
+        self.traverse("Einzelzelle")
+        self.assertPresence("Altes Schloss")
+        self.assertNonPresence("Hauptgebäude")
+        self.assertNonPresence("Haupthaus")
+
+        # Delete Sonstige with all lodgements.
+        self.traverse("Unterkünfte", {'linkid': 'move_or_delete_lodgements_in_group_3'})
+        self.assertTitle("Verschiebe oder lösche Unterkünfte aus Sonstige"
+                         " (Große Testakademie 2222)")
+        self.assertPresence("Es gibt 1 Unterkünfte in dieser Gruppe.")
+        f = self.response.forms['movelodgementsform']
+        self.submit(f, value='True', button='delete_group')
+        self.assertNonPresence("Sonstige")
+        self.assertNonPresence("Kellerverlies")
 
     @event_keeper
     @as_users("garcia")
@@ -3167,6 +3280,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
     @as_users("garcia")
     def test_stats_matches(self) -> None:
         # Create a statistic part group containing all event parts
+        event_id = 1
         self.traverse(
             "Veranstaltungen", "Große Testakademie 2222", "Veranstaltungsteile",
             "Veranstaltungsteilgruppe", "Veranstaltungsteilgruppe hinzufügen")
@@ -3189,16 +3303,123 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                       {'href': '/event/event/1/stats'}, )
         self.assertTitle("Statistik (Große Testakademie 2222)")
 
-        stats_page = self.response
+        event = self.event.get_event(self.key, event_id)
 
-        participant_stats = self.response.html.find(id="participant-stats")
-        course_stats = self.response.html.find(id="course-stats")
-        for table in [participant_stats, course_stats]:
-            for link in table.find_all("a"):
-                with self.subTest(linkid=link.attrs['id']):
+        def _test_one_stat(
+                stat: StatisticMixin,
+                *, track_id: int = 0, part_id: int = 0, part_group_id: int = 0
+        ) -> None:
+            """Only one of track_id, part_id and part_group_id should be given."""
+
+            # First retrieve the query for the given context id.
+            if track_id:
+                assert isinstance(stat, StatisticTrackMixin)
+                query = stat.get_query(event, track_id)
+            elif part_id:
+                if isinstance(stat, StatisticTrackMixin):
+                    query = stat.get_query_part(event, part_id, [-1])
+                else:
+                    query = stat.get_query(event, part_id)
+            else:
+                query = stat.get_query_part_group(event, part_group_id, [-1])
+
+            # Take special care if the query filters by id. Since we do not supply
+            #  valid ids, we cannot execute those queries.
+            if get_id_constraint(stat.id_field, [-1]) in query.constraints:
+                num = None
+            else:
+                num = len(self.event.submit_general_query(self.key, query, event_id))
+
+            link_id = stat.get_link_id(
+                track_id=track_id, part_id=part_id, part_group_id=part_group_id)
+
+            with self.subTest(link_id=link_id):
+                # Find the single link with matching id.
+                [link] = self.response.html.find_all(id=link_id)
+                # If the query is not by id, check that the result equals the link text.
+                if num is not None:
+                    self.assertEqual(int(link.text), num)
+                else:
+                    response = self.response
+                    self.get(link['href'])
+                    self.assertPresence(f"Ergebnis [{link.text}]", div="query-results")
+                    self.response = response
+
+        stat: StatisticMixin
+        part_stats: Collection[StatisticPartMixin] = tuple(
+            itertools.chain.from_iterable(PART_STATISTICS))
+        track_stats: Collection[StatisticTrackMixin] = tuple(
+            itertools.chain.from_iterable(TRACK_STATISTICS))
+
+        # Test single track stats.
+        for track_id, track in event['tracks'].items():
+            for stat in track_stats:
+                _test_one_stat(stat, track_id=track_id)
+
+        # Test single part stats.
+        for part_id, part in event['parts'].items():
+            for stat in part_stats:
+                _test_one_stat(stat, part_id=part_id)
+
+            # Skip track-based stats for parts with at most one track.
+            if len(StatisticMixin.get_track_ids(event, part_id=part_id)) <= 1:
+                continue
+            for stat in track_stats:
+                _test_one_stat(stat, part_id=part_id)
+
+        # Test single part group stats.
+        for part_group_id, part_group in event['part_groups'].items():
+            # Skip all part groups with at most one part.
+            if len(part_group['part_ids']) <= 1:
+                continue
+            for stat in part_stats:
+                _test_one_stat(stat, part_group_id=part_group_id)
+
+            if len(StatisticMixin.get_track_ids(
+                    event, part_group_id=part_group_id)) <= 1:
+                continue
+            for stat in track_stats:
+                _test_one_stat(stat, part_group_id=part_group_id)
+
+        registration_ids = self.event.list_registrations(self.key, event_id)
+        registrations = self.event.get_registrations(self.key, registration_ids)
+        grouper = EventRegistrationInXChoiceGrouper(event, registrations)
+
+        def _test_grouper_link(reg_ids: Optional[set[int]], link_id: str) -> None:
+            with self.subTest(link_id=link_id):
+                links = self.response.html.find_all(id=link_id)
+                if reg_ids is None:
+                    self.assertEqual(links, [])
+                else:
+                    [link] = links
+                    self.assertEqual(int(link.text), len(reg_ids))
+
+        for x, row in grouper:
+            for track_id, reg_ids in row['tracks'].items():
+                _test_grouper_link(reg_ids, grouper.get_link_id(x, track_id=track_id))
+            for part_id, reg_ids in row['parts'].items():
+                if len(StatisticMixin.get_track_ids(event, part_id=part_id)) <= 1:
+                    continue
+                _test_grouper_link(reg_ids, grouper.get_link_id(x, part_id=part_id))
+            for pg_id, reg_ids in row['part_groups'].items():
+                if len(StatisticMixin.get_track_ids(event, part_group_id=pg_id)) <= 1:
+                    continue
+                _test_grouper_link(reg_ids, grouper.get_link_id(x, part_group_id=pg_id))
+
+    @as_users("garcia")
+    def test_stats_links(self) -> None:
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Statistik")
+        part_stats_table = self.response.html.find(id="participant-stats")
+        track_stats_table = self.response.html.find(id="course-stats")
+
+        # Sporadically click on a few links.
+        # Do this, because they take a very long time otherwise.
+        n = 5
+        for table in (part_stats_table, track_stats_table):
+            for link in table.findAll("a")[::n]:
+                with self.subTest(clicked_link_id=link.attrs['id']):
                     self.get(link["href"])
                     self.assertPresence(f"Ergebnis [{link.text}]", div="query-results")
-        self.response = stats_page
 
     @as_users("garcia")
     def test_course_stats(self) -> None:
@@ -4014,8 +4235,11 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertNonPresence("Inga", div='track3-attendees')
 
         # Check the attendees link in the footer.
-        self.assertPresence("Kurswahlen Kursteilnehmer", div='track3-attendees')
-        self.traverse({'description': "Kursteilnehmer", 'linkid': "attendees-link-3"})
+        self.assertPresence("Alle Kurswahlen", div='track3-attendees')
+        self.assertPresence("Kursteilnehmer", div='track3-attendees')
+        self.assertPresence("In Anmeldungsliste", div='track3-attendees')
+        self.traverse({'description': "In Anmeldungsliste anzeigen",
+                       'linkid': "attendees-link-3"})
         self.assertTitle("Anmeldungen (Große Testakademie 2222)")
         self.assertPresence("Ergebnis [2]", div='query-results')
         self.assertPresence("Akira", div='result-container')
@@ -4035,11 +4259,11 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertTitle("Unterkunft Kalte Kammer (Große Testakademie 2222)")
         self.assertPresence("Inga", div='inhabitants-3')
         self.assertPresence("Garcia", div='inhabitants-3')
-        self.assertPresence("Bewohner", div='inhabitants-3')
+        self.assertPresence("In Anmeldungsliste", div='inhabitants-3')
         self.assertPresence("Garcia", div='inhabitants-1')
-        self.assertPresence("Bewohner", div='inhabitants-1')
+        self.assertPresence("In Anmeldungsliste", div='inhabitants-1')
         self.assertNonPresence("Emilia", div='inhabitants')
-        self.assertNonPresence("Bewohner", div='inhabitants-2')
+        self.assertNonPresence("In Anmeldungsliste", div='inhabitants-2')
         self.traverse("Bewohner verwalten")
         self.assertTitle("Bewohner der Unterkunft Kalte Kammer verwalten"
                          " (Große Testakademie 2222)")
@@ -4065,7 +4289,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 
         # Check inhabitants link
         self.traverse("Kalte Kammer",
-                      {'description': "Bewohner", 'linkid': "inhabitants-link-3"})
+                      {'description': "In Anmeldungsliste anzeigen",
+                       'linkid': "inhabitants-link-3"})
         self.assertTitle("Anmeldungen (Große Testakademie 2222)")
         self.assertPresence("Ergebnis [3]", div='query-results')
         self.assertPresence("Emilia", div='result-container')
@@ -4324,11 +4549,25 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.submit(f)
 
         # Check that there are logs for this event
-        self.get("/event/event/log")
-        self.assertPresence("Veranstaltungsteil geändert",
-                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
-        self.assertPresence("Große Testakademie 2222",
-                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
+        log_expectation = [
+            {
+                'change_note': "Warmup",
+                'code': const.EventLogCodes.part_changed,
+                'event_id': 1,
+            },
+            {
+                'change_note': "Erste Hälfte",
+                'code': const.EventLogCodes.part_changed,
+                'event_id': 1,
+            },
+            {
+                'change_note': "Zweite Hälfte",
+                'code': const.EventLogCodes.part_changed,
+                'event_id': 1,
+            },
+        ]
+        self.assertLogEqual(
+            log_expectation, realm="event", offset=self.EVENT_LOG_OFFSET)
 
         # Delete the event
         self.traverse("Veranstaltungen", "Große Testakademie 2222")
@@ -4339,7 +4578,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertNonPresence("Testakademie")
 
         # Check that all old logs are deleted and there is only a deletion log entry
-        self.get("/event/event/log")
         log_expectation = [
             {
                 'change_note': "Große Testakademie 2222",

@@ -31,12 +31,11 @@
             </div>
         </div>
         <div class="col-md-8">
-            {{ generic.place_default_queries("event/registration_query", default_queries) }}
+            {{ generic.place_default_queries(enums['QueryScope'].registration, default_queries) }}
         </div>
     </div>
 
     {{ generic.format_query(enums['QueryScope'].registration, spec,
-                            cdedblink('event/registration_query') + '#query-results',
                             selection_default=('persona.username', 'persona.family_name', 'persona.given_names')) }}
 
     {% if values['is_search'] %}

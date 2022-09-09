@@ -10,11 +10,12 @@ from typing import (
     Sequence, Type, TypedDict, Union, cast, overload,
 )
 
-import aiopg.connection
-from aiopg.pool import Pool
 from ldaptor.protocols.ldap.distinguishedname import DistinguishedName as DN
 from ldaptor.protocols.pureber import int2ber
 from passlib.hash import sha512_crypt
+from psycopg import AsyncCursor
+from psycopg.rows import DictRow
+from psycopg_pool import AsyncConnectionPool
 
 from cdedb.config import SecretsConfig
 from cdedb.database.constants import SubscriptionState
@@ -99,7 +100,11 @@ class LdapLeaf(TypedDict):
 
 class LDAPsqlBackend:
     """Provide the interface between ldap and database."""
-    def __init__(self, pool: Pool) -> None:
+    def __init__(self, pool: AsyncConnectionPool) -> None:
+        # notice that we also do pooling with pg_bouncer. However, since we have no
+        # concept of 'sessions' in this backend, we can not create one database
+        # connection per session. So, to avoid creating a new connection for each
+        # transaction, we utilize the psycopg connection pool for this.
         self.pool = pool
         # load the ldap schemas (and overlays) which are supported
         self.schema = self.load_schemas(
@@ -108,13 +113,8 @@ class LDAPsqlBackend:
         self._dua_pwds = {name: self.encrypt_password(pwd)
                           for name, pwd in SecretsConfig()["LDAP_DUA_PW"].items()}
 
-    async def close_pool(self) -> None:
-        """Provide a convenient shutdown method."""
-        self.pool.close()
-        await self.pool.wait_closed()
-
     @staticmethod
-    async def execute_db_query(cur: aiopg.connection.Cursor, query: str,
+    async def execute_db_query(cur: AsyncCursor[DictRow], query: str,
                                params: Sequence["DatabaseValue_s"]) -> None:
         """Perform a database query. This low-level wrapper should be used
         for all explicit database queries, mostly because it invokes
@@ -127,13 +127,15 @@ class LDAPsqlBackend:
         This doesn't return anything, but has a side-effect on ``cur``.
         """
         sanitized_params = tuple(to_db_input(p) for p in params)
-        logger.debug(f"Execute PostgreSQL query"
-                     f" {cur.mogrify(query, sanitized_params)}.")
+        # psycopg3 does server-side parameter substitution. Sadly, cur.mogrify is
+        # therefore no longer available ...
+        # logger.debug(f"Execute PostgreSQL query"
+        #              f" {cur.mogrify(query, sanitized_params)}.")
         await cur.execute(query, sanitized_params)
 
     async def query_exec(self, query: str, params: Sequence["DatabaseValue_s"]) -> int:
         """Execute a query in a safe way (inside a transaction)."""
-        async with self.pool.acquire() as conn:
+        async with self.pool.connection() as conn:
             async with conn.cursor() as cur:
                 await self.execute_db_query(cur, query, params)
                 return cur.rowcount
@@ -144,7 +146,7 @@ class LDAPsqlBackend:
 
         :returns: First result of query or None if there is none
         """
-        async with self.pool.acquire() as conn:
+        async with self.pool.connection() as conn:
             async with conn.cursor() as cur:
                 await self.execute_db_query(cur, query, params)
                 return from_db_output(await cur.fetchone())
@@ -155,7 +157,7 @@ class LDAPsqlBackend:
 
         :returns: all results of query
         """
-        async with self.pool.acquire() as conn:
+        async with self.pool.connection() as conn:
             async with conn.cursor() as cur:
                 await self.execute_db_query(cur, query, params)
                 async for x in cur:

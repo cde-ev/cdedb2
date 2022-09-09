@@ -293,7 +293,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
 
     @access("core_admin", "cde_admin")
     @REQUESTdata("download", "is_search")
-    def archived_user_search(self, rs: RequestState, download: Optional[str],
+    def full_user_search(self, rs: RequestState, download: Optional[str],
                              is_search: bool) -> Response:
         """Perform search.
 
@@ -311,9 +311,8 @@ class CdEBaseFrontend(AbstractUserFrontend):
         }
         return self.generic_user_search(
             rs, download, is_search,
-            QueryScope.archived_past_event_user, QueryScope.archived_persona,
-            self.cdeproxy.submit_general_query, choices=choices,
-            endpoint="archived_user_search")
+            QueryScope.all_cde_users, QueryScope.all_core_users,
+            self.cdeproxy.submit_general_query, choices=choices)
 
     @access("core_admin", "cde_admin")
     def create_user_form(self, rs: RequestState) -> Response:

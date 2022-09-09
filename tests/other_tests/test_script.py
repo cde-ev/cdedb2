@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 # pylint: disable=missing-module-docstring
-
 import io
+import sys
 import tempfile
+import typing
 import unittest
-from contextlib import redirect_stdout
 from pkgutil import resolve_name
 from typing import Any, Callable, ClassVar
 
 from cdedb.backend.core import CoreBackend
+from cdedb.cli.util import redirect_to_file
 from cdedb.common import unwrap
 from cdedb.config import TestConfig, get_configpath
 from cdedb.script import DryRunError, Script, ScriptAtomizer
@@ -36,19 +37,46 @@ class TestScript(unittest.TestCase):
                       dbuser="cdb_admin", check_system_user=False, **config)
 
     @staticmethod
-    def check_buffer(buffer: io.StringIO, assertion: Callable[[str, str], None],
-                     value: str) -> None:
+    def check_buffer(buffer: typing.IO[str], assertion: Callable[[str, str], None],
+                     value: str, truncate: bool = True) -> None:
         """Check the buffer's content and empty it."""
         buffer.seek(0)  # go to start of buffer
         assertion(value, buffer.read())
         buffer.seek(0)  # go back to start of buffer
-        buffer.truncate()  # cut off content after the current position -> empty buffer
+        if truncate:
+            buffer.truncate()  # cut off content after current position -> empty buffer
+
+    def test_outfile(self) -> None:
+        buffer = io.StringIO()
+        with redirect_to_file(buffer):
+            with tempfile.NamedTemporaryFile("w") as f:
+                s = self.get_script(outfile=f.name)
+                print("Not writing this to file.")
+                print("Not writing this to file either.", file=sys.stderr)
+                with s:
+                    print("Writing this to file.")
+                    print("This too!", file=sys.stderr)
+                with open(f.name, "r") as fr:
+                    self.check_buffer(
+                        fr, self.assertEqual, "Writing this to file.\nThis too!\n",
+                        truncate=False)
+
+        expectation = """Not writing this to file.
+Not writing this to file either.
+
+================================================================================
+
+Aborting Dry Run! Time taken: 0.000 seconds.
+
+"""
+        self.check_buffer(buffer, self.assertEqual, expectation)
 
     def test_rs_factory(self) -> None:
         rs_factory = self.script.rs
         self.assertTrue(callable(rs_factory))
         self.assertEqual(-1, rs_factory().user.persona_id)
         self.assertEqual(23, rs_factory(23).user.persona_id)
+        self.assertIs(rs_factory(42), rs_factory(42))
 
         with self.assertRaises(ValueError) as cm:
             Script(dbname=self.conf["CDB_DATABASE_NAME"], dbuser="cdb_admin",
@@ -71,6 +99,7 @@ class TestScript(unittest.TestCase):
         configured_script = self.get_script(SYSLOG_LEVEL=42)
         self.assertEqual(42, configured_script.config["SYSLOG_LEVEL"])
         self.assertEqual(real_configpath, get_configpath())
+        self.assertEqual(str(configured_script._tempconfig), str({"SYSLOG_LEVEL": 42}))  # pylint: disable=protected-access
 
         # check overwriting per config file
         # here, we need to set the relevant flags from the real_config manually
@@ -118,13 +147,15 @@ class TestScript(unittest.TestCase):
             backend_class = resolve_name(f"cdedb.backend.{realm}.{backend_name}")
             backendproxy = self.script.make_backend(realm, proxy=True)
             self.assertIs(backend_class, backendproxy.get_backend_class())
+            self.assertIs(backendproxy, self.script.make_backend(realm, proxy=True))
             backend = self.script.make_backend(realm, proxy=False)
             self.assertIsInstance(backend, backend_class)
+            self.assertIs(backend, self.script.make_backend(realm, proxy=False))
 
     def test_script_atomizer(self) -> None:
         rs = self.script.rs()
         buffer = io.StringIO()
-        with redirect_stdout(buffer):
+        with redirect_to_file(buffer):
             with ScriptAtomizer(rs):
                 pass
             self.check_buffer(buffer, self.assertIn,

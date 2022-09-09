@@ -56,44 +56,47 @@ class TestMlFrontend(FrontendTest):
         if self.user_in('martin'):
             ins = {"Übersicht"}
             out = {"Alle Mailinglisten", "Moderierte Mailinglisten",
-                   "Aktive Mailinglisten", "Nutzer verwalten", "Archivsuche", "Log"}
+                   "Aktive Mailinglisten", "Nutzer verwalten", "Alle Nutzer verwalten",
+                   "Log"}
         # Users with core admin privileges for some mailinglists:
         elif self.user_in('vera'):
             ins = {"Aktive Mailinglisten", "Administrierte Mailinglisten", "Log",
-                   "Nutzer verwalten", "Archivsuche"}
+                   "Nutzer verwalten", "Alle Nutzer verwalten"}
             out = {"Übersicht", "Alle Mailinglisten", "Moderierte Mailinglisten"}
         # Users with relative admin privileges for some mailinglists:
         elif self.user_in('viktor'):
             ins = {"Aktive Mailinglisten", "Administrierte Mailinglisten", "Log"}
             out = {"Übersicht", "Alle Mailinglisten", "Moderierte Mailinglisten",
-                   "Nutzer verwalten", "Archivsuche"}
+                   "Nutzer verwalten", "Alle Nutzer verwalten"}
         # Users with moderated mailinglists and relative admin privileges
         # for some mailinglists:
         elif self.user_in('annika'):
             ins = {"Aktive Mailinglisten", "Administrierte Mailinglisten",
                    "Moderierte Mailinglisten", "Log"}
-            out = {"Übersicht", "Alle Mailinglisten", "Nutzer verwalten", "Archivsuche"}
+            out = {"Übersicht", "Alle Mailinglisten", "Nutzer verwalten",
+                   "Alle Nutzer verwalten"}
         # Users with moderated mailinglists, but no admin privileges.
         elif self.user_in('berta'):
             ins = {"Aktive Mailinglisten", "Moderierte Mailinglisten", "Log"}
             out = {"Übersicht", "Administrierte Mailinglisten", "Alle Mailinglisten",
-                   "Nutzer verwalten", "Archivsuche"}
+                   "Nutzer verwalten", "Alle Nutzer verwalten"}
         # Users with full ml-admin privileges.
         elif self.user_in('nina'):
             ins = {"Aktive Mailinglisten", "Alle Mailinglisten",
-                   "Accounts verschmelzen", "Nutzer verwalten", "Archivsuche", "Log"}
+                   "Accounts verschmelzen", "Nutzer verwalten", "Alle Nutzer verwalten",
+                   "Log"}
             out = {"Übersicht", "Moderierte Mailinglisten"}
         # Users with moderated mailinglists with full ml-admin privileges.
         elif self.user_in('anton'):
             ins = {"Aktive Mailinglisten", "Alle Mailinglisten",
                    "Accounts verschmelzen", "Moderierte Mailinglisten",
-                   "Nutzer verwalten", "Archivsuche", "Log"}
+                   "Nutzer verwalten", "Alle Nutzer verwalten", "Log"}
             out = {"Übersicht"}
         # Auditors
         elif self.user_in('katarina'):
             ins = {"Übersicht", "Log"}
             out = {"Alle Mailinglisten", "Moderierte Mailinglisten",
-                   "Aktive Mailinglisten", "Nutzer verwalten", "Archivsuche"}
+                   "Aktive Mailinglisten", "Nutzer verwalten", "Alle Nutzer verwalten"}
         else:
             self.fail("Please adjust users for this tests.")
 
@@ -800,6 +803,11 @@ class TestMlFrontend(FrontendTest):
         # Check that there must be some moderators
         errormsg = "Darf nicht leer sein."
         f['moderators'] = ""
+        self.submit(f, check_notification=False)
+        self.assertValidationError("moderators", errormsg)
+        # Check that invalid DB-IDs are catched (regression test #2632)
+        errormsg = "Falsches Format."
+        f['moderators'] = "DB-1"
         self.submit(f, check_notification=False)
         self.assertValidationError("moderators", errormsg)
         # Check that you cannot add non-existing or archived moderators.

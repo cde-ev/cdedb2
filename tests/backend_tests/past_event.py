@@ -81,7 +81,11 @@ class TestPastEventBackend(BackendTest):
     @as_users("vera")
     def test_entity_past_course(self) -> None:
         pevent_id = 1
-        expectation = {1: 'Swish -- und alles ist gut', 2: 'Goethe zum Anfassen'}
+        expectation = {
+            1: 'Swish -- und alles ist gut',
+            2: 'Goethe zum Anfassen',
+            3: 'Torheiten im Zwiebelrouter',
+        }
         self.assertEqual(expectation, self.pastevent.list_past_courses(self.key))
         old_courses = self.pastevent.list_past_courses(self.key, pevent_id)
         data = {

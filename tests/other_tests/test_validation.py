@@ -752,3 +752,20 @@ class TestValidation(unittest.TestCase):
                 datetime.datetime, serialized_timestamp, ignore_warnings=False),
             timestamp
         )
+
+    def test_validation_summary(self) -> None:
+        errs = validate.ValidationSummary()
+
+        self.assertEqual(0, len(errs))
+
+        with errs:
+            raise validate.ValidationSummary(RuntimeError())
+
+        self.assertEqual(1, len(errs))
+        self.assertIsInstance(errs[0], RuntimeError)
+
+        with self.assertRaises(RuntimeError):
+            with errs:
+                raise RuntimeError
+
+        self.assertEqual(1, len(errs))

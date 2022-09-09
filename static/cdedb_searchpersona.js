@@ -31,17 +31,22 @@
      * Adds selecizes to the given DOM elements to search personas via jQuerys ajax() function and the json api at the
      * given url provided by our python code.
      *
-     * The url parameter must contain '%s' wich will be replaced by the search pattern.
+     * @param url The url of the server-side endpoint, relative to the document's location.
+     * @param params Object specifying GET-parameters to be appended to the url.
+     *               The search phrase will be added with `phrase` as key.
      * @param exclude May contain an array of (unformatted) persona ids, which will be excluded from the fetched result list.
      * @param freeform' If true, all inputs will be accepted as new option, else only well-formed DB-Ids are accepted to be
      *                  added as option.
      * @param multi If true, a list of personas seperated by ',' is produced, otherwise only a single persona can be selected
      * @param placeholder If given, this string is used as placeholder in the selectize.js control
+     * @param toggle Optionally let some url parameters depend on a checkbox. If given, this object must contain a key `toggle`,
+     *               which holds the checkbox' jquery object and it may contain arbitrary other keys to append to the url with their values.
+     *               When the checkbox is checked, values from this object take precedence over those specified via the `params` argument.
      */
-    $.fn.cdedbSearchPerson = function(url,exclude,freeform,multi,placeholder) {
+    $.fn.cdedbSearchPerson = function(url, params, exclude, freeform, multi, placeholder, toggle) {
         exclude ??= [];
         $(this).selectize({
-            'placeholder' : placeholder || '',
+            'placeholder' : placeholder || '',
             'valueField' : 'cdedb_id',
             'labelField' : 'name',
             searchField: ['name','email','id'],
@@ -71,8 +76,22 @@
             },
             load: function(query, callback) {
                 if (!query.length) return callback();
+
+                let target_url = new URL(url, document.location);
+                // no URI-encoding here, as URLSearchParams below does this internally:
+                // https://url.spec.whatwg.org/#interface-urlsearchparams
+                params['phrase'] = query;
+                if (toggle && toggle['toggle'].is(':checked')) {
+                    let new_params = $.extend({}, params, toggle);  // values from toggle take precedence
+                    delete new_params['toggle'];
+                    for (const key in new_params)
+                        target_url.searchParams.append(key, new_params[key]);
+                } else {
+                    for (const key in params)
+                        target_url.searchParams.append(key, params[key]);
+                }
                 $.ajax({
-                    url: url.replace('%s',encodeURIComponent(query)),
+                    url: target_url,
                     type: 'GET',
                     error: function() {
                         callback();
@@ -94,6 +113,12 @@
                 });
             }
         });
+        if (toggle) {  // toggling potentially changes search results
+            let selectize = $(this)[0].selectize;
+            toggle['toggle'].on('change', function () {
+                selectize.clearOptions();
+            });
+        }
         return this;
     };
 })(jQuery);

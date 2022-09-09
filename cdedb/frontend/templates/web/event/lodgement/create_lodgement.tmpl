@@ -26,8 +26,13 @@
         {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]")) }}
         {{ util.form_input_text(name="regular_capacity", label=gettext("Regular Capacity"), type="number") }}
         {{ util.form_input_text(name="camping_mat_capacity", label=gettext("Camping Mat Capacity"), type="number") }}
-        {{ util.form_input_select(name="group_id", entries=groups.items(),
-                                  label=gettext("Lodgement Group"), nulloption=nbsp, sort=True) }}
+        {% if groups|length > 1 %}
+            {{ util.form_input_select(
+                name="group_id", entries=groups.items(), label=gettext("Lodgement Group"),
+                nulloption=gettext("– create new group –"), sort=True) }}
+        {% endif %}
+        {{ util.form_input_text(name="new_group_title", label=gettext("New Lodgement Group Title"), errorname="group_id",
+                                info=gettext("Only for creating a new group.") if groups else "") }}
         {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="5") }}
 
         <h4 class="heading-underline">{% trans %}Fields{% endtrans %}</h4>
@@ -41,5 +46,16 @@
     </form>
     <script nonce="{{ csp_nonce }}">
         $('#createlodgementform').cdedbProtectChanges();
+        var group_id_input = $('#createlodgementform').find("[name='group_id']");
+        var new_group_title_input_group = $('#createlodgementform').find("[name='new_group_title']").closest(".form-group");
+        function show_hide_new_group_title() {
+            if (Boolean(group_id_input.val())===false) // Show the title input if no group is selected.
+                new_group_title_input_group.show();
+            else new_group_title_input_group.hide();
+        }
+        if (group_id_input.length) {
+            group_id_input.on("input", show_hide_new_group_title);
+            show_hide_new_group_title();
+        }
     </script>
 {% endblock %}

@@ -210,12 +210,14 @@ DEFAULT_QUERIES = {
                 (("family_name", True), ("given_names", True),
                  ("personas.id", True))),
         },
-        QueryScope.archived_persona: {
+        QueryScope.all_core_users: {
             n_("00_query_archived_persona_all"): Query(
-                QueryScope.archived_persona,
-                QueryScope.archived_persona.get_spec(),
+                QueryScope.all_core_users,
+                QueryScope.all_core_users.get_spec(),
                 ("personas.id", "given_names", "family_name", "notes"),
-                tuple(),
+                (
+                    ("is_archived", QueryOperators.equal, True),
+                ),
                 (("family_name", True), ("given_names", True),
                  ("personas.id", True))),
         },
@@ -264,3 +266,9 @@ DEFAULT_QUERIES = {
                  ("personas.id", True))),
         },
 }
+
+DEFAULT_QUERIES[QueryScope.all_assembly_users] = DEFAULT_QUERIES[
+    QueryScope.all_core_users]
+DEFAULT_QUERIES[QueryScope.all_cde_users] = DEFAULT_QUERIES[QueryScope.all_core_users]
+DEFAULT_QUERIES[QueryScope.all_event_users] = DEFAULT_QUERIES[QueryScope.all_core_users]
+DEFAULT_QUERIES[QueryScope.all_ml_users] = DEFAULT_QUERIES[QueryScope.all_core_users]

@@ -25,7 +25,7 @@ steps:
   - git checkout $DRONE_TARGET_BRANCH
   - git fetch origin $DRONE_COMMIT
   - git merge $DRONE_COMMIT || (git merge --abort && git checkout $DRONE_COMMIT)
-  - git tag --message "Git state upon which all ci steps work." ci/workdir
+  - git tag --force --message "Git state upon which all ci steps work." ci/workdir
 - name: build images
   image: docker:20.10
   volumes:
@@ -57,6 +57,7 @@ steps:
     - cdb
   environment:
     CDEDB_CONFIGPATH: tests/config/test_1.py
+    POSTGRES_PASSWORD: passwd
   commands:
     - make i18n-compile # needed for sample-data creation in evolution-trial.sh
     - python3 -m cdedb filesystem log create # TODO needed during dependencies of script.py
@@ -86,7 +87,7 @@ steps:
     - failure
     - success
   commands:
-    - make lint
+    - make --keep-going lint
 - name: testsuite-setup
   image: cdedb
   pull: never # do not try to pull image from docker hub

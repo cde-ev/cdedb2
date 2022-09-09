@@ -94,6 +94,9 @@ _DEFAULTS = {
     # port on which the database listens, preferably a pooler like pgbouncer
     "DB_PORT": 6432,
 
+    # port of the db itself, for skipping pooler during tests or deploys.
+    "DIRECT_DB_PORT": 5432,
+
     # host name where the ldap server is running
     "LDAP_HOST": "localhost",
 
@@ -306,6 +309,7 @@ _SECRECTS_DEFAULTS = {
         "cdb_persona": "abcdefghijklmnopqrstuvwxyzabcd",
         "cdb_member": "zyxwvutsrqponmlkjihgfedcbazyxw",
         "cdb_admin": "9876543210abcdefghijklmnopqrst",
+        "cdb_ldap": "1234567890zyxwvutsrqponmlkjihg",
         "cdb": "987654321098765432109876543210",  # only used for testsuite
     },
 

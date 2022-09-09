@@ -588,10 +588,10 @@ class TestPrivacyFrontend(FrontendTest):
                     self.assertTitle("403: Forbidden")
 
                 if self.user_in(*archive):
-                    self.get('/core/search/archiveduser')
-                    self.assertTitle("Archivsuche")
+                    self.get('/core/search/fulluser')
+                    self.assertTitle("Vollständige Nutzerverwaltung")
                 else:
-                    self.get('/core/search/archiveduser', status="403 FORBIDDEN")
+                    self.get('/core/search/fulluser', status="403 FORBIDDEN")
                     self.assertTitle("403: Forbidden")
 
                 if self.user_in(*(core | cde)):
@@ -622,6 +622,7 @@ class TestPrivacyFrontend(FrontendTest):
                     self.get('/assembly/search/user', status="403 FORBIDDEN")
                     self.assertTitle("403: Forbidden")
 
+            if self.user:
                 self.logout()
 
     @as_users("anton")
