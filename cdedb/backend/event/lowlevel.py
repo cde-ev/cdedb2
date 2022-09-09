@@ -23,13 +23,14 @@ from cdedb.common import (
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
     COURSE_TRACK_FIELDS, EVENT_FIELD_SPEC, EVENT_PART_FIELDS, FEE_MODIFIER_FIELDS,
-    FIELD_DEFINITION_FIELDS, PART_GROUP_FIELDS,
+    FIELD_DEFINITION_FIELDS, PART_GROUP_FIELDS, REGISTRATION_FIELDS,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.sorting import mixed_existence_sorter
 from cdedb.common.validation import (
     EVENT_FIELD_COMMON_FIELDS, parse_date, parse_datetime,
 )
+from cdedb.database.query import DatabaseValue_s
 
 
 class EventLowLevelBackend(AbstractBackend):
@@ -953,6 +954,37 @@ class EventLowLevelBackend(AbstractBackend):
             raise PrivilegeError(n_("Not privileged."))
         query = "SELECT COUNT(*) FROM event.registrations WHERE event_id = %s LIMIT 1"
         return bool(unwrap(self.query_one(rs, query, (event_id,))))
+
+    @internal
+    def _get_registration_data(self, rs: RequestState, event_id: int,
+                               registration_ids: Collection[int] = None
+                               ) -> CdEDBObjectMap:
+        """Retrieve basic registration data."""
+        query = f"""
+            SELECT {", ".join(REGISTRATION_FIELDS)}, ctime, mtime
+            FROM event.registrations
+            LEFT OUTER JOIN (
+                SELECT persona_id AS log_persona_id, MAX(ctime) AS ctime
+                FROM event.log WHERE code = %s AND event_id = %s
+                GROUP BY log_persona_id
+            ) AS ctime
+            ON event.registrations.persona_id = ctime.log_persona_id
+            LEFT OUTER JOIN (
+                SELECT persona_id AS log_persona_id, MAX(ctime) AS mtime
+                FROM event.log WHERE code = %s AND event_id = %s
+                GROUP BY log_persona_id
+            ) AS mtime
+            ON event.registrations.persona_id = mtime.log_persona_id
+            WHERE event.registrations.event_id = %s"""
+        params: list[DatabaseValue_s] = [
+            const.EventLogCodes.registration_created, event_id,
+            const.EventLogCodes.registration_changed, event_id, event_id,
+        ]
+        if registration_ids is not None:
+            query += " AND event.registrations.id = ANY(%s)"
+            params.append(registration_ids)
+        rdata = self.query_all(rs, query, params)
+        return {reg['id']: reg for reg in rdata}
 
     @classmethod
     def _translate(cls, data: CdEDBObject,

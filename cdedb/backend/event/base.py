@@ -831,9 +831,7 @@ class EventBaseBackend(EventLowLevelBackend):
             lodgements = list_to_dict(self.sql_select(
                 rs, 'event.lodgements', LODGEMENT_FIELDS, (event_id,),
                 entity_key='event_id'))
-            registrations = list_to_dict(self.sql_select(
-                rs, 'event.registrations', REGISTRATION_FIELDS, (event_id,),
-                entity_key='event_id'))
+            registrations = self._get_registration_data(rs, event_id)
             registration_parts = self.sql_select(
                 rs, 'event.registration_parts',
                 REGISTRATION_PART_FIELDS, registrations.keys(),
