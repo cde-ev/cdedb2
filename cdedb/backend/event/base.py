@@ -1050,13 +1050,14 @@ class EventBaseBackend(EventLowLevelBackend):
         event_id = affirm(int, event_id)
         commit_msg = affirm(str, commit_msg)
 
-        export = self.partial_export_event(rs, event_id)
+        with Atomizer(rs):
+            export = self.partial_export_event(rs, event_id)
+            logs = self._process_event_keeper_logs(rs, event_id)
         del export['timestamp']
         author_name = author_email = ""
         if rs.user.persona_id:
             author_name = f"{rs.user.given_names} {rs.user.family_name}"
             author_email = rs.user.username
-        logs = self._process_event_keeper_logs(rs, event_id)
         may_drop = False if is_initial else not after_change
         self._event_keeper.commit(
             event_id, json_serialize(export), commit_msg, author_name, author_email,
