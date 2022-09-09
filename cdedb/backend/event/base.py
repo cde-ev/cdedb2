@@ -1083,6 +1083,9 @@ class EventBaseBackend(EventLowLevelBackend):
             timestamp = self._event_keeper.latest_logtime(event_id)
             if timestamp is None:
                 return None
+            # since retrieve_log compares timestamps inclusive, we need to increase the
+            # timestamp to not include log entries from the latest commit.
+            timestamp += datetime.timedelta(seconds=1)
             _, entries = self.retrieve_log(rs, event_id=event_id, time_start=timestamp)
             # short circuit if there are no new log entries
             if not entries:
