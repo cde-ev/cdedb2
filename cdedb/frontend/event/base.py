@@ -642,8 +642,6 @@ class EventBaseFrontend(AbstractUserFrontend):
 
         commit_msg = "Regelmäßiger Snapshot"
         for event_id in event_ids:
-            # we do the log check since creating exports is rather costly
-            if self.eventproxy.has_event_keeper_new_logs(rs, event_id):
-                self.eventproxy.event_keeper_commit(rs, event_id, commit_msg)
+            self.eventproxy.event_keeper_commit(rs, event_id, commit_msg)
 
         return state

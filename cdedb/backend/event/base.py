@@ -1020,8 +1020,11 @@ class EventBaseBackend(EventLowLevelBackend):
         """Create a new git repository for keeping track of event changes."""
         event_id = affirm(vtypes.ID, event_id)
         self._event_keeper.init(event_id)
-        return self.event_keeper_commit(rs, event_id, "Initialer Commit",
-                                        is_initial=True)
+        export = self.event_keeper_commit(rs, event_id, "Initialer Commit",
+                                          is_initial=True)
+        # since is_initial is True, a partial export will always be returned
+        assert export is not None
+        return export
 
     @access("event_admin")
     def event_keeper_drop(self, rs: RequestState, event_id: int) -> None:
@@ -1033,7 +1036,7 @@ class EventBaseBackend(EventLowLevelBackend):
     @access("event")
     def event_keeper_commit(self, rs: RequestState, event_id: int, commit_msg: str, *,
                             after_change: bool = False, is_initial: bool = False
-                            ) -> CdEDBObject:
+                            ) -> Optional[CdEDBObject]:
         """Commit the current state of the event to its git repository.
 
         In general, there are two scenarios where we want to make a new commit:
@@ -1046,40 +1049,27 @@ class EventBaseBackend(EventLowLevelBackend):
 
         :param after_change: Only true for commits taken after a relevant change.
         :param is_initial: Only true for the first commit to the event keeper.
+        :returns: The partial export or None. None may only be returned iff the commit
+            may be dropped.
         """
         event_id = affirm(int, event_id)
         commit_msg = affirm(str, commit_msg)
 
+        may_drop = False if is_initial else not after_change
         with Atomizer(rs):
-            export = self.partial_export_event(rs, event_id)
             logs = self._process_event_keeper_logs(rs, event_id)
+            if logs is None and may_drop:
+                return None
+            export = self.partial_export_event(rs, event_id)
         del export['timestamp']
         author_name = author_email = ""
         if rs.user.persona_id:
             author_name = f"{rs.user.given_names} {rs.user.family_name}"
             author_email = rs.user.username
-        may_drop = False if is_initial else not after_change
         self._event_keeper.commit(
             event_id, json_serialize(export), commit_msg, author_name, author_email,
             may_drop=may_drop, logs=logs)
         return export
-
-    @internal
-    def _get_latest_event_keeper_logs(self, rs: RequestState, event_id: int
-                                      ) -> Tuple[CdEDBObject, ...]:
-        """Retrieve all log entries since the last event keeper commit."""
-        # TODO time_start does a <= compare to ctime, maybe need to increase timestamp
-        timestamp = self._event_keeper.latest_logtime(event_id)
-        if timestamp is None:
-            return tuple()
-        _, entries = self.retrieve_log(rs, event_id=event_id, time_start=timestamp)
-        return entries
-
-    @access("event")
-    def has_event_keeper_new_logs(self, rs: RequestState, event_id: int) -> bool:
-        """Are there any new log entries since the last commit?"""
-        event_id = affirm(int, event_id)
-        return bool(self._get_latest_event_keeper_logs(rs, event_id))
 
     @internal
     def _process_event_keeper_logs(self, rs: RequestState,
@@ -1090,7 +1080,10 @@ class EventBaseBackend(EventLowLevelBackend):
         log entry which was recorded by event keeper.
         """
         with Atomizer(rs):
-            entries = self._get_latest_event_keeper_logs(rs, event_id)
+            timestamp = self._event_keeper.latest_logtime(event_id)
+            if timestamp is None:
+                return None
+            _, entries = self.retrieve_log(rs, event_id=event_id, time_start=timestamp)
             # short circuit if there are no new log entries
             if not entries:
                 return None
