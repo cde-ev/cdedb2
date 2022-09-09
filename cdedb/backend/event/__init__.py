@@ -240,14 +240,14 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                 blockers = self.delete_event_blockers(rs, event_id)
 
             if not blockers:
-                # Delete non-pseudonymized event keeper only after internal work has
-                # been concluded successfully. This is inside the Atomizer to
-                # guarantee event keeper deletion if the deletion goes through.
-                self.event_keeper_drop(rs, event_id)
                 ret *= self.sql_delete_one(
                     rs, "event.events", event_id)
                 self.event_log(rs, const.EventLogCodes.event_deleted,
                                event_id=None, change_note=event["title"])
+                # Delete non-pseudonymized event keeper only after internal work has
+                # been concluded successfully. This is inside the Atomizer to
+                # guarantee event keeper deletion if the deletion goes through.
+                self.event_keeper_drop(rs, event_id)
             else:
                 raise ValueError(
                     n_("Deletion of %(type)s blocked by %(block)s."),

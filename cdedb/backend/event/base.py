@@ -55,7 +55,8 @@ class EventBaseBackend(EventLowLevelBackend):
         # define which keys of log entries will show up in commit messages
         # they are translated to german, since commit messages are always in german
         log_keys = ["Zeitstempel", "Code", "Verantwortlich", "Betroffen", "Erläuterung"]
-        self._event_keeper = EntityKeeper(self.conf, 'event_keeper', log_keys=log_keys)
+        self._event_keeper = EntityKeeper(
+            self.conf, 'event_keeper', log_keys=log_keys, log_timestamp_key="ctime")
 
     @access("event")
     def is_offline_locked(self, rs: RequestState, *, event_id: int = None,
@@ -1024,8 +1025,9 @@ class EventBaseBackend(EventLowLevelBackend):
 
     @access("event_admin")
     def event_keeper_drop(self, rs: RequestState, event_id: int) -> None:
-        """Published version of EntityKeeper.delete."""
-        self.sql_delete(rs, "event.keeper", [event_id], entity_key="event_id")
+        """Published version of EntityKeeper.delete.
+
+        :param rs: Required for access check."""
         return self._event_keeper.delete(event_id)
 
     @access("event")
@@ -1065,16 +1067,9 @@ class EventBaseBackend(EventLowLevelBackend):
     def _get_latest_event_keeper_logs(self, rs: RequestState, event_id: int
                                       ) -> Tuple[CdEDBObject, ...]:
         """Retrieve all log entries since the last event keeper commit."""
-        with Atomizer(rs):
-            latest_log_id = unwrap(self.sql_select_one(
-                rs, "event.keeper", ["log_id"], event_id, entity_key="event_id"))
-            # if we retrieve the log id for the first time for this event, the entry
-            # is not yet present, so we insert it
-            if latest_log_id is None:
-                self.sql_insert(rs, "event.keeper", {"event_id": event_id})
-                latest_log_id = 0
-            q = "SELECT * FROM event.log WHERE id > %s AND event_id = %s ORDER BY id"
-            entries = self.query_all(rs, q, (latest_log_id, event_id))
+        # TODO time_start does a <= compare to ctime, maybe need to increase timestamp
+        timestamp = self._event_keeper.latest_logtime(event_id)
+        _, entries = self.retrieve_log(rs, event_id=event_id, time_start=timestamp)
         return entries
 
     @access("event")
@@ -1096,13 +1091,6 @@ class EventBaseBackend(EventLowLevelBackend):
             # short circuit if there are no new log entries
             if not entries:
                 return None
-
-            # adjust the last event keeper log id
-            setter = {
-                'event_id': event_id,
-                'log_id': entries[-1]["id"]
-            }
-            self.sql_update(rs, "event.keeper", setter, entity_key="event_id")
 
             # retrieve additional information to pimp up the log entries
             persona_ids = (
