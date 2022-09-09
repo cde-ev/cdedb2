@@ -13122,9 +13122,9 @@ msgid "Detected wishes will be shown here. No wishes have currently been detecte
 msgstr "Erkannte Unterbringungswünsche werden hier angezeigt. Derzeit wurden keine Wünsche erkannt."
 
 msgid ""
-"If a wish is missing from this list, check that you spelled the name correctly and that both you and they are a participant of this event."
+"If a wish is missing from this list, check that you spelled the name correctly and that both you and they appear on the participant list."
 msgstr ""
-"Falls ein Wunsch fehlen sollte, prüfe bitte ob Du den Namen richtig geschrieben hast und ob Du, sowie die Person an dieser Veranstaltung teilnehmen."
+"Falls ein Wunsch fehlen sollte, prüfe bitte ob Du den Namen richtig geschrieben hast und sowohl Du, als auch die Person auf der Teilnehmerliste sichtbar sind."
 
 #: cdedb/frontend/templates/web/event/questionnaire/additional_questionnaire.tmpl:78
 msgid "The following problems with your lodgement wishes were detected"
