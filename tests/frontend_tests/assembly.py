@@ -174,19 +174,19 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         # not assembly admins
         if self.user_in("annika", "martin", "werner"):
             ins = everyone
-            out = {"Nutzer verwalten", "Archivsuche", "Log"}
+            out = {"Nutzer verwalten", "Alle Nutzer verwalten", "Log"}
         # core admins
         elif self.user_in("vera"):
-            ins = everyone | {"Nutzer verwalten", "Archivsuche"}
+            ins = everyone | {"Nutzer verwalten", "Alle Nutzer verwalten"}
             out = {"Log"}
         # assembly admins
         elif self.user_in("anton"):
-            ins = everyone | {"Nutzer verwalten", "Archivsuche", "Log"}
+            ins = everyone | {"Nutzer verwalten", "Alle Nutzer verwalten", "Log"}
             out = set()
         # auditors
         elif self.user_in("katarina"):
             ins = everyone | {"Log"}
-            out = {"Nutzer verwalten", "Archivsuche"}
+            out = {"Nutzer verwalten", "Alle Nutzer verwalten"}
         else:
             self.fail("Please adjust users for this tests.")
 
@@ -1303,12 +1303,12 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.submit(f)
         self.assertPresence("Du hast Dich enthalten.", div='status')
         f = self.response.forms['voteform']
-        self.assertEqual("e=pi=i=1=0", f['vote'].value)
+        self.assertEqual("0=1=e=i=pi", f['vote'].value)
         self.traverse("Abstimmungen", "Wahl des Innenvorstand")
         self.assertTitle("Wahl des Innenvorstand (Internationaler Kongress)")
         self.submit(self.response.forms['voteform'])
         f = self.response.forms['voteform']
-        self.assertEqual(f"Anton=Berta=Akira={ASSEMBLY_BAR_SHORTNAME}", f['vote'].value)
+        self.assertEqual(f"Akira=Anton=Berta={ASSEMBLY_BAR_SHORTNAME}", f['vote'].value)
         # invalid candidates - test validation errors
         f['vote'] = "Werner>Anton"
         self.submit(f, check_notification=False)
@@ -1469,9 +1469,10 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                     self.traverse({'description': 'Abstimmungen'},
                                   {'description': bdata['title']},
                                   {'description': 'Ergebnisdetails'})
-                    self.assertPresence("Du hast für die folgenden Kandidaten "
-                                        "gestimmt: Arthur Dent = Ford Prefect",
-                                        div='own-vote', exact=True)
+                    self.assertPresence(
+                        "Du hast für die folgenden Kandidaten "
+                        "gestimmt: Arthur Dent = Ford Prefect",
+                        div='own-vote', exact=True)
 
     @storage
     @as_users("werner", "inga", "kalif")

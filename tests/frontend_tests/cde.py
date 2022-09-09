@@ -145,7 +145,8 @@ class TestCdEFrontend(FrontendTest):
         member = {"Sonstiges", "Datenschutzerklärung"}
         searchable = {"CdE-Mitglied suchen"}
         cde_admin_or_member = {"Mitglieder-Statistik"}
-        cde_admin = {"Nutzer verwalten", "Archivsuche", "Organisationen verwalten"}
+        cde_admin = {"Nutzer verwalten", "Alle Nutzer verwalten",
+                     "Organisationen verwalten"}
         cde_admin_or_auditor = {"Finanz-Log", "CdE-Log", "Verg.-Veranstaltungen-Log"}
         finance_admin = {"Einzugsermächtigungen", "Kontoauszug parsen",
                          "Überweisungen eintragen", "Semesterverwaltung"}
@@ -704,6 +705,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Nutzer verwalten'})
         self.assertTitle("CdE-Nutzerverwaltung")
+        self.assertPresence('Massenaufnahme')
         f = self.response.forms['queryform']
         f['qop_address'] = QueryOperators.match.value
         f['qval_address'] = 'Garten'
@@ -898,6 +900,13 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Daten sind für andere Mitglieder sichtbar.",
                             div='searchability')
         self.assertCheckbox(True, "paper_expuls_checkbox")
+
+        # check for correct welcome mail
+        mail = self.fetch_mail_content()
+        self.assertIn("Zelda", mail)
+        self.assertIn("Ein herzliches Willkommen", mail)
+        self.assertIn("kostenlos", mail)  # trial membership
+
         link = self.fetch_link()
         self.logout()
         self.get(link)
@@ -919,8 +928,9 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("vera")
     def test_archived_user_search(self) -> None:
-        self.traverse({'href': '/cde/$'}, "Archivsuche")
-        self.assertTitle("Archivsuche")
+        self.traverse({'href': '/cde/$'}, "Alle Nutzer verwalten")
+        self.assertTitle("Vollständige Nutzerverwaltung")
+        self.assertNonPresence("Massenaufnahme")
         f = self.response.forms['queryform']
         f['qval_birthday'] = '31.12.2000'
         f['qop_birthday'] = QueryOperators.less.value
@@ -928,8 +938,17 @@ class TestCdEFrontend(FrontendTest):
             if field and field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
-        self.assertTitle("Archivsuche")
+        self.assertTitle("Vollständige Nutzerverwaltung")
         self.assertPresence("Ergebnis [2]", div='query-results')
+        self.assertNonPresence("Anton", div='query-result')
+        self.assertPresence("Hell", div='query-result')
+        self.assertPresence("Lost", div='query-result')
+
+        f['qop_is_archived'] = ""
+        f['qval_is_archived'] = ""
+        self.submit(f)
+        self.assertPresence("Ergebnis [16]", div='query-results')
+        self.assertPresence("Anton", div='query-result')
         self.assertPresence("Hell", div='query-result')
         self.assertPresence("Lost", div='query-result')
 
@@ -1068,7 +1087,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Übersicht Einzugsermächtigungen")
         # self.traverse({'href': '^/$'})
         self.admin_view_profile('berta')
-        self.assertPresence("17,50 €")
+        self.assertPresence("20,50 €")
         self.traverse({'description': 'Einzugsermächtigung'})
         f = self.response.forms['transactionrollbackform1001']
         self.submit(f)
@@ -1837,8 +1856,8 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Später zu erledigen.", div='next-semester')
 
         self.assertPresence(
-            "Derzeit haben 0 Mitglieder ein zu niedriges Guthaben "
-            "(insgesamt 0,00 €, davon 0 mit einer aktiven Einzugsermächtigung)."
+            "Derzeit haben 2 Mitglieder ein zu niedriges Guthaben "
+            "(insgesamt 6,44 €, davon 0 mit einer aktiven Einzugsermächtigung)."
             " Zusätzlich gibt es 2 Probemitglieder.", div='eject-members')
         # Check error handling for bill
         self.submit(f, check_notification=False)
@@ -1856,7 +1875,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Erledigt am", div='eject-members')
         self.assertPresence("Später zu erledigen.", div='next-semester')
 
-        self.assertPresence("Insgesamt 8 Mitglieder, 2 davon haben eine "
+        self.assertPresence("Insgesamt 6 Mitglieder, 2 davon haben eine "
                             "Probemitgliedschaft", div='balance-update')
         # Check error handling for eject
         self.submit(f, check_notification=False)
@@ -1900,8 +1919,8 @@ class TestCdEFrontend(FrontendTest):
 
         # 2.2 Remove Inactive Members
         self.assertPresence(
-            "Derzeit haben 3 Mitglieder ein zu niedriges Guthaben "
-            "(insgesamt 2,44 €, davon 0 mit einer aktiven Einzugsermächtigung)."
+            "Derzeit haben 1 Mitglieder ein zu niedriges Guthaben "
+            "(insgesamt 1,00 €, davon 0 mit einer aktiven Einzugsermächtigung)."
             " Zusätzlich gibt es 0 Probemitglieder.", div='eject-members')
 
         f = self.response.forms['ejectform']
@@ -1931,14 +1950,14 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'CdE-Log'})
         self.assertTitle("CdE-Log [1–12 von 12]")
         self.assertPresence("1 E-Mails versandt.", div="2-1002")
-        self.assertPresence("0 inaktive Mitglieder gestrichen.", div="3-1003")
+        self.assertPresence("2 inaktive Mitglieder gestrichen.", div="3-1003")
         self.assertPresence("1 Accounts archiviert.", div="4-1004")
         self.assertPresence("2 Probemitgliedschaften beendet", div="5-1005")
-        self.assertPresence("15.00 € Guthaben abgebucht.", div="5-1005")
+        self.assertPresence("16.00 € Guthaben abgebucht.", div="5-1005")
 
-        self.assertPresence("3 inaktive Mitglieder gestrichen.", div="9-1009")
+        self.assertPresence("1 inaktive Mitglieder gestrichen.", div="9-1009")
         self.assertPresence("0 Probemitgliedschaften beendet", div="11-1011")
-        self.assertPresence("12.50 € Guthaben abgebucht.", div="11-1011")
+        self.assertPresence("20.00 € Guthaben abgebucht.", div="11-1011")
 
         # Check that the weak references to all workers are dead.
         for name, ref in Worker.active_workers.items():
@@ -2217,6 +2236,11 @@ class TestCdEFrontend(FrontendTest):
         self.assertNoLink('cde/past/event/list')
         self.get("/cde/past/event/list", status=403)
         self.get("/cde/past/event/1/show", status=403)
+
+    @as_users("berta")
+    def test_past_course_counting(self) -> None:
+        self.get("/cde/past/event/4/course/3/show")
+        self.assertPresence("Keine Teilnehmer eingetragen.")
 
     @as_users("berta", "charly")
     def test_show_past_event_own_link(self) -> None:

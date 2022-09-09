@@ -167,4 +167,5 @@ def reset_config(conf: Config) -> Tuple[Config, SecretsConfig]:
 
     config_path.unlink()
     shutil.copy(sample_config_path, config_path)
+    shutil.chown(config_path, "cdedb", "cdedb")
     return Config(), SecretsConfig()

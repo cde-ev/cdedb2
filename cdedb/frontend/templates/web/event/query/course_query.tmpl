@@ -31,12 +31,11 @@
             </div>
         </div>
         <div class="col-md-8">
-            {{ generic.place_default_queries("event/course_query", default_queries) }}
+            {{ generic.place_default_queries(enums['QueryScope'].event_course, default_queries) }}
         </div>
     </div>
 
-    {{ generic.format_query(enums['QueryScope'].event_course, spec, cdedblink('event/course_query'),
-                            selection_default=selection_default) }}
+    {{ generic.format_query(enums['QueryScope'].event_course, spec, selection_default=selection_default) }}
 
     {% if values['is_search'] %}
         <h3 id="query-results">{% trans %}Result{% endtrans %} [{{ result|length }}]</h3>

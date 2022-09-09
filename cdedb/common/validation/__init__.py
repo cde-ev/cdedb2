@@ -63,6 +63,7 @@ import re
 import string
 import typing
 from enum import Enum, IntEnum
+from types import TracebackType
 from typing import (
     Callable, Iterable, Optional, Protocol, Sequence, Set, Tuple, TypeVar, Union, cast,
     get_args, get_origin, get_type_hints, overload,
@@ -134,6 +135,17 @@ class ValidationSummary(ValueError, Sequence[Exception]):
 
     def append(self, error: Exception) -> None:
         self.args = self.args + (error,)
+
+    def __enter__(self) -> None:
+        pass
+
+    def __exit__(self, exc_type: Optional[Type[Exception]],
+                 exc_val: Optional[Exception],
+                 exc_tb: Optional[TracebackType]) -> bool:
+        if isinstance(exc_val, self.__class__):
+            self.extend(exc_val)
+            return True
+        return False
 
 
 class ValidatorStorage(Dict[Type[Any], Callable[..., Any]]):
@@ -380,10 +392,8 @@ def _augment_dict_validator(
                 del tmp[field]
 
         v = None
-        try:
+        with errs:
             v = validator(tmp, argname=argname, **kwargs)
-        except ValidationSummary as e:
-            errs.extend(e)
 
         if v is not None:
             ret.update(v)
@@ -896,10 +906,8 @@ def _list_of(
     vals: List[T] = []
     errs = ValidationSummary()
     for v in val:
-        try:
+        with errs:
             vals.append(_ALL_TYPED[atype](v, argname, **kwargs))
-        except ValidationSummary as e:
-            errs.extend(e)
     if errs:
         raise errs
 
@@ -1035,6 +1043,9 @@ PERSONA_BASE_CREATION: Mapping[str, Any] = {
     'title': NoneType,
     'name_supplement': NoneType,
     'gender': NoneType,
+    'pronouns': NoneType,
+    'pronouns_nametag': bool,
+    'pronouns_profile': bool,
     'birthday': NoneType,
     'telephone': NoneType,
     'mobile': NoneType,
@@ -1066,6 +1077,9 @@ PERSONA_CDE_CREATION: Mapping[str, Any] = {
     'title': Optional[str],
     'name_supplement': Optional[str],
     'gender': const.Genders,
+    'pronouns': Optional[str],
+    'pronouns_nametag': bool,
+    'pronouns_profile': bool,
     'birthday': Birthday,
     'telephone': Optional[Phone],
     'mobile': Optional[Phone],
@@ -1097,6 +1111,9 @@ PERSONA_EVENT_CREATION: Mapping[str, Any] = {
     'title': Optional[str],
     'name_supplement': Optional[str],
     'gender': const.Genders,
+    'pronouns': Optional[str],
+    'pronouns_nametag': bool,
+    'pronouns_profile': bool,
     'birthday': Birthday,
     'telephone': Optional[Phone],
     'mobile': Optional[Phone],
@@ -1143,6 +1160,9 @@ PERSONA_COMMON_FIELDS: Mapping[str, Any] = {
     'title': Optional[str],
     'name_supplement': Optional[str],
     'gender': const.Genders,
+    'pronouns': Optional[str],
+    'pronouns_nametag': bool,
+    'pronouns_profile': bool,
     'birthday': Birthday,
     'telephone': Optional[Phone],
     'mobile': Optional[Phone],
@@ -2159,6 +2179,40 @@ EVENT_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'fields': Mapping,
 }
 
+EVENT_CREATION_OPTIONAL_FIELDS: TypeMapping = {
+    'lodgement_groups': Mapping,
+}
+
+
+def _optional_object_mapping_helper(
+    val_dict: Mapping[Any, Any], atype: Type[T], argname: str,
+    creation_only: bool, **kwargs: Any
+) -> Mapping[int, Optional[T]]:
+    """Helper to validate a `CdEDBOptionalMap` of a given type.
+
+    The map may contain positive or negative IDs. Positive IDs may be either None,
+    indicating an existing object should be deleted, or a partial dataset containing
+    changes to an existing object. Negative IDs should contain a full dataset for
+    creation of a new object.
+
+    :param creation_only: If True, only allow negative IDs.
+    """
+    ret = {}
+    errs = ValidationSummary()
+    for anid, val in val_dict.items():
+        with errs:
+            anid = _ALL_TYPED[PartialImportID](anid, argname, **kwargs)
+            creation = (anid < 0)
+            if creation_only and not creation:
+                raise ValidationSummary(ValueError(
+                    argname, n_("Only creation allowed.")))
+            val = _ALL_TYPED[Optional[atype]](val, argname, creation=creation, **kwargs)  # type: ignore[index]
+            ret[anid] = val
+
+    if errs:
+        raise errs
+    return ret
+
 
 @_add_typed_validator
 def _event(
@@ -2173,7 +2227,7 @@ def _event(
 
     if creation:
         mandatory_fields = {**EVENT_COMMON_FIELDS}
-        optional_fields = {**EVENT_OPTIONAL_FIELDS}
+        optional_fields = {**EVENT_OPTIONAL_FIELDS, **EVENT_CREATION_OPTIONAL_FIELDS}
     else:
         mandatory_fields = {'id': ID}
         optional_fields = {**EVENT_COMMON_FIELDS, **EVENT_OPTIONAL_FIELDS}
@@ -2207,41 +2261,20 @@ def _event(
         val['orgas'] = orgas
 
     if 'parts' in val:
-        newparts = {}
-        for anid, part in val['parts'].items():
-            try:
-                anid = _int(anid, 'parts', **kwargs)
-            except ValidationSummary as e:
-                errs.extend(e)
-            else:  # TODO maybe use continue instead of else or move into try block
-                creation = (anid < 0)
-                try:
-                    part = _ALL_TYPED[Optional[EventPart]](  # type: ignore[index]
-                        part, 'parts', creation=creation, **kwargs)
-                except ValidationSummary as e:
-                    errs.extend(e)
-                else:
-                    newparts[anid] = part
-        val['parts'] = newparts
+        with errs:
+            val['parts'] = _optional_object_mapping_helper(
+                val['parts'], EventPart, 'parts', creation_only=creation, **kwargs)
 
     if 'fields' in val:
-        newfields = {}
-        # TODO maybe replace all these loops with a helper function
-        for anid, field in val['fields'].items():
-            try:
-                anid = _int(anid, 'fields', **kwargs)
-            except ValidationSummary as e:
-                errs.extend(e)
-            else:
-                creation = (anid < 0)
-                try:
-                    field = _ALL_TYPED[Optional[EventField]](  # type: ignore[index]
-                        field, 'fields', creation=creation, **kwargs)
-                except ValidationSummary as e:
-                    errs.extend(e)
-                else:
-                    newfields[anid] = field
-        val['fields'] = newfields
+        with errs:
+            val['fields'] = _optional_object_mapping_helper(
+                val['fields'], EventField, 'fields', creation_only=creation, **kwargs)
+
+    if 'lodgement_groups' in val:
+        with errs:
+            val['lodgement_groups'] = _optional_object_mapping_helper(
+                val['lodgement_groups'], LodgementGroup, 'lodgement_groups',
+                creation_only=creation, nested_creation=creation, **kwargs)
 
     if errs:
         raise errs
@@ -2908,17 +2941,21 @@ LODGEMENT_GROUP_FIELDS: TypeMapping = {
 @_add_typed_validator
 def _lodgement_group(
     val: Any, argname: str = "lodgement_group", *,
-    creation: bool = False, **kwargs: Any
+    creation: bool = False, nested_creation: bool = False, **kwargs: Any
 ) -> LodgementGroup:
     """
     :param creation: If ``True`` test the data set for fitness for creation
         of a new entity.
+    :param nested_creation: If ``True`` do not require an event_id for creation,
+        because the event is being created at the same time as the group.
     """
 
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        mandatory_fields = dict(LODGEMENT_GROUP_FIELDS, event_id=ID)
+        mandatory_fields = dict(LODGEMENT_GROUP_FIELDS)
+        if not nested_creation:
+            mandatory_fields['event_id'] = ID
         optional_fields: TypeMapping = {}
     else:
         # no event_id, since the associated event should be fixed.
@@ -2934,7 +2971,7 @@ LODGEMENT_COMMON_FIELDS: Mapping[str, Any] = {
     'regular_capacity': NonNegativeInt,
     'camping_mat_capacity': NonNegativeInt,
     'notes': Optional[str],
-    'group_id': Optional[ID],
+    'group_id': ID,
 }
 
 LODGEMENT_OPTIONAL_FIELDS: TypeMapping = {
@@ -4449,22 +4486,16 @@ def _query(
 
     # spec
     for field, spec_entry in val.spec.items():
-        try:
+        with errs:
             _csv_identifier(field, "spec", **kwargs)
-        except ValidationSummary as e:
-            errs.extend(e)
 
-        try:
+        with errs:
             _printable_ascii(spec_entry.type, "spec", **kwargs)
-        except ValidationSummary as e:
-            errs.extend(e)
 
     # fields_of_interest
     for field in val.fields_of_interest:
-        try:
+        with errs:
             _csv_identifier(field, "fields_of_interest", **kwargs)
-        except ValidationSummary as e:
-            errs.extend(e)
     if not val.fields_of_interest:
         errs.append(ValueError("fields_of_interest", n_("Must not be empty.")))
 
@@ -4477,10 +4508,8 @@ def _query(
             errs.append(ValueError("constraints", msg, {"index": idx}))
             continue
 
-        try:
+        with errs:
             field = _csv_identifier(field, "constraints", **kwargs)
-        except ValidationSummary as e:
-            errs.extend(e)
 
         if field not in val.spec:
             errs.append(KeyError("constraints", n_("Invalid field.")))
@@ -4504,10 +4533,8 @@ def _query(
             validator: Callable[..., Any] = _ALL_TYPED[
                 Optional[VALIDATOR_LOOKUP[val.spec[field].type]]]  # type: ignore[index]
             for v in value:
-                try:
+                with errs:
                     validator(v, f"constraints/{field}", **kwargs)
-                except ValidationSummary as e:
-                    errs.extend(e)
         else:
             try:
                 _ALL_TYPED[

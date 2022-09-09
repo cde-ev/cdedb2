@@ -2,11 +2,12 @@
 import contextlib
 import functools
 import getpass
+import io
 import os
 import pathlib
 import pwd
 from shutil import which
-from typing import Any, Callable, Generator
+from typing import Any, Callable, Generator, Iterator, Union
 
 import click
 import psycopg2.extensions
@@ -95,7 +96,8 @@ def get_user() -> str:
 
 # TODO is the nobody hack really necessary?
 def connect(
-    config: Config, secrets: SecretsConfig, as_nobody: bool = False
+    config: Config, secrets: SecretsConfig, as_nobody: bool = False,
+    as_postgres: bool = False,
 ) -> psycopg2.extensions.connection:
     """Create a very basic database connection.
 
@@ -106,22 +108,35 @@ def connect(
     which is used for very low-level setups (like generation of sample data).
     """
 
-    if as_nobody:
-        dbname = user = "nobody"
-    else:
-        dbname = config["CDB_DATABASE_NAME"]
-        user = "cdb"
+    conn_factory = psycopg2.extensions.connection
+    curser_factory = psycopg2.extras.RealDictCursor
 
-    connection_parameters = {
-        "dbname": dbname,
-        "user": user,
-        "password": secrets["CDB_DATABASE_ROLES"][user],
-        "host": config["DB_HOST"],
-        "port": 5432,
-        "connection_factory": psycopg2.extensions.connection,
-        "cursor_factory": psycopg2.extras.RealDictCursor,
-    }
-    conn = psycopg2.connect(**connection_parameters)
+    if as_postgres:
+        if pathlib.Path("/CONTAINER").is_file():
+            # In container mode a password is set for the postgres user.
+            conn = psycopg2.connect(
+                database=config["CDB_DATABASE_NAME"],
+                user="postgres", password=os.environ.get('POSTGRES_PASSWORD'),
+                host=config["DB_HOST"], port=config["DIRECT_DB_PORT"],
+                connection_factory=conn_factory, cursor_factory=curser_factory,
+            )
+        else:
+            # In non-container mode, we have to omit the host to connect to the
+            # UNIX-socket relying on peer authentication.
+            with switch_user("postgres"):
+                conn = psycopg2.connect(
+                    database=config["CDB_DATABASE_NAME"],
+                    user="postgres",
+                    connection_factory=conn_factory, cursor_factory=curser_factory,
+                )
+    else:
+        user = "nobody" if as_nobody else "cdb"
+        conn = psycopg2.connect(
+            database="nobody" if as_nobody else config["CDB_DATABASE_NAME"],
+            user=user, password=secrets["CDB_DATABASE_ROLES"][user],
+            host=config["DB_HOST"], port=config["DIRECT_DB_PORT"],
+            connection_factory=conn_factory, cursor_factory=curser_factory,
+        )
     conn.set_client_encoding("UTF8")
     conn.set_session(autocommit=True)
 
@@ -155,3 +170,52 @@ def fake_rs(conn: psycopg2.extensions.connection, persona_id: int = 0) -> Reques
     )
     rs.conn = rs._conn = conn
     return rs
+
+
+@contextlib.contextmanager
+def redirect_to_file(outfile: Union[pathlib.Path, io.StringIO, None],
+                     append: bool = False) -> Iterator[None]:
+    """Context manager to open a file in either append or write mode and redirect both
+    stdout and std err into the file.
+
+    If no file is given, don't do anything.
+    """
+    if isinstance(outfile, pathlib.Path):
+        with outfile.open("a" if append else "w") as f:
+            with contextlib.redirect_stdout(f):
+                with contextlib.redirect_stderr(f):
+                    yield
+    elif isinstance(outfile, io.IOBase):
+        with contextlib.redirect_stdout(outfile):
+            with contextlib.redirect_stderr(outfile):
+                yield
+    elif outfile is None:
+        yield
+    else:
+        raise ValueError("Can only redirect outpur to file or buffer.")
+
+
+def execute_sql_script(
+    config: TestConfig, secrets: SecretsConfig, sql_text: str, verbose: int = 0,
+    as_postgres: bool = False,
+) -> None:
+    """Execute any number of SQL statements one at a time.
+    Depending on verbosity print a certain amount of output.
+
+    In order to redirect this to a file wrap the call in `redirect_to_file`."""
+    with connect(config, secrets, as_postgres=as_postgres) as conn:
+        with conn.cursor() as cur:
+            for statement in sql_text.split(";"):
+                if not statement.strip():
+                    continue
+                cur.execute(statement)
+                if verbose > 2:
+                    click.echo(cur.query)
+                if verbose > 1:
+                    click.echo(cur.statusmessage)
+                if verbose > 0:
+                    try:
+                        for x in cur:
+                            click.echo(x)
+                    except psycopg2.ProgrammingError:
+                        pass

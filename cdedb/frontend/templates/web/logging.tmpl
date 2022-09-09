@@ -87,11 +87,11 @@
                         anid="input-persona_id") }}
             <script type="text/javascript" nonce="{{ csp_nonce }}">
                 $('#input-submitted_by').cdedbSearchPerson(
-                    '{{ (cdedblink('core/select_persona')|e) + ('?kind=') + kind + ('&phrase=%s'|s) }}', [],
+                    '{{ cdedblink('core/select_persona') }}', {{ {'kind': kind}|tojson }}, [],
                     false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                 );
                 $('#input-persona_id').cdedbSearchPerson(
-                    '{{ (cdedblink('core/select_persona')|e) + ('?kind=') + kind + ('&phrase=%s'|s) }}', [],
+                    '{{ cdedblink('core/select_persona') }}', {{ {'kind': kind}|tojson }}, [],
                     false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                 );
             </script>
@@ -113,7 +113,7 @@
                         anid="input-reviewed_by") }}
                 <script type="text/javascript" nonce="{{ csp_nonce }}">
                     $('#input-reviewed_by').cdedbSearchPerson(
-                        '{{ (cdedblink('core/select_persona')|e) + ('?kind=admin_persona&phrase=%s'|s) }}', [],
+                        '{{ cdedblink('core/select_persona') }}', {'kind': 'admin_persona'}, [],
                                              false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                     );
                 </script>

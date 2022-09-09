@@ -1,0 +1,39 @@
+{% set sidenav_active='event_lodgements' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% set jshint='weak' %}
+{% block title %}
+    {% trans title=ambience['event']['title'], group_title=ambience['group']['title'] %}
+        Move or Delete Lodgements from {{ group_title }} ({{ title }})
+    {% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+    {{ util.breadcrumb_link(cdedblink("event/lodgements"), gettext("Lodgements")) }}
+    {{ util.breadcrumb_link(cdedblink("event/create_lodgement"), gettext("Create Lodgement"), active=True) }}
+{% endblock %}
+{% block heading %}
+    {{ util.context_heading(gettext("Move or Delete Lodgements"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+{% endblock %}
+{% block content %}
+    <form action="{{ cdedblink('event/move_lodgements') }}" method="POST" id="movelodgementsform" class="form-horizontal">
+        {{ util.anti_csrf_token('event/move_lodgements') }}
+        {{ util.form_input_static(gettext("Source Group"), value=ambience['group']['title'],
+                                  info=gettext("There are %(count)s lodgements in this group.")|format(count=lodgements_in_group|length)) }}
+        {% for l_id in lodgements_in_group %}
+            {{ util.input_hidden('lodgement_ids', l_id) }}
+        {% endfor %}
+        {{ util.form_input_select('target_group_id', groups.items(), label=gettext("Target Group"),
+                                  nulloption=gettext("- do not move lodgements -"), sort=True) }}
+
+        <div class="form-group mosp">
+            <div class="col-sm-offset-4 col-sm-8">
+                {{ util.input_submit("Move Lodgements", aclass='btn btn-primary', icon='random', name='delete_group', value="False") }}{{ nbsp }}
+                {{ util.input_submit("Delete Lodgement Group", aclass='btn btn-danger', icon='trash', name='delete_group', value="True") }}{{ nbsp }}
+                {{ util.href(cdedblink("event/lodgements"), gettext("Cancel"), icon="times", aclass="btn btn-default cancel") }}
+            </div>
+        </div>
+    </form>
+{% endblock %}

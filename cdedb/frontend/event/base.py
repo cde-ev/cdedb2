@@ -119,6 +119,9 @@ class EventBaseFrontend(AbstractUserFrontend):
                            == const.RegistrationPartStati.participant
                            for part in registration['parts'].values()):
                         params['is_participant'] = True
+            params['has_constraints'] = any(
+                not pg['constraint_type'].is_stats()
+                for pg in rs.ambience['event']['part_groups'].values())
         return super().render(rs, templatename, params=params)
 
     @classmethod
@@ -168,12 +171,11 @@ class EventBaseFrontend(AbstractUserFrontend):
         }
         return self.generic_user_search(
             rs, download, is_search, QueryScope.event_user, QueryScope.event_user,
-            self.eventproxy.submit_general_query, choices=choices,
-            endpoint="user/user_search")
+            self.eventproxy.submit_general_query, choices=choices)
 
     @access("core_admin", "event_admin")
     @REQUESTdata("download", "is_search")
-    def archived_user_search(self, rs: RequestState, download: Optional[str],
+    def full_user_search(self, rs: RequestState, download: Optional[str],
                              is_search: bool) -> Response:
         """Perform search.
 
@@ -191,9 +193,8 @@ class EventBaseFrontend(AbstractUserFrontend):
         }
         return self.generic_user_search(
             rs, download, is_search,
-            QueryScope.archived_past_event_user, QueryScope.archived_persona,
-            self.eventproxy.submit_general_query, choices=choices,
-            endpoint="user/archived_user_search")
+            QueryScope.all_event_users, QueryScope.all_core_users,
+            self.eventproxy.submit_general_query, choices=choices)
 
     @access("event")
     @REQUESTdata("part_id", "sortkey", "reverse")

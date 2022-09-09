@@ -19,7 +19,7 @@
     </p>
 
     <p>
-        {% trans amount=25|money(lang=lang), fee=5|money(lang=lang), dsa=
+        {% trans amount=25|money(lang=lang), fee=annual_fee|money(lang=lang), dsa=
                 gettext("Deutsche SchülerAkademie"), idea=gettext("Idee SchülerAkademie")-%}
         	These {{ amount }} will be used to pay the annual membership fee
             currently in force, currently {{ fee }}. The remainder is a donation
