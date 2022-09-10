@@ -1049,7 +1049,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         :param after_change: Only true for commits taken after a relevant change.
         :param is_initial: Only true for the first commit to the event keeper.
-        :returns: The partial export or None. None may only be returned iff the commit
+        :returns: The partial export or None. None may only be returned if the commit
             may be dropped.
         """
         event_id = affirm(int, event_id)
@@ -1064,7 +1064,10 @@ class EventBaseBackend(EventLowLevelBackend):
         del export['timestamp']
         author_name = author_email = ""
         if rs.user.persona_id:
-            author_name = f"{rs.user.given_names} {rs.user.family_name}"
+            persona = {"display_name": rs.user.display_name,
+                       "given_names": rs.user.given_names,
+                       "family_name": rs.user.family_name}
+            author_name = make_persona_name(persona)
             author_email = rs.user.username
         self._event_keeper.commit(
             event_id, json_serialize(export), commit_msg, author_name, author_email,
@@ -1074,11 +1077,7 @@ class EventBaseBackend(EventLowLevelBackend):
     @internal
     def _process_event_keeper_logs(self, rs: RequestState,
                                    event_id: int) -> Optional[Tuple[CdEDBObject, ...]]:
-        """Format the log entries since the last commit to make them more readable.
-
-        This also takes care of the bookkeeping and updates the id of the latest
-        log entry which was recorded by event keeper.
-        """
+        """Format the log entries since the last commit to make them more readable."""
         with Atomizer(rs):
             timestamp = self._event_keeper.latest_logtime(event_id)
             if timestamp is None:

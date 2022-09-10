@@ -194,8 +194,9 @@ class EntityKeeper:
         # so, we use git log instead, where -1 restrict the results to the latest commit
         # and iso-strict-local format shows the correct iso 8601 format...
         response = self._run(["git", "log", "--date=iso-strict-local", "-1",
-                              "--pretty='%cd'"], cwd=full_dir)
-        timestamp = response.stdout.decode("utf-8").strip().strip("'")
+                              "--pretty=%cd"], cwd=full_dir)
+        # the response contains a \n
+        timestamp = response.stdout.decode("utf-8").strip()
         return datetime.datetime.fromisoformat(timestamp)
 
     def _format_logs(self, logs: Sequence[CdEDBObject]) -> Optional[bytes]:
