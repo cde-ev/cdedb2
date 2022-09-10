@@ -14,7 +14,8 @@ from werkzeug import Response
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, RequestState, build_msg, merge_dicts,
+    CdEDBObject, CdEDBObjectMap, RequestState, build_msg, make_persona_name,
+    merge_dicts,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
@@ -23,8 +24,8 @@ from cdedb.common.validation import EVENT_FIELD_ALL_FIELDS
 from cdedb.common.validation.types import VALIDATOR_LOOKUP
 from cdedb.filter import safe_filter
 from cdedb.frontend.common import (
-    REQUESTdata, access, drow_name, event_guard, make_persona_name,
-    process_dynamic_input, request_extractor,
+    REQUESTdata, access, drow_name, event_guard, process_dynamic_input,
+    request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
 

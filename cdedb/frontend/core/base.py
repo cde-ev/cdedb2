@@ -22,8 +22,8 @@ from werkzeug import Response
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Realm, RequestState, merge_dicts,
-    now, pairwise, sanitize_filename, unwrap,
+    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Realm, RequestState,
+    make_persona_name, merge_dicts, now, pairwise, sanitize_filename, unwrap,
 )
 from cdedb.common.exceptions import ArchiveError, PrivilegeError
 from cdedb.common.fields import (
@@ -49,8 +49,7 @@ from cdedb.frontend.common import (
     TransactionObserver, access, basic_redirect, calculate_db_logparams,
     calculate_loglinks, check_validation as check,
     check_validation_optional as check_optional, inspect_validation as inspect,
-    make_membership_fee_reference, make_persona_name, periodic, request_dict_extractor,
-    request_extractor,
+    make_membership_fee_reference, periodic, request_dict_extractor, request_extractor,
 )
 from cdedb.ml_type_aux import MailinglistGroup
 

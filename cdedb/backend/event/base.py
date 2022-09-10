@@ -29,7 +29,8 @@ from cdedb.backend.entity_keeper import EntityKeeper
 from cdedb.backend.event.lowlevel import EventLowLevelBackend
 from cdedb.common import (
     EVENT_SCHEMA_VERSION, CdEDBLog, CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap,
-    DefaultReturnCode, RequestState, glue, json_serialize, now, unwrap,
+    DefaultReturnCode, RequestState, glue, json_serialize, make_persona_name, now,
+    unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
@@ -42,6 +43,7 @@ from cdedb.common.fields import (
 from cdedb.common.n_ import n_
 from cdedb.common.sorting import mixed_existence_sorter, xsorted
 from cdedb.database.connection import Atomizer
+from cdedb.filter import datetime_filter
 
 # type alias for questionnaire specification.
 CdEDBQuestionnaire = Dict[const.QuestionnaireUsages, List[CdEDBObject]]
@@ -50,7 +52,11 @@ CdEDBQuestionnaire = Dict[const.QuestionnaireUsages, List[CdEDBObject]]
 class EventBaseBackend(EventLowLevelBackend):
     def __init__(self) -> None:
         super().__init__()
-        self._event_keeper = EntityKeeper(self.conf, 'event_keeper')
+        # define which keys of log entries will show up in commit messages
+        # they are translated to german, since commit messages are always in german
+        log_keys = ["Zeitstempel", "Code", "Verantwortlich", "Betroffen", "Erläuterung"]
+        self._event_keeper = EntityKeeper(
+            self.conf, 'event_keeper', log_keys=log_keys, log_timestamp_key="ctime")
 
     @access("event")
     def is_offline_locked(self, rs: RequestState, *, event_id: int = None,
@@ -1012,8 +1018,11 @@ class EventBaseBackend(EventLowLevelBackend):
         """Create a new git repository for keeping track of event changes."""
         event_id = affirm(vtypes.ID, event_id)
         self._event_keeper.init(event_id)
-        return self.event_keeper_commit(rs, event_id, "Initialer Commit",
-                                        is_initial=True)
+        export = self.event_keeper_commit(rs, event_id, "Initialer Commit",
+                                          is_initial=True)
+        # since is_initial is True, a partial export will always be returned
+        assert export is not None
+        return export
 
     @access("event_admin")
     def event_keeper_drop(self, rs: RequestState, event_id: int) -> None:
@@ -1025,7 +1034,7 @@ class EventBaseBackend(EventLowLevelBackend):
     @access("event")
     def event_keeper_commit(self, rs: RequestState, event_id: int, commit_msg: str, *,
                             after_change: bool = False, is_initial: bool = False
-                            ) -> CdEDBObject:
+                            ) -> Optional[CdEDBObject]:
         """Commit the current state of the event to its git repository.
 
         In general, there are two scenarios where we want to make a new commit:
@@ -1038,17 +1047,66 @@ class EventBaseBackend(EventLowLevelBackend):
 
         :param after_change: Only true for commits taken after a relevant change.
         :param is_initial: Only true for the first commit to the event keeper.
+        :returns: The partial export or None. None may only be returned if the commit
+            may be dropped.
         """
         event_id = affirm(int, event_id)
         commit_msg = affirm(str, commit_msg)
 
-        export = self.partial_export_event(rs, event_id)
+        may_drop = False if is_initial else not after_change
+        with Atomizer(rs):
+            logs = self._process_event_keeper_logs(rs, event_id)
+            if logs is None and may_drop:
+                return None
+            export = self.partial_export_event(rs, event_id)
         del export['timestamp']
         author_name = author_email = ""
         if rs.user.persona_id:
-            author_name = f"{rs.user.given_names} {rs.user.family_name}"
+            persona = {"display_name": rs.user.display_name,
+                       "given_names": rs.user.given_names,
+                       "family_name": rs.user.family_name}
+            author_name = make_persona_name(persona)
             author_email = rs.user.username
-        may_drop = False if is_initial else not after_change
-        self._event_keeper.commit(event_id, json_serialize(export), commit_msg,
-                                  author_name, author_email, may_drop=may_drop)
+        self._event_keeper.commit(
+            event_id, json_serialize(export), commit_msg, author_name, author_email,
+            may_drop=may_drop, logs=logs)
         return export
+
+    @internal
+    def _process_event_keeper_logs(self, rs: RequestState,
+                                   event_id: int) -> Optional[Tuple[CdEDBObject, ...]]:
+        """Format the log entries since the last commit to make them more readable."""
+        with Atomizer(rs):
+            timestamp = self._event_keeper.latest_logtime(event_id)
+            if timestamp is None:
+                return None
+            # since retrieve_log compares timestamps inclusive, we need to increase the
+            # timestamp to not include log entries from the latest commit.
+            timestamp += datetime.timedelta(seconds=1)
+            _, entries = self.retrieve_log(rs, event_id=event_id, time_start=timestamp)
+            # short circuit if there are no new log entries
+            if not entries:
+                return None
+
+            # retrieve additional information to pimp up the log entries
+            persona_ids = (
+                {entry['submitted_by'] for entry in entries if entry['submitted_by']}
+                | {entry['persona_id'] for entry in entries if entry['persona_id']})
+            personas = self.core.get_personas(rs, persona_ids)
+
+        # the name of the fields which will show up in the log are defined
+        # during instantiation of the entity keeper.
+        for entry in entries:
+            entry["Zeitstempel"] = datetime_filter(
+                entry["ctime"], formatstr="%Y-%m-%d %H:%M:%S (%Z)")
+            # pad the log code column to a fixed width. 31 chars is the current length
+            # of our longest log code.
+            entry["Code"] = str(const.EventLogCodes(entry["code"]).name).ljust(31)
+            if entry["submitted_by"]:
+                submitter = personas[entry["submitted_by"]]
+                entry["Verantwortlich"] = make_persona_name(submitter)
+            if entry["persona_id"]:
+                affected = personas[entry["persona_id"]]
+                entry["Betroffen"] = make_persona_name(affected)
+            entry["Erläuterung"] = entry["change_note"]
+        return entries

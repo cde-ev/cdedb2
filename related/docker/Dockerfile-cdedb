@@ -60,6 +60,7 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3-vobject \
     python3-graphviz \
     python3-phonenumbers \
+    python3-tabulate \
     \
     python3-pip \
     python3-click \
@@ -92,7 +93,8 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     types-freezegun \
     types-bleach \
     types-Markdown \
-    types-click
+    types-click \
+    types-tabulate
 
 # get the configuration files from the autobuild
 COPY ./related/docker/cdedb-entrypoint.sh ./related/auto-build/files/stage3 /tmp/autobuild/

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2022-07-03 17:26+0200\n"
+"POT-Creation-Date: 2022-05-11 14:08+0200\n"
 "PO-Revision-Date: 2020-12-06 11:30+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -17,6 +17,21 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "Generated-By: Babel 2.6.0\n"
+
+msgid "Pronouns"
+msgstr "Pronomen"
+
+msgid "Pronouns on Nametag"
+msgstr "Pronomen auf Namenschild"
+
+msgid "Show pronouns on nametags"
+msgstr "Pronomen auf Namenschildern anzeigen"
+
+msgid "Show pronouns on profile"
+msgstr "Pronomen auf Profil anzeigen"
+
+msgid "he/him, she/her, they/them, …"
+msgstr "er/ihm, sie/ihr, they/them, o.ä."
 
 #: bin/archive/migrate_execute.py:394
 msgid "Initial import."
@@ -10350,6 +10365,14 @@ msgstr "Guthaben"
 msgid "Additional Info"
 msgstr "Zusatz"
 
+#: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:27
+#: cdedb/frontend/templates/web/core/show_history.tmpl:270
+#: cdedb/frontend/templates/web/core/view_changelog_meta.tmpl:27
+#: cdedb/frontend/templates/web/logging.tmpl:35
+#: cdedb/frontend/templates/web/logging.tmpl:121
+msgid "Annotation"
+msgstr "Erläuterung"
+
 #: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:29
 msgid "Overall Balance"
 msgstr "Gesamtguthaben"
@@ -19369,19 +19392,3 @@ msgstr "Kann aus {} keinen ml_type bestimmen"
 #, python-format
 msgid "%(ml_type)s is not an appropriate type for this mailinglist."
 msgstr "%(ml_type)s ist kein geeigneter Typ für diese Mailingliste."
-
-
-msgid "Pronouns"
-msgstr "Pronomen"
-
-msgid "Show pronouns on nametags"
-msgstr "Pronomen auf Namenschildern anzeigen"
-
-msgid "Show pronouns on profile"
-msgstr "Pronomen auf Profil anzeigen"
-
-msgid "Pronouns on Nametag"
-msgstr "Pronomen auf Namenschild"
-
-msgid "he/him, she/her, they/them, …"
-msgstr "er/ihm, sie/ihr, they/them, o.ä."

@@ -11,25 +11,37 @@ to apache or similar.
 Depending on the specific use case, one may choose to use one EntityKeeper for each
 individual entity, or for all entities of a specific type.
 """
+import datetime
 import logging
 import shutil
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import List, Optional, Sequence, Union
+
+import tabulate
 
 import cdedb.common.validation.types as vtypes
 from cdedb.backend.common import affirm_validation as affirm
-from cdedb.common import PathLike, setup_logger
+from cdedb.common import CdEDBObject, PathLike, setup_logger
 from cdedb.config import Config
+from cdedb.filter import datetime_filter
+
+# We use whitespace to force column length, so we do not want it to be stripped away.
+tabulate.PRESERVE_WHITESPACE = True
 
 
 class EntityKeeper:
-    def __init__(self, conf: Config, directory: PathLike):
+    def __init__(self, conf: Config, directory: PathLike,
+                 log_keys: Sequence[str] = None, log_timestamp_key: str = None):
         """This specifies the base directory where the individual entity repositories
         will be located."""
         self.conf = conf
         self._dir = self.conf['STORAGE_DIR'] / directory
+        # Use this keys in this order of the log dict passing in during commits
+        self.log_keys = log_keys
+        # the key holding the timestamp of log entries
+        self.log_timestamp_key = log_timestamp_key
 
         # Initialize logger.
         logger_name = "cdedb.backend.entitykeeper"
@@ -100,7 +112,8 @@ class EntityKeeper:
 
     def commit(self, entity_id: int, file_text: str, commit_msg: str,
                author_name: str = "", author_email: str = "", *,
-               may_drop: bool = True) -> Optional[subprocess.CompletedProcess[bytes]]:
+               may_drop: bool = True, logs: Sequence[CdEDBObject] = None
+               ) -> Optional[subprocess.CompletedProcess[bytes]]:
         """Commit a single file representing an entity to a git repository.
 
         In contrast to its friends, we allow some wiggle room for errors here right now
@@ -127,6 +140,20 @@ class EntityKeeper:
             # Then commit everything as if we were in the repository directory.
             commit: List[Union[PathLike, bytes]]
             commit = ["git", "-C", full_dir, "commit", "-m", commit_msg.encode("utf8")]
+            if logs and (formated_logs := self._format_logs(logs)):
+                commit.append("-m")
+                commit.append(formated_logs)
+                # set the date of the commit to the ctime of the latest log entry
+                commit.append("--date")
+                # formatted logs only exist if log_timestamp_key is not None
+                assert self.log_timestamp_key is not None
+                timestamp: datetime.datetime = logs[-1][self.log_timestamp_key]
+                formatstr = "%Y-%m-%dT%H:%M:%S+%z"
+                formated_timestamp = datetime_filter(timestamp, formatstr=formatstr)
+                # the formated timestamp is not None, since we passed in a valid
+                # datetime object
+                assert formated_timestamp is not None
+                commit.append(formated_timestamp.encode("utf-8"))
             if author_name or author_email:
                 commit.append("--author")
                 commit.append(f"{author_name} <{author_email}>".encode("utf8"))
@@ -147,3 +174,39 @@ class EntityKeeper:
             # Do not check here such that an error does not drag the whole request down
             # In particular, this is expected for empty commits.
             return self._run(commit, check=False)
+
+    def latest_logtime(self, entity_id: int) -> Optional[datetime.datetime]:
+        """Retrieve the ctime of the latest log entry.
+
+        This is determined by the timestamp of the commit, which is set to the ctime
+        of the latest log entry which was taken into account.
+        """
+        entity_id = affirm(int, entity_id)
+        full_dir = self._dir / str(entity_id)
+        # This has a non-zero exit code if HEAD does not point to any commit. This is
+        # the case if there are no commits present yet.
+        if self._run(["git", "rev-parse", "HEAD"],
+                     check=False, cwd=full_dir).returncode:
+            return None
+        # get the timestamp of the last commit in ISO 8601 format
+        # sadly, git show does not return proper iso format, so this does not work:
+        # self._run(["git", "show", "-s", "--format=%ci", "HEAD"], cwd=full_dir)
+        # so, we use git log instead, where -1 restrict the results to the latest commit
+        # and iso-strict-local format shows the correct iso 8601 format...
+        response = self._run(["git", "log", "--date=iso-strict-local", "-1",
+                              "--pretty=%cd"], cwd=full_dir)
+        # the response contains a \n
+        timestamp = response.stdout.decode("utf-8").strip()
+        return datetime.datetime.fromisoformat(timestamp)
+
+    def _format_logs(self, logs: Sequence[CdEDBObject]) -> Optional[bytes]:
+        if self.log_keys is None or self.log_timestamp_key is None:
+            return None
+
+        summary = f"Es gab {len(logs)} neue Logeinträge seit dem letzten Commit."
+
+        headers = self.log_keys
+        body = [[entry.get(key, "") for key in headers] for entry in logs]
+        table = tabulate.tabulate(body, headers=headers)
+
+        return "\n\n".join([summary, table]).encode("utf8")

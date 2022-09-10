@@ -13,10 +13,11 @@ import graphviz
 
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, Notification, RequestState, inverse_diacritic_patterns,
+    make_persona_name,
 )
 from cdedb.common.n_ import n_
 from cdedb.database.constants import Genders, RegistrationPartStati
-from cdedb.frontend.common import cdedburl, make_persona_name
+from cdedb.frontend.common import cdedburl
 
 
 @dataclass
