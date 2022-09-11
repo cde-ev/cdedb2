@@ -84,58 +84,6 @@ REALM_SPECIFIC_GENESIS_FIELDS: Dict[Realm, Tuple[str, ...]] = {
             "country", "birth_name", "attachment_hash", "pevent_id", "pcourse_id"),
 }
 
-# This defines which fields are available for which realm. They are cumulative.
-PERSONA_FIELDS_BY_REALM: Dict[Role, Set[str]] = {
-    'persona': {
-        "display_name", "family_name", "given_names", "title",
-        "name_supplement", "notes"
-    },
-    'ml': set(),
-    'assembly': set(),
-    'event': {
-        "gender", "birthday", "telephone", "mobile", "address_supplement",
-        "address", "postal_code", "location", "country", "pronouns",
-        "pronouns_nametag", "pronouns_profile",
-    },
-    'cde': {
-        "birth_name", "weblink", "specialisation", "affiliation", "timeline",
-        "interests", "free_form", "is_searchable", "paper_expuls",
-        "address_supplement2", "address2", "postal_code2", "location2",
-        "country2",
-    }
-}
-
-# Some of the above fields cannot be edited by the users themselves.
-# These are defined here.
-RESTRICTED_FIELDS_BY_REALM: Dict[Role, Set[str]] = {
-    'persona': {
-        "notes",
-    },
-    'ml': set(),
-    'assembly': set(),
-    'event': {
-        "birthday",
-    },
-    'cde': {
-        "is_searchable",
-    }
-}
-
-
-def get_persona_fields_by_realm(roles: Set[Role], restricted: bool = True
-                                ) -> Set[str]:
-    """Helper to retrieve the appropriate fields for a user.
-
-    :param restricted: If True, only return fields the user may change
-        themselves, i.e. remove the restricted fields."""
-    ret: Set[str] = set()
-    for role, fields in PERSONA_FIELDS_BY_REALM.items():
-        if role in roles:
-            ret |= fields
-            if restricted:
-                ret -= RESTRICTED_FIELDS_BY_REALM[role]
-    return ret
-
 
 #: Fields of a pending privilege change.
 PRIVILEGE_CHANGE_FIELDS = (
