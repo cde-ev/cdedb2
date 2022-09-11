@@ -14,9 +14,11 @@ from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.roles import extract_roles
+from cdedb.common.sorting import EntitySorter
 from cdedb.database.constants import (
     MailinglistDomain, MailinglistTypes, RegistrationPartStati,
 )
+from cdedb.filter import keydictsort_filter
 
 if TYPE_CHECKING:
     from cdedb.backend.assembly import AssemblyBackend
@@ -479,7 +481,8 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
 
         event = bc.event.get_event(rs, mailinglist["event_id"])
 
-        status_column = ",".join(f"part{part_id}.status" for part_id in event["parts"])
+        status_column = ",".join(f"part{part_id}.status" for part_id, _ in
+                                 keydictsort_filter(event['parts'], EntitySorter.event_part))
         query = Query(
             scope=QueryScope.registration,
             spec=QueryScope.registration.get_spec(event=event),
