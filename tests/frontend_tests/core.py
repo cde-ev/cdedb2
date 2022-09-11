@@ -1923,6 +1923,11 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesisform']
         for field, entry in data.items():
             f[field] = entry
+        if data.get("realm") == "cde":
+            with open(self.testfile_dir / "form.pdf", 'rb') as datafile:
+                attachment_data = datafile.read()
+            f['attachment'] = webtest.Upload(
+                "cert.pdf", attachment_data, content_type="application/pdf")
         self.submit(f)
         link = self.fetch_link()
         self.get(link)
@@ -2537,6 +2542,38 @@ class TestCoreFrontend(FrontendTest):
             self.key, self.EVENT_GENESIS_DATA['username']))
         self.assertTrue(self.core.verify_existence(
             self.key, alternate_username))
+
+    @storage
+    @as_users("vera")
+    def test_genesis_doppelganger_archive_persistence(self) -> None:
+        # issue a genesis request
+        self._genesis_request(self.CDE_GENESIS_DATA)
+        self.traverse("Accountanfragen", "Details")
+        self._decide_genesis_case(GenesisDecision.approve)
+        new_persona_id = 1001
+
+        # archive the new user
+        self.traverse("Index")
+        f = self.response.forms['adminshowuserform']
+        f['phrase'] = new_persona_id
+        self.submit(f)
+        f = self.response.forms["archivepersonaform"]
+        f["note"] = "Archived for testing."
+        f["ack_delete"].checked = True
+        self.submit(f)
+        self.assertPresence("Der Benutzer ist archiviert.", div='archived')
+
+        # issue a new genesis request with almost identical data
+        alternate_username = f"asdf{self.CDE_GENESIS_DATA['username']}"
+        self._genesis_request(dict(
+            self.CDE_GENESIS_DATA, username=alternate_username, mobile="06597620191"))
+        self.traverse("Accountanfragen", "Details")
+        self._decide_genesis_case(GenesisDecision.update, persona_id=1001)
+
+        # Check that the data of the second genesis request persisted
+        self.traverse("Änderungen prüfen", f"{self.CDE_GENESIS_DATA['given_names']}"
+                                           f" {self.CDE_GENESIS_DATA['family_name']}")
+        self.assertPresence("Mobiltelefon – +49 6597 620191")
 
     @as_users("vera")
     def test_genesis_dearchive_doppelganger(self) -> None:

@@ -27,8 +27,9 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import ArchiveError, PrivilegeError
 from cdedb.common.fields import (
-    LOG_FIELDS_COMMON, META_INFO_FIELDS, REALM_SPECIFIC_GENESIS_FIELDS,
-    get_persona_fields_by_realm,
+    LOG_FIELDS_COMMON, META_INFO_FIELDS, PERSONA_ASSEMBLY_FIELDS, PERSONA_CDE_FIELDS,
+    PERSONA_CORE_FIELDS, PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, PERSONA_STATUS_FIELDS,
+    REALM_SPECIFIC_GENESIS_FIELDS, Role,
 )
 from cdedb.common.i18n import format_country_code
 from cdedb.common.n_ import n_
@@ -1033,6 +1034,36 @@ class CoreBaseFrontend(AbstractFrontend):
             ret.append(result)
         return self.send_json(rs, {'personas': ret})
 
+    @staticmethod
+    def _changeable_persona_fields(roles: Set[Role], restricted: bool = True
+                                   ) -> Set[str]:
+        """Helper to retrieve the appropriate fields for (admin_)change_user.
+
+        :param restricted: If True, only return fields the user may change
+            themselves, i.e. remove the restricted fields.
+        """
+        ret: Set[str] = set()
+        # some fields are of no interest here.
+        hidden_fields = set(PERSONA_STATUS_FIELDS) | {"id", "username"}
+        hidden_cde_fields = hidden_fields - {"is_searchable"} | {
+            "balance", "bub_search", "decided_search", "foto", "trial_member"}
+        roles_to_fields = {
+            "persona": (set(PERSONA_CORE_FIELDS) | {"notes"}) - hidden_fields,
+            "ml": set(PERSONA_ML_FIELDS) - hidden_fields,
+            "assembly": set(PERSONA_ASSEMBLY_FIELDS) - hidden_fields,
+            "event": set(PERSONA_EVENT_FIELDS) - hidden_fields,
+            "cde": (set(PERSONA_CDE_FIELDS) - hidden_cde_fields),
+        }
+        for role, fields in roles_to_fields.items():
+            if role in roles:
+                ret |= fields
+
+        restricted_fields = {"notes", "birthday", "is_searchable"}
+        if restricted:
+            ret -= restricted_fields
+
+        return ret
+
     @access("persona")
     def change_user_form(self, rs: RequestState) -> Response:
         """Render form."""
@@ -1045,8 +1076,7 @@ class CoreBaseFrontend(AbstractFrontend):
             rs.notify("info", n_("Change pending."))
         del data['change_note']
         merge_dicts(rs.values, data)
-        shown_fields = get_persona_fields_by_realm(rs.user.roles,
-                                                   restricted=True)
+        shown_fields = self._changeable_persona_fields(rs.user.roles, restricted=True)
         return self.render(rs, "change_user", {
             'username': data['username'],
             'shown_fields': shown_fields,
@@ -1057,7 +1087,7 @@ class CoreBaseFrontend(AbstractFrontend):
     def change_user(self, rs: RequestState, generation: int) -> Response:
         """Change own data set."""
         assert rs.user.persona_id is not None
-        attributes = get_persona_fields_by_realm(rs.user.roles, restricted=True)
+        attributes = self._changeable_persona_fields(rs.user.roles, restricted=True)
         data = request_dict_extractor(rs, attributes)
         data['id'] = rs.user.persona_id
         data = check(rs, vtypes.Persona, data, "persona")
@@ -1156,7 +1186,7 @@ class CoreBaseFrontend(AbstractFrontend):
         if data['code'] == const.MemberChangeStati.pending:
             rs.notify("info", n_("Change pending."))
         roles = extract_roles(rs.ambience['persona'], introspection_only=True)
-        shown_fields = get_persona_fields_by_realm(roles, restricted=False)
+        shown_fields = self._changeable_persona_fields(roles, restricted=False)
         return self.render(rs, "admin_change_user", {
             'admin_bits': self.admin_bits(rs),
             'shown_fields': shown_fields,
@@ -1171,7 +1201,7 @@ class CoreBaseFrontend(AbstractFrontend):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
         # Assure we don't accidently change the original.
         roles = extract_roles(rs.ambience['persona'], introspection_only=True)
-        attributes = get_persona_fields_by_realm(roles, restricted=False)
+        attributes = self._changeable_persona_fields(roles, restricted=False)
         data = request_dict_extractor(rs, attributes)
         data['id'] = persona_id
         data = check(rs, vtypes.Persona, data)
