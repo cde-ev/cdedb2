@@ -20,7 +20,7 @@ from cdedb.common import (
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
     GENESIS_CASE_FIELDS, PERSONA_ALL_FIELDS, PERSONA_CORE_FIELDS,
-    PERSONA_FIELDS_BY_REALM, REALM_SPECIFIC_GENESIS_FIELDS,
+    REALM_SPECIFIC_GENESIS_FIELDS, REALMS_TO_FIELDS,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.roles import (
@@ -382,7 +382,7 @@ class CoreGenesisBackend(CoreBaseBackend):
                     # For every realm that the persona has, update the fields implied
                     # by that realm if they are also genesis fields.
                     if realm in roles:
-                        update_keys.update(set(fields) & PERSONA_FIELDS_BY_REALM[realm])
+                        update_keys.update(set(fields) & set(REALMS_TO_FIELDS[realm]))
                 update_keys -= {'username', 'id'}
                 update = {
                     k: case[k] for k in update_keys if case[k]
