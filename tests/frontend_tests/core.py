@@ -1925,9 +1925,9 @@ class TestCoreFrontend(FrontendTest):
             f[field] = entry
         if data.get("realm") == "cde":
             with open(self.testfile_dir / "form.pdf", 'rb') as datafile:
-                data = datafile.read()
+                attachment_data = datafile.read()
             f['attachment'] = webtest.Upload(
-                "cert.pdf", data, content_type="application/pdf")
+                "cert.pdf", attachment_data, content_type="application/pdf")
         self.submit(f)
         link = self.fetch_link()
         self.get(link)
@@ -2545,7 +2545,7 @@ class TestCoreFrontend(FrontendTest):
 
     @storage
     @as_users("vera")
-    def test_genesis_doppelganger_archive_persistence(self):
+    def test_genesis_doppelganger_archive_persistence(self) -> None:
         # issue a genesis request
         self._genesis_request(self.CDE_GENESIS_DATA)
         self.traverse("Accountanfragen", "Details")
