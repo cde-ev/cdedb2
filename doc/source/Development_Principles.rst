@@ -46,3 +46,7 @@ Here is a list of best practices to follow, so the code stays nice.
 * Only use asserts for static type checking purposes (i.e. making mypy aware
   of invariants we already know to be true). Note that asserts may be
   disabled at runtime.
+* Importable things need to be placed in the ``cdedb`` module, typically in
+  the ``cdedb.common`` submodule or it's submodules. Things that are only
+  imported by the test suite may be placed in the ``tests`` module, typically
+  in the ``tests.common`` submodule.

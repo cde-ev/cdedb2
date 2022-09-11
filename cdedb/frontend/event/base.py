@@ -655,13 +655,16 @@ class EventBaseFrontend(AbstractUserFrontend):
     def event_keeper(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject:
         """Regularly backup any event that got changed.
 
-        :param state: Keeps track of the event schema version as well as of the newest
-            log entry to do a commit only if either is outdated."""
+        :param state: Keeps track of the event schema version to do an extra commit if
+            it is outdated.
+        """
         if not state:
             state = {
                 'EVENT_SCHEMA_VERSION': None,
-                'events': {}
             }
+        # TODO this can be dropped once this got deployed
+        if "events" in state:
+            del state["events"]
         event_ids = self.eventproxy.list_events(rs, archived=False)
         if state.get("EVENT_SCHEMA_VERSION") != list(EVENT_SCHEMA_VERSION):
             self.logger.info("Event schema version changed, creating new commit for"
@@ -673,16 +676,6 @@ class EventBaseFrontend(AbstractUserFrontend):
 
         commit_msg = "Regelmäßiger Snapshot"
         for event_id in event_ids:
-            if event_id not in state['events']:
-                state['events'][event_id] = 0
-            _, entries = self.eventproxy.retrieve_log(rs, event_id=event_id, length=1)
-            if entries:
-                log_entry_id = unwrap(entries)['id']
-            else:
-                # this can only happen for missing logs (e.g. test data)
-                log_entry_id = 0
-            if not log_entry_id or log_entry_id > state['events'][event_id]:
-                self.eventproxy.event_keeper_commit(rs, event_id, commit_msg)
-                state['events'][event_id] = log_entry_id
+            self.eventproxy.event_keeper_commit(rs, event_id, commit_msg)
 
         return state
