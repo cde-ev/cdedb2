@@ -377,7 +377,7 @@ class CoreGenesisBackend(CoreBaseBackend):
 
                 # Determine the keys of the persona that should be updated.
                 update_keys = set(GENESIS_CASE_FIELDS) & set(PERSONA_CORE_FIELDS)
-                roles = extract_roles(persona)
+                roles = extract_roles(persona, introspection_only=True)
                 for realm, fields in REALM_SPECIFIC_GENESIS_FIELDS.items():
                     # For every realm that the persona has, update the fields implied
                     # by that realm if they are also genesis fields.
