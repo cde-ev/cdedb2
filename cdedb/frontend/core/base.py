@@ -1048,7 +1048,7 @@ class CoreBaseFrontend(AbstractFrontend):
         hidden_cde_fields = hidden_fields - {"is_searchable"} | {
             "balance", "bub_search", "decided_search", "foto", "trial_member"}
         roles_to_fields = {
-            "persona": set(PERSONA_CORE_FIELDS) | {"notes"} - hidden_fields,
+            "persona": (set(PERSONA_CORE_FIELDS) | {"notes"}) - hidden_fields,
             "ml": set(PERSONA_ML_FIELDS) - hidden_fields,
             "assembly": set(PERSONA_ASSEMBLY_FIELDS) - hidden_fields,
             "event": set(PERSONA_EVENT_FIELDS) - hidden_fields,
