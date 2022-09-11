@@ -44,6 +44,7 @@ from cdedb.frontend.common import (
     AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access, calculate_db_logparams,
     calculate_loglinks, event_guard, periodic,
 )
+from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
 
 
 @dataclass(frozen=True)  # type: ignore[misc]
@@ -227,7 +228,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             part_ids = rs.ambience['event']['parts'].keys()
 
         data = self._get_participant_list_data(
-            rs, event_id, part_ids, sortkey or "persona", reverse=reverse)
+            rs, event_id, part_ids, sortkey=sortkey or "persona", reverse=reverse)
         if len(rs.ambience['event']['parts']) == 1:
             part_id = unwrap(rs.ambience['event']['parts'].keys())
         data['part_id'] = part_id
@@ -238,7 +239,7 @@ class EventBaseFrontend(AbstractUserFrontend):
 
     def _get_participant_list_data(
             self, rs: RequestState, event_id: int,
-            part_ids: Collection[int] = (),
+            part_ids: Collection[int] = (), orga_list: bool = False,
             sortkey: str = "persona", reverse: bool = False) -> CdEDBObject:
         """This provides data for download and online participant list.
 
@@ -248,24 +249,28 @@ class EventBaseFrontend(AbstractUserFrontend):
         courses = self.eventproxy.get_courses(rs, course_ids)
         registration_ids = self.eventproxy.list_participants(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
+        reg_counts = self.eventproxy.get_num_registrations_by_part(
+            rs, event_id, (const.RegistrationPartStati.participant,))
 
         if not part_ids:
             part_ids = rs.ambience['event']['parts'].keys()
         if any(anid not in rs.ambience['event']['parts'] for anid in part_ids):
             raise werkzeug.exceptions.NotFound(n_("Invalid part id."))
-        parts = {anid: rs.ambience['event']['parts'][anid]
-                 for anid in part_ids}
+        if orga_list and event_id not in rs.user.orga and not self.is_admin(rs):
+            raise PermissionError
+        parts = {anid: rs.ambience['event']['parts'][anid] for anid in part_ids}
 
-        participant = const.RegistrationPartStati.participant
+        def check(reg: CdEDBObject) -> bool:
+            if not reg['list_consent'] and not orga_list:
+                return False
+            participant = const.RegistrationPartStati.participant
+            return any(
+                reg['parts'][part_id]['status'] == participant for part_id in parts)
+
         registrations = {
-            k: v
-            for k, v in registrations.items()
-            if any(v['parts'][part_id]
-                   and v['parts'][part_id]['status'] == participant
-                   for part_id in parts)}
+            reg_id: reg for reg_id, reg in registrations.items() if check(reg)}
         personas = self.coreproxy.get_event_users(
-            rs, tuple(e['persona_id']
-                      for e in registrations.values()), event_id)
+            rs, tuple(e['persona_id'] for e in registrations.values()), event_id)
 
         all_sortkeys = {
             "given_names": EntitySorter.make_persona_sorter(family_name_first=False),
@@ -314,7 +319,36 @@ class EventBaseFrontend(AbstractUserFrontend):
         return {
             'courses': courses, 'registrations': registrations,
             'personas': personas, 'ordered': ordered, 'parts': parts,
+            'reg_counts': reg_counts,
         }
+
+    def _get_user_lodgement_wishes(self, rs: RequestState, event_id: int
+                                   ) -> CdEDBObject:
+        assert rs.user.persona_id is not None
+        wish_data = {}
+        if (rs.ambience['event']['is_participant_list_visible']
+                and (field_id := rs.ambience['event']['lodge_field'])
+                and self.eventproxy.check_registration_status(
+                    rs, rs.user.persona_id, event_id,
+                    [const.RegistrationPartStati.participant])):
+            registration_id = unwrap(self.eventproxy.list_registrations(
+                rs, event_id, rs.user.persona_id).keys())
+            registration = self.eventproxy.get_registration(rs, registration_id)
+            wish_data = self._get_participant_list_data(rs, event_id)
+            wish_data['field'] = rs.ambience['event']['fields'][field_id]
+            wishes, problems = detect_lodgement_wishes(
+                wish_data['registrations'], wish_data['personas'], rs.ambience['event'],
+                restrict_part_id=None, restrict_registration_id=registration_id,
+                check_edges=False)
+            if registration['list_consent']:
+                wish_data['wishes'] = wishes
+                wish_data['problems'] = problems
+            else:
+                msg = n_(
+                    "You can not access the Participant List as you have not agreed to"
+                    " have your own data sent to other participants before the event.")
+                wish_data['problems'] = [("error", msg, {})]
+        return wish_data
 
     @access("event")
     def participant_info(self, rs: RequestState, event_id: int) -> Response:

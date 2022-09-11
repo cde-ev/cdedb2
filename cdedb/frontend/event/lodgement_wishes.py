@@ -45,7 +45,10 @@ class LodgementWish:
 def detect_lodgement_wishes(registrations: CdEDBObjectMap,
                             personas: CdEDBObjectMap,
                             event: CdEDBObject,
-                            restrict_part_id: Optional[int]) \
+                            restrict_part_id: Optional[int],
+                            restrict_registration_id: int = None,
+                            check_edges: bool = True,
+                            ) \
         -> Tuple[List[LodgementWish], List[Notification]]:
     """ Detect lodgement wish graph edges from all registrations' raw rooming
     preferences text.
@@ -77,6 +80,9 @@ def detect_lodgement_wishes(registrations: CdEDBObjectMap,
         :meth:`cdedb.backend.event.EventBackend.get_event`
     :param restrict_part_id: A part id of the event to filter wishes by presence
         and waitlist at/of this event part or None to consider all event parts.
+    :param restrict_registration_id: A registration id to limit wish checking to.
+        If given, only determine wishes *from* this registration to other registrations.
+    :param check_edges: If False, do not check whether edges are allowed.
     :return: The list of detected wish edges for the lodgement wishes graph and
         a list of localizable problem notification messages.
     """
@@ -89,8 +95,18 @@ def detect_lodgement_wishes(registrations: CdEDBObjectMap,
     wish_field_name = event['fields'][event['lodge_field']]['field_name']
     wishes: Dict[Tuple[int, int], LodgementWish] = {}
     problems: List[Notification] = []
+
+    # Limit registrations to check for matches if necessary.
+    registrations_to_check = list(registrations.items())
+    if restrict_registration_id:
+        if restrict_registration_id in registrations:
+            registrations_to_check = [
+                (restrict_registration_id, registrations[restrict_registration_id])]
+        else:
+            return [], []
+
     # For each registration, analyze wishes
-    for registration_id, registration in registrations.items():
+    for registration_id, registration in registrations_to_check:
         # Skip registrations with emtpy wishes field
         if not registration['fields'].get(wish_field_name):
             continue
@@ -137,7 +153,8 @@ def detect_lodgement_wishes(registrations: CdEDBObjectMap,
                                            registration_id))
                 if reverse_edge:
                     reverse_edge.bidirectional = True
-                else:
+                    continue
+                elif check_edges:
                     # if not, create the new wish object
                     # but first check, if the wish is allowed (considering
                     # genders) and
@@ -173,17 +190,16 @@ def detect_lodgement_wishes(registrations: CdEDBObjectMap,
                                 personas[other_registration['persona_id']])}))
                         continue
 
-                    common_presence_parts = (
-                        _parts_with_status(registration, PRESENT_STATI)
-                        & _parts_with_status(other_registration, PRESENT_STATI))
-                    wishes[(registration_id, other_registration_id)] = \
-                        LodgementWish(
-                            registration_id,
-                            other_registration_id,
-                            (bool(common_presence_parts)
-                             if restrict_part_id is None
-                             else restrict_part_id in common_presence_parts),
-                            )
+                common_presence_parts = (
+                    _parts_with_status(registration, PRESENT_STATI)
+                    & _parts_with_status(other_registration, PRESENT_STATI))
+                wishes[(registration_id, other_registration_id)] = \
+                    LodgementWish(
+                        registration_id,
+                        other_registration_id,
+                        (bool(common_presence_parts) if restrict_part_id is None
+                         else restrict_part_id in common_presence_parts),
+                    )
 
     return list(wishes.values()), problems
 
@@ -201,7 +217,7 @@ def make_identifying_regex(persona: CdEDBObject) -> Pattern[str]:
         f"{persona['display_name']} {persona['family_name']}")))
     patterns.append(inverse_diacritic_patterns(re.escape(
         f"{persona['family_name']}, {persona['display_name']}")))
-    patterns.append(re.escape(f"DB-{persona['id']}\\b"))
+    patterns.append(re.escape(f"DB-{persona['id']}-"))
     if persona['username']:
         patterns.append(re.escape(persona['username']))
     return re.compile('|'.join(patterns), flags=re.I)

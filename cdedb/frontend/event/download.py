@@ -328,7 +328,7 @@ class EventDownloadMixin(EventBaseFrontend):
         """Create list to send to all participants."""
         if rs.has_validation_errors():
             return self.redirect(rs, 'event/downloads')
-        data = self._get_participant_list_data(rs, event_id, part_ids)
+        data = self._get_participant_list_data(rs, event_id, part_ids, orgas_only)
         if runs and not data['registrations']:
             rs.notify("info", n_("Empty PDF."))
             return self.redirect(rs, "event/downloads")
