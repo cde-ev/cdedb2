@@ -481,12 +481,18 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
 
         event = bc.event.get_event(rs, mailinglist["event_id"])
 
-        status_column = ",".join(
-            f"part{part_id}.status" for part_id, _ in
-            keydictsort_filter(event['parts'], EntitySorter.event_part))
+        spec = QueryScope.registration.get_spec(event=event)
+        target = {f"part{part_id}.status" for part_id in event['parts']}
+        for column in spec:
+            if set(column.split(',')) == target:
+                status_column = column
+                break
+        else:
+            status_column = ",".join(
+                f"part{part_id}.status" for part_id in event['parts'])
         query = Query(
             scope=QueryScope.registration,
-            spec=QueryScope.registration.get_spec(event=event),
+            spec=spec,
             fields_of_interest=("persona.id",),
             constraints=[
                 (status_column, QueryOperators.oneof,
