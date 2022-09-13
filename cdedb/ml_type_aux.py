@@ -14,11 +14,9 @@ from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.roles import extract_roles
-from cdedb.common.sorting import EntitySorter
 from cdedb.database.constants import (
     MailinglistDomain, MailinglistTypes, RegistrationPartStati,
 )
-from cdedb.filter import keydictsort_filter
 
 if TYPE_CHECKING:
     from cdedb.backend.assembly import AssemblyBackend
