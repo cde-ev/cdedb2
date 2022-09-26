@@ -35,15 +35,14 @@
         {% endif %}
 
         <h3 class="sr-only">{% trans %}Course Choices{% endtrans %}</h3>
-        {# TODO: fix involved tracks. #}
         {% for cco in choice_objects %}
             {% if 'constraint_type' in cco %}
-                {% if cco['track_ids'] %}
+                {% if cco['track_ids'] and involved_tracks.intersection(cco['track_ids']) %}
                     {{ generic_event.select_course_choice(
                             reference_track[cco['id']], courses, courses_per_track_group[cco['id']],
                             show_track_title=True, track_group=cco) }}
                 {% endif %}
-            {% elif cco['num_choices'] %}
+            {% elif cco['num_choices'] and cco['id'] in involved_tracks %}
                 {{ generic_event.select_course_choice(
                         cco, courses, courses_per_track[cco['id']],
                         show_track_title=ambience['event']['tracks']|length > 1) }}
