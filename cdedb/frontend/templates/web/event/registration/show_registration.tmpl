@@ -206,18 +206,20 @@
         </dl>
         <h4>{% trans %}Course Choices{% endtrans %}</h4>
         {% if ambience['event']['tracks']|length > 0 %}
-            {% for batch in ambience['event']['tracks']|keydictsort(EntitySorter.course_track)|batch(2) %}
+            {% for batch in choice_objects|batch(2) %}
                 <div class="row">
-                {% for track_id, track in batch %}
+                {% for cco in batch %}
                     <div class="col-md-6">
-                        {% if ambience['event']['tracks']|length > 1 %}
-                            <h5>{{ track['shortname'] }}</h5>
+                        {% if choice_objects|length > 1 %}
+                            <h5>{{ cco['title'] }}</h5>
                         {% endif %}
+                        {% set track = reference_track[cco['id']] if 'constraint_type' in cco else cco %}
+                        {% set reg_track = ambience['registration']['tracks'][track['id']] %}
 
                         <dl class="dl-horizontal">
                             <dt>{% trans %}Instructor of{% endtrans %}</dt>
                             <dd>
-                                {% with course_id = ambience['registration']['tracks'][track_id]['course_instructor'] %}
+                                {% with course_id = reg_track['course_instructor'] %}
                                     {% if course_id %}
                                         {{ util.href(cdedblink('event/show_course', {'course_id': course_id}),
                                                      "{}. {}".format(courses[course_id]['nr'],
@@ -230,8 +232,8 @@
                             {% for i in range(track['num_choices']) %}
                                 <dt>{{ gettext("%s. Choice")|format(i + 1) }}</dt>
                                 <dd>
-                                    {% if ambience['registration']['tracks'][track_id]['choices']|length > i  %}
-                                        {% with course_id = ambience['registration']['tracks'][track_id]['choices'][i] %}
+                                    {% if reg_track['choices']|length > i  %}
+                                        {% with course_id = reg_track['choices'][i] %}
                                             {% if course_id %}
                                                 {{ util.href(cdedblink('event/show_course', {'course_id': course_id}),
                                                              "{}. {}".format(courses[course_id]['nr'],

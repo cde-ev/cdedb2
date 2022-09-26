@@ -169,14 +169,15 @@
         {% endfor %}
     </dl>
 
-    {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) if track['num_choices'] %}
-        {% set reg_track = registration['tracks'][track_id] %}
-        {% if enums['RegistrationPartStati'](registration['parts'][track['part_id']]['status']).is_involved() %}
+    {% for cco in choice_objects %}
+        {% set track = reference_track[cco['id']] if 'constraint_type' in cco else cco %}
+        {% set reg_track = registration['tracks'][track['id']] %}
+        {% if 'track_ids' in cco and cco['track_ids'].intersection(involved_tracks) or cco['id'] in involved_tracks %}
             <h4>
                 {% trans %}Course{% endtrans %}
-                {% if ambience['event']['tracks']|length > 1 %}
+                {% if choice_objects|length > 1 %}
                     {% trans %}for{% endtrans %}
-                    {{ track['title'] }}
+                    {{ cco['title'] }}
                 {% endif %}
             </h4>
 

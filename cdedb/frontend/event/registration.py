@@ -558,12 +558,18 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs, event_id, (const.QuestionnaireUsages.registration,)))
         waitlist_position = self.eventproxy.get_waitlist_position(
             rs, event_id, persona_id=rs.user.persona_id)
+        course_choice_parameters = self.get_course_choice_params(rs, event_id)
+
+        stat = lambda track: registration['parts'][track['part_id']]['status']
+        involved_tracks = {
+            track_id for track_id, track in rs.ambience['event']['tracks'].items()
+            if const.RegistrationPartStati(stat(track)).is_involved()}
 
         return self.render(rs, "registration/registration_status", {
             'registration': registration, 'age': age, 'courses': courses,
             'reg_questionnaire': reg_questionnaire,
-            'waitlist_position': waitlist_position,
-            **payment_data
+            'waitlist_position': waitlist_position, 'involved_tracks': involved_tracks,
+            **payment_data, **course_choice_parameters,
         })
 
     @access("event")
@@ -691,6 +697,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs, event_id, persona_id=persona['id'])
         constraint_violations = self.get_constraint_violations(
             rs, event_id, registration_id=registration_id, course_id=-1)
+        course_choice_parameters = self.get_course_choice_params(rs, event_id)
         return self.render(rs, "registration/show_registration", {
             'persona': persona, 'age': age, 'courses': courses,
             'lodgements': lodgements, 'meta_info': meta_info, 'fee': fee,
@@ -698,6 +705,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             'mep_violations': constraint_violations['mep_violations'],
             'ccs_violations': constraint_violations['ccs_violations'],
             'violation_severity': constraint_violations['max_severity'],
+            **course_choice_parameters,
         })
 
     @access("event")
