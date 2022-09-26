@@ -762,9 +762,8 @@ class EventRegistrationMixin(EventBaseFrontend):
             **course_choice_params,
         })
 
-    @staticmethod
     def process_orga_registration_input(
-            rs: RequestState, event: CdEDBObject, do_fields: bool = True,
+            self, rs: RequestState, event: CdEDBObject, do_fields: bool = True,
             check_enabled: bool = False, skip: Collection[str] = (),
             do_real_persona_id: bool = False) -> CdEDBObject:
         """Helper to handle input by orgas.
@@ -795,6 +794,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                 key: kind for key, kind in params.items() if enable[f"enable_{key}"]}
 
         # Extract parameters from request
+        course_choice_parameters = self.get_course_choice_params(rs, event['id'])
         tracks = event['tracks']
         reg_params: vtypes.TypeMapping = {
             "reg.notes": Optional[str],  # type: ignore[dict-item]
@@ -839,6 +839,27 @@ class EventRegistrationMixin(EventBaseFrontend):
         raw_tracks = request_extractor(rs, filter_parameters(track_params))
         raw_fields = request_extractor(rs, filter_parameters(field_params))
 
+        # Synced course choices.
+        ref_tracks = course_choice_parameters['reference_track']
+        track_groups = event['track_groups']
+        synced_choice_params: vtypes.TypeMapping = {
+            f"course_choice_group{group_id}_{i}": Optional[vtypes.ID]  # type: ignore[misc]
+            for group_id in course_choice_parameters['sync_track_groups']
+            for i in range(event['tracks'][ref_tracks[group_id]['id']]['num_choices'])
+        }
+        for key, val in request_extractor(rs, synced_choice_params).items():
+            group_id, x = map(int, key.removeprefix("course_choice_group").split("_"))
+            for track_id in track_groups[group_id]['track_ids']:
+                raw_tracks[f"track{track_id}.course_choice_{x}"] = val
+        synced_instructor_params: vtypes.TypeMapping = {
+            f"course_choice_group_instructor{group_id}": Optional[vtypes.ID]  # type: ignore[misc]
+            for group_id in course_choice_parameters['sync_track_groups']
+        }
+        for key, val in request_extractor(rs, synced_instructor_params).items():
+            group_id = int(key.removeprefix("course_choice_group_instructor"))
+            for track_id in track_groups[group_id]['track_ids']:
+                raw_tracks[f"{track_id}.course_instructor"] = val
+
         # Build `parts`, `tracks` and `fields` dict
         new_parts = {
             part_id: {
@@ -850,23 +871,20 @@ class EventRegistrationMixin(EventBaseFrontend):
         }
         new_tracks = {
             track_id: {
-                key: raw_tracks["track{}.{}".format(track_id, key)]
+                key: raw_tracks[f"track{track_id}.{key}"]
                 for key in ("course_id", "course_instructor")
-                if "track{}.{}".format(track_id, key) in raw_tracks
+                if f"track{track_id}.{key}" in raw_tracks
             }
             for track_id in tracks
         }
         # Build course choices (but only if all choices are present)
         for track_id, track in tracks.items():
-            if not all("track{}.course_choice_{}".format(track_id, i)
-                       in raw_tracks
-                       for i in range(track['num_choices'])):
-                continue
-            extractor = lambda i: raw_tracks["track{}.course_choice_{}".format(
-                track_id, i)]
+            # if not all(f"track{track_id}.course_choice_{i}" in raw_tracks
+            #            for i in range(track['num_choices'])):
+            #     continue
+            extractor = lambda i: raw_tracks[f"track{track_id}.course_choice_{i}"]
             choices_tuple = tuple(
-                extractor(i)
-                for i in range(track['num_choices']) if extractor(i))
+                c_id for i in range(track['num_choices']) if (c_id := extractor(i)))
             choices_set = set()
             own_course = new_tracks[track_id].get("course_instructor")
             for i_choice, choice in enumerate(choices_tuple):
