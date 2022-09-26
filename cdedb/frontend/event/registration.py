@@ -260,11 +260,14 @@ class EventRegistrationMixin(EventBaseFrontend):
         courses_per_track_group: dict[int, set[int]] = {}
         reference_track = {}
         simple_tracks = set(tracks)
-        for track_group_id, track_group in track_groups.items():
-            if not track_group['constraint_type'].is_sync():
-                continue
+        track_group_map = {track_id: None for track_id in tracks}
+        sync_track_groups = {tg_id: tg for tg_id, tg in track_groups.items()
+                             if tg['constraint_type'].is_sync()}
+        for track_group_id, track_group in sync_track_groups.items():
             simple_tracks.difference_update(track_group['track_ids'])
             courses_per_track_group[track_group_id] = set()
+            track_group_map.update(
+                {track_id: track_group_id for track_id in track_group['track_ids']})
             for track_id in track_group['track_ids']:
                 courses_per_track_group[track_group_id] = courses_per_track[track_id]
                 reference_track[track_group_id] = tracks[track_id]
@@ -276,7 +279,8 @@ class EventRegistrationMixin(EventBaseFrontend):
             'courses': courses, 'courses_per_track': courses_per_track,
             'courses_per_track_group': courses_per_track_group,
             'reference_track': reference_track, 'simple_tracks': simple_tracks,
-            'choice_objects': choice_objects,
+            'choice_objects': choice_objects, 'sync_track_groups': sync_track_groups,
+            'track_group_map': track_group_map,
         }
 
     @access("event")
@@ -344,7 +348,10 @@ class EventRegistrationMixin(EventBaseFrontend):
           be provided in the input.
         :returns: registration data set
         """
+        course_choice_parameters = self.get_course_choice_params(rs, event['id'])
         tracks = event['tracks']
+
+        # Default keys.
         standard_params: vtypes.TypeMapping = {
             "mixed_lodging": bool,
             "notes": Optional[str],  # type: ignore[dict-item]
@@ -356,31 +363,61 @@ class EventRegistrationMixin(EventBaseFrontend):
             standard['parts'] = tuple(
                 part_id for part_id, entry in parts.items()
                 if const.RegistrationPartStati(entry['status']).is_involved())
-        choice_params: vtypes.TypeMapping = {
+
+        # Simple course choices.
+        simple_tracks = course_choice_parameters['simple_tracks']
+        simple_choice_params: vtypes.TypeMapping = {
             f"course_choice{track_id}_{i}": Optional[vtypes.ID]  # type: ignore[misc]
-            for part_id in standard['parts']
-            for track_id in event['parts'][part_id]['tracks']
+            for track_id in simple_tracks
             for i in range(event['tracks'][track_id]['num_choices'])
         }
-        choices = request_extractor(rs, choice_params)
-        instructor_params: vtypes.TypeMapping = {
+        simple_choices = request_extractor(rs, simple_choice_params)
+        simple_instructor_params: vtypes.TypeMapping = {
             f"course_instructor{track_id}": Optional[vtypes.ID]  # type: ignore[misc]
-            for part_id in standard['parts']
-            for track_id in event['parts'][part_id]['tracks']
+            for track_id in simple_tracks
         }
-        instructor = request_extractor(rs, instructor_params)
+        simple_instructors = request_extractor(rs, simple_instructor_params)
+
+        # Synced course choices.
+        ref_tracks = course_choice_parameters['reference_track']
+        track_groups = event['track_groups']
+        synced_choice_params: vtypes.TypeMapping = {
+            f"course_choice_group{group_id}_{i}": Optional[vtypes.ID]  # type: ignore[misc]
+            for group_id in course_choice_parameters['sync_track_groups']
+            for i in range(event['tracks'][ref_tracks[group_id]['id']]['num_choices'])
+        }
+        for key, val in request_extractor(rs, synced_choice_params).items():
+            group_id, x = map(int, key.removeprefix("course_choice_group").split("_"))
+            for track_id in track_groups[group_id]['track_ids']:
+                simple_choices[f"course_choice{track_id}_{x}"] = val
+        synced_instructor_params: vtypes.TypeMapping = {
+            f"course_choice_group_instructor{group_id}": Optional[vtypes.ID]  # type: ignore[misc]
+            for group_id in course_choice_parameters['sync_track_groups']
+        }
+        for key, val in request_extractor(rs, synced_instructor_params).items():
+            group_id = int(key.removeprefix("course_choice_group_instructor"))
+            for track_id in track_groups[group_id]['track_ids']:
+                simple_instructors[f"course_instructor{track_id}"] = val
+
+        # Validation.
         if not standard['parts']:
             rs.append_validation_error(
                 ("parts", ValueError(n_("Must select at least one part."))))
         present_tracks = set()
         choice_getter = (
-            lambda track_id, i: choices[f"course_choice{track_id}_{i}"])
+            lambda track_id, i: simple_choices[f"course_choice{track_id}_{i}"])
+        choice_key = (
+            lambda track_id, i:
+                f"course_choice_group{group_id}_{i}"
+                if (group_id := course_choice_parameters['track_group_map'][track_id])
+                else f"course_choice{track_id}_{i}"
+        )
         for part_id in standard['parts']:
             for track_id, track in event['parts'][part_id]['tracks'].items():
                 present_tracks.add(track_id)
                 # Check for duplicate course choices
-                rs.extend_validation_errors(
-                    ("course_choice{}_{}".format(track_id, j),
+                rs.add_validation_errors(
+                    (choice_key(track_id, i),
                      ValueError(n_("You cannot have the same course as %(i)s."
                                    " and %(j)s. choice"), {'i': i+1, 'j': j+1}))
                     for j in range(track['num_choices'])
@@ -389,8 +426,8 @@ class EventRegistrationMixin(EventBaseFrontend):
                         and choice_getter(track_id, i)
                             == choice_getter(track_id, j)))
                 # Check for unfilled mandatory course choices
-                rs.extend_validation_errors(
-                    ("course_choice{}_{}".format(track_id, i),
+                rs.add_validation_errors(
+                    (choice_key(track_id, i),
                      ValueError(n_("You must choose at least %(min_choices)s"
                                    " courses."),
                                 {'min_choices': track['min_choices']}))
@@ -407,7 +444,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         reg_tracks = {
             track_id: {
                 'course_instructor':
-                    instructor.get("course_instructor{}".format(track_id))
+                    simple_instructors.get(f"course_instructor{track_id}")
                     if track['num_choices'] else None,
             }
             for track_id, track in tracks.items()

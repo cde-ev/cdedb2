@@ -24,7 +24,7 @@
                                            |xdict_entries('{id}', '{nr}. {title}', include=course_choices) %}
         {% if track_group %}
             {% set choice_name = "course_choice_group{}".format(track_group['id']) + "_{}" %}
-            {% set instructor_name = "course_instructor{}".format(track_group['id']) %}
+            {% set instructor_name = "course_choice_group_instructor{}".format(track_group['id']) %}
         {% else %}
             {% set choice_name = "course_choice{}".format(track['id']) + "_{}" %}
             {% set instructor_name = "course_instructor{}".format(track['id']) %}
