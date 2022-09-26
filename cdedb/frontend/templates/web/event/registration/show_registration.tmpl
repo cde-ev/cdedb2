@@ -81,7 +81,7 @@
             {{ ambience['registration']['orga_notes']|md }}
         {% endcall %}
     {% endif %}
-    {% if mep_violations %}
+    {% if mep_violations or ccs_violations %}
         {% call generic_event.constraint_violations_panel(violation_severity) %}
             {{ generic_event.list_mep_violations(mep_violations, {persona['id']: persona}) }}
             {{ generic_event.list_ccs_violations(ccs_violations, {persona['id']: persona}) }}

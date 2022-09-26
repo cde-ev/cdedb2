@@ -336,7 +336,7 @@
             {% if has_constraints %}
             <div class="col-md-6" id="constraint-violations">
                 {% call generic.constraint_violations_panel(violation_severity, link_title=True) %}
-                    {% if not mep_violations and not mec_violations %}
+                    {% if not mep_violations and not mec_violations and not ccs_violations %}
                         {% trans %}
                             There are currently no constraints being violated.
                         {% endtrans %}
@@ -353,6 +353,13 @@
                                 <li><a href="{{ cdedblink("event/constraint_violations") }}#mec-violations">
                                     {% trans count=mec_violations|length %}
                                         There are {{ count }} violations of mutually exclusive course constraints.
+                                    {% endtrans %}
+                                </li>
+                            {% endif %}
+                            {% if ccs_violations %}
+                                <li><a href="{{ cdedblink("event/constraint_violations") }}#ccs-violations">
+                                    {% trans count=ccs_violations|length %}
+                                        There are {{ count }} violations of course choice sync constraints.
                                     {% endtrans %}
                                 </li>
                             {% endif %}

@@ -106,6 +106,7 @@ class EventEventMixin(EventBaseFrontend):
                 rs, event_id, registration_id=None, course_id=None)
             params['mep_violations'] = constraint_violations['mep_violations']
             params['mec_violations'] = constraint_violations['mec_violations']
+            params['ccs_violations'] = constraint_violations['ccs_violations']
             params['violation_severity'] = constraint_violations['max_severity']
         elif not rs.ambience['event']['is_visible']:
             raise werkzeug.exceptions.Forbidden(n_("The event is not published yet."))

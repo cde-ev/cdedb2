@@ -35,4 +35,12 @@
         {# These are presorted by course and constraint. #}
         {{ generic.list_mec_violations(mec_violations, courses, link_course=True) }}
     {% endif %}
+
+    {% if ccs_violations %}
+        <h2 class="heading-underline" id="ccs-violations">
+            {% trans %}Course Choice Sync{% endtrans %}
+        </h2>
+        {# These are presorted by persona and constraint. #}
+        {{ generic.list_ccs_violations(ccs_violations, personas, link_registration=True) }}
+    {% endif %}
 {% endblock %}

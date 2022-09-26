@@ -155,7 +155,12 @@ class EventBaseFrontend(AbstractUserFrontend):
                         params['is_participant'] = True
             params['has_constraints'] = any(
                 not pg['constraint_type'].is_stats()
-                for pg in rs.ambience['event']['part_groups'].values())
+                for pg in rs.ambience['event']['part_groups'].values()
+            ) or any(
+                tg['constraint_type']
+                for tg in rs.ambience['event']['track_groups'].values()
+            )
+
         return super().render(rs, templatename, params=params)
 
     @classmethod
