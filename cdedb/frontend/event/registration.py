@@ -596,11 +596,17 @@ class EventRegistrationMixin(EventBaseFrontend):
         non_trivials = {}
         for track_id, track in registration['tracks'].items():
             for i, choice in enumerate(track['choices']):
-                param = "course_choice{}_{}".format(track_id, i)
-                non_trivials[param] = choice
+                key = f"course_choice{track_id}_{i}"
+                non_trivials[key] = choice
+            for tg_id, tg in event['tracks'][track_id]['track_groups'].items():
+                if not tg['constraint_type'].is_sync():
+                    continue
+                for i, choice in enumerate(track['choices']):
+                    key = f'course_choice_group{tg_id}_{i}'
+                    non_trivials[key] = choice
         for track_id, entry in registration['tracks'].items():
-            param = "course_instructor{}".format(track_id)
-            non_trivials[param] = entry['course_instructor']
+            key = f"course_instructor{track_id}"
+            non_trivials[key] = entry['course_instructor']
         for k, v in registration['fields'].items():
             non_trivials[k] = v
         stat = lambda track: registration['parts'][track['part_id']]['status']
@@ -714,6 +720,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         """
         if rs.has_validation_errors() and not internal:
             return self.redirect(rs, 'event/show_registration')
+        event = rs.ambience['event']
         tracks = rs.ambience['event']['tracks']
         registration = rs.ambience['registration']
         persona = self.coreproxy.get_event_user(rs, registration['persona_id'],
@@ -745,6 +752,12 @@ class EventRegistrationMixin(EventBaseFrontend):
             for i, choice in enumerate(track['choices']):
                 key = f'track{track_id}.course_choice_{i}'
                 one_track[key] = choice
+            for tg_id, tg in event['tracks'][track_id]['track_groups'].items():
+                if not tg['constraint_type'].is_sync():
+                    continue
+                for i, choice in enumerate(track['choices']):
+                    key = f'course_choice_group{tg_id}_{i}'
+                    one_track[key] = choice
             track_values.append(one_track)
         field_values = {
             f"fields.{key}": value
