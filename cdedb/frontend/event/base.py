@@ -60,7 +60,7 @@ class ConstraintViolation:
         ...
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True)  # type: ignore[misc]
 class PartGroupConstraintViolation(ConstraintViolation):
     part_group_id: int  # ID of the part group whose constraint is being violated.
 
@@ -70,7 +70,7 @@ class PartGroupConstraintViolation(ConstraintViolation):
         ...
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True)  # type: ignore[misc]
 class TrackGroupConstraintViolation(ConstraintViolation):
     track_group_id: int  # ID of the track group whose constraint is being violated.
 
