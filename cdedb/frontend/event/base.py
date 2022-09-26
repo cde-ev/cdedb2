@@ -21,7 +21,7 @@ import operator
 from collections import OrderedDict
 from dataclasses import dataclass
 from typing import (
-    Any, Collection, Dict, Iterable, List, Literal, Optional, Set, Tuple, Type,
+    Any, Collection, Dict, Iterable, List, Literal, Optional, Set, Tuple, Type, Union,
 )
 
 import werkzeug.exceptions
@@ -48,12 +48,21 @@ from cdedb.frontend.common import (
 
 @dataclass(frozen=True)  # type: ignore[misc]
 class ConstraintViolation:
-    part_group_id: int  # ID of the part group whose constraint is being violated.
-
     @property
     @abc.abstractmethod
     def severity(self) -> int:
         ...
+
+    @property
+    @abc.abstractmethod
+    def constraint_type(self) -> Union[const.EventPartGroupType,
+                                       const.CourseTrackGroupType]:
+        ...
+
+
+@dataclass(frozen=True)
+class PartGroupConstraintViolation(ConstraintViolation):
+    part_group_id: int  # ID of the part group whose constraint is being violated.
 
     @property
     @abc.abstractmethod
@@ -62,7 +71,17 @@ class ConstraintViolation:
 
 
 @dataclass(frozen=True)
-class MEPViolation(ConstraintViolation):
+class TrackGroupConstraintViolation(ConstraintViolation):
+    track_group_id: int  # ID of the track group whose constraint is being violated.
+
+    @property
+    @abc.abstractmethod
+    def constraint_type(self) -> const.CourseTrackGroupType:
+        ...
+
+
+@dataclass(frozen=True)
+class MEPViolation(PartGroupConstraintViolation):
     registration_id: int
     persona_id: int
     part_ids: List[int]  # Sorted IDs of the parts in violation.
@@ -81,7 +100,7 @@ class MEPViolation(ConstraintViolation):
 
 
 @dataclass(frozen=True)
-class MECViolation(ConstraintViolation):
+class MECViolation(PartGroupConstraintViolation):
     course_id: int
     track_ids: List[int]  # Sorted IDs of the tracks in violation.
     tracks_str: str  # Locale agnostic string representation of said tracks.
@@ -96,6 +115,21 @@ class MECViolation(ConstraintViolation):
             self
     ) -> Literal[const.EventPartGroupType.mutually_exclusive_courses]:
         return const.EventPartGroupType.mutually_exclusive_courses
+
+
+@dataclass(frozen=True)
+class CCSViolation(TrackGroupConstraintViolation):
+    track_group_id: int
+    registration_id: int
+    persona_id: int
+
+    @property
+    def severity(self) -> int:
+        return 2
+
+    @property
+    def constraint_type(self) -> Literal[const.CourseTrackGroupType.course_choice_sync]:
+        return const.CourseTrackGroupType.course_choice_sync
 
 
 class EventBaseFrontend(AbstractUserFrontend):
@@ -439,10 +473,17 @@ class EventBaseFrontend(AbstractUserFrontend):
                 }, EntitySorter.event_part_group)
             for constraint in const.EventPartGroupType
         }
+        tgs_by_type = {
+            constraint: keydictsort_filter(
+                {
+                    tg_id: tg
+                    for tg_id, tg in rs.ambience['event']['track_groups'].items()
+                    if tg['constraint_type'] == constraint
+                }, EntitySorter.course_choice_object)
+            for constraint in const.CourseTrackGroupType
+        }
 
-        # Check registrations for violations against mutual exclusiveness constraints.
-        mep = const.EventPartGroupType.mutually_exclusive_participants
-        mep_violations = []
+        # Retrieve registrations.
         if registration_id is None:
             registrations = self.eventproxy.get_registrations(
                 rs, self.eventproxy.list_registrations(rs, event_id))
@@ -459,6 +500,10 @@ class EventBaseFrontend(AbstractUserFrontend):
         def part_id_sorter(part_ids: Collection[int]) -> List[int]:
             return xsorted(part_ids, key=lambda part_id: EntitySorter.event_part(
                 rs.ambience['event']['parts'][part_id]))
+
+        # Check registrations for violations against mutual exclusiveness constraints.
+        mep = const.EventPartGroupType.mutually_exclusive_participants
+        mep_violations = []
 
         for reg_id, reg in registrations.items():
             for pg_id, part_group in pgs_by_type[mep]:
@@ -486,6 +531,17 @@ class EventBaseFrontend(AbstractUserFrontend):
                                   for part_id in sorted_part_ids),
                         guest_violation=True,
                     ))
+
+        # Check registrations for course choice sync violations.
+        ccs = const.CourseTrackGroupType.course_choice_sync
+        ccs_violations = []
+
+        for reg_id, reg in registrations.items():
+            for tg_id, tg in tgs_by_type[ccs]:
+                if any(reg['tracks'][t1]['choices'] != reg['tracks'][t2]['choices']
+                       for t1, t2 in itertools.combinations(tg['track_ids'], 2)):
+                    ccs_violations.append(
+                        CCSViolation(tg_id, reg_id, reg['persona_id']))
 
         # Check courses for violations against mutual exclusiveness constraints.
         mec = const.EventPartGroupType.mutually_exclusive_courses
@@ -524,13 +580,14 @@ class EventBaseFrontend(AbstractUserFrontend):
                     ))
 
         all_violations: Iterable[ConstraintViolation] = itertools.chain(
-            mep_violations, mec_violations)
+            mep_violations, mec_violations, ccs_violations)
         max_severity = max((v.severity for v in all_violations), default=0)
         return {
             'max_severity': max_severity,
             'mep_violations': mep_violations, 'registrations': registrations,
             'personas': personas,
             'mec_violations': mec_violations, 'courses': courses,
+            'ccs_violations': ccs_violations,
         }
 
     @access("event")

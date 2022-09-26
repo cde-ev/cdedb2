@@ -690,6 +690,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             'lodgements': lodgements, 'meta_info': meta_info, 'fee': fee,
             'reference': reference, 'waitlist_position': waitlist_position,
             'mep_violations': constraint_violations['mep_violations'],
+            'ccs_violations': constraint_violations['ccs_violations'],
             'violation_severity': constraint_violations['max_severity'],
         })
 

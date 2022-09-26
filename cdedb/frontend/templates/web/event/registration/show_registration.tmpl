@@ -84,6 +84,7 @@
     {% if mep_violations %}
         {% call generic_event.constraint_violations_panel(violation_severity) %}
             {{ generic_event.list_mep_violations(mep_violations, {persona['id']: persona}) }}
+            {{ generic_event.list_ccs_violations(ccs_violations, {persona['id']: persona}) }}
         {% endcall %}
     {% endif %}
 

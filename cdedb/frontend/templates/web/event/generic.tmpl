@@ -356,3 +356,22 @@
         {% endfor %}
     </ul>
 {% endmacro %}
+
+{% macro list_ccs_violations(violations, personas, link_registration=False) %}
+    <ul id="ccs-violations-list">
+        {% for violation in violations %}
+            {% set persona_name = util.persona_name(personas[violation.persona_id]) %}
+            {% if link_registration %}
+                {% set reg_link = util.href(cdedblink("event/show_registration", {'registration_id': violation.registration_id}), persona_name) %}
+            {% else %}
+                {% set reg_link = persona_name %}
+            {% endif %}
+
+            <li {% if violation.severity == 1 %} class="text-warning" {% elif violation.severity > 1 %} class="text-danger" {% endif %}>
+                {% trans reg_link=reg_link, constraint_shortname=ambience['event']['track_groups'][violation.track_group_id]['shortname'] %}
+                    {{ reg_link }} is in violation of the {{ constraint_shortname }} course choice sync.
+                {% endtrans -%}
+            </li>
+        {% endfor %}
+    </ul>
+{% endmacro %}
