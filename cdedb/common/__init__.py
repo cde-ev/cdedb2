@@ -275,6 +275,10 @@ class RequestState(ConnectionContainer):
         self.validation_appraised = False
         self._errors.extend(errors)
 
+    def add_validation_errors(self, errors: Iterable[Error]) -> None:
+        for e in errors:
+            self.add_validation_error(e)
+
     def has_validation_errors(self) -> bool:
         """Check whether validation errors exists.
 
