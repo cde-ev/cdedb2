@@ -728,36 +728,39 @@ class EventRegistrationMixin(EventBaseFrontend):
             for track_id in tracks}
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
-        reg_values = {"reg.{}".format(key): value
+        reg_values = {f"reg.{key}": value
                       for key, value in registration.items()}
         part_values = []
         for part_id, part in registration['parts'].items():
             one_part = {
-                "part{}.{}".format(part_id, key): value
+                f"part{part_id}.{key}": value
                 for key, value in part.items()}
             part_values.append(one_part)
         track_values = []
         for track_id, track in registration['tracks'].items():
             one_track = {
-                "track{}.{}".format(track_id, key): value
+                f"track{track_id}.{key}": value
                 for key, value in track.items()
                 if key != "choices"}
             for i, choice in enumerate(track['choices']):
-                key = 'track{}.course_choice_{}'.format(track_id, i)
+                key = f'track{track_id}.course_choice_{i}'
                 one_track[key] = choice
             track_values.append(one_track)
         field_values = {
-            "fields.{}".format(key): value
+            f"fields.{key}": value
             for key, value in registration['fields'].items()}
         # Fix formatting of ID
         reg_values['reg.real_persona_id'] = cdedbid_filter(
             reg_values['reg.real_persona_id'])
         merge_dicts(rs.values, reg_values, field_values,
                     *(part_values + track_values))
+        course_choice_params = self.get_course_choice_params(rs, event_id)
         return self.render(rs, "registration/change_registration", {
             'persona': persona, 'courses': courses,
             'course_choices': course_choices, 'lodgements': lodgements,
-            'skip': skip or [], 'change_note': change_note})
+            'skip': skip or [], 'change_note': change_note,
+            **course_choice_params,
+        })
 
     @staticmethod
     def process_orga_registration_input(
