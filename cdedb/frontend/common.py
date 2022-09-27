@@ -74,8 +74,8 @@ from cdedb.common import (
     ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD, IGNORE_WARNINGS_NAME, CdEDBMultiDict,
     CdEDBObject, CustomJSONEncoder, Error, Notification, NotificationType, PathLike,
     RequestState, Role, User, _tdelta, asciificator, decode_parameter, encode_parameter,
-    glue, json_serialize, make_persona_forename, make_proxy, merge_dicts, now,
-    setup_logger, unwrap,
+    glue, json_serialize, make_persona_name, make_proxy, merge_dicts, now, setup_logger,
+    unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
@@ -2184,32 +2184,6 @@ def make_event_fee_reference(persona: CdEDBObject, event: CdEDBObject) -> str:
         fn=asciificator(persona['family_name']),
         cdedbid=cdedbid_filter(persona['id'])
     )
-
-
-def make_persona_name(persona: CdEDBObject,
-                      only_given_names: bool = False,
-                      only_display_name: bool = False,
-                      given_and_display_names: bool = False,
-                      with_family_name: bool = True,
-                      with_titles: bool = False) -> str:
-    """Format the name of a given persona according to the display name specification
-
-    This is the Python pendant of the `util.persona_name()` macro.
-    For a full specification, which name variant should be used in which context, see
-    the documentation page about "User Experience Conventions".
-    """
-    forename = make_persona_forename(
-        persona, only_given_names=only_given_names, only_display_name=only_display_name,
-        given_and_display_names=given_and_display_names)
-    ret = []
-    if with_titles and persona.get('title'):
-        ret.append(persona['title'])
-    ret.append(forename)
-    if with_family_name:
-        ret.append(persona['family_name'])
-    if with_titles and persona.get('name_supplement'):
-        ret.append(persona['name_supplement'])
-    return " ".join(ret)
 
 
 def drow_name(field_name: str, entity_id: int, prefix: str = "") -> str:

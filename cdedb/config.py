@@ -171,6 +171,8 @@ _DEFAULTS = {
     "I18N_LANGUAGES": ("de", "en", "la"),
     # Advertised languages in the UI
     "I18N_ADVERTISED_LANGUAGES": ("de", "en"),
+    # timeout for cleaning up genesis cases
+    "GENESIS_CLEANUP_TIMEOUT": datetime.timedelta(days=90),
 
     ###############
     # email stuff #

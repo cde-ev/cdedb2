@@ -34,7 +34,7 @@ from tests.common import (
 
 
 class TestEventFrontend(FrontendTest):
-    EVENT_LOG_OFFSET = 4
+    EVENT_LOG_OFFSET = 6
 
     @as_users("anton", "emilia")
     def test_index(self) -> None:
@@ -655,7 +655,7 @@ class TestEventFrontend(FrontendTest):
     @as_users("annika", "garcia")
     def test_part_summary_trivial(self) -> None:
         self.traverse("Veranstaltungen", "Große Testakademie 2222", "Log")
-        self.assertTitle("Große Testakademie 2222: Log [1–4 von 4]")
+        self.assertTitle("Große Testakademie 2222: Log [1–6 von 6]")
 
         # check there is no log generation if nothing changes
         self.traverse("Veranstaltungsteile")
@@ -672,7 +672,7 @@ class TestEventFrontend(FrontendTest):
 
         # check the that no log entries were added
         self.traverse("Log")
-        self.assertTitle("Große Testakademie 2222: Log [1–4 von 4]")
+        self.assertTitle("Große Testakademie 2222: Log [1–6 von 6]")
 
     @as_users("annika")
     def test_part_summary_complex(self) -> None:
@@ -2277,6 +2277,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertTitle("Neue Anmeldung (CdE-Party 2050)")
         f = self.response.forms['addregistrationform']
         f['persona.persona_id'] = "DB-1-9"
+        f['reg.list_consent'] = True
         self.submit(f)
 
         # now test participant list
@@ -2375,6 +2376,42 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             # this is an expanded profile, since garcia is not searchable but
             # orga of this event
             self.assertPresence("akira@example.cde", div='contact-email')
+
+    @as_users("berta", "emilia")
+    def test_lodgement_wish_detection(self) -> None:
+        with self.switch_user("garcia"):
+            self.event.set_event(self.key, {
+                'id': 1,
+                'is_participant_list_visible': True,
+                'use_additional_questionnaire': True,
+            })
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Fragebogen")
+        f = self.response.forms['questionnaireform']
+        f['lodge'] = ""
+        self.submit(f)
+        self.assertPresence("Du kannst Zimmerwünsche im entsprechenden Fragebogenfeld",
+                            div="lodgement-wishes")
+        self.assertNonPresence("Folgende Unterbringungswünsche wurden aus Deiner"
+                               " Eingabe erkannt.", div="lodgement-wishes")
+        self.assertPresence("Erkannte Unterbringungswünsche werden hier angezeigt",
+                            div="lodgement-wishes")
+        self.assertPresence("Falls ein Wunsch fehlen sollte", div="lodgement-wishes")
+        f['lodge'] = """
+            Anton Armin A. Administrator, garcia@example.cde, DB-100-Y, Daniel D. Dino
+        """
+        self.submit(f)
+        self.assertPresence("Folgende Unterbringungswünsche", div="lodgement-wishes")
+        self.assertPresence("Anton Administrator", div="lodgement-wishes-list")
+        self.assertNonPresence("Garcia", div="lodgement-wishes-list")
+        self.assertPresence("Akira Abukara", div="lodgement-wishes-list")
+        self.assertNonPresence("Daniel", div="lodgement-wishes-list")
+        with self.switch_user("garcia"):
+            reg_id = unwrap(
+                self.event.list_registrations(
+                    self.key, event_id=1, persona_id=self.user['id']).keys())
+            self.event.set_registration(self.key, {'id': reg_id, 'list_consent': True})
+        self.submit(f)
+        self.assertPresence("Garcia Generalis", div="lodgement-wishes-list")
 
     @as_users("annika", "garcia")
     def test_cancellation(self) -> None:
@@ -3923,6 +3960,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             expectation = json.load(datafile)
         result = json.loads(self.response.text)
         expectation['timestamp'] = result['timestamp']  # nearly_now() won't do
+        for log_entry in result['event.log'].values():
+            del log_entry['ctime']
+        for log_entry in expectation['event.log'].values():
+            del log_entry['ctime']
         self.assertEqual(expectation, result)
 
     @as_users("garcia")
@@ -4642,6 +4683,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         with open(self.testfile_dir / "TestAka_partial_export_event.json") as f:
             expectation = json.load(f)
         expectation['timestamp'] = result['timestamp']
+        for reg_id, reg in result['registrations'].items():
+            expectation['registrations'][reg_id]['ctime'] = reg['ctime']
+            expectation['registrations'][reg_id]['mtime'] = reg['mtime']
         self.assertEqual(expectation, result)
 
     @event_keeper
@@ -4658,6 +4702,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         del upload['event']
         for reg in upload['registrations'].values():
             del reg['persona']
+            del reg['ctime']
+            del reg['mtime']
         self.get('/')
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
