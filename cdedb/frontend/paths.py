@@ -510,6 +510,20 @@ CDEDB_PATHS = werkzeug.routing.Map((
                         )),
                     )),
                 )),
+                sub('/track/group', (
+                    rule("/add", methods=_GET,
+                         endpoint="add_track_group_form"),
+                    rule("/add", methods=_POST,
+                         endpoint="add_track_group"),
+                    sub('/<int:track_group_id>', (
+                        rule("/change", methods=_GET,
+                             endpoint="change_track_group_form"),
+                        rule("/change", methods=_POST,
+                             endpoint="change_track_group"),
+                        rule("/delete", methods=_POST,
+                             endpoint="delete_track_group"),
+                    )),
+                )),
                 sub('/course', (
                     rule("/list", methods=_GET,
                          endpoint="course_list"),

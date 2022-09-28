@@ -129,7 +129,9 @@
                             <th>{% trans %}Course Choices{% endtrans %}</th>
                             <th>{% trans %}Req. Choices{% endtrans %}</th>
                             <th>{% trans %}Sortkey{% endtrans %}</th>
-                            <th>{% trans %}Track Groups{% endtrans %}</th>
+                            {% if ambience['event']['track_groups'] %}
+                                <th>{% trans %}Track Groups{% endtrans %}</th>
+                            {% endif %}
                         </tr>
                     </thead>
                     <tbody>
@@ -140,6 +142,7 @@
                                 <td>{{ track['num_choices'] }}</td>
                                 <td>{{ track['min_choices'] }}</td>
                                 <td>{{ track['sortkey'] }}</td>
+                                {% if ambience['event']['track_groups'] %}
                                 <td id="track{{ track_id }}_trackgroups">
                                     {% for track_group_id, track_group in track['track_groups']|keydictsort(EntitySorter.course_choice_object) %}
                                         {{ util.href(cdedblink("event/part_group_summary") + ("#trackgroup_" + track_group_id|string)|s,
@@ -147,6 +150,7 @@
                                                      title=gettext(track_group['constraint_type']|string) + ": " + track_group['title']) }}
                                     {% endfor %}
                                 </td>
+                                {% endif %}
                             </tr>
                         {% endfor %}
                     </tbody>
