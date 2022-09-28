@@ -10,8 +10,8 @@ import copy
 import decimal
 import itertools
 from typing import (
-    Any, Collection, Dict, Iterable, List, Mapping, Optional, Protocol, Sequence, Set,
-    Tuple, TypeVar,
+    Any, Collection, Dict, Iterable, List, Mapping, NamedTuple, Optional, Protocol,
+    Sequence, Set, Tuple, TypeVar,
 )
 
 import psycopg2.extensions
@@ -39,10 +39,17 @@ from cdedb.filter import date_filter, money_filter
 
 T = TypeVar("T")
 
+CourseChoiceValidationAux = NamedTuple(
+    "CoursChoiceValidationAux", [
+        ("course_segments", Mapping[int, Set[int]]),
+        ("synced_tracks", Mapping[int, Set[int]]),
+        ("involved_tracks", Set[int]),
+    ])
+
 
 class EventRegistrationBackend(EventBaseBackend):
     def _get_event_course_segments(self, rs: RequestState,
-                                   event: CdEDBObject) -> Dict[int, Set[int]]:
+                                   event_id: int) -> Dict[int, Set[int]]:
         """
         Helper function to get course segments of all courses of an event.
 
@@ -64,10 +71,10 @@ class EventRegistrationBackend(EventBaseBackend):
             GROUP BY courses.id"""
 
         return {row['id']: set(row['segments'])
-                for row in self.query_all(rs, query, (event['id'],))}
+                for row in self.query_all(rs, query, (event_id,))}
 
-    def _get_registration_involved_tracks(self, rs: RequestState, registration_id: int
-                                          ) -> Set[int]:
+    def _get_involved_tracks(self, rs: RequestState, registration_id: int
+                             ) -> Set[int]:
         """Return the track ids of all tracks, the registration is involved with."""
         q = """
             SELECT course_tracks.id
@@ -88,7 +95,7 @@ class EventRegistrationBackend(EventBaseBackend):
         The value will be an empty set for unsynced tracks.
         """
         q = """
-            SELECT ct.id, COALESCE(synced_tracks, ARRAY[]::integer[])
+            SELECT ct.id, COALESCE(synced_tracks, ARRAY[]::integer[]) AS synced_tracks
             FROM event.course_tracks ct
             JOIN event.event_parts ep on ep.id = ct.part_id
             LEFT JOIN (
@@ -104,6 +111,52 @@ class EventRegistrationBackend(EventBaseBackend):
         """
         p = (const.CourseTrackGroupType.course_choice_sync, event_id, event_id)
         return {e['id']: set(e['synced_tracks']) for e in self.query_all(rs, q, p)}
+
+    @access("event")
+    def get_course_choice_validation_aux(self, rs: RequestState, event_id: int,
+                                         registration_id: Optional[int],
+                                         part_ids: Optional[Collection[int]],
+                                         ) -> CourseChoiceValidationAux:
+        """Gather auxilliary data necessary to validate course choices."""
+        event_id = affirm(vtypes.ID, event_id)
+        registration_id = affirm_optional(vtypes.ID, registration_id)
+        part_ids = affirm_set(vtypes.ID, part_ids or ())
+        if registration_id:
+            involved_tracks = self._get_involved_tracks(rs, registration_id)
+        elif part_ids:
+            q = """
+                SELECT ct.id
+                FROM event.course_tracks ct
+                JOIN event_parts ep on ep.id = ct.part_id
+                WHERE ep.id = ANY(%s)
+            """
+            involved_tracks = {e['id'] for e in self.query_all(rs, q, (part_ids,))}
+        else:
+            involved_tracks = set()
+        return CourseChoiceValidationAux(
+            self._get_event_course_segments(rs, event_id),
+            self._get_synced_tracks(rs, event_id),
+            involved_tracks=involved_tracks,
+        )
+
+    @access("event")
+    def validate_single_course_choice(self, rs: RequestState, course_id: int,
+                                      track_id: int, aux: CourseChoiceValidationAux) -> bool:
+        """Check whether a course choice is allowed in a given track.
+
+        Returns True for valid choice and False for invalid choice.
+
+        :param aux: As returned by `get_course_choice_validation_aux`. This is
+            dependent on the event and a specific registration.
+        """
+        # Either the course is offered in this track.
+        if track_id in (offered_tracks := aux.course_segments[course_id]):
+            return True
+        # Or the course is offered in a synced track, that we are involved with.
+        if aux.synced_tracks[track_id] & aux.involved_tracks & offered_tracks:
+            return True
+        # Otherwise the choice is not allowed.
+        return False
 
     @access("event")
     def get_course_segments_per_track(self, rs: RequestState, event_id: int,
@@ -145,8 +198,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
     def _set_course_choices(self, rs: RequestState, registration_id: int,
                             track_id: int, choices: Optional[Sequence[int]],
-                            course_segments: Mapping[int, Collection[int]],
-                            synced_tracks: Set[int], involved_tracks: Set[int],
+                            aux: CourseChoiceValidationAux,
                             new_registration: bool = False
                             ) -> DefaultReturnCode:
         """Helper for handling of course choices.
@@ -155,8 +207,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
         :note: This has to be called inside an atomized context.
 
-        :param course_segments: Dict, course segments, as returned by
-            _get_event_course_segments()
+        :param aux: Additional data, as returned by `get_course_choice_validation_aux`.
         :param new_registration: Performance optimization for creating
             registrations: If true, the deletion of existing choices is skipped.
         """
@@ -166,11 +217,8 @@ class EventRegistrationBackend(EventBaseBackend):
             # Nothing specified, hence nothing to do
             return ret
         for course_id in choices:
-            # Either the course is offered in this track.
-            if track_id not in (offered_tracks := course_segments[course_id]):
-                # Or the course is offered in a synced track, that we are involved with.
-                if not synced_tracks & involved_tracks & offered_tracks:
-                    raise ValueError(n_("Wrong track for course."))
+            if not self.validate_single_course_choice(rs, course_id, track_id, aux):
+                raise ValueError(n_("Wrong track for course."))
         if not new_registration:
             query = ("DELETE FROM event.course_choices"
                      " WHERE registration_id = %s AND track_id = %s")
@@ -696,7 +744,6 @@ class EventRegistrationBackend(EventBaseBackend):
                     and not self.is_admin(rs)):
                 raise PrivilegeError(n_("Not privileged."))
             event = self.get_event(rs, event_id)
-            course_segments = self._get_event_course_segments(rs, event)
             if "amount_owed" in data:
                 del data["amount_owed"]
 
@@ -748,8 +795,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 tracks = data['tracks']
                 if not set(tracks).issubset(event['tracks']):
                     raise ValueError(n_("Non-existing tracks specified."))
-                involved_tracks = self._get_registration_involved_tracks(rs, data['id'])
-                synced_tracks = self._get_synced_tracks(rs, event_id)
+                aux = self.get_course_choice_validation_aux(rs, event_id, data['id'])
                 existing = {e['track_id']: e['id'] for e in self.sql_select(
                     rs, "event.registration_tracks", ("id", "track_id"),
                     (data['id'],), entity_key="registration_id")}
@@ -762,8 +808,7 @@ class EventRegistrationBackend(EventBaseBackend):
                     new_track = copy.deepcopy(tracks[x])
                     choices = new_track.pop('choices', None)
                     self._set_course_choices(
-                        rs, data['id'], x, choices, course_segments=course_segments,
-                        synced_tracks=synced_tracks[x], involved_tracks=involved_tracks)
+                        rs, data['id'], x, choices, aux=aux)
                     new_track['registration_id'] = data['id']
                     new_track['track_id'] = x
                     ret *= self.sql_insert(rs, "event.registration_tracks",
@@ -772,8 +817,7 @@ class EventRegistrationBackend(EventBaseBackend):
                     update = copy.deepcopy(tracks[x])
                     choices = update.pop('choices', None)
                     self._set_course_choices(
-                        rs, data['id'], x, choices, course_segments=course_segments,
-                        synced_tracks=synced_tracks[x], involved_tracks=involved_tracks)
+                        rs, data['id'], x, choices, aux=aux)
                     update['id'] = existing[x]
                     ret *= self.sql_update(rs, "event.registration_tracks",
                                            update)
@@ -823,7 +867,6 @@ class EventRegistrationBackend(EventBaseBackend):
             data['fields'] = fdata
             data['amount_owed'] = self._calculate_single_fee(rs, data, event=event)
             data['fields'] = PsycoJson(fdata)
-            course_segments = self._get_event_course_segments(rs, event)
             part_ids = {e['id'] for e in self.sql_select(
                 rs, "event.event_parts", ("id",), (data['event_id'],),
                 entity_key="event_id")}
@@ -845,16 +888,13 @@ class EventRegistrationBackend(EventBaseBackend):
                 new_part['registration_id'] = new_id
                 new_part['part_id'] = part_id
                 self.sql_insert(rs, "event.registration_parts", new_part)
-            involved_tracks = self._get_registration_involved_tracks(rs, new_id)
-            synced_tracks = self._get_synced_tracks(rs, event['id'])
+            aux = self.get_course_choice_validation_aux(rs, event['id'], new_id)
             # insert tracks
             for track_id, track in data['tracks'].items():
                 new_track = copy.deepcopy(track)
                 choices = new_track.pop('choices', None)
                 self._set_course_choices(
-                    rs, new_id, track_id, choices, course_segments=course_segments,
-                    synced_tracks=synced_tracks[track_id],
-                    involved_tracks=involved_tracks, new_registration=True)
+                    rs, new_id, track_id, choices, aux=aux, new_registration=True)
                 new_track['registration_id'] = new_id
                 new_track['track_id'] = track_id
                 self.sql_insert(rs, "event.registration_tracks", new_track)
