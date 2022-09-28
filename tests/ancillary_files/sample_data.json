@@ -4808,6 +4808,45 @@
             "max_size": 11,
             "notes": "Alle Teilnehmenden müssen mit dem Kurs nach Windischleuba umziehen.",
             "fields": {}
+        },
+        {
+            "id": 10,
+            "event_id": 4,
+            "nr": "1",
+            "title": "Das Niebelungenlied",
+            "description": null,
+            "shortname": "Niebelungenlied",
+            "instructors": null,
+            "max_size": null,
+            "min_size": null,
+            "notes": null,
+            "fields": {}
+        },
+        {
+            "id": 11,
+            "event_id": 4,
+            "title": "All-Embracement",
+            "nr": "2",
+            "description": "In diesem Kurs finden wir heraus, wie man alles umfassen und an drei Orten gleichzeitig sein kann. Dabei beginnen wir damit, wie man gleichzeitig in Kaub und in Oberwesel sein kann, und fahren im fortgeschrittenen Teil mit Windischleuba fort.",
+            "shortname": "All-Embracement",
+            "instructors": null,
+            "max_size": null,
+            "min_size": null,
+            "notes": null,
+            "fields": {}
+        },
+        {
+            "id": 12,
+            "event_id": 4,
+            "title": "Nostalgie",
+            "description": "In diesem Kurs lernen wir, warum alle Akademien in Windischleuba stattfinden sollten.",
+            "nr": "3",
+            "shortname": "Nostalgie",
+            "instructors": null,
+            "max_size": null,
+            "min_size": null,
+            "notes": null,
+            "fields": {}
         }
     ],
     "event.course_segments": [
@@ -4904,6 +4943,81 @@
         {
             "course_id": 9,
             "track_id": 6,
+            "is_active": true
+        },
+        {
+            "course_id": 10,
+            "track_id": 6,
+            "is_active": true
+        },
+        {
+            "course_id": 10,
+            "track_id": 8,
+            "is_active": true
+        },
+        {
+            "course_id": 11,
+            "track_id": 6,
+            "is_active": true
+        },
+        {
+            "course_id": 11,
+            "track_id": 8,
+            "is_active": true
+        },
+        {
+            "course_id": 11,
+            "track_id": 9,
+            "is_active": true
+        },
+        {
+            "course_id": 11,
+            "track_id": 10,
+            "is_active": true
+        },
+        {
+            "course_id": 11,
+            "track_id": 11,
+            "is_active": true
+        },
+        {
+            "course_id": 11,
+            "track_id": 12,
+            "is_active": true
+        },
+        {
+            "course_id": 11,
+            "track_id": 13,
+            "is_active": true
+        },
+        {
+            "course_id": 11,
+            "track_id": 14,
+            "is_active": true
+        },
+        {
+            "course_id": 11,
+            "track_id": 15,
+            "is_active": true
+        },
+        {
+            "course_id": 12,
+            "track_id": 11,
+            "is_active": true
+        },
+        {
+            "course_id": 12,
+            "track_id": 12,
+            "is_active": true
+        },
+        {
+            "course_id": 12,
+            "track_id": 15,
+            "is_active": true
+        },
+        {
+            "course_id": 12,
+            "track_id": 7,
             "is_active": true
         }
     ],
