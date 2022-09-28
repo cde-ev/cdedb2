@@ -277,26 +277,11 @@ class EventLowLevelBackend(AbstractBackend):
                 ret *= self.sql_insert(
                     rs, "event.registration_tracks", reg_track)
 
-        q = """
-            SELECT tgt.track_id
-            FROM event.track_group_tracks tgt
-            JOIN event.track_groups tg on tg.id = tgt.track_group_id
-            WHERE tg.constraint_type = %s AND tgt.track_id = ANY(%s)
-        """
-        ccs = const.CourseTrackGroupType.course_choice_sync
-        params = (ccs, updated | deleted)
-        synced_tracks = {e['track_id'] for e in self.query_all(rs, q, params)}
-
         # updated
         for x in mixed_existence_sorter(updated):
             updated_track = copy.copy(data[x])
             assert updated_track is not None
             if any(updated_track[k] != current[x][k] for k in updated_track):
-                if x in synced_tracks:
-                    if any(updated_track[k] != current[x][k]
-                           for k in ccs.locked_track_keys()):
-                        raise ValueError(n_(
-                            "May not change number of choices for synced track."))
                 updated_track['id'] = x
                 ret *= self.sql_update(rs, "event.course_tracks", updated_track)
                 self.event_log(
@@ -563,6 +548,22 @@ class EventLowLevelBackend(AbstractBackend):
             for x in mixed_existence_sorter(deleted_parts):
                 ret *= self._delete_event_part(rs, part_id=x, cascade=cascade)
 
+        # Check that all tracks belonging to synced track groups have the same number
+        #  of choices.
+        q = """
+            SELECT tg.id, ct.num_choices, ct.min_choices
+            FROM event.track_groups tg
+            LEFT JOIN event.event_parts ep on tg.event_id = ep.event_id
+            LEFT JOIN event.track_group_tracks tgt on tg.id = tgt.track_group_id
+            LEFT JOIN event.course_tracks ct on ct.id = tgt.track_id
+            WHERE ep.event_id = %s AND tg.constraint_type = %s
+            GROUP BY tg.id, ct.num_choices, ct.min_choices
+        """
+        p = (event_id, const.CourseTrackGroupType.course_choice_sync)
+        track_params = self.query_all(rs, q, p)
+        if len({e['id'] for e in track_params}) != len(track_params):
+            raise ValueError(n_("Synced tracks must have same number of choices."))
+
         return ret
 
     @internal
@@ -742,7 +743,6 @@ class EventLowLevelBackend(AbstractBackend):
         ret = 1
         self.affirm_atomized_context(rs)
 
-        # TODO: Do this check too for changes to tracks.
         # For Course Choice Sync, all tracks must have the same number of choices.
         if constraint_type.is_sync():
             track_params = {
