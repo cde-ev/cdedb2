@@ -409,9 +409,20 @@ class EventEventMixin(EventBaseFrontend):
         current = copy.deepcopy(part)
         del current['id']
         del current['tracks']
-        for track_id, track in part['tracks'].items():
+
+        # Select the first track by id for every sync track group, disable altering
+        #  choices for all others.
+        sync_groups = set()
+        readonly_synced_tracks = set()
+        for track_id, track in sorted(part['tracks'].items(), key=lambda e: e[0]):
             for k in ('title', 'shortname', 'num_choices', 'min_choices', 'sortkey'):
                 current[drow_name(k, entity_id=track_id, prefix="track")] = track[k]
+            for tg_id, tg in track['track_groups'].items():
+                if tg['constraint_type'].is_sync():
+                    if tg_id in sync_groups:
+                        readonly_synced_tracks.add(track_id)
+                    else:
+                        sync_groups.add(tg_id)
         for m_id, m in rs.ambience['event']['fee_modifiers'].items():
             for k in ('modifier_name', 'amount', 'field_id'):
                 current[drow_name(k, entity_id=m_id, prefix="fee_modifier")] = m[k]
@@ -440,7 +451,9 @@ class EventEventMixin(EventBaseFrontend):
             'waitlist_fields': waitlist_fields,
             'referenced_tracks': referenced_tracks,
             'has_registrations': has_registrations,
-            'DEFAULT_NUM_COURSE_CHOICES': DEFAULT_NUM_COURSE_CHOICES})
+            'DEFAULT_NUM_COURSE_CHOICES': DEFAULT_NUM_COURSE_CHOICES,
+            'readonly_synced_tracks': readonly_synced_tracks,
+        })
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
@@ -559,14 +572,33 @@ class EventEventMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.change_part_form(rs, event_id, part_id)
 
-        #
-        # put it all together
-        #
         data['tracks'] = track_data
         data['fee_modifiers'] = fee_modifier_data
+        part_data = {part_id: data}
+
+        # For every sync track group take the first track by id and propagate it's
+        #  number of choices to all tracks in that group.
+        sync_groups = set()
+
+        for track_id, track in sorted(track_data.items(), key=lambda e: e[0]):
+            if track_id in track_existing:
+                for tg_id, tg in track_existing[track_id]['track_groups'].items():
+                    if tg['constraint_type'].is_sync() and tg_id not in sync_groups:
+                        sync_groups.add(tg_id)
+                        for t_id in tg['track_ids']:
+                            p_id = rs.ambience['event']['tracks'][t_id]['part_id']
+                            if p_id not in part_data:
+                                part_data[p_id] = {'tracks': {}}
+                            if t_id not in part_data[p_id]['tracks']:
+                                part_data[p_id]['tracks'][t_id] = {}
+                            part_data[p_id]['tracks'][t_id].update({
+                                'num_choices': track['num_choices'],
+                                'min_choices': track['min_choices'],
+                            })
+
         event = {
             'id': event_id,
-            'parts': {part_id: data},
+            'parts': part_data,
         }
         code = self.eventproxy.set_event(rs, event)
         rs.notify_return_code(code)
