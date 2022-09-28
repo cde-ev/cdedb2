@@ -577,6 +577,24 @@ class EventRegistrationBackend(EventBaseBackend):
         return {e['id']: e['persona_id'] for e in data}
 
     @access("event")
+    def get_num_registrations_by_part(self, rs: RequestState, event_id: int,
+                                      stati: Collection[const.RegistrationPartStati],
+                                      ) -> Dict[int, int]:
+        event_id = affirm(vtypes.ID, event_id)
+        stati = affirm_set(const.RegistrationPartStati, stati)
+        q = """
+            SELECT part_id, COUNT(*) AS num
+            FROM event.registration_parts rp
+            JOIN event.event_parts ep on ep.id = rp.part_id
+            WHERE ep.event_id = %s AND rp.status = ANY(%s)
+            GROUP BY part_id
+        """
+        return {
+            e['part_id']: e['num']
+            for e in self.query_all(rs, q, (event_id, stati))
+        }
+
+    @access("event")
     def get_registration_payment_info(self, rs: RequestState, event_id: int
                                       ) -> Tuple[Optional[bool], bool]:
         """Small helper to get information for the dashboard pages.
@@ -647,28 +665,7 @@ class EventRegistrationBackend(EventBaseBackend):
                     # Permission check is done later when we know more
                     stati = {const.RegistrationPartStati.participant}
 
-            query = f"""
-                SELECT {", ".join(REGISTRATION_FIELDS)}, ctime, mtime
-                FROM event.registrations
-                LEFT OUTER JOIN (
-                    SELECT persona_id AS log_persona_id, MAX(ctime) AS ctime
-                    FROM event.log WHERE code = %s AND event_id = %s
-                    GROUP BY log_persona_id
-                ) AS ctime
-                ON event.registrations.persona_id = ctime.log_persona_id
-                LEFT OUTER JOIN (
-                    SELECT persona_id AS log_persona_id, MAX(ctime) AS mtime
-                    FROM event.log WHERE code = %s AND event_id = %s
-                    GROUP BY log_persona_id
-                ) AS mtime
-                ON event.registrations.persona_id = mtime.log_persona_id
-                WHERE event.registrations.id = ANY(%s)
-                """
-            params = (const.EventLogCodes.registration_created, event_id,
-                      const.EventLogCodes.registration_changed, event_id,
-                      registration_ids)
-            rdata = self.query_all(rs, query, params)
-            ret = {reg['id']: reg for reg in rdata}
+            ret = self._get_registration_data(rs, event_id, registration_ids)
 
             pdata = self.sql_select(
                 rs, "event.registration_parts", REGISTRATION_PART_FIELDS,

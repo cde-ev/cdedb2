@@ -402,6 +402,8 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
             event = unwrap(self.get_events(rs, (data['id'],)))
             all_current_data = self.event_keeper_commit(
                 rs, data['id'], "Snapshot vor partiellem Import.")
+            if all_current_data is None:
+                all_current_data = self.partial_export_event(rs, data["id"])
             oregistration_ids = self.list_registrations(rs, data['id'])
             old_registrations = self.get_registrations(rs, oregistration_ids)
 

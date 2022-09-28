@@ -1046,7 +1046,7 @@ class TestEventBackend(BackendTest):
             'amount_paid': decimal.Decimal("0.00"),
             'amount_owed': decimal.Decimal("466.49"),
             'checkin': None,
-            'ctime': datetime.datetime(2014, 1, 1, 2, 5, 6, tzinfo=pytz.utc),
+            'ctime': nearly_now(),
             'event_id': 1,
             'fields': {
                 'anzahl_GROSSBUCHSTABEN': 3,
@@ -1212,7 +1212,7 @@ class TestEventBackend(BackendTest):
             1: {'amount_owed': decimal.Decimal("573.99"),
                 'amount_paid': decimal.Decimal("200.00"),
                 'checkin': None,
-                'ctime': datetime.datetime(2014, 1, 1, 1, 4, 5, tzinfo=pytz.utc),
+                'ctime': nearly_now(),
                 'event_id': 1,
                 'fields': {
                     'anzahl_GROSSBUCHSTABEN': 4,
@@ -1265,7 +1265,7 @@ class TestEventBackend(BackendTest):
             2: {'amount_owed': decimal.Decimal("466.49"),
                 'amount_paid': decimal.Decimal("0.00"),
                 'checkin': None,
-                'ctime': datetime.datetime(2014, 1, 1, 2, 5, 6, tzinfo=pytz.utc),
+                'ctime': nearly_now(),
                 'event_id': 1,
                 'fields': {
                     'anzahl_GROSSBUCHSTABEN': 3,
@@ -1318,7 +1318,7 @@ class TestEventBackend(BackendTest):
             4: {'amount_owed': decimal.Decimal("431.99"),
                 'amount_paid': decimal.Decimal("0.00"),
                 'checkin': None,
-                'ctime': datetime.datetime(2014, 1, 1, 4, 7, 8, tzinfo=pytz.utc),
+                'ctime': nearly_now(),
                 'event_id': 1,
                 'fields': {
                     'anzahl_GROSSBUCHSTABEN': 2,
@@ -2385,6 +2385,8 @@ class TestEventBackend(BackendTest):
             expectation = self.cleanup_event_export(json.load(f))
         expectation['timestamp'] = nearly_now()
         expectation['EVENT_SCHEMA_VERSION'] = tuple(expectation['EVENT_SCHEMA_VERSION'])
+        for log_entry in expectation['event.log'].values():
+            log_entry['ctime'] = nearly_now()
         self.assertEqual(expectation, self.event.export_event(self.key, 1))
 
     @event_keeper
@@ -2858,6 +2860,9 @@ class TestEventBackend(BackendTest):
         with open(self.testfile_dir / "TestAka_partial_export_event.json") as f:
             expectation = self.cleanup_event_export(json.load(f))
         expectation['timestamp'] = nearly_now()
+        for reg in expectation['registrations'].values():
+            reg['ctime'] = nearly_now()
+            reg['mtime'] = None
         expectation['EVENT_SCHEMA_VERSION'] = tuple(expectation['EVENT_SCHEMA_VERSION'])
         export = self.event.partial_export_event(self.key, 1)
         self.assertEqual(expectation, export)
@@ -2961,18 +2966,23 @@ class TestEventBackend(BackendTest):
         del expectation['timestamp']
         del updated['timestamp']
         del updated['registrations'][1002]['persona']  # ignore additional info
+        expectation['registrations'][1]['mtime'] = nearly_now()
         updated['registrations'][2]['amount_owed'] = str(
             updated['registrations'][2]['amount_owed'])
+        expectation['registrations'][2]['mtime'] = nearly_now()
+        expectation['registrations'][3]['mtime'] = nearly_now()
         updated['registrations'][1002]['amount_paid'] = str(
             updated['registrations'][1002]['amount_paid'])
         updated['registrations'][1002]['amount_owed'] = str(
             updated['registrations'][1002]['amount_owed'])
+        expectation['registrations'][1002]['ctime'] = nearly_now()
+        expectation['registrations'][1002]['mtime'] = None
         expectation['EVENT_SCHEMA_VERSION'] = tuple(
             expectation['EVENT_SCHEMA_VERSION'])
         self.assertEqual(expectation, updated)
 
         # Test logging
-        log_expectation = (27, (
+        log_expectation = (
             {'change_note': 'Geheime Etage',
              'code': 70,
              'ctime': nearly_now(),
@@ -3133,9 +3143,8 @@ class TestEventBackend(BackendTest):
              'event_id': 1,
              'id': 1045,
              'persona_id': None,
-             'submitted_by': 27}))
-        result = self.event.retrieve_log(self.key, offset=4)
-        self.assertEqual(log_expectation, result)
+             'submitted_by': 27})
+        self.assertLogEqual(log_expectation, realm="event", offset=6)
 
     @storage
     @event_keeper
@@ -3650,40 +3659,47 @@ class TestEventBackend(BackendTest):
     @as_users("annika")
     def test_log(self) -> None:
         # first check the already existing log
-        offset = 4
-        expectation = (offset, (
-            {'id': 1,
-             'change_note': None,
-             'code': const.EventLogCodes.registration_created,
-             'ctime': datetime.datetime(2014, 1, 1, 1, 4, 5, tzinfo=pytz.utc),
-             'event_id': 1,
-             'persona_id': 1,
-             'submitted_by': 1},
-            {'id': 2,
-             'change_note': None,
-             'code': const.EventLogCodes.registration_created,
-             'ctime': datetime.datetime(2014, 1, 1, 2, 5, 6, tzinfo=pytz.utc),
-             'event_id': 1,
-             'persona_id': 5,
-             'submitted_by': 5},
-            {'id': 3,
-             'change_note': None,
-             'code': const.EventLogCodes.registration_created,
-             'ctime': datetime.datetime(2014, 1, 1, 3, 6, 7, tzinfo=pytz.utc),
-             'event_id': 1,
-             'persona_id': 7,
-             'submitted_by': 7},
-            {'id': 4,
-             'change_note': None,
-             'code': const.EventLogCodes.registration_created,
-             'ctime': datetime.datetime(2014, 1, 1, 4, 7, 8, tzinfo=pytz.utc),
-             'event_id': 1,
-             'persona_id': 9,
-             'submitted_by': 9},
-        ))
+        offset = 6
+        expectation = (
+            {
+                'code': const.EventLogCodes.registration_created,
+                'event_id': 1,
+                'persona_id': 1,
+                'submitted_by': 1,
+            },
+            {
+                'code': const.EventLogCodes.registration_created,
+                'event_id': 1,
+                'persona_id': 5,
+                'submitted_by': 5,
+            },
+            {
+                'code': const.EventLogCodes.registration_created,
+                'event_id': 1,
+                'persona_id': 7,
+                'submitted_by': 7,
+            },
+            {
+                'code': const.EventLogCodes.registration_created,
+                'event_id': 1,
+                'persona_id': 9,
+                'submitted_by': 9,
+            },
+            {
+                'code': const.EventLogCodes.registration_created,
+                'event_id': 1,
+                'persona_id': 100,
+                'submitted_by': 100,
+            },
+            {
+                'code': const.EventLogCodes.registration_created,
+                'event_id': 1,
+                'persona_id': 2,
+                'submitted_by': 2,
+            }
+        )
 
-        result = self.event.retrieve_log(self.key)
-        self.assertEqual(expectation, result)
+        self.assertLogEqual(expectation, realm="event")
 
         # then generate some data
         data: CdEDBObject = {

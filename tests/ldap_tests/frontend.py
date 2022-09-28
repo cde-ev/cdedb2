@@ -571,8 +571,27 @@ class TestLDAP(BasicTest):
         # Second, test search by email
         search_filter = (
             "(&"
-            "(objectClass=inetOrgPerson)"
+            "(objectclass=*)"
             f"(mail={user_mail})"
+            ")"
+        )
+        self.single_result_search(search_filter, expectation, attributes=attributes)
+
+    def test_caseinsensitive_attributes(self) -> None:
+        user_id = 9
+        attributes = ["objectClass", "cn", "givenName", "mail", "uid"]
+        expectation = {
+            'uid': ['9'],
+            'mail': ['inga@example.cde'],
+            'cn': ['Inga Iota'],
+            'givenName': ['Inga'],
+            'objectClass': ['inetOrgPerson'],
+        }
+
+        search_filter = (
+            "(&"
+            "(oBjeCtclASS=*)"
+            f"(UID={user_id})"
             ")"
         )
         self.single_result_search(search_filter, expectation, attributes=attributes)

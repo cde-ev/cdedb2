@@ -546,6 +546,32 @@ def make_persona_forename(persona: CdEDBObject,
     return given_names
 
 
+def make_persona_name(persona: CdEDBObject,
+                      only_given_names: bool = False,
+                      only_display_name: bool = False,
+                      given_and_display_names: bool = False,
+                      with_family_name: bool = True,
+                      with_titles: bool = False) -> str:
+    """Format the name of a given persona according to the display name specification
+
+    This is the Python pendant of the `util.persona_name()` macro.
+    For a full specification, which name variant should be used in which context, see
+    the documentation page about "User Experience Conventions".
+    """
+    forename = make_persona_forename(
+        persona, only_given_names=only_given_names, only_display_name=only_display_name,
+        given_and_display_names=given_and_display_names)
+    ret = []
+    if with_titles and persona.get('title'):
+        ret.append(persona['title'])
+    ret.append(forename)
+    if with_family_name:
+        ret.append(persona['family_name'])
+    if with_titles and persona.get('name_supplement'):
+        ret.append(persona['name_supplement'])
+    return " ".join(ret)
+
+
 def compute_checkdigit(value: int) -> str:
     """Map an integer to the checksum used for UI purposes.
 

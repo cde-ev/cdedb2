@@ -232,7 +232,9 @@ class CoreGenesisMixin(CoreBaseFrontend):
         cases = self.coreproxy.genesis_list_cases(rs, stati=stati)
 
         delete = tuple(case["id"] for case in cases.values() if
-                       case["ctime"] < now() - self.conf["PARAMETER_TIMEOUT"])
+                       case["ctime"] < now() - self.conf["GENESIS_CLEANUP_TIMEOUT"]
+                       or (case['case_status'] == const.GenesisStati.unconfirmed and
+                           case["ctime"] < now() - self.conf["PARAMETER_TIMEOUT"]))
 
         count = 0
         for genesis_case_id in delete:
