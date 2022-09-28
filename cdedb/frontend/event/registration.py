@@ -412,6 +412,8 @@ class EventRegistrationMixin(EventBaseFrontend):
                 if (group_id := course_choice_parameters['track_group_map'][track_id])
                 else f"course_choice{track_id}_{i}"
         )
+        aux = self.eventproxy.get_course_choice_validation_aux(
+            rs, event['id'], registration_id=None, part_ids=standard['parts'])
         for part_id in standard['parts']:
             for track_id, track in event['parts'][part_id]['tracks'].items():
                 present_tracks.add(track_id)
@@ -433,6 +435,13 @@ class EventRegistrationMixin(EventBaseFrontend):
                                 {'min_choices': track['min_choices']}))
                     for i in range(track['min_choices'])
                     if choice_getter(track_id, i) is None)
+                rs.extend_validation_errors(
+                    (choice_key(track_id, i),
+                     ValueError(n_("Invalid choice.")))
+                    for i in range(track['num_choices'])
+                    if ((course_id := choice_getter(track_id, i)) is not None
+                        and not self.eventproxy.validate_single_course_choice(
+                                rs, course_id, track_id, aux)))
         reg_parts: CdEDBObjectMap = {part_id: {} for part_id in event['parts']}
         if parts is None:
             for part_id in reg_parts:

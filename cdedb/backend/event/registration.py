@@ -115,9 +115,13 @@ class EventRegistrationBackend(EventBaseBackend):
     @access("event")
     def get_course_choice_validation_aux(self, rs: RequestState, event_id: int,
                                          registration_id: Optional[int],
-                                         part_ids: Optional[Collection[int]],
+                                         part_ids: Optional[Collection[int]] = None,
                                          ) -> CourseChoiceValidationAux:
-        """Gather auxilliary data necessary to validate course choices."""
+        """Gather auxilliary data necessary to validate course choices.
+
+        Involved tracks can be determined from a registration id, by reading from the
+        database or by specifying the involved parts explicitly, if necessary.
+        """
         event_id = affirm(vtypes.ID, event_id)
         registration_id = affirm_optional(vtypes.ID, registration_id)
         part_ids = affirm_set(vtypes.ID, part_ids or ())
@@ -127,7 +131,7 @@ class EventRegistrationBackend(EventBaseBackend):
             q = """
                 SELECT ct.id
                 FROM event.course_tracks ct
-                JOIN event_parts ep on ep.id = ct.part_id
+                JOIN event.event_parts ep on ep.id = ct.part_id
                 WHERE ep.id = ANY(%s)
             """
             involved_tracks = {e['id'] for e in self.query_all(rs, q, (part_ids,))}
