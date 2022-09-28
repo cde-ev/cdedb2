@@ -417,6 +417,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         for part_id in standard['parts']:
             for track_id, track in event['parts'][part_id]['tracks'].items():
                 present_tracks.add(track_id)
+                present_tracks.update(aux.synced_tracks[track_id])
                 # Check for duplicate course choices
                 rs.add_validation_errors(
                     (choice_key(track_id, i),
@@ -424,9 +425,8 @@ class EventRegistrationMixin(EventBaseFrontend):
                                    " and %(j)s. choice"), {'i': i+1, 'j': j+1}))
                     for j in range(track['num_choices'])
                     for i in range(j)
-                    if (choice_getter(track_id, j) is not None
-                        and choice_getter(track_id, i)
-                            == choice_getter(track_id, j)))
+                    if ((course_id := choice_getter(track_id, j)) is not None
+                        and choice_getter(track_id, j) == course_id))
                 # Check for unfilled mandatory course choices
                 rs.add_validation_errors(
                     (choice_key(track_id, i),
@@ -460,9 +460,9 @@ class EventRegistrationMixin(EventBaseFrontend):
         }
         for track_id in present_tracks:
             all_choices = tuple(
-                choice_getter(track_id, i)
+                course_id
                 for i in range(tracks[track_id]['num_choices'])
-                if choice_getter(track_id, i) is not None)
+                if (course_id := choice_getter(track_id, i)) is not None)
 
             if reg_tracks[track_id]["course_instructor"] in all_choices:
                 i_choice = all_choices.index(reg_tracks[track_id]["course_instructor"])
