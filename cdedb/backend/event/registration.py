@@ -81,18 +81,29 @@ class EventRegistrationBackend(EventBaseBackend):
              [x for x in const.RegistrationPartStati if x.is_involved()])
         return {e['id'] for e in self.query_all(rs, q, p)}
 
-    def _get_synced_tracks(self, rs: RequestState, event_id: int) -> Dict[int, Set[int]]:
-        q = """
-            SELECT ct.id, ARRAY_AGG(tgt2.track_id) AS synced_tracks
-            FROM event.course_tracks AS ct
-            LEFT JOIN event.track_group_tracks AS tgt ON ct.id = tgt.track_id
-            LEFT JOIN event.track_groups AS tg ON tgt.track_group_id = tg.id
-            LEFT JOIN event.track_group_tracks AS tgt2 on tg.id = tgt2.track_group_id
-            WHERE tg.constraint_type = %s AND tg.event_id = %s
-            GROUP BY ct.id
+    def _get_synced_tracks(self, rs: RequestState, event_id: int
+                           ) -> Dict[int, Set[int]]:
+        """Return a mapping of track id to ids of tracks synced to that track.
+
+        The value will be an empty set for unsynced tracks.
         """
-        p = (const.CourseTrackGroupType.course_choice_sync, event_id)
-        return {e['id']: e['synced_tracks'] for e in self.query_all(rs, q, p)}
+        q = """
+            SELECT ct.id, COALESCE(synced_tracks, ARRAY[]::integer[])
+            FROM event.course_tracks ct
+            JOIN event.event_parts ep on ep.id = ct.part_id
+            LEFT JOIN (
+                SELECT ct.id, ARRAY_AGG(tgt2.track_id) AS synced_tracks
+                FROM event.course_tracks AS ct
+                LEFT JOIN event.track_group_tracks AS tgt ON ct.id = tgt.track_id
+                LEFT JOIN event.track_groups AS tg ON tgt.track_group_id = tg.id
+                LEFT JOIN event.track_group_tracks AS tgt2 on tg.id = tgt2.track_group_id
+                WHERE tg.constraint_type = %s AND tg.event_id = %s
+                GROUP BY ct.id
+            ) tmp ON tmp.id = ct.id
+            WHERE ep.event_id = %s
+        """
+        p = (const.CourseTrackGroupType.course_choice_sync, event_id, event_id)
+        return {e['id']: set(e['synced_tracks']) for e in self.query_all(rs, q, p)}
 
     @access("event")
     def get_course_segments_per_track(self, rs: RequestState, event_id: int,
