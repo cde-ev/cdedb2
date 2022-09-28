@@ -414,7 +414,7 @@ class EventEventMixin(EventBaseFrontend):
         #  choices for all others.
         sync_groups = set()
         readonly_synced_tracks = set()
-        for track_id, track in sorted(part['tracks'].items(), key=lambda e: e[0]):
+        for track_id, track in xsorted(part['tracks'].items(), key=lambda e: e[0]):
             for k in ('title', 'shortname', 'num_choices', 'min_choices', 'sortkey'):
                 current[drow_name(k, entity_id=track_id, prefix="track")] = track[k]
             for tg_id, tg in track['track_groups'].items():
@@ -580,15 +580,15 @@ class EventEventMixin(EventBaseFrontend):
         #  number of choices to all tracks in that group.
         sync_groups = set()
 
-        for track_id, track in sorted(track_data.items(), key=lambda e: e[0]):
-            if track_id in track_existing:
+        for track_id, track in xsorted(track_data.items(), key=lambda e: e[0]):
+            if track and track_id in track_existing:
                 for tg_id, tg in track_existing[track_id]['track_groups'].items():
                     if tg['constraint_type'].is_sync() and tg_id not in sync_groups:
                         sync_groups.add(tg_id)
                         for t_id in tg['track_ids']:
                             p_id = rs.ambience['event']['tracks'][t_id]['part_id']
                             if p_id not in part_data:
-                                part_data[p_id] = {'tracks': {}}
+                                part_data[p_id] = vtypes.EventPart({'tracks': {}})
                             if t_id not in part_data[p_id]['tracks']:
                                 part_data[p_id]['tracks'][t_id] = {}
                             part_data[p_id]['tracks'][t_id].update({
