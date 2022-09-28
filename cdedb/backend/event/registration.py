@@ -63,19 +63,36 @@ class EventRegistrationBackend(EventBaseBackend):
             WHERE courses.event_id = %s
             GROUP BY courses.id"""
 
-        ret = {row['id']: set(row['segments'])
-               for row in self.query_all(rs, query, (event['id'],))}
+        return {row['id']: set(row['segments'])
+                for row in self.query_all(rs, query, (event['id'],))}
 
-        # For tracks in a course choice sync track group, treat a course as offered if
-        # it is offered in at least one track.
-        for track_group in event['track_groups'].values():
-            if not track_group['constraint_type'].is_sync():
-                continue
-            for course_id, segments in ret.items():
-                if segments & track_group['track_ids']:
-                    segments.update(track_group['track_ids'])
+    def _get_registration_involved_tracks(self, rs: RequestState, registration_id: int
+                                          ) -> Set[int]:
+        """Return the track ids of all tracks, the registration is involved with."""
+        q = """
+            SELECT course_tracks.id
+            FROM event.course_tracks
+            WHERE course_tracks.part_id IN (
+                SELECT part_id FROM event.registration_parts
+                WHERE registration_id = %s AND status = ANY(%s)
+            )
+        """
+        p = (registration_id,
+             [x for x in const.RegistrationPartStati if x.is_involved()])
+        return {e['id'] for e in self.query_all(rs, q, p)}
 
-        return ret
+    def _get_synced_tracks(self, rs: RequestState, event_id: int) -> Dict[int, Set[int]]:
+        q = """
+            SELECT ct.id, ARRAY_AGG(tgt2.track_id) AS synced_tracks
+            FROM event.course_tracks AS ct
+            LEFT JOIN event.track_group_tracks AS tgt ON ct.id = tgt.track_id
+            LEFT JOIN event.track_groups AS tg ON tgt.track_group_id = tg.id
+            LEFT JOIN event.track_group_tracks AS tgt2 on tg.id = tgt2.track_group_id
+            WHERE tg.constraint_type = %s AND tg.event_id = %s
+            GROUP BY ct.id
+        """
+        p = (const.CourseTrackGroupType.course_choice_sync, event_id)
+        return {e['id']: e['synced_tracks'] for e in self.query_all(rs, q, p)}
 
     @access("event")
     def get_course_segments_per_track(self, rs: RequestState, event_id: int,
@@ -118,6 +135,7 @@ class EventRegistrationBackend(EventBaseBackend):
     def _set_course_choices(self, rs: RequestState, registration_id: int,
                             track_id: int, choices: Optional[Sequence[int]],
                             course_segments: Mapping[int, Collection[int]],
+                            synced_tracks: Set[int], involved_tracks: Set[int],
                             new_registration: bool = False
                             ) -> DefaultReturnCode:
         """Helper for handling of course choices.
@@ -137,8 +155,11 @@ class EventRegistrationBackend(EventBaseBackend):
             # Nothing specified, hence nothing to do
             return ret
         for course_id in choices:
-            if track_id not in course_segments[course_id]:
-                raise ValueError(n_("Wrong track for course."))
+            # Either the course is offered in this track.
+            if track_id not in (offered_tracks := course_segments[course_id]):
+                # Or the course is offered in a synced track, that we are involved with.
+                if not synced_tracks & involved_tracks & offered_tracks:
+                    raise ValueError(n_("Wrong track for course."))
         if not new_registration:
             query = ("DELETE FROM event.course_choices"
                      " WHERE registration_id = %s AND track_id = %s")
@@ -150,8 +171,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 "course_id": course_id,
                 "rank": rank,
             }
-            ret *= self.sql_insert(rs, "event.course_choices",
-                                   new_choice)
+            ret *= self.sql_insert(rs, "event.course_choices", new_choice)
         return ret
 
     def _get_registration_info(self, rs: RequestState,
@@ -717,6 +737,8 @@ class EventRegistrationBackend(EventBaseBackend):
                 tracks = data['tracks']
                 if not set(tracks).issubset(event['tracks']):
                     raise ValueError(n_("Non-existing tracks specified."))
+                involved_tracks = self._get_registration_involved_tracks(rs, data['id'])
+                synced_tracks = self._get_synced_tracks(rs, event_id)
                 existing = {e['track_id']: e['id'] for e in self.sql_select(
                     rs, "event.registration_tracks", ("id", "track_id"),
                     (data['id'],), entity_key="registration_id")}
@@ -728,8 +750,9 @@ class EventRegistrationBackend(EventBaseBackend):
                 for x in new:
                     new_track = copy.deepcopy(tracks[x])
                     choices = new_track.pop('choices', None)
-                    self._set_course_choices(rs, data['id'], x, choices,
-                                             course_segments)
+                    self._set_course_choices(
+                        rs, data['id'], x, choices, course_segments=course_segments,
+                        synced_tracks=synced_tracks[x], involved_tracks=involved_tracks)
                     new_track['registration_id'] = data['id']
                     new_track['track_id'] = x
                     ret *= self.sql_insert(rs, "event.registration_tracks",
@@ -737,8 +760,9 @@ class EventRegistrationBackend(EventBaseBackend):
                 for x in updated:
                     update = copy.deepcopy(tracks[x])
                     choices = update.pop('choices', None)
-                    self._set_course_choices(rs, data['id'], x, choices,
-                                             course_segments)
+                    self._set_course_choices(
+                        rs, data['id'], x, choices, course_segments=course_segments,
+                        synced_tracks=synced_tracks[x], involved_tracks=involved_tracks)
                     update['id'] = existing[x]
                     ret *= self.sql_update(rs, "event.registration_tracks",
                                            update)
@@ -810,12 +834,16 @@ class EventRegistrationBackend(EventBaseBackend):
                 new_part['registration_id'] = new_id
                 new_part['part_id'] = part_id
                 self.sql_insert(rs, "event.registration_parts", new_part)
+            involved_tracks = self._get_registration_involved_tracks(rs, new_id)
+            synced_tracks = self._get_synced_tracks(rs, event['id'])
             # insert tracks
             for track_id, track in data['tracks'].items():
                 new_track = copy.deepcopy(track)
                 choices = new_track.pop('choices', None)
-                self._set_course_choices(rs, new_id, track_id, choices,
-                                         course_segments, new_registration=True)
+                self._set_course_choices(
+                    rs, new_id, track_id, choices, course_segments=course_segments,
+                    synced_tracks=synced_tracks[track_id],
+                    involved_tracks=involved_tracks, new_registration=True)
                 new_track['registration_id'] = new_id
                 new_track['track_id'] = track_id
                 self.sql_insert(rs, "event.registration_tracks", new_track)
