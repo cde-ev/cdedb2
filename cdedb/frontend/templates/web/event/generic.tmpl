@@ -180,7 +180,8 @@
 {% macro form_field_input(field, name=none, label=none, info='', displayerrors=True, readonly=False,
                           defaultvalue='', anid=none, force_label=False, text_rows=3, bool_label=none) %}
     {%- set name = name or "fields.{}".format(field['field_name']) %}
-    {%- set label = (none if field['kind'] == enums['FieldDatatypes'].bool and not force_label
+    {%- set label = (none if (field['kind'] == enums['FieldDatatypes'].bool
+                              and not force_label and not field['entries'])
                      else label or field['title']) %}
     {%- set anid = anid or "event-input-{}".format(name) %}
     {%- call util.form_input_general(name=name, label=label, anid=anid, small=False, info=info,
