@@ -40,7 +40,7 @@ from cdedb.filter import date_filter, money_filter
 T = TypeVar("T")
 
 CourseChoiceValidationAux = NamedTuple(
-    "CoursChoiceValidationAux", [
+    "CourseChoiceValidationAux", [
         ("course_segments", Mapping[int, Set[int]]),
         ("synced_tracks", Mapping[int, Set[int]]),
         ("involved_tracks", Set[int]),
@@ -144,8 +144,9 @@ class EventRegistrationBackend(EventBaseBackend):
         )
 
     @access("event")
-    def validate_single_course_choice(self, rs: RequestState, course_id: int,
-                                      track_id: int, aux: CourseChoiceValidationAux) -> bool:
+    def validate_single_course_choice(self, rs: RequestState, course_id: int,  # pylint: disable=no-self-use
+                                      track_id: int, aux: CourseChoiceValidationAux
+                                      ) -> bool:
         """Check whether a course choice is allowed in a given track.
 
         Returns True for valid choice and False for invalid choice.
