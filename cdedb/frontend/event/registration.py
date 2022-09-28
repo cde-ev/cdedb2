@@ -408,7 +408,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             lambda track_id, i: simple_choices[f"course_choice{track_id}_{i}"])
         choice_key = (
             lambda track_id, i:
-                f"course_choice_group{group_id}_{i}"
+                f"course_choice_group{group_id}_{i}"  # pylint: disable=E0602  # This seems to be a pylint bug.
                 if (group_id := course_choice_parameters['track_group_map'][track_id])
                 else f"course_choice{track_id}_{i}"
         )
