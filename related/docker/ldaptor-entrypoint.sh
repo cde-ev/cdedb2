@@ -10,5 +10,5 @@ if [ ! -f /etc/cdedb/ldap/ldap.pem ] || [ ! -f /etc/cdedb/ldap/ldap.key ]; then
         -keyout /etc/cdedb/ldap/ldap.key \
         -days 365 \
         -nodes \
-        -subj "/C=DE/O=CdE e.V./CN=ldap.local/emailAddress=cdedb@lists.cde-ev.de"
+        -subj "/C=DE/O=CdE e.V./CN=ldap/emailAddress=cdedb@lists.cde-ev.de"
 fi
