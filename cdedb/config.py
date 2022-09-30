@@ -98,11 +98,15 @@ _DEFAULTS = {
     "DIRECT_DB_PORT": 5432,
 
     # host name where the ldap server is running
-    "LDAP_HOST": "localhost",
-
+    "LDAP_HOST": "sandbox.cdedb.virtual",
     # port on which the ldap server listens
     # TODO switch to TLS port?
     "LDAP_PORT": 389,
+    # path to ldaps .pem and .key files
+    "LDAP_PEM_PATH": (_repopath / "related" / "auto-build" / "files" / "stage2" /
+                      "ldap.pem"),
+    "LDAP_KEY_PATH": _repopath / "related" / "auto-build" / "files" / "stage2" /
+                     "ldap.key",
 
     # True for offline versions running on academies
     "CDEDB_OFFLINE_DEPLOYMENT": False,

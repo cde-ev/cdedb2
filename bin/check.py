@@ -187,7 +187,7 @@ def run_ldap_tests(testpatterns: List[str] = None, *, verbose: bool = False) -> 
         restart_services("cde-ldap-test")
         # wait until the ldap server is ready
         # TODO is there a better solution?
-        time.sleep(5)
+        time.sleep(10)
 
         # update the current ldap setting
         # note that this takes no changes of the base ldap setup into account,

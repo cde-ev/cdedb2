@@ -31,4 +31,5 @@ EXPOSE 389
 WORKDIR /cdedb2
 
 ENV CDEDB_CONFIGPATH /etc/cdedb/config.py
+ENTRYPOINT ["/ldaptor-entrypoint.sh"]
 CMD ["python3", "-m", "cdedb.ldap.main"]

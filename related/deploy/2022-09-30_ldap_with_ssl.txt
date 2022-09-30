@@ -1,0 +1,15 @@
+# The following is only needed at the productive instance
+
+# Add sane values for the following config variables:
+# LDAP_HOST, LDAP_PEM_PATH, LDAP_KEY_PATH
+
+
+
+# The following is only needed on dev instances and only if one wants to use ldapsearch
+# (from ldap-utils package) with the self-signed certificate
+
+sudo mkdir /etc/ldap/certs
+sudo cp /cdedb2/related/auto-build/files/stage2/ldap.pem /etc/ldap/certs
+
+# add the following line to /etc/ldap/ldap.conf:
+TLS_CACERT    /etc/ldap/certs/ldap.pem
