@@ -1469,6 +1469,9 @@ class AssemblyFrontend(AbstractUserFrontend):
             # vote begin must be in the future
             "vote_begin": now() + datetime.timedelta(milliseconds=100),
             "vote_end": now() + datetime.timedelta(minutes=1),
+            "vote_extension_end":
+                None if not rs.ambience['ballot']['vote_extension_end']
+                else now() + datetime.timedelta(minutes=1, microseconds=100),
         }
 
         rs.notify_return_code(self.assemblyproxy.set_ballot(rs, bdata))
