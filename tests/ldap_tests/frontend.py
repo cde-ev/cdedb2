@@ -46,14 +46,6 @@ class TestLDAP(BasicTest):
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
-        # TODO this is currently necessary, since the certificate is generated at
-        #  runtime in another container, so we can not access it here.
-        if is_docker():
-            tls = Tls(validate=ssl.CERT_NONE)
-            cls.server = ldap3.Server(
-                cls.conf['LDAP_HOST'], port=cls.conf['LDAP_PORT'], get_info=ldap3.ALL,
-                use_ssl=True, tls=tls)
-            return
         tls = Tls(validate=ssl.CERT_REQUIRED, ca_certs_file=cls.conf["LDAP_PEM_PATH"])
         cls.server = ldap3.Server(
             cls.conf['LDAP_HOST'], port=cls.conf['LDAP_PORT'], get_info=ldap3.ALL,

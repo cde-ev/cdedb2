@@ -116,6 +116,9 @@ steps:
     status:
       - failure
       - success
+  volumes:
+  - name: ldap
+    path: /etc/ldap
   environment:
     CDEDB_CONFIGPATH: tests/config/test_ldap.py
 - name: frontend tests a-d
@@ -180,6 +183,8 @@ steps:
       - failure
       - success
   volumes:
+  - name: ldap
+    path: /etc/ldap
   - name: tmp_dir
     path: /tmp
   - name: coverage
@@ -245,6 +250,8 @@ volumes:
 - name: database
   temp:
     medium: memory
+- name: ldap
+  temp: {}
 - name: tmp_dir
   temp: {}
 - name: coverage
