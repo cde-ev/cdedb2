@@ -34,7 +34,9 @@
 
     <dl class="dl-horizontal">
         {% if ambience['event']['parts']|length > 0 %}
-            <dt>{% trans %}Timeframe{% endtrans %}</dt>
+            <dt title="{% trans %}Timeframe{% endtrans %}">
+                {% trans %}Timeframe{% endtrans %}
+            </dt>
             <dd id="timeframe-parts">
                 {% if ambience['event']['parts']|length == 1 %}
                     {% with part = (ambience['event']['parts'].values()|list)[0] %}
@@ -51,7 +53,9 @@
             </dd>
         {% endif %}
         {% if not ambience['event']['registration_start'] is none %}
-            <dt>{% trans %}Registration{% endtrans %}</dt>
+            <dt title="{% trans %}Registration{% endtrans %}">
+                {% trans %}Registration{% endtrans %}
+            </dt>
             <dd id="timeframe-registration">
                 {% set soft_limit = ambience['event']['registration_soft_limit'] %}
                 {% set hard_limit = ambience['event']['registration_hard_limit'] %}
@@ -78,13 +82,17 @@
             </dd>
         {% endif %}
         {% if ambience['event']['orga_address'] %}
-            <dt>{% trans %}Orga Address{% endtrans %}</dt>
+            <dt title="{% trans %}Orga Address{% endtrans %}">
+                {% trans %}Orga Address{% endtrans %}
+            </dt>
             <dd id="orga-address">
                 <a href="{{ util.mailto(ambience['event']['orga_address']) }}">{{ ambience['event']['orga_address'] }}</a>
             </dd>
         {% endif %}
         {% if "event" in user.roles %}
-            <dt>{% trans %}Orgas{% endtrans %}</dt>
+            <dt title="{% trans %}Orgas{% endtrans %}">
+                {% trans %}Orgas{% endtrans %}
+            </dt>
             <dd id="orgas">
                 {% for anid, entry in orgas.items() %} {# This is already sorted. #}
                     {{ util.persona_anchor(entry) }}{% if not loop.last %},{% endif %}
@@ -96,14 +104,14 @@
     </dl>
     {% if values['event_id'] in user.orga or user.admin_views.intersection(('event_orga', 'event_mgmt')) %}
         <dl class="dl-horizontal">
-            <dt>{% trans %}Shortname{% endtrans %}</dt>
+            <dt title="{% trans %}Shortname{% endtrans %}">{% trans %}Shortname{% endtrans %}</dt>
             <dd id="shortname">{{ ambience['event']['shortname'] }}</dd>
-            <dt>{% trans %}Institution{% endtrans %}</dt>
+            <dt title="{% trans %}Institution{% endtrans %}">{% trans %}Institution{% endtrans %}</dt>
             <dd id="institution">{{ institutions[ambience['event']['institution']] }}</dd>
             {% if values['event_id'] in user.orga or 'event_orga' in user.admin_views %}
-                <dt>{% trans %}CdE-Account IBAN{% endtrans %}</dt>
+                <dt title="{% trans %}CdE-Account IBAN{% endtrans %}">{% trans %}CdE-Account IBAN{% endtrans %}</dt>
                 <dd id="cde-iban">{{ ambience['event']['iban']|iban }}</dd>
-                <dt>{% trans %}Questionnaire active{% endtrans %}</dt>
+                <dt title="{% trans %}Questionnaire active{% endtrans %}">{% trans %}Questionnaire active{% endtrans %}</dt>
                 <dd id="questionnaire-active">{{ util.deko_checkbox(checked=ambience['event']['use_additional_questionnaire'],
                             titles=[gettext("No"),gettext("Yes")]) }}</dd>
             {% endif %}

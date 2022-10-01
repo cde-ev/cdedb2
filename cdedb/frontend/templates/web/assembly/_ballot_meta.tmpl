@@ -34,7 +34,9 @@
 
 {% macro show_status() -%}
     <dl class="dl-horizontal mosp" id="ballot-status">
-        <dt>{% trans %}Period{% endtrans %}</dt>
+        <dt title="{% trans %}Period{% endtrans %}">
+            {% trans %}Period{% endtrans %}
+        </dt>
         <dd id="voting-period">
             <div id="regular-voting-period">
                 {% trans begin=ambience['ballot']['vote_begin']|datetime(lang=lang),
@@ -65,7 +67,9 @@
             </div>
         </dd>
 
-        <dt>{% trans %}Status{% endtrans %}</dt>
+        <dt title="{% trans %}Status{% endtrans %}">
+            {% trans %}Status{% endtrans %}
+        </dt>
         <dd id="status">
             {% if now() < ambience['ballot']['vote_begin'] %}
                 <strong>{% trans %}This ballot has not yet begun.{% endtrans %}</strong><br />
@@ -101,7 +105,9 @@
             {% endif %}
         </dd>
 
-        <dt>{% trans %}Modality{% endtrans %}</dt>
+        <dt title="{% trans %}Modality{% endtrans %}">
+            {% trans %}Modality{% endtrans %}
+        </dt>
         <dd>
             {% if ambience['ballot']['votes'] == 1 %}
                 {% if ambience['ballot']['use_bar'] %}
@@ -137,7 +143,9 @@
         </dd>
 
         {% if ambience['ballot']['vote_begin'] < now() %}
-            <dt>{% trans %}Voted{% endtrans %}</dt>
+            <dt title="{% trans %}Voted{% endtrans %}">
+                {% trans %}Voted{% endtrans %}
+            </dt>
             {% if ambience['ballot']['is_tallied'] %}
                 <dd id="had-voted">
                     {% trans count=ambience['ballot']['vote_count'] %}
