@@ -36,7 +36,7 @@
         <li>
             <div>
                 {{- vote_begin|datetime(lang=lang) }} – {{ vote_end|datetime(lang=lang) }}
-                {%- if extension_end %} ( – {{ extension_end|datetime(lang=lang) }}, {% if abs_quorum %}{{ abs_quorum }}{% else %}{{ rel_quorum }} %{% endif %}){% endif -%}
+                {%- if extension_end %} ( – {{ extension_end|datetime(lang=lang) }}, {% trans %}Quorum{% endtrans %}: {% if abs_quorum %}{{ abs_quorum }}{% else %}{{ rel_quorum }} %{% endif %}){% endif -%}
             </div>
             <ul class="slim">
                 {% for ballot_id, ballot in sorted_ballots if ballot_id in ballot_ids %}
