@@ -12,3 +12,5 @@ if [ ! -f /etc/cdedb/ldap/ldap.pem ] || [ ! -f /etc/cdedb/ldap/ldap.key ]; then
         -nodes \
         -subj "/C=DE/O=CdE e.V./CN=ldap/emailAddress=cdedb@lists.cde-ev.de"
 fi
+
+exec "$@"

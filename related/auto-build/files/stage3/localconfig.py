@@ -15,5 +15,7 @@ if pathlib.Path('/CONTAINER').is_file():
     # postgres and ldap are reachable under their own hostname instead of localhost
     DB_HOST = "cdb"
     LDAP_HOST = "ldap"
+    LDAP_PEM_PATH = "/etc/cdedb/ldap/ldap.pem"
+    LDAP_KEY_PATH = "/etc/cdedb/ldap/ldap.key"
     # there is no pgbouncer so the postgres port is the original one
     DB_PORT = 5432

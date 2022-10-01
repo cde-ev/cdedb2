@@ -18,5 +18,8 @@ LDAP_PORT = 20389
 # change the ldap host in docker
 if pathlib.Path('/CONTAINER').is_file():
     LDAP_HOST = "ldap"
+    # there is only a single ldap server running for docker, which needs to be used
+    # for tests and development
+    LDAP_PORT = 389
     LDAP_PEM_PATH = "/etc/cdedb/ldap/ldap.pem"
     LDAP_KEY_PATH = "/etc/cdedb/ldap/ldap.key"

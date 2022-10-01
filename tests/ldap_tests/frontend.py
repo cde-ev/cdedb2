@@ -51,7 +51,8 @@ class TestLDAP(BasicTest):
         if is_docker():
             tls = Tls(validate=ssl.CERT_NONE)
             cls.server = ldap3.Server(
-                cls.conf['LDAP_HOST'], port=cls.conf['LDAP_PORT'], get_info=ldap3.ALL)
+                cls.conf['LDAP_HOST'], port=cls.conf['LDAP_PORT'], get_info=ldap3.ALL,
+                use_ssl=True, tls=tls)
             return
         tls = Tls(validate=ssl.CERT_REQUIRED, ca_certs_file=cls.conf["LDAP_PEM_PATH"])
         cls.server = ldap3.Server(
