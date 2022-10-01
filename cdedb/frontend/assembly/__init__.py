@@ -1367,9 +1367,11 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         result = {k: self.get_online_result(rs, v) for k, v in done.items()}
 
+        config_grouped = self.assemblyproxy.group_ballots(rs, assembly_id)
+
         return self.render(rs, "summary_ballots", {
             'concluded_ballots': done, 'running_ballots': extended | current,
-            'upcoming_ballots': future,
+            'upcoming_ballots': future, 'config_grouped': config_grouped,
             'ASSEMBLY_BAR_SHORTNAME': ASSEMBLY_BAR_SHORTNAME, 'result': result,
         })
 

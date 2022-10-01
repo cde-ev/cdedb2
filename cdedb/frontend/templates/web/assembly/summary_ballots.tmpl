@@ -13,6 +13,21 @@
     {{ util.breadcrumb_link(cdedblink("assembly/summary_ballots"), gettext("Summary"), active=True) }}
 {% endblock %}
 {% block content %}
+    {% if running_ballots %}
+        <h3>{% trans %}Current Ballots{% endtrans %}</h3>
+        <ul class="slim" id="running-ballots">
+            {{ ballot_meta.details_list(config_grouped, running_ballots) }}
+        </ul>
+
+    {% endif %}
+
+    {% if upcoming_ballots %}
+        <h3>{% trans %}Upcoming Ballots{% endtrans %}</h3>
+        <ul class="slim" id="upcoming-ballots">
+            {{ ballot_meta.details_list(config_grouped, upcoming_ballots) }}
+        </ul>
+    {% endif %}
+
     <h3>{% trans %}Concluded Ballots{% endtrans %}</h3>
     {% for ballot_id, ballot in concluded_ballots|keydictsort(EntitySorter.ballot) %}
         {% set title = util.href(cdedblink("assembly/show_ballot", {'assembly_id': ambience['assembly']['id'], 'ballot_id': ballot_id}),
@@ -37,25 +52,6 @@
 
     {% if concluded_ballots %}
         {{ ballot_tallied.explain_result(classical=True, preferential=True, use_bar=True) }}
-    {% endif %}
-
-    {% if running_ballots %}
-        <h3>{% trans %}Current Ballots{% endtrans %}</h3>
-        <ul class="slim" id="running-ballots">
-        {% for ballot_id, ballot in running_ballots|keydictsort(EntitySorter.ballot) %}
-            {{ ballot_meta.simple_list_item(ballot) }}
-        {% endfor %}
-        </ul>
-
-    {% endif %}
-
-    {% if upcoming_ballots %}
-        <h3>{% trans %}Upcoming Ballots{% endtrans %}</h3>
-        <ul class="slim" id="upcoming-ballots">
-        {% for ballot_id, ballot in upcoming_ballots|keydictsort(EntitySorter.ballot) %}
-            {{ ballot_meta.simple_list_item(ballot) }}
-        {% endfor %}
-        </ul>
     {% endif %}
 
 {% endblock %}

@@ -27,12 +27,16 @@ do it.
 """
 
 import copy
+import dataclasses
 import datetime
 import hmac
 import math
 from pathlib import Path
 from secrets import token_urlsafe
-from typing import Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, Union
+from typing import (
+    Any, Collection, Dict, Iterator, List, NamedTuple, Optional, Protocol, Set, Tuple,
+    Union,
+)
 
 from schulze_condorcet import schulze_evaluate
 
@@ -57,6 +61,28 @@ from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.roles import implying_realms
 from cdedb.common.sorting import EntitySorter, mixed_existence_sorter, xsorted
 from cdedb.database.connection import Atomizer
+
+BallotConfiguration = NamedTuple(
+    'BallotConfiguration',
+    [
+        ('vote_begin', datetime.datetime),
+        ('vote_end', datetime.datetime),
+        ('vote_extension_end', Optional[datetime.datetime]),
+        ('abs_quorum', int),
+        ('rel_quorum', int),
+    ]
+)
+
+
+@dataclasses.dataclass(frozen=True)
+class GroupedBallots:
+    # concluded: Dict[BallotConfiguration, Set[int]]
+    # running: Dict[BallotConfiguration, Set[int]]
+    # upcoming: Dict[BallotConfiguration, Set[int]]
+    ballots: Dict[BallotConfiguration, Set[int]]
+
+    def __iter__(self) -> Iterator[Tuple[BallotConfiguration, Set[int]]]:
+        return iter(xsorted(self.ballots.items()))
 
 
 class AssemblyBackend(AbstractBackend):
@@ -2219,3 +2245,25 @@ class AssemblyBackend(AbstractBackend):
         def __call__(self, rs: RequestState, attachment_id: int) -> CdEDBObject: ...
     get_attachment: _GetAttachmentProtocol = singularize(
         get_attachments, "attachment_ids", "attachment_id")
+
+    @access("assembly")
+    def group_ballots(self, rs: RequestState, assembly_id: int) -> GroupedBallots:
+        """Group ballot ids by their configuration."""
+        q = """
+            SELECT
+                vote_begin, vote_end, vote_extension_end, abs_quorum, rel_quorum,
+                ARRAY_AGG(id) as ballot_ids
+            FROM assembly.ballots
+            WHERE assembly_id = %s
+            GROUP BY vote_begin, vote_end, vote_extension_end, abs_quorum, rel_quorum
+        """
+        assembly_id = affirm(vtypes.ID, assembly_id)
+        p = (assembly_id,)
+        return GroupedBallots({
+            BallotConfiguration(
+                e['vote_begin'], e['vote_end'], e['vote_extension_end'],
+                e['abs_quorum'], e['rel_quorum'],
+            ):
+                set(e['ballot_ids'])
+            for e in self.query_all(rs, q, p)
+        })
