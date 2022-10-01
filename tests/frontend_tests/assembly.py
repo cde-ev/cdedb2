@@ -1958,7 +1958,7 @@ class TestMultiAssemblyFrontend(MultiAppFrontendTest, AssemblyTestHelpers):
                          self.response.forms)
         self.submit(f, check_notification=False)
         self.assertNotification(
-            "Dieser Nutzer ist kein Wahlleiter für diese Versammlung.")
+            "Dieser Nutzer ist kein Versammlungsleiter für diese Versammlung.")
         self.assertNonPresence("Werner Wahlleitung", div='assembly-presiders',
                                check_div=False)
 
