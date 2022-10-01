@@ -2249,7 +2249,7 @@ class AssemblyBackend(AbstractBackend):
     @access("assembly")
     def group_ballots(self, rs: RequestState, assembly_id: int) -> GroupedBallots:
         """Group ballot ids by their configuration."""
-        q = """
+        query = """
             SELECT
                 vote_begin, vote_end, vote_extension_end, abs_quorum, rel_quorum,
                 ARRAY_AGG(id) as ballot_ids
@@ -2258,12 +2258,12 @@ class AssemblyBackend(AbstractBackend):
             GROUP BY vote_begin, vote_end, vote_extension_end, abs_quorum, rel_quorum
         """
         assembly_id = affirm(vtypes.ID, assembly_id)
-        p = (assembly_id,)
+        params = (assembly_id,)
         return GroupedBallots({
             BallotConfiguration(
                 e['vote_begin'], e['vote_end'], e['vote_extension_end'],
                 e['abs_quorum'], e['rel_quorum'],
             ):
                 set(e['ballot_ids'])
-            for e in self.query_all(rs, q, p)
+            for e in self.query_all(rs, query, params)
         })
