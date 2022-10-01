@@ -922,6 +922,8 @@ class AssemblyBackend(AbstractBackend):
                 ("id", "ballot_id", "title", "shortname"), ballot_ids,
                 entity_key="ballot_id")
             for anid in ballot_ids:
+                if anid not in ret:
+                    continue
                 candidates = {e['id']: e for e in data
                               if e['ballot_id'] == anid}
                 if 'candidates' in ret[anid]:
