@@ -4,9 +4,11 @@
 # LDAP_HOST, LDAP_PEM_PATH, LDAP_KEY_PATH
 
 
+# The following is needed on both, production and dev vms
+# change the "AuthLDAPURL" in /etc/apache2/sites-enabled/cdedb-site.conf from "ldap" to "ldaps"
 
-# The following is only needed on dev instances and only if one wants to use ldapsearch
-# (from ldap-utils package) with the self-signed certificate
+
+# The following is needed for ldapsearch and event keeper on dev instances, since we use self-signed certificates
 
 sudo mkdir /etc/ldap/certs
 sudo cp /cdedb2/related/auto-build/files/stage2/ldap.pem /etc/ldap/certs
