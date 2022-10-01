@@ -554,6 +554,9 @@ p.textbox {
 #footer a:hover, #footer a:focus, #footer a.btn {
     text-decoration: none;
 }
+.candidate:hover {
+    opacity: 0.6;
+}
 
 code.result {
     color: #0f0f0f;

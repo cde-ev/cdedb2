@@ -23,11 +23,15 @@
     {{ util.breadcrumb_link(cdedblink("assembly/show_ballot_result"), gettext("Detailed Results"), active=True) }}
 {% endblock %}
 
+{% macro print_candidate(shortname) -%}
+    <span class="candidate" title="{{ candidates[shortname] }}">{{ abbreviations[shortname] }}</span>
+{%- endmacro %}
+
 {% macro print_vote(votestring) %}
     {%- if votestring -%} {# avoid error if votestring is empty #}
     {%- for candidate_level in votestring.split(">") -%}
         {%- for candidate in candidate_level.split("=") -%}
-            {{- candidates[candidate] -}}
+            {{- print_candidate(candidate) -}}
             {%- if not loop.last -%}
                 {{ nbsp }}<span class="result-separator">=</span>{{ nbsp }}
             {%- endif -%}
@@ -53,6 +57,18 @@
 
     <p>
         {% trans %}
+            For the whole page, the candidates are addressed with the following abbreviations.
+        {% endtrans %}
+    </p>
+
+    <ul>
+        {% for candidate in abbreviations %}
+            <li>{{ abbreviations[candidate] }} = {{ candidates[candidate] }}</li>
+        {% endfor %}
+    </ul>
+
+    <p>
+        {% trans %}
             After evaluating all given votes, we obtain the following combined preference list of all participants:
         {% endtrans %}
     </p>
@@ -69,14 +85,6 @@
             preference across all participants.
         {% endtrans %}
     </p>
-
-    {% if ambience['ballot']['use_bar'] %}
-        <p>
-            {% trans abm="<code class=result >%(abm)s</code>"|s|format(abm=candidates[ASSEMBLY_BAR_SHORTNAME]) %}
-                Additionally the shortname {{ abm }} shows where in the election the rejection limit was ranked.
-            {% endtrans %}
-        </p>
-    {% endif %}
 
 
     <h2 class="mosp">{% trans %}Verify the result{% endtrans %}</h2>

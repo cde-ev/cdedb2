@@ -28,7 +28,7 @@ import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
-    RequestState, get_hash, merge_dicts, now, unwrap,
+    RequestState, abbreviation_mapper, get_hash, merge_dicts, now, unwrap,
 )
 from cdedb.common.fields import LOG_FIELDS_COMMON
 from cdedb.common.n_ import n_
@@ -1127,6 +1127,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                     "Against all Candidates")
             else:
                 candidates[ASSEMBLY_BAR_SHORTNAME] = rs.gettext("Rejection limit")
+        abbreviations = abbreviation_mapper(xsorted(candidates.keys()))
 
         # all vote string submitted in this ballot
         votes = [vote["vote"] for vote in result["votes"]]
