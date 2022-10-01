@@ -39,11 +39,11 @@
     <p>
         {% if ambience['event']['registration_soft_limit'] is none %}
             {% trans %}
-                All data except Event-Parts can be changed until the registration ends.
+                All data except Event Parts can be changed until the registration ends.
             {% endtrans %}
         {% elif ambience['event']['registration_soft_limit'] >= now() %}
             {% trans date=ambience['event']['registration_soft_limit']|datetime(lang=lang) %}
-                All data except Event-Parts can be changed until the registration ends ({{ date }}).
+                All data except Event Parts can be changed until the registration ends ({{ date }}).
             {% endtrans %}
         {% else %}
             {% trans %}
@@ -107,7 +107,7 @@
         {% endif %}
 
         {% if ambience['event']['parts']|length > 1 %}
-            {{ util.form_input_checkboxes(name="parts", label=gettext("Event-Parts"),
+            {{ util.form_input_checkboxes(name="parts", label=gettext("Event Parts"),
                                           entries=ambience['event']['parts']|keydictsort(EntitySorter.event_part)
                                               |dict_entries('id', 'title')) }}
         {% elif ambience['event']['parts']|length == 1 %}

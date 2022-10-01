@@ -69,7 +69,7 @@ to all personas.
 
 Additionally realm admins have full access to users that belong to their realm, but not
 to any higher or equivalent realm. For example an event admin may manage, create and
-view all simple event-users, but not a user that belongs to the event and the assembly
+view all simple event users, but not a user that belongs to the event and the assembly
 realm or a user belonging to the cde realm (i.e. a former or current member).
 
 Special Admins

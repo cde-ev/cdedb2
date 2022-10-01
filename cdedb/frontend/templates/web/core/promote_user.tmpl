@@ -96,7 +96,7 @@
                                               defaultvalue=DEFAULT_COUNTRY) }}
                 {% endif %}
                 {% if not p['is_cde_realm'] and values['target_realm'] == 'cde'  %}
-                    {{ util.form_input_checkbox(name="trial_member", label=gettext("Grant Trialmembership")) }}
+                    {{ util.form_input_checkbox(name="trial_member", label=gettext("Grant Trial Membership")) }}
                     {{ util.form_input_select(
                             name='pevent_id', entries=past_events.items(), sort=True,
                             nulloption=nbsp, label=gettext("Past Event")) }}
