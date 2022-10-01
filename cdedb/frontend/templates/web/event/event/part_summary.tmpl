@@ -75,21 +75,25 @@
                 </div>
                 <div class="row">
                     <dl class="dl-horizontal col-md-6">
-                        <dt>{% trans %}Shortname{% endtrans %}</dt>
+                        <dt title="{% trans %}Shortname{% endtrans %}">{% trans %}Shortname{% endtrans %}</dt>
                         <dd id="part{{ part_id }}_shortname">{{ part['shortname'] }}</dd>
 
-                        <dt>{% trans %}Begin{% endtrans %}</dt>
+                        <dt title="{% trans %}Begin{% endtrans %}">{% trans %}Begin{% endtrans %}</dt>
                         <dd id="part{{ part_id }}_begin">{{ part['part_begin']|date(lang=lang) }}</dd>
 
-                        <dt>{% trans %}End{% endtrans %}</dt>
+                        <dt title="{% trans %}End{% endtrans %}">{% trans %}End{% endtrans %}</dt>
                         <dd id="part{{ part_id }}_end">{{ part['part_end']|date(lang=lang) }}</dd>
                     </dl>
 
                     <dl class="dl-horizontal col-md-6">
-                        <dt>{% trans %}Event-Part Fee{% endtrans %}</dt>
+                        <dt title="{% trans %}Event Part Fee{% endtrans %}">
+                            {% trans %}Event Part Fee{% endtrans %}
+                        </dt>
                         <dd>{{ part['fee']|money }}</dd>
 
-                        <dt>{% trans %}Field for Waitlist{% endtrans %}</dt>
+                        <dt title="{% trans %}Field for Waitlist{% endtrans %}">
+                            {% trans %}Field for Waitlist{% endtrans %}
+                        </dt>
                         <dd>
                             {% if part['waitlist_field'] %}
                                 {{ ambience['event']['fields'][part['waitlist_field']]['field_name'] }}

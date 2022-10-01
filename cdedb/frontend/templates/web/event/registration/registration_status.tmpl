@@ -147,7 +147,7 @@
     <h3 class="heading-underline">Status</h3>
     <dl class="dl-horizontal">
         {% for part_id, part in registration['parts'].items() %}
-            <dt>
+            <dt title="{{ ambience['event']['parts'][part_id]['title'] }}">
                 {% if ambience['event']['parts']|length > 1 %}
                     {{ ambience['event']['parts'][part_id]['title'] }}
                 {% else %}
@@ -182,7 +182,7 @@
 
             <dl class="dl-horizontal">
                 {% if ambience['event']['is_course_assignment_visible'] %}
-                    <dt>{% trans %}Assigned to{% endtrans %}</dt>
+                    <dt title="{% trans %}Assigned to{% endtrans %}">{% trans %}Assigned to{% endtrans %}</dt>
                     <dd>
                         {% if reg_track['course_id'] %}
                             {{ util.href(cdedblink('event/course_list') + '#course-' + reg_track['course_id']|string,
@@ -194,11 +194,13 @@
                     </dd>
                 {% endif %}
                 {% if reg_track['course_instructor'] %}
-                    <dt>{% trans %}Instructor of{% endtrans %}</dt>
+                    <dt title="{% trans %}Instructor of{% endtrans %}">{% trans %}Instructor of{% endtrans %}</dt>
                     <dd><em>{{ courses[reg_track['course_instructor']]['title'] }}</em>.</dd>
                 {% endif %}
                 {% for i in range(track['num_choices']) %}
-                    <dt>{{ gettext("{}. choice").format(i + 1) }}</dt>
+                    <dt title="{{ gettext("{}. choice").format(i + 1) }}">
+                        {{ gettext("{}. choice").format(i + 1) }}
+                    </dt>
                     <dd>
                         {% if reg_track['choices']|length > i %}
                             {{ util.href(cdedblink('event/course_list') + '#course-' + reg_track['choices'][i]|string,
@@ -235,7 +237,9 @@
     {% endif %}
 
     <dl class="dl-horizontal">
-        <dt>{% trans %}Mixed Lodging{% endtrans %}</dt>
+        <dt title="{% trans %}Mixed Lodging{% endtrans %}">
+            {% trans %}Mixed Lodging{% endtrans %}
+        </dt>
         <dd>
             {% if not age.may_mix() %}
                 {% trans %}Mixed Lodging not possible.{% endtrans %}
@@ -247,7 +251,9 @@
                 {% endif %}
             {% endif %}
         </dd>
-        <dt>{% trans %}Participant List Consent{% endtrans %}</dt>
+        <dt title="{% trans %}Participant List Consent{% endtrans %}">
+            {% trans %}Participant List Consent{% endtrans %}
+        </dt>
         <dd>
             {% trans consent="<strong>%s</strong> "|s|format(gettext("do not"))
                             if not registration['list_consent'] else "" -%}
@@ -263,7 +269,7 @@
             {% if entry['field_id'] %}
                 {% with FIELD = ambience['event']['fields'][entry['field_id']] %}
                     <div id="questionnaire_field_result_{{ FIELD['field_name'] }}">
-                        <dt>{{ entry['title'] }}</dt>
+                        <dt title="{{ entry['title'] }}">{{ entry['title'] }}</dt>
                         <dd>
                             {{ generic_event.display_field(FIELD, registration['fields'].get(FIELD['field_name'])) }}
                         </dd>
@@ -276,7 +282,9 @@
 
     {% if registration['notes'] %}
         <dl class="dl-horizontal">
-            <dt>{% trans %}Notes{% endtrans %}</dt>
+            <dt title="{% trans %}Notes{% endtrans %}">
+                {% trans %}Notes{% endtrans %}
+            </dt>
             <dd>
                 {{ registration['notes']|md }}
             </dd>
