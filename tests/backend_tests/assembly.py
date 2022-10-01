@@ -9,6 +9,7 @@ import freezegun
 import pytz
 
 import cdedb.database.constants as const
+from cdedb.backend.assembly import BallotConfiguration
 from cdedb.common import CdEDBObject, CdEDBObjectMap, get_hash, nearly_now, now
 from tests.common import (
     USER_DICT, BackendTest, UserIdentifier, as_users, prepsql, storage,
@@ -1464,6 +1465,19 @@ class TestAssemblyBackend(BackendTest):
         candidates = self.assembly.get_ballot(self.key, ballot_id)['candidates']
         self.assertEqual(candidates[7]['shortname'], old_candidates[8]['shortname'])
         self.assertEqual(candidates[8]['shortname'], old_candidates[7]['shortname'])
+
+    @as_users("werner", "berta")
+    def test_group_ballots_by_config(self) -> None:
+        assembly_id = 1
+        grouped = self.assembly.group_ballots(self.key, assembly_id)
+        ballots = self.assembly.get_ballots(
+            self.key, self.assembly.list_ballots(self.key, assembly_id))
+
+        for ballot_id, ballot in ballots.items():
+            key = BallotConfiguration(
+                ballot['vote_begin'], ballot['vote_end'], ballot['vote_extension_end'],
+                ballot['abs_quorum'], ballot['rel_quorum'])
+            self.assertIn(ballot_id, grouped.ballots[key])
 
     @as_users("werner")
     @prepsql("""INSERT INTO assembly.assemblies
