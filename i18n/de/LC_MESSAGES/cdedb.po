@@ -8271,7 +8271,7 @@ msgid "Ballots (%(title)s)"
 msgstr "Abstimmungen (%(title)s)"
 
 #: cdedb/frontend/templates/web/assembly/list_ballots.tmpl:24
-msgid "Future Ballots"
+msgid "Upcoming Ballots"
 msgstr "Zukünftige Abstimmungen"
 
 #: cdedb/frontend/templates/web/assembly/list_ballots.tmpl:25
@@ -8279,7 +8279,7 @@ msgid "Current Ballots"
 msgstr "Laufende Abstimmungen"
 
 #: cdedb/frontend/templates/web/assembly/list_ballots.tmpl:26
-msgid "Past Ballots"
+msgid "Concluded Ballots"
 msgstr "Abgeschlossene Abstimmungen"
 
 #: cdedb/frontend/templates/web/assembly/list_ballots.tmpl:38
