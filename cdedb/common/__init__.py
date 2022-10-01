@@ -1258,7 +1258,6 @@ def abbreviation_mapper(data: Sequence[T]) -> Dict[T, str]:
         data, itertools.product(string.ascii_uppercase, repeat=num_letters))}
 
 
-
 _tdelta = datetime.timedelta
 
 

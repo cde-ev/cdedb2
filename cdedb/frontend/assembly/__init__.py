@@ -1133,8 +1133,15 @@ class AssemblyFrontend(AbstractUserFrontend):
         votes = [vote["vote"] for vote in result["votes"]]
         # calculate the occurrence of each vote
         vote_counts = self.count_equal_votes(votes, classical=bool(ballot['votes']))
+
+        all_candidates = [Candidate(c) for c in candidates]
+        if ballot["votes"]:
+            all_candidates.append(Candidate(ASSEMBLY_BAR_SHORTNAME))
         # the pairwise preference of all candidates
-        pairwise_pref = pairwise_preference(votes, candidates)
+        # Schulze_condorcet checks if all votes contain exactly the given candidates.
+        # Since the pairwise preference does not change if we ignore some candidates
+        # afterwards, we simply add the _bar_ here.
+        pairwise_pref = pairwise_preference(votes, all_candidates)
 
         # calculate the hash of the result file
         result_bytes = self.assemblyproxy.get_ballot_result(rs, ballot['id'])
