@@ -30,13 +30,6 @@
     {% endcall %}
 {%- endmacro %}
 
-{% macro simple_list_item(ballot, id_prefix) %}
-    <li id="{{ id_prefix }}-ballot-{{ ballot['id'] }}">
-        {{ title_link(ballot) }}
-        {{ voting_period(ballot) }}
-    </li>
-{% endmacro %}
-
 {% macro details_list(grouped_config, ballots) %}
     {% set sorted_ballots = ballots|keydictsort(EntitySorter.ballot) %}
     {% for (vote_begin, vote_end, extension_end, abs_quorum, rel_quorum), ballot_ids in config_grouped if ballot_ids.intersection(ballots) %}
