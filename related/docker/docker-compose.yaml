@@ -38,7 +38,7 @@ services:
     volumes:
       - ../..:/cdedb2:z # the :z is for SELinux (see #2053)
     ports:
-      - 127.0.0.1:8389:389
+      - 127.0.0.1:8636:636
     environment:
         CDEDB_CONFIGPATH: /etc/cdedb/config.py # DEFAULT_CONFIGPATH from cdedb.config
     depends_on:

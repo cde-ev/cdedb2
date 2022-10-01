@@ -12,14 +12,14 @@ STORAGE_DIR = _TMP_DIR / "storage"
 
 CDB_DATABASE_NAME = "cdb_test_ldap"
 
-# switch the port, so we do not collide with the real ldap server at port 389
-LDAP_PORT = 20389
+# switch the port, so we do not collide with the real ldap server at port 636
+LDAP_PORT = 20636
 
 # change the ldap host in docker
 if pathlib.Path('/CONTAINER').is_file():
     LDAP_HOST = "ldap"
     # there is only a single ldap server running for docker, which needs to be used
     # for tests and development
-    LDAP_PORT = 389
+    LDAP_PORT = 636
     LDAP_PEM_PATH = "/etc/cdedb/ldap/ldap.pem"
     LDAP_KEY_PATH = "/etc/cdedb/ldap/ldap.key"

@@ -27,7 +27,7 @@ RUN install -D /tmp/autobuild/localconfig.py /etc/cdedb/config.py \
 # make config persistent
 VOLUME /etc/cdedb
 
-EXPOSE 389
+EXPOSE 636
 
 # mount the code here
 WORKDIR /cdedb2
