@@ -9,6 +9,7 @@ from ldap3 import ALL_ATTRIBUTES
 from ldap3.core.tls import Tls
 from ldap3.utils.config import _ATTRIBUTES_EXCLUDED_FROM_CHECK
 
+from cdedb.cli.util import is_docker
 from tests.common import USER_DICT, BasicTest
 
 # this is likely a bug in ldaptor and already reported upstream, see
@@ -45,6 +46,13 @@ class TestLDAP(BasicTest):
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
+        # TODO this is currently necessary, since the certificate is generated at
+        #  runtime in another container, so we can not access it here.
+        if is_docker():
+            tls = Tls(validate=ssl.CERT_NONE)
+            cls.server = ldap3.Server(
+                cls.conf['LDAP_HOST'], port=cls.conf['LDAP_PORT'], get_info=ldap3.ALL)
+            return
         tls = Tls(validate=ssl.CERT_REQUIRED, ca_certs_file=cls.conf["LDAP_PEM_PATH"])
         cls.server = ldap3.Server(
             cls.conf['LDAP_HOST'], port=cls.conf['LDAP_PORT'], get_info=ldap3.ALL,
