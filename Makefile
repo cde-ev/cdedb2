@@ -30,7 +30,7 @@ help:
 	@echo "coverage            -- run coverage to determine test suite coverage"
 	@echo ""
 	@echo "Sample Data:"
-	@echo "sample-data-dump    -- dump current database state into json file in tests directory"
+	@echo "sample-data-dump    -- shortcut to dump current database state into json file in tests directory"
 	@echo "sample-data         -- shortcut to reset the whole application via the python cli"
 
 
@@ -272,11 +272,8 @@ coverage: .coverage
 
 .PHONY: sample-data-dump
 sample-data-dump:
-	JSONTEMPFILE=`sudo -u www-data mktemp` \
-		&& sudo -u www-data chmod +r "$${JSONTEMPFILE}" \
-		&& sudo -u www-data $(PYTHONBIN) bin/create_sample_data_json.py -o "$${JSONTEMPFILE}" \
-		&& cp "$${JSONTEMPFILE}" tests/ancillary_files/sample_data.json \
-		&& sudo -u www-data rm "$${JSONTEMPFILE}"
+	python3 -m cdedb dev compile-sample-data-json \
+		--outfile /cdedb2/tests/ancillary_files/sample_data.json
 
 .PHONY: sample-data
 sample-data:
