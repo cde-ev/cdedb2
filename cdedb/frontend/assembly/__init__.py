@@ -16,7 +16,7 @@ import zipapp
 from typing import Any, Collection, Dict, List, Optional, Set, Tuple, Union
 
 import werkzeug.exceptions
-from schulze_condorcet import schulze_evaluate_detailed
+from schulze_condorcet import pairwise_preference, schulze_evaluate_detailed
 from schulze_condorcet.types import Candidate, DetailedResultLevel, VoteString
 from schulze_condorcet.util import (
     as_vote_string, as_vote_strings, as_vote_tuple, as_vote_tuples,
@@ -1133,6 +1133,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         votes = [vote["vote"] for vote in result["votes"]]
         # calculate the occurrence of each vote
         vote_counts = self.count_equal_votes(votes, classical=bool(ballot['votes']))
+        # the pairwise preference of all candidates
+        pairwise_pref = pairwise_preference(votes, candidates)
 
         # calculate the hash of the result file
         result_bytes = self.assemblyproxy.get_ballot_result(rs, ballot['id'])
@@ -1155,7 +1157,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             'BALLOT_TALLY_ADDRESS': self.conf["BALLOT_TALLY_ADDRESS"],
             'BALLOT_TALLY_MAILINGLIST_URL': self.conf["BALLOT_TALLY_MAILINGLIST_URL"],
             'prev_ballot': prev_ballot, 'next_ballot': next_ballot,
-            'candidates': candidates})
+            'candidates': candidates, 'abbreviations': abbreviations,
+            'pairwise_preference': pairwise_pref})
 
     @staticmethod
     def count_equal_votes(vote_strings: List[VoteString], classical: bool = False

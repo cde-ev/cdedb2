@@ -150,6 +150,44 @@
         <pre>{{ result_hash }}</pre>
 
 
+    <h2 class="mosp">{% trans %}Cross Table of Preferences{% endtrans %}</h2>
+
+    <p>
+        {% trans %}
+            The following table contains the pairwise preferences above all candidates.
+            It can be read as "the candidate of the xth row is preferred by y voters over the candidate of the zth column".
+        {% endtrans %}
+    </p>
+
+    {# rows are preferred over columns #}
+    <table class="table crosstable table-hover">
+        <thead>
+            <tr>
+                <th></th>
+                {% for candidate in abbreviations %}
+                    <th class="text-right">{{ print_candidate(candidate) }}</th>
+                {% endfor %}
+            </tr>
+            <tbody>
+                {% for candidate_a in abbreviations %}
+                    <tr>
+                        <th class="text-right">{{ print_candidate(candidate_a) }}</th>
+                        {% for candidate_b in candidates %}
+                            <td class="text-right">
+                                {% if candidate_a == candidate_b %}
+                                    –
+                                {% else %}
+                                    {{ pairwise_preference[(candidate_a, candidate_b)] }}
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </thead>
+    </table>
+
+
     <h2 class="mosp">{% trans %}Votes{% endtrans %}</h2>
 
         <table class="table table-condensed table-hover">

@@ -83,6 +83,13 @@ body{
 .table-log {
     margin-bottom: 0;
 }
+.crosstable {
+    width: unset;
+}
+.crosstable>tbody>tr>td, .crosstable>tfoot>tr>td,
+.crosstable>tfoot>tr>th, .crosstable>thead>tr>td, .crosstable>thead>tr>th {
+    padding-left: 30px;
+}
 .input-slim, .input-group>.input-slim {
     width: auto;
 }
