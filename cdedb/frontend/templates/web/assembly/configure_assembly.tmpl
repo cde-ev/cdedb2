@@ -50,7 +50,7 @@
         {{ util.form_input_text(name="presider_address", label=gettext("Presider Address"),
                                     info=gettext("This will be the default address for replies to mails sent for this assembly.")) }}
         {{ util.form_input_text(name="signup_end", label=gettext("Application Deadline"), type="datetime-local") }}
-        {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="5", markdown=True) }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Admin Notes"), rows="5", markdown=True) }}
 
         {# Display a warning and submit buttons.
            For creation additionally allow specifying presiders and creating mailinglists. #}

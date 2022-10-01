@@ -2631,7 +2631,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence(
             "Ungültiger Benutzer für Aktualisierung.", div="notifications")
 
-        # The event-user. This option should work.
+        # The event user. This option should work.
         self.assertTrue(self.core.is_relative_admin(self.key, 1002))
         self._decide_genesis_case(GenesisDecision.update, persona_id=1002)
 

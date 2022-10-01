@@ -100,7 +100,7 @@
 
     {% if ambience['assembly']['notes'] and ("assembly_presider" in user.admin_views
                                              or ambience['assembly']['id'] in user.presider) %}
-        {% call util.bootstrap_panel(title=gettext("Admin-Notes"), icon="tag", aclass="panel-default panel-condensed") %}
+        {% call util.bootstrap_panel(title=gettext("Admin Notes"), icon="tag", aclass="panel-default panel-condensed") %}
             <div id="notes">
                 {{ ambience['assembly']['notes']|md }}
             </div>
