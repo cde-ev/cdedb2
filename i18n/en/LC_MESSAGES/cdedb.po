@@ -8177,7 +8177,7 @@ msgid "Automated Archival Done"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:229
-msgid "Trialmemberships Ended"
+msgid "Trial Memberships Ended"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:230
@@ -9177,7 +9177,7 @@ msgid "Additional Data"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:99
-msgid "Grant Trialmembership"
+msgid "Grant Trial Membership"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:112
@@ -9309,10 +9309,6 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/show_privilege_change.tmpl:25
 #: cdedb/frontend/templates/web/core/show_user.tmpl:245
 msgid "Admin Privileges"
-msgstr ""
-
-#: cdedb/frontend/templates/web/core/show_history.tmpl:170
-msgid "Trialmembership"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/show_history.tmpl:175
@@ -9488,12 +9484,8 @@ msgstr ""
 msgid "To request an upgrade to a member account, contact %(mailto)s."
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/show_user.tmpl:259
-msgid "Admin-Notes"
-msgstr ""
-
 #: cdedb/frontend/templates/web/core/show_user.tmpl:276
-msgid "(Trialmembership)"
+msgid "(Trial Membership)"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/show_user.tmpl:279
@@ -14399,7 +14391,7 @@ msgstr "Membership fee deducted"
 
 #: cdedb/i18n_additional.py:128
 msgid "FinanceLogCodes.end_trial_membership"
-msgstr "End of Trialmembership"
+msgstr "End of Trial Membership"
 
 #: cdedb/i18n_additional.py:129
 msgid "FinanceLogCodes.manual_balance_correction"
@@ -14539,7 +14531,7 @@ msgstr "Skip Entry"
 
 #: cdedb/i18n_additional.py:168
 msgid "LineResolutions.renew_trial"
-msgstr "Renew Trialmembership"
+msgstr "Renew Trial Membership"
 
 #: cdedb/i18n_additional.py:169
 msgid "LineResolutions.update"
@@ -14547,7 +14539,7 @@ msgstr "Update Data"
 
 #: cdedb/i18n_additional.py:170
 msgid "LineResolutions.renew_and_update"
-msgstr "Renew Trialmembership and Update Data"
+msgstr "Renew Trial Membership and Update Data"
 
 #: cdedb/i18n_additional.py:172
 msgid "MemberChangeStati.pending"

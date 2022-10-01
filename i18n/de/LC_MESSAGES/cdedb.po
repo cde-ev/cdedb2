@@ -11356,6 +11356,7 @@ msgstr "Ende"
 
 #: cdedb/frontend/templates/web/event/event/add_part.tmpl:29
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:44
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:89
 msgid "Event Part Fee"
 msgstr "Teilnahmebeitrag"
 
