@@ -108,7 +108,7 @@
     {% endif %}
 
     {% if attachments_version %}
-        {% call util.bootstrap_panel(title=gettext("Files"), icon='file', anid='attachmentspanel') %}
+        {% call util.bootstrap_panel(title=util.href(cdedblink("assembly/list_attachments"), gettext("Files"), icon='file'), anid='attachmentspanel') %}
         <div class="row">
             {% for slice in attachments_version|keydictsort(EntitySorter.attachment)|slice(2) %}
                 <div class="col-sm-6">
