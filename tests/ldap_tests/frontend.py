@@ -9,7 +9,6 @@ from ldap3 import ALL_ATTRIBUTES
 from ldap3.core.tls import Tls
 from ldap3.utils.config import _ATTRIBUTES_EXCLUDED_FROM_CHECK
 
-from cdedb.cli.util import is_docker
 from tests.common import USER_DICT, BasicTest
 
 # this is likely a bug in ldaptor and already reported upstream, see
