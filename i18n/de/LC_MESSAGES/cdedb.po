@@ -4488,7 +4488,7 @@ msgstr "Aktion hatte keinen Effekt."
 #: cdedb/frontend/assembly/__init__.py:265
 #: cdedb/frontend/assembly/__init__.py:266
 msgid "This user is not a presider for this assembly."
-msgstr "Dieser Nutzer ist kein Wahlleiter für diese Versammlung."
+msgstr "Dieser Nutzer ist kein Versammlungsleiter für diese Versammlung."
 
 #: cdedb/frontend/assembly/__init__.py:362
 #: cdedb/frontend/assembly/__init__.py:363
@@ -8321,15 +8321,15 @@ msgstr "Teilnehmen"
 
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:70
 msgid "Remove Presider"
-msgstr "Wahlleiter entfernen"
+msgstr "Versammlungsleiter entfernen"
 
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:80
 msgid "Add Presiders"
-msgstr "Wahlleiter hinzufügen"
+msgstr "Versammlungsleiter hinzufügen"
 
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:82
 msgid "IDs of the new Presiders."
-msgstr "IDs der neuen Wahlleiter"
+msgstr "IDs der neuen Versammlungsleiter"
 
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:143
 msgid "Create presider mailinglist"
@@ -17618,11 +17618,11 @@ msgstr "Neuer Teilnehmer"
 
 #: cdedb/i18n_additional.py:29
 msgid "AssemblyLogCodes.assembly_presider_added"
-msgstr "Wahlleiter hinzugefügt"
+msgstr "Versammlungsleiter hinzugefügt"
 
 #: cdedb/i18n_additional.py:30
 msgid "AssemblyLogCodes.assembly_presider_removed"
-msgstr "Wahlleiter entfernt"
+msgstr "Versammlungsleiter entfernt"
 
 #: cdedb/i18n_additional.py:31
 msgid "AssemblyLogCodes.attachment_added"

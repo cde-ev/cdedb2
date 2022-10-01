@@ -43,6 +43,12 @@
                 {% endif %}
             {% endif %}
         </dd>
+        {% if ambience['assembly']['presider_address'] %}
+            <dt title="{{ gettext("Presider Address") }}">{% trans %}Presider Address{% endtrans %}</dt>
+            <dd id="presider-address">
+                <a href="{{ util.mailto(ambience['assembly']['presider_address']) }}">{{ ambience['assembly']['presider_address'] }}</a>
+            </dd>
+        {% endif %}
         {% if presiders %}
             <dt>{% trans %}Presiders{% endtrans %}</dt>
             <dd id="assembly-presiders">
