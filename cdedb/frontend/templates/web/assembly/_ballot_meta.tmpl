@@ -42,6 +42,9 @@
                 {% for ballot_id, ballot in sorted_ballots if ballot_id in ballot_ids %}
                     <li>
                         {{ title_link(ballot) }}
+                        <span class="text-muted small">
+                            ({{ modality(ballot) }})
+                        </span>
                     </li>
                 {% endfor %}
             </ul>
@@ -83,39 +86,39 @@
     </div>
 {% endmacro %}
 
-{% macro modality(ballot) %}
-    {% if ballot['votes'] == 1 %}
-        {% if ballot['use_bar'] %}
-            {% trans votes=ballot['votes'] %}
+{% macro modality(ballot) -%}
+    {% if ballot['votes'] == 1 -%}
+        {% if ballot['use_bar'] -%}
+            {% trans votes=ballot['votes'] -%}
                 Classical voting with {{ votes }} vote and "Against all" option.
-            {% endtrans %}
-        {% else %}
-            {% trans votes=ballot['votes'] %}
+            {%- endtrans %}
+        {%- else -%}
+            {% trans votes=ballot['votes'] -%}
                 Classical voting with {{ votes }} vote.
-            {% endtrans %}
-        {% endif %}
-    {% elif ballot['votes'] %}
-        {% if ballot['use_bar'] %}
-            {% trans votes=ballot['votes'] %}
+            {%- endtrans %}
+        {%- endif %}
+    {%- elif ballot['votes'] -%}
+        {% if ballot['use_bar'] -%}
+            {% trans votes=ballot['votes'] -%}
                 Classical voting with {{ votes }} votes and "Against all" option.
-            {% endtrans %}
-        {% else %}
-            {% trans votes=ballot['votes'] %}
+            {%- endtrans %}
+        {%- else -%}
+            {% trans votes=ballot['votes'] -%}
                 Classical voting with {{ votes }} votes.
-            {% endtrans %}
-        {% endif %}
-    {% else %}
-        {% if ballot['use_bar'] %}
-            {% trans %}
+            {%- endtrans %}
+        {%- endif %}
+    {%- else -%}
+        {% if ballot['use_bar'] -%}
+            {% trans -%}
                 Preferential voting with bar option.
-            {% endtrans %}
-        {% else %}
-            {% trans %}
+            {%- endtrans %}
+        {%- else -%}
+            {% trans -%}
                 Preferential voting without bar option.
-            {% endtrans %}
-        {% endif %}
-    {% endif %}
-{% endmacro %}
+            {%- endtrans %}
+        {%- endif %}
+    {%- endif %}
+{%- endmacro %}
 
 {% macro show_status() -%}
     <dl class="dl-horizontal mosp" id="ballot-status">
