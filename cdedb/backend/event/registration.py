@@ -119,8 +119,17 @@ class EventRegistrationBackend(EventBaseBackend):
                                          ) -> CourseChoiceValidationAux:
         """Gather auxilliary data necessary to validate course choices.
 
-        Involved tracks can be determined from a registration id, by reading from the
-        database or by specifying the involved parts explicitly, if necessary.
+        This retrieves three datapoints:
+          * course_segments: Which course is offered in which tracks.
+          * synced_tracks: To which tracks each track is synced to.
+          * involved_tracks: Which tracks a registration is involved with.
+
+        The return of this method can be passed to `validate_single_course_choice`.
+
+        To determine involved tracks, a registration id can be given, which will then
+        be used to read this information from the database, or the involved parts can
+        be passed directly in case that data is not available in the database yet,
+        for example during validation before creating a new registration.
         """
         event_id = affirm(vtypes.ID, event_id)
         registration_id = affirm_optional(vtypes.ID, registration_id)
@@ -136,7 +145,7 @@ class EventRegistrationBackend(EventBaseBackend):
             """
             involved_tracks = {e['id'] for e in self.query_all(rs, q, (part_ids,))}
         else:
-            involved_tracks = set()
+            raise ValueError(n_("Cannot determine involved tracks."))
         return CourseChoiceValidationAux(
             self._get_event_course_segments(rs, event_id),
             self._get_synced_tracks(rs, event_id),
