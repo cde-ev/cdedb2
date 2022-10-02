@@ -96,7 +96,7 @@ class EventRegistrationBackend(EventBaseBackend):
         """
         q = """
             SELECT ct.id, COALESCE(synced_tracks, ARRAY[]::integer[]) AS synced_tracks
-            FROM event.course_tracks ct
+            FROM event.course_tracks AS ct
             JOIN event.event_parts ep on ep.id = ct.part_id
             LEFT JOIN (
                 SELECT ct.id, ARRAY_AGG(tgt2.track_id) AS synced_tracks
@@ -106,7 +106,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 LEFT JOIN event.track_group_tracks AS tgt2 on tg.id = tgt2.track_group_id
                 WHERE tg.constraint_type = %s AND tg.event_id = %s
                 GROUP BY ct.id
-            ) tmp ON tmp.id = ct.id
+            ) AS tmp ON tmp.id = ct.id
             WHERE ep.event_id = %s
         """
         p = (const.CourseTrackGroupType.course_choice_sync, event_id, event_id)
