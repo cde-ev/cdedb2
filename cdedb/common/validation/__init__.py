@@ -2434,27 +2434,9 @@ def _event_part_group_setter(
     """
     val = _mapping(val, argname)
 
-    errs = ValidationSummary()
-    new_part_groups = {}
-    for anid, part_group in val.items():
-        try:
-            anid = _partial_import_id(anid, 'parts', **kwargs)
-        except ValidationSummary as e:
-            errs.extend(e)
-            continue
-        creation = (anid < 0)
-        try:
-            if creation:
-                part_group = _ALL_TYPED[EventPartGroup](
-                    part_group, creation=True, **kwargs)
-            else:
-                part_group = _ALL_TYPED[Optional[EventPartGroup]](part_group, **kwargs)  # type: ignore[index]
-        except ValidationSummary as e:
-            errs.extend(e)
-        else:
-            new_part_groups[anid] = part_group
-    if errs:
-        raise errs
+    new_part_groups = _optional_object_mapping_helper(
+        val, EventPartGroup, argname, creation_only=False)
+
     return EventPartGroupSetter(new_part_groups)
 
 
