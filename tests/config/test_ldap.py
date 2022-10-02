@@ -21,5 +21,5 @@ if pathlib.Path('/CONTAINER').is_file():
     # there is only a single ldap server running for docker, which needs to be used
     # for tests and development
     LDAP_PORT = 636
-    LDAP_PEM_PATH = pathlib.Path("/etc/ldap/certs/ldap.pem")
-    LDAP_KEY_PATH = pathlib.Path("/etc/ldap/certs/ldap.key")
+    LDAP_PEM_PATH = pathlib.Path("/etc/ssl/ldap/ldap.pem")
+    LDAP_KEY_PATH = pathlib.Path("/etc/ssl/ldap/ldap.key")

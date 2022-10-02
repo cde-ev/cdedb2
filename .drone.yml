@@ -118,7 +118,7 @@ steps:
       - success
   volumes:
   - name: ldap
-    path: /etc/ldap
+    path: /etc/ssl/ldap
   environment:
     CDEDB_CONFIGPATH: tests/config/test_ldap.py
 - name: frontend tests a-d
@@ -184,7 +184,7 @@ steps:
       - success
   volumes:
   - name: ldap
-    path: /etc/ldap
+    path: /etc/ssl/ldap
   - name: tmp_dir
     path: /tmp
   - name: coverage
