@@ -91,6 +91,8 @@ def populate_storage(conf: Config) -> None:
 
     foto = ("e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425"
             "a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9")
+    genesis = ("d28c1a205a1dfb4fd6f655d0e69e6512c676c9cd675f760ec41b6e8a57bde89d313f"
+               "521d4fafc2f294a28bd8aff4a106032e904470b3249f9436f68ea1ec8020")
     files = (
         "picture.pdf",  # core: profile foto?
         "picture.png",  # core: profile foto
@@ -112,12 +114,14 @@ def populate_storage(conf: Config) -> None:
 
     testfile_dir = repo_path / "tests" / "ancillary_files"
     attachment_dir = storage_dir / "assembly_attachment"
+    genesis_dir = storage_dir / "genesis_attachment"
 
     shutil.copy(testfile_dir / foto, storage_dir / "foto")
     shutil.copy(testfile_dir / "rechen.pdf", attachment_dir / "1_v1")
     shutil.copy(testfile_dir / "kassen.pdf", attachment_dir / "2_v1")
     shutil.copy(testfile_dir / "kassen2.pdf", attachment_dir / "2_v3")
     shutil.copy(testfile_dir / "kandidaten.pdf", attachment_dir / "3_v1")
+    shutil.copy(testfile_dir / "form.pdf", genesis_dir / genesis)
     for file in files:
         shutil.copy(testfile_dir / file, storage_dir / "testfiles")
 
