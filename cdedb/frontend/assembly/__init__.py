@@ -1472,6 +1472,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             "vote_extension_end":
                 None if not rs.ambience['ballot']['vote_extension_end']
                 else now() + datetime.timedelta(minutes=1, microseconds=100),
+            "abs_quorum": rs.ambience['ballot']['abs_quorum'],
+            "rel_quorum": rs.ambience['ballot']['rel_quorum'],
         }
 
         rs.notify_return_code(self.assemblyproxy.set_ballot(rs, bdata))
