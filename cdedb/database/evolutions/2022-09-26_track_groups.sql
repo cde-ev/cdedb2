@@ -11,7 +11,7 @@ BEGIN;
             UNIQUE (event_id, title) DEFERRABLE INITIALLY IMMEDIATE
     );
     GRANT INSERT, SELECT, DELETE ON event.track_groups TO cdb_persona;
-    GRANT UPDATE (title, shortname, notes) ON event.track_groups TO cdb_persona;
+    GRANT UPDATE (title, shortname, notes, sortkey) ON event.track_groups TO cdb_persona;
     GRANT SELECT, UPDATE ON event.track_groups_id_seq TO cdb_persona;
     GRANT SELECT ON event.track_groups TO cdb_anonymous;
 
