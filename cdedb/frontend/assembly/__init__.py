@@ -40,7 +40,6 @@ from cdedb.common.validation import (
     filter_none,
 )
 from cdedb.common.validation.types import CdedbID, Email
-from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, Attachment, REQUESTdata, REQUESTdatadict, REQUESTfile, access,
     assembly_guard, calculate_db_logparams, calculate_loglinks, cdedburl,
@@ -1107,7 +1106,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         # we are only interested in concluded ballots
         ballot_list: List[int] = xsorted(
             grouped.concluded.keys(),
-            key=lambda id_: EntitySorter.ballot(grouped.concluded[id_])
+            key=lambda id_: EntitySorter.ballot(grouped.concluded[id_])  # type: ignore[union-attr]
+            # Seems like a mypy bug.
         )
 
         i = ballot_list.index(ballot_id)
