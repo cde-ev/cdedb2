@@ -54,13 +54,11 @@
             {% endif %}
             {{ util.href(cdedblink("assembly/create_ballot", {'source_id': ambience['ballot']['id']}), gettext("Use as Template"), icon="clone",
                     aclass="btn btn-sm btn-success") }}
-        </div>
-        {% if ambience['ballot']['is_tallied'] %}
-            <div class="p">
+            {% if ambience['ballot']['is_tallied'] %}
                 {{ util.href(cdedblink("assembly/comment_concluded_ballot_form"), gettext("Comment_[[verb]]"), icon="comment",
                         aclass="btn btn-sm btn-warning") }}
-            </div>
-        {% endif %}
+            {% endif %}
+        </div>
     {% endif %}
 
     {# General information about ballot and personalized state info #}
