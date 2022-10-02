@@ -1440,6 +1440,11 @@ def reconnoitre_ambience(obj: AbstractFrontend,
               'part_group_id', 'part_group',
               ((lambda a: do_assert(a['part_group']['event_id']
                                     == a['event']['id'])),)),
+        # Dirty hack, that relies on the event being retrieved into ambience first.
+        Scout(lambda anid: ambience['event']['track_groups'][anid],  # type: ignore[has-type]
+              'track_group_id', 'track_group',
+              ((lambda a: do_assert(a['track_group']['event_id']
+                                    == a['event']['id'])),)),
         Scout(lambda anid: obj.assemblyproxy.get_attachment(rs, anid),
               'attachment_id', 'attachment',
               ((lambda a: do_assert(a['attachment']['assembly_id']
