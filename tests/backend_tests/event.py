@@ -483,8 +483,7 @@ class TestEventBackend(BackendTest):
             self.event.delete_event(
                 self.key, 1, self.event.delete_event_blockers(self.key, 1)))
 
-    @as_users("annika")
-    def test_get_event_part_groups(self) -> None:
+        # Test part groups and track groups in get_event.
         expectation_part = {
             'id': 6,
             'event_id': 4,
@@ -514,7 +513,7 @@ class TestEventBackend(BackendTest):
                             'constraint_type':
                                 const.CourseTrackGroupType.course_choice_sync,
                             'track_ids': {6, 7, 8},
-                            'sortkey': 0,
+                            'sortkey': 2,
                         }
                     },
                 },
