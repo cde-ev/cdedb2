@@ -59,40 +59,48 @@
         <h2>{% trans %}Active Direct Debit Authorization{% endtrans %}</h2>
         {% with lastschrift = lastschrifts[active_permit] %}
             <dl class="dl-horizontal">
-                <dt>{% trans %}Member{% endtrans %}</dt>
+                <dt title="{% trans %}Member{% endtrans %}">
+                    {% trans %}Member{% endtrans %}
+                </dt>
                 <dd>{{ util.persona_anchor(personas[values['persona_id']]) }}</dd>
             {% if "finance" in user.admin_views %}
-                <dt>{% trans %}Submitted by{% endtrans %}</dt>
+                <dt title="{% trans %}Submitted by{% endtrans %}">
+                    {% trans %}Submitted by{% endtrans %}
+                </dt>
                 <dd id="submitted-by">
                     {{ util.persona_anchor(personas[lastschrift['submitted_by']]) }}
                 </dd>
 
-                <dt>{% trans %}Notes{% endtrans %}</dt>
+                <dt title="{% trans %}Notes{% endtrans %}">
+                    {% trans %}Notes{% endtrans %}
+                </dt>
                 <dd id="notes">{{ lastschrift['notes']|md }}</dd>
             {% endif %}
             </dl>
             <dl class="dl-horizontal">
-                <dt>{% trans %}Amount{% endtrans %}</dt>
+                <dt title="{% trans %}Amount{% endtrans %}">{% trans %}Amount{% endtrans %}</dt>
                 <dd id="amount">{{ lastschrift['amount']|money(lang=lang) }}</dd>
 
-                <dt>{% trans %}IBAN{% endtrans %}</dt>
+                <dt title="{% trans %}IBAN{% endtrans %}">
+                    {% trans %}IBAN{% endtrans %}
+                </dt>
                 {% if 'finance' in user.admin_views %}
                     <dd id="iban">{{ lastschrift['iban']|iban }}</dd>
                 {% else %}
                     <dd id="iban">{{ lastschrift['iban']|hidden_iban }}</dd>
                 {% endif %}
 
-                <dt>{% trans %}Account holder{% endtrans %}</dt>
+                <dt title="{% trans %}Account holder{% endtrans %}">{% trans %}Account holder{% endtrans %}</dt>
                 <dd id="account-holder">
                     {{ lastschrift['account_owner'] }}
                 </dd>
 
-                <dt>{% trans %}Acc. holder’s address{% endtrans %}</dt>
+                <dt title="{% trans %}Acc. holder’s address{% endtrans %}">{% trans %}Acc. holder’s address{% endtrans %}</dt>
                 <dd id="account-holder-address">
                     {{ lastschrift['account_address']|linebreaks }}
                 </dd>
 
-                <dt>{% trans %}Granted{% endtrans %}</dt>
+                <dt title="{% trans %}Granted{% endtrans %}">{% trans %}Granted{% endtrans %}</dt>
                 <dd id="granted-at">{{ lastschrift['granted_at']|datetime(lang=lang) }}</dd>
             </dl>
         {% endwith %}

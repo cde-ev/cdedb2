@@ -491,7 +491,7 @@ class TestEventFrontend(FrontendTest):
             f['orga_id'] = "DB-1-1"
             self.submit(f, check_notification=False)
             self.assertValidationError('orga_id', "Checksumme stimmt nicht.", index=-1)
-            # Try to add a non event-user.
+            # Try to add a non event user.
             f['orga_id'] = USER_DICT['janis']['DB-ID']
             self.submit(f, check_notification=False)
             self.assertValidationError(

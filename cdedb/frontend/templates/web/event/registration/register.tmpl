@@ -39,11 +39,11 @@
     <p>
         {% if ambience['event']['registration_soft_limit'] is none %}
             {% trans %}
-                All data except Event-Parts can be changed until the registration ends.
+                All data except Event Parts can be changed until the registration ends.
             {% endtrans %}
         {% elif ambience['event']['registration_soft_limit'] >= now() %}
             {% trans date=ambience['event']['registration_soft_limit']|datetime(lang=lang) %}
-                All data except Event-Parts can be changed until the registration ends ({{ date }}).
+                All data except Event Parts can be changed until the registration ends ({{ date }}).
             {% endtrans %}
         {% else %}
             {% trans %}
@@ -67,32 +67,32 @@
 
         <h3 class="heading-underline">{% trans %}My Data{% endtrans %}</h3>
         <dl class="dl-horizontal">
-            <dt>{% trans %}Full Name{% endtrans %}</dt>
+            <dt title="{% trans %}Full Name{% endtrans %}">{% trans %}Full Name{% endtrans %}</dt>
             <dd>
                 {{ util.persona_name(persona, given_and_display_names=True, with_titles=True) }}
             </dd>
 
-            <dt>{% trans %}Birthday{% endtrans %}</dt>
+            <dt title="{% trans %}Birthday{% endtrans %}">{% trans %}Birthday{% endtrans %}</dt>
             <dd>{{ persona['birthday']|date(lang=lang) }}</dd>
-            <dt>{% trans %}Gender{% endtrans %}</dt>
+            <dt title="{% trans %}Gender{% endtrans %}">{% trans %}Gender{% endtrans %}</dt>
             <dd>{{ gettext(enums['Genders'](persona['gender'])|string) }}</dd>
-            <dt>{% trans %}Pronouns{% endtrans %}</dt>
+            <dt title="{% trans %}Pronouns{% endtrans %}">{% trans %}Pronouns{% endtrans %}</dt>
             <dd>{{ persona['pronouns'] }}</dd>
-            <dt>{% trans %}Show pronouns on nametags{% endtrans %}</dt>
+            <dt title="{% trans %}Show pronouns on nametags{% endtrans %}">{% trans %}Pronouns on nametags{% endtrans %}</dt>
             <dd>{{ util.deko_checkbox(persona['pronouns_nametag']) }}</dd>
-            <dt>{% trans %}E-Mail{% endtrans %}</dt>
+            <dt title="{% trans %}E-Mail{% endtrans %}">{% trans %}E-Mail{% endtrans %}</dt>
             <dd> {{ persona['username'] }} </dd>
-            <dt>{% trans %}Phone{% endtrans %}</dt>
+            <dt title="{% trans %}Phone{% endtrans %}">{% trans %}Phone{% endtrans %}</dt>
             <dd>{{ persona['telephone']|phone }}</dd>
-            <dt>{% trans %}Mobile Phone{% endtrans %}</dt>
+            <dt title="{% trans %}Mobile Phone{% endtrans %}">{% trans %}Mobile Phone{% endtrans %}</dt>
             <dd>{{ persona['mobile']|phone }}</dd>
-            <dt>{% trans %}Address{% endtrans %}</dt>
+            <dt title="{% trans %}Address{% endtrans %}">{% trans %}Address{% endtrans %}</dt>
             <dd>{{ persona['address'] }}</dd>
-            <dt>{% trans %}Address Supplement{% endtrans %}</dt>
+            <dt title="{% trans %}Address Supplement{% endtrans %}">{% trans %}Address Supplement{% endtrans %}</dt>
             <dd>{{ persona['address_supplement'] }}</dd>
-            <dt>{% trans %}City{% endtrans %}</dt>
+            <dt title="{% trans %}City{% endtrans %}">{% trans %}City{% endtrans %}</dt>
             <dd>{{ persona['postal_code'] }} {{ persona['location'] }}</dd>
-            <dt>{% trans %}Country{% endtrans %}</dt>
+            <dt title="{% trans %}Country{% endtrans %}">{% trans %}Country{% endtrans %}</dt>
             <dd>{{ util.gettext_country(persona['country']) }}</dd>
         </dl>
         <p>
@@ -107,7 +107,7 @@
         {% endif %}
 
         {% if ambience['event']['parts']|length > 1 %}
-            {{ util.form_input_checkboxes(name="parts", label=gettext("Event-Parts"),
+            {{ util.form_input_checkboxes(name="parts", label=gettext("Event Parts"),
                                           entries=ambience['event']['parts']|keydictsort(EntitySorter.event_part)
                                               |dict_entries('id', 'title')) }}
         {% elif ambience['event']['parts']|length == 1 %}

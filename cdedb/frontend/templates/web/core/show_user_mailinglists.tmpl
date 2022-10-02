@@ -20,15 +20,21 @@
 {% block content %}
     <h4 class="heading-underline">{% trans %}Global information{% endtrans %}</h4>
         <dl class="dl-horizontal">
-            <dt>{% trans %}Name{% endtrans %}</dt>
+            <dt title="{% trans %}Name{% endtrans %}">
+                {% trans %}Name{% endtrans %}
+            </dt>
             <dd>
                 {{ util.persona_name(ambience['persona'], given_and_display_names=True, with_titles=True) }}
             </dd>
-            <dt>{% trans %}CdEDB-ID{% endtrans %}</dt>
+            <dt title="{% trans %}CdEDB-ID{% endtrans %}">
+                {% trans %}CdEDB-ID{% endtrans %}
+            </dt>
             <dd id="cdedb-id">
                 {{ ambience['persona']['id']|cdedbid }}
             </dd>
-            <dt>{% trans %}E-Mail{% endtrans %}</dt>
+            <dt title="{% trans %}E-Mail{% endtrans %}">
+                {% trans %}E-Mail{% endtrans %}
+            </dt>
             <dd id="contact-email">
                 {{ util.username_mailto(ambience['persona']) }}
             </dd>

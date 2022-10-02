@@ -25,11 +25,15 @@
     </div>
 
     <dl class="dl-horizontal">
-        <dt>{% trans %}Participation Deadline{% endtrans %}</dt>
+        <dt title="{% trans %}Participation Deadline{% endtrans %}">
+            {% trans %}Participation Deadline{% endtrans %}
+        </dt>
         <dd id="participation-deadline">
             {{ ambience['assembly']['signup_end']|datetime(lang=lang) }}
         </dd>
-        <dt>{% trans %}Participation Status{% endtrans %}</dt>
+        <dt title="{% trans %}Participation Status{% endtrans %}">
+            {% trans %}Participation Status{% endtrans %}
+        </dt>
         <dd id="participation-status">
             {% if attends %}
                 <strong class="text-success">{% trans %}You are participating in this assembly.{% endtrans %}</strong>
@@ -50,7 +54,9 @@
             </dd>
         {% endif %}
         {% if presiders %}
-            <dt>{% trans %}Presiders{% endtrans %}</dt>
+            <dt title="{% trans %}Presiders{% endtrans %}">
+                {% trans %}Presiders{% endtrans %}
+            </dt>
             <dd id="assembly-presiders">
                 {% for anid, entry in presiders|keydictsort(EntitySorter.persona) %}
                     {{ util.persona_anchor(entry, only_given_names=True, with_titles=True) }}
@@ -106,7 +112,7 @@
 
     {% if ambience['assembly']['notes'] and ("assembly_presider" in user.admin_views
                                              or ambience['assembly']['id'] in user.presider) %}
-        {% call util.bootstrap_panel(title=gettext("Admin-Notes"), icon="tag", aclass="panel-default panel-condensed") %}
+        {% call util.bootstrap_panel(title=gettext("Admin Notes"), icon="tag", aclass="panel-default panel-condensed") %}
             <div id="notes">
                 {{ ambience['assembly']['notes']|md }}
             </div>
@@ -114,7 +120,7 @@
     {% endif %}
 
     {% if attachments_version %}
-        {% call util.bootstrap_panel(title=gettext("Files"), icon='file', anid='attachmentspanel') %}
+        {% call util.bootstrap_panel(title=util.href(cdedblink("assembly/list_attachments"), gettext("Files"), icon='file'), anid='attachmentspanel') %}
         <div class="row">
             {% for slice in attachments_version|keydictsort(EntitySorter.attachment)|slice(2) %}
                 <div class="col-sm-6">
