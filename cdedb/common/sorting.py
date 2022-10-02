@@ -185,7 +185,7 @@ class EntitySorter:
 
     @staticmethod
     def course_choice_object(cco: CdEDBObject) -> Sortkey:
-        return (cco['sortkey'], 'constraint_type' in cco, cco['title'], cco['id'])
+        return (cco['sortkey'], cco.get('constraint_type', 0), cco['title'], cco['id'])
 
     @staticmethod
     def fee_modifier(fee_modifier: CdEDBObject) -> Sortkey:
