@@ -21,9 +21,9 @@
                     icon="plus") }}
         </div>
     {% endif %}
-    {% for heading, sample, show_state in ((gettext("Upcoming Ballots"), future, False),
-                                           (gettext("Current Ballots"), running, True),
-                                           (gettext("Concluded Ballots"), done, False))
+    {% for heading, sample, show_state in ((gettext("Upcoming Ballots"), grouped_ballots.upcoming, False),
+                                           (gettext("Current Ballots"), grouped_ballots.running, True),
+                                           (gettext("Concluded Ballots"), grouped_ballots.concluded, False))
                                        if sample %}
         <h3>{{ heading }}</h3>
         <div class="row">

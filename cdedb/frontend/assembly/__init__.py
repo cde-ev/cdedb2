@@ -26,9 +26,10 @@ from werkzeug import Response
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
+from cdedb.backend.assembly import GroupedBallots
 from cdedb.common import (
-    ASSEMBLY_BAR_SHORTNAME, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
-    RequestState, get_hash, merge_dicts, now, unwrap,
+    ASSEMBLY_BAR_SHORTNAME, CdEDBObject, DefaultReturnCode, RequestState, get_hash,
+    merge_dicts, now, unwrap,
 )
 from cdedb.common.fields import LOG_FIELDS_COMMON
 from cdedb.common.n_ import n_
@@ -637,8 +638,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         return self.redirect(rs, "assembly/show_assembly")
 
     def _group_ballots(self, rs: RequestState, assembly_id: int
-                       ) -> Optional[Tuple[CdEDBObjectMap, CdEDBObjectMap,
-                                           CdEDBObjectMap, CdEDBObjectMap]]:
+                       ) -> Optional[GroupedBallots]:
         """Helper to group all ballots of an assembly by status.
 
         This calls `_update_ballots` to ensure data integrity before
@@ -661,31 +661,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         if extended or tallied:
             return None
 
-        ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
-        ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
-
-        ref = now()
-
-        future = {k: v for k, v in ballots.items()
-                  if v['vote_begin'] > ref}
-        # `current` also contains ballots which wait for
-        # check_voting_period_extension() being called on them
-        current = {k: v for k, v in ballots.items()
-                   if (v['vote_begin'] <= ref < v['vote_end']
-                       or (v['vote_end'] <= ref and v['extended'] is None))}
-        extended = {k: v for k, v in ballots.items()
-                    if (v['extended']
-                        and v['vote_end'] <= ref < v['vote_extension_end'])}
-        done = {k: v for k, v in ballots.items()
-                if (v['vote_end'] <= ref
-                    and (v['extended'] is False
-                         or v['vote_extension_end'] <= ref))}
-
-        if not (len(future) + len(current) + len(extended) + len(done)
-                == len(ballots)):
-            raise RuntimeError(n_("Impossible."))
-
-        return done, extended, current, future
+        return self.assemblyproxy.group_ballots(rs, assembly_id)
 
     @access("assembly")
     def list_ballots(self, rs: RequestState, assembly_id: int) -> Response:
@@ -694,9 +670,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
 
         if grouped := self._group_ballots(rs, assembly_id):
-            done, extended, current, future = grouped
-            # _group_ballots returns all ballots of the assembly in four disjunct dicts
-            ballots = done | extended | current | future
+            ballots = grouped.all
         else:
             # some ballots updated state
             return self.redirect(rs, "assembly/list_ballots")
@@ -708,8 +682,8 @@ class AssemblyFrontend(AbstractUserFrontend):
                     rs, ballot_id, secret=None)
 
         return self.render(rs, "list_ballots", {
-            'ballots': ballots, 'future': future, 'running': current | extended,
-            'done': done, 'votes': votes})
+            'ballots': ballots, 'grouped_ballots': grouped, 'votes': votes,
+        })
 
     @access("assembly")
     @REQUESTdata("source_id", _postpone_validation=True)
@@ -1032,10 +1006,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         # We need to group the ballots for navigation later anyway,
         # and as grouping them updates their state we do it already here
         if grouped := self._group_ballots(rs, assembly_id):
-            done, extended, current, future = grouped
-            # _group_ballots returns all ballots of the assembly in four disjunct dicts
-            # TODO: python3.9: ballots = done | extended | current | future
-            ballots = {**done, **extended, **current, **future}
+            ballots = grouped.all
         else:
             # some ballots updated state
             return self.redirect(rs, "assembly/show_ballot")
@@ -1072,11 +1043,9 @@ class AssemblyFrontend(AbstractUserFrontend):
         merge_dicts(rs.values, current_candidates)
 
         # now, process the grouped ballots from above for the navigation buttons.
-        # Currently, we don't distinguish between current and extended ballots
-        current.update(extended)
         ballot_list: List[int] = sum((
             xsorted(bdict, key=lambda key: bdict[key]["title"])  # pylint: disable=cell-var-from-loop;
-            for bdict in (future, current, done)), [])
+            for bdict in (grouped.upcoming, grouped.running, grouped.concluded)), [])
 
         i = ballot_list.index(ballot_id)
         length = len(ballot_list)
@@ -1116,9 +1085,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         # We need to group the ballots for navigation later anyway,
         # and as grouping them updates their state we do it already here
         if grouped := self._group_ballots(rs, assembly_id):
-            done, _, _, _ = grouped
-            # _group_ballots returns all ballots of the assembly in four disjunct dicts
-            ballots = {k: v for d in grouped for k, v in d.items()}
+            ballots = grouped.all
         else:
             # some ballots updated state
             return self.redirect(rs, "assembly/show_ballot_result")
@@ -1156,8 +1123,12 @@ class AssemblyFrontend(AbstractUserFrontend):
         result_hash = get_hash(result_bytes)
 
         # show links to next and previous ballots
-        # we are only interested in done ballots
-        ballot_list: List[int] = xsorted(done, key=lambda key: done[key]["title"])
+        # we are only interested in concluded ballots
+        ballot_list: List[int] = xsorted(
+            grouped.concluded.keys(),
+            key=lambda id_: EntitySorter.ballot(grouped.concluded[id_])  # type: ignore[union-attr]
+            # Seems like a mypy bug.
+        )
 
         i = ballot_list.index(ballot_id)
         length = len(ballot_list)
@@ -1171,7 +1142,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             'BALLOT_TALLY_ADDRESS': self.conf["BALLOT_TALLY_ADDRESS"],
             'BALLOT_TALLY_MAILINGLIST_URL': self.conf["BALLOT_TALLY_MAILINGLIST_URL"],
             'prev_ballot': prev_ballot, 'next_ballot': next_ballot,
-            'candidates': candidates})
+            'candidates': candidates,
+        })
 
     @staticmethod
     def count_equal_votes(vote_strings: List[VoteString], classical: bool = False
@@ -1379,19 +1351,17 @@ class AssemblyFrontend(AbstractUserFrontend):
         if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):  # pragma: no cover
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
 
-        if grouped := self._group_ballots(rs, assembly_id):
-            done, extended, current, future = grouped
-        else:
+        if not (grouped := self._group_ballots(rs, assembly_id)):
             # some ballots updated state
             return self.redirect(rs, "assembly/summary_ballots")
 
-        result = {k: self.get_online_result(rs, v) for k, v in done.items()}
+        result = {k: self.get_online_result(rs, v)
+                  for k, v in grouped.concluded.items()}
 
-        config_grouped = self.assemblyproxy.group_ballots(rs, assembly_id)
+        config_grouped = self.assemblyproxy.group_ballots_by_config(rs, assembly_id)
 
         return self.render(rs, "summary_ballots", {
-            'concluded_ballots': done, 'running_ballots': extended | current,
-            'upcoming_ballots': future, 'config_grouped': config_grouped,
+            'grouped_ballots': grouped, 'config_grouped': config_grouped,
             'ASSEMBLY_BAR_SHORTNAME': ASSEMBLY_BAR_SHORTNAME, 'result': result,
         })
 

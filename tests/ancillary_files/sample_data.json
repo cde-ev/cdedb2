@@ -6199,7 +6199,7 @@
             "vote_begin": "2020-01-30T22:00:00+00:00",
             "vote_end": "2200-12-01T23:00:10+00:00",
             "vote_extension_end": null,
-            "extended": false,
+            "extended": null,
             "use_bar": false,
             "abs_quorum": 0,
             "rel_quorum": 0,

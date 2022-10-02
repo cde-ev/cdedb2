@@ -75,14 +75,30 @@ BallotConfiguration = NamedTuple(
 
 
 @dataclasses.dataclass(frozen=True)
-class GroupedBallots:
-    # concluded: Dict[BallotConfiguration, Set[int]]
-    # running: Dict[BallotConfiguration, Set[int]]
-    # upcoming: Dict[BallotConfiguration, Set[int]]
+class ConfigurationGroupedBallots:
     ballots: Dict[BallotConfiguration, Set[int]]
 
     def __iter__(self) -> Iterator[Tuple[BallotConfiguration, Set[int]]]:
         return iter(xsorted(self.ballots.items()))
+
+
+@dataclasses.dataclass(frozen=True)
+class GroupedBallots:
+    concluded: CdEDBObjectMap
+    extended: CdEDBObjectMap
+    current: CdEDBObjectMap
+    upcoming: CdEDBObjectMap
+
+    @property
+    def running(self) -> CdEDBObjectMap:
+        return self.current | self.extended
+
+    @property
+    def all(self) -> CdEDBObjectMap:
+        return self.concluded | self.extended | self.current | self.upcoming
+
+    def __iter__(self) -> Iterator[CdEDBObjectMap]:
+        return iter((self.concluded, self.extended, self.current, self.upcoming))
 
 
 class AssemblyBackend(AbstractBackend):
@@ -2249,7 +2265,8 @@ class AssemblyBackend(AbstractBackend):
         get_attachments, "attachment_ids", "attachment_id")
 
     @access("assembly")
-    def group_ballots(self, rs: RequestState, assembly_id: int) -> GroupedBallots:
+    def group_ballots_by_config(self, rs: RequestState, assembly_id: int
+                                ) -> ConfigurationGroupedBallots:
         """Group ballot ids by their configuration."""
         query = """
             SELECT
@@ -2261,7 +2278,7 @@ class AssemblyBackend(AbstractBackend):
         """
         assembly_id = affirm(vtypes.ID, assembly_id)
         params = (assembly_id,)
-        return GroupedBallots({
+        return ConfigurationGroupedBallots({
             BallotConfiguration(
                 e['vote_begin'], e['vote_end'], e['vote_extension_end'],
                 e['abs_quorum'], e['rel_quorum'],
@@ -2269,3 +2286,56 @@ class AssemblyBackend(AbstractBackend):
                 set(e['ballot_ids'])
             for e in self.query_all(rs, query, params)
         })
+
+    @access("assembly")
+    def group_ballots(self, rs: RequestState, assembly_id: int) -> GroupedBallots:
+        query = """
+            SELECT
+                vote_begin <= %s AS started,
+                extended,
+                vote_end <= %s AND (
+                    extended IS FALSE OR vote_extension_end <= now()) AS ended,
+                ARRAY_AGG(id) AS ballot_ids,
+                assembly_id
+            FROM assembly.ballots
+            WHERE assembly_id = %s
+            GROUP BY started, extended, ended, assembly_id
+        """
+        assembly_id = affirm(vtypes.ID, assembly_id)
+        ref = now()
+        params = (ref, ref, assembly_id,)
+
+        ballot_ids = self.list_ballots(rs, assembly_id)
+        ballots = self.get_ballots(rs, ballot_ids)
+
+        upcoming, current, extended, concluded = {}, {}, {}, {}
+        for e in self.query_all(rs, query, params):
+            if e['ended']:
+                concluded.update({
+                    ballot_id: ballots[ballot_id]
+                    for ballot_id in e['ballot_ids']
+                })
+            elif not e['started']:
+                upcoming.update({
+                    ballot_id: ballots[ballot_id]
+                    for ballot_id in e['ballot_ids']
+                })
+            elif e['extended']:
+                extended.update({
+                    ballot_id: ballots[ballot_id]
+                    for ballot_id in e['ballot_ids']
+                })
+            else:
+                current.update({
+                    ballot_id: ballots[ballot_id]
+                    for ballot_id in e['ballot_ids']
+                })
+
+        ret = GroupedBallots(
+            concluded=concluded, extended=extended, current=current, upcoming=upcoming
+        )
+
+        if len(ballots) != len(ret.all):
+            raise RuntimeError(n_("Impossible."))
+
+        return ret

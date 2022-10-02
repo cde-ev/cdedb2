@@ -1469,7 +1469,7 @@ class TestAssemblyBackend(BackendTest):
     @as_users("werner", "berta")
     def test_group_ballots_by_config(self) -> None:
         assembly_id = 1
-        grouped = self.assembly.group_ballots(self.key, assembly_id)
+        grouped = self.assembly.group_ballots_by_config(self.key, assembly_id)
         ballots = self.assembly.get_ballots(
             self.key, self.assembly.list_ballots(self.key, assembly_id))
 
@@ -1478,6 +1478,30 @@ class TestAssemblyBackend(BackendTest):
                 ballot['vote_begin'], ballot['vote_end'], ballot['vote_extension_end'],
                 ballot['abs_quorum'], ballot['rel_quorum'])
             self.assertIn(ballot_id, grouped.ballots[key])
+
+    @as_users("werner", "berta")
+    @storage
+    def test_group_ballots(self) -> None:
+        assembly_id = 1
+        grouped = self.assembly.group_ballots(self.key, assembly_id)
+        ballots = self.assembly.get_ballots(
+            self.key, self.assembly.list_ballots(self.key, assembly_id))
+
+        for ballot_id, ballot in ballots.items():
+            try:
+                self.assembly.tally_ballot(self.key, ballot_id)
+            except ValueError:
+                pass
+            if self.assembly.is_ballot_voting(self.key, ballot_id):
+                if ballot['extended']:
+                    self.assertIn(ballot_id, grouped.extended)
+                else:
+                    self.assertIn(ballot_id, grouped.current)
+                self.assertIn(ballot_id, grouped.running)
+            elif self.assembly.is_ballot_concluded(self.key, ballot_id):
+                self.assertIn(ballot_id, grouped.concluded)
+            else:
+                self.assertIn(ballot_id, grouped.upcoming)
 
     @as_users("werner")
     @prepsql("""INSERT INTO assembly.assemblies
