@@ -891,6 +891,8 @@ class EventBaseBackend(EventLowLevelBackend):
                 ('event.part_groups', "event_id", PART_GROUP_FIELDS),
                 ('event.part_group_parts', "part_id", ("part_group_id", "part_id")),
                 ('event.course_tracks', "part_id", COURSE_TRACK_FIELDS),
+                ('event.track_groups', "event_id", TRACK_GROUP_FIELDS),
+                ('event.track_group_tracks', "track_id", ("track_group_id", "track_id")),
                 ('event.courses', "event_id", COURSE_FIELDS),
                 ('event.course_segments', "track_id", COURSE_SEGMENT_FIELDS),
                 ('event.orgas', "event_id", ('id', 'persona_id', 'event_id',)),
