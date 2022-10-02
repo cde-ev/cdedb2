@@ -696,13 +696,10 @@ class AssemblyFrontend(AbstractUserFrontend):
         if grouped := self._group_ballots(rs, assembly_id):
             done, extended, current, future = grouped
             # _group_ballots returns all ballots of the assembly in four disjunct dicts
-            # TODO: python3.9: ballots = done | extended | current | future
-            ballots = {**done, **extended, **current, **future}
+            ballots = done | extended | current | future
         else:
             # some ballots updated state
             return self.redirect(rs, "assembly/list_ballots")
-        # Currently, we don't distinguish between current and extended ballots
-        current.update(extended)
 
         votes = {}
         if self.assemblyproxy.does_attend(rs, assembly_id=assembly_id):
@@ -711,7 +708,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                     rs, ballot_id, secret=None)
 
         return self.render(rs, "list_ballots", {
-            'ballots': ballots, 'future': future, 'current': current,
+            'ballots': ballots, 'future': future, 'running': current | extended,
             'done': done, 'votes': votes})
 
     @access("assembly")
@@ -1363,16 +1360,20 @@ class AssemblyFrontend(AbstractUserFrontend):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
 
         if grouped := self._group_ballots(rs, assembly_id):
-            done, _, _, _ = grouped
+            done, extended, current, future = grouped
         else:
             # some ballots updated state
             return self.redirect(rs, "assembly/summary_ballots")
 
         result = {k: self.get_online_result(rs, v) for k, v in done.items()}
 
+        config_grouped = self.assemblyproxy.group_ballots(rs, assembly_id)
+
         return self.render(rs, "summary_ballots", {
-            'ballots': done, 'ASSEMBLY_BAR_SHORTNAME': ASSEMBLY_BAR_SHORTNAME,
-            'result': result})
+            'concluded_ballots': done, 'running_ballots': extended | current,
+            'upcoming_ballots': future, 'config_grouped': config_grouped,
+            'ASSEMBLY_BAR_SHORTNAME': ASSEMBLY_BAR_SHORTNAME, 'result': result,
+        })
 
     @access("assembly")
     @assembly_guard
@@ -1468,6 +1469,11 @@ class AssemblyFrontend(AbstractUserFrontend):
             # vote begin must be in the future
             "vote_begin": now() + datetime.timedelta(milliseconds=100),
             "vote_end": now() + datetime.timedelta(minutes=1),
+            "vote_extension_end":
+                None if not rs.ambience['ballot']['vote_extension_end']
+                else now() + datetime.timedelta(minutes=1, microseconds=100),
+            "abs_quorum": rs.ambience['ballot']['abs_quorum'],
+            "rel_quorum": rs.ambience['ballot']['rel_quorum'],
         }
 
         rs.notify_return_code(self.assemblyproxy.set_ballot(rs, bdata))

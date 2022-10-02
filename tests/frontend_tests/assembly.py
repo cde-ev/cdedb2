@@ -1892,6 +1892,26 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.assertTitle("Bester Hof (Internationaler Kongress)")
             self.assertNotification("Abstimmung wurde noch nicht ausgezählt.", 'error')
 
+    @as_users("werner", "berta")
+    @storage
+    def test_group_ballots_by_config(self) -> None:
+        self.traverse("Versammlungen", "Internationaler Kongress", "Zusammenfassung")
+        self.assertPresence("Laufende Abstimmungen")
+        self.assertPresence('10.02.2000, 21:22:22 – 11.02.2222, 21:22:22'
+                            ' Bester Hof (Klassische Abstimmung mit 1 Stimme und'
+                            ' "Gegen alle Kanididaten"-Option.)', div="running-ballots")
+        self.assertPresence(' – 01.01.2222, 21:22:22'
+                            ' Akademie-Nachtisch (Klassische Abstimmung mit 2 Stimmen'
+                            ' und "Gegen alle Kandidaten"-Option.)'
+                            ' Lieblingszahl (Präferenzwahl ohne Ablehnungsoption.)',
+                            div="running-ballots")
+
+        self.assertPresence("Zukünftige Abstimmungen")
+        self.assertPresence('02.02.2222, 21:22:22 – 03.02.2222, 21:22:22'
+                            ' ( – 04.02.2222, 21:22:22, Quorum: 83 %)'
+                            ' Farbe des Logos (Präferenzwahl ohne Ablehnungsoption.)',
+                            div="upcoming-ballots")
+
     def test_verify_result(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             script = pathlib.Path(tmp) / 'verify_result.pyz'

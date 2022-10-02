@@ -2,6 +2,7 @@
 {% extends "web/assembly/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/assembly/_ballot_tallied.tmpl" as ballot_tallied with context %}
+{% import "web/assembly/_ballot_meta.tmpl" as ballot_meta with context %}
 {% block title %}{{ gettext("Summary") }} ({{ ambience['assembly']['title'] }}){% endblock %}
 {% block heading %}
     {{ util.context_heading(gettext("Summary"), ambience['assembly']['title'], 'bullhorn', gettext("Assembly")) }}
@@ -12,8 +13,23 @@
     {{ util.breadcrumb_link(cdedblink("assembly/summary_ballots"), gettext("Summary"), active=True) }}
 {% endblock %}
 {% block content %}
+    {% if running_ballots %}
+        <h3>{% trans %}Current Ballots{% endtrans %}</h3>
+        <ul class="slim" id="running-ballots">
+            {{ ballot_meta.details_list(config_grouped, running_ballots) }}
+        </ul>
 
-    {% for ballot_id, ballot in ballots|keydictsort(EntitySorter.ballot) %}
+    {% endif %}
+
+    {% if upcoming_ballots %}
+        <h3>{% trans %}Upcoming Ballots{% endtrans %}</h3>
+        <ul class="slim" id="upcoming-ballots">
+            {{ ballot_meta.details_list(config_grouped, upcoming_ballots) }}
+        </ul>
+    {% endif %}
+
+    <h3>{% trans %}Concluded Ballots{% endtrans %}</h3>
+    {% for ballot_id, ballot in concluded_ballots|keydictsort(EntitySorter.ballot) %}
         {% set title = util.href(cdedblink("assembly/show_ballot", {'assembly_id': ambience['assembly']['id'], 'ballot_id': ballot_id}),
                                  ballot['title']) %}
         {% call util.bootstrap_panel(title=title, icon='thumbs-up') %}
@@ -34,7 +50,7 @@
         </p>
     {% endfor %}
 
-    {% if ballots %}
+    {% if concluded_ballots %}
         {{ ballot_tallied.explain_result(classical=True, preferential=True, use_bar=True) }}
     {% endif %}
 
