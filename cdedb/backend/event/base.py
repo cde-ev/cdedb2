@@ -598,7 +598,10 @@ class EventBaseBackend(EventLowLevelBackend):
                     assert updated is not None
                     updated['id'] = x
                     # Changing the constraint type is not allowed.
-                    updated.pop('constraint_type', None)
+                    new_ct = updated.pop('contraint_type', None)
+                    old_ct = current_part_group_data[x]['constraint_type']
+                    if new_ct and new_ct != old_ct:
+                        raise ValueError(n_("May not change constraint type."))
                     part_ids = updated.pop('part_ids', None)
                     title = updated.get('title', current_part_group_data[x]['title'])
                     if any(updated[k] != current_part_group_data[x][k]
@@ -692,7 +695,10 @@ class EventBaseBackend(EventLowLevelBackend):
                     assert updated is not None
                     updated['id'] = x
                     # Changing constraint type is not allowed.
-                    updated.pop('contraint_type', None)
+                    new_ct = updated.pop('contraint_type', None)
+                    old_ct = current_track_group_data[x]['constraint_type']
+                    if new_ct and new_ct != old_ct:
+                        raise ValueError(n_("May not change constraint type."))
                     track_ids = updated.pop('track_ids', None)
                     title = updated.get('title', current_track_group_data[x]['title'])
                     if any(updated[k] != current_track_group_data[x][k]
