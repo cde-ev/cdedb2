@@ -197,7 +197,7 @@ def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
         'event.lodgement_groups', 'event.lodgements', 'event.registrations',
         'event.registration_parts', 'event.registration_tracks',
         'event.course_choices', 'event.questionnaire_rows', 'event.log',
-        'event.stored_queries',
+        'event.stored_queries', 'event.track_groups', 'event.track_group_tracks',
     )
 
     print("Connect to database")
