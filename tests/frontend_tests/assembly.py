@@ -1892,6 +1892,44 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.assertTitle("Bester Hof (Internationaler Kongress)")
             self.assertNotification("Abstimmung wurde noch nicht ausgezählt.", 'error')
 
+    @as_users("werner")
+    @storage
+    def test_duplicate_ballot(self) -> None:
+        self.traverse("Versammlungen", "Archiv-Sammlung", "Abstimmungen",
+                      "Ganz wichtige Wahl", "Als Vorlage benutzen")
+        f = self.response.forms['configureballotform']
+        self.submit(f)
+        ballots = self.assembly.get_ballots(self.key, (16, 1001))
+        for ballot in ballots.values():
+            del ballot['id']
+            del ballot['candidates']
+        self.assertEqual(ballots[16], ballots[1001])
+        self.assertEqual(
+            self.assembly.list_attachments(self.key, ballot_id=16),
+            self.assembly.list_attachments(self.key, ballot_id=1001),
+        )
+
+        # Source the ballot from a different assembly:
+        self.get('/assembly/assembly/1/ballot/create?source_id=16')
+        f = self.response.forms['configureballotform']
+        self.submit(f)
+        source = ballots[16]
+        target = self.assembly.get_ballot(self.key, 1002)
+        del target['id']
+        del target['candidates']
+        source['assembly_id'] = 1
+        self.assertEqual(source, target)
+
+        # Try some invalid inputs:
+        self.get('/assembly/assembly/1/ballot/create?source_id=-1')
+        f = self.response.forms['configureballotform']
+        self.assertEqual(f['title'].value, "")
+
+        self.get('/assembly/assembly/1/ballot/create?source_id=999999')
+        self.assertPresence("Unbekannte Abstimmung", div="notifications")
+        f = self.response.forms['configureballotform']
+        self.assertEqual(f['title'].value, "")
+
     @as_users("werner", "berta")
     @storage
     def test_group_ballots_by_config(self) -> None:
