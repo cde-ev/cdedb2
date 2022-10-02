@@ -1121,13 +1121,16 @@ class AssemblyFrontend(AbstractUserFrontend):
         # map the candidate shortnames to their titles
         candidates = {candidate['shortname']: candidate['title']
                       for candidate in ballot['candidates'].values()}
+        abbreviations = abbreviation_mapper(xsorted(candidates.keys()))
         if ballot['use_bar']:
             if ballot['votes']:
                 candidates[ASSEMBLY_BAR_SHORTNAME] = rs.gettext(
                     "Against all Candidates")
             else:
                 candidates[ASSEMBLY_BAR_SHORTNAME] = rs.gettext("Rejection limit")
-        abbreviations = abbreviation_mapper(xsorted(candidates.keys()))
+        # use special symbol for bar abbreviation
+        if ballot['use_bar']:
+            abbreviations[ASSEMBLY_BAR_SHORTNAME] = "#"
 
         # all vote string submitted in this ballot
         votes = [vote["vote"] for vote in result["votes"]]
