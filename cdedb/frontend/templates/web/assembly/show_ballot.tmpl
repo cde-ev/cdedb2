@@ -52,7 +52,7 @@
                     </form>
                 {% endif %}
             {% endif %}
-            {{ util.href(cdedblink("assembly/create_ballot", {'source_id': ambience['ballot']['id']}), gettext("Duplicate Ballot"), icon="plus",
+            {{ util.href(cdedblink("assembly/create_ballot", {'source_id': ambience['ballot']['id']}), gettext("Use as Template"), icon="clone",
                     aclass="btn btn-sm btn-success") }}
         </div>
     {% elif ambience['ballot']['is_tallied'] and is_privileged %}
