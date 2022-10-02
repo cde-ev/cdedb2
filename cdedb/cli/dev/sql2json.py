@@ -29,6 +29,8 @@ sort_table_by = {
 ignored_tables = {
     "core.sessions",
     "core.quota",
+    "ldap.organizations",
+    "ldap.static_groups",
 }
 
 # mark some columns which shall not be filled with information extracted from the
@@ -40,12 +42,19 @@ ignored_columns = {
 # mark some columns which shall not be filled with information extracted from the
 # database, because they can be filled by sql automatically.
 implicit_columns = {
+    "core.changelog": {"id"},
     "core.log": {"id"},
     "cde.finance_log": {"id"},
     "cde.log": {"id"},
     "past_event.participants": {"id"},
     "past_event.log": {"id"},
+    "event.course_segments": {"id"},
+    "event.lodgement_groups": {"id"},
     "event.log": {"id"},
+    "event.orgas": {"id"},
+    "event.part_group_parts": {"id"},
+    "event.registration_tracks": {"id"},
+    "event.registration_parts": {"id"},
     "assembly.presiders": {"id"},
     "assembly.attendees": {"id"},
     "assembly.voter_register": {"id"},

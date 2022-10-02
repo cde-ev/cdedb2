@@ -25,46 +25,46 @@
     </div>
     <h3 class="heading-underline">{% trans %}Personal Information{% endtrans %}</h3>
     <dl class="dl-horizontal">
-        <dt>{% trans %}Full Name{% endtrans %}</dt>
+        <dt title="{% trans %}Full Name{% endtrans %}">{% trans %}Full Name{% endtrans %}</dt>
         <dd>
             {{ util.persona_name(persona, given_and_display_names=True, with_titles=True) }}
         </dd>
-        <dt>{% trans %}CdEDB-ID{% endtrans %}</dt>
+        <dt title="{% trans %}CdEDB-ID{% endtrans %}">{% trans %}CdEDB-ID{% endtrans %}</dt>
         <dd>{{ util.href(show_user_link(user, persona['id'], event_id=ambience['event']['id']), persona['id']|cdedbid) }}</dd>
         {% if ambience['registration']['real_persona_id'] %}
-            <dt>{% trans %}Online CdEDB-ID{% endtrans %}</dt>
+            <dt title="{% trans %}Online CdEDB-ID{% endtrans %}">{% trans %}Online CdEDB-ID{% endtrans %}</dt>
             <dd>{{ ambience['registration']['real_persona_id']|cdedbid }}</dd>
         {% endif %}
-        <dt>{% trans %}CdE-Member{% endtrans %}</dt>
+        <dt title="{% trans %}CdE-Member{% endtrans %}">{% trans %}CdE-Member{% endtrans %}</dt>
         <dd>{{ util.deko_checkbox(checked=(persona['is_member'])) }}</dd>
-        <dt>{% trans %}Birthday{% endtrans %}</dt>
+        <dt title="{% trans %}Birthday{% endtrans %}">{% trans %}Birthday{% endtrans %}</dt>
         <dd>
             {{ persona['birthday']|date(lang=lang) }} (<em>{{ gettext(age|string) }}</em>)
         </dd>
-        <dt>{% trans %}Gender{% endtrans %}</dt>
+        <dt title="{% trans %}Gender{% endtrans %}">{% trans %}Gender{% endtrans %}</dt>
         <dd>{{ gettext(enums['Genders'](persona['gender'])|string) }}</dd>
-        <dt>{% trans %}Pronouns{% endtrans %}</dt>
+        <dt title="{% trans %}Pronouns{% endtrans %}">{% trans %}Pronouns{% endtrans %}</dt>
         <dd>{{ persona['pronouns'] }}</dd>
-        <dt>{% trans %}Show pronouns on nametags{% endtrans %}</dt>
+        <dt title="{% trans %}Show pronouns on nametags{% endtrans %}">{% trans %}Pronouns on nametags{% endtrans %}</dt>
         <dd>{{ util.deko_checkbox(persona['pronouns_nametag']) }}</dd>
 
     </dl>
     <dl class="dl-horizontal">
-        <dt>{% trans %}E-Mail{% endtrans %}</dt>
+        <dt title="{% trans %}E-Mail{% endtrans %}">{% trans %}E-Mail{% endtrans %}</dt>
         <dd>{{ util.username_mailto(persona) }} </dd>
-        <dt>{% trans %}Phone{% endtrans %}</dt>
+        <dt title="{% trans %}Phone{% endtrans %}">{% trans %}Phone{% endtrans %}</dt>
         <dd>{{ persona['telephone']|phone }}</dd>
-        <dt>{% trans %}Mobile Phone{% endtrans %}</dt>
+        <dt title="{% trans %}Mobile Phone{% endtrans %}">{% trans %}Mobile Phone{% endtrans %}</dt>
         <dd>{{ persona['mobile']|phone }}</dd>
     </dl>
     <dl class="dl-horizontal">
-        <dt>{% trans %}Address{% endtrans %}</dt>
+        <dt title="{% trans %}Address{% endtrans %}">{% trans %}Address{% endtrans %}</dt>
         <dd>{{ persona['address'] }}</dd>
-        <dt>{% trans %}Address Supplement{% endtrans %}</dt>
+        <dt title="{% trans %}Address Supplement{% endtrans %}">{% trans %}Address Supplement{% endtrans %}</dt>
         <dd>{{ persona['address_supplement'] }}</dd>
-        <dt>{% trans %}City{% endtrans %}</dt>
+        <dt title="{% trans %}City{% endtrans %}">{% trans %}City{% endtrans %}</dt>
         <dd>{{ persona['postal_code'] }} {{ persona['location'] }}</dd>
-        <dt>{% trans %}Country{% endtrans %}</dt>
+        <dt title="{% trans %}Country{% endtrans %}">{% trans %}Country{% endtrans %}</dt>
         <dd>{{ util.gettext_country(persona['country']) }}</dd>
     </dl>
     {% if persona['id'] in ambience['event']['orgas'] %}
@@ -91,7 +91,7 @@
     <h3 class="heading-underline">{% trans %}Status{% endtrans %}</h3>
     <div class="row">
     <dl class="dl-horizontal col-md-6">
-        <dt>{% trans %}Participation Fee{% endtrans %}</dt>
+        <dt title="{% trans %}Participation Fee{% endtrans %}">{% trans %}Participation Fee{% endtrans %}</dt>
         <dd>
             {% if ambience['registration']['payment'] %}
                 {% trans date=ambience['registration']['payment']|date(lang=lang) %}
@@ -101,12 +101,12 @@
                 <em>{% trans %}Pending{% endtrans %}</em>
             {% endif %}
         </dd>
-        <dt>{% trans %}Already Paid{% endtrans %}</dt>
+        <dt title="{% trans %}Already Paid{% endtrans %}">{% trans %}Already Paid{% endtrans %}</dt>
         <dd>
             {{ ambience['registration']['amount_paid']|money(lang=lang) }}
         </dd>
 
-        <dt>{% trans %}Parental Consent{% endtrans %}</dt>
+        <dt title="{% trans %}Parental Consent{% endtrans %}">{% trans %}Parental Consent{% endtrans %}</dt>
         <dd>
             {% if not age.is_minor() %}
                 <em>{% trans %}Of Age{% endtrans %}</em>
@@ -115,18 +115,18 @@
             {% endif %}
         </dd>
 
-        <dt>{% trans %}Checked-In at{% endtrans %}</dt>
+        <dt title="{% trans %}Checked-In at{% endtrans %}">{% trans %}Checked-In at{% endtrans %}</dt>
         <dd id="checkin-time">
             {{ ambience['registration']['checkin']|datetime(lang=lang) or "—" }}
         </dd>
     </dl>
 
     <dl class="dl-horizontal col-md-6">
-        <dt>{% trans %}Registered at{% endtrans %}</dt>
+        <dt title="{% trans %}Registered at{% endtrans %}">{% trans %}Registered at{% endtrans %}</dt>
         <dd>
             {{ ambience['registration']['ctime']|datetime(lang=lang) or "—" }}
         </dd>
-        <dt>{% trans %}Last modified at{% endtrans %}</dt>
+        <dt title="{% trans %}Last modified at{% endtrans %}">{% trans %}Last modified at{% endtrans %}</dt>
         <dd>
             {{ ambience['registration']['mtime']|datetime(lang=lang) or "—" }}
         </dd>
@@ -141,7 +141,7 @@
                     <h4>{{ part['title'] }}</h4>
                 {% endif %}
                 <dl class="dl-horizontal">
-                    <dt>{% trans %}Status{% endtrans %}</dt>
+                    <dt title="{% trans %}Status{% endtrans %}">{% trans %}Status{% endtrans %}</dt>
                     <dd>
                         {{ gettext(ambience['registration']['parts'][part_id]['status']
                                 |enum(enums['RegistrationPartStati'])) }}
@@ -153,7 +153,9 @@
                             .is_involved() %}
                         {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track)
                                 if track['part_id'] == part_id %}
-                            <dt>
+                            <dt title="{% trans track=track['shortname'] if ambience['event']['tracks']|length > 1 else "" %}
+                                           Course {{ track }}
+                                       {% endtrans %}">
                                 {% trans track=track['shortname'] if ambience['event']['tracks']|length > 1 else "" %}
                                 	Course {{ track }}
                                 {% endtrans %}
@@ -171,7 +173,7 @@
                             </dd>
                         {% endfor %}
 
-                        <dt>{% trans %}Lodgement{% endtrans %}</dt>
+                        <dt title="{% trans %}Lodgement{% endtrans %}">{% trans %}Lodgement{% endtrans %}</dt>
                         <dd>
                             {% with lodgement_id = ambience['registration']['parts'][part_id]['lodgement_id'] %}
                                 {% if lodgement_id %}
@@ -182,7 +184,7 @@
                                 {% endif %}
                             {% endwith %}
                         </dd>
-                        <dt>{% trans %}Uses Camping Mat{% endtrans %}</dt>
+                        <dt title="">{% trans %}Uses Camping Mat{% endtrans %}</dt>
                         <dd>
                             {{ util.deko_checkbox(checked=ambience['registration']['parts'][part_id]['is_camping_mat']) }}
                         </dd>
@@ -195,11 +197,11 @@
 
     <h3 class="heading-underline">{% trans %}Registration Data{% endtrans %}</h3>
         <dl class="dl-horizontal">
-            <dt>{% trans %}Mixed Lodging{% endtrans %}</dt>
+            <dt title="{% trans %}Mixed Lodging{% endtrans %}">{% trans %}Mixed Lodging{% endtrans %}</dt>
             <dd>
                 {{ util.deko_checkbox(checked=ambience['registration']['mixed_lodging']) }}
             </dd>
-            <dt>{% trans %}Participant List Consent{% endtrans %}</dt>
+            <dt title="{% trans %}Participant List Consent{% endtrans %}">{% trans %}Participant List Consent{% endtrans %}</dt>
             <dd>
                 {{ util.deko_checkbox(checked=ambience['registration']['list_consent']) }}
             </dd>
@@ -217,7 +219,7 @@
                         {% set reg_track = ambience['registration']['tracks'][track['id']] %}
 
                         <dl class="dl-horizontal">
-                            <dt>{% trans %}Instructor of{% endtrans %}</dt>
+                            <dt title="{% trans %}Instructor of{% endtrans %}">{% trans %}Instructor of{% endtrans %}</dt>
                             <dd>
                                 {% with course_id = reg_track['course_instructor'] %}
                                     {% if course_id %}
@@ -230,7 +232,7 @@
                                 {% endwith %}
                             </dd>
                             {% for i in range(track['num_choices']) %}
-                                <dt>{{ gettext("%s. Choice")|format(i + 1) }}</dt>
+                                <dt title="{{ gettext("%s. Choice")|format(i + 1) }}">{{ gettext("%s. Choice")|format(i + 1) }}</dt>
                                 <dd>
                                     {% if reg_track['choices']|length > i  %}
                                         {% with course_id = reg_track['choices'][i] %}
@@ -260,7 +262,7 @@
         <dl class="dl-horizontal">
             {% for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field) %}
                 {% if field['association'] == enums['FieldAssociations'].registration %}
-                    <dt>{{ field['title'] }}</dt>
+                    <dt title="{{ field['title'] }}">{{ field['title'] }}</dt>
                     <dd>
                         {{ generic_event.display_field(field, ambience['registration']['fields'].get(field['field_name'])) }}
                     </dd>

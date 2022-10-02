@@ -375,7 +375,7 @@ _QUERY_SPECS = {
             "display_name": QuerySpecEntry("str", n_("Known as (Forename)")),
             "is_active": QuerySpecEntry("bool", n_("Active Account")),
             "is_archived": QuerySpecEntry("bool", n_("Archived Account")),
-            "notes": QuerySpecEntry("str", n_("Admin-Notes")),
+            "notes": QuerySpecEntry("str", n_("Admin Notes")),
             "fulltext": QuerySpecEntry("str", n_("Fulltext")),
         },
     # More complete view of a persona. Includes most event-realm things, but not all
@@ -413,7 +413,7 @@ _QUERY_SPECS = {
             ",".join(ADMIN_KEYS): QuerySpecEntry("bool", n_("Any"), n_("Admin")),
             "pevent_id": QuerySpecEntry("id", n_("Past Event")),
             "pcourse_id": QuerySpecEntry("id", n_("Past Course")),
-            "notes": QuerySpecEntry("str", n_("Admin-Notes")),
+            "notes": QuerySpecEntry("str", n_("Admin Notes")),
             "fulltext": QuerySpecEntry("str", n_("Fulltext")),
         },
     # The most complete view on a persona. Most is only available for cde-realm users.
@@ -470,7 +470,7 @@ _QUERY_SPECS = {
             "lastschrift.active_lastschrift": QuerySpecEntry(
                 "bool", n_("Active Lastschrift")),
             "lastschrift.amount": QuerySpecEntry("float", n_("Lastschrift Amount")),
-            "notes": QuerySpecEntry("str", n_("Admin-Notes")),
+            "notes": QuerySpecEntry("str", n_("Admin Notes")),
         },
     # Basic view of an event-realm user.
     QueryScope.event_user:
@@ -503,7 +503,7 @@ _QUERY_SPECS = {
             ",".join(ADMIN_KEYS): QuerySpecEntry("bool", n_("Any"), n_("Admin")),
             "pevent_id": QuerySpecEntry("id", n_("Past Event")),
             "pcourse_id": QuerySpecEntry("id", n_("Past Course")),
-            "notes": QuerySpecEntry("str", n_("Admin-Notes")),
+            "notes": QuerySpecEntry("str", n_("Admin Notes")),
         },
     # Special view of a cde member for the member search.
     QueryScope.cde_member:

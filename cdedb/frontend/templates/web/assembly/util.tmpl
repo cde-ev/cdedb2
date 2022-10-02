@@ -17,6 +17,9 @@
                                {'attachment_id': version["attachment_id"], 'version_nr': version["version_nr"]}),
                      version["title"]|string + " " + gettext("(Version %(version)s)")|format(version=version["version_nr"]),
                      icon="file") }}
+        {% if edit_right %}
+            <span class="text-muted small">[{{ version['filename'] }}]</span>
+        {% endif %}
         {% if edit_right and (add or delete) %}
             <div class="list-button-float" id="versionmanagement">
                 {% if add %}

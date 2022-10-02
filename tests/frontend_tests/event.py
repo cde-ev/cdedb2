@@ -491,7 +491,7 @@ class TestEventFrontend(FrontendTest):
             f['orga_id'] = "DB-1-1"
             self.submit(f, check_notification=False)
             self.assertValidationError('orga_id', "Checksumme stimmt nicht.", index=-1)
-            # Try to add a non event-user.
+            # Try to add a non event user.
             f['orga_id'] = USER_DICT['janis']['DB-ID']
             self.submit(f, check_notification=False)
             self.assertValidationError(
@@ -2490,6 +2490,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.submit(f)
         for i in range(3):
             text = self.fetch_mail_content(i)
+            if i == 1:
+                self.assertIn("589,49", text)
             self.assertIn("Überweisung für die Veranstaltung", text)
             self.assertIn('"Große Testakademie 2222"', text)
         self.traverse({'href': '/event/event/1/show'},
