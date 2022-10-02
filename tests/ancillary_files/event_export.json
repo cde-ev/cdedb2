@@ -1497,5 +1497,9 @@
             }
         }
     },
+    "event.track_groups": {
+    },
+    "event.track_group_tracks": {
+    },
     "timestamp": "2018-12-15T09:58:04.241360+00:00"
 }
