@@ -93,6 +93,7 @@
                                     label="") }}
                         </form>
                     {% endif %}
+                    {% if participant['is_orga'] %}({% trans %}Orga{% endtrans %}){% endif %}
                 </li>
             {% endfor %}
             {% if extra_participants %}
