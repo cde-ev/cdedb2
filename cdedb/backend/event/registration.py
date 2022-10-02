@@ -175,6 +175,16 @@ class EventRegistrationBackend(EventBaseBackend):
     @access("event")
     def get_course_segments_per_track(self, rs: RequestState, event_id: int,
                                       active_only: bool = False) -> Dict[int, Set[int]]:
+        """Determine in which courses can be chosen in each track.
+
+        If synced tracks exist, this will indicate that a course offered in one track
+        of a track group can be chosen in every track of that group.
+
+        :param active_only: If True, restrict to active course segments, i.e. courses
+            that are taking place.
+        :returns: A map of <track id> -> [<course_id>, ...], indicating that these
+            courses can be chosen in the given track.
+        """
         query = """
             SELECT ct.id, ARRAY_REMOVE(ARRAY_AGG(segments.course_id), NULL) AS courses
             FROM (
