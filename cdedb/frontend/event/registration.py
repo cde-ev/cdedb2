@@ -27,7 +27,6 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.types import VALIDATOR_LOOKUP
-from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     CustomCSVDialect, Headers, REQUESTdata, REQUESTfile, TransactionObserver, access,
     cdedbid_filter, check_validation_optional as check_optional, event_guard,
@@ -556,8 +555,6 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         age = determine_age_class(
             persona['birthday'], rs.ambience['event']['begin'])
-        course_ids = self.eventproxy.list_courses(rs, event_id)
-        courses = self.eventproxy.get_courses(rs, course_ids.keys())
         part_order = xsorted(
             registration['parts'].keys(),
             key=lambda anid:
@@ -576,7 +573,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             if const.RegistrationPartStati(stat(track)).is_involved()}
 
         return self.render(rs, "registration/registration_status", {
-            'registration': registration, 'age': age, 'courses': courses,
+            'registration': registration, 'age': age,
             'reg_questionnaire': reg_questionnaire,
             'waitlist_position': waitlist_position, 'involved_tracks': involved_tracks,
             **payment_data, **course_choice_parameters,
@@ -696,8 +693,6 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs, rs.ambience['registration']['persona_id'], event_id)
         age = determine_age_class(
             persona['birthday'], rs.ambience['event']['begin'])
-        course_ids = self.eventproxy.list_courses(rs, event_id)
-        courses = self.eventproxy.get_courses(rs, course_ids.keys())
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         meta_info = self.coreproxy.get_meta_info(rs)
@@ -709,7 +704,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs, event_id, registration_id=registration_id, course_id=-1)
         course_choice_parameters = self.get_course_choice_params(rs, event_id)
         return self.render(rs, "registration/show_registration", {
-            'persona': persona, 'age': age, 'courses': courses,
+            'persona': persona, 'age': age,
             'lodgements': lodgements, 'meta_info': meta_info, 'fee': fee,
             'reference': reference, 'waitlist_position': waitlist_position,
             'mep_violations': constraint_violations['mep_violations'],
@@ -743,14 +738,6 @@ class EventRegistrationMixin(EventBaseFrontend):
         registration = rs.ambience['registration']
         persona = self.coreproxy.get_event_user(rs, registration['persona_id'],
                                                 event_id)
-        course_ids = self.eventproxy.list_courses(rs, event_id)
-        courses = self.eventproxy.get_courses(rs, course_ids.keys())
-        course_choices = {
-            track_id: [course_id
-                       for course_id, course
-                       in keydictsort_filter(courses, EntitySorter.course)
-                       if track_id in course['segments']]
-            for track_id in tracks}
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         reg_values = {f"reg.{key}": value
@@ -787,8 +774,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                     *(part_values + track_values))
         course_choice_params = self.get_course_choice_params(rs, event_id)
         return self.render(rs, "registration/change_registration", {
-            'persona': persona, 'courses': courses,
-            'course_choices': course_choices, 'lodgements': lodgements,
+            'persona': persona, 'lodgements': lodgements,
             'skip': skip or [], 'change_note': change_note,
             **course_choice_params,
         })
@@ -974,15 +960,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                               ) -> Response:
         """Render form."""
         tracks = rs.ambience['event']['tracks']
-        course_ids = self.eventproxy.list_courses(rs, event_id)
-        courses = self.eventproxy.get_courses(rs, course_ids.keys())
         registrations = self.eventproxy.list_registrations(rs, event_id)
-        course_choices = {
-            track_id: [course_id
-                       for course_id, course
-                       in keydictsort_filter(courses, EntitySorter.course)
-                       if track_id in course['active_segments']]
-            for track_id in tracks}
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         defaults = {
@@ -991,10 +969,11 @@ class EventRegistrationMixin(EventBaseFrontend):
             for part_id in rs.ambience['event']['parts']
         }
         merge_dicts(rs.values, defaults)
+        course_choice_params = self.get_course_choice_params(rs, event_id)
         return self.render(rs, "registration/add_registration", {
-            'courses': courses, 'course_choices': course_choices,
-            'lodgements': lodgements,
-            'registered_personas': registrations.values()})
+            'lodgements': lodgements, 'registered_personas': registrations.values(),
+            **course_choice_params,
+        })
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
@@ -1090,14 +1069,6 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs, [r['persona_id'] for r in reg_vals], event_id)
         for reg in reg_vals:
             reg['gender'] = personas[reg['persona_id']]['gender']
-        course_ids = self.eventproxy.list_courses(rs, event_id)
-        courses = self.eventproxy.get_courses(rs, course_ids.keys())
-        course_choices = {
-            track_id: [course_id for course_id, course
-                       in keydictsort_filter(courses, EntitySorter.course)
-                       if track_id in course['segments']]
-            for track_id in tracks
-        }
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
 
@@ -1143,12 +1114,14 @@ class EventRegistrationMixin(EventBaseFrontend):
             key=lambda anid: EntitySorter.persona(
                 personas[registrations[anid]['persona_id']]))
 
+        course_choice_params = self.get_course_choice_params(rs, event_id)
         registrations = OrderedDict(
             (reg_id, registrations[reg_id]) for reg_id in reg_order)
         return self.render(rs, "registration/change_registrations", {
             'registrations': registrations, 'personas': personas,
-            'courses': courses, 'course_choices': course_choices,
-            'lodgements': lodgements, 'change_note': change_note})
+            'lodgements': lodgements, 'change_note': change_note,
+            **course_choice_params,
+        })
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
