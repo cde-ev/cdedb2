@@ -57,7 +57,7 @@ class EventRegistrationBackend(EventBaseBackend):
         over tracks and/or registrations, to avoid having to query the same information
         multiple times.
 
-        :returns: A dict mapping each course id (of the event) to a list of
+        :returns: A dict mapping each course id (of the event) to a set of
             track ids (which correspond to its segments)
         """
         query = """
@@ -75,7 +75,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
     def _get_involved_tracks(self, rs: RequestState, registration_id: int
                              ) -> Set[int]:
-        """Return the track ids of all tracks, the registration is involved with."""
+        """Return the track ids of all tracks the registration is involved with."""
         q = """
             SELECT course_tracks.id
             FROM event.course_tracks
