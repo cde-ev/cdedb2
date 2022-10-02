@@ -4827,16 +4827,16 @@
             "description": null,
             "shortname": "Niebelungenlied",
             "instructors": null,
-            "max_size": null,
             "min_size": null,
+            "max_size": null,
             "notes": null,
             "fields": {}
         },
         {
             "id": 11,
             "event_id": 4,
-            "title": "All-Embracement",
             "nr": "2",
+            "title": "All-Embracement",
             "description": "In diesem Kurs finden wir heraus, wie man alles umfassen und an drei Orten gleichzeitig sein kann. Dabei beginnen wir damit, wie man gleichzeitig in Kaub und in Oberwesel sein kann, und fahren im fortgeschrittenen Teil mit Windischleuba fort.",
             "shortname": "All-Embracement",
             "instructors": null,
@@ -4848,13 +4848,13 @@
         {
             "id": 12,
             "event_id": 4,
+            "nr": "3",
             "title": "Nostalgie",
             "description": "In diesem Kurs lernen wir, warum alle Akademien in Windischleuba stattfinden sollten.",
-            "nr": "3",
             "shortname": "Nostalgie",
             "instructors": null,
-            "max_size": null,
             "min_size": null,
+            "max_size": null,
             "notes": null,
             "fields": {}
         }

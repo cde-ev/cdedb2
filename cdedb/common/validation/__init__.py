@@ -2207,9 +2207,10 @@ def _optional_object_mapping_helper(
                 raise ValidationSummary(ValueError(
                     argname, n_("Only creation allowed.")))
             if creation:
-                val = _ALL_TYPED[atype](val, argname, creation=creation, **kwargs)  # type: ignore[index]
+                val = _ALL_TYPED[atype](val, argname, creation=creation, **kwargs)
             else:
-                val = _ALL_TYPED[Optional[atype]](val, argname, creation=creation, **kwargs)  # type: ignore[index]
+                val = _ALL_TYPED[Optional[atype]](
+                    val, argname, creation=creation, **kwargs)  # type: ignore[index]
             ret[anid] = val
 
     if errs:
@@ -2437,7 +2438,7 @@ def _event_part_group_setter(
     new_part_groups = _optional_object_mapping_helper(
         val, EventPartGroup, argname, creation_only=False)
 
-    return EventPartGroupSetter(new_part_groups)
+    return EventPartGroupSetter(dict(new_part_groups))
 
 
 EVENT_TRACK_COMMON_FIELDS: TypeMapping = {

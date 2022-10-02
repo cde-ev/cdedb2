@@ -743,7 +743,7 @@ class EventLowLevelBackend(AbstractBackend):
         ret = 1
         self.affirm_atomized_context(rs)
 
-        self._track_group_tracks_sanity_check(rs, constraint_type, tracks, track_ids)
+        self._track_group_tracks_sanity_check(constraint_type, tracks, track_ids)
 
         current_track_ids = {e['track_id'] for e in self.sql_select(
             rs, "event.track_group_tracks", ("track_id",), (track_group_id,),
@@ -768,8 +768,8 @@ class EventLowLevelBackend(AbstractBackend):
             ret *= self.sql_insert_many(rs, "event.track_group_tracks", inserter)
         return ret
 
-    def _track_group_tracks_sanity_check(self, rs: RequestState,
-                                         constraint_type: const.CourseTrackGroupType,
+    @staticmethod
+    def _track_group_tracks_sanity_check(constraint_type: const.CourseTrackGroupType,
                                          tracks: CdEDBObjectMap,
                                          track_ids: Collection[int]) -> None:
         """For Course Choice Sync, all tracks must have the same number of choices."""
@@ -780,7 +780,6 @@ class EventLowLevelBackend(AbstractBackend):
             }
             if len(track_params) > 1:
                 raise ValueError(n_("Incompatible tracks."))
-
 
     def _delete_event_field_blockers(self, rs: RequestState,
                                      field_id: int) -> DeletionBlockers:

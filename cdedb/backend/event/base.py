@@ -746,7 +746,7 @@ class EventBaseBackend(EventLowLevelBackend):
         event = self.get_event(rs, event_id)
         for track_group_id, track_group in event['track_groups'].items():
             self._track_group_tracks_sanity_check(
-                rs, constraint_type=track_group['constraint_type'],
+                constraint_type=track_group['constraint_type'],
                 tracks=event['tracks'], track_ids=track_group['track_ids'])
 
     @access("event")
@@ -905,7 +905,8 @@ class EventBaseBackend(EventLowLevelBackend):
                 ('event.part_group_parts', "part_id", ("part_group_id", "part_id")),
                 ('event.course_tracks', "part_id", COURSE_TRACK_FIELDS),
                 ('event.track_groups', "event_id", TRACK_GROUP_FIELDS),
-                ('event.track_group_tracks', "track_id", ("track_group_id", "track_id")),
+                ('event.track_group_tracks', "track_id", (
+                    "track_group_id", "track_id")),
                 ('event.courses', "event_id", COURSE_FIELDS),
                 ('event.course_segments', "track_id", COURSE_SEGMENT_FIELDS),
                 ('event.orgas', "event_id", ('id', 'persona_id', 'event_id',)),
