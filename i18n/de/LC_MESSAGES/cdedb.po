@@ -20107,3 +20107,6 @@ msgstr "%(ml_type)s ist kein geeigneter Typ für diese Mailingliste."
 
 msgid "Use as Template"
 msgstr "Als Vorlage benutzen"
+
+msgid "Unknown Ballot."
+msgstr "Unbekannte Abstimmung."

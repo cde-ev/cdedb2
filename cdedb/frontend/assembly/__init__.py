@@ -741,7 +741,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                     rs, ballot_id=source_id)
             # If the ballot does not exist or is not accessible, show a warning instead.
             else:
-                rs.notify("warning", rs.gettext("Unknown ballot."))
+                rs.notify("warning", rs.gettext("Unknown Ballot."))
 
         attachment_ids = self.assemblyproxy.list_attachments(
             rs, assembly_id=assembly_id)
