@@ -421,13 +421,13 @@ class EventRegistrationMixin(EventBaseFrontend):
                 present_tracks.update(aux.synced_tracks[track_id])
                 # Check for duplicate course choices
                 rs.add_validation_errors(
-                    (choice_key(track_id, i),
+                    (choice_key(track_id, j),
                      ValueError(n_("You cannot have the same course as %(i)s."
                                    " and %(j)s. choice"), {'i': i+1, 'j': j+1}))
                     for j in range(track['num_choices'])
                     for i in range(j)
                     if ((course_id := choice_getter(track_id, j)) is not None
-                        and choice_getter(track_id, j) == course_id))
+                        and choice_getter(track_id, i) == course_id))
                 # Check for unfilled mandatory course choices
                 rs.add_validation_errors(
                     (choice_key(track_id, i),
