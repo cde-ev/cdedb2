@@ -8440,6 +8440,11 @@ msgstr ""
 "ausgezählte Abstimmung. Jeder Teilnehmer dieser Versammlung und jedes aktive "
 "Mitglied hat Zugriff auf diese Seite."
 
+msgid ""
+"For the whole page, the candidates are addressed with the following "
+"abbreviations."
+msgstr "Auf dieser Seite werden die Kandidaten wie folgt abgekürzt."
+
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:55
 msgid ""
 "After evaluating all given votes, we obtain the following combined "
@@ -8584,6 +8589,22 @@ msgstr ""
 "Natürlich kannst du die Ergebnisdatei auch herunterladen und ihren "
 "%(algorithm)s Hash selbst berechnen."
 
+msgid "Cross Table of Preferences"
+msgstr "Paarweise-Präferenz-Tabelle"
+
+msgid ""
+"The following table contains the pairwise preferences over all candidates. "
+"It can be read as"
+msgstr ""
+"Die folgende Tabelle enthält die paarweise Präferenz aller Kandidaten. "
+"Sie kann gelesen werden als"
+
+msgid ""
+"the candidate of the xth row is preferred by y voters over the candidate "
+"of the zth column."
+msgstr ""
+"der Kandidat der xten Reihe wird von y Wählern gegenüber dem Kandidat "
+"der zten Spalte präferiert."
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:145
 msgid "Votes"
 msgstr "Stimmen"

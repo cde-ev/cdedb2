@@ -154,9 +154,13 @@
 
     <p>
         {% trans %}
-            The following table contains the pairwise preferences over all candidates.
-            It can be read as "the candidate of the xth row is preferred by y voters over the candidate of the zth column".
+            The following table contains the pairwise preferences over all candidates. It can be read as
         {% endtrans %}
+        <i>
+            {% trans %}
+                the candidate of the xth row is preferred by y voters over the candidate of the zth column.
+            {% endtrans %}
+        </i>
     </p>
 
     {# rows are preferred over columns #}
