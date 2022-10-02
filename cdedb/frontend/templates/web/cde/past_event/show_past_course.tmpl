@@ -81,6 +81,7 @@
                     {% endif %}
                     {% if participant['instructor'] %}</strong>{% endif %}
                     {% if participant['instructor'] %}({% trans %}Course instructor{% endtrans %}){% endif %}
+                    {% if participant['is_orga'] %}({% trans %}Orga{% endtrans %}){% endif %}
                     {% if "past_event" in user.admin_views %}
                         <form action="{{ cdedblink('cde/remove_participant') }}" method="POST"
                               id="removeparticipantform{{ anid }}" style="display: inline;"
@@ -93,7 +94,6 @@
                                     label="") }}
                         </form>
                     {% endif %}
-                    {% if participant['is_orga'] %}({% trans %}Orga{% endtrans %}){% endif %}
                 </li>
             {% endfor %}
             {% if extra_participants %}
