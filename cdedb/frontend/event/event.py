@@ -29,6 +29,7 @@ from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation import (
     EVENT_EXPOSED_FIELDS, EVENT_PART_COMMON_FIELDS,
     EVENT_PART_CREATION_MANDATORY_FIELDS, EVENT_PART_GROUP_COMMON_FIELDS,
+    EVENT_TRACK_GROUP_COMMON_FIELDS,
 )
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access, cdedburl,
@@ -680,6 +681,81 @@ class EventEventMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.part_group_summary(rs, event_id)  # pragma: no cover
         code = self.eventproxy.set_part_groups(rs, event_id, {part_group_id: None})
+        rs.notify_return_code(code)
+        return self.redirect(rs, "event/part_group_summary")
+
+    @access("event")
+    @event_guard()
+    def add_track_group_form(self, rs: RequestState, event_id: int) -> Response:
+        return self.render(rs, "event/configure_track_group")
+
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
+    @REQUESTdata(*EVENT_TRACK_GROUP_COMMON_FIELDS)
+    def add_track_group(self, rs: RequestState, event_id: int, title: str,
+                       shortname: str, notes: Optional[str], sortkey: int,
+                       constraint_type: const.CourseTrackGroupType,
+                       track_ids: Collection[int]) -> Response:
+        if track_ids and not set(track_ids) <= rs.ambience['event']['tracks'].keys():
+            rs.append_validation_error(("track_ids", ValueError(n_("Unknown part."))))
+        data = {
+            'title': title,
+            'shortname': shortname,
+            'notes': notes,
+            'constraint_type': constraint_type,
+            'sortkey': sortkey,
+            'track_ids': track_ids,
+        }
+        for key in ('title', 'shortname'):
+            existing = {tg[key] for tg in rs.ambience['event']['track_groups'].values()}
+            if data[key] in existing:
+                rs.append_validation_error((key, ValueError(n_(
+                    "A track group with this name already exists."))))
+        data = check(rs, vtypes.EventTrackGroup, data)
+        if rs.has_validation_errors():
+            return self.add_track_group_form(rs, event_id)
+        code = self.eventproxy.set_track_groups(rs, event_id, {-1: data})
+        rs.notify_return_code(code)
+        return self.redirect(rs, "event/part_group_summary")
+
+    @access("event")
+    @event_guard()
+    def change_track_group_form(self, rs: RequestState, event_id: int,
+                                track_group_id: int) -> Response:
+        merge_dicts(rs.values, rs.ambience['track_group'])
+        return self.render(rs, "event/configure_track_group")
+
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
+    @REQUESTdata("title", "shortname", "notes", "sortkey")
+    def change_track_group(self, rs: RequestState, event_id: int,
+                          track_group_id: int, title: str, shortname: str,
+                          notes: Optional[str], sortkey: int) -> Response:
+        data: CdEDBObject = {
+            'title': title,
+            'shortname': shortname,
+            'notes': notes,
+            'sortkey': sortkey,
+        }
+        for key in ('title', 'shortname'):
+            existing = {tg[key] for tg in rs.ambience['event']['track_groups'].values()}
+            if data[key] in existing - {rs.ambience['track_group'][key]}:
+                rs.append_validation_error((key, ValueError(n_(
+                    "A track group with this name already exists."))))
+        data = check(rs, vtypes.EventTrackGroup, data)
+        if rs.has_validation_errors():
+            return self.change_track_group_form(rs, event_id, track_group_id)
+        code = self.eventproxy.set_track_groups(rs, event_id, {track_group_id: data})
+        rs.notify_return_code(code)
+        return self.redirect(rs, "event/part_group_summary")
+
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
+    def delete_track_group(self, rs: RequestState, event_id: int,
+                           track_group_id: int) -> Response:
+        if rs.has_validation_errors():
+            return self.part_group_summary(rs, event_id)  # pragma: no cover
+        code = self.eventproxy.set_track_groups(rs, event_id, {track_group_id: None})
         rs.notify_return_code(code)
         return self.redirect(rs, "event/part_group_summary")
 
