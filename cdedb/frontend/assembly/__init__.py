@@ -42,8 +42,8 @@ from cdedb.common.validation.types import CdedbID, Email
 from cdedb.frontend.common import (
     AbstractUserFrontend, Attachment, REQUESTdata, REQUESTdatadict, REQUESTfile, access,
     assembly_guard, calculate_db_logparams, calculate_loglinks, cdedburl,
-    check_validation as check, drow_name, periodic, process_dynamic_input,
-    request_extractor,
+    check_validation as check, drow_name, inspect_validation, periodic,
+    process_dynamic_input, request_extractor,
 )
 
 #: Magic value to signal abstention during _classical_ voting.
@@ -712,13 +712,33 @@ class AssemblyFrontend(AbstractUserFrontend):
             'done': done, 'votes': votes})
 
     @access("assembly")
+    @REQUESTdata("source_id", _postpone_validation=True)
     @assembly_guard
-    def create_ballot_form(self, rs: RequestState,
-                           assembly_id: int) -> Response:
-        """Render form."""
+    def create_ballot_form(self, rs: RequestState, assembly_id: int,
+                           source_id: int = None) -> Response:
+        """Render form.
+
+        :param source_id: Can be the ID of an existing ballot, prefilling it's data.
+        """
         if not rs.ambience['assembly']['is_active']:
             rs.notify("warning", n_("Assembly already concluded."))
             return self.redirect(rs, "assembly/show_assembly")
+
+        # Use inspect validation to avoid showing a validation error for this.
+        # If the given source ID is not a valid ID at all, simply ignore it.
+        if (source_id := inspect_validation(vtypes.ID, source_id)[0]):
+            # If the ballot does not exist, get_ballot would throw a key error.
+            source_ballot = unwrap(
+                self.assemblyproxy.get_ballots(rs, (source_id,)) or None)
+            if source_ballot:
+                merge_dicts(rs.values, source_ballot)
+                # Multiselects work differently from multiple checkboxes, so
+                #  merge_dicts does the wrong thing here (setlist).
+                rs.values['linked_attachments'] = self.assemblyproxy.list_attachments(
+                    rs, ballot_id=source_id)
+            # If the ballot does not exist or is not accessible, show a warning instead.
+            else:
+                rs.notify("warning", rs.gettext("Unknown Ballot."))
 
         attachment_ids = self.assemblyproxy.list_attachments(
             rs, assembly_id=assembly_id)
