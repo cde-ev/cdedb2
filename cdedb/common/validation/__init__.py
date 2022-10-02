@@ -2206,7 +2206,10 @@ def _optional_object_mapping_helper(
             if creation_only and not creation:
                 raise ValidationSummary(ValueError(
                     argname, n_("Only creation allowed.")))
-            val = _ALL_TYPED[Optional[atype]](val, argname, creation=creation, **kwargs)  # type: ignore[index]
+            if creation:
+                val = _ALL_TYPED[atype](val, argname, creation=creation, **kwargs)  # type: ignore[index]
+            else:
+                val = _ALL_TYPED[Optional[atype]](val, argname, creation=creation, **kwargs)  # type: ignore[index]
             ret[anid] = val
 
     if errs:
