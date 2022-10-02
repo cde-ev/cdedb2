@@ -3275,6 +3275,8 @@ def _serialized_event(
         'core.personas': Mapping,
         'event.part_groups': Mapping,
         'event.part_group_parts': Mapping,
+        'event.track_groups': Mapping,
+        'event.track_group_tracks': Mapping,
     }
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
@@ -3334,17 +3336,35 @@ def _serialized_event(
             _empty_dict, {'id': ID, 'event_id': ID, 'query_name': str,
                           'scope': QueryScope, 'serialized_query': Mapping})
     }
+    optional_table_validators: Mapping[str, Callable[..., Any]] = {
+        'event.part_groups': _augment_dict_validator(
+            _event_part_group, {'id': ID, 'event_id': ID}),
+        'event.part_group_parts': _augment_dict_validator(
+            _empty_dict, {'part_group_id': ID, 'part_id': ID}),
+        'event.track_groups': _augment_dict_validator(
+            _event_track_group, {'id': ID, 'event_id': ID}),
+        'event.track_group_tracks': _augment_dict_validator(
+            _empty_dict, {'track_group_id': ID, 'track_id': ID}),
+    }
 
     errs = ValidationSummary()
     for table, validator in table_validators.items():
         new_table = {}
         for key, entry in val[table].items():
-            try:
+            with errs:
                 new_entry = validator(entry, argname=table, **kwargs)
                 new_key = _int(key, argname=table, **kwargs)
-            except ValidationSummary as e:
-                errs.extend(e)
-            else:
+                new_table[new_key] = new_entry
+        val[table] = new_table
+
+    for table, validator in optional_table_validators.items():
+        if table not in val:
+            continue
+        new_table = {}
+        for key, entry in val[table].items():
+            with errs:
+                new_entry = validator(entry, argname=table, **kwargs)
+                new_key = _int(key, argname=table, **kwargs)
                 new_table[new_key] = new_entry
         val[table] = new_table
 
