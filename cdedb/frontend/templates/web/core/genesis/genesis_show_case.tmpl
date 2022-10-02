@@ -136,9 +136,25 @@
         <h4 class="heading-underline">{% trans %}Academy Information{% endtrans %}</h4>
         <dl class="dl-horizontal">
             <dt title="{% trans %}Past Event{% endtrans %}">{% trans %}Past Event{% endtrans %}</dt>
-            <dd>{{ pevent['title'] or "–" }}</dd>
+            <dd>
+                {% if pevent -%}
+                    {{ util.href(cdedblink("cde/show_past_event", {"pevent_id": pevent['id']}), pevent['title'],
+                        readonly='cde_admin' not in user.roles and 'member' not in user.roles) }}
+                {% else %}
+                    –
+                {% endif %}
+            </dd>
             <dt title="{% trans %}Course{% endtrans %}">{% trans %}Course{% endtrans %}</dt>
-            <dd>{{ pcourse['title'] or "–" }}</dd>
+            <dd>
+                {% if pcourse -%}
+                    {{ util.href(cdedblink("cde/show_past_course",
+                                           {"pevent_id": pevent['id'], "pcourse_id": pcourse['id']}),
+                                 pcourse['title'],
+                                 readonly='cde_admin' not in user.roles and 'member' not in user.roles) }}
+                {% else %}
+                    –
+                {% endif %}
+            </dd>
             <dt title="{% trans %}Attachment{% endtrans %}">{% trans %}Attachment{% endtrans %}</dt>
             <dd>{% if ambience['genesis_case']['attachment_hash'] %}
                 {{ util.href(cdedblink("core/genesis_get_attachment", {'attachment_hash': ambience['genesis_case']['attachment_hash']}),
