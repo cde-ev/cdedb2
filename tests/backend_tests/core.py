@@ -602,11 +602,13 @@ class TestCoreBackend(BackendTest):
             'location': "Marcuria",
             'country': "AQ",
         }
+        self.assertEqual(1, len(self.core.genesis_list_cases(
+            self.key, realms=["event"], stati=(const.GenesisStati.to_review,))))
         case_id = self.core.genesis_request(ANONYMOUS, data)
         self.assertGreater(case_id, 0)
         assert case_id is not None
         self.assertEqual((1, 'event'), self.core.genesis_verify(ANONYMOUS, case_id))
-        self.assertEqual(1, len(self.core.genesis_list_cases(
+        self.assertEqual(2, len(self.core.genesis_list_cases(
             self.key, realms=["event"], stati=(const.GenesisStati.to_review,))))
         expectation = data
         expectation.update({
@@ -675,11 +677,13 @@ class TestCoreBackend(BackendTest):
             "realm": "ml",
             "notes": "Some blah",
         }
+        self.assertEqual(1, len(self.core.genesis_list_cases(
+            self.key, realms=["ml"], stati=(const.GenesisStati.to_review,))))
         case_id = self.core.genesis_request(ANONYMOUS, data)
         self.assertGreater(case_id, 0)
         assert case_id is not None
         self.assertEqual((1, "ml"), self.core.genesis_verify(ANONYMOUS, case_id))
-        self.assertEqual(1, len(self.core.genesis_list_cases(
+        self.assertEqual(2, len(self.core.genesis_list_cases(
             self.key, realms=["ml"], stati=(const.GenesisStati.to_review,))))
         expectation = data
         expectation.update({
@@ -769,13 +773,15 @@ class TestCoreBackend(BackendTest):
         }
         self.assertFalse(self.core.genesis_attachment_usage(
             self.key, attachment_hash))
+        self.assertEqual(1, len(self.core.genesis_list_cases(
+            self.key, realms=["cde"], stati=(const.GenesisStati.to_review,))))
         case_id = self.core.genesis_request(ANONYMOUS, data)
         self.assertTrue(self.core.genesis_attachment_usage(
             self.key, attachment_hash))
         self.assertLess(0, case_id)
         assert case_id is not None
         self.assertEqual((1, 'cde'), self.core.genesis_verify(ANONYMOUS, case_id))
-        self.assertEqual(1, len(self.core.genesis_list_cases(
+        self.assertEqual(2, len(self.core.genesis_list_cases(
             self.key, realms=["cde"], stati=(const.GenesisStati.to_review,))))
         expectation = data
         expectation.update({
