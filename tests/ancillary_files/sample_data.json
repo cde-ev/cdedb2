@@ -4840,8 +4840,8 @@
             "description": "In diesem Kurs finden wir heraus, wie man alles umfassen und an drei Orten gleichzeitig sein kann. Dabei beginnen wir damit, wie man gleichzeitig in Kaub und in Oberwesel sein kann, und fahren im fortgeschrittenen Teil mit Windischleuba fort.",
             "shortname": "All-Embracement",
             "instructors": null,
-            "max_size": null,
             "min_size": null,
+            "max_size": null,
             "notes": null,
             "fields": {}
         },

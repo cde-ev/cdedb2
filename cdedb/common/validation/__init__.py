@@ -2209,8 +2209,8 @@ def _optional_object_mapping_helper(
             if creation:
                 val = _ALL_TYPED[atype](val, argname, creation=creation, **kwargs)
             else:
-                val = _ALL_TYPED[Optional[atype]](
-                    val, argname, creation=creation, **kwargs)  # type: ignore[index]
+                val = _ALL_TYPED[Optional[atype]](  # type: ignore[index]
+                    val, argname, creation=creation, **kwargs)
             ret[anid] = val
 
     if errs:

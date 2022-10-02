@@ -822,7 +822,8 @@ class TestEventFrontend(FrontendTest):
             {'href': '/event/event/1/registration/3/show'},
             "Bearbeiten",
         )
-        self.assertTitle("Anmeldung von Garcia Generalis bearbeiten (Große Testakademie 2222)")
+        self.assertTitle("Anmeldung von Garcia Generalis bearbeiten"
+                         " (Große Testakademie 2222)")
         f = self.response.forms['changeregistrationform']
         self.assertEqual('', f['track2.course_choice_1'].value)
         f['track2.course_choice_0'] = 3
