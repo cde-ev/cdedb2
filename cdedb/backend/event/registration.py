@@ -176,7 +176,7 @@ class EventRegistrationBackend(EventBaseBackend):
     @access("event")
     def get_course_segments_per_track(self, rs: RequestState, event_id: int,
                                       active_only: bool = False) -> Dict[int, Set[int]]:
-        """Determine in which courses can be chosen in each track.
+        """Determine which courses can be chosen in each track.
 
         If synced tracks exist, this will indicate that a course offered in one track
         of a track group can be chosen in every track of that group.

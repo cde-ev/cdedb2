@@ -742,7 +742,7 @@ class EventBaseBackend(EventLowLevelBackend):
         if self.query_all(rs, q, (ccs, event_id)):
             raise ValueError(n_("Track synced to more than one ccs track group."))
 
-        # Check that no each track group has sane tracks.
+        # Check that no track group has invalid tracks for its constraint.
         event = self.get_event(rs, event_id)
         for track_group_id, track_group in event['track_groups'].items():
             self._track_group_tracks_sanity_check(
