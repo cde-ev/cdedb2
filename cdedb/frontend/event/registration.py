@@ -734,7 +734,6 @@ class EventRegistrationMixin(EventBaseFrontend):
         if rs.has_validation_errors() and not internal:
             return self.redirect(rs, 'event/show_registration')
         event = rs.ambience['event']
-        tracks = rs.ambience['event']['tracks']
         registration = rs.ambience['registration']
         persona = self.coreproxy.get_event_user(rs, registration['persona_id'],
                                                 event_id)
@@ -961,7 +960,6 @@ class EventRegistrationMixin(EventBaseFrontend):
     def add_registration_form(self, rs: RequestState, event_id: int
                               ) -> Response:
         """Render form."""
-        tracks = rs.ambience['event']['tracks']
         registrations = self.eventproxy.list_registrations(rs, event_id)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
@@ -1060,7 +1058,6 @@ class EventRegistrationMixin(EventBaseFrontend):
             return self.redirect(rs, 'event/registration_query',
                                  {'download': None, 'is_search': False})
         # Get information about registrations, courses and lodgements
-        tracks = rs.ambience['event']['tracks']
         registrations = self.eventproxy.get_registrations(rs, reg_ids)
         reg_vals = registrations.values()
         if not registrations:
@@ -1075,6 +1072,8 @@ class EventRegistrationMixin(EventBaseFrontend):
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
 
         representative = next(iter(registrations.values()))
+
+        course_choice_params = self.get_course_choice_params(rs, event_id)
 
         # iterate registrations to check for differing values
         reg_data = {}
@@ -1116,7 +1115,6 @@ class EventRegistrationMixin(EventBaseFrontend):
             key=lambda anid: EntitySorter.persona(
                 personas[registrations[anid]['persona_id']]))
 
-        course_choice_params = self.get_course_choice_params(rs, event_id)
         registrations = OrderedDict(
             (reg_id, registrations[reg_id]) for reg_id in reg_order)
         return self.render(rs, "registration/change_registrations", {

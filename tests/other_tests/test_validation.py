@@ -772,6 +772,7 @@ class TestValidation(unittest.TestCase):
         self.assertEqual(1, len(errs))
 
     def test_optional_object_mapping_helper(self) -> None:
+        # pylint: disable=protected-access
         with self.assertRaises(validate.ValidationSummary):
             validate._optional_object_mapping_helper(
                 {-1: None}, EventPartGroup, "event_part", creation_only=False)
