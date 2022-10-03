@@ -864,7 +864,8 @@ class EventRegistrationMixin(EventBaseFrontend):
             for group_id in course_choice_parameters['sync_track_groups']
             for i in range(event['tracks'][ref_tracks[group_id]['id']]['num_choices'])
         }
-        for key, val in request_extractor(rs, synced_choice_params).items():
+        for key, val in request_extractor(
+                rs, filter_parameters(synced_choice_params)).items():
             group_id, x = map(int, key.removeprefix("course_choice_group").split("_"))
             for track_id in track_groups[group_id]['track_ids']:
                 raw_tracks[f"track{track_id}.course_choice_{x}"] = val
@@ -872,7 +873,8 @@ class EventRegistrationMixin(EventBaseFrontend):
             f"course_choice_group_instructor{group_id}": Optional[vtypes.ID]  # type: ignore[misc]
             for group_id in course_choice_parameters['sync_track_groups']
         }
-        for key, val in request_extractor(rs, synced_instructor_params).items():
+        for key, val in request_extractor(
+                rs, filter_parameters(synced_instructor_params)).items():
             group_id = int(key.removeprefix("course_choice_group_instructor"))
             for track_id in track_groups[group_id]['track_ids']:
                 raw_tracks[f"{track_id}.course_instructor"] = val
@@ -899,7 +901,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             # if not all(f"track{track_id}.course_choice_{i}" in raw_tracks
             #            for i in range(track['num_choices'])):
             #     continue
-            extractor = lambda i: raw_tracks[f"track{track_id}.course_choice_{i}"]
+            extractor = lambda i: raw_tracks.get(f"track{track_id}.course_choice_{i}")
             choices_tuple = tuple(
                 c_id for i in range(track['num_choices']) if (c_id := extractor(i)))
             choices_set = set()

@@ -146,7 +146,7 @@
 
             {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) if track['part_id'] == part_id %}
                 {% set course_entries = courses|keydictsort(EntitySorter.course)
-                                        |xdict_entries('{id}', '{nr}. {shortname}', include=course_choices[track_id]) %}
+                                        |xdict_entries('{id}', '{nr}. {shortname}', include=courses_per_track[track_id]) %}
                 {% call form_input_optional("track{}.course_id".format(track_id),
                                             label=gettext("Course %s")|format(track['shortname'])
                                                   if ambience['event']['tracks']|length > 1  else gettext("Course"),
@@ -173,18 +173,6 @@
         {% call form_input_optional("reg.notes", anid="input_reg_notes", label=gettext("Notes")) %}
             {{ util.input_textarea(name="reg.notes", rows="5", anid="input_reg_notes") }}
         {% endcall %}
-        {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
-            {% set course_entries = courses|keydictsort(EntitySorter.course)
-                                    |xdict_entries('{id}', '{nr}. {shortname}', include=course_choices[track_id]) %}
-            {% call form_input_optional("track{}.course_instructor".format(track_id),
-                                        label=gettext("%s: Instructor of")|format(track['shortname'])
-                                              if ambience['event']['tracks']|length > 1  else gettext("Instructor of"),
-                                        anid="input_track{}_course_instructor".format(track_id)) %}
-                {{ util.input_select(name="track{}.course_instructor".format(track_id),
-                                     entries=course_entries, nulloption=nbsp,
-                                     anid="input_track{}_course_instructor".format(track_id)) }}
-            {% endcall %}
-        {% endfor %}
 
         {% if ambience['event']['fields']|length > 0 %}
             <h3 class="heading-underline">{% trans %}Custom Fields{% endtrans %}</h3>
