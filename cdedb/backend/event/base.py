@@ -1078,7 +1078,6 @@ class EventBaseBackend(EventLowLevelBackend):
         # Delete this later.
         # del event['orgas']
         del event['tracks']
-        del event['track_groups']
         del event['fee_modifiers']
         for part in event['parts'].values():
             del part['id']
@@ -1104,6 +1103,11 @@ class EventBaseBackend(EventLowLevelBackend):
             del pg['event_id']
             pg['constraint_type'] = const.EventPartGroupType(pg['constraint_type'])
             pg['part_ids'] = xsorted(pg['part_ids'])
+        for tg in event['track_groups'].values():
+            del tg['id']
+            del tg['event_id']
+            tg['constraint_type'] = const.CourseTrackGroupType(tg['constraint_type'])
+            tg['track_ids'] = xsorted(tg['track_ids'])
         for f in ('lodge_field', 'camping_mat_field', 'course_room_field'):
             if event[f]:
                 event[f] = event['fields'][event[f]]['field_name']

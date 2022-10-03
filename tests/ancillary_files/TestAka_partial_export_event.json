@@ -669,6 +669,7 @@
         "camping_mat_field": "may_reserve",
         "course_room_field": "transportation",
         "part_groups": {},
+        "track_groups": {},
         "parts": {
             "1": {
                 "title": "Warmup",
