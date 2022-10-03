@@ -48,8 +48,8 @@ CourseChoiceValidationAux = NamedTuple(
 
 
 class EventRegistrationBackend(EventBaseBackend):
-    def _get_event_course_segments(self, rs: RequestState,
-                                   event_id: int) -> Dict[int, Set[int]]:
+    def _get_course_segments_per_course(self, rs: RequestState,
+                                        event_id: int) -> Dict[int, Set[int]]:
         """
         Helper function to get course segments of all courses of an event.
 
@@ -148,7 +148,7 @@ class EventRegistrationBackend(EventBaseBackend):
         else:
             raise ValueError(n_("Cannot determine involved tracks."))
         return CourseChoiceValidationAux(
-            self._get_event_course_segments(rs, event_id),
+            self._get_course_segments_per_course(rs, event_id),
             self._get_synced_tracks(rs, event_id),
             involved_tracks=involved_tracks,
         )
