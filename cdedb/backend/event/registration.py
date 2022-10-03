@@ -125,6 +125,7 @@ class EventRegistrationBackend(EventBaseBackend):
           * involved_tracks: Which tracks a registration is involved with.
 
         The return of this method can be passed to `validate_single_course_choice`.
+        Since that is called in a loop, this should only be called once.
 
         To determine involved tracks, a registration id can be given, which will then
         be used to read this information from the database, or the involved parts can
