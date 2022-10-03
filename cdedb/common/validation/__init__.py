@@ -3341,11 +3341,11 @@ def _serialized_event(
         'event.part_groups': _augment_dict_validator(
             _event_part_group, {'id': ID, 'event_id': ID}),
         'event.part_group_parts': _augment_dict_validator(
-            _empty_dict, {'part_group_id': ID, 'part_id': ID}),
+            _empty_dict, {'id': ID, 'part_group_id': ID, 'part_id': ID}),
         'event.track_groups': _augment_dict_validator(
             _event_track_group, {'id': ID, 'event_id': ID}),
         'event.track_group_tracks': _augment_dict_validator(
-            _empty_dict, {'track_group_id': ID, 'track_id': ID}),
+            _empty_dict, {'id': ID, 'track_group_id': ID, 'track_id': ID}),
     }
 
     errs = ValidationSummary()
