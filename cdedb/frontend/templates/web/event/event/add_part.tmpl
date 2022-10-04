@@ -15,7 +15,7 @@
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
-    {{ util.breadcrumb_link(cdedblink("event/part_summary"), gettext("Event-Parts")) }}
+    {{ util.breadcrumb_link(cdedblink("event/part_summary"), gettext("Event Parts")) }}
     {{ util.breadcrumb_link(cdedblink("event/add_part_form"), gettext("Add part"), active=True) }}
 {% endblock %}
 
@@ -26,7 +26,7 @@
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
         {{ util.form_input_text(name="part_begin", label=gettext("Begin"), type='date', placeholder="YYYY-MM-DD") }}
         {{ util.form_input_text(name="part_end", label=gettext("End"), type='date', placeholder="YYYY-MM-DD") }}
-        {{ util.form_input_text(name="fee", label=gettext("Event-Part Fee"), anid="input-text-fee", addon='€') }}
+        {{ util.form_input_text(name="fee", label=gettext("Event Part Fee"), anid="input-text-fee", addon='€') }}
         {{ util.form_input_select(name="waitlist_field", entries=waitlist_fields,
                                   label=gettext("Field for Waitlist"), nulloption=nbsp,
                                   info=gettext("Field to store the %(link)s ranking of this part."

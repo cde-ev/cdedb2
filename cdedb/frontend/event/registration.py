@@ -167,8 +167,8 @@ class EventRegistrationMixin(EventBaseFrontend):
             success, number = self.eventproxy.book_fees(
                 rs, rs.ambience['event']['id'], relevant_data)
             if success and send_notifications:
-                persona_ids = tuple(e['persona_id'] for e in data)
-                personas = self.coreproxy.get_personas(rs, persona_ids)
+                persona_amounts = {e['persona_id']: e['amount'] for e in data}
+                personas = self.coreproxy.get_personas(rs, persona_amounts)
                 subject = "Überweisung für {} eingetroffen".format(
                     rs.ambience['event']['title'])
                 for persona in personas.values():
@@ -178,7 +178,8 @@ class EventRegistrationMixin(EventBaseFrontend):
                     }
                     if rs.ambience['event']['orga_address']:
                         headers['Reply-To'] = rs.ambience['event']['orga_address']
-                    self.do_mail(rs, "transfer_received", headers, {'persona': persona})
+                    self.do_mail(rs, "transfer_received", headers, {
+                        'persona': persona, 'amount': persona_amounts[persona['id']]})
             return success, number
 
     @access("event", modi={"POST"})

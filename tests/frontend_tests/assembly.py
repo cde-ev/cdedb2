@@ -1927,6 +1927,64 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.assertTitle("Bester Hof (Internationaler Kongress)")
             self.assertNotification("Abstimmung wurde noch nicht ausgezählt.", 'error')
 
+    @as_users("werner")
+    @storage
+    def test_duplicate_ballot(self) -> None:
+        self.traverse("Versammlungen", "Archiv-Sammlung", "Abstimmungen",
+                      "Ganz wichtige Wahl", "Als Vorlage benutzen")
+        f = self.response.forms['configureballotform']
+        self.submit(f)
+        ballots = self.assembly.get_ballots(self.key, (16, 1001))
+        for ballot in ballots.values():
+            del ballot['id']
+            del ballot['candidates']
+        self.assertEqual(ballots[16], ballots[1001])
+        self.assertEqual(
+            self.assembly.list_attachments(self.key, ballot_id=16),
+            self.assembly.list_attachments(self.key, ballot_id=1001),
+        )
+
+        # Source the ballot from a different assembly:
+        self.get('/assembly/assembly/1/ballot/create?source_id=16')
+        f = self.response.forms['configureballotform']
+        self.submit(f)
+        source = ballots[16]
+        target = self.assembly.get_ballot(self.key, 1002)
+        del target['id']
+        del target['candidates']
+        source['assembly_id'] = 1
+        self.assertEqual(source, target)
+
+        # Try some invalid inputs:
+        self.get('/assembly/assembly/1/ballot/create?source_id=-1')
+        f = self.response.forms['configureballotform']
+        self.assertEqual(f['title'].value, "")
+
+        self.get('/assembly/assembly/1/ballot/create?source_id=999999')
+        self.assertPresence("Unbekannte Abstimmung", div="notifications")
+        f = self.response.forms['configureballotform']
+        self.assertEqual(f['title'].value, "")
+
+    @as_users("werner", "berta")
+    @storage
+    def test_group_ballots_by_config(self) -> None:
+        self.traverse("Versammlungen", "Internationaler Kongress", "Zusammenfassung")
+        self.assertPresence("Laufende Abstimmungen")
+        self.assertPresence('10.02.2000, 21:22:22 – 11.02.2222, 21:22:22'
+                            ' Bester Hof (Klassische Abstimmung mit 1 Stimme und'
+                            ' "Gegen alle Kanididaten"-Option.)', div="running-ballots")
+        self.assertPresence(' – 01.01.2222, 21:22:22'
+                            ' Akademie-Nachtisch (Klassische Abstimmung mit 2 Stimmen'
+                            ' und "Gegen alle Kandidaten"-Option.)'
+                            ' Lieblingszahl (Präferenzwahl ohne Ablehnungsoption.)',
+                            div="running-ballots")
+
+        self.assertPresence("Zukünftige Abstimmungen")
+        self.assertPresence('02.02.2222, 21:22:22 – 03.02.2222, 21:22:22'
+                            ' ( – 04.02.2222, 21:22:22, Quorum: 83 %)'
+                            ' Farbe des Logos (Präferenzwahl ohne Ablehnungsoption.)',
+                            div="upcoming-ballots")
+
     def test_verify_result(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             script = pathlib.Path(tmp) / 'verify_result.pyz'
@@ -1993,7 +2051,7 @@ class TestMultiAssemblyFrontend(MultiAppFrontendTest, AssemblyTestHelpers):
                          self.response.forms)
         self.submit(f, check_notification=False)
         self.assertNotification(
-            "Dieser Nutzer ist kein Wahlleiter für diese Versammlung.")
+            "Dieser Nutzer ist kein Versammlungsleiter für diese Versammlung.")
         self.assertNonPresence("Werner Wahlleitung", div='assembly-presiders',
                                check_div=False)
 

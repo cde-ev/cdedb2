@@ -190,6 +190,7 @@ def compile_sample_data_json(config: TestConfig, secrets: SecretsConfig,
     data = sql2json(config, secrets)
     with open(outfile, "w") as f:
         json.dump(data, f, cls=CustomJSONEncoder, indent=4, ensure_ascii=False)
+        f.write("\n")
 
 
 @development.command(name="compile-sample-data-sql")

@@ -262,7 +262,7 @@ class EventQueryBackend(EventBaseBackend):
                 query.constraints.append(("is_archived", QueryOperators.equal, False))
                 query.spec["is_archived"] = QuerySpecEntry("bool", "")
 
-            # Include only event-users
+            # Include only event users
             query.constraints.append(("is_event_realm", QueryOperators.equal, True))
             query.spec["is_event_realm"] = QuerySpecEntry("bool", "")
 
