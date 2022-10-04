@@ -4,6 +4,7 @@
 import argparse
 import os
 import pathlib
+import socket
 import subprocess
 import sys
 import time
@@ -185,9 +186,15 @@ def run_ldap_tests(testpatterns: List[str] = None, *, verbose: bool = False) -> 
 
         # ensure the test ldap server is running
         restart_services("cde-ldap-test")
+
         # wait until the ldap server is ready
-        # TODO is there a better solution?
-        time.sleep(10)
+        while True:
+            try:
+                socket.create_connection(
+                    (conf["LDAP_HOST"], conf["LDAP_PORT"]), timeout=0.5)
+                break
+            except OSError:
+                time.sleep(0.5)
 
         # update the current ldap setting
         # note that this takes no changes of the base ldap setup into account,
