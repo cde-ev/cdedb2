@@ -20,7 +20,8 @@ import string
 import sys
 from typing import (
     TYPE_CHECKING, Any, Callable, Collection, Dict, Generic, Iterable, List, Mapping,
-    MutableMapping, Optional, Set, Tuple, Type, TypeVar, Union, cast, overload,
+    MutableMapping, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast,
+    overload,
 )
 
 import psycopg2.extras
@@ -1248,6 +1249,13 @@ def inverse_diacritic_patterns(s: str) -> str:
     the word even when written without the diacritics.
     """
     return s.translate(UMLAUT_TRANSLATE_TABLE)
+
+
+def abbreviation_mapper(data: Sequence[T]) -> Dict[T, str]:
+    """Assign an unique combination of ascii letters to each element."""
+    num_letters = ((len(data) - 1) // 26) + 1
+    return {item: "".join(shortname) for item, shortname in zip(
+        data, itertools.product(string.ascii_uppercase, repeat=num_letters))}
 
 
 _tdelta = datetime.timedelta
