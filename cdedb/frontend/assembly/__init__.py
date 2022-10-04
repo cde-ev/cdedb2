@@ -50,6 +50,8 @@ from cdedb.frontend.common import (
 #: This can not occur as a shortname since it contains forbidden characters.
 MAGIC_ABSTAIN = Candidate("special: abstain")
 
+ASSEMBLY_BAR_ABBREVIATION = "#"
+
 
 class AssemblyFrontend(AbstractUserFrontend):
     """Organize congregations and vote on ballots."""
@@ -1130,7 +1132,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 candidates[ASSEMBLY_BAR_SHORTNAME] = rs.gettext("Rejection limit")
         # use special symbol for bar abbreviation
         if ballot['use_bar']:
-            abbreviations[ASSEMBLY_BAR_SHORTNAME] = "#"
+            abbreviations[ASSEMBLY_BAR_SHORTNAME] = ASSEMBLY_BAR_ABBREVIATION
 
         # all vote string submitted in this ballot
         votes = [vote["vote"] for vote in result["votes"]]
