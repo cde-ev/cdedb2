@@ -220,11 +220,10 @@ The original message as received by Mailman is attached.
         # submitted via mailman.
         requests = mm_list.requests
         for request in requests:
-            mm_list.moderate_request(request['token'], 'reject', reason=
-                f"Please use the CdE-Datenbank at"
-                f" {cdedburl(rs, 'ml/show_mailinglist', {'mailinglist_id': db_list['id']}, force_external=True)}"
-                f" to manage your subscription."
-            )
+            url = cdedburl(rs, 'ml/show_mailinglist', {'mailinglist_id': db_list['id']},
+                           force_external=True)
+            mm_list.moderate_request(request['token'], 'reject',
+                f"Please use the CdE-Datenbank at {url} to manage your subscription.")
 
         db_subscribers = {
             address: make_persona_name(personas[pid])
