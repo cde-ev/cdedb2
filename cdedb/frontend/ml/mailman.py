@@ -70,8 +70,9 @@ class MlMailmanMixin(MlBaseFrontend):
         if db_list['subject_prefix']:
             prefix = "[{}] ".format(db_list['subject_prefix'] or "")
 
-        alias_domans: Set[str] = db_list['domain'].get_acceptable_aliases()
-        acceptable_aliases = [db_list['local_part'] + '@' + d for d in alias_domans]
+        alias_domains: Set[str] = db_list['domain'].get_acceptable_aliases()
+        acceptable_aliases =\
+            [db_list['local_part'] + '@' + d for d in alias_domains] or ""
 
         # First, specify the generally desired settings, templates and header matches.
         # Settings not specified here can be persistently set otherwise.

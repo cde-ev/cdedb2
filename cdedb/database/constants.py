@@ -231,10 +231,11 @@ class MailinglistDomain(enum.IntEnum):
 
         This is only used to allow emails to <local_part>@alias to be sent to the list
         members without moderation."""
-        aliases = {"cde-ev.de", "lists.schuelerakademie.de"}
+        if self == MailinglistDomain.general:
+            return {"cde-ev.de", "lists.schuelerakademie.de"}
         if self == MailinglistDomain.cdelokal:
-            aliases.add("cdelokal.schuelerakademie.de")
-        return aliases
+            return {"cdelokal.schuelerakademie.de"}
+        return set()
 
 
 # Instead of importing this, call str() on a MailinglistDomain.
