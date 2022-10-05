@@ -525,6 +525,13 @@ class PastEventBackend(AbstractBackend):
                 'is_instructor': affirm(bool, is_instructor),
                 'is_orga': affirm(bool, is_orga)}
         with Atomizer(rs):
+            # Validate data consistency
+            if not self.core.verify_persona(rs, persona_id, {"event"}):
+                raise ValueError(n_("This past event participant is no event user."))
+            if pcourse_id and pcourse_id not in self.list_past_courses(rs, pevent_id):
+                raise ValueError(
+                    n_("Course not associated with past event specified."))
+
             # Check that participant is no pure pevent participant if they are
             # course participant as well.
             if self._check_pure_event_participation(rs, persona_id, pevent_id):
