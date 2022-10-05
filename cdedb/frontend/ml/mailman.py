@@ -216,9 +216,9 @@ The original message as received by Mailman is attached.
             rs, db_list['id'], persona_ids)
         personas = self.coreproxy.get_personas(rs, persona_ids)
 
-        # Before updating subscribers, delete spurious subscription requests
+        # Before updating subscribers, delete spurious (un)subscription requests
         # submitted via mailman.
-        requests = mm_list.requests
+        requests = mm_list.requests + mm_list.unsubscription_requests
         for request in requests:
             url = cdedburl(rs, 'ml/show_mailinglist', {'mailinglist_id': db_list['id']},
                            force_external=True)
