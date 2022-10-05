@@ -231,7 +231,7 @@ class MailinglistDomain(enum.IntEnum):
 
         This is only used to allow emails to <local_part>@alias to be sent to the list
         members without moderation."""
-        if self == MailinglistDomain.general:
+        if self == MailinglistDomain.lists:
             return {"cde-ev.de", "lists.schuelerakademie.de"}
         if self == MailinglistDomain.cdelokal:
             return {"cdelokal.schuelerakademie.de"}
