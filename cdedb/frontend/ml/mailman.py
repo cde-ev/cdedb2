@@ -215,6 +215,17 @@ The original message as received by Mailman is attached.
         db_addresses = self.mlproxy.get_subscription_addresses(
             rs, db_list['id'], persona_ids)
         personas = self.coreproxy.get_personas(rs, persona_ids)
+
+        # Before updating subscribers, delete spurious subscription requests
+        # submitted via mailman.
+        requests = mm_list.requests
+        for request in requests:
+            mm_list.moderate_request(request['token'], 'reject', reason=
+                f"Please use the CdE-Datenbank at"
+                f" {cdedburl(rs, 'ml/show_mailinglist', {'mailinglist_id': db_list['id']}, force_external=True)}"
+                f" to manage your subscription."
+            )
+
         db_subscribers = {
             address: make_persona_name(personas[pid])
             for pid, address in db_addresses.items() if address
