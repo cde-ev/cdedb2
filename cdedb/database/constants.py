@@ -294,6 +294,7 @@ class CoreLogCodes(enum.IntEnum):
     genesis_deleted = 23  #:
     genesis_verified = 24  #:
     genesis_merged = 25  #:
+    genesis_change = 28  #:
     privilege_change_pending = 30  #:
     privilege_change_approved = 31  #:
     privilege_change_rejected = 32  #:

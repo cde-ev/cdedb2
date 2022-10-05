@@ -325,6 +325,10 @@ class CoreGenesisBackend(CoreBaseBackend):
                 elif data['case_status'] == const.GenesisStati.existing_updated:
                     self.core_log(
                         rs, const.CoreLogCodes.genesis_merged, persona_id=persona_id)
+            else:
+                # persona_id should be None in this case.
+                self.core_log(rs, const.CoreLogCodes.genesis_change,
+                              persona_id=persona_id, change_note=current['username'])
         return ret
 
     @access(*REALM_ADMINS)

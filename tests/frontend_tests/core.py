@@ -2534,6 +2534,16 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Benutzer aktualisiert", div="notifications")
         log_expectation.extend([
             {
+                'code': const.CoreLogCodes.genesis_change,
+                'persona_id': None,
+                'change_note': alternate_username,
+            },
+            {
+                'code': const.CoreLogCodes.genesis_change,
+                'persona_id': None,
+                'change_note': alternate_username,
+            },
+            {
                 'code': const.CoreLogCodes.genesis_merged,
                 'persona_id': new_persona_id,
             },
