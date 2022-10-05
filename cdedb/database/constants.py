@@ -226,6 +226,16 @@ class MailinglistDomain(enum.IntEnum):
         """Return a readable string representation to be displayed in the UI."""
         return self.get_domain()
 
+    def get_acceptable_aliases(self) -> Set[str]:
+        """Return alias domains which might exist for a given type.
+
+        This is only used to allow emails to <local_part>@alias to be sent to the list
+        members without moderation."""
+        aliases = {"cde-ev.de", "lists.schuelerakademie.de"}
+        if self == MailinglistDomain.cdelokal:
+            aliases.add("cdelokal.schuelerakademie.de")
+        return aliases
+
 
 # Instead of importing this, call str() on a MailinglistDomain.
 _DOMAIN_STR_MAP: Dict[MailinglistDomain, str] = {
