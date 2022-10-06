@@ -184,7 +184,7 @@ def sql_update_conn(conn: Any, table: str, data: Dict[str, Any]) -> None:
     query = query.format(
         table=table, setters=", ".join(f'{key} = %s' for key in keys))
     params = tuple(data[key] for key in keys) + (id,)
-    query_exec(conn, query, params)
+    query_exec_conn(conn, query, params)
 
 
 # Old to new
