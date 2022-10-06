@@ -1,0 +1,7 @@
+* Shut down Apache
+* Replace passwords in bin/history_graft.py and cdedb/database/graft-prepare.sql with secure ones
+* Place CdEDBv1 snapshot at /cdedb2/cdedbv1.sql
+* Run bin/graft-prepare.sh
+* Run `DO_HISTORY_GRAFT=1 bin/history_graft.py | tee history-graft-output.txt`
+* Execute `sudo -u postgres psql -f cdedb/database/graft-cleanup.sql`
+* Start up Apache
