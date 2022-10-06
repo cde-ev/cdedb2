@@ -156,6 +156,37 @@ def sql_update(sql: Any, table: str, data: Dict[str, Any]) -> None:
     query_exec(sql, query, params)
 
 
+def query_exec_conn(conn: Any, query: str, params: Sequence[Any]) -> int:
+    sanitized_params = tuple(sanitize_db_input(p) for p in params)
+    with conn.cursor() as cur:
+        cur.execute(query, sanitized_params)
+        return cur.rowcount
+
+
+def query_one_conn(conn: Any, query: str, params: Sequence[Any]) -> Dict[str, Any]:
+    sanitized_params = tuple(sanitize_db_input(p) for p in params)
+    with conn.cursor() as cur:
+        cur.execute(query, sanitized_params)
+        return cur.fetchone()
+
+
+def query_all_conn(conn: Any, query: str, params: Sequence[Any]) -> List[Dict[str, Any]]:
+    sanitized_params = tuple(sanitize_db_input(p) for p in params)
+    with conn.cursor() as cur:
+        cur.execute(query, sanitized_params)
+        return list(x for x in cur.fetchall())
+
+
+def sql_update_conn(conn: Any, table: str, data: Dict[str, Any]) -> None:
+    id = data.pop('id')
+    keys = tuple(data.keys())
+    query = "UPDATE {table} SET {setters} WHERE id = %s"
+    query = query.format(
+        table=table, setters=", ".join(f'{key} = %s' for key in keys))
+    params = tuple(data[key] for key in keys) + (id,)
+    query_exec_conn(conn, query, params)
+
+
 # Old to new
 ATTR_MAP = {
     'username': 'username',
@@ -530,7 +561,7 @@ with cdb as cdb_conn:
     SKIPPED_CHANGES = collections.defaultdict(list)
     for persona_id in persona_ids:
         query = "SELECT * FROM core.changelog WHERE persona_id = %s ORDER BY id"
-        changes = query_all(cdb_conn, query, (persona_id,))
+        changes = query_all_conn(cdb_conn, query, (persona_id,))
         line = "New changelog for {} {} ({}):".format(
             changes[0]['given_names'], changes[0]['family_name'], persona_id)
         print(line, end="")
@@ -559,7 +590,7 @@ with cdb as cdb_conn:
                 if compare_datum(change, old_change) and compare_datum(diff, old_diff):
                     print(f' [{change["generation"]}->{old_change["ctime"]}]', end="")
                     update = {'id': change['id'], 'ctime': old_change['ctime']}
-                    sql_update(cdb_conn, 'core.changelog', update)
+                    sql_update_conn(cdb_conn, 'core.changelog', update)
                     candidate_old += 1
                 else:
                     # telephone numbers and email addresses are normalized in the new db
@@ -597,7 +628,7 @@ with cdb as cdb_conn:
     # Update new core log
     for persona_id in persona_ids:
         query = "SELECT * FROM core.log WHERE persona_id = %s ORDER BY id"
-        changes = query_all(cdb_conn, query, (persona_id,))
+        changes = query_all_conn(cdb_conn, query, (persona_id,))
         ref = OLD_CHANGES[persona_id][0]
         line = "New core log for {} {} ({}):".format(
             ref['given_names'], ref['family_name'], persona_id)
@@ -624,7 +655,7 @@ with cdb as cdb_conn:
             if compare_datum(change, old_change, additional_suppress={'change_note'}):
                 print(f' [{change["id"]}->{old_change["ctime"]}]', end="")
                 update = {'id': change['id'], 'ctime': old_change['ctime']}
-                sql_update(cdb_conn, 'core.log', update)
+                sql_update_conn(cdb_conn, 'core.log', update)
                 candidate_old += 1
             else:
                 raise RuntimeError('Unmatched change!')
@@ -637,7 +668,7 @@ with cdb as cdb_conn:
     # Update finance log
     for persona_id in persona_ids:
         query = "SELECT * FROM cde.finance_log WHERE persona_id = %s ORDER BY id"
-        changes = query_all(cdb_conn, query, (persona_id,))
+        changes = query_all_conn(cdb_conn, query, (persona_id,))
         old_changes = list(entry for entry in OLD_CHANGES[persona_id]
                            if entry['affects_finance'])
         ref = OLD_CHANGES[persona_id][0]
@@ -660,7 +691,7 @@ with cdb as cdb_conn:
                 lastschrift = LASTSCHRIFTS[persona_id][candidate_lastschrift]
                 print(f' [{change["id"]}->{lastschrift["erteilt"]}]', end="")  # type: ignore[index]
                 update = {'id': change['id'], 'ctime': lastschrift['erteilt']}  # type: ignore[index]
-                sql_update(cdb_conn, 'cde.finance_log', update)
+                sql_update_conn(cdb_conn, 'cde.finance_log', update)
                 candidate_lastschrift += 1
                 continue
             old_change = old_changes[candidate_old]
@@ -672,7 +703,7 @@ with cdb as cdb_conn:
                     and change['code'] == old_change['finance_code']):
                 print(f' [{change["id"]}->{old_change["ctime"]}]', end="")
                 update = {'id': change['id'], 'ctime': old_change['ctime']}
-                sql_update(cdb_conn, 'cde.finance_log', update)
+                sql_update_conn(cdb_conn, 'cde.finance_log', update)
                 candidate_old += 1
             else:
                 raise RuntimeError('Unmatched change!')
