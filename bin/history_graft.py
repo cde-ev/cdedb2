@@ -26,7 +26,7 @@ psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
 
 DEFAULT_ID = 5124
-WINDOW = range(1, 27000)
+WINDOW = range(1, 270)
 
 #
 # Fixes for real world data
