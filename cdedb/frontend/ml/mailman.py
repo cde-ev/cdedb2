@@ -5,6 +5,8 @@
 This utilizes the mailman REST API to drive the mailinglists residing
 on the mail VM from within the CdEDB.
 """
+from typing import Set
+
 from mailmanclient import Client, MailingList
 
 import cdedb.database.constants as const
@@ -68,6 +70,10 @@ class MlMailmanMixin(MlBaseFrontend):
         if db_list['subject_prefix']:
             prefix = "[{}] ".format(db_list['subject_prefix'] or "")
 
+        alias_domains: Set[str] = db_list['domain'].get_acceptable_aliases()
+        acceptable_aliases =\
+            [db_list['local_part'] + '@' + d for d in alias_domains] or ""
+
         # First, specify the generally desired settings, templates and header matches.
         # Settings not specified here can be persistently set otherwise.
         desired_settings = {
@@ -91,8 +97,8 @@ class MlMailmanMixin(MlBaseFrontend):
             'description': db_list['title'],
             'info': db_list['description'] or "",
             'subject_prefix': prefix,
-            # TODO: Replace with whitelist of acceptable_aliases
-            'require_explicit_destination': False,
+            'acceptable_aliases': acceptable_aliases,
+            'require_explicit_destination': True,
             'max_message_size': db_list['maxsize'] or 0,
             'max_num_recipients': 0,
             'default_member_action': POLICY_MEMBER_CONVERT[
@@ -154,6 +160,10 @@ The original message as received by Mailman is attached.
             desired_header_matches = {
                 ('x-spam-flag', 'YES', 'discard'),
             }
+
+        # Special case admin mailinglist due to existence of many aliases
+        if db_list['address'] == 'admin@lists.cde-ev.de':
+            desired_settings['require_explicit_destination'] = False
 
         # Second, update values to mailman if changed
         changed = False
