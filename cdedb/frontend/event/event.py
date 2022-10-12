@@ -714,6 +714,11 @@ class EventEventMixin(EventBaseFrontend):
         data = check(rs, vtypes.EventTrackGroup, data)
         if rs.has_validation_errors():
             return self.add_track_group_form(rs, event_id)
+        if constraint_type.is_sync():
+            if self.eventproxy.do_course_choices_exist(rs, track_ids):
+                rs.notify(
+                    "error", n_("Cannot create CCS group if course choices exist."))
+                return self.add_track_group_form(rs, event_id)
         code = self.eventproxy.set_track_groups(rs, event_id, {-1: data})
         rs.notify_return_code(code)
         return self.redirect(rs, "event/group_summary")
