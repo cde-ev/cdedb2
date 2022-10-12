@@ -817,14 +817,14 @@ class EventLowLevelBackend(AbstractBackend):
 
     @access("event")
     def do_course_choices_exist(self, rs: RequestState, track_ids: Collection[int]
-                                 ) -> bool:
+                                ) -> bool:
         """Determine whether any course choices exist for the given tracks."""
         track_ids = affirm_set(vtypes.ID, track_ids)
 
         query = """
-            SELECT ep.event_id
+            SELECT DISTINCT ep.event_id
             FROM event.event_parts ep
-                LEFT JOIN course_tracks ct on ep.id = ct.part_id
+                LEFT JOIN event.course_tracks ct on ep.id = ct.part_id
             WHERE ct.id = ANY(%s)
         """
         params = (track_ids,)
@@ -832,7 +832,7 @@ class EventLowLevelBackend(AbstractBackend):
         if len(data) != 1:
             raise ValueError(n_("Only tracks from one event allowed."))
         event_id = unwrap(unwrap(data))
-        if not self.is_orga(rs, event_id=event_id) or self.is_admin(rs):
+        if not (self.is_orga(rs, event_id=event_id) or self.is_admin(rs)):
             raise PrivilegeError(n_("Not privileged."))
 
         query = "SELECT * FROM event.course_choices WHERE track_id = ANY(%s)"
