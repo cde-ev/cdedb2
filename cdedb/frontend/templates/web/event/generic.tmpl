@@ -10,7 +10,7 @@
 #}
 {% macro select_course_choice(track, all_courses, course_choices, show_track_title, track_group=none, change_registration=False) %}
 
-    <div id="course_choice_container-{{ track['id'] if not track_group else "group-{}".format(track_group['id'])  }}"
+    <div id="course-choice-container-{{ track['id'] if not track_group else "group-{}".format(track_group['id'])  }}"
          class="course_choice_container" data-part="{{ track['part_id'] if not track_group else "" }}">
         <h4>
             {% trans %}Course Choices{% endtrans %}

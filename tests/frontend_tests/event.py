@@ -5554,3 +5554,169 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertEqual(
             f['qop_part4.status,part1001.status,part1002.status'].value,
             str(QueryOperators.equal.value))
+
+    @as_users("garcia")
+    def test_track_groups(self) -> None:
+        self.traverse("Veranstaltungen", "Große Testakademie 2222",
+                      "Veranstaltungsteile", "Gruppen", "Kursschienengruppe hinzufügen")
+        self.assertTitle("Kursschienengruppe hinzufügen (Große Testakademie 2222)")
+        f = self.response.forms['configuretrackgroupform']
+
+        # Try to submit some invalid forms:
+        f['title'] = ""
+        f['shortname'] = ""
+        self.submit(f, check_notification=False)
+        self.assertValidationError('title', "Darf nicht leer sein.")
+        self.assertValidationError('shortname', "Darf nicht leer sein.")
+        f['title'] = f['shortname'] = "abc"
+        f['track_ids'] = [1, 2]
+        self.submit(f, check_notification=False)
+        self.assertPresence("Kursschienensynchronisierung fehlgeschlagen,"
+                            " weil bereits Kurswahlen existieren.",
+                            div="notifications")
+
+        # Now a valid one.
+        f['title'] = "Gruppe ohne Kursschiene"
+        f['shortname'] = "Sehr kleine Gruppe"
+        f['sortkey'] = -10
+        f['constraint_type'] = const.CourseTrackGroupType.course_choice_sync
+        f['track_ids'] = []
+        self.submit(f, check_notification=False)
+        f = self.response.forms['configuretrackgroupform']
+        f['_magic_ignore_warnings'] = True
+        self.submit(f)
+
+        self.submit(f, check_notification=False)
+        self.assertValidationError('title', "Es existiert bereits eine"
+                                            " Kursschienengruppe mit diesem Namen.")
+        self.assertValidationError('shortname', "Es existiert bereits eine"
+                                                " Kursschienengruppe mit diesem Namen.")
+        self.traverse("Gruppen", {'href': "/event/event/1/track/group/1001/change"})
+        self.assertTitle("Kursschienengruppe bearbeiten (Große Testakademie 2222)")
+        f = self.response.forms['configuretrackgroupform']
+        f['title'] = "Keine Kursschiene in dieser Gruppe"
+        f['shortname'] = "Kurz"
+        f['notes'] = "Das soll so!"
+        self.submit(f)
+
+        self.assertTitle("Gruppen (Große Testakademie 2222)")
+        self.assertPresence("Keine Kursschiene in dieser Gruppe",
+                            div="track-group-summary")
+        self.assertNonPresence("Sehr kleine Gruppe", div="track-group-summary")
+        f = self.response.forms['deletetrackgroupform1001']
+        self.submit(f, check_notification=False)
+        self.assertValidationError('ack_delete', "Muss markiert sein.")
+        f['ack_delete'] = True
+        self.submit(f)
+        self.assertNonPresence("Keine Kursschiene in dieser Gruppe",
+                               div="track-group-summary")
+
+    @as_users("anton")
+    def test_course_choice_sync(self) -> None:
+        self.traverse("Veranstaltungen", "TripelAkademie", "Anmelden")
+
+        # Register for TripelAkademie and choose some courses.
+        f = self.response.forms['registerform']
+        self.assertPresence("Kurswahlen für Kurs 1 Sync",
+                            div="course-choice-container-group-1")
+        f['course_choice_group1_0'] = 9
+        f['course_choice_group1_1'] = 10
+        f['course_choice_group1_2'] = 12
+        f['course_choice_group1_3'] = ''
+        f['course_choice_group_instructor1'] = 11
+        self.assertPresence("Kurswahlen für Kaub Vorträge",
+                            div="course-choice-container-15")
+        f['course_choice15_0'] = 11
+        f['course_instructor15'] = 12
+        self.assertPresence("Kurswahlen für Kurs 2 morgens Sync",
+                            div="course-choice-container-group-3")
+        f['course_choice_group3_0'] = 12
+        f['course_choice_group3_1'] = 11
+        f['course_choice_group3_2'] = 9
+        f['course_choice_group3_3'] = ''
+        f['course_choice_group3_4'] = ''
+        f['course_choice_group_instructor3'] = ''
+        self.assertPresence("Kurswahlen für Kurs 2 nachmittags Sync",
+                            div="course-choice-container-group-2")
+        f['course_choice_group2_0'] = 11
+        f['course_choice_group2_1'] = ''
+        f['course_choice_group2_2'] = ''
+        f['course_choice_group_instructor2'] = 9
+        self.submit(f)
+
+        # Check that choices are correctly displayed.
+        self.assertTitle("Deine Anmeldung (TripelAkademie)")
+        self.assertPresence("Kursleiter von 2. All-Embracement",
+                            div="course-choices-group-1")
+        self.assertPresence("1. Wahl 4. Akrobatik für Anfangende",
+                            div="course-choices-group-1")
+        self.assertPresence("2. Wahl 1. Das Niebelungenlied",
+                            div="course-choices-group-1")
+        self.assertPresence("3. Wahl 3. Nostalgie",
+                            div="course-choices-group-1")
+
+        self.assertPresence("Kursleiter von 3. Nostalgie",
+                            div="course-choices-15")
+        self.assertPresence("1. Wahl 2. All-Embracement",
+                            div="course-choices-15")
+
+        self.assertPresence("1. Wahl 3. Nostalgie",
+                            div="course-choices-group-3")
+        self.assertPresence("2. Wahl 2. All-Embracement",
+                            div="course-choices-group-3")
+        self.assertPresence("3. Wahl 4. Akrobatik für Anfangende",
+                            div="course-choices-group-3")
+        self.assertPresence("4. Wahl —",
+                            div="course-choices-group-3")
+        self.assertPresence("5. Wahl —",
+                            div="course-choices-group-3")
+
+        self.assertPresence("Kursleiter von 4. Akrobatik für Anfangende",
+                            div="course-choices-group-2")
+        self.assertPresence("1. Wahl 2. All-Embracement",
+                            div="course-choices-group-2")
+        self.assertPresence("2. Wahl —",
+                            div="course-choices-group-2")
+        self.assertPresence("3. Wahl —",
+                            div="course-choices-group-2")
+
+        # Check that non-offered courses are illegal to choose.
+        self.traverse("Ändern")
+        f = self.response.forms['amendregistrationform']
+        f['course_choice_group1_3'] = 9
+        f['course_instructor15'] = 11
+        f['course_choice_group3_3'].force_value(10)
+        f['course_choice_group2_0'] = ''
+        self.submit(f, check_notification=False)
+        self.assertValidationError(
+            'course_choice_group1_3',
+            "Du kannst diesen Kurs nicht als 1. und 4. Wahl wählen.")
+        self.assertValidationError(
+            'course_choice15_0',
+            "Bitte wähle nicht deinen eigenen Kurs")
+        self.assertValidationError(
+            'course_choice_group3_3',
+            "Unzulässige Kurswahl")
+        self.assertValidationError(
+            'course_choice_group2_0',
+            "Du musst mindestens 1 Kurse wählen.")
+
+        # Check that choices are correctly synced for each track group.
+        registration = self.event.get_registration(self.key, 1001)
+        event = self.event.get_event(self.key, 4)
+        for tg in event['track_groups'].values():
+            choices_set = set()
+            for track_id in tg['track_ids']:
+                choices_set.add(tuple(registration['tracks'][track_id]['choices']))
+            self.assertEqual(len(choices_set), 1)
+
+        # Check that changing one track propagates to others in the group.
+        self.traverse("Veranstaltungsteile", {'href': "/event/event/4/part/8/change"})
+        f = self.response.forms['changepartform']
+        f['track_num_choices_8'] = 10
+        f['track_min_choices_8'] = 9
+        self.submit(f)
+        event = self.event.get_event(self.key, 4)
+        for track_id in unwrap(event['tracks'][8]['track_groups'])['track_ids']:
+            self.assertEqual(event['tracks'][track_id]['num_choices'], 10)
+            self.assertEqual(event['tracks'][track_id]['min_choices'], 9)
