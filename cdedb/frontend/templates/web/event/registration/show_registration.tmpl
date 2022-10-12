@@ -213,7 +213,7 @@
                 {% for cco in batch %}
                     <div class="col-md-6">
                         {% if choice_objects|length > 1 %}
-                            <h5>{{ cco['title'] }}</h5>
+                            <h5>{{ cco['shortname'] }}</h5>
                         {% endif %}
                         {% set track = reference_tracks[cco['id']] if 'constraint_type' in cco else cco %}
                         {% set reg_track = ambience['registration']['tracks'][track['id']] %}

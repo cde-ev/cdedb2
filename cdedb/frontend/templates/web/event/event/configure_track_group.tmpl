@@ -3,7 +3,7 @@
 {% import "web/util.tmpl" as util with context %}
 
 {% block title %}
-    {% if ambience['part_group'] %}
+    {% if ambience['track_group'] %}
         {% trans event_title=ambience['event']['title'] %}
             Change track group ({{ event_title }})
         {% endtrans %}

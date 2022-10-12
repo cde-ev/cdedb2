@@ -439,7 +439,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                                 {'min_choices': track['min_choices']}))
                     for i in range(track['min_choices'])
                     if choice_getter(track_id, i) is None)
-                rs.extend_validation_errors(
+                rs.add_validation_errors(
                     (choice_key(track_id, i),
                      ValueError(n_("Invalid choice.")))
                     for i in range(track['num_choices'])
@@ -571,10 +571,10 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs, event_id, persona_id=rs.user.persona_id)
         course_choice_parameters = self.get_course_choice_params(rs, event_id)
 
-        stat = lambda track: registration['parts'][track['part_id']]['status']
+        status = lambda track: registration['parts'][track['part_id']]['status']
         involved_tracks = {
             track_id for track_id, track in rs.ambience['event']['tracks'].items()
-            if const.RegistrationPartStati(stat(track)).is_involved()}
+            if const.RegistrationPartStati(status(track)).is_involved()}
 
         return self.render(rs, "registration/registration_status", {
             'registration': registration, 'age': age,

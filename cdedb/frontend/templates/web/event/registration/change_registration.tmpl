@@ -82,7 +82,7 @@
 
         {% for cco in choice_objects %}
             {% if 'constraint_type' in cco %}
-                {% if cco['track_ids'] %}
+                {% if cco['track_ids'] and reference_tracks[cco['id']]['num_choices'] %}
                     {{ generic_event.select_course_choice(
                             reference_tracks[cco['id']], courses, courses_per_track_group[cco['id']],
                             show_track_title=True, track_group=cco, change_registration=True) }}

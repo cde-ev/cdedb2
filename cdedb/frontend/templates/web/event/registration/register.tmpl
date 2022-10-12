@@ -135,15 +135,15 @@
         <h3 class="sr-only">{% trans %}Course Choices{% endtrans %}</h3>
         {% for cco in choice_objects %}
             {% if 'constraint_type' in cco %}
-                {% if cco['track_ids'] %}
+                {% if cco['track_ids'] and reference_tracks[cco['id']]['num_choices'] %}
                     {{ generic_event.select_course_choice(
                             reference_tracks[cco['id']], courses, courses_per_track_group[cco['id']],
-                            show_track_title=True, track_group=cco) }}
+                            show_track_title=choice_objects|length > 1, track_group=cco) }}
                 {% endif %}
             {% elif cco['num_choices'] %}
                 {{ generic_event.select_course_choice(
                         cco, courses, courses_per_track[cco['id']],
-                        show_track_title=ambience['event']['tracks']|length > 1) }}
+                        show_track_title=choice_objects|length > 1) }}
             {% endif %}
         {% endfor %}
 
