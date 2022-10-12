@@ -829,6 +829,8 @@ class EventLowLevelBackend(AbstractBackend):
         """
         params = (track_ids,)
         data = self.query_all(rs, query, params)
+        if not data:
+            return False
         if len(data) != 1:
             raise ValueError(n_("Only tracks from one event allowed."))
         event_id = unwrap(unwrap(data))
