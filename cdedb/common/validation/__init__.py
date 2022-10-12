@@ -2436,7 +2436,7 @@ def _event_part_group_setter(
     val = _mapping(val, argname)
 
     new_part_groups = _optional_object_mapping_helper(
-        val, EventPartGroup, argname, creation_only=False)
+        val, EventPartGroup, argname, creation_only=False, **kwargs)
 
     return EventPartGroupSetter(dict(new_part_groups))
 
@@ -2517,7 +2517,7 @@ def _event_track_group_setter(
     val = _mapping(val, argname)
 
     new_track_groups = _optional_object_mapping_helper(
-        val, EventTrackGroup, argname, creation_only=False)
+        val, EventTrackGroup, argname, creation_only=False, **kwargs)
 
     return EventTrackGroupSetter(dict(new_track_groups))
 
