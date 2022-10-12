@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """Module containing all tests for the CdEDB-LDAP interface."""
 
+import ssl
 from typing import Dict, List, Set, Union
 
 import ldap3
 from ldap3 import ALL_ATTRIBUTES
+from ldap3.core.tls import Tls
 from ldap3.utils.config import _ATTRIBUTES_EXCLUDED_FROM_CHECK
 
 from tests.common import USER_DICT, BasicTest
@@ -43,8 +45,10 @@ class TestLDAP(BasicTest):
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
+        tls = Tls(validate=ssl.CERT_REQUIRED, ca_certs_file=cls.conf["LDAP_PEM_PATH"])
         cls.server = ldap3.Server(
-            cls.conf['LDAP_HOST'], port=cls.conf['LDAP_PORT'], get_info=ldap3.ALL)
+            cls.conf['LDAP_HOST'], port=cls.conf['LDAP_PORT'], get_info=ldap3.ALL,
+            use_ssl=True, tls=tls)
 
     def single_result_search(
         self, search_filter: str, raw_expectation: Dict[str, List[str]], *,

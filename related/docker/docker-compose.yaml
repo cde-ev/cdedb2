@@ -22,6 +22,7 @@ services:
       - files:/var/lib/cdedb # attachments etc
       - config:/etc/cdedb # config files
       - cert:/etc/ssl/apache2 # dynamic self-signed certificate
+      - ldap:/etc/ssl/ldap # dynamic self-signed ldap certificate
       - ../..:/cdedb2:z # the :z is for SELinux (see #2053)
     ports:
       - 127.0.0.1:5000:5000 # werkzeug server including interactive debugger
@@ -36,9 +37,10 @@ services:
       context: ../..
       dockerfile: ./related/docker/Dockerfile-ldaptor
     volumes:
+      - ldap:/etc/ssl/ldap # dynamic self-signed ldap certificate
       - ../..:/cdedb2:z # the :z is for SELinux (see #2053)
     ports:
-      - 127.0.0.1:8389:389
+      - 127.0.0.1:8636:636
     environment:
         CDEDB_CONFIGPATH: /etc/cdedb/config.py # DEFAULT_CONFIGPATH from cdedb.config
     depends_on:

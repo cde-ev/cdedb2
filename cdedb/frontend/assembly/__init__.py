@@ -16,7 +16,7 @@ import zipapp
 from typing import Any, Collection, Dict, List, Optional, Set, Tuple, Union
 
 import werkzeug.exceptions
-from schulze_condorcet import schulze_evaluate_detailed
+from schulze_condorcet import pairwise_preference, schulze_evaluate_detailed
 from schulze_condorcet.types import Candidate, DetailedResultLevel, VoteString
 from schulze_condorcet.util import (
     as_vote_string, as_vote_strings, as_vote_tuple, as_vote_tuples,
@@ -28,8 +28,8 @@ import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
 from cdedb.backend.assembly import GroupedBallots
 from cdedb.common import (
-    ASSEMBLY_BAR_SHORTNAME, CdEDBObject, DefaultReturnCode, RequestState, get_hash,
-    merge_dicts, now, unwrap,
+    ASSEMBLY_BAR_SHORTNAME, CdEDBObject, DefaultReturnCode, RequestState,
+    abbreviation_mapper, get_hash, merge_dicts, now, unwrap,
 )
 from cdedb.common.fields import LOG_FIELDS_COMMON
 from cdedb.common.n_ import n_
@@ -50,6 +50,8 @@ from cdedb.frontend.common import (
 #: Magic value to signal abstention during _classical_ voting.
 #: This can not occur as a shortname since it contains forbidden characters.
 MAGIC_ABSTAIN = Candidate("special: abstain")
+
+ASSEMBLY_BAR_ABBREVIATION = "#"
 
 
 class AssemblyFrontend(AbstractUserFrontend):
@@ -1105,17 +1107,30 @@ class AssemblyFrontend(AbstractUserFrontend):
         # map the candidate shortnames to their titles
         candidates = {candidate['shortname']: candidate['title']
                       for candidate in ballot['candidates'].values()}
+        abbreviations = abbreviation_mapper(xsorted(candidates.keys()))
         if ballot['use_bar']:
             if ballot['votes']:
                 candidates[ASSEMBLY_BAR_SHORTNAME] = rs.gettext(
                     "Against all Candidates")
             else:
                 candidates[ASSEMBLY_BAR_SHORTNAME] = rs.gettext("Rejection limit")
+        # use special symbol for bar abbreviation
+        if ballot['use_bar']:
+            abbreviations[ASSEMBLY_BAR_SHORTNAME] = ASSEMBLY_BAR_ABBREVIATION
 
         # all vote string submitted in this ballot
         votes = [vote["vote"] for vote in result["votes"]]
         # calculate the occurrence of each vote
         vote_counts = self.count_equal_votes(votes, classical=bool(ballot['votes']))
+
+        all_candidates = [Candidate(c) for c in candidates]
+        if ballot["votes"]:
+            all_candidates.append(Candidate(ASSEMBLY_BAR_SHORTNAME))
+        # the pairwise preference of all candidates
+        # Schulze_condorcet checks if all votes contain exactly the given candidates.
+        # Since the pairwise preference does not change if we ignore some candidates
+        # afterwards, we simply add the _bar_ here.
+        pairwise_pref = pairwise_preference(votes, all_candidates)
 
         # calculate the hash of the result file
         result_bytes = self.assemblyproxy.get_ballot_result(rs, ballot['id'])
@@ -1142,7 +1157,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             'BALLOT_TALLY_ADDRESS': self.conf["BALLOT_TALLY_ADDRESS"],
             'BALLOT_TALLY_MAILINGLIST_URL': self.conf["BALLOT_TALLY_MAILINGLIST_URL"],
             'prev_ballot': prev_ballot, 'next_ballot': next_ballot,
-            'candidates': candidates,
+            'candidates': candidates, 'abbreviations': abbreviations,
+            'pairwise_preference': pairwise_pref,
         })
 
     @staticmethod

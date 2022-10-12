@@ -14,21 +14,24 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     Twisted==22.4.0 \
     pytz==2022.1
 
-COPY ./related/auto-build/files/stage3 /tmp/autobuild/
+COPY ./related/docker/ldaptor-entrypoint.sh ./related/auto-build/files/stage3 /tmp/autobuild/
 
 RUN install -D /tmp/autobuild/localconfig.py /etc/cdedb/config.py \
     && touch /etc/cdedb/public-secrets.py \
     && touch /CONTAINER \
+    \
+    && cp /tmp/autobuild/ldaptor-entrypoint.sh /ldaptor-entrypoint.sh \
     \
     && rm -rf /tmp/autobuild
 
 # make config persistent
 VOLUME /etc/cdedb
 
-EXPOSE 389
+EXPOSE 636
 
 # mount the code here
 WORKDIR /cdedb2
 
 ENV CDEDB_CONFIGPATH /etc/cdedb/config.py
+ENTRYPOINT ["/ldaptor-entrypoint.sh"]
 CMD ["python3", "-m", "cdedb.ldap.main"]
