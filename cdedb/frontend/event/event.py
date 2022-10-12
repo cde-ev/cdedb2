@@ -756,8 +756,12 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    def delete_track_group(self, rs: RequestState, event_id: int,
-                           track_group_id: int) -> Response:
+    @REQUESTdata("ack_delete")
+    def delete_track_group(self, rs: RequestState, event_id: int, track_group_id: int,
+                           ack_delete: bool) -> Response:
+        if not ack_delete:
+            rs.append_validation_error(
+                ("ack_delete", ValueError(n_("Must be checked."))))
         if rs.has_validation_errors():
             return self.group_summary(rs, event_id)  # pragma: no cover
         code = self.eventproxy.set_track_groups(rs, event_id, {track_group_id: None})

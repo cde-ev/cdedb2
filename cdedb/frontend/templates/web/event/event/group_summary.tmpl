@@ -142,7 +142,12 @@
                             {{ util.input_submit(
                                 label=util.make_icon("trash-alt"), aclass="btn btn-sm btn-danger", icon=None,
                                 title=gettext("Delete track group %(shortname)s")|format(shortname=track_group['shortname'])) }}
+                            {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
                         </form>
+                        <script nonce="{{ csp_nonce }}">
+                            $('#deletetrackgroupform{{ track_group_id }}').cdedbProtectAction("{{ gettext("The track group will be deleted. You may not be able to recreate it if registrations already exist.") }}");
+                            $('#deletetrackgroupform{{ track_group_id }}').find('[name="ack_delete"]').prop('checked', true).parent().hide();
+                        </script>
                     </td>
                 </tr>
             {% endfor %}
