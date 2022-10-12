@@ -27,7 +27,7 @@
             {{ util.href(cdedblink('event/add_part_form'), gettext("Add Part"),
                                    icon='plus', aclass='btn btn-success btn-sm') }}
         {% endif %}
-        {{ util.href(cdedblink('event/part_group_summary'), gettext("Part Groups"), icon='bullseye',
+        {{ util.href(cdedblink('event/group_summary'), gettext("Groups_[[part or track]]"), icon='bullseye',
                      aclass='btn btn-info btn-sm') }}
     </div>
     <p class="text-warning">{{ util.make_icon('exclamation-triangle') }}
@@ -44,7 +44,7 @@
                 {{ part['title'] }}
                 <div id="part{{ part_id }}_partgroups" class="pull-right">
                     {% for part_group_id, part_group in part['part_groups']|keydictsort(EntitySorter.event_part_group) %}
-                        {{ util.href(cdedblink("event/part_group_summary") + ("#partgroup_" + part_group_id|string)|s,
+                        {{ util.href(cdedblink("event/group_summary") + ("#partgroup_" + part_group_id|string)|s,
                                      part_group['shortname'], aclass="badge", icon=part_group['constraint_type'].get_icon(),
                                      title=gettext(part_group['constraint_type']|string) + ": " + part_group['title']) }}
                     {% endfor %}
@@ -149,7 +149,7 @@
                                 {% if ambience['event']['track_groups'] %}
                                 <td id="track{{ track_id }}_trackgroups">
                                     {% for track_group_id, track_group in track['track_groups']|keydictsort(EntitySorter.course_choice_object) %}
-                                        {{ util.href(cdedblink("event/part_group_summary") + ("#trackgroup_" + track_group_id|string)|s,
+                                        {{ util.href(cdedblink("event/group_summary") + ("#trackgroup_" + track_group_id|string)|s,
                                                      track_group['shortname'], aclass="badge", icon=track_group['constraint_type'].get_icon(),
                                                      title=gettext(track_group['constraint_type']|string) + ": " + track_group['title']) }}
                                     {% endfor %}

@@ -17272,3 +17272,9 @@ msgstr "Kann aus {} keinen ml_type bestimmen"
 #, python-format
 msgid "%(ml_type)s is not an appropriate type for this mailinglist."
 msgstr "%(ml_type)s ist kein geeigneter Typ für diese Mailingliste."
+
+msgid "Groups_[[part or track]]"
+msgstr "Gruppen"
+
+msgid "Groups_[[part or track]] (%(title)s)"
+msgstr "Gruppen (%(title)s)"

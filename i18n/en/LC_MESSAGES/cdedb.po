@@ -16424,3 +16424,9 @@ msgstr ""
 #, python-format
 msgid "%(ml_type)s is not an appropriate type for this mailinglist."
 msgstr ""
+
+msgid "Groups_[[part or track]]"
+msgstr "Groups"
+
+msgid "Groups_[[part or track]] (%(title)s)"
+msgstr "Groups (%(title)s)"

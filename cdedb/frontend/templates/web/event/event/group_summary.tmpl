@@ -8,18 +8,18 @@
 {% set jshint = 'weak' %}
 {% block title %}
     {% trans title=ambience['event']['title'] %}
-        Part Groups ({{ title }})
+        Groups_[[part or track]] ({{ title }})
     {% endtrans %}
 {% endblock %}
 {% block heading %}
-    {{ util.context_heading(gettext("Configure Part Groups"), ambience['event']['title'],
+    {{ util.context_heading(gettext("Groups_[[part or track]]"), ambience['event']['title'],
                             'chalkboard-teacher', gettext("Event"), doclink='Handbuch_Orga_Veranstaltungsteilgruppen') }}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
     {{ util.breadcrumb_link(cdedblink("event/part_summary"), gettext("Event Parts")) }}
-    {{ util.breadcrumb_link(cdedblink("event/part_group_summary"), gettext("Part Groups"), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("event/group_summary"), gettext("Groups"), active=True) }}
 {% endblock %}
 
 {% block content %}

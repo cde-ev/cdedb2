@@ -608,8 +608,8 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard()
-    def part_group_summary(self, rs: RequestState, event_id: int) -> Response:
-        return self.render(rs, "event/part_group_summary")
+    def group_summary(self, rs: RequestState, event_id: int) -> Response:
+        return self.render(rs, "event/group_summary")
 
     @access("event")
     @event_guard()
@@ -642,7 +642,7 @@ class EventEventMixin(EventBaseFrontend):
             return self.add_part_group_form(rs, event_id)
         code = self.eventproxy.set_part_groups(rs, event_id, {-1: data})
         rs.notify_return_code(code)
-        return self.redirect(rs, "event/part_group_summary")
+        return self.redirect(rs, "event/group_summary")
 
     @access("event")
     @event_guard()
@@ -672,17 +672,17 @@ class EventEventMixin(EventBaseFrontend):
             return self.change_part_group_form(rs, event_id, part_group_id)
         code = self.eventproxy.set_part_groups(rs, event_id, {part_group_id: data})
         rs.notify_return_code(code)
-        return self.redirect(rs, "event/part_group_summary")
+        return self.redirect(rs, "event/group_summary")
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
     def delete_part_group(self, rs: RequestState, event_id: int,
                           part_group_id: int) -> Response:
         if rs.has_validation_errors():
-            return self.part_group_summary(rs, event_id)  # pragma: no cover
+            return self.group_summary(rs, event_id)  # pragma: no cover
         code = self.eventproxy.set_part_groups(rs, event_id, {part_group_id: None})
         rs.notify_return_code(code)
-        return self.redirect(rs, "event/part_group_summary")
+        return self.redirect(rs, "event/group_summary")
 
     @access("event")
     @event_guard()
@@ -716,7 +716,7 @@ class EventEventMixin(EventBaseFrontend):
             return self.add_track_group_form(rs, event_id)
         code = self.eventproxy.set_track_groups(rs, event_id, {-1: data})
         rs.notify_return_code(code)
-        return self.redirect(rs, "event/part_group_summary")
+        return self.redirect(rs, "event/group_summary")
 
     @access("event")
     @event_guard()
@@ -747,17 +747,17 @@ class EventEventMixin(EventBaseFrontend):
             return self.change_track_group_form(rs, event_id, track_group_id)
         code = self.eventproxy.set_track_groups(rs, event_id, {track_group_id: data})
         rs.notify_return_code(code)
-        return self.redirect(rs, "event/part_group_summary")
+        return self.redirect(rs, "event/group_summary")
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
     def delete_track_group(self, rs: RequestState, event_id: int,
                            track_group_id: int) -> Response:
         if rs.has_validation_errors():
-            return self.part_group_summary(rs, event_id)  # pragma: no cover
+            return self.group_summary(rs, event_id)  # pragma: no cover
         code = self.eventproxy.set_track_groups(rs, event_id, {track_group_id: None})
         rs.notify_return_code(code)
-        return self.redirect(rs, "event/part_group_summary")
+        return self.redirect(rs, "event/group_summary")
 
     @staticmethod
     def _get_mailinglist_setter(event: CdEDBObject, orgalist: bool = False
