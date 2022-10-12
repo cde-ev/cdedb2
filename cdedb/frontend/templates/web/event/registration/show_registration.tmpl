@@ -215,7 +215,7 @@
                         {% if choice_objects|length > 1 %}
                             <h5>{{ cco['title'] }}</h5>
                         {% endif %}
-                        {% set track = reference_track[cco['id']] if 'constraint_type' in cco else cco %}
+                        {% set track = reference_tracks[cco['id']] if 'constraint_type' in cco else cco %}
                         {% set reg_track = ambience['registration']['tracks'][track['id']] %}
 
                         <dl class="dl-horizontal">

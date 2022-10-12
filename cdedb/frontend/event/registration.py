@@ -11,7 +11,7 @@ import decimal
 import io
 import re
 from collections import OrderedDict
-from typing import Collection, Dict, Optional, Tuple
+from typing import Collection, Dict, Optional, Set, Tuple
 
 import segno.helpers
 import werkzeug.exceptions
@@ -261,8 +261,8 @@ class EventRegistrationMixin(EventBaseFrontend):
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         courses_per_track = self.eventproxy.get_course_segments_per_track(
             rs, event_id, event['is_course_state_visible'])
-        courses_per_track_group: dict[int, set[int]] = {}
-        reference_track = {}
+        courses_per_track_group: Dict[int, Set[int]] = {}
+        reference_tracks = {}
         simple_tracks = set(tracks)
         track_group_map = {track_id: None for track_id in tracks}
         sync_track_groups = {tg_id: tg for tg_id, tg in track_groups.items()
@@ -274,7 +274,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                 {track_id: track_group_id for track_id in track_group['track_ids']})
             for track_id in track_group['track_ids']:
                 courses_per_track_group[track_group_id] = courses_per_track[track_id]
-                reference_track[track_group_id] = tracks[track_id]
+                reference_tracks[track_group_id] = tracks[track_id]
                 break
         choice_objects = [t for t_id, t in tracks.items() if t_id in simple_tracks] + [
             tg for tg in track_groups.values() if tg['constraint_type'].is_sync()]
@@ -282,7 +282,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         return {
             'courses': courses, 'courses_per_track': courses_per_track,
             'courses_per_track_group': courses_per_track_group,
-            'reference_track': reference_track, 'simple_tracks': simple_tracks,
+            'reference_tracks': reference_tracks, 'simple_tracks': simple_tracks,
             'choice_objects': choice_objects, 'sync_track_groups': sync_track_groups,
             'track_group_map': track_group_map,
         }
@@ -383,7 +383,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         simple_instructors = request_extractor(rs, simple_instructor_params)
 
         # Synced course choices.
-        ref_tracks = course_choice_parameters['reference_track']
+        ref_tracks = course_choice_parameters['reference_tracks']
         track_groups = event['track_groups']
         synced_choice_params: vtypes.TypeMapping = {
             f"course_choice_group{group_id}_{i}": Optional[vtypes.ID]  # type: ignore[misc]
@@ -860,7 +860,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         raw_fields = request_extractor(rs, filter_parameters(field_params))
 
         # Synced course choices.
-        ref_tracks = course_choice_parameters['reference_track']
+        ref_tracks = course_choice_parameters['reference_tracks']
         track_groups = event['track_groups']
         synced_choice_params: vtypes.TypeMapping = {
             f"course_choice_group{group_id}_{i}": Optional[vtypes.ID]  # type: ignore[misc]

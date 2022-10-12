@@ -39,7 +39,7 @@
             {% if 'constraint_type' in cco %}
                 {% if cco['track_ids'] and involved_tracks.intersection(cco['track_ids']) %}
                     {{ generic_event.select_course_choice(
-                            reference_track[cco['id']], courses, courses_per_track_group[cco['id']],
+                            reference_tracks[cco['id']], courses, courses_per_track_group[cco['id']],
                             show_track_title=True, track_group=cco) }}
                 {% endif %}
             {% elif cco['num_choices'] and cco['id'] in involved_tracks %}

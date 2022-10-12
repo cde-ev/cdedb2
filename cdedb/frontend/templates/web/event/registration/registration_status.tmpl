@@ -170,7 +170,7 @@
     </dl>
 
     {% for cco in choice_objects %}
-        {% set track = reference_track[cco['id']] if 'constraint_type' in cco else cco %}
+        {% set track = reference_tracks[cco['id']] if 'constraint_type' in cco else cco %}
         {% set reg_track = registration['tracks'][track['id']] %}
         {% if 'track_ids' in cco and cco['track_ids'].intersection(involved_tracks) or cco['id'] in involved_tracks %}
             <h4>
