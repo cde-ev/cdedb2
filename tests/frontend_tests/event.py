@@ -3324,7 +3324,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         event_id = 1
         self.traverse(
             "Veranstaltungen", "Große Testakademie 2222", "Veranstaltungsteile",
-            "Veranstaltungsteilgruppe", "Veranstaltungsteilgruppe hinzufügen")
+            "Gruppen", "Veranstaltungsteilgruppe hinzufügen")
         f = self.response.forms['configurepartgroupform']
         f['title'] = f['shortname'] = "3/3"
         f['constraint_type'] = const.EventPartGroupType.Statistic
@@ -5163,8 +5163,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         offset = self.event.retrieve_log(self.key, event_id=event_id)[0]
 
         self.traverse("Veranstaltungen", event['title'], "Veranstaltungsteile",
-                      "Veranstaltungsteilgruppen")
-        self.assertTitle("Veranstaltungsteilgruppen (TripelAkademie)")
+                      "Gruppen")
+        self.assertTitle("Gruppen (TripelAkademie)")
 
         # Check summary display.
         for pg_id, pg in event['part_groups'].items():
@@ -5215,7 +5215,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         # self.assertValidationError('part_ids', "Unbekannter Veranstaltungsteil")
 
         new_id = max(self.event.get_event(self.key, event_id)['part_groups'])
-        self.traverse("Veranstaltungsteilgruppen")
+        self.traverse("Gruppen")
         self.assertPresence(new_title, div=f"partgroup_{new_id}")
         self.assertPresence(new_shortname, div=f"partgroup_{new_id}")
 
@@ -5231,7 +5231,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                     self.assertNonPresence(pg['shortname'], div=div)
 
         # Change the new part group.
-        self.traverse("Veranstaltungsteilgruppen",
+        self.traverse("Gruppen",
                       {'linkid': f'partgroup{new_id}_change'})
         f = self.response.forms['configurepartgroupform']
 
@@ -5269,7 +5269,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence(new_shortname[::-1], div="participant-stats")
 
         # Delete the new part group.
-        self.traverse("Veranstaltungsteile", "Veranstaltungsteilgruppen")
+        self.traverse("Veranstaltungsteile", "Gruppen")
         f = self.response.forms[f'deletepartgroupform{new_id}']
         self.submit(f)
         log_expectation.append({
@@ -5541,7 +5541,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.submit(f)
 
         self.traverse(
-            "Veranstaltungsteilgruppen", "Veranstaltungsteilgruppe hinzufügen")
+            "Gruppen", "Veranstaltungsteilgruppe hinzufügen")
         f = self.response.forms['configurepartgroupform']
         f['title'] = "All"
         f['shortname'] = "all"
