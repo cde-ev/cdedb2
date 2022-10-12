@@ -249,6 +249,10 @@ class EventRegistrationMixin(EventBaseFrontend):
                                         csvfields=fields)
 
     def get_course_choice_params(self, rs: RequestState, event_id: int) -> CdEDBObject:
+        """Helper to gather all info needed for course choice forms.
+
+        The return can be unpacked and passed to the template directly.
+        """
         event = rs.ambience['event']
         tracks = event['tracks']
         track_groups = event['track_groups']
