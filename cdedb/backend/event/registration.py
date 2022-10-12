@@ -857,6 +857,9 @@ class EventRegistrationBackend(EventBaseBackend):
             self.event_log(
                 rs, const.EventLogCodes.registration_changed, event_id,
                 persona_id=persona_id, change_note=change_note)
+
+            self._track_groups_sanity_check(rs, event_id)
+
         return ret
 
     @access("event")

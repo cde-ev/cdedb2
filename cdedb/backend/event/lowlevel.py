@@ -548,21 +548,7 @@ class EventLowLevelBackend(AbstractBackend):
             for x in mixed_existence_sorter(deleted_parts):
                 ret *= self._delete_event_part(rs, part_id=x, cascade=cascade)
 
-        # Check that all tracks belonging to synced track groups have the same number
-        #  of choices.
-        q = """
-            SELECT tg.id, ct.num_choices, ct.min_choices
-            FROM event.track_groups tg
-            LEFT JOIN event.event_parts ep on tg.event_id = ep.event_id
-            LEFT JOIN event.track_group_tracks tgt on tg.id = tgt.track_group_id
-            LEFT JOIN event.course_tracks ct on ct.id = tgt.track_id
-            WHERE ep.event_id = %s AND tg.constraint_type = %s
-            GROUP BY tg.id, ct.num_choices, ct.min_choices
-        """
-        p = (event_id, const.CourseTrackGroupType.course_choice_sync)
-        track_params = self.query_all(rs, q, p)
-        if len({e['id'] for e in track_params}) != len(track_params):
-            raise ValueError(n_("Synced tracks must have same number of choices."))
+        self._track_groups_sanity_check(rs, event_id)
 
         return ret
 
@@ -743,8 +729,6 @@ class EventLowLevelBackend(AbstractBackend):
         ret = 1
         self.affirm_atomized_context(rs)
 
-        self._track_group_tracks_sanity_check(constraint_type, tracks, track_ids)
-
         current_track_ids = {e['track_id'] for e in self.sql_select(
             rs, "event.track_group_tracks", ("track_id",), (track_group_id,),
             entity_key="track_group_id")}
@@ -768,18 +752,68 @@ class EventLowLevelBackend(AbstractBackend):
             ret *= self.sql_insert_many(rs, "event.track_group_tracks", inserter)
         return ret
 
-    @staticmethod
-    def _track_group_tracks_sanity_check(constraint_type: const.CourseTrackGroupType,
-                                         tracks: CdEDBObjectMap,
-                                         track_ids: Collection[int]) -> None:
-        """For Course Choice Sync, all tracks must have the same number of choices."""
-        if constraint_type.is_sync():
-            track_params = {
-                (tracks[t_id]['num_choices'], tracks[t_id]['min_choices'])
-                for t_id in track_ids
-            }
-            if len(track_params) > 1:
-                raise ValueError(n_("Incompatible tracks."))
+    def _track_groups_sanity_check(self, rs: RequestState, event_id: int) -> None:
+        """Perform checks on the sanity of all track groups."""
+
+        #######################
+        # CCS specific checks #
+        #######################
+
+        # Check that all tracks belonging to CCS groups have the same number of choices.
+        query = """
+            SELECT id
+            FROM (
+                -- Inner SELECT will have one row per different configuration per group.
+                SELECT tg.id, ct.num_choices, ct.min_choices
+                FROM event.track_groups tg
+                    LEFT JOIN event.track_group_tracks tgt on tg.id = tgt.track_group_id
+                    LEFT JOIN event.course_tracks ct on ct.id = tgt.track_id
+                WHERE tg.event_id = %s AND tg.constraint_type = %s
+                GROUP BY tg.id, ct.num_choices, ct.min_choices
+            ) AS tmp
+            GROUP BY id
+            -- Filter for ids occurring multiple times.
+            HAVING COUNT(id) > 1
+        """
+        params = (event_id, const.CourseTrackGroupType.course_choice_sync)
+        if self.query_all(rs, query, params):
+            raise ValueError(n_("Synced tracks must have same number of choices."))
+
+        # Check that no track is linked to more than one CCS group.
+        query = """
+            SELECT track_id
+            FROM event.track_group_tracks tgt
+                JOIN event.track_groups tg ON tg.id = tgt.track_group_id
+            WHERE tg.event_id = %s AND tg.constraint_type = %s
+            GROUP BY tgt.track_id
+            -- Filter for tracks with more than one CCS group.
+            HAVING COUNT(tgt.track_group_id) > 1
+        """
+        params = (event_id, const.CourseTrackGroupType.course_choice_sync)
+        if self.query_all(rs, query, params):
+            raise ValueError(n_("Track synced to more than one ccs track group."))
+
+        # Check that course choices are consistently synced across CCS groups.
+        query = """
+            SELECT track_group_id, registration_id, COUNT(*)
+                FROM (
+                    -- Per reg_track gather ordered choices, eliminating duplicates.
+                    SELECT DISTINCT cc.registration_id, tg.id AS track_group_id,
+                        ARRAY_AGG(cc.course_id ORDER BY cc.rank ASC) AS choices
+                    FROM event.course_choices cc
+                        LEFT JOIN event.track_group_tracks
+                            tgt ON cc.track_id = tgt.track_id
+                        LEFT JOIN event.track_groups tg ON tgt.track_group_id = tg.id
+                    WHERE tg.event_id = %s AND tg.constraint_type = %s
+                    GROUP BY cc.registration_id, cc.track_id, tg.id
+                ) AS tmp
+            GROUP BY registration_id, track_group_id
+            -- Filter for non-unique combinations.
+            HAVING COUNT(*) > 1
+        """
+        params = (event_id, const.CourseTrackGroupType.course_choice_sync)
+        if self.query_all(rs, query, params):
+            raise ValueError(n_("Incompatible course choices present."))
 
     def _delete_event_field_blockers(self, rs: RequestState,
                                      field_id: int) -> DeletionBlockers:

@@ -727,28 +727,6 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return ret
 
-    def _track_groups_sanity_check(self, rs: RequestState, event_id: int) -> None:
-        """Perform checks on the sanity of all track groups."""
-
-        # Check if any track is linked to more than one ccs track group."""
-        q = """SELECT track_id
-            FROM event.track_group_tracks tgt
-            JOIN event.track_groups tg ON tg.id = tgt.track_group_id
-            WHERE tg.constraint_type = %s AND tg.event_id = %s
-            GROUP BY tgt.track_id
-            HAVING COUNT(tgt.track_group_id) > 1
-        """
-        ccs = const.CourseTrackGroupType.course_choice_sync
-        if self.query_all(rs, q, (ccs, event_id)):
-            raise ValueError(n_("Track synced to more than one ccs track group."))
-
-        # Check that no track group has invalid tracks for its constraint.
-        event = self.get_event(rs, event_id)
-        for track_group_id, track_group in event['track_groups'].items():
-            self._track_group_tracks_sanity_check(
-                constraint_type=track_group['constraint_type'],
-                tracks=event['tracks'], track_ids=track_group['track_ids'])
-
     @access("event")
     def check_orga_addition_limit(self, rs: RequestState,
                                   event_id: int) -> bool:
