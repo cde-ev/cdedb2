@@ -164,8 +164,10 @@ class EventRegistrationBackend(EventBaseBackend):
         :param aux: As returned by `get_course_choice_validation_aux`. This is
             dependent on the event and a specific registration.
         """
+        course_id = affirm(vtypes.ID, course_id)
+        track_id = affirm(vtypes.ID, track_id)
         # Either the course is offered in this track.
-        if track_id in (offered_tracks := aux.course_segments[course_id]):
+        if track_id in (offered_tracks := aux.course_segments.get(course_id, set())):
             return True
         # Or the course is offered in a synced track, that we are involved with.
         if aux.synced_tracks[track_id] & aux.involved_tracks & offered_tracks:
