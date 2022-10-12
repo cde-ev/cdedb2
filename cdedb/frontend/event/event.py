@@ -697,7 +697,7 @@ class EventEventMixin(EventBaseFrontend):
                        constraint_type: const.CourseTrackGroupType,
                        track_ids: Collection[int]) -> Response:
         if track_ids and not set(track_ids) <= rs.ambience['event']['tracks'].keys():
-            rs.append_validation_error(("track_ids", ValueError(n_("Unknown part."))))
+            rs.append_validation_error(("track_ids", ValueError(n_("Unknown track."))))
         data = {
             'title': title,
             'shortname': shortname,
