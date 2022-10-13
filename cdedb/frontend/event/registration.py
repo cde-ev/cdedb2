@@ -11,7 +11,7 @@ import decimal
 import io
 import re
 from collections import OrderedDict
-from typing import Collection, Dict, Optional, Tuple
+from typing import Callable, Collection, Dict, Optional, Tuple
 
 import segno.helpers
 import werkzeug.exceptions
@@ -337,6 +337,49 @@ class EventRegistrationMixin(EventBaseFrontend):
             **course_choice_params,
         })
 
+    @staticmethod
+    def process_track_group_choices(rs: RequestState,
+                                    course_choice_parameters: CdEDBObject,
+                                    orga_input: bool,
+                                    filter_params: Callable[
+                                        [vtypes.TypeMapping],
+                                        vtypes.TypeMapping
+                                    ] = None,
+                                    ) -> Tuple[CdEDBObject, CdEDBObject]:
+        event = rs.ambience['event']
+        ref_tracks = course_choice_parameters['reference_tracks']
+        track_groups = event['track_groups']
+        choices = {}
+        synced_choice_params: vtypes.TypeMapping = {
+            f"course_choice_group{group_id}_{i}": Optional[vtypes.ID]  # type: ignore[misc]
+            for group_id in course_choice_parameters['sync_track_groups']
+            for i in range(event['tracks'][ref_tracks[group_id]['id']]['num_choices'])
+        }
+        if filter_params:
+            synced_choice_params = filter_params(synced_choice_params)
+        for key, val in request_extractor(rs, synced_choice_params).items():
+            group_id, x = map(int, key.removeprefix("course_choice_group").split("_"))
+            for track_id in track_groups[group_id]['track_ids']:
+                if orga_input:
+                    choices[f"track{track_id}.course_choice_{x}"] = val
+                else:
+                    choices[f"course_choice{track_id}_{x}"] = val
+        instructors = {}
+        synced_instructor_params: vtypes.TypeMapping = {
+            f"course_choice_group_instructor{group_id}": Optional[vtypes.ID]  # type: ignore[misc]
+            for group_id in course_choice_parameters['sync_track_groups']
+        }
+        if filter_params:
+            synced_instructor_params = filter_params(synced_instructor_params)
+        for key, val in request_extractor(rs, synced_instructor_params).items():
+            group_id = int(key.removeprefix("course_choice_group_instructor"))
+            for track_id in track_groups[group_id]['track_ids']:
+                if orga_input:
+                    instructors[f"course_instructor{track_id}"] = val
+                else:
+                    instructors[f"track{track_id}.course_instructor"] = val
+        return choices, instructors
+
     def process_registration_input(
             self, rs: RequestState, event: CdEDBObject, courses: CdEDBObjectMap,
             reg_questionnaire: Collection[CdEDBObject],
@@ -383,26 +426,10 @@ class EventRegistrationMixin(EventBaseFrontend):
         }
         simple_instructors = request_extractor(rs, simple_instructor_params)
 
-        # Synced course choices.
-        ref_tracks = course_choice_parameters['reference_tracks']
-        track_groups = event['track_groups']
-        synced_choice_params: vtypes.TypeMapping = {
-            f"course_choice_group{group_id}_{i}": Optional[vtypes.ID]  # type: ignore[misc]
-            for group_id in course_choice_parameters['sync_track_groups']
-            for i in range(event['tracks'][ref_tracks[group_id]['id']]['num_choices'])
-        }
-        for key, val in request_extractor(rs, synced_choice_params).items():
-            group_id, x = map(int, key.removeprefix("course_choice_group").split("_"))
-            for track_id in track_groups[group_id]['track_ids']:
-                simple_choices[f"course_choice{track_id}_{x}"] = val
-        synced_instructor_params: vtypes.TypeMapping = {
-            f"course_choice_group_instructor{group_id}": Optional[vtypes.ID]  # type: ignore[misc]
-            for group_id in course_choice_parameters['sync_track_groups']
-        }
-        for key, val in request_extractor(rs, synced_instructor_params).items():
-            group_id = int(key.removeprefix("course_choice_group_instructor"))
-            for track_id in track_groups[group_id]['track_ids']:
-                simple_instructors[f"course_instructor{track_id}"] = val
+        group_choices, group_instructors = self.process_track_group_choices(
+            rs, course_choice_parameters, orga_input=False)
+        simple_choices.update(group_choices)
+        simple_instructors.update(group_instructors)
 
         # Validation.
         if not standard['parts']:
@@ -860,28 +887,11 @@ class EventRegistrationMixin(EventBaseFrontend):
         raw_tracks = request_extractor(rs, filter_parameters(track_params))
         raw_fields = request_extractor(rs, filter_parameters(field_params))
 
-        # Synced course choices.
-        ref_tracks = course_choice_parameters['reference_tracks']
-        track_groups = event['track_groups']
-        synced_choice_params: vtypes.TypeMapping = {
-            f"course_choice_group{group_id}_{i}": Optional[vtypes.ID]  # type: ignore[misc]
-            for group_id in course_choice_parameters['sync_track_groups']
-            for i in range(event['tracks'][ref_tracks[group_id]['id']]['num_choices'])
-        }
-        for key, val in request_extractor(
-                rs, filter_parameters(synced_choice_params)).items():
-            group_id, x = map(int, key.removeprefix("course_choice_group").split("_"))
-            for track_id in track_groups[group_id]['track_ids']:
-                raw_tracks[f"track{track_id}.course_choice_{x}"] = val
-        synced_instructor_params: vtypes.TypeMapping = {
-            f"course_choice_group_instructor{group_id}": Optional[vtypes.ID]  # type: ignore[misc]
-            for group_id in course_choice_parameters['sync_track_groups']
-        }
-        for key, val in request_extractor(
-                rs, filter_parameters(synced_instructor_params)).items():
-            group_id = int(key.removeprefix("course_choice_group_instructor"))
-            for track_id in track_groups[group_id]['track_ids']:
-                raw_tracks[f"track{track_id}.course_instructor"] = val
+        group_choices, group_instructors = self.process_track_group_choices(
+            rs, course_choice_parameters, orga_input=True,
+            filter_params=filter_parameters)
+        raw_tracks.update(group_choices)
+        raw_tracks.update(group_instructors)
 
         # Build `parts`, `tracks` and `fields` dict
         new_parts = {
