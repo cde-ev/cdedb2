@@ -513,7 +513,7 @@ class TestEventBackend(BackendTest):
                             'constraint_type':
                                 const.CourseTrackGroupType.course_choice_sync,
                             'track_ids': {6, 7, 8},
-                            'sortkey': 2,
+                            'sortkey': 1,
                         }
                     },
                 },
