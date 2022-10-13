@@ -30,6 +30,7 @@ from cdedb.common import (
 from cdedb.common.n_ import n_
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation import LASTSCHRIFT_COMMON_FIELDS
+from cdedb.filter import money_filter
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, cdedbid_filter, check_validation as check,
@@ -136,16 +137,29 @@ class CdELastschriftMixin(CdEBaseFrontend):
     def lastschrift_create_form(self, rs: RequestState, persona_id: int = None
                                 ) -> Response:
         """Render form."""
-        return self.render(rs, "lastschrift/lastschrift_create")
+        min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
+        typical_donation = self.conf["TYPICAL_LASTSCHRIFT_DONATION"]
+        persona = self.coreproxy.get_cde_user(rs, persona_id)
+        current_donation = persona["donation"] or None
+        return self.render(rs, "lastschrift/lastschrift_create", {
+            "min_donation": min_donation, "typical_donation": typical_donation,
+            "current_donation": current_donation,
+        })
 
     @access("finance_admin", modi={"POST"})
     @REQUESTdatadict(*LASTSCHRIFT_COMMON_FIELDS)
-    @REQUESTdata('persona_id')
+    @REQUESTdata('persona_id', "donation")
     def lastschrift_create(self, rs: RequestState, persona_id: vtypes.CdedbID,
-                           data: CdEDBObject) -> Response:
+                           data: CdEDBObject, donation: vtypes.PositiveDecimal
+    ) -> Response:
         """Create a new permit."""
         data['persona_id'] = persona_id
         data = check(rs, vtypes.Lastschrift, data, creation=True)
+        min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
+        if donation < min_donation:
+            rs.add_validation_error(("donation", ValueError(
+                n_("Lastschrift donation must be at least %(min)s."),
+                {"min": money_filter(min_donation)})))
         if rs.has_validation_errors():
             return self.lastschrift_create_form(rs, persona_id)
         assert data is not None
@@ -154,22 +168,8 @@ class CdELastschriftMixin(CdEBaseFrontend):
             rs.notify("error", n_("Multiple active permits are disallowed."))
             return self.redirect(rs, "cde/lastschrift_show", {
                 'persona_id': persona_id})
-        new_id = self.cdeproxy.create_lastschrift(rs, data)
+        new_id = self.cdeproxy.create_lastschrift(rs, data, initial_donation=donation)
         rs.notify_return_code(new_id)
-
-        # adjust the amount of donation if necessary
-        user = self.coreproxy.get_cde_user(rs, persona_id)
-        min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
-        typical_donation = self.conf["TYPICAL_LASTSCHRIFT_DONATION"]
-        if user["donation"] == decimal.Decimal(0):
-            update = {"id": persona_id, "donation": typical_donation}
-            code = self.coreproxy.change_persona(rs, update)
-            rs.notify_return_code(code, success=n_("Donation raised to typical value."))
-        elif user["donation"] < min_donation:
-            update = {"id": persona_id, "donation": min_donation}
-            code = self.coreproxy.change_persona(rs, update)
-            rs.notify_return_code(code, success=n_("Donation raised to minimal value."))
-
         return self.redirect(
             rs, "cde/lastschrift_show", {'persona_id': persona_id})
 
@@ -596,12 +596,20 @@ class CdELastschriftMixin(CdEBaseFrontend):
             persona = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
             not_minor = not determine_age_class(
                 persona['birthday'], now().date()).is_minor()
-        return self.render(rs, "lastschrift/lastschrift_subscription_form_fill",
-                           {"persona": persona, "not_minor": not_minor})
+        min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
+        max_donation = self.conf["MAXIMAL_LASTSCHRIFT_DONATION"]
+        typical_donation = self.conf["TYPICAL_LASTSCHRIFT_DONATION"]
+        return self.render(
+            rs, "lastschrift/lastschrift_subscription_form_fill", {
+                "persona": persona, "not_minor": not_minor,
+                "min_donation": min_donation, "max_donation": max_donation,
+                "typical_donation": typical_donation
+            }
+        )
 
     @access("anonymous")
     @REQUESTdata("full_name", "db_id", "username", "not_minor", "address_supplement",
-                 "address", "postal_code", "location", "country", "iban",
+                 "address", "postal_code", "location", "country", "iban", "donation",
                  "account_holder")
     def lastschrift_subscription_form(
             self, rs: RequestState, full_name: Optional[str],
@@ -609,7 +617,8 @@ class CdELastschriftMixin(CdEBaseFrontend):
             not_minor: bool, address_supplement: Optional[str], address: Optional[str],
             postal_code: Optional[vtypes.GermanPostalCode], location: Optional[str],
             country: Optional[str], iban: Optional[vtypes.IBAN],
-            account_holder: Optional[str]) -> Response:
+            account_holder: Optional[str], donation: Optional[vtypes.PositiveDecimal]
+    ) -> Response:
         """Fill the direct debit authorization template with information."""
 
         if rs.has_validation_errors():
@@ -626,7 +635,10 @@ class CdELastschriftMixin(CdEBaseFrontend):
             "location": location or "",
             "country": country or "",
             "iban": iban or "",
+            "donation": float(donation) if donation else None,
             "account_holder": account_holder or "",
+            "min_donation": self.conf["MINIMAL_LASTSCHRIFT_DONATION"],
+            "typical_donation": self.conf["TYPICAL_LASTSCHRIFT_DONATION"],
         }
 
         meta_info = self.coreproxy.get_meta_info(rs)

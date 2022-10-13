@@ -138,10 +138,12 @@ class CdELastschriftBackend(CdEBaseBackend):
         return ret
 
     @access("finance_admin")
-    def create_lastschrift(self, rs: RequestState,
-                           data: CdEDBObject) -> DefaultReturnCode:
+    def create_lastschrift(self, rs: RequestState, data: CdEDBObject,
+                           initial_donation: vtypes.PositiveDecimal
+    ) -> DefaultReturnCode:
         """Make a new direct debit permit."""
         data = affirm(vtypes.Lastschrift, data, creation=True)
+        initial_donation = affirm(vtypes.PositiveDecimal, initial_donation)
         data['submitted_by'] = rs.user.persona_id
         with Atomizer(rs):
             if self.list_lastschrift(rs, persona_ids=(data['persona_id'],),
@@ -150,6 +152,10 @@ class CdELastschriftBackend(CdEBaseBackend):
             new_id = self.sql_insert(rs, "cde.lastschrift", data)
             self.core.finance_log(rs, const.FinanceLogCodes.grant_lastschrift,
                                   data['persona_id'], None, None)
+            # TODO check that persona has cde realm?
+            update = {"id": data["persona_id"], "donation": initial_donation}
+            msg = "Setzen einer initialen Spende nach Lastschrifterstellung."
+            self.core.change_persona(rs, update, change_note=msg)
         return new_id
 
     @access("finance_admin")

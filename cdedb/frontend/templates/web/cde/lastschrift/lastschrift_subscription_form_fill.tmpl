@@ -52,6 +52,9 @@
 
         {% endif %}
         <h4 class="heading-underline">{% trans %}Banking Information{% endtrans %}</h4>
+        {{ util.form_input_text(name="donation", label=gettext("Initial Donation"), type="number",
+                                attributes='min="%(min)s" max="%(max)s" step="0.01"'|s|format(min=min_donation, max=max_donation),
+                                defaultvalue=typical_donation) }}
         {{ util.form_input_text(name="iban", label=gettext("IBAN"), type="iban") }}
         {{ util.form_input_text(name="account_owner", label=gettext("Account holder (if different)")) }}
 
