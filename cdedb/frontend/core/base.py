@@ -23,7 +23,7 @@ from werkzeug import Response
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Realm, RequestState,
+    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Realm, RequestState, User,
     make_persona_name, merge_dicts, now, pairwise, sanitize_filename, unwrap,
 )
 from cdedb.common.exceptions import ArchiveError, PrivilegeError, ValidationWarning
@@ -585,6 +585,9 @@ class CoreBaseFrontend(AbstractFrontend):
         # Cull unwanted data
         if not ('is_cde_realm' in data and data['is_cde_realm']) and 'foto' in data:
             del data['foto']
+        # hide the donation property if no active lastschrift exists, to avoid confusion
+        if "donation" in data and not data.get("has_lastschrift"):
+            del data["donation"]
         # relative admins, core admins and the user himself got "core"
         if "core" not in access_levels:
             masks = ["balance", "decided_search", "trial_member", "bub_search",
@@ -1035,9 +1038,8 @@ class CoreBaseFrontend(AbstractFrontend):
             ret.append(result)
         return self.send_json(rs, {'personas': ret})
 
-    @staticmethod
-    def _changeable_persona_fields(roles: Set[Role], restricted: bool = True
-                                   ) -> Set[str]:
+    def _changeable_persona_fields(self, rs: RequestState, user: User,
+                                   restricted: bool = True) -> Set[str]:
         """Helper to retrieve the appropriate fields for (admin_)change_user.
 
         :param restricted: If True, only return fields the user may change
@@ -1056,8 +1058,13 @@ class CoreBaseFrontend(AbstractFrontend):
             "cde": (set(PERSONA_CDE_FIELDS) - hidden_cde_fields),
         }
         for role, fields in roles_to_fields.items():
-            if role in roles:
+            if role in user.roles:
                 ret |= fields
+
+        # hide the donation property if no active lastschrift exists, to avoid confusion
+        if "donation" in ret and not self.cdeproxy.list_lastschrift(
+            rs, [user.persona_id], active=True):
+            ret.remove("donation")
 
         restricted_fields = {"notes", "birthday", "is_searchable"}
         if restricted:
@@ -1077,7 +1084,7 @@ class CoreBaseFrontend(AbstractFrontend):
             rs.notify("info", n_("Change pending."))
         del data['change_note']
         merge_dicts(rs.values, data)
-        shown_fields = self._changeable_persona_fields(rs.user.roles, restricted=True)
+        shown_fields = self._changeable_persona_fields(rs, rs.user, restricted=True)
         return self.render(rs, "change_user", {
             'username': data['username'],
             'shown_fields': shown_fields,
@@ -1088,7 +1095,7 @@ class CoreBaseFrontend(AbstractFrontend):
     def change_user(self, rs: RequestState, generation: int) -> Response:
         """Change own data set."""
         assert rs.user.persona_id is not None
-        attributes = self._changeable_persona_fields(rs.user.roles, restricted=True)
+        attributes = self._changeable_persona_fields(rs, rs.user, restricted=True)
         data = request_dict_extractor(rs, attributes)
         data['id'] = rs.user.persona_id
         data = check(rs, vtypes.Persona, data, "persona")
@@ -1211,7 +1218,8 @@ class CoreBaseFrontend(AbstractFrontend):
         if data['code'] == const.MemberChangeStati.pending:
             rs.notify("info", n_("Change pending."))
         roles = extract_roles(rs.ambience['persona'], introspection_only=True)
-        shown_fields = self._changeable_persona_fields(roles, restricted=False)
+        user = User(persona_id=persona_id, roles=roles)
+        shown_fields = self._changeable_persona_fields(rs, user, restricted=False)
         return self.render(rs, "admin_change_user", {
             'admin_bits': self.admin_bits(rs),
             'shown_fields': shown_fields,
@@ -1226,7 +1234,8 @@ class CoreBaseFrontend(AbstractFrontend):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
         # Assure we don't accidently change the original.
         roles = extract_roles(rs.ambience['persona'], introspection_only=True)
-        attributes = self._changeable_persona_fields(roles, restricted=False)
+        user = User(persona_id=persona_id, roles=roles)
+        attributes = self._changeable_persona_fields(rs, user, restricted=False)
         data = request_dict_extractor(rs, attributes)
         data['id'] = persona_id
         data = check(rs, vtypes.Persona, data)
