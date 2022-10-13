@@ -880,14 +880,14 @@ class EventRegistrationMixin(EventBaseFrontend):
                 rs, filter_parameters(synced_instructor_params)).items():
             group_id = int(key.removeprefix("course_choice_group_instructor"))
             for track_id in track_groups[group_id]['track_ids']:
-                raw_tracks[f"{track_id}.course_instructor"] = val
+                raw_tracks[f"track{track_id}.course_instructor"] = val
 
         # Build `parts`, `tracks` and `fields` dict
         new_parts = {
             part_id: {
                 key: raw_parts["part{}.{}".format(part_id, key)]
                 for key in ("status", "lodgement_id", "is_camping_mat")
-                if "part{}.{}".format(part_id, key) in raw_parts
+                if f"part{part_id}.{key}" in raw_parts
             }
             for part_id in event['parts']
         }
@@ -899,11 +899,8 @@ class EventRegistrationMixin(EventBaseFrontend):
             }
             for track_id in tracks
         }
-        # Build course choices (but only if all choices are present)
+        # Build course choices.
         for track_id, track in tracks.items():
-            # if not all(f"track{track_id}.course_choice_{i}" in raw_tracks
-            #            for i in range(track['num_choices'])):
-            #     continue
             extractor = lambda i: raw_tracks.get(f"track{track_id}.course_choice_{i}")
             choices_tuple = tuple(
                 c_id for i in range(track['num_choices']) if (c_id := extractor(i)))

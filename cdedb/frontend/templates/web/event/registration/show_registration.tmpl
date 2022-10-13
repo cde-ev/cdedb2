@@ -211,12 +211,12 @@
             {% for batch in choice_objects|batch(2) %}
                 <div class="row">
                 {% for cco in batch %}
-                    <div class="col-md-6">
+                    {% set track, track_group = (reference_tracks[cco['id']], cco) if 'constraint_type' in cco else (cco, None) %}
+                    {% set reg_track = ambience['registration']['tracks'][track['id']] %}
+                    <div class="col-md-6" id="course-choices-{{ "group-{}".format(track_group['id']) if track_group else track['id'] }}">
                         {% if choice_objects|length > 1 %}
-                            <h5>{{ cco['shortname'] }}</h5>
+                            <h5>{{ cco['title'] }}</h5>
                         {% endif %}
-                        {% set track = reference_tracks[cco['id']] if 'constraint_type' in cco else cco %}
-                        {% set reg_track = ambience['registration']['tracks'][track['id']] %}
 
                         <dl class="dl-horizontal">
                             <dt title="{% trans %}Instructor of{% endtrans %}">{% trans %}Instructor of{% endtrans %}</dt>
@@ -240,10 +240,10 @@
                                                 {{ util.href(cdedblink('event/show_course', {'course_id': course_id}),
                                                              "{}. {}".format(courses[course_id]['nr'],
                                                                              courses[course_id]['shortname'])) }}
-                                            {% else %}
-                                                —
                                             {% endif %}
                                         {% endwith %}
+                                    {% else %}
+                                        —
                                     {% endif %}
                                 </dd>
                             {% endfor %}
