@@ -48,30 +48,22 @@
             {{ util.form_input_checkbox(name="pronouns_profile", label=gettext("Show pronouns on profile")) }}
         {% endif %}
 
-        {% if ("paper_expuls" in shown_fields or "donation" in shown_fields) and values['is_member'] %}
+        {% if "paper_expuls" in shown_fields or "donation" in shown_fields %}
             <h4 class="heading-underline">{% trans %}Membership{% endtrans %}</h4>
         {% endif %}
         {% if "donation" in shown_fields %}
-            {% if values['is_member'] %}
                 {{ util.form_input_text(name="donation", label=gettext("Annual Donation"), type="number",
                                         attributes='min="0" step="0.01"'|s,
                                         info=gettext("You allow the CdE to withdraw this amount annually from your balance"
                                                      " or via direct debit authorization, in addition to the annual membership fee.")) }}
-            {% else %}
-                {{ util.input_hidden(name="donation") }}
-            {% endif %}
         {% endif %}
         {% if "paper_expuls" in shown_fields %}
-            {% if values['is_member'] %}
             {{ util.form_input_checkbox(name="paper_expuls", label=gettext("Printed exPuls"),
                                         info=gettext("The exPuls is published semi-anually printed and online. "
                                                      "You can find further information about the online version at %(link)s.")|format(
                                                      link=util.href(cdedblink('cde/view_misc'),
                                                                     (gettext("Members") + " / " +
                                                                      gettext("Miscellaneous"))))|s) }}
-            {% else %}
-                {{ util.input_hidden(name="paper_expuls") }}
-            {% endif %}
         {% endif %}
 
         <h4 class="heading-underline">{% trans %}Contact Information{% endtrans %}</h4>
