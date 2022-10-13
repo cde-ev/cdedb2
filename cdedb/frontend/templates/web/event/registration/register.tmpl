@@ -182,13 +182,19 @@
         checkboxes.each(function(){
             checkbox_map[$(this).val()] = $(this);
         });
+        ccos_per_part = {{ ccos_per_part|tojson }};
         var containers = $('.course_choice_container');
         var updateCourseChoiceContainers = function() {
+            /* Hide everything, then show available containers */
             containers.each(function(){
-               if (checkbox_map[$(this).attr('data-part')].prop('checked'))
-                   $(this).show();
-               else
-                   $(this).hide();
+                $(this).hide();
+            });
+            Object.keys(ccos_per_part).forEach(function(key){
+                console.log(key, ccos_per_part[key]);
+                if (checkbox_map[key].prop('checked'))
+                    ccos_per_part[key].forEach(function(element){
+                        $('#course-choice-container-' + element).show();
+                    });
             });
         };
 

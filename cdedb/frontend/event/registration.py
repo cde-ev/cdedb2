@@ -267,15 +267,19 @@ class EventRegistrationMixin(EventBaseFrontend):
         track_group_map = {track_id: None for track_id in tracks}
         sync_track_groups = {tg_id: tg for tg_id, tg in track_groups.items()
                              if tg['constraint_type'].is_sync()}
+        ccos_per_part = {part_id: [] for part_id in event['parts']}
         for track_group_id, track_group in sync_track_groups.items():
             simple_tracks.difference_update(track_group['track_ids'])
             courses_per_track_group[track_group_id] = set()
             track_group_map.update(
                 {track_id: track_group_id for track_id in track_group['track_ids']})
             for track_id in track_group['track_ids']:
+                ccos_per_part[tracks[track_id]['part_id']].append(
+                    f"group-{track_group_id}")
                 courses_per_track_group[track_group_id] = courses_per_track[track_id]
                 reference_tracks[track_group_id] = tracks[track_id]
-                break
+        for track_id in simple_tracks:
+            ccos_per_part[tracks[track_id]['part_id']].append(f"{track_id}")
         choice_objects = [t for t_id, t in tracks.items() if t_id in simple_tracks] + [
             tg for tg in track_groups.values() if tg['constraint_type'].is_sync()]
         choice_objects = xsorted(choice_objects, key=EntitySorter.course_choice_object)
@@ -284,7 +288,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             'courses_per_track_group': courses_per_track_group,
             'reference_tracks': reference_tracks, 'simple_tracks': simple_tracks,
             'choice_objects': choice_objects, 'sync_track_groups': sync_track_groups,
-            'track_group_map': track_group_map,
+            'track_group_map': track_group_map, 'ccos_per_part': ccos_per_part,
         }
 
     @access("event")
@@ -296,9 +300,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         registrations = self.eventproxy.list_registrations(
             rs, event_id, persona_id=rs.user.persona_id)
         persona = self.coreproxy.get_event_user(rs, rs.user.persona_id, event_id)
-        age = determine_age_class(
-            persona['birthday'],
-            event['begin'])
+        age = determine_age_class(persona['birthday'], event['begin'])
         minor_form = self.eventproxy.get_minor_form(rs, event_id)
         rs.ignore_validation_errors()
         if not preview:
