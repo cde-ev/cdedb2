@@ -69,19 +69,7 @@
         {{ util.form_input_checkbox(name="reg.list_consent", label=gettext("Participant List Consent"), defaultvalue=True) }}
         {{ util.form_input_textarea(name="reg.notes", label=gettext("Notes"), rows="5") }}
 
-        {% for cco in choice_objects %}
-            {% if 'constraint_type' in cco %}
-                {% if cco['track_ids'] and reference_tracks[cco['id']]['num_choices'] %}
-                    {{ generic_event.select_course_choice(
-                            reference_track[cco['id']], courses, courses_per_track_group[cco['id']],
-                            show_track_title=choice_objects|length > 1, track_group=cco, change_registration=True) }}
-                {% endif %}
-            {% elif cco['num_choices'] %}
-                {{ generic_event.select_course_choice(
-                        cco, courses, courses_per_track[cco['id']],
-                        show_track_title=choice_objects|length > 1, change_registration=True) }}
-            {% endif %}
-        {% endfor %}
+        {{ generic_event.select_all_course_choices(orga_input=True) }}
 
         {{ util.form_input_submit(label=gettext("Add"), cancellink=cdedblink('event/registration_query')) }}
     </form>
