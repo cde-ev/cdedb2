@@ -312,11 +312,6 @@ class CdELastschriftBackend(CdEBaseBackend):
         be adjusted _in advance_ to reflect this change, so the right amount of money
         can be issued as lastschrift transaction.
         """
-        # We increase our fee from 2.5€ to 4€ between period 58 and 59.
-        # Since lastschrifts cover two semester fees, we need to special
-        # case those booked in period 58.
-        if self.current_period(rs) == 58:
-            return decimal.Decimal(2.5) + decimal.Decimal(4)
         return self.conf["PERIODS_PER_YEAR"] * self.conf["MEMBERSHIP_FEE"]
 
     @access("finance_admin")
