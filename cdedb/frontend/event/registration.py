@@ -11,7 +11,7 @@ import decimal
 import io
 import re
 from collections import OrderedDict
-from typing import Collection, Dict, Optional, Set, Tuple
+from typing import Collection, Dict, Optional, Tuple
 
 import segno.helpers
 import werkzeug.exceptions
@@ -261,7 +261,8 @@ class EventRegistrationMixin(EventBaseFrontend):
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         courses_per_track = self.eventproxy.get_course_segments_per_track(
             rs, event_id, event['is_course_state_visible'])
-        courses_per_track_group: Dict[int, Set[int]] = {}
+        courses_per_track_group = self.eventproxy.get_course_segments_per_track_group(
+            rs, event_id, event['is_course_state_visible'])
         reference_tracks = {}
         simple_tracks = set(tracks)
         track_group_map = {track_id: None for track_id in tracks}
@@ -270,13 +271,11 @@ class EventRegistrationMixin(EventBaseFrontend):
         ccos_per_part = {part_id: [] for part_id in event['parts']}
         for track_group_id, track_group in sync_track_groups.items():
             simple_tracks.difference_update(track_group['track_ids'])
-            courses_per_track_group[track_group_id] = set()
             track_group_map.update(
                 {track_id: track_group_id for track_id in track_group['track_ids']})
             for track_id in track_group['track_ids']:
                 ccos_per_part[tracks[track_id]['part_id']].append(
                     f"group-{track_group_id}")
-                courses_per_track_group[track_group_id] = courses_per_track[track_id]
                 reference_tracks[track_group_id] = tracks[track_id]
         for track_id in simple_tracks:
             ccos_per_part[tracks[track_id]['part_id']].append(f"{track_id}")

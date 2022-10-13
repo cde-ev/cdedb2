@@ -177,11 +177,9 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event")
     def get_course_segments_per_track(self, rs: RequestState, event_id: int,
-                                      active_only: bool = False) -> Dict[int, Set[int]]:
+                                      active_only: bool = False,
+                                      ) -> Dict[int, Set[int]]:
         """Determine which courses can be chosen in each track.
-
-        If synced tracks exist, this will indicate that a course offered in one track
-        of a track group can be chosen in every track of that group.
 
         :param active_only: If True, restrict to active course segments, i.e. courses
             that are taking place.
@@ -189,15 +187,11 @@ class EventRegistrationBackend(EventBaseBackend):
             courses can be chosen in the given track.
         """
         query = """
-            SELECT ct.id, ARRAY_REMOVE(ARRAY_AGG(segments.course_id), NULL) AS courses
+            SELECT ct.id, ARRAY_REMOVE(ARRAY_AGG(cs.course_id), NULL) AS courses
             FROM (
                 event.course_tracks AS ct
                 LEFT JOIN event.event_parts AS ep ON ct.part_id = ep.id
-                LEFT JOIN (
-                    SELECT course_id, track_id, is_active
-                    FROM event.course_segments AS segments
-                    {}
-                ) AS segments ON ct.id = segments.track_id
+                LEFT JOIN event.course_segments AS cs ON ct.id = cs.track_id {}
             )
             WHERE ep.event_id = %s
             GROUP BY ct.id
@@ -205,23 +199,42 @@ class EventRegistrationBackend(EventBaseBackend):
 
         event_id = affirm(vtypes.ID, event_id)
         active_only = affirm(bool, active_only)
-        query = query.format("WHERE is_active = True" if active_only else "")
+        query = query.format("AND is_active = True" if active_only else "")
 
-        ret = {
+        return {
             e['id']: set(e['courses'])
             for e in self.query_all(rs, query, (event_id,))
         }
 
-        event = self.get_event(rs, event_id)
-        for track_group in event['track_groups'].values():
-            if not track_group['constraint_type'].is_sync():
-                continue
-            all_courses = set(itertools.chain.from_iterable(
-                ret[track_id] for track_id in track_group['track_ids']))
-            for track_id in track_group['track_ids']:
-                ret[track_id] = set(all_courses)
+    @access("event")
+    def get_course_segments_per_track_group(self, rs: RequestState, event_id: int,
+                                            active_only: bool = False,
+                                            ) -> Dict[int, Set[int]]:
+        """Determine which courses can be chosen in each track group.
 
-        return ret
+        :param active_only: If True, restrict to active course segments, i.e. courses
+            that are taking place.
+        :returns: A map of <track id> -> [<course_id>, ...], indicating that these
+            courses can be chosen in the given track.
+        """
+        query = """
+            SELECT tg.id, ARRAY_REMOVE(ARRAY_AGG(DISTINCT cs.course_id), NULL) AS courses
+            FROM event.track_groups tg
+                LEFT JOIN event.track_group_tracks tgt ON tg.id = tgt.track_group_id
+                LEFT JOIN event.course_segments cs ON tgt.track_id = cs.track_id {}
+            WHERE tg.event_id = %s AND tg.constraint_type = %s
+            GROUP BY tg.id
+        """
+
+        event_id = affirm(vtypes.ID, event_id)
+        active_only = affirm(bool, active_only)
+        query = query.format("AND is_active = True" if active_only else "")
+        params = (event_id, const.CourseTrackGroupType.course_choice_sync)
+
+        return {
+            e['id']: set(e['courses'])
+            for e in self.query_all(rs, query, params)
+        }
 
     def _set_course_choices(self, rs: RequestState, registration_id: int,
                             track_id: int, choices: Optional[Sequence[int]],
