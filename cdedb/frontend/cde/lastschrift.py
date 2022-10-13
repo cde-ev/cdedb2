@@ -91,10 +91,11 @@ class CdELastschriftMixin(CdEBaseFrontend):
                 rs, lastschrift_ids=lastschrift_ids.keys())
             transactions = self.cdeproxy.get_lastschrift_transactions(
                 rs, transaction_ids.keys())
-        persona_ids = {persona_id}.union({
-            x['submitted_by'] for x in lastschrifts.values()}).union(
+        persona_ids = {x['submitted_by'] for x in lastschrifts.values()}.union(
             {x['submitted_by'] for x in transactions.values()})
         personas = self.coreproxy.get_personas(rs, persona_ids)
+        # we need to access the donation property of the associated user
+        main_persona = self.coreproxy.get_cde_user(rs, persona_id)
         active_permit = None
         for lastschrift in lastschrifts.values():
             if not lastschrift['revoked_at']:
@@ -102,7 +103,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         active_open = bool(
             active_permit and self.determine_open_permits(rs, (active_permit,)))
         return self.render(rs, "lastschrift/lastschrift_show", {
-            'lastschrifts': lastschrifts,
+            'lastschrifts': lastschrifts, 'main_persona': main_persona,
             'active_permit': active_permit, 'active_open': active_open,
             'personas': personas, 'transactions': transactions,
         })
@@ -112,7 +113,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
                                 ) -> Response:
         """Render form."""
         merge_dicts(rs.values, rs.ambience['lastschrift'])
-        persona = self.coreproxy.get_persona(
+        persona = self.coreproxy.get_cde_user(
             rs, rs.ambience['lastschrift']['persona_id'])
         return self.render(rs, "lastschrift/lastschrift_change", {'persona': persona})
 
