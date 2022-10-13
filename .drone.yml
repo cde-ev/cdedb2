@@ -116,6 +116,9 @@ steps:
     status:
       - failure
       - success
+  volumes:
+  - name: ldap
+    path: /etc/ssl/ldap
   environment:
     CDEDB_CONFIGPATH: tests/config/test_ldap.py
 - name: frontend tests a-d
@@ -180,6 +183,8 @@ steps:
       - failure
       - success
   volumes:
+  - name: ldap
+    path: /etc/ssl/ldap
   - name: tmp_dir
     path: /tmp
   - name: coverage
@@ -219,6 +224,25 @@ steps:
     path: /tmp
   commands:
     - bin/check.py --verbose --parts xss
+- name: check sample data consistency
+  image: cdedb
+  pull: never
+  depends_on:
+    - ldap tests
+  when:
+    status:
+      - failure
+      - success
+  volumes:
+    - name: tmp_dir
+      path: /tmp
+  environment:
+    CDEDB_CONFIGPATH: tests/config/test_ldap.py
+  commands:
+    - python3 -m cdedb db create
+    - python3 -m cdedb db populate
+    - python3 -m cdedb dev compile-sample-data-json
+    - diff -u tests/ancillary_files/sample_data.json /tmp/sample_data.json
 - name: check for merge conflicts
   image: docker:20.10-git
   pull: never # do not try to pull image from docker hub
@@ -245,6 +269,8 @@ volumes:
 - name: database
   temp:
     medium: memory
+- name: ldap
+  temp: {}
 - name: tmp_dir
   temp: {}
 - name: coverage

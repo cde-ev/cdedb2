@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import ssl
 
 from psycopg.rows import dict_row
 from psycopg_pool import AsyncConnectionPool
@@ -37,7 +38,11 @@ async def main() -> None:
     # Create Server
     logger.info("Opening LDAP server ...")
     loop = asyncio.get_event_loop()
-    server = await loop.create_server(lambda: LdapServer(root), port=conf["LDAP_PORT"])
+    context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+    context.load_cert_chain(
+        certfile=conf["LDAP_PEM_PATH"], keyfile=conf["LDAP_KEY_PATH"])
+    server = await loop.create_server(lambda: LdapServer(root), port=conf["LDAP_PORT"],
+                                      ssl=context)
     logger.warning("Startup completed")
 
     async with server:

@@ -29,12 +29,18 @@
     </div>
 
             <dl class="dl-horizontal">
-                <dt>{% trans %}Regular Capacity{% endtrans %}</dt>
+                <dt title="{% trans %}Regular Capacity{% endtrans %}">
+                    {% trans %}Regular Capacity{% endtrans %}
+                </dt>
                 <dd>{{ ambience['lodgement']['regular_capacity'] }}</dd>
-                <dt>{% trans %}Camping Mat Capacity{% endtrans %}</dt>
+                <dt title="{% trans %}Camping Mat Capacity{% endtrans %}">
+                    {% trans %}Camping Mat Capacity{% endtrans %}
+                </dt>
                 <dd>{{ ambience['lodgement']['camping_mat_capacity'] }}</dd>
                 {% if groups|length > 1 %}
-                    <dt>{% trans %}Lodgement Group{% endtrans %}</dt>
+                    <dt title="{% trans %}Lodgement Group{% endtrans %}">
+                        {% trans %}Lodgement Group{% endtrans %}
+                    </dt>
                     <dd>
                         {{ groups[ambience['lodgement']['group_id']]['title'] }}
                     </dd>
@@ -44,7 +50,7 @@
             <dl class="dl-horizontal">
                 {% for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field) %}
                     {% if field['association'] == enums['FieldAssociations'].lodgement %}
-                        <dt>{{ field['title'] }}</dt>
+                        <dt title="{{ field['title'] }}">{{ field['title'] }}</dt>
                         <dd>
                             {{ generic_event.display_field(field, ambience['lodgement']['fields'].get(field['field_name'])) }}
                         </dd>

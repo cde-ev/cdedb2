@@ -30,42 +30,108 @@
     {% endcall %}
 {%- endmacro %}
 
+{% macro details_list(grouped_config, ballots) %}
+    {% set sorted_ballots = ballots|keydictsort(EntitySorter.ballot) %}
+    {% for (vote_begin, vote_end, extension_end, abs_quorum, rel_quorum), ballot_ids in config_grouped if ballot_ids.intersection(ballots) %}
+        <li>
+            <div>
+                {{- vote_begin|datetime(lang=lang) }} – {{ vote_end|datetime(lang=lang) }}
+                {%- if extension_end %} ( – {{ extension_end|datetime(lang=lang) }}, {% trans %}Quorum{% endtrans %}: {% if abs_quorum %}{{ abs_quorum }}{% else %}{{ rel_quorum }} %{% endif %}){% endif -%}
+            </div>
+            <ul class="slim">
+                {% for ballot_id, ballot in sorted_ballots if ballot_id in ballot_ids %}
+                    <li>
+                        {{ title_link(ballot) }}
+                        <span class="text-muted small">
+                            ({{ modality(ballot) }})
+                        </span>
+                    </li>
+                {% endfor %}
+            </ul>
+        </li>
+    {% endfor %}
+{% endmacro %}
 
+{% macro title_link(ballot) %}
+    {{ util.href(cdedblink("assembly/show_ballot", {'assembly_id': ambience['assembly']['id'], 'ballot_id': ballot['id']}), ballot['title']) }}
+{% endmacro %}
+
+{% macro voting_period(ballot) %}
+    <div id="regular-voting-period">
+        {% trans begin=ballot['vote_begin']|datetime(lang=lang),
+                end=ballot['vote_end']|datetime(lang=lang) -%}
+            From {{ begin }} until {{ end }}.
+        {% endtrans %}
+    </div>
+    <div id="extension-period">
+        {% if ballot['extended'] is none %}
+            {% if ballot['quorum'] %}
+                {% trans extension=ballot['vote_extension_end']|datetime(lang=lang),
+                         quorum=ballot['quorum'] -%}
+                    Extension until {{ extension }} if {{ quorum }} votes are not reached.
+                {% endtrans %}
+            {% endif %}
+        {% else %}
+            {% if ballot['extended'] %}
+                {% trans extension=ballot['vote_extension_end']|datetime(lang=lang),
+                         quorum=ballot['quorum'] -%}
+                    Extended until {{ extension }} because {{ quorum }} votes were not reached.
+                {% endtrans %}
+            {% elif ballot['quorum'] %}
+                {% trans quorum=ballot['quorum'] %}
+                    No extension neccessary, because {{ quorum }} votes were reached.
+                {% endtrans %}
+            {% endif %}
+        {% endif %}
+    </div>
+{% endmacro %}
+
+{% macro modality(ballot) -%}
+    {% if ballot['votes'] == 1 -%}
+        {% if ballot['use_bar'] -%}
+            {% trans votes=ballot['votes'] -%}
+                Classical voting with {{ votes }} vote and "Against all" option.
+            {%- endtrans %}
+        {%- else -%}
+            {% trans votes=ballot['votes'] -%}
+                Classical voting with {{ votes }} vote.
+            {%- endtrans %}
+        {%- endif %}
+    {%- elif ballot['votes'] -%}
+        {% if ballot['use_bar'] -%}
+            {% trans votes=ballot['votes'] -%}
+                Classical voting with {{ votes }} votes and "Against all" option.
+            {%- endtrans %}
+        {%- else -%}
+            {% trans votes=ballot['votes'] -%}
+                Classical voting with {{ votes }} votes.
+            {%- endtrans %}
+        {%- endif %}
+    {%- else -%}
+        {% if ballot['use_bar'] -%}
+            {% trans -%}
+                Preferential voting with bar option.
+            {%- endtrans %}
+        {%- else -%}
+            {% trans -%}
+                Preferential voting without bar option.
+            {%- endtrans %}
+        {%- endif %}
+    {%- endif %}
+{%- endmacro %}
 
 {% macro show_status() -%}
     <dl class="dl-horizontal mosp" id="ballot-status">
-        <dt>{% trans %}Period{% endtrans %}</dt>
+        <dt title="{% trans %}Period{% endtrans %}">
+            {% trans %}Period{% endtrans %}
+        </dt>
         <dd id="voting-period">
-            <div id="regular-voting-period">
-                {% trans begin=ambience['ballot']['vote_begin']|datetime(lang=lang),
-                        end=ambience['ballot']['vote_end']|datetime(lang=lang) -%}
-                    From {{ begin }} until {{ end }}.
-                {% endtrans %}
-            </div>
-            <div id="extension-period">
-                {% if ambience['ballot']['extended'] is none %}
-                    {% if ambience['ballot']['quorum'] %}
-                        {% trans extension=ambience['ballot']['vote_extension_end']|datetime(lang=lang),
-                                 quorum=ambience['ballot']['quorum'] -%}
-                        Extension until {{ extension }} if {{ quorum }} votes are not reached.
-                        {% endtrans %}
-                    {% endif %}
-                {% else %}
-                    {% if ambience['ballot']['extended'] %}
-                        {% trans extension=ambience['ballot']['vote_extension_end']|datetime(lang=lang),
-                                 quorum=ambience['ballot']['quorum'] -%}
-                        Extended until {{ extension }} because {{ quorum }} votes were not reached.
-                        {% endtrans %}
-                    {% elif ambience['ballot']['quorum'] %}
-                        {% trans quorum=anbience['ballot']['quorum'] %}
-                        No extension neccessary, because {{ quorum }} votes were reached.
-                        {% endtrans %}
-                    {% endif %}
-                {% endif %}
-            </div>
+            {{ voting_period(ambience['ballot']) }}
         </dd>
 
-        <dt>{% trans %}Status{% endtrans %}</dt>
+        <dt title="{% trans %}Status{% endtrans %}">
+            {% trans %}Status{% endtrans %}
+        </dt>
         <dd id="status">
             {% if now() < ambience['ballot']['vote_begin'] %}
                 <strong>{% trans %}This ballot has not yet begun.{% endtrans %}</strong><br />
@@ -101,43 +167,17 @@
             {% endif %}
         </dd>
 
-        <dt>{% trans %}Modality{% endtrans %}</dt>
+        <dt title="{% trans %}Modality{% endtrans %}">
+            {% trans %}Modality{% endtrans %}
+        </dt>
         <dd>
-            {% if ambience['ballot']['votes'] == 1 %}
-                {% if ambience['ballot']['use_bar'] %}
-                    {% trans votes=ambience['ballot']['votes'] %}
-                        Classical voting with {{ votes }} vote and "Against all" option.
-                    {% endtrans %}
-                {% else %}
-                    {% trans votes=ambience['ballot']['votes'] %}
-                        Classical voting with {{ votes }} vote.
-                    {% endtrans %}
-                {% endif %}
-            {% elif ambience['ballot']['votes'] %}
-                {% if ambience['ballot']['use_bar'] %}
-                    {% trans votes=ambience['ballot']['votes'] %}
-                        Classical voting with {{ votes }} votes and "Against all" option.
-                    {% endtrans %}
-                {% else %}
-                    {% trans votes=ambience['ballot']['votes'] %}
-                        Classical voting with {{ votes }} votes.
-                    {% endtrans %}
-                {% endif %}
-            {% else %}
-                {% if ambience['ballot']['use_bar'] %}
-                    {% trans %}
-                        Preferential voting with bar option.
-                    {% endtrans %}
-                {% else %}
-                    {% trans %}
-                        Preferential voting without bar option.
-                    {% endtrans %}
-                {% endif %}
-            {% endif %}
+            {{ modality(ambience['ballot']) }}
         </dd>
 
         {% if ambience['ballot']['vote_begin'] < now() %}
-            <dt>{% trans %}Voted{% endtrans %}</dt>
+            <dt title="{% trans %}Voted{% endtrans %}">
+                {% trans %}Voted{% endtrans %}
+            </dt>
             {% if ambience['ballot']['is_tallied'] %}
                 <dd id="had-voted">
                     {% trans count=ambience['ballot']['vote_count'] %}
@@ -156,7 +196,7 @@
 
     {% if ("assembly_presider" in user.admin_views or ambience['assembly']['id'] in user.presider)
            and ambience['ballot']['notes'] %}
-        {% call util.bootstrap_panel(title=gettext("Admin-Notes"), icon="tag", aclass="panel-default panel-condensed",
+        {% call util.bootstrap_panel(title=gettext("Admin Notes"), icon="tag", aclass="panel-default panel-condensed",
                                      anid='notes') %}
             {{ ambience['ballot']['notes']|md }}
         {% endcall %}

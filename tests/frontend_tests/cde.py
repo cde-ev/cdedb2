@@ -2141,6 +2141,10 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
         self.assertPresence("Ringelpiez mit anfassen.", div='description',
                             exact=True)
+        self.traverse({'description': 'PfingstAkademie 2014'})
+        self.traverse({'description': 'Goethe zum Anfassen'})
+        self.assertTitle("Goethe zum Anfassen (PfingstAkademie 2014)")
+        self.assertPresence("Ferdinand Findus (Orga) ")
 
     @as_users("vera", "berta", "charly", "ferdinand", "inga")
     def test_show_past_event_gallery(self) -> None:

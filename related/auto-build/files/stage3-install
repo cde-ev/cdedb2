@@ -101,6 +101,12 @@ echo "--------------------------------------------"
 python3 -m cdedb filesystem --owner www-data storage create
 
 echo ""
+echo "Setting up dummy ldap because cyclic dependency..."
+echo "--------------------------------------------"
+# copy the systemd service file to the right place
+cp /media/cdrom0/cde-ldap-dummy.service /etc/systemd/system/cde-ldap.service
+
+echo ""
 echo "Setting up the database..."
 echo "--------------------------------------------"
 
@@ -150,6 +156,12 @@ cp /media/cdrom0/cde-ldap.service /etc/systemd/system/
 cp /media/cdrom0/cde-ldap.service /etc/systemd/system/cde-ldap-test.service
 # ensure the tests is accessible via python path, since config.test_ldap.py performs imports
 sed -i -r -e "s|Environment=CDEDB_CONFIGPATH=/etc/cdedb/config.py|Environment=CDEDB_CONFIGPATH=/cdedb2/tests/config/test_ldap.py\nEnvironment=PYTHONPATH=/cdedb2/|g" /etc/systemd/system/cde-ldap-test.service
+
+# add the self-signed certificate to the trusted ldap certificates
+# (note the previous step in stage2)
+echo "TLS_CACERT    /etc/ldap/certs/ldap.pem" >> /etc/ldap/ldap.conf
+
+systemctl restart cde-ldap
 
 # TODO remove once we switched to ldaptor
 # The following lines mirror the ldap-create make target.

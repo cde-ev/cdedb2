@@ -170,6 +170,16 @@ class TestPastEventBackend(BackendTest):
         self.assertEqual(expectation,
                          self.pastevent.list_participants(self.key, pevent_id=1))
 
+        # past course not associated with specified past event
+        with self.assertRaises(ValueError) as cm:
+            self.pastevent.add_participant(self.key, 2, 1, 5, False, False)
+            self.assertIn("Teilnehmer ist kein Veranstaltungsnutzer.",
+                          cm.exception.args[0])
+        # mailinglist user can not be added to past event
+        with self.assertRaises(ValueError):
+            self.pastevent.add_participant(self.key, 1, 1, 10, False, False)
+            self.assertIn("Vergangener Kurs ist nicht", cm.exception.args[0])
+
     @as_users("vera")
     def test_participant_consistency(self) -> None:
         # See issue #1458

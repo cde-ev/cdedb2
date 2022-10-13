@@ -2115,6 +2115,13 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Zickzack")
         self.assertNonPresence("Ganondorf")
         self.assertPresence("PfingstAkademie 2014")
+        if self.user_in("paul"):
+            self.assertNoLink("PfingstAkademie")
+        else:
+            saved = self.response
+            self.traverse("PfingstAkademie 2014")
+            self.assertTitle("PfingstAkademie 2014")
+            self.response = saved
 
         self.traverse({'href': '/core/genesis/1001/modify'})
         self.assertTitle("Accountanfrage bearbeiten")
@@ -2122,6 +2129,13 @@ class TestCoreFrontend(FrontendTest):
         f['pcourse_id'] = 2
         self.submit(f)
         self.assertPresence("Goethe")
+        if self.user_in("paul"):
+            self.assertNoLink("Goethe")
+        else:
+            saved = self.response
+            self.traverse("Goethe")
+            self.assertTitle("Goethe zum Anfassen (PfingstAkademie 2014)")
+            self.response = saved
 
         self.traverse({'href': '/core/genesis/1001/modify'})
         self.assertTitle("Accountanfrage bearbeiten")
@@ -2631,7 +2645,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence(
             "Ungültiger Benutzer für Aktualisierung.", div="notifications")
 
-        # The event-user. This option should work.
+        # The event user. This option should work.
         self.assertTrue(self.core.is_relative_admin(self.key, 1002))
         self._decide_genesis_case(GenesisDecision.update, persona_id=1002)
 
