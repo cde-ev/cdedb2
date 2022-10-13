@@ -5720,3 +5720,38 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         for track_id in unwrap(event['tracks'][8]['track_groups'])['track_ids']:
             self.assertEqual(event['tracks'][track_id]['num_choices'], 10)
             self.assertEqual(event['tracks'][track_id]['min_choices'], 9)
+
+        # Check that change_registration works properly.
+        self.traverse("Anmeldungen", "Alle Teilnehmer", "Details")
+        self.assertTitle("Anmeldung von Emilia E. Eventis (TripelAkademie)")
+
+        self.assertPresence("Kurs 2 nachmittags Sync", div="course-choices-group-2")
+        self.assertPresence("Kursleiter von —",
+                            div="course-choices-group-2")
+        self.assertPresence("1. Wahl —",
+                            div="course-choices-group-2")
+        self.assertPresence("2. Wahl —",
+                            div="course-choices-group-2")
+        self.assertPresence("3. Wahl —",
+                            div="course-choices-group-2")
+
+        self.traverse("Bearbeiten")
+        f = self.response.forms['changeregistrationform']
+        f['part10.status'] = const.RegistrationPartStati.participant
+        f['course_choice_group2_0'] = 9
+        f['course_choice_group2_1'] = 11
+        f['course_choice_group2_2'] = ''
+        f['course_choice_group_instructor2'] = 12
+        self.submit(f)
+
+        self.assertPresence("Kurs 2 nachmittags Sync", div="course-choices-group-2")
+        self.assertPresence("Kursleiter von 3. Nostalgie",
+                            div="course-choices-group-2")
+        self.assertPresence("1. Wahl 4. Akrobatik",
+                            div="course-choices-group-2")
+        self.assertPresence("2. Wahl 2. All-Embracement",
+                            div="course-choices-group-2")
+        self.assertPresence("3. Wahl —",
+                            div="course-choices-group-2")
+
+        print(self.event.get_course_segments_per_track(self.key, 4))
