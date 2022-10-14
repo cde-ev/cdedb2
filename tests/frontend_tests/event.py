@@ -3811,8 +3811,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f['show_lodgement_groups'] = True
         f['part_id'] = 2
         self.submit(f, check_notification=False)
-        xml = lxml.etree.XML(
-            self.response.body)  # pylint: disable=c-extension-no-member
+        xml = lxml.etree.XML(self.response.body)  # pylint: disable=c-extension-no-member
 
         self.assertIn("Emilia", self.response.text)
         self.assertIn("Einzelzelle", self.response.text)
