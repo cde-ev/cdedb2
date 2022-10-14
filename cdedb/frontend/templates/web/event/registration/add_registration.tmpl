@@ -33,17 +33,17 @@
             );
         </script>
         {% if CDEDB_OFFLINE_DEPLOYMENT %}
-            {{ util.form_input_text(name="reg.real_persona_id", label=gettext("Online CdEDB-ID")) }}
+            {{ util.form_input_text(name="real_persona_id", label=gettext("Online CdEDB-ID")) }}
         {% endif %}
 
         <h3 class="heading-underline">{% trans %}Status{% endtrans %}</h3>
-        {{ util.form_input_textarea(name="reg.orga_notes", label=gettext("Orga-Notes"), rows="5") }}
-        {{ util.form_input_text(name="reg.payment", label=gettext("Fee paid"), type="date",
+        {{ util.form_input_textarea(name="orga_notes", label=gettext("Orga-Notes"), rows="5") }}
+        {{ util.form_input_text(name="payment", label=gettext("Fee paid"), type="date",
                             placeholder="YYYY-MM-DD") }}
-        {{ util.form_input_text(name="reg.amount_paid", label=gettext("Amount Paid"), type="number",
+        {{ util.form_input_text(name="amount_paid", label=gettext("Amount Paid"), type="number",
                                 attributes='step="0.01"'|s, defaultvalue="0.00") }}
-        {{ util.form_input_checkbox(name="reg.parental_agreement", label=gettext("Parental Consent")) }}
-        {{ util.form_input_text(name="reg.checkin", label=gettext("Checked-In"), type="datetime-local") }}
+        {{ util.form_input_checkbox(name="parental_agreement", label=gettext("Parental Consent")) }}
+        {{ util.form_input_text(name="checkin", label=gettext("Checked-In"), type="datetime-local") }}
 
         {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
             {% if ambience['event']['parts']|length > 1 %}
@@ -65,11 +65,11 @@
         {% endfor %}
 
         <h3 class="heading-underline">Registration Data</h3>
-        {{ util.form_input_checkbox(name="reg.mixed_lodging", label=gettext("Mixed Lodging"), defaultvalue=True) }}
-        {{ util.form_input_checkbox(name="reg.list_consent", label=gettext("Participant List Consent"), defaultvalue=True) }}
-        {{ util.form_input_textarea(name="reg.notes", label=gettext("Notes"), rows="5") }}
+        {{ util.form_input_checkbox(name="mixed_lodging", label=gettext("Mixed Lodging"), defaultvalue=True) }}
+        {{ util.form_input_checkbox(name="list_consent", label=gettext("Participant List Consent"), defaultvalue=True) }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="5") }}
 
-        {{ generic_event.select_all_course_choices(orga_input=True) }}
+        {{ generic_event.select_all_course_choices() }}
 
         {{ util.form_input_submit(label=gettext("Add"), cancellink=cdedblink('event/registration_query')) }}
     </form>

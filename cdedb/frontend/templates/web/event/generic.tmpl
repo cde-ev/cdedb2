@@ -8,7 +8,7 @@
     track_group         Optionally the track group for which to print course choices.
     orga_input          Whether this macro is used in an orga input form like change or add registration.
 #}
-{% macro select_course_choice(track, all_courses, course_choices, show_track_title, track_group=none, orga_input=False) %}
+{% macro select_course_choice(track, all_courses, course_choices, show_track_title, track_group=none) %}
 
     <div id="course-choice-container-{{ track['id'] if not track_group else "group-{}".format(track_group['id'])  }}"
          class="course_choice_container">
@@ -24,14 +24,11 @@
         {% set course_entries = all_courses|keydictsort(EntitySorter.course)
                                            |xdict_entries('{id}', '{nr}. {title}', include=course_choices) %}
         {% if track_group %}
-            {% set choice_name = "course_choice_group{}".format(track_group['id']) + "_{}" %}
-            {% set instructor_name = "course_choice_group_instructor{}".format(track_group['id']) %}
-        {% elif change_registration %}
+            {% set choice_name = "group{}.course_choice".format(track_group['id']) + "_{}" %}
+            {% set instructor_name = "group{}.course_instructor".format(track_group['id']) %}
+        {% else %}
             {% set choice_name = "track{}.course_choice".format(track['id']) + "_{}" %}
             {% set instructor_name = "track{}.course_instructor".format(track['id']) %}
-        {% else %}
-            {% set choice_name = "course_choice{}".format(track['id']) + "_{}" %}
-            {% set instructor_name = "course_instructor{}".format(track['id']) %}
         {% endif %}
         {% set num_choices = track['num_choices'] %}
         {% set min_choices = track['min_choices'] %}
@@ -48,19 +45,19 @@
     </div>
 {% endmacro %}
 
-{% macro select_all_course_choices(involved_tracks=None, orga_input=False) %}
+{% macro select_all_course_choices(involved_tracks=None) %}
     {% for cco in choice_objects %}
         {% if 'constraint_type' in cco %}
             {% if cco['track_ids'] and reference_tracks[cco['id']]['num_choices'] and (
                     involved_tracks is none or involved_tracks.intersection(cco['track_ids'])) %}
                 {{ select_course_choice(
                         reference_tracks[cco['id']], courses, courses_per_track_group[cco['id']],
-                        show_track_title=choice_objects|length > 1, track_group=cco, orga_input=orga_input) }}
+                        show_track_title=choice_objects|length > 1, track_group=cco) }}
             {% endif %}
         {% elif cco['num_choices'] %}
             {{ select_course_choice(
                     cco, courses, courses_per_track[cco['id']],
-                    show_track_title=choice_objects|length > 1, orga_input=orga_input) }}
+                    show_track_title=choice_objects|length > 1) }}
         {% endif %}
     {% endfor %}
 {% endmacro %}
