@@ -2505,6 +2505,11 @@ def _event_track_group(
 
     val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
 
+    if 'track_ids' in val:
+        if not val['track_ids']:
+            raise ValidationSummary(
+                ValueError('track_ids', n_("Must not be empty.")))
+
     return EventTrackGroup(val)
 
 
