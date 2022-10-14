@@ -14,6 +14,7 @@ else:
     CdEDBObject = CdEDBOptionalMap = None
 
 TypeMapping = Mapping[str, Type[Any]]
+TypeDict = Dict[str, Type[Any]]
 
 # SIMPLE/PRIMITIVE/ATOMIC TYPES
 

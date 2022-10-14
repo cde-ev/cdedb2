@@ -146,7 +146,9 @@ class EventRegistrationBackend(EventBaseBackend):
             """
             involved_tracks = {e['id'] for e in self.query_all(rs, q, (part_ids,))}
         else:
-            raise ValueError(n_("Cannot determine involved tracks."))
+            # For multiedit, we cannot reliably determine part ids, but we don't need
+            #  them either, so not returning anything does not hurt.
+            involved_tracks = set()
         return CourseChoiceValidationAux(
             self._get_course_segments_per_course(rs, event_id),
             self._get_synced_tracks(rs, event_id),

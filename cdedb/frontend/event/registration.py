@@ -11,7 +11,7 @@ import decimal
 import io
 import re
 from collections import OrderedDict
-from typing import Callable, Collection, Dict, Optional, Tuple
+from typing import Collection, Dict, List, Optional, Tuple
 
 import segno.helpers
 import werkzeug.exceptions
@@ -268,7 +268,8 @@ class EventRegistrationMixin(EventBaseFrontend):
         track_group_map = {track_id: None for track_id in tracks}
         sync_track_groups = {tg_id: tg for tg_id, tg in track_groups.items()
                              if tg['constraint_type'].is_sync()}
-        ccos_per_part = {part_id: [] for part_id in event['parts']}
+        ccos_per_part: Dict[int, List[str]] = {
+            part_id: [] for part_id in event['parts']}
         for track_group_id, track_group in sync_track_groups.items():
             simple_tracks.difference_update(track_group['track_ids'])
             track_group_map.update(
@@ -337,184 +338,228 @@ class EventRegistrationMixin(EventBaseFrontend):
             **course_choice_params,
         })
 
-    @staticmethod
-    def process_track_group_choices(rs: RequestState,
-                                    course_choice_parameters: CdEDBObject,
-                                    orga_input: bool,
-                                    filter_params: Callable[
-                                        [vtypes.TypeMapping],
-                                        vtypes.TypeMapping
-                                    ] = None,
-                                    ) -> Tuple[CdEDBObject, CdEDBObject]:
+    def new_process_registration_input(
+            self, rs: RequestState, orga_input: bool, parts: CdEDBObjectMap = None,
+            skip: Collection[str] = (), check_enabled: bool = False,
+    ) -> CdEDBObject:
+
+        def filter_params(params: vtypes.TypeDict) -> vtypes.TypeDict:
+            """Helper to filter out params that are skipped or not enabled."""
+            params = {key: kind for key, kind in params.items() if key not in skip}
+            if not check_enabled:
+                return params
+            enable_params = {f"enable_{key}": bool for key in params}
+            enable = request_extractor(rs, enable_params)
+            return {
+                key: kind for key, kind in params.items() if enable[f"enable_{key}"]}
+
         event = rs.ambience['event']
-        ref_tracks = course_choice_parameters['reference_tracks']
-        track_groups = event['track_groups']
-        choices = {}
-        synced_choice_params: vtypes.TypeMapping = {
-            f"course_choice_group{group_id}_{i}": Optional[vtypes.ID]  # type: ignore[misc]
-            for group_id in course_choice_parameters['sync_track_groups']
-            for i in range(event['tracks'][ref_tracks[group_id]['id']]['num_choices'])
-        }
-        if filter_params:
-            synced_choice_params = filter_params(synced_choice_params)
-        for key, val in request_extractor(rs, synced_choice_params).items():
-            group_id, x = map(int, key.removeprefix("course_choice_group").split("_"))
-            for track_id in track_groups[group_id]['track_ids']:
-                if orga_input:
-                    choices[f"track{track_id}.course_choice_{x}"] = val
-                else:
-                    choices[f"course_choice{track_id}_{x}"] = val
-        instructors = {}
-        synced_instructor_params: vtypes.TypeMapping = {
-            f"course_choice_group_instructor{group_id}": Optional[vtypes.ID]  # type: ignore[misc]
-            for group_id in course_choice_parameters['sync_track_groups']
-        }
-        if filter_params:
-            synced_instructor_params = filter_params(synced_instructor_params)
-        for key, val in request_extractor(rs, synced_instructor_params).items():
-            group_id = int(key.removeprefix("course_choice_group_instructor"))
-            for track_id in track_groups[group_id]['track_ids']:
-                if orga_input:
-                    instructors[f"course_instructor{track_id}"] = val
-                else:
-                    instructors[f"track{track_id}.course_instructor"] = val
-        return choices, instructors
-
-    def process_registration_input(
-            self, rs: RequestState, event: CdEDBObject, courses: CdEDBObjectMap,
-            reg_questionnaire: Collection[CdEDBObject],
-            parts: CdEDBObjectMap = None) -> CdEDBObject:
-        """Helper to handle input by participants.
-
-        This takes care of extracting the values and validating them. Which
-        values to extract depends on the event.
-
-        :param parts: If not None this specifies the ids of the parts this
-          registration applies to (since you can apply for only some of the
-          parts of an event and should not have to choose courses for the
-          non-relevant parts this is important). If None the parts have to
-          be provided in the input.
-        :returns: registration data set
-        """
-        course_choice_parameters = self.get_course_choice_params(rs, event['id'])
         tracks = event['tracks']
+        track_groups = event['track_groups']
+        course_choice_params = self.get_course_choice_params(rs, event['id'])
+        simple_tracks = course_choice_params['simple_tracks']
+        sync_track_groups = course_choice_params['sync_track_groups']
+        reference_tracks = course_choice_params['reference_tracks']
+        track_group_map = course_choice_params['track_group_map']
 
-        # Default keys.
-        standard_params: vtypes.TypeMapping = {
-            "mixed_lodging": bool,
-            "notes": Optional[str],  # type: ignore[dict-item]
-            "list_consent": bool,
-            **({"parts": Collection[int]} if parts is None else {}),
+        # Top-level registration data.
+        standard_params: vtypes.TypeDict = {
+            "reg.list_consent": bool,
+            "reg.mixed_lodging": bool,
+            "reg.notes": Optional[str],  # type: ignore[dict-item]
         }
-        standard = request_extractor(rs, standard_params)
-        if parts is not None:
-            standard['parts'] = tuple(
-                part_id for part_id, entry in parts.items()
-                if const.RegistrationPartStati(entry['status']).is_involved())
+        if orga_input:
+            standard_params.update({
+                "reg.amount_paid": vtypes.NonNegativeDecimal,
+                "reg.checkin": bool,
+                "reg.orga_notes": Optional[str],  # type: ignore[dict-item]
+                "reg.parental_agreement": bool,
+                "reg.payment": Optional[datetime.date],  # type: ignore[dict-item]
+            })
+            if self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
+                standard_params |= {
+                    "reg.real_persona_id": Optional[vtypes.ID]  # type: ignore[dict-item]
+                }
+        standard_params = filter_params(standard_params)
+        registration = {
+            key.removeprefix("reg."): val
+            for key, val in request_extractor(rs, standard_params).items()
+        }
 
-        # Simple course choices.
-        simple_tracks = course_choice_parameters['simple_tracks']
-        simple_choice_params: vtypes.TypeMapping = {
-            f"course_choice{track_id}_{i}": Optional[vtypes.ID]  # type: ignore[misc]
+        # Part specific data:
+        if orga_input:
+            part_params: vtypes.TypeDict = {}
+            for part_id in event['parts']:
+                part_params |= {
+                    f"part{part_id}.status": const.RegistrationPartStati,
+                    f"part{part_id}.lodgement_id": Optional[vtypes.ID],  # type: ignore[dict-item]
+                    f"part{part_id}.is_camping_mat": bool,
+                }
+            part_params = filter_params(part_params)
+            raw_parts = request_extractor(rs, part_params)
+            registration['parts'] = {
+                part_id: {
+                    key: raw_parts[raw_key]
+                    for key in ("status", "lodgement_id", "is_camping_mat")
+                    if (raw_key := f"part{part_id}.{key}") in raw_parts
+                }
+                for part_id in event['parts']
+            }
+            part_ids = {
+                part_id for part_id in registration['parts']
+                if (status := registration['parts'][part_id].get('status'))
+                   and status.is_involved()
+            }
+        elif parts is None:
+            # If no parts were given, this must be a new registration.
+            rps = const.RegistrationPartStati
+            part_ids = set(request_extractor(rs, {"parts": Collection[int]})["parts"])
+            registration['parts'] = {
+                part_id: {
+                    "status": rps.applied if part_id in part_ids else rps.not_applied
+                }
+                for part_id in event['parts']
+            }
+        else:
+            # This must be a user amending their own registration.
+            part_ids = {
+                part_id for part_id in parts
+                if parts[part_id]['status'].is_involved()
+            }
+
+        # Track specific data:
+        # First for simple tracks.
+        track_params: vtypes.TypeDict = {}
+        if orga_input:
+            track_params |= {
+                f"track{track_id}.course_id": Optional[vtypes.ID]  # type: ignore[misc]
+                for track_id in tracks
+            }
+        track_params |= {
+            f"track{track_id}.course_choice_{i}": Optional[vtypes.ID]  # type: ignore[misc]
             for track_id in simple_tracks
-            for i in range(event['tracks'][track_id]['num_choices'])
+            for i in range(tracks[track_id]['num_choices'])
         }
-        simple_choices = request_extractor(rs, simple_choice_params)
-        simple_instructor_params: vtypes.TypeMapping = {
-            f"course_instructor{track_id}": Optional[vtypes.ID]  # type: ignore[misc]
+        track_params |= {
+            f"track{track_id}.course_instructor": Optional[vtypes.ID]  # type: ignore[misc]
             for track_id in simple_tracks
         }
-        simple_instructors = request_extractor(rs, simple_instructor_params)
+        track_params = filter_params(track_params)
+        raw_tracks = request_extractor(rs, track_params)
 
-        group_choices, group_instructors = self.process_track_group_choices(
-            rs, course_choice_parameters, orga_input=False)
-        simple_choices.update(group_choices)
-        simple_instructors.update(group_instructors)
+        # Now for synced tracks.
+        num_choices = lambda g_id: tracks[reference_tracks[g_id]['id']]['num_choices']
+        synced_params: vtypes.TypeDict = {
+            f"group{group_id}.course_choice_{i}": Optional[vtypes.ID]  # type: ignore[misc]
+            for group_id in sync_track_groups for i in range(num_choices(group_id))
+        }
+        synced_params |= {
+            f"group{group_id}.course_instructor": Optional[vtypes.ID]  # type: ignore[misc]
+            for group_id in sync_track_groups
+        }
+        synced_params = filter_params(synced_params)
+        synced_data = request_extractor(rs, synced_params)
 
-        # Validation.
-        if not standard['parts']:
-            rs.append_validation_error(
-                ("parts", ValueError(n_("Must select at least one part."))))
-        present_tracks = set()
-        choice_getter = (
-            lambda track_id, i: simple_choices[f"course_choice{track_id}_{i}"])
-        choice_key = (
-            lambda track_id, i:
-                f"course_choice_group{group_id}_{i}"  # pylint: disable=E0602  # This seems to be a pylint bug.
-                if (group_id := course_choice_parameters['track_group_map'][track_id])
-                else f"course_choice{track_id}_{i}"
-        )
-        aux = self.eventproxy.get_course_choice_validation_aux(
-            rs, event['id'], registration_id=None, part_ids=standard['parts'])
-        for part_id in standard['parts']:
-            for track_id, track in event['parts'][part_id]['tracks'].items():
-                present_tracks.add(track_id)
-                present_tracks.update(aux.synced_tracks[track_id])
-                # Check for duplicate course choices
-                rs.add_validation_errors(
-                    (choice_key(track_id, j),
-                     ValueError(n_("You cannot have the same course as %(i)s."
-                                   " and %(j)s. choice"), {'i': i+1, 'j': j+1}))
-                    for j in range(track['num_choices'])
-                    for i in range(j)
-                    if ((course_id := choice_getter(track_id, j)) is not None
-                        and choice_getter(track_id, i) == course_id))
-                # Check for unfilled mandatory course choices
-                rs.add_validation_errors(
-                    (choice_key(track_id, i),
-                     ValueError(n_("You must choose at least %(min_choices)s"
-                                   " courses."),
-                                {'min_choices': track['min_choices']}))
-                    for i in range(track['min_choices'])
-                    if choice_getter(track_id, i) is None)
-                rs.add_validation_errors(
-                    (choice_key(track_id, i),
-                     ValueError(n_("Invalid choice.")))
-                    for i in range(track['num_choices'])
-                    if ((course_id := choice_getter(track_id, i)) is not None
-                        and not self.eventproxy.validate_single_course_choice(
-                                rs, course_id, track_id, aux)))
-        reg_parts: CdEDBObjectMap = {part_id: {} for part_id in event['parts']}
-        if parts is None:
-            for part_id in reg_parts:
-                stati = const.RegistrationPartStati
-                if part_id in standard['parts']:
-                    reg_parts[part_id]['status'] = stati.applied
-                else:
-                    reg_parts[part_id]['status'] = stati.not_applied
+        for group_id in sync_track_groups:
+            for track_id in track_groups[group_id]['track_ids']:
+                for i in range(num_choices(group_id)):
+                    raw_tracks[f"track{track_id}.course_choice_{i}"] = synced_data[
+                        f"group{group_id}.course_choice_{i}"]
+                raw_tracks[f"track{track_id}.course_instructor"] = synced_data[
+                    f"group{group_id}.course_instructor"]
+
+        # Combine all regular track data.
         reg_tracks = {
             track_id: {
-                'course_instructor':
-                    simple_instructors.get(f"course_instructor{track_id}")
-                    if track['num_choices'] else None,
+                key: raw_tracks[raw_key]
+                for key in ("course_id", "course_instructor")
+                if (raw_key := f"track{track_id}.{key}") in raw_tracks
             }
-            for track_id, track in tracks.items()
+            for track_id in tracks
         }
-        for track_id in present_tracks:
-            all_choices = tuple(
-                course_id
-                for i in range(tracks[track_id]['num_choices'])
-                if (course_id := choice_getter(track_id, i)) is not None)
 
-            if reg_tracks[track_id]["course_instructor"] in all_choices:
-                i_choice = all_choices.index(reg_tracks[track_id]["course_instructor"])
-                rs.add_validation_error(
-                    (f"course_choice{track_id}_{i_choice}",
-                     ValueError(n_("You may not choose your own course.")))
+        # Now retrieve _and validate_ course choices.
+        aux = self.eventproxy.get_course_choice_validation_aux(
+            rs, event['id'], registration_id=None, part_ids=part_ids)
+        for track_id, track in tracks.items():
+            # If not all keys are present we are probably in the multiedit.
+            if not all(
+                f"track{track_id}.course_choice_{x}" in raw_tracks
+                for x in range(track['num_choices'])
+            ):
+                # In which case we don't want to touch the course choices.
+                continue
+            choice = lambda x: raw_tracks.get(f"track{track_id}.course_choice_{x}")
+            choice_key = lambda x: (
+                f"group{group_id}.course_choice_{x}"
+                if (group_id := track_group_map[track_id])
+                else f"track{track_id}.course_choice_{x}"
+            )
+            choices_list = [
+                c_id for i in range(track['num_choices']) if (c_id := choice(i))]  # pylint: disable=superfluous-parens,line-too-long # seems like a bug.
+            instructed_course = reg_tracks[track_id].get("course_instructor")
+            for rank, course_id in enumerate(choices_list):
+                # Check for choosing instructed course.
+                if course_id == instructed_course:
+                    rs.add_validation_error((
+                        choice_key(rank),
+                        ValueError(n_("Instructed course must not be chosen."))
+                        if orga_input else
+                        ValueError(n_("You may not choose your own course."))
+                    ))
+                # Check for duplicated course choices.
+                for x in range(rank):
+                    if course_id == choice(x):
+                        rs.add_validation_error((
+                            choice_key(rank),
+                             ValueError(n_(
+                                 "You cannot have the same course as %(i)s."
+                                 " and %(j)s. choice"),
+                                 {'i': x + 1, 'j': rank + 1})
+                        ))
+                # Check that the course choice is allowed for this track.
+                if not self.eventproxy.validate_single_course_choice(
+                        rs, course_id, track_id, aux):
+                    rs.add_validation_error((
+                        choice_key(rank),
+                        ValueError(n_("Invalid course choice for this track."))
+                    ))
+
+            # Check for unfilled mandatory course choices, but only if not orga.
+            if (len(choices_list) < track['min_choices']
+                    and track['part_id'] in part_ids and not orga_input):
+                rs.add_validation_errors(
+                    (choice_key(x), ValueError(n_(
+                        "You must choose at least %(min_choices)s courses."),
+                        {'min_choices': track['min_choices']}))
+                    for x in range(len(choices_list), track['min_choices'])
                 )
-            reg_tracks[track_id]['choices'] = all_choices
+            reg_tracks[track_id]["choices"] = choices_list
+        registration['tracks'] = reg_tracks
 
-        params = self._questionnaire_params(rs, const.QuestionnaireUsages.registration)
-        field_data = request_extractor(rs, params)
+        # Custom data field data:
+        if orga_input:
+            field_params: vtypes.TypeDict = {
+                f"fields.{field['field_name']}": Optional[  # type: ignore[misc]
+                    VALIDATOR_LOOKUP[field['kind'].name]]  # noqa: F821  # seems like a bug.
+                for field in event['fields'].values()
+                if field['association'] == const.FieldAssociations.registration
+            }
+            field_params = filter_params(field_params)
+            raw_fields = request_extractor(rs, field_params)
+            registration['fields'] = {
+                field['field_name']: raw_fields[raw_key]
+                for field in event['fields'].values()
+                if (raw_key := f"fields.{field['field_name']}") in raw_fields
+            }
+        else:
+            field_params = self._questionnaire_params(
+                rs, const.QuestionnaireUsages.registration)
+            registration['fields'] = {
+                key.removeprefix("fields."): val
+                for key, val in request_extractor(rs, field_params).items()
+            }
 
-        registration = {
-            'mixed_lodging': standard['mixed_lodging'],
-            'list_consent': standard['list_consent'],
-            'notes': standard['notes'],
-            'parts': reg_parts,
-            'tracks': reg_tracks,
-            'fields': field_data,
-        }
         return registration
 
     @access("event", modi={"POST"})
@@ -534,12 +579,8 @@ class EventRegistrationMixin(EventBaseFrontend):
         if self.eventproxy.list_registrations(rs, event_id, rs.user.persona_id):
             rs.notify("error", n_("Already registered."))
             return self.redirect(rs, "event/registration_status")
-        course_ids = self.eventproxy.list_courses(rs, event_id)
-        courses = self.eventproxy.get_courses(rs, course_ids.keys())
-        reg_questionnaire = unwrap(self.eventproxy.get_questionnaire(
-            rs, event_id, kinds=(const.QuestionnaireUsages.registration,)))
-        registration = self.process_registration_input(
-            rs, rs.ambience['event'], courses, reg_questionnaire)
+        registration = self.new_process_registration_input(
+            rs, orga_input=False)
         if rs.has_validation_errors():
             return self.register_form(rs, event_id)
         registration['event_id'] = event_id
@@ -611,6 +652,46 @@ class EventRegistrationMixin(EventBaseFrontend):
             **payment_data, **course_choice_parameters,
         })
 
+    @staticmethod
+    def _prepare_registration_values(event: CdEDBObject,
+                                     registration: CdEDBObject) -> CdEDBObject:
+        values: CdEDBObject = {
+            f"reg.{key}": val
+            for key, val in registration.items()
+            if key not in ("parts", "tracks", "fields")
+        }
+        for part_id, reg_part in registration['parts'].items():
+            values |= {
+                f"part{part_id}.{key}": value
+                for key, value in reg_part.items()}
+        for track_id, reg_track in registration['tracks'].items():
+            values |= {
+                f"track{track_id}.{key}": value
+                for key, value in reg_track.items()
+                if key != "choices"
+            }
+            values |= {
+                f"track{track_id}.course_choice_{i}": choice
+                for i, choice in enumerate(reg_track['choices'])
+            }
+            for tg_id, tg in event['tracks'][track_id]['track_groups'].items():
+                if not tg['constraint_type'].is_sync():
+                    continue
+                values |= {
+                    f"group{track_id}.{key}": value
+                    for key, value in reg_track.items()
+                    if key != "choices"
+                }
+                values |= {
+                    f"group{tg_id}.course_choice_{i}": choice
+                    for i, choice in enumerate(reg_track['choices'])
+                }
+        values |= {
+            f"fields.{key}": val
+            for key, val in registration['fields'].items()
+        }
+        return values
+
     @access("event")
     def amend_registration_form(self, rs: RequestState, event_id: int
                                 ) -> Response:
@@ -618,7 +699,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         event = rs.ambience['event']
         tracks = event['tracks']
         registration_id = unwrap(self.eventproxy.list_registrations(
-            rs, event_id, persona_id=rs.user.persona_id).keys())
+            rs, event_id, persona_id=rs.user.persona_id).keys() or None)
         if not registration_id:
             rs.notify("warning", n_("Not registered for event."))
             return self.redirect(rs, "event/show_event")
@@ -638,30 +719,16 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs, rs.user.persona_id, event_id)
         age = determine_age_class(
             persona['birthday'], rs.ambience['event']['begin'])
-        non_trivials = {}
-        for track_id, track in registration['tracks'].items():
-            for i, choice in enumerate(track['choices']):
-                key = f"course_choice{track_id}_{i}"
-                non_trivials[key] = choice
-            for tg_id, tg in event['tracks'][track_id]['track_groups'].items():
-                if not tg['constraint_type'].is_sync():
-                    continue
-                for i, choice in enumerate(track['choices']):
-                    key = f'course_choice_group{tg_id}_{i}'
-                    non_trivials[key] = choice
-        for track_id, entry in registration['tracks'].items():
-            key = f"course_instructor{track_id}"
-            non_trivials[key] = entry['course_instructor']
-        for k, v in registration['fields'].items():
-            non_trivials[k] = v
+        values = self._prepare_registration_values(event, registration)
+        merge_dicts(rs.values, values)
+
         stat = lambda track: registration['parts'][track['part_id']]['status']
         involved_tracks = {
             track_id for track_id, track in tracks.items()
             if const.RegistrationPartStati(stat(track)).is_involved()}
-        merge_dicts(rs.values, non_trivials, registration)
+
         reg_questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(const.QuestionnaireUsages.registration,)))
-
         course_choice_params = self.get_course_choice_params(rs, event_id)
         return self.render(rs, "registration/amend_registration", {
             'age': age, 'involved_tracks': involved_tracks,
@@ -693,14 +760,9 @@ class EventRegistrationMixin(EventBaseFrontend):
         if self.is_locked(rs.ambience['event']):
             rs.notify("error", n_("Event locked."))
             return self.redirect(rs, "event/registration_status")
-        course_ids = self.eventproxy.list_courses(rs, event_id)
-        courses = self.eventproxy.get_courses(rs, course_ids.keys())
         stored = self.eventproxy.get_registration(rs, registration_id)
-        reg_questionnaire = unwrap(self.eventproxy.get_questionnaire(
-            rs, event_id, kinds=(const.QuestionnaireUsages.registration,)))
-        registration = self.process_registration_input(
-            rs, rs.ambience['event'], courses, reg_questionnaire,
-            parts=stored['parts'])
+        registration = self.new_process_registration_input(
+            rs, orga_input=False, parts=stored['parts'])
         if rs.has_validation_errors():
             return self.amend_registration_form(rs, event_id)
 
@@ -765,182 +827,22 @@ class EventRegistrationMixin(EventBaseFrontend):
         """
         if rs.has_validation_errors() and not internal:
             return self.redirect(rs, 'event/show_registration')
-        event = rs.ambience['event']
         registration = rs.ambience['registration']
-        persona = self.coreproxy.get_event_user(rs, registration['persona_id'],
-                                                event_id)
+        persona = self.coreproxy.get_event_user(
+            rs, registration['persona_id'], event_id)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
-        reg_values = {f"reg.{key}": value
-                      for key, value in registration.items()}
-        part_values = []
-        for part_id, part in registration['parts'].items():
-            one_part = {
-                f"part{part_id}.{key}": value
-                for key, value in part.items()}
-            part_values.append(one_part)
-        track_values = []
-        for track_id, track in registration['tracks'].items():
-            one_track = {
-                f"track{track_id}.{key}": value
-                for key, value in track.items()
-                if key != "choices"}
-            for i, choice in enumerate(track['choices']):
-                key = f'track{track_id}.course_choice_{i}'
-                one_track[key] = choice
-            for tg_id, tg in event['tracks'][track_id]['track_groups'].items():
-                if not tg['constraint_type'].is_sync():
-                    continue
-                for i, choice in enumerate(track['choices']):
-                    key = f'course_choice_group{tg_id}_{i}'
-                    one_track[key] = choice
-            track_values.append(one_track)
-        field_values = {
-            f"fields.{key}": value
-            for key, value in registration['fields'].items()}
-        # Fix formatting of ID
-        reg_values['reg.real_persona_id'] = cdedbid_filter(
-            reg_values['reg.real_persona_id'])
-        merge_dicts(rs.values, reg_values, field_values,
-                    *(part_values + track_values))
         course_choice_params = self.get_course_choice_params(rs, event_id)
+
+        values = self._prepare_registration_values(rs.ambience['event'], registration)
+        # Fix formatting of ID
+        values['reg.real_persona_id'] = cdedbid_filter(registration['real_persona_id'])
+        merge_dicts(rs.values, values)
         return self.render(rs, "registration/change_registration", {
             'persona': persona, 'lodgements': lodgements,
             'skip': skip or [], 'change_note': change_note,
             **course_choice_params,
         })
-
-    def process_orga_registration_input(
-            self, rs: RequestState, event: CdEDBObject, do_fields: bool = True,
-            check_enabled: bool = False, skip: Collection[str] = (),
-            do_real_persona_id: bool = False) -> CdEDBObject:
-        """Helper to handle input by orgas.
-
-        This takes care of extracting the values and validating them. Which
-        values to extract depends on the event. This puts less restrictions
-        on the input (like not requiring different course choices).
-
-        :param do_fields: Process custom fields of the registration(s)
-        :param check_enabled: Check if the "enable" checkboxes, corresponding
-                              to the fields are set. This is required for the
-                              multiedit page.
-        :param skip: A list of field names to be entirely skipped
-        :param do_real_persona_id: Process the `real_persona_id` field. Should
-                                   only be done when CDEDB_OFFLINE_DEPLOYMENT
-        :returns: registration data set
-        """
-
-        def filter_parameters(params: vtypes.TypeMapping) -> vtypes.TypeMapping:
-            """Helper function to filter parameters by `skip` list and `enabled`
-            checkboxes"""
-            params = {key: kind for key, kind in params.items() if key not in skip}
-            if not check_enabled:
-                return params
-            enable_params = {f"enable_{i}": bool for i, t in params.items()}
-            enable = request_extractor(rs, enable_params)
-            return {
-                key: kind for key, kind in params.items() if enable[f"enable_{key}"]}
-
-        # Extract parameters from request
-        course_choice_parameters = self.get_course_choice_params(rs, event['id'])
-        tracks = event['tracks']
-        reg_params: vtypes.TypeMapping = {
-            "reg.notes": Optional[str],  # type: ignore[dict-item]
-            "reg.orga_notes": Optional[str],  # type: ignore[dict-item]
-            "reg.payment": Optional[datetime.date],  # type: ignore[dict-item]
-            "reg.amount_paid": vtypes.NonNegativeDecimal,
-            "reg.parental_agreement": bool,
-            "reg.mixed_lodging": bool,
-            "reg.checkin": Optional[datetime.datetime],  # type: ignore[dict-item]
-            "reg.list_consent": bool,
-        }
-        part_params: vtypes.TypeMapping = {}
-        for part_id in event['parts']:
-            part_params.update({  # type: ignore[attr-defined]
-                f"part{part_id}.status": const.RegistrationPartStati,
-                f"part{part_id}.lodgement_id": Optional[vtypes.ID],
-                f"part{part_id}.is_camping_mat": bool
-            })
-        track_params: vtypes.TypeMapping = {}
-        for track_id, track in tracks.items():
-            track_params.update({  # type: ignore[attr-defined]
-                f"track{track_id}.{key}": Optional[vtypes.ID]
-                for key in ("course_id", "course_instructor")
-            })
-            track_params.update({  # type: ignore[attr-defined]
-                f"track{track_id}.course_choice_{i}": Optional[vtypes.ID]
-                for i in range(track['num_choices'])
-            })
-        field_params: vtypes.TypeMapping = {
-            f"fields.{field['field_name']}": Optional[  # type: ignore[misc]
-                VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]  # noqa: F821
-            for field in event['fields'].values()
-            if field['association'] == const.FieldAssociations.registration
-        }
-
-        raw_reg = request_extractor(rs, filter_parameters(reg_params))
-        if do_real_persona_id:
-            raw_reg.update(request_extractor(rs, filter_parameters({
-                "reg.real_persona_id": Optional[vtypes.CdedbID]  # type: ignore[dict-item]
-            })))
-        raw_parts = request_extractor(rs, filter_parameters(part_params))
-        raw_tracks = request_extractor(rs, filter_parameters(track_params))
-        raw_fields = request_extractor(rs, filter_parameters(field_params))
-
-        group_choices, group_instructors = self.process_track_group_choices(
-            rs, course_choice_parameters, orga_input=True,
-            filter_params=filter_parameters)
-        raw_tracks.update(group_choices)
-        raw_tracks.update(group_instructors)
-
-        # Build `parts`, `tracks` and `fields` dict
-        new_parts = {
-            part_id: {
-                key: raw_parts["part{}.{}".format(part_id, key)]
-                for key in ("status", "lodgement_id", "is_camping_mat")
-                if f"part{part_id}.{key}" in raw_parts
-            }
-            for part_id in event['parts']
-        }
-        new_tracks = {
-            track_id: {
-                key: raw_tracks[f"track{track_id}.{key}"]
-                for key in ("course_id", "course_instructor")
-                if f"track{track_id}.{key}" in raw_tracks
-            }
-            for track_id in tracks
-        }
-        # Build course choices.
-        for track_id, track in tracks.items():
-            extractor = lambda i: raw_tracks.get(f"track{track_id}.course_choice_{i}")
-            choices_tuple = tuple(
-                c_id for i in range(track['num_choices']) if (c_id := extractor(i)))
-            choices_set = set()
-            own_course = new_tracks[track_id].get("course_instructor")
-            for i_choice, choice in enumerate(choices_tuple):
-                if own_course == choice:
-                    rs.add_validation_error(
-                        (f"track{track_id}.course_choice_{i_choice}",
-                         ValueError(n_("Instructed course must not be chosen.")))
-                    )
-                if choice in choices_set:
-                    rs.append_validation_error(
-                        (f"track{track_id}.course_choice_{i_choice}",
-                         ValueError(n_("Must choose different courses."))))
-                else:
-                    choices_set.add(choice)
-            new_tracks[track_id]['choices'] = choices_tuple
-        new_fields = {
-            key.split('.', 1)[1]: value for key, value in raw_fields.items()}
-
-        # Put it all together
-        registration = {
-            key.split('.', 1)[1]: value for key, value in raw_reg.items()}
-        registration['parts'] = new_parts
-        registration['tracks'] = new_tracks
-        if do_fields:
-            registration['fields'] = new_fields
-        return registration
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
@@ -955,9 +857,8 @@ class EventRegistrationMixin(EventBaseFrontend):
         redundant (like managing the lodgement inhabitants), but it would be
         much more cumbersome to always use this interface.
         """
-        registration = self.process_orga_registration_input(
-            rs, rs.ambience['event'], skip=skip,
-            do_real_persona_id=self.conf["CDEDB_OFFLINE_DEPLOYMENT"])
+        registration = self.new_process_registration_input(
+            rs, orga_input=True, skip=skip)
         if rs.has_validation_errors():
             return self.change_registration_form(
                 rs, event_id, registration_id, skip=(), internal=True,
@@ -1010,15 +911,11 @@ class EventRegistrationMixin(EventBaseFrontend):
                 and self.eventproxy.list_registrations(rs, event_id, persona_id)):
             rs.append_validation_error(("persona.persona_id",
                                         ValueError(n_("Already registered."))))
-        registration = self.process_orga_registration_input(
-            rs, rs.ambience['event'], do_fields=False,
-            do_real_persona_id=self.conf["CDEDB_OFFLINE_DEPLOYMENT"])
+        registration = self.new_process_registration_input(rs, orga_input=True)
         if (not rs.has_validation_errors()
-                and not self.eventproxy.check_orga_addition_limit(
-                    rs, event_id)):
+                and not self.eventproxy.check_orga_addition_limit(rs, event_id)):
             rs.append_validation_error(
-                ("persona.persona_id",
-                  ValueError(n_("Rate-limit reached."))))
+                ("persona.persona_id", ValueError(n_("Rate-limit reached."))))
         if rs.has_validation_errors():
             return self.add_registration_form(rs, event_id)
 
@@ -1144,8 +1041,8 @@ class EventRegistrationMixin(EventBaseFrontend):
         """Make privileged changes to any information pertaining to multiple
         registrations.
         """
-        registration = self.process_orga_registration_input(
-            rs, rs.ambience['event'], check_enabled=True)
+        registration = self.new_process_registration_input(
+            rs, orga_input=True, check_enabled=True)
         if rs.has_validation_errors():
             return self.change_registrations_form(rs, event_id, reg_ids, change_note)
 

@@ -54,7 +54,7 @@
                         reference_tracks[cco['id']], courses, courses_per_track_group[cco['id']],
                         show_track_title=choice_objects|length > 1, track_group=cco) }}
             {% endif %}
-        {% elif cco['num_choices'] %}
+        {% elif cco['num_choices'] and (involved_tracks is none or cco['id'] in involved_tracks) %}
             {{ select_course_choice(
                     cco, courses, courses_per_track[cco['id']],
                     show_track_title=choice_objects|length > 1) }}
@@ -74,12 +74,12 @@
 #}
 {% macro additional_registration_choices(age, reg_questionnaire) %}
 
-    {{ util.form_input_checkbox(name="list_consent", defaultvalue='True', label=gettext("Privacy consent"), info=gettext(
+    {{ util.form_input_checkbox(name="reg.list_consent", defaultvalue='True', label=gettext("Privacy consent"), info=gettext(
             "I agree that my data, including my name, address and my email, may be sent "
             "to other participants of this event beforehand.")) }}
 
     {% if not age.may_mix() %}
-        {{ util.input_hidden(name="mixed_lodging", value=False) }}
+        {{ util.input_hidden(name="reg.mixed_lodging", value=False) }}
         {{ util.form_input_static(label=gettext("Mixed Lodging"), value=gettext("Mixed Lodging not possible.")) }}
     {% else %}
         {% if age.is_minor() %}
@@ -87,7 +87,7 @@
         {% else %}
             {% set mix_info = "" %}
         {% endif %}
-        {{ util.form_input_select(name="mixed_lodging", entries=(
+        {{ util.form_input_select(name="reg.mixed_lodging", entries=(
             (True, gettext("I agree to mixed lodging.")),
             (False, gettext("I want to be lodged separated by gender."))),
             label=gettext("Mixed Lodging"), info=mix_info) }}
@@ -116,7 +116,7 @@
     {%- else %}
         {%- set noteslabel = gettext("Notes for Orgas") %}
     {%- endif %}
-    {{ util.form_input_textarea(name="notes", label=noteslabel, rows="5") }}
+    {{ util.form_input_textarea(name="reg.notes", label=noteslabel, rows="5") }}
 {% endmacro %}
 
 {# Display the value of a custom event field.
@@ -222,6 +222,17 @@
 {%- endmacro %}
 
 
+{% macro print_field_inputs(association) %}
+    {% if ambience['event']['fields']|length > 0 %}
+        <h3 class="heading-underline">{% trans %}Custom Fields{% endtrans %}</h3>
+        {% for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field) %}
+            {% if field['association'] == association %}
+                {{ form_field_input(field) }}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+{% endmacro %}
+
 {% macro print_questionnaire_entry(entry) %}
     {# Field entry #}
     {% if entry['field_id'] %}
@@ -229,7 +240,7 @@
                 readonly = entry['readonly'] or is_locked or ambience['event']['is_archived'] %}
             <div id="questionnaire_field_entry_{{ FIELD['field_name'] }}">
                 {{ form_field_input(
-                        FIELD, name=FIELD['field_name'], label=entry['title'], info=entry['info'],
+                        FIELD, name="fields." + FIELD['field_name'], label=entry['title'], info=entry['info'],
                         readonly=readonly, defaultvalue=entry['default_value'] if not readonly else "",
                         text_rows=2*(entry['input_size'] or 0), bool_label=entry['title']) }}
             </div>

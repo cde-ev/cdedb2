@@ -402,7 +402,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         return self.render(rs, "base/participant_info")
 
     def _questionnaire_params(self, rs: RequestState, kind: const.QuestionnaireUsages
-                              ) -> vtypes.TypeMapping:
+                              ) -> vtypes.TypeDict:
         """Helper to construct a TypeMapping to extract questionnaire data."""
         questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, rs.ambience['event']['id'], kinds=(kind,)))
@@ -415,7 +415,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             elif kind == const.QuestionnaireUsages.registration:
                 if field['kind'] == const.FieldDatatypes.str:
                     type_ = Optional[type_]  # type: ignore[assignment]
-            return (field['field_name'], type_)
+            return (f"fields.{field['field_name']}", type_)
 
         return dict(
             get_validator(entry) for entry in questionnaire

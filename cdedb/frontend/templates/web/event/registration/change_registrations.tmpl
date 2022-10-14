@@ -82,13 +82,13 @@
             {% endfor %}
         {% endcall %}
 
-        {% if values['enable_reg.gender'] %}
+        {% if values['enable.gender'] %}
             {{ util.form_input_static(label=gettext("Gender"), value=gettext(enums['Genders'](values['reg.gender'])|string)) }}
         {% else %}
             {{ util.form_input_static(label=gettext("Gender"), value="unterschiedlich") }}
         {% endif %}
-        {% call form_input_optional("reg.orga_notes", label=gettext("Orga-Notes"), anid="input_reg_orga_notes") %}
-            {{ util.input_textarea("reg.orga_notes", rows=5, anid="input_reg_orga_notes") }}
+        {% call form_input_optional("orga_notes", label=gettext("Orga-Notes"), anid="input_orga_notes") %}
+            {{ util.input_textarea("orga_notes", rows=5, anid="input_reg_orga_notes") }}
         {% endcall %}
 
         <h3 class="heading-underline">{% trans %}Status{% endtrans %}</h3>

@@ -4865,8 +4865,8 @@ msgid "You must choose at least %(min_choices)s courses."
 msgstr "Du musst mindestens %(min_choices)s Kurse wählen."
 
 #: cdedb/frontend/event/registration.py:444
-msgid "Invalid choice."
-msgstr "Unzulässige Kurswahl."
+msgid "Invalid course choice for this track."
+msgstr "Unzulässige Kurswahl für diese Kursschiene."
 
 #: cdedb/frontend/event/registration.py:475
 msgid "You may not choose your own course."
@@ -13261,8 +13261,8 @@ msgstr "Anmeldungen (%(title)s)"
 
 #: cdedb/frontend/templates/web/event/query/registration_query.tmpl:25
 #: cdedb/frontend/templates/web/event/registration/add_registration.tmpl:16
-msgid "Add Participant"
-msgstr "Teilnehmer hinzufügen"
+msgid "Add Registration"
+msgstr "Anmeldung hinzufügen"
 
 #: cdedb/frontend/templates/web/event/query/registration_query.tmpl:51
 #: cdedb/frontend/templates/web/event/query/registration_query.tmpl:58
