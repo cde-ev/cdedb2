@@ -714,10 +714,29 @@ class EventEventMixin(EventBaseFrontend):
         data = check(rs, vtypes.EventTrackGroup, data)
         if rs.has_validation_errors():
             return self.add_track_group_form(rs, event_id)
+        event = rs.ambience['event']
+        tracks = event['tracks']
         if constraint_type.is_sync():
+            track_ids = set(track_ids)
+            if any(tg['constraint_type'].is_sync() and tg['track_ids'] & track_ids
+                   for tg in event['track_groups'].values()):
+                rs.append_validation_error((
+                    "track_ids",
+                    ValueError(n_("Cannot have more than one course choice sync"
+                                  " track group per track."))
+                ))
+            if not len(set(
+                    (tracks[track_id]['num_choices'], tracks[track_id]['min_choices'])
+                    for track_id in track_ids)
+            ) == 1:
+                rs.append_validation_error((
+                    "track_ids", ValueError(n_("Incompatible tracks."))
+                ))
             if self.eventproxy.do_course_choices_exist(rs, track_ids):
-                rs.notify(
-                    "error", n_("Cannot create CCS group if course choices exist."))
+                rs.append_validation_error((
+                    "track_ids", ValueError(n_("Cannot create CCS group if course"
+                                               " choices exist."))))
+            if rs.has_validation_errors():
                 return self.add_track_group_form(rs, event_id)
         code = self.eventproxy.set_track_groups(rs, event_id, {-1: data})
         rs.notify_return_code(code)

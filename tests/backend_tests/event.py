@@ -588,6 +588,10 @@ class TestEventBackend(BackendTest):
         # Test incompatible tracks.
         with self.assertRaises(ValueError):
             self.event.set_track_groups(self.key, event_id, tg_data)
+        # Test empty tracks.
+        tg_data[-1]['track_ids'] = []
+        with self.assertRaises(ValueError):
+            self.event.set_track_groups(self.key, event_id, tg_data)
         # Test unknown tracks.
         tg_data[-1]['track_ids'] = {1, 2}
         with self.assertRaises(ValueError):
@@ -609,7 +613,7 @@ class TestEventBackend(BackendTest):
         with self.assertRaises(psycopg2.errors.UniqueViolation):
             tmp = copy.deepcopy(tg_data)
             assert tmp[-1] is not None
-            tmp[-1]['track_ids'] = []
+            tmp[-1]['track_ids'] = [8]
             self.event.set_track_groups(self.key, event_id, tmp)
 
         # Test update

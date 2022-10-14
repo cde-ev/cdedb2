@@ -5531,7 +5531,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             f['qop_part4.status,part1001.status,part1002.status'].value,
             str(QueryOperators.equal.value))
 
-    @as_users("garcia")
+    @as_users("annika")
     def test_track_groups(self) -> None:
         self.traverse("Veranstaltungen", "Große Testakademie 2222",
                       "Veranstaltungsteile", "Gruppen", "Kursschienengruppe hinzufügen")
@@ -5547,19 +5547,27 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f['title'] = f['shortname'] = "abc"
         f['track_ids'] = [1, 2]
         self.submit(f, check_notification=False)
-        self.assertPresence("Kursschienensynchronisierung fehlgeschlagen,"
-                            " weil bereits Kurswahlen existieren.",
-                            div="notifications")
+        self.assertValidationError(
+            'track_ids', "Kursschienensynchronisierung fehlgeschlagen,"
+                         " weil bereits Kurswahlen existieren.",
+            index=0)
 
         # Now a valid one.
-        f['title'] = "Gruppe ohne Kursschiene"
-        f['shortname'] = "Sehr kleine Gruppe"
+        self.traverse("Veranstaltungen", "TripelAkademie", "Veranstaltungsteile",
+                      "Gruppen", "Kursschienengruppe hinzufügen")
+        f = self.response.forms['configuretrackgroupform']
+        f['title'] = "Gruppe mit einer Kursschiene"
+        f['shortname'] = "kl. Gr."
         f['sortkey'] = -10
         f['constraint_type'] = const.CourseTrackGroupType.course_choice_sync
         f['track_ids'] = []
         self.submit(f, check_notification=False)
-        f = self.response.forms['configuretrackgroupform']
-        f['_magic_ignore_warnings'] = True
+        self.assertValidationError('track_ids', "Darf nicht leer sein.", index=0)
+        f['track_ids'] = [6, 15]
+        self.submit(f, check_notification=False)
+        self.assertPresence("Maximal eine Kurswahlsynchronisierung pro Kursschiene.")
+        self.assertPresence("Inkompatible Kursschienen.")
+        f['track_ids'] = [15]
         self.submit(f)
 
         self.submit(f, check_notification=False)
@@ -5567,21 +5575,22 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                                             " Kursschienengruppe mit diesem Namen.")
         self.assertValidationError('shortname', "Es existiert bereits eine"
                                                 " Kursschienengruppe mit diesem Namen.")
-        self.traverse("Gruppen", {'href': "/event/event/1/track/group/1001/change"})
-        self.assertTitle("Kursschienengruppe bearbeiten (Große Testakademie 2222)")
+        self.traverse("Gruppen", {'href': "/event/event/4/track/group/1001/change"})
+        self.assertTitle("Kursschienengruppe bearbeiten (TripelAkademie)")
         f = self.response.forms['configuretrackgroupform']
-        f['title'] = "Keine Kursschiene in dieser Gruppe"
+        f['title'] = "Nur eine Kursschiene in dieser Gruppe"
         f['shortname'] = "Kurz"
         f['notes'] = "Das soll so!"
         self.submit(f)
 
-        self.assertTitle("Gruppen (Große Testakademie 2222)")
-        self.assertPresence("Keine Kursschiene in dieser Gruppe",
+        self.assertTitle("Gruppen (TripelAkademie)")
+        self.assertPresence("Nur eine Kursschiene in dieser Gruppe",
                             div="track-group-summary")
-        self.assertNonPresence("Sehr kleine Gruppe", div="track-group-summary")
+        self.assertNonPresence("Gruppe mit einer Kursschiene",
+                               div="track-group-summary")
         f = self.response.forms['deletetrackgroupform1001']
         self.submit(f, check_notification=False)
-        self.assertValidationError('ack_delete', "Muss markiert sein.")
+        self.assertValidationError('ack_delete', "Muss markiert sein.", index=3)
         f['ack_delete'] = True
         self.submit(f)
         self.assertNonPresence("Keine Kursschiene in dieser Gruppe",
