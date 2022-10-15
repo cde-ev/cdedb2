@@ -5596,6 +5596,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertNonPresence("Keine Kursschiene in dieser Gruppe",
                                div="track-group-summary")
 
+    @event_keeper
     @as_users("anton")
     def test_course_choice_sync(self) -> None:
         self.traverse("Veranstaltungen", "TripelAkademie", "Anmelden")
@@ -5752,16 +5753,16 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f['group1.course_instructor'] = 11
         self.assertPresence("Kurswahlen für Kaub Vorträge",
                             div="course-choice-container-15")
-        f['track15.course_choice_0'] = 11
-        f['track15.course_instructor'] = 12
+        f['track15.course_choice_0'] = 12
+        f['track15.course_instructor'] = 11
         self.assertPresence("Kurswahlen für Kurs 2 morgens Sync",
                             div="course-choice-container-group-3")
         f['group3.course_choice_0'] = 12
         f['group3.course_choice_1'] = 11
-        f['group3.course_choice_2'] = 9
+        f['group3.course_choice_2'] = ''
         f['group3.course_choice_3'] = ''
         f['group3.course_choice_4'] = ''
-        f['group3.course_instructor'] = ''
+        f['group3.course_instructor'] = 9
         self.assertPresence("Kurswahlen für Kurs 2 nachmittags Sync",
                             div="course-choice-container-group-2")
         f['group2.course_choice_0'] = 11
@@ -5781,16 +5782,18 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("3. Wahl 3. Nostalgie",
                             div="course-choices-group-1")
 
-        self.assertPresence("Kursleiter von 3. Nostalgie",
+        self.assertPresence("Kursleiter von 2. All-Embracement",
                             div="course-choices-15")
-        self.assertPresence("1. Wahl 2. All-Embracement",
+        self.assertPresence("1. Wahl 3. Nostalgie",
                             div="course-choices-15")
 
+        self.assertPresence("Kursleiter von 4. Akrobatik",
+                            div="course-choices-group-3")
         self.assertPresence("1. Wahl 3. Nostalgie",
                             div="course-choices-group-3")
         self.assertPresence("2. Wahl 2. All-Embracement",
                             div="course-choices-group-3")
-        self.assertPresence("3. Wahl 4. Akrobatik",
+        self.assertPresence("3. Wahl —",
                             div="course-choices-group-3")
         self.assertPresence("4. Wahl —",
                             div="course-choices-group-3")
@@ -5807,15 +5810,42 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                             div="course-choices-group-2")
 
         self.traverse("Bearbeiten")
+        f = self.response.forms['changeregistrationform']
         f['part10.status'] = const.RegistrationPartStati.rejected  # Windischleuba 2
-        f['group2.course_instructor'] = ''
         f['group2.course_choice_0'] = 9
         self.submit(f, check_notification=False)
-        # Akrobatik is only offered in Windischleuba in the second half.
+        # Akrobatik and Nostalgie are only offered in Windischleuba in the second half.
         self.assertValidationError(
-            'group3.course_choice_2', "Unzulässige Kurswahl für diese Kursschiene.")
+            'group3.course_choice_0', "Unzulässige Kurswahl für diese Kursschiene.")
         self.assertValidationError(
             'group2.course_choice_0', "Unzulässige Kurswahl für diese Kursschiene.")
-        f['group3.course_choice_2'] = ''
         f['group2.course_choice_0'] = ''
+        f['group3.course_choice_0'] = ''
         self.submit(f)
+
+        # Test muldiedit.
+        self.get('/event/event/4/registration/multiedit?reg_ids=1001,1002')
+        f = self.response.forms['changeregistrationsform']
+        self.assertEqual(f['enable_group2.course_instructor'].checked, True)
+        self.assertEqual(f['group2.course_instructor'].value, '9')
+        f['group2.course_instructor'] = 11
+        self.assertEqual(f['enable_group3.course_instructor'].checked, False)
+        f['enable_group3.course_instructor'] = True
+        f['group3.course_instructor'] = 12
+        self.assertEqual(f['enable_track15.course_id'].checked, True)
+        self.assertEqual(f['track15.course_id'].value, '')
+        f['track15.course_id'] = 12
+
+        self.assertEqual(f['enable_track6.course_id'].checked, True)
+        self.assertEqual(f['track6.course_id'].value, '')
+        f['track6.course_id'] = 10
+        self.submit(f)
+
+        for id_ in (1001, 1002):
+            self.get(f'/event/event/4/registration/{id_}/show')
+            self.assertPresence("Kursleiter von 2. All-Embracement",
+                                div="course-choices-group-2")
+            self.assertPresence("Kursleiter von 3. Nostalgie",
+                                div="course-choices-group-3")
+            self.assertPresence("Kurs KV 3. Nostalgie")
+            self.assertPresence("Kurs OK1 1. Niebelungenlied")
