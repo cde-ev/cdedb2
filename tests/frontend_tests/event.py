@@ -5805,3 +5805,17 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                             div="course-choices-group-2")
         self.assertPresence("3. Wahl —",
                             div="course-choices-group-2")
+
+        self.traverse("Bearbeiten")
+        f['part10.status'] = const.RegistrationPartStati.rejected  # Windischleuba 2
+        f['group2.course_instructor'] = ''
+        f['group2.course_choice_0'] = 9
+        self.submit(f, check_notification=False)
+        # Akrobatik is only offered in Windischleuba in the second half.
+        self.assertValidationError(
+            'group3.course_choice_2', "Unzulässige Kurswahl für diese Kursschiene.")
+        self.assertValidationError(
+            'group2.course_choice_0', "Unzulässige Kurswahl für diese Kursschiene.")
+        f['group3.course_choice_2'] = ''
+        f['group2.course_choice_0'] = ''
+        self.submit(f)
