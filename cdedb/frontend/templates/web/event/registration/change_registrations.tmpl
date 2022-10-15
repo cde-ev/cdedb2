@@ -144,17 +144,47 @@
                 </div>
             {% endcall %}
 
-            {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) if track['part_id'] == part_id %}
+        {% endfor %}
+
+        {% if choice_objects %}
+            <h3 class="heading-underline">{% trans %}Courses{% endtrans %}</h3>
+            {% set sorted_tracks = ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
+        {% endif %}
+        {% for cco in choice_objects %}
+            <h5 class="mosp">{{ cco['title'] }}</h5>
+            {% if 'constraint_type' in cco %}
                 {% set course_entries = courses|keydictsort(EntitySorter.course)
-                                        |xdict_entries('{id}', '{nr}. {shortname}', include=courses_per_track[track_id]) %}
-                {% call form_input_optional("track{}.course_id".format(track_id),
-                                            label=gettext("Course %s")|format(track['shortname'])
-                                                  if ambience['event']['tracks']|length > 1  else gettext("Course"),
-                                            anid="track{}_course_id".format(track_id)) %}
-                    {{ util.input_select(name="track{}.course_id".format(track_id), entries=course_entries,
-                                         nulloption=nbsp, anid="track{}_course_id".format(track_id)) }}
+                                        |xdict_entries('{id}', '{nr}. {shortname}',
+                                         include=courses_per_track_group[cco['id']]) %}
+                {% set prefix = "group{}".format(cco['id']) %}
+                {% for track_id, track in sorted_tracks if track_id in cco['track_ids'] %}
+                    {% call form_input_optional("track{}.course_id".format(track_id),
+                                                label=gettext("Course %s")|format(ambience['event']['tracks'][track_id]['shortname']),
+                                                anid="track{}_course_id".format(track_id)) %}
+                        {{ util.input_select(name="track{}.course_id".format(track_id), entries=course_entries,
+                                             nulloption=nbsp, anid="track{}_course_id".format(track_id)) }}
+                    {% endcall %}
+                {% endfor %}
+            {% else %}
+                {% set course_entries = courses|keydictsort(EntitySorter.course)
+                                        |xdict_entries('{id}', '{nr}. {shortname}',
+                                         include=courses_per_track[cco['id']]) %}
+                {% set prefix = "track{}".format(cco['id']) %}
+                {% call form_input_optional(prefix + ".course_id",
+                                            label=gettext("Course %s")|format(cco['shortname'])
+                                                  if choice_objects|length > 1  else gettext("Course"),
+                                            anid=prefix + "_course_id") %}
+                    {{ util.input_select(name=prefix + ".course_id", entries=course_entries,
+                                         nulloption=nbsp, anid=prefix + "_course_id") }}
                 {% endcall %}
-            {% endfor %}
+            {% endif %}
+            {% call form_input_optional(prefix + ".course_instructor",
+                                        label=gettext("%s: Instructor of")|format(cco['shortname'])
+                                              if choice_objects|length > 1  else gettext("Instructor of"),
+                                        anid=prefix + "_course_instructor") %}
+                {{ util.input_select(name=prefix + ".course_instructor", entries=course_entries,
+                                     nulloption=nbsp, anid=prefix + "_course_instructor") }}
+            {% endcall %}
         {% endfor %}
 
         <h3 class="heading-underline">{% trans %}Registration Data{% endtrans %}</h3>

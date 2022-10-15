@@ -462,11 +462,15 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         for group_id in sync_track_groups:
             for track_id in track_groups[group_id]['track_ids']:
+                # Be careful not to override non-present keys here, due to multiedit.
                 for i in range(num_choices(group_id)):
-                    raw_tracks[f"track{track_id}.course_choice_{i}"] = synced_data[
-                        f"group{group_id}.course_choice_{i}"]
-                raw_tracks[f"track{track_id}.course_instructor"] = synced_data[
-                    f"group{group_id}.course_instructor"]
+                    key = f"group{group_id}.course_choice_{i}"
+                    if key in synced_data:
+                        raw_tracks[f"track{track_id}.course_choice_{i}"] = synced_data[
+                            key]
+                key = f"group{group_id}.course_instructor"
+                if key in synced_data:
+                    raw_tracks[f"track{track_id}.course_instructor"] = synced_data[key]
 
         # Combine all regular track data.
         reg_tracks = {
@@ -678,7 +682,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                 if not tg['constraint_type'].is_sync():
                     continue
                 values |= {
-                    f"group{track_id}.{key}": value
+                    f"group{tg_id}.{key}": value
                     for key, value in reg_track.items()
                     if key != "choices"
                 }
@@ -999,9 +1003,26 @@ class EventRegistrationMixin(EventBaseFrontend):
                     reg_data[f'enable_part{part_id}.{key}'] = True
             for track_id in part['tracks']:
                 for key, value in representative['tracks'][track_id].items():
+                    # Do no include course choices in multiedit.
+                    if key == 'choices':
+                        continue
                     if all(r['tracks'][track_id][key] == value for r in reg_vals):
                         reg_data[f'track{track_id}.{key}'] = value
                         reg_data[f'enable_track{track_id}.{key}'] = True
+
+        for tg_id, tg in rs.ambience['event']['track_groups'].items():
+            if not tg['constraint_type'].is_sync():
+                continue
+            repr_track_id = next(iter(tg['track_ids']))
+            for key, value in representative['tracks'][repr_track_id].items():
+                if key == 'choices':
+                    continue
+                if all(
+                    r['tracks'][track_id][key] == value
+                    for track_id in tg['track_ids'] for r in reg_vals
+                ):
+                    reg_data[f'group{tg_id}.{key}'] = value
+                    reg_data[f'enable_group{tg_id}.{key}'] = True
 
         for field_id, field in rs.ambience['event']['fields'].items():
             key = field['field_name']
