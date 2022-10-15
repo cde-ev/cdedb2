@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2022-10-14 23:30+0000\n"
+"POT-Creation-Date: 2022-10-15 02:14+0000\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -1099,19 +1099,19 @@ msgstr ""
 
 #: cdedb/backend/event/registration.py:903
 #: cdedb/frontend/assembly/__init__.py:567 cdedb/frontend/event/event.py:213
-#: cdedb/frontend/event/registration.py:904
+#: cdedb/frontend/event/registration.py:908
 msgid "This user does not exist or is archived."
 msgstr ""
 
 #: cdedb/backend/event/registration.py:905 cdedb/frontend/event/event.py:216
-#: cdedb/frontend/event/registration.py:908
+#: cdedb/frontend/event/registration.py:912
 msgid "This user is not an event user."
 msgstr ""
 
 #: cdedb/backend/event/registration.py:907
 #: cdedb/frontend/event/registration.py:308
-#: cdedb/frontend/event/registration.py:580
-#: cdedb/frontend/event/registration.py:913
+#: cdedb/frontend/event/registration.py:584
+#: cdedb/frontend/event/registration.py:917
 msgid "Already registered."
 msgstr ""
 
@@ -2072,7 +2072,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:64
 #: cdedb/frontend/templates/web/event/registration/add_registration.tmpl:68
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:79
-#: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:163
+#: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:195
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:244
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:245
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:200
@@ -2083,7 +2083,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:66
 #: cdedb/frontend/templates/web/event/registration/add_registration.tmpl:69
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:80
-#: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:170
+#: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:202
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:258
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:259
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:204
@@ -2110,7 +2110,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/lodgement/create_lodgement.tmpl:36
 #: cdedb/frontend/templates/web/event/registration/add_registration.tmpl:70
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:81
-#: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:173
+#: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:205
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:289
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:290
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:256
@@ -3180,7 +3180,7 @@ msgstr ""
 #: cdedb/frontend/event/course.py:222 cdedb/frontend/event/event.py:334
 #: cdedb/frontend/event/event.py:783 cdedb/frontend/event/event.py:994
 #: cdedb/frontend/event/event.py:1032 cdedb/frontend/event/lodgement.py:504
-#: cdedb/frontend/event/registration.py:937 cdedb/frontend/ml/base.py:545
+#: cdedb/frontend/event/registration.py:941 cdedb/frontend/ml/base.py:545
 msgid "Must be checked."
 msgstr ""
 
@@ -4309,7 +4309,7 @@ msgstr ""
 msgid "Field name not unique."
 msgstr ""
 
-#: cdedb/frontend/event/fields.py:180 cdedb/frontend/event/registration.py:1125
+#: cdedb/frontend/event/fields.py:180 cdedb/frontend/event/registration.py:1146
 msgid "Wrong associated event."
 msgstr ""
 
@@ -4441,7 +4441,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/course/create_course.tmpl:31
 #: cdedb/frontend/templates/web/event/registration/add_registration.tmpl:61
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:72
-#: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:152
+#: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:177
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:177
 msgid "Course"
 msgstr ""
@@ -4641,9 +4641,9 @@ msgstr ""
 
 #: cdedb/frontend/event/questionnaire.py:147
 #: cdedb/frontend/event/questionnaire.py:188
-#: cdedb/frontend/event/registration.py:624
-#: cdedb/frontend/event/registration.py:704
-#: cdedb/frontend/event/registration.py:751
+#: cdedb/frontend/event/registration.py:628
+#: cdedb/frontend/event/registration.py:708
+#: cdedb/frontend/event/registration.py:755
 msgid "Not registered for event."
 msgstr ""
 
@@ -4655,9 +4655,9 @@ msgstr ""
 #: cdedb/frontend/event/questionnaire.py:155
 #: cdedb/frontend/event/questionnaire.py:195
 #: cdedb/frontend/event/registration.py:314
-#: cdedb/frontend/event/registration.py:574
-#: cdedb/frontend/event/registration.py:716
-#: cdedb/frontend/event/registration.py:761
+#: cdedb/frontend/event/registration.py:578
+#: cdedb/frontend/event/registration.py:720
+#: cdedb/frontend/event/registration.py:765
 msgid "Event locked."
 msgstr ""
 
@@ -4672,9 +4672,9 @@ msgstr ""
 
 #: cdedb/frontend/event/questionnaire.py:198
 #: cdedb/frontend/event/registration.py:317
-#: cdedb/frontend/event/registration.py:577
-#: cdedb/frontend/event/registration.py:707
-#: cdedb/frontend/event/registration.py:758
+#: cdedb/frontend/event/registration.py:581
+#: cdedb/frontend/event/registration.py:711
+#: cdedb/frontend/event/registration.py:762
 msgid "Event is already archived."
 msgstr ""
 
@@ -4720,58 +4720,58 @@ msgid "Unexpected error on line {num}."
 msgstr ""
 
 #: cdedb/frontend/event/registration.py:311
-#: cdedb/frontend/event/registration.py:571
+#: cdedb/frontend/event/registration.py:575
 msgid "Registration not open."
 msgstr ""
 
 #: cdedb/frontend/event/registration.py:320
-#: cdedb/frontend/event/registration.py:594
+#: cdedb/frontend/event/registration.py:598
 msgid "No minors may register. Please contact the Orgateam."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:506
+#: cdedb/frontend/event/registration.py:510
 msgid "Instructed course must not be chosen."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:508
+#: cdedb/frontend/event/registration.py:512
 msgid "You may not choose your own course."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:515
+#: cdedb/frontend/event/registration.py:519
 #, python-format
 msgid "You cannot have the same course as %(i)s. and %(j)s. choice"
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:525
+#: cdedb/frontend/event/registration.py:529
 msgid "Invalid course choice for this track."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:532
+#: cdedb/frontend/event/registration.py:536
 #, python-format
 msgid "You must choose at least %(min_choices)s courses."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:616
+#: cdedb/frontend/event/registration.py:620
 msgid "Registered for event."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:713
+#: cdedb/frontend/event/registration.py:717
 msgid "Registration closed, no changes possible."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:755
+#: cdedb/frontend/event/registration.py:759
 msgid "No changes allowed anymore."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:918
+#: cdedb/frontend/event/registration.py:922
 msgid "Rate-limit reached."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:973
+#: cdedb/frontend/event/registration.py:977
 msgid "No participants found to edit."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:1127
+#: cdedb/frontend/event/registration.py:1148
 msgid "Already checked in."
 msgstr ""
 
@@ -5556,7 +5556,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/questionnaire/configure_registration.tmpl:57
 #: cdedb/frontend/templates/web/event/registration/amend_registration.tmpl:43
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:94
-#: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:196
+#: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:228
 #: cdedb/frontend/templates/web/generic.tmpl:315
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:125
 #: cdedb/i18n_additional.py:366
@@ -7973,6 +7973,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:176
 #: cdedb/frontend/templates/web/event/query/course_query.tmpl:13
 #: cdedb/frontend/templates/web/event/query/course_query.tmpl:18
+#: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:150
 msgid "Courses"
 msgstr ""
 
@@ -8492,7 +8493,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:120
 #: cdedb/frontend/templates/web/event/fields/field_set.tmpl:60
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:89
-#: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:191
+#: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:223
 msgid "Changenotes"
 msgstr ""
 
@@ -11946,7 +11947,7 @@ msgid "Notes for Orgas"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:227
-#: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:178
+#: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:210
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:261
 msgid "Custom Fields"
 msgstr ""
@@ -12728,7 +12729,8 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/registration/add_registration.tmpl:60
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:71
-#: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:151
+#: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:164
+#: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:176
 #, python-format
 msgid "Course %s"
 msgstr ""
@@ -12808,7 +12810,7 @@ msgid "Uses Camping Mat"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:78
-#: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:160
+#: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:192
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:222
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:198
 msgid "Registration Data"
@@ -12849,7 +12851,18 @@ msgid ""
 "selected."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:192
+#: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:184
+#, python-format
+msgid "%s: Instructor of"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:185
+#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:198
+#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:222
+msgid "Instructor of"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:224
 msgid ""
 "Summary to be added to the log entries. This is prefixed with \"Multi-Edit: "
 "\""
@@ -13035,11 +13048,6 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:186
 msgid "Assigned to"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:198
-#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:222
-msgid "Instructor of"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:205

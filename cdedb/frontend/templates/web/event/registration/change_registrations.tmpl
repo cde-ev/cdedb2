@@ -151,7 +151,9 @@
             {% set sorted_tracks = ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
         {% endif %}
         {% for cco in choice_objects %}
-            <h5 class="mosp">{{ cco['title'] }}</h5>
+            {% if choice_objects|length > 1 %}
+                <h5 class="mosp">{{ cco['title'] }}</h5>
+            {% endif %}
             {% if 'constraint_type' in cco %}
                 {% set course_entries = courses|keydictsort(EntitySorter.course)
                                         |xdict_entries('{id}', '{nr}. {shortname}',
