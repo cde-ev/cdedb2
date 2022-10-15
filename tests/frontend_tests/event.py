@@ -5738,3 +5738,70 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                             div="course-choices-group-2")
         self.assertPresence("3. Wahl —",
                             div="course-choices-group-2")
+
+        # Test add_registration too.
+        self.traverse("Anmeldungen", "Anmeldung hinzufügen")
+        f = self.response.forms['addregistrationform']
+        f['persona.persona_id'] = "DB-2-7"
+        self.assertPresence("Kurswahlen für Kurs 1 Sync",
+                            div="course-choice-container-group-1")
+        f['group1.course_choice_0'] = 9
+        f['group1.course_choice_1'] = 10
+        f['group1.course_choice_2'] = 12
+        f['group1.course_choice_3'] = ''
+        f['group1.course_instructor'] = 11
+        self.assertPresence("Kurswahlen für Kaub Vorträge",
+                            div="course-choice-container-15")
+        f['track15.course_choice_0'] = 11
+        f['track15.course_instructor'] = 12
+        self.assertPresence("Kurswahlen für Kurs 2 morgens Sync",
+                            div="course-choice-container-group-3")
+        f['group3.course_choice_0'] = 12
+        f['group3.course_choice_1'] = 11
+        f['group3.course_choice_2'] = 9
+        f['group3.course_choice_3'] = ''
+        f['group3.course_choice_4'] = ''
+        f['group3.course_instructor'] = ''
+        self.assertPresence("Kurswahlen für Kurs 2 nachmittags Sync",
+                            div="course-choice-container-group-2")
+        f['group2.course_choice_0'] = 11
+        f['group2.course_choice_1'] = ''
+        f['group2.course_choice_2'] = ''
+        f['group2.course_instructor'] = 9
+        self.submit(f)
+
+        # Check that choices are correctly displayed.
+        self.assertTitle("Anmeldung von Bertå Beispiel (TripelAkademie)")
+        self.assertPresence("Kursleiter von 2. All-Embracement",
+                            div="course-choices-group-1")
+        self.assertPresence("1. Wahl 4. Akrobatik",
+                            div="course-choices-group-1")
+        self.assertPresence("2. Wahl 1. Niebelungenlied",
+                            div="course-choices-group-1")
+        self.assertPresence("3. Wahl 3. Nostalgie",
+                            div="course-choices-group-1")
+
+        self.assertPresence("Kursleiter von 3. Nostalgie",
+                            div="course-choices-15")
+        self.assertPresence("1. Wahl 2. All-Embracement",
+                            div="course-choices-15")
+
+        self.assertPresence("1. Wahl 3. Nostalgie",
+                            div="course-choices-group-3")
+        self.assertPresence("2. Wahl 2. All-Embracement",
+                            div="course-choices-group-3")
+        self.assertPresence("3. Wahl 4. Akrobatik",
+                            div="course-choices-group-3")
+        self.assertPresence("4. Wahl —",
+                            div="course-choices-group-3")
+        self.assertPresence("5. Wahl —",
+                            div="course-choices-group-3")
+
+        self.assertPresence("Kursleiter von 4. Akrobatik",
+                            div="course-choices-group-2")
+        self.assertPresence("1. Wahl 2. All-Embracement",
+                            div="course-choices-group-2")
+        self.assertPresence("2. Wahl —",
+                            div="course-choices-group-2")
+        self.assertPresence("3. Wahl —",
+                            div="course-choices-group-2")
