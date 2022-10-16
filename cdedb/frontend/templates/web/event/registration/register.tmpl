@@ -179,7 +179,6 @@
                 $(this).hide();
             });
             Object.keys(ccos_per_part).forEach(function(key){
-                console.log(key, ccos_per_part[key]);
                 if (checkbox_map[key].prop('checked'))
                     ccos_per_part[key].forEach(function(element){
                         $('#course-choice-container-' + element).show();
