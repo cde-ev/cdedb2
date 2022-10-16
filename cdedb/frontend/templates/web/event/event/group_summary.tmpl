@@ -13,7 +13,7 @@
 {% endblock %}
 {% block heading %}
     {{ util.context_heading(gettext("Groups_[[part or track]]"), ambience['event']['title'],
-                            'chalkboard-teacher', gettext("Event"), doclink='Handbuch_Orga_Veranstaltungsteilgruppen') }}
+                            'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
@@ -29,7 +29,10 @@
         {{ util.href(cdedblink('event/add_track_group_form'), gettext("Add track group"),
                                icon='plus', aclass='btn btn-success') }}
     </p>
-    <h3>{% trans %}Part Groups{% endtrans %}</h3>
+    <h3>
+        {% trans %}Part Groups{% endtrans %}
+        {{ util.doclink_("Handbuch_Orga_Veranstaltungsteilgruppen") }}
+    </h3>
     <table id="part-group-summary" class="table table-stats">
         <thead>
             <tr>
@@ -84,7 +87,10 @@
         </tbody>
     </table>
 
-    <h3>{% trans %}Track Groups{% endtrans %}</h3>
+    <h3>
+        {% trans %}Track Groups{% endtrans %}
+        {{ util.doclink_("Handbuch_Orga_Kursschienengruppen") }}
+    </h3>
     <p class="text-danger">{{ util.make_icon('exclamation-triangle') }}
         {% trans %}
             This feature is still experimental. Use at your own risk, and only if you know what you are doing.

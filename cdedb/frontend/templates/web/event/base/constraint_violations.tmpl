@@ -23,6 +23,7 @@
     {% if mep_violations %}
         <h2 class="heading-underline" id="mep-violations">
             {% trans %}Mutually Exclusive Participation{% endtrans %}
+            {{ util.doclink_("Handbuch_Orga_Veranstaltungsteilgruppen.html#typ-teilnahmeausschlieszlichkeit") }}
         </h2>
         {# These are presorted by persona and constraint. #}
         {{ generic.list_mep_violations(mep_violations, personas, link_registration=True) }}
@@ -31,6 +32,7 @@
     {% if mec_violations %}
         <h2 class="heading-underline" id="mec-violations">
             {% trans %}Mutually Exclusive Courses{% endtrans %}
+            {{ util.doclink_("Handbuch_Orga_Veranstaltungsteilgruppen.html#typ-kursausschlieszlichkeit") }}
         </h2>
         {# These are presorted by course and constraint. #}
         {{ generic.list_mec_violations(mec_violations, courses, link_course=True) }}
@@ -39,6 +41,7 @@
     {% if ccs_violations %}
         <h2 class="heading-underline" id="ccs-violations">
             {% trans %}Course Choice Sync{% endtrans %}
+            {{ util.doclink_("Handbuch_Orga_Kursschienengruppen.html#typ-kurswahlsynchronisierung-ccs") }}
         </h2>
         {# These are presorted by persona and constraint. #}
         {{ generic.list_ccs_violations(ccs_violations, personas, link_registration=True) }}
