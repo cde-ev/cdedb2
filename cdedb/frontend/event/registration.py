@@ -343,7 +343,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             skip: Collection[str] = (), check_enabled: bool = False,
     ) -> CdEDBObject:
 
-        def filter_params(params: vtypes.TypeDict) -> vtypes.TypeDict:
+        def filter_params(params: vtypes.TypeMapping) -> vtypes.TypeMapping:
             """Helper to filter out params that are skipped or not enabled."""
             params = {key: kind for key, kind in params.items() if key not in skip}
             if not check_enabled:
@@ -363,7 +363,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         track_group_map = course_choice_params['track_group_map']
 
         # Top-level registration data.
-        standard_params: vtypes.TypeDict = {
+        standard_params: vtypes.TypeMapping = {
             "reg.list_consent": bool,
             "reg.mixed_lodging": bool,
             "reg.notes": Optional[str],  # type: ignore[dict-item]
@@ -377,9 +377,9 @@ class EventRegistrationMixin(EventBaseFrontend):
                 "reg.payment": Optional[datetime.date],  # type: ignore[dict-item]
             })
             if self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
-                standard_params |= {
+                standard_params.update({
                     "reg.real_persona_id": Optional[vtypes.ID]  # type: ignore[dict-item]
-                }
+                })
         standard_params = filter_params(standard_params)
         registration = {
             key.removeprefix("reg."): val
@@ -388,13 +388,13 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         # Part specific data:
         if orga_input:
-            part_params: vtypes.TypeDict = {}
+            part_params: vtypes.TypeMapping = {}
             for part_id in event['parts']:
-                part_params |= {
+                part_params.update({
                     f"part{part_id}.status": const.RegistrationPartStati,
                     f"part{part_id}.lodgement_id": Optional[vtypes.ID],  # type: ignore[dict-item]
                     f"part{part_id}.is_camping_mat": bool,
-                }
+                })
             part_params = filter_params(part_params)
             raw_parts = request_extractor(rs, part_params)
             registration['parts'] = {
@@ -429,34 +429,34 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         # Track specific data:
         # First for simple tracks.
-        track_params: vtypes.TypeDict = {}
+        track_params: vtypes.TypeMapping = {}
         if orga_input:
-            track_params |= {
+            track_params.update({
                 f"track{track_id}.course_id": Optional[vtypes.ID]  # type: ignore[misc]
                 for track_id in tracks
-            }
-        track_params |= {
+            })
+        track_params.update({
             f"track{track_id}.course_choice_{i}": Optional[vtypes.ID]  # type: ignore[misc]
             for track_id in simple_tracks
             for i in range(tracks[track_id]['num_choices'])
-        }
-        track_params |= {
+        })
+        track_params.update({
             f"track{track_id}.course_instructor": Optional[vtypes.ID]  # type: ignore[misc]
             for track_id in simple_tracks
-        }
+        })
         track_params = filter_params(track_params)
         raw_tracks = request_extractor(rs, track_params)
 
         # Now for synced tracks.
         num_choices = lambda g_id: tracks[reference_tracks[g_id]['id']]['num_choices']
-        synced_params: vtypes.TypeDict = {
+        synced_params: vtypes.TypeMapping = {
             f"group{group_id}.course_choice_{i}": Optional[vtypes.ID]  # type: ignore[misc]
             for group_id in sync_track_groups for i in range(num_choices(group_id))
         }
-        synced_params |= {
+        synced_params.update({
             f"group{group_id}.course_instructor": Optional[vtypes.ID]  # type: ignore[misc]
             for group_id in sync_track_groups
-        }
+        })
         synced_params = filter_params(synced_params)
         synced_data = request_extractor(rs, synced_params)
 
@@ -543,7 +543,7 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         # Custom data field data:
         if orga_input:
-            field_params: vtypes.TypeDict = {
+            field_params: vtypes.TypeMapping = {
                 f"fields.{field['field_name']}": Optional[  # type: ignore[misc]
                     VALIDATOR_LOOKUP[field['kind'].name]]  # noqa: F821  # seems like a bug.
                 for field in event['fields'].values()

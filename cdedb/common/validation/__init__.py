@@ -1133,7 +1133,7 @@ PERSONA_FULL_EVENT_CREATION = {**PERSONA_BASE_CREATION, **PERSONA_EVENT_CREATION
 PERSONA_FULL_CDE_CREATION = {**PERSONA_BASE_CREATION, **PERSONA_CDE_CREATION,
                              'is_member': bool, 'is_searchable': bool}
 
-PERSONA_COMMON_FIELDS: Mapping[str, Any] = {
+PERSONA_COMMON_FIELDS: Dict[str, Any] = {
     'username': Email,
     'notes': Optional[str],
     'is_meta_admin': bool,
@@ -1558,8 +1558,8 @@ PRIVILEGE_CHANGE_COMMON_FIELDS: TypeMapping = {
     'notes': str,
 }
 
-PRIVILEGE_CHANGE_OPTIONAL_FIELDS: Mapping[str, Any] = {
-    k: Optional[bool] for k in ADMIN_KEYS
+PRIVILEGE_CHANGE_OPTIONAL_FIELDS: TypeMapping = {
+    k: Optional[bool] for k in ADMIN_KEYS  # type: ignore[misc]
 }
 
 
@@ -3429,7 +3429,7 @@ def _serialized_partial_event(
         'id': ID,
         'timestamp': datetime.datetime,
     }
-    optional_fields = {
+    optional_fields: TypeMapping = {
         'courses': Mapping,
         'lodgement_groups': Mapping,
         'lodgements': Mapping,

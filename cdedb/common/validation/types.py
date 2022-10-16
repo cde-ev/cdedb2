@@ -2,7 +2,9 @@
 
 import datetime
 import decimal
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, NewType as _NewType, Type
+from typing import (  # noqa: F401  # pylint: disable=unused-import
+    TYPE_CHECKING, Any, Dict, List, Mapping, MutableMapping, NewType as _NewType, Type,
+)
 
 from subman import SubscriptionState
 
@@ -13,8 +15,7 @@ if TYPE_CHECKING:
 else:
     CdEDBObject = CdEDBOptionalMap = None
 
-TypeMapping = Mapping[str, Type[Any]]
-TypeDict = Dict[str, Type[Any]]
+TypeMapping = MutableMapping[str, Type[Any]]
 
 # SIMPLE/PRIMITIVE/ATOMIC TYPES
 
