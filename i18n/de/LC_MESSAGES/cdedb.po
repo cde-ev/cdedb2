@@ -17324,3 +17324,6 @@ msgstr "Kann aus {} keinen ml_type bestimmen"
 #, python-format
 msgid "%(ml_type)s is not an appropriate type for this mailinglist."
 msgstr "%(ml_type)s ist kein geeigneter Typ für diese Mailingliste."
+
+msgid "Track groups may be deleted freely, but you may not be able ro recreate them if registrations already exist."
+msgstr "Kursschienengruppen können jederzeit gelöscht werden, aber falls bereits Anmeldungen existieren ist es ggf. nicht möglich diese neu zu erstellen."
