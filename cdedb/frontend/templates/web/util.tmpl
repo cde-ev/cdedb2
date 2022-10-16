@@ -892,10 +892,12 @@ mailto:
     <h1 class="title">
         {{ title }}
         {% if subtitle %}
-            <small>
+            <span class="small">
                 {{ make_icon(icon, arialabel=icon_arialabel) }}{{ nbsp }}{{ subtitle }}
-                {% if caller %}{{ caller() }}{% endif %}
-            </small>
+                {% if caller %}
+                    {{ caller() }}
+                {% endif %}
+            </span>
         {% endif %}
     </h1>
 {% endmacro %}

@@ -16,7 +16,10 @@
 
 {% block heading %}
     {% if ambience['part_group'] %}
-        {{ util.context_heading(gettext("Change part group"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+        {% call util.context_heading(gettext("Change part group"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) %}
+            {{- util.make_icon('bullseye', arialabel=gettext('Part Group')) }}
+            {{ ambience['part_group']['title'] -}}
+        {% endcall %}
     {% else %}
         {{ util.context_heading(gettext("Add part group"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
     {% endif %}
