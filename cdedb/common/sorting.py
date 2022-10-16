@@ -184,6 +184,11 @@ class EntitySorter:
         return (course_track['sortkey'], course_track['id'])
 
     @staticmethod
+    def course_track_group(track_group: CdEDBObject) -> Sortkey:
+        return (track_group['sortkey'], track_group['constraint_type'],
+                track_group['title'], track_group['shortname'], track_group['id'])
+
+    @staticmethod
     def course_choice_object(cco: CdEDBObject) -> Sortkey:
         return (cco['sortkey'], cco.get('constraint_type', 0), cco['title'], cco['id'])
 

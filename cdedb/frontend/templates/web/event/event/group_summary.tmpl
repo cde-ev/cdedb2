@@ -114,7 +114,7 @@
             </tr>
         </thead>
         <tbody>
-            {% for track_group_id, track_group in ambience['event']['track_groups']|keydictsort(EntitySorter.course_choice_object) %}
+            {% for track_group_id, track_group in ambience['event']['track_groups']|keydictsort(EntitySorter.course_track_group) %}
                 <tr id="trackgroup_{{ track_group_id }}">
                     <td>
                         {{ util.make_icon(track_group['constraint_type'].get_icon(), title=gettext(track_group['constraint_type']|string)) }}
