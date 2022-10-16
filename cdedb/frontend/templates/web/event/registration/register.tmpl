@@ -131,8 +131,10 @@
             </div>
         {% endif %}
 
-        <h3 class="sr-only">{% trans %}Course Choices{% endtrans %}</h3>
-        {{ generic_event.select_all_course_choices() }}
+        {% if choice_objects %}
+            <h3 class="">{% trans %}Course Choices{% endtrans %}</h3>
+            {{ generic_event.select_all_course_choices() }}
+        {% endif %}
 
         <h3 class="heading-underline">{% trans %}Additional Information{% endtrans %}</h3>
         {{ generic_event.additional_registration_choices(age, reg_questionnaire) }}

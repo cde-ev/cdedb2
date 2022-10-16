@@ -32,13 +32,8 @@
         {% endif %}
         {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="5") }}
 
-        <h4 class="heading-underline">{% trans %}Fields{% endtrans %}</h4>
-        {% for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field)
-            if field['association'] == enums['FieldAssociations'].lodgement %}
-            {{ generic_event.form_field_input(field) }}
-        {% else %}
-            <p class="text-muted">{% trans %}No custom fields for lodgements available.{% endtrans %}</p>
-        {% endfor %}
+        {{ generic_event.print_field_inputs(enums['FieldAssociations'].lodgement) }}
+
         {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("event/show_lodgement")) }}
     </form>
     <script nonce="{{ csp_nonce }}">

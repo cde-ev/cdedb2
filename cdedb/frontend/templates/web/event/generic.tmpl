@@ -225,10 +225,19 @@
 {% macro print_field_inputs(association) %}
     {% if ambience['event']['fields']|length > 0 %}
         <h3 class="heading-underline">{% trans %}Custom Fields{% endtrans %}</h3>
-        {% for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field) %}
-            {% if field['association'] == association %}
-                {{ form_field_input(field) }}
-            {% endif %}
+        {% for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field)
+                if field['association'] == association %}
+            {{ form_field_input(field) }}
+        {% else %}
+            <p class="text-muted">
+                {% if association == enums['FieldAssociations'].lodgement %}
+                    {% trans %}No custom fields for lodgements available.{% endtrans %}
+                {% elif association == enums['FieldAssociations'].course %}
+                    {% trans %}No custom fields for courses available.{% endtrans %}
+                {% else %}
+                    {% trans %}No custom fields for registrations available.{% endtrans %}
+                {% endif %}
+            </p>
         {% endfor %}
     {% endif %}
 {% endmacro %}

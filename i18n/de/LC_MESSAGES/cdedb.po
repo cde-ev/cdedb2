@@ -12932,6 +12932,9 @@ msgstr "Unterkunft %(lodgement)s bearbeiten"
 msgid "No custom fields for lodgements available."
 msgstr "Keine Datenfelder für Unterkünfte verfügbar."
 
+msgid "No custom fields for registrations available."
+msgstr "Keine Datenfelder für Anmeldungen verfügbar."
+
 #: cdedb/frontend/templates/web/event/lodgement/create_lodgement.tmpl:8
 #, python-format
 msgid "Create Lodgement (%(title)s)"
