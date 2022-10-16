@@ -10820,8 +10820,8 @@ msgid "Course Tracks"
 msgstr "Kursschienen"
 
 #: cdedb/frontend/templates/web/event/course/change_course.tmpl:43
-msgid "Course tracks, in which the Course was originally offered."
-msgstr "Kurschienen, in denen der Kurs ursprünglich angeboten wurde."
+msgid "Course tracks, in which the Course was originally offered. Should only be altered if the course offers has been rescinded. For courses cancelled by orgas use \"Takes Place\" below."
+msgstr "Kurschienen, in denen der Kurs ursprünglich angeboten wurde. Sollte nur geändert werden, wenn das Kursangebot zurückgezogen wird. Für von Orga-Seite abgesagte Kurse stattdessen \"Findet statt in\" weiter unten verwenden."
 
 #: cdedb/frontend/templates/web/event/course/change_course.tmpl:50
 msgid "Takes place"
@@ -17339,3 +17339,9 @@ msgstr "Wird für Orgas bei Bearbeiten von Anmeldungen angezeigt."
 
 msgid "See also: %(link)s."
 msgstr "Siehe auch: %(link)s."
+
+msgid "e.g. \"1. Half\" or \"1. Half Oberwesel\"."
+msgstr "z.B. \"1. Hälfte\" oder \"1. Hälfte Oberwesel\"."
+
+msgid "e.g. \"1.H\" or \"O1\"."
+msgstr "z.B. \"1.H\" oder \"O1\"."
