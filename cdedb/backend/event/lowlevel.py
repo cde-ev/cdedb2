@@ -796,17 +796,17 @@ class EventLowLevelBackend(AbstractBackend):
         # Check that course choices are consistently synced across CCS groups.
         query = """
             SELECT track_group_id, registration_id, COUNT(*)
-                FROM (
-                    -- Per reg_track gather ordered choices, eliminating duplicates.
-                    SELECT DISTINCT cc.registration_id, tg.id AS track_group_id,
-                        ARRAY_AGG(cc.course_id ORDER BY cc.rank ASC) AS choices
-                    FROM event.course_choices cc
-                        LEFT JOIN event.track_group_tracks
-                            tgt ON cc.track_id = tgt.track_id
-                        LEFT JOIN event.track_groups tg ON tgt.track_group_id = tg.id
-                    WHERE tg.event_id = %s AND tg.constraint_type = %s
-                    GROUP BY cc.registration_id, cc.track_id, tg.id
-                ) AS tmp
+            FROM (
+                -- Per reg_track gather ordered choices, eliminating duplicates.
+                SELECT DISTINCT cc.registration_id, tg.id AS track_group_id,
+                    ARRAY_AGG(cc.course_id ORDER BY cc.rank ASC) AS choices
+                FROM event.course_choices cc
+                    LEFT JOIN event.track_group_tracks
+                        tgt ON cc.track_id = tgt.track_id
+                    LEFT JOIN event.track_groups tg ON tgt.track_group_id = tg.id
+                WHERE tg.event_id = %s AND tg.constraint_type = %s
+                GROUP BY cc.registration_id, cc.track_id, tg.id
+            ) AS tmp
             GROUP BY registration_id, track_group_id
             -- Filter for non-unique combinations.
             HAVING COUNT(*) > 1
