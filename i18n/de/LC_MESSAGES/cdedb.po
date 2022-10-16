@@ -17333,3 +17333,6 @@ msgstr "Wird während der Anmeldung angezeigt."
 
 msgid "Will only be shown to Orags when editing registrations."
 msgstr "Wird für Orgas bei Bearbeiten von Anmeldungen angezeigt."
+
+msgid "See also: %(link)s."
+msgstr "Siehe auch: %(link)s."

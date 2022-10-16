@@ -35,6 +35,13 @@
 {%- endmacro %}
 
 {% block content %}
+    {% if has_constraints %}
+        <div class="p">
+            {% trans link=util.href(cdedblink('event/constraint_violations'), gettext("Constraint Violations")) %}
+                See also: {{ link }}.
+            {% endtrans %}
+        </div>
+    {% endif %}
     <div class="row">
         {% for key, heading, icon, panelclass in (
                 ('cancelled_with_p', gettext("Cancelled courses with participants"), 'ban', 'danger'),
@@ -66,7 +73,7 @@
         {% if mec_violations %}
             <div class="col-md-6">
                 {% call generic.constraint_violations_panel(mec_severity, title=gettext("Mutually Exclusive Courses")) %}
-                    {{ generic.list_mec_violations(mec_violations, courses) }}
+                    {{ generic.list_mec_violations(mec_violations, courses, link_course=True) }}
                 {% endcall %}
             </div>
         {% endif %}

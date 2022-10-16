@@ -14,7 +14,14 @@
     {{ util.context_heading(gettext("Constraint Violations"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block content %}
-    {% if not mep_violations and not mec_violations %}
+    {% if ambience['event']['tracks'] %}
+        <div class="p">
+            {% trans link=util.href(cdedblink('event/course_assignment_checks'), gettext("Course Assignment Checks")) %}
+                See also: {{ link }}.
+            {% endtrans %}
+        </div>
+    {% endif %}
+    {% if not mep_violations and not mec_violations and not ccs_violations %}
         {% trans %}
             There are currently no constraints being violated.
         {% endtrans %}
