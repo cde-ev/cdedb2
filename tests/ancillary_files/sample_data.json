@@ -4476,8 +4476,8 @@
         {
             "id": 1,
             "event_id": 4,
-            "title": "Kurs 1 Sync",
-            "shortname": "K1S",
+            "title": "Kurs 1. Hälfte",
+            "shortname": "Kurs1",
             "notes": null,
             "constraint_type": 1,
             "sortkey": 1
@@ -4485,7 +4485,7 @@
         {
             "id": 2,
             "event_id": 4,
-            "title": "Kurs 2 nachmittags Sync",
+            "title": "Kurs 2. Hälfte nachmittags",
             "shortname": "K2nS",
             "notes": null,
             "constraint_type": 1,
@@ -4494,7 +4494,7 @@
         {
             "id": 3,
             "event_id": 4,
-            "title": "Kurs 2 morgens Sync",
+            "title": "Kurs 2. Hälfte morgens",
             "shortname": "K2mS",
             "notes": null,
             "constraint_type": 1,
