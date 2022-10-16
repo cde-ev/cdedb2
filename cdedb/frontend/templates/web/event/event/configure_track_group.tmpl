@@ -46,8 +46,8 @@
     {% endif %}
     <form action="{{ cdedblink(action) }}" method="POST" id="configuretrackgroupform" class="form-horizontal">
         {{ util.anti_csrf_token(action) }}
-        {{ util.form_input_text(name="title", label=gettext("Title")) }}
-        {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
+        {{ util.form_input_text(name="title", label=gettext("Title"), info=gettext("Will be shown during registration.")) }}
+        {{ util.form_input_text(name="shortname", label=gettext("Shortname"), info=gettext("Will only be shown to Orags when editing registrations.")) }}
         {{ util.form_input_textarea(name="notes", label=gettext("Notes")) }}
         {{ util.form_input_text(name="sortkey", label=gettext("Sortkey"), type="number", defaultvalue="0") }}
         {% if ambience['track_group'] %}

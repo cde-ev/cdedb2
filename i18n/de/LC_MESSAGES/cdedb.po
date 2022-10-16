@@ -17327,3 +17327,9 @@ msgstr "%(ml_type)s ist kein geeigneter Typ für diese Mailingliste."
 
 msgid "Track groups may be deleted freely, but you may not be able ro recreate them if registrations already exist."
 msgstr "Kursschienengruppen können jederzeit gelöscht werden, aber falls bereits Anmeldungen existieren ist es ggf. nicht möglich diese neu zu erstellen."
+
+msgid "Will be shown during registration."
+msgstr "Wird während der Anmeldung angezeigt."
+
+msgid "Will only be shown to Orags when editing registrations."
+msgstr "Wird für Orgas bei Bearbeiten von Anmeldungen angezeigt."
