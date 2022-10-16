@@ -44,6 +44,7 @@ CourseChoiceValidationAux = NamedTuple(
         ("course_segments", Mapping[int, Set[int]]),
         ("synced_tracks", Mapping[int, Set[int]]),
         ("involved_tracks", Set[int]),
+        ("orga_input", bool),
     ])
 
 
@@ -115,6 +116,7 @@ class EventRegistrationBackend(EventBaseBackend):
     @access("event")
     def get_course_choice_validation_aux(self, rs: RequestState, event_id: int,
                                          registration_id: Optional[int],
+                                         orga_input: bool,
                                          part_ids: Optional[Collection[int]] = None,
                                          ) -> CourseChoiceValidationAux:
         """Gather auxilliary data necessary to validate course choices.
@@ -153,11 +155,12 @@ class EventRegistrationBackend(EventBaseBackend):
             self._get_course_segments_per_course(rs, event_id),
             self._get_synced_tracks(rs, event_id),
             involved_tracks=involved_tracks,
+            orga_input=orga_input
         )
 
     @access("event")
     def validate_single_course_choice(self, rs: RequestState, course_id: int,  # pylint: disable=no-self-use
-                                      track_id: int, aux: CourseChoiceValidationAux
+                                      track_id: int, aux: CourseChoiceValidationAux,
                                       ) -> bool:
         """Check whether a course choice is allowed in a given track.
 
@@ -173,6 +176,9 @@ class EventRegistrationBackend(EventBaseBackend):
             return True
         # Or the course is offered in a synced track, that we are involved with.
         if aux.synced_tracks[track_id] & aux.involved_tracks & offered_tracks:
+            return True
+        # If this is an orga operation, ignore involvement.
+        if aux.orga_input and aux.synced_tracks[track_id] & offered_tracks:
             return True
         # Otherwise the choice is not allowed.
         return False
@@ -750,7 +756,8 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event")
     def set_registration(self, rs: RequestState, data: CdEDBObject,
-                         change_note: str = None) -> DefaultReturnCode:
+                         change_note: str = None, orga_input: bool = True,
+                         ) -> DefaultReturnCode:
         """Update some keys of a registration.
 
         The syntax for updating the non-trivial keys fields, parts and
@@ -834,7 +841,8 @@ class EventRegistrationBackend(EventBaseBackend):
                 tracks = data['tracks']
                 if not set(tracks).issubset(event['tracks']):
                     raise ValueError(n_("Non-existing tracks specified."))
-                aux = self.get_course_choice_validation_aux(rs, event_id, data['id'])
+                aux = self.get_course_choice_validation_aux(
+                    rs, event_id, registration_id=data['id'], orga_input=orga_input)
                 existing = {e['track_id']: e['id'] for e in self.sql_select(
                     rs, "event.registration_tracks", ("id", "track_id"),
                     (data['id'],), entity_key="registration_id")}
@@ -880,8 +888,8 @@ class EventRegistrationBackend(EventBaseBackend):
         return ret
 
     @access("event")
-    def create_registration(self, rs: RequestState,
-                            data: CdEDBObject) -> DefaultReturnCode:
+    def create_registration(self, rs: RequestState, data: CdEDBObject,
+                            orga_input: bool = True) -> DefaultReturnCode:
         """Make a new registration.
 
         The data must contain a dataset for each part and each track
@@ -930,7 +938,8 @@ class EventRegistrationBackend(EventBaseBackend):
                 new_part['registration_id'] = new_id
                 new_part['part_id'] = part_id
                 self.sql_insert(rs, "event.registration_parts", new_part)
-            aux = self.get_course_choice_validation_aux(rs, event['id'], new_id)
+            aux = self.get_course_choice_validation_aux(
+                rs, event['id'], registration_id=new_id, orga_input=orga_input)
             # insert tracks
             for track_id, track in data['tracks'].items():
                 new_track = copy.deepcopy(track)

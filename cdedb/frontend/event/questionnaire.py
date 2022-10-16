@@ -207,7 +207,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
 
         change_note = "Fragebogen durch Teilnehmer bearbeitet."
         code = self.eventproxy.set_registration(
-            rs, {'id': registration_id, 'fields': data}, change_note)
+            rs, {'id': registration_id, 'fields': data}, change_note, orga_input=False)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/additional_questionnaire_form")
 

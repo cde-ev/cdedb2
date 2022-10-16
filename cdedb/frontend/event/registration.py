@@ -484,7 +484,8 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         # Now retrieve _and validate_ course choices.
         aux = self.eventproxy.get_course_choice_validation_aux(
-            rs, event['id'], registration_id=None, part_ids=part_ids)
+            rs, event['id'], registration_id=None, part_ids=part_ids,
+            orga_input=orga_input)
         for track_id, track in tracks.items():
             # If not all keys are present we are probably in the multiedit.
             if not all(
@@ -601,7 +602,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         registration['parental_agreement'] = not age.is_minor()
         registration['mixed_lodging'] = (registration['mixed_lodging']
                                          and age.may_mix())
-        new_id = self.eventproxy.create_registration(rs, registration)
+        new_id = self.eventproxy.create_registration(rs, registration, orga_input=False)
         meta_info = self.coreproxy.get_meta_info(rs)
         fee = self.eventproxy.calculate_fee(rs, new_id)
         semester_fee = self.conf["MEMBERSHIP_FEE"]
@@ -778,7 +779,8 @@ class EventRegistrationMixin(EventBaseFrontend):
         registration['mixed_lodging'] = (registration['mixed_lodging']
                                          and age.may_mix())
         change_note = "Anmeldung durch Teilnehmer bearbeitet."
-        code = self.eventproxy.set_registration(rs, registration, change_note)
+        code = self.eventproxy.set_registration(
+            rs, registration, change_note, orga_input=False)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/registration_status")
 
