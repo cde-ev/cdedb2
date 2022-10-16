@@ -517,9 +517,12 @@ class EventRegistrationMixin(EventBaseFrontend):
                     if course_id == choice(x):
                         rs.add_validation_error((
                             choice_key(rank),
-                             ValueError(n_(
-                                 "You cannot have the same course as %(i)s."
-                                 " and %(j)s. choice"),
+                             ValueError(
+                                 n_("Cannot have the same course as %(i)s."
+                                    " and %(j)s. choice.")
+                                 if orga_input else
+                                 n_("You cannot have the same course as %(i)s."
+                                    " and %(j)s. choice."),
                                  {'i': x + 1, 'j': rank + 1})
                         ))
                 # Check that the course choice is allowed for this track.
