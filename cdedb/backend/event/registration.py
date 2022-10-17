@@ -98,7 +98,7 @@ class EventRegistrationBackend(EventBaseBackend):
         q = """
             SELECT ct.id, COALESCE(synced_tracks, ARRAY[]::integer[]) AS synced_tracks
             FROM event.course_tracks AS ct
-            JOIN event.event_parts ep on ep.id = ct.part_id
+            JOIN event.event_parts AS ep on ep.id = ct.part_id
             LEFT JOIN (
                 SELECT ct.id, ARRAY_AGG(tgt2.track_id) AS synced_tracks
                 FROM event.course_tracks AS ct
@@ -142,8 +142,8 @@ class EventRegistrationBackend(EventBaseBackend):
         elif part_ids:
             q = """
                 SELECT ct.id
-                FROM event.course_tracks ct
-                JOIN event.event_parts ep on ep.id = ct.part_id
+                FROM event.course_tracks AS ct
+                    JOIN event.event_parts AS ep on ep.id = ct.part_id
                 WHERE ep.id = ANY(%s)
             """
             involved_tracks = {e['id'] for e in self.query_all(rs, q, (part_ids,))}
@@ -227,9 +227,9 @@ class EventRegistrationBackend(EventBaseBackend):
         """
         query = """
             SELECT tg.id, ARRAY_REMOVE(ARRAY_AGG(DISTINCT cs.course_id), NULL) AS courses
-            FROM event.track_groups tg
-                LEFT JOIN event.track_group_tracks tgt ON tg.id = tgt.track_group_id
-                LEFT JOIN event.course_segments cs ON tgt.track_id = cs.track_id {}
+            FROM event.track_groups AS tg
+                LEFT JOIN event.track_group_tracks AS tgt ON tg.id = tgt.track_group_id
+                LEFT JOIN event.course_segments AS cs ON tgt.track_id = cs.track_id {}
             WHERE tg.event_id = %s AND tg.constraint_type = %s
             GROUP BY tg.id
         """

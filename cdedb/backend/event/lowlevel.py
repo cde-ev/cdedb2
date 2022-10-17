@@ -765,9 +765,9 @@ class EventLowLevelBackend(AbstractBackend):
             FROM (
                 -- Inner SELECT will have one row per different configuration per group.
                 SELECT tg.id, ct.num_choices, ct.min_choices
-                FROM event.track_groups tg
-                    LEFT JOIN event.track_group_tracks tgt on tg.id = tgt.track_group_id
-                    LEFT JOIN event.course_tracks ct on ct.id = tgt.track_id
+                FROM event.track_groups AS tg
+                    LEFT JOIN event.track_group_tracks AS tgt on tg.id = tgt.track_group_id
+                    LEFT JOIN event.course_tracks AS ct on ct.id = tgt.track_id
                 WHERE tg.event_id = %s AND tg.constraint_type = %s
                 GROUP BY tg.id, ct.num_choices, ct.min_choices
             ) AS tmp
@@ -782,8 +782,8 @@ class EventLowLevelBackend(AbstractBackend):
         # Check that no track is linked to more than one CCS group.
         query = """
             SELECT track_id
-            FROM event.track_group_tracks tgt
-                JOIN event.track_groups tg ON tg.id = tgt.track_group_id
+            FROM event.track_group_tracks AS tgt
+                JOIN event.track_groups AS tg ON tg.id = tgt.track_group_id
             WHERE tg.event_id = %s AND tg.constraint_type = %s
             GROUP BY tgt.track_id
             -- Filter for tracks with more than one CCS group.
@@ -800,10 +800,10 @@ class EventLowLevelBackend(AbstractBackend):
                 -- Per reg_track gather ordered choices, eliminating duplicates.
                 SELECT DISTINCT cc.registration_id, tg.id AS track_group_id,
                     ARRAY_AGG(cc.course_id ORDER BY cc.rank ASC) AS choices
-                FROM event.course_choices cc
-                    LEFT JOIN event.track_group_tracks
-                        tgt ON cc.track_id = tgt.track_id
-                    LEFT JOIN event.track_groups tg ON tgt.track_group_id = tg.id
+                FROM event.course_choices AS cc
+                    LEFT JOIN event.track_group_tracks AS tgt
+                        ON cc.track_id = tgt.track_id
+                    LEFT JOIN event.track_groups AS tg ON tgt.track_group_id = tg.id
                 WHERE tg.event_id = %s AND tg.constraint_type = %s
                 GROUP BY cc.registration_id, cc.track_id, tg.id
             ) AS tmp
@@ -823,8 +823,8 @@ class EventLowLevelBackend(AbstractBackend):
 
         query = """
             SELECT DISTINCT ep.event_id
-            FROM event.event_parts ep
-                LEFT JOIN event.course_tracks ct on ep.id = ct.part_id
+            FROM event.event_parts AS ep
+                LEFT JOIN event.course_tracks AS ct on ep.id = ct.part_id
             WHERE ct.id = ANY(%s)
         """
         params = (track_ids,)
