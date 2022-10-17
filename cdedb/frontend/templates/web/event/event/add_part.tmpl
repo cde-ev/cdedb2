@@ -22,7 +22,7 @@
 {% block content %}
     <form action="{{ cdedblink('event/add_part') }}" method="POST" id="addpartform" class="form-horizontal">
         {{ util.anti_csrf_token('event/add_part') }}
-        {{ util.form_input_text(name="title", label=gettext("Title"), info=gettext("e.g. \"1. Half\" or \"1. Half Oberwesel\".")) }}
+        {{ util.form_input_text(name="title", label=gettext("Title"), info=gettext("e.g. \"1. Hälfte\" or \"1. Hälfte Oberwesel\".")) }}
         {{ util.form_input_text(name="shortname", label=gettext("Shortname"), info=gettext("e.g. \"1.H\" or \"O1\".")) }}
         {{ util.form_input_text(name="part_begin", label=gettext("Begin"), type='date', placeholder="YYYY-MM-DD") }}
         {{ util.form_input_text(name="part_end", label=gettext("End"), type='date', placeholder="YYYY-MM-DD") }}

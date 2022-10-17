@@ -2934,7 +2934,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             "track1.course_choice_0", "Geleiteter Kurs kann nicht gewählt werden.")
         self.assertValidationError(
             "track1.course_choice_1",
-            "Du kannst diesen Kurs nicht als 1. und 2. Wahl wählen.")
+            "1. und 2. Kurswahl müssen unterschiedlich sein.")
         # Now add an actually valid user.
         f['persona.persona_id'] = USER_DICT['charly']['DB-ID']
         f['reg.orga_notes'] = "Du entkommst uns nicht."
@@ -2970,7 +2970,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 
     @as_users("garcia")
     def test_add_illegal_registration(self) -> None:
-        self.get("/event/event/1/registration/add")
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Anmeldungen",
+                      "Anmeldung hinzufügen")
         self.assertTitle("Neue Anmeldung (Große Testakademie 2222)")
         f = self.response.forms["addregistrationform"]
         f["persona.persona_id"] = USER_DICT['charly']['DB-ID']
@@ -2980,8 +2981,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.submit(f, check_notification=False)
         self.assertTitle("Neue Anmeldung (Große Testakademie 2222)")
         self.assertValidationError('track1.course_choice_1',
-                                   "Du kannst diesen Kurs nicht als"
-                                   " 1. und 2. Wahl wählen.")
+                                   "1. und 2. Kurswahl müssen unterschiedlich sein.")
         f = self.response.forms["addregistrationform"]
         f["track1.course_choice_1"] = 4
         self.submit(f)
@@ -5212,7 +5212,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f = self.response.forms['configurepartgroupform']
 
         # Check that constraint_type and part_ids fields are disabled.
-        self.assertEqual(f['constraint_type'].attrs, {'type': 'hidden'})
+        self.assertNotIn('constraint_type', f.fields)
         for field in f.fields.get('part_ids'):
             self.assertEqual(field.attrs, {'type': 'hidden'})
 
@@ -5603,7 +5603,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 
         # Register for TripelAkademie and choose some courses.
         f = self.response.forms['registerform']
-        self.assertPresence("Kurswahlen für Kurs 1 Sync",
+        self.assertPresence("Kurswahlen für Kurs 1. Hälfte",
                             div="course-choice-container-group-1")
         f['group1.course_choice_0'] = 9
         f['group1.course_choice_1'] = 10
@@ -5614,7 +5614,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                             div="course-choice-container-15")
         f['track15.course_choice_0'] = 11
         f['track15.course_instructor'] = 12
-        self.assertPresence("Kurswahlen für Kurs 2 morgens Sync",
+        self.assertPresence("Kurswahlen für Kurs 2. Hälfte morgens",
                             div="course-choice-container-group-3")
         f['group3.course_choice_0'] = 12
         f['group3.course_choice_1'] = 11
@@ -5622,7 +5622,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f['group3.course_choice_3'] = ''
         f['group3.course_choice_4'] = ''
         f['group3.course_instructor'] = ''
-        self.assertPresence("Kurswahlen für Kurs 2 nachmittags Sync",
+        self.assertPresence("Kurswahlen für Kurs 2. Hälfte nachmittags",
                             div="course-choice-container-group-2")
         f['group2.course_choice_0'] = 11
         f['group2.course_choice_1'] = ''
@@ -5744,7 +5744,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.traverse("Anmeldungen", "Anmeldung hinzufügen")
         f = self.response.forms['addregistrationform']
         f['persona.persona_id'] = "DB-2-7"
-        self.assertPresence("Kurswahlen für Kurs 1 Sync",
+        self.assertPresence("Kurswahlen für Kurs 1. Hälfte",
                             div="course-choice-container-group-1")
         f['group1.course_choice_0'] = 9
         f['group1.course_choice_1'] = 10
@@ -5755,7 +5755,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                             div="course-choice-container-15")
         f['track15.course_choice_0'] = 12
         f['track15.course_instructor'] = 11
-        self.assertPresence("Kurswahlen für Kurs 2 morgens Sync",
+        self.assertPresence("Kurswahlen für Kurs 2. Hälfte morgens",
                             div="course-choice-container-group-3")
         f['group3.course_choice_0'] = 12
         f['group3.course_choice_1'] = 11
@@ -5763,7 +5763,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f['group3.course_choice_3'] = ''
         f['group3.course_choice_4'] = ''
         f['group3.course_instructor'] = 9
-        self.assertPresence("Kurswahlen für Kurs 2 nachmittags Sync",
+        self.assertPresence("Kurswahlen für Kurs 2. Hälfte nachmittags",
                             div="course-choice-container-group-2")
         f['group2.course_choice_0'] = 11
         f['group2.course_choice_1'] = ''

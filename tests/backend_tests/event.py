@@ -507,8 +507,8 @@ class TestEventBackend(BackendTest):
                         1: {
                             'id': 1,
                             'event_id': 4,
-                            'title': "Kurs 1 Sync",
-                            'shortname': "K1S",
+                            'title': "Kurs 1. Hälfte",
+                            'shortname': "Kurs1",
                             'notes': None,
                             'constraint_type':
                                 const.CourseTrackGroupType.course_choice_sync,

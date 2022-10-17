@@ -4867,10 +4867,10 @@ msgstr "Bitte wähle nicht deinen eigenen Kurs."
 
 #: cdedb/frontend/event/registration.py:519
 #, python-format
-msgid "You cannot have the same course as %(i)s. and %(j)s. choice"
+msgid "You cannot have the same course as %(i)s. and %(j)s. choice."
 msgstr "Du kannst diesen Kurs nicht als %(i)s. und %(j)s. Wahl wählen."
 
-msgid "Cannot have the same course as %(i)s. and %(j)s. choice"
+msgid "Cannot have the same course as %(i)s. and %(j)s. choice."
 msgstr "%(i)s. und %(j)s. Kurswahl müssen unterschiedlich sein."
 
 #: cdedb/frontend/event/registration.py:529
@@ -17340,7 +17340,7 @@ msgstr "Wird für Orgas bei Bearbeiten von Anmeldungen angezeigt."
 msgid "See also: %(link)s."
 msgstr "Siehe auch: %(link)s."
 
-msgid "e.g. \"1. Half\" or \"1. Half Oberwesel\"."
+msgid "e.g. \"1. Hälfte\" or \"1. Hälfte Oberwesel\"."
 msgstr "z.B. \"1. Hälfte\" oder \"1. Hälfte Oberwesel\"."
 
 msgid "e.g. \"1.H\" or \"O1\"."
