@@ -136,7 +136,7 @@
     {%- set bool_label = bool_label or field['title'] %}
     {%- if field['entries'] %}
         {{- util.input_select(name=name, entries=field['entries'], nulloption=nbsp,
-                              readonly=readonly, defaultvalue=defaultvalue, anid=anid, sort=True) }}
+                              readonly=readonly, defaultvalue=defaultvalue, anid=anid, sort=False) }}
     {%- else %}
         {% set datatypes = enums['FieldDatatypes'] %}
         {%- if field['kind'] == datatypes.bool %}
