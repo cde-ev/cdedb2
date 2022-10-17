@@ -148,6 +148,7 @@
                                     aclass='drow-input form-control input-num-choices',
                                     attributes=util.drow_basename("num_choices", prefix="track"),
                                     defaultvalue=DEFAULT_NUM_COURSE_CHOICES,
+                                    actualreadonly=id in readonly_synced_tracks,
                                     arialabel=gettext("Course Choices")) }}
                             {{ util.output_errors(drow_name("num_choices", id, prefix="track")) }}
                         </td>
@@ -156,6 +157,7 @@
                                     aclass='drow-input form-control input-min-choices',
                                     attributes=util.drow_basename("min_choices", prefix="track"),
                                     defaultvalue=DEFAULT_NUM_COURSE_CHOICES,
+                                    actualreadonly=id in readonly_synced_tracks,
                                     arialabel=gettext("Req. Choices")) }}
                             {{ util.output_errors(drow_name("min_choices", id, prefix="track")) }}
                         </td>
@@ -163,7 +165,7 @@
                             {{ util.input_text(drow_name("sortkey", id, prefix="track"),
                                     aclass='drow-input form-control',
                                     attributes=util.drow_basename("sortkey", prefix="track"),
-                                    arialabel=gettext("Sortkey")) }}
+                                    defaultvalue="0", arialabel=gettext("Sortkey")) }}
                             {{ util.output_errors(drow_name("sortkey", id, prefix="track")) }}
                         </td>
                         <td>

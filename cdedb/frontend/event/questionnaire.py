@@ -153,7 +153,11 @@ class EventQuestionnaireMixin(EventBaseFrontend):
                 return self.redirect(rs, "event/registration_status")
             if self.is_locked(rs.ambience['event']):
                 rs.notify("info", n_("Event locked."))
-            merge_dicts(rs.values, registration['fields'])
+            values = {
+                f"fields.{key}": val
+                for key, val in registration['fields'].items()
+            }
+            merge_dicts(rs.values, values)
             if field_id := rs.ambience['event']['lodge_field']:
                 if any(row['field_id'] == field_id for row in add_questionnaire):
                     wish_data = self._get_user_lodgement_wishes(rs, event_id)
@@ -194,13 +198,16 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             rs.notify("error", n_("Event is already archived."))
             return self.redirect(rs, "event/show_event")
         params = self._questionnaire_params(rs, const.QuestionnaireUsages.additional)
-        data = request_extractor(rs, params)
+        data = {
+            key.removeprefix("fields."): val
+            for key, val in request_extractor(rs, params).items()
+        }
         if rs.has_validation_errors():
             return self.additional_questionnaire_form(rs, event_id, internal=True)
 
         change_note = "Fragebogen durch Teilnehmer bearbeitet."
-        code = self.eventproxy.set_registration(rs,
-            {'id': registration_id, 'fields': data}, change_note)
+        code = self.eventproxy.set_registration(
+            rs, {'id': registration_id, 'fields': data}, change_note, orga_input=False)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/additional_questionnaire_form")
 

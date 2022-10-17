@@ -123,7 +123,7 @@ def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
     with open(data_path, encoding='UTF-8') as infile:
         data = json.load(infile)
 
-    if data.get("EVENT_SCHEMA_VERSION") != [15, 6]:
+    if data.get("EVENT_SCHEMA_VERSION") != [15, 7]:
         raise RuntimeError("Version mismatch -- aborting.")
     if data["kind"] != "full":
         raise RuntimeError("Not a full export -- aborting.")
@@ -197,7 +197,7 @@ def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
         'event.lodgement_groups', 'event.lodgements', 'event.registrations',
         'event.registration_parts', 'event.registration_tracks',
         'event.course_choices', 'event.questionnaire_rows', 'event.log',
-        'event.stored_queries',
+        'event.stored_queries', 'event.track_groups', 'event.track_group_tracks',
     )
 
     print("Connect to database")

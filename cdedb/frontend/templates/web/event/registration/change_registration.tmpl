@@ -66,7 +66,7 @@
 
             {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) if track['part_id'] == part_id %}
                 {% set course_entries = courses|keydictsort(EntitySorter.course)
-                                        |xdict_entries('{id}', '{nr}. {shortname}', include=course_choices[track_id]) %}
+                                        |xdict_entries('{id}', '{nr}. {shortname}', include=courses_per_track[track_id]) %}
                 {{ util.form_input_select(name="track{}.course_id".format(track_id),
                                           label=gettext("Course %s")|format(track['shortname'])
                                                 if ambience['event']['tracks']|length > 1  else gettext("Course"),
@@ -79,34 +79,10 @@
         {{ util.form_input_checkbox(name="reg.mixed_lodging", label=gettext("Mixed Lodging")) }}
         {{ util.form_input_checkbox(name="reg.list_consent", label=gettext("Participant List Consent")) }}
         {{ util.form_input_textarea(name="reg.notes", label=gettext("Notes"), rows="5") }}
-        {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
-            {% if course_choices[track_id]|length > 0 %}
-                <h4>
-                    {% trans %}Course Choices{% endtrans %}
-                    {% if ambience['event']['tracks']|length > 1 %}
-                    {{ track['shortname'] }}
-                    {% endif %}
-                </h4>
 
-                {% set course_entries = courses|keydictsort(EntitySorter.course)
-                                        |xdict_entries('{id}', '{nr}. {shortname}', include=course_choices[track_id]) %}
-                {{ util.form_input_select(name="track{}.course_instructor".format(track_id), label=gettext("Instructor of"),
-                                         entries=course_entries, nulloption=nbsp) }}
-                {% for i in range(track['num_choices']) %}
-                    {{ util.form_input_select(name="track{}.course_choice_{}".format(track_id, i),
-                                              label=gettext("%s. Choice")|format(i + 1), entries=course_entries, nulloption=nbsp) }}
-                {% endfor %}
-            {% endif %}
-        {% endfor %}
+        {{ generic_event.select_all_course_choices() }}
 
-        {% if ambience['event']['fields']|length > 0 %}
-            <h3 class="heading-underline">{% trans %}Custom Fields{% endtrans %}</h3>
-            {% for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field) %}
-                {% if field['association'] == enums['FieldAssociations'].registration %}
-                    {{ generic_event.form_field_input(field) }}
-                {% endif %}
-            {% endfor %}
-        {% endif %}
+        {{ generic_event.print_field_inputs(enums['FieldAssociations'].registration) }}
 
         <div class="panel panel-primary">
             <div class="panel-body">
