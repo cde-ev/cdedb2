@@ -342,6 +342,23 @@ class EventRegistrationMixin(EventBaseFrontend):
             self, rs: RequestState, orga_input: bool, parts: CdEDBObjectMap = None,
             skip: Collection[str] = (), check_enabled: bool = False,
     ) -> CdEDBObject:
+        """Helper to retrieve input data for e registration and convert it into a
+        registration dict that can be used for `create_registration` or
+        `set_registration`.
+
+        :param orga_input: False if the form is filled in and submitted by a non-orga
+            user. (Or an orga using the regular register form). There are more fields
+            available to set for orgas and some slight semantic differences.
+        :param parts: Only relevant for non-orga input. If None, the part information
+            will be retrieved from the input (meaning this is a new registration
+            being created). Otherwise the data from `get_registration()['parts']`.
+        :param skip: A list of field names to be excluded from retrieval and setting.
+            Can be used to avoid simulataneously opened tabs overwriting one another,
+            e.g. when editing a registration coming from the checkin page, the
+            `reg.checkin` field is skipped for that edit.
+        :param check_enabled: If True, only retrieve data for fields where a
+            corresponding enable checkbox is selected. Only relevant for the multiedit.
+        """
 
         def filter_params(params: vtypes.TypeMapping) -> vtypes.TypeMapping:
             """Helper to filter out params that are skipped or not enabled."""
