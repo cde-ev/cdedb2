@@ -5711,7 +5711,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.traverse("Anmeldungen", "Alle Teilnehmer", "Details")
         self.assertTitle("Anmeldung von Emilia E. Eventis (TripelAkademie)")
 
-        self.assertPresence("Kurs 2 nachmittags Sync", div="course-choices-group-2")
+        self.assertPresence("Kurs 2. Hälfte nachmittags", div="course-choices-group-2")
         self.assertPresence("Kursleiter von —",
                             div="course-choices-group-2")
         self.assertPresence("1. Wahl —",
@@ -5730,7 +5730,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f['group2.course_instructor'] = 12
         self.submit(f)
 
-        self.assertPresence("Kurs 2 nachmittags Sync", div="course-choices-group-2")
+        self.assertPresence("Kurs 2. Hälfte nachmittags", div="course-choices-group-2")
         self.assertPresence("Kursleiter von 3. Nostalgie",
                             div="course-choices-group-2")
         self.assertPresence("1. Wahl 4. Akrobatik",
@@ -5815,10 +5815,11 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f['group2.course_choice_0'] = 9
         self.submit(f, check_notification=False)
         # Akrobatik and Nostalgie are only offered in Windischleuba in the second half.
-        self.assertValidationError(
-            'group3.course_choice_0', "Unzulässige Kurswahl für diese Kursschiene.")
-        self.assertValidationError(
-            'group2.course_choice_0', "Unzulässige Kurswahl für diese Kursschiene.")
+        # This no longer is a validation error for orgas.
+        # self.assertValidationError(
+        #     'group3.course_choice_0', "Unzulässige Kurswahl für diese Kursschiene.")
+        # self.assertValidationError(
+        #     'group2.course_choice_0', "Unzulässige Kurswahl für diese Kursschiene.")
         f['group2.course_choice_0'] = ''
         f['group3.course_choice_0'] = ''
         self.submit(f)
