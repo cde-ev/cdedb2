@@ -19,7 +19,7 @@ import cdedb.database.constants as const
 from cdedb.backend.common import cast_fields
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap, CourseFilterPositions, InfiniteEnum,
-    nearly_now, now,
+    nearly_now, now, unwrap,
 )
 from cdedb.common.exceptions import PartialImportError, PrivilegeError
 from cdedb.common.query import Query, QueryOperators, QueryScope
@@ -628,6 +628,29 @@ class TestEventBackend(BackendTest):
         tg.update(tg_update[1003])
         self.assertEqual(
             tg, self.event.get_event(self.key, event_id)['track_groups'][1003])
+
+    @as_users("emilia")
+    def test_course_choice_sync(self) -> None:
+        event_id = 4
+        registration_id = 10
+        track_id = 6
+        event = self.event.get_event(self.key, event_id)
+        self.assertTrue(event['tracks'][track_id]['track_groups'])
+        self.assertTrue(unwrap(
+            event['tracks'][track_id]['track_groups'])['constraint_type'].is_sync())
+        self.assertGreater(
+            len(unwrap(event['tracks'][track_id]['track_groups'])), 1)
+        reg_data = {
+            'id': registration_id,
+            'tracks': {
+                track_id: {
+                    'choices': [10, 11, 12]
+                }
+            }
+        }
+        with self.assertRaises(ValueError) as cm:
+            self.event.set_registration(self.key, reg_data)
+        self.assertEqual(cm.exception.args[0], "Incompatible course choices present.")
 
     @storage
     @as_users("annika", "garcia")
