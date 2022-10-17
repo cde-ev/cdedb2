@@ -5723,7 +5723,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 
         self.traverse("Bearbeiten")
         f = self.response.forms['changeregistrationform']
-        f['part10.status'] = const.RegistrationPartStati.participant
         f['group2.course_choice_0'] = 9
         f['group2.course_choice_1'] = 11
         f['group2.course_choice_2'] = ''
