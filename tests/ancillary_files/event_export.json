@@ -428,7 +428,7 @@
     },
     "EVENT_SCHEMA_VERSION": [
         15,
-        6
+        7
     ],
     "event.registration_parts": {
         "2": {
