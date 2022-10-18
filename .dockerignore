@@ -2,3 +2,5 @@
 
 !related/
 !ldap/
+
+related/auto-build/*
