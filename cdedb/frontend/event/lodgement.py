@@ -242,7 +242,7 @@ class EventLodgementMxin(EventBaseFrontend):
                                 ) -> Response:
         """Manipulate groups of lodgements."""
         group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
-        spec = {'title': str}
+        spec: vtypes.TypeMapping = {'title': str}
         groups = process_dynamic_input(rs, vtypes.LodgementGroup, group_ids.keys(),
                                        spec, additional={'event_id': event_id})
 

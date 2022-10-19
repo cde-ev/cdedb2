@@ -43,13 +43,7 @@
         <h4 class="heading-underline">{% trans %}Status{% endtrans %}</h4>
         {{ util.form_input_textarea(name="notes", label=gettext("Orga-Notes"), rows="5", markdown=True) }}
 
-        <h4 class="heading-underline">{% trans %}Fields{% endtrans %}</h4>
-        {% for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field)
-                if field['association'] == enums['FieldAssociations'].course %}
-            {{ generic_event.form_field_input(field) }}
-        {% else %}
-            <p class="text-muted">{% trans %}No custom fields for courses available.{% endtrans %}</p>
-        {% endfor %}
+        {{ generic_event.print_field_inputs(enums['FieldAssociations'].course) }}
 
         {{ util.form_input_static(aclass='text-info', icon='info-circle',
                           value=gettext("Warning: The description will be publicly visible, once courselist visibility "

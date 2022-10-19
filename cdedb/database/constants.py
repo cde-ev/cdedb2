@@ -133,6 +133,19 @@ class EventPartGroupType(enum.IntEnum):
 
 
 @enum.unique
+class CourseTrackGroupType(enum.IntEnum):
+    course_choice_sync = 1
+
+    def get_icon(self) -> str:
+        return {
+            CourseTrackGroupType.course_choice_sync: "bezier-curve",
+        }[self]
+
+    def is_sync(self) -> bool:
+        return self == CourseTrackGroupType.course_choice_sync
+
+
+@enum.unique
 class GenesisStati(enum.IntEnum):
     """Spec for field case_status of core.genesis_cases."""
     #: created, data logged, email unconfirmed
@@ -225,6 +238,17 @@ class MailinglistDomain(enum.IntEnum):
     def display_str(self) -> str:
         """Return a readable string representation to be displayed in the UI."""
         return self.get_domain()
+
+    def get_acceptable_aliases(self) -> Set[str]:
+        """Return alias domains which might exist for a given type.
+
+        This is only used to allow emails to <local_part>@alias to be sent to the list
+        members without moderation."""
+        if self == MailinglistDomain.lists:
+            return {"cde-ev.de", "lists.schuelerakademie.de"}
+        if self == MailinglistDomain.cdelokal:
+            return {"cdelokal.schuelerakademie.de"}
+        return set()
 
 
 # Instead of importing this, call str() on a MailinglistDomain.
@@ -389,6 +413,11 @@ class EventLogCodes(enum.IntEnum):
     part_group_deleted = 102  #:
     part_group_link_created = 105  #:
     part_group_link_deleted = 106  #:
+    track_group_created = 110  #:
+    track_group_changed = 111  #:
+    track_group_deleted = 112  #:
+    track_group_link_created = 113  #:
+    track_group_link_deleted = 114  #:
 
 
 @enum.unique

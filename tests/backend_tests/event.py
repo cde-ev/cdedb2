@@ -19,7 +19,7 @@ import cdedb.database.constants as const
 from cdedb.backend.common import cast_fields
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap, CourseFilterPositions, InfiniteEnum,
-    nearly_now, now,
+    nearly_now, now, unwrap,
 )
 from cdedb.common.exceptions import PartialImportError, PrivilegeError
 from cdedb.common.query import Query, QueryOperators, QueryScope
@@ -180,6 +180,7 @@ class TestEventBackend(BackendTest):
         data['parts'][-2]['fee_modifiers'][-1].update({'id': 1001, 'part_id': 1002})
         data['fee_modifiers'] = {1001: data['parts'][-2]['fee_modifiers'][-1]}
         data['part_groups'] = {}
+        data['track_groups'] = {}
         # correct part and field ids
         tmp = self.event.get_event(self.key, new_id)
         part_map = {}
@@ -190,6 +191,7 @@ class TestEventBackend(BackendTest):
                     data['parts'][part] = data['parts'][oldpart]
                     data['parts'][part]['id'] = part
                     data['parts'][part]['event_id'] = new_id
+                    data['parts'][part]['part_groups'] = {}
                     self.assertEqual(
                         set(x['title'] for x in data['parts'][part]['tracks'].values()),
                         set(x['title'] for x in tmp['parts'][part]['tracks'].values()))
@@ -203,6 +205,8 @@ class TestEventBackend(BackendTest):
                         tmp['parts'][part]['fee_modifiers'])
                     del data['parts'][oldpart]
                     break
+        for track in data['tracks'].values():
+            track['track_groups'] = {}
         field_map = {}
         for field in tmp['fields']:
             for oldfield in data['fields']:
@@ -310,6 +314,10 @@ class TestEventBackend(BackendTest):
         changed_part['tracks'][1002].update({'part_id': 1002, 'id': 1002})
         changed_part['fee_modifiers'][1001].update({'part_id': 1002, 'id': 1001})
         data['parts'][part_map["Second coming"]] = changed_part
+        for part in data['parts'].values():
+            part['part_groups'] = {}
+            for track in part['tracks'].values():
+                track['track_groups'] = {}
         for field in tmp['fields']:
             if tmp['fields'][field]['field_name'] == "kuea":
                 field_map[tmp['fields'][field]['field_name']] = field
@@ -333,6 +341,7 @@ class TestEventBackend(BackendTest):
                 'num_choices': 5,
                 'min_choices': 4,
                 'sortkey': 3,
+                'track_groups': {},
             },
             1003: {
                 'id': 1003,
@@ -342,6 +351,7 @@ class TestEventBackend(BackendTest):
                 'num_choices': 2,
                 'min_choices': 2,
                 'sortkey': 2,
+                'track_groups': {},
             },
         }
         data['fee_modifiers'] = changed_part['fee_modifiers']
@@ -473,6 +483,175 @@ class TestEventBackend(BackendTest):
             self.event.delete_event(
                 self.key, 1, self.event.delete_event_blockers(self.key, 1)))
 
+        # Test part groups and track groups in get_event.
+        expectation_part = {
+            'id': 6,
+            'event_id': 4,
+            'title': "1. Hälfte Oberwesel",
+            'shortname': "O1",
+            'part_begin': datetime.date(3000, 1, 1),
+            'part_end': datetime.date(3000, 2, 1),
+            'fee': decimal.Decimal("0.00"),
+            'waitlist_field': None,
+            'fee_modifiers': {},
+            'tracks': {
+                6: {
+                    'id': 6,
+                    'part_id': 6,
+                    'title': "Oberwesel Kurs 1",
+                    'shortname': "OK1",
+                    'num_choices': 4,
+                    'min_choices': 2,
+                    'sortkey': 1,
+                    'track_groups': {
+                        1: {
+                            'id': 1,
+                            'event_id': 4,
+                            'title': "Kurs 1. Hälfte",
+                            'shortname': "Kurs1",
+                            'notes': None,
+                            'constraint_type':
+                                const.CourseTrackGroupType.course_choice_sync,
+                            'track_ids': {6, 7, 8},
+                            'sortkey': 1,
+                        }
+                    },
+                },
+            },
+            'part_groups': {
+                1: {
+                    'id': 1,
+                    'title': "1. Hälfte",
+                    'shortname': "1.H.",
+                    'notes': None,
+                    'event_id': 4,
+                    'constraint_type': const.EventPartGroupType.Statistic,
+                    'part_ids': {6, 7, 8},
+                },
+                3: {
+                    'id': 3,
+                    'title': "Oberwesel",
+                    'shortname': "OW",
+                    'notes': None,
+                    'event_id': 4,
+                    'constraint_type': const.EventPartGroupType.Statistic,
+                    'part_ids': {6, 9},
+                },
+                6: {
+                    'id': 6,
+                    'title': "Teilnehmer 1. Hälfte",
+                    'shortname': "TN 1H",
+                    'notes': None,
+                    'event_id': 4,
+                    'constraint_type':
+                        const.EventPartGroupType.mutually_exclusive_participants,
+                    'part_ids': {6, 7, 8},
+                },
+                8: {
+                    'id': 8,
+                    'title': "Kurse 1. Hälfte",
+                    'shortname': "Kurs 1H",
+                    'notes': None,
+                    'event_id': 4,
+                    'constraint_type':
+                        const.EventPartGroupType.mutually_exclusive_courses,
+                    'part_ids': {6, 7, 8},
+                },
+            }
+        }
+        self.assertEqual(
+            expectation_part,
+            self.event.get_event(self.key, 4)['parts'][6]
+        )
+
+    @as_users("annika")
+    def test_track_groups(self) -> None:
+        event_id = 4
+        event = self.event.get_event(self.key, event_id)
+        track_group_ids = self.event.get_event(
+            self.key, event_id)['track_groups'].keys()
+        self.assertTrue(self.event.set_track_groups(self.key, event_id, {
+            tg_id: None
+            for tg_id in track_group_ids
+        }))
+        tg_data: CdEDBOptionalMap = {
+            -1: {
+                'title': "Test",
+                'shortname': "Test",
+                'constraint_type': const.CourseTrackGroupType.course_choice_sync,
+                'notes': None,
+                'track_ids': event['tracks'].keys(),
+                'sortkey': 1,
+            },
+        }
+        assert tg_data[-1] is not None
+        # Test incompatible tracks.
+        with self.assertRaises(ValueError):
+            self.event.set_track_groups(self.key, event_id, tg_data)
+        # Test empty tracks.
+        tg_data[-1]['track_ids'] = []
+        with self.assertRaises(ValueError):
+            self.event.set_track_groups(self.key, event_id, tg_data)
+        # Test unknown tracks.
+        tg_data[-1]['track_ids'] = {1, 2}
+        with self.assertRaises(ValueError):
+            self.event.set_track_groups(self.key, event_id, tg_data)
+
+        # Test correct tracks.
+        tg_data[-1]['track_ids'] = {6, 7}
+        self.assertTrue(self.event.set_track_groups(self.key, event_id, tg_data))
+        tg = tg_data[-1].copy()
+        tg['id'] = 1003
+        tg['event_id'] = event_id
+        self.assertEqual(
+            tg, self.event.get_event(self.key, event_id)['track_groups'][1003])
+
+        # Test duplicate tracks.
+        with self.assertRaises(ValueError):
+            self.event.set_track_groups(self.key, event_id, tg_data)
+        # Test dupliclate title.
+        with self.assertRaises(psycopg2.errors.UniqueViolation):
+            tmp = copy.deepcopy(tg_data)
+            assert tmp[-1] is not None
+            tmp[-1]['track_ids'] = [8]
+            self.event.set_track_groups(self.key, event_id, tmp)
+
+        # Test update
+        tg_update: CdEDBOptionalMap = {
+            1003: {
+                'title': "tEST",
+                'track_ids': {7, 8},
+            },
+        }
+        assert tg_update[1003] is not None
+        self.assertTrue(self.event.set_track_groups(self.key, event_id, tg_update))
+        tg.update(tg_update[1003])
+        self.assertEqual(
+            tg, self.event.get_event(self.key, event_id)['track_groups'][1003])
+
+    @as_users("emilia")
+    def test_course_choice_sync(self) -> None:
+        event_id = 4
+        registration_id = 10
+        track_id = 6
+        event = self.event.get_event(self.key, event_id)
+        self.assertTrue(event['tracks'][track_id]['track_groups'])
+        self.assertTrue(unwrap(
+            event['tracks'][track_id]['track_groups'])['constraint_type'].is_sync())
+        self.assertGreater(
+            len(unwrap(event['tracks'][track_id]['track_groups'])), 1)
+        reg_data = {
+            'id': registration_id,
+            'tracks': {
+                track_id: {
+                    'choices': [10, 11, 12]
+                }
+            }
+        }
+        with self.assertRaises(ValueError) as cm:
+            self.event.set_registration(self.key, reg_data)
+        self.assertEqual(cm.exception.args[0], "Incompatible course choices present.")
+
     @storage
     @as_users("annika", "garcia")
     def test_change_minor_form(self) -> None:
@@ -543,6 +722,7 @@ class TestEventBackend(BackendTest):
         self.event.set_event(self.key, update_event)
         new_track['id'] = new_track_id
         new_track['part_id'] = part_id
+        new_track['track_groups'] = {}
 
         for reg in regs.values():
             reg['tracks'][new_track_id] = {
@@ -4257,7 +4437,8 @@ class TestEventBackend(BackendTest):
             self.assertEqual(
                 set(blockers),
                 {"orgas", "event_parts", "course_tracks", "part_groups",
-                 "part_group_parts", "courses", "log", "lodgement_groups"}
+                 "part_group_parts", "track_groups", "track_group_tracks",
+                 "courses", "log", "lodgement_groups"}
             )
             self.assertTrue(self.event.delete_event(self.key, event_id, blockers))
 

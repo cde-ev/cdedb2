@@ -477,6 +477,12 @@ CDEDB_PATHS = werkzeug.routing.Map((
                          endpoint="download_csv_lodgements"),
                     rule("/csv_registrations", methods=_GET,
                          endpoint="download_csv_registrations"),)),
+                sub('/group', (
+                    rule("/summary", methods=_GET,
+                         endpoint="group_summary"),
+                    rule("/violations", methods=_GET,
+                         endpoint="constraint_violations"),
+                )),
                 sub('/part', (
                     rule("/summary", methods=_GET,
                          endpoint="part_summary"),
@@ -492,10 +498,6 @@ CDEDB_PATHS = werkzeug.routing.Map((
                         rule("/delete", methods=_POST,
                              endpoint="delete_part"),)),
                     sub('/group', (
-                        rule("/summary", methods=_GET,
-                             endpoint="part_group_summary"),
-                        rule("/violations", methods=_GET,
-                             endpoint="constraint_violations"),
                         rule("/add", methods=_GET,
                              endpoint="add_part_group_form"),
                         rule("/add", methods=_POST,
@@ -508,6 +510,20 @@ CDEDB_PATHS = werkzeug.routing.Map((
                             rule("/delete", methods=_POST,
                                  endpoint="delete_part_group"),
                         )),
+                    )),
+                )),
+                sub('/track/group', (
+                    rule("/add", methods=_GET,
+                         endpoint="add_track_group_form"),
+                    rule("/add", methods=_POST,
+                         endpoint="add_track_group"),
+                    sub('/<int:track_group_id>', (
+                        rule("/change", methods=_GET,
+                             endpoint="change_track_group_form"),
+                        rule("/change", methods=_POST,
+                             endpoint="change_track_group"),
+                        rule("/delete", methods=_POST,
+                             endpoint="delete_track_group"),
                     )),
                 )),
                 sub('/course', (
