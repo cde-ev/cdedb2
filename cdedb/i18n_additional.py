@@ -67,6 +67,7 @@ I18N_STRINGS = (
     n_("CoreLogCodes.genesis_deleted"),
     n_("CoreLogCodes.genesis_verified"),
     n_("CoreLogCodes.genesis_merged"),
+    n_("CoreLogCodes.genesis_change"),
     n_("CoreLogCodes.privilege_change_pending"),
     n_("CoreLogCodes.privilege_change_approved"),
     n_("CoreLogCodes.privilege_change_rejected"),
