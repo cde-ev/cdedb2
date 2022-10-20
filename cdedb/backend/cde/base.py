@@ -273,7 +273,7 @@ class CdEBaseBackend(AbstractBackend):
                 order="datum ASC"),
         }
 
-        # Members by first event.
+        # Users/Members by first event.
         query = """SELECT
             COUNT(*) AS num, EXTRACT(year FROM min_tempus.t)::integer AS datum
         FROM
@@ -282,7 +282,7 @@ class CdEBaseBackend(AbstractBackend):
                 FROM
                     (
                         SELECT id FROM core.personas
-                        WHERE is_member = TRUE
+                        {}
                     ) as persona
                     LEFT OUTER JOIN (
                         SELECT DISTINCT persona_id, pevent_id
@@ -304,7 +304,11 @@ class CdEBaseBackend(AbstractBackend):
             datum ASC
         """
         year_stats[n_("members_by_first_event")] = OrderedDict(
-            (e['datum'], e['num']) for e in self.query_all(rs, query, ()))
+            (e['datum'], e['num'])
+            for e in self.query_all(rs, query.format("WHERE is_member = TRUE"), ()))
+        year_stats[n_("users_by_first_event")] = OrderedDict(
+            (e['datum'], e['num'])
+            for e in self.query_all(rs, query.format(""), ()))
 
         # Unique event attendees per year:
         query = """SELECT

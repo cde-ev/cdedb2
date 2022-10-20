@@ -160,6 +160,11 @@ class EventLowLevelBackend(AbstractBackend):
         if course_choices:
             blockers["course_choices"] = [e["id"] for e in course_choices]
 
+        track_group_tracks = self.sql_select(
+            rs, "event.track_group_tracks", ("id",), (track_id,), entity_key="track_id")
+        if track_group_tracks:
+            blockers["track_group_tracks"] = [e["id"] for e in track_group_tracks]
+
         return blockers
 
     @internal
@@ -201,6 +206,9 @@ class EventLowLevelBackend(AbstractBackend):
             if "course_choices" in cascade:
                 ret *= self.sql_delete(rs, "event.course_choices",
                                        blockers["course_choices"])
+            if "track_group_tracks" in cascade:
+                ret *= self.sql_delete(rs, "event.track_group_tracks",
+                                       blockers["track_group_tracks"])
 
             blockers = self._delete_course_track_blockers(rs, track_id)
 
@@ -268,6 +276,7 @@ class EventLowLevelBackend(AbstractBackend):
                 }
                 ret *= self.sql_insert(
                     rs, "event.registration_tracks", reg_track)
+
         # updated
         for x in mixed_existence_sorter(updated):
             updated_track = copy.copy(data[x])
@@ -441,7 +450,7 @@ class EventLowLevelBackend(AbstractBackend):
                                        blockers["fee_modifiers"])
             if "course_tracks" in cascade:
                 track_cascade = ("course_segments", "registration_tracks",
-                                 "course_choices")
+                                 "course_choices", "track_group_tracks")
                 for anid in blockers["course_tracks"]:
                     ret *= self._delete_course_track(rs, anid, track_cascade)
             if "registration_parts" in cascade:
@@ -538,6 +547,8 @@ class EventLowLevelBackend(AbstractBackend):
             cascade = ("fee_modifiers", "course_tracks", "part_group_parts")
             for x in mixed_existence_sorter(deleted_parts):
                 ret *= self._delete_event_part(rs, part_id=x, cascade=cascade)
+
+        self._track_groups_sanity_check(rs, event_id)
 
         return ret
 
@@ -639,6 +650,196 @@ class EventLowLevelBackend(AbstractBackend):
                     change_note=f"{parts[x]['title']} -> {part_group_title}")
             ret *= self.sql_insert_many(rs, "event.part_group_parts", inserter)
         return ret
+
+    @internal
+    def _delete_track_group_blockers(self, rs: RequestState,
+                                     track_group_id: int) -> DeletionBlockers:
+        """Determine what keeps a track group from being deleted.
+
+        Possible blockers:
+
+        * track_group_tracks: A link between an course track and the track group.
+
+        :return: List of blockers, separated by type. The values of the dict
+            are the ids of the blockers.
+        """
+        track_group_id = affirm(vtypes.ID, track_group_id)
+        blockers = {}
+
+        track_group_tracks = self.sql_select(
+            rs, "event.track_group_tracks", ("id",), (track_group_id,),
+            entity_key="track_group_id")
+        if track_group_tracks:
+            blockers["track_group_tracks"] = [e["id"] for e in track_group_tracks]
+
+        return blockers
+
+    @internal
+    def _delete_track_group(self, rs: RequestState, track_group_id: int,
+                            cascade: Collection[str] = None) -> DefaultReturnCode:
+        """Helper to delete one track group.
+
+        :note: This has to be called inside an atomized context.
+
+        :param cascade: Specify which deletion blockers to cascadingly
+            remove or ignore. If None or empty, cascade none.
+        """
+        track_group_id = affirm(vtypes.ID, track_group_id)
+        blockers = self._delete_track_group_blockers(rs, track_group_id)
+        cascade = affirm_set(str, cascade or set()) & blockers.keys()
+        if blockers.keys() - cascade:
+            raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),  # pragma: no cover
+                             {
+                                 "type": "track group",
+                                 "block": blockers.keys() - cascade,
+                             })
+
+        ret = 1
+        self.affirm_atomized_context(rs)
+        if cascade:
+            if "track_group_tracks" in cascade:
+                ret *= self.sql_delete(
+                    rs, "event.track_group_tracks", blockers["track_group_tracks"])
+
+            blockers = self._delete_track_group_blockers(rs, track_group_id)
+
+        if not blockers:
+            track_group = self.sql_select_one(
+                rs, "event.track_groups", PART_GROUP_FIELDS, track_group_id)
+            if track_group is None:  # pragma: no cover
+                return 0
+            type_ = const.CourseTrackGroupType(track_group['constraint_type'])
+            ret *= self.sql_delete_one(rs, "event.track_groups", track_group_id)
+            self.event_log(rs, const.EventLogCodes.track_group_deleted,
+                           event_id=track_group["event_id"],
+                           change_note=f"{track_group['title']} ({type_.name})")
+        else:
+            raise ValueError(  # pragma: no cover
+                n_("Deletion of %(type)s blocked by %(block)s."),
+                {"type": "track group", "block": blockers.keys()})
+        return ret
+
+    @internal
+    def _set_track_group_tracks(self, rs: RequestState, event_id: int,
+                                track_group_id: int, track_group_title: str,
+                                track_ids: Set[int], tracks: CdEDBObjectMap,
+                                constraint_type: const.CourseTrackGroupType,
+                                ) -> DefaultReturnCode:
+        """Helper to link the given course traks to the given track group."""
+        ret = 1
+        self.affirm_atomized_context(rs)
+
+        current_track_ids = {e['track_id'] for e in self.sql_select(
+            rs, "event.track_group_tracks", ("track_id",), (track_group_id,),
+            entity_key="track_group_id")}
+
+        if deleted_track_ids := current_track_ids - track_ids:
+            query = ("DELETE FROM event.track_group_tracks"
+                     " WHERE track_group_id = %s AND track_id = ANY(%s)")
+            ret *= self.query_exec(rs, query, (track_group_id, deleted_track_ids))
+            for x in mixed_existence_sorter(deleted_track_ids):
+                self.event_log(
+                    rs, const.EventLogCodes.track_group_link_deleted, event_id,
+                    change_note=f"{tracks[x]['title']} -> {track_group_title}")
+
+        if new_track_ids := track_ids - current_track_ids:
+            inserter = []
+            for x in mixed_existence_sorter(new_track_ids):
+                inserter.append({'track_group_id': track_group_id, 'track_id': x})
+                self.event_log(
+                    rs, const.EventLogCodes.track_group_link_created, event_id,
+                    change_note=f"{tracks[x]['title']} -> {track_group_title}")
+            ret *= self.sql_insert_many(rs, "event.track_group_tracks", inserter)
+        return ret
+
+    def _track_groups_sanity_check(self, rs: RequestState, event_id: int) -> None:
+        """Perform checks on the sanity of all track groups."""
+
+        #######################
+        # CCS specific checks #
+        #######################
+
+        # Check that all tracks belonging to CCS groups have the same number of choices.
+        query = """
+            SELECT id
+            FROM (
+                -- Inner SELECT will have one row per different configuration per group.
+                SELECT tg.id, ct.num_choices, ct.min_choices
+                FROM event.track_groups AS tg
+                    LEFT JOIN event.track_group_tracks AS tgt on tg.id = tgt.track_group_id
+                    LEFT JOIN event.course_tracks AS ct on ct.id = tgt.track_id
+                WHERE tg.event_id = %s AND tg.constraint_type = %s
+                GROUP BY tg.id, ct.num_choices, ct.min_choices
+            ) AS tmp
+            GROUP BY id
+            -- Filter for ids occurring multiple times.
+            HAVING COUNT(id) > 1
+        """
+        params = (event_id, const.CourseTrackGroupType.course_choice_sync)
+        if self.query_all(rs, query, params):
+            raise ValueError(n_("Synced tracks must have same number of choices."))
+
+        # Check that no track is linked to more than one CCS group.
+        query = """
+            SELECT track_id
+            FROM event.track_group_tracks AS tgt
+                JOIN event.track_groups AS tg ON tg.id = tgt.track_group_id
+            WHERE tg.event_id = %s AND tg.constraint_type = %s
+            GROUP BY tgt.track_id
+            -- Filter for tracks with more than one CCS group.
+            HAVING COUNT(tgt.track_group_id) > 1
+        """
+        params = (event_id, const.CourseTrackGroupType.course_choice_sync)
+        if self.query_all(rs, query, params):
+            raise ValueError(n_("Track synced to more than one ccs track group."))
+
+        # Check that course choices are consistently synced across CCS groups.
+        query = """
+            SELECT track_group_id, registration_id, COUNT(*)
+            FROM (
+                -- Per reg_track gather ordered choices, eliminating duplicates.
+                SELECT DISTINCT rt.registration_id, tg.id AS track_group_id,
+                    ARRAY_REMOVE(ARRAY_AGG(cc.course_id ORDER BY cc.rank ASC), NULL) AS choices
+                FROM event.registration_tracks AS rt
+                    LEFT JOIN event.track_group_tracks AS tgt ON rt.track_id = tgt.track_id
+                    LEFT JOIN event.track_groups AS tg ON tgt.track_group_id = tg.id
+                    LEFT JOIN event.course_choices AS cc ON rt.track_id = cc.track_id AND rt.registration_id = cc.registration_id
+                WHERE tg.event_id = %s AND tg.constraint_type = %s
+                GROUP BY rt.registration_id, rt.track_id, tg.id
+            ) AS tmp
+            GROUP BY registration_id, track_group_id
+            -- Filter for non-unique combinations.
+            HAVING COUNT(*) > 1
+        """
+        params = (event_id, const.CourseTrackGroupType.course_choice_sync)
+        if self.query_all(rs, query, params):
+            raise ValueError(n_("Incompatible course choices present."))
+
+    @access("event")
+    def do_course_choices_exist(self, rs: RequestState, track_ids: Collection[int]
+                                ) -> bool:
+        """Determine whether any course choices exist for the given tracks."""
+        track_ids = affirm_set(vtypes.ID, track_ids)
+
+        query = """
+            SELECT DISTINCT ep.event_id
+            FROM event.event_parts AS ep
+                LEFT JOIN event.course_tracks AS ct on ep.id = ct.part_id
+            WHERE ct.id = ANY(%s)
+        """
+        params = (track_ids,)
+        data = self.query_all(rs, query, params)
+        if not data:
+            return False
+        if len(data) != 1:
+            raise ValueError(n_("Only tracks from one event allowed."))
+        event_id = unwrap(unwrap(data))
+        if not (self.is_orga(rs, event_id=event_id) or self.is_admin(rs)):
+            raise PrivilegeError(n_("Not privileged."))
+
+        query = "SELECT * FROM event.course_choices WHERE track_id = ANY(%s)"
+        params = (track_ids,)
+        return bool(self.query_all(rs, query, params))
 
     def _delete_event_field_blockers(self, rs: RequestState,
                                      field_id: int) -> DeletionBlockers:

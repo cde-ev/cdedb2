@@ -428,7 +428,7 @@
     },
     "EVENT_SCHEMA_VERSION": [
         15,
-        6
+        7
     ],
     "event.registration_parts": {
         "2": {
@@ -1496,6 +1496,10 @@
                 "scope": 30
             }
         }
+    },
+    "event.track_groups": {
+    },
+    "event.track_group_tracks": {
     },
     "timestamp": "2018-12-15T09:58:04.241360+00:00"
 }
