@@ -692,24 +692,23 @@ class AssemblyFrontend(AbstractUserFrontend):
     def ballot_template(self, rs: RequestState, assembly_id: int, ballot_id: int
                         ) -> Response:
         if self.is_admin(rs):
-            assembly_ids = self.assemblyproxy.list_assemblies(rs)
-        elif not rs.user.presider:
-            rs.notify("warning", n_("Not presiding over any assemblies."))
-            return self.redirect(rs, "assembly/show_ballot")
-        elif len(rs.user.presider) == 1:
-            return self.redirect(rs, "assembly/create_ballot", {
-                'assembly_id': unwrap(rs.user.presider), 'source_id': ballot_id,
-            })
+            assembly_ids = set(self.assemblyproxy.list_assemblies(rs, is_active=True))
         else:
             assembly_ids = rs.user.presider
         assemblies = self.assemblyproxy.get_assemblies(rs, assembly_ids)
-        inactive = f"({rs.gettext('inactive')})"
-        label = lambda a: f"{a['title']} {'' if a['is_active'] else inactive}"
         assembly_entries = [
-            (assembly_id, label(assembly))
+            (assembly_id, assembly['title'])
             for assembly_id, assembly in keydictsort_filter(
                 assemblies, EntitySorter.assembly)
+            if assembly['is_active']
         ]
+        if not assembly_entries:
+            rs.notify("warning", n_("Not presiding over any active assemblies."))
+            return self.redirect(rs, "assembly/show_ballot")
+        elif len(assembly_entries) == 1:
+            return self.redirect(rs, "assembly/create_ballot", {
+                'assembly_id': assembly_entries[0][0], 'source_id': ballot_id,
+            })
         return self.render(rs, "ballot_template", {
             'assembly_entries': assembly_entries,
         })
@@ -720,7 +719,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                                  ballot_id: int, target_assembly_id: int,
                                  source_id: int) -> Response:
         if rs.has_validation_errors():
-            return self.ballot_template(rs)
+            return self.ballot_template(rs, assembly_id, ballot_id)
         return self.redirect(rs, "assembly/create_ballot", {
             'assembly_id': target_assembly_id, 'source_id': source_id,
         })

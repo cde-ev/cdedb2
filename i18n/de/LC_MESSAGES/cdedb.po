@@ -3285,8 +3285,8 @@ msgid "Unable to conclude assembly with open ballot."
 msgstr "Kann Versammlung mit offenen Abstimmungen nicht abschließen."
 
 #: cdedb/frontend/assembly/__init__.py:697
-msgid "Not presiding over any assemblies."
-msgstr "Du leitest keine Versammlung."
+msgid "Not presiding over any active assemblies."
+msgstr "Du leitest keine aktive Versammlung."
 
 #: cdedb/frontend/assembly/__init__.py:755
 msgid "Unknown Ballot."
