@@ -40,6 +40,7 @@ from cdedb.common.validation import (
     filter_none,
 )
 from cdedb.common.validation.types import CdedbID, Email
+from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, Attachment, REQUESTdata, REQUESTdatadict, REQUESTfile, access,
     assembly_guard, calculate_db_logparams, calculate_loglinks, cdedburl,
@@ -685,6 +686,31 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         return self.render(rs, "list_ballots", {
             'ballots': ballots, 'grouped_ballots': grouped, 'votes': votes,
+        })
+
+    @access("assembly")
+    def ballot_template(self, rs: RequestState, assembly_id: int, ballot_id: int):
+        if self.is_admin(rs):
+            assembly_ids = self.assemblyproxy.list_assemblies(rs)
+        elif not rs.user.presider:
+            rs.notify("warning", n_("Not presiding over any assemblies."))
+            return self.redirect(rs, "assembly/show_ballot")
+        elif len(rs.user.presider) == 1:
+            return self.redirect(rs, "assembly/create_ballot", {
+                'assembly_id': unwrap(rs.user.presider), 'source_id': ballot_id,
+            })
+        else:
+            assembly_ids = rs.user.presider
+        assemblies = self.assemblyproxy.get_assemblies(rs, assembly_ids)
+        inactive = f"({rs.gettext('inactive')})"
+        label = lambda a: f"{a['title']} {'' if a['is_active'] else inactive}"
+        assembly_entries = [
+            (assembly_id, label(assembly))
+            for assembly_id, assembly in keydictsort_filter(
+                assemblies, EntitySorter.assembly)
+        ]
+        return self.render(rs, "ballot_template", {
+            'assembly_entries': assembly_entries,
         })
 
     @access("assembly")
