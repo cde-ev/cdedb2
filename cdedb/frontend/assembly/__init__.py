@@ -689,7 +689,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         })
 
     @access("assembly")
-    def ballot_template(self, rs: RequestState, assembly_id: int, ballot_id: int):
+    def ballot_template(self, rs: RequestState, assembly_id: int, ballot_id: int
+                        ) -> Response:
         if self.is_admin(rs):
             assembly_ids = self.assemblyproxy.list_assemblies(rs)
         elif not rs.user.presider:
@@ -711,6 +712,17 @@ class AssemblyFrontend(AbstractUserFrontend):
         ]
         return self.render(rs, "ballot_template", {
             'assembly_entries': assembly_entries,
+        })
+
+    @access("assembly")
+    @REQUESTdata("target_assembly_id", "source_id")
+    def ballot_template_redirect(self, rs: RequestState, assembly_id: int,
+                                 ballot_id: int, target_assembly_id: int,
+                                 source_id: int) -> Response:
+        if rs.has_validation_errors():
+            return self.ballot_template(rs)
+        return self.redirect(rs, "assembly/create_ballot", {
+            'assembly_id': target_assembly_id, 'source_id': source_id,
         })
 
     @access("assembly")

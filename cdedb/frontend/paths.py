@@ -791,7 +791,9 @@ CDEDB_PATHS = werkzeug.routing.Map((
                     rule("/candidates/edit", methods=_POST,
                          endpoint="edit_candidates"),
                     rule("/template", methods=_GET,
-                         endpoint="ballot_template")
+                         endpoint="ballot_template"),
+                    rule("/template/redirect", methods=_GET,
+                         endpoint="ballot_template_redirect"),
                 )),
             )),
         )),

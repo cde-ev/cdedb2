@@ -52,7 +52,7 @@
                     </form>
                 {% endif %}
             {% endif %}
-            {% if user.presider %}
+            {% if user.presider or "assembly_presider" in user.admin_views %}
                 {{ util.href(cdedblink("assembly/ballot_template"), gettext("Use as Template"), icon="clone",
                         aclass="btn btn-sm btn-success") }}
             {% endif %}
