@@ -11,7 +11,7 @@ import decimal
 import io
 import re
 from collections import OrderedDict
-from typing import Collection, Dict, List, Optional, Tuple
+from typing import Collection, Dict, List, Optional, Set, Tuple
 
 import segno.helpers
 import werkzeug.exceptions
@@ -57,7 +57,8 @@ class EventRegistrationMixin(EventBaseFrontend):
 
     def examine_fee(self, rs: RequestState, datum: CdEDBObject,
                     expected_fees: Dict[int, decimal.Decimal],
-                    full_payment: bool = True) -> CdEDBObject:
+                    seen_reg_ids: Set[int], full_payment: bool = True,
+                    ) -> CdEDBObject:
         """Check one line specifying a paid fee.
 
         We test for fitness of the data itself.
@@ -101,6 +102,11 @@ class EventRegistrationMixin(EventBaseFrontend):
                     rs, event['id'], persona_id).keys()
                 if registration_ids:
                     registration_id = unwrap(registration_ids)
+                    if registration_id in seen_reg_ids:
+                        warnings.append(
+                            ('persona_id',
+                             ValueError(n_("Multiple transfers for this user."))))
+                    seen_reg_ids.add(registration_id)
                     registration = self.eventproxy.get_registration(
                         rs, registration_id)
                     amount = amount or decimal.Decimal(0)
@@ -117,6 +123,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                     elif total > fee:
                         warnings.append(('amount',
                                          ValueError(n_("Too much money."))))
+                    expected_fees[registration_id] -= amount
                 else:
                     problems.append(('persona_id',
                                      ValueError(n_("No registration found."))))
@@ -216,9 +223,12 @@ class EventRegistrationMixin(EventBaseFrontend):
         reader = csv.DictReader(
             fee_data_lines, fieldnames=fields, dialect=CustomCSVDialect())
         data = []
+        seen_reg_ids: Set[int] = set()
         for lineno, raw_entry in enumerate(reader):
             dataset: CdEDBObject = {'raw': raw_entry, 'lineno': lineno}
-            data.append(self.examine_fee(rs, dataset, expected_fees, full_payment))
+            data.append(self.examine_fee(
+                rs, dataset, expected_fees, full_payment=full_payment,
+                seen_reg_ids=seen_reg_ids))
         open_issues = any(e['problems'] for e in data)
         saldo: decimal.Decimal = sum(
             (e['amount'] for e in data if e['amount']), decimal.Decimal("0.00"))
