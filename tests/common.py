@@ -18,6 +18,7 @@ import os
 import pathlib
 import re
 import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -481,6 +482,29 @@ class BackendTest(CdEDBTest):
     def initialize_backend(cls, backendcls: Type[B]) -> B:
         return _make_backend_shim(backendcls(), internal=True)
 
+
+class BrowserTest(CdEDBTest):
+    """
+    Base class for a TestCase that uses a real browser.
+    """
+    serverProcess = None
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        cls.serverProcess = subprocess.Popen(['python3', '-m', 'cdedb', 'dev', 'serve', '-t'])
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls.serverProcess.terminate()
+        cls.serverProcess.wait(2)
+        cls.serverProcess.kill()
+        cls.serverProcess.wait()
+        cls.serverProcess = None
+        super().tearDownClass()
 
 # A reference of the most important attributes for all users. This is used for
 # logging in and the `as_user` decorator.

@@ -255,9 +255,10 @@ def apply_evolution_trial(config: TestConfig, secrets: SecretsConfig) -> None:
 
 
 @development.command(name="serve")
-def serve_debugger_cmd() -> None:
+@click.option('-t', '--test', is_flag=True)
+def serve_debugger_cmd(test) -> None:
     """Serve the cdedb using the werkzeug development server"""
-    serve_debugger()
+    serve_debugger(test)
 
 
 @development.command(name="execute-sql-script")

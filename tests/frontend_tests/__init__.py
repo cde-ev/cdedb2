@@ -15,3 +15,4 @@ from tests.frontend_tests.event import TestEventFrontend
 from tests.frontend_tests.ml import TestMlFrontend
 from tests.frontend_tests.parse import TestParseFrontend
 from tests.frontend_tests.privacy import TestPrivacyFrontend
+from tests.frontend_tests.browser import TestBrowser
