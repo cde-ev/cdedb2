@@ -495,16 +495,19 @@ class BrowserTest(CdEDBTest):
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
-        cls.serverProcess = subprocess.Popen(['python3', '-m', 'cdedb', 'dev', 'serve', '-t'])
+        cls.serverProcess = subprocess.Popen([
+            'python3', '-m', 'cdedb', 'dev', 'serve', '-t'])
 
     @classmethod
     def tearDownClass(cls) -> None:
-        cls.serverProcess.terminate()
-        cls.serverProcess.wait(2)
-        cls.serverProcess.kill()
-        cls.serverProcess.wait()
-        cls.serverProcess = None
+        if cls.serverProcess:
+            cls.serverProcess.terminate()
+            cls.serverProcess.wait(2)
+            cls.serverProcess.kill()
+            cls.serverProcess.wait()
+            cls.serverProcess = None
         super().tearDownClass()
+
 
 # A reference of the most important attributes for all users. This is used for
 # logging in and the `as_user` decorator.

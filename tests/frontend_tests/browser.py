@@ -2,12 +2,11 @@
 # pylint: disable=missing-module-docstring
 
 import functools
-
 from typing import Callable
 
-from tests.common import BrowserTest, storage
-
 from playwright.sync_api import expect, sync_playwright
+
+from tests.common import BrowserTest, storage
 
 
 def make_page(*args, headless: bool = True) -> Callable:
