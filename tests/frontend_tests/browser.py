@@ -4,7 +4,7 @@
 import functools
 from typing import Callable
 
-from playwright.sync_api import expect, sync_playwright
+from playwright.sync_api import Page, expect, sync_playwright
 
 from tests.common import BrowserTest, storage
 
@@ -46,7 +46,7 @@ def make_page(*args, headless: bool = True) -> Callable:
 class TestBrowser(BrowserTest):
     @storage
     @make_page
-    def test_pw_vote(self, page) -> None:
+    def test_pw_vote(self, page: Page) -> None:
         page.goto("http://localhost:5000/")
         page.get_by_label("E-Mail").fill("anton@example.cde")
         page.get_by_label("Passwort").fill("secret")
