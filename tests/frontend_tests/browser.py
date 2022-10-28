@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# pylint: disable=missing-module-docstring
+# pylint: disable=missing-module-docstring,no-self-use
 
 import functools
 from typing import Callable
@@ -9,7 +9,8 @@ from playwright.sync_api import Page, expect, sync_playwright
 from tests.common import BrowserTest, storage
 
 
-def make_page(*args, headless: bool = True) -> Callable:
+def make_page(*args, headless: bool = True
+              ) -> Callable:  # type: ignore[type-arg, no-untyped-def]
     """Decorator to handle playwright setup.
 
     This injects a `Page` object usable for testing.
@@ -20,7 +21,7 @@ def make_page(*args, headless: bool = True) -> Callable:
         func = args[0]
 
         @functools.wraps(func)
-        def new_func(self, *fargs, **fkwargs):
+        def new_func(self, *fargs, **fkwargs):  # type: ignore[no-untyped-def]
             if 'page' in fkwargs:
                 raise ValueError('Argument `page` already present.')
             with sync_playwright() as pw:
@@ -38,7 +39,7 @@ def make_page(*args, headless: bool = True) -> Callable:
     if len(args) > 0:
         raise ValueError('Unexpected positional argument.')
 
-    def mp(func: Callable) -> Callable:
+    def mp(func: Callable) -> Callable:  # type: ignore[type-arg]
         return make_page(func, headless=headless)
     return mp
 
