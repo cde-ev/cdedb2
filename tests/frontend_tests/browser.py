@@ -9,8 +9,8 @@ from playwright.sync_api import Page, expect, sync_playwright
 from tests.common import BrowserTest, storage
 
 
-def make_page(*args, headless: bool = True
-              ) -> Callable:  # type: ignore[type-arg, no-untyped-def]
+def make_page(*args, headless: bool = True  # type: ignore[no-untyped-def]
+              ) -> Callable:  # type: ignore[type-arg]
     """Decorator to handle playwright setup.
 
     This injects a `Page` object usable for testing.
