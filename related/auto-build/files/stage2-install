@@ -86,8 +86,8 @@ apt-get install --yes --no-install-recommends                       \
     \
     python3-pip python3-click isort python3-freezegun               \
     \
-    libatk-bridge2.0-0 libatk1.0-0 libatomic1 libatspi2.0-0         \
-    libcups2 libdrm2 libenchant-2-2 libgbm1 libgles2                \
+    libasound2 libatk-bridge2.0-0 libatk1.0-0 libatomic1            \
+    libatspi2.0-0 libcups2 libdrm2 libenchant-2-2 libgbm1 libgles2  \
     libgstreamer-gl1.0-0 libharfbuzz-icu0 libhyphen0                \
     libmanette-0.2-0 libnspr4 libnss3 libopengl0 libwayland-client0 \
     libwoff1 libxcomposite1 libxdamage1 libxfixes3 libxkbcommon0    \
