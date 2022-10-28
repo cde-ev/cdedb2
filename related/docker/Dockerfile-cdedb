@@ -71,6 +71,31 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     wget \
     unzip \
     \
+    && apt-get install --yes --no-install-recommends \
+    libatk-bridge2.0-0 \
+    libatk1.0-0 \
+    libatomic1 \
+    libatspi2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libenchant-2-2 \
+    libgbm1 \
+    libgles2 \
+    libgstreamer-gl1.0-0 \
+    libharfbuzz-icu0 \
+    libhyphen0 \
+    libmanette-0.2-0 \
+    libnspr4 \
+    libnss3 \
+    libopengl0 \
+    libwayland-client0 \
+    libwoff1 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxkbcommon0 \
+    libxrandr2 \
+    \
     && apt-get install --yes python3-coverage \
     \
     && rm -rf /var/lib/apt/lists/* \
@@ -94,7 +119,11 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     types-bleach \
     types-Markdown \
     types-click \
-    types-tabulate
+    types-tabulate \
+    playwright
+
+# retrieve browser engines
+RUN /usr/local/bin/playwright install
 
 # get the configuration files from the autobuild
 COPY ./related/docker/cdedb-entrypoint.sh ./related/auto-build/files/stage3 /tmp/autobuild/
