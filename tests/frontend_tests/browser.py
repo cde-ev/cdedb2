@@ -48,6 +48,11 @@ class TestBrowser(BrowserTest):
 
     Each test should contain a short description so it can be reproduced
     without reverse engineering the code.
+
+    To start a test generation session execute
+    playwright codegen https://localhost --ignore-https-errors
+    in a shell in a graphical environment. The result has to be postprocessed
+    by replacing `https://localhost/db/` with `http://localhost:5000/`.
     """
     @storage
     @make_page
