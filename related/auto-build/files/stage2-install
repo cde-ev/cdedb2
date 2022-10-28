@@ -63,6 +63,7 @@ echo 'slapd slapd/password2 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0' |
 # - devtools
 # - runtime dependencies (app, ldap, postgres, latex)
 # - python libraries (libraries, tools)
+# - playwright dependencies
 apt-get install --yes --no-install-recommends                       \
     openssh-server sudo git file mc emacs-nox vim htop make gettext \
     \
@@ -83,7 +84,14 @@ apt-get install --yes --no-install-recommends                       \
     python3-requests python3-graphviz python3-phonenumbers          \
     python3-tabulate                                                \
     \
-    python3-pip python3-click isort python3-freezegun
+    python3-pip python3-click isort python3-freezegun               \
+    \
+    libatk-bridge2.0-0 libatk1.0-0 libatomic1 libatspi2.0-0         \
+    libcups2 libdrm2 libenchant-2-2 libgbm1 libgles2                \
+    libgstreamer-gl1.0-0 libharfbuzz-icu0 libhyphen0                \
+    libmanette-0.2-0 libnspr4 libnss3 libopengl0 libwayland-client0 \
+    libwoff1 libxcomposite1 libxdamage1 libxfixes3 libxkbcommon0    \
+    libxrandr2
 # some packages interpret "recommends" very narrowly, breaking if they are missing
 apt-get install --yes python3-coverage
 
@@ -113,7 +121,8 @@ python3 -m pip install --no-cache-dir \
     types-bleach \
     types-Markdown \
     types-click \
-    types-tabulate
+    types-tabulate \
+    playwright
 
 for file in /var/cache/apt/archives/*.deb
 do
