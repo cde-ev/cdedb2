@@ -44,9 +44,19 @@ def make_page(*args, headless: bool = True) -> Callable:
 
 
 class TestBrowser(BrowserTest):
+    """Full simulation tests.
+
+    Each test should contain a short description so it can be reproduced
+    without reverse engineering the code.
+    """
     @storage
     @make_page
-    def test_pw_vote(self, page: Page) -> None:
+    def test_pw_interactive_vote(self, page: Page) -> None:
+        """Cast a vote with the interactive voting facility.
+
+        Ensure that all modalities are covered (add a tier at the end / in the
+        middle, move a candidate into an existing tier, empty a tier, ...).
+        """
         page.goto("http://localhost:5000/")
         page.get_by_label("E-Mail").fill("anton@example.cde")
         page.get_by_label("Passwort").fill("secret")
@@ -61,15 +71,21 @@ class TestBrowser(BrowserTest):
         page.get_by_role("link", name="Lieblingszahl").click()
         page.wait_for_url("http://localhost:5000/assembly/assembly/1/ballot/5/show")
         page.get_by_role("tab", name="Interaktive Abstimmung").click()
-        page.locator("#vote-cand_23").click()
-        page.locator("#vote_spacer_2").click()
-        page.locator("#vote-cand_26").click()
+
+        page.locator("#vote-cand_25").click()
         page.locator("#vote_spacer_0").click()
-        page.locator("#vote-cand_27").click()
+        page.locator("#vote-cand_23").click()
         page.locator("#vote_spacer_4").click()
+        page.locator("#vote-cand_26").click()
+        page.locator("#vote_spacer_2").click()
         page.locator("#vote-cand_24").click()
         page.locator("#vote_stage_5").click()
+        page.locator("#vote-cand_27").click()
+        page.locator("#vote_stage_3").click()
+        page.locator("#vote-cand_26").click()
+        page.locator("#vote_spacer_4").click()
+
         page.get_by_role("button", name="Abstimmen").click()
         page.wait_for_url("http://localhost:5000/assembly/assembly/1/ballot/5/show")
         page.get_by_role("tab", name="Text-basierte Abstimmung").click()
-        expect(page.get_by_label("Präferenzliste")).to_have_value('1=pi>i>e>0')
+        expect(page.get_by_label("Präferenzliste")).to_have_value('i=0>1>e=pi')
