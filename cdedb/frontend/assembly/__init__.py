@@ -691,17 +691,11 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly")
     def ballot_template(self, rs: RequestState, assembly_id: int, ballot_id: int
                         ) -> Response:
-        if self.is_admin(rs):
-            assembly_ids = set(self.assemblyproxy.list_assemblies(rs, is_active=True))
-        else:
-            assembly_ids = rs.user.presider
+        assembly_ids = set(self.assemblyproxy.list_assemblies(rs, is_active=True))
+        if not self.is_admin(rs):
+            assembly_ids &= rs.user.presider
         assemblies = self.assemblyproxy.get_assemblies(rs, assembly_ids)
-        assembly_entries = [
-            (assembly_id, assembly['title'])
-            for assembly_id, assembly in keydictsort_filter(
-                assemblies, EntitySorter.assembly)
-            if assembly['is_active']
-        ]
+        assembly_entries = keydictsort_filter(assemblies, EntitySorter.assembly)
         if not assembly_entries:
             rs.notify("warning", n_("Not presiding over any active assemblies."))
             return self.redirect(rs, "assembly/show_ballot")
@@ -1091,6 +1085,11 @@ class AssemblyFrontend(AbstractUserFrontend):
         prev_ballot = ballots[ballot_list[i-1]] if i > 0 else None
         next_ballot = ballots[ballot_list[i+1]] if i + 1 < length else None
 
+        # Get ids of managed assemblies.
+        assembly_ids = set(self.assemblyproxy.list_assemblies(rs, is_active=True))
+        if "assembly_presider" not in rs.user.admin_views:
+            assembly_ids &= rs.user.presider
+
         return self.render(rs, "show_ballot", {
             "sorted_candidate_ids": sorted_candidate_ids,
             'latest_versions': latest_versions,
@@ -1101,6 +1100,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             'result': result,
             'prev_ballot': prev_ballot,
             'next_ballot': next_ballot,
+            'assembly_ids': assembly_ids,
             **vote_dict
         })
 
