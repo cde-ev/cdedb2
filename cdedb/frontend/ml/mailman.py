@@ -49,7 +49,7 @@ ATTACHMENT_MIME_CONVERT = {
 }
 
 ATTACHMENT_HTML_CONVERT = {
-    const.AttachmentPolicy.allow: False,
+    const.AttachmentPolicy.allow: True,
     const.AttachmentPolicy.pdf_only: True,
     const.AttachmentPolicy.forbid: True,
 }
