@@ -700,7 +700,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         if not self.is_admin(rs):
             assembly_ids &= rs.user.presider
         assemblies = self.assemblyproxy.get_assemblies(rs, assembly_ids)
-        assembly_entries = keydictsort_filter(assemblies, EntitySorter.assembly)
+        assembly_entries = keydictsort_filter(assemblies, EntitySorter.assembly,
+                                              reverse=True)
         if not assembly_entries:
             rs.notify("warning", n_("Not presiding over any active assemblies."))
             return self.redirect(rs, "assembly/show_ballot")
