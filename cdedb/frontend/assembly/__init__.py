@@ -692,7 +692,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     def ballot_template(self, rs: RequestState, assembly_id: int, ballot_id: int
                         ) -> Response:
         """Offer a choice of appropriate assemblies to create the new ballot.
-        
+
         If exactly one appropriate assembly exists, skip this page.
         If none exists, show a warning instead.
         """
