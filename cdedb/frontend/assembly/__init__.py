@@ -691,6 +691,11 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly")
     def ballot_template(self, rs: RequestState, assembly_id: int, ballot_id: int
                         ) -> Response:
+        """Offer a choice of appropriate assemblies to create the new ballot.
+        
+        If exactly one appropriate assembly exists, skip this page.
+        If none exists, show a warning instead.
+        """
         assembly_ids = set(self.assemblyproxy.list_assemblies(rs, is_active=True))
         if not self.is_admin(rs):
             assembly_ids &= rs.user.presider
@@ -712,6 +717,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     def ballot_template_redirect(self, rs: RequestState, assembly_id: int,
                                  ballot_id: int, target_assembly_id: int,
                                  source_id: int) -> Response:
+        """Redirect to the creation page of the chosen target assembly."""
         if rs.has_validation_errors():
             return self.ballot_template(rs, assembly_id, ballot_id)
         return self.redirect(rs, "assembly/create_ballot", {
@@ -1100,7 +1106,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             'result': result,
             'prev_ballot': prev_ballot,
             'next_ballot': next_ballot,
-            'assembly_ids': assembly_ids,
+            'managed_assembly_ids': assembly_ids,
             **vote_dict
         })
 
