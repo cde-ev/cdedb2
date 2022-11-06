@@ -488,5 +488,4 @@ class TestCdEBackend(BackendTest):
         # TODO more when available
 
         # now check it
-        expectation: CdEDBLog = (0, tuple())
-        self.assertEqual(expectation, self.cde.retrieve_cde_log(self.key))
+        self.assertLogEqual([], log_retriever=self.cde.retrieve_cde_log)

@@ -1350,8 +1350,8 @@ class TestCoreBackend(BackendTest):
             "core.changelog", ids=None,
             keys=("id", "submitted_by", "reviewed_by", "ctime", "generation",
                   "change_note", "code", "persona_id", "automated_change"))
-        self.assertEqual((len(expectation), tuple(expectation.values())),
-                         self.core.retrieve_changelog_meta(self.key))
+        self.assertLogEqual(
+            expectation.values(), log_retriever=self.core.retrieve_changelog_meta)
 
     @as_users("katarina")
     def test_auditor(self) -> None:

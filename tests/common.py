@@ -450,7 +450,7 @@ class BackendTest(CdEDBTest):
         if realm and not log_retriever:
             log_retriever = getattr(self, realm).retrieve_log
         if log_retriever:
-            _, log = log_retriever(self.key, **kwargs)
+            _, log = log_retriever(self.key, kwargs)
         else:
             raise ValueError("No method of log retrieval provided.")
 
