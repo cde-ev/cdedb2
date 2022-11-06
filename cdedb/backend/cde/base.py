@@ -33,7 +33,7 @@ from cdedb.common import (
 from cdedb.common.exceptions import PrivilegeError, QuotaException
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
-from cdedb.common.query.log_filter import LogFilter, LogFilterAnnotation
+from cdedb.common.query.log_filter import LogFilterAnnotation
 from cdedb.common.roles import implying_realms
 from cdedb.common.validation import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS, is_optional,

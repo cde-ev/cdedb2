@@ -7,7 +7,6 @@ import decimal
 import pytz
 
 import cdedb.database.constants as const
-from cdedb.common import CdEDBLog
 from cdedb.common.exceptions import QuotaException
 from cdedb.common.fields import (
     PERSONA_CDE_FIELDS, PERSONA_CORE_FIELDS, PERSONA_EVENT_FIELDS,
