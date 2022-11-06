@@ -462,8 +462,8 @@ class BackendTest(CdEDBTest):
             if 'submitted_by' not in exp:
                 exp['submitted_by'] = self.user['id']
             for k in ('event_id', 'assembly_id', 'mailinglist_id'):
-                if k in kwargs and k not in exp:
-                    exp[k] = kwargs[k]
+                if k in kwargs and 'entity_ids' not in exp:
+                    exp['entity_ids'] = [kwargs[k]]
             for k in ('persona_id', 'change_note'):
                 if k not in exp:
                     exp[k] = None

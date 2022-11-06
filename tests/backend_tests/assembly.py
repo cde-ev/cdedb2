@@ -623,7 +623,7 @@ class TestAssemblyBackend(BackendTest):
             new_id: 'Verstehen wir Spaß'}
         self.assertEqual(expectation, self.assembly.list_ballots(self.key, assembly_id))
         self.assertLogEqual(
-            log, realm="assembly", offset=log_offset, entity_ids=[assembly_id])
+            log, realm="assembly", offset=log_offset, assembly_id=assembly_id)
 
     @as_users("werner")
     def test_quorum(self) -> None:
@@ -912,7 +912,7 @@ class TestAssemblyBackend(BackendTest):
         entry = {'change_note': 'Antwort auf die letzte aller Fragen',
                  'code': const.AssemblyLogCodes.ballot_changed}
         expectation = (entry, entry.copy())
-        self.assertLogEqual(expectation, realm="assembly", entity_ids=[1])
+        self.assertLogEqual(expectation, realm="assembly", assembly_id=1)
 
     @storage
     @as_users("werner")
@@ -1311,7 +1311,7 @@ class TestAssemblyBackend(BackendTest):
         self.assertEqual(
             expectation, self.assembly.get_attachments(self.key, attachment_ids))
         self.assertLogEqual(
-            log, realm="assembly", offset=log_offset, entity_ids=[assembly_id])
+            log, realm="assembly", offset=log_offset, assembly_id=assembly_id)
 
     @storage
     @as_users("werner")
@@ -1439,7 +1439,7 @@ class TestAssemblyBackend(BackendTest):
                         self.key, ballot_id)
                 )
         self.assertLogEqual(
-            log, realm="assembly", offset=log_offset, entity_ids=[assembly_id])
+            log, realm="assembly", offset=log_offset, assembly_id=assembly_id)
 
     @as_users("werner")
     def test_2289(self) -> None:
