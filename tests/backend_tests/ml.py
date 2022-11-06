@@ -77,7 +77,7 @@ class TestMlBackend(BackendTest):
         self.assertEqual(berta_new_mod, berta_mod | janis_mod)
 
         # check the logs
-        expectation = (10, (
+        expectation = (
             {'change_note': 'Nutzer 10 ist in diesem Account aufgegangen.',
              'code': const.MlLogCodes.subscribed,
              'ctime': nearly_now(),
@@ -147,8 +147,9 @@ class TestMlBackend(BackendTest):
              'id': 1010,
              'mailinglist_id': 63,
              'persona_id': 2,
-             'submitted_by': 1}))
-        self.assertEqual(expectation, self.ml.retrieve_log(self.key))
+             'submitted_by': 1},
+        )
+        self.assertLogEqual(expectation, realm="ml")
 
         # assure janis is archived
         janis = self.core.get_persona(self.key, janis_id)
@@ -597,7 +598,7 @@ class TestMlBackend(BackendTest):
                 'persona_id': persona_id,
             }
             _, log_entries = self.ml.retrieve_log(
-                self.key, mailinglist_ids=[mailinglist_id])
+                self.key, {'entity_ids': [mailinglist_id]})
             # its a bit annoying to check always the correct log id
             log_entries = [{k: v for k, v in log.items()
                             if k not in {'id', 'submitted_by'}}
@@ -1206,7 +1207,7 @@ class TestMlBackend(BackendTest):
 
         # Check that this has been logged
         _, log_entries = self.ml.retrieve_log(
-            self.key, mailinglist_ids=[mailinglist_id])
+            self.key, {'entity_ids': [mailinglist_id]})
         expected_log = {
             'id': 1001,
             'change_note': None,

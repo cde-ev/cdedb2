@@ -65,7 +65,7 @@ class TestAssemblyBackend(BackendTest):
         presider_id = 23
         log = []
         self.login("anton")
-        log_offset, _ = self.assembly.retrieve_log(self.key)
+        log_offset, _ = self.assembly.retrieve_log(self.key, {})
         self.login("werner")
 
         expectation = {
@@ -208,7 +208,8 @@ class TestAssemblyBackend(BackendTest):
     @as_users("werner")
     def test_entity_ballot(self) -> None:
         assembly_id = 1
-        log_offset, _ = self.assembly.retrieve_log(self.key, assembly_id=assembly_id)
+        log_offset, _ = self.assembly.retrieve_log(
+            self.key, {'entity_ids': [assembly_id]})
         log: List[CdEDBObject] = []
         expectation = {1: 'Antwort auf die letzte aller Fragen',
                        2: 'Farbe des Logos',
@@ -622,7 +623,7 @@ class TestAssemblyBackend(BackendTest):
             new_id: 'Verstehen wir Spaß'}
         self.assertEqual(expectation, self.assembly.list_ballots(self.key, assembly_id))
         self.assertLogEqual(
-            log, realm="assembly", offset=log_offset, assembly_id=assembly_id)
+            log, realm="assembly", offset=log_offset, entity_ids=[assembly_id])
 
     @as_users("werner")
     def test_quorum(self) -> None:
@@ -911,7 +912,7 @@ class TestAssemblyBackend(BackendTest):
         entry = {'change_note': 'Antwort auf die letzte aller Fragen',
                  'code': const.AssemblyLogCodes.ballot_changed}
         expectation = (entry, entry.copy())
-        self.assertLogEqual(expectation, realm="assembly", assembly_id=1)
+        self.assertLogEqual(expectation, realm="assembly", entity_ids=[1])
 
     @storage
     @as_users("werner")
@@ -920,7 +921,8 @@ class TestAssemblyBackend(BackendTest):
         assembly_id = 1
         ballot_id = 2
         attachment_id = 1
-        log_offset, _ = self.assembly.retrieve_log(self.key, assembly_id=assembly_id)
+        log_offset, _ = self.assembly.retrieve_log(
+            self.key, {'entity_ids': [assembly_id]})
         log = []
 
         # Check the default entities.
@@ -1309,14 +1311,15 @@ class TestAssemblyBackend(BackendTest):
         self.assertEqual(
             expectation, self.assembly.get_attachments(self.key, attachment_ids))
         self.assertLogEqual(
-            log, realm="assembly", offset=log_offset, assembly_id=assembly_id)
+            log, realm="assembly", offset=log_offset, entity_ids=[assembly_id])
 
     @storage
     @as_users("werner")
     def test_ballot_attachment_links(self) -> None:
         assembly_id = 3
         n = 3
-        log_offset, _ = self.assembly.retrieve_log(self.key, assembly_id=assembly_id)
+        log_offset, _ = self.assembly.retrieve_log(
+            self.key, {'entity_ids': [assembly_id]})
         log = []
         base_time = now()
         delta = datetime.timedelta(seconds=10)
@@ -1436,7 +1439,7 @@ class TestAssemblyBackend(BackendTest):
                         self.key, ballot_id)
                 )
         self.assertLogEqual(
-            log, realm="assembly", offset=log_offset, assembly_id=assembly_id)
+            log, realm="assembly", offset=log_offset, entity_ids=[assembly_id])
 
     @as_users("werner")
     def test_2289(self) -> None:
