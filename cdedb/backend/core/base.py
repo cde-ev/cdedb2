@@ -42,7 +42,7 @@ from cdedb.common.fields import (
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
-from cdedb.common.query.log_filter import LogFilter
+from cdedb.common.query.log_filter import LogFilterAnnotation
 from cdedb.common.roles import (
     ADMIN_KEYS, ALL_ROLES, REALM_ADMINS, extract_roles, privilege_tier,
 )
@@ -252,23 +252,24 @@ class CoreBaseBackend(AbstractBackend):
             return self.sql_insert(rs, "cde.finance_log", data)
 
     @access("core_admin", "auditor")
-    def retrieve_log(self, rs: RequestState, log_filter: LogFilter) -> CdEDBLog:
+    def retrieve_log(self, rs: RequestState, log_filter: LogFilterAnnotation
+                     ) -> CdEDBLog:
         """Get recorded activity.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        return self.generic_retrieve_log(rs, log_filter)
+        return self.generic_retrieve_log(rs, log_filter, "core.log")
 
     @access("core_admin", "auditor")
-    def retrieve_changelog_meta(self, rs: RequestState, log_filter: LogFilter
+    def retrieve_changelog_meta(self, rs: RequestState, log_filter: LogFilterAnnotation
                                 ) -> CdEDBLog:
         """Get changelog activity.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        return self.generic_retrieve_log(rs, log_filter)
+        return self.generic_retrieve_log(rs, log_filter, "core.changelog")
 
     def changelog_submit_change(self, rs: RequestState, data: CdEDBObject,
                                 generation: Optional[int], may_wait: bool,

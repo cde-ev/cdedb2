@@ -31,7 +31,7 @@ from cdedb.common.fields import (
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
-from cdedb.common.query.log_filter import LogFilter
+from cdedb.common.query.log_filter import LogFilter, LogFilterAnnotation
 from cdedb.common.roles import ADMIN_KEYS, implying_realms
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
@@ -257,7 +257,8 @@ class MlBackend(AbstractBackend):
         return self.sql_insert(rs, "ml.log", new_log)
 
     @access("ml", "auditor")
-    def retrieve_log(self, rs: RequestState, log_filter: LogFilter) -> CdEDBLog:
+    def retrieve_log(self, rs: RequestState, log_filter: LogFilterAnnotation
+                     ) -> CdEDBLog:
         """Get recorded activity.
 
         To support relative admins, this is the only retrieve_log function
@@ -266,18 +267,18 @@ class MlBackend(AbstractBackend):
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        log_filter = affirm(LogFilter, log_filter)
-        ml_ids = log_filter.entity_ids
+        ml_ids = log_filter.get('entity_ids', ())
+        ml_ids = affirm_set(vtypes.ID, ml_ids)
 
         if self.is_admin(rs) or "auditor" in rs.user.roles:
             pass
         elif not ml_ids:
             raise PrivilegeError(n_("Must be admin to access global log."))
-        elif len(ml_ids) == 1 and self.may_manage(rs, unwrap(ml_ids)):
+        elif all(self.may_manage(rs, ml_id) for ml_id in ml_ids):
             pass
         else:
             raise PrivilegeError(n_("Not privileged."))
-        return self.generic_retrieve_log(rs, log_filter)
+        return self.generic_retrieve_log(rs, log_filter, "ml.log")
 
     @access("core_admin", "ml_admin")
     def submit_general_query(self, rs: RequestState,

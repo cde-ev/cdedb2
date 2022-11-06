@@ -33,7 +33,7 @@ from cdedb.common import (
 from cdedb.common.exceptions import PrivilegeError, QuotaException
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
-from cdedb.common.query.log_filter import LogFilter
+from cdedb.common.query.log_filter import LogFilter, LogFilterAnnotation
 from cdedb.common.roles import implying_realms
 from cdedb.common.validation import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS, is_optional,
@@ -79,22 +79,24 @@ class CdEBaseBackend(AbstractBackend):
         return self.sql_insert(rs, "cde.log", data)
 
     @access("cde_admin", "auditor")
-    def retrieve_cde_log(self, rs: RequestState, log_filter: LogFilter) -> CdEDBLog:
+    def retrieve_cde_log(self, rs: RequestState, log_filter: LogFilterAnnotation
+                         ) -> CdEDBLog:
         """Get recorded activity.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        return self.generic_retrieve_log(rs, log_filter)
+        return self.generic_retrieve_log(rs, log_filter, "cde.log")
 
     @access("core_admin", "cde_admin", "auditor")
-    def retrieve_finance_log(self, rs: RequestState, log_filter: LogFilter) -> CdEDBLog:
+    def retrieve_finance_log(self, rs: RequestState, log_filter: LogFilterAnnotation
+                             ) -> CdEDBLog:
         """Get financial activity.
 
         Similar to
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        return self.generic_retrieve_log(rs, log_filter)
+        return self.generic_retrieve_log(rs, log_filter, "cde.finance_log")
 
     @access("finance_admin")
     def perform_money_transfers(self, rs: RequestState, data: List[CdEDBObject]

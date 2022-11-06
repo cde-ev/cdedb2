@@ -17,9 +17,7 @@ backend parts.
 import collections
 import copy
 import datetime
-from typing import (
-    Any, Collection, Dict, Iterable, List, Optional, Protocol, Set, Tuple, Union,
-)
+from typing import Any, Collection, Dict, Iterable, List, Optional, Protocol, Set, Tuple
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -44,7 +42,7 @@ from cdedb.common.fields import (
     TRACK_GROUP_FIELDS,
 )
 from cdedb.common.n_ import n_
-from cdedb.common.query.log_filter import LogFilter
+from cdedb.common.query.log_filter import LogFilterAnnotation
 from cdedb.common.sorting import mixed_existence_sorter, xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.filter import datetime_filter
@@ -119,26 +117,26 @@ class EventBaseBackend(EventLowLevelBackend):
     orga_info: _OrgaInfoProtocol = singularize(orga_infos, "persona_ids", "persona_id")
 
     @access("event", "auditor")
-    def retrieve_log(self, rs: RequestState, log_filter: Union[LogFilter, CdEDBObject]
+    def retrieve_log(self, rs: RequestState, log_filter: LogFilterAnnotation
                      ) -> CdEDBLog:
         """Get recorded activity.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        log_filter = affirm(LogFilter, log_filter)
-        event_ids = log_filter.entity_ids
+        event_ids = log_filter.get('entity_ids', ())
+        event_ids = affirm_set(vtypes.ID, event_ids)
 
         if self.is_admin(rs) or "auditor" in rs.user.roles:
             pass
         elif not event_ids:
             raise PrivilegeError(n_("Must be admin to access global log."))
-        elif len(event_ids) == 1 and self.is_orga(rs, event_id=unwrap(event_ids)):
+        elif all(self.is_orga(rs, event_id=event_id) for event_id in event_ids):
             pass
         else:
             raise PrivilegeError(n_("Not privileged."))
 
-        return self.generic_retrieve_log(rs, log_filter)
+        return self.generic_retrieve_log(rs, log_filter, "event.log")
 
     @access("anonymous")
     def list_events(self, rs: RequestState, visible: bool = None,

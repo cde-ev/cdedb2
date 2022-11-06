@@ -2,14 +2,17 @@ import dataclasses
 import datetime
 import decimal
 import enum
-from typing import Iterator, Optional, Type, cast
+from typing import Any, Iterator, Optional, Type, Union, cast
 
 import cdedb.database.constants as const
-from cdedb.common import diacritic_patterns
+from cdedb.common import CdEDBObject, diacritic_patterns
 from cdedb.config import LazyConfig
 from cdedb.database.query import DatabaseValue_s
 
 _CONFIG = LazyConfig()
+
+
+LogFilterAnnotation = Union["LogFilter", CdEDBObject]
 
 
 class LogTable(enum.Enum):

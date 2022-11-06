@@ -31,7 +31,7 @@ from cdedb.common import (
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators
-from cdedb.common.query.log_filter import LogFilter
+from cdedb.common.query.log_filter import LogFilter, LogTable
 from cdedb.common.sorting import LOCALE
 from cdedb.common.validation import parse_date, parse_datetime
 from cdedb.config import Config
@@ -436,7 +436,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
             q = glue(q, "ORDER BY", ", ".join(orders))
         return self.query_all(rs, q, params)
 
-    def generic_retrieve_log(self, rs: RequestState, log_filter: LogFilter
+    def generic_retrieve_log(self, rs: RequestState, log_filter: LogFilter, table: str
                              ) -> CdEDBLog:
         """Get recorded activity.
 
@@ -455,6 +455,12 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
 
         However this handles the finance_log for financial transactions.
         """
+        if isinstance(log_filter, dict):
+            log_table = LogTable(table)
+            if log_filter.get('table', log_table) != log_table:
+                raise ValueError(n_("Table mismatch."))
+            log_filter['table'] = log_table
+
         log_filter = affirm_validation(LogFilter, log_filter)
 
         table = log_filter.table.value
