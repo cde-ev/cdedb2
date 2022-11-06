@@ -1125,7 +1125,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if not log_filter or rs.has_validation_errors():
             # TODO: Can we just ignore errors somehow?
             loglinks = calculate_loglinks(rs, 0, 0, 1)
-            return self.render(rs, template, {'log': [], 'total': 0, 'length': 1, 'loglinks': loglinks})
+            return self.render(rs, template, {'log': [], 'total': 0, 'length': 1,
+                                              'loglinks': loglinks, **template_kwargs})
 
         # Retrieve entry count and log entries.
         table = log_filter.table
@@ -1152,6 +1153,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         persona_ids = (
                 set(e['submitted_by'] for e in log if e['submitted_by'])
                 | set(e['persona_id'] for e in log if e['persona_id'])
+                | set(e['reviewed_by'] for e in log if e.get('reviewed_by'))
         )
         personas = self.coreproxy.get_personas(rs, persona_ids)
 

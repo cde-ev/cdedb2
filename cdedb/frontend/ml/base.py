@@ -336,29 +336,30 @@ class MlBaseFrontend(AbstractUserFrontend):
                  time_stop: Optional[datetime]) -> Response:
         """View activities."""
 
-        filter_params = {
-            'table': "ml.log", 'entity_ids': [mailinglist_id] if mailinglist_id else [],
-            'codes': codes, 'offset': offset, 'length': length,
-            'persona_id': persona_id, 'submitted_by': submitted_by,
-            'change_note': change_note, 'ctime': (time_start, time_stop),
-        }
-
-        db_mailinglist_ids = {mailinglist_id} if mailinglist_id else None
+        db_mailinglist_ids = {mailinglist_id} if mailinglist_id else set()
 
         relevant_mls = self.mlproxy.list_mailinglists(rs, active_only=False,
                                                       managed='managed')
         relevant_set = set(relevant_mls)
         if not self.is_admin(rs):
-            if db_mailinglist_ids is None:
+            if not db_mailinglist_ids:
                 db_mailinglist_ids = relevant_set
             elif not db_mailinglist_ids <= relevant_set:
                 db_mailinglist_ids = db_mailinglist_ids | relevant_set
                 rs.notify("warning", n_(
                     "Not privileged to view log for all these mailinglists."))
 
+        filter_params = {
+            'table': "ml.log", 'entity_ids': db_mailinglist_ids,
+            'codes': codes, 'offset': offset, 'length': length,
+            'persona_id': persona_id, 'submitted_by': submitted_by,
+            'change_note': change_note, 'ctime': (time_start, time_stop),
+        }
+
         mailinglists = self.mlproxy.get_mailinglists(rs, relevant_mls)
+        self.logger.debug(mailinglists)
         return self.generic_view_log(rs, filter_params, "view_log", {
-            'mailinglists': mailinglists, 'relevant_mailinglists': relevant_mls,
+            'all_mailinglists': mailinglists,
             'may_view': lambda ml: self.mlproxy.may_view(rs, ml),
         })
 

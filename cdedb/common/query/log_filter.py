@@ -39,7 +39,7 @@ class LogTable(enum.Enum):
 
     def get_additional_columns(self) -> tuple[str, ...]:
         return {
-            self.core_changelog: ("reviewed_by", "generation",),
+            self.core_changelog: ("reviewed_by", "generation", "automated_change",),
             self.cde_finance_log: ("delta", "new_balance", "members", "total",),
             self.past_event_log: ("pevent_id",),
             self.event_log: ("event_id",),
@@ -126,6 +126,9 @@ class LogFilter:
             if -self.offset < self.length:
                 object.__setattr__(self, 'length', self.length + self.offset)
             object.__setattr__(self, 'offset', 0)
+
+    def get(self, name: str, default: Any) -> Any:
+        return self.__dict__.get(name, default)
 
     def to_sql(self) -> tuple[str, tuple[DatabaseValue_s, ...]]:
         conditions = []
