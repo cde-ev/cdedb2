@@ -665,7 +665,7 @@ class TestEventBackend(BackendTest):
         count, log = self.event.retrieve_log(
             self.key, {'codes': {const.EventLogCodes.minor_form_updated,
                                  const.EventLogCodes.minor_form_removed},
-                       'entity_ids': event_id}
+                       'entity_ids': [event_id]}
         )
         expectation = [
             {
