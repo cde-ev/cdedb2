@@ -58,6 +58,7 @@ from cdedb.common.fields import (
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
+from cdedb.common.query.log_filter import LogFilter
 from cdedb.common.roles import implying_realms
 from cdedb.common.sorting import EntitySorter, mixed_existence_sorter, xsorted
 from cdedb.database.connection import Atomizer
@@ -314,35 +315,26 @@ class AssemblyBackend(AbstractBackend):
         return self.query_exec(rs, query, params)
 
     @access("assembly", "auditor")
-    def retrieve_log(self, rs: RequestState,
-                     codes: Collection[const.AssemblyLogCodes] = None,
-                     assembly_id: int = None, offset: int = None,
-                     length: int = None, persona_id: int = None,
-                     submitted_by: int = None, change_note: str = None,
-                     time_start: datetime.datetime = None,
-                     time_stop: datetime.datetime = None) -> CdEDBLog:
+    def retrieve_log(self, rs: RequestState, log_filter: LogFilter) -> CdEDBLog:
         """Get recorded activity.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        assembly_id = affirm_optional(vtypes.ID, assembly_id)
-        if assembly_id is None:
-            if not self.is_admin(rs) and "auditor" not in rs.user.roles:
-                raise PrivilegeError(n_("Must be admin to access global log."))
-            assembly_ids = None
+        log_filter = affirm(LogFilter, log_filter)
+        assembly_ids = log_filter.entity_ids
+
+        if self.is_admin(rs) or "auditor" in rs.user.roles:
+            pass
+        elif not assembly_ids:
+            raise PrivilegeError(n_("Must be admin to access global log."))
+        elif len(assembly_ids) == 1 and self.is_presider(rs, assembly_id=unwrap(
+                assembly_ids)):
+            pass
         else:
-            if (not self.is_presider(rs, assembly_id=assembly_id)
-                    and "auditor" not in rs.user.roles):
-                raise PrivilegeError(n_("Must have privileged access to view"
-                                        " assembly log."))
-            assembly_ids = [assembly_id]
-        return self.generic_retrieve_log(
-            rs, const.AssemblyLogCodes, "assembly", "assembly.log", codes,
-            entity_ids=assembly_ids, offset=offset, length=length,
-            persona_id=persona_id, submitted_by=submitted_by,
-            change_note=change_note, time_start=time_start,
-            time_stop=time_stop)
+            raise PrivilegeError(n_("Not privileged."))
+
+        return self.generic_retrieve_log(rs, log_filter)
 
     @access("core_admin", "assembly_admin")
     def submit_general_query(self, rs: RequestState,

@@ -92,6 +92,9 @@ from cdedb.common.query import (
     MULTI_VALUE_OPERATORS, NO_VALUE_OPERATORS, VALID_QUERY_OPERATORS, QueryOperators,
     QueryOrder, QueryScope, QuerySpec,
 )
+from cdedb.common.query.log_filter import (
+    LogFilter, OptionalDatetimeRange, OptionalDecimalRange, OptionalIntRange,
+)
 from cdedb.common.roles import ADMIN_KEYS, extract_roles
 from cdedb.common.sorting import xsorted
 from cdedb.common.validation.data import (
@@ -4632,6 +4635,105 @@ def _query(
 
     # TODO why deepcopy?
     return copy.deepcopy(val)
+
+
+@_add_typed_validator
+def _optional_datetime_range(
+    val: Any, argname: str = None, **kwargs: Any
+) -> OptionalDatetimeRange:
+
+    val = _sequence(val, argname, **kwargs)
+    if len(val) != 2:
+        raise ValidationSummary(ValueError(
+            argname, n_("Must have exactly two values.")))
+
+    errs = ValidationSummary()
+
+    new_val = []
+    for v in val:
+        with errs:
+            new_val.append(
+                _ALL_TYPED[Optional[datetime.datetime]](v, argname, **kwargs))
+
+    if errs:
+        raise errs
+
+    return OptionalDatetimeRange(*new_val)
+
+
+@_add_typed_validator
+def _optional_decimal_range(
+    val: Any, argname: str = None, **kwargs: Any
+) -> OptionalDecimalRange:
+
+    val = _sequence(val, argname, **kwargs)
+    if len(val) != 2:
+        raise ValidationSummary(ValueError(
+            argname, n_("Must have exactly two values.")))
+
+    errs = ValidationSummary()
+
+    new_val = []
+    for v in val:
+        with errs:
+            new_val.append(
+                _ALL_TYPED[Optional[decimal.Decimal]](v, argname, **kwargs))
+
+    if errs:
+        raise errs
+
+    return OptionalDecimalRange(*new_val)
+
+
+@_add_typed_validator
+def _optional_int_range(
+    val: Any, argname: str = None, **kwargs: Any
+) -> OptionalIntRange:
+
+    val = _sequence(val, argname, **kwargs)
+    if len(val) != 2:
+        raise ValidationSummary(ValueError(
+            argname, n_("Must have exactly two values.")))
+
+    errs = ValidationSummary()
+
+    new_val = []
+    for v in val:
+        with errs:
+            new_val.append(
+                _ALL_TYPED[Optional[int]](v, argname, **kwargs))
+
+    if errs:
+        raise errs
+
+    return OptionalIntRange(*new_val)
+
+
+@_add_typed_validator
+def _log_filter(
+    val: Any, argname: str = "log_filter", **kwargs: Any
+) -> LogFilter:
+
+    if isinstance(val, LogFilter):
+        val_dict = val.__dict__
+    else:
+        val_dict = _mapping(val, argname, **kwargs)
+
+    if not val_dict.get('length'):
+        val_dict['length'] = _CONFIG['DEFAULT_LOG_LENGTH']
+
+    errs = ValidationSummary()
+
+    new_kwargs = {}
+    for name, type_ in LogFilter.__annotations__.items():
+        if name in val_dict:
+            with errs:
+                new_kwargs[name] = _ALL_TYPED[type_](val_dict[name], name)
+
+    if errs:
+        raise errs
+
+    return LogFilter(**new_kwargs)
 
 
 E = TypeVar('E', bound=Enum)

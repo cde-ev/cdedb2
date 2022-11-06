@@ -15,7 +15,7 @@ import copy
 import datetime
 import decimal
 from collections import OrderedDict
-from typing import Collection, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import psycopg2.extensions
 
@@ -33,6 +33,7 @@ from cdedb.common import (
 from cdedb.common.exceptions import PrivilegeError, QuotaException
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
+from cdedb.common.query.log_filter import LogFilter
 from cdedb.common.roles import implying_realms
 from cdedb.common.validation import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS, is_optional,
@@ -78,44 +79,22 @@ class CdEBaseBackend(AbstractBackend):
         return self.sql_insert(rs, "cde.log", data)
 
     @access("cde_admin", "auditor")
-    def retrieve_cde_log(self, rs: RequestState,
-                         codes: Collection[const.CdeLogCodes] = None,
-                         offset: int = None, length: int = None,
-                         persona_id: int = None, submitted_by: int = None,
-                         change_note: str = None,
-                         time_start: datetime.datetime = None,
-                         time_stop: datetime.datetime = None) -> CdEDBLog:
+    def retrieve_cde_log(self, rs: RequestState, log_filter: LogFilter) -> CdEDBLog:
         """Get recorded activity.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        return self.generic_retrieve_log(
-            rs, const.CdeLogCodes, "persona", "cde.log", codes=codes,
-            offset=offset, length=length, persona_id=persona_id,
-            submitted_by=submitted_by, change_note=change_note,
-            time_start=time_start, time_stop=time_stop)
+        return self.generic_retrieve_log(rs, log_filter)
 
     @access("core_admin", "cde_admin", "auditor")
-    def retrieve_finance_log(self, rs: RequestState,
-                             codes: Collection[const.FinanceLogCodes] = None,
-                             offset: int = None, length: int = None,
-                             persona_id: int = None, submitted_by: int = None,
-                             change_note: str = None,
-                             time_start: datetime.datetime = None,
-                             time_stop: datetime.datetime = None) -> CdEDBLog:
+    def retrieve_finance_log(self, rs: RequestState, log_filter: LogFilter) -> CdEDBLog:
         """Get financial activity.
 
         Similar to
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        additional_columns = ["delta", "new_balance", "members", "total"]
-        return self.generic_retrieve_log(
-            rs, const.FinanceLogCodes, "persona", "cde.finance_log",
-            codes=codes, offset=offset, length=length, persona_id=persona_id,
-            submitted_by=submitted_by, additional_columns=additional_columns,
-            change_note=change_note, time_start=time_start,
-            time_stop=time_stop)
+        return self.generic_retrieve_log(rs, log_filter)
 
     @access("finance_admin")
     def perform_money_transfers(self, rs: RequestState, data: List[CdEDBObject]

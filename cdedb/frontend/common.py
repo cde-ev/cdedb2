@@ -83,6 +83,7 @@ from cdedb.common.i18n import format_country_code, get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query
 from cdedb.common.query.defaults import DEFAULT_QUERIES
+from cdedb.common.query.log_filter import LogFilter, LogTable
 from cdedb.common.roles import (
     ADMIN_KEYS, ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS, PERSONA_DEFAULTS,
     roles_to_db_role,
@@ -1113,6 +1114,54 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if val != token_payload:
             return n_("Anti CSRF token is invalid.")
         return None
+
+    def generic_view_log(self, rs: RequestState, filter_params: CdEDBObject,
+                         template: str, template_kwargs: CdEDBObject = None
+                         ) -> Response:
+        """Generic helper to retrieve log data and render the result."""
+        # Convert filter params into LogFilter.
+        filter_params['table'] = LogTable(filter_params['table'])
+        log_filter = check_validation(rs, LogFilter, filter_params)
+        if rs.has_validation_errors():
+            # TODO: Can we just ignore errors somehow?
+            loglinks = calculate_loglinks(rs, 0, 0, 1)
+            return self.render(rs, template, {'log': [], 'total': 0, 'length': 1, 'loglinks': loglinks})
+
+        # Retrieve entry count and log entries.
+        table = log_filter.table
+        if table == LogTable.core_log:
+            total, log = self.coreproxy.retrieve_log(rs, log_filter)
+        elif table == LogTable.core_changelog:
+            total, log = self.coreproxy.retrieve_changelog_meta(rs, log_filter)
+        elif table == LogTable.cde_finance_log:
+            total, log = self.cdeproxy.retrieve_finance_log(rs, log_filter)
+        elif table == LogTable.cde_log:
+            total, log = self.cdeproxy.retrieve_cde_log(rs, log_filter)
+        elif table == LogTable.past_event_log:
+            total, log = self.pasteventproxy.retrieve_past_log(rs, log_filter)
+        elif table == LogTable.event_log:
+            total, log = self.eventproxy.retrieve_log(rs, log_filter)
+        elif table == LogTable.assembly_log:
+            total, log = self.assemblyproxy.retrieve_log(rs, log_filter)
+        elif table == LogTable.ml_log:
+            total, log = self.mlproxy.retrieve_log(rs, log_filter)
+        else:
+            raise RuntimeError(n_("Impossible."))
+
+        # Retrieve linked personas.
+        persona_ids = (
+                set(e['submitted_by'] for e in log if e['submitted_by'])
+                | set(e['persona_id'] for e in log if e['persona_id'])
+        )
+        personas = self.coreproxy.get_personas(rs, persona_ids)
+
+        # Create pagination.
+        loglinks = calculate_loglinks(rs, total, log_filter.offset, log_filter.length)
+        return self.render(rs, template, {
+            'log': log, 'total': total, 'length': log_filter.length,
+            'personas': personas, 'loglinks': loglinks,
+            **(template_kwargs or {})
+        })
 
 
 class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
@@ -2376,22 +2425,6 @@ def query_result_to_json(data: Collection[CdEDBObject], fields: Iterable[str],
             row[field] = value
         json_data.append(row)
     return json_serialize(json_data)
-
-
-def calculate_db_logparams(offset: Optional[int], length: int
-                           ) -> Tuple[Optional[int], int]:
-    """Modify the offset and length values used in the frontend to
-    allow for guaranteed valid sql queries.
-    """
-    _offset = offset
-    _length = length
-    if _offset and _offset < 0:
-        # Avoid non-positive lengths
-        if -_offset < length:
-            _length = _length + _offset
-        _offset = 0
-
-    return _offset, _length
 
 
 def calculate_loglinks(rs: RequestState, total: int,

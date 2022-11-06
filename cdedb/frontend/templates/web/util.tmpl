@@ -719,7 +719,7 @@
  # ############################ #}
 
 {% macro form_input_from_to(name1, name2, label='', info='', type='number', small=False, displayerrors=True,
-        horizontal=True) %}
+        horizontal=True, attributes='') %}
     <div class="form-group{{ " has-error" if name1 in errors or name2 in errors }}">
         <label class="control-label{% if horizontal %} {{ "col-sm-2" if small else "col-sm-4" }}{% endif %}">
             {{- label -}}
@@ -727,9 +727,9 @@
         <div{% if horizontal %} class="{{ "col-sm-6" if small else "col-sm-8" }}"{% endif %}>
             <div class="input-group">
                 <span class="input-group-addon">{% trans %}from{% endtrans %}</span>
-                {{ input_text(name=name1, type=type, arialabel=gettext('%s from')|format(label)) }}
+                {{ input_text(name=name1, type=type, arialabel=gettext('%s from')|format(label), attributes=attributes) }}
                 <span class="input-group-addon">{% trans %}to{% endtrans %}</span>
-                {{ input_text(name=name2, type=type, arialabel=gettext('%s to')|format(label)) }}
+                {{ input_text(name=name2, type=type, arialabel=gettext('%s to')|format(label), attributes=attributes) }}
             </div>
             {{- output_errors(name1, displayerrors) }}
             {{- output_errors(name2, displayerrors) }}
