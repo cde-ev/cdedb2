@@ -1125,8 +1125,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if not log_filter or rs.has_validation_errors():
             # TODO: Can we just ignore errors somehow?
             loglinks = calculate_loglinks(rs, 0, 0, 1)
-            return self.render(rs, template, {'log': [], 'total': 0, 'length': 1,
-                                              'loglinks': loglinks, **template_kwargs})
+            return self.render(rs, template, {
+                'log': [], 'total': 0, 'length': 1,
+                'loglinks': loglinks, **(template_kwargs or {})
+            })
 
         # Retrieve entry count and log entries.
         table = log_filter.table
