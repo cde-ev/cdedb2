@@ -38,7 +38,7 @@ class LogTable(enum.Enum):
         return {
             self.core_changelog: ("reviewed_by", "generation",),
             self.cde_finance_log: ("delta", "new_balance", "members", "total",),
-            self.past_event_log: ("past_event_id",),
+            self.past_event_log: ("pevent_id",),
             self.event_log: ("event_id",),
             self.ml_log: ("mailinglist_id",),
             self.assembly_log: ("assembly_id",),
@@ -167,7 +167,7 @@ class LogFilter:
                 params.append(self.entity_ids)
         elif self.table == LogTable.past_event_log:
             if self.entity_ids:
-                conditions.append("past_event_id = ANY(%s)")
+                conditions.append("pevent_id = ANY(%s)")
                 params.append(self.entity_ids)
         elif self.table == LogTable.cde_finance_log:
             if self.delta:
