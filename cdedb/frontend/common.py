@@ -1117,12 +1117,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
     def generic_view_log(self, rs: RequestState, filter_params: CdEDBObject,
                          template: str, template_kwargs: CdEDBObject = None
-                         ) -> Response:
+                         ) -> werkzeug.Response:
         """Generic helper to retrieve log data and render the result."""
         # Convert filter params into LogFilter.
         filter_params['table'] = LogTable(filter_params['table'])
         log_filter = check_validation(rs, LogFilter, filter_params)
-        if rs.has_validation_errors():
+        if not log_filter or rs.has_validation_errors():
             # TODO: Can we just ignore errors somehow?
             loglinks = calculate_loglinks(rs, 0, 0, 1)
             return self.render(rs, template, {'log': [], 'total': 0, 'length': 1, 'loglinks': loglinks})

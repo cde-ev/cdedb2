@@ -436,7 +436,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
             q = glue(q, "ORDER BY", ", ".join(orders))
         return self.query_all(rs, q, params)
 
-    def generic_retrieve_log(self, rs: RequestState, log_filter: CdEDBObject
+    def generic_retrieve_log(self, rs: RequestState, log_filter: LogFilter
                              ) -> CdEDBLog:
         """Get recorded activity.
 

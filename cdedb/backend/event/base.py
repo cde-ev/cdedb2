@@ -17,7 +17,9 @@ backend parts.
 import collections
 import copy
 import datetime
-from typing import Any, Collection, Dict, Iterable, List, Optional, Protocol, Set, Tuple
+from typing import (
+    Any, Collection, Dict, Iterable, List, Optional, Protocol, Set, Tuple, Union,
+)
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -117,7 +119,8 @@ class EventBaseBackend(EventLowLevelBackend):
     orga_info: _OrgaInfoProtocol = singularize(orga_infos, "persona_ids", "persona_id")
 
     @access("event", "auditor")
-    def retrieve_log(self, rs: RequestState, log_filter: LogFilter) -> CdEDBLog:
+    def retrieve_log(self, rs: RequestState, log_filter: Union[LogFilter, CdEDBObject]
+                     ) -> CdEDBLog:
         """Get recorded activity.
 
         See
@@ -1213,7 +1216,8 @@ class EventBaseBackend(EventLowLevelBackend):
             # since retrieve_log compares timestamps inclusive, we need to increase the
             # timestamp to not include log entries from the latest commit.
             timestamp += datetime.timedelta(seconds=1)
-            _, entries = self.retrieve_log(rs, event_id=event_id, time_start=timestamp)
+            _, entries = self.retrieve_log(
+                rs, {'entity_ids': [event_id], 'ctime': (timestamp, None)})
             # short circuit if there are no new log entries
             if not entries:
                 return None

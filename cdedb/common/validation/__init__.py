@@ -4649,11 +4649,11 @@ def _optional_datetime_range(
 
     errs = ValidationSummary()
 
-    new_val = []
+    new_val: List[Optional[datetime.datetime]] = []
     for v in val:
         with errs:
             new_val.append(
-                _ALL_TYPED[Optional[datetime.datetime]](v, argname, **kwargs))
+                _ALL_TYPED[Optional[datetime.datetime]](v, argname, **kwargs))  # type: ignore[index]
 
     if errs:
         raise errs
@@ -4673,11 +4673,11 @@ def _optional_decimal_range(
 
     errs = ValidationSummary()
 
-    new_val = []
+    new_val: List[Optional[decimal.Decimal]] = []
     for v in val:
         with errs:
             new_val.append(
-                _ALL_TYPED[Optional[decimal.Decimal]](v, argname, **kwargs))
+                _ALL_TYPED[Optional[decimal.Decimal]](v, argname, **kwargs))  # type: ignore[index]
 
     if errs:
         raise errs
@@ -4697,11 +4697,11 @@ def _optional_int_range(
 
     errs = ValidationSummary()
 
-    new_val = []
+    new_val: List[Optional[int]] = []
     for v in val:
         with errs:
             new_val.append(
-                _ALL_TYPED[Optional[int]](v, argname, **kwargs))
+                _ALL_TYPED[Optional[int]](v, argname, **kwargs))  # type: ignore[index]
 
     if errs:
         raise errs
@@ -4717,7 +4717,7 @@ def _log_filter(
     if isinstance(val, LogFilter):
         val_dict = val.__dict__
     else:
-        val_dict = _mapping(val, argname, **kwargs)
+        val_dict = dict(_mapping(val, argname, **kwargs))
 
     if not val_dict.get('length'):
         val_dict['length'] = _CONFIG['DEFAULT_LOG_LENGTH']

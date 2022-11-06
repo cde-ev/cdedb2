@@ -54,7 +54,7 @@ class OptionalDatetimeRange:
         """Truthy if any of the values is truthy"""
         return any(self)
 
-    def __iter__(self) -> Iterator[tuple[Optional[datetime.datetime], ...]]:
+    def __iter__(self) -> Iterator[Optional[datetime.datetime]]:
         """Enable Tuple unpacking."""
         return iter((self.val_from, self.val_to))
 
@@ -68,7 +68,7 @@ class OptionalIntRange:
         """Truthy if any of the values is truthy"""
         return any(self)
 
-    def __iter__(self) -> Iterator[tuple[Optional[int], ...]]:
+    def __iter__(self) -> Iterator[Optional[int]]:
         """Enable Tuple unpacking."""
         return iter((self.val_from, self.val_to))
 
@@ -82,7 +82,7 @@ class OptionalDecimalRange:
         """Truthy if any of the values is truthy"""
         return any(self)
 
-    def __iter__(self) -> Iterator[tuple[Optional[decimal.Decimal], ...]]:
+    def __iter__(self) -> Iterator[Optional[decimal.Decimal]]:
         """Enable Tuple unpacking."""
         return iter((self.val_from, self.val_to))
 
