@@ -4677,7 +4677,7 @@ def _range(
     val = _sequence(val, argname, **kwargs)
 
     if not len(val) == 2:
-        raise ValidationSummary(ValueError(n_("A range must have exactly two values.")))
+        raise ValidationSummary(ValueError(n_("Must contain exactly two elements.")))
 
     errs = ValidationSummary()
     new_val = []
