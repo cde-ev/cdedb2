@@ -1,3 +1,5 @@
+"""Provide a dataclass for validating and passing parameters for log filtering."""
+
 import dataclasses
 import datetime
 import decimal
@@ -14,10 +16,17 @@ _CONFIG = LazyConfig()
 _DEFAULT_LOG_COLUMNS = (
     "id", "ctime", "code", "submitted_by", "persona_id", "change_note")
 
+
+# Use this TypeAlias where both a LogFilter and a dict, that can be turned into a
+# LogFilter by validation is acceptable.
 LogFilterAnnotation = Union["LogFilter", CdEDBObject]
 
 
 class LogTable(enum.Enum):
+    """Enum containing all the different log tables.
+
+    Has a few helper methods providing additional data depending on the table.
+    """
     core_log = "core.log"
     core_changelog = "core.changelog"
     cde_finance_log = "cde.finance_log"
@@ -28,6 +37,7 @@ class LogTable(enum.Enum):
     ml_log = "ml.log"
 
     def get_log_code_class(self) -> Type[enum.IntEnum]:
+        """Map each log table to the corresponsing LogCode class."""
         return {
             self.core_log: const.CoreLogCodes,
             self.core_changelog: const.MemberChangeStati,
@@ -40,6 +50,7 @@ class LogTable(enum.Enum):
         }[cast(str, self)]
 
     def get_additional_columns(self) -> tuple[str, ...]:
+        """Provide a list of non-default columns for every table."""
         return {
             self.core_changelog: ("reviewed_by", "generation", "automated_change",),
             self.cde_finance_log: ("delta", "new_balance", "members", "total",),
@@ -49,6 +60,9 @@ class LogTable(enum.Enum):
             self.assembly_log: ("assembly_id",),
         }.get(cast(str, self), ())
 
+
+# Some Types for storing range filters. Basically just two-element tuples of a common
+# (optional) type.
 
 OptionalDatetimeRange = typing.NamedTuple("OptionalDatetimeRange", [
     ("from_val", Optional[datetime.datetime]), ("to_val", Optional[datetime.datetime]),
@@ -63,14 +77,22 @@ OptionalIntRange = typing.NamedTuple("OptionalIntRange", [
 
 @dataclasses.dataclass(frozen=True)
 class LogFilter:
+    """Dataclass to validate, pass and process filter parameters for querying a log.
+
+    Everything except for the table should be optional.
+
+    This can be created from a dict of parameters by the validation, using the type
+    annotations to validate the parameters.
+    """
     # The log that is being retrieved.
     table: LogTable
-    # Generic attributes available for all logs.
-    codes: list[int] = dataclasses.field(default_factory=list)
+    # Pagination parameters.
     offset: Optional[int] = None
     _offset: Optional[int] = dataclasses.field(default=None)  # Unmodified offset.
     length: int = 0  # Set default in post_init.
     _length: int = dataclasses.field(default=0)  # Unmodified length.
+    # Generic attributes available for all logs.
+    codes: list[int] = dataclasses.field(default_factory=list)
     persona_id: Optional[int] = None
     submitted_by: Optional[int] = None
     change_note: Optional[str] = None
