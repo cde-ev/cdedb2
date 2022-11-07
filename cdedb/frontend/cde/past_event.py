@@ -543,7 +543,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         """View activities concerning concluded events."""
 
         filter_params = {
-            'table': "past_event.log", 'entity_ids': [pevent_id] if pevent_id else [],
+            'entity_ids': [pevent_id] if pevent_id else [],
             'codes': codes, 'offset': offset, 'length': length,
             'persona_id': persona_id, 'submitted_by': submitted_by,
             'change_note': change_note, 'ctime': (time_start, time_stop),
@@ -551,6 +551,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
 
         pevent_ids = self.pasteventproxy.list_past_events(rs)
         pevents = self.pasteventproxy.get_past_events(rs, pevent_ids)
-        return self.generic_view_log(rs, filter_params, "past_event/view_past_log", {
+        return self.generic_view_log(
+            rs, filter_params, "past_event.log", "past_event/view_past_log", {
             'pevents': pevents
         })

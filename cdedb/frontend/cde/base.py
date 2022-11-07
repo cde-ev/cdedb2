@@ -801,7 +801,6 @@ class CdEBaseFrontend(AbstractUserFrontend):
         """View financial activity."""
 
         filter_params = {
-            'table': "cde.finance_log",
             'codes': codes, 'offset': offset, 'length': length,
             'persona_id': persona_id, 'submitted_by': submitted_by,
             'change_note': change_note, 'ctime': (time_start, time_stop),
@@ -810,4 +809,5 @@ class CdEBaseFrontend(AbstractUserFrontend):
             'total': (total_from, total_to), 'members': (members_from, members_to),
         }
 
-        return self.generic_view_log(rs, filter_params, "view_finance_log")
+        return self.generic_view_log(
+            rs, filter_params, "cde.finance_log", "view_finance_log")

@@ -300,10 +300,10 @@ class CdESemesterMixin(CdEBaseFrontend):
         """View semester activity."""
 
         filter_params = {
-            'table': "cde.log",
             'codes': codes, 'offset': offset, 'length': length,
             'persona_id': persona_id, 'submitted_by': submitted_by,
             'change_note': change_note, 'ctime': (time_start, time_stop),
         }
 
-        return self.generic_view_log(rs, filter_params, "semester/view_cde_log")
+        return self.generic_view_log(
+            rs, filter_params, "cde.log", "semester/view_cde_log")

@@ -648,7 +648,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         """View activities concerning events organized via DB."""
 
         filter_params = {
-            'table': "event.log", 'entity_ids': [event_id] if event_id else [],
+            'entity_ids': [event_id] if event_id else [],
             'codes': codes, 'offset': offset, 'length': length,
             'persona_id': persona_id, 'submitted_by': submitted_by,
             'change_note': change_note, 'ctime': (time_start, time_stop),
@@ -659,7 +659,8 @@ class EventBaseFrontend(AbstractUserFrontend):
             registration_map = self.eventproxy.get_registration_map(rs, event_ids)
         else:
             registration_map = {}
-        return self.generic_view_log(rs, filter_params, "base/view_log", {
+        return self.generic_view_log(
+            rs, filter_params, "event.log", "base/view_log", {
             'all_events': events, 'registration_map': registration_map,
         })
 
@@ -678,14 +679,15 @@ class EventBaseFrontend(AbstractUserFrontend):
         """View activities concerning one event organized via DB."""
 
         filter_params = {
-            'table': "event.log", 'entity_ids': [event_id],
+            'entity_ids': [event_id],
             'codes': codes, 'offset': offset, 'length': length,
             'persona_id': persona_id, 'submitted_by': submitted_by,
             'change_note': change_note, 'ctime': (time_start, time_stop),
         }
 
         registration_map = self.eventproxy.get_registration_map(rs, (event_id,))
-        return self.generic_view_log(rs, filter_params, "base/view_event_log", {
+        return self.generic_view_log(
+            rs, filter_params, "event.log", "base/view_event_log", {
             'registration_map': registration_map
         })
 

@@ -2,7 +2,8 @@ import dataclasses
 import datetime
 import decimal
 import enum
-from typing import Any, Iterator, Optional, Type, Union, cast
+import typing
+from typing import Any, Optional, Type, Union, cast
 
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, diacritic_patterns
@@ -10,7 +11,8 @@ from cdedb.config import LazyConfig
 from cdedb.database.query import DatabaseValue_s
 
 _CONFIG = LazyConfig()
-
+_DEFAULT_LOG_COLUMNS = (
+    "id", "ctime", "code", "submitted_by", "persona_id", "change_note")
 
 LogFilterAnnotation = Union["LogFilter", CdEDBObject]
 
@@ -48,46 +50,15 @@ class LogTable(enum.Enum):
         }.get(cast(str, self), ())
 
 
-@dataclasses.dataclass(frozen=True)
-class OptionalDatetimeRange:
-    val_from: Optional[datetime.datetime] = dataclasses.field(default=None)
-    val_to: Optional[datetime.datetime] = dataclasses.field(default=None)
-
-    def __bool__(self) -> bool:
-        """Truthy if any of the values is truthy"""
-        return any(self)
-
-    def __iter__(self) -> Iterator[Optional[datetime.datetime]]:
-        """Enable Tuple unpacking."""
-        return iter((self.val_from, self.val_to))
-
-
-@dataclasses.dataclass(frozen=True)
-class OptionalIntRange:
-    val_from: Optional[int] = dataclasses.field(default=None)
-    val_to: Optional[int] = dataclasses.field(default=None)
-
-    def __bool__(self) -> bool:
-        """Truthy if any of the values is truthy"""
-        return any(self)
-
-    def __iter__(self) -> Iterator[Optional[int]]:
-        """Enable Tuple unpacking."""
-        return iter((self.val_from, self.val_to))
-
-
-@dataclasses.dataclass(frozen=True)
-class OptionalDecimalRange:
-    val_from: Optional[decimal.Decimal] = dataclasses.field(default=None)
-    val_to: Optional[decimal.Decimal] = dataclasses.field(default=None)
-
-    def __bool__(self) -> bool:
-        """Truthy if any of the values is truthy"""
-        return any(self)
-
-    def __iter__(self) -> Iterator[Optional[decimal.Decimal]]:
-        """Enable Tuple unpacking."""
-        return iter((self.val_from, self.val_to))
+OptionalDatetimeRange = typing.NamedTuple("OptionalDatetimeRange", [
+    ("from_val", Optional[datetime.datetime]), ("to_val", Optional[datetime.datetime]),
+])
+OptionalDecimalRange = typing.NamedTuple("OptionalDecimalRange", [
+    ("from_val", Optional[decimal.Decimal]), ("to_val", Optional[decimal.Decimal]),
+])
+OptionalIntRange = typing.NamedTuple("OptionalIntRange", [
+    ("from_val", Optional[int]), ("to_val", Optional[int]),
+])
 
 
 @dataclasses.dataclass(frozen=True)
@@ -96,31 +67,35 @@ class LogFilter:
     table: LogTable
     # Generic attributes available for all logs.
     codes: list[int] = dataclasses.field(default_factory=list)
-    offset: Optional[int] = dataclasses.field(default=None)
-    length: int = dataclasses.field(default=0)  # Set default in post_init.
-    persona_id: Optional[int] = dataclasses.field(default=None)
-    submitted_by: Optional[int] = dataclasses.field(default=None)
-    change_note: Optional[str] = dataclasses.field(default=None)
-    ctime: OptionalDatetimeRange = dataclasses.field(
-        default_factory=OptionalDatetimeRange)
+    offset: Optional[int] = None
+    _offset: Optional[int] = dataclasses.field(default=None)  # Unmodified offset.
+    length: int = 0  # Set default in post_init.
+    _length: int = dataclasses.field(default=0)  # Unmodified length.
+    persona_id: Optional[int] = None
+    submitted_by: Optional[int] = None
+    change_note: Optional[str] = None
+    ctime: OptionalDatetimeRange = OptionalDatetimeRange(None, None)
     # changelog only
-    reviewed_by: Optional[int] = dataclasses.field(default=None)
+    reviewed_by: Optional[int] = None
     # event and ml only
     entity_ids: list[int] = dataclasses.field(default_factory=list)
     # finance only
-    delta: OptionalDecimalRange = dataclasses.field(
-        default_factory=OptionalDecimalRange)
-    new_balance: OptionalDecimalRange = dataclasses.field(
-        default_factory=OptionalDecimalRange)
-    total: OptionalDecimalRange = dataclasses.field(
-        default_factory=OptionalDecimalRange)
-    members: OptionalIntRange = dataclasses.field(
-        default_factory=OptionalIntRange)
+    delta: OptionalDecimalRange = OptionalDecimalRange(None, None)
+    new_balance: OptionalDecimalRange = OptionalDecimalRange(None, None)
+    total: OptionalDecimalRange = OptionalDecimalRange(None, None)
+    members: OptionalIntRange = OptionalIntRange(None, None)
 
     def __post_init__(self) -> None:
-        """Modify offset and length values used in the frontend to ensure valid SQL."""
+        """Do a little processing on the data.
+
+         Use setattr workaround because of frozen dataclass.
+         """
         if not self.length:
             object.__setattr__(self, 'length', _CONFIG['DEFAULT_LOG_LENGTH'])
+        # Remember original length and offset for pagination.
+        object.__setattr__(self, '_length', self.length)
+        object.__setattr__(self, '_offset', self.offset)
+        # Fix offset and length to ensure valid SQL.
         if self.offset and self.offset < 0:
             # Avoid non-positive lengths
             if -self.offset < self.length:
@@ -128,9 +103,17 @@ class LogFilter:
             object.__setattr__(self, 'offset', 0)
 
     def get(self, name: str, default: Any) -> Any:
+        """Emulate dict access."""
         return self.__dict__.get(name, default)
 
-    def to_sql(self) -> tuple[str, tuple[DatabaseValue_s, ...]]:
+    def to_sql_condition(self) -> tuple[str, tuple[DatabaseValue_s, ...]]:
+        """Create a SQL condition string from parameters.
+
+        The condition string is empty if there is no filter condition. Otherwise it
+        includes the "WHERE".
+
+        Returns the condition string and a tuple of parameters used in that condition.
+        """
         conditions = []
         params: list[DatabaseValue_s] = []
         if self.codes:
@@ -210,3 +193,7 @@ class LogFilter:
                     params.append(members_to)
 
         return f"WHERE {' AND '.join(conditions)}" if conditions else "", tuple(params)
+
+    def get_columns(self) -> str:
+        """Get a comma-separated list of columns to select from the log table."""
+        return ", ".join(_DEFAULT_LOG_COLUMNS + self.table.get_additional_columns())

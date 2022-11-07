@@ -455,20 +455,15 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
 
         However this handles the finance_log for financial transactions.
         """
-        if isinstance(log_filter, dict):
-            log_table = LogTable(table)
-            if log_filter.get('table', log_table) != log_table:
-                raise ValueError(n_("Table mismatch."))
-            log_filter['table'] = log_table
-
-        log_filter = affirm_validation(LogFilter, log_filter)
+        log_filter = affirm_validation(LogFilter, log_filter, log_table=LogTable(table))
 
         table = log_filter.table.value
         length = log_filter.length or 0
         offset = log_filter.offset
         log_code = log_filter.table.get_log_code_class()
 
-        condition, params = log_filter.to_sql()
+        condition, params = log_filter.to_sql_condition()
+        columns = log_filter.get_columns()
 
         # The first query determines the absolute number of logs existing
         # matching the given criteria
@@ -479,10 +474,6 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
             return total, tuple()
         elif offset is None and total > length:
             offset = length * ((total - 1) // length)
-
-        columns = ", ".join(
-            ("id", "ctime", "code", "submitted_by", "persona_id", "change_note")
-            + log_filter.table.get_additional_columns())
 
         # Now, query the actual information
         query = f"""

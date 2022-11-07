@@ -132,7 +132,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         """View activities."""
 
         filter_params = {
-            'table': "assembly.log", 'entity_ids': [assembly_id] if assembly_id else [],
+            'entity_ids': [assembly_id] if assembly_id else [],
             'codes': codes, 'offset': offset, 'length': length,
             'persona_id': persona_id, 'submitted_by': submitted_by,
             'change_note': change_note, 'ctime': (time_start, time_stop),
@@ -141,7 +141,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         all_assemblies = self.assemblyproxy.list_assemblies(rs)
         may_view = lambda id_: self.assemblyproxy.may_assemble(rs, assembly_id=id_)
 
-        return self.generic_view_log(rs, filter_params, "view_log", {
+        return self.generic_view_log(
+            rs, filter_params, "assembly.log", "view_log", {
             'may_view': may_view, 'all_assemblies': all_assemblies,
         })
 
@@ -160,13 +161,14 @@ class AssemblyFrontend(AbstractUserFrontend):
         """View activities."""
 
         filter_params = {
-            'table': "assembly.log", 'entity_ids': [assembly_id],
+            'entity_ids': [assembly_id],
             'codes': codes, 'offset': offset, 'length': length,
             'persona_id': persona_id, 'submitted_by': submitted_by,
             'change_note': change_note, 'ctime': (time_start, time_stop),
         }
 
-        return self.generic_view_log(rs, filter_params, "view_assembly_log")
+        return self.generic_view_log(
+            rs, filter_params, "assembly.log", "view_assembly_log")
 
     @access("assembly")
     def show_assembly(self, rs: RequestState, assembly_id: int) -> Response:

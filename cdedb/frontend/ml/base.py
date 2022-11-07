@@ -350,7 +350,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                     "Not privileged to view log for all these mailinglists."))
 
         filter_params = {
-            'table': "ml.log", 'entity_ids': db_mailinglist_ids,
+            'entity_ids': db_mailinglist_ids,
             'codes': codes, 'offset': offset, 'length': length,
             'persona_id': persona_id, 'submitted_by': submitted_by,
             'change_note': change_note, 'ctime': (time_start, time_stop),
@@ -358,7 +358,8 @@ class MlBaseFrontend(AbstractUserFrontend):
 
         mailinglists = self.mlproxy.get_mailinglists(rs, relevant_mls)
         self.logger.debug(mailinglists)
-        return self.generic_view_log(rs, filter_params, "view_log", {
+        return self.generic_view_log(
+            rs, filter_params, "ml.log", "view_log", {
             'all_mailinglists': mailinglists,
             'may_view': lambda ml: self.mlproxy.may_view(rs, ml),
         })
@@ -554,13 +555,14 @@ class MlBaseFrontend(AbstractUserFrontend):
         """View activities pertaining to one list."""
 
         filter_params = {
-            'table': "ml.log", 'entity_ids': [mailinglist_id],
+            'entity_ids': [mailinglist_id],
             'codes': codes, 'offset': offset, 'length': length,
             'persona_id': persona_id, 'submitted_by': submitted_by,
             'change_note': change_note, 'ctime': (time_start, time_stop),
         }
 
-        return self.generic_view_log(rs, filter_params, "view_ml_log")
+        return self.generic_view_log(
+            rs, filter_params, "ml.log", "view_ml_log")
 
     @access("ml")
     @mailinglist_guard()

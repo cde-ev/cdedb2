@@ -2157,14 +2157,14 @@ class CoreBaseFrontend(AbstractFrontend):
         """View changelog activity."""
 
         filter_params = {
-            'table': "core.changelog",
             'codes': codes, 'offset': offset, 'length': length,
             'persona_id': persona_id, 'submitted_by': submitted_by,
             'change_note': change_note, 'ctime': (time_start, time_stop),
             'reviewed_by': reviewed_by,
         }
 
-        return self.generic_view_log(rs, filter_params, "view_changelog_meta")
+        return self.generic_view_log(
+            rs, filter_params, "core.changelog", "view_changelog_meta")
 
     @access("core_admin", "auditor")
     @REQUESTdata(*LOG_FIELDS_COMMON)
@@ -2177,13 +2177,13 @@ class CoreBaseFrontend(AbstractFrontend):
         """View activity."""
 
         filter_params = {
-            'table': "core.log",
             'codes': codes, 'offset': offset, 'length': length,
             'persona_id': persona_id, 'submitted_by': submitted_by,
             'change_note': change_note, 'ctime': (time_start, time_stop),
         }
 
-        return self.generic_view_log(rs, filter_params, "view_log")
+        return self.generic_view_log(
+            rs, filter_params, "core.log", "view_log")
 
     @access("anonymous")
     def debug_email(self, rs: RequestState, token: str) -> Response:

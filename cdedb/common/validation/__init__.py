@@ -93,7 +93,7 @@ from cdedb.common.query import (
     QueryOrder, QueryScope, QuerySpec,
 )
 from cdedb.common.query.log_filter import (
-    LogFilter, OptionalDatetimeRange, OptionalDecimalRange, OptionalIntRange,
+    LogFilter, LogTable, OptionalDatetimeRange, OptionalDecimalRange, OptionalIntRange,
 )
 from cdedb.common.roles import ADMIN_KEYS, extract_roles
 from cdedb.common.sorting import xsorted
@@ -4641,77 +4641,60 @@ def _query(
 def _optional_datetime_range(
     val: Any, argname: str = None, **kwargs: Any
 ) -> OptionalDatetimeRange:
+    type_ = Optional[datetime.datetime]
+    val: Tuple[type_, type_] = _range(val, type_, argname, **kwargs)  # type: ignore[arg-type]
 
-    val = _sequence(val, argname, **kwargs)
-    if len(val) != 2:
-        raise ValidationSummary(ValueError(
-            argname, n_("Must have exactly two values.")))
-
-    errs = ValidationSummary()
-
-    new_val: List[Optional[datetime.datetime]] = []
-    for v in val:
-        with errs:
-            new_val.append(
-                _ALL_TYPED[Optional[datetime.datetime]](v, argname, **kwargs))  # type: ignore[index]
-
-    if errs:
-        raise errs
-
-    return OptionalDatetimeRange(*new_val)
+    return OptionalDatetimeRange(*val)
 
 
 @_add_typed_validator
 def _optional_decimal_range(
     val: Any, argname: str = None, **kwargs: Any
 ) -> OptionalDecimalRange:
+    type_ = Optional[decimal.Decimal]
+    val: Tuple[type_, type_] = _range(val, type_, argname, **kwargs)  # type: ignore[arg-type]
 
-    val = _sequence(val, argname, **kwargs)
-    if len(val) != 2:
-        raise ValidationSummary(ValueError(
-            argname, n_("Must have exactly two values.")))
-
-    errs = ValidationSummary()
-
-    new_val: List[Optional[decimal.Decimal]] = []
-    for v in val:
-        with errs:
-            new_val.append(
-                _ALL_TYPED[Optional[decimal.Decimal]](v, argname, **kwargs))  # type: ignore[index]
-
-    if errs:
-        raise errs
-
-    return OptionalDecimalRange(*new_val)
+    return OptionalDecimalRange(*val)
 
 
 @_add_typed_validator
 def _optional_int_range(
     val: Any, argname: str = None, **kwargs: Any
 ) -> OptionalIntRange:
+    type_ = Optional[int]
+    val: Tuple[type_, type_] = _range(val, type_, argname, **kwargs)  # type: ignore[arg-type]
 
+    return OptionalIntRange(*val)
+
+
+def _range(
+    val: Any, type_: Type[T], argname: str = None, **kwargs: Any
+) -> Tuple[T, T]:
+    """Validate val to be a tuple of exactly two values of the given type.
+
+    Used to specify a range to filter for.
+    """
     val = _sequence(val, argname, **kwargs)
-    if len(val) != 2:
-        raise ValidationSummary(ValueError(
-            argname, n_("Must have exactly two values.")))
+
+    if not len(val) == 2:
+        raise ValidationSummary(ValueError(n_("A range must have exactly two values.")))
 
     errs = ValidationSummary()
-
-    new_val: List[Optional[int]] = []
+    new_val = []
     for v in val:
         with errs:
-            new_val.append(
-                _ALL_TYPED[Optional[int]](v, argname, **kwargs))  # type: ignore[index]
+            new_val.append(_ALL_TYPED[type_](v, argname, **kwargs))
 
     if errs:
         raise errs
 
-    return OptionalIntRange(*new_val)
+    from_val, to_val = new_val
+    return (from_val, to_val)
 
 
 @_add_typed_validator
 def _log_filter(
-    val: Any, argname: str = "log_filter", **kwargs: Any
+    val: Any, argname: str = None, *, log_table: LogTable, **kwargs: Any
 ) -> LogFilter:
 
     if isinstance(val, LogFilter):
@@ -4721,19 +4704,14 @@ def _log_filter(
 
     if not val_dict.get('length'):
         val_dict['length'] = _CONFIG['DEFAULT_LOG_LENGTH']
+    if val_dict.get('table', log_table) != log_table:
+        raise ValidationSummary(ValueError(n_("Table mismatch.")))
+    # Ensure this is an enum member, not just a string.
+    val_dict['table'] = LogTable(log_table)
 
-    errs = ValidationSummary()
+    val_dict = _examine_dictionary_fields(val_dict, {}, LogFilter.__annotations__)
 
-    new_kwargs = {}
-    for name, type_ in LogFilter.__annotations__.items():
-        if name in val_dict:
-            with errs:
-                new_kwargs[name] = _ALL_TYPED[type_](val_dict[name], name)
-
-    if errs:
-        raise errs
-
-    return LogFilter(**new_kwargs)
+    return LogFilter(**val_dict)
 
 
 E = TypeVar('E', bound=Enum)

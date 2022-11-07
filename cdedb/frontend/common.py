@@ -1116,22 +1116,18 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         return None
 
     def generic_view_log(self, rs: RequestState, filter_params: CdEDBObject,
-                         template: str, template_kwargs: CdEDBObject = None
+                         table: str, template: str, template_kwargs: CdEDBObject = None
                          ) -> werkzeug.Response:
         """Generic helper to retrieve log data and render the result."""
+        table = LogTable(table)
         # Convert filter params into LogFilter.
-        filter_params['table'] = LogTable(filter_params['table'])
-        log_filter = check_validation(rs, LogFilter, filter_params)
-        if not log_filter or rs.has_validation_errors():
-            # TODO: Can we just ignore errors somehow?
-            loglinks = calculate_loglinks(rs, 0, 0, 1)
-            return self.render(rs, template, {
-                'log': [], 'total': 0, 'length': 1,
-                'loglinks': loglinks, **(template_kwargs or {})
-            })
+        log_filter = check_validation(rs, LogFilter, filter_params, log_table=table)
+        if rs.has_validation_errors() or log_filter is None:
+            log_filter = check_validation(rs, LogFilter, {}, log_table=table)
+            rs.ignore_validation_errors()
+            assert log_filter is not None
 
         # Retrieve entry count and log entries.
-        table = log_filter.table
         if table == LogTable.core_log:
             total, log = self.coreproxy.retrieve_log(rs, log_filter)
         elif table == LogTable.core_changelog:
@@ -1160,7 +1156,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         personas = self.coreproxy.get_personas(rs, persona_ids)
 
         # Create pagination.
-        loglinks = calculate_loglinks(rs, total, log_filter.offset, log_filter.length)
+        loglinks = calculate_loglinks(rs, total, log_filter._offset, log_filter._length)
         return self.render(rs, template, {
             'log': log, 'total': total, 'length': log_filter.length,
             'personas': personas, 'loglinks': loglinks,
