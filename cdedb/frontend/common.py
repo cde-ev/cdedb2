@@ -1156,7 +1156,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         personas = self.coreproxy.get_personas(rs, persona_ids)
 
         # Create pagination.
-        loglinks = calculate_loglinks(rs, total, log_filter._offset, log_filter._length)
+        loglinks = calculate_loglinks(rs, total, log_filter._offset, log_filter._length)  # pylint: disable=protected-access
         return self.render(rs, template, {
             'log': log, 'total': total, 'length': log_filter.length,
             'personas': personas, 'loglinks': loglinks,

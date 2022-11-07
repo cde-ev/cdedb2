@@ -4688,7 +4688,7 @@ def _range(
     if errs:
         raise errs
 
-    from_val, to_val = new_val
+    from_val, to_val = new_val  # pylint: disable=unbalanced-tuple-unpacking
     return (from_val, to_val)
 
 
