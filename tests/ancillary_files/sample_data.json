@@ -3770,9 +3770,9 @@
             "delta": null,
             "new_balance": null,
             "change_note": "-4.50€",
+            "transaction_date": null
             "members": 7,
             "total": "106.50",
-            "transaction_date": null
         },
         {
             "ctime": "---now---",
@@ -3782,9 +3782,9 @@
             "delta": "5.00",
             "new_balance": "12.50",
             "change_note": "42.23€",
+            "transaction_date": null
             "members": 7,
             "total": "111.50",
-            "transaction_date": null
         }
     ],
     "cde.log": [],
