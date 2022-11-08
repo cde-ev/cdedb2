@@ -3771,7 +3771,8 @@
             "new_balance": null,
             "change_note": "-4.50€",
             "members": 7,
-            "total": "106.50"
+            "total": "106.50",
+            "transaction_date": null
         },
         {
             "ctime": "---now---",
@@ -3782,7 +3783,8 @@
             "new_balance": "12.50",
             "change_note": "42.23€",
             "members": 7,
-            "total": "111.50"
+            "total": "111.50",
+            "transaction_date": null
         }
     ],
     "cde.log": [],

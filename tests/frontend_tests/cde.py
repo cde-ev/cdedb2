@@ -1746,15 +1746,8 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertPresence("4 Überweisungen gebucht. 1 neue Mitglieder.",
                             div="notifications")
-        "-12.34";"DB-3-5";"Clown";"Charly";"guaranteed no money laundering"
-        "100";"DB-4-3 ";"Dino";"Daniel";"17.03.2019"
-        "25";"DB-6-X";"Findus";"Ferdinand F.";"15.03.2019"
-        "13.75";"DB-6-X";"Findus";"Ferdinand";"16.03.2019"
 
-
-        note_template = ("Guthabenänderung um {amount} auf {new_balance}"
-                         " (Überwiesen am {date})")
-        log_expectation = [
+        log_expectation: list[CdEDBObject] = [
             {
                 'persona_id': 3,
                 'code': const.FinanceLogCodes.increase_balance,
