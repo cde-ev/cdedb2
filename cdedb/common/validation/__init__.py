@@ -92,9 +92,7 @@ from cdedb.common.query import (
     MULTI_VALUE_OPERATORS, NO_VALUE_OPERATORS, VALID_QUERY_OPERATORS, QueryOperators,
     QueryOrder, QueryScope, QuerySpec,
 )
-from cdedb.common.query.log_filter import (
-    LogFilter, LogTable, OptionalDatetimeRange, OptionalDecimalRange, OptionalIntRange,
-)
+from cdedb.common.query.log_filter import LogFilter, LogTable
 from cdedb.common.roles import ADMIN_KEYS, extract_roles
 from cdedb.common.sorting import xsorted
 from cdedb.common.validation.data import (
@@ -165,6 +163,12 @@ class ValidatorStorage(Dict[Type[Any], Callable[..., Any]]):
         elif typing.get_origin(type_) is list:
             [inner_type] = typing.get_args(type_)
             return make_list_validator(inner_type)  # type: ignore[return-value]
+        elif typing.get_origin(type_) is tuple:
+            args = typing.get_args(type_)
+            if len(args) == 2:
+                type_a, type_b = args
+                if type_a is type_b:
+                    return make_pair_validator(type_a)
         # TODO more container types like tuple
         return super().__getitem__(type_)
 
@@ -932,6 +936,20 @@ def make_list_validator(type_: Type[T]) -> ListValidator[T]:
         return _list_of(val, type_, argname, **kwargs)
 
     return list_validator
+
+
+class PairValidator(Protocol[T]):
+    def __call__(self, val: Any, argname: str = None, **kargs: Any) -> Tuple[T, T]:
+        ...
+
+
+def make_pair_validator(type_: Type[T]) -> PairValidator[T]:
+
+    @functools.wraps(_range)
+    def pair_validator(val: Any, argname: str = None, **kwargs: Any) -> Tuple[T, T]:
+        return _range(val, type_, argname, **kwargs)
+
+    return pair_validator
 
 
 @_add_typed_validator
@@ -4635,36 +4653,6 @@ def _query(
 
     # TODO why deepcopy?
     return copy.deepcopy(val)
-
-
-@_add_typed_validator
-def _optional_datetime_range(
-    val: Any, argname: str = None, **kwargs: Any
-) -> OptionalDatetimeRange:
-    type_ = Optional[datetime.datetime]
-    val: Tuple[type_, type_] = _range(val, type_, argname, **kwargs)  # type: ignore[arg-type]
-
-    return OptionalDatetimeRange(*val)
-
-
-@_add_typed_validator
-def _optional_decimal_range(
-    val: Any, argname: str = None, **kwargs: Any
-) -> OptionalDecimalRange:
-    type_ = Optional[decimal.Decimal]
-    val: Tuple[type_, type_] = _range(val, type_, argname, **kwargs)  # type: ignore[arg-type]
-
-    return OptionalDecimalRange(*val)
-
-
-@_add_typed_validator
-def _optional_int_range(
-    val: Any, argname: str = None, **kwargs: Any
-) -> OptionalIntRange:
-    type_ = Optional[int]
-    val: Tuple[type_, type_] = _range(val, type_, argname, **kwargs)  # type: ignore[arg-type]
-
-    return OptionalIntRange(*val)
 
 
 def _range(

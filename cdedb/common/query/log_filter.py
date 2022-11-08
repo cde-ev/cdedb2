@@ -96,16 +96,17 @@ class LogFilter:
     persona_id: Optional[int] = None
     submitted_by: Optional[int] = None
     change_note: Optional[str] = None
-    ctime: OptionalDatetimeRange = OptionalDatetimeRange(None, None)
+    ctime: tuple[Optional[datetime.datetime],
+                 Optional[datetime.datetime]] = (None, None)
     # changelog only
     reviewed_by: Optional[int] = None
     # event and ml only
     entity_ids: list[int] = dataclasses.field(default_factory=list)
     # finance only
-    delta: OptionalDecimalRange = OptionalDecimalRange(None, None)
-    new_balance: OptionalDecimalRange = OptionalDecimalRange(None, None)
-    total: OptionalDecimalRange = OptionalDecimalRange(None, None)
-    members: OptionalIntRange = OptionalIntRange(None, None)
+    delta: tuple[Optional[decimal.Decimal], Optional[decimal.Decimal]] = (None, None)
+    new_balance: tuple[Optional[decimal.Decimal], Optional[decimal.Decimal]] = (None, None)
+    total: tuple[Optional[decimal.Decimal], Optional[decimal.Decimal]] = (None, None)
+    members: tuple[Optional[int], Optional[int]] = (None, None)
 
     def __post_init__(self) -> None:
         """Do a little processing on the data.
