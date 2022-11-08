@@ -1746,6 +1746,71 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertPresence("4 Überweisungen gebucht. 1 neue Mitglieder.",
                             div="notifications")
+        "-12.34";"DB-3-5";"Clown";"Charly";"guaranteed no money laundering"
+        "100";"DB-4-3 ";"Dino";"Daniel";"17.03.2019"
+        "25";"DB-6-X";"Findus";"Ferdinand F.";"15.03.2019"
+        "13.75";"DB-6-X";"Findus";"Ferdinand";"16.03.2019"
+
+
+        note_template = ("Guthabenänderung um {amount} auf {new_balance}"
+                         " (Überwiesen am {date})")
+        log_expectation = [
+            {
+                'persona_id': 3,
+                'code': const.FinanceLogCodes.increase_balance,
+                'change_note': None,
+                'delta': "12.34",
+                'new_balance': "13.34",
+                'total': "127.10",
+                'members': 8,
+                'transaction_date': None,
+            },
+            {
+                'persona_id': 4,
+                'code': const.FinanceLogCodes.increase_balance,
+                'change_note': None,
+                'delta': "100.00",
+                'new_balance': "100.00",
+                'total': "127.10",
+                'members': 8,
+                'transaction_date': datetime.date(2019, 3, 17),
+            },
+            {
+                'persona_id': 4,
+                'code': const.FinanceLogCodes.gain_membership,
+                'change_note': None,
+                'delta': None,
+                'new_balance': None,
+                'total': "227.10",
+                'members': 9,
+                'transaction_date': None,
+            },
+            {
+                'persona_id': 6,
+                'code': const.FinanceLogCodes.increase_balance,
+                'change_note': None,
+                'delta': "25.00",
+                'new_balance': "47.20",
+                'total': "252.10",
+                'members': 9,
+                'transaction_date': datetime.date(2019, 3, 15),
+            },
+            {
+                'persona_id': 6,
+                'code': const.FinanceLogCodes.increase_balance,
+                'change_note': None,
+                'delta': "13.75",
+                'new_balance': "60.95",
+                'total': "265.85",
+                'members': 9,
+                'transaction_date': datetime.date(2019, 3, 16),
+            },
+        ]
+        self.assertLogEqual(
+            log_expectation, realm="finance",
+            log_retriever=self.cde.retrieve_finance_log,
+            codes=[const.FinanceLogCodes.increase_balance,
+                   const.FinanceLogCodes.gain_membership])
         self.admin_view_profile("daniel")
         self.traverse({"description": "Änderungshistorie"})
         self.assertPresence("Guthabenänderung um 100,00 € auf 100,00 € "

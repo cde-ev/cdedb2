@@ -1432,6 +1432,9 @@ class FrontendTest(BackendTest):
                 specific_log = True
             else:
                 self.get("/ml/log")
+        elif realm == "finance":
+            self.get("/cde/finances")
+            entities = {}
         else:
             self.get(f"/{realm}/log")
             entities = {}
