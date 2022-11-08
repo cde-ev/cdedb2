@@ -213,7 +213,8 @@ class CoreBaseBackend(AbstractBackend):
     def finance_log(self, rs: RequestState, code: const.FinanceLogCodes,
                     persona_id: Optional[int], delta: Optional[decimal.Decimal],
                     new_balance: Optional[decimal.Decimal],
-                    change_note: str = None) -> DefaultReturnCode:
+                    change_note: str = None, transaction_date: datetime.date = None,
+                    ) -> DefaultReturnCode:
         """Make an entry in the finance log.
 
         See
@@ -234,7 +235,8 @@ class CoreBaseBackend(AbstractBackend):
             "persona_id": persona_id,
             "delta": delta,
             "new_balance": new_balance,
-            "change_note": change_note
+            "change_note": change_note,
+            "transaction_date": transaction_date,
         }
         with Atomizer(rs):
             query = """
@@ -1107,8 +1109,9 @@ class CoreBaseBackend(AbstractBackend):
     def change_persona_balance(self, rs: RequestState, persona_id: int,
                                balance: Union[str, decimal.Decimal],
                                log_code: const.FinanceLogCodes,
-                               change_note: str = None,
-                               trial_member: bool = None) -> DefaultReturnCode:
+                               change_note: str = None, trial_member: bool = None,
+                               transaction_date: datetime.date = None
+                               ) -> DefaultReturnCode:
         """Special modification function for monetary aspects.
 
         :param trial_member: If not None, set trial membership to this.
@@ -1118,6 +1121,7 @@ class CoreBaseBackend(AbstractBackend):
         log_code = affirm(const.FinanceLogCodes, log_code)
         trial_member = affirm_optional(bool, trial_member)
         change_note = affirm_optional(str, change_note)
+        transaction_date = affirm_optional(datetime.date, transaction_date)
         update: CdEDBObject = {
             'id': persona_id,
         }
@@ -1137,8 +1141,9 @@ class CoreBaseBackend(AbstractBackend):
                     rs, update, may_wait=False, change_note=change_note,
                     allow_specials=("finance",))
                 if 'balance' in update:
-                    self.finance_log(rs, log_code, persona_id,
-                                     balance - current['balance'], balance)
+                    self.finance_log(
+                        rs, log_code, persona_id, balance - current['balance'], balance,
+                        transaction_date=transaction_date)
                 return ret
             else:
                 return 0

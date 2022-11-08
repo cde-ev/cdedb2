@@ -109,7 +109,8 @@ class CdEBaseBackend(AbstractBackend):
         Similar to
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        additional_columns = ["delta", "new_balance", "members", "total"]
+        additional_columns = ["delta", "new_balance", "members", "total",
+                              "transaction_date"]
         return self.generic_retrieve_log(
             rs, const.FinanceLogCodes, "persona", "cde.finance_log",
             codes=codes, offset=offset, length=length, persona_id=persona_id,
@@ -147,6 +148,7 @@ class CdEBaseBackend(AbstractBackend):
                     new_balance = (personas[datum['persona_id']]['balance']
                                    + datum['amount'])
                     note = datum['note']
+                    date = None
                     if note:
                         try:
                             date = datetime.datetime.strptime(
@@ -162,7 +164,7 @@ class CdEBaseBackend(AbstractBackend):
                     count += self.core.change_persona_balance(
                         rs, datum['persona_id'], new_balance,
                         const.FinanceLogCodes.increase_balance,
-                        change_note=note)
+                        change_note=note, transaction_date=date)
                     if new_balance >= self.conf["MEMBERSHIP_FEE"]:
                         code = self.core.change_membership_easy_mode(
                             rs, datum['persona_id'], is_member=True)

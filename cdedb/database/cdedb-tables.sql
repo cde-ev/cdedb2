@@ -546,6 +546,7 @@ CREATE TABLE cde.finance_log (
         delta                   numeric(8, 2),
         new_balance             numeric(8, 2),
         change_note             varchar,
+        transaction_date        date,
         -- checksums
         -- number of members (SELECT COUNT(*) FROM core.personas WHERE status = ...)
         members                 integer NOT NULL,
