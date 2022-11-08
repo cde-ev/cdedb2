@@ -104,7 +104,8 @@ class LogFilter:
     entity_ids: list[int] = dataclasses.field(default_factory=list)
     # finance only
     delta: tuple[Optional[decimal.Decimal], Optional[decimal.Decimal]] = (None, None)
-    new_balance: tuple[Optional[decimal.Decimal], Optional[decimal.Decimal]] = (None, None)
+    new_balance: tuple[Optional[decimal.Decimal],
+                       Optional[decimal.Decimal]] = (None, None)
     total: tuple[Optional[decimal.Decimal], Optional[decimal.Decimal]] = (None, None)
     members: tuple[Optional[int], Optional[int]] = (None, None)
 

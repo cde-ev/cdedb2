@@ -111,6 +111,7 @@ _LOGGER = logging.getLogger(__name__)
 _CONFIG = LazyConfig()
 
 T = TypeVar('T')
+T_Co = TypeVar('T_Co', covariant=True)
 F = TypeVar('F', bound=Callable[..., Any])
 
 
@@ -168,7 +169,7 @@ class ValidatorStorage(Dict[Type[Any], Callable[..., Any]]):
             if len(args) == 2:
                 type_a, type_b = args
                 if type_a is type_b:
-                    return make_pair_validator(type_a)
+                    return cast(Callable[..., T], make_pair_validator(type_a))
         # TODO more container types like tuple
         return super().__getitem__(type_)
 
@@ -938,8 +939,9 @@ def make_list_validator(type_: Type[T]) -> ListValidator[T]:
     return list_validator
 
 
-class PairValidator(Protocol[T]):
-    def __call__(self, val: Any, argname: str = None, **kargs: Any) -> Tuple[T, T]:
+class PairValidator(Protocol[T_Co]):
+    def __call__(self, val: Any, argname: str = None, **kargs: Any
+                 ) -> Tuple[T_Co, T_Co]:
         ...
 
 
