@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2022-10-22 14:22+0000\n"
+"POT-Creation-Date: 2022-11-10 14:48+0100\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -106,10 +106,10 @@ msgstr ""
 #: cdedb/frontend/assembly/__init__.py:673
 #: cdedb/frontend/assembly/__init__.py:822
 #: cdedb/frontend/assembly/__init__.py:1044
-#: cdedb/frontend/assembly/__init__.py:1122
-#: cdedb/frontend/assembly/__init__.py:1406
-#: cdedb/frontend/assembly/__init__.py:1561
-#: cdedb/frontend/assembly/__init__.py:1619 cdedb/frontend/core/base.py:645
+#: cdedb/frontend/assembly/__init__.py:1128
+#: cdedb/frontend/assembly/__init__.py:1412
+#: cdedb/frontend/assembly/__init__.py:1567
+#: cdedb/frontend/assembly/__init__.py:1625 cdedb/frontend/core/base.py:645
 #: cdedb/frontend/core/base.py:674 cdedb/frontend/core/base.py:890
 #: cdedb/frontend/core/base.py:893 cdedb/frontend/core/base.py:897
 #: cdedb/frontend/core/base.py:902 cdedb/frontend/core/base.py:908
@@ -158,7 +158,7 @@ msgstr ""
 msgid "Some of these users are not assembly users."
 msgstr ""
 
-#: cdedb/backend/assembly.py:764 cdedb/frontend/assembly/__init__.py:1541
+#: cdedb/backend/assembly.py:764 cdedb/frontend/assembly/__init__.py:1547
 msgid "Unable to remove active ballot."
 msgstr ""
 
@@ -188,8 +188,8 @@ msgstr ""
 msgid "Must have privileged access to change ballot."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1010 cdedb/frontend/assembly/__init__.py:1428
-#: cdedb/frontend/assembly/__init__.py:1464
+#: cdedb/backend/assembly.py:1010 cdedb/frontend/assembly/__init__.py:1434
+#: cdedb/frontend/assembly/__init__.py:1470
 msgid "Unable to modify active ballot."
 msgstr ""
 
@@ -210,8 +210,8 @@ msgstr "epistula electronica ad verificandum mitte"
 msgid "Must have privileged access to comment ballot."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1121 cdedb/frontend/assembly/__init__.py:1482
-#: cdedb/frontend/assembly/__init__.py:1495
+#: cdedb/backend/assembly.py:1121 cdedb/frontend/assembly/__init__.py:1488
+#: cdedb/frontend/assembly/__init__.py:1501
 msgid "Comments are only allowed for concluded ballots."
 msgstr ""
 
@@ -377,7 +377,7 @@ msgstr ""
 #: cdedb/backend/assembly.py:2339 cdedb/backend/cde/base.py:454
 #: cdedb/backend/cde/lastschrift.py:423 cdedb/backend/common.py:422
 #: cdedb/backend/core/base.py:2072 cdedb/backend/event/base.py:915
-#: cdedb/common/__init__.py:230 cdedb/frontend/assembly/__init__.py:1318
+#: cdedb/common/__init__.py:230 cdedb/frontend/assembly/__init__.py:1324
 #: cdedb/frontend/cde/base.py:701 cdedb/frontend/cde/lastschrift.py:479
 #: cdedb/frontend/cde/parse_statement.py:652 cdedb/frontend/common.py:608
 #: cdedb/frontend/event/base.py:477 cdedb/frontend/event/query_stats.py:431
@@ -2558,7 +2558,7 @@ msgstr ""
 #: cdedb/common/validation/__init__.py:915
 #: cdedb/common/validation/__init__.py:2511
 #: cdedb/common/validation/__init__.py:3923
-#: cdedb/common/validation/__init__.py:4554 cdedb/frontend/core/base.py:1095
+#: cdedb/common/validation/__init__.py:4561 cdedb/frontend/core/base.py:1095
 #: cdedb/frontend/core/genesis.py:110 cdedb/frontend/event/event.py:192
 msgid "Must not be empty."
 msgstr ""
@@ -3011,80 +3011,84 @@ msgid "Must specify ballot in order to validate vote."
 msgstr ""
 
 #: cdedb/common/validation/__init__.py:4281
+msgid "Duplicate candidates."
+msgstr ""
+
+#: cdedb/common/validation/__init__.py:4288
 msgid "Superfluous candidates."
 msgstr ""
 
-#: cdedb/common/validation/__init__.py:4283
+#: cdedb/common/validation/__init__.py:4290
 msgid "Missing candidates."
 msgstr ""
 
-#: cdedb/common/validation/__init__.py:4291
+#: cdedb/common/validation/__init__.py:4298
 msgid "Too many levels."
 msgstr ""
 
-#: cdedb/common/validation/__init__.py:4294
+#: cdedb/common/validation/__init__.py:4301
 msgid "Too many votes."
 msgstr ""
 
-#: cdedb/common/validation/__init__.py:4296
+#: cdedb/common/validation/__init__.py:4303
 msgid "Misplaced bar."
 msgstr ""
 
-#: cdedb/common/validation/__init__.py:4315
+#: cdedb/common/validation/__init__.py:4322
 #, python-format
 msgid "Invalid  regular expression (position %(pos)s)."
 msgstr ""
 
-#: cdedb/common/validation/__init__.py:4327
+#: cdedb/common/validation/__init__.py:4334
 #, python-format
 msgid ""
 "Must not contain any forbidden characters (which are %(forbidden_chars)s "
 "while .^$ are allowed)."
 msgstr ""
 
-#: cdedb/common/validation/__init__.py:4403
+#: cdedb/common/validation/__init__.py:4410
 msgid "Invalid operator for this field."
 msgstr ""
 
-#: cdedb/common/validation/__init__.py:4451
+#: cdedb/common/validation/__init__.py:4458
 msgid "Two endpoints required."
 msgstr ""
 
-#: cdedb/common/validation/__init__.py:4485
+#: cdedb/common/validation/__init__.py:4492
 msgid "Selection may not be empty."
 msgstr ""
 
-#: cdedb/common/validation/__init__.py:4532
+#: cdedb/common/validation/__init__.py:4539
 msgid "Not a Query."
 msgstr ""
 
-#: cdedb/common/validation/__init__.py:4561
+#: cdedb/common/validation/__init__.py:4568
 #, python-format
 msgid "Invalid constraint number %(index)s"
 msgstr ""
 
-#: cdedb/common/validation/__init__.py:4569
-#: cdedb/common/validation/__init__.py:4627
+#: cdedb/common/validation/__init__.py:4576
+#: cdedb/common/validation/__init__.py:4634
 #: cdedb/frontend/event/questionnaire.py:259
 msgid "Invalid field."
 msgstr ""
 
-#: cdedb/common/validation/__init__.py:4580
+#: cdedb/common/validation/__init__.py:4587
 msgid "Invalid operator."
 msgstr ""
 
-#: cdedb/common/validation/__init__.py:4616
+#: cdedb/common/validation/__init__.py:4623
 #, python-format
 msgid "Invalid ordering condition number %(index)s"
 msgstr ""
 
-#: cdedb/common/validation/__init__.py:4651
-#: cdedb/common/validation/__init__.py:4716
+#: cdedb/common/validation/__init__.py:4658
+#: cdedb/common/validation/__init__.py:4723
 #, python-format
 msgid "Invalid input for the enumeration %(enum)s"
 msgstr ""
 
-#: cdedb/common/validation/__init__.py:4697
+#: cdedb/common/validation/__init__.py:4704
 msgid "SubscriptionState.none is not written into the database."
 msgstr ""
 
@@ -3188,7 +3192,7 @@ msgstr ""
 #: cdedb/frontend/assembly/__init__.py:884
 #: cdedb/frontend/assembly/__init__.py:957
 #: cdedb/frontend/assembly/__init__.py:988
-#: cdedb/frontend/assembly/__init__.py:1536
+#: cdedb/frontend/assembly/__init__.py:1542
 #: cdedb/frontend/cde/past_event.py:406 cdedb/frontend/cde/past_event.py:466
 #: cdedb/frontend/core/base.py:2091 cdedb/frontend/core/base.py:2138
 #: cdedb/frontend/event/course.py:222 cdedb/frontend/event/event.py:334
@@ -3233,8 +3237,8 @@ msgstr ""
 msgid "Unable to conclude assembly with open ballot."
 msgstr ""
 
-#: cdedb/frontend/assembly/__init__.py:697
-msgid "Not presiding over any assemblies."
+#: cdedb/frontend/assembly/__init__.py:706
+msgid "Not presiding over any active assemblies."
 msgstr ""
 
 #: cdedb/frontend/assembly/__init__.py:755
@@ -3267,44 +3271,44 @@ msgid "Unknown version."
 msgstr ""
 
 #: cdedb/frontend/assembly/__init__.py:1025
-#: cdedb/frontend/assembly/__init__.py:1134
+#: cdedb/frontend/assembly/__init__.py:1140
 msgid "Ballot has not been tallied."
 msgstr ""
 
-#: cdedb/frontend/assembly/__init__.py:1151
+#: cdedb/frontend/assembly/__init__.py:1157
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:28
 msgid "Against all Candidates"
 msgstr ""
 
-#: cdedb/frontend/assembly/__init__.py:1154
+#: cdedb/frontend/assembly/__init__.py:1160
 msgid "Rejection limit"
 msgstr ""
 
-#: cdedb/frontend/assembly/__init__.py:1245
+#: cdedb/frontend/assembly/__init__.py:1251
 msgid "Entered invalid secret"
 msgstr ""
 
-#: cdedb/frontend/assembly/__init__.py:1509
+#: cdedb/frontend/assembly/__init__.py:1515
 msgid "Force starting a ballot is only possible in dev mode."
 msgstr ""
 
-#: cdedb/frontend/assembly/__init__.py:1563
+#: cdedb/frontend/assembly/__init__.py:1569
 msgid "Ballot is outside its voting period."
 msgstr ""
 
-#: cdedb/frontend/assembly/__init__.py:1577
+#: cdedb/frontend/assembly/__init__.py:1583
 msgid "Option not available."
 msgstr ""
 
-#: cdedb/frontend/assembly/__init__.py:1585
+#: cdedb/frontend/assembly/__init__.py:1591
 msgid "Rejection is exclusive."
 msgstr ""
 
-#: cdedb/frontend/assembly/__init__.py:1621
+#: cdedb/frontend/assembly/__init__.py:1627
 msgid "Ballot not yet tallied."
 msgstr ""
 
-#: cdedb/frontend/assembly/__init__.py:1647
+#: cdedb/frontend/assembly/__init__.py:1653
 msgid "Duplicate shortname."
 msgstr ""
 
@@ -5611,7 +5615,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:11
 #: cdedb/frontend/templates/web/assembly/add_attachment_version.tmpl:18
-#: cdedb/frontend/templates/web/assembly/ballot_template.tmpl:26
+#: cdedb/frontend/templates/web/assembly/ballot_template.tmpl:27
 #: cdedb/frontend/templates/web/assembly/base.tmpl:45
 #: cdedb/frontend/templates/web/assembly/configure_assembly.tmpl:27
 #: cdedb/frontend/templates/web/assembly/configure_ballot.tmpl:37
@@ -5710,6 +5714,14 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:21
 msgid "Ballots"
 msgstr ""
+
+#: cdedb/frontend/templates/web/assembly/ballot_template.tmpl:29
+#: cdedb/frontend/templates/web/core/create_user.tmpl:25
+#: cdedb/frontend/templates/web/core/promote_user.tmpl:51
+#: cdedb/frontend/templates/web/event/fields/field_set_select.tmpl:43
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:21
+msgid "Continue"
+msgstr "Porro"
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:7
 #: cdedb/frontend/templates/web/assembly/base.tmpl:51
@@ -8767,13 +8779,6 @@ msgstr "epistula electronica ad verificandum mitte"
 #: cdedb/frontend/templates/web/core/create_user.tmpl:12
 msgid "Create New Account"
 msgstr "vestigium novum crea"
-
-#: cdedb/frontend/templates/web/core/create_user.tmpl:25
-#: cdedb/frontend/templates/web/core/promote_user.tmpl:51
-#: cdedb/frontend/templates/web/event/fields/field_set_select.tmpl:43
-#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:21
-msgid "Continue"
-msgstr "Porro"
 
 #: cdedb/frontend/templates/web/core/dearchive_user.tmpl:4
 #, python-format
