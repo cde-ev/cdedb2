@@ -2141,7 +2141,8 @@ EVENT_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'institution': ID,
     'description': Optional[str],
-    'shortname': ShortnameIdentifier,
+    # Event shortnames do not actually need to be that short.
+    'shortname': Identifier,
 }
 
 EVENT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
@@ -3997,7 +3998,8 @@ def _subscription_address(
 
 ASSEMBLY_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
-    'shortname': ShortnameIdentifier,
+    # Assembly shortnames do not actually need to be that short.
+    'shortname': Identifier,
     'description': Optional[str],
     'signup_end': datetime.datetime,
     'notes': Optional[str],
