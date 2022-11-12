@@ -573,7 +573,8 @@ class TestValidation(unittest.TestCase):
             ("_bar_=B<E=C=D<A", None, KeyError),
             ("_bar_=B>E=C>A", None, KeyError),
             ("_bar_=B>E=C>A>F=D", None, KeyError),
-            ("=>=>>=", None, KeyError),
+            ("=>=>>=", None, ValueError),
+            ("_bar_=B>E=C>A>F=D>A", None, ValueError),
         ), extraparams={'ballot': ballot})
         self.do_validator_test(Vote, (
             ("A=B>C=D=E=_bar_", "A=B>C=D=E=_bar_", None),

@@ -1321,6 +1321,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.submit(f, check_notification=False)
         self.assertValidationError('vote', "Unerwartete Kandidaten gefunden.")
         self.assertValidationError('vote', "Nicht alle Kandidaten vorhanden.")
+        f['vote'] = "e>pi>1=0>i>e"
+        self.submit(f, check_notification=False)
+        self.assertValidationError('vote', "Doppelte Kandidaten gefunden.")
 
     @storage
     @as_users("werner", "inga", "kalif")
