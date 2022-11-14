@@ -497,7 +497,7 @@ class TestLDAP(BasicTest):
             'cn=orgas-1,ou=event-orgas,ou=groups,dc=cde-ev,dc=de',
             'cn=orgas-3,ou=event-orgas,ou=groups,dc=cde-ev,dc=de',
         }
-        expectation_presider = {}
+        expectation_presider: Set[str] = set()
         expectation_all = {
             *expectation_status, *expectation_subscriber, *expectation_moderator,
             *expectation_orga, *expectation_presider}
@@ -518,7 +518,7 @@ class TestLDAP(BasicTest):
                 self.server, user=self.DUAs["rqt"], password=self.DUA_passwords["rqt"]
         ) as conn:
             conn.search(search_base=self.root_dn, search_filter=search_filter)
-            result_names: Set[str] = {entry.entry_dn for entry in conn.entries}
+            result_names = {entry.entry_dn for entry in conn.entries}
             self.assertEqual(expectation_subscriber, result_names)
 
         # Werner has status fields, is presider, subscriber and moderator
@@ -545,7 +545,7 @@ class TestLDAP(BasicTest):
             'cn=kongress-leitung-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
             'cn=kongress-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
         }
-        expectation_orga = {}
+        expectation_orga: Set[str] = set()
         expectation_presider = {
             'cn=presiders-1,ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de',
             'cn=presiders-3,ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de',
@@ -570,7 +570,7 @@ class TestLDAP(BasicTest):
                 self.server, user=self.DUAs["rqt"], password=self.DUA_passwords["rqt"]
         ) as conn:
             conn.search(search_base=self.root_dn, search_filter=search_filter)
-            result_names: Set[str] = {entry.entry_dn for entry in conn.entries}
+            result_names = {entry.entry_dn for entry in conn.entries}
             self.assertEqual(expectation_subscriber, result_names)
 
     def test_search_attributes_of_groups_of_user(self) -> None:
