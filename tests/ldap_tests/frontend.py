@@ -465,16 +465,16 @@ class TestLDAP(BasicTest):
     def test_search_groups_of_user(self) -> None:
         # Garcia has status fields, is orga, subscriber and ml moderator
         user_id = 7
-        expectation = {
-            # pylint: disable=line-too-long
-            # status
+        expectation_status = {
             'cn=is_active,ou=status,ou=groups,dc=cde-ev,dc=de',
             'cn=is_assembly_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
             'cn=is_cde_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
             'cn=is_event_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
             'cn=is_ml_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
             'cn=is_member,ou=status,ou=groups,dc=cde-ev,dc=de',
-            # subscriber
+        }
+        expectation_subscriber = {
+            # pylint: disable=line-too-long
             'cn=aka@aka.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=all@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=announce@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
@@ -485,15 +485,22 @@ class TestLDAP(BasicTest):
             'cn=moderatoren@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=participants@aka.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=werbung@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
-            # moderator
+        }
+        expectation_moderator = {
+            # pylint: disable=line-too-long
             'cn=aka-owner@aka.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
             'cn=test-gast-owner@aka.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
             'cn=participants-owner@aka.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
             'cn=wait-owner@aka.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
-            # orga
+        }
+        expectation_orga = {
             'cn=orgas-1,ou=event-orgas,ou=groups,dc=cde-ev,dc=de',
             'cn=orgas-3,ou=event-orgas,ou=groups,dc=cde-ev,dc=de',
         }
+        expectation_presider = {}
+        expectation_all = {
+            *expectation_status, *expectation_subscriber, *expectation_moderator,
+            *expectation_orga, *expectation_presider}
         search_filter = (
             "(&"
                 "(objectClass=groupOfUniqueNames)"
@@ -506,33 +513,46 @@ class TestLDAP(BasicTest):
         ) as conn:
             conn.search(search_base=self.root_dn, search_filter=search_filter)
             result_names: Set[str] = {entry.entry_dn for entry in conn.entries}
-            self.assertEqual(expectation, result_names)
+            self.assertEqual(expectation_all, result_names)
+        with ldap3.Connection(
+                self.server, user=self.DUAs["rqt"], password=self.DUA_passwords["rqt"]
+        ) as conn:
+            conn.search(search_base=self.root_dn, search_filter=search_filter)
+            result_names: Set[str] = {entry.entry_dn for entry in conn.entries}
+            self.assertEqual(expectation_subscriber, result_names)
 
-        # Kalif has status fields, is presider, subscriber and moderator
+        # Werner has status fields, is presider, subscriber and moderator
         user_id = 23
-        expectation = {
-            # pylint: disable=line-too-long
-            # status
-            'cn=everyone@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+        expectation_status = {
             'cn=is_active,ou=status,ou=groups,dc=cde-ev,dc=de',
             'cn=is_assembly_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
             'cn=is_cde_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
             'cn=is_event_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
             'cn=is_ml_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
-            # subscriber
+        }
+        expectation_subscriber = {
+            # pylint: disable=line-too-long
+            'cn=everyone@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=kongress@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=kongress-leitung@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=moderatoren@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=opt@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=wal@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
-            # moderators
+        }
+        expectation_moderator = {
+            # pylint: disable=line-too-long
             'cn=kanonisch-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
             'cn=kongress-leitung-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
             'cn=kongress-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
-            # presider
+        }
+        expectation_orga = {}
+        expectation_presider = {
             'cn=presiders-1,ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de',
             'cn=presiders-3,ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de',
         }
+        expectation_all = {
+            *expectation_status, *expectation_subscriber, *expectation_moderator,
+            *expectation_orga, *expectation_presider}
         search_filter = (
             "(&"
                 "(objectClass=groupOfUniqueNames)"
@@ -545,7 +565,13 @@ class TestLDAP(BasicTest):
         ) as conn:
             conn.search(search_base=self.root_dn, search_filter=search_filter)
             result_names = {entry.entry_dn for entry in conn.entries}
-            self.assertEqual(expectation, result_names)
+            self.assertEqual(expectation_all, result_names)
+        with ldap3.Connection(
+                self.server, user=self.DUAs["rqt"], password=self.DUA_passwords["rqt"]
+        ) as conn:
+            conn.search(search_base=self.root_dn, search_filter=search_filter)
+            result_names: Set[str] = {entry.entry_dn for entry in conn.entries}
+            self.assertEqual(expectation_subscriber, result_names)
 
     def test_search_attributes_of_groups_of_user(self) -> None:
         user_id = 10
