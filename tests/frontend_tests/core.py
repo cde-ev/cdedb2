@@ -2262,7 +2262,6 @@ class TestCoreFrontend(FrontendTest):
         self._decide_genesis_case(GenesisDecision.approve)
         assert_account_presence(ml=False, event=False, cde=False)
 
-
     def test_genesis_name_collision(self) -> None:
         self.get('/')
         self.traverse({'description': 'Account anfordern'})

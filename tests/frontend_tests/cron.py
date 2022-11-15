@@ -60,6 +60,7 @@ def genesis_template(**kwargs: Any) -> str:
     data = {**defaults, **kwargs}
     return format_insert_sql("core.genesis_cases", data)
 
+
 def forget_finalized_genesis_template() -> str:
     ctime = now() - datetime.timedelta(days=89)
     status = const.GenesisStati
