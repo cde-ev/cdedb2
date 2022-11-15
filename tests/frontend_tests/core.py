@@ -2212,6 +2212,57 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle('CdE-Mitgliederbereich')
         self.traverse({'description': 'Sonstiges'})
 
+    @as_users("paul")
+    def test_genesis_overview(self) -> None:
+
+        def assert_account_presence(ml: bool, event: bool, cde: bool) -> None:
+            self.assertTitle("Accountanfragen")
+            ml_msg = "keine Mailinglisten-Account-Anfragen zur Bestätigung aus."
+            if ml:
+                self.assertPresence("Michaela Mailcrawler")
+                self.assertNonPresence(ml_msg)
+            else:
+                self.assertNonPresence("Michaele Mailcrawler")
+                self.assertPresence(ml_msg)
+            event_msg = "keine Veranstaltungs-Account-Anfragen zur Bestätigung aus."
+            if event:
+                self.assertPresence("Wolfgang Weihnacht")
+                self.assertNonPresence(event_msg)
+            else:
+                self.assertNonPresence("Wolfgang Weihnacht")
+                self.assertPresence(event_msg)
+            cde_msg = "keine CdE-Mitglieds-Account-Anfragen zur Bestätigung aus."
+            if cde:
+                self.assertPresence("Kristin Zeder")
+                self.assertNonPresence(cde_msg)
+            else:
+                self.assertNonPresence("Kristin Zeder")
+                self.assertPresence(cde_msg)
+
+        self.traverse("Accountanfragen")
+
+        # check default
+        assert_account_presence(ml=True, event=True, cde=True)
+
+        # decide ml request
+        self.traverse({"href": "/core/genesis/1/show"})
+        self.assertTitle("Accountanfrage von Michaela Mailcrawler")
+        self._decide_genesis_case(GenesisDecision.approve)
+        assert_account_presence(ml=False, event=True, cde=True)
+
+        # decide cde request
+        self.traverse({"href": "/core/genesis/3/show"})
+        self.assertTitle("Accountanfrage von Kristin Zeder")
+        self._decide_genesis_case(GenesisDecision.approve)
+        assert_account_presence(ml=False, event=True, cde=False)
+
+        # decide event request
+        self.traverse({"href": "/core/genesis/2/show"})
+        self.assertTitle("Accountanfrage von Wolfgang Weihnacht")
+        self._decide_genesis_case(GenesisDecision.approve)
+        assert_account_presence(ml=False, event=False, cde=False)
+
+
     def test_genesis_name_collision(self) -> None:
         self.get('/')
         self.traverse({'description': 'Account anfordern'})
