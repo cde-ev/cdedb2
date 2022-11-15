@@ -434,7 +434,8 @@ class TestCron(CronTest):
             'member_roster_visibility': 'moderators',
             'advertised': True,
             'max_num_recipients': 0,
-            'require_explicit_destination': False,
+            'acceptable_aliases': {"cde-ev.de", "lists.schuelerakademie.de"},
+            'require_explicit_destination': True,
         }
         mm_lists = {
             'zombie': unittest.mock.MagicMock(

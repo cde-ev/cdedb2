@@ -83,6 +83,18 @@ body{
 .table-log {
     margin-bottom: 0;
 }
+.crosstable {
+    width: unset;
+}
+.crosstable>tbody>tr>td, .crosstable>tfoot>tr>td,
+.crosstable>tfoot>tr>th, .crosstable>thead>tr>td, .crosstable>thead>tr>th {
+    text-align: right;
+    min-width: 3em;
+}
+.crosstable>tbody>tr>th {
+    text-align: center;
+    min-width: 3em;
+}
 .input-slim, .input-group>.input-slim {
     width: auto;
 }
@@ -554,22 +566,29 @@ p.textbox {
 #footer a:hover, #footer a:focus, #footer a.btn {
     text-decoration: none;
 }
+.candidate:hover {
+    opacity: 0.6;
+}
 
-code.result {
+.result {
     color: #0f0f0f;
     background-color: #f5f5f5;
+    font-size: 12pt;
 }
 
 pre.result {
     display: inline-block;
     margin-bottom: 4px;
-    color: #0f0f0f;
-    background-color: #f5f5f5;
 }
 
 span.result-separator, code.result-separator {
     color: #c7254e;
     background-color: #f5f5f5;
+}
+
+/* <details> are clickable, show a cursor */
+details {
+    cursor: pointer;
 }
 
 /* query form */

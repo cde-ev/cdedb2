@@ -623,6 +623,27 @@ class TestCoreBackend(BackendTest):
         value = self.core.genesis_get_case(self.key, case_id)
         del value['ctime']
         self.assertEqual(expectation, value)
+
+        # Just update the genesis request
+        update = {
+            'id': case_id,
+            'realm': "event",
+            'address': "An dem Elche",
+        }
+        self.assertEqual(1, self.core.genesis_modify_case(self.key, update))
+        expectation.update(update)
+        value = self.core.genesis_get_case(self.key, case_id)
+        del value['ctime']
+        self.assertEqual(expectation, value)
+        if self.user_in("vera"):
+            log_entry_expectation = {
+                'change_note': expectation['username'],
+                'code': const.CoreLogCodes.genesis_change,
+                'persona_id': None,
+                'submitted_by': self.user['id'],
+            }
+            self.assertLogEqual([log_entry_expectation], realm='core', offset=2)
+
         update = {
             'id': case_id,
             'realm': "event",

@@ -1210,10 +1210,9 @@ class CdEMailmanClient(mailmanclient.Client):
         try:
             return self.get_list(address)
         except urllib.error.HTTPError as e:
-            if e.code == 404:
-                return None
-            else:
-                raise
+            if e.code != 404:
+                self.logger.exception("Mailman connection failed!")
+            return None
 
     def get_held_messages(self, dblist: CdEDBObject) -> Optional[
             List[mailmanclient.restobjects.held_message.HeldMessage]]:
@@ -1232,7 +1231,11 @@ class CdEMailmanClient(mailmanclient.Client):
             return None
         else:
             mmlist = self.get_list_safe(dblist['address'])
-            return mmlist.held if mmlist else None
+            try:
+                return mmlist.held if mmlist else None
+            except urllib.error.HTTPError:
+                self.logger.exception("Mailman connection failed!")
+        return None
 
     def get_held_message_count(self, dblist: CdEDBObject) -> Optional[int]:
         """Returns the number of held messages for a mailman list.
@@ -1249,7 +1252,10 @@ class CdEMailmanClient(mailmanclient.Client):
                     return 0
         else:
             mmlist = self.get_list_safe(dblist['address'])
-            return mmlist.get_held_count() if mmlist else None
+            try:
+                return mmlist.get_held_count() if mmlist else None
+            except urllib.error.HTTPError:
+                self.logger.exception("Mailman connection failed!")
         return None
 
 
@@ -1439,6 +1445,11 @@ def reconnoitre_ambience(obj: AbstractFrontend,
         Scout(lambda anid: ambience['event']['part_groups'][anid],  # type: ignore[has-type]
               'part_group_id', 'part_group',
               ((lambda a: do_assert(a['part_group']['event_id']
+                                    == a['event']['id'])),)),
+        # Dirty hack, that relies on the event being retrieved into ambience first.
+        Scout(lambda anid: ambience['event']['track_groups'][anid],  # type: ignore[has-type]
+              'track_group_id', 'track_group',
+              ((lambda a: do_assert(a['track_group']['event_id']
                                     == a['event']['id'])),)),
         Scout(lambda anid: obj.assemblyproxy.get_attachment(rs, anid),
               'attachment_id', 'attachment',

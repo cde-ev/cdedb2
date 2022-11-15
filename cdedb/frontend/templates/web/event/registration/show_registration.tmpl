@@ -81,9 +81,10 @@
             {{ ambience['registration']['orga_notes']|md }}
         {% endcall %}
     {% endif %}
-    {% if mep_violations %}
+    {% if mep_violations or ccs_violations %}
         {% call generic_event.constraint_violations_panel(violation_severity) %}
             {{ generic_event.list_mep_violations(mep_violations, {persona['id']: persona}) }}
+            {{ generic_event.list_ccs_violations(ccs_violations, {persona['id']: persona}) }}
         {% endcall %}
     {% endif %}
 
@@ -207,18 +208,20 @@
         </dl>
         <h4>{% trans %}Course Choices{% endtrans %}</h4>
         {% if ambience['event']['tracks']|length > 0 %}
-            {% for batch in ambience['event']['tracks']|keydictsort(EntitySorter.course_track)|batch(2) %}
+            {% for batch in choice_objects|batch(2) %}
                 <div class="row">
-                {% for track_id, track in batch %}
-                    <div class="col-md-6">
-                        {% if ambience['event']['tracks']|length > 1 %}
-                            <h5>{{ track['shortname'] }}</h5>
+                {% for cco in batch %}
+                    {% set track, track_group = (reference_tracks[cco['id']], cco) if 'constraint_type' in cco else (cco, None) %}
+                    {% set reg_track = ambience['registration']['tracks'][track['id']] %}
+                    <div class="col-md-6" id="course-choices-{{ "group-{}".format(track_group['id']) if track_group else track['id'] }}">
+                        {% if choice_objects|length > 1 %}
+                            <h5>{{ cco['title'] }}</h5>
                         {% endif %}
 
                         <dl class="dl-horizontal">
                             <dt title="{% trans %}Instructor of{% endtrans %}">{% trans %}Instructor of{% endtrans %}</dt>
                             <dd>
-                                {% with course_id = ambience['registration']['tracks'][track_id]['course_instructor'] %}
+                                {% with course_id = reg_track['course_instructor'] %}
                                     {% if course_id %}
                                         {{ util.href(cdedblink('event/show_course', {'course_id': course_id}),
                                                      "{}. {}".format(courses[course_id]['nr'],
@@ -231,16 +234,16 @@
                             {% for i in range(track['num_choices']) %}
                                 <dt title="{{ gettext("%s. Choice")|format(i + 1) }}">{{ gettext("%s. Choice")|format(i + 1) }}</dt>
                                 <dd>
-                                    {% if ambience['registration']['tracks'][track_id]['choices']|length > i  %}
-                                        {% with course_id = ambience['registration']['tracks'][track_id]['choices'][i] %}
+                                    {% if reg_track['choices']|length > i  %}
+                                        {% with course_id = reg_track['choices'][i] %}
                                             {% if course_id %}
                                                 {{ util.href(cdedblink('event/show_course', {'course_id': course_id}),
                                                              "{}. {}".format(courses[course_id]['nr'],
                                                                              courses[course_id]['shortname'])) }}
-                                            {% else %}
-                                                —
                                             {% endif %}
                                         {% endwith %}
+                                    {% else %}
+                                        —
                                     {% endif %}
                                 </dd>
                             {% endfor %}

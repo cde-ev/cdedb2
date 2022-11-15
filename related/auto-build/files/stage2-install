@@ -25,6 +25,11 @@ cp /media/cdrom0/server* /etc/ssl/apache2/
 chmod 600 /etc/ssl/apache2/server.key
 chmod 644 /etc/ssl/apache2/server.pem
 
+# add the self-signed certificate to the trusted ldap certificates
+# (note the following step in stage3)
+mkdir -p /etc/ldap/certs
+cp /media/cdrom0/ldap.pem /etc/ldap/certs
+
 echo ""
 echo "Getting the system up to date..."
 echo "--------------------------------------------"

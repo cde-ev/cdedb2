@@ -777,8 +777,15 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                          "(Internationaler Kongress)")
         self.assertPresence("Nach dem Leben, dem Universum und dem ganzen Rest")
         self.traverse({'description': 'Ergebnisdetails'})
+        # test abbreviations
+        self.assertPresence("A = Ich")
+        self.assertPresence("B = 23")
+        self.assertPresence("C = 42")
+        self.assertPresence("D = Philosophie")
+        self.assertPresence("# = Ablehnungsgrenze")
+        # check own vote
         own_vote = ("Du hast mit der folgenden Präferenz abgestimmt:"
-                    " 23 > 42 > Ablehnungsgrenze > Ich = Philosophie")
+                    " B > C > # > A = D")
         self.assertPresence(own_vote, div='own-vote', exact=True)
 
     @storage
@@ -1314,6 +1321,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.submit(f, check_notification=False)
         self.assertValidationError('vote', "Unerwartete Kandidaten gefunden.")
         self.assertValidationError('vote', "Nicht alle Kandidaten vorhanden.")
+        f['vote'] = "e>pi>1=0>i>e"
+        self.submit(f, check_notification=False)
+        self.assertValidationError('vote', "Doppelte Kandidaten gefunden.")
 
     @storage
     @as_users("werner", "inga", "kalif")
@@ -1469,9 +1479,10 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                     self.traverse({'description': 'Abstimmungen'},
                                   {'description': bdata['title']},
                                   {'description': 'Ergebnisdetails'})
+                    self.assertPresence("A = Arthur Dent")
+                    self.assertPresence("B = Ford Prefect")
                     self.assertPresence(
-                        "Du hast für die folgenden Kandidaten "
-                        "gestimmt: Arthur Dent = Ford Prefect",
+                        "Du hast für die folgenden Kandidaten gestimmt: A = B",
                         div='own-vote', exact=True)
 
     @storage
@@ -1608,15 +1619,20 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertTitle("Ergebnis (Kanonische Beispielversammlung/"
                          "Eine damals wichtige Frage)")
 
+        # test abbreviations
+        self.assertPresence("A = Baum & Blätter")
+        self.assertPresence("B = CdE Glühbirne")
+        self.assertPresence("C = CdE Wappen")
+        self.assertPresence("# = Gegen alle Kandidaten")
+
         # test if the overall result is displayed correctly
-        result = "CdE Wappen > CdE Glühbirne = Baum & Blätter = Gegen alle Kandidaten"
-        self.assertPresence(result, div='combined-preference', exact=True)
+        self.assertPresence("C > B = A = #", div='combined-preference', exact=True)
 
         # test if the sorting of the single votes is correct
-        self.assertPresence("CdE Wappen 3", div='vote-1', exact=True)
-        self.assertPresence("CdE Glühbirne 1 ", div='vote-2', exact=True)
-        self.assertPresence("Baum & Blätter 1", div='vote-3', exact=True)
-        self.assertPresence("Gegen alle Kandidaten 1", div='vote-4', exact=True)
+        self.assertPresence("C 3", div='vote-1', exact=True)
+        self.assertPresence("B 1", div='vote-2', exact=True)
+        self.assertPresence("A 1", div='vote-3', exact=True)
+        self.assertPresence("# 1", div='vote-4', exact=True)
         self.assertNonPresence("", div='vote-5', check_div=False)
 
         # test the list of all voters
@@ -1631,12 +1647,18 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertTitle("Ergebnis (Kanonische Beispielversammlung/Entlastung des"
                          " Vorstands)")
 
+        # test abbreviations
+        self.assertPresence("A = Ja")
+        self.assertPresence("B = Nein")
+
         # test if the overall result is displayed correctly
-        result = "Ja > Nein"
-        self.assertPresence(result, div='combined-preference', exact=True)
+        self.assertPresence("A > B", div='combined-preference', exact=True)
 
         # test if abstentions are rendered correctly
+        self.assertPresence("A 3", div='vote-1', exact=True)
+        self.assertPresence("B 2", div='vote-2', exact=True)
         self.assertPresence("Enthalten 1", div='vote-3', exact=True)
+        self.assertNonPresence("", div='vote-4', check_div=False)
 
         # preferential vote without bar
         self.traverse({'description': 'Abstimmungen'},
@@ -1645,15 +1667,20 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertTitle("Ergebnis (Kanonische Beispielversammlung/Wie soll der CdE mit"
                          " seinem Vermögen umgehen?)")
 
-        # test if the overall result is displayed correctly
-        result = ("Wir kaufen den Eisenberg! = Kostenlose Akademien für alle."
-                  " > Investieren in Aktien und Fonds.")
-        self.assertPresence(result, div='combined-preference', exact=True)
+        # test abbreviations
+        self.assertPresence("A = Kostenlose Akademien für alle.")
+        self.assertPresence("B = Investieren in Aktien und Fonds.")
+        self.assertPresence("C = Wir kaufen den Eisenberg!")
 
-        # test a vote string
-        vote = ("Kostenlose Akademien für alle. > Investieren in Aktien und Fonds."
-                " = Wir kaufen den Eisenberg! 3")
-        self.assertPresence(vote, div='vote-1', exact=True)
+        # test if the overall result is displayed correctly
+        self.assertPresence("C = A > B", div='combined-preference', exact=True)
+
+        # test votes
+        self.assertPresence("A > B = C 3", div='vote-1', exact=True)
+        self.assertPresence("C > A > B 1", div='vote-2', exact=True)
+        self.assertPresence("C > A = B 1", div='vote-3', exact=True)
+        self.assertPresence("B = C > A 1", div='vote-4', exact=True)
+        self.assertNonPresence("", div='vote-5', check_div=False)
 
         # preferential vote with bar
         self.traverse({'description': 'Versammlung'},
@@ -1664,13 +1691,22 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertTitle(
             "Ergebnis (Internationaler Kongress/Antwort auf die letzte aller Fragen)")
 
-        # test if the overall result is displayed correctly
-        result = "42 > 23 = Philosophie > Ablehnungsgrenze > Ich"
-        self.assertPresence(result, div='combined-preference', exact=True)
+        # test abbreviations
+        self.assertPresence("A = Ich")
+        self.assertPresence("B = 23")
+        self.assertPresence("C = 42")
+        self.assertPresence("D = Philosophie")
+        self.assertPresence("# = Ablehnungsgrenze")
 
-        # test a vote string
-        self.assertPresence("42 > 23 = Philosophie > Ablehnungsgrenze > Ich 1",
-                            div='vote-1', exact=True)
+        # test if the overall result is displayed correctly
+        self.assertPresence("C > B = D > # > A", div='combined-preference', exact=True)
+
+        # test votes
+        self.assertPresence("C > B = D > # > A 1", div="vote-1", exact=True)
+        self.assertPresence("B > C > # > A = D 1", div="vote-2", exact=True)
+        self.assertPresence("A > B = C = D > # 1", div="vote-3", exact=True)
+        self.assertPresence("# > D > C > B > A 1", div="vote-4", exact=True)
+        self.assertNonPresence("", div='vote-5', check_div=False)
 
     @storage
     @as_users("werner")
@@ -1833,7 +1869,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.traverse({'description': 'Abstimmungen'},
                           {'description': bdata['title']},
                           {'description': 'Ergebnisdetails'})
-            self.assertPresence("Du hast für die folgenden Kandidaten gestimmt: Ja",
+            self.assertPresence("A = Ja")
+            self.assertPresence("B = Nein")
+            self.assertPresence("Du hast für die folgenden Kandidaten gestimmt: A",
                                 div='own-vote', exact=True)
 
             self.traverse({'description': 'Abstimmungen'},
@@ -1883,7 +1921,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.submit(f, check_notification=False)
             self.assertNonPresence("Die Versammlung wurde beendet und die "
                                    "Stimmen sind nun verschlüsselt.")
-            self.assertPresence("Du hast für die folgenden Kandidaten gestimmt: Ja",
+            self.assertPresence("Du hast für die folgenden Kandidaten gestimmt: A",
                                 div='own-vote', exact=True)
 
             # providing secret for running ballot not possible
@@ -1891,6 +1929,72 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                       {'secret': "-YZN1KWDfMLQ5Y8Q"})
             self.assertTitle("Bester Hof (Internationaler Kongress)")
             self.assertNotification("Abstimmung wurde noch nicht ausgezählt.", 'error')
+
+    @as_users("werner")
+    @storage
+    def test_duplicate_ballot(self) -> None:
+        self.traverse("Versammlungen", "Archiv-Sammlung", "Abstimmungen",
+                      "Ganz wichtige Wahl", "Als Vorlage benutzen")
+        f = self.response.forms['selectassemblyform']
+        f['target_assembly_id'] = 3
+        self.submit(f)
+        f = self.response.forms['configureballotform']
+        self.submit(f)
+        ballots = self.assembly.get_ballots(self.key, (16, 1001))
+        for ballot in ballots.values():
+            del ballot['id']
+            del ballot['candidates']
+        self.assertEqual(ballots[16], ballots[1001])
+        self.assertEqual(
+            self.assembly.list_attachments(self.key, ballot_id=16),
+            self.assembly.list_attachments(self.key, ballot_id=1001),
+        )
+
+        # Source the ballot from a different assembly:
+        self.traverse("Abstimmungen", "Ganz wichtige Wahl", "Als Vorlage benutzen")
+        f = self.response.forms['selectassemblyform']
+        f['target_assembly_id'] = 1
+        self.submit(f)
+        f = self.response.forms['configureballotform']
+        self.submit(f)
+        source = ballots[16]
+        target = self.assembly.get_ballot(self.key, 1002)
+        del target['id']
+        del target['candidates']
+        source['assembly_id'] = 1
+        self.assertEqual(source, target)
+
+        # Try some invalid inputs:
+        self.get('/assembly/assembly/1/ballot/create?source_id=-1')
+        f = self.response.forms['configureballotform']
+        self.assertEqual(f['title'].value, "")
+
+        self.get('/assembly/assembly/1/ballot/create?source_id=999999')
+        self.assertPresence("Unbekannte Abstimmung", div="notifications")
+        f = self.response.forms['configureballotform']
+        self.assertEqual(f['title'].value, "")
+
+        # Archive one assembly, so that we only preside over one active assembly.
+        assembly_id = 3
+        ballot_ids = set(self.assembly.list_ballots(self.key, assembly_id))
+        ballot_ids.remove(6)
+        for b_id in ballot_ids:
+            self.assembly.delete_ballot(
+                self.key, b_id, ("candidates", "attachments", "voters"))
+        with self.switch_user("viktor"):
+            self.traverse("Versammlungen", "Archiv-Sammlung")
+            f = self.response.forms['concludeassemblyform']
+            f['ack_conclude'] = True
+            self.submit(f)
+        self.traverse("Versammlungen", "Archiv-Sammlung", "Abstimmungen",
+                      "Test-Abstimmung", "Als Vorlage benutzen")
+        self.assertTitle("Abstimmung anlegen (Internationaler Kongress)")
+        f = self.response.forms['configureballotform']
+        f['vote_begin'] = now() + datetime.timedelta(days=1)
+        f['vote_end'] = now() + datetime.timedelta(days=2)
+        self.submit(f)
+        self.assertTitle(
+            "Test-Abstimmung – bitte ignorieren (Internationaler Kongress)")
 
     @as_users("werner", "berta")
     @storage

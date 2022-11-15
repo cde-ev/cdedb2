@@ -7,6 +7,8 @@ Je nach Typ der Gruppe hat dies verschiedene Effekte, darunter Warnmeldungen
 unterschiedlicher Stärken, die bei Verstößen gegen Beschränkungen angezeigt
 werden.
 
+Siehe auch :doc:`Handbuch_Orga_Kursschienengruppen`.
+
 Die Stärke der Meldungen ist rein kosmetisch; "Warnungen" werden in gelb
 angezeigt, "Fehler" in rot. "Warnungen" sind primär für seltene Fälle, die trotz
 ansonsten korrekter Daten auftreten (z.B. Teilnehmer die gleichzeitig Gäste auf einem

@@ -1,0 +1,7 @@
+# /etc/systemd/system/cde-ldap.service
+[Unit]
+Description=CdE LDAP Dummy for auto-build
+
+[Service]
+Type=oneshot
+ExecStart=/bin/true

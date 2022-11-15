@@ -2,3 +2,7 @@
 
 !related/
 !ldap/
+
+related/auto-build/images/*
+related/auto-build/work/*
+related/auto-build/distfiles/*

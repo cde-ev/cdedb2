@@ -4123,7 +4123,7 @@
             "shortname": "triaka",
             "institution": 1,
             "description": "Ich habe gehört, du magst DoppelAkademien, also habe ich eine DoppelAkademie in Deine DoppelAkademie gepackt.",
-            "registration_start": null,
+            "registration_start": "---now---",
             "registration_soft_limit": null,
             "registration_hard_limit": null,
             "iban": "DE26370205000008068900",
@@ -4519,8 +4519,8 @@
             "part_id": 9,
             "title": "Oberwesel Kurs 2 nachmittags",
             "shortname": "OK2n",
-            "num_choices": 5,
-            "min_choices": 2,
+            "num_choices": 3,
+            "min_choices": 1,
             "sortkey": 1
         },
         {
@@ -4528,7 +4528,7 @@
             "part_id": 10,
             "title": "Windischleuba Kurs 2 morgens",
             "shortname": "WK2m",
-            "num_choices": 3,
+            "num_choices": 5,
             "min_choices": 2,
             "sortkey": 1
         },
@@ -4538,7 +4538,7 @@
             "title": "Windischleuba Kurs 2 nachmittags",
             "shortname": "WK2n",
             "num_choices": 3,
-            "min_choices": 2,
+            "min_choices": 1,
             "sortkey": 1
         },
         {
@@ -4546,7 +4546,7 @@
             "part_id": 11,
             "title": "Kaub Kurs 2 morgens",
             "shortname": "KK2m",
-            "num_choices": 4,
+            "num_choices": 5,
             "min_choices": 2,
             "sortkey": 1
         },
@@ -4555,18 +4555,94 @@
             "part_id": 11,
             "title": "Kaub Kurs 2 nachmittags",
             "shortname": "KK2n",
-            "num_choices": 4,
-            "min_choices": 2,
+            "num_choices": 3,
+            "min_choices": 1,
             "sortkey": 1
         },
         {
             "id": 15,
             "part_id": 11,
-            "title": "Kaub Vortäge",
+            "title": "Kaub Vorträge",
             "shortname": "KV",
             "num_choices": 1,
             "min_choices": 1,
+            "sortkey": 2
+        }
+    ],
+    "event.track_groups": [
+        {
+            "id": 1,
+            "event_id": 4,
+            "title": "Kurs 1. Hälfte",
+            "shortname": "Kurs1",
+            "notes": null,
+            "constraint_type": 1,
             "sortkey": 1
+        },
+        {
+            "id": 2,
+            "event_id": 4,
+            "title": "Kurs 2. Hälfte nachmittags",
+            "shortname": "K2nS",
+            "notes": null,
+            "constraint_type": 1,
+            "sortkey": 4
+        },
+        {
+            "id": 3,
+            "event_id": 4,
+            "title": "Kurs 2. Hälfte morgens",
+            "shortname": "K2mS",
+            "notes": null,
+            "constraint_type": 1,
+            "sortkey": 3
+        }
+    ],
+    "event.track_group_tracks": [
+        {
+            "id": 1,
+            "track_group_id": 1,
+            "track_id": 6
+        },
+        {
+            "id": 2,
+            "track_group_id": 1,
+            "track_id": 7
+        },
+        {
+            "id": 3,
+            "track_group_id": 1,
+            "track_id": 8
+        },
+        {
+            "id": 4,
+            "track_group_id": 3,
+            "track_id": 9
+        },
+        {
+            "id": 5,
+            "track_group_id": 3,
+            "track_id": 11
+        },
+        {
+            "id": 6,
+            "track_group_id": 3,
+            "track_id": 13
+        },
+        {
+            "id": 7,
+            "track_group_id": 2,
+            "track_id": 10
+        },
+        {
+            "id": 8,
+            "track_group_id": 2,
+            "track_id": 12
+        },
+        {
+            "id": 9,
+            "track_group_id": 2,
+            "track_id": 14
         }
     ],
     "event.field_definitions": [
@@ -4839,6 +4915,45 @@
             "max_size": 11,
             "notes": "Alle Teilnehmenden müssen mit dem Kurs nach Windischleuba umziehen.",
             "fields": {}
+        },
+        {
+            "id": 10,
+            "event_id": 4,
+            "nr": "1",
+            "title": "Das Niebelungenlied",
+            "description": null,
+            "shortname": "Niebelungenlied",
+            "instructors": null,
+            "min_size": null,
+            "max_size": null,
+            "notes": null,
+            "fields": {}
+        },
+        {
+            "id": 11,
+            "event_id": 4,
+            "nr": "2",
+            "title": "All-Embracement",
+            "description": "In diesem Kurs finden wir heraus, wie man alles umfassen und an drei Orten gleichzeitig sein kann. Dabei beginnen wir damit, wie man gleichzeitig in Kaub und in Oberwesel sein kann, und fahren im fortgeschrittenen Teil mit Windischleuba fort.",
+            "shortname": "All-Embracement",
+            "instructors": null,
+            "min_size": null,
+            "max_size": null,
+            "notes": null,
+            "fields": {}
+        },
+        {
+            "id": 12,
+            "event_id": 4,
+            "nr": "3",
+            "title": "Nostalgie",
+            "description": "In diesem Kurs lernen wir, warum alle Akademien in Windischleuba stattfinden sollten.",
+            "shortname": "Nostalgie",
+            "instructors": null,
+            "min_size": null,
+            "max_size": null,
+            "notes": null,
+            "fields": {}
         }
     ],
     "event.course_segments": [
@@ -4935,6 +5050,81 @@
         {
             "course_id": 9,
             "track_id": 6,
+            "is_active": true
+        },
+        {
+            "course_id": 10,
+            "track_id": 6,
+            "is_active": true
+        },
+        {
+            "course_id": 10,
+            "track_id": 8,
+            "is_active": true
+        },
+        {
+            "course_id": 11,
+            "track_id": 6,
+            "is_active": true
+        },
+        {
+            "course_id": 11,
+            "track_id": 8,
+            "is_active": true
+        },
+        {
+            "course_id": 11,
+            "track_id": 9,
+            "is_active": true
+        },
+        {
+            "course_id": 11,
+            "track_id": 10,
+            "is_active": true
+        },
+        {
+            "course_id": 11,
+            "track_id": 11,
+            "is_active": true
+        },
+        {
+            "course_id": 11,
+            "track_id": 12,
+            "is_active": true
+        },
+        {
+            "course_id": 11,
+            "track_id": 13,
+            "is_active": true
+        },
+        {
+            "course_id": 11,
+            "track_id": 14,
+            "is_active": true
+        },
+        {
+            "course_id": 11,
+            "track_id": 15,
+            "is_active": true
+        },
+        {
+            "course_id": 12,
+            "track_id": 11,
+            "is_active": true
+        },
+        {
+            "course_id": 12,
+            "track_id": 12,
+            "is_active": true
+        },
+        {
+            "course_id": 12,
+            "track_id": 15,
+            "is_active": true
+        },
+        {
+            "course_id": 12,
+            "track_id": 7,
             "is_active": true
         }
     ],
@@ -6296,7 +6486,7 @@
             "vote_begin": "2020-01-30T22:00:00+00:00",
             "vote_end": "2200-12-01T23:00:10+00:00",
             "vote_extension_end": null,
-            "extended": false,
+            "extended": null,
             "use_bar": false,
             "abs_quorum": 0,
             "rel_quorum": 0,

@@ -257,7 +257,7 @@
 
 {# Helper macro to create a large, left-floated 'Help' button, linking to the off-page documentation as referenced by
    docurl(). #}
-{% macro _doclink(topic, anchor=none) %}
+{% macro doclink_(topic, anchor=none) %}
     <a href="{{ docurl(topic, anchor) }}" class="btn btn-info pull-right" target="_blank">
         {{ make_icon('question-circle') }}
         {% trans %}Help{% endtrans %}
@@ -320,7 +320,8 @@
     <p class="help-block no-color">
         {{ make_icon('fab fa-markdown') }} {{ gettext(infotext) }}
         <span class="mdjs" style="display: none;">
-            <a id="{{ anid }}-mdpreview" title="{% trans %}Open Markdown Preview{% endtrans %}">
+            <a id="{{ anid }}-mdpreview" title="{% trans %}Open Markdown Preview{% endtrans %}"
+               href="#" style="display: inline-block;">
                 {{ gettext("Preview") }}
             </a> |
         </span>
@@ -887,15 +888,17 @@ mailto:
 {# Macro to unify the style of headings with context (events, personas, assemblies, ...) #}
 {% macro context_heading(title, subtitle=none, icon=none, icon_arialabel=none, doclink=none, doclink_anchor=none) %}
     {% if doclink %}
-        {{ _doclink(doclink, anchor=doclink_anchor) }}
+        {{ doclink_(doclink, anchor=doclink_anchor) }}
     {% endif %}
     <h1 class="title">
         {{ title }}
         {% if subtitle %}
-            <small>
+            <span class="small">
                 {{ make_icon(icon, arialabel=icon_arialabel) }}{{ nbsp }}{{ subtitle }}
-                {% if caller %}{{ caller() }}{% endif %}
-            </small>
+                {% if caller %}
+                    {{ caller() }}
+                {% endif %}
+            </span>
         {% endif %}
     </h1>
 {% endmacro %}

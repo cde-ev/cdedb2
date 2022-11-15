@@ -16,7 +16,7 @@ import zipapp
 from typing import Any, Collection, Dict, List, Optional, Set, Tuple, Union
 
 import werkzeug.exceptions
-from schulze_condorcet import schulze_evaluate_detailed
+from schulze_condorcet import pairwise_preference, schulze_evaluate_detailed
 from schulze_condorcet.types import Candidate, DetailedResultLevel, VoteString
 from schulze_condorcet.util import (
     as_vote_string, as_vote_strings, as_vote_tuple, as_vote_tuples,
@@ -26,9 +26,10 @@ from werkzeug import Response
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
+from cdedb.backend.assembly import GroupedBallots
 from cdedb.common import (
-    ASSEMBLY_BAR_SHORTNAME, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
-    RequestState, get_hash, merge_dicts, now, unwrap,
+    ASSEMBLY_BAR_SHORTNAME, CdEDBObject, DefaultReturnCode, RequestState,
+    abbreviation_mapper, get_hash, merge_dicts, now, unwrap,
 )
 from cdedb.common.fields import LOG_FIELDS_COMMON
 from cdedb.common.n_ import n_
@@ -39,16 +40,19 @@ from cdedb.common.validation import (
     filter_none,
 )
 from cdedb.common.validation.types import CdedbID, Email
+from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, Attachment, REQUESTdata, REQUESTdatadict, REQUESTfile, access,
     assembly_guard, calculate_db_logparams, calculate_loglinks, cdedburl,
-    check_validation as check, drow_name, periodic, process_dynamic_input,
-    request_extractor,
+    check_validation as check, drow_name, inspect_validation, periodic,
+    process_dynamic_input, request_extractor,
 )
 
 #: Magic value to signal abstention during _classical_ voting.
 #: This can not occur as a shortname since it contains forbidden characters.
 MAGIC_ABSTAIN = Candidate("special: abstain")
+
+ASSEMBLY_BAR_ABBREVIATION = "#"
 
 
 class AssemblyFrontend(AbstractUserFrontend):
@@ -637,8 +641,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         return self.redirect(rs, "assembly/show_assembly")
 
     def _group_ballots(self, rs: RequestState, assembly_id: int
-                       ) -> Optional[Tuple[CdEDBObjectMap, CdEDBObjectMap,
-                                           CdEDBObjectMap, CdEDBObjectMap]]:
+                       ) -> Optional[GroupedBallots]:
         """Helper to group all ballots of an assembly by status.
 
         This calls `_update_ballots` to ensure data integrity before
@@ -661,31 +664,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         if extended or tallied:
             return None
 
-        ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
-        ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
-
-        ref = now()
-
-        future = {k: v for k, v in ballots.items()
-                  if v['vote_begin'] > ref}
-        # `current` also contains ballots which wait for
-        # check_voting_period_extension() being called on them
-        current = {k: v for k, v in ballots.items()
-                   if (v['vote_begin'] <= ref < v['vote_end']
-                       or (v['vote_end'] <= ref and v['extended'] is None))}
-        extended = {k: v for k, v in ballots.items()
-                    if (v['extended']
-                        and v['vote_end'] <= ref < v['vote_extension_end'])}
-        done = {k: v for k, v in ballots.items()
-                if (v['vote_end'] <= ref
-                    and (v['extended'] is False
-                         or v['vote_extension_end'] <= ref))}
-
-        if not (len(future) + len(current) + len(extended) + len(done)
-                == len(ballots)):
-            raise RuntimeError(n_("Impossible."))
-
-        return done, extended, current, future
+        return self.assemblyproxy.group_ballots(rs, assembly_id)
 
     @access("assembly")
     def list_ballots(self, rs: RequestState, assembly_id: int) -> Response:
@@ -694,9 +673,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
 
         if grouped := self._group_ballots(rs, assembly_id):
-            done, extended, current, future = grouped
-            # _group_ballots returns all ballots of the assembly in four disjunct dicts
-            ballots = done | extended | current | future
+            ballots = grouped.all
         else:
             # some ballots updated state
             return self.redirect(rs, "assembly/list_ballots")
@@ -708,17 +685,74 @@ class AssemblyFrontend(AbstractUserFrontend):
                     rs, ballot_id, secret=None)
 
         return self.render(rs, "list_ballots", {
-            'ballots': ballots, 'future': future, 'running': current | extended,
-            'done': done, 'votes': votes})
+            'ballots': ballots, 'grouped_ballots': grouped, 'votes': votes,
+        })
 
     @access("assembly")
+    def ballot_template(self, rs: RequestState, assembly_id: int, ballot_id: int
+                        ) -> Response:
+        """Offer a choice of appropriate assemblies to create the new ballot.
+
+        If exactly one appropriate assembly exists, skip this page.
+        If none exists, show a warning instead.
+        """
+        assembly_ids = set(self.assemblyproxy.list_assemblies(rs, is_active=True))
+        if not self.is_admin(rs):
+            assembly_ids &= rs.user.presider
+        assemblies = self.assemblyproxy.get_assemblies(rs, assembly_ids)
+        assembly_entries = keydictsort_filter(assemblies, EntitySorter.assembly,
+                                              reverse=True)
+        if not assembly_entries:
+            rs.notify("warning", n_("Not presiding over any active assemblies."))
+            return self.redirect(rs, "assembly/show_ballot")
+        elif len(assembly_entries) == 1:
+            return self.redirect(rs, "assembly/create_ballot", {
+                'assembly_id': assembly_entries[0][0], 'source_id': ballot_id,
+            })
+        return self.render(rs, "ballot_template", {
+            'assembly_entries': assembly_entries,
+        })
+
+    @access("assembly")
+    @REQUESTdata("target_assembly_id", "source_id")
+    def ballot_template_redirect(self, rs: RequestState, assembly_id: int,
+                                 ballot_id: int, target_assembly_id: int,
+                                 source_id: int) -> Response:
+        """Redirect to the creation page of the chosen target assembly."""
+        if rs.has_validation_errors():
+            return self.ballot_template(rs, assembly_id, ballot_id)
+        return self.redirect(rs, "assembly/create_ballot", {
+            'assembly_id': target_assembly_id, 'source_id': source_id,
+        })
+
+    @access("assembly")
+    @REQUESTdata("source_id", _postpone_validation=True)
     @assembly_guard
-    def create_ballot_form(self, rs: RequestState,
-                           assembly_id: int) -> Response:
-        """Render form."""
+    def create_ballot_form(self, rs: RequestState, assembly_id: int,
+                           source_id: int = None) -> Response:
+        """Render form.
+
+        :param source_id: Can be the ID of an existing ballot, prefilling it's data.
+        """
         if not rs.ambience['assembly']['is_active']:
             rs.notify("warning", n_("Assembly already concluded."))
             return self.redirect(rs, "assembly/show_assembly")
+
+        # Use inspect validation to avoid showing a validation error for this.
+        # If the given source ID is not a valid ID at all, simply ignore it.
+        if (source_id := inspect_validation(vtypes.ID, source_id)[0]):
+            # If the ballot does not exist, get_ballot would throw a key error.
+            source_ballot = unwrap(
+                self.assemblyproxy.get_ballots(rs, (source_id,)) or None)
+            if source_ballot:
+                merge_dicts(rs.values, source_ballot)
+                # Multiselects work differently from multiple checkboxes, so
+                #  merge_dicts does the wrong thing here (setlist).
+                rs.values['linked_attachments'] = self.assemblyproxy.list_attachments(
+                    rs, ballot_id=source_id)
+            # If the ballot does not exist or is not accessible, show a warning instead.
+            else:
+                rs.notify("warning", rs.gettext("Unknown Ballot."))
 
         attachment_ids = self.assemblyproxy.list_attachments(
             rs, assembly_id=assembly_id)
@@ -1012,10 +1046,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         # We need to group the ballots for navigation later anyway,
         # and as grouping them updates their state we do it already here
         if grouped := self._group_ballots(rs, assembly_id):
-            done, extended, current, future = grouped
-            # _group_ballots returns all ballots of the assembly in four disjunct dicts
-            # TODO: python3.9: ballots = done | extended | current | future
-            ballots = {**done, **extended, **current, **future}
+            ballots = grouped.all
         else:
             # some ballots updated state
             return self.redirect(rs, "assembly/show_ballot")
@@ -1052,16 +1083,19 @@ class AssemblyFrontend(AbstractUserFrontend):
         merge_dicts(rs.values, current_candidates)
 
         # now, process the grouped ballots from above for the navigation buttons.
-        # Currently, we don't distinguish between current and extended ballots
-        current.update(extended)
         ballot_list: List[int] = sum((
             xsorted(bdict, key=lambda key: bdict[key]["title"])  # pylint: disable=cell-var-from-loop;
-            for bdict in (future, current, done)), [])
+            for bdict in (grouped.upcoming, grouped.running, grouped.concluded)), [])
 
         i = ballot_list.index(ballot_id)
         length = len(ballot_list)
         prev_ballot = ballots[ballot_list[i-1]] if i > 0 else None
         next_ballot = ballots[ballot_list[i+1]] if i + 1 < length else None
+
+        # Get ids of managed assemblies.
+        assembly_ids = set(self.assemblyproxy.list_assemblies(rs, is_active=True))
+        if "assembly_presider" not in rs.user.admin_views:
+            assembly_ids &= rs.user.presider
 
         return self.render(rs, "show_ballot", {
             "sorted_candidate_ids": sorted_candidate_ids,
@@ -1073,6 +1107,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             'result': result,
             'prev_ballot': prev_ballot,
             'next_ballot': next_ballot,
+            'managed_assembly_ids': assembly_ids,
             **vote_dict
         })
 
@@ -1096,9 +1131,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         # We need to group the ballots for navigation later anyway,
         # and as grouping them updates their state we do it already here
         if grouped := self._group_ballots(rs, assembly_id):
-            done, _, _, _ = grouped
-            # _group_ballots returns all ballots of the assembly in four disjunct dicts
-            ballots = {k: v for d in grouped for k, v in d.items()}
+            ballots = grouped.all
         else:
             # some ballots updated state
             return self.redirect(rs, "assembly/show_ballot_result")
@@ -1118,17 +1151,30 @@ class AssemblyFrontend(AbstractUserFrontend):
         # map the candidate shortnames to their titles
         candidates = {candidate['shortname']: candidate['title']
                       for candidate in ballot['candidates'].values()}
+        abbreviations = abbreviation_mapper(xsorted(candidates.keys()))
         if ballot['use_bar']:
             if ballot['votes']:
                 candidates[ASSEMBLY_BAR_SHORTNAME] = rs.gettext(
                     "Against all Candidates")
             else:
                 candidates[ASSEMBLY_BAR_SHORTNAME] = rs.gettext("Rejection limit")
+        # use special symbol for bar abbreviation
+        if ballot['use_bar']:
+            abbreviations[ASSEMBLY_BAR_SHORTNAME] = ASSEMBLY_BAR_ABBREVIATION
 
         # all vote string submitted in this ballot
         votes = [vote["vote"] for vote in result["votes"]]
         # calculate the occurrence of each vote
         vote_counts = self.count_equal_votes(votes, classical=bool(ballot['votes']))
+
+        all_candidates = [Candidate(c) for c in candidates]
+        if ballot["votes"]:
+            all_candidates.append(Candidate(ASSEMBLY_BAR_SHORTNAME))
+        # the pairwise preference of all candidates
+        # Schulze_condorcet checks if all votes contain exactly the given candidates.
+        # Since the pairwise preference does not change if we ignore some candidates
+        # afterwards, we simply add the _bar_ here.
+        pairwise_pref = pairwise_preference(votes, all_candidates)
 
         # calculate the hash of the result file
         result_bytes = self.assemblyproxy.get_ballot_result(rs, ballot['id'])
@@ -1136,8 +1182,12 @@ class AssemblyFrontend(AbstractUserFrontend):
         result_hash = get_hash(result_bytes)
 
         # show links to next and previous ballots
-        # we are only interested in done ballots
-        ballot_list: List[int] = xsorted(done, key=lambda key: done[key]["title"])
+        # we are only interested in concluded ballots
+        ballot_list: List[int] = xsorted(
+            grouped.concluded.keys(),
+            key=lambda id_: EntitySorter.ballot(grouped.concluded[id_])  # type: ignore[union-attr]
+            # Seems like a mypy bug.
+        )
 
         i = ballot_list.index(ballot_id)
         length = len(ballot_list)
@@ -1151,7 +1201,9 @@ class AssemblyFrontend(AbstractUserFrontend):
             'BALLOT_TALLY_ADDRESS': self.conf["BALLOT_TALLY_ADDRESS"],
             'BALLOT_TALLY_MAILINGLIST_URL': self.conf["BALLOT_TALLY_MAILINGLIST_URL"],
             'prev_ballot': prev_ballot, 'next_ballot': next_ballot,
-            'candidates': candidates})
+            'candidates': candidates, 'abbreviations': abbreviations,
+            'pairwise_preference': pairwise_pref,
+        })
 
     @staticmethod
     def count_equal_votes(vote_strings: List[VoteString], classical: bool = False
@@ -1359,19 +1411,17 @@ class AssemblyFrontend(AbstractUserFrontend):
         if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):  # pragma: no cover
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
 
-        if grouped := self._group_ballots(rs, assembly_id):
-            done, extended, current, future = grouped
-        else:
+        if not (grouped := self._group_ballots(rs, assembly_id)):
             # some ballots updated state
             return self.redirect(rs, "assembly/summary_ballots")
 
-        result = {k: self.get_online_result(rs, v) for k, v in done.items()}
+        result = {k: self.get_online_result(rs, v)
+                  for k, v in grouped.concluded.items()}
 
-        config_grouped = self.assemblyproxy.group_ballots(rs, assembly_id)
+        config_grouped = self.assemblyproxy.group_ballots_by_config(rs, assembly_id)
 
         return self.render(rs, "summary_ballots", {
-            'concluded_ballots': done, 'running_ballots': extended | current,
-            'upcoming_ballots': future, 'config_grouped': config_grouped,
+            'grouped_ballots': grouped, 'config_grouped': config_grouped,
             'ASSEMBLY_BAR_SHORTNAME': ASSEMBLY_BAR_SHORTNAME, 'result': result,
         })
 
