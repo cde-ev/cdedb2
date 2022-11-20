@@ -1043,12 +1043,13 @@ class FrontendTest(BackendTest):
         return self.key  # type: ignore[return-value]
 
     def logout(self, verbose: bool = False) -> None:  # pylint: disable=arguments-differ
-        """Log out. Raises a KeyError if not currently logged in.
+        """Log out.
 
         :param verbose: If True display additional debug information.
         """
-        f = self.response.forms['logoutform']
-        self.submit(f, check_notification=False, verbose=verbose)
+        if not self.user_in("anonymous"):
+            f = self.response.forms['logoutform']
+            self.submit(f, check_notification=False, verbose=verbose)
         self.key = ANONYMOUS
         self.user = USER_DICT["anonymous"]
 
