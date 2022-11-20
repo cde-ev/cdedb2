@@ -205,6 +205,7 @@ def run_ldap_tests(testpatterns: List[str] = None, *, verbose: bool = False) -> 
     test_runner = MyTextTestRunner(verbosity=(2 if verbose else 1),
                                    resultclass=MyTextTestResult, descriptions=False)
     ran_tests = test_runner.run(test_suite)
+    stop_services("cde-ldap-test")
     return 0 if ran_tests.wasSuccessful() else 1
 
 
