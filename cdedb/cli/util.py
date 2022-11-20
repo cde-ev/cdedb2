@@ -12,6 +12,7 @@ from typing import Any, Callable, Generator, Iterator, Union
 import click
 import psycopg2.extensions
 import psycopg2.extras
+import werkzeug.routing
 
 from cdedb.common import RequestState, User
 from cdedb.common.roles import ALL_ROLES
@@ -143,7 +144,8 @@ def connect(
     return conn
 
 
-def fake_rs(conn: psycopg2.extensions.connection, persona_id: int = 0) -> RequestState:
+def fake_rs(conn: psycopg2.extensions.connection, persona_id: int = 0,
+            urls: werkzeug.routing.MapAdapter = None) -> RequestState:
     """Create a RequestState which may be used during more elaborated commands.
 
     This is needed when we want to interact with the CdEDB on a higher level of
@@ -159,7 +161,7 @@ def fake_rs(conn: psycopg2.extensions.connection, persona_id: int = 0) -> Reques
         ),
         request=None,  # type: ignore[arg-type]
         notifications=[],
-        mapadapter=None,  # type: ignore[arg-type]
+        mapadapter=urls,  # type: ignore[arg-type]
         requestargs=None,
         errors=[],
         values=None,
