@@ -25,7 +25,7 @@ s = Script(dbuser="cdb_admin", LOG_LEVEL=logging.WARNING)
 
 assembly: AssemblyBackend = s.make_backend("assembly", proxy=False)
 assembly_frontend: AssemblyFrontend = s.make_frontend("assembly")
-core: CoreBackend = s.make_backend("core")
+core: CoreBackend = s.make_backend("core", proxy=False)
 
 
 # Config.
