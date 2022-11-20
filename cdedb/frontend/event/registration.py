@@ -55,13 +55,15 @@ class EventRegistrationMixin(EventBaseFrontend):
                            {'data': data, 'csvfields': csv_position,
                             'saldo': saldo})
 
-    def examine_fee(self, rs: RequestState, datum: CdEDBObject,
-                    expected_fees: Dict[int, decimal.Decimal],
-                    seen_reg_ids: Set[int], full_payment: bool = True,
-                    ) -> CdEDBObject:
-        """Check one line specifying a paid fee.
+    def _examine_fee(self, rs: RequestState, datum: CdEDBObject,
+                     expected_fees: Dict[int, decimal.Decimal],
+                     seen_reg_ids: Set[int], full_payment: bool = True,
+                     ) -> CdEDBObject:
+        """Check one line specifying a paid fee. Uninlined from `batch_fees`.
 
         We test for fitness of the data itself.
+
+        :note: This modifies the parameters `expected_fees` and `seen_reg_ids`.
 
         :param full_payment: If True, only write the payment date if the fee
             was paid in full.
@@ -226,7 +228,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         seen_reg_ids: Set[int] = set()
         for lineno, raw_entry in enumerate(reader):
             dataset: CdEDBObject = {'raw': raw_entry, 'lineno': lineno}
-            data.append(self.examine_fee(
+            data.append(self._examine_fee(
                 rs, dataset, expected_fees, full_payment=full_payment,
                 seen_reg_ids=seen_reg_ids))
         open_issues = any(e['problems'] for e in data)
