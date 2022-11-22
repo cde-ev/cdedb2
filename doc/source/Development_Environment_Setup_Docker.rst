@@ -110,18 +110,23 @@ or execute ``docker-compose help``.
 Resetting the containers
 ------------------------
 
-The containers store their state in two volumes.
+The containers store their state in multiple volumes.
 You can list these using ``docker volume ls``.
 When starting the containers using ``docker-compose`` they get a proper name
 which is generated from the name set in the ``docker-compose.yaml`` file
 and the parent folder of that file.
 
-The volumes used should therefore be named
-``docker_database`` and ``docker_files``.
-The former is attached to the postgres container and stores the database
-while the latter stores uploaded attachments and similar files.
+The volumes used should therefore be named:
+* ``docker_cert``: Stores the dynamic self-signed certificate for apache.
+* ``docker_config``: Stores the config and secret-config files.
+* ``docker_database``: Attached to the postgres container and stores the database.
+* ``docker_files``: Attached to the app container and stores uploaded attachements and similar files.
+* ``docker_ldap``: Stores the dynamic self-signed certificate for ldap.
 
 You can delete these volumes using ``docker volume rm VOLUME``.
 This can however only be done when the containers are not running.
 Execute ``docker-compose down`` to properly stop the containers.
 To remove all volumes you can simply run ``docker-compose down --volumes``.
+
+If you changed the entrypoint shell scripts or the docker files themselves, you
+need to rebuild the containers via ``docker-compose build``.
