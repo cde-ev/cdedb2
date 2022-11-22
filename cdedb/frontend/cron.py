@@ -18,7 +18,9 @@ from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.assembly import AssemblyFrontend
 from cdedb.frontend.cde import CdEFrontend
-from cdedb.frontend.common import AbstractFrontend, BaseApp, PeriodicJob
+from cdedb.frontend.common import (
+    AbstractFrontend, BaseApp, PeriodicJob, setup_translations,
+)
 from cdedb.frontend.core import CoreFrontend
 from cdedb.frontend.event import EventFrontend
 from cdedb.frontend.ml import MlFrontend
@@ -37,11 +39,7 @@ class CronFrontend(BaseApp):
         self.connpool = connection_pool_factory(
             self.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
             secrets, self.conf["DB_HOST"], self.conf["DB_PORT"])
-        self.translations = {
-            lang: gettext.translation(
-                'cdedb', languages=[lang],
-                localedir=str(self.conf["REPOSITORY_PATH"] / 'i18n'))
-            for lang in self.conf["I18N_LANGUAGES"]}
+        self.translations = setup_translations(self.conf)
         if pathlib.Path("/PRODUCTIONVM").is_file():  # pragma: no cover
             # Sanity checks for the live instance
             if self.conf["CDEDB_DEV"] or self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
