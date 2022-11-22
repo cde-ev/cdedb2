@@ -5,7 +5,6 @@
 This expects a period of 15 minutes.
 """
 
-import gettext
 import inspect
 import pathlib
 from typing import Collection, Iterator
