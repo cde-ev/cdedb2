@@ -140,7 +140,7 @@ def database() -> None:
 @pass_config
 def create_database_users_cmd(config: TestConfig) -> None:
     """Creates the database users."""
-    click.echo(f"Create database users.")
+    click.echo("Create database users.")
     create_database_users(config)
 
 
