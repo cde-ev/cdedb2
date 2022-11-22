@@ -4,7 +4,7 @@
 -- This also sets up the global state for each database
 -- i.e. extensions, collations etc.
 
-DROP DATABASE IF EXISTS :cdb_database_name;
+DROP DATABASE IF EXISTS :cdb_database_name WITH (FORCE);
 CREATE DATABASE :cdb_database_name WITH OWNER = cdb TEMPLATE = template0 ENCODING = 'UTF8';
 
 ALTER DATABASE :cdb_database_name SET datestyle TO 'ISO, YMD';
