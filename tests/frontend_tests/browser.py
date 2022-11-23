@@ -9,13 +9,14 @@ from playwright.sync_api import Page, expect, sync_playwright
 from tests.common import BrowserTest, storage
 
 
-def make_page(*args, headless: bool = True  # type: ignore[no-untyped-def]
-              ) -> Callable:  # type: ignore[type-arg]
+def make_page(*args, headless: bool = True,  # type: ignore[no-untyped-def]
+              timeout: float = 5000) -> Callable:  # type: ignore[type-arg]
     """Decorator to handle playwright setup.
 
     This injects a `Page` object usable for testing.
 
     :param headless: Use headless browser to execute test.
+    :param timeout: Default timeout in milliseconds.
     """
     if len(args) == 1 and callable(args[0]):
         func = args[0]
@@ -30,6 +31,7 @@ def make_page(*args, headless: bool = True  # type: ignore[no-untyped-def]
                 for name in ['chromium']:
                     browser = getattr(pw, name).launch(headless=headless)
                     page = browser.new_page(locale='de-DE')
+                    page.set_default_timeout(timeout)
                     fkwargs['page'] = page
                     with self.subTest(browser=name):
                         func(self, *fargs, **fkwargs)
@@ -57,7 +59,7 @@ class TestBrowser(BrowserTest):
     """
     @storage
     @make_page
-    def test_pw_interactive_vote(self, page: Page) -> None:
+    def test_js_interactive_vote(self, page: Page) -> None:
         """Cast a vote with the interactive voting facility.
 
         Ensure that all modalities are covered (add a tier at the end / in the
@@ -68,6 +70,7 @@ class TestBrowser(BrowserTest):
         page.get_by_label("Passwort").fill("secret")
         page.get_by_role("button", name="Anmelden").click()
         page.wait_for_url("http://localhost:5000/")
+
         page.get_by_role("link", name="Versammlungen").click()
         page.wait_for_url("http://localhost:5000/assembly/")
         page.get_by_role("link", name="Internationaler Kongress").click()
@@ -95,3 +98,22 @@ class TestBrowser(BrowserTest):
         page.wait_for_url("http://localhost:5000/assembly/assembly/1/ballot/5/show")
         page.get_by_role("tab", name="Text-basierte Abstimmung").click()
         expect(page.get_by_label("Präferenzliste")).to_have_value('i=0>1>e=pi')
+
+    @make_page
+    def test_js_selectize_persona(self, page: Page) -> None:
+        """Search for a persona via the admin showuser functionality."""
+        page.goto("http://localhost:5000/")
+        page.get_by_label("E-Mail").fill("anton@example.cde")
+        page.get_by_label("Passwort").fill("secret")
+        page.get_by_role("button", name="Anmelden").click()
+        page.wait_for_url("http://localhost:5000/")
+
+        page.get_by_role("button", name="Benutzer-Administration").click()
+        page.wait_for_url("http://localhost:5000/")
+        page.locator(".selectize-input").click()
+        page.get_by_placeholder("CdEDB-ID, Name oder E-Mail").type("emi")
+        page.get_by_text("Emilia E. EventisDB-5-1 • emilia@example.cde").click()
+        page.wait_for_url("http://localhost:5000/core/persona/5/show?**")
+
+        expect(page.locator("#content--admin-notes")).to_have_text(
+            ("War früher mal berühmt, hat deswegen ihren Nachnamen geändert."))
