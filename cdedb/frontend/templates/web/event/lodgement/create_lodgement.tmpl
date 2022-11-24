@@ -26,9 +26,10 @@
         {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]")) }}
         {{ util.form_input_text(name="regular_capacity", label=gettext("Regular Capacity"), type="number") }}
         {{ util.form_input_text(name="camping_mat_capacity", label=gettext("Camping Mat Capacity"), type="number") }}
-        {% if groups|length > 1 %}
+        {% if groups|length >= 1 %}
+            {% set defaultvalue = groups.keys()[0] if groups|length == 1 else none %}
             {{ util.form_input_select(
-                name="group_id", entries=groups.items(), label=gettext("Lodgement Group"),
+                name="group_id", entries=groups.items(), label=gettext("Lodgement Group"), defaultvalue=defaultvalue,
                 nulloption=gettext("– create new group –"), sort=True) }}
         {% endif %}
         {{ util.form_input_text(name="new_group_title", label=gettext("New Lodgement Group Title"), errorname="group_id",

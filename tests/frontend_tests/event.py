@@ -3093,6 +3093,25 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f = self.response.forms['createlodgementform']
         self.assertEqual("1001", f['group_id'].value)
 
+    @event_keeper
+    @as_users("berta")
+    def test_lodgement_creation_single_group(self) -> None:
+        self.traverse("CdE-Party 2050", "Unterkünfte", "Unterkunftsgruppen verwalten")
+        # only one lodgement group exists
+        f = self.response.forms["lodgementgroupsummaryform"]
+        self.assertEqual(f["title_4"].value, "CdE-Party")
+        self.traverse("Unterkünfte", "Unterkunft anlegen")
+        f = self.response.forms["createlodgementform"]
+        # existing lodgement group is selectable and preselected
+        self.assertEqual(f["group_id"].value, "4")
+        f["title"] = "Testzimmer"
+        f["regular_capacity"] = 1
+        f["camping_mat_capacity"] = 0
+        self.submit(f)
+        self.traverse("Unterkünfte")
+        # check the new lodgement was created
+        self.assertPresence("Testzimmer")
+
     @as_users("garcia")
     def test_lodgement_capacities(self) -> None:
         self.traverse({'href': '/event/$'},
