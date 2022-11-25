@@ -1321,6 +1321,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.submit(f, check_notification=False)
         self.assertValidationError('vote', "Unerwartete Kandidaten gefunden.")
         self.assertValidationError('vote', "Nicht alle Kandidaten vorhanden.")
+        f['vote'] = "e>pi>1=0>i>e"
+        self.submit(f, check_notification=False)
+        self.assertValidationError('vote', "Doppelte Kandidaten gefunden.")
 
     @storage
     @as_users("werner", "inga", "kalif")
@@ -1932,6 +1935,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
     def test_duplicate_ballot(self) -> None:
         self.traverse("Versammlungen", "Archiv-Sammlung", "Abstimmungen",
                       "Ganz wichtige Wahl", "Als Vorlage benutzen")
+        f = self.response.forms['selectassemblyform']
+        f['target_assembly_id'] = 3
+        self.submit(f)
         f = self.response.forms['configureballotform']
         self.submit(f)
         ballots = self.assembly.get_ballots(self.key, (16, 1001))
@@ -1945,7 +1951,10 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         )
 
         # Source the ballot from a different assembly:
-        self.get('/assembly/assembly/1/ballot/create?source_id=16')
+        self.traverse("Abstimmungen", "Ganz wichtige Wahl", "Als Vorlage benutzen")
+        f = self.response.forms['selectassemblyform']
+        f['target_assembly_id'] = 1
+        self.submit(f)
         f = self.response.forms['configureballotform']
         self.submit(f)
         source = ballots[16]
@@ -1964,6 +1973,28 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence("Unbekannte Abstimmung", div="notifications")
         f = self.response.forms['configureballotform']
         self.assertEqual(f['title'].value, "")
+
+        # Archive one assembly, so that we only preside over one active assembly.
+        assembly_id = 3
+        ballot_ids = set(self.assembly.list_ballots(self.key, assembly_id))
+        ballot_ids.remove(6)
+        for b_id in ballot_ids:
+            self.assembly.delete_ballot(
+                self.key, b_id, ("candidates", "attachments", "voters"))
+        with self.switch_user("viktor"):
+            self.traverse("Versammlungen", "Archiv-Sammlung")
+            f = self.response.forms['concludeassemblyform']
+            f['ack_conclude'] = True
+            self.submit(f)
+        self.traverse("Versammlungen", "Archiv-Sammlung", "Abstimmungen",
+                      "Test-Abstimmung", "Als Vorlage benutzen")
+        self.assertTitle("Abstimmung anlegen (Internationaler Kongress)")
+        f = self.response.forms['configureballotform']
+        f['vote_begin'] = now() + datetime.timedelta(days=1)
+        f['vote_end'] = now() + datetime.timedelta(days=2)
+        self.submit(f)
+        self.assertTitle(
+            "Test-Abstimmung – bitte ignorieren (Internationaler Kongress)")
 
     @as_users("werner", "berta")
     @storage

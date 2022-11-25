@@ -42,14 +42,16 @@ ATTACHMENT_EXTENSIONS_CONVERT = {
 
 ATTACHMENT_MIME_CONVERT = {
     const.AttachmentPolicy.allow: "",
-    const.AttachmentPolicy.pdf_only: ['multipart', 'text/plain', 'application/pdf'],
-    const.AttachmentPolicy.forbid: ['text/plain'],
+    # HTML parts will be stripped afterwards due to the conversion.
+    const.AttachmentPolicy.pdf_only: ['multipart', 'text/plain', 'application/pdf',
+                                      'text/html'],
+    const.AttachmentPolicy.forbid: ['text/plain', 'text/html'],
 }
 
 ATTACHMENT_HTML_CONVERT = {
     const.AttachmentPolicy.allow: True,
-    const.AttachmentPolicy.pdf_only: False,
-    const.AttachmentPolicy.forbid: False,
+    const.AttachmentPolicy.pdf_only: True,
+    const.AttachmentPolicy.forbid: True,
 }
 
 

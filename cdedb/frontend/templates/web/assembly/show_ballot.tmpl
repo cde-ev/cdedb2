@@ -38,7 +38,7 @@
     {% set is_preferential = not ambience['ballot']['votes'] %}
 
     {# Privileged modification options (delete and edit) #}
-    {% if is_privileged %}
+    {% if is_privileged or user.presider %}
         <div class="p">
             {% if edit_mode %}
                 {{ util.href(cdedblink("assembly/change_ballot_form"), gettext("Edit"), icon="pen",
@@ -52,9 +52,11 @@
                     </form>
                 {% endif %}
             {% endif %}
-            {{ util.href(cdedblink("assembly/create_ballot", {'source_id': ambience['ballot']['id']}), gettext("Use as Template"), icon="clone",
-                    aclass="btn btn-sm btn-success") }}
-            {% if ambience['ballot']['is_tallied'] %}
+            {% if managed_assembly_ids %}
+                {{ util.href(cdedblink("assembly/ballot_template"), gettext("Use as Template"), icon="clone",
+                        aclass="btn btn-sm btn-success") }}
+            {% endif %}
+            {% if is_privileged and ambience['ballot']['is_tallied'] %}
                 {{ util.href(cdedblink("assembly/comment_concluded_ballot_form"), gettext("Comment_[[verb]]"), icon="comment",
                         aclass="btn btn-sm btn-warning") }}
             {% endif %}

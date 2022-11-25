@@ -12,6 +12,7 @@ from cdedb.backend.core import CoreBackend
 from cdedb.cli.util import redirect_to_file
 from cdedb.common import unwrap
 from cdedb.config import TestConfig, get_configpath
+from cdedb.frontend.core import CoreFrontend
 from cdedb.script import DryRunError, Script, ScriptAtomizer
 
 
@@ -151,6 +152,39 @@ Aborting Dry Run! Time taken: 0.000 seconds.
             backend = self.script.make_backend(realm, proxy=False)
             self.assertIsInstance(backend, backend_class)
             self.assertIs(backend, self.script.make_backend(realm, proxy=False))
+
+    def test_make_frontend(self) -> None:
+        # check that the config path stays correct.
+        real_configpath = get_configpath()
+        real_config = TestConfig()
+
+        core = self.script.make_frontend("core")
+        self.assertIsInstance(core, CoreFrontend)
+
+        # check setting config options per kwarg
+        # this takes the options from the real_configpath into account automatically
+        configured_script = self.get_script(LOCKDOWN=42)
+        self.assertEqual(42, configured_script.make_frontend("core").conf["LOCKDOWN"])
+        self.assertEqual(real_configpath, get_configpath())
+
+        # check setting config options per config file
+        # here, we need to set the relevant flags from the real_config manually
+        with tempfile.NamedTemporaryFile("w", suffix=".py") as f:
+            f.write("LOCKDOWN = 42\n")
+            f.write(f"DB_HOST = '{real_config['DB_HOST']}'\n")
+            f.write(f"DB_PORT = {real_config['DB_PORT']}\n")
+            f.flush()
+            configured_script = self.get_script(configpath=f.name)
+            self.assertEqual(
+                42,
+                configured_script.make_frontend("core").conf["LOCKDOWN"])
+            self.assertEqual(real_configpath, get_configpath())
+
+        for realm, frontend_name in Script.frontend_map.items():
+            frontend_class = resolve_name(f"cdedb.frontend.{realm}.{frontend_name}")
+            frontend = self.script.make_frontend(realm)
+            self.assertIsInstance(frontend, frontend_class)
+            self.assertIs(frontend, self.script.make_frontend(realm))
 
     def test_script_atomizer(self) -> None:
         rs = self.script.rs()

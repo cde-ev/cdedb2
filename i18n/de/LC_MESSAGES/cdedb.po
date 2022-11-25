@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2022-10-20 12:54+0200\n"
+"POT-Creation-Date: 2022-11-10 14:48+0100\n"
 "PO-Revision-Date: 2020-12-06 11:30+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -102,15 +102,15 @@ msgstr "Nicht berechtigt auf Veranstaltungstabellen zuzugreifen"
 #: cdedb/backend/ml.py:670 cdedb/backend/ml.py:716 cdedb/backend/ml.py:870
 #: cdedb/backend/ml.py:914 cdedb/backend/ml.py:940 cdedb/backend/ml.py:973
 #: cdedb/backend/ml.py:1043 cdedb/backend/ml.py:1069 cdedb/backend/ml.py:1107
-#: cdedb/backend/ml.py:1188 cdedb/frontend/assembly/__init__.py:198
-#: cdedb/frontend/assembly/__init__.py:595
-#: cdedb/frontend/assembly/__init__.py:672
-#: cdedb/frontend/assembly/__init__.py:784
-#: cdedb/frontend/assembly/__init__.py:1006
-#: cdedb/frontend/assembly/__init__.py:1084
-#: cdedb/frontend/assembly/__init__.py:1368
-#: cdedb/frontend/assembly/__init__.py:1523
-#: cdedb/frontend/assembly/__init__.py:1581 cdedb/frontend/core/base.py:645
+#: cdedb/backend/ml.py:1188 cdedb/frontend/assembly/__init__.py:199
+#: cdedb/frontend/assembly/__init__.py:596
+#: cdedb/frontend/assembly/__init__.py:673
+#: cdedb/frontend/assembly/__init__.py:822
+#: cdedb/frontend/assembly/__init__.py:1044
+#: cdedb/frontend/assembly/__init__.py:1128
+#: cdedb/frontend/assembly/__init__.py:1412
+#: cdedb/frontend/assembly/__init__.py:1567
+#: cdedb/frontend/assembly/__init__.py:1625 cdedb/frontend/core/base.py:645
 #: cdedb/frontend/core/base.py:674 cdedb/frontend/core/base.py:890
 #: cdedb/frontend/core/base.py:893 cdedb/frontend/core/base.py:897
 #: cdedb/frontend/core/base.py:902 cdedb/frontend/core/base.py:908
@@ -132,13 +132,13 @@ msgid "Must have privileged access to change assembly."
 msgstr "Keine Zugriffsrechte zum Ändern der Versammlung."
 
 #: cdedb/backend/assembly.py:593 cdedb/backend/assembly.py:1077
-#: cdedb/frontend/assembly/__init__.py:240
-#: cdedb/frontend/assembly/__init__.py:263
-#: cdedb/frontend/assembly/__init__.py:281
-#: cdedb/frontend/assembly/__init__.py:296
-#: cdedb/frontend/assembly/__init__.py:623
-#: cdedb/frontend/assembly/__init__.py:700
-#: cdedb/frontend/assembly/__init__.py:746
+#: cdedb/frontend/assembly/__init__.py:241
+#: cdedb/frontend/assembly/__init__.py:264
+#: cdedb/frontend/assembly/__init__.py:282
+#: cdedb/frontend/assembly/__init__.py:297
+#: cdedb/frontend/assembly/__init__.py:624
+#: cdedb/frontend/assembly/__init__.py:738
+#: cdedb/frontend/assembly/__init__.py:784
 msgid "Assembly already concluded."
 msgstr "Die Versammlung ist bereits beendet."
 
@@ -149,19 +149,19 @@ msgstr ""
 "Versammlung beendet wurde."
 
 #: cdedb/backend/assembly.py:616 cdedb/backend/ml.py:433
-#: cdedb/frontend/assembly/__init__.py:245
-#: cdedb/frontend/assembly/__init__.py:420 cdedb/frontend/event/event.py:883
+#: cdedb/frontend/assembly/__init__.py:246
+#: cdedb/frontend/assembly/__init__.py:421 cdedb/frontend/event/event.py:883
 #: cdedb/frontend/ml/base.py:256 cdedb/frontend/ml/base.py:719
 #: cdedb/frontend/ml/base.py:807
 msgid "Some of these users do not exist or are archived."
 msgstr "Einige dieser Nutzer existieren nicht oder sind archiviert."
 
-#: cdedb/backend/assembly.py:619 cdedb/frontend/assembly/__init__.py:248
-#: cdedb/frontend/assembly/__init__.py:424
+#: cdedb/backend/assembly.py:619 cdedb/frontend/assembly/__init__.py:249
+#: cdedb/frontend/assembly/__init__.py:425
 msgid "Some of these users are not assembly users."
 msgstr "Einige dieser Nutzer sind keine Versammlungsnutzer."
 
-#: cdedb/backend/assembly.py:764 cdedb/frontend/assembly/__init__.py:1503
+#: cdedb/backend/assembly.py:764 cdedb/frontend/assembly/__init__.py:1547
 msgid "Unable to remove active ballot."
 msgstr "Eine aktive Abstimmung kann nicht gelöscht werden."
 
@@ -191,8 +191,8 @@ msgstr "Löschen von %(type)s wird verhindert von %(block)s."
 msgid "Must have privileged access to change ballot."
 msgstr "Fehlende Zugriffsrechte zur Änderung der Abstimmung."
 
-#: cdedb/backend/assembly.py:1010 cdedb/frontend/assembly/__init__.py:1390
-#: cdedb/frontend/assembly/__init__.py:1426
+#: cdedb/backend/assembly.py:1010 cdedb/frontend/assembly/__init__.py:1434
+#: cdedb/frontend/assembly/__init__.py:1470
 msgid "Unable to modify active ballot."
 msgstr "Eine aktive Abstimmung kann nicht mehr verändert werden."
 
@@ -212,8 +212,8 @@ msgstr "Fehler beim Erstellen der Abstimmung."
 msgid "Must have privileged access to comment ballot."
 msgstr "Fehlende Zugriffsrechte zum Kommentieren von Abstimmungen."
 
-#: cdedb/backend/assembly.py:1121 cdedb/frontend/assembly/__init__.py:1444
-#: cdedb/frontend/assembly/__init__.py:1457
+#: cdedb/backend/assembly.py:1121 cdedb/frontend/assembly/__init__.py:1488
+#: cdedb/frontend/assembly/__init__.py:1501
 msgid "Comments are only allowed for concluded ballots."
 msgstr "Kommentare sind nur für beendete Abstimmungen erlaubt."
 
@@ -241,8 +241,8 @@ msgstr ""
 msgid "Normal voting still going on."
 msgstr "Der normale Abstimmungszeitraum ist noch nicht zu Ende."
 
-#: cdedb/backend/assembly.py:1301 cdedb/frontend/assembly/__init__.py:547
-#: cdedb/frontend/assembly/__init__.py:562
+#: cdedb/backend/assembly.py:1301 cdedb/frontend/assembly/__init__.py:548
+#: cdedb/frontend/assembly/__init__.py:563
 msgid "Signup already ended."
 msgstr "Der Anmeldezeitraum ist vorbei."
 
@@ -310,8 +310,8 @@ msgstr ""
 msgid "Must have privileged access to add attachment."
 msgstr "Fehlende Zugriffsrechte zum Anlegen eines Dateianhangs."
 
-#: cdedb/backend/assembly.py:1711 cdedb/frontend/assembly/__init__.py:802
-#: cdedb/frontend/assembly/__init__.py:818
+#: cdedb/backend/assembly.py:1711 cdedb/frontend/assembly/__init__.py:840
+#: cdedb/frontend/assembly/__init__.py:856
 msgid "Cannot add attachment once the assembly has been locked."
 msgstr ""
 "Es kann keine Datei mehr hinzugefügt werden, nachdem die Versammlung "
@@ -356,8 +356,8 @@ msgstr ""
 "Eine Datei kann nicht von einer Abstimmung entfernt werden, die bereits "
 "gesperrt wurde."
 
-#: cdedb/backend/assembly.py:2096 cdedb/frontend/assembly/__init__.py:875
-#: cdedb/frontend/assembly/__init__.py:907
+#: cdedb/backend/assembly.py:2096 cdedb/frontend/assembly/__init__.py:913
+#: cdedb/frontend/assembly/__init__.py:945
 msgid "Cannot add attachment version once the assembly has been locked."
 msgstr ""
 "Es kann keine Dateiversion mehr hinzugefügt werden, nachdem die Versammlung "
@@ -383,15 +383,15 @@ msgstr ""
 "Eine Dateiversion kann nicht mehr entfernt werden, nachdem die Versammlung "
 "oder mindestens eine verknüpfte Abstimmung gesperrt wurden."
 
-#: cdedb/backend/assembly.py:2139 cdedb/frontend/assembly/__init__.py:969
+#: cdedb/backend/assembly.py:2139 cdedb/frontend/assembly/__init__.py:1007
 msgid "This version does not exist."
 msgstr "Diese Version der Datei existiert nicht."
 
-#: cdedb/backend/assembly.py:2141 cdedb/frontend/assembly/__init__.py:972
+#: cdedb/backend/assembly.py:2141 cdedb/frontend/assembly/__init__.py:1010
 msgid "This version has already been deleted."
 msgstr "Diese Version der Datei wurde bereits gelöscht."
 
-#: cdedb/backend/assembly.py:2144 cdedb/frontend/assembly/__init__.py:963
+#: cdedb/backend/assembly.py:2144 cdedb/frontend/assembly/__init__.py:1001
 msgid "Cannot remove the last remaining version of an attachment."
 msgstr ""
 "Die letzte verbleibende Version einer Datei kann nicht gelöscht werden."
@@ -399,7 +399,7 @@ msgstr ""
 #: cdedb/backend/assembly.py:2339 cdedb/backend/cde/base.py:454
 #: cdedb/backend/cde/lastschrift.py:423 cdedb/backend/common.py:422
 #: cdedb/backend/core/base.py:2072 cdedb/backend/event/base.py:915
-#: cdedb/common/__init__.py:230 cdedb/frontend/assembly/__init__.py:1280
+#: cdedb/common/__init__.py:230 cdedb/frontend/assembly/__init__.py:1324
 #: cdedb/frontend/cde/base.py:701 cdedb/frontend/cde/lastschrift.py:479
 #: cdedb/frontend/cde/parse_statement.py:652 cdedb/frontend/common.py:608
 #: cdedb/frontend/event/base.py:477 cdedb/frontend/event/query_stats.py:431
@@ -1136,7 +1136,7 @@ msgid "This is not useful."
 msgstr "Dies ist nicht unterstützt."
 
 #: cdedb/backend/event/registration.py:911
-#: cdedb/frontend/assembly/__init__.py:567 cdedb/frontend/event/event.py:213
+#: cdedb/frontend/assembly/__init__.py:568 cdedb/frontend/event/event.py:213
 #: cdedb/frontend/event/registration.py:930
 msgid "This user does not exist or is archived."
 msgstr "Dieser Benutzer existiert nicht oder ist archiviert."
@@ -2592,7 +2592,7 @@ msgstr "Muss positiv sein."
 #: cdedb/common/validation/__init__.py:915
 #: cdedb/common/validation/__init__.py:2511
 #: cdedb/common/validation/__init__.py:3923
-#: cdedb/common/validation/__init__.py:4554 cdedb/frontend/core/base.py:1095
+#: cdedb/common/validation/__init__.py:4561 cdedb/frontend/core/base.py:1095
 #: cdedb/frontend/core/genesis.py:110 cdedb/frontend/event/event.py:192
 msgid "Must not be empty."
 msgstr "Darf nicht leer sein."
@@ -3052,31 +3052,35 @@ msgid "Must specify ballot in order to validate vote."
 msgstr "Um eine Stimme zu validieren muss eine Abstimmung angegeben werden."
 
 #: cdedb/common/validation/__init__.py:4281
+msgid "Duplicate candidates."
+msgstr "Doppelte Kandidaten gefunden."
+
+#: cdedb/common/validation/__init__.py:4288
 msgid "Superfluous candidates."
 msgstr "Unerwartete Kandidaten gefunden."
 
-#: cdedb/common/validation/__init__.py:4283
+#: cdedb/common/validation/__init__.py:4290
 msgid "Missing candidates."
 msgstr "Nicht alle Kandidaten vorhanden."
 
-#: cdedb/common/validation/__init__.py:4291
+#: cdedb/common/validation/__init__.py:4298
 msgid "Too many levels."
 msgstr "Zu viele Abstufungen."
 
-#: cdedb/common/validation/__init__.py:4294
+#: cdedb/common/validation/__init__.py:4301
 msgid "Too many votes."
 msgstr "Zu viele Optionen ausgewählt."
 
-#: cdedb/common/validation/__init__.py:4296
+#: cdedb/common/validation/__init__.py:4303
 msgid "Misplaced bar."
 msgstr "Ablehnungsoption an ungültiger Stelle."
 
-#: cdedb/common/validation/__init__.py:4315
+#: cdedb/common/validation/__init__.py:4322
 #, python-format
 msgid "Invalid  regular expression (position %(pos)s)."
 msgstr "Ungültiger regulärer Ausdruck (Position %(pos)s)."
 
-#: cdedb/common/validation/__init__.py:4327
+#: cdedb/common/validation/__init__.py:4334
 #, python-format
 msgid ""
 "Must not contain any forbidden characters (which are %(forbidden_chars)s "
@@ -3085,49 +3089,49 @@ msgstr ""
 "Darf keine verbotenen Zeichen enthalten (diese sind %(forbidden_chars)s) "
 "wohingegen .^$ erlaubt sind."
 
-#: cdedb/common/validation/__init__.py:4403
+#: cdedb/common/validation/__init__.py:4410
 msgid "Invalid operator for this field."
 msgstr "Unzulässiger Operator für dieses Feld."
 
-#: cdedb/common/validation/__init__.py:4451
+#: cdedb/common/validation/__init__.py:4458
 msgid "Two endpoints required."
 msgstr "Zwei Werte für Intervall benötigt."
 
-#: cdedb/common/validation/__init__.py:4485
+#: cdedb/common/validation/__init__.py:4492
 msgid "Selection may not be empty."
 msgstr "Es muss etwas ausgewählt werden."
 
-#: cdedb/common/validation/__init__.py:4532
+#: cdedb/common/validation/__init__.py:4539
 msgid "Not a Query."
 msgstr "Muss eine Query sein."
 
-#: cdedb/common/validation/__init__.py:4561
+#: cdedb/common/validation/__init__.py:4568
 #, python-format
 msgid "Invalid constraint number %(index)s"
 msgstr "Ungültige Einschränkung bei Index %(index)s."
 
-#: cdedb/common/validation/__init__.py:4569
-#: cdedb/common/validation/__init__.py:4627
+#: cdedb/common/validation/__init__.py:4576
+#: cdedb/common/validation/__init__.py:4634
 #: cdedb/frontend/event/questionnaire.py:259
 msgid "Invalid field."
 msgstr "Unzulässiges Feld."
 
-#: cdedb/common/validation/__init__.py:4580
+#: cdedb/common/validation/__init__.py:4587
 msgid "Invalid operator."
 msgstr "Unzulässiger Operator."
 
-#: cdedb/common/validation/__init__.py:4616
+#: cdedb/common/validation/__init__.py:4623
 #, python-format
 msgid "Invalid ordering condition number %(index)s"
 msgstr "Ungültige Ordnungsrelation bei Index %(index)s."
 
-#: cdedb/common/validation/__init__.py:4651
-#: cdedb/common/validation/__init__.py:4716
+#: cdedb/common/validation/__init__.py:4658
+#: cdedb/common/validation/__init__.py:4723
 #, python-format
 msgid "Invalid input for the enumeration %(enum)s"
 msgstr "Ungültige Eingabe für Enumeration %(enum)s."
 
-#: cdedb/common/validation/__init__.py:4697
+#: cdedb/common/validation/__init__.py:4704
 msgid "SubscriptionState.none is not written into the database."
 msgstr "SubscriptionState.none wird nicht in die Datenbank geschrieben."
 
@@ -3185,61 +3189,61 @@ msgstr ""
 "Eine Änderung an der Datenbank konnte wegen eines gleichzeitigen Zugriffs "
 "nicht ausgeführt werden. Bitte lade die Seite neu, um es erneut zu versuchen."
 
-#: cdedb/frontend/assembly/__init__.py:254
-#: cdedb/frontend/assembly/__init__.py:272 cdedb/frontend/event/event.py:220
+#: cdedb/frontend/assembly/__init__.py:255
+#: cdedb/frontend/assembly/__init__.py:273 cdedb/frontend/event/event.py:220
 #: cdedb/frontend/event/event.py:235 cdedb/frontend/ml/base.py:729
 #: cdedb/frontend/ml/base.py:767 cdedb/frontend/ml/base.py:835
 msgid "Action had no effect."
 msgstr "Aktion hatte keinen Effekt."
 
-#: cdedb/frontend/assembly/__init__.py:268
+#: cdedb/frontend/assembly/__init__.py:269
 msgid "This user is not a presider for this assembly."
 msgstr "Dieser Nutzer ist kein Versammlungsleiter für diese Versammlung."
 
-#: cdedb/frontend/assembly/__init__.py:365
+#: cdedb/frontend/assembly/__init__.py:366
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:159
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:186
 msgid "Must have presiders in order to create a mailinglist."
 msgstr "Mailingliste kann nur mit Versammlungsleitern erstellt werden."
 
-#: cdedb/frontend/assembly/__init__.py:376
-#: cdedb/frontend/assembly/__init__.py:441
+#: cdedb/frontend/assembly/__init__.py:377
+#: cdedb/frontend/assembly/__init__.py:442
 msgid "Presider mailinglist created."
 msgstr "Versammlungsleitungs-Mailingliste angelegt."
 
-#: cdedb/frontend/assembly/__init__.py:377
-#: cdedb/frontend/assembly/__init__.py:451
+#: cdedb/frontend/assembly/__init__.py:378
+#: cdedb/frontend/assembly/__init__.py:452
 msgid "Attendee mailinglist created."
 msgstr "Versammlungsteilnehmer-Mailingliste angelegt."
 
-#: cdedb/frontend/assembly/__init__.py:383
-#: cdedb/frontend/assembly/__init__.py:412
-#: cdedb/frontend/assembly/__init__.py:453 cdedb/frontend/event/event.py:264
+#: cdedb/frontend/assembly/__init__.py:384
+#: cdedb/frontend/assembly/__init__.py:413
+#: cdedb/frontend/assembly/__init__.py:454 cdedb/frontend/event/event.py:264
 #: cdedb/frontend/event/event.py:912 cdedb/frontend/event/event.py:934
 #, python-format
 msgid "Mailinglist %(address)s already exists."
 msgstr "Mailingliste %(address)s existiert bereits."
 
-#: cdedb/frontend/assembly/__init__.py:405
+#: cdedb/frontend/assembly/__init__.py:406
 msgid "Given presider address ignored in favor of newly created mailinglist."
 msgstr ""
 "Angegebene Versammlungsleitungs-E-Mail-Adresse durch Adresse der neuen "
 "Mailingliste ersetzt."
 
-#: cdedb/frontend/assembly/__init__.py:431 cdedb/frontend/event/event.py:897
+#: cdedb/frontend/assembly/__init__.py:432 cdedb/frontend/event/event.py:897
 msgid "Must not be empty in order to create a mailinglist."
 msgstr "Darf nicht leer sein, damit eine Mailingliste erstellt werden kann."
 
-#: cdedb/frontend/assembly/__init__.py:455
+#: cdedb/frontend/assembly/__init__.py:456
 msgid "Assembly created."
 msgstr "Versammlung angelegt."
 
-#: cdedb/frontend/assembly/__init__.py:464
-#: cdedb/frontend/assembly/__init__.py:627
-#: cdedb/frontend/assembly/__init__.py:846
-#: cdedb/frontend/assembly/__init__.py:919
-#: cdedb/frontend/assembly/__init__.py:950
-#: cdedb/frontend/assembly/__init__.py:1498
+#: cdedb/frontend/assembly/__init__.py:465
+#: cdedb/frontend/assembly/__init__.py:628
+#: cdedb/frontend/assembly/__init__.py:884
+#: cdedb/frontend/assembly/__init__.py:957
+#: cdedb/frontend/assembly/__init__.py:988
+#: cdedb/frontend/assembly/__init__.py:1542
 #: cdedb/frontend/cde/past_event.py:406 cdedb/frontend/cde/past_event.py:466
 #: cdedb/frontend/core/base.py:2091 cdedb/frontend/core/base.py:2138
 #: cdedb/frontend/event/course.py:222 cdedb/frontend/event/event.py:334
@@ -3249,111 +3253,115 @@ msgstr "Versammlung angelegt."
 msgid "Must be checked."
 msgstr "Muss markiert sein."
 
-#: cdedb/frontend/assembly/__init__.py:469
+#: cdedb/frontend/assembly/__init__.py:470
 msgid "Assemblies with active ballots cannot be deleted."
 msgstr "Versammlungen mit aktiven Abstimmungen können nicht gelöscht werden."
 
-#: cdedb/frontend/assembly/__init__.py:485
+#: cdedb/frontend/assembly/__init__.py:486
 msgid "May not access attachments for this assembly."
 msgstr "Keine Berechtigung auf die Dateien dieser Versammlung zuzugreifen."
 
-#: cdedb/frontend/assembly/__init__.py:528
+#: cdedb/frontend/assembly/__init__.py:529
 msgid "Signed up."
 msgstr "Angemeldet."
 
-#: cdedb/frontend/assembly/__init__.py:539
+#: cdedb/frontend/assembly/__init__.py:540
 msgid "Already signed up."
 msgstr "Bereits angemeldet."
 
-#: cdedb/frontend/assembly/__init__.py:570
+#: cdedb/frontend/assembly/__init__.py:571
 msgid "This user is not an assembly user."
 msgstr "Dieser Nutzer ist kein Versammlungsnutzer."
 
-#: cdedb/frontend/assembly/__init__.py:573
+#: cdedb/frontend/assembly/__init__.py:574
 msgid "Members must sign up themselves."
 msgstr "Mitglieder müssen sich selbst anmelden."
 
-#: cdedb/frontend/assembly/__init__.py:606 cdedb/frontend/event/download.py:354
+#: cdedb/frontend/assembly/__init__.py:607 cdedb/frontend/event/download.py:354
 #: cdedb/frontend/event/download.py:432 cdedb/frontend/event/download.py:455
 #: cdedb/frontend/event/download.py:482 cdedb/frontend/event/download.py:505
 #: cdedb/frontend/event/download.py:519 cdedb/frontend/ml/base.py:674
 msgid "Empty File."
 msgstr "Leere Datei."
 
-#: cdedb/frontend/assembly/__init__.py:634
+#: cdedb/frontend/assembly/__init__.py:635
 msgid "Unable to conclude assembly with open ballot."
 msgstr "Kann Versammlung mit offenen Abstimmungen nicht abschließen."
 
-#: cdedb/frontend/assembly/__init__.py:717
+#: cdedb/frontend/assembly/__init__.py:706
+msgid "Not presiding over any active assemblies."
+msgstr "Du leitest keine aktive Versammlung."
+
+#: cdedb/frontend/assembly/__init__.py:755
 msgid "Unknown Ballot."
 msgstr "Unbekannte Abstimmung."
 
-#: cdedb/frontend/assembly/__init__.py:791
+#: cdedb/frontend/assembly/__init__.py:829
 msgid "File not found."
 msgstr "Datei wurde nicht gefunden."
 
-#: cdedb/frontend/assembly/__init__.py:835
-#: cdedb/frontend/assembly/__init__.py:938
+#: cdedb/frontend/assembly/__init__.py:873
+#: cdedb/frontend/assembly/__init__.py:976
 msgid "Attachment added."
 msgstr "Anhang hinzugefügt."
 
-#: cdedb/frontend/assembly/__init__.py:851
+#: cdedb/frontend/assembly/__init__.py:889
 msgid "Attachment can not be deleted."
 msgstr "Datei kann nicht gelöscht werden."
 
-#: cdedb/frontend/assembly/__init__.py:857
+#: cdedb/frontend/assembly/__init__.py:895
 msgid "Remove all but the last version before deleting the attachment."
 msgstr ""
 "Entferne erst alle bis auf eine Dateiversion, bevor Du die gesamte Datei "
 "entfernst."
 
-#: cdedb/frontend/assembly/__init__.py:957
+#: cdedb/frontend/assembly/__init__.py:995
 msgid "Attachment version can not be deleted."
 msgstr "Dateiversion kann nicht gelöscht werden."
 
-#: cdedb/frontend/assembly/__init__.py:977
+#: cdedb/frontend/assembly/__init__.py:1015
 msgid "Unknown version."
 msgstr "Unbekannte Version angegeben."
 
-#: cdedb/frontend/assembly/__init__.py:987
-#: cdedb/frontend/assembly/__init__.py:1096
+#: cdedb/frontend/assembly/__init__.py:1025
+#: cdedb/frontend/assembly/__init__.py:1140
 msgid "Ballot has not been tallied."
 msgstr "Abstimmung wurde noch nicht ausgezählt."
 
-#: cdedb/frontend/assembly/__init__.py:1113
+#: cdedb/frontend/assembly/__init__.py:1157
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:28
 msgid "Against all Candidates"
 msgstr "Gegen alle Kandidaten"
 
-#: cdedb/frontend/assembly/__init__.py:1116
+#: cdedb/frontend/assembly/__init__.py:1160
 msgid "Rejection limit"
 msgstr "Ablehnungsgrenze"
 
-#: cdedb/frontend/assembly/__init__.py:1207
+#: cdedb/frontend/assembly/__init__.py:1251
 msgid "Entered invalid secret"
 msgstr "Ungültiges Geheimnis eingegeben."
 
-#: cdedb/frontend/assembly/__init__.py:1471
+#: cdedb/frontend/assembly/__init__.py:1515
 msgid "Force starting a ballot is only possible in dev mode."
 msgstr "Forcieren eines Abstimmungsstarts ist nur im Entwicklermodus möglich."
 
-#: cdedb/frontend/assembly/__init__.py:1525
+#: cdedb/frontend/assembly/__init__.py:1569
 msgid "Ballot is outside its voting period."
 msgstr "Abstimmung ist außerhalb des Abstimmungszeitraums."
 
-#: cdedb/frontend/assembly/__init__.py:1539
+#: cdedb/frontend/assembly/__init__.py:1583
 msgid "Option not available."
 msgstr "Option nicht verfügbar."
 
-#: cdedb/frontend/assembly/__init__.py:1547
+#: cdedb/frontend/assembly/__init__.py:1591
 msgid "Rejection is exclusive."
 msgstr "Ablehnung kann nur exklusiv gewählt werden."
 
-#: cdedb/frontend/assembly/__init__.py:1583
+#: cdedb/frontend/assembly/__init__.py:1627
 msgid "Ballot not yet tallied."
 msgstr "Abstimmung noch nicht ausgezählt."
 
-#: cdedb/frontend/assembly/__init__.py:1609
+#: cdedb/frontend/assembly/__init__.py:1653
 msgid "Duplicate shortname."
 msgstr "Option doppelt gefunden."
 
@@ -5395,6 +5403,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:19
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:223
+#: cdedb/frontend/templates/web/assembly/ballot_template.tmpl:20
 #: cdedb/frontend/templates/web/assembly/configure_ballot.tmpl:34
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:14
 msgid "Ballot"
@@ -5795,6 +5804,7 @@ msgstr "Datei hinzufügen"
 
 #: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:11
 #: cdedb/frontend/templates/web/assembly/add_attachment_version.tmpl:18
+#: cdedb/frontend/templates/web/assembly/ballot_template.tmpl:27
 #: cdedb/frontend/templates/web/assembly/base.tmpl:45
 #: cdedb/frontend/templates/web/assembly/configure_assembly.tmpl:27
 #: cdedb/frontend/templates/web/assembly/configure_ballot.tmpl:37
@@ -5881,6 +5891,32 @@ msgstr ""
 "Diese Dateiversion kann nicht mehr gelöscht werden, nachdem sie erstellt "
 "wurde."
 
+#: cdedb/frontend/templates/web/assembly/ballot_template.tmpl:5
+#: cdedb/frontend/templates/web/assembly/ballot_template.tmpl:16
+#: cdedb/frontend/templates/web/assembly/ballot_template.tmpl:20
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:56
+msgid "Use as Template"
+msgstr "Als Vorlage benutzen"
+
+#: cdedb/frontend/templates/web/assembly/ballot_template.tmpl:14
+#: cdedb/frontend/templates/web/assembly/base.tmpl:13
+#: cdedb/frontend/templates/web/assembly/configure_ballot.tmpl:23
+#: cdedb/frontend/templates/web/assembly/index.tmpl:51
+#: cdedb/frontend/templates/web/assembly/list_ballots.tmpl:9
+#: cdedb/frontend/templates/web/assembly/list_ballots.tmpl:14
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:28
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:21
+msgid "Ballots"
+msgstr "Abstimmungen"
+
+#: cdedb/frontend/templates/web/assembly/ballot_template.tmpl:29
+#: cdedb/frontend/templates/web/core/create_user.tmpl:25
+#: cdedb/frontend/templates/web/core/promote_user.tmpl:51
+#: cdedb/frontend/templates/web/event/fields/field_set_select.tmpl:43
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:21
+msgid "Continue"
+msgstr "Weiter"
+
 #: cdedb/frontend/templates/web/assembly/base.tmpl:7
 #: cdedb/frontend/templates/web/assembly/base.tmpl:51
 #: cdedb/frontend/templates/web/cde/base.tmpl:11
@@ -5895,16 +5931,6 @@ msgstr ""
 #: cdedb/frontend/templates/web/ml/base.tmpl:57
 msgid "Overview"
 msgstr "Übersicht"
-
-#: cdedb/frontend/templates/web/assembly/base.tmpl:13
-#: cdedb/frontend/templates/web/assembly/configure_ballot.tmpl:23
-#: cdedb/frontend/templates/web/assembly/index.tmpl:51
-#: cdedb/frontend/templates/web/assembly/list_ballots.tmpl:9
-#: cdedb/frontend/templates/web/assembly/list_ballots.tmpl:14
-#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:28
-#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:21
-msgid "Ballots"
-msgstr "Abstimmungen"
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:16
 #: cdedb/frontend/templates/web/assembly/summary_ballots.tmpl:6
@@ -6484,15 +6510,11 @@ msgstr "Die Versammlung wird irreversibel gelöscht."
 msgid "Start Voting"
 msgstr "Abstimmung starten"
 
-#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:55
-msgid "Use as Template"
-msgstr "Als Vorlage benutzen"
-
-#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:58
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:60
 msgid "Comment_[[verb]]"
 msgstr "Kommentieren"
 
-#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:71
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:73
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:34
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:60
 #: cdedb/frontend/templates/web/cde/past_event/past_course_search.tmpl:21
@@ -6504,13 +6526,13 @@ msgstr "Kommentieren"
 msgid "Result"
 msgstr "Ergebnis"
 
-#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:72
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:74
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:14
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:23
 msgid "Detailed Results"
 msgstr "Ergebnisdetails"
 
-#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:77
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:79
 msgid "Ballot Comment"
 msgstr "Abstimmungskommentar"
 
@@ -9147,13 +9169,6 @@ msgstr "Verifizierungs-E-Mail abschicken"
 #: cdedb/frontend/templates/web/core/create_user.tmpl:12
 msgid "Create New Account"
 msgstr "Nutzer anlegen"
-
-#: cdedb/frontend/templates/web/core/create_user.tmpl:25
-#: cdedb/frontend/templates/web/core/promote_user.tmpl:51
-#: cdedb/frontend/templates/web/event/fields/field_set_select.tmpl:43
-#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:21
-msgid "Continue"
-msgstr "Weiter"
 
 #: cdedb/frontend/templates/web/core/dearchive_user.tmpl:4
 #, python-format
@@ -17379,3 +17394,6 @@ msgstr "%(ml_type)s ist kein geeigneter Typ für diese Mailingliste."
 
 msgid "Multiple transfers for this user."
 msgstr "Mehrere Überweisungen für diese Person."
+
+msgid "Unknown email address."
+msgstr "Unbekannte E-Mail-Adresse."
