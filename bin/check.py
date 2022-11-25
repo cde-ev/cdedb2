@@ -180,7 +180,6 @@ def run_ldap_tests(testpatterns: List[str] = None, *, verbose: bool = False) -> 
         print(f"Database {conf['CDB_DATABASE_NAME']} must already been set up.")
         # TODO verify this somehow
     else:
-        stop_services("cde-ldap-test")
         create_database(conf, secrets)
         populate_database(conf, secrets)
 
