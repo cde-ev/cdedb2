@@ -17395,5 +17395,8 @@ msgstr "%(ml_type)s ist kein geeigneter Typ für diese Mailingliste."
 msgid "Transaction Date"
 msgstr "Überweisungsdatum"
 
+msgid "Multiple transfers for this user."
+msgstr "Mehrere Überweisungen für diese Person."
+
 msgid "Unknown email address."
 msgstr "Unbekannte E-Mail-Adresse."

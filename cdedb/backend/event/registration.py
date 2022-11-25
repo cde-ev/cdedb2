@@ -1197,11 +1197,16 @@ class EventRegistrationBackend(EventBaseBackend):
                 count = 0
                 all_reg_ids = {datum['registration_id'] for datum in data}
                 all_regs = self.get_registrations(rs, all_reg_ids)
+                regs_done = set()
                 if any(reg['event_id'] != event_id for reg in all_regs.values()):
                     raise ValueError(n_("Mismatched registrations,"
                                         " not associated with the event."))
                 for index, datum in enumerate(data):
                     reg_id = datum['registration_id']
+                    if reg_id in regs_done:
+                        all_regs[reg_id] = self.get_registration(rs, reg_id)
+                    else:
+                        regs_done.add(reg_id)
                     update = {
                         'id': reg_id,
                         'payment': datum['date'],
