@@ -1748,6 +1748,19 @@ class TestCdEFrontend(FrontendTest):
                             div="notifications")
 
         log_expectation: list[CdEDBObject] = [
+            # sample data entry:
+            {
+                'persona_id': 9,
+                'code': const.FinanceLogCodes.increase_balance,
+                'change_note': None,
+                'delta': "5.00",
+                'new_balance': "5.00",
+                'total': "116.50",
+                'members': 7,
+                'submitted_by': 32,
+                'transaction_date': now().date(),
+            },
+            # new entries:
             {
                 'persona_id': 3,
                 'code': const.FinanceLogCodes.increase_balance,
