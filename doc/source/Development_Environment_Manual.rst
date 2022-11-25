@@ -16,8 +16,8 @@ Prerequisites
 
 We need some dependencies:
 
-* python (at least 3.8)
-* PostgreSQL (at least 9.4, for jsonb)
+* python (at least 3.9)
+* PostgreSQL (at least 13, for drop with force)
 * Apache (with mod_wsgi)
 * git
 * texlive (incl. luatex; for generating pdf documents)
