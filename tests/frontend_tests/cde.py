@@ -2788,7 +2788,8 @@ class TestCdEFrontend(FrontendTest):
         self.login(USER_DICT['farin'])
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/finances'})
-        self.assertTitle("Finanz-Log [1–2 von 2]")
+        n = len(self.get_sample_data('cde.finance_log'))
+        self.assertTitle(f"Finanz-Log [1–{n} von {n}]")
         self.assertNonPresence("LogCodes")
 
     @as_users("vera")
