@@ -87,6 +87,7 @@ def storage() -> None:
 @pass_config
 def create_storage_cmd(config: TestConfig, owner: str) -> None:
     """Create the file storage."""
+    click.echo(f"Create storage directory at {config['STORAGE_DIR']}.")
     with switch_user(owner):
         create_storage(config)
 
@@ -96,6 +97,7 @@ def create_storage_cmd(config: TestConfig, owner: str) -> None:
 @pass_config
 def populate_storage_cmd(config: TestConfig, owner: str) -> None:
     """Populate the file storage with sample data."""
+    click.echo(f"Populate storage directory at {config['STORAGE_DIR']}.")
     with switch_user(owner):
         populate_storage(config)
         populate_sample_event_keepers(config)
@@ -108,6 +110,7 @@ def populate_storage_cmd(config: TestConfig, owner: str) -> None:
 def populate_event_keeper_cmd(config: TestConfig, owner: str, event_id: int) -> None:
     """Populate the event keeper."""
     path = config['STORAGE_DIR'] / 'event_keeper'
+    click.echo(f"Populate event keeper at {path}.")
     with switch_user(owner):
         path.mkdir(parents=True, exist_ok=True)
         populate_event_keeper(config, [event_id])
@@ -123,6 +126,7 @@ def log() -> None:
 @pass_config
 def create_log_cmd(config: TestConfig, owner: str) -> None:
     """Create the log storage."""
+    click.echo(f"Create log directory at {config['LOG_DIR']}.")
     with switch_user(owner):
         create_log(config)
 
@@ -136,6 +140,7 @@ def database() -> None:
 @pass_config
 def create_database_users_cmd(config: TestConfig) -> None:
     """Creates the database users."""
+    click.echo("Create database users.")
     create_database_users(config)
 
 
@@ -144,6 +149,7 @@ def create_database_users_cmd(config: TestConfig) -> None:
 @pass_config
 def create_database_cmd(config: TestConfig, secrets: SecretsConfig) -> None:
     """Create the tables of the database from the config."""
+    click.echo(f"Create database {config['CDB_DATABASE_NAME']}.")
     create_database(config, secrets)
     # to reset all old states of the database, we also remove prepared transactions.
     remove_prepared_transactions(config, secrets)
@@ -159,6 +165,7 @@ def populate_database_cmd(
     config: TestConfig, secrets: SecretsConfig, xss: bool
 ) -> None:
     """Populate the database tables with sample data."""
+    click.echo(f"Populate database {config['CDB_DATABASE_NAME']}.")
     populate_database(config, secrets, xss)
 
 
