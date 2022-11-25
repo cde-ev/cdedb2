@@ -1501,7 +1501,104 @@
             "fulltext": null
         }
     ],
-    "core.genesis_cases": [],
+    "core.genesis_cases": [
+        {
+            "id": 1,
+            "ctime": "---now---",
+            "username": "michaela@example.cde",
+            "given_names": "Michaela",
+            "family_name": "Mailcrawler",
+            "birth_name": null,
+            "gender": null,
+            "birthday": null,
+            "telephone": null,
+            "mobile": null,
+            "address_supplement": null,
+            "address": null,
+            "postal_code": null,
+            "location": null,
+            "country": null,
+            "realm": "ml",
+            "notes": "Ich möchte gerne die DSA-Liste abbonieren.",
+            "attachment_hash": null,
+            "case_status": 2,
+            "reviewer": null,
+            "pevent_id": null,
+            "pcourse_id": null
+        },
+        {
+            "id": 2,
+            "ctime": "---now---",
+            "username": "wolfgang@example.cde",
+            "given_names": "Wolfgang",
+            "family_name": "Weihnacht",
+            "birth_name": null,
+            "gender": 2,
+            "birthday": "2000-12-24",
+            "telephone": null,
+            "mobile": null,
+            "address_supplement": null,
+            "address": "An das Christkind",
+            "postal_code": "51766",
+            "location": "Engelskirchen",
+            "country": "DE",
+            "realm": "event",
+            "notes": "Ich möchte mich gerne für die WinterAkademie anmelden.",
+            "attachment_hash": null,
+            "case_status": 2,
+            "reviewer": null,
+            "pevent_id": null,
+            "pcourse_id": null
+        },
+        {
+            "id": 3,
+            "ctime": "---now---",
+            "username": "zeder@example.cde",
+            "given_names": "Kristin",
+            "family_name": "Zeder",
+            "birth_name": null,
+            "gender": 10,
+            "birthday": "2010-08-05",
+            "telephone": null,
+            "mobile": null,
+            "address_supplement": "CdErnhof",
+            "address": "Feriendorf Eisenberg 1",
+            "postal_code": "36275",
+            "location": "Kirchheim",
+            "country": "DE",
+            "realm": "cde",
+            "notes": "Nach meiner Pflanzung auf dem Eisenberg möchte ich jetzt offiziell meine Mitgliedschaft beantragen.",
+            "attachment_hash": "71186e9b6f29e6c984b85a59bfb644a771dc58d286dcb40e5768d15258c0a8f1dac091feb7943d2d2fd4b038459585e8e42edaf3f493fff1c6c99d12b5f2d93d",
+            "case_status": 2,
+            "reviewer": null,
+            "pevent_id": null,
+            "pcourse_id": null
+        },
+        {
+            "id": 4,
+            "ctime": "---now---",
+            "username": "leslie@example.cde",
+            "given_names": "Leslie",
+            "family_name": "Levitaro",
+            "birth_name": null,
+            "gender": null,
+            "birthday": null,
+            "telephone": null,
+            "mobile": null,
+            "address_supplement": null,
+            "address": null,
+            "postal_code": null,
+            "location": null,
+            "country": null,
+            "realm": "ml",
+            "notes": "Ich stelle eine Accountanfrage, aber bestätige sie nicht!",
+            "attachment_hash": null,
+            "case_status": 1,
+            "reviewer": null,
+            "pevent_id": null,
+            "pcourse_id": null
+        }
+    ],
     "core.privilege_changes": [],
     "core.sessions": [],
     "core.quota": [],
@@ -9370,39 +9467,5 @@
             "persona_id": 1
         }
     ],
-    "ml.log": [],
-    "ldap.organizations": [],
-    "ldap.duas": [
-        {
-            "id": 1,
-            "cn": "admin",
-            "password_hash": "$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1"
-        },
-        {
-            "id": 2,
-            "cn": "apache",
-            "password_hash": "$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1"
-        },
-        {
-            "id": 3,
-            "cn": "cloud",
-            "password_hash": "$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1"
-        },
-        {
-            "id": 4,
-            "cn": "cyberaka",
-            "password_hash": "$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1"
-        },
-        {
-            "id": 5,
-            "cn": "dokuwiki",
-            "password_hash": "$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1"
-        },
-        {
-            "id": 999999999,
-            "cn": "test",
-            "password_hash": "$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1"
-        }
-    ],
-    "ldap.static_groups": []
+    "ml.log": []
 }

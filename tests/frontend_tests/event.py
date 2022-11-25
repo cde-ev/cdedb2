@@ -2522,6 +2522,101 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.submit(f, check_notification=False)
         # Here the active regex chars where successfully neutralised
 
+    @as_users("garcia")
+    def test_batch_fee_duplicate(self) -> None:
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/batchfees'})
+        self.assertTitle("Überweisungen eintragen (Große Testakademie 2222)")
+        f = self.response.forms['batchfeesform']
+        f['fee_data'] = """
+466.49;DB-5-1;Eventis;Emilia;01.04.18
+466.49;DB-5-1;Eventis;Emilia;02.04.18
+"""
+        self.submit(f, check_notification=False)
+        self.assertNonPresence("Zu viel Geld.", div="line0_warnings", check_div=False)
+        self.assertPresence("Mehrere Überweisungen für diese Person.",
+                            div="line1_warnings")
+        self.assertPresence("Zu viel Geld.", div="line1_warnings")
+
+        f['fee_data'] = """
+400;DB-5-1;Eventis;Emilia;01.04.18
+66.49;DB-5-1;Eventis;Emilia;02.04.18
+"""
+        self.submit(f, check_notification=False)
+        self.assertPresence("Nicht genug Geld.", div="line0_warnings")
+        self.assertNonPresence("Zu viel Geld.", div="line1_warnings")
+        self.assertPresence("Mehrere Überweisungen für diese Person.",
+                            div="line1_warnings")
+
+    @as_users("garcia")
+    def test_batch_fee_twice(self) -> None:
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/batchfees'})
+        self.assertTitle("Überweisungen eintragen (Große Testakademie 2222)")
+        f = self.response.forms['batchfeesform']
+        f['send_notifications'].checked = True
+        f['force'].checked = True
+        f['fee_data'] = """
+266.49;DB-5-1;Eventis;Emilia;01.04.18
+"""
+        self.submit(f, check_notification=False)
+        # submit again because of checksum
+        self.assertPresence("Bestätigen")
+        f = self.response.forms['batchfeesform']
+        self.submit(f, check_notification=False)
+        self.assertPresence("Bestätigen")
+        f = self.response.forms['batchfeesform']
+        self.submit(f)
+        for i in range(1):
+            text = self.fetch_mail_content(i)
+            self.assertIn("Überweisung für die Veranstaltung", text)
+            self.assertIn('"Große Testakademie 2222"', text)
+        self.traverse({'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/registration/query'},
+                      {'description': 'Alle Anmeldungen'},
+                      {'href': '/event/event/1/registration/2/show'})
+        self.assertTitle(
+            "Anmeldung von Emilia E. Eventis (Große Testakademie 2222)")
+        self.assertNonPresence("Bezahlt am 01.04.2018")
+        self.assertNonPresence("Bezahlt am 02.02.2014")
+        self.assertPresence("Bereits Bezahlt 266,49 €")
+
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/batchfees'})
+        self.assertTitle("Überweisungen eintragen (Große Testakademie 2222)")
+        f = self.response.forms['batchfeesform']
+        f['send_notifications'].checked = True
+        f['fee_data'] = """
+200.00;DB-5-1;Eventis;Emilia;02.04.18
+"""
+        self.submit(f, check_notification=False)
+        # submit again because of checksum
+        f = self.response.forms['batchfeesform']
+        self.submit(f, check_notification=False)
+        f = self.response.forms['batchfeesform']
+        self.submit(f)
+        for i in range(1):
+            text = self.fetch_mail_content(i)
+            self.assertIn("Überweisung für die Veranstaltung", text)
+            self.assertIn('"Große Testakademie 2222"', text)
+        self.traverse({'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/registration/query'},
+                      {'description': 'Alle Anmeldungen'},
+                      {'href': '/event/event/1/registration/2/show'})
+        self.assertTitle(
+            "Anmeldung von Emilia E. Eventis (Große Testakademie 2222)")
+        self.assertPresence("Bezahlt am 02.04.2018")
+        self.assertPresence("Bereits Bezahlt 466,49 €")
+        # Check log
+        self.traverse({'href': '/event/event/1/log'})
+        self.assertPresence("266,49 € am 01.04.2018 gezahlt.",
+                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
+        self.assertPresence("200,00 € am 02.04.2018 gezahlt.",
+                            div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
+
     @event_keeper
     @as_users("garcia")
     def test_registration_query(self) -> None:

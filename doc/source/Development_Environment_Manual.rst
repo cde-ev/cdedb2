@@ -16,11 +16,10 @@ Prerequisites
 
 We need some dependencies:
 
-* python (at least 3.8)
-* PostgreSQL (at least 9.4, for jsonb)
+* python (at least 3.9)
+* PostgreSQL (at least 13, for drop with force)
 * Apache (with mod_wsgi)
 * git
-* openldap
 * texlive (incl. luatex; for generating pdf documents)
 
 Further we depend on a number of python packages:
@@ -176,7 +175,7 @@ Last step before startup is compiling the GNU gettext .mo files for i18n::
 
   make i18n-compile
 
-Now, check if postgres, pgbouncer and slapd are running. Optionally you
+Now, check if postgres and pgbouncer are running. Optionally you
 can run the test suite first to see whether everything is ready::
 
   ./bin/check.py

@@ -2166,7 +2166,8 @@ EVENT_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'institution': ID,
     'description': Optional[str],
-    'shortname': ShortnameIdentifier,
+    # Event shortnames do not actually need to be that short.
+    'shortname': Identifier,
 }
 
 EVENT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
@@ -4022,7 +4023,8 @@ def _subscription_address(
 
 ASSEMBLY_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
-    'shortname': ShortnameIdentifier,
+    # Assembly shortnames do not actually need to be that short.
+    'shortname': Identifier,
     'description': Optional[str],
     'signup_end': datetime.datetime,
     'notes': Optional[str],
@@ -4298,7 +4300,14 @@ def _vote(
             n_("Must specify ballot in order to validate vote.")))
         raise errs
 
-    entries = {candidate for level in as_vote_tuple(val) for candidate in level}
+    # First check for duplicates
+    raw_entries = as_vote_tuple(val)
+    # TODO: Implement `as_vote_list` into schulze_condorcet
+    all_entries = list(itertools.chain.from_iterable(raw_entries))
+    if len(all_entries) > len(set(all_entries)):
+        errs.append(ValueError(argname, n_("Duplicate candidates.")))
+
+    entries = {candidate for level in raw_entries for candidate in level}
     reference = set(e['shortname'] for e in ballot['candidates'].values())
     if ballot['use_bar'] or ballot['votes']:
         reference.add(ASSEMBLY_BAR_SHORTNAME)

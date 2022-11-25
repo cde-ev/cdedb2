@@ -42,10 +42,6 @@ i18n/*/LC_MESSAGES/cdedb.mo
 i18n/*/LC_MESSAGES/cdedb.spellcheck
 messages.mo
 
-# local ldap config files
-ldap/cdedb-ldap-applied.ldif
-ldap/output/
-
 # virtual environment
 .venv
 

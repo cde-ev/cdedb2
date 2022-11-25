@@ -149,7 +149,7 @@
         </p>
         <pre>{{ result_hash }}</pre>
 
-
+{% if preferential %}
     <h2 class="mosp">{% trans %}Cross Table of Preferences{% endtrans %}</h2>
 
     <p>
@@ -190,6 +190,7 @@
             {% endfor %}
         </tbody>
     </table>
+{% endif %}
 
 
     <h2 class="mosp">{% trans %}Votes{% endtrans %}</h2>

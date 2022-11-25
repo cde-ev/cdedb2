@@ -29,8 +29,6 @@ sort_table_by = {
 ignored_tables = {
     "core.sessions",
     "core.quota",
-    "ldap.organizations",
-    "ldap.static_groups",
 }
 
 # mark some columns which shall not be filled with information extracted from the
@@ -83,12 +81,6 @@ def sql2json(config: Config, secrets: SecretsConfig) -> Dict[str, List[Dict[str,
         tables = [
             table.group('name')
             for table in re.finditer(r'CREATE TABLE\s(?P<name>\w+\.\w+)', f.read())]
-
-    # extract the ldap tables from the separate file
-    with open("/cdedb2/cdedb/database/cdedb-ldap.sql", "r") as f:
-        tables.extend(
-            [table.group('name')
-             for table in re.finditer(r'CREATE TABLE\s(?P<name>\w+\.\w+)', f.read())])
 
     # take care that the order is preserved
     full_sample_data = dict()

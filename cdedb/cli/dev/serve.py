@@ -1,5 +1,6 @@
 """Interactive werkzeug debugger for the CdEDB2 application."""
 
+import pathlib
 import subprocess
 
 from werkzeug.serving import run_simple
@@ -11,10 +12,12 @@ from cdedb.frontend.application import Application
 def serve_debugger() -> None:
     """Serve the cdedb using the werkzeug development server"""
 
-    subprocess.run(["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL)
+    conf = Config()
+    repo_path: pathlib.Path = conf["REPOSITORY_PATH"]
+    subprocess.run(["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL,
+                   cwd=repo_path)
 
     application = Application()
-    conf = Config()
     i18n_files = (conf["REPOSITORY_PATH"] / "i18n" / lang / "LC_MESSAGES" / "cdedb.po"
                   for lang in application.conf["I18N_LANGUAGES"])
     run_simple(
