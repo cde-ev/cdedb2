@@ -6,7 +6,7 @@ from typing import Callable
 
 from playwright.sync_api import Page, expect, sync_playwright
 
-from tests.common import BrowserTest, storage
+from tests.common import BrowserTest, event_keeper, storage
 
 
 def make_page(*args, headless: bool = True,  # type: ignore[no-untyped-def]
@@ -117,3 +117,57 @@ class TestBrowser(BrowserTest):
 
         expect(page.locator("#content--admin-notes")).to_have_text(
             ("War früher mal berühmt, hat deswegen ihren Nachnamen geändert."))
+
+    @event_keeper
+    @make_page
+    def test_js_dynamicrow(self, page: Page) -> None:
+        """Configure custom event fields.
+
+        Test addition and deletion and deletion of a not-yet-added field.
+        """
+        page.goto("http://localhost:5000/")
+        page.get_by_label("E-Mail").fill("anton@example.cde")
+        page.get_by_label("Passwort").fill("secret")
+        page.get_by_role("button", name="Anmelden").click()
+        page.wait_for_url("http://localhost:5000/")
+
+        page.get_by_role("link", name="Veranstaltungen").click()
+        page.wait_for_url("http://localhost:5000/event/")
+        page.get_by_role("link", name="Große Testakademie 2222").click()
+        page.wait_for_url("http://localhost:5000/event/event/1/show")
+        page.get_by_role("button", name="Orga-Schaltflächen").click()
+        page.wait_for_url("http://localhost:5000/event/event/1/show")
+        page.get_by_role("link", name="Datenfelder konfigurieren").click()
+        page.wait_for_url("http://localhost:5000/event/event/1/field/summary")
+
+        page.get_by_role("button", name="Feld hinzufügen").click()
+        page.locator('input[name="title_-1"]').click()
+        page.locator('input[name="title_-1"]').fill("Favorit")
+        page.locator('input[name="field_name_-1"]').click()
+        page.locator('input[name="field_name_-1"]').fill("favorit")
+
+        page.locator("#dynamicrow-delete-button-0").click()
+
+        page.get_by_role("button", name="Feld hinzufügen").click()
+        page.locator('input[name="title_-2"]').click()
+        page.locator('input[name="title_-2"]').fill("Lieblingsheld")
+        page.locator('input[name="field_name_-2"]').click()
+        page.locator('input[name="field_name_-2"]').fill("held")
+
+        page.locator("#dynamicrow-delete-button-8").click()
+
+        page.get_by_role("button", name="Speichern").click()
+        page.wait_for_url("http://localhost:5000/event/event/1/field/summary")
+
+        expect(page.locator('input[name="title_1001"]')).to_have_value('Lieblingsheld')
+        expect(page.locator('input[name="field_name_1001"]')).to_have_value('held')
+        expect(page.locator('#content')).not_to_contain_text('Favorit')
+        expect(page.locator('#content')).not_to_contain_text('favorit')
+        expect(page.locator('#content')).not_to_contain_text('Anzahl Großbuchstaben')
+        expect(page.locator('#content')).not_to_contain_text('anzahl_GROSSBUCHSTABEN')
+
+
+
+
+
+

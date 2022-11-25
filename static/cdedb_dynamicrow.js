@@ -23,6 +23,7 @@
             callback : function () {},
             delButtonTitle: "delete row",
         }, options || {});
+        var unique_counter = 0;
 
 
         /**
@@ -38,8 +39,10 @@
                                                  'title': settings.delButtonTitle,
                                                  'aria-label': settings.delButtonTitle,
                                                  'aria-pressed': 'false',
-                                                 'class': 'btn btn-danger btn-sm' })
+                                                 'class': 'btn btn-danger btn-sm',
+                                                 'id': 'dynamicrow-delete-button-' + unique_counter})
                     .append($('<span></span>', {'class': 'fas fa-trash-alt'}));
+            unique_counter += 1;
 
             if (newrow) {
                 $deleteButton.click(function() {
