@@ -166,7 +166,6 @@ class TestBrowser(BrowserTest):
         expect(page.locator('#content')).not_to_contain_text('Anzahl Großbuchstaben')
         expect(page.locator('#content')).not_to_contain_text('anzahl_GROSSBUCHSTABEN')
 
-
     @make_page
     def test_js_user_management_search(self, page: Page) -> None:
         """Search for members via the admin user search in the member area.
