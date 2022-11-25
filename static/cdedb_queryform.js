@@ -61,6 +61,7 @@
         var $viewFieldList = $element.find('.viewfield-list');
         /** The jQueryDOM object of the container for sort rows */
         var $sortFieldList = $element.find('.sortfield-list');
+        var unique_counter = 0;
 
         /* Scan form rows and initialize field list */
         $element.find('.query_field').each(function() {
@@ -204,12 +205,14 @@
 
             var $item = $('<li></li>',{
                 'class':"list-group-item queryform-filterbox" + (f.error ? " has-error": ""),
-                'data-id': number
+                'data-id': number,
+                'id': 'qf-filter-row-' + unique_counter
             })
                 .append(f.name).append('&ensp;')
                 .append($opselector).append('&ensp;')
                 .append($fieldbox)
                 .append($button);
+            unique_counter += 1;
             if (f.error)
                 $item.append($('<div></div>',{'class':'help-block'}).html(f.error));
 
@@ -412,9 +415,13 @@
                     $(this).parent().detach();
                     obj.refreshViewFieldSelect();
                 });
-            var $box = $('<span></span>',{'class':'queryform-fieldbox', 'data-id':number})
+            var $box = $('<span></span>',
+                         {'class':'queryform-fieldbox',
+                          'data-id':number,
+                          'id': 'qf-view-row-' + unique_counter})
                     .text(f.name)
                     .append($button);
+            unique_counter += 1;
 
             $viewFieldList.append($box);
         };
@@ -459,11 +466,15 @@
                 .change(function() {
                     obj.updateSortInputs();
                 });
-            var $item = $('<li></li>',{'class':"list-group-item queryform-filterbox",'data-id':number})
+            var $item = $('<li></li>',
+                          {'class':"list-group-item queryform-filterbox",
+                           'data-id':number,
+                           'id': 'qf-sort-row-' + unique_counter})
                     .append($('<span></span>',{'class':'num label label-default'})).append('&ensp;')
                     .append(f.name).append('&ensp;')
                     .append($sortselector).append('&ensp;')
                     .append($button);
+            unique_counter += 1;
 
             $sortFieldList.append($item);
         };

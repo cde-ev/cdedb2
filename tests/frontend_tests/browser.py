@@ -113,7 +113,7 @@ class TestBrowser(BrowserTest):
         page.locator(".selectize-input").click()
         page.get_by_placeholder("CdEDB-ID, Name oder E-Mail").type("emi")
         page.get_by_text("Emilia E. EventisDB-5-1 • emilia@example.cde").click()
-        page.wait_for_url("http://localhost:5000/core/persona/5/show?**")
+        page.wait_for_url("http://localhost:5000/core/persona/5/show?*")
 
         expect(page.locator("#content--admin-notes")).to_have_text(
             ("War früher mal berühmt, hat deswegen ihren Nachnamen geändert."))
@@ -167,7 +167,48 @@ class TestBrowser(BrowserTest):
         expect(page.locator('#content')).not_to_contain_text('anzahl_GROSSBUCHSTABEN')
 
 
+    @make_page
+    def test_js_user_management_search(self, page: Page) -> None:
+        """Search for members via the admin user search in the member area.
 
+        Also try for deletion of some elements.
+        """
+        page.goto("http://localhost:5000/")
+        page.get_by_label("E-Mail").fill("anton@example.cde")
+        page.get_by_label("Passwort").fill("secret")
+        page.get_by_role("button", name="Anmelden").click()
+        page.wait_for_url("http://localhost:5000/")
 
+        page.get_by_role("link", name="Mitglieder").click()
+        page.wait_for_url("http://localhost:5000/cde/")
+        page.get_by_role("button", name="Benutzer-Administration").click()
+        page.wait_for_url("http://localhost:5000/cde/")
+        page.get_by_role("link", name="Nutzer verwalten").click()
+        page.wait_for_url("http://localhost:5000/cde/search/user")
 
+        page.get_by_placeholder("– Filter hinzufügen –").click()
+        page.locator(".selectize-input").first.click()
 
+        page.locator("#tab_qf_js").get_by_text("Vorname(n)").first.click()
+        page.get_by_role("textbox", name="Vergleichswert").click()
+        page.get_by_role("textbox", name="Vergleichswert").fill("o")
+        page.locator(".selectize-input").first.click()
+        page.locator("#tab_qf_js").get_by_text("Namenszusatz").click()
+        page.locator("li:has-text(\"Namenszusatz passt zu\")").get_by_role(
+            "button", name="").click()
+        page.locator(".col-sm-6 > .input-group > .selectize-control"
+                     " > .selectize-input").first.click()
+        page.locator("#tab_qf_js").get_by_text("Geschlecht").nth(1).click()
+        page.locator("span:has-text(\"Nachname\")").get_by_role(
+            "button", name="").click()
+        page.locator(".row > div:nth-child(2) > .input-group > .selectize-control"
+                     " > .selectize-input").click()
+        page.locator("#tab_qf_js").get_by_text("E-Mail").nth(2).click()
+        page.get_by_role("button", name="Suche").click()
+
+        page.wait_for_url("http://localhost:5000/cde/search/user?*")
+
+        expect(page.locator('#content')).to_contain_text('Ergebnis [4]')
+        expect(page.locator('#content')).to_contain_text('olaf@example.cde')
+        expect(page.locator('#content')).to_contain_text('männlich')
+        expect(page.locator('#content')).not_to_contain_text('Olafson')
