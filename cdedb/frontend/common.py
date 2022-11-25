@@ -1126,7 +1126,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         log_filter = check_validation(
             rs, table.get_filter_class(), filter_params, log_table=table)
         if rs.has_validation_errors() or log_filter is None:
-            log_filter = check_validation(rs, LogFilter, {}, log_table=table)
+            log_filter = check_validation(
+                rs, table.get_filter_class(), {}, log_table=table)
             rs.ignore_validation_errors()
             assert log_filter is not None
 
