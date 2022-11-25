@@ -1628,6 +1628,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         # test if the overall result is displayed correctly
         self.assertPresence("C > B = A = #", div='combined-preference', exact=True)
 
+        # test absence of pairwise preference table
+        self.assertNonPresence("Paarweise-Präferenz-Tabelle")
+
         # test if the sorting of the single votes is correct
         self.assertPresence("C 3", div='vote-1', exact=True)
         self.assertPresence("B 1", div='vote-2', exact=True)
@@ -1654,6 +1657,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         # test if the overall result is displayed correctly
         self.assertPresence("A > B", div='combined-preference', exact=True)
 
+        # test absence of pairwise preference table
+        self.assertNonPresence("Paarweise-Präferenz-Tabelle")
+
         # test if abstentions are rendered correctly
         self.assertPresence("A 3", div='vote-1', exact=True)
         self.assertPresence("B 2", div='vote-2', exact=True)
@@ -1674,6 +1680,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
 
         # test if the overall result is displayed correctly
         self.assertPresence("C = A > B", div='combined-preference', exact=True)
+
+        # test presence of pairwise preference table
+        self.assertPresence("Paarweise-Präferenz-Tabelle")
 
         # test votes
         self.assertPresence("A > B = C 3", div='vote-1', exact=True)
@@ -1700,6 +1709,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
 
         # test if the overall result is displayed correctly
         self.assertPresence("C > B = D > # > A", div='combined-preference', exact=True)
+
+        # test presence of pairwise preference table
+        self.assertPresence("Paarweise-Präferenz-Tabelle")
 
         # test votes
         self.assertPresence("C > B = D > # > A 1", div="vote-1", exact=True)
