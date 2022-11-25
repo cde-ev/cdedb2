@@ -4301,6 +4301,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.submit(f)
         self.assertTitle("Checkin (CyberTestAkademie)")
         self.assertNotIn('checkinform7', self.response.forms)
+        # Check that checkin did not break registration editing.
+        self.get('/event/event/3/registration/7/change')
+        f = self.response.forms['changeregistrationform']
+        self.submit(f)
         # Check log
         self.traverse({'href': '/event/event/3/log'})
         self.assertPresence("Eingecheckt.", div="1-1003")
