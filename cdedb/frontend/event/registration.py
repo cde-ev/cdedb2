@@ -400,7 +400,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         if orga_input:
             standard_params.update({
                 "reg.amount_paid": vtypes.NonNegativeDecimal,
-                "reg.checkin": bool,
+                "reg.checkin": Optional[datetime.datetime],
                 "reg.orga_notes": Optional[str],  # type: ignore[dict-item]
                 "reg.parental_agreement": bool,
                 "reg.payment": Optional[datetime.date],  # type: ignore[dict-item]
