@@ -212,7 +212,6 @@ class TestBrowser(BrowserTest):
         expect(page.locator('#content')).to_contain_text('männlich')
         expect(page.locator('#content')).not_to_contain_text('Olafson')
 
-
     @make_page
     def test_js_registration_search(self, page: Page) -> None:
         """Search for registrations of an event.
