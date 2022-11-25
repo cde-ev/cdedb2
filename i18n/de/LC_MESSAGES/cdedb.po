@@ -17392,5 +17392,8 @@ msgstr "Kann aus {} keinen ml_type bestimmen"
 msgid "%(ml_type)s is not an appropriate type for this mailinglist."
 msgstr "%(ml_type)s ist kein geeigneter Typ für diese Mailingliste."
 
+msgid "Multiple transfers for this user."
+msgstr "Mehrere Überweisungen für diese Person."
+
 msgid "Unknown email address."
 msgstr "Unbekannte E-Mail-Adresse."
