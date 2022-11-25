@@ -117,6 +117,7 @@ which is generated from the name set in the ``docker-compose.yaml`` file
 and the parent folder of that file.
 
 The volumes used should therefore be named:
+
 * ``docker_cert``: Stores the dynamic self-signed certificate for apache.
 * ``docker_config``: Stores the config and secret-config files.
 * ``docker_database``: Attached to the postgres container and stores the database.
