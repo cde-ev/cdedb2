@@ -28,7 +28,8 @@ from cdedb.common import AbstractBackend, PathLike, RequestState, make_proxy
 from cdedb.common.n_ import n_
 from cdedb.config import Config, SecretsConfig, get_configpath, set_configpath
 from cdedb.database.connection import Atomizer, IrradiatedConnection
-from cdedb.frontend.common import setup_translations
+from cdedb.frontend.common import AbstractFrontend, setup_translations
+from cdedb.frontend.paths import CDEDB_PATHS
 
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
@@ -112,6 +113,13 @@ class Script:
         "assembly": "AssemblyBackend",
         "event": "EventBackend",
     }
+    frontend_map = {
+        "core": "CoreFrontend",
+        "cde": "CdEFrontend",
+        "ml": "MlFrontend",
+        "assembly": "AssemblyFrontend",
+        "event": "EventFrontend",
+    }
 
     def __init__(self, *, persona_id: int = None, dry_run: bool = None,
                  dbuser: str = 'cdb_anonymous', dbname: str = 'cdb',
@@ -178,8 +186,10 @@ class Script:
             self._secrets = SecretsConfig()
         self._translations: Optional[Mapping[str, gettext.NullTranslations]]
         self._backends: Dict[Tuple[str, bool], AbstractBackend]
+        self._frontends: Dict[str, AbstractFrontend]
         self._translations = None
         self._backends = {}
+        self._frontends = {}
         self._request_states: Dict[int, RequestState] = {}
         self._connect(dbuser, dbname, cursor)
 
@@ -214,6 +224,16 @@ class Script:
         })
         return self._backends[(realm, proxy)]
 
+    def make_frontend(self, realm: str):  # type: ignore[no-untyped-def]
+        """Create a frontend."""
+        if ret := self._frontends.get(realm):
+            return ret
+        with self._tempconfig:
+            frontend_name = self.frontend_map[realm]
+            frontend = resolve_name(f"cdedb.frontend.{realm}.{frontend_name}")()
+        self._frontends[realm] = frontend
+        return frontend
+
     def rs(self, persona_id: int = None) -> RequestState:
         """Create a RequestState."""
         persona_id = self.persona_id if persona_id is None else persona_id
@@ -221,7 +241,8 @@ class Script:
             return ret
         if self._translations is None:
             self._translations = setup_translations(self.config)
-        rs = fake_rs(self._conn, persona_id)
+        urls = CDEDB_PATHS.bind("db.cde-ev.de", script_name="/db/", url_scheme="https")
+        rs = fake_rs(self._conn, persona_id, urls=urls)
         self._request_states[persona_id] = rs
         return rs
 

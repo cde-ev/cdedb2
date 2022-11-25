@@ -199,19 +199,13 @@ def run_ldap_tests(testpatterns: List[str] = None, *, verbose: bool = False) -> 
             if attempt == max_attempts - 1:
                 raise TimeoutError("LDAP server took too long for startup.")
 
-        # update the current ldap setting
-        # note that this takes no changes of the base ldap setup into account,
-        # since this would need to reinstall slapd to work.
-        # subprocess.run(
-        #     ["make", "ldap-update-full", f"DATABASE_NAME={conf['CDB_DATABASE_NAME']}"],
-        #     check=True, stdout=subprocess.DEVNULL)
-
     test_suite = _load_tests(testpatterns, [ldap_tests])
 
     unittest.installHandler()
     test_runner = MyTextTestRunner(verbosity=(2 if verbose else 1),
                                    resultclass=MyTextTestResult, descriptions=False)
     ran_tests = test_runner.run(test_suite)
+    stop_services("cde-ldap-test")
     return 0 if ran_tests.wasSuccessful() else 1
 
 

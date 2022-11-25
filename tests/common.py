@@ -422,7 +422,15 @@ class BackendTest(CdEDBTest):
             self.user = USER_DICT["anonymous"]
         return self.key  # type: ignore[return-value]
 
-    def logout(self) -> None:
+    def logout(self, *, allow_anonymous: bool = False) -> None:
+        """Log out.
+
+        :param allow_anonymous: If False, this will throw an error if the current user
+            is anonymous..
+        """
+        if self.user_in("anonymous"):
+            if not allow_anonymous:
+                raise self.failureException("Already logged out.")
         self.core.logout(self.key)
         self.key = ANONYMOUS
         self.user = USER_DICT["anonymous"]
@@ -431,7 +439,7 @@ class BackendTest(CdEDBTest):
     def switch_user(self, new_user: UserIdentifier) -> Generator[None, None, None]:
         """This method can be used as a context manager to temporarily switch users."""
         old_user = self.user
-        self.logout()
+        self.logout(allow_anonymous=True)
         self.login(new_user)
         yield
         self.logout()
@@ -1042,13 +1050,19 @@ class FrontendTest(BackendTest):
             self.user = USER_DICT["anonymous"]
         return self.key  # type: ignore[return-value]
 
-    def logout(self, verbose: bool = False) -> None:  # pylint: disable=arguments-differ
-        """Log out. Raises a KeyError if not currently logged in.
+    def logout(self, verbose: bool = False, *, allow_anonymous: bool = False) -> None:  # pylint: disable=arguments-differ
+        """Log out.
 
         :param verbose: If True display additional debug information.
+        :param allow_anonymous: If False, this will throw an error if the current user
+            is anonymous..
         """
-        f = self.response.forms['logoutform']
-        self.submit(f, check_notification=False, verbose=verbose)
+        if self.user_in("anonymous"):
+            if not allow_anonymous:
+                raise self.failureException("Already logged out.")
+        else:
+            f = self.response.forms['logoutform']
+            self.submit(f, check_notification=False, verbose=verbose)
         self.key = ANONYMOUS
         self.user = USER_DICT["anonymous"]
 

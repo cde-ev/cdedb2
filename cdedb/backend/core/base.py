@@ -2371,9 +2371,11 @@ class CoreBaseBackend(AbstractBackend):
             raise ValueError(n_("No input provided."))
         elif email and persona_id:
             raise ValueError(n_("More than one input provided."))
-        if email:
+        elif email:
             persona_id = unwrap(self.sql_select_one(
                 rs, "core.personas", ("id",), email, entity_key="username"))
+            if persona_id is None:
+                raise ValueError(n_("Unknown email address."))
         assert persona_id is not None
 
         columns_of_interest = [

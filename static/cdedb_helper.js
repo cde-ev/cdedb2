@@ -348,6 +348,7 @@
                     $("#cdedb-modal-content").html(result);
                 }
             );
+            return false; // this prevents the browser from jumping to the top via <a href="#">
         });
         return this;
     };

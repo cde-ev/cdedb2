@@ -983,6 +983,27 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Link ist ungültig oder wurde bereits verwendet.",
                             div="notifications")
 
+    def test_password_reset_username_change(self) -> None:
+        new_password = "krce63koLe#$e"
+        user = USER_DICT['berta']
+        username = user['username']
+        self.get("/")
+        self.traverse("Passwort zurücksetzen")
+        f = self.response.forms['passwordresetform']
+        f['email'] = username
+        self.submit(f)
+        link = self.fetch_link()
+        with self.switch_user('vera'):
+            self.core.change_username(
+                self.key, user['id'], "new_username@example.cde", password=None)
+        self.get(link)
+        f = self.response.forms['passwordresetform']
+        f['new_password'] = f['new_password2'] = new_password
+        self.submit(f, check_notification=False)
+        self.assertPresence("Unbekannte E-Mail-Adresse", div="notifications")
+        with self.assertRaises(ValueError):
+            self.core.check_password_strength(self.key, new_password, email=username)
+
     def test_admin_reset_password(self) -> None:
         new_password = "krce63koLe#$e"
         self.setUp()
