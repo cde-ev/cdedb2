@@ -211,3 +211,55 @@ class TestBrowser(BrowserTest):
         expect(page.locator('#content')).to_contain_text('olaf@example.cde')
         expect(page.locator('#content')).to_contain_text('männlich')
         expect(page.locator('#content')).not_to_contain_text('Olafson')
+
+
+    @make_page
+    def test_js_registration_search(self, page: Page) -> None:
+        """Search for registrations of an event.
+
+        Also try for deletion of some elements of the search mask.
+        """
+        page.goto("http://localhost:5000/")
+        page.get_by_label("E-Mail").fill("anton@example.cde")
+        page.get_by_label("Passwort").fill("secret")
+        page.get_by_role("button", name="Anmelden").click()
+        page.wait_for_url("http://localhost:5000/")
+
+        page.get_by_role("link", name="Veranstaltungen").click()
+        page.wait_for_url("http://localhost:5000/event/")
+        page.get_by_role("link", name="Große Testakademie 2222").click()
+        page.wait_for_url("http://localhost:5000/event/event/1/show")
+        page.get_by_role("button", name="Orga-Schaltflächen").click()
+        page.wait_for_url("http://localhost:5000/event/event/1/show")
+        page.get_by_role("link", name="Anmeldungen").click()
+        page.wait_for_url("http://localhost:5000/event/event/1/registration/query")
+
+        page.locator("#tab_qf_js div:has-text(\"Filter hinzufügen\") div"
+                     ).nth(1).click()
+        page.locator("#tab_qf_js").get_by_text("Vorname(n)").first.click()
+        page.locator(".selectize-input").first.click()
+        page.locator("#tab_qf_js").get_by_text("Nachname").first.click()
+        page.locator("li:has-text(\"Nachname passt zu\")").get_by_role(
+            "textbox", name="Vergleichswert").click()
+        page.locator("li:has-text(\"Nachname passt zu\")").get_by_role(
+            "textbox", name="Vergleichswert").fill("e")
+        page.locator("li:has-text(\"Vorname(n) passt zu\")").get_by_role(
+            "button", name="").click()
+        page.locator(".col-sm-6 > .input-group > .selectize-control"
+                     " > .selectize-input").first.click()
+        page.locator("#tab_qf_js").get_by_text("brings_balls").nth(1).click()
+        page.locator("#tab_qf_js").get_by_text("Bereits bezahlter Betrag"
+                                               ).nth(1).click()
+        page.locator(".row > div:nth-child(2) > .input-group > .selectize-control"
+                     " > .selectize-input").click()
+        page.locator("#tab_qf_js").get_by_text("PLZ").nth(2).click()
+        page.locator("span:has-text(\"E-Mail\")").get_by_role(
+            "button", name="").click()
+        page.get_by_role("button", name="Suche").click()
+
+        page.wait_for_url("http://localhost:5000/event/event/1/registration/query?*")
+
+        expect(page.locator('#content')).to_contain_text('Ergebnis [3]')
+        expect(page.locator('#content')).to_contain_text('Emilia')
+        expect(page.locator('#content')).to_contain_text('0.00')
+        expect(page.locator('#content')).not_to_contain_text('emilia@example.cde')
