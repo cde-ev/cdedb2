@@ -92,7 +92,9 @@ from cdedb.common.query import (
     MULTI_VALUE_OPERATORS, NO_VALUE_OPERATORS, VALID_QUERY_OPERATORS, QueryOperators,
     QueryOrder, QueryScope, QuerySpec,
 )
-from cdedb.common.query.log_filter import LogFilter, LogTable
+from cdedb.common.query.log_filter import (
+    LogFilter, LogFilterChangelog, LogFilterEntityLog, LogFilterFinanceLog, LogTable,
+)
 from cdedb.common.roles import ADMIN_KEYS, extract_roles
 from cdedb.common.sorting import xsorted
 from cdedb.common.validation.data import (
@@ -4686,8 +4688,44 @@ def _range(
 def _log_filter(
     val: Any, argname: str = None, *, log_table: LogTable, **kwargs: Any
 ) -> LogFilter:
+    return _log_filter_common(
+        val, argname, log_table=log_table, filter_class=LogFilter)
 
-    if isinstance(val, LogFilter):
+
+@_add_typed_validator
+def _log_filter_changelog(
+    val: Any, argname: str = None, *, log_table: LogTable, **kwargs: Any
+) -> LogFilterChangelog:
+    return _log_filter_common(
+        val, argname, log_table=log_table, filter_class=LogFilterChangelog)
+
+
+@_add_typed_validator
+def _log_filter_entity_log(
+    val: Any, argname: str = None, *, log_table: LogTable, **kwargs: Any
+) -> LogFilterEntityLog:
+    return _log_filter_common(
+        val, argname, log_table=log_table, filter_class=LogFilterEntityLog)
+
+
+@_add_typed_validator
+def _log_filter_finance(
+    val: Any, argname: str = None, *, log_table: LogTable, **kwargs: Any
+) -> LogFilterFinanceLog:
+    return _log_filter_common(
+        val, argname, log_table=log_table, filter_class=LogFilterFinanceLog)
+
+
+LF = TypeVar("LF", bound=LogFilter)
+
+
+def _log_filter_common(
+    val: Any, argname: str = None,
+    *, log_table: LogTable, filter_class: Type[LF],
+    **kwargs: Any
+) -> LF:
+
+    if isinstance(val, filter_class):
         val_dict = val.__dict__
     else:
         val_dict = dict(_mapping(val, argname, **kwargs))
@@ -4699,9 +4737,10 @@ def _log_filter(
     # Ensure this is an enum member, not just a string.
     val_dict['table'] = LogTable(log_table)
 
-    val_dict = _examine_dictionary_fields(val_dict, {}, LogFilter.__annotations__)
+    val_dict = _examine_dictionary_fields(
+        val_dict, {}, typing.get_type_hints(filter_class))
 
-    return LogFilter(**val_dict)
+    return filter_class(**val_dict)
 
 
 E = TypeVar('E', bound=Enum)

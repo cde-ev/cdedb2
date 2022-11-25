@@ -83,7 +83,9 @@ from cdedb.common.i18n import format_country_code, get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query
 from cdedb.common.query.defaults import DEFAULT_QUERIES
-from cdedb.common.query.log_filter import LogFilter, LogTable
+from cdedb.common.query.log_filter import (
+    LogFilter, LogFilterChangelog, LogFilterEntityLog, LogFilterFinanceLog, LogTable,
+)
 from cdedb.common.roles import (
     ADMIN_KEYS, ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS, PERSONA_DEFAULTS,
     roles_to_db_role,
@@ -1121,7 +1123,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         """Generic helper to retrieve log data and render the result."""
         table = LogTable(table)
         # Convert filter params into LogFilter.
-        log_filter = check_validation(rs, LogFilter, filter_params, log_table=table)
+        log_filter = check_validation(
+            rs, table.get_filter_class(), filter_params, log_table=table)
         if rs.has_validation_errors() or log_filter is None:
             log_filter = check_validation(rs, LogFilter, {}, log_table=table)
             rs.ignore_validation_errors()
@@ -1131,18 +1134,24 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if table == LogTable.core_log:
             total, log = self.coreproxy.retrieve_log(rs, log_filter)
         elif table == LogTable.core_changelog:
+            assert isinstance(log_filter, LogFilterChangelog)
             total, log = self.coreproxy.retrieve_changelog_meta(rs, log_filter)
         elif table == LogTable.cde_finance_log:
+            assert isinstance(log_filter, LogFilterFinanceLog)
             total, log = self.cdeproxy.retrieve_finance_log(rs, log_filter)
         elif table == LogTable.cde_log:
             total, log = self.cdeproxy.retrieve_cde_log(rs, log_filter)
         elif table == LogTable.past_event_log:
+            assert isinstance(log_filter, LogFilterEntityLog)
             total, log = self.pasteventproxy.retrieve_past_log(rs, log_filter)
         elif table == LogTable.event_log:
+            assert isinstance(log_filter, LogFilterEntityLog)
             total, log = self.eventproxy.retrieve_log(rs, log_filter)
         elif table == LogTable.assembly_log:
+            assert isinstance(log_filter, LogFilterEntityLog)
             total, log = self.assemblyproxy.retrieve_log(rs, log_filter)
         elif table == LogTable.ml_log:
+            assert isinstance(log_filter, LogFilterEntityLog)
             total, log = self.mlproxy.retrieve_log(rs, log_filter)
         else:
             raise RuntimeError(n_("Impossible."))

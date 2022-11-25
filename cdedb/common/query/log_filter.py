@@ -19,7 +19,10 @@ _DEFAULT_LOG_COLUMNS = (
 
 # Use this TypeAlias where both a LogFilter and a dict, that can be turned into a
 # LogFilter by validation is acceptable.
-LogFilterAnnotation = Union["LogFilter", CdEDBObject]
+LogFilterLike = Union["LogFilter", CdEDBObject]
+LogFilterChangelogLike = Union["LogFilterChangelog", CdEDBObject]
+LogFilterEntityLogLike = Union["LogFilterEntityLog", CdEDBObject]
+LogFilterFinanceLike = Union["LogFilterFinanceLog", CdEDBObject]
 
 
 class LogTable(enum.Enum):
@@ -60,6 +63,17 @@ class LogTable(enum.Enum):
             self.assembly_log: ("assembly_id",),
         }.get(cast(str, self), ())
 
+    def get_filter_class(self) -> "Type[LogFilter]":
+        """Map log tables to appropriate filter class."""
+        return {
+            self.core_changelog: LogFilterChangelog,
+            self.assembly_log: LogFilterEntityLog,
+            self.event_log: LogFilterEntityLog,
+            self.past_event_log: LogFilterEntityLog,
+            self.ml_log: LogFilterEntityLog,
+            self.cde_finance_log: LogFilterFinanceLog,
+        }.get(cast(str, self), LogFilter)
+
 
 # Some Types for storing range filters. Basically just two-element tuples of a common
 # (optional) type.
@@ -75,7 +89,7 @@ OptionalIntRange = typing.NamedTuple("OptionalIntRange", [
 ])
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass
 class LogFilter:
     """Dataclass to validate, pass and process filter parameters for querying a log.
 
@@ -86,11 +100,13 @@ class LogFilter:
     """
     # The log that is being retrieved.
     table: LogTable
+
     # Pagination parameters.
     offset: Optional[int] = None
     _offset: Optional[int] = dataclasses.field(default=None)  # Unmodified offset.
     length: int = 0  # Set default in post_init.
     _length: int = dataclasses.field(default=0)  # Unmodified length.
+
     # Generic attributes available for all logs.
     codes: list[int] = dataclasses.field(default_factory=list)
     persona_id: Optional[int] = None
@@ -98,16 +114,6 @@ class LogFilter:
     change_note: Optional[str] = None
     ctime: tuple[Optional[datetime.datetime],
                  Optional[datetime.datetime]] = (None, None)
-    # changelog only
-    reviewed_by: Optional[int] = None
-    # event and ml only
-    entity_ids: list[int] = dataclasses.field(default_factory=list)
-    # finance only
-    delta: tuple[Optional[decimal.Decimal], Optional[decimal.Decimal]] = (None, None)
-    new_balance: tuple[Optional[decimal.Decimal],
-                       Optional[decimal.Decimal]] = (None, None)
-    total: tuple[Optional[decimal.Decimal], Optional[decimal.Decimal]] = (None, None)
-    members: tuple[Optional[int], Optional[int]] = (None, None)
 
     def __post_init__(self) -> None:
         """Do a little processing on the data.
@@ -115,22 +121,22 @@ class LogFilter:
          Use setattr workaround because of frozen dataclass.
          """
         if not self.length:
-            object.__setattr__(self, 'length', _CONFIG['DEFAULT_LOG_LENGTH'])
+            self.length = _CONFIG['DEFAULT_LOG_LENGTH']
         # Remember original length and offset for pagination.
-        object.__setattr__(self, '_length', self.length)
-        object.__setattr__(self, '_offset', self.offset)
+        self._length = self.length
+        self._offset = self.offset
         # Fix offset and length to ensure valid SQL.
         if self.offset and self.offset < 0:
             # Avoid non-positive lengths
             if -self.offset < self.length:
-                object.__setattr__(self, 'length', self.length + self.offset)
-            object.__setattr__(self, 'offset', 0)
+                self.length = self.length + self.offset
+            self.offset = 0
 
     def get(self, name: str, default: Any) -> Any:
         """Emulate dict access."""
         return self.__dict__.get(name, default)
 
-    def to_sql_condition(self) -> tuple[str, tuple[DatabaseValue_s, ...]]:
+    def _get_sql_conditions(self) -> tuple[list[str], list[DatabaseValue_s]]:
         """Create a SQL condition string from parameters.
 
         The condition string is empty if there is no filter condition. Otherwise it
@@ -161,12 +167,43 @@ class LogFilter:
                 conditions.append("ctime <= %s")
                 params.append(ctime_to)
 
+        return conditions, params
+
+    def to_sql_condition(self) -> tuple[str, tuple[DatabaseValue_s, ...]]:
+        conditions, params = self._get_sql_conditions()
+        return f"WHERE {' AND '.join(conditions)}" if conditions else "", tuple(params)
+
+    def get_columns(self) -> str:
+        """Get a comma-separated list of columns to select from the log table."""
+        return ", ".join(_DEFAULT_LOG_COLUMNS + self.table.get_additional_columns())
+
+
+@dataclasses.dataclass
+class LogFilterChangelog(LogFilter):
+    # changelog only
+    reviewed_by: Optional[int] = None
+
+    def _get_sql_conditions(self) -> tuple[list[str], list[DatabaseValue_s]]:
+        conditions, params = super()._get_sql_conditions()
+
         # Special column for core.changelog
         if self.table == LogTable.core_changelog:
             if self.reviewed_by:
                 conditions.append("reviewed_by = %s")
                 params.append(self.reviewed_by)
-        elif self.table == LogTable.assembly_log:
+
+        return conditions, params
+
+
+@dataclasses.dataclass
+class LogFilterEntityLog(LogFilter):
+    # assembly, event, past_event, ml
+    entity_ids: list[int] = dataclasses.field(default_factory=list)
+
+    def _get_sql_conditions(self) -> tuple[list[str], list[DatabaseValue_s]]:
+        conditions, params = super()._get_sql_conditions()
+
+        if self.table == LogTable.assembly_log:
             if self.entity_ids:
                 conditions.append("assembly_id = ANY(%s)")
                 params.append(self.entity_ids)
@@ -182,7 +219,23 @@ class LogFilter:
             if self.entity_ids:
                 conditions.append("pevent_id = ANY(%s)")
                 params.append(self.entity_ids)
-        elif self.table == LogTable.cde_finance_log:
+
+        return conditions, params
+
+
+@dataclasses.dataclass
+class LogFilterFinanceLog(LogFilter):
+    # finance only
+    delta: tuple[Optional[decimal.Decimal], Optional[decimal.Decimal]] = (None, None)
+    new_balance: tuple[Optional[decimal.Decimal],
+                       Optional[decimal.Decimal]] = (None, None)
+    total: tuple[Optional[decimal.Decimal], Optional[decimal.Decimal]] = (None, None)
+    members: tuple[Optional[int], Optional[int]] = (None, None)
+
+    def _get_sql_conditions(self) -> tuple[list[str], list[DatabaseValue_s]]:
+        conditions, params = super()._get_sql_conditions()
+
+        if self.table == LogTable.cde_finance_log:
             if self.delta:
                 delta_from, delta_to = self.delta
                 if delta_from:
@@ -216,8 +269,4 @@ class LogFilter:
                     conditions.append("members <= %s")
                     params.append(members_to)
 
-        return f"WHERE {' AND '.join(conditions)}" if conditions else "", tuple(params)
-
-    def get_columns(self) -> str:
-        """Get a comma-separated list of columns to select from the log table."""
-        return ", ".join(_DEFAULT_LOG_COLUMNS + self.table.get_additional_columns())
+        return conditions, params

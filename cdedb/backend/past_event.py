@@ -25,7 +25,7 @@ from cdedb.common.fields import (
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryScope
-from cdedb.common.query.log_filter import LogFilterAnnotation
+from cdedb.common.query.log_filter import LogFilterEntityLogLike
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 
@@ -107,7 +107,7 @@ class PastEventBackend(AbstractBackend):
         return self.sql_insert(rs, "past_event.log", data)
 
     @access("cde_admin", "event_admin", "auditor")
-    def retrieve_past_log(self, rs: RequestState, log_filter: LogFilterAnnotation
+    def retrieve_past_log(self, rs: RequestState, log_filter: LogFilterEntityLogLike
                           ) -> CdEDBLog:
         """Get recorded activity for concluded events.
 

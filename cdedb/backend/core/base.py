@@ -42,7 +42,7 @@ from cdedb.common.fields import (
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
-from cdedb.common.query.log_filter import LogFilterAnnotation
+from cdedb.common.query.log_filter import LogFilterChangelogLike, LogFilterLike
 from cdedb.common.roles import (
     ADMIN_KEYS, ALL_ROLES, REALM_ADMINS, extract_roles, privilege_tier,
 )
@@ -252,7 +252,7 @@ class CoreBaseBackend(AbstractBackend):
             return self.sql_insert(rs, "cde.finance_log", data)
 
     @access("core_admin", "auditor")
-    def retrieve_log(self, rs: RequestState, log_filter: LogFilterAnnotation
+    def retrieve_log(self, rs: RequestState, log_filter: LogFilterLike
                      ) -> CdEDBLog:
         """Get recorded activity.
 
@@ -262,7 +262,7 @@ class CoreBaseBackend(AbstractBackend):
         return self.generic_retrieve_log(rs, log_filter, "core.log")
 
     @access("core_admin", "auditor")
-    def retrieve_changelog_meta(self, rs: RequestState, log_filter: LogFilterAnnotation
+    def retrieve_changelog_meta(self, rs: RequestState, log_filter: LogFilterChangelogLike
                                 ) -> CdEDBLog:
         """Get changelog activity.
 

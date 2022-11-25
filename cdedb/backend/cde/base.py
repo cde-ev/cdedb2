@@ -33,7 +33,7 @@ from cdedb.common import (
 from cdedb.common.exceptions import PrivilegeError, QuotaException
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
-from cdedb.common.query.log_filter import LogFilterAnnotation
+from cdedb.common.query.log_filter import LogFilterFinanceLike, LogFilterLike
 from cdedb.common.roles import implying_realms
 from cdedb.common.validation import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS, is_optional,
@@ -79,7 +79,7 @@ class CdEBaseBackend(AbstractBackend):
         return self.sql_insert(rs, "cde.log", data)
 
     @access("cde_admin", "auditor")
-    def retrieve_cde_log(self, rs: RequestState, log_filter: LogFilterAnnotation
+    def retrieve_cde_log(self, rs: RequestState, log_filter: LogFilterLike
                          ) -> CdEDBLog:
         """Get recorded activity.
 
@@ -89,7 +89,7 @@ class CdEBaseBackend(AbstractBackend):
         return self.generic_retrieve_log(rs, log_filter, "cde.log")
 
     @access("core_admin", "cde_admin", "auditor")
-    def retrieve_finance_log(self, rs: RequestState, log_filter: LogFilterAnnotation
+    def retrieve_finance_log(self, rs: RequestState, log_filter: LogFilterFinanceLike
                              ) -> CdEDBLog:
         """Get financial activity.
 

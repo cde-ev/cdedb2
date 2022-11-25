@@ -42,7 +42,7 @@ from cdedb.common.fields import (
     TRACK_GROUP_FIELDS,
 )
 from cdedb.common.n_ import n_
-from cdedb.common.query.log_filter import LogFilterAnnotation
+from cdedb.common.query.log_filter import LogFilterEntityLogLike, LogFilterLike
 from cdedb.common.sorting import mixed_existence_sorter, xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.filter import datetime_filter
@@ -117,7 +117,7 @@ class EventBaseBackend(EventLowLevelBackend):
     orga_info: _OrgaInfoProtocol = singularize(orga_infos, "persona_ids", "persona_id")
 
     @access("event", "auditor")
-    def retrieve_log(self, rs: RequestState, log_filter: LogFilterAnnotation
+    def retrieve_log(self, rs: RequestState, log_filter: LogFilterEntityLogLike
                      ) -> CdEDBLog:
         """Get recorded activity.
 

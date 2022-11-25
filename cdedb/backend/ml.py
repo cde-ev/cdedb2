@@ -31,7 +31,7 @@ from cdedb.common.fields import (
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
-from cdedb.common.query.log_filter import LogFilterAnnotation
+from cdedb.common.query.log_filter import LogFilterEntityLogLike
 from cdedb.common.roles import ADMIN_KEYS, implying_realms
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
@@ -257,7 +257,7 @@ class MlBackend(AbstractBackend):
         return self.sql_insert(rs, "ml.log", new_log)
 
     @access("ml", "auditor")
-    def retrieve_log(self, rs: RequestState, log_filter: LogFilterAnnotation
+    def retrieve_log(self, rs: RequestState, log_filter: LogFilterEntityLogLike
                      ) -> CdEDBLog:
         """Get recorded activity.
 
