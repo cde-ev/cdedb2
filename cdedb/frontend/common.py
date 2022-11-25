@@ -84,7 +84,7 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import Query
 from cdedb.common.query.defaults import DEFAULT_QUERIES
 from cdedb.common.query.log_filter import (
-    LogFilter, LogFilterChangelog, LogFilterEntityLog, LogFilterFinanceLog, LogTable,
+    LogFilterChangelog, LogFilterEntityLog, LogFilterFinanceLog, LogTable,
 )
 from cdedb.common.roles import (
     ADMIN_KEYS, ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS, PERSONA_DEFAULTS,

@@ -262,8 +262,8 @@ class CoreBaseBackend(AbstractBackend):
         return self.generic_retrieve_log(rs, log_filter, "core.log")
 
     @access("core_admin", "auditor")
-    def retrieve_changelog_meta(self, rs: RequestState, log_filter: LogFilterChangelogLike
-                                ) -> CdEDBLog:
+    def retrieve_changelog_meta(self, rs: RequestState,
+                                log_filter: LogFilterChangelogLike) -> CdEDBLog:
         """Get changelog activity.
 
         See
