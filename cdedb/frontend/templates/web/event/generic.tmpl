@@ -4,10 +4,11 @@
     track               The track dict of the requested track.
     all_courses         A dict containing all courses of the current event.
     course_choices      A dict containing a mapping from track to a list of ids of all choosable courses.
+    all_course_choices  A dict containing a mapping from track to a list of ids of all offered courses.
     show_track_titles   A bool deciding whether to print or omit the title of the track.
     track_group         Optionally the track group for which to print course choices.
 #}
-{% macro select_course_choice(track, all_courses, course_choices, show_track_title, track_group=none) %}
+{% macro select_course_choice(track, all_courses, course_choices, all_course_choices, show_track_title, track_group=none) %}
 
     <div id="course-choice-container-{{ track['id'] if not track_group else "group-{}".format(track_group['id'])  }}"
          class="course_choice_container">
@@ -22,6 +23,8 @@
 
         {% set course_entries = all_courses|keydictsort(EntitySorter.course)
                                            |xdict_entries('{id}', '{nr}. {title}', include=course_choices) %}
+        {% set all_course_entries = all_courses|keydictsort(EntitySorter.course)
+                                               |xdict_entries('{id}', '{nr}. {title}', include=all_course_choices) %}
         {% if track_group %}
             {% set choice_name = "group{}.course_choice".format(track_group['id']) + "_{}" %}
             {% set instructor_name = "group{}.course_instructor".format(track_group['id']) %}
@@ -38,7 +41,7 @@
                                       info=(gettext("Optional choice") if i >= min_choices else "")) }}
         {% endfor %}
 
-        {{ util.form_input_select(name=instructor_name, entries=course_entries,
+        {{ util.form_input_select(name=instructor_name, entries=all_course_entries,
                                   nulloption=gettext("– I am not an Instructor –"), label=gettext("Instructor"),
                                   info=gettext("If you are instructing a course, please specify which one.")) }}
     </div>
@@ -51,11 +54,12 @@
                     involved_tracks is none or involved_tracks.intersection(cco['track_ids'])) %}
                 {{ select_course_choice(
                         reference_tracks[cco['id']], courses, courses_per_track_group[cco['id']],
+                        all_courses_per_track_group[cco['id']],
                         show_track_title=choice_objects|length > 1, track_group=cco) }}
             {% endif %}
         {% elif cco['num_choices'] and (involved_tracks is none or cco['id'] in involved_tracks) %}
             {{ select_course_choice(
-                    cco, courses, courses_per_track[cco['id']],
+                    cco, courses, courses_per_track[cco['id']], all_courses_per_track[cco['id']],
                     show_track_title=choice_objects|length > 1) }}
         {% endif %}
     {% endfor %}

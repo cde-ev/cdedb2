@@ -260,7 +260,8 @@ class EventRegistrationMixin(EventBaseFrontend):
             return self.batch_fees_form(rs, event_id, data=data,
                                         csvfields=fields)
 
-    def get_course_choice_params(self, rs: RequestState, event_id: int) -> CdEDBObject:
+    def get_course_choice_params(self, rs: RequestState, event_id: int,
+                                 orga: bool = True) -> CdEDBObject:
         """Helper to gather all info needed for course choice forms.
 
         The return can be unpacked and passed to the template directly.
@@ -272,9 +273,13 @@ class EventRegistrationMixin(EventBaseFrontend):
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         courses_per_track = self.eventproxy.get_course_segments_per_track(
-            rs, event_id, event['is_course_state_visible'])
+            rs, event_id, event['is_course_state_visible'] and not orga)
+        all_courses_per_track = (
+            self.eventproxy.get_course_segments_per_track(rs, event_id))
         courses_per_track_group = self.eventproxy.get_course_segments_per_track_group(
-            rs, event_id, event['is_course_state_visible'])
+            rs, event_id, event['is_course_state_visible'] and not orga)
+        all_courses_per_track_group = (
+            self.eventproxy.get_course_segments_per_track_group(rs, event_id))
         reference_tracks = {}
         simple_tracks = set(tracks)
         track_group_map = {track_id: None for track_id in tracks}
@@ -297,7 +302,9 @@ class EventRegistrationMixin(EventBaseFrontend):
         choice_objects = xsorted(choice_objects, key=EntitySorter.course_choice_object)
         return {
             'courses': courses, 'courses_per_track': courses_per_track,
+            'all_courses_per_track': all_courses_per_track,
             'courses_per_track_group': courses_per_track_group,
+            'all_courses_per_track_group': all_courses_per_track_group,
             'reference_tracks': reference_tracks, 'simple_tracks': simple_tracks,
             'choice_objects': choice_objects, 'sync_track_groups': sync_track_groups,
             'track_group_map': track_group_map, 'ccos_per_part': ccos_per_part,
@@ -340,7 +347,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         if 'parts' not in rs.values:
             rs.values.setlist('parts', event['parts'])
 
-        course_choice_params = self.get_course_choice_params(rs, event_id)
+        course_choice_params = self.get_course_choice_params(rs, event_id, orga=False)
 
         reg_questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(const.QuestionnaireUsages.registration,)))
@@ -385,7 +392,8 @@ class EventRegistrationMixin(EventBaseFrontend):
         event = rs.ambience['event']
         tracks = event['tracks']
         track_groups = event['track_groups']
-        course_choice_params = self.get_course_choice_params(rs, event['id'])
+        course_choice_params = self.get_course_choice_params(
+            rs, event['id'], orga=orga_input)
         simple_tracks = course_choice_params['simple_tracks']
         sync_track_groups = course_choice_params['sync_track_groups']
         reference_tracks = course_choice_params['reference_tracks']
@@ -675,7 +683,8 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs, event_id, (const.QuestionnaireUsages.registration,)))
         waitlist_position = self.eventproxy.get_waitlist_position(
             rs, event_id, persona_id=rs.user.persona_id)
-        course_choice_parameters = self.get_course_choice_params(rs, event_id)
+        course_choice_parameters = self.get_course_choice_params(
+            rs, event_id, orga=False)
 
         status = lambda track: registration['parts'][track['part_id']]['status']
         involved_tracks = {
@@ -766,7 +775,7 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         reg_questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(const.QuestionnaireUsages.registration,)))
-        course_choice_params = self.get_course_choice_params(rs, event_id)
+        course_choice_params = self.get_course_choice_params(rs, event_id, orga=False)
         return self.render(rs, "registration/amend_registration", {
             'age': age, 'involved_tracks': involved_tracks,
             'reg_questionnaire': reg_questionnaire,
