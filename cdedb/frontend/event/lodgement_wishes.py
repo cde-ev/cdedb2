@@ -460,13 +460,16 @@ def _make_node_tooltip(rs: RequestState, registration: CdEDBObject,
         msg = rs.gettext("camping mat okay")
         may_camp = f"\n{MAY_CAMPING_MAT_ICON} ({msg})"
     persona = personas[registration['persona_id']]
-    return "{name}\n{email}{parts}{may_camp}\n\n{wishes}".format(
+    lodge_field_name = event['fields'][event['lodge_field']]['field_name']
+    wishes = ""
+    if raw_wishes := registration['fields'].get(lodge_field_name):
+        wishes = f"\n\n{raw_wishes}"
+    return "{name}\n{email}{parts}{may_camp}{wishes}".format(
         name=make_persona_name(persona, given_and_display_names=True),
         email=persona['username'],
         parts=parts,
         may_camp=may_camp,
-        wishes=registration['fields'].get(
-            event['fields'][event['lodge_field']]['field_name'], ""),
+        wishes=wishes,
     )
 
 
