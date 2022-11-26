@@ -10,7 +10,7 @@ Basic Workflow
 
 On ``core/genesis/request``, each user can provide the data which will be required
 to create a persona in a respective realms. Additionally, helpful auxiliary
-information is provided, like a reason or ann attachment confirming you are
+information is provided, like a reason or an attachment confirming you are
 eligible for cde membership. After submitting the form, the case is ``unconfirmed``
 and an email is sent to the user to confirm their email address. Afterwards, the case
 is set ``to_review``.

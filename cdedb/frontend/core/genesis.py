@@ -289,7 +289,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         if case['reviewer']:
             reviewer = self.coreproxy.get_persona(rs, case['reviewer'])
         if "event" in rs.user.roles:
-            # e.g. for Nina
+            # e.g. for ml-only ml admins
             if case['pevent_id']:
                 pevent = self.pasteventproxy.get_past_event(rs, case['pevent_id'])
             if case['pcourse_id']:

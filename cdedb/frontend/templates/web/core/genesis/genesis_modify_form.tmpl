@@ -70,8 +70,10 @@
             {{ util.form_input_select(name="country", label=gettext("Country"), entries=COUNTRY_CODES, small=True,
                                       defaultvalue=DEFAULT_COUNTRY, aclass="genesis-realm-specific") }}
             {# Well, you might wonder how this has happened. Turns out, mailinglist admins generally have no permission
-               to access past events. And ml accounts may not have past events either way. #}
-            {% if user.roles.intersection(("core_admin", "cde_admin", "event_admin")) %}
+               to access past events. And ml accounts may not have past events either way, while genesis may have them
+               (see documentation). Therefore, you need at least access to event realm to see these properly (and not
+               unset it accidentally). #}
+            {% if "event" in user.roles %}
                 {{ util.form_input_select(name="pevent_id", entries=choices['pevent_id'].items(), small=True,
                                           nulloption=nbsp, label=gettext("Past Event"), aclass="genesis-realm-specific",
                                           sort=True) }}
