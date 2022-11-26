@@ -482,7 +482,11 @@ class SecretsConfig(Mapping[str, Any]):
         override = {
             key: value for key, value in override.items() if key in _SECRECTS_DEFAULTS}
 
-        self._configchain = collections.ChainMap(override, _SECRECTS_DEFAULTS)
+        # for security reasons, do not use the _SECRETS_DEFAULT in production
+        if pathlib.Path("/PRODUCTIONVM").is_file():
+            self._configchain = collections.ChainMap(override)
+        else:
+            self._configchain = collections.ChainMap(override, _SECRECTS_DEFAULTS)
 
     def __getitem__(self, key: str) -> Any:
         return self._configchain.__getitem__(key)
