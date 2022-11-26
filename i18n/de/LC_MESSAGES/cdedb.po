@@ -1997,7 +1997,7 @@ msgstr "Interessen"
 #: cdedb/frontend/templates/web/core/show_user.tmpl:483
 #: cdedb/frontend/templates/web/generic.tmpl:23
 msgid "Miscellaneous"
-msgstr "Sonstiges"
+msgstr "Verschiedenes"
 
 #: cdedb/common/query/__init__.py:467
 msgid "Lastschrift Granted"
