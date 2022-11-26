@@ -36,8 +36,7 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation import (
-    ASSEMBLY_COMMON_FIELDS, BALLOT_EXPOSED_FIELDS, PERSONA_FULL_ASSEMBLY_CREATION,
-    filter_none,
+    ASSEMBLY_COMMON_FIELDS, BALLOT_EXPOSED_FIELDS, PERSONA_FULL_CREATION, filter_none,
 )
 from cdedb.common.validation.types import CdedbID, Email
 from cdedb.filter import keydictsort_filter
@@ -86,7 +85,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         return super().create_user_form(rs)
 
     @access("core_admin", "assembly_admin", modi={"POST"})
-    @REQUESTdatadict(*filter_none(PERSONA_FULL_ASSEMBLY_CREATION))
+    @REQUESTdatadict(*filter_none(PERSONA_FULL_CREATION['assembly']))
     def create_user(self, rs: RequestState, data: CdEDBObject) -> Response:
         defaults = {
             'is_cde_realm': False,
