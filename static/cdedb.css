@@ -522,7 +522,7 @@ body.development {
    and also used on the event course list */
 a.headerlink {
     margin-left: 10px;
-    display: inline-block;
+    display: inline;
     color: #777;
     text-decoration: none;
     opacity: 0;
