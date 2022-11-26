@@ -4,7 +4,6 @@ import dataclasses
 import datetime
 import decimal
 import enum
-import typing
 from typing import Any, Optional, Type, Union, cast
 
 import cdedb.database.constants as const
