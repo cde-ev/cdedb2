@@ -65,6 +65,17 @@
                 —
             {% endif %}
         </dd>
+        <dt title="{% trans %}Account{% endtrans %}">
+                {% trans %}Account{% endtrans %}
+            </dt>
+            <dd id="persona">
+                {% if persona %}
+                    {{ util.persona_anchor(persona) }}
+                {% else %}
+                    —
+                {% endif %}
+            </dd>
+        </dt>
     </dl>
 
     <h4 class="heading-underline">{% trans %}Persona Information{% endtrans %}</h4>
@@ -189,6 +200,7 @@
                     {% for key, value in doppelgangers|keydictsort(EntitySorter.persona) %}
                         {% do entries.append((key, util.print_doppelganger(value))) %}
                     {% endfor %}
+                    {# This acutally becomes the persona_id to be saved into the genesis request! #}
                     {{ util.input_checkboxes("persona_id", entries, radio=True, readonly_map=disabled_radios, title_map=title_map) }}
                 </div>
 

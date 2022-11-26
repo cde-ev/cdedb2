@@ -295,15 +295,10 @@ class CoreGenesisBackend(CoreBaseBackend):
         genesis_get_cases, "genesis_case_ids", "genesis_case_id")
 
     @access(*REALM_ADMINS)
-    def genesis_modify_case(self, rs: RequestState, data: CdEDBObject,
-                            persona_id: int = None) -> DefaultReturnCode:
-        """Modify a persona creation case.
-
-        :param persona_id: The account, this modification related to. Especially
-            relevant if a new account was created or an existing account was updated.
-        """
+    def genesis_modify_case(self, rs: RequestState, data: CdEDBObject
+                            ) -> DefaultReturnCode:
+        """Modify a persona creation case."""
         data = affirm(vtypes.GenesisCase, data)
-        persona_id = affirm_optional(vtypes.ID, persona_id)
 
         with Atomizer(rs):
             current = self.genesis_get_case(rs, data['id'])
@@ -314,21 +309,27 @@ class CoreGenesisBackend(CoreBaseBackend):
                 raise ValueError(n_("Genesis case already finalized."))
             ret = self.sql_update(rs, "core.genesis_cases", data)
             if 'case_status' in data and data['case_status'] != current['case_status']:
+                # persona_id of the account this modification is related to. Especially
+                # relevant if a new account was created or an existing account was
+                # updated. Hence, we sometimes use get and sometimes use [] here.
                 if data['case_status'] == const.GenesisStati.successful:
                     self.core_log(
-                        rs, const.CoreLogCodes.genesis_approved, persona_id=persona_id,
-                        change_note=current['username'])
+                        rs, const.CoreLogCodes.genesis_approved,
+                        persona_id=data['persona_id'], change_note=current['username'])
                 elif data['case_status'] == const.GenesisStati.rejected:
                     self.core_log(
-                        rs, const.CoreLogCodes.genesis_rejected, persona_id=persona_id,
+                        rs, const.CoreLogCodes.genesis_rejected,
+                        persona_id=data.get('persona_id'),
                         change_note=current['username'])
                 elif data['case_status'] == const.GenesisStati.existing_updated:
                     self.core_log(
-                        rs, const.CoreLogCodes.genesis_merged, persona_id=persona_id)
+                        rs, const.CoreLogCodes.genesis_merged,
+                        persona_id=data['persona_id'])
             else:
                 # persona_id should be None in this case.
                 self.core_log(rs, const.CoreLogCodes.genesis_change,
-                              persona_id=persona_id, change_note=current['username'])
+                              persona_id=data.get('persona_id'),
+                              change_note=current['username'])
         return ret
 
     @access(*REALM_ADMINS)
@@ -359,8 +360,9 @@ class CoreGenesisBackend(CoreBaseBackend):
                 'case_status': case_status,
                 'reviewer': rs.user.persona_id,
                 'realm': case['realm'],
+                'persona_id': persona_id,
             }
-            if not self.genesis_modify_case(rs, update, persona_id):
+            if not self.genesis_modify_case(rs, update):
                 raise RuntimeError(n_("Genesis modification failed."))
             if decision.is_create():
                 return self.genesis(rs, case_id)
@@ -434,6 +436,7 @@ class CoreGenesisBackend(CoreBaseBackend):
                 'id': case_id,
                 'case_status': const.GenesisStati.successful,
                 'realm': case['realm'],
+                'persona_id': new_id,
             }
-            self.genesis_modify_case(rs, update, persona_id=new_id)
+            self.genesis_modify_case(rs, update)
         return new_id
