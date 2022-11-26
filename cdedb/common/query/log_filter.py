@@ -121,16 +121,10 @@ class LogFilter:
 
     def get(self, name: str, default: Any) -> Any:
         """Emulate dict access."""
-        return self.__dict__.get(name, default)
+        return getattr(self, name, default)
 
     def _get_sql_conditions(self) -> tuple[list[str], list[DatabaseValue_s]]:
-        """Create a SQL condition string from parameters.
-
-        The condition string is empty if there is no filter condition. Otherwise it
-        includes the "WHERE".
-
-        Returns the condition string and a tuple of parameters used in that condition.
-        """
+        """Create a list of SQL conditions and the corresponding parameters."""
         conditions = []
         params: list[DatabaseValue_s] = []
         if self.codes:
@@ -157,6 +151,11 @@ class LogFilter:
         return conditions, params
 
     def to_sql_condition(self) -> tuple[str, tuple[DatabaseValue_s, ...]]:
+        """Return a SQL-string from the filter sttributes and a sequence of parameters.
+
+        The string will be empty if no conditions exist.
+        Otherwise it includes the WHERE.
+        """
         conditions, params = self._get_sql_conditions()
         return f"WHERE {' AND '.join(conditions)}" if conditions else "", tuple(params)
 
@@ -169,6 +168,11 @@ class LogFilter:
 class LogFilterChangelog(LogFilter):
     # changelog only
     reviewed_by: Optional[int] = None  # ID of the reviewer.
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        if not self.table == LogTable.core_changelog:
+            raise ValueError("Table mismatch.")
 
     def _get_sql_conditions(self) -> tuple[list[str], list[DatabaseValue_s]]:
         conditions, params = super()._get_sql_conditions()
@@ -186,6 +190,12 @@ class LogFilterChangelog(LogFilter):
 class LogFilterEntityLog(LogFilter):
     # ID of the relevant entity (assembly, event, past_event, ml).
     entity_ids: list[int] = dataclasses.field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        if self.table not in {LogTable.assembly_log, LogTable.event_log,
+                              LogTable.ml_log, LogTable.past_event_log}:
+            raise ValueError("Table mismatch.")
 
     def _get_sql_conditions(self) -> tuple[list[str], list[DatabaseValue_s]]:
         conditions, params = super()._get_sql_conditions()
@@ -222,6 +232,11 @@ class LogFilterFinanceLog(LogFilter):
     total: tuple[Optional[decimal.Decimal], Optional[decimal.Decimal]] = (None, None)
     # New number of total members.
     members: tuple[Optional[int], Optional[int]] = (None, None)
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        if not self.table == LogTable.cde_finance_log:
+            raise ValueError("Table mismatch.")
 
     def _get_sql_conditions(self) -> tuple[list[str], list[DatabaseValue_s]]:
         conditions, params = super()._get_sql_conditions()
