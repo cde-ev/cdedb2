@@ -4511,6 +4511,9 @@ msgstr ""
 msgid "Waitlist: "
 msgstr "Warteliste: "
 
+msgid "camping mat okay"
+msgstr "Isomatte ok"
+
 #: cdedb/frontend/event/partial_import.py:135
 msgid "The data changed, please review the difference."
 msgstr "Es gab konkurrierende Eingaben, bitte kontrolliere die Änderungen."

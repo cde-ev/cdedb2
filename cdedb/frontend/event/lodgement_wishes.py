@@ -19,6 +19,8 @@ from cdedb.common.n_ import n_
 from cdedb.database.constants import Genders, RegistrationPartStati
 from cdedb.frontend.common import cdedburl
 
+MAY_CAMPING_MAT_ICON = "⛺?"
+
 
 @dataclass
 class LodgementWish:
@@ -348,6 +350,11 @@ def create_lodgement_wishes_graph(
                 name=f'cluster_lodgement_group_{lodgement_group_id}',
                 graph_attr={'label': lodgement_group['title']})
 
+    # Determine the camping mat field name of the event
+    fields = rs.ambience["event"]["fields"]
+    camping_mat_field_name = None
+    if event["camping_mat_field"]:
+        camping_mat_field_name = fields[event["camping_mat_field"]]["field_name"]
     # Add registrations as nodes to graph (or correct lodgement cluster)
     for registration_id, registration in registrations.items():
         # Only consider wishing or wished participants (unless show_all==True)
@@ -378,8 +385,9 @@ def create_lodgement_wishes_graph(
         wish_field_name = event['fields'][event['lodge_field']]['field_name']
         subgraph.node(
             str(registration['id']),
-            _make_node_label(registration, personas, event),
-            tooltip=_make_node_tooltip(rs, registration, personas, event),
+            _make_node_label(registration, personas, event, camping_mat_field_name),
+            tooltip=_make_node_tooltip(rs, registration, personas, event,
+                                       camping_mat_field_name),
             fillcolor=_make_node_color(registration, personas, event),
             color=("black" if registration['fields'].get(wish_field_name)
                    else _make_node_color(registration, personas, event)),
@@ -418,18 +426,21 @@ def create_lodgement_wishes_graph(
 
 
 def _make_node_label(registration: CdEDBObject, personas: CdEDBObjectMap,
-                     event: CdEDBObject) -> str:
+                     event: CdEDBObject, camping_mat_field_name: Optional[str]) -> str:
     presence_parts = _parts_with_status(registration, PRESENT_STATI)
-    parts = ("\n({})".format(
-                 ', '.join(event['parts'][p]['shortname']
-                           for p in presence_parts))
-             if len(event['parts']) > 1 and presence_parts
-             else "")
-    return make_persona_name(personas[registration['persona_id']]) + parts
+    may_camp = ""
+    if camping_mat_field_name and registration["fields"].get(camping_mat_field_name):
+        may_camp = f"{MAY_CAMPING_MAT_ICON}"
+    parts = (f"({', '.join(event['parts'][p]['shortname'] for p in presence_parts)})"
+             if len(event['parts']) > 1 and presence_parts else "")
+    linebreak = "\n" if may_camp or parts else ""
+    return (f"{make_persona_name(personas[registration['persona_id']])}"
+            f"{linebreak}{parts} {may_camp}")
 
 
 def _make_node_tooltip(rs: RequestState, registration: CdEDBObject,
-                       personas: CdEDBObjectMap, event: CdEDBObject) -> str:
+                       personas: CdEDBObjectMap, event: CdEDBObject,
+                       camping_mat_field_name: Optional[str]) -> str:
     parts = ""
     if len(event['parts']) > 1:
         parts = "\n"
@@ -444,11 +455,16 @@ def _make_node_tooltip(rs: RequestState, registration: CdEDBObject,
             parts += (rs.gettext("Waitlist: ")
                       + ', '.join(event['parts'][p]['title']
                                   for p in waitlist_parts))
+    may_camp = ""
+    if camping_mat_field_name and registration["fields"].get(camping_mat_field_name):
+        msg = rs.gettext("camping mat okay")
+        may_camp = f"\n{MAY_CAMPING_MAT_ICON} ({msg})"
     persona = personas[registration['persona_id']]
-    return "{name}\n{email}{parts}\n\n{wishes}".format(
+    return "{name}\n{email}{parts}{may_camp}\n\n{wishes}".format(
         name=make_persona_name(persona, given_and_display_names=True),
         email=persona['username'],
         parts=parts,
+        may_camp=may_camp,
         wishes=registration['fields'].get(
             event['fields'][event['lodge_field']]['field_name'], ""),
     )
