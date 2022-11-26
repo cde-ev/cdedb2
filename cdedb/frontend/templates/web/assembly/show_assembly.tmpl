@@ -40,7 +40,7 @@
             {% else %}
                 <p><strong class="text-muted">{% trans %}You are not participating.{% endtrans %}</strong></p>
                 {% if "member" in user.roles and now() < ambience['assembly']['signup_end'] %}
-                    <form action="{{ cdedblink('assembly/signup') }}" method="POST" id="signupform">
+                    <form action="{{ cdedblink('assembly/signup') }}" method="POST" id="signupform" class="p">
                         {{ util.anti_csrf_token('assembly/signup') }}
                         {{ util.input_submit(label=gettext("Participate"), icon="sign-in-alt") }}
                     </form>
