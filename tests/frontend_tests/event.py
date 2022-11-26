@@ -3094,8 +3094,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertEqual("1001", f['group_id'].value)
 
     @event_keeper
-    @as_users("berta")
-    def test_lodgement_creation_single_group(self) -> None:
+    @as_users("anton")
+    def test_lodgement_creation_with_groups(self) -> None:
         self.traverse("CdE-Party 2050", "Unterkünfte", "Unterkunftsgruppen verwalten")
         # only one lodgement group exists
         f = self.response.forms["lodgementgroupsummaryform"]
@@ -3108,6 +3108,31 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f["title"] = "Testzimmer"
         f["regular_capacity"] = 1
         f["camping_mat_capacity"] = 0
+        self.submit(f)
+        self.traverse("Unterkünfte")
+        # check the new lodgement was created
+        self.assertPresence("Testzimmer")
+
+        self.traverse("Veranstaltungen", "TripelAkademie", "Unterkünfte",
+                      "Unterkunftsgruppen verwalten")
+        # delete all lodgement groups
+        f = self.response.forms["lodgementgroupsummaryform"]
+        self.assertEqual(f["title_6"].value, "Kaub")
+        self.assertEqual(f["title_7"].value, "Oberwesel")
+        self.assertEqual(f["title_8"].value, "Windischleuba")
+        f["delete_6"] = True
+        f["delete_7"] = True
+        f["delete_8"] = True
+        self.submit(f)
+        # create new lodgement and new lodgement group
+        self.traverse("Unterkünfte", "Unterkunft anlegen")
+        self.assertPresence("Titel der neuen Unterkunftsgruppe")
+        f = self.response.forms["createlodgementform"]
+        self.assertEqual(f["group_id"].value, "")
+        f["title"] = "Testzimmer"
+        f["regular_capacity"] = 1
+        f["camping_mat_capacity"] = 0
+        f["new_group_title"] = "Testgruppe"
         self.submit(f)
         self.traverse("Unterkünfte")
         # check the new lodgement was created

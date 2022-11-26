@@ -26,7 +26,10 @@
         {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]")) }}
         {{ util.form_input_text(name="regular_capacity", label=gettext("Regular Capacity"), type="number") }}
         {{ util.form_input_text(name="camping_mat_capacity", label=gettext("Camping Mat Capacity"), type="number") }}
-        {% if groups|length == 1 %}
+        {% if groups|length == 0 %}
+            {{ util.input_hidden(name="group_id", value=none) }}
+            {{ util.form_input_text(name="new_group_title", label=gettext("New Lodgement Group Title"), errorname="group_id") }}
+        {% elif groups|length == 1 %}
             {{ util.input_hidden(name="group_id", value=groups|first) }}
         {% elif groups|length > 1 %}
             {{ util.form_input_select(
