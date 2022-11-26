@@ -40,7 +40,8 @@
                     }.get(values['realm']) %}
                     {{ util.form_input_static(label=gettext("Realm"), small=True, icon=icon, value=caption) }}
                 {% endwith %}
-                {{ util.input_hidden(name="realm") }}
+                {# id is required for js script to work #}
+                {{ util.input_hidden(name="realm", anid="realm-select") }}
             {% endif %}
             {{ util.form_input_textarea(name="notes", label=gettext("Rationale"), small=True) }}
 

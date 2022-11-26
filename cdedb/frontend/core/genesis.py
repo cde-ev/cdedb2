@@ -312,6 +312,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         return self.render(rs, "genesis/genesis_show_case", {
             'reviewer': reviewer, 'pevent': pevent, 'pcourse': pcourse,
             'doppelgangers': doppelgangers,
+            'REALM_SPECIFIC_GENESIS_FIELDS': REALM_SPECIFIC_GENESIS_FIELDS,
             'disabled_radios': non_editable_doppelgangers, 'title_map': title_map,
         })
 
@@ -431,7 +432,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
             return self.genesis_show_case(rs, genesis_case_id)
 
         if ((decision.is_create() or decision.is_update()) and case['pevent_id']
-                and case['realm'] in {'event', 'cde'}):
+                and case['realm'] == 'cde'):
             code = self.pasteventproxy.add_participant(
                 rs, pevent_id=case['pevent_id'], pcourse_id=case['pcourse_id'],
                 persona_id=persona_id)

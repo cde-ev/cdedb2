@@ -2180,12 +2180,14 @@ class TestCoreFrontend(FrontendTest):
             f['realm'] = 'ml'
         self.submit(f)
         self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
-        self.assertPresence("Anhang herunterladen")
-        save = self.response
-        self.traverse({'description': 'Anhang herunterladen'})
-        with open(self.testfile_dir / "form.pdf", 'rb') as f:
-            self.assertEqual(f.read(), self.response.body)
-        self.response = save
+        if self.user_in('quintus'):
+            # attachment is hidden for ml account requests
+            self.assertPresence("Anhang herunterladen")
+            save = self.response
+            self.traverse({'description': 'Anhang herunterladen'})
+            with open(self.testfile_dir / "form.pdf", 'rb') as f:
+                self.assertEqual(f.read(), self.response.body)
+            self.response = save
         self.assertNonPresence("zelda@example.cde")
         self.assertPresence("zorro@example.cde")
         self.traverse("Accountanfrage bearbeiten")
