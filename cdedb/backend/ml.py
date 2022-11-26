@@ -267,6 +267,7 @@ class MlBackend(AbstractBackend):
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
+        log_filter = self.generic_affirm_log_filter(log_filter, "ml.log")
         ml_ids = log_filter.get('entity_ids', ())
         ml_ids = affirm_set(vtypes.ID, ml_ids)
 

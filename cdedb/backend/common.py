@@ -31,7 +31,7 @@ from cdedb.common import (
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators
-from cdedb.common.query.log_filter import LogFilterLike, LogTable
+from cdedb.common.query.log_filter import LogFilter, LogFilterLike, LogTable
 from cdedb.common.sorting import LOCALE
 from cdedb.common.validation import parse_date, parse_datetime
 from cdedb.config import Config
@@ -436,6 +436,13 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
             q = glue(q, "ORDER BY", ", ".join(orders))
         return self.query_all(rs, q, params)
 
+    @staticmethod
+    def generic_affirm_log_filter(log_filter: LogFilterLike, table: str) -> LogFilter:
+        """Validate a LogFilter"""
+        log_table = LogTable(table)
+        return affirm_validation(
+            log_table.get_filter_class(), log_filter, log_table=log_table)
+
     def generic_retrieve_log(self, rs: RequestState, log_filter: LogFilterLike,
                              table: str) -> CdEDBLog:
         """Get recorded activity.
@@ -455,9 +462,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
 
         However this handles the finance_log for financial transactions.
         """
-        log_table = LogTable(table)
-        log_filter = affirm_validation(
-            log_table.get_filter_class(), log_filter, log_table=log_table)
+        log_filter = self.generic_affirm_log_filter(log_filter, table)
 
         table = log_filter.table.value
         length = log_filter.length or 0

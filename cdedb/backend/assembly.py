@@ -322,6 +322,7 @@ class AssemblyBackend(AbstractBackend):
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
+        log_filter = self.generic_affirm_log_filter(log_filter, "assembly.log")
         assembly_ids = log_filter.get('entity_ids', ())
         assembly_ids = affirm_set(vtypes.ID, assembly_ids)
 

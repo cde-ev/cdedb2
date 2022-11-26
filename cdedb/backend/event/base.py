@@ -124,6 +124,7 @@ class EventBaseBackend(EventLowLevelBackend):
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
+        log_filter = self.generic_affirm_log_filter(log_filter, "event.log")
         event_ids = log_filter.get('entity_ids', ())
         event_ids = affirm_set(vtypes.ID, event_ids)
 
