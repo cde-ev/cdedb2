@@ -650,7 +650,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 JOIN event.event_parts ep on ep.id = rp.part_id
                 WHERE ep.event_id = %s AND rp.status = ANY(%s)
             """
-            res[None] = unwrap(self.query_one(rs, q, (event_id, stati)).values())
+            res[None] = unwrap(self.query_one(rs, q, (event_id, stati)))
         return res
 
     @access("event")
