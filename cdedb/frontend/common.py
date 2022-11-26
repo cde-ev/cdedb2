@@ -1126,6 +1126,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         log_filter = check_validation(
             rs, table.get_filter_class(), filter_params, log_table=table)
         if rs.has_validation_errors() or log_filter is None:
+            # If validation fails, there is no good way to get a partial filter
+            #  that is valid, so we use an empty filter instead. This should not
+            #  matter much in practice because, with regular usage there should not
+            #  be a way to input invalid filter values.
             log_filter = check_validation(
                 rs, table.get_filter_class(), {}, log_table=table)
             rs.ignore_validation_errors()

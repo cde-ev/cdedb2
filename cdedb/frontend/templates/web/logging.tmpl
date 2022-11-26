@@ -120,13 +120,13 @@
             {% elif filter_name == "finance" %}
                 {{ util.form_input_from_to(
                         'delta_from', 'delta_to', label=gettext("Amount"),
-                        type='number', attributes='step="0.01"'|s, small=True) }}
+                        type='number', attributes='step="0.01" min="-1000000" max="1000000"'|s, small=True) }}
                 {{ util.form_input_from_to(
                         'new_balance_from', 'new_balance_to', label=gettext("Balance"),
-                         type='number', attributes='min="0" step="0.01"'|s, small=True) }}
+                         type='number', attributes='min="0" step="0.01 max=1000000"'|s, small=True) }}
                 {{ util.form_input_from_to(
                         'total_from', 'total_to', label=gettext("Overall Balance"),
-                         type='number', attributes='min="0" step="0.01"'|s, small=True) }}
+                         type='number', attributes='min="0" step="0.01" max="1000000"'|s, small=True) }}
                 {{ util.form_input_from_to(
                         'members_from', 'members_to', label=gettext("Members"),
                          type='number', attributes='min="0"'|s, small=True) }}
