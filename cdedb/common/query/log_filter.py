@@ -75,20 +75,6 @@ class LogTable(enum.Enum):
         }.get(cast(str, self), LogFilter)
 
 
-# Some Types for storing range filters. Basically just two-element tuples of a common
-# (optional) type.
-
-OptionalDatetimeRange = typing.NamedTuple("OptionalDatetimeRange", [
-    ("from_val", Optional[datetime.datetime]), ("to_val", Optional[datetime.datetime]),
-])
-OptionalDecimalRange = typing.NamedTuple("OptionalDecimalRange", [
-    ("from_val", Optional[decimal.Decimal]), ("to_val", Optional[decimal.Decimal]),
-])
-OptionalIntRange = typing.NamedTuple("OptionalIntRange", [
-    ("from_val", Optional[int]), ("to_val", Optional[int]),
-])
-
-
 @dataclasses.dataclass
 class LogFilter:
     """Dataclass to validate, pass and process filter parameters for querying a log.
