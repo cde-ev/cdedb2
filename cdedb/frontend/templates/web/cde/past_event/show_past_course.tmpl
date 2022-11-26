@@ -71,7 +71,9 @@
     {% endif %}
     {% if participants %}
         <div class="row">
-            <div class="col-sm-6">
+            {# column width depending on admin views, since admins see the red deletion buttons which
+                would be too far away on the very right #}
+            <div class="col-sm-{{ 6 if 'past_event' in user.admin_views else 12 }}">
                 <ul id="list-participants">
                     {% for anid, participant in participants.items() %} {# This dict is already sorted. #}
                         <li class="hide-hover-container clearfix-after">
