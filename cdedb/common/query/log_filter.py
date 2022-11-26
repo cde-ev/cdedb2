@@ -102,16 +102,17 @@ class LogFilter:
     table: LogTable
 
     # Pagination parameters.
-    offset: Optional[int] = None
+    offset: Optional[int] = None  # How many entries to skip at the start.
     _offset: Optional[int] = dataclasses.field(default=None)  # Unmodified offset.
-    length: int = 0  # Set default in post_init.
+    length: int = 0  # How many entries to list. Set default in post_init.
     _length: int = dataclasses.field(default=0)  # Unmodified length.
 
     # Generic attributes available for all logs.
-    codes: list[int] = dataclasses.field(default_factory=list)
-    persona_id: Optional[int] = None
-    submitted_by: Optional[int] = None
-    change_note: Optional[str] = None
+    codes: list[int] = dataclasses.field(default_factory=list)  # Log codes to filter.
+    persona_id: Optional[int] = None  # ID of the affected user.
+    submitted_by: Optional[int] = None  # ID of the active user.
+    change_note: Optional[str] = None  # Additional notes.
+    # Range for the log timestamp.
     ctime: tuple[Optional[datetime.datetime],
                  Optional[datetime.datetime]] = (None, None)
 
@@ -181,7 +182,7 @@ class LogFilter:
 @dataclasses.dataclass
 class LogFilterChangelog(LogFilter):
     # changelog only
-    reviewed_by: Optional[int] = None
+    reviewed_by: Optional[int] = None  # ID of the reviewer.
 
     def _get_sql_conditions(self) -> tuple[list[str], list[DatabaseValue_s]]:
         conditions, params = super()._get_sql_conditions()
@@ -197,7 +198,7 @@ class LogFilterChangelog(LogFilter):
 
 @dataclasses.dataclass
 class LogFilterEntityLog(LogFilter):
-    # assembly, event, past_event, ml
+    # ID of the relevant entity (assembly, event, past_event, ml).
     entity_ids: list[int] = dataclasses.field(default_factory=list)
 
     def _get_sql_conditions(self) -> tuple[list[str], list[DatabaseValue_s]]:
@@ -226,10 +227,14 @@ class LogFilterEntityLog(LogFilter):
 @dataclasses.dataclass
 class LogFilterFinanceLog(LogFilter):
     # finance only
+    # Change in balance of the affected user.
     delta: tuple[Optional[decimal.Decimal], Optional[decimal.Decimal]] = (None, None)
+    # New balance of the affected user.
     new_balance: tuple[Optional[decimal.Decimal],
                        Optional[decimal.Decimal]] = (None, None)
+    # New total balance across all members.
     total: tuple[Optional[decimal.Decimal], Optional[decimal.Decimal]] = (None, None)
+    # New number of total members.
     members: tuple[Optional[int], Optional[int]] = (None, None)
 
     def _get_sql_conditions(self) -> tuple[list[str], list[DatabaseValue_s]]:
