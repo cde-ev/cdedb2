@@ -69,23 +69,23 @@
 {% endblock %}
 
 {% block content %}
-    {% if registrations and list_consent %}
-        {% if ambience['event']['parts']|length > 1 %}
-            <nav>
-                <ul class="nav nav-tabs mosp">
-                    <li role="presentation" {% if part_id is none %}class="active" aria-current="page" {% endif %}>
-                        {{ util.href(cdedblink('event/participant_list', {'part_id': None}), gettext("Overview")) }}
+    {% if ambience['event']['parts']|length > 1 %}
+        <nav>
+            <ul class="nav nav-tabs mosp">
+                <li role="presentation" {% if part_id is none %}class="active" aria-current="page" {% endif %}>
+                    {{ util.href(cdedblink('event/participant_list', {'part_id': None}), gettext("Overview")) }}
+                </li>
+                {% for p_id, p in ambience['event']['parts'].items() %}
+                    <li role="presentation" {% if p_id == part_id %}class="active" aria-current="page" {% endif %}>
+                        {{ util.href(cdedblink('event/participant_list', {'part_id': p_id}), p['title']) }}
                     </li>
-                    {% for p_id, p in ambience['event']['parts'].items() %}
-                        <li role="presentation" {% if p_id == part_id %}class="active" aria-current="page" {% endif %}>
-                            {{ util.href(cdedblink('event/participant_list', {'part_id': p_id}), p['title']) }}
-                        </li>
-                    {% endfor %}
-                </ul>
-            </nav>
-        {% endif %}
+                {% endfor %}
+            </ul>
+        </nav>
+    {% endif %}
 
 
+    {% if registrations and list_consent %}
         {# This makes a list per part. If the event has only one part, part_id is set by the frontend on this part_id by default. #}
         {% if part_id %}
             <div class="table-container">
