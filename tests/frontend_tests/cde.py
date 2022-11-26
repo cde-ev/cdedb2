@@ -2298,7 +2298,7 @@ class TestCdEFrontend(FrontendTest):
 
         save = self.response
         self.response = save.click(href='/cde/past/event/1/download',
-                                   description='Dokuteam-Adressliste')
+                                   description='Teilnehmerliste')
 
         class dialect(csv.Dialect):
             delimiter = ';'
