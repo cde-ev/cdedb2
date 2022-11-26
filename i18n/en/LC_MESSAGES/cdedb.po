@@ -2388,6 +2388,9 @@ msgstr "Non-Members"
 msgid "30_query_event_registration_orga_notes"
 msgstr "Orga Notes"
 
+msgid "32_query_event_registration_notes"
+msgstr "Notes"
+
 #: cdedb/common/query/defaults.py:98
 msgid "40_query_event_registration_u18"
 msgstr "U18"

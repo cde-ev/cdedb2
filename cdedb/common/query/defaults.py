@@ -95,6 +95,11 @@ def generate_event_registration_default_queries(
             ("persona.given_names", "persona.family_name", "reg.orga_notes"),
             (("reg.orga_notes", QueryOperators.nonempty, None),),
             default_sort),
+        n_("32_query_event_registration_notes"): Query(
+            QueryScope.registration, spec,
+            ("persona.given_names", "persona.family_name", "reg.notes"),
+            (("reg.notes", QueryOperators.nonempty, None),),
+            default_sort),
         n_("40_query_event_registration_u18"): Query(
             QueryScope.registration, spec,
             ("persona.given_names", "persona.family_name", "persona.birthday"),
