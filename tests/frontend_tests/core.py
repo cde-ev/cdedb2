@@ -2231,7 +2231,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Goethe")
         self.traverse({'href': '/cde'})
         self.assertTitle('CdE-Mitgliederbereich')
-        self.traverse({'description': 'Sonstiges'})
+        self.traverse({'description': 'Verschiedenes'})
 
     @as_users("paul")
     def test_genesis_overview(self) -> None:
