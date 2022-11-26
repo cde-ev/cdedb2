@@ -20,7 +20,7 @@ admins of the respective realms, to fix mistakes (potentially after communicatio
 the user) etc. For cde accounts, a past event and past course can
 be provided here -- usually the one that made the account eligible for admission.
 
-.. todo:: what happeens when a request is finalized? Doppelgangers?
+.. todo:: what happens when a request is finalized? Doppelgangers?
     ``approved``, ``successful``, ``existing_updated``, ``rejected``
 
 Realm Transitions
@@ -32,7 +32,7 @@ is not applicable for the currently selected realms.
 Therefore, it is persistent under idempotent realm transformations like
 cde -> ml -> cde.
 
-However, data which are not applicable to the selected realm are hidden in the frontend:
+However, data which is not applicable to the selected realm are hidden in the frontend:
 These are only seen at the genesis modification form (and hidden there with javascript).
 
-Instead, it is finally ignored during the actual account creation.
+Instead, it is ignored during the actual account creation.
