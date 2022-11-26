@@ -70,42 +70,47 @@
         {% endcall %}
     {% endif %}
     {% if participants %}
-        <ul id="list-participants">
-            {% for anid, participant in participants.items() %} {# This dict is already sorted. #}
-                <li class="hide-hover-container clearfix-after">
-                    {% if participant['instructor'] %}<strong>{% endif %}
-                    {% if participant['viewable'] %}
-                        {{ util.persona_anchor(personas[anid], quote_me=not is_admin) }}
-                    {% else %}
-                        {{ util.persona_name(personas[anid]) }}
+        <div class="row">
+            <div class="col-sm-6">
+                <ul id="list-participants">
+                    {% for anid, participant in participants.items() %} {# This dict is already sorted. #}
+                        <li class="hide-hover-container clearfix-after">
+                            {% if participant['instructor'] %}<strong>{% endif %}
+                            {% if participant['viewable'] %}
+                                {{ util.persona_anchor(personas[anid], quote_me=not is_admin) }}
+                            {% else %}
+                                {{ util.persona_name(personas[anid]) }}
+                            {% endif %}
+                            {% if participant['instructor'] %}</strong>{% endif %}
+                            {% if participant['instructor'] %}({% trans %}Course instructor{% endtrans %}){% endif %}
+                            {% if participant['is_orga'] %}({% trans %}Orga{% endtrans %}){% endif %}
+                            {% if "past_event" in user.admin_views %}
+                                <form action="{{ cdedblink('cde/remove_participant') }}" method="POST"
+                                      id="removeparticipantform{{ anid }}" style="display: inline;"
+                                      class="delete-participant-form hide-hover display-inline">
+                                    {{ util.anti_csrf_token('cde/remove_participant') }}
+                                    {{ util.input_hidden(name="persona_id", value=anid) }}
+                                    {{ util.input_hidden(name="pcourse_id", value=values['pcourse_id']) }}
+                                    {{ util.input_hidden(name="course_page", value=True) }}
+                                    {{ util.input_submit(title=gettext("Remove"), icon="minus",
+                                            aclass="btn btn-xs btn-danger list-button-float",
+                                            label="") }}
+                                </form>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                    {% if extra_participants %}
+                        <li id="count-extra-participants">
+                            {% trans count=extra_participants %}
+                                and_one_more
+                            {%- pluralize count -%}
+                                and_count_more
+                            {% endtrans %} …
+                        </li>
                     {% endif %}
-                    {% if participant['instructor'] %}</strong>{% endif %}
-                    {% if participant['instructor'] %}({% trans %}Course instructor{% endtrans %}){% endif %}
-                    {% if participant['is_orga'] %}({% trans %}Orga{% endtrans %}){% endif %}
-                    {% if "past_event" in user.admin_views %}
-                        <form action="{{ cdedblink('cde/remove_participant') }}" method="POST"
-                              id="removeparticipantform{{ anid }}" style="display: inline;"
-                              class="delete-participant-form hide-hover display-inline">
-                            {{ util.anti_csrf_token('cde/remove_participant') }}
-                            {{ util.input_hidden(name="persona_id", value=anid) }}
-                            {{ util.input_hidden(name="pcourse_id", value=values['pcourse_id']) }}
-                            {{ util.input_hidden(name="course_page", value=True) }}
-                            {{ util.input_submit(title=gettext("Remove"), icon="minus", aclass="btn btn-xs btn-danger list-button-float",
-                                    label="") }}
-                        </form>
-                    {% endif %}
-                </li>
-            {% endfor %}
-            {% if extra_participants %}
-                <li id="count-extra-participants">
-                    {% trans count=extra_participants %}
-                        and_one_more
-                    {%- pluralize count -%}
-                        and_count_more
-                    {% endtrans %} …
-                </li>
-            {% endif %}
-        </ul>
+                </ul>
+            </div>
+        </div>
     {% elif extra_participants %}
         <p>
             <i id="count-extra-participants">
