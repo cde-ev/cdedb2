@@ -22,7 +22,7 @@ _DEFAULT_LOG_COLUMNS = (
 LogFilterLike = Union["LogFilter", CdEDBObject]
 LogFilterChangelogLike = Union["LogFilterChangelog", CdEDBObject]
 LogFilterEntityLogLike = Union["LogFilterEntityLog", CdEDBObject]
-LogFilterFinanceLike = Union["LogFilterFinanceLog", CdEDBObject]
+LogFilterFinanceLogLike = Union["LogFilterFinanceLog", CdEDBObject]
 
 
 class LogTable(enum.Enum):
