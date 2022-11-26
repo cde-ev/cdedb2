@@ -75,7 +75,7 @@
                 <li role="presentation" {% if part_id is none %}class="active" aria-current="page" {% endif %}>
                     {{ util.href(cdedblink('event/participant_list', {'part_id': None}), gettext("Overview")) }}
                 </li>
-                {% for p_id, p in ambience['event']['parts'].items() %}
+                {% for p_id, p in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
                     <li role="presentation" {% if p_id == part_id %}class="active" aria-current="page" {% endif %}>
                         {{ util.href(cdedblink('event/participant_list', {'part_id': p_id}), p['title']) }}
                     </li>

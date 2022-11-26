@@ -2267,7 +2267,14 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("berta@example.cde")
         self.assertNonPresence("emilia@example.cde")
         self.assertPresence("Es gibt in Summe 2 Teilnehmer.")
+
+        self.traverse("Silvesterfeier")
+        # Berta is only guest - neither counted nor listed
+        self.assertPresence("Es gibt in Summe 1 Teilnehmer.")
+        self.assertNonPresence("Vorname")
+
         self.traverse("1. Hälfte Windischleuba")
+        self.assertNonPresence("Vorname")
         self.assertPresence("Bisher gibt es keine Teilnehmer.")
 
         self.traverse("1. Hälfte Oberwesel")
@@ -2277,11 +2284,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.traverse("1. Hälfte Kaub")
         self.assertNonPresence("Vorname")
         self.assertPresence("Es gibt in Summe 1 Teilnehmer.")
-
-        self.traverse("Silvesterfeier")
-        # Berta is only guest - neither counted nor listed
-        self.assertPresence("Es gibt in Summe 1 Teilnehmer.")
-        self.assertNonPresence("Vorname")
 
     @as_users("berta")
     def test_participant_list_event_with_one_part(self) -> None:
