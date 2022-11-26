@@ -17,7 +17,9 @@ import segno.helpers
 import webtest
 
 import cdedb.database.constants as const
-from cdedb.common import IGNORE_WARNINGS_NAME, CdEDBObject, now, unwrap
+from cdedb.common import (
+    ANTI_CSRF_TOKEN_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, now, unwrap,
+)
 from cdedb.common.query import QueryOperators
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
 from cdedb.common.sorting import xsorted
@@ -5441,6 +5443,17 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             f['qval_ctime.creation_time'].value,
             reference_time.isoformat()
         )
+
+    @as_users("garcia")
+    def test_questionnaire_csrf(self) -> None:
+        self.event.set_event(self.key, {'id': 1, 'use_additional_questionnaire': True})
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Fragebogen")
+        f = self.response.forms['questionnaireform']
+        f['fields.lodge'] = "Test"
+        f[ANTI_CSRF_TOKEN_NAME] = "I am a Hax0r!1"
+        self.submit(f, check_notification=False)
+        f = self.response.forms['questionnaireform']
+        self.assertEqual("Test", f['fields.lodge'].value)
 
     @as_users("emilia")
     def test_part_group_constraints(self) -> None:
