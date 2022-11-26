@@ -267,7 +267,8 @@ class EventBaseFrontend(AbstractUserFrontend):
             part_ids = rs.ambience['event']['parts'].keys()
 
         data = self._get_participant_list_data(
-            rs, event_id, part_ids, sortkey=sortkey or "persona", reverse=reverse)
+            rs, event_id, part_ids, include_total_count=True,
+            sortkey=sortkey or "persona", reverse=reverse)
         if len(rs.ambience['event']['parts']) == 1:
             part_id = unwrap(rs.ambience['event']['parts'].keys())
         data['part_id'] = part_id
@@ -279,7 +280,8 @@ class EventBaseFrontend(AbstractUserFrontend):
     def _get_participant_list_data(
             self, rs: RequestState, event_id: int,
             part_ids: Collection[int] = (), orga_list: bool = False,
-            sortkey: str = "persona", reverse: bool = False) -> CdEDBObject:
+            include_total_count: bool = False, sortkey: str = "persona",
+            reverse: bool = False) -> CdEDBObject:
         """This provides data for download and online participant list.
 
         It filters out the participants which have not given list_consent.
@@ -291,7 +293,8 @@ class EventBaseFrontend(AbstractUserFrontend):
         registration_ids = self.eventproxy.list_participants(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         reg_counts = self.eventproxy.get_num_registrations_by_part(
-            rs, event_id, (const.RegistrationPartStati.participant,))
+            rs, event_id, (const.RegistrationPartStati.participant,),
+            include_total=include_total_count)
 
         if not part_ids:
             part_ids = rs.ambience['event']['parts'].keys()
