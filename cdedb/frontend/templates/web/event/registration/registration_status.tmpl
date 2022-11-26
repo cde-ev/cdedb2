@@ -169,9 +169,31 @@
         {% endfor %}
     </dl>
 
+    {% set sorted_tracks = ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
+    {% set filtered_choice_objects = [] %}
     {% for cco in choice_objects %}
+        {% if 'constraint_type' in cco %}
+            {% if cco['track_ids'] and reference_tracks[cco['id']]['num_choices'] %}
+                {% do filtered_choice_objects.append(cco) %}
+            {% endif %}
+        {% elif cco['num_choices'] %}
+            {% do filtered_choice_objects.append(cco) %}
+        {% endif %}
+    {% endfor %}
+
+    {% for batch in filtered_choice_objects|batch(2) %}
+        <div class="row">
+        {% for cco in batch %}
+        <div class="col-md-6">
         {% set track, track_group = (reference_tracks[cco['id']], cco) if 'constraint_type' in cco else (cco, None) %}
+        {% set track_ids = [track['id']] if track_group is none else track_group['track_ids'] %}
+        {% set sorted_involved_tracks = [] %}
+        {% for track_id, track in sorted_tracks if track_id in track_ids and registration['parts'][track['part_id']]['status'].is_involved() %}
+            {% do sorted_involved_tracks.append((track_id, track)) %}
+        {% endfor %}
+        {% set id_suffix = "group-{}".format(track_group['id']) if track_group else track['id'] %}
         {% set reg_track = registration['tracks'][track['id']] %}
+
         {% if 'track_ids' in cco and cco['track_ids'].intersection(involved_tracks) or cco['id'] in involved_tracks %}
             <h4>
                 {% trans %}Course{% endtrans %}
@@ -181,19 +203,43 @@
                 {% endif %}
             </h4>
 
-            <dl class="dl-horizontal" id="course-choices-{{ "group-{}".format(track_group['id']) if track_group else track['id'] }}">
-                {% if ambience['event']['is_course_assignment_visible'] %}
-                    <dt title="{% trans %}Assigned to{% endtrans %}">{% trans %}Assigned to{% endtrans %}</dt>
-                    <dd>
-                        {% if reg_track['course_id'] %}
-                            {{ util.href(cdedblink('event/course_list') + '#course-' + reg_track['course_id']|string,
-                                         "{}. {}".format(courses[reg_track['course_id']]['nr'],
-                                                         courses[reg_track['course_id']]['title'])) }}
-                        {% else %}
-                            —
-                        {% endif %}
-                    </dd>
+            {% if ambience['event']['is_course_assignment_visible'] %}
+                {% if sorted_involved_tracks|length > 1 %}
+                    <h5>
+                        {% trans %}Assigned to{% endtrans %}
+                    </h5>
                 {% endif %}
+                <dl class="dl-horizontal" id="course-assignment-{{ id_suffix }}">
+                    {% for track_id, track in sorted_involved_tracks %}
+                        {% if sorted_involved_tracks|length > 1 %}
+                            <dt title="{{ track['title'] }}">
+                                {{ track['title'] }}
+                            </dt>
+                        {% else %}
+                            <dt title="{% trans %}Assigned Course{% endtrans %}">
+                                {% trans %}
+                                    Assigned to
+                                {% endtrans %}
+                            </dt>
+                        {% endif %}
+                        <dd>
+                            {% if registration['tracks'][track_id]['course_id'] %}
+                                {{ util.href(cdedblink('event/course_list') + '#course-' + reg_track['course_id']|string,
+                                        "{}. {}".format(courses[reg_track['course_id']]['nr'], courses[reg_track['course_id']]['title'])) }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </dd>
+                    {% endfor %}
+                </dl>
+            {% endif %}
+            {% if sorted_involved_tracks|length > 1 %}
+                {# Only show this heading if the heading above is shown too. #}
+                <h5>
+                    {% trans %}Course Choices{% endtrans %}
+                </h5>
+            {% endif %}
+            <dl class="dl-horizontal" id="course-choices-{{ id_suffix }}">
                 {% if reg_track['course_instructor'] %}
                     <dt title="{% trans %}Instructor of{% endtrans %}">{% trans %}Instructor of{% endtrans %}</dt>
                     <dd><em>
@@ -217,6 +263,9 @@
                 {% endfor %}
             </dl>
         {% endif %}
+        </div>
+        {% endfor %}
+        </div>
     {% endfor %}
 
     <h3 class="heading-underline">{% trans %}Registration Data{% endtrans %}</h3>
