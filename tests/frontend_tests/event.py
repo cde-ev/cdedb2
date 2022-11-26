@@ -5961,3 +5961,22 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                                 div="course-choices-group-3")
             self.assertPresence("Kurs KV 3. Nostalgie")
             self.assertPresence("Kurs OK1 1. Niebelungenlied")
+
+    @as_users("emilia")
+    def test_ccs_cancelled_courses(self) -> None:
+        self.event.set_event(
+            self.key, {'id': 4, 'is_course_state_visible': True,
+                       'is_participant_list_visible': True,
+                       'is_course_assignment_visible': True})
+        course_id = 9
+        self.event.set_course(self.key, {'id': course_id, 'active_segments': []})
+
+        self.traverse("Veranstaltungen", "TripelAkademie", "Meine Anmeldung", "Ändern")
+        f = self.response.forms['amendregistrationform']
+        with self.assertRaises(ValueError):
+            f['group1.course_choice_0'] = course_id
+        f['group1.course_instructor'] = course_id
+        self.traverse("Anmeldungen", "Alle Anmeldungen", "Details", "Bearbeiten")
+        f = self.response.forms['changeregistrationform']
+        f['group1.course_choice_0'] = course_id
+        f['group1.course_instructor'] = course_id
