@@ -622,9 +622,14 @@ class EventRegistrationBackend(EventBaseBackend):
     @access("event")
     def get_num_registrations_by_part(self, rs: RequestState, event_id: int,
                                       stati: Collection[const.RegistrationPartStati],
-                                      ) -> Dict[int, int]:
+                                      ) -> Dict[Optional[int], int]:
+        """Count registrations per part.
+
+        Furthermore, count total registrations (returned with part_id `None`).
+        """
         event_id = affirm(vtypes.ID, event_id)
         stati = affirm_set(const.RegistrationPartStati, stati)
+        # count per part
         q = """
             SELECT part_id, COUNT(*) AS num
             FROM event.registration_parts rp
@@ -632,10 +637,19 @@ class EventRegistrationBackend(EventBaseBackend):
             WHERE ep.event_id = %s AND rp.status = ANY(%s)
             GROUP BY part_id
         """
-        return {
+        res = {
             e['part_id']: e['num']
             for e in self.query_all(rs, q, (event_id, stati))
         }
+        # total registration count
+        q = """
+            SELECT COUNT(DISTINCT registration_id)
+            FROM event.registration_parts rp
+            JOIN event.event_parts ep on ep.id = rp.part_id
+            WHERE ep.event_id = %s AND rp.status = ANY(%s)
+        """
+        res[None] = unwrap(self.query_one(rs, q, (event_id, stati)).values())
+        return res
 
     @access("event")
     def get_registration_payment_info(self, rs: RequestState, event_id: int

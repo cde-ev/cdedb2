@@ -282,6 +282,8 @@ class EventBaseFrontend(AbstractUserFrontend):
             sortkey: str = "persona", reverse: bool = False) -> CdEDBObject:
         """This provides data for download and online participant list.
 
+        It filters out the participants which have not given list_consent.
+
         This is un-inlined so download_participant_list can use this
         as well."""
         course_ids = self.eventproxy.list_courses(rs, event_id)
