@@ -69,7 +69,7 @@
 {% endblock %}
 
 {% block content %}
-    {% if ambience['event']['parts']|length > 1 %}
+    {% if list_consent and ambience['event']['parts']|length > 1 %}
         <nav>
             <ul class="nav nav-tabs mosp">
                 <li role="presentation" {% if part_id is none %}class="active" aria-current="page" {% endif %}>
