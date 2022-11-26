@@ -3102,8 +3102,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertEqual(f["title_4"].value, "CdE-Party")
         self.traverse("Unterkünfte", "Unterkunft anlegen")
         f = self.response.forms["createlodgementform"]
-        # existing lodgement group is selectable and preselected
+        # existing lodgement group is a hidden input
         self.assertEqual(f["group_id"].value, "4")
+        self.assertNonPresence("Unterkunftsgruppe")
         f["title"] = "Testzimmer"
         f["regular_capacity"] = 1
         f["camping_mat_capacity"] = 0
