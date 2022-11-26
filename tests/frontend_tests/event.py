@@ -2260,6 +2260,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f["part11.status"] = const.RegistrationPartStati.not_applied
         f["part12.status"] = const.RegistrationPartStati.guest  # Silvesterfeier
         f["reg.list_consent"].checked = True
+        self.submit(f)
 
         self.traverse("Teilnehmerliste")
         # Emmy has not given list_consent, check she is counted anyway
