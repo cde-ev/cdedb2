@@ -180,6 +180,8 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         Save data submitted in the additional questionnaire.
         Note that questionnaire rows may also be present during registration.
         """
+        # Ignore validation errors in case there is a csrf error and a redirect below.
+        rs.ignore_validation_errors()
         registration_id = self.eventproxy.list_registrations(
             rs, event_id, persona_id=rs.user.persona_id)
         if not registration_id:
