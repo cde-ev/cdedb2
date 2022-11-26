@@ -153,7 +153,7 @@
                                         {{ util.input_hidden('presider_list', value=True) }}
                                         {{ util.input_submit(
                                                 label=gettext("Create presider mailinglist"),
-                                                aclass="btn btn-success btn-wrap", icon="plus",
+                                                aclass="btn btn-success btn-wrap btn-icon", icon="plus",
                                                 readonly=not ambience['assembly']['presiders'],
                                                 title=("" if ambience['assembly']['presiders']
                                                        else gettext("Must have presiders in order to"
@@ -180,7 +180,7 @@
                                         {{ util.input_hidden('presider_list', value=False) }}
                                         {{ util.input_submit(
                                                 label=gettext("Create attendee mailinglist"),
-                                                aclass="btn btn-success btn-wrap", icon="plus",
+                                                aclass="btn btn-success btn-wrap btn-icon", icon="plus",
                                                 readonly=not ambience['assembly']['presiders'],
                                                 title=("" if ambience['assembly']['presiders']
                                                        else gettext("Must have presiders in order to"

@@ -1109,6 +1109,16 @@ span.color-legend {
 .btn-wrap {
     white-space: normal;
 }
+.btn-wrap.btn-icon {
+    position: relative;
+    padding-left: 36px;
+}
+.btn-wrap.btn-icon>.fas {
+    position: absolute;
+    top: 50%;
+    margin-top: -7px;
+    left: 10px;
+}
 .clickable {
     cursor: pointer;
 }
