@@ -2034,15 +2034,27 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Zelda Zeruda-Hime")
         self.assertPresence("12345", div='address')
 
+    @as_users('nina', 'paul')
     def test_genesis_ml(self) -> None:
+        test_user = self.user
+        self.logout()
         self._genesis_request(self.ML_GENESIS_DATA_NO_REALM, realm='ml')
-        self.login('nina')
+        self.login(test_user)
         self.traverse('Accountanfragen')
         self.assertTitle("Accountanfragen")
         self.assertPresence("zelda@example.cde", div='request-1001')
         self.traverse({"href": "/core/genesis/1001/show"})
         self.assertTitle(f"Accountanfrage von {self.ML_GENESIS_DATA['given_names']}"
                          f" {self.ML_GENESIS_DATA['family_name']}")
+
+        # Set past event and gender that should be ignored
+        self.traverse('Accountanfrage bearbeiten')
+        f = self.response.forms['genesismodifyform']
+        f['gender'].force_value(const.Genders.other)
+        if self.user_in('paul'):
+            f['pevent_id'] = 1
+        self.submit(f)
+
         f = self.response.forms['genesisdecisionform']
         self.submit(f, button="decision", value=str(GenesisDecision.approve))
         link = self.fetch_link()
