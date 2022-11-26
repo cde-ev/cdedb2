@@ -949,6 +949,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 new_track['registration_id'] = new_id
                 new_track['track_id'] = track_id
                 self.sql_insert(rs, "event.registration_tracks", new_track)
+            self._track_groups_sanity_check(rs, data['event_id'])
             self.event_log(
                 rs, const.EventLogCodes.registration_created, data['event_id'],
                 persona_id=data['persona_id'])

@@ -798,14 +798,14 @@ class EventLowLevelBackend(AbstractBackend):
             SELECT track_group_id, registration_id, COUNT(*)
             FROM (
                 -- Per reg_track gather ordered choices, eliminating duplicates.
-                SELECT DISTINCT rt.registration_id, tg.id AS track_group_id,
+                SELECT DISTINCT rt.registration_id, tg.id AS track_group_id, rt.course_instructor,
                     ARRAY_REMOVE(ARRAY_AGG(cc.course_id ORDER BY cc.rank ASC), NULL) AS choices
                 FROM event.registration_tracks AS rt
                     LEFT JOIN event.track_group_tracks AS tgt ON rt.track_id = tgt.track_id
                     LEFT JOIN event.track_groups AS tg ON tgt.track_group_id = tg.id
                     LEFT JOIN event.course_choices AS cc ON rt.track_id = cc.track_id AND rt.registration_id = cc.registration_id
                 WHERE tg.event_id = %s AND tg.constraint_type = %s
-                GROUP BY rt.registration_id, rt.track_id, tg.id
+                GROUP BY rt.registration_id, rt.track_id, rt.course_instructor, tg.id
             ) AS tmp
             GROUP BY registration_id, track_group_id
             -- Filter for non-unique combinations.
