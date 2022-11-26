@@ -14,10 +14,9 @@
 {% endblock %}
 
 {% block heading %}
-    {% call util.context_heading(gettext("Add Version"), ambience['assembly']['title'],
-                                 'bullhorn', gettext("Assembly")) %}
-        {{ assembly_util.small_attachment_title(latest_version) }}
-    {% endcall %}
+    {{ util.context_heading(gettext("Add Version"),
+                            latest_version['title'], 'file', gettext('Attachment'),
+                            ambience['assembly']['title'], 'bullhorn', gettext("Assembly")) }}
 {% endblock %}
 
 {% block breadcrumb %}

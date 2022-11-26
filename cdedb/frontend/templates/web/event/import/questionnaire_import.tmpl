@@ -13,8 +13,9 @@
     {{ util.breadcrumb_link(cdedblink("event/questionnaire_import_form"), gettext("Questionnaire Import"), active=True) }}
 {% endblock %}
 {% block heading %}
+    {{ util.doclink_("Handbuch_Orga_Fragebogenimport") }}
     {{ util.context_heading(gettext("Questionnaire Import"), ambience['event']['title'],
-                            'chalkboard-teacher', gettext("Event"), doclink="Handbuch_Orga_Fragebogenimport") }}
+                            'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block content %}
     {% if errors %}

@@ -16,7 +16,8 @@
     {{ util.breadcrumb_link(cdedblink("event/create_lodgement"), gettext("Create Lodgement"), active=True) }}
 {% endblock %}
 {% block heading %}
-    {{ util.context_heading(gettext("Create Lodgement"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+    {{ util.context_heading(gettext("Create Lodgement"),
+                            ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('event/create_lodgement') }}" method="POST" id="createlodgementform"
