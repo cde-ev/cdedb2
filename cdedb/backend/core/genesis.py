@@ -19,14 +19,15 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
-    GENESIS_CASE_FIELDS, PERSONA_ALL_FIELDS, PERSONA_CORE_FIELDS,
-    REALM_SPECIFIC_GENESIS_FIELDS, REALMS_TO_FIELDS,
+    GENESIS_CASE_FIELDS, PERSONA_CORE_FIELDS, REALM_SPECIFIC_GENESIS_FIELDS,
+    REALMS_TO_FIELDS,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.roles import (
     GENESIS_REALM_OVERRIDE, PERSONA_DEFAULTS, REALM_ADMINS, extract_realms,
     extract_roles, implied_realms,
 )
+from cdedb.common.validation import PERSONA_FULL_CREATION, filter_none
 from cdedb.database.connection import Atomizer
 
 
@@ -302,7 +303,7 @@ class CoreGenesisBackend(CoreBaseBackend):
 
         with Atomizer(rs):
             current = self.genesis_get_case(rs, data['id'])
-            # Get case already checks privilege and existance for the current data set.
+            # Get case already checks privilege and existence for the current data set.
             if not {"core_admin", f"{data['realm']}_admin"} & rs.user.roles:
                 raise PrivilegeError(n_("Not privileged."))
             if current['case_status'].is_finalized():
@@ -418,8 +419,14 @@ class CoreGenesisBackend(CoreBaseBackend):
             case = unwrap(self.genesis_get_cases(rs, (case_id,)))
             if self.verify_existence(rs, case['username'], include_genesis=False):
                 raise ValueError(n_("Email address already taken."))
-            data = {k: v for k, v in case.items()
-                    if k in PERSONA_ALL_FIELDS and k != "id"}
+
+            # filter out genesis information not relevant for the respective realm
+            allowed_keys = (
+                set(filter_none(PERSONA_FULL_CREATION[case['realm']])) & (
+                    set(GENESIS_CASE_FIELDS) |
+                    set(REALM_SPECIFIC_GENESIS_FIELDS[case['realm']])) - {"id"})
+
+            data = {k: v for k, v in case.items() if k in allowed_keys}
             data['display_name'] = data['given_names']
             merge_dicts(data, PERSONA_DEFAULTS)
             # Fix realms, so that the persona validator does the correct thing

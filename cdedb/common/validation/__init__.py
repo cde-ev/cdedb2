@@ -1124,14 +1124,13 @@ PERSONA_EVENT_CREATION: Mapping[str, Any] = {
     'country': Optional[Country],
 }
 
-PERSONA_FULL_ML_CREATION = {**PERSONA_BASE_CREATION}
-
-PERSONA_FULL_ASSEMBLY_CREATION = {**PERSONA_BASE_CREATION}
-
-PERSONA_FULL_EVENT_CREATION = {**PERSONA_BASE_CREATION, **PERSONA_EVENT_CREATION}
-
-PERSONA_FULL_CDE_CREATION = {**PERSONA_BASE_CREATION, **PERSONA_CDE_CREATION,
-                             'is_member': bool, 'is_searchable': bool}
+PERSONA_FULL_CREATION: Mapping[str, Dict[str, Any]] = {
+    'ml': {**PERSONA_BASE_CREATION},
+    'assembly': {**PERSONA_BASE_CREATION},
+    'event': {**PERSONA_BASE_CREATION, **PERSONA_EVENT_CREATION},
+    'cde': {**PERSONA_BASE_CREATION, **PERSONA_CDE_CREATION,
+            'is_member': bool, 'is_searchable': bool}
+}
 
 PERSONA_COMMON_FIELDS: Dict[str, Any] = {
     'username': Email,

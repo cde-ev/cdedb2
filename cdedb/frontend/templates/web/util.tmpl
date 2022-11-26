@@ -886,20 +886,23 @@ mailto:
 
 
 {# Macro to unify the style of headings with context (events, personas, assemblies, ...) #}
-{% macro context_heading(title, subtitle=none, icon=none, icon_arialabel=none, doclink=none, doclink_anchor=none) %}
-    {% if doclink %}
-        {{ doclink_(doclink, anchor=doclink_anchor) }}
-    {% endif %}
+{% macro context_heading(title,
+                         subtitle=none, icon=none, icon_arialabel=none,
+                         subtitle2=none, icon2=none, icon_arialabel2=none) %}
     <h1 class="title">
         {{ title }}
+        {% if subtitle and subtitle2 %}<div>{% endif %}
         {% if subtitle %}
-            <span class="small">
+            <small>
                 {{ make_icon(icon, arialabel=icon_arialabel) }}{{ nbsp }}{{ subtitle }}
-                {% if caller %}
-                    {{ caller() }}
-                {% endif %}
-            </span>
+            </small>
         {% endif %}
+        {% if subtitle2 %}
+            <small>
+                 &ensp;{{ make_icon(icon2, arialabel=icon_arialabel2) }}{{ nbsp }}{{ subtitle2 }}
+            </small>
+        {% endif %}
+        {% if subtitle and subtitle2 %}</div>{% endif %}
     </h1>
 {% endmacro %}
 

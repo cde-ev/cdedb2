@@ -70,7 +70,7 @@
             </div>
             {% if "member" in user.roles %}
                 <div class="list-group tear-down">
-                    {{ util.href(cdedblink("cde/view_misc"), gettext("Miscellaneous"), icon="random",
+                    {{ util.href(cdedblink("cde/view_misc"), gettext("Miscellaneous"), icon="external-link-alt",
                                  aclass="list-group-item", active=(sidenav_active=='cde_misc')) }}
                 </div>
             {% endif %}
