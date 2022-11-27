@@ -5962,6 +5962,19 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             self.assertPresence("Kurs KV 3. Nostalgie")
             self.assertPresence("Kurs OK1 1. Niebelungenlied")
 
+        # Check that a CCS group can be recreated after being deleted, while
+        #  compatible choices exist.
+        event = self.event.get_event(self.key, 4)
+        self.traverse("Veranstaltungsteile", "Gruppen")
+        f = self.response.forms['deletetrackgroupform1']
+        f['ack_delete'] = True
+        self.submit(f)
+        self.traverse("Kursschienengruppe hinzufügen")
+        f = self.response.forms['configuretrackgroupform']
+        f['title'] = f['shortname'] = "K1"
+        f['track_ids'] = list(str(id_) for id_ in event['track_groups'][1]['track_ids'])
+        self.submit(f)
+
     @as_users("emilia")
     def test_ccs_cancelled_courses(self) -> None:
         self.event.set_event(

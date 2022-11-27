@@ -4375,9 +4375,9 @@ msgid "Incompatible tracks."
 msgstr "Inkompatible Kursschienen."
 
 #: cdedb/frontend/event/event.py:738
-msgid "Cannot create CCS group if course choices exist."
+msgid "Cannot create CCS group due to incompatible choices."
 msgstr ""
-"Kursschienensynchronisierung fehlgeschlagen, weil bereits Kurswahlen "
+"Kursschienensynchronisierung fehlgeschlagen, weil inkompatible Kurswahlen "
 "existieren."
 
 #: cdedb/frontend/event/event.py:965 cdedb/frontend/event/partial_import.py:107
