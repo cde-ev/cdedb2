@@ -2683,7 +2683,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f["qord_primary"] = "reg_fields.xfield_anzahl_GROSSBUCHSTABEN"
         f["query_name"] = "Großbuchstaben"
         self.submit(f, button="store_query", check_button_attrs=True)
-        self.assertPresence("anzahl_GROSSBUCHSTABEN", div="query-result")
+        self.assertPresence("Anzahl Großbuchstaben", div="query-result")
 
         # Delete that field.
         self.traverse("Datenfelder konfigurieren")
@@ -2692,7 +2692,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.submit(f)
 
         self.traverse("Anmeldungen", "Großbuchstaben")
-        self.assertNonPresence("anzahl_GROSSBUCHSTABEN", div="query-result")
+        self.assertNonPresence("Anzahl Großbuchstaben", div="query-result")
 
         # Add the field again.
         self.traverse("Datenfelder konfigurieren")
@@ -2708,6 +2708,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f = self.response.forms["queryform"]
         f["qop_reg_fields.xfield_anzahl_GROSSBUCHSTABEN"] = ""
         self.submit(f)
+        # The field has been deleted, hence the title is no longer known.
         self.assertPresence("anzahl_GROSSBUCHSTABEN", div="query-result")
 
     @as_users("annika")
