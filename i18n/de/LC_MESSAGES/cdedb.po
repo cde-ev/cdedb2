@@ -11075,6 +11075,9 @@ msgstr "In Kurs einteilen"
 msgid "View Registrations"
 msgstr "In Anmeldungsliste anzeigen"
 
+msgid "View in Registrations"
+msgstr "In Anmeldungsliste anzeigen"
+
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:176
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:31
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:78

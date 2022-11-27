@@ -39,7 +39,7 @@
                                                  'aria-label': settings.delButtonTitle,
                                                  'aria-pressed': 'false',
                                                  'class': 'btn btn-danger btn-sm' })
-                    .append($('<span></span>', {'class': 'fas fa-trash-alt'}));
+                    .append($('<span></span>', {'class': 'far fa-trash-alt'}));
 
             if (newrow) {
                 $deleteButton.click(function() {

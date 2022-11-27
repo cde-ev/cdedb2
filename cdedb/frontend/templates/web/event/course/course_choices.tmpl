@@ -148,19 +148,19 @@
 
         <div class="pull-right">
             {{ util.href(cdedblink('event/registration_query', corresponding_query.serialize_to_url()),
-                         gettext("View Registrations"), icon='list', aclass='btn btn-sm btn-default') }}
+                         gettext("View in Registrations"), icon='list', aclass='btn btn-sm btn-default') }}
         </div>
         <div class="p softhide" id="js-button-group">
             <div class="btn-group">
-                <button type="button" class="btn btn-sm btn-info" title="{% trans %}Select All{% endtrans %}"
+                <button type="button" class="btn btn-sm btn-default" title="{% trans %}Select All{% endtrans %}"
                         id="btn-select-all">
                     {{ util.make_icon('check-square') }} <span class="hidden-xs">{% trans %}All{% endtrans %}</span>
                 </button>
-                <button type="button" class="btn btn-sm btn-info" title="{% trans %}Select None{% endtrans %}"
+                <button type="button" class="btn btn-sm btn-default" title="{% trans %}Select None{% endtrans %}"
                         id="btn-select-none">
                     {{ util.make_icon('square') }} <span class="hidden-xs">{% trans %}None{% endtrans %}</span>
                 </button>
-                <button type="button" class="btn btn-sm btn-info" title="{% trans %}Invert Selection{% endtrans %}"
+                <button type="button" class="btn btn-sm btn-default" title="{% trans %}Invert Selection{% endtrans %}"
                         id="btn-select-swap">
                     {{ util.make_icon('caret-square-right') }} <span class="hidden-xs">{% trans %}Invert{% endtrans %}</span>
                 </button>

@@ -26,6 +26,6 @@
         {{ util.form_input_select('target_assembly_id', assembly_entries|dict_entries('id', 'title'),
                                   label=gettext("Assembly")) }}
         {{ util.input_hidden('source_id', ambience['ballot']['id']) }}
-        {{ util.form_input_submit(label=gettext("Continue"), icon="pen") }}
+        {{ util.form_input_submit(label=gettext("Continue"), icon="chevron-right", aclass="btn btn-success") }}
     </form>
 {% endblock %}
