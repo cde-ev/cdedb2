@@ -366,7 +366,6 @@ class CdELastschriftMixin(CdEBaseFrontend):
         """
         if rs.has_validation_errors():
             return self.lastschrift_index(rs)
-        period = self.cdeproxy.current_period(rs)
         if not lastschrift_id:
             all_lids = self.cdeproxy.list_lastschrift(rs)
             lastschrift_ids = tuple(self.determine_open_permits(
@@ -376,28 +375,22 @@ class CdELastschriftMixin(CdEBaseFrontend):
             if not self.determine_open_permits(rs, lastschrift_ids):
                 rs.notify("error", n_("Existing pending transaction."))
                 return self.lastschrift_index(rs)
-        new_transactions = tuple(
-            {
-                'issued_at': now(),
-                'lastschrift_id': anid,
-                'period_id': period,
-            } for anid in lastschrift_ids
-        )
         transaction_ids = self.cdeproxy.issue_lastschrift_transaction_batch(
-            rs, new_transactions, check_unique=True)
+            rs, lastschrift_ids)
         if not transaction_ids:
             return self.lastschrift_index(rs)
 
-        lastschrifts = self.cdeproxy.get_lastschrifts(
-            rs, lastschrift_ids)
+        lastschrifts = self.cdeproxy.get_lastschrifts(rs, lastschrift_ids)
+        transactions = self.cdeproxy.get_lastschrift_transactions(rs, transaction_ids)
         personas = self.coreproxy.get_personas(
             rs, tuple(e['persona_id'] for e in lastschrifts.values()))
-        for lastschrift in lastschrifts.values():
+        for transaction in transactions.values():
+            lastschrift = lastschrifts[transaction["lastschrift_id"]]
             persona = personas[lastschrift['persona_id']]
             data = {
                 'persona': persona,
                 'payment_date': self._calculate_payment_date(),
-                'amount': self.cdeproxy.transaction_amount(rs, persona['id']),
+                'amount': transaction["amount"],
                 'iban': lastschrift['iban'],
                 'account_owner': lastschrift['account_owner'],
                 'mandate_reference': lastschrift_reference(
@@ -437,13 +430,6 @@ class CdELastschriftMixin(CdEBaseFrontend):
         else:
             return self.redirect(rs, "cde/lastschrift_index")
 
-    def tally_for_lastschrift_status(self, status: const.LastschriftTransactionStati
-                                     ) -> Optional[decimal.Decimal]:
-        """Retrieve preset tally associated with each status."""
-        return (-self.conf["SEPA_ROLLBACK_FEE"]
-                if status == const.LastschriftTransactionStati.failure else
-                None)
-
     @access("finance_admin", modi={"POST"})
     @REQUESTdata("status", "persona_id")
     def lastschrift_finalize_transaction(
@@ -459,8 +445,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         if rs.has_validation_errors():
             return self.lastschrift_index(rs)
         code = self.cdeproxy.finalize_lastschrift_transaction(
-            rs, transaction_id, status,
-            tally=self.tally_for_lastschrift_status(status))
+            rs, transaction_id, status)
         rs.notify_return_code(code)
         if persona_id:
             return self.redirect(rs, "cde/lastschrift_show",
@@ -483,7 +468,6 @@ class CdELastschriftMixin(CdEBaseFrontend):
         if not transaction_ids:
             rs.notify("warning", n_("No transactions selected."))
             return self.redirect(rs, "cde/lastschrift_index")
-        status = None
         if success:
             status = const.LastschriftTransactionStati.success
         elif cancelled:
@@ -492,15 +476,8 @@ class CdELastschriftMixin(CdEBaseFrontend):
             status = const.LastschriftTransactionStati.failure
         else:
             raise RuntimeError(n_("Impossible."))
-        code = 1
-        transactions = [
-            {
-                'transaction_id': transaction_id,
-                'status': status,
-                'tally': self.tally_for_lastschrift_status(status),
-            }
-            for transaction_id in transaction_ids]
-        code = self.cdeproxy.finalize_lastschrift_transactions(rs, transactions)
+        code = self.cdeproxy.finalize_lastschrift_transactions(
+            rs, transaction_ids, status)
         rs.notify_return_code(code)
         return self.redirect(rs, "cde/lastschrift_index")
 
@@ -516,9 +493,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         """
         if rs.has_validation_errors():
             return self.lastschrift_index(rs)
-        tally = -self.conf["SEPA_ROLLBACK_FEE"]
-        code = self.cdeproxy.rollback_lastschrift_transaction(
-            rs, transaction_id, tally)
+        code = self.cdeproxy.rollback_lastschrift_transaction(rs, transaction_id)
         rs.notify_return_code(code)
         transaction_ids = self.cdeproxy.list_lastschrift_transactions(
             rs, lastschrift_ids=(lastschrift_id,),
@@ -684,5 +659,5 @@ class CdELastschriftMixin(CdEBaseFrontend):
     @access("anonymous")
     def i25p_index(self, rs: RequestState) -> Response:
         """Show information about 'Initiative 25+'."""
-        annual_fee = self.conf["MEMBERSHIP_FEE"] * self.conf["PERIODS_PER_YEAR"]
+        annual_fee = self.cdeproxy.annual_membership_fee(rs)
         return self.render(rs, "lastschrift/i25p_index", {"annual_fee": annual_fee})

@@ -328,39 +328,37 @@ class CdELastschriftBackend(CdEBaseBackend):
         return user["donation"] + self.annual_membership_fee(rs)
 
     @access("finance_admin")
-    def issue_lastschrift_transaction(self, rs: RequestState, data: CdEDBObject,
-                                      check_unique: bool = False
+    def issue_lastschrift_transaction(self, rs: RequestState, lastschrift_id: vtypes.ID
                                       ) -> DefaultReturnCode:
         """Make a new direct debit transaction.
 
         This only creates the database entry. The SEPA file will be
         generated in the frontend.
 
-        :param check_unique: If True: raise an error if there already is an
-          issued transaction.
         :returns: The id of the new transaction.
         """
         stati = const.LastschriftTransactionStati
-        data = affirm(vtypes.LastschriftTransaction, data, creation=True)
+        lastschrift_id = affirm(vtypes.ID, lastschrift_id)
         with Atomizer(rs):
-            lastschrift = unwrap(self.get_lastschrifts(
-                rs, (data['lastschrift_id'],)))
+            lastschrift = self.get_lastschrift(rs, lastschrift_id)
             if lastschrift['revoked_at']:
                 raise RuntimeError(n_("Lastschrift already revoked."))
             period = self.current_period(rs)
-            if check_unique:
-                transaction_ids = self.list_lastschrift_transactions(
-                    rs, lastschrift_ids=(data['lastschrift_id'],),
-                    periods=(period,), stati=(stati.issued,))
-                if transaction_ids:
-                    raise RuntimeError(n_("Existing pending transaction."))
-            update = {
+            # TODO maybe check that there is no successful transaction
+            transaction_ids = self.list_lastschrift_transactions(
+                rs, lastschrift_ids=(lastschrift_id,),
+                periods=(period,), stati=(stati.issued,))
+            if transaction_ids:
+                raise RuntimeError(n_("Existing pending transaction."))
+            data = {
+                'issued_at': now(),
+                'processed_at': None,
+                'tally': None,
                 'submitted_by': rs.user.persona_id,
                 'period_id': period,
                 'status': stati.issued,
                 'amount': self.transaction_amount(rs, lastschrift["persona_id"])
             }
-            merge_dicts(data, update)
             ret = self.sql_insert(rs, "cde.lastschrift_transactions", data)
             self.core.finance_log(
                 rs, const.FinanceLogCodes.lastschrift_transaction_issue,
@@ -373,8 +371,7 @@ class CdELastschriftBackend(CdEBaseBackend):
     @access("finance_admin")
     def finalize_lastschrift_transaction(
             self, rs: RequestState, transaction_id: int,
-            status: const.LastschriftTransactionStati,
-            tally: decimal.Decimal = None) -> DefaultReturnCode:
+            status: const.LastschriftTransactionStati) -> DefaultReturnCode:
         """Tally a direct debit transaction.
 
         That is either book the successful transaction, book the fees for a
@@ -391,22 +388,18 @@ class CdELastschriftBackend(CdEBaseBackend):
         status = affirm(const.LastschriftTransactionStati, status)
         if not status.is_finalized():
             raise RuntimeError(n_("Non-final target state."))
-        tally = affirm_optional(decimal.Decimal, tally)
         with Atomizer(rs):
-            transaction = unwrap(self.get_lastschrift_transactions(
-                rs, (transaction_id,)))
-            # noinspection PyArgumentList
-            current = const.LastschriftTransactionStati(transaction['status'])
-            if current.is_finalized():
+            transaction = self.get_lastschrift_transaction(rs, transaction_id)
+            if transaction['status'].is_finalized():
                 raise RuntimeError(n_("Transaction already tallied."))
-            if tally is None:
-                if status == const.LastschriftTransactionStati.success:
-                    tally = transaction['amount']
-                elif status == const.LastschriftTransactionStati.cancelled:
-                    tally = decimal.Decimal(0)
-                else:
-                    raise ValueError(
-                        n_("Missing tally for failed transaction."))
+            if status == const.LastschriftTransactionStati.success:
+                tally = transaction['amount']
+            elif status == const.LastschriftTransactionStati.cancelled:
+                tally = decimal.Decimal(0)
+            elif status == const.LastschriftTransactionStati.failure:
+                tally = -self.conf["SEPA_ROLLBACK_FEE"]
+            else:
+                raise RuntimeError(n_("Impossible"))
             update = {
                 'id': transaction_id,
                 'processed_at': now(),
@@ -414,8 +407,7 @@ class CdELastschriftBackend(CdEBaseBackend):
                 'status': status,
             }
             ret = self.sql_update(rs, "cde.lastschrift_transactions", update)
-            lastschrift = unwrap(self.get_lastschrifts(
-                rs, (transaction['lastschrift_id'],)))
+            lastschrift = self.get_lastschrift(rs, transaction['lastschrift_id'])
             persona_id = lastschrift['persona_id']
             delta = None
             new_balance = None
@@ -425,8 +417,7 @@ class CdELastschriftBackend(CdEBaseBackend):
                 delta = self.annual_membership_fee(rs)
                 new_balance = user['balance'] + delta
                 ret *= self.core.change_persona_balance(
-                    rs, persona_id, new_balance,
-                    const.FinanceLogCodes.lastschrift_transaction_success,
+                    rs, persona_id, new_balance, code,
                     change_note="Erfolgreicher Lastschrifteinzug.")
                 # We provide membership directly after the successful transaction.
                 self.change_membership(rs, persona_id, is_member=True)
@@ -449,51 +440,47 @@ class CdELastschriftBackend(CdEBaseBackend):
 
     @access("finance_admin")
     def finalize_lastschrift_transactions(
-            self, rs: RequestState, transactions: List[CdEDBObject]
+            self, rs: RequestState, transaction_ids: Collection[vtypes.ID],
+            status: const.LastschriftTransactionStati
     ) -> DefaultReturnCode:
         """Atomized multiplex variant of finalize_lastschrift_transaction."""
-        transactions = affirm_array(vtypes.LastschriftTransactionEntry, transactions)
+        transaction_ids = affirm_array(vtypes.ID, transaction_ids)
+        status = affirm(const.LastschriftTransactionStati, status)
         code = 1
         with Atomizer(rs):
-            for transaction in transactions:
+            for transaction_id in transaction_ids:
                 code *= self.finalize_lastschrift_transaction(
-                    rs, transaction['transaction_id'], transaction['status'],
-                    tally=transaction['tally'])
+                    rs, transaction_id, status)
         return code
 
     @access("finance_admin")
     def rollback_lastschrift_transaction(
-            self, rs: RequestState, transaction_id: int,
-            tally: decimal.Decimal) -> DefaultReturnCode:
+            self, rs: RequestState, transaction_id: int) -> DefaultReturnCode:
         """Revert a successful direct debit transaction.
 
         This happens if the creditor revokes a successful transaction,
         which is possible for some weeks. We deduct the now non-existing
         money from the balance and invalidate the permit.
-
-        :param tally: The fee incurred by the revokation.
         """
         transaction_id = affirm(vtypes.ID, transaction_id)
-        tally = affirm(decimal.Decimal, tally)
-        stati = const.LastschriftTransactionStati
         with Atomizer(rs):
-            transaction = unwrap(self.get_lastschrift_transactions(
-                rs, (transaction_id,)))
-            lastschrift = unwrap(self.get_lastschrifts(
-                rs, (transaction['lastschrift_id'],)))
-            if transaction['status'] != stati.success:
+            transaction = self.get_lastschrift_transaction(rs, transaction_id)
+            lastschrift = self.get_lastschrift(rs, transaction['lastschrift_id'])
+            if transaction['status'] != const.LastschriftTransactionStati.success:
                 raise RuntimeError(n_("Transaction was not successful."))
             update = {
                 'id': transaction_id,
                 'processed_at': now(),
-                'tally': tally,
-                'status': stati.rollback,
+                'tally': -self.conf["SEPA_ROLLBACK_FEE"],
+                'status': const.LastschriftTransactionStati.rollback,
             }
             ret = self.sql_update(rs, "cde.lastschrift_transactions", update)
             persona_id = lastschrift['persona_id']
             current = self.core.get_cde_user(rs, persona_id)
-            # ensure the balance does not get negative, f.e. if the MEMBERSHIP_FEE
-            # changed between finalization and rollback
+            # TODO notify this happens
+            # Ensure the balance does not get negative, f.e. if the MEMBERSHIP_FEE
+            #  changed between finalization and rollback or membership fee was deducted
+            #  from balance as part of the semester management.
             new_balance = max(
                 decimal.Decimal(0), current['balance'] - self.annual_membership_fee(rs))
             self.core.change_persona_balance(
@@ -507,8 +494,7 @@ class CdELastschriftBackend(CdEBaseBackend):
             self.set_lastschrift(rs, lastschrift_update)
         return ret
 
-    def lastschrift_may_skip(self, rs: RequestState,
-                             lastschrift: CdEDBObject) -> bool:
+    def lastschrift_may_skip(self, rs: RequestState, lastschrift: CdEDBObject) -> bool:
         """Check whether a direct debit permit may stay dormant for now.
 
         The point is, that consecutive skips will invalidat the
@@ -542,7 +528,7 @@ class CdELastschriftBackend(CdEBaseBackend):
         """
         lastschrift_id = affirm(vtypes.ID, lastschrift_id)
         with Atomizer(rs):
-            lastschrift = unwrap(self.get_lastschrifts(rs, (lastschrift_id,)))
+            lastschrift = self.get_lastschrift(rs, lastschrift_id)
             if not self.lastschrift_may_skip(rs, lastschrift):
                 # Skipping will invalidate permit.
                 return 0
