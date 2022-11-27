@@ -221,6 +221,11 @@ _DEFAULTS = {
     "MAILMAN_USER": "restadmin",
     # user for mailman to retrieve templates
     "MAILMAN_BASIC_AUTH_USER": "mailman",
+    # aliases which are recognized for mailinglists
+    "MAILMAN_ACCEPTABLE_ALIASES": {
+        "vorstand@lists.cde-ev.de": ["info@cde-ev.de"],
+        "doku@lists.cde-ev.de": ["team@dokuforge.de"],
+    },
 
     #################
     # Backend stuff #
