@@ -39,6 +39,7 @@ PERSONA_CORE_FIELDS = PERSONA_STATUS_FIELDS + (
     "id", "username", "display_name", "family_name", "given_names",
     "title", "name_supplement")
 
+#: Names of columns associated to an event user.
 PERSONA_EVENT_FIELDS = PERSONA_CORE_FIELDS + (
     "gender", "birthday", "telephone", "mobile", "address_supplement",
     "address", "postal_code", "location", "country", "pronouns",
