@@ -926,7 +926,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             params['quote_me'] = True
         return self.redirect(rs, 'core/show_user', params=params)
 
-    def safe_compile(self, rs: RequestState, target_file: str, cwd: PathLike,
+    def safe_compile(self, rs: RequestState, target_file: str, cwd: pathlib.Path,
                      runs: int, errormsg: Optional[str]) -> pathlib.Path:
         """Helper to compile latex documents in a safe way.
 
@@ -961,7 +961,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 tstamp = round(now().timestamp())
                 backup_path = "/tmp/cdedb-latex-error-{}.tex".format(tstamp)
                 self.logger.info(f"Copying source file to {backup_path}")
-                shutil.copy2(target_file, backup_path)
+                shutil.copy2(cwd / target_file, backup_path)
             errormsg = errormsg or n_(
                 "LaTeX compilation failed. Try downloading the "
                 "source files and compiling them manually.")
@@ -984,7 +984,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 tmp_file.write(data.encode('utf8'))
                 tmp_file.flush()
                 path = self.safe_compile(
-                    rs, tmp_file.name, tmp_dir, runs=runs, errormsg=errormsg)
+                    rs, tmp_file.name, pathlib.Path(tmp_dir), runs=runs,
+                    errormsg=errormsg)
                 if path.exists():
                     # noinspection PyTypeChecker
                     with open(path, 'rb') as pdf:
