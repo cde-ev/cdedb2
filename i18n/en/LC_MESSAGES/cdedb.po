@@ -15321,6 +15321,9 @@ msgstr "All CdElokal Moderators"
 msgid "MailinglistTypes.semi_public"
 msgstr "Public ([Moderated] Opt-in)"
 
+msgid "MailinglistTypes.public_member_implicit"
+msgstr "Members (Opt-out), Public (Opt-in)"
+
 #: cdedb/i18n_additional.py:302
 msgid "MailinglistTypes.cdelokal"
 msgstr "CdElokal ([Moderated] Opt-in)"
