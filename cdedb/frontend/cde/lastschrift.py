@@ -155,6 +155,9 @@ class CdELastschriftMixin(CdEBaseFrontend):
         """Create a new permit."""
         data['persona_id'] = persona_id
         data = check(rs, vtypes.Lastschrift, data, creation=True)
+        if not self.coreproxy.verify_persona(rs, data["persona_id"], ["cde"]):
+            rs.add_validation_error(("persona_id", ValueError(
+                n_("Persona must have cde realm."))))
         min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
         if donation < min_donation:
             rs.add_validation_error(("donation", ValueError(

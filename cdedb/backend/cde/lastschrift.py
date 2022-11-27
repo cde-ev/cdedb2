@@ -152,7 +152,8 @@ class CdELastschriftBackend(CdEBaseBackend):
             new_id = self.sql_insert(rs, "cde.lastschrift", data)
             self.core.finance_log(rs, const.FinanceLogCodes.grant_lastschrift,
                                   data['persona_id'], None, None)
-            # TODO check that persona has cde realm?
+            if not self.core.verify_persona(rs, data["persona_id"], ["cde"]):
+                raise ValueError(n_("Invalid persona."))
             update = {"id": data["persona_id"], "donation": initial_donation}
             msg = "Setzen einer initialen Spende nach Lastschrifterstellung."
             self.core.change_persona(rs, update, change_note=msg)
