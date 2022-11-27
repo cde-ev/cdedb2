@@ -26,7 +26,7 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation import (
-    ALL_MAILINGLIST_FIELDS, PERSONA_FULL_ML_CREATION, filter_none,
+    ALL_MAILINGLIST_FIELDS, PERSONA_FULL_CREATION, filter_none,
 )
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
@@ -107,7 +107,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         return super().create_user_form(rs)
 
     @access("core_admin", "ml_admin", modi={"POST"})
-    @REQUESTdatadict(*filter_none(PERSONA_FULL_ML_CREATION))
+    @REQUESTdatadict(*filter_none(PERSONA_FULL_CREATION['ml']))
     def create_user(self, rs: RequestState, data: Dict[str, Any]) -> Response:
         defaults = {
             'is_cde_realm': False,

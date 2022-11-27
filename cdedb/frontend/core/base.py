@@ -1862,6 +1862,9 @@ class CoreBaseFrontend(AbstractFrontend):
         """Now we can reset to a new password."""
         if rs.has_validation_errors():
             return self.reset_password_form(rs)
+        if not self.coreproxy.verify_existence(rs, email, include_genesis=False):
+            rs.notify("error", n_("Unknown email address."))
+            return self.reset_password_form(rs)
         if new_password != new_password2:
             rs.extend_validation_errors(
                 (("new_password", ValueError(n_("Passwords don’t match."))),

@@ -1307,7 +1307,8 @@ def encode_parameter(salt: str, target: str, name: str, param: str,
     :param persona_id: The id of the persona utilizing the parameter, may be
       None in which case everybody (including anonymous requests) can do so.
     :param target: The endpoint the parameter is designated for. If this is
-      omitted, there are nasty replay attacks.
+      omitted, there are nasty replay attacks. Is only used to ensure the
+      parameter is not abused for another ``target``.
     :param name: name of parameter, same security implications as ``target``
     :param timeout: time until parameter expires, if this is None, the
       parameter never expires

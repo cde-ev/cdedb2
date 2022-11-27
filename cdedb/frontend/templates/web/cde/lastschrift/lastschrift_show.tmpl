@@ -18,7 +18,7 @@
 {% block breadcrumb %}
     {{ super() }}
     {% if "finance" in user.admin_views or ambience['persona']['id'] != user.persona_id %}
-        {{ util.breadcrumb_link(cdedblink("cde/lastschrift_index"), gettext("Direct Debit Authorization")) }}
+        {{ util.breadcrumb_link(cdedblink("cde/lastschrift_index"), gettext("Direct Debit Authorizations")) }}
     {% endif %}
     {{ util.breadcrumb_link(cdedblink("cde/lastschrift_show", {'persona_id': values['persona_id']}),
                             util.persona_name(ambience['persona'], only_given_names=True), active=True,

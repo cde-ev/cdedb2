@@ -25,3 +25,13 @@ found in the ``bin`` subdirectory.
 There is also a development server running at port 5000
 which bypasses Apache and provides an interactive traceback explorer
 including a console in which expressions can be evaluated in the respective namespace.
+Take care to start the interactive debugger as user ``www-data``.
+
+To access the ldap server from a local vm, it is currently necessary to manually switch
+from TLS to plain TCP connections by removing the ``ssl`` parameter during server
+creation in ldap/main.py: Tools like ldapsearch (from ``ldap-utils`` package) or
+ApacheDirectoryStudio seems to do not work properly if the certificate name differs
+from the hostname which is used to access the ldap server.
+If those tools are used *within* the vm, everything works fine.
+
+It is also reasonable to increase the debug level in ldap/main.py from WARNING to DEBUG.

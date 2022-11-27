@@ -368,10 +368,9 @@ class EventDownloadMixin(EventBaseFrontend):
     def download_dokuteam_participant_list(self, rs: RequestState,
                                            event_id: int) -> Response:
         """Create participant list per track for dokuteam."""
-        event = self.eventproxy.get_event(rs, event_id)
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
-        spec = QueryScope.registration.get_spec(event=event)
+        spec = QueryScope.registration.get_spec(event=rs.ambience['event'])
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             work_dir = pathlib.Path(tmp_dir, rs.ambience['event']['shortname'])

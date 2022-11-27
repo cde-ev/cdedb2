@@ -11,7 +11,7 @@ import decimal
 import io
 import re
 from collections import OrderedDict
-from typing import Collection, Dict, List, Optional, Tuple
+from typing import Collection, Dict, List, Optional, Set, Tuple
 
 import segno.helpers
 import werkzeug.exceptions
@@ -55,12 +55,15 @@ class EventRegistrationMixin(EventBaseFrontend):
                            {'data': data, 'csvfields': csv_position,
                             'saldo': saldo})
 
-    def examine_fee(self, rs: RequestState, datum: CdEDBObject,
-                    expected_fees: Dict[int, decimal.Decimal],
-                    full_payment: bool = True) -> CdEDBObject:
-        """Check one line specifying a paid fee.
+    def _examine_fee(self, rs: RequestState, datum: CdEDBObject,
+                     expected_fees: Dict[int, decimal.Decimal],
+                     seen_reg_ids: Set[int], full_payment: bool = True,
+                     ) -> CdEDBObject:
+        """Check one line specifying a paid fee. Uninlined from `batch_fees`.
 
         We test for fitness of the data itself.
+
+        :note: This modifies the parameters `expected_fees` and `seen_reg_ids`.
 
         :param full_payment: If True, only write the payment date if the fee
             was paid in full.
@@ -101,6 +104,11 @@ class EventRegistrationMixin(EventBaseFrontend):
                     rs, event['id'], persona_id).keys()
                 if registration_ids:
                     registration_id = unwrap(registration_ids)
+                    if registration_id in seen_reg_ids:
+                        warnings.append(
+                            ('persona_id',
+                             ValueError(n_("Multiple transfers for this user."))))
+                    seen_reg_ids.add(registration_id)
                     registration = self.eventproxy.get_registration(
                         rs, registration_id)
                     amount = amount or decimal.Decimal(0)
@@ -117,6 +125,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                     elif total > fee:
                         warnings.append(('amount',
                                          ValueError(n_("Too much money."))))
+                    expected_fees[registration_id] -= amount
                 else:
                     problems.append(('persona_id',
                                      ValueError(n_("No registration found."))))
@@ -216,9 +225,12 @@ class EventRegistrationMixin(EventBaseFrontend):
         reader = csv.DictReader(
             fee_data_lines, fieldnames=fields, dialect=CustomCSVDialect())
         data = []
+        seen_reg_ids: Set[int] = set()
         for lineno, raw_entry in enumerate(reader):
             dataset: CdEDBObject = {'raw': raw_entry, 'lineno': lineno}
-            data.append(self.examine_fee(rs, dataset, expected_fees, full_payment))
+            data.append(self._examine_fee(
+                rs, dataset, expected_fees, full_payment=full_payment,
+                seen_reg_ids=seen_reg_ids))
         open_issues = any(e['problems'] for e in data)
         saldo: decimal.Decimal = sum(
             (e['amount'] for e in data if e['amount']), decimal.Decimal("0.00"))
@@ -388,7 +400,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         if orga_input:
             standard_params.update({
                 "reg.amount_paid": vtypes.NonNegativeDecimal,
-                "reg.checkin": bool,
+                "reg.checkin": Optional[datetime.datetime],  # type: ignore[dict-item]
                 "reg.orga_notes": Optional[str],  # type: ignore[dict-item]
                 "reg.parental_agreement": bool,
                 "reg.payment": Optional[datetime.date],  # type: ignore[dict-item]

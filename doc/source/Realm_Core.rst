@@ -7,4 +7,4 @@ Core Realm
 
    Realm_Core_Privacy
 
-.. todo:: add information on Personas in general, Genesis Requests, Admin Promotion
+.. todo:: add information on Personas in general, Admin Promotion

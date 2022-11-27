@@ -52,11 +52,7 @@ def create_database_users(conf: Config) -> None:
     repo_path: pathlib.Path = conf['REPOSITORY_PATH']
 
     users_path = repo_path / "cdedb" / "database" / "cdedb-users.sql"
-
-    # TODO remove slapd once we removed openldap
-    stop_services("pgbouncer", "slapd", "cde-ldap")
     psql("-f", users_path.__fspath__())
-    restart_services("pgbouncer", "cde-ldap")
 
 
 @sanity_check
@@ -70,17 +66,12 @@ def create_database(conf: Config, secrets: SecretsConfig) -> None:
 
     db_path = repo_path / "cdedb" / "database" / "cdedb-db.sql"
     tables_path = repo_path / "cdedb" / "database" / "cdedb-tables.sql"
-    ldap_path = repo_path / "cdedb" / "database" / "cdedb-ldap.sql"
 
-    # TODO remove slapd once we removed openldap
-    stop_services("pgbouncer", "slapd", "cde-ldap")
     psql("-f", str(db_path), "-v", f"cdb_database_name={database}")
-    restart_services("pgbouncer", "cde-ldap")
 
     with connect(conf, secrets) as conn:
         with conn.cursor() as cur:
             cur.execute(tables_path.read_text())
-            cur.execute(ldap_path.read_text())
 
 
 @sanity_check

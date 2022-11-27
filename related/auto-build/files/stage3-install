@@ -163,19 +163,6 @@ echo "TLS_CACERT    /etc/ldap/certs/ldap.pem" >> /etc/ldap/ldap.conf
 
 systemctl restart cde-ldap
 
-# TODO remove once we switched to ldaptor
-# The following lines mirror the ldap-create make target.
-# We can not call the target directly, since ldap-create installs slapd
-# by itself, but in the auto-build all packages are installed in stage2.
-systemctl stop slapd
-# remove the predefined mdb-database from ldap
-rm -f /etc/ldap/slapd.d/cn=config/olcDatabase=\{1\}mdb.ldif
-systemctl start slapd
-# Apply the overall ldap configuration (load modules, add backends etc)
-ldapmodify -Y EXTERNAL -H ldapi:/// -f /media/cdrom0/ldap-config.ldif
-# Apply the cdedb specific ldap configuration
-sudo -u cdedb make ldap-update
-
 echo ""
 echo "Set up the apache2..."
 echo "--------------------------------------------"

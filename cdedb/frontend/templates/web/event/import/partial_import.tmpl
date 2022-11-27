@@ -12,8 +12,9 @@
 {{ util.breadcrumb_link(cdedblink("event/partial_import_form"), gettext("Partial Import"), active=True) }}
 {% endblock %}
 {% block heading %}
+    {{ util.doclink_("Handbuch_Orga_Partieller-Import") }}
     {{ util.context_heading(gettext("Partial Import"), ambience['event']['title'],
-                            'chalkboard-teacher', gettext("Event"), doclink="Handbuch_Orga_Partieller-Import") }}
+                            'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block content %}
     {% if errors %}

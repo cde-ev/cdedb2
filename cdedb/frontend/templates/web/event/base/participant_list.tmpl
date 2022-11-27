@@ -69,24 +69,25 @@
 {% endblock %}
 
 {% block content %}
-    {% if registrations and list_consent %}
-        {% if ambience['event']['parts']|length > 1 %}
-            <nav>
-                <ul class="nav nav-tabs mosp">
-                    <li role="presentation" {% if part_id is none %}class="active" aria-current="page" {% endif %}>
-                        {{ util.href(cdedblink('event/participant_list', {'part_id': None}), gettext("Overview")) }}
+    {% if list_consent and ambience['event']['parts']|length > 1 %}
+        <nav>
+            <ul class="nav nav-tabs mosp">
+                <li role="presentation" {% if part_id is none %}class="active" aria-current="page" {% endif %}>
+                    {{ util.href(cdedblink('event/participant_list', {'part_id': None}), gettext("Overview")) }}
+                </li>
+                {% for p_id, p in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+                    <li role="presentation" {% if p_id == part_id %}class="active" aria-current="page" {% endif %}>
+                        {{ util.href(cdedblink('event/participant_list', {'part_id': p_id}), p['title']) }}
                     </li>
-                    {% for p_id, p in ambience['event']['parts'].items() %}
-                        <li role="presentation" {% if p_id == part_id %}class="active" aria-current="page" {% endif %}>
-                            {{ util.href(cdedblink('event/participant_list', {'part_id': p_id}), p['title']) }}
-                        </li>
-                    {% endfor %}
-                </ul>
-            </nav>
-        {% endif %}
+                {% endfor %}
+            </ul>
+        </nav>
+    {% endif %}
 
 
+    {% if list_consent and (registrations or reg_counts.get(part_id)) %}
         {# This makes a list per part. If the event has only one part, part_id is set by the frontend on this part_id by default. #}
+        {% if registrations %}
         {% if part_id %}
             <div class="table-container">
             <table class="table table-condensed">
@@ -104,7 +105,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                {% for registration_id in ordered if registrations[registration_id]['list_consent'] %}
+                {% for registration_id in ordered %}
                     {% with persona = personas[registrations[registration_id]['persona_id']] %}
                     <tr id="row-{{ loop.index }}">
                         {% if persona['is_searchable'] and persona['is_member'] %}
@@ -186,8 +187,10 @@
             </table>
             </div>
         {% endif %}
+        {% endif %}
         <p>
-            {% trans count=reg_counts.get(part_id, registrations|length) %}
+            {# for part_id=None, the reg_counts include the full event participant count #}
+            {% trans count=reg_counts[part_id] %}
                 There are {{ count }} participants in total.
             {% endtrans %}
         </p>

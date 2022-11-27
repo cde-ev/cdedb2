@@ -61,6 +61,18 @@ def genesis_template(**kwargs: Any) -> str:
     return format_insert_sql("core.genesis_cases", data)
 
 
+def forget_finalized_genesis_template() -> str:
+    ctime = now() - datetime.timedelta(days=89)
+    status = const.GenesisStati
+    successful = genesis_template(
+        username="1@example.cde", case_status=status.successful, ctime=ctime)
+    updated = genesis_template(
+        username="2@example.cde", case_status=status.existing_updated, ctime=ctime)
+    rejected = genesis_template(
+        username="3@example.cde", case_status=status.rejected, ctime=ctime)
+    return successful + updated + rejected
+
+
 def changelog_template(**kwargs: Any) -> str:
     defaults: SQL_DATA = {
         'address': 'Im Garten 55',
@@ -197,7 +209,7 @@ class TestCron(CronTest):
     @prepsql(genesis_template())
     def test_genesis_forget_unrelated(self) -> None:
         self.execute('genesis_forget')
-        self.assertEqual({1001}, set(self.core.genesis_list_cases(RS)))
+        self.assertEqual({1, 2, 3, 4, 1001}, set(self.core.genesis_list_cases(RS)))
 
     @storage
     @prepsql(genesis_template(
@@ -205,7 +217,7 @@ class TestCron(CronTest):
         case_status=const.GenesisStati.successful.value))
     def test_genesis_forget_successful(self) -> None:
         self.execute('genesis_forget')
-        self.assertEqual({}, self.core.genesis_list_cases(RS))
+        self.assertEqual({1, 2, 3, 4}, set(self.core.genesis_list_cases(RS)))
 
     @storage
     @prepsql(genesis_template(
@@ -213,7 +225,7 @@ class TestCron(CronTest):
         case_status=const.GenesisStati.rejected.value))
     def test_genesis_forget_rejected(self) -> None:
         self.execute('genesis_forget')
-        self.assertEqual({}, self.core.genesis_list_cases(RS))
+        self.assertEqual({1, 2, 3, 4}, set(self.core.genesis_list_cases(RS)))
 
     @storage
     @prepsql(genesis_template(
@@ -221,14 +233,22 @@ class TestCron(CronTest):
         case_status=const.GenesisStati.unconfirmed.value))
     def test_genesis_forget_unconfirmed(self) -> None:
         self.execute('genesis_forget')
-        self.assertEqual({}, self.core.genesis_list_cases(RS))
+        self.assertEqual({1, 2, 3, 4}, set(self.core.genesis_list_cases(RS)))
 
     @storage
     @prepsql(genesis_template(
         case_status=const.GenesisStati.unconfirmed.value))
     def test_genesis_forget_recent_unconfirmed(self) -> None:
         self.execute('genesis_forget')
-        self.assertEqual({1001}, set(self.core.genesis_list_cases(RS)))
+        self.assertEqual({1, 2, 3, 4, 1001}, set(self.core.genesis_list_cases(RS)))
+
+    @storage
+    @prepsql(forget_finalized_genesis_template())
+    def test_genesis_forget_finalized(self) -> None:
+        """Do not forget finalized cases which are less than 90 days old."""
+        self.execute('genesis_forget')
+        self.assertEqual(
+            {1, 2, 3, 4, 1001, 1002, 1003}, set(self.core.genesis_list_cases(RS)))
 
     def test_changelog_remind_empty(self) -> None:
         self.cron.execute(['pending_changelog_remind'])
