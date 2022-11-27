@@ -1523,6 +1523,7 @@
             "attachment_hash": null,
             "case_status": 2,
             "reviewer": null,
+            "persona_id": null,
             "pevent_id": null,
             "pcourse_id": null
         },
@@ -1547,6 +1548,7 @@
             "attachment_hash": null,
             "case_status": 2,
             "reviewer": null,
+            "persona_id": null,
             "pevent_id": null,
             "pcourse_id": null
         },
@@ -1571,6 +1573,7 @@
             "attachment_hash": "71186e9b6f29e6c984b85a59bfb644a771dc58d286dcb40e5768d15258c0a8f1dac091feb7943d2d2fd4b038459585e8e42edaf3f493fff1c6c99d12b5f2d93d",
             "case_status": 2,
             "reviewer": null,
+            "persona_id": null,
             "pevent_id": null,
             "pcourse_id": null
         },
@@ -1595,6 +1598,7 @@
             "attachment_hash": null,
             "case_status": 1,
             "reviewer": null,
+            "persona_id": null,
             "pevent_id": null,
             "pcourse_id": null
         }
