@@ -951,12 +951,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         try:
             for _ in range(runs):
                 subprocess.run(args, cwd=cwd, check=True,
-                               stdout=subprocess.DEVNULL)
+                               capture_output=True, text=True)
         except subprocess.CalledProcessError as e:
             if pdf_path.exists():
                 self.logger.debug(f"Deleting corrupted file {pdf_path}")
                 pdf_path.unlink()
-            self.logger.debug(f"Exception \"{e}\" caught and handled.")
+            self.logger.debug(f"Exception \"{e}\" caught and handled. Output follows:")
+            self.logger.debug(e.stdout)  # lualatex puts its errors to stdout
             if self.conf["CDEDB_DEV"]:
                 tstamp = round(now().timestamp())
                 backup_path = "/tmp/cdedb-latex-error-{}.tex".format(tstamp)
