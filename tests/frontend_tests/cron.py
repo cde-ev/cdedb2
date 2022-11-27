@@ -492,6 +492,7 @@ class TestCron(CronTest):
             'platin': unittest.mock.MagicMock(),
             'geheim': unittest.mock.MagicMock(),
             'hogwarts': unittest.mock.MagicMock(),
+            'gu': unittest.mock.MagicMock(),
             'migration': unittest.mock.MagicMock(),
         }
 
@@ -544,6 +545,7 @@ class TestCron(CronTest):
                           umcall('platin'),
                           umcall('geheim'),
                           umcall('hogwarts'),
+                          umcall('gu'),
                           umcall('migration'),
                           ])))
         # Meta update
