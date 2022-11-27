@@ -299,7 +299,7 @@ I18N_STRINGS = (
     n_("MailinglistTypes.general_moderators"),
     n_("MailinglistTypes.cdelokal_moderators"),
     n_("MailinglistTypes.semi_public"),
-    n_("MailinglistTypes.semi_public_member_implicit"),
+    n_("MailinglistTypes.public_member_implicit"),
     n_("MailinglistTypes.cdelokal"),
 
     #

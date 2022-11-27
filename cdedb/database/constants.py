@@ -218,7 +218,6 @@ class MailinglistTypes(enum.IntEnum):
     public_member_implicit = 70
 
 
-
 @enum.unique
 class MailinglistDomain(enum.IntEnum):
     lists = 1
