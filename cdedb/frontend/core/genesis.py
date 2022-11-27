@@ -285,7 +285,9 @@ class CoreGenesisMixin(CoreBaseFrontend):
         if (not self.is_admin(rs)
                 and "{}_admin".format(case['realm']) not in rs.user.roles):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        reviewer = pevent = pcourse = None
+        persona = reviewer = pevent = pcourse = None
+        if case['persona_id']:
+            persona = self.coreproxy.get_persona(rs, case['persona_id'])
         if case['reviewer']:
             reviewer = self.coreproxy.get_persona(rs, case['reviewer'])
         if "event" in rs.user.roles:
@@ -311,7 +313,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         }
         return self.render(rs, "genesis/genesis_show_case", {
             'reviewer': reviewer, 'pevent': pevent, 'pcourse': pcourse,
-            'doppelgangers': doppelgangers,
+            'persona': persona, 'doppelgangers': doppelgangers,
             'REALM_SPECIFIC_GENESIS_FIELDS': REALM_SPECIFIC_GENESIS_FIELDS,
             'disabled_radios': non_editable_doppelgangers, 'title_map': title_map,
         })

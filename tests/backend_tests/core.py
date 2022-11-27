@@ -617,6 +617,7 @@ class TestCoreBackend(BackendTest):
             'reviewer': None,
             'attachment_hash': None,
             'birth_name': None,
+            'persona_id': None,
             'pevent_id': None,
             'pcourse_id': None,
         })
@@ -722,6 +723,7 @@ class TestCoreBackend(BackendTest):
             'telephone': None,
             'attachment_hash': None,
             'birth_name': None,
+            'persona_id': None,
             'pevent_id': None,
             'pcourse_id': None,
         })
@@ -789,6 +791,7 @@ class TestCoreBackend(BackendTest):
             'location': "Marcuria",
             'country': "AQ",
             'attachment_hash': attachment_hash,
+            'persona_id': None,
             'pevent_id': None,
             'pcourse_id': None,
         }

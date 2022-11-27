@@ -2209,8 +2209,14 @@ class TestCoreFrontend(FrontendTest):
         self.assertIn("Zelda", mail)
         self.assertIn("Ein herzliches Willkommen", mail)
         self.assertIn("zum ersten Mal in unserer Datenbank anmeldest", mail)  # consent
-
         link = self.fetch_link()
+
+        # Check wether link to account and reviewer work
+        self.get("/core/genesis/1001/show")
+        self.traverse({'href': "/core/persona/2001/"})
+        self.get("/core/genesis/1001/show")
+        self.traverse(self.user['default_name_format'])
+
         self.traverse({'href': '^/$'})
         if not self.user_in('quintus'):
             f = self.response.forms['adminshowuserform']
