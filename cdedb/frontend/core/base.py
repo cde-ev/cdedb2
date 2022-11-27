@@ -591,7 +591,7 @@ class CoreBaseFrontend(AbstractFrontend):
         # relative admins, core admins and the user himself got "core"
         if "core" not in access_levels:
             masks = ["balance", "decided_search", "trial_member", "bub_search",
-                     "is_searchable", "paper_expuls"]
+                     "is_searchable", "paper_expuls", "donation"]
             if "meta" not in access_levels:
                 masks.extend([
                     "is_active", "is_meta_admin", "is_core_admin",
