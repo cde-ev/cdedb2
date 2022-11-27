@@ -306,6 +306,7 @@ class PastEventBackend(AbstractBackend):
                         courses.
         * courses: A course associated with the past event.
         * log: A log entry for the past event.
+        * genesis cases: A genesis case associated with the past event.
 
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
@@ -327,6 +328,10 @@ class PastEventBackend(AbstractBackend):
                               entity_key="pevent_id")
         if log:
             blockers["log"] = [e["id"] for e in log]
+        genesis_cases = self.sql_select(rs, "core.genesis_cases", ("id",),
+                                        (pevent_id,), entity_key="pevent_id")
+        if genesis_cases:
+            blockers["genesis_cases"] = [e["id"] for e in genesis_cases]
 
         return blockers
 
@@ -362,11 +367,18 @@ class PastEventBackend(AbstractBackend):
                 if "courses" in cascade:
                     with Silencer(rs):
                         for pcourse_id in blockers["courses"]:
+                            casc = {"participants"} | ({"genesis_cases"} & cascade)
                             ret *= self.delete_past_course(
-                                rs, pcourse_id, ("participants",))
+                                rs, pcourse_id, cascade=casc)
                 if "log" in cascade:
                     ret *= self.sql_delete(
                         rs, "past_event.log", blockers["log"])
+                if "genesis_cases" in cascade:
+                    for case_id in blockers["genesis_cases"]:
+                        # we use sql_update instead of core.modify_genesis_case here,
+                        #  since the latter is forbidden for finalized cases
+                        update = {'id': case_id, 'pevent_id': None}
+                        ret *= self.sql_update(rs, "core.genesis_cases", update)
 
                 blockers = self.delete_past_event_blockers(rs, pevent_id)
 
@@ -453,6 +465,7 @@ class PastEventBackend(AbstractBackend):
         Possible blockers:
 
         * participants: Participants of the past course.
+        * genesis cases: A genesis case associated with this past course.
 
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
@@ -464,6 +477,10 @@ class PastEventBackend(AbstractBackend):
                                        (pcourse_id,), entity_key="pcourse_id")
         if participants:
             blockers["participants"] = [e["id"] for e in participants]
+        genesis_cases = self.sql_select(rs, "core.genesis_cases", ("id",),
+                                        (pcourse_id,), entity_key="pcourse_id")
+        if genesis_cases:
+            blockers["genesis_cases"] = [e["id"] for e in genesis_cases]
 
         return blockers
 
@@ -496,6 +513,12 @@ class PastEventBackend(AbstractBackend):
                 if "participants" in cascade:
                     ret *= self.sql_delete(
                         rs, "past_event.participants", blockers["participants"])
+                if "genesis_cases" in cascade:
+                    for case_id in blockers["genesis_cases"]:
+                        # we use sql_update instead of core.modify_genesis_case here,
+                        #  since the latter is forbidden for finalized cases
+                        update = {'id': case_id, 'pcourse_id': None}
+                        ret *= self.sql_update(rs, "core.genesis_cases", update)
 
                 blockers = self.delete_past_course_blockers(rs, pcourse_id)
 
