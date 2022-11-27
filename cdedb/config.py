@@ -225,6 +225,7 @@ _DEFAULTS = {
     "MAILMAN_ACCEPTABLE_ALIASES": {
         "vorstand@lists.cde-ev.de": ["info@cde-ev.de"],
         "doku@lists.cde-ev.de": ["team@dokuforge.de"],
+        "dokuforge2@lists.cde-ev.de": ["df2@dokuforge.de"],
     },
 
     #################
