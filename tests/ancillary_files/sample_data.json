@@ -8734,12 +8734,12 @@
         },
         {
             "mailinglist_id": 12,
-            "persona_id": 15,
+            "persona_id": 14,
             "subscription_state": 30
         },
         {
             "mailinglist_id": 12,
-            "persona_id": 18,
+            "persona_id": 15,
             "subscription_state": 30
         },
         {
@@ -9274,11 +9274,6 @@
         },
         {
             "mailinglist_id": 67,
-            "persona_id": 18,
-            "subscription_state": 1
-        },
-        {
-            "mailinglist_id": 67,
             "persona_id": 100,
             "subscription_state": 30
         }
@@ -9538,7 +9533,7 @@
         },
         {
             "mailinglist_id": 67,
-            "persona_id": 18
+            "persona_id": 14
         },
         {
             "mailinglist_id": 99,
