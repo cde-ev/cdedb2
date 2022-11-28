@@ -6,7 +6,7 @@ xsi:schemaLocation="urn:iso:std:iso:20022:tech:xsd:pain.008.003.02 pain.008.003.
 			<MsgId>1442438515.600722-OukDdlmT74</MsgId>
 			<CreDtTm>2015-09-16T21:21:55.618487+00:00</CreDtTm>
 			<NbOfTxs>1</NbOfTxs>
-			<CtrlSum>47.23</CtrlSum>
+			<CtrlSum>50.23</CtrlSum>
 			<InitgPty>
 				<Nm>CdE e.V.</Nm>
 			</InitgPty>
@@ -16,7 +16,7 @@ xsi:schemaLocation="urn:iso:std:iso:20022:tech:xsd:pain.008.003.02 pain.008.003.
                                 <PmtMtd>DD</PmtMtd>
                                 <BtchBookg>false</BtchBookg>
                                 <NbOfTxs>1</NbOfTxs>
-                                <CtrlSum>47.23</CtrlSum>
+                                <CtrlSum>50.23</CtrlSum>
                                 <PmtTpInf>
                                         <SvcLvl>
                                                 <Cd>SEPA</Cd>
@@ -66,7 +66,7 @@ xsi:schemaLocation="urn:iso:std:iso:20022:tech:xsd:pain.008.003.02 pain.008.003.
                                                 <PmtId>
                                                         <EndToEndId>CDE-I25-2-7-2-7-15.594588</EndToEndId>
                                                 </PmtId>
-                                                <InstdAmt Ccy="EUR">47.23</InstdAmt>
+                                                <InstdAmt Ccy="EUR">50.23</InstdAmt>
                                                 <DrctDbtTx>
                                                         <MndtRltdInf>
                                                                 <MndtId>CDE-I25-2-7-2-7</MndtId>

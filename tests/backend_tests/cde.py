@@ -214,9 +214,13 @@ class TestCdEBackend(BackendTest):
             'notes': None,
             'persona_id': 3,
         }
-        new_id = self.cde.create_lastschrift(self.key, newdata)
+        donation = decimal.Decimal(9)
+        new_id = self.cde.create_lastschrift(self.key, newdata, donation)
         self.assertLess(0, new_id)
         self.assertEqual({new_id: 3}, self.cde.list_lastschrift(self.key))
+        # the donation is tracked in core.personas
+        user = self.core.get_cde_user(self.key, persona_id=3)
+        self.assertEqual(donation, user["donation"])
         newdata.update({
             'id': new_id,
             'revoked_at': None,
@@ -228,12 +232,7 @@ class TestCdEBackend(BackendTest):
             ["revoked_at", "transactions"],
             list(self.cde.delete_lastschrift_blockers(self.key, 2)))
 
-        transaction_data = {
-            "lastschrift_id": new_id,
-            "period_id": self.cde.current_period(self.key),
-        }
-        transaction_id = self.cde.issue_lastschrift_transaction(
-            self.key, transaction_data, check_unique=True)
+        transaction_id = self.cde.issue_lastschrift_transaction(self.key, new_id)
         self.assertEqual(
             ["revoked_at", "transactions", "active_transactions"],
             list(self.cde.delete_lastschrift_blockers(self.key, new_id)))
@@ -251,6 +250,9 @@ class TestCdEBackend(BackendTest):
             list(self.cde.delete_lastschrift_blockers(self.key, 1)))
         self.assertLess(
             0, self.cde.delete_lastschrift(self.key, 1, ["transactions"]))
+        # check that the donation survives the lastschrift deletion
+        user = self.core.get_cde_user(self.key, persona_id=3)
+        self.assertEqual(donation, user["donation"])
 
     @as_users("farin")
     def test_lastschrift_multiple_active(self) -> None:
@@ -262,9 +264,9 @@ class TestCdEBackend(BackendTest):
             'notes': None,
             'persona_id': 3,
         }
-        self.cde.create_lastschrift(self.key, newdata)
+        self.cde.create_lastschrift(self.key, newdata, decimal.Decimal("3"))
         with self.assertRaises(ValueError):
-            self.cde.create_lastschrift(self.key, newdata)
+            self.cde.create_lastschrift(self.key, newdata, decimal.Decimal("3"))
 
     @as_users("farin")
     def test_lastschrift_transaction(self) -> None:
@@ -293,65 +295,58 @@ class TestCdEBackend(BackendTest):
         }
         self.assertEqual(expectation,
                          self.cde.get_lastschrift_transactions(self.key, (1,)))
-        newdata = {
-            'issued_at': datetime.datetime.now(pytz.utc),
-            'lastschrift_id': 2,
-            'period_id': 43,
-        }
-        new_id = self.cde.issue_lastschrift_transaction(self.key, newdata)
+        new_id = self.cde.issue_lastschrift_transaction(self.key, lastschrift_id=2)
         self.assertLess(0, new_id)
-        update = {
+        newdata = {
             'id': new_id,
+            'lastschrift_id': 2,
             'amount': decimal.Decimal('42.23') + 2 * self.conf["MEMBERSHIP_FEE"],
+            'issued_at': nearly_now(),
             'processed_at': None,
             'status': 1,
             'submitted_by': self.user['id'],
             'tally': None,
+            'period_id': 43,
         }
-        newdata.update(update)
         self.assertEqual({new_id: newdata},
                          self.cde.get_lastschrift_transactions(self.key, (new_id,)))
 
     @as_users("farin")
     def test_lastschrift_transaction_finalization(self) -> None:
         ltstati = const.LastschriftTransactionStati
-        for status, tally in ((ltstati.success, None),
-                              (ltstati.cancelled, None),
-                              (ltstati.failure, decimal.Decimal("-4.50"))):
+        for status in (ltstati.success, ltstati.cancelled, ltstati.failure):
             with self.subTest(status=status):
                 # since this is modified by the successful lastschrift test, we need to
                 # retrieve it in each subtest
                 old_balance = self.core.get_cde_user(
                     self.key, USER_DICT["berta"]["id"])["balance"]
-                newdata = {
-                    'issued_at': datetime.datetime.now(pytz.utc),
-                    'lastschrift_id': 2,
-                    'period_id': 43,
-                }
-                new_id = self.cde.issue_lastschrift_transaction(self.key, newdata)
+                new_id = self.cde.issue_lastschrift_transaction(
+                    self.key, lastschrift_id=2)
                 self.assertLess(0, new_id)
-                update = {
+                newdata = {
                     'id': new_id,
+                    'lastschrift_id': 2,
                     'amount': decimal.Decimal('42.23') + 2*self.conf["MEMBERSHIP_FEE"],
+                    'issued_at': nearly_now(),
                     'processed_at': None,
-                    'status': 1,
+                    'status': ltstati.issued,
                     'submitted_by': self.user['id'],
                     'tally': None,
+                    'period_id': 43,
                 }
-                newdata.update(update)
                 self.assertEqual(
                     {new_id: newdata}, self.cde.get_lastschrift_transactions(
                         self.key, (new_id,)))
                 self.assertLess(
                     0, self.cde.finalize_lastschrift_transaction(
-                        self.key, new_id, status, tally=tally))
+                        self.key, new_id, status))
                 data = self.cde.get_lastschrift_transactions(self.key, (new_id,))
                 data = data[new_id]
                 new_balance = self.core.get_cde_user(
                     self.key, USER_DICT["berta"]["id"])["balance"]
                 self.assertEqual(status, data['status'])
                 if status == ltstati.success:
-                    self.assertEqual(decimal.Decimal('47.23'), data['tally'])
+                    self.assertEqual(decimal.Decimal('50.23'), data['tally'])
                     self.assertEqual(
                         new_balance, old_balance + 2*self.conf["MEMBERSHIP_FEE"])
                 elif status == ltstati.cancelled:
@@ -361,25 +356,23 @@ class TestCdEBackend(BackendTest):
                     self.assertEqual(decimal.Decimal('-4.50'), data['tally'])
                     self.assertEqual(new_balance, old_balance)
 
+
     @as_users("farin")
     def test_lastschrift_transaction_rollback(self) -> None:
         ltstati = const.LastschriftTransactionStati
-        newdata = {
-            'issued_at': datetime.datetime.now(pytz.utc),
-            'lastschrift_id': 2,
-            'period_id': 43,
-        }
-        new_id = self.cde.issue_lastschrift_transaction(self.key, newdata)
+        new_id = self.cde.issue_lastschrift_transaction(self.key, lastschrift_id=2)
         self.assertLess(0, new_id)
-        update = {
+        newdata = {
             'id': new_id,
+            'lastschrift_id': 2,
             'amount': decimal.Decimal('42.23') + 2 * self.conf["MEMBERSHIP_FEE"],
+            'issued_at': nearly_now(),
             'processed_at': None,
-            'status': 1,
+            'status': ltstati.issued,
             'submitted_by': self.user['id'],
             'tally': None,
+            'period_id': 43,
         }
-        newdata.update(update)
         self.assertEqual(
             {new_id: newdata}, self.cde.get_lastschrift_transactions(
                 self.key, (new_id,)))
@@ -387,8 +380,7 @@ class TestCdEBackend(BackendTest):
             0, self.cde.finalize_lastschrift_transaction(
                 self.key, new_id, ltstati.success))
         self.assertLess(
-            0, self.cde.rollback_lastschrift_transaction(
-                self.key, new_id, decimal.Decimal('-4.50')))
+            0, self.cde.rollback_lastschrift_transaction(self.key, new_id))
         data = self.cde.get_lastschrift_transactions(self.key, (new_id,))
         data = data[new_id]
         self.assertEqual(ltstati.rollback, data['status'])
@@ -407,7 +399,7 @@ class TestCdEBackend(BackendTest):
             'notes': None,
             'persona_id': 3,
         }
-        new_id = self.cde.create_lastschrift(self.key, newdata)
+        new_id = self.cde.create_lastschrift(self.key, newdata, decimal.Decimal("9"))
         self.assertLess(0, new_id)
         self.assertLess(0, self.cde.lastschrift_skip(self.key, new_id))
 

@@ -857,6 +857,7 @@ class TestCdEFrontend(FrontendTest):
                       {'description': 'Einzugsermächtigungen'},
                       {'description': 'Bertålotta Beispiel'},)
         self.assertTitle("Einzugsermächtigung Bertålotta Beispiel")
+        self.assertPresence("50,23 €", div='amount', exact=True)
         self.get("/cde/user/2/lastschrift/create")
         f = self.response.forms['createlastschriftform']
         f['iban'] = "DE12 5001 0517 0648 4898 90"
@@ -1158,6 +1159,7 @@ class TestCdEFrontend(FrontendTest):
         f['notes'] = "grosze Siebte: Take on me"
         self.submit(f)
         self.assertTitle("Einzugsermächtigung Charly C. Clown")
+        self.assertPresence("20,00 €", div='donation', exact=True)
         self.assertIn("revokeform", self.response.forms)
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['changelastschriftform']

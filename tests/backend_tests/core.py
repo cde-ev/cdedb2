@@ -1009,9 +1009,11 @@ class TestCoreBackend(BackendTest):
             "granted_at": datetime.datetime.fromisoformat("2000-01-01"),
             "revoked_at": datetime.datetime.fromisoformat("2000-01-01"),
         }
-        old_ls_id = self.cde.create_lastschrift(self.key, ls_data)
+        old_ls_id = self.cde.create_lastschrift(
+            self.key, ls_data, initial_donation=decimal.Decimal("5"))
         del ls_data["revoked_at"]
-        ls_id = self.cde.create_lastschrift(self.key, ls_data)
+        ls_id = self.cde.create_lastschrift(
+            self.key, ls_data, initial_donation=decimal.Decimal("7"))
         self.login("vera")
         with self.assertRaises(ArchiveError) as cm:
             self.core.archive_persona(self.key, persona_id, "Testing")
