@@ -11,8 +11,8 @@
 {% endblock %}
 
 {% block heading %}
-    {{ util.context_heading(gettext("Detailed Results"), ambience['ballot']['title'], 'thumbs-up', gettext("Ballot"),
-                            doclink='Realm_Assembly_Voting-Procedere') }}
+    {{ util.doclink_('Realm_Assembly_Voting-Procedere') }}
+    {{ util.context_heading(gettext("Detailed Results"), ambience['ballot']['title'], 'thumbs-up', gettext("Ballot")) }}
 {% endblock %}
 
 {% block breadcrumb %}

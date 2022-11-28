@@ -187,6 +187,7 @@ class TestMlBackend(BackendTest):
             64: 'Das Leben, das Universum ...',
             65: 'Hogwarts',
             66: 'Versammlungsleitung Internationaler Kongress',
+            67: 'Globaler Unsinn',
             99: 'Mailman-Migration',
         }
         self.assertEqual(expectation, self.ml.list_mailinglists(self.key))
@@ -277,7 +278,7 @@ class TestMlBackend(BackendTest):
     @as_users("janis")
     def test_list_mailinglists_semi_privileged(self) -> None:
         self.assertEqual(self.ml.list_mailinglists(self.key).keys(),
-                         {2, 3, 7, 12, 13, 14, 56, 57, 61, 63, 64, 65})
+                         {2, 3, 7, 12, 13, 14, 56, 57, 61, 63, 64, 65, 67})
 
     @as_users("janis")
     def test_double_link(self) -> None:
@@ -502,7 +503,8 @@ class TestMlBackend(BackendTest):
             53: SS.subscribed,
             54: SS.pending,
             59: SS.implicit,
-            63: SS.subscribed
+            63: SS.subscribed,
+            67: SS.implicit,
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=2))
@@ -550,6 +552,7 @@ class TestMlBackend(BackendTest):
             54: SS.unsubscription_override,
             56: SS.pending,
             61: SS.implicit,
+            67: SS.implicit,
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=7))
@@ -1666,9 +1669,11 @@ class TestMlBackend(BackendTest):
             61: SS.implicit,
             63: SS.subscribed,
             64: SS.subscribed,
+            67: SS.implicit,
         }
-        self.assertEqual(expectation,
-                         self.ml.get_user_subscriptions(self.key, persona_id=9))
+        self.assertEqual(
+            expectation,
+            self.ml.get_user_subscriptions(self.key, persona_id=self.user['id']))
         data = [
             {
                 'mailinglist_id': 2,
@@ -1703,9 +1708,11 @@ class TestMlBackend(BackendTest):
             61: SS.implicit,
             63: SS.subscribed,
             64: SS.subscribed,
+            67: SS.implicit,
         }
-        self.assertEqual(expectation,
-                         self.ml.get_user_subscriptions(self.key, persona_id=9))
+        self.assertEqual(
+            expectation,
+            self.ml.get_user_subscriptions(self.key, persona_id=self.user['id']))
 
         self.login(USER_DICT['berta'])
         datum = {
@@ -1733,9 +1740,11 @@ class TestMlBackend(BackendTest):
             61: SS.implicit,
             63: SS.subscribed,
             64: SS.subscribed,
+            67: SS.implicit,
         }
-        self.assertEqual(expectation,
-                         self.ml.get_user_subscriptions(self.key, persona_id=9))
+        self.assertEqual(
+            expectation,
+            self.ml.get_user_subscriptions(self.key, persona_id=self.user['id']))
 
         datum = {
             'mailinglist_id': 4,
@@ -1759,9 +1768,11 @@ class TestMlBackend(BackendTest):
             61: SS.implicit,
             63: SS.subscribed,
             64: SS.subscribed,
+            67: SS.implicit,
         }
-        self.assertEqual(expectation,
-                         self.ml.get_user_subscriptions(self.key, persona_id=9))
+        self.assertEqual(
+            expectation,
+            self.ml.get_user_subscriptions(self.key, persona_id=self.user['id']))
 
         datum = {
             'mailinglist_id': 4,
@@ -1785,9 +1796,11 @@ class TestMlBackend(BackendTest):
             61: SS.implicit,
             63: SS.subscribed,
             64: SS.subscribed,
+            67: SS.implicit,
         }
-        self.assertEqual(expectation,
-                         self.ml.get_user_subscriptions(self.key, persona_id=9))
+        self.assertEqual(
+            expectation,
+            self.ml.get_user_subscriptions(self.key, persona_id=self.user['id']))
 
         self.login(USER_DICT['berta'])
         datum = {
@@ -1814,9 +1827,11 @@ class TestMlBackend(BackendTest):
             61: SS.implicit,
             63: SS.subscribed,
             64: SS.subscribed,
+            67: SS.implicit,
         }
-        self.assertEqual(expectation,
-                         self.ml.get_user_subscriptions(self.key, persona_id=9))
+        self.assertEqual(
+            expectation,
+            self.ml.get_user_subscriptions(self.key, persona_id=self.user['id']))
 
     @as_users("inga")
     def test_request_cancellation(self) -> None:

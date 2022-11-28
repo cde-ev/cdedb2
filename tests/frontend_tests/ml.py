@@ -84,8 +84,8 @@ class TestMlFrontend(FrontendTest):
         elif self.user_in('nina'):
             ins = {"Aktive Mailinglisten", "Alle Mailinglisten",
                    "Accounts verschmelzen", "Nutzer verwalten", "Alle Nutzer verwalten",
-                   "Log"}
-            out = {"Übersicht", "Moderierte Mailinglisten"}
+                   "Log", "Moderierte Mailinglisten"}
+            out = {"Übersicht"}
         # Users with moderated mailinglists with full ml-admin privileges.
         elif self.user_in('anton'):
             ins = {"Aktive Mailinglisten", "Alle Mailinglisten",

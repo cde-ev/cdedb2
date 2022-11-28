@@ -1,5 +1,5 @@
-Dokuteam Exporte
-================
+Dokuteam
+========
 
 Das Dokuteam benötigt einige Informationen aus der Datenbank, um seiner Arbeit
 nachgehen zu können. Um das Extrahieren dieser Informationen zu erleichtern,

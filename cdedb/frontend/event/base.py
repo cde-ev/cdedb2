@@ -38,7 +38,7 @@ from cdedb.common.i18n import get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryScope
 from cdedb.common.sorting import EntitySorter, KeyFunction, Sortkey, xsorted
-from cdedb.common.validation import PERSONA_FULL_EVENT_CREATION, filter_none
+from cdedb.common.validation import PERSONA_FULL_CREATION, filter_none
 from cdedb.filter import enum_entries_filter, keydictsort_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access, event_guard, periodic,
@@ -181,7 +181,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         return self.render(rs, "user/create_user")
 
     @access("core_admin", "event_admin", modi={"POST"})
-    @REQUESTdatadict(*filter_none(PERSONA_FULL_EVENT_CREATION))
+    @REQUESTdatadict(*filter_none(PERSONA_FULL_CREATION['event']))
     def create_user(self, rs: RequestState, data: CdEDBObject) -> Response:
         defaults = {
             'is_cde_realm': False,
@@ -266,7 +266,8 @@ class EventBaseFrontend(AbstractUserFrontend):
             part_ids = rs.ambience['event']['parts'].keys()
 
         data = self._get_participant_list_data(
-            rs, event_id, part_ids, sortkey=sortkey or "persona", reverse=reverse)
+            rs, event_id, part_ids, include_total_count=True,
+            sortkey=sortkey or "persona", reverse=reverse)
         if len(rs.ambience['event']['parts']) == 1:
             part_id = unwrap(rs.ambience['event']['parts'].keys())
         data['part_id'] = part_id
@@ -278,8 +279,11 @@ class EventBaseFrontend(AbstractUserFrontend):
     def _get_participant_list_data(
             self, rs: RequestState, event_id: int,
             part_ids: Collection[int] = (), orga_list: bool = False,
-            sortkey: str = "persona", reverse: bool = False) -> CdEDBObject:
+            include_total_count: bool = False, sortkey: str = "persona",
+            reverse: bool = False) -> CdEDBObject:
         """This provides data for download and online participant list.
+
+        It filters out the participants which have not given list_consent.
 
         This is un-inlined so download_participant_list can use this
         as well."""
@@ -288,7 +292,8 @@ class EventBaseFrontend(AbstractUserFrontend):
         registration_ids = self.eventproxy.list_participants(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         reg_counts = self.eventproxy.get_num_registrations_by_part(
-            rs, event_id, (const.RegistrationPartStati.participant,))
+            rs, event_id, (const.RegistrationPartStati.participant,),
+            include_total=include_total_count)
 
         if not part_ids:
             part_ids = rs.ambience['event']['parts'].keys()

@@ -32,7 +32,7 @@ from cdedb.common.query import QueryConstraint, QueryOperators, QueryScope
 from cdedb.common.roles import PERSONA_DEFAULTS
 from cdedb.common.sorting import xsorted
 from cdedb.common.validation import (
-    PERSONA_FULL_CDE_CREATION, filter_none, get_errors, get_warnings,
+    PERSONA_FULL_CREATION, filter_none, get_errors, get_warnings,
 )
 from cdedb.filter import enum_entries_filter
 from cdedb.frontend.common import (
@@ -325,7 +325,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
         return super().create_user_form(rs)
 
     @access("core_admin", "cde_admin", modi={"POST"})
-    @REQUESTdatadict(*filter_none(PERSONA_FULL_CDE_CREATION))
+    @REQUESTdatadict(*filter_none(PERSONA_FULL_CREATION['cde']))
     def create_user(self, rs: RequestState, data: CdEDBObject) -> Response:
         defaults = {
             'is_cde_realm': True,

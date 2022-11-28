@@ -20,8 +20,8 @@
 {% endblock %}
 
 {% block heading %}
-    {{ util.context_heading(gettext("Create Accounts"),
-                            doclink="Handbuch_Verwaltungsteam", doclink_anchor="massenaufnahme-von-mitgliedern") }}
+    {{ util.doclink_('Handbuch_Verwaltungsteam', anchor='massenaufnahme-von-mitgliedern') }}
+    <h1 class="title">{{ gettext("Create Accounts") }}</h1>
 {% endblock %}
 
 {% macro ba_submit_button() %}

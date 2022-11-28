@@ -20,9 +20,6 @@ doc/build/**
 doc/source/emails/
 doc/source/Handbuch_Email_Templates.rst
 
-# local configuration
-cdedb/localconfig.py
-
 # cache data
 .mypy_cache/
 .coverage
