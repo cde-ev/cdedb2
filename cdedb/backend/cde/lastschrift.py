@@ -310,7 +310,7 @@ class CdELastschriftBackend(CdEBaseBackend):
     get_lastschrift_transaction: _GetLastschriftTransactionProtocol = singularize(
         get_lastschrift_transactions)
 
-    @access("finance_admin")
+    @access("cde")
     def annual_membership_fee(self, rs: RequestState) -> decimal.Decimal:
         """The (expected) annual membership fee.
 
@@ -352,6 +352,7 @@ class CdELastschriftBackend(CdEBaseBackend):
             if transaction_ids:
                 raise RuntimeError(n_("Existing pending transaction."))
             data = {
+                'lastschrift_id': lastschrift_id,
                 'issued_at': now(),
                 'processed_at': None,
                 'tally': None,
