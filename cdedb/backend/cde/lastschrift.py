@@ -139,7 +139,7 @@ class CdELastschriftBackend(CdEBaseBackend):
 
     @access("finance_admin")
     def create_lastschrift(self, rs: RequestState, data: CdEDBObject,
-                           initial_donation: vtypes.PositiveDecimal
+                           initial_donation: decimal.Decimal
     ) -> DefaultReturnCode:
         """Make a new direct debit permit."""
         data = affirm(vtypes.Lastschrift, data, creation=True)
@@ -322,14 +322,14 @@ class CdELastschriftBackend(CdEBaseBackend):
         return self.conf["PERIODS_PER_YEAR"] * self.conf["MEMBERSHIP_FEE"]
 
     @access("finance_admin")
-    def transaction_amount(self, rs: RequestState, persona_id: vtypes.ID
-                           ) -> decimal.Decimal:
+    def transaction_amount(self, rs: RequestState, persona_id: int) -> decimal.Decimal:
         """The amount of a lastschrift transaction."""
+        persona_id = affirm(vtypes.ID, persona_id)
         user = self.core.get_cde_user(rs, persona_id)
         return user["donation"] + self.annual_membership_fee(rs)
 
     @access("finance_admin")
-    def issue_lastschrift_transaction(self, rs: RequestState, lastschrift_id: vtypes.ID
+    def issue_lastschrift_transaction(self, rs: RequestState, lastschrift_id: int,
                                       ) -> DefaultReturnCode:
         """Make a new direct debit transaction.
 
@@ -441,7 +441,7 @@ class CdELastschriftBackend(CdEBaseBackend):
 
     @access("finance_admin")
     def finalize_lastschrift_transactions(
-            self, rs: RequestState, transaction_ids: Collection[vtypes.ID],
+            self, rs: RequestState, transaction_ids: Collection[int],
             status: const.LastschriftTransactionStati
     ) -> DefaultReturnCode:
         """Atomized multiplex variant of finalize_lastschrift_transaction."""
