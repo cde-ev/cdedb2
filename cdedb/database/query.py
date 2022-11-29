@@ -6,6 +6,7 @@ This is used by :py:class:`AbstractBackend` to access the database.
 """
 
 import datetime
+import decimal
 import enum
 import logging
 from typing import Collection, List, Optional, Sequence, Tuple, Union, cast
@@ -21,7 +22,7 @@ from cdedb.database.conversions import from_db_output, to_db_input
 # DatabaseValue is for any singular value that should be written into the database or
 # compared to something already stored.
 DatabaseValue = Union[int, str, enum.IntEnum, float, datetime.date, datetime.datetime,
-                      None]
+                      decimal.Decimal, None]
 # DatabaseValue_s is either a singular value or a collection of such values, e.g. to be
 # used with an "ANY(%s)" like comparison.
 DatabaseValue_s = Union[DatabaseValue, Collection[DatabaseValue]]

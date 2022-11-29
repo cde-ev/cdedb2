@@ -256,3 +256,6 @@ EVENT_FIELD_SPEC: Dict[
 
 LOG_FIELDS_COMMON = ("codes", "persona_id", "submitted_by", "change_note", "offset",
                      "length", "time_start", "time_stop")
+
+FINANCE_LOG_FIELDS = ("delta_from", "delta_to", "new_balance_from", "new_balance_to",
+                      "total_from", "total_to", "members_from", "members_to")

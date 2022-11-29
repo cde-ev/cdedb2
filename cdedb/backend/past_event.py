@@ -25,6 +25,7 @@ from cdedb.common.fields import (
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryScope
+from cdedb.common.query.log_filter import LogFilterEntityLogLike
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 
@@ -106,26 +107,14 @@ class PastEventBackend(AbstractBackend):
         return self.sql_insert(rs, "past_event.log", data)
 
     @access("cde_admin", "event_admin", "auditor")
-    def retrieve_past_log(self, rs: RequestState,
-                          codes: Collection[const.PastEventLogCodes] = None,
-                          pevent_id: int = None, offset: int = None,
-                          length: int = None, persona_id: int = None,
-                          submitted_by: int = None, change_note: str = None,
-                          time_start: datetime.datetime = None,
-                          time_stop: datetime.datetime = None) -> CdEDBLog:
+    def retrieve_past_log(self, rs: RequestState, log_filter: LogFilterEntityLogLike
+                          ) -> CdEDBLog:
         """Get recorded activity for concluded events.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        pevent_id = affirm_optional(vtypes.ID, pevent_id)
-        pevent_ids = [pevent_id] if pevent_id else None
-        return self.generic_retrieve_log(
-            rs, const.PastEventLogCodes, "pevent", "past_event.log",
-            codes=codes, entity_ids=pevent_ids, offset=offset, length=length,
-            persona_id=persona_id, submitted_by=submitted_by,
-            change_note=change_note, time_start=time_start,
-            time_stop=time_stop)
+        return self.generic_retrieve_log(rs, log_filter, "past_event.log")
 
     @access("cde", "event")
     def list_institutions(self, rs: RequestState) -> Dict[int, str]:

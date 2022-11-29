@@ -42,9 +42,8 @@ from cdedb.common.validation.types import CdedbID, Email
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, Attachment, REQUESTdata, REQUESTdatadict, REQUESTfile, access,
-    assembly_guard, calculate_db_logparams, calculate_loglinks, cdedburl,
-    check_validation as check, drow_name, inspect_validation, periodic,
-    process_dynamic_input, request_extractor,
+    assembly_guard, cdedburl, check_validation as check, drow_name, inspect_validation,
+    periodic, process_dynamic_input, request_extractor,
 )
 
 #: Magic value to signal abstention during _classical_ voting.
@@ -130,30 +129,20 @@ class AssemblyFrontend(AbstractUserFrontend):
                  time_start: Optional[datetime.datetime],
                  time_stop: Optional[datetime.datetime]) -> Response:
         """View activities."""
-        length = length or self.conf["DEFAULT_LOG_LENGTH"]
-        # length is the requested length, _length the theoretically
-        # shown length for an infinite amount of log entries.
-        _offset, _length = calculate_db_logparams(offset, length)
 
-        # no validation since the input stays valid, even if some options
-        # are lost
-        rs.ignore_validation_errors()
-        total, log = self.assemblyproxy.retrieve_log(
-            rs, codes, assembly_id, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, change_note=change_note,
-            time_start=time_start, time_stop=time_stop)
-        personas = (
-                {entry['submitted_by'] for entry in log if
-                 entry['submitted_by']}
-                | {entry['persona_id'] for entry in log if entry['persona_id']})
-        personas = self.coreproxy.get_personas(rs, personas)
+        filter_params = {
+            'entity_ids': [assembly_id] if assembly_id else [],
+            'codes': codes, 'offset': offset, 'length': length,
+            'persona_id': persona_id, 'submitted_by': submitted_by,
+            'change_note': change_note, 'ctime': (time_start, time_stop),
+        }
+
         all_assemblies = self.assemblyproxy.list_assemblies(rs)
-        loglinks = calculate_loglinks(rs, total, offset, length)
-        return self.render(rs, "view_log", {
-            'log': log, 'total': total, 'length': _length, 'personas': personas,
-            'all_assemblies': all_assemblies, 'loglinks': loglinks,
-            'may_view': lambda assembly_id: self.assemblyproxy.may_assemble(
-                rs, assembly_id=assembly_id),
+        may_view = lambda id_: self.assemblyproxy.may_assemble(rs, assembly_id=id_)
+
+        return self.generic_view_log(
+            rs, filter_params, "assembly.log", "view_log", {
+            'may_view': may_view, 'all_assemblies': all_assemblies,
         })
 
     @access("assembly")
@@ -161,7 +150,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     @REQUESTdata(*LOG_FIELDS_COMMON)
     def view_assembly_log(self, rs: RequestState,
                           codes: Optional[Collection[const.AssemblyLogCodes]],
-                          assembly_id: Optional[int], offset: Optional[int],
+                          assembly_id: int, offset: Optional[int],
                           length: Optional[vtypes.PositiveInt],
                           persona_id: Optional[CdedbID],
                           submitted_by: Optional[CdedbID],
@@ -169,27 +158,16 @@ class AssemblyFrontend(AbstractUserFrontend):
                           time_start: Optional[datetime.datetime],
                           time_stop: Optional[datetime.datetime]) -> Response:
         """View activities."""
-        length = length or self.conf["DEFAULT_LOG_LENGTH"]
-        # length is the requested length, _length the theoretically
-        # shown length for an infinite amount of log entries.
-        _offset, _length = calculate_db_logparams(offset, length)
 
-        # no validation since the input stays valid, even if some options
-        # are lost
-        rs.ignore_validation_errors()
-        total, log = self.assemblyproxy.retrieve_log(
-            rs, codes, assembly_id, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, change_note=change_note,
-            time_start=time_start, time_stop=time_stop)
-        personas = (
-                {entry['submitted_by'] for entry in log if
-                 entry['submitted_by']}
-                | {entry['persona_id'] for entry in log if entry['persona_id']})
-        personas = self.coreproxy.get_personas(rs, personas)
-        loglinks = calculate_loglinks(rs, total, offset, length)
-        return self.render(rs, "view_assembly_log", {
-            'log': log, 'total': total, 'length': _length, 'personas': personas,
-            'loglinks': loglinks})
+        filter_params = {
+            'entity_ids': [assembly_id],
+            'codes': codes, 'offset': offset, 'length': length,
+            'persona_id': persona_id, 'submitted_by': submitted_by,
+            'change_note': change_note, 'ctime': (time_start, time_stop),
+        }
+
+        return self.generic_view_log(
+            rs, filter_params, "assembly.log", "view_assembly_log")
 
     @access("assembly")
     def show_assembly(self, rs: RequestState, assembly_id: int) -> Response:

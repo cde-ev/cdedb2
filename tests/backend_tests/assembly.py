@@ -65,7 +65,7 @@ class TestAssemblyBackend(BackendTest):
         presider_id = 23
         log = []
         self.login("anton")
-        log_offset, _ = self.assembly.retrieve_log(self.key)
+        log_offset, _ = self.assembly.retrieve_log(self.key, {})
         self.login("werner")
 
         expectation = {
@@ -208,7 +208,8 @@ class TestAssemblyBackend(BackendTest):
     @as_users("werner")
     def test_entity_ballot(self) -> None:
         assembly_id = 1
-        log_offset, _ = self.assembly.retrieve_log(self.key, assembly_id=assembly_id)
+        log_offset, _ = self.assembly.retrieve_log(
+            self.key, {'entity_ids': [assembly_id]})
         log: List[CdEDBObject] = []
         expectation = {1: 'Antwort auf die letzte aller Fragen',
                        2: 'Farbe des Logos',
@@ -920,7 +921,8 @@ class TestAssemblyBackend(BackendTest):
         assembly_id = 1
         ballot_id = 2
         attachment_id = 1
-        log_offset, _ = self.assembly.retrieve_log(self.key, assembly_id=assembly_id)
+        log_offset, _ = self.assembly.retrieve_log(
+            self.key, {'entity_ids': [assembly_id]})
         log = []
 
         # Check the default entities.
@@ -1316,7 +1318,8 @@ class TestAssemblyBackend(BackendTest):
     def test_ballot_attachment_links(self) -> None:
         assembly_id = 3
         n = 3
-        log_offset, _ = self.assembly.retrieve_log(self.key, assembly_id=assembly_id)
+        log_offset, _ = self.assembly.retrieve_log(
+            self.key, {'entity_ids': [assembly_id]})
         log = []
         base_time = now()
         delta = datetime.timedelta(seconds=10)

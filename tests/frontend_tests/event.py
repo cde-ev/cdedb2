@@ -1345,7 +1345,7 @@ etc;anything else""", f['entries_2'].value)
             },
         ]
         self.assertLogEqual(
-            ml_log_expectation, realm="ml", mailinglist_ids={1001, 1002})
+            ml_log_expectation, realm="ml", entity_ids={1001, 1002})
 
     @as_users("annika", "garcia")
     def test_change_course(self) -> None:
@@ -5272,7 +5272,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         event_id = 4
         event = self.event.get_event(self.key, event_id)
         log_expectation = []
-        offset = self.event.retrieve_log(self.key, event_id=event_id)[0]
+        offset = self.event.retrieve_log(self.key, {'entity_ids': [event_id]})[0]
 
         self.traverse("Veranstaltungen", event['title'], "Veranstaltungsteile",
                       "Gruppen")
