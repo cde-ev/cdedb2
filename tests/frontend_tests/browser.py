@@ -236,29 +236,35 @@ class TestBrowser(BrowserTest):
         page.locator("#tab_qf_js div:has-text(\"Filter hinzufügen\") div"
                      ).nth(1).click()
         page.locator("#tab_qf_js").get_by_text("Vorname(n)").first.click()
+        page.get_by_role("textbox", name="Vergleichswert").click()
+        page.get_by_role("textbox", name="Vergleichswert").fill("asdfgh")
         page.locator(".selectize-input").first.click()
         page.locator("#tab_qf_js").get_by_text("Nachname").first.click()
-        page.locator("li:has-text(\"Nachname passt zu\")").get_by_role(
+        page.locator("li:has-text(\"Nachname passt zupasst nicht\")").get_by_role(
             "textbox", name="Vergleichswert").click()
-        page.locator("li:has-text(\"Nachname passt zu\")").get_by_role(
+        page.locator("li:has-text(\"Nachname passt zupasst nicht\")").get_by_role(
             "textbox", name="Vergleichswert").fill("e")
-        page.locator("li:has-text(\"Vorname(n) passt zu\")").get_by_role(
+        page.locator("li:has-text(\"Vorname(n) passt zupasst nicht\")").get_by_role(
             "button", name="").click()
         page.locator(".col-sm-6 > .input-group > .selectize-control"
                      " > .selectize-input").first.click()
-        page.locator("#tab_qf_js").get_by_text("brings_balls").nth(1).click()
+        page.locator("#tab_qf_js").get_by_text("Geschlecht").nth(1).click()
         page.locator("#tab_qf_js").get_by_text("Bereits bezahlter Betrag"
                                                ).nth(1).click()
-        page.locator(".row > div:nth-child(2) > .input-group > .selectize-control"
-                     " > .selectize-input").click()
-        page.locator("#tab_qf_js").get_by_text("PLZ").nth(2).click()
+        page.locator("#tab_qf_js").get_by_text("Bringt Bälle mit"
+                                               ).nth(1).click()
         page.locator("span:has-text(\"E-Mail\")").get_by_role(
             "button", name="").click()
+        page.locator(".row > div:nth-child(2) > .input-group > .selectize-control"
+                     " > .selectize-input").click()
+        page.locator(".row > div:nth-child(2) > .input-group > .selectize-control"
+                     " > .selectize-dropdown > .selectize-dropdown-content"
+                     " > div:nth-child(8)").click()
         page.get_by_role("button", name="Suche").click()
-
         page.wait_for_url("http://localhost:5000/event/event/1/registration/query?*")
 
         expect(page.locator('#content')).to_contain_text('Ergebnis [3]')
         expect(page.locator('#content')).to_contain_text('Emilia')
         expect(page.locator('#content')).to_contain_text('0.00')
+        expect(page.locator('#content')).to_contain_text('weiblich')
         expect(page.locator('#content')).not_to_contain_text('emilia@example.cde')
