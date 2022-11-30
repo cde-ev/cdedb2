@@ -467,7 +467,12 @@ class BackendTest(CdEDBTest):
         if realm and not log_retriever:
             log_retriever = getattr(self, realm).retrieve_log
         if log_retriever:
-            _, log = log_retriever(self.key, **kwargs)
+            new_kwargs = dict(kwargs)
+            for k in ('assembly_id', 'event_id', 'mailinglist_id'):
+                if k in kwargs:
+                    new_kwargs['entity_ids'] = [kwargs[k]]
+                    del new_kwargs[k]
+            _, log = log_retriever(self.key, new_kwargs)
         else:
             raise ValueError("No method of log retrieval provided.")
 
@@ -479,7 +484,7 @@ class BackendTest(CdEDBTest):
             if 'submitted_by' not in exp:
                 exp['submitted_by'] = self.user['id']
             for k in ('event_id', 'assembly_id', 'mailinglist_id'):
-                if k in kwargs and k not in exp:
+                if k in kwargs and 'entity_ids' not in exp:
                     exp[k] = kwargs[k]
             for k in ('persona_id', 'change_note'):
                 if k not in exp:

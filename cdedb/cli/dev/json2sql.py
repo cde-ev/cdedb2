@@ -7,12 +7,12 @@ from typing import (
 
 from psycopg2.extensions import connection
 
-from cdedb.backend.common import DatabaseValue_s
 from cdedb.backend.core import CoreBackend
 from cdedb.cli.util import connect
 from cdedb.common import CdEDBObject, PsycoJson
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.conversions import to_db_input
+from cdedb.database.query import DatabaseValue_s
 
 
 class AuxData(TypedDict):

@@ -14,7 +14,8 @@
 {{ util.breadcrumb_link(cdedblink("event/change_event"), gettext("Configuration"), active=True) }}
 {% endblock %}
 {% block heading %}
-    {{ util.context_heading(gettext("Configuration"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+    {{ util.context_heading(gettext("Configuration"),
+                            ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('event/change_event') }}" method="POST" id="changeeventform" class="form-horizontal">

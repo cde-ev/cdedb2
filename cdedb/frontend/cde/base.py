@@ -10,6 +10,7 @@ import collections
 import copy
 import csv
 import datetime
+import decimal
 import itertools
 import operator
 from collections import OrderedDict
@@ -24,21 +25,21 @@ from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, Error, LineResolutions, RequestState, deduct_years,
     get_hash, merge_dicts, now,
 )
-from cdedb.common.fields import LOG_FIELDS_COMMON
+from cdedb.common.fields import FINANCE_LOG_FIELDS, LOG_FIELDS_COMMON
 from cdedb.common.i18n import get_country_code_from_country, get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryConstraint, QueryOperators, QueryScope
 from cdedb.common.roles import PERSONA_DEFAULTS
 from cdedb.common.sorting import xsorted
 from cdedb.common.validation import (
-    PERSONA_FULL_CDE_CREATION, filter_none, get_errors, get_warnings,
+    PERSONA_FULL_CREATION, filter_none, get_errors, get_warnings,
 )
 from cdedb.filter import enum_entries_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, CustomCSVDialect, REQUESTdata, REQUESTdatadict, REQUESTfile,
-    TransactionObserver, access, calculate_db_logparams, calculate_loglinks,
-    check_validation as check, check_validation_optional as check_optional,
-    inspect_validation as inspect, make_membership_fee_reference, request_extractor,
+    TransactionObserver, access, check_validation as check,
+    check_validation_optional as check_optional, inspect_validation as inspect,
+    make_membership_fee_reference, request_extractor,
 )
 
 MEMBERSEARCH_DEFAULTS = {
@@ -324,7 +325,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
         return super().create_user_form(rs)
 
     @access("core_admin", "cde_admin", modi={"POST"})
-    @REQUESTdatadict(*filter_none(PERSONA_FULL_CDE_CREATION))
+    @REQUESTdatadict(*filter_none(PERSONA_FULL_CREATION['cde']))
     def create_user(self, rs: RequestState, data: CdEDBObject) -> Response:
         defaults = {
             'is_cde_realm': True,
@@ -778,7 +779,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
         return self.render(rs, "view_misc", {"cde_misc": cde_misc})
 
     @access("cde_admin", "auditor")
-    @REQUESTdata(*LOG_FIELDS_COMMON)
+    @REQUESTdata(*LOG_FIELDS_COMMON, *FINANCE_LOG_FIELDS)
     def view_finance_log(self, rs: RequestState,
                          codes: Collection[const.FinanceLogCodes],
                          offset: Optional[int],
@@ -787,26 +788,26 @@ class CdEBaseFrontend(AbstractUserFrontend):
                          submitted_by: Optional[vtypes.CdedbID],
                          change_note: Optional[str],
                          time_start: Optional[datetime.datetime],
-                         time_stop: Optional[datetime.datetime]) -> Response:
+                         time_stop: Optional[datetime.datetime],
+                         delta_from: Optional[decimal.Decimal],
+                         delta_to: Optional[decimal.Decimal],
+                         new_balance_from: Optional[decimal.Decimal],
+                         new_balance_to: Optional[decimal.Decimal],
+                         total_from: Optional[decimal.Decimal],
+                         total_to: Optional[decimal.Decimal],
+                         members_from: Optional[int],
+                         members_to: Optional[int],
+                         ) -> Response:
         """View financial activity."""
-        length = length or self.conf["DEFAULT_LOG_LENGTH"]
-        # length is the requested length, _length the theoretically
-        # shown length for an infinite amount of log entries.
-        _offset, _length = calculate_db_logparams(offset, length)
 
-        # no validation since the input stays valid, even if some options
-        # are lost
-        rs.ignore_validation_errors()
-        total, log = self.cdeproxy.retrieve_finance_log(
-            rs, codes, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, change_note=change_note,
-            time_start=time_start, time_stop=time_stop)
-        persona_ids = (
-                {entry['submitted_by'] for entry in log if
-                 entry['submitted_by']}
-                | {entry['persona_id'] for entry in log if entry['persona_id']})
-        personas = self.coreproxy.get_personas(rs, persona_ids)
-        loglinks = calculate_loglinks(rs, total, offset, length)
-        return self.render(rs, "view_finance_log", {
-            'log': log, 'total': total, 'length': _length,
-            'personas': personas, 'loglinks': loglinks})
+        filter_params = {
+            'codes': codes, 'offset': offset, 'length': length,
+            'persona_id': persona_id, 'submitted_by': submitted_by,
+            'change_note': change_note, 'ctime': (time_start, time_stop),
+            'delta': (delta_from, delta_to),
+            'new_balance': (new_balance_from, new_balance_to),
+            'total': (total_from, total_to), 'members': (members_from, members_to),
+        }
+
+        return self.generic_view_log(
+            rs, filter_params, "cde.finance_log", "view_finance_log")

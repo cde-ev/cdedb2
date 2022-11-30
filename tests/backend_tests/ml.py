@@ -77,7 +77,7 @@ class TestMlBackend(BackendTest):
         self.assertEqual(berta_new_mod, berta_mod | janis_mod)
 
         # check the logs
-        expectation = (10, (
+        expectation = (
             {'change_note': 'Nutzer 10 ist in diesem Account aufgegangen.',
              'code': const.MlLogCodes.subscribed,
              'ctime': nearly_now(),
@@ -147,8 +147,9 @@ class TestMlBackend(BackendTest):
              'id': 1010,
              'mailinglist_id': 63,
              'persona_id': 2,
-             'submitted_by': 1}))
-        self.assertEqual(expectation, self.ml.retrieve_log(self.key))
+             'submitted_by': 1},
+        )
+        self.assertLogEqual(expectation, realm="ml")
 
         # assure janis is archived
         janis = self.core.get_persona(self.key, janis_id)
@@ -186,6 +187,7 @@ class TestMlBackend(BackendTest):
             64: 'Das Leben, das Universum ...',
             65: 'Hogwarts',
             66: 'Versammlungsleitung Internationaler Kongress',
+            67: 'Globaler Unsinn',
             99: 'Mailman-Migration',
         }
         self.assertEqual(expectation, self.ml.list_mailinglists(self.key))
@@ -276,7 +278,7 @@ class TestMlBackend(BackendTest):
     @as_users("janis")
     def test_list_mailinglists_semi_privileged(self) -> None:
         self.assertEqual(self.ml.list_mailinglists(self.key).keys(),
-                         {2, 3, 7, 12, 13, 14, 56, 57, 61, 63, 64, 65})
+                         {2, 3, 7, 12, 13, 14, 56, 57, 61, 63, 64, 65, 67})
 
     @as_users("janis")
     def test_double_link(self) -> None:
@@ -501,7 +503,8 @@ class TestMlBackend(BackendTest):
             53: SS.subscribed,
             54: SS.pending,
             59: SS.implicit,
-            63: SS.subscribed
+            63: SS.subscribed,
+            67: SS.implicit,
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=2))
@@ -549,6 +552,7 @@ class TestMlBackend(BackendTest):
             54: SS.unsubscription_override,
             56: SS.pending,
             61: SS.implicit,
+            67: SS.implicit,
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=7))
@@ -597,7 +601,7 @@ class TestMlBackend(BackendTest):
                 'persona_id': persona_id,
             }
             _, log_entries = self.ml.retrieve_log(
-                self.key, mailinglist_ids=[mailinglist_id])
+                self.key, {'entity_ids': [mailinglist_id]})
             # its a bit annoying to check always the correct log id
             log_entries = [{k: v for k, v in log.items()
                             if k not in {'id', 'submitted_by'}}
@@ -1206,7 +1210,7 @@ class TestMlBackend(BackendTest):
 
         # Check that this has been logged
         _, log_entries = self.ml.retrieve_log(
-            self.key, mailinglist_ids=[mailinglist_id])
+            self.key, {'entity_ids': [mailinglist_id]})
         expected_log = {
             'id': 1001,
             'change_note': None,
@@ -1665,9 +1669,11 @@ class TestMlBackend(BackendTest):
             61: SS.implicit,
             63: SS.subscribed,
             64: SS.subscribed,
+            67: SS.implicit,
         }
-        self.assertEqual(expectation,
-                         self.ml.get_user_subscriptions(self.key, persona_id=9))
+        self.assertEqual(
+            expectation,
+            self.ml.get_user_subscriptions(self.key, persona_id=self.user['id']))
         data = [
             {
                 'mailinglist_id': 2,
@@ -1702,9 +1708,11 @@ class TestMlBackend(BackendTest):
             61: SS.implicit,
             63: SS.subscribed,
             64: SS.subscribed,
+            67: SS.implicit,
         }
-        self.assertEqual(expectation,
-                         self.ml.get_user_subscriptions(self.key, persona_id=9))
+        self.assertEqual(
+            expectation,
+            self.ml.get_user_subscriptions(self.key, persona_id=self.user['id']))
 
         self.login(USER_DICT['berta'])
         datum = {
@@ -1732,9 +1740,11 @@ class TestMlBackend(BackendTest):
             61: SS.implicit,
             63: SS.subscribed,
             64: SS.subscribed,
+            67: SS.implicit,
         }
-        self.assertEqual(expectation,
-                         self.ml.get_user_subscriptions(self.key, persona_id=9))
+        self.assertEqual(
+            expectation,
+            self.ml.get_user_subscriptions(self.key, persona_id=self.user['id']))
 
         datum = {
             'mailinglist_id': 4,
@@ -1758,9 +1768,11 @@ class TestMlBackend(BackendTest):
             61: SS.implicit,
             63: SS.subscribed,
             64: SS.subscribed,
+            67: SS.implicit,
         }
-        self.assertEqual(expectation,
-                         self.ml.get_user_subscriptions(self.key, persona_id=9))
+        self.assertEqual(
+            expectation,
+            self.ml.get_user_subscriptions(self.key, persona_id=self.user['id']))
 
         datum = {
             'mailinglist_id': 4,
@@ -1784,9 +1796,11 @@ class TestMlBackend(BackendTest):
             61: SS.implicit,
             63: SS.subscribed,
             64: SS.subscribed,
+            67: SS.implicit,
         }
-        self.assertEqual(expectation,
-                         self.ml.get_user_subscriptions(self.key, persona_id=9))
+        self.assertEqual(
+            expectation,
+            self.ml.get_user_subscriptions(self.key, persona_id=self.user['id']))
 
         self.login(USER_DICT['berta'])
         datum = {
@@ -1813,9 +1827,11 @@ class TestMlBackend(BackendTest):
             61: SS.implicit,
             63: SS.subscribed,
             64: SS.subscribed,
+            67: SS.implicit,
         }
-        self.assertEqual(expectation,
-                         self.ml.get_user_subscriptions(self.key, persona_id=9))
+        self.assertEqual(
+            expectation,
+            self.ml.get_user_subscriptions(self.key, persona_id=self.user['id']))
 
     @as_users("inga")
     def test_request_cancellation(self) -> None:
@@ -2043,7 +2059,7 @@ class TestMlBackend(BackendTest):
                                   "whitelist", "moderators", "log"))
 
         # now check it
-        expectation = (8, (
+        expectation = (
             {'id': 1001,
              'change_note': None,
              'code': const.MlLogCodes.unsubscribed,
@@ -2100,15 +2116,15 @@ class TestMlBackend(BackendTest):
              'mailinglist_id': None,
              'persona_id': None,
              'submitted_by': self.user['id']}
-        ))
-        self.assertEqual(expectation, self.ml.retrieve_log(self.key))
+        )
+        self.assertLogEqual(expectation, realm="ml")
         self.assertEqual(
-            (expectation[0], expectation[1][2:5]),
-            self.ml.retrieve_log(self.key, offset=2, length=3))
+            (len(expectation), expectation[2:5]),
+            self.ml.retrieve_log(self.key, {'offset': 2, 'length': 3}))
         self.assertEqual(
-            (4, expectation[1][3:7]),
-            self.ml.retrieve_log(self.key, mailinglist_ids=[new_id]))
+            (4, expectation[3:7]),
+            self.ml.retrieve_log(self.key, {'entity_ids': [new_id]}))
         self.assertEqual(
-            (2, expectation[1][4:6]),
+            (2, expectation[4:6]),
             self.ml.retrieve_log(
-                self.key, codes=(const.MlLogCodes.moderator_added,)))
+                self.key, {'codes': (const.MlLogCodes.moderator_added,)}))

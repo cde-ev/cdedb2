@@ -1920,7 +1920,10 @@ class TestCoreFrontend(FrontendTest):
         link = self.fetch_link()
         self.get(link)
 
-        self.traverse('Accountanfragen', 'Details', 'Accountanfrage bearbeiten')
+        self.traverse('Accountanfragen')
+        self.traverse({"href": "/core/genesis/1001/show"})
+        self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
+        self.traverse('Accountanfrage bearbeiten')
         f = self.response.forms['genesismodifyform']
         self.assertNonPresence("Warnungen ignorieren")
         self.submit(f, check_notification=False)
@@ -1978,11 +1981,6 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Accountanfragen")
         self.assertPresence("zelda@example.cde", div='request-1001')
         self.assertNonPresence("zorro@example.cde")
-        self.assertNonPresence(
-            "Aktuell stehen keine Veranstaltungs-Account-Anfragen zur Bestätigung aus.")
-        self.assertPresence(
-            "Aktuell stehen keine Mailinglisten-Account-Anfragen zur Bestätigung aus.",
-            div='no-ml-request')
         self.traverse({'href': '/core/genesis/1001/modify'})
         self.assertTitle("Accountanfrage bearbeiten")
         f = self.response.forms['genesismodifyform']
@@ -1994,22 +1992,12 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("zorro@example.cde", div='username')
         self.traverse({'description': 'Accountanfrage'})
         self.assertTitle("Accountanfragen")
-        self.assertPresence(
-            "Aktuell stehen keine Veranstaltungs-Account-Anfragen zur Bestätigung aus.",
-            div='no-event-request')
-        self.assertNonPresence(
-            "Aktuell stehen keine Mailinglisten-Account-Anfragen zur Bestätigung aus.")
         self.traverse({'href': '/core/genesis/1001/modify'})
         f = self.response.forms['genesismodifyform']
         f['realm'] = 'event'
         self.submit(f)
         self.traverse({'description': 'Accountanfrage'})
         self.assertTitle("Accountanfragen")
-        self.assertNonPresence(
-            "Aktuell stehen keine Veranstaltungs-Account-Anfragen zur Bestätigung aus.")
-        self.assertPresence(
-            "Aktuell stehen keine Mailinglisten-Account-Anfragen zur Bestätigung aus.",
-            div='no-ml-request')
         self.logout()
 
         self.login('annika')  # event-only admin
@@ -2046,15 +2034,27 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Zelda Zeruda-Hime")
         self.assertPresence("12345", div='address')
 
+    @as_users('nina', 'paul')
     def test_genesis_ml(self) -> None:
+        test_user = self.user
+        self.logout()
         self._genesis_request(self.ML_GENESIS_DATA_NO_REALM, realm='ml')
-        self.login('nina')
+        self.login(test_user)
         self.traverse('Accountanfragen')
         self.assertTitle("Accountanfragen")
         self.assertPresence("zelda@example.cde", div='request-1001')
-        self.assertNonPresence(
-            "Aktuell stehen keine Mailinglisten-Account-Anfragen zur Bestätigung aus.")
-        self.traverse("Details")
+        self.traverse({"href": "/core/genesis/1001/show"})
+        self.assertTitle(f"Accountanfrage von {self.ML_GENESIS_DATA['given_names']}"
+                         f" {self.ML_GENESIS_DATA['family_name']}")
+
+        # Set past event and gender that should be ignored
+        self.traverse('Accountanfrage bearbeiten')
+        f = self.response.forms['genesismodifyform']
+        f['gender'].force_value(const.Genders.other)
+        if self.user_in('paul'):
+            f['pevent_id'] = 1
+        self.submit(f)
+
         f = self.response.forms['genesisdecisionform']
         self.submit(f, button="decision", value=str(GenesisDecision.approve))
         link = self.fetch_link()
@@ -2067,7 +2067,6 @@ class TestCoreFrontend(FrontendTest):
         f['new_password2'] = new_password
         self.submit(f)
         new_user = {
-            'id': 11,
             'username': "zelda@example.cde",
             'password': new_password,
             'display_name': "Zelda",
@@ -2083,6 +2082,8 @@ class TestCoreFrontend(FrontendTest):
     def test_genesis_cde(self) -> None:
         user = self.user
         self.logout()
+
+        # issue genesis request
         self.get('/core/genesis/request')
         self.assertTitle("Account anfordern")
         self.assertPresence("Die maximale Dateigröße ist 8 MB.")
@@ -2110,6 +2111,8 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         link = self.fetch_link()
         self.get(link)
+
+        # verify correctness of genesis overview page
         self.login(user)
         self.traverse({'href': '/core'},
                       {'href': '/core/genesis/list'})
@@ -2117,12 +2120,19 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("zelda@example.cde")
         self.assertNonPresence("zorro@example.cde")
         if self.user_in('paul'):
-            self.assertPresence("Aktuell stehen keine Veranstaltungs-Account-Anfragen"
-                                " zur Bestätigung aus.")
-            self.assertPresence("Aktuell stehen keine Mailinglisten-Account-Anfragen"
-                                " zur Bestätigung aus.")
-        self.assertNonPresence(
-            "Aktuell stehen keine CdE-Mitglieds-Account-Anfragen zur Bestätigung aus.")
+            self.assertPresence("Mailinglisten-Account-Anfragen")
+            self.assertPresence("Michaela Mailcrawler")
+            self.assertPresence("Veranstaltungs-Account-Anfragen")
+            self.assertPresence("Wolfgang Weihnacht")
+        else:
+            self.assertNonPresence("Mailinglisten-Account-Anfragen")
+            self.assertNonPresence("Michaela Mailcrawler")
+            self.assertNonPresence("Veranstaltungs-Account-Anfragen")
+            self.assertNonPresence("Wolfgang Weihnacht")
+        self.assertPresence("CdE-Mitglieds-Account-Anfragen")
+        self.assertPresence("Kristin Zeder")
+
+        # modify genesis request
         self.traverse({'href': '/core/genesis/1001/show'})
         self.assertPresence("Ganondorf")
         self.assertNonPresence("Zickzack")
@@ -2133,6 +2143,8 @@ class TestCoreFrontend(FrontendTest):
         f['birth_name'] = "Zickzack"
         f['pevent_id'] = 1
         self.submit(f)
+
+        # select a past event
         self.assertPresence("Zickzack")
         self.assertNonPresence("Ganondorf")
         self.assertPresence("PfingstAkademie 2014")
@@ -2144,6 +2156,7 @@ class TestCoreFrontend(FrontendTest):
             self.assertTitle("PfingstAkademie 2014")
             self.response = saved
 
+        # select a past course
         self.traverse({'href': '/core/genesis/1001/modify'})
         self.assertTitle("Accountanfrage bearbeiten")
         f = self.response.forms['genesismodifyform']
@@ -2158,6 +2171,7 @@ class TestCoreFrontend(FrontendTest):
             self.assertTitle("Goethe zum Anfassen (PfingstAkademie 2014)")
             self.response = saved
 
+        # modify username and realm (wtf) of genesis request
         self.traverse({'href': '/core/genesis/1001/modify'})
         self.assertTitle("Accountanfrage bearbeiten")
         f = self.response.forms['genesismodifyform']
@@ -2166,36 +2180,22 @@ class TestCoreFrontend(FrontendTest):
             f['realm'] = 'ml'
         self.submit(f)
         self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
-        self.assertPresence("Anhang herunterladen")
-        save = self.response
-        self.traverse({'description': 'Anhang herunterladen'})
-        with open(self.testfile_dir / "form.pdf", 'rb') as f:
-            self.assertEqual(f.read(), self.response.body)
-        self.response = save
+        if self.user_in('quintus'):
+            # attachment is hidden for ml account requests
+            self.assertPresence("Anhang herunterladen")
+            save = self.response
+            self.traverse({'description': 'Anhang herunterladen'})
+            with open(self.testfile_dir / "form.pdf", 'rb') as f:
+                self.assertEqual(f.read(), self.response.body)
+            self.response = save
         self.assertNonPresence("zelda@example.cde")
         self.assertPresence("zorro@example.cde")
-        self.traverse({'href': '/core/genesis/list'})
-        self.assertTitle("Accountanfragen")
-        if self.user_in('paul'):
-            self.assertPresence("Aktuell stehen keine Veranstaltungs-Account-Anfragen"
-                                " zur Bestätigung aus.")
-            self.assertNonPresence("Aktuell stehen keine Mailinglisten-Account-Anfragen"
-                                   " zur Bestätigung aus.")
-            self.assertPresence("Aktuell stehen keine CdE-Mitglieds-Account-Anfragen"
-                                " zur Bestätigung aus.")
-        elif self.user_in('quintus'):
-            self.assertNonPresence("Mailinglisten-Account-Anfragen")
-            self.assertPresence("CdE-Mitglieds-Account-Anfragen")
-        self.traverse({'href': '/core/genesis/1001/modify'})
+        self.traverse("Accountanfrage bearbeiten")
         f = self.response.forms['genesismodifyform']
         f['realm'] = 'cde'
         self.submit(f)
-        self.traverse({'href': '/core/genesis/list'})
-        self.assertTitle("Accountanfragen")
-        self.assertNonPresence(
-            "Aktuell stehen keine CdE-Mitglieds-Account-Anfragen zur Bestätigung aus.")
-        self.traverse({'href': '/core/genesis/1001/show'})
-        self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
+
+        # accept genesis request
         f = self.response.forms['genesisdecisionform']
 
         # Set the sequence of persona ids to a different value, so other ids are not
@@ -2209,8 +2209,14 @@ class TestCoreFrontend(FrontendTest):
         self.assertIn("Zelda", mail)
         self.assertIn("Ein herzliches Willkommen", mail)
         self.assertIn("zum ersten Mal in unserer Datenbank anmeldest", mail)  # consent
-
         link = self.fetch_link()
+
+        # Check wether link to account and reviewer work
+        self.get("/core/genesis/1001/show")
+        self.traverse({'href': "/core/persona/2001/"})
+        self.get("/core/genesis/1001/show")
+        self.traverse(self.user['default_name_format'])
+
         self.traverse({'href': '^/$'})
         if not self.user_in('quintus'):
             f = self.response.forms['adminshowuserform']
@@ -2229,7 +2235,6 @@ class TestCoreFrontend(FrontendTest):
         f['new_password2'] = new_password
         self.submit(f)
         new_user = {
-            'id': 9,
             'username': "zorro@example.cde",
             'password': new_password,
             'display_name': "Zelda",
@@ -2246,7 +2251,57 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Goethe")
         self.traverse({'href': '/cde'})
         self.assertTitle('CdE-Mitgliederbereich')
-        self.traverse({'description': 'Sonstiges'})
+        self.traverse({'description': 'Verschiedenes'})
+
+    @as_users("paul")
+    def test_genesis_overview(self) -> None:
+
+        def assert_account_presence(ml: bool, event: bool, cde: bool) -> None:
+            self.assertTitle("Accountanfragen")
+            ml_msg = "keine Mailinglisten-Account-Anfragen zur Bestätigung aus."
+            if ml:
+                self.assertPresence("Michaela Mailcrawler")
+                self.assertNonPresence(ml_msg)
+            else:
+                self.assertNonPresence("Michaele Mailcrawler")
+                self.assertPresence(ml_msg)
+            event_msg = "keine Veranstaltungs-Account-Anfragen zur Bestätigung aus."
+            if event:
+                self.assertPresence("Wolfgang Weihnacht")
+                self.assertNonPresence(event_msg)
+            else:
+                self.assertNonPresence("Wolfgang Weihnacht")
+                self.assertPresence(event_msg)
+            cde_msg = "keine CdE-Mitglieds-Account-Anfragen zur Bestätigung aus."
+            if cde:
+                self.assertPresence("Kristin Zeder")
+                self.assertNonPresence(cde_msg)
+            else:
+                self.assertNonPresence("Kristin Zeder")
+                self.assertPresence(cde_msg)
+
+        self.traverse("Accountanfragen")
+
+        # check default
+        assert_account_presence(ml=True, event=True, cde=True)
+
+        # decide ml request
+        self.traverse({"href": "/core/genesis/1/show"})
+        self.assertTitle("Accountanfrage von Michaela Mailcrawler")
+        self._decide_genesis_case(GenesisDecision.approve)
+        assert_account_presence(ml=False, event=True, cde=True)
+
+        # decide cde request
+        self.traverse({"href": "/core/genesis/3/show"})
+        self.assertTitle("Accountanfrage von Kristin Zeder")
+        self._decide_genesis_case(GenesisDecision.approve)
+        assert_account_presence(ml=False, event=True, cde=False)
+
+        # decide event request
+        self.traverse({"href": "/core/genesis/2/show"})
+        self.assertTitle("Accountanfrage von Wolfgang Weihnacht")
+        self._decide_genesis_case(GenesisDecision.approve)
+        assert_account_presence(ml=False, event=False, cde=False)
 
     def test_genesis_name_collision(self) -> None:
         self.get('/')
@@ -2351,8 +2406,8 @@ class TestCoreFrontend(FrontendTest):
 
         admin = USER_DICT["vera"]
         self.login(admin)
-        self.traverse({'description': 'Accountanfrage'},
-                      {'description': 'Details'})
+        self.traverse({'description': 'Accountanfrage'})
+        self.traverse({"href": "/core/genesis/1001/show"})
         self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
         self.traverse('Accountanfrage bearbeiten')
         f = self.response.forms['genesismodifyform']
@@ -2433,7 +2488,8 @@ class TestCoreFrontend(FrontendTest):
             },
         ]
 
-        self.traverse("Accountanfragen", "Details")
+        self.traverse("Accountanfragen")
+        self.traverse({"href": "/core/genesis/1001/show"})
         self.assertTitle(f"Accountanfrage von {self.user['given_names']}"
                          f" {self.user['family_name']}")
         self.assertPresence("Ähnliche Accounts")
@@ -2476,9 +2532,11 @@ class TestCoreFrontend(FrontendTest):
         ])
 
         # Approve the first request.
-        self.traverse("Accountanfragen", "Details")
+        self.traverse("Accountanfragen")
+        self.traverse({"href": "/core/genesis/1002/show"})
         self.assertTitle(f"Accountanfrage von {self.EVENT_GENESIS_DATA['given_names']}"
                          f" {self.EVENT_GENESIS_DATA['family_name']}")
+        self.assertPresence(self.EVENT_GENESIS_DATA["username"])
         self.assertNonPresence("Ähnliche Accounts")
         self.assertNonPresence("Wiederherstellen", div="genesisdecisionform")
         f = self.response.forms['genesisdecisionform']
@@ -2509,9 +2567,11 @@ class TestCoreFrontend(FrontendTest):
 
         # Check that the second request finds the new account as a doppelgänger and
         # update that account to the alternate username.
-        self.traverse("Accountanfragen", "Details")
+        self.traverse("Accountanfragen")
+        self.traverse({"href": "/core/genesis/1003/show"})
         self.assertTitle(f"Accountanfrage von {self.EVENT_GENESIS_DATA['given_names']}"
                          f" {self.EVENT_GENESIS_DATA['family_name']}")
+        self.assertPresence(alternate_username)
         self.assertPresence("Ähnliche Accounts")
         self.assertPresence(self.EVENT_GENESIS_DATA['username'], div="doppelgangers")
 
@@ -2593,7 +2653,10 @@ class TestCoreFrontend(FrontendTest):
     def test_genesis_doppelganger_archive_persistence(self) -> None:
         # issue a genesis request
         self._genesis_request(self.CDE_GENESIS_DATA)
-        self.traverse("Accountanfragen", "Details")
+        self.traverse("Accountanfragen")
+        self.traverse({"href": "/core/genesis/1001/show"})
+        self.assertTitle(f"Accountanfrage von {self.CDE_GENESIS_DATA['given_names']}"
+                         f" {self.CDE_GENESIS_DATA['family_name']}")
         self._decide_genesis_case(GenesisDecision.approve)
         new_persona_id = 1001
 
@@ -2612,7 +2675,11 @@ class TestCoreFrontend(FrontendTest):
         alternate_username = f"asdf{self.CDE_GENESIS_DATA['username']}"
         self._genesis_request(dict(
             self.CDE_GENESIS_DATA, username=alternate_username, mobile="06597620191"))
-        self.traverse("Accountanfragen", "Details")
+        self.traverse("Accountanfragen")
+        self.traverse({"href": "/core/genesis/1002/show"})
+        self.assertTitle(f"Accountanfrage von {self.CDE_GENESIS_DATA['given_names']}"
+                         f" {self.CDE_GENESIS_DATA['family_name']}")
+        self.assertPresence(alternate_username)
         self._decide_genesis_case(GenesisDecision.update, persona_id=1001)
 
         # Check that the data of the second genesis request persisted
@@ -2624,7 +2691,8 @@ class TestCoreFrontend(FrontendTest):
     def test_genesis_dearchive_doppelganger(self) -> None:
         hades = get_user("hades")
         self._create_genesis_doppelganger(hades)
-        self.traverse("Accountanfragen", "Details")
+        self.traverse("Accountanfragen")
+        self.traverse({"href": "/core/genesis/1001/show"})
         self.assertTitle(f"Accountanfrage von {hades['given_names']}"
                          f" {hades['family_name']}")
         self.assertPresence(f"{hades['given_names']} {hades['family_name']}",
@@ -2647,15 +2715,27 @@ class TestCoreFrontend(FrontendTest):
         existing_user = get_user("berta")
         with self.switch_user("anton"):
             dg_data_1 = self._create_genesis_doppelganger(existing_user, realm="ml")
-            self.traverse("Accountanfragen", "Details")
+            self.traverse("Accountanfragen")
+            self.traverse({"href": "/core/genesis/1001/show"})
+            self.assertTitle(f"Accountanfrage von {dg_data_1['given_names']}"
+                             f" {dg_data_1['family_name']}")
+            self.assertPresence(dg_data_1["username"])
             self._decide_genesis_case(GenesisDecision.approve)
             dg_data_2 = self._create_genesis_doppelganger(
                 existing_user, realm="event", unique_username=True)
-            self.traverse("Accountanfragen", "Details")
+            self.traverse("Accountanfragen")
+            self.traverse({"href": "/core/genesis/1002/show"})
+            self.assertTitle(f"Accountanfrage von {dg_data_2['given_names']}"
+                             f" {dg_data_2['family_name']}")
+            self.assertPresence(dg_data_2["username"])
             self._decide_genesis_case(GenesisDecision.approve)
-        self._create_genesis_doppelganger(
+        dg_data_3 = self._create_genesis_doppelganger(
             existing_user, realm="event", unique_username=True)
-        self.traverse("Accountanfragen", "Details")
+        self.traverse("Accountanfragen")
+        self.traverse({"href": "/core/genesis/1003/show"})
+        self.assertTitle(f"Accountanfrage von {dg_data_3['given_names']}"
+                         f" {dg_data_3['family_name']}")
+        self.assertPresence(dg_data_3["username"])
 
         self.assertPresence(existing_user['given_names'], div="doppelgangers")
         self.assertPresence(existing_user['family_name'], div="doppelgangers")

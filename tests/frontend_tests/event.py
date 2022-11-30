@@ -17,7 +17,9 @@ import segno.helpers
 import webtest
 
 import cdedb.database.constants as const
-from cdedb.common import IGNORE_WARNINGS_NAME, CdEDBObject, now, unwrap
+from cdedb.common import (
+    ANTI_CSRF_TOKEN_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, now, unwrap,
+)
 from cdedb.common.query import QueryOperators
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
 from cdedb.common.sorting import xsorted
@@ -1343,7 +1345,7 @@ etc;anything else""", f['entries_2'].value)
             },
         ]
         self.assertLogEqual(
-            ml_log_expectation, realm="ml", mailinglist_ids={1001, 1002})
+            ml_log_expectation, realm="ml", entity_ids={1001, 1002})
 
     @as_users("annika", "garcia")
     def test_change_course(self) -> None:
@@ -2158,71 +2160,68 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("Warteliste (Platz 1)", exact=True,
                             div="registration_status_part1")
 
+    @as_users('emilia')
     def test_participant_list(self) -> None:
         # first, check non-visibility for all participants
-        self.login(USER_DICT['emilia'])
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'})
         self.get('/event/event/1/registration/list')
         self.assertTitle("Große Testakademie 2222")
         self.assertPresence("Fehler! Die Teilnehmerliste ist noch nicht "
                             "veröffentlicht.", div='notifications')
-        self.logout()
 
         # now, check visibility for orgas
-        self.login(USER_DICT['garcia'])
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': 'event/event/1/registration/list'})
-        self.assertTitle("Teilnehmerliste Große Testakademie 2222")
-        self.assertPresence("Die Teilnehmerliste ist aktuell nur für Orgas und "
-                            "Admins sichtbar.", div='static-notifications')
-        self.assertPresence("Übersicht")
-        self.assertPresence("Administrator")
-        self.assertPresence("emilia@example.cde")
-        self.assertPresence("03205 Musterstadt")
-        self.assertNonPresence("Inga")
-        self.assertPresence("Veranstaltungsteile")
-        self.assertNonPresence("Kurs")
+        with self.switch_user('garcia'):
+            self.traverse({'href': '/event/$'},
+                          {'href': '/event/event/1/show'},
+                          {'href': 'event/event/1/registration/list'})
+            self.assertTitle("Teilnehmerliste Große Testakademie 2222")
+            self.assertPresence("Die Teilnehmerliste ist aktuell nur für Orgas und "
+                                "Admins sichtbar.", div='static-notifications')
+            self.assertPresence("Übersicht")
+            self.assertPresence("Administrator")
+            self.assertPresence("emilia@example.cde")
+            self.assertPresence("03205 Musterstadt")
+            self.assertNonPresence("Inga")
+            self.assertPresence("Veranstaltungsteile")
+            self.assertNonPresence("Kurs")
 
-        self.traverse({'href': r'event/event/1/registration/list\?part_id=1'})
-        self.assertPresence("Es gibt in Summe 3 Teilnehmer.")
-        self.assertNonPresence("Garcia")
-        self.assertNonPresence("Kurs")
-        self.assertNonPresence("Veranstaltungsteile")
+            self.traverse({'href': r'event/event/1/registration/list\?part_id=1'})
+            self.assertPresence("Es gibt in Summe 3 Teilnehmer.")
+            self.assertNonPresence("Garcia")
+            self.assertNonPresence("Kurs")
+            self.assertNonPresence("Veranstaltungsteile")
 
-        self.traverse({'href': '/event/event/1/change'})
-        self.assertTitle("Große Testakademie 2222 – Konfiguration")
-        f = self.response.forms['changeeventform']
-        f['is_course_assignment_visible'].checked = True
-        self.submit(f)
+            self.traverse({'href': '/event/event/1/change'})
+            self.assertTitle("Große Testakademie 2222 – Konfiguration")
+            f = self.response.forms['changeeventform']
+            f['is_course_assignment_visible'].checked = True
+            self.submit(f)
 
-        self.traverse({'href': 'event/event/1/registration/list'})
-        self.assertTitle("Teilnehmerliste Große Testakademie 2222")
-        self.assertPresence("Veranstaltungsteile")
-        self.assertNonPresence("Kurs")
-        self.traverse({'href': r'event/event/1/registration/list\?part_id=1'})
-        self.assertNonPresence("Veranstaltungsteile")
-        self.assertNonPresence("Kurs")
-        self.traverse({'href': r'event/event/1/registration/list\?part_id=2'})
-        self.assertNonPresence("Veranstaltungsteile")
-        self.assertPresence("Kurse")
-        self.traverse({'href': r'event/event/1/registration/list\?part_id=3'})
-        self.assertNonPresence("Veranstaltungsteile")
-        self.assertPresence("Kurs")
-        self.assertNonPresence("Kurse")
-        self.assertPresence("α. Heldentum")
+            self.traverse({'href': 'event/event/1/registration/list'})
+            self.assertTitle("Teilnehmerliste Große Testakademie 2222")
+            self.assertPresence("Veranstaltungsteile")
+            self.assertNonPresence("Kurs")
+            self.traverse({'href': r'event/event/1/registration/list\?part_id=1'})
+            self.assertNonPresence("Veranstaltungsteile")
+            self.assertNonPresence("Kurs")
+            self.traverse({'href': r'event/event/1/registration/list\?part_id=2'})
+            self.assertNonPresence("Veranstaltungsteile")
+            self.assertPresence("Kurse")
+            self.traverse({'href': r'event/event/1/registration/list\?part_id=3'})
+            self.assertNonPresence("Veranstaltungsteile")
+            self.assertPresence("Kurs")
+            self.assertNonPresence("Kurse")
+            self.assertPresence("α. Heldentum")
 
-        # now, make participant list visible to participants
-        self.traverse({'href': '/event/event/1/change'})
-        self.assertTitle("Große Testakademie 2222 – Konfiguration")
-        f = self.response.forms['changeeventform']
-        f['is_participant_list_visible'].checked = True
-        self.submit(f)
-        self.logout()
+            # now, make participant list visible to participants
+            self.traverse({'href': '/event/event/1/change'})
+            self.assertTitle("Große Testakademie 2222 – Konfiguration")
+            f = self.response.forms['changeeventform']
+            f['is_participant_list_visible'].checked = True
+            self.submit(f)
 
         # check visibility for participant with list consent
-        self.login(USER_DICT['emilia'])
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/registration/list'})
@@ -2233,21 +2232,58 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("Zweite Hälfte")
         self.traverse({'description': 'Zweite Hälfte'},)
         self.assertPresence("α. Heldentum (KL)")
-        self.logout()
 
         # check non-visibility for participant without list consent
-        self.login(USER_DICT['inga'])
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/registration/list'})
-        self.assertTitle("Teilnehmerliste Große Testakademie 2222")
-        self.assertPresence("Du kannst die Teilnehmerliste nicht sehen, da du "
-                            "nicht zugestimmt hast, deine Daten auf der "
-                            "Teilnehmerliste zur Verfügung zu stellen.")
-        self.assertNonPresence("Übersicht")
-        self.assertNonPresence("Zweite Hälfte")
-        self.assertNonPresence("Anton")
-        self.assertNonPresence("Stadt, Postleitzahl")
+        with self.switch_user('inga'):
+            self.traverse({'href': '/event/$'},
+                          {'href': '/event/event/1/show'},
+                          {'href': '/event/event/1/registration/list'})
+            self.assertTitle("Teilnehmerliste Große Testakademie 2222")
+            self.assertPresence("Du kannst die Teilnehmerliste nicht sehen, da du "
+                                "nicht zugestimmt hast, deine Daten auf der "
+                                "Teilnehmerliste zur Verfügung zu stellen.")
+            self.assertNonPresence("Übersicht")
+            self.assertNonPresence("Zweite Hälfte")
+            self.assertNonPresence("Anton")
+            self.assertNonPresence("Stadt, Postleitzahl")
+
+        # check for correct participant count and visibility of tab navigation (#2748)
+        self.traverse("Veranstaltungen", "TripelAkademie", "Anmeldungen",
+                      "Anmeldung hinzufügen")  # Emmy is Orga
+        f = self.response.forms['addregistrationform']
+        f["persona.persona_id"] = "DB-2-7"  # Berta
+        f["part6.status"] = const.RegistrationPartStati.participant  # Oberwesel H1
+        f["part7.status"] = const.RegistrationPartStati.not_applied
+        f["part8.status"] = const.RegistrationPartStati.not_applied
+        f["part9.status"] = const.RegistrationPartStati.not_applied
+        f["part10.status"] = const.RegistrationPartStati.participant  # Windischleuba H2
+        f["part11.status"] = const.RegistrationPartStati.not_applied
+        f["part12.status"] = const.RegistrationPartStati.guest  # Silvesterfeier
+        f["reg.list_consent"].checked = True
+        self.submit(f)
+
+        self.traverse("Teilnehmerliste")
+        # Emmy has not given list_consent, check she is counted anyway
+        self.assertPresence("berta@example.cde")
+        self.assertNonPresence("emilia@example.cde")
+        self.assertPresence("Es gibt in Summe 2 Teilnehmer.")
+
+        self.traverse("Silvesterfeier")
+        # Berta is only guest - neither counted nor listed
+        self.assertPresence("Es gibt in Summe 1 Teilnehmer.")
+        self.assertNonPresence("Vorname")
+
+        self.traverse("1. Hälfte Windischleuba")
+        self.assertNonPresence("Vorname")
+        self.assertPresence("Bisher gibt es keine Teilnehmer.")
+
+        self.traverse("1. Hälfte Oberwesel")
+        self.assertPresence("berta@example.cde")
+        self.assertPresence("Es gibt in Summe 1 Teilnehmer.")
+
+        self.traverse("1. Hälfte Kaub")
+        self.assertNonPresence("Vorname")
+        self.assertPresence("Es gibt in Summe 1 Teilnehmer.")
 
     @as_users("berta")
     def test_participant_list_event_with_one_part(self) -> None:
@@ -2681,7 +2717,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f["qord_primary"] = "reg_fields.xfield_anzahl_GROSSBUCHSTABEN"
         f["query_name"] = "Großbuchstaben"
         self.submit(f, button="store_query", check_button_attrs=True)
-        self.assertPresence("anzahl_GROSSBUCHSTABEN", div="query-result")
+        self.assertPresence("Anzahl Großbuchstaben", div="query-result")
 
         # Delete that field.
         self.traverse("Datenfelder konfigurieren")
@@ -2690,7 +2726,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.submit(f)
 
         self.traverse("Anmeldungen", "Großbuchstaben")
-        self.assertNonPresence("anzahl_GROSSBUCHSTABEN", div="query-result")
+        self.assertNonPresence("Anzahl Großbuchstaben", div="query-result")
 
         # Add the field again.
         self.traverse("Datenfelder konfigurieren")
@@ -2706,6 +2742,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f = self.response.forms["queryform"]
         f["qop_reg_fields.xfield_anzahl_GROSSBUCHSTABEN"] = ""
         self.submit(f)
+        # The field has been deleted, hence the title is no longer known.
         self.assertPresence("anzahl_GROSSBUCHSTABEN", div="query-result")
 
     @as_users("annika")
@@ -4301,6 +4338,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.submit(f)
         self.assertTitle("Checkin (CyberTestAkademie)")
         self.assertNotIn('checkinform7', self.response.forms)
+        # Check that checkin did not break registration editing.
+        self.get('/event/event/3/registration/7/change')
+        f = self.response.forms['changeregistrationform']
+        self.submit(f)
         # Check log
         self.traverse({'href': '/event/event/3/log'})
         self.assertPresence("Eingecheckt.", div="1-1003")
@@ -5231,7 +5272,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         event_id = 4
         event = self.event.get_event(self.key, event_id)
         log_expectation = []
-        offset = self.event.retrieve_log(self.key, event_id=event_id)[0]
+        offset = self.event.retrieve_log(self.key, {'entity_ids': [event_id]})[0]
 
         self.traverse("Veranstaltungen", event['title'], "Veranstaltungsteile",
                       "Gruppen")
@@ -5441,6 +5482,17 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             f['qval_ctime.creation_time'].value,
             reference_time.isoformat()
         )
+
+    @as_users("garcia")
+    def test_questionnaire_csrf(self) -> None:
+        self.event.set_event(self.key, {'id': 1, 'use_additional_questionnaire': True})
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Fragebogen")
+        f = self.response.forms['questionnaireform']
+        f['fields.lodge'] = "Test"
+        f[ANTI_CSRF_TOKEN_NAME] = "I am a Hax0r!1"
+        self.submit(f, check_notification=False)
+        f = self.response.forms['questionnaireform']
+        self.assertEqual("Test", f['fields.lodge'].value)
 
     @as_users("emilia")
     def test_part_group_constraints(self) -> None:

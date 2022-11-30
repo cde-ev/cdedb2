@@ -269,7 +269,7 @@ class TestPastEventBackend(BackendTest):
         self.pastevent.remove_participant(self.key, 1, None, 5)
 
         # now check it
-        expectation = (7, (
+        expectation = (
             {'id': 1001,
              'change_note': None,
              'code': const.PastEventLogCodes.event_created,
@@ -318,8 +318,8 @@ class TestPastEventBackend(BackendTest):
              'ctime': nearly_now(),
              'pevent_id': 1,
              'persona_id': 5,
-             'submitted_by': self.user['id']}))
-        self.assertEqual(expectation, self.pastevent.retrieve_past_log(self.key))
+             'submitted_by': self.user['id']})
+        self.assertLogEqual(expectation, log_retriever=self.pastevent.retrieve_past_log)
 
     @as_users("anton")
     def test_archive(self) -> None:

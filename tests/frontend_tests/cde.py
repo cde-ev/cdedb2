@@ -142,7 +142,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Mitglieder'})
         everyone = {"Mitglieder", "Übersicht"}
         past_event = {"Verg. Veranstaltungen", "Kurssuche"}
-        member = {"Sonstiges", "Datenschutzerklärung"}
+        member = {"Verschiedenes", "Datenschutzerklärung"}
         searchable = {"CdE-Mitglied suchen"}
         cde_admin_or_member = {"Mitglieder-Statistik"}
         cde_admin = {"Nutzer verwalten", "Alle Nutzer verwalten",
@@ -2369,7 +2369,7 @@ class TestCdEFrontend(FrontendTest):
 
         save = self.response
         self.response = save.click(href='/cde/past/event/1/download',
-                                   description='Dokuteam-Adressliste')
+                                   description='Teilnehmerliste')
 
         class dialect(csv.Dialect):
             delimiter = ';'

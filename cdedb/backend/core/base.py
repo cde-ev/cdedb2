@@ -42,6 +42,7 @@ from cdedb.common.fields import (
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
+from cdedb.common.query.log_filter import LogFilterChangelogLike, LogFilterLike
 from cdedb.common.roles import (
     ADMIN_KEYS, ALL_ROLES, REALM_ADMINS, extract_roles, privilege_tier,
 )
@@ -253,44 +254,24 @@ class CoreBaseBackend(AbstractBackend):
             return self.sql_insert(rs, "cde.finance_log", data)
 
     @access("core_admin", "auditor")
-    def retrieve_log(self, rs: RequestState,
-                     codes: Collection[const.CoreLogCodes] = None,
-                     offset: int = None, length: int = None,
-                     persona_id: int = None, submitted_by: int = None,
-                     change_note: str = None,
-                     time_start: datetime.datetime = None,
-                     time_stop: datetime.datetime = None) -> CdEDBLog:
+    def retrieve_log(self, rs: RequestState, log_filter: LogFilterLike
+                     ) -> CdEDBLog:
         """Get recorded activity.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        return self.generic_retrieve_log(
-            rs, const.CoreLogCodes, "persona", "core.log", codes=codes,
-            offset=offset, length=length, persona_id=persona_id,
-            submitted_by=submitted_by, change_note=change_note,
-            time_start=time_start, time_stop=time_stop)
+        return self.generic_retrieve_log(rs, log_filter, "core.log")
 
     @access("core_admin", "auditor")
-    def retrieve_changelog_meta(
-            self, rs: RequestState,
-            stati: Collection[const.MemberChangeStati] = None,
-            offset: int = None, length: int = None, persona_id: int = None,
-            submitted_by: int = None, change_note: str = None,
-            time_start: datetime.datetime = None,
-            time_stop: datetime.datetime = None,
-            reviewed_by: int = None) -> CdEDBLog:
+    def retrieve_changelog_meta(self, rs: RequestState,
+                                log_filter: LogFilterChangelogLike) -> CdEDBLog:
         """Get changelog activity.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        return self.generic_retrieve_log(
-            rs, const.MemberChangeStati, "persona", "core.changelog",
-            additional_columns=['automated_change'], codes=stati, offset=offset,
-            length=length, persona_id=persona_id, submitted_by=submitted_by,
-            reviewed_by=reviewed_by, change_note=change_note, time_start=time_start,
-            time_stop=time_stop)
+        return self.generic_retrieve_log(rs, log_filter, "core.changelog")
 
     def changelog_submit_change(self, rs: RequestState, data: CdEDBObject,
                                 generation: Optional[int], may_wait: bool,

@@ -75,10 +75,10 @@ REALMS_TO_FIELDS = {
 
 #: Fields of a persona creation case.
 GENESIS_CASE_FIELDS = (
-    "id", "ctime", "username", "given_names", "family_name",
-    "gender", "birthday", "telephone", "mobile", "address_supplement",
-    "address", "postal_code", "location", "country", "birth_name", "attachment_hash",
-    "realm", "notes", "case_status", "reviewer", "pevent_id", "pcourse_id")
+    "id", "ctime", "username", "given_names", "family_name", "gender", "birthday",
+    "telephone", "mobile", "address_supplement", "address", "postal_code", "location",
+    "country", "birth_name", "attachment_hash", "realm", "notes", "case_status",
+    "reviewer", "persona_id", "pevent_id", "pcourse_id")
 
 # The following dict defines, which additional fields are required for genesis
 # request for distinct realms. Additionally, it is used to define for which
@@ -256,3 +256,6 @@ EVENT_FIELD_SPEC: Dict[
 
 LOG_FIELDS_COMMON = ("codes", "persona_id", "submitted_by", "change_note", "offset",
                      "length", "time_start", "time_stop")
+
+FINANCE_LOG_FIELDS = ("delta_from", "delta_to", "new_balance_from", "new_balance_to",
+                      "total_from", "total_to", "members_from", "members_to")

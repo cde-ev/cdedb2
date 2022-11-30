@@ -4,7 +4,6 @@
 event and assembly realm in the form of specific mailing lists.
 """
 import itertools
-from datetime import datetime
 from typing import (
     Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, cast, overload,
 )
@@ -32,6 +31,7 @@ from cdedb.common.fields import (
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
+from cdedb.common.query.log_filter import LogFilterEntityLogLike
 from cdedb.common.roles import ADMIN_KEYS, implying_realms
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
@@ -257,15 +257,8 @@ class MlBackend(AbstractBackend):
         return self.sql_insert(rs, "ml.log", new_log)
 
     @access("ml", "auditor")
-    def retrieve_log(self, rs: RequestState,
-                     codes: Optional[Collection[const.MlLogCodes]] = None,
-                     mailinglist_ids: Optional[Collection[int]] = None,
-                     offset: Optional[int] = None, length: Optional[int] = None,
-                     persona_id: Optional[int] = None,
-                     submitted_by: Optional[int] = None,
-                     change_note: Optional[str] = None,
-                     time_start: Optional[datetime] = None,
-                     time_stop: Optional[datetime] = None) -> CdEDBLog:
+    def retrieve_log(self, rs: RequestState, log_filter: LogFilterEntityLogLike
+                     ) -> CdEDBLog:
         """Get recorded activity.
 
         To support relative admins, this is the only retrieve_log function
@@ -274,18 +267,19 @@ class MlBackend(AbstractBackend):
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        mailinglist_ids = affirm_set(vtypes.ID, mailinglist_ids or set())
-        if not (self.is_admin(rs) or (mailinglist_ids
-                and all(self.may_manage(rs, ml_id)
-                        for ml_id in mailinglist_ids))
-                or "auditor" in rs.user.roles):
+        log_filter = self.generic_affirm_log_filter(log_filter, "ml.log")
+        ml_ids = log_filter.get('entity_ids', ())
+        ml_ids = affirm_set(vtypes.ID, ml_ids)
+
+        if self.is_admin(rs) or "auditor" in rs.user.roles:
+            pass
+        elif not ml_ids:
+            raise PrivilegeError(n_("Must be admin to access global log."))
+        elif all(self.may_manage(rs, ml_id) for ml_id in ml_ids):
+            pass
+        else:
             raise PrivilegeError(n_("Not privileged."))
-        return self.generic_retrieve_log(
-            rs, const.MlLogCodes, "mailinglist", "ml.log", codes=codes,
-            entity_ids=mailinglist_ids, offset=offset, length=length,
-            persona_id=persona_id, submitted_by=submitted_by,
-            change_note=change_note, time_start=time_start,
-            time_stop=time_stop)
+        return self.generic_retrieve_log(rs, log_filter, "ml.log")
 
     @access("core_admin", "ml_admin")
     def submit_general_query(self, rs: RequestState,
