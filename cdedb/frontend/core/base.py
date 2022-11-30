@@ -4,7 +4,6 @@
 
 import collections
 import datetime
-import decimal
 import io
 import itertools
 import operator
@@ -30,7 +29,7 @@ from cdedb.common.exceptions import ArchiveError, PrivilegeError, ValidationWarn
 from cdedb.common.fields import (
     LOG_FIELDS_COMMON, META_INFO_FIELDS, PERSONA_ASSEMBLY_FIELDS, PERSONA_CDE_FIELDS,
     PERSONA_CORE_FIELDS, PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, PERSONA_STATUS_FIELDS,
-    REALM_SPECIFIC_GENESIS_FIELDS, Role,
+    REALM_SPECIFIC_GENESIS_FIELDS,
 )
 from cdedb.common.i18n import format_country_code
 from cdedb.common.n_ import n_
@@ -1044,6 +1043,7 @@ class CoreBaseFrontend(AbstractFrontend):
         :param restricted: If True, only return fields the user may change
             themselves, i.e. remove the restricted fields.
         """
+        assert user.persona_id is not None
         ret: Set[str] = set()
         # some fields are of no interest here.
         hidden_fields = set(PERSONA_STATUS_FIELDS) | {"id", "username"}
@@ -1062,7 +1062,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
         # hide the donation property if no active lastschrift exists, to avoid confusion
         if "donation" in ret and not self.cdeproxy.list_lastschrift(
-            rs, [user.persona_id], active=True):
+                rs, [user.persona_id], active=True):
             ret.remove("donation")
 
         restricted_fields = {"notes", "birthday", "is_searchable"}

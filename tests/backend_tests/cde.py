@@ -355,7 +355,6 @@ class TestCdEBackend(BackendTest):
                     self.assertEqual(decimal.Decimal('-4.50'), data['tally'])
                     self.assertEqual(new_balance, old_balance)
 
-
     @as_users("farin")
     def test_lastschrift_transaction_rollback(self) -> None:
         ltstati = const.LastschriftTransactionStati

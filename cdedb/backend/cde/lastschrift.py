@@ -19,8 +19,8 @@ from cdedb.backend.common import (
     affirm_validation_optional as affirm_optional, batchify, singularize,
 )
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, RequestState,
-    merge_dicts, now, unwrap,
+    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, RequestState, now,
+    unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import LASTSCHRIFT_FIELDS, LASTSCHRIFT_TRANSACTION_FIELDS
@@ -139,8 +139,7 @@ class CdELastschriftBackend(CdEBaseBackend):
 
     @access("finance_admin")
     def create_lastschrift(self, rs: RequestState, data: CdEDBObject,
-                           initial_donation: decimal.Decimal
-    ) -> DefaultReturnCode:
+                           initial_donation: decimal.Decimal) -> DefaultReturnCode:
         """Make a new direct debit permit."""
         data = affirm(vtypes.Lastschrift, data, creation=True)
         initial_donation = affirm(vtypes.PositiveDecimal, initial_donation)
@@ -364,8 +363,7 @@ class CdELastschriftBackend(CdEBaseBackend):
             ret = self.sql_insert(rs, "cde.lastschrift_transactions", data)
             self.core.finance_log(
                 rs, const.FinanceLogCodes.lastschrift_transaction_issue,
-                lastschrift['persona_id'], None, None,
-                change_note=data['amount'])
+                lastschrift['persona_id'], None, None, change_note=str(data['amount']))
         return ret
     issue_lastschrift_transaction_batch = batchify(
         issue_lastschrift_transaction)

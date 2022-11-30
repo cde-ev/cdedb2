@@ -8,7 +8,6 @@ Everything else here requires the "finance_admin" role.
 """
 
 import datetime
-import decimal
 import pathlib
 import random
 import shutil
@@ -153,11 +152,11 @@ class CdELastschriftMixin(CdEBaseFrontend):
     @REQUESTdata('persona_id', "donation")
     def lastschrift_create(self, rs: RequestState, persona_id: vtypes.CdedbID,
                            data: CdEDBObject, donation: vtypes.PositiveDecimal
-    ) -> Response:
+                           ) -> Response:
         """Create a new permit."""
         data['persona_id'] = persona_id
         data = check(rs, vtypes.Lastschrift, data, creation=True)
-        if not self.coreproxy.verify_persona(rs, data["persona_id"], ["cde"]):
+        if not self.coreproxy.verify_persona(rs, persona_id, ["cde"]):
             rs.add_validation_error(("persona_id", ValueError(
                 n_("Persona must have cde realm."))))
         min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
