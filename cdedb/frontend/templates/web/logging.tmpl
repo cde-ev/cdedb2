@@ -125,6 +125,9 @@
                         'new_balance_from', 'new_balance_to', label=gettext("Balance"),
                          type='number', attributes='min="0" step="0.01 max=1000000"'|s, small=True) }}
                 {{ util.form_input_from_to(
+                        'transaction_date_from', 'transaction_date_to', label=gettext("Transaction Date"),
+                         type='date', small=True) }}
+                {{ util.form_input_from_to(
                         'total_from', 'total_to', label=gettext("Overall Balance"),
                          type='number', attributes='min="0" step="0.01" max="1000000"'|s, small=True) }}
                 {{ util.form_input_from_to(

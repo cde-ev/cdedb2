@@ -55,7 +55,8 @@ class LogTable(enum.Enum):
         """Provide a list of non-default columns for every table."""
         return {
             self.core_changelog: ("reviewed_by", "generation", "automated_change",),
-            self.cde_finance_log: ("delta", "new_balance", "members", "total",),
+            self.cde_finance_log: ("delta", "new_balance", "transaction_date",
+                                   "members", "total",),
             self.past_event_log: ("pevent_id",),
             self.event_log: ("event_id",),
             self.ml_log: ("mailinglist_id",),
@@ -227,6 +228,9 @@ class LogFilterFinanceLog(LogFilter):
     # New balance of the affected user.
     new_balance: tuple[Optional[decimal.Decimal],
                        Optional[decimal.Decimal]] = (None, None)
+    # Range for the transaction date..
+    transaction_date: tuple[Optional[datetime.date],
+                            Optional[datetime.date]] = (None, None)
     # New total balance across all members.
     total: tuple[Optional[decimal.Decimal], Optional[decimal.Decimal]] = (None, None)
     # New number of total members.
@@ -257,6 +261,14 @@ class LogFilterFinanceLog(LogFilter):
                 if new_balance_to:
                     conditions.append("new_balance <= %s")
                     params.append(new_balance_to)
+            if self.transaction_date:
+                transaction_date_from, transaction_date_to = self.transaction_date
+                if transaction_date_from:
+                    conditions.append("transaction_date >= %s")
+                    params.append(transaction_date_from)
+                if transaction_date_to:
+                    conditions.append("transaction_date <= %s")
+                    params.append(transaction_date_to)
             if self.total:
                 total_from, total_to = self.total
                 if total_from:
