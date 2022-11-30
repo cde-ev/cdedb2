@@ -2019,7 +2019,7 @@ msgstr "Lastschrift erteilt"
 
 #: cdedb/common/query/__init__.py:470
 msgid "Lastschrift Revoked"
-msgstr "Lastsrift widerrufen"
+msgstr "Lastschrift widerrufen"
 
 #: cdedb/common/query/__init__.py:472
 msgid "Active Lastschrift"
@@ -3510,6 +3510,9 @@ msgid "%(num)s Direct Debits issued. Notification mails sent."
 msgstr ""
 "%(num)s Lastschriften initialisiert. Benachrichtigungsmails wurden "
 "verschickt."
+
+msgid "Taken from the profile of the user."
+msgstr "Dem Profil des Nutzers entnommen."
 
 #: cdedb/frontend/cde/lastschrift.py:428
 msgid "Unable to skip transaction."
