@@ -119,7 +119,7 @@ Colours & Icons
             - SHOULD have
 
                 - fa-times icon (cancel = form reset)
-                - arrow-left icon
+                - chevron-left icon
 
         - keeping page (e.g. Download buttons) or going to similar page
 
