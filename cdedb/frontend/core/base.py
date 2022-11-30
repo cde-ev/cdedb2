@@ -48,8 +48,7 @@ from cdedb.common.validation.types import CdedbID
 from cdedb.filter import enum_entries_filter, markdown_parse_safe, money_filter
 from cdedb.frontend.common import (
     AbstractFrontend, Headers, REQUESTdata, REQUESTdatadict, REQUESTfile,
-    TransactionObserver, access, basic_redirect, calculate_db_logparams,
-    calculate_loglinks, check_validation as check,
+    TransactionObserver, access, basic_redirect, check_validation as check,
     check_validation_optional as check_optional, inspect_validation as inspect,
     make_membership_fee_reference, periodic, request_dict_extractor, request_extractor,
 )
@@ -1896,6 +1895,9 @@ class CoreBaseFrontend(AbstractFrontend):
         """Now we can reset to a new password."""
         if rs.has_validation_errors():
             return self.reset_password_form(rs)
+        if not self.coreproxy.verify_existence(rs, email, include_genesis=False):
+            rs.notify("error", n_("Unknown email address."))
+            return self.reset_password_form(rs)
         if new_password != new_password2:
             rs.extend_validation_errors(
                 (("new_password", ValueError(n_("Passwords don’t match."))),
@@ -2190,29 +2192,16 @@ class CoreBaseFrontend(AbstractFrontend):
                             time_stop: Optional[datetime.datetime],
                             reviewed_by: Optional[CdedbID]) -> Response:
         """View changelog activity."""
-        length = length or self.conf["DEFAULT_LOG_LENGTH"]
-        # length is the requested length, _length the theoretically
-        # shown length for an infinite amount of log entries.
-        _offset, _length = calculate_db_logparams(offset, length)
 
-        # no validation since the input stays valid, even if some options
-        # are lost
-        rs.ignore_validation_errors()
-        total, log = self.coreproxy.retrieve_changelog_meta(
-            rs, codes, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, change_note=change_note,
-            time_start=time_start, time_stop=time_stop, reviewed_by=reviewed_by)
-        persona_ids = (
-                {entry['submitted_by'] for entry in log if
-                 entry['submitted_by']}
-                | {entry['reviewed_by'] for entry in log if
-                   entry['reviewed_by']}
-                | {entry['persona_id'] for entry in log if entry['persona_id']})
-        personas = self.coreproxy.get_personas(rs, persona_ids)
-        loglinks = calculate_loglinks(rs, total, offset, length)
-        return self.render(rs, "view_changelog_meta", {
-            'log': log, 'total': total, 'length': _length,
-            'personas': personas, 'loglinks': loglinks})
+        filter_params = {
+            'codes': codes, 'offset': offset, 'length': length,
+            'persona_id': persona_id, 'submitted_by': submitted_by,
+            'change_note': change_note, 'ctime': (time_start, time_stop),
+            'reviewed_by': reviewed_by,
+        }
+
+        return self.generic_view_log(
+            rs, filter_params, "core.changelog", "view_changelog_meta")
 
     @access("core_admin", "auditor")
     @REQUESTdata(*LOG_FIELDS_COMMON)
@@ -2223,27 +2212,15 @@ class CoreBaseFrontend(AbstractFrontend):
                  time_start: Optional[datetime.datetime],
                  time_stop: Optional[datetime.datetime]) -> Response:
         """View activity."""
-        length = length or self.conf["DEFAULT_LOG_LENGTH"]
-        # length is the requested length, _length the theoretically
-        # shown length for an infinite amount of log entries.
-        _offset, _length = calculate_db_logparams(offset, length)
 
-        # no validation since the input stays valid, even if some options
-        # are lost
-        rs.ignore_validation_errors()
-        total, log = self.coreproxy.retrieve_log(
-            rs, codes, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, change_note=change_note,
-            time_start=time_start, time_stop=time_stop)
-        persona_ids = (
-                {entry['submitted_by'] for entry in log if
-                 entry['submitted_by']}
-                | {entry['persona_id'] for entry in log if entry['persona_id']})
-        personas = self.coreproxy.get_personas(rs, persona_ids)
-        loglinks = calculate_loglinks(rs, total, offset, length)
-        return self.render(rs, "view_log", {
-            'log': log, 'total': total, 'length': _length,
-            'personas': personas, 'loglinks': loglinks})
+        filter_params = {
+            'codes': codes, 'offset': offset, 'length': length,
+            'persona_id': persona_id, 'submitted_by': submitted_by,
+            'change_note': change_note, 'ctime': (time_start, time_stop),
+        }
+
+        return self.generic_view_log(
+            rs, filter_params, "core.log", "view_log")
 
     @access("anonymous")
     def debug_email(self, rs: RequestState, token: str) -> Response:

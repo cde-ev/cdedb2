@@ -91,8 +91,10 @@ def populate_storage(conf: Config) -> None:
 
     foto = ("e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425"
             "a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9")
+    genesis = ("71186e9b6f29e6c984b85a59bfb644a771dc58d286dcb40e5768d15258c0a8f1dac0"
+               "91feb7943d2d2fd4b038459585e8e42edaf3f493fff1c6c99d12b5f2d93d")
     files = (
-        "picture.pdf",  # core: profile foto?
+        "picture.pdf",  # core: genesis request file
         "picture.png",  # core: profile foto
         "picture.jpg",  # core: profile foto
         "batch_admission.csv",  # cde: sample input for batch admission
@@ -112,12 +114,14 @@ def populate_storage(conf: Config) -> None:
 
     testfile_dir = repo_path / "tests" / "ancillary_files"
     attachment_dir = storage_dir / "assembly_attachment"
+    genesis_dir = storage_dir / "genesis_attachment"
 
     shutil.copy(testfile_dir / foto, storage_dir / "foto")
     shutil.copy(testfile_dir / "rechen.pdf", attachment_dir / "1_v1")
     shutil.copy(testfile_dir / "kassen.pdf", attachment_dir / "2_v1")
     shutil.copy(testfile_dir / "kassen2.pdf", attachment_dir / "2_v3")
     shutil.copy(testfile_dir / "kandidaten.pdf", attachment_dir / "3_v1")
+    shutil.copy(testfile_dir / "picture.pdf", genesis_dir / genesis)
     for file in files:
         shutil.copy(testfile_dir / file, storage_dir / "testfiles")
 

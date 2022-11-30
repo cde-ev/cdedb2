@@ -211,7 +211,7 @@ class TestCoreBackend(BackendTest):
             'submitted_by': self.user['id'],
             'change_note': newaddress,
         }
-        _, log_entry = self.core.retrieve_log(self.key)
+        _, log_entry = self.core.retrieve_log(self.key, {})
         self.assertIn(expected_log, log_entry)
 
     @storage
@@ -485,7 +485,7 @@ class TestCoreBackend(BackendTest):
             'submitted_by': self.user['id'],
             'change_note': change_note,
         }
-        _, expected_log = self.core.retrieve_log(self.key)
+        _, expected_log = self.core.retrieve_log(self.key, {})
         self.assertIn(log_entry, expected_log)
 
     @as_users("vera")
@@ -586,7 +586,7 @@ class TestCoreBackend(BackendTest):
             'persona_id': None,
             'submitted_by': self.user['id'],
         }
-        _, log_entries = self.core.retrieve_log(self.key, codes=(genesis_deleted,))
+        _, log_entries = self.core.retrieve_log(self.key, {'codes': (genesis_deleted,)})
         self.assertIn(log_entry_expectation, log_entries)
 
     @as_users("annika", "vera")
@@ -607,11 +607,13 @@ class TestCoreBackend(BackendTest):
             'location': "Marcuria",
             'country': "AQ",
         }
+        self.assertEqual(1, len(self.core.genesis_list_cases(
+            self.key, realms=["event"], stati=(const.GenesisStati.to_review,))))
         case_id = self.core.genesis_request(ANONYMOUS, data)
         self.assertGreater(case_id, 0)
         assert case_id is not None
         self.assertEqual((1, 'event'), self.core.genesis_verify(ANONYMOUS, case_id))
-        self.assertEqual(1, len(self.core.genesis_list_cases(
+        self.assertEqual(2, len(self.core.genesis_list_cases(
             self.key, realms=["event"], stati=(const.GenesisStati.to_review,))))
         expectation = data
         expectation.update({
@@ -620,12 +622,34 @@ class TestCoreBackend(BackendTest):
             'reviewer': None,
             'attachment_hash': None,
             'birth_name': None,
+            'persona_id': None,
             'pevent_id': None,
             'pcourse_id': None,
         })
         value = self.core.genesis_get_case(self.key, case_id)
         del value['ctime']
         self.assertEqual(expectation, value)
+
+        # Just update the genesis request
+        update = {
+            'id': case_id,
+            'realm': "event",
+            'address': "An dem Elche",
+        }
+        self.assertEqual(1, self.core.genesis_modify_case(self.key, update))
+        expectation.update(update)
+        value = self.core.genesis_get_case(self.key, case_id)
+        del value['ctime']
+        self.assertEqual(expectation, value)
+        if self.user_in("vera"):
+            log_entry_expectation = {
+                'change_note': expectation['username'],
+                'code': const.CoreLogCodes.genesis_change,
+                'persona_id': None,
+                'submitted_by': self.user['id'],
+            }
+            self.assertLogEqual([log_entry_expectation], realm='core', offset=2)
+
         update = {
             'id': case_id,
             'realm': "event",
@@ -680,11 +704,13 @@ class TestCoreBackend(BackendTest):
             "realm": "ml",
             "notes": "Some blah",
         }
+        self.assertEqual(1, len(self.core.genesis_list_cases(
+            self.key, realms=["ml"], stati=(const.GenesisStati.to_review,))))
         case_id = self.core.genesis_request(ANONYMOUS, data)
         self.assertGreater(case_id, 0)
         assert case_id is not None
         self.assertEqual((1, "ml"), self.core.genesis_verify(ANONYMOUS, case_id))
-        self.assertEqual(1, len(self.core.genesis_list_cases(
+        self.assertEqual(2, len(self.core.genesis_list_cases(
             self.key, realms=["ml"], stati=(const.GenesisStati.to_review,))))
         expectation = data
         expectation.update({
@@ -702,6 +728,7 @@ class TestCoreBackend(BackendTest):
             'telephone': None,
             'attachment_hash': None,
             'birth_name': None,
+            'persona_id': None,
             'pevent_id': None,
             'pcourse_id': None,
         })
@@ -769,18 +796,21 @@ class TestCoreBackend(BackendTest):
             'location': "Marcuria",
             'country': "AQ",
             'attachment_hash': attachment_hash,
+            'persona_id': None,
             'pevent_id': None,
             'pcourse_id': None,
         }
         self.assertFalse(self.core.genesis_attachment_usage(
             self.key, attachment_hash))
+        self.assertEqual(1, len(self.core.genesis_list_cases(
+            self.key, realms=["cde"], stati=(const.GenesisStati.to_review,))))
         case_id = self.core.genesis_request(ANONYMOUS, data)
         self.assertTrue(self.core.genesis_attachment_usage(
             self.key, attachment_hash))
         self.assertLess(0, case_id)
         assert case_id is not None
         self.assertEqual((1, 'cde'), self.core.genesis_verify(ANONYMOUS, case_id))
-        self.assertEqual(1, len(self.core.genesis_list_cases(
+        self.assertEqual(2, len(self.core.genesis_list_cases(
             self.key, realms=["cde"], stati=(const.GenesisStati.to_review,))))
         expectation = data
         expectation.update({
@@ -886,7 +916,7 @@ class TestCoreBackend(BackendTest):
         self.assertLess(ret, 0)
         self.login(USER_DICT["anton"])
         total, _ = self.core.retrieve_log(
-            self.key, codes=(const.CoreLogCodes.genesis_verified,))
+            self.key, {'codes': (const.CoreLogCodes.genesis_verified,)})
         self.assertEqual(1, total)
 
     @as_users("vera")
@@ -1135,11 +1165,11 @@ class TestCoreBackend(BackendTest):
                 'submitted_by': admin2['id'],
             },
         ))
-        result = self.core.retrieve_log(self.key)
+        result = self.core.retrieve_log(self.key, {})
         self.assertEqual(core_log_expectation, result)
 
-        total_entries = self.core.retrieve_changelog_meta(self.key)[0]
-        changelog_expectation = (total_entries, (
+        total_entries = self.core.retrieve_changelog_meta(self.key, {})[0]
+        changelog_expectation = (
             # Committing the changed admin bits.
             {
                 'id': 1001,
@@ -1152,10 +1182,12 @@ class TestCoreBackend(BackendTest):
                 'submitted_by': admin2["id"],
                 'automated_change': False,
             },
-        ))
+        )
         # Set offset to avoid selecting the Init. changelog entries
-        result = self.core.retrieve_changelog_meta(self.key, offset=total_entries-1)
-        self.assertEqual(changelog_expectation, result)
+        self.assertLogEqual(
+            changelog_expectation, log_retriever=self.core.retrieve_changelog_meta,
+            offset=total_entries - 1
+        )
 
     @as_users("anton", "martin")
     def test_invalid_privilege_change(self) -> None:
@@ -1336,8 +1368,8 @@ class TestCoreBackend(BackendTest):
             "core.changelog", ids=None,
             keys=("id", "submitted_by", "reviewed_by", "ctime", "generation",
                   "change_note", "code", "persona_id", "automated_change"))
-        self.assertEqual((len(expectation), tuple(expectation.values())),
-                         self.core.retrieve_changelog_meta(self.key))
+        self.assertLogEqual(
+            list(expectation.values()), log_retriever=self.core.retrieve_changelog_meta)
 
     @as_users("katarina")
     def test_auditor(self) -> None:
@@ -1358,5 +1390,5 @@ class TestCoreBackend(BackendTest):
                             "automated_change")
                 self.assertLogEqual(
                     tuple(self.get_sample_data(table, keys=keys).values()),
-                    log_retriever=retriever,  # type: ignore[arg-type]
+                    log_retriever=retriever,
                 )

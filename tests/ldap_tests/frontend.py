@@ -28,18 +28,32 @@ class TestLDAP(BasicTest):
 
     # all duas except the admin dua
     DUAs = {
-        f'cn=apache,ou=duas,{root_dn}': 'secret',
-        f'cn=cloud,ou=duas,{root_dn}': 'secret',
-        f'cn=cyberaka,ou=duas,{root_dn}': 'secret',
-        f'cn=dokuwiki,ou=duas,{root_dn}': 'secret',
-        f'cn=test,ou=duas,{root_dn}': 'secret',
+        "apache": f'cn=apache,ou=duas,{root_dn}',
+        "cloud": f'cn=cloud,ou=duas,{root_dn}',
+        "cyberaka": f'cn=cyberaka,ou=duas,{root_dn}',
+        "dokuwiki": f'cn=dokuwiki,ou=duas,{root_dn}',
+        "rqt": f'cn=rqt,ou=duas,{root_dn}',
+        "test": f'cn=test,ou=duas,{root_dn}',
+    }
+    DUA_passwords = {
+        "apache": "secret",
+        "cloud": "secret",
+        "cyberaka": "secret",
+        "dokuwiki": "secret",
+        "rqt": "secret",
+        "test": "secret",
     }
 
     # all users which have a password
     USERS = {
-        f'uid={user["id"]},ou=users,dc=cde-ev,dc=de': user['password']
+        user: f'uid={value["id"]},ou=users,dc=cde-ev,dc=de'
         # take only non-archived users into account
-        for user in USER_DICT.values() if user['username']
+        for user, value in USER_DICT.items() if value['username']
+    }
+    USER_passwords = {
+        user: value['password']
+        # take only non-archived users into account
+        for user, value in USER_DICT.items() if value['username']
     }
 
     @classmethod
@@ -87,12 +101,13 @@ class TestLDAP(BasicTest):
         The 'except_users' argument may be used to exclude some users from this check.
         """
         users: Dict[str, str] = {**self.DUAs, **self.USERS}
+        passwords: Dict[str, str] = {**self.DUA_passwords, **self.USER_passwords}
         except_users = except_users or set()
-        for user, password in users.items():
+        for user in users:
             with self.subTest(user):
-                identifier = user.split(sep=",", maxsplit=1)[0]
                 with ldap3.Connection(
-                    self.server, user=user, password=password, raise_exceptions=True
+                    self.server, user=users[user], password=passwords[user],
+                    raise_exceptions=True
                 ) as conn:
                     conn.search(
                         search_base=search_base,
@@ -100,7 +115,7 @@ class TestLDAP(BasicTest):
                         attributes=attributes
                     )
                     # if the current user should access the entries, we check if he does
-                    if identifier in except_users:
+                    if user in except_users:
                         self.assertNotEqual(0, len(conn.entries), conn.entries)
                     else:
                         self.assertEqual(0, len(conn.entries), conn.entries)
@@ -156,13 +171,15 @@ class TestLDAP(BasicTest):
         self.assertEqual("unwillingToPerform", conn.result["description"])
 
     def test_compare(self) -> None:
-        user = "uid=1,ou=users,dc=cde-ev,dc=de"
+        user = "anton"
+        user_dn = self.USERS[user]
         with ldap3.Connection(
-            self.server, user=user, password=self.USERS[user], raise_exceptions=True
+            self.server, user=user_dn, password=self.USER_passwords[user],
+            raise_exceptions=True
         ) as conn:
-            conn.compare(user, "sn", "Administrator")
+            conn.compare(user_dn, "sn", "Administrator")
             self.assertEqual("compareTrue", conn.result["description"])
-            conn.compare(user, "sn", "Beispiel")
+            conn.compare(user_dn, "sn", "Beispiel")
             self.assertEqual("compareFalse", conn.result["description"])
 
     def test_anonymous_search(self) -> None:
@@ -239,7 +256,8 @@ class TestLDAP(BasicTest):
                 'cn=platin-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
                 'cn=platin@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
                 'cn=werbung@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
-                'cn=witz@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de'
+                'cn=witz@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+                'cn=gu@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             ]
         }
         self.single_result_search(search_filter, expectation, attributes=attributes,
@@ -330,7 +348,7 @@ class TestLDAP(BasicTest):
             f"(cn={group_cn})"
             ")"
         )
-        self.no_result_search(search_filter, except_users={"cn=cloud", "cn=apache"})
+        self.no_result_search(search_filter, except_users={"cloud", "apache"})
         self.single_result_search(search_filter, expectation, user=self.admin_dua_dn,
                                   password=self.admin_dua_pw)
 
@@ -354,7 +372,7 @@ class TestLDAP(BasicTest):
             f"(cn={group_cn})"
             ")"
         )
-        self.no_result_search(search_filter, except_users={"cn=cloud", "cn=apache"})
+        self.no_result_search(search_filter, except_users={"cloud", "apache", "rqt"})
         self.single_result_search(search_filter, expectation, search_base=search_base,
                                   user=self.admin_dua_dn, password=self.admin_dua_pw)
 
@@ -377,7 +395,7 @@ class TestLDAP(BasicTest):
             f"(cn={group_cn})"
             ")"
         )
-        self.no_result_search(search_filter, except_users={"cn=cloud", "cn=apache"})
+        self.no_result_search(search_filter, except_users={"cloud", "apache"})
         self.single_result_search(search_filter, expectation, search_base=search_base,
                                   user=self.admin_dua_dn, password=self.admin_dua_pw)
 
@@ -400,7 +418,7 @@ class TestLDAP(BasicTest):
             f"(cn={group_cn})"
             ")"
         )
-        self.no_result_search(search_filter, except_users={"cn=cloud", "cn=apache"})
+        self.no_result_search(search_filter, except_users={"cloud", "apache"})
         self.single_result_search(search_filter, expectation, search_base=search_base,
                                   user=self.admin_dua_dn, password=self.admin_dua_pw)
 
@@ -423,7 +441,7 @@ class TestLDAP(BasicTest):
             f"(cn={group_cn})"
             ")"
         )
-        self.no_result_search(search_filter, except_users={"cn=cloud", "cn=apache"})
+        self.no_result_search(search_filter, except_users={"cloud", "apache"})
         self.single_result_search(search_filter, expectation, search_base=search_base,
                                   user=self.admin_dua_dn, password=self.admin_dua_pw)
 
@@ -442,22 +460,22 @@ class TestLDAP(BasicTest):
             f"(cn={dua_cn})"
             ")"
         )
-        self.no_result_search(search_filter, except_users={"cn=test"})
+        self.no_result_search(search_filter, except_users={"test"})
         self.single_result_search(search_filter, expectation)
 
     def test_search_groups_of_user(self) -> None:
         # Garcia has status fields, is orga, subscriber and ml moderator
         user_id = 7
-        expectation = {
-            # pylint: disable=line-too-long
-            # status
+        expectation_status = {
             'cn=is_active,ou=status,ou=groups,dc=cde-ev,dc=de',
             'cn=is_assembly_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
             'cn=is_cde_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
             'cn=is_event_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
             'cn=is_ml_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
             'cn=is_member,ou=status,ou=groups,dc=cde-ev,dc=de',
-            # subscriber
+        }
+        expectation_subscriber = {
+            # pylint: disable=line-too-long
             'cn=aka@aka.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=all@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=announce@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
@@ -468,67 +486,94 @@ class TestLDAP(BasicTest):
             'cn=moderatoren@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=participants@aka.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=werbung@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
-            # moderator
+            'cn=gu@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+        }
+        expectation_moderator = {
+            # pylint: disable=line-too-long
             'cn=aka-owner@aka.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
             'cn=test-gast-owner@aka.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
             'cn=participants-owner@aka.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
             'cn=wait-owner@aka.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
-            # orga
+        }
+        expectation_orga = {
             'cn=orgas-1,ou=event-orgas,ou=groups,dc=cde-ev,dc=de',
             'cn=orgas-3,ou=event-orgas,ou=groups,dc=cde-ev,dc=de',
         }
+        expectation_presider: Set[str] = set()
+        expectation_all = {
+            *expectation_status, *expectation_subscriber, *expectation_moderator,
+            *expectation_orga, *expectation_presider}
         search_filter = (
             "(&"
                 "(objectClass=groupOfUniqueNames)"
                 f"(uniqueMember=uid={user_id},ou=users,{self.root_dn})"
             ")"
         )
-        self.no_result_search(search_filter, except_users={"cn=cloud", "cn=apache"})
+        self.no_result_search(search_filter, except_users={"cloud", "apache", "rqt"})
         with ldap3.Connection(
                 self.server, user=self.admin_dua_dn, password=self.admin_dua_pw
         ) as conn:
             conn.search(search_base=self.root_dn, search_filter=search_filter)
             result_names: Set[str] = {entry.entry_dn for entry in conn.entries}
-            self.assertEqual(expectation, result_names)
+            self.assertEqual(expectation_all, result_names)
+        with ldap3.Connection(
+                self.server, user=self.DUAs["rqt"], password=self.DUA_passwords["rqt"]
+        ) as conn:
+            conn.search(search_base=self.root_dn, search_filter=search_filter)
+            result_names = {entry.entry_dn for entry in conn.entries}
+            self.assertEqual(expectation_subscriber, result_names)
 
-        # Kalif has status fields, is presider, subscriber and moderator
+        # Werner has status fields, is presider, subscriber and moderator
         user_id = 23
-        expectation = {
-            # pylint: disable=line-too-long
-            # status
-            'cn=everyone@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+        expectation_status = {
             'cn=is_active,ou=status,ou=groups,dc=cde-ev,dc=de',
             'cn=is_assembly_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
             'cn=is_cde_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
             'cn=is_event_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
             'cn=is_ml_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
-            # subscriber
+        }
+        expectation_subscriber = {
+            # pylint: disable=line-too-long
+            'cn=everyone@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=kongress@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=kongress-leitung@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=moderatoren@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=opt@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=wal@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
-            # moderators
+        }
+        expectation_moderator = {
+            # pylint: disable=line-too-long
             'cn=kanonisch-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
             'cn=kongress-leitung-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
             'cn=kongress-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
-            # presider
+        }
+        expectation_orga: Set[str] = set()
+        expectation_presider = {
             'cn=presiders-1,ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de',
             'cn=presiders-3,ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de',
         }
+        expectation_all = {
+            *expectation_status, *expectation_subscriber, *expectation_moderator,
+            *expectation_orga, *expectation_presider}
         search_filter = (
             "(&"
                 "(objectClass=groupOfUniqueNames)"
                 f"(uniqueMember=uid={user_id},ou=users,{self.root_dn})"
             ")"
         )
-        self.no_result_search(search_filter, except_users={"cn=cloud", "cn=apache"})
+        self.no_result_search(search_filter, except_users={"cloud", "apache", "rqt"})
         with ldap3.Connection(
             self.server, user=self.admin_dua_dn, password=self.admin_dua_pw
         ) as conn:
             conn.search(search_base=self.root_dn, search_filter=search_filter)
             result_names = {entry.entry_dn for entry in conn.entries}
-            self.assertEqual(expectation, result_names)
+            self.assertEqual(expectation_all, result_names)
+        with ldap3.Connection(
+                self.server, user=self.DUAs["rqt"], password=self.DUA_passwords["rqt"]
+        ) as conn:
+            conn.search(search_base=self.root_dn, search_filter=search_filter)
+            result_names = {entry.entry_dn for entry in conn.entries}
+            self.assertEqual(expectation_subscriber, result_names)
 
     def test_search_attributes_of_groups_of_user(self) -> None:
         user_id = 10
@@ -545,7 +590,7 @@ class TestLDAP(BasicTest):
             'cn': ['42@lists.cde-ev.de'],
             'objectClass': ['groupOfUniqueNames']
         }
-        self.no_result_search(search_filter, except_users={"cn=cloud", "cn=apache"})
+        self.no_result_search(search_filter, except_users={"cloud", "apache", "rqt"})
         # TODO use appropiate non-admin-dua here
         self.single_result_search(search_filter, expectation, attributes=attributes,
                                   user=self.admin_dua_dn, password=self.admin_dua_pw)

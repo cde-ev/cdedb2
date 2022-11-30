@@ -29,6 +29,7 @@ from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation import (
     EVENT_EXPOSED_FIELDS, EVENT_PART_COMMON_FIELDS,
     EVENT_PART_CREATION_MANDATORY_FIELDS, EVENT_PART_GROUP_COMMON_FIELDS,
+    EVENT_TRACK_GROUP_COMMON_FIELDS,
 )
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access, cdedburl,
@@ -106,6 +107,7 @@ class EventEventMixin(EventBaseFrontend):
                 rs, event_id, registration_id=None, course_id=None)
             params['mep_violations'] = constraint_violations['mep_violations']
             params['mec_violations'] = constraint_violations['mec_violations']
+            params['ccs_violations'] = constraint_violations['ccs_violations']
             params['violation_severity'] = constraint_violations['max_severity']
         elif not rs.ambience['event']['is_visible']:
             raise werkzeug.exceptions.Forbidden(n_("The event is not published yet."))
@@ -295,6 +297,8 @@ class EventEventMixin(EventBaseFrontend):
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         for course in courses.values():
             blocked_tracks.update(course['segments'])
+        for tg in rs.ambience['event']['track_groups'].values():
+            blocked_tracks.update(tg['track_ids'])
         return blocked_tracks
 
     @access("event")
@@ -405,9 +409,20 @@ class EventEventMixin(EventBaseFrontend):
         current = copy.deepcopy(part)
         del current['id']
         del current['tracks']
-        for track_id, track in part['tracks'].items():
+
+        # Select the first track by id for every sync track group, disable altering
+        #  choices for all others.
+        sync_groups = set()
+        readonly_synced_tracks = set()
+        for track_id, track in xsorted(part['tracks'].items()):
             for k in ('title', 'shortname', 'num_choices', 'min_choices', 'sortkey'):
                 current[drow_name(k, entity_id=track_id, prefix="track")] = track[k]
+            for tg_id, tg in track['track_groups'].items():
+                if tg['constraint_type'].is_sync():
+                    if tg_id in sync_groups:
+                        readonly_synced_tracks.add(track_id)
+                    else:
+                        sync_groups.add(tg_id)
         for m_id, m in rs.ambience['event']['fee_modifiers'].items():
             for k in ('modifier_name', 'amount', 'field_id'):
                 current[drow_name(k, entity_id=m_id, prefix="fee_modifier")] = m[k]
@@ -436,7 +451,9 @@ class EventEventMixin(EventBaseFrontend):
             'waitlist_fields': waitlist_fields,
             'referenced_tracks': referenced_tracks,
             'has_registrations': has_registrations,
-            'DEFAULT_NUM_COURSE_CHOICES': DEFAULT_NUM_COURSE_CHOICES})
+            'DEFAULT_NUM_COURSE_CHOICES': DEFAULT_NUM_COURSE_CHOICES,
+            'readonly_synced_tracks': readonly_synced_tracks,
+        })
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
@@ -555,14 +572,34 @@ class EventEventMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.change_part_form(rs, event_id, part_id)
 
-        #
-        # put it all together
-        #
         data['tracks'] = track_data
         data['fee_modifiers'] = fee_modifier_data
+        part_data = {part_id: data}
+
+        # For every sync track group take the first track by id and propagate it's
+        #  number of choices to all tracks in that group.
+        sync_groups = set()
+
+        for track_id, track in xsorted(track_data.items()):
+            # Only existing tracks are relevant, new ones are not part of a group.
+            if track and track_id in track_existing:
+                for tg_id, tg in track_existing[track_id]['track_groups'].items():
+                    if tg['constraint_type'].is_sync() and tg_id not in sync_groups:
+                        sync_groups.add(tg_id)
+                        for t_id in tg['track_ids']:
+                            p_id = rs.ambience['event']['tracks'][t_id]['part_id']
+                            if p_id not in part_data:
+                                part_data[p_id] = vtypes.EventPart({'tracks': {}})
+                            if t_id not in part_data[p_id]['tracks']:
+                                part_data[p_id]['tracks'][t_id] = {}
+                            part_data[p_id]['tracks'][t_id].update({
+                                'num_choices': track['num_choices'],
+                                'min_choices': track['min_choices'],
+                            })
+
         event = {
             'id': event_id,
-            'parts': {part_id: data},
+            'parts': part_data,
         }
         code = self.eventproxy.set_event(rs, event)
         rs.notify_return_code(code)
@@ -571,8 +608,8 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard()
-    def part_group_summary(self, rs: RequestState, event_id: int) -> Response:
-        return self.render(rs, "event/part_group_summary")
+    def group_summary(self, rs: RequestState, event_id: int) -> Response:
+        return self.render(rs, "event/group_summary")
 
     @access("event")
     @event_guard()
@@ -605,7 +642,7 @@ class EventEventMixin(EventBaseFrontend):
             return self.add_part_group_form(rs, event_id)
         code = self.eventproxy.set_part_groups(rs, event_id, {-1: data})
         rs.notify_return_code(code)
-        return self.redirect(rs, "event/part_group_summary")
+        return self.redirect(rs, "event/group_summary")
 
     @access("event")
     @event_guard()
@@ -635,17 +672,120 @@ class EventEventMixin(EventBaseFrontend):
             return self.change_part_group_form(rs, event_id, part_group_id)
         code = self.eventproxy.set_part_groups(rs, event_id, {part_group_id: data})
         rs.notify_return_code(code)
-        return self.redirect(rs, "event/part_group_summary")
+        return self.redirect(rs, "event/group_summary")
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
     def delete_part_group(self, rs: RequestState, event_id: int,
                           part_group_id: int) -> Response:
         if rs.has_validation_errors():
-            return self.part_group_summary(rs, event_id)  # pragma: no cover
+            return self.group_summary(rs, event_id)  # pragma: no cover
         code = self.eventproxy.set_part_groups(rs, event_id, {part_group_id: None})
         rs.notify_return_code(code)
-        return self.redirect(rs, "event/part_group_summary")
+        return self.redirect(rs, "event/group_summary")
+
+    @access("event")
+    @event_guard()
+    def add_track_group_form(self, rs: RequestState, event_id: int) -> Response:
+        return self.render(rs, "event/configure_track_group")
+
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
+    @REQUESTdata(*EVENT_TRACK_GROUP_COMMON_FIELDS)
+    def add_track_group(self, rs: RequestState, event_id: int, title: str,
+                       shortname: str, notes: Optional[str], sortkey: int,
+                       constraint_type: const.CourseTrackGroupType,
+                       track_ids: Collection[int]) -> Response:
+        if track_ids and not set(track_ids) <= rs.ambience['event']['tracks'].keys():
+            rs.append_validation_error(("track_ids", ValueError(n_("Unknown track."))))
+        data = {
+            'title': title,
+            'shortname': shortname,
+            'notes': notes,
+            'constraint_type': constraint_type,
+            'sortkey': sortkey,
+            'track_ids': track_ids,
+        }
+        for key in ('title', 'shortname'):
+            existing = {tg[key] for tg in rs.ambience['event']['track_groups'].values()}
+            if data[key] in existing:
+                rs.append_validation_error((key, ValueError(n_(
+                    "A track group with this name already exists."))))
+        data = check(rs, vtypes.EventTrackGroup, data)
+        if rs.has_validation_errors():
+            return self.add_track_group_form(rs, event_id)
+        event = rs.ambience['event']
+        tracks = event['tracks']
+        if constraint_type.is_sync():
+            track_ids = set(track_ids)
+            if any(tg['constraint_type'].is_sync() and tg['track_ids'] & track_ids
+                   for tg in event['track_groups'].values()):
+                rs.append_validation_error((
+                    "track_ids",
+                    ValueError(n_("Cannot have more than one course choice sync"
+                                  " track group per track."))
+                ))
+            if not len(set(
+                    (tracks[track_id]['num_choices'], tracks[track_id]['min_choices'])
+                    for track_id in track_ids)
+            ) == 1:
+                rs.append_validation_error((
+                    "track_ids", ValueError(n_("Incompatible tracks."))
+                ))
+            if self.eventproxy.do_course_choices_exist(rs, track_ids):
+                rs.append_validation_error((
+                    "track_ids", ValueError(n_("Cannot create CCS group if course"
+                                               " choices exist."))))
+            if rs.has_validation_errors():
+                return self.add_track_group_form(rs, event_id)
+        code = self.eventproxy.set_track_groups(rs, event_id, {-1: data})
+        rs.notify_return_code(code)
+        return self.redirect(rs, "event/group_summary")
+
+    @access("event")
+    @event_guard()
+    def change_track_group_form(self, rs: RequestState, event_id: int,
+                                track_group_id: int) -> Response:
+        merge_dicts(rs.values, rs.ambience['track_group'])
+        return self.render(rs, "event/configure_track_group")
+
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
+    @REQUESTdata("title", "shortname", "notes", "sortkey")
+    def change_track_group(self, rs: RequestState, event_id: int,
+                          track_group_id: int, title: str, shortname: str,
+                          notes: Optional[str], sortkey: int) -> Response:
+        data: CdEDBObject = {
+            'title': title,
+            'shortname': shortname,
+            'notes': notes,
+            'sortkey': sortkey,
+        }
+        for key in ('title', 'shortname'):
+            existing = {tg[key] for tg in rs.ambience['event']['track_groups'].values()}
+            if data[key] in existing - {rs.ambience['track_group'][key]}:
+                rs.append_validation_error((key, ValueError(n_(
+                    "A track group with this name already exists."))))
+        data = check(rs, vtypes.EventTrackGroup, data)
+        if rs.has_validation_errors():
+            return self.change_track_group_form(rs, event_id, track_group_id)
+        code = self.eventproxy.set_track_groups(rs, event_id, {track_group_id: data})
+        rs.notify_return_code(code)
+        return self.redirect(rs, "event/group_summary")
+
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
+    @REQUESTdata("ack_delete")
+    def delete_track_group(self, rs: RequestState, event_id: int, track_group_id: int,
+                           ack_delete: bool) -> Response:
+        if not ack_delete:
+            rs.append_validation_error(
+                ("ack_delete", ValueError(n_("Must be checked."))))
+        if rs.has_validation_errors():
+            return self.group_summary(rs, event_id)  # pragma: no cover
+        code = self.eventproxy.set_track_groups(rs, event_id, {track_group_id: None})
+        rs.notify_return_code(code)
+        return self.redirect(rs, "event/group_summary")
 
     @staticmethod
     def _get_mailinglist_setter(event: CdEDBObject, orgalist: bool = False

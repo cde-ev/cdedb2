@@ -42,14 +42,16 @@ ATTACHMENT_EXTENSIONS_CONVERT = {
 
 ATTACHMENT_MIME_CONVERT = {
     const.AttachmentPolicy.allow: "",
-    const.AttachmentPolicy.pdf_only: ['multipart', 'text/plain', 'application/pdf'],
-    const.AttachmentPolicy.forbid: ['text/plain'],
+    # HTML parts will be stripped afterwards due to the conversion.
+    const.AttachmentPolicy.pdf_only: ['multipart', 'text/plain', 'application/pdf',
+                                      'text/html'],
+    const.AttachmentPolicy.forbid: ['text/plain', 'text/html'],
 }
 
 ATTACHMENT_HTML_CONVERT = {
     const.AttachmentPolicy.allow: True,
-    const.AttachmentPolicy.pdf_only: False,
-    const.AttachmentPolicy.forbid: False,
+    const.AttachmentPolicy.pdf_only: True,
+    const.AttachmentPolicy.forbid: True,
 }
 
 
@@ -71,8 +73,9 @@ class MlMailmanMixin(MlBaseFrontend):
             prefix = "[{}] ".format(db_list['subject_prefix'] or "")
 
         alias_domains: Set[str] = db_list['domain'].get_acceptable_aliases()
-        acceptable_aliases =\
-            [db_list['local_part'] + '@' + d for d in alias_domains] or ""
+        acceptable_aliases = \
+            ([db_list['local_part'] + '@' + d for d in alias_domains] +
+             self.conf["MAILMAN_ACCEPTABLE_ALIASES"].get(db_list['address'], [])) or ""
 
         # First, specify the generally desired settings, templates and header matches.
         # Settings not specified here can be persistently set otherwise.

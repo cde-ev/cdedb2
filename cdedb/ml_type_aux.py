@@ -716,6 +716,10 @@ class CdeLokalMailinglist(SemiPublicMailinglist):
     relevant_admins = {"cdelokal_admin"}
 
 
+class PublicMemberImplicitMailinglist(AllMembersImplicitMeta, GeneralOptInMailinglist):
+    pass
+
+
 MLTypeLike = Union[MailinglistTypes, Type[GeneralMailinglist]]
 MLType = Type[GeneralMailinglist]
 
@@ -770,6 +774,7 @@ TYPE_MAP = {
     MailinglistTypes.general_moderators: GeneralModeratorMailinglist,
     MailinglistTypes.cdelokal_moderators: CdELokalModeratorMailinglist,
     MailinglistTypes.semi_public: SemiPublicMailinglist,
+    MailinglistTypes.public_member_implicit: PublicMemberImplicitMailinglist,
     MailinglistTypes.cdelokal: CdeLokalMailinglist,
 }
 

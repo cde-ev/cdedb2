@@ -169,18 +169,19 @@
         {% endfor %}
     </dl>
 
-    {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) if track['num_choices'] %}
-        {% set reg_track = registration['tracks'][track_id] %}
-        {% if enums['RegistrationPartStati'](registration['parts'][track['part_id']]['status']).is_involved() %}
+    {% for cco in choice_objects %}
+        {% set track, track_group = (reference_tracks[cco['id']], cco) if 'constraint_type' in cco else (cco, None) %}
+        {% set reg_track = registration['tracks'][track['id']] %}
+        {% if 'track_ids' in cco and cco['track_ids'].intersection(involved_tracks) or cco['id'] in involved_tracks %}
             <h4>
                 {% trans %}Course{% endtrans %}
-                {% if ambience['event']['tracks']|length > 1 %}
+                {% if choice_objects|length > 1 %}
                     {% trans %}for{% endtrans %}
-                    {{ track['title'] }}
+                    {{ cco['title'] }}
                 {% endif %}
             </h4>
 
-            <dl class="dl-horizontal">
+            <dl class="dl-horizontal" id="course-choices-{{ "group-{}".format(track_group['id']) if track_group else track['id'] }}">
                 {% if ambience['event']['is_course_assignment_visible'] %}
                     <dt title="{% trans %}Assigned to{% endtrans %}">{% trans %}Assigned to{% endtrans %}</dt>
                     <dd>
@@ -195,7 +196,10 @@
                 {% endif %}
                 {% if reg_track['course_instructor'] %}
                     <dt title="{% trans %}Instructor of{% endtrans %}">{% trans %}Instructor of{% endtrans %}</dt>
-                    <dd><em>{{ courses[reg_track['course_instructor']]['title'] }}</em>.</dd>
+                    <dd><em>
+                        {{ courses[reg_track['course_instructor']]['nr'] }}.
+                        {{ courses[reg_track['course_instructor']]['title'] }}
+                    </em></dd>
                 {% endif %}
                 {% for i in range(track['num_choices']) %}
                     <dt title="{{ gettext("{}. choice").format(i + 1) }}">

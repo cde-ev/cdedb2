@@ -1526,7 +1526,108 @@
             "fulltext": null
         }
     ],
-    "core.genesis_cases": [],
+    "core.genesis_cases": [
+        {
+            "id": 1,
+            "ctime": "---now---",
+            "username": "michaela@example.cde",
+            "given_names": "Michaela",
+            "family_name": "Mailcrawler",
+            "birth_name": null,
+            "gender": null,
+            "birthday": null,
+            "telephone": null,
+            "mobile": null,
+            "address_supplement": null,
+            "address": null,
+            "postal_code": null,
+            "location": null,
+            "country": null,
+            "realm": "ml",
+            "notes": "Ich möchte gerne die DSA-Liste abbonieren.",
+            "attachment_hash": null,
+            "case_status": 2,
+            "reviewer": null,
+            "persona_id": null,
+            "pevent_id": null,
+            "pcourse_id": null
+        },
+        {
+            "id": 2,
+            "ctime": "---now---",
+            "username": "wolfgang@example.cde",
+            "given_names": "Wolfgang",
+            "family_name": "Weihnacht",
+            "birth_name": null,
+            "gender": 2,
+            "birthday": "2000-12-24",
+            "telephone": null,
+            "mobile": null,
+            "address_supplement": null,
+            "address": "An das Christkind",
+            "postal_code": "51766",
+            "location": "Engelskirchen",
+            "country": "DE",
+            "realm": "event",
+            "notes": "Ich möchte mich gerne für die WinterAkademie anmelden.",
+            "attachment_hash": null,
+            "case_status": 2,
+            "reviewer": null,
+            "persona_id": null,
+            "pevent_id": null,
+            "pcourse_id": null
+        },
+        {
+            "id": 3,
+            "ctime": "---now---",
+            "username": "zeder@example.cde",
+            "given_names": "Kristin",
+            "family_name": "Zeder",
+            "birth_name": null,
+            "gender": 10,
+            "birthday": "2010-08-05",
+            "telephone": null,
+            "mobile": null,
+            "address_supplement": "CdErnhof",
+            "address": "Feriendorf Eisenberg 1",
+            "postal_code": "36275",
+            "location": "Kirchheim",
+            "country": "DE",
+            "realm": "cde",
+            "notes": "Nach meiner Pflanzung auf dem Eisenberg möchte ich jetzt offiziell meine Mitgliedschaft beantragen.",
+            "attachment_hash": "71186e9b6f29e6c984b85a59bfb644a771dc58d286dcb40e5768d15258c0a8f1dac091feb7943d2d2fd4b038459585e8e42edaf3f493fff1c6c99d12b5f2d93d",
+            "case_status": 2,
+            "reviewer": null,
+            "persona_id": null,
+            "pevent_id": null,
+            "pcourse_id": null
+        },
+        {
+            "id": 4,
+            "ctime": "---now---",
+            "username": "leslie@example.cde",
+            "given_names": "Leslie",
+            "family_name": "Levitaro",
+            "birth_name": null,
+            "gender": null,
+            "birthday": null,
+            "telephone": null,
+            "mobile": null,
+            "address_supplement": null,
+            "address": null,
+            "postal_code": null,
+            "location": null,
+            "country": null,
+            "realm": "ml",
+            "notes": "Ich stelle eine Accountanfrage, aber bestätige sie nicht!",
+            "attachment_hash": null,
+            "case_status": 1,
+            "reviewer": null,
+            "persona_id": null,
+            "pevent_id": null,
+            "pcourse_id": null
+        }
+    ],
     "core.privilege_changes": [],
     "core.sessions": [],
     "core.quota": [],
@@ -3825,6 +3926,7 @@
             "delta": null,
             "new_balance": null,
             "change_note": "-4.50€",
+            "transaction_date": null,
             "members": 7,
             "total": "106.50"
         },
@@ -3836,8 +3938,21 @@
             "delta": "5.00",
             "new_balance": "12.50",
             "change_note": "42.23€",
+            "transaction_date": null,
             "members": 7,
             "total": "111.50"
+        },
+        {
+            "ctime": "---now---",
+            "code": 10,
+            "submitted_by": 32,
+            "persona_id": 9,
+            "delta": "5.00",
+            "new_balance": "5.00",
+            "change_note": null,
+            "transaction_date": "---now---",
+            "members": 7,
+            "total": "116.50"
         }
     ],
     "cde.log": [],
@@ -4081,7 +4196,7 @@
             "shortname": "triaka",
             "institution": 1,
             "description": "Ich habe gehört, du magst DoppelAkademien, also habe ich eine DoppelAkademie in Deine DoppelAkademie gepackt.",
-            "registration_start": null,
+            "registration_start": "---now---",
             "registration_soft_limit": null,
             "registration_hard_limit": null,
             "iban": "DE26370205000008068900",
@@ -4477,8 +4592,8 @@
             "part_id": 9,
             "title": "Oberwesel Kurs 2 nachmittags",
             "shortname": "OK2n",
-            "num_choices": 5,
-            "min_choices": 2,
+            "num_choices": 3,
+            "min_choices": 1,
             "sortkey": 1
         },
         {
@@ -4486,7 +4601,7 @@
             "part_id": 10,
             "title": "Windischleuba Kurs 2 morgens",
             "shortname": "WK2m",
-            "num_choices": 3,
+            "num_choices": 5,
             "min_choices": 2,
             "sortkey": 1
         },
@@ -4496,7 +4611,7 @@
             "title": "Windischleuba Kurs 2 nachmittags",
             "shortname": "WK2n",
             "num_choices": 3,
-            "min_choices": 2,
+            "min_choices": 1,
             "sortkey": 1
         },
         {
@@ -4504,7 +4619,7 @@
             "part_id": 11,
             "title": "Kaub Kurs 2 morgens",
             "shortname": "KK2m",
-            "num_choices": 4,
+            "num_choices": 5,
             "min_choices": 2,
             "sortkey": 1
         },
@@ -4513,18 +4628,94 @@
             "part_id": 11,
             "title": "Kaub Kurs 2 nachmittags",
             "shortname": "KK2n",
-            "num_choices": 4,
-            "min_choices": 2,
+            "num_choices": 3,
+            "min_choices": 1,
             "sortkey": 1
         },
         {
             "id": 15,
             "part_id": 11,
-            "title": "Kaub Vortäge",
+            "title": "Kaub Vorträge",
             "shortname": "KV",
             "num_choices": 1,
             "min_choices": 1,
+            "sortkey": 2
+        }
+    ],
+    "event.track_groups": [
+        {
+            "id": 1,
+            "event_id": 4,
+            "title": "Kurs 1. Hälfte",
+            "shortname": "Kurs1",
+            "notes": null,
+            "constraint_type": 1,
             "sortkey": 1
+        },
+        {
+            "id": 2,
+            "event_id": 4,
+            "title": "Kurs 2. Hälfte nachmittags",
+            "shortname": "K2nS",
+            "notes": null,
+            "constraint_type": 1,
+            "sortkey": 4
+        },
+        {
+            "id": 3,
+            "event_id": 4,
+            "title": "Kurs 2. Hälfte morgens",
+            "shortname": "K2mS",
+            "notes": null,
+            "constraint_type": 1,
+            "sortkey": 3
+        }
+    ],
+    "event.track_group_tracks": [
+        {
+            "id": 1,
+            "track_group_id": 1,
+            "track_id": 6
+        },
+        {
+            "id": 2,
+            "track_group_id": 1,
+            "track_id": 7
+        },
+        {
+            "id": 3,
+            "track_group_id": 1,
+            "track_id": 8
+        },
+        {
+            "id": 4,
+            "track_group_id": 3,
+            "track_id": 9
+        },
+        {
+            "id": 5,
+            "track_group_id": 3,
+            "track_id": 11
+        },
+        {
+            "id": 6,
+            "track_group_id": 3,
+            "track_id": 13
+        },
+        {
+            "id": 7,
+            "track_group_id": 2,
+            "track_id": 10
+        },
+        {
+            "id": 8,
+            "track_group_id": 2,
+            "track_id": 12
+        },
+        {
+            "id": 9,
+            "track_group_id": 2,
+            "track_id": 14
         }
     ],
     "event.field_definitions": [
@@ -4797,6 +4988,45 @@
             "max_size": 11,
             "notes": "Alle Teilnehmenden müssen mit dem Kurs nach Windischleuba umziehen.",
             "fields": {}
+        },
+        {
+            "id": 10,
+            "event_id": 4,
+            "nr": "1",
+            "title": "Das Niebelungenlied",
+            "description": null,
+            "shortname": "Niebelungenlied",
+            "instructors": null,
+            "min_size": null,
+            "max_size": null,
+            "notes": null,
+            "fields": {}
+        },
+        {
+            "id": 11,
+            "event_id": 4,
+            "nr": "2",
+            "title": "All-Embracement",
+            "description": "In diesem Kurs finden wir heraus, wie man alles umfassen und an drei Orten gleichzeitig sein kann. Dabei beginnen wir damit, wie man gleichzeitig in Kaub und in Oberwesel sein kann, und fahren im fortgeschrittenen Teil mit Windischleuba fort.",
+            "shortname": "All-Embracement",
+            "instructors": null,
+            "min_size": null,
+            "max_size": null,
+            "notes": null,
+            "fields": {}
+        },
+        {
+            "id": 12,
+            "event_id": 4,
+            "nr": "3",
+            "title": "Nostalgie",
+            "description": "In diesem Kurs lernen wir, warum alle Akademien in Windischleuba stattfinden sollten.",
+            "shortname": "Nostalgie",
+            "instructors": null,
+            "min_size": null,
+            "max_size": null,
+            "notes": null,
+            "fields": {}
         }
     ],
     "event.course_segments": [
@@ -4893,6 +5123,81 @@
         {
             "course_id": 9,
             "track_id": 6,
+            "is_active": true
+        },
+        {
+            "course_id": 10,
+            "track_id": 6,
+            "is_active": true
+        },
+        {
+            "course_id": 10,
+            "track_id": 8,
+            "is_active": true
+        },
+        {
+            "course_id": 11,
+            "track_id": 6,
+            "is_active": true
+        },
+        {
+            "course_id": 11,
+            "track_id": 8,
+            "is_active": true
+        },
+        {
+            "course_id": 11,
+            "track_id": 9,
+            "is_active": true
+        },
+        {
+            "course_id": 11,
+            "track_id": 10,
+            "is_active": true
+        },
+        {
+            "course_id": 11,
+            "track_id": 11,
+            "is_active": true
+        },
+        {
+            "course_id": 11,
+            "track_id": 12,
+            "is_active": true
+        },
+        {
+            "course_id": 11,
+            "track_id": 13,
+            "is_active": true
+        },
+        {
+            "course_id": 11,
+            "track_id": 14,
+            "is_active": true
+        },
+        {
+            "course_id": 11,
+            "track_id": 15,
+            "is_active": true
+        },
+        {
+            "course_id": 12,
+            "track_id": 11,
+            "is_active": true
+        },
+        {
+            "course_id": 12,
+            "track_id": 12,
+            "is_active": true
+        },
+        {
+            "course_id": 12,
+            "track_id": 15,
+            "is_active": true
+        },
+        {
+            "course_id": 12,
+            "track_id": 7,
             "is_active": true
         }
     ],
@@ -8121,6 +8426,25 @@
             "assembly_id": 1
         },
         {
+            "id": 67,
+            "title": "Globaler Unsinn",
+            "address": "gu@lists.cde-ev.de",
+            "local_part": "gu",
+            "domain": 1,
+            "description": null,
+            "mod_policy": 2,
+            "attachment_policy": 2,
+            "ml_type": 70,
+            "subject_prefix": null,
+            "maxsize": 64,
+            "is_active": true,
+            "notes": null,
+            "gateway": null,
+            "event_id": null,
+            "registration_stati": [],
+            "assembly_id": null
+        },
+        {
             "id": 99,
             "title": "Mailman-Migration",
             "address": "migration@testmail.cde-ev.de",
@@ -8479,6 +8803,11 @@
         {
             "mailinglist_id": 12,
             "persona_id": 11,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 14,
             "subscription_state": 30
         },
         {
@@ -8975,6 +9304,51 @@
             "mailinglist_id": 66,
             "persona_id": 23,
             "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 67,
+            "persona_id": 1,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 67,
+            "persona_id": 2,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 67,
+            "persona_id": 3,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 67,
+            "persona_id": 6,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 67,
+            "persona_id": 7,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 67,
+            "persona_id": 9,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 67,
+            "persona_id": 14,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 67,
+            "persona_id": 15,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 67,
+            "persona_id": 100,
+            "subscription_state": 30
         }
     ],
     "ml.subscription_addresses": [
@@ -9231,43 +9605,13 @@
             "persona_id": 23
         },
         {
+            "mailinglist_id": 67,
+            "persona_id": 14
+        },
+        {
             "mailinglist_id": 99,
             "persona_id": 1
         }
     ],
-    "ml.log": [],
-    "ldap.organizations": [],
-    "ldap.duas": [
-        {
-            "id": 1,
-            "cn": "admin",
-            "password_hash": "$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1"
-        },
-        {
-            "id": 2,
-            "cn": "apache",
-            "password_hash": "$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1"
-        },
-        {
-            "id": 3,
-            "cn": "cloud",
-            "password_hash": "$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1"
-        },
-        {
-            "id": 4,
-            "cn": "cyberaka",
-            "password_hash": "$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1"
-        },
-        {
-            "id": 5,
-            "cn": "dokuwiki",
-            "password_hash": "$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1"
-        },
-        {
-            "id": 999999999,
-            "cn": "test",
-            "password_hash": "$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1"
-        }
-    ],
-    "ldap.static_groups": []
+    "ml.log": []
 }

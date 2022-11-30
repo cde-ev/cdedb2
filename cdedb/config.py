@@ -221,6 +221,12 @@ _DEFAULTS = {
     "MAILMAN_USER": "restadmin",
     # user for mailman to retrieve templates
     "MAILMAN_BASIC_AUTH_USER": "mailman",
+    # aliases which are recognized for mailinglists
+    "MAILMAN_ACCEPTABLE_ALIASES": {
+        "vorstand@lists.cde-ev.de": ["info@cde-ev.de"],
+        "doku@lists.cde-ev.de": ["team@dokuforge.de"],
+        "dokuforge2@lists.cde-ev.de": ["df2@dokuforge.de"],
+    },
 
     #################
     # Backend stuff #
@@ -347,6 +353,7 @@ _SECRECTS_DEFAULTS = {
         "cloud": "secret",
         "cyberaka": "secret",
         "dokuwiki": "secret",
+        "rqt": "secret",
         "test": "secret",
     },
 }
@@ -486,7 +493,11 @@ class SecretsConfig(Mapping[str, Any]):
         override = {
             key: value for key, value in override.items() if key in _SECRECTS_DEFAULTS}
 
-        self._configchain = collections.ChainMap(override, _SECRECTS_DEFAULTS)
+        # for security reasons, do not use the _SECRETS_DEFAULT in production
+        if pathlib.Path("/PRODUCTIONVM").is_file():
+            self._configchain = collections.ChainMap(override)
+        else:
+            self._configchain = collections.ChainMap(override, _SECRECTS_DEFAULTS)
 
     def __getitem__(self, key: str) -> Any:
         return self._configchain.__getitem__(key)

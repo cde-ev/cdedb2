@@ -3,7 +3,6 @@ SHELL := /bin/bash
 .PHONY: help
 help:
 	@echo "Default Variables:"
-	@echo "DATABASE_NAME       -- name of a postgres database. Default: cdb"
 	@echo "I18NDIR             -- directory of the translation files. Default: ./i18n"
 	@echo ""
 	@echo "General:"
@@ -13,9 +12,6 @@ help:
 	@echo ""
 	@echo "Translations"
 	@echo "i18n-refresh        -- extract translatable strings from code and update translation catalogs in I18NDIR"
-	@echo ""
-	@echo "LDAP:"
-	@echo "TODO add description"
 	@echo ""
 	@echo "Code formatting:"
 	@echo "mypy                -- let mypy run over our codebase (bin, cdedb, tests)"
@@ -51,12 +47,6 @@ MYPY ?= $(PYTHONBIN) -m mypy
 #####################
 
 # Use makes command-line arguments to override the following default variables
-# The database name on which we operate. This will be overridden in the test suite.
-DATABASE_NAME = cdb
-# The host where the database is available. This is mostly needed to setup ldap correctly.
-DATABASE_HOST = localhost
-# The password of the cdb_admin user. This is currently needed to setup ldap correctly.
-DATABASE_CDB_ADMIN_PASSWORD = 9876543210abcdefghijklmnopqrst
 # Directory where the translation files are stored. Especially used by the i18n-targets.
 I18NDIR = ./i18n
 # Available languages, by default detected as subdirectories of the translation targets.
@@ -108,59 +98,6 @@ i18n-compile: $(foreach lang, $(I18N_LANGUAGES), $(I18NDIR)/$(lang)/LC_MESSAGES/
 
 $(I18NDIR)/%/LC_MESSAGES/cdedb.mo: $(I18NDIR)/%/LC_MESSAGES/cdedb.po
 	msgfmt --verbose --check --statistics -o $@ $<
-
-
-########
-# LDAP #
-########
-
-.PHONY: ldap-prepare-odbc
-ldap-prepare-odbc:
-	# prepare odbc.ini file to enable database connection for ldap
-	sudo cp -f ldap/odbc.ini /etc/odbc.ini \
-		&& sudo sed -i -r -e "s|DATABASE_CDB_ADMIN_PASSWORD|${DATABASE_CDB_ADMIN_PASSWORD}|g" \
-		                  -e "s/DATABASE_NAME/${DATABASE_NAME}/g" \
-		                  -e "s/DATABASE_HOST/${DATABASE_HOST}/g" /etc/odbc.ini
-
-.PHONY: ldap-prepare-ldif
-ldap-prepare-ldif:
-	# prepare the new cdedb-specific ldap configuration
-	cp -f ldap/cdedb-ldap.ldif ldap/cdedb-ldap-applied.ldif \
-		&& sed -i -r -e "s|DATABASE_CDB_ADMIN_PASSWORD|${DATABASE_CDB_ADMIN_PASSWORD}|g" \
-		             -e "s/OLC_DB_NAME/${DATABASE_NAME}/g" \
-		             -e "s/OLC_DB_HOST/${DATABASE_HOST}/g" ldap/cdedb-ldap-applied.ldif
-
-.PHONY: ldap-create
-ldap-create:
-	# the only way to remove all ldap settings for sure is currently to uninstall it.
-	# therefore, we need to re-install slapd here.
-	sudo DEBIAN_FRONTEND=noninteractive apt-get install --yes slapd
-	# remove the predefined mdb-database from ldap
-	sudo systemctl stop slapd
-	sudo rm -f /etc/ldap/slapd.d/cn=config/olcDatabase=\{1\}mdb.ldif
-	sudo systemctl start slapd
-	# Apply the overall ldap configuration (load modules, add backends etc)
-	sudo ldapmodify -Y EXTERNAL -H ldapi:/// -f related/auto-build/files/stage3/ldap-config.ldif
-
-.PHONY: ldap-update
-ldap-update: ldap-prepare-odbc ldap-prepare-ldif
-	# remove the old cdedb-specific configuration and apply the new one
-	sudo systemctl stop slapd
-	# TODO is there any nice solution to do this from within ldap?
-	sudo rm -f /etc/ldap/slapd.d/cn=config/olcDatabase={1}sql.ldif
-	sudo systemctl start slapd
-	sudo ldapmodify -Y EXTERNAL -H ldapi:/// -f ldap/cdedb-ldap-applied.ldif
-
-.PHONY: ldap-update-full
-ldap-update-full: ldap-update
-	sudo -u www-data $(PYTHONBIN) bin/ldap_add_duas.py
-
-.PHONY: ldap-remove
-ldap-remove:
-	sudo apt-get remove --purge -y slapd
-
-.PHONY: ldap-reset
-ldap-reset: ldap-remove ldap-create ldap-update-full
 
 
 ###################

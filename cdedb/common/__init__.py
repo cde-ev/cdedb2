@@ -276,6 +276,10 @@ class RequestState(ConnectionContainer):
         self.validation_appraised = False
         self._errors.extend(errors)
 
+    def add_validation_errors(self, errors: Iterable[Error]) -> None:
+        for e in errors:
+            self.add_validation_error(e)
+
     def has_validation_errors(self) -> bool:
         """Check whether validation errors exists.
 
@@ -1303,7 +1307,8 @@ def encode_parameter(salt: str, target: str, name: str, param: str,
     :param persona_id: The id of the persona utilizing the parameter, may be
       None in which case everybody (including anonymous requests) can do so.
     :param target: The endpoint the parameter is designated for. If this is
-      omitted, there are nasty replay attacks.
+      omitted, there are nasty replay attacks. Is only used to ensure the
+      parameter is not abused for another ``target``.
     :param name: name of parameter, same security implications as ``target``
     :param timeout: time until parameter expires, if this is None, the
       parameter never expires
@@ -1376,7 +1381,7 @@ IGNORE_WARNINGS_NAME = "_magic_ignore_warnings"
 #: If the partial export and import are unaffected the minor version may be
 #: incremented.
 #: If you increment this, it must be incremented in make_offline_vm.py as well.
-EVENT_SCHEMA_VERSION = (15, 6)
+EVENT_SCHEMA_VERSION = (15, 7)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3

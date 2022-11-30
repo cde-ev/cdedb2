@@ -92,6 +92,9 @@ from cdedb.common.query import (
     MULTI_VALUE_OPERATORS, NO_VALUE_OPERATORS, VALID_QUERY_OPERATORS, QueryOperators,
     QueryOrder, QueryScope, QuerySpec,
 )
+from cdedb.common.query.log_filter import (
+    LogFilter, LogFilterChangelog, LogFilterEntityLog, LogFilterFinanceLog, LogTable,
+)
 from cdedb.common.roles import ADMIN_KEYS, extract_roles
 from cdedb.common.sorting import xsorted
 from cdedb.common.validation.data import (
@@ -110,6 +113,7 @@ _LOGGER = logging.getLogger(__name__)
 _CONFIG = LazyConfig()
 
 T = TypeVar('T')
+T_Co = TypeVar('T_Co', covariant=True)
 F = TypeVar('F', bound=Callable[..., Any])
 
 
@@ -162,6 +166,12 @@ class ValidatorStorage(Dict[Type[Any], Callable[..., Any]]):
         elif typing.get_origin(type_) is list:
             [inner_type] = typing.get_args(type_)
             return make_list_validator(inner_type)  # type: ignore[return-value]
+        elif typing.get_origin(type_) is tuple:
+            args = typing.get_args(type_)
+            if len(args) == 2:
+                type_a, type_b = args
+                if type_a is type_b:
+                    return cast(Callable[..., T], make_pair_validator(type_a))
         # TODO more container types like tuple
         return super().__getitem__(type_)
 
@@ -931,6 +941,21 @@ def make_list_validator(type_: Type[T]) -> ListValidator[T]:
     return list_validator
 
 
+class PairValidator(Protocol[T_Co]):
+    def __call__(self, val: Any, argname: str = None, **kargs: Any
+                 ) -> Tuple[T_Co, T_Co]:
+        ...
+
+
+def make_pair_validator(type_: Type[T]) -> PairValidator[T]:
+
+    @functools.wraps(_range)
+    def pair_validator(val: Any, argname: str = None, **kwargs: Any) -> Tuple[T, T]:
+        return _range(val, type_, argname, **kwargs)
+
+    return pair_validator
+
+
 @_add_typed_validator
 def _int_csv_list(
     val: Any, argname: str = None, **kwargs: Any
@@ -1126,16 +1151,15 @@ PERSONA_EVENT_CREATION: Mapping[str, Any] = {
     'country': Optional[Country],
 }
 
-PERSONA_FULL_ML_CREATION = {**PERSONA_BASE_CREATION}
+PERSONA_FULL_CREATION: Mapping[str, Dict[str, Any]] = {
+    'ml': {**PERSONA_BASE_CREATION},
+    'assembly': {**PERSONA_BASE_CREATION},
+    'event': {**PERSONA_BASE_CREATION, **PERSONA_EVENT_CREATION},
+    'cde': {**PERSONA_BASE_CREATION, **PERSONA_CDE_CREATION,
+            'is_member': bool, 'is_searchable': bool}
+}
 
-PERSONA_FULL_ASSEMBLY_CREATION = {**PERSONA_BASE_CREATION}
-
-PERSONA_FULL_EVENT_CREATION = {**PERSONA_BASE_CREATION, **PERSONA_EVENT_CREATION}
-
-PERSONA_FULL_CDE_CREATION = {**PERSONA_BASE_CREATION, **PERSONA_CDE_CREATION,
-                             'is_member': bool, 'is_searchable': bool}
-
-PERSONA_COMMON_FIELDS: Mapping[str, Any] = {
+PERSONA_COMMON_FIELDS: Dict[str, Any] = {
     'username': Email,
     'notes': Optional[str],
     'is_meta_admin': bool,
@@ -1485,6 +1509,7 @@ GENESIS_CASE_COMMON_FIELDS: TypeMapping = {
 GENESIS_CASE_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'case_status': const.GenesisStati,
     'reviewer': ID,
+    'persona_id': Optional[ID],
     'pevent_id': Optional[ID],
     'pcourse_id': Optional[ID],
 }
@@ -1561,8 +1586,8 @@ PRIVILEGE_CHANGE_COMMON_FIELDS: TypeMapping = {
     'notes': str,
 }
 
-PRIVILEGE_CHANGE_OPTIONAL_FIELDS: Mapping[str, Any] = {
-    k: Optional[bool] for k in ADMIN_KEYS
+PRIVILEGE_CHANGE_OPTIONAL_FIELDS: TypeMapping = {
+    k: Optional[bool] for k in ADMIN_KEYS  # type: ignore[misc]
 }
 
 
@@ -2095,7 +2120,8 @@ EVENT_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'institution': ID,
     'description': Optional[str],
-    'shortname': ShortnameIdentifier,
+    # Event shortnames do not actually need to be that short.
+    'shortname': Identifier,
 }
 
 EVENT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
@@ -2160,7 +2186,11 @@ def _optional_object_mapping_helper(
             if creation_only and not creation:
                 raise ValidationSummary(ValueError(
                     argname, n_("Only creation allowed.")))
-            val = _ALL_TYPED[Optional[atype]](val, argname, creation=creation, **kwargs)  # type: ignore[index]
+            if creation:
+                val = _ALL_TYPED[atype](val, argname, creation=creation, **kwargs)
+            else:
+                val = _ALL_TYPED[Optional[atype]](  # type: ignore[index]
+                    val, argname, creation=creation, **kwargs)
             ret[anid] = val
 
     if errs:
@@ -2385,28 +2415,10 @@ def _event_part_group_setter(
     """
     val = _mapping(val, argname)
 
-    errs = ValidationSummary()
-    new_part_groups = {}
-    for anid, part_group in val.items():
-        try:
-            anid = _partial_import_id(anid, 'parts', **kwargs)
-        except ValidationSummary as e:
-            errs.extend(e)
-            continue
-        creation = (anid < 0)
-        try:
-            if creation:
-                part_group = _ALL_TYPED[EventPartGroup](
-                    part_group, creation=True, **kwargs)
-            else:
-                part_group = _ALL_TYPED[Optional[EventPartGroup]](part_group, **kwargs)  # type: ignore[index]
-        except ValidationSummary as e:
-            errs.extend(e)
-        else:
-            new_part_groups[anid] = part_group
-    if errs:
-        raise errs
-    return EventPartGroupSetter(new_part_groups)
+    new_part_groups = _optional_object_mapping_helper(
+        val, EventPartGroup, argname, creation_only=False, **kwargs)
+
+    return EventPartGroupSetter(dict(new_part_groups))
 
 
 EVENT_TRACK_COMMON_FIELDS: TypeMapping = {
@@ -2445,6 +2457,54 @@ def _event_track(
             "Must be less or equal than total Course Choices.")))
 
     return EventTrack(val)
+
+
+EVENT_TRACK_GROUP_COMMON_FIELDS: TypeMapping = {
+    'title': str,
+    'shortname': Shortname,
+    'constraint_type': const.CourseTrackGroupType,
+    'notes': Optional[str],  # type: ignore[dict-item]
+    'track_ids': List[ID],
+    'sortkey': int,
+}
+
+
+@_add_typed_validator
+def _event_track_group(
+    val: Any, argname: str = "track_group", *,
+    creation: bool = False, **kwargs: Any
+) -> EventTrackGroup:
+    val = _mapping(val, argname, **kwargs)
+
+    if creation:
+        mandatory_fields = {**EVENT_TRACK_GROUP_COMMON_FIELDS}
+        optional_fields: TypeMapping = {}
+    else:
+        mandatory_fields = {}
+        optional_fields = {**EVENT_TRACK_GROUP_COMMON_FIELDS}
+
+    val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
+
+    if 'track_ids' in val:
+        if not val['track_ids']:
+            raise ValidationSummary(
+                ValueError('track_ids', n_("Must not be empty.")))
+
+    return EventTrackGroup(val)
+
+
+@_add_typed_validator
+def _event_track_group_setter(
+    val: Any, argname: str = "track_groups",
+    **kwargs: Any
+) -> EventTrackGroupSetter:
+    """Validate a `CdEDBOptionalMap` of track groups."""
+    val = _mapping(val, argname)
+
+    new_track_groups = _optional_object_mapping_helper(
+        val, EventTrackGroup, argname, creation_only=False, **kwargs)
+
+    return EventTrackGroupSetter(dict(new_track_groups))
 
 
 EVENT_FIELD_COMMON_FIELDS: TypeMapping = {
@@ -3201,6 +3261,8 @@ def _serialized_event(
         'core.personas': Mapping,
         'event.part_groups': Mapping,
         'event.part_group_parts': Mapping,
+        'event.track_groups': Mapping,
+        'event.track_group_tracks': Mapping,
     }
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
@@ -3260,17 +3322,35 @@ def _serialized_event(
             _empty_dict, {'id': ID, 'event_id': ID, 'query_name': str,
                           'scope': QueryScope, 'serialized_query': Mapping})
     }
+    optional_table_validators: Mapping[str, Callable[..., Any]] = {
+        'event.part_groups': _augment_dict_validator(
+            _event_part_group, {'id': ID, 'event_id': ID}),
+        'event.part_group_parts': _augment_dict_validator(
+            _empty_dict, {'id': ID, 'part_group_id': ID, 'part_id': ID}),
+        'event.track_groups': _augment_dict_validator(
+            _event_track_group, {'id': ID, 'event_id': ID}),
+        'event.track_group_tracks': _augment_dict_validator(
+            _empty_dict, {'id': ID, 'track_group_id': ID, 'track_id': ID}),
+    }
 
     errs = ValidationSummary()
     for table, validator in table_validators.items():
         new_table = {}
         for key, entry in val[table].items():
-            try:
+            with errs:
                 new_entry = validator(entry, argname=table, **kwargs)
                 new_key = _int(key, argname=table, **kwargs)
-            except ValidationSummary as e:
-                errs.extend(e)
-            else:
+                new_table[new_key] = new_entry
+        val[table] = new_table
+
+    for table, validator in optional_table_validators.items():
+        if table not in val:
+            continue
+        new_table = {}
+        for key, entry in val[table].items():
+            with errs:
+                new_entry = validator(entry, argname=table, **kwargs)
+                new_key = _int(key, argname=table, **kwargs)
                 new_table[new_key] = new_entry
         val[table] = new_table
 
@@ -3329,7 +3409,7 @@ def _serialized_partial_event(
         'id': ID,
         'timestamp': datetime.datetime,
     }
-    optional_fields = {
+    optional_fields: TypeMapping = {
         'courses': Mapping,
         'lodgement_groups': Mapping,
         'lodgements': Mapping,
@@ -3897,7 +3977,8 @@ def _subscription_address(
 
 ASSEMBLY_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
-    'shortname': ShortnameIdentifier,
+    # Assembly shortnames do not actually need to be that short.
+    'shortname': Identifier,
     'description': Optional[str],
     'signup_end': datetime.datetime,
     'notes': Optional[str],
@@ -4173,7 +4254,14 @@ def _vote(
             n_("Must specify ballot in order to validate vote.")))
         raise errs
 
-    entries = {candidate for level in as_vote_tuple(val) for candidate in level}
+    # First check for duplicates
+    raw_entries = as_vote_tuple(val)
+    # TODO: Implement `as_vote_list` into schulze_condorcet
+    all_entries = list(itertools.chain.from_iterable(raw_entries))
+    if len(all_entries) > len(set(all_entries)):
+        errs.append(ValueError(argname, n_("Duplicate candidates.")))
+
+    entries = {candidate for level in raw_entries for candidate in level}
     reference = set(e['shortname'] for e in ballot['candidates'].values())
     if ballot['use_bar'] or ballot['votes']:
         reference.add(ASSEMBLY_BAR_SHORTNAME)
@@ -4532,6 +4620,90 @@ def _query(
 
     # TODO why deepcopy?
     return copy.deepcopy(val)
+
+
+def _range(
+    val: Any, type_: Type[T], argname: str = None, **kwargs: Any
+) -> Tuple[T, T]:
+    """Validate val to be a tuple of exactly two values of the given type.
+
+    Used to specify a range to filter for.
+    """
+    val = _sequence(val, argname, **kwargs)
+
+    if not len(val) == 2:
+        raise ValidationSummary(ValueError(n_("Must contain exactly two elements.")))
+
+    errs = ValidationSummary()
+    new_val = []
+    for v in val:
+        with errs:
+            new_val.append(_ALL_TYPED[type_](v, argname, **kwargs))
+
+    if errs:
+        raise errs
+
+    from_val, to_val = new_val  # pylint: disable=unbalanced-tuple-unpacking
+    return (from_val, to_val)
+
+
+@_add_typed_validator
+def _log_filter(
+    val: Any, argname: str = None, *, log_table: LogTable, **kwargs: Any
+) -> LogFilter:
+    return _log_filter_common(
+        val, argname, log_table=log_table, filter_class=LogFilter)
+
+
+@_add_typed_validator
+def _log_filter_changelog(
+    val: Any, argname: str = None, *, log_table: LogTable, **kwargs: Any
+) -> LogFilterChangelog:
+    return _log_filter_common(
+        val, argname, log_table=log_table, filter_class=LogFilterChangelog)
+
+
+@_add_typed_validator
+def _log_filter_entity_log(
+    val: Any, argname: str = None, *, log_table: LogTable, **kwargs: Any
+) -> LogFilterEntityLog:
+    return _log_filter_common(
+        val, argname, log_table=log_table, filter_class=LogFilterEntityLog)
+
+
+@_add_typed_validator
+def _log_filter_finance(
+    val: Any, argname: str = None, *, log_table: LogTable, **kwargs: Any
+) -> LogFilterFinanceLog:
+    return _log_filter_common(
+        val, argname, log_table=log_table, filter_class=LogFilterFinanceLog)
+
+
+LF = TypeVar("LF", bound=LogFilter)
+
+
+def _log_filter_common(
+    val: Any, argname: str = None,
+    *, log_table: LogTable, filter_class: Type[LF],
+    **kwargs: Any
+) -> LF:
+
+    if isinstance(val, filter_class):
+        val_dict = val.__dict__
+    else:
+        val_dict = dict(_mapping(val, argname, **kwargs))
+
+    if not val_dict.get('length'):
+        val_dict['length'] = _CONFIG['DEFAULT_LOG_LENGTH']
+    if val_dict.get('table', log_table) != log_table:
+        raise ValidationSummary(ValueError(n_("Table mismatch.")))
+    # Ensure this is an enum member, not just a string.
+    val_dict['table'] = LogTable(log_table)
+
+    val_dict = _examine_dictionary_fields(
+        val_dict, {}, typing.get_type_hints(filter_class))
+
+    return filter_class(**val_dict)
 
 
 E = TypeVar('E', bound=Enum)

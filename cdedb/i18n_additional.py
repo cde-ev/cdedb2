@@ -67,6 +67,7 @@ I18N_STRINGS = (
     n_("CoreLogCodes.genesis_deleted"),
     n_("CoreLogCodes.genesis_verified"),
     n_("CoreLogCodes.genesis_merged"),
+    n_("CoreLogCodes.genesis_change"),
     n_("CoreLogCodes.privilege_change_pending"),
     n_("CoreLogCodes.privilege_change_approved"),
     n_("CoreLogCodes.privilege_change_rejected"),
@@ -119,6 +120,11 @@ I18N_STRINGS = (
     n_("EventLogCodes.part_group_deleted"),
     n_("EventLogCodes.part_group_link_created"),
     n_("EventLogCodes.part_group_link_deleted"),
+    n_("EventLogCodes.track_group_created"),
+    n_("EventLogCodes.track_group_changed"),
+    n_("EventLogCodes.track_group_deleted"),
+    n_("EventLogCodes.track_group_link_created"),
+    n_("EventLogCodes.track_group_link_deleted"),
 
     n_("FinanceLogCodes.new_member"),
     n_("FinanceLogCodes.gain_membership"),
@@ -227,6 +233,8 @@ I18N_STRINGS = (
     n_("EventPartGroupType.mutually_exclusive_courses"),
     n_("EventPartGroupType.Statistic"),
 
+    n_("CourseTrackGroupType.course_choice_sync"),
+
     n_("RegistrationPartStati.not_applied"),
     n_("RegistrationPartStati.applied"),
     n_("RegistrationPartStati.participant"),
@@ -291,6 +299,7 @@ I18N_STRINGS = (
     n_("MailinglistTypes.general_moderators"),
     n_("MailinglistTypes.cdelokal_moderators"),
     n_("MailinglistTypes.semi_public"),
+    n_("MailinglistTypes.public_member_implicit"),
     n_("MailinglistTypes.cdelokal"),
 
     #

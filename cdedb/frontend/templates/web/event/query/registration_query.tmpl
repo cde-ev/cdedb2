@@ -22,7 +22,7 @@
     <div class="row">
         <div class="col-md-4">
             <div class="p button-par">
-                {{ util.href(cdedblink("event/add_registration_form"), gettext("Add Participant"),
+                {{ util.href(cdedblink("event/add_registration_form"), gettext("Add Registration"),
                              readonly=is_locked, icon='plus', aclass='btn btn-sm btn-success') }}
                 {% if ambience['event']['fields'] and has_registrations %}
                     {{ util.href(cdedblink("event/field_set_select", {'kind': enums['FieldAssociations'].registration.value}), gettext("Set Field"),

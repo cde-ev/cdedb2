@@ -1,14 +1,14 @@
 -- This file specifies the accounts in the database and should be pretty stable
 
 -- drop everything to be sure
-DROP DATABASE IF EXISTS cdb;
-DROP DATABASE IF EXISTS cdb_test;
-DROP DATABASE IF EXISTS cdb_test_1;
-DROP DATABASE IF EXISTS cdb_test_2;
-DROP DATABASE IF EXISTS cdb_test_3;
-DROP DATABASE IF EXISTS cdb_test_4;
-DROP DATABASE IF EXISTS cdb_test_ldap;
-DROP DATABASE IF EXISTS cdb_test_xss;
+DROP DATABASE IF EXISTS cdb WITH (FORCE);
+DROP DATABASE IF EXISTS cdb_test WITH (FORCE);
+DROP DATABASE IF EXISTS cdb_test_1 WITH (FORCE);
+DROP DATABASE IF EXISTS cdb_test_2 WITH (FORCE);
+DROP DATABASE IF EXISTS cdb_test_3 WITH (FORCE);
+DROP DATABASE IF EXISTS cdb_test_4 WITH (FORCE);
+DROP DATABASE IF EXISTS cdb_test_ldap WITH (FORCE);
+DROP DATABASE IF EXISTS cdb_test_xss WITH (FORCE);
 -- master user cdb -- do not use in code
 DROP ROLE IF EXISTS cdb;
 CREATE USER cdb                 PASSWORD '987654321098765432109876543210';

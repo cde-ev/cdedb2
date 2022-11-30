@@ -2,7 +2,9 @@
 
 import datetime
 import decimal
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, NewType as _NewType, Type
+from typing import (  # noqa: F401  # pylint: disable=unused-import
+    TYPE_CHECKING, Any, Dict, List, Mapping, MutableMapping, NewType as _NewType, Type,
+)
 
 from subman import SubscriptionState
 
@@ -13,7 +15,7 @@ if TYPE_CHECKING:
 else:
     CdEDBObject = CdEDBOptionalMap = None
 
-TypeMapping = Mapping[str, Type[Any]]
+TypeMapping = MutableMapping[str, Type[Any]]
 
 # SIMPLE/PRIMITIVE/ATOMIC TYPES
 
@@ -95,6 +97,8 @@ EventPart = _NewType("EventPart", CdEDBObject)
 EventPartGroup = _NewType("EventPartGroup", CdEDBObject)
 EventPartGroupSetter = _NewType("EventPartGroupSetter", CdEDBOptionalMap)
 EventTrack = _NewType("EventTrack", CdEDBObject)
+EventTrackGroup = _NewType("EventTrackGroup", CdEDBObject)
+EventTrackGroupSetter = _NewType("EventTrackGroupSetter", CdEDBOptionalMap)
 EventField = _NewType("EventField", CdEDBObject)
 EventFeeModifier = _NewType("EventFeeModifier", CdEDBObject)
 PastCourse = _NewType("PastCourse", CdEDBObject)

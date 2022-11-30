@@ -105,6 +105,7 @@ General Mailinglists
     * Opt-in
     * Moderated Opt-in
     * Invitation only
+    * Member Opt-out
 
 Semi-public Mailinglists
     Mailinglists that are Opt-in for CdE members, but have Moderated Opt-in

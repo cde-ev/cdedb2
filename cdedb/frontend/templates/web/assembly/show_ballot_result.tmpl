@@ -11,8 +11,8 @@
 {% endblock %}
 
 {% block heading %}
-    {{ util.context_heading(gettext("Detailed Results"), ambience['ballot']['title'], 'thumbs-up', gettext("Ballot"),
-                            doclink='Realm_Assembly_Voting-Procedere') }}
+    {{ util.doclink_('Realm_Assembly_Voting-Procedere') }}
+    {{ util.context_heading(gettext("Detailed Results"), ambience['ballot']['title'], 'thumbs-up', gettext("Ballot")) }}
 {% endblock %}
 
 {% block breadcrumb %}
@@ -149,7 +149,7 @@
         </p>
         <pre>{{ result_hash }}</pre>
 
-
+{% if preferential %}
     <h2 class="mosp">{% trans %}Cross Table of Preferences{% endtrans %}</h2>
 
     <p>
@@ -190,6 +190,7 @@
             {% endfor %}
         </tbody>
     </table>
+{% endif %}
 
 
     <h2 class="mosp">{% trans %}Votes{% endtrans %}</h2>

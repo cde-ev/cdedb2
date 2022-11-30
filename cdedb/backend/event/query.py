@@ -9,7 +9,7 @@ from typing import Collection, Dict, List, Optional, Tuple
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.backend.common import (
-    PYTHON_TO_SQL_MAP, DatabaseValue_s, access, affirm_set_validation as affirm_set,
+    PYTHON_TO_SQL_MAP, access, affirm_set_validation as affirm_set,
     affirm_validation as affirm,
 )
 from cdedb.backend.event.base import EventBaseBackend
@@ -25,6 +25,7 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.roles import implying_realms
 from cdedb.database.connection import Atomizer
+from cdedb.database.query import DatabaseValue_s
 
 
 def _get_field_select_columns(fields: CdEDBObjectMap,

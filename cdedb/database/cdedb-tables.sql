@@ -239,6 +239,8 @@ CREATE TABLE core.genesis_cases (
         case_status             integer NOT NULL DEFAULT 0,
         -- who moderated the request
         reviewer                integer REFERENCES core.personas(id) DEFAULT NULL,
+        -- the created or account merged into, if any
+        persona_id              integer REFERENCES core.personas(id) DEFAULT NULL,
         -- past event and course to be added to the new user
         pevent_id               integer DEFAULT NULL, -- REFERENCES past_event.events(id)
         pcourse_id              integer DEFAULT NULL -- REFERENCES past_event.courses(id)
@@ -549,6 +551,7 @@ CREATE TABLE cde.finance_log (
         delta                   numeric(8, 2),
         new_balance             numeric(8, 2),
         change_note             varchar,
+        transaction_date        date,
         -- checksums
         -- number of members (SELECT COUNT(*) FROM core.personas WHERE status = ...)
         members                 integer NOT NULL,
@@ -779,6 +782,33 @@ CREATE INDEX course_tracks_part_id_idx ON event.course_tracks(part_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.course_tracks TO cdb_persona;
 GRANT SELECT, UPDATE ON event.course_tracks_id_seq TO cdb_persona;
 GRANT SELECT ON event.course_tracks TO cdb_anonymous;
+
+CREATE TABLE event.track_groups (
+        id                      serial PRIMARY KEY,
+        event_id                integer REFERENCES event.events(id) NOT NULL,
+        title                   varchar NOT NULL,
+        shortname               varchar NOT NULL,
+        notes                   varchar,
+        constraint_type         integer NOT NULL,
+        sortkey                 integer NOT NULL,
+        UNIQUE (event_id, shortname) DEFERRABLE INITIALLY IMMEDIATE,
+        UNIQUE (event_id, title) DEFERRABLE INITIALLY IMMEDIATE
+);
+GRANT INSERT, SELECT, DELETE ON event.track_groups TO cdb_persona;
+GRANT UPDATE (title, shortname, notes, sortkey) ON event.track_groups TO cdb_persona;
+GRANT SELECT, UPDATE ON event.track_groups_id_seq TO cdb_persona;
+GRANT SELECT ON event.track_groups TO cdb_anonymous;
+
+CREATE TABLE event.track_group_tracks (
+        id                      serial PRIMARY KEY,
+        track_group_id          integer REFERENCES event.track_groups(id) NOT NULL,
+        track_id                integer REFERENCES event.course_tracks(id) NOT NULL,
+        UNIQUE (track_id, track_group_id) DEFERRABLE INITIALLY IMMEDIATE
+);
+CREATE INDEX track_group_tracks_track_group_id_idx ON event.track_group_tracks(track_group_id);
+GRANT INSERT, SELECT, DELETE ON event.track_group_tracks TO cdb_persona;
+GRANT SELECT, UPDATE ON event.track_group_tracks_id_seq TO cdb_persona;
+GRANT SELECT ON event.track_group_tracks TO cdb_anonymous;
 
 CREATE TABLE event.field_definitions (
         id                      serial PRIMARY KEY,

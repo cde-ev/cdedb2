@@ -17,10 +17,11 @@ from cdedb.common import now
 from cdedb.common.exceptions import ValidationWarning
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.validation.types import (
-    IBAN, ID, JSON, Email, EmptyDict, EmptyList, GenesisCase, LegacyShortname,
-    NonNegativeDecimal, NonNegativeInt, NonNegativeLargeDecimal, PartialImportID,
-    PasswordStrength, Persona, Phone, PositiveInt, PrintableASCII, PrintableASCIIType,
-    Realm, SafeStr, ShortnameRestrictiveIdentifier, StringType, Vote,
+    IBAN, ID, JSON, Email, EmptyDict, EmptyList, EventPartGroup, GenesisCase,
+    LegacyShortname, NonNegativeDecimal, NonNegativeInt, NonNegativeLargeDecimal,
+    PartialImportID, PasswordStrength, Persona, Phone, PositiveInt, PrintableASCII,
+    PrintableASCIIType, Realm, SafeStr, ShortnameRestrictiveIdentifier, StringType,
+    Vote,
 )
 from cdedb.config import Config
 
@@ -572,7 +573,8 @@ class TestValidation(unittest.TestCase):
             ("_bar_=B<E=C=D<A", None, KeyError),
             ("_bar_=B>E=C>A", None, KeyError),
             ("_bar_=B>E=C>A>F=D", None, KeyError),
-            ("=>=>>=", None, KeyError),
+            ("=>=>>=", None, ValueError),
+            ("_bar_=B>E=C>A>F=D>A", None, ValueError),
         ), extraparams={'ballot': ballot})
         self.do_validator_test(Vote, (
             ("A=B>C=D=E=_bar_", "A=B>C=D=E=_bar_", None),
@@ -769,3 +771,17 @@ class TestValidation(unittest.TestCase):
                 raise RuntimeError
 
         self.assertEqual(1, len(errs))
+
+    def test_optional_object_mapping_helper(self) -> None:
+        # pylint: disable=protected-access
+        with self.assertRaises(validate.ValidationSummary):
+            validate._optional_object_mapping_helper(
+                {-1: None}, EventPartGroup, "event_part", creation_only=False)
+        with self.assertRaises(validate.ValidationSummary):
+            validate._optional_object_mapping_helper(
+                {-1: None}, int, "int", creation_only=False)
+        validate._optional_object_mapping_helper(
+            {1: None, -1: -1, 2: 2}, int, "int", creation_only=False)
+        with self.assertRaises(validate.ValidationSummary):
+            validate._optional_object_mapping_helper(
+                {1: None, -1: -1, 2: 2}, int, "int", creation_only=True)

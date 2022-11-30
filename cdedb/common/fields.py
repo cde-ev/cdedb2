@@ -75,10 +75,10 @@ REALMS_TO_FIELDS = {
 
 #: Fields of a persona creation case.
 GENESIS_CASE_FIELDS = (
-    "id", "ctime", "username", "given_names", "family_name",
-    "gender", "birthday", "telephone", "mobile", "address_supplement",
-    "address", "postal_code", "location", "country", "birth_name", "attachment_hash",
-    "realm", "notes", "case_status", "reviewer", "pevent_id", "pcourse_id")
+    "id", "ctime", "username", "given_names", "family_name", "gender", "birthday",
+    "telephone", "mobile", "address_supplement", "address", "postal_code", "location",
+    "country", "birth_name", "attachment_hash", "realm", "notes", "case_status",
+    "reviewer", "persona_id", "pevent_id", "pcourse_id")
 
 # The following dict defines, which additional fields are required for genesis
 # request for distinct realms. Additionally, it is used to define for which
@@ -123,6 +123,10 @@ EVENT_PART_FIELDS = ("id", "event_id", "title", "shortname", "part_begin",
                      "part_end", "fee", "waitlist_field")
 
 PART_GROUP_FIELDS = ("id", "event_id", "title", "shortname", "notes", "constraint_type")
+
+TRACK_GROUP_FIELDS = (
+    "id", "event_id", "title", "shortname", "notes", "constraint_type", "sortkey",
+)
 
 #: Fields of a track where courses can happen
 COURSE_TRACK_FIELDS = ("id", "part_id", "title", "shortname", "num_choices",
@@ -251,3 +255,7 @@ EVENT_FIELD_SPEC: Dict[
 
 LOG_FIELDS_COMMON = ("codes", "persona_id", "submitted_by", "change_note", "offset",
                      "length", "time_start", "time_stop")
+
+FINANCE_LOG_FIELDS = ("delta_from", "delta_to", "new_balance_from", "new_balance_to",
+                      "transaction_date_from", "transaction_date_to",
+                      "total_from", "total_to", "members_from", "members_to")

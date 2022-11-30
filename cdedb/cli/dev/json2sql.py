@@ -7,12 +7,12 @@ from typing import (
 
 from psycopg2.extensions import connection
 
-from cdedb.backend.common import DatabaseValue_s
 from cdedb.backend.core import CoreBackend
 from cdedb.cli.util import connect
 from cdedb.common import CdEDBObject, PsycoJson
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.conversions import to_db_input
+from cdedb.database.query import DatabaseValue_s
 
 
 class AuxData(TypedDict):
@@ -78,7 +78,7 @@ def prepare_aux(data: CdEDBObject, config: Config, secrets: SecretsConfig) -> Au
         "amount_paid", "amount_owed", "payment", "presider_address", "signup_end",
         "vote_begin", "vote_end", "vote_extension_end", "secret", "vote", "salt",
         "hash", "filename", "file_hash", "address", "local_part", "new_balance",
-        "modifier_name", "donation"
+        "modifier_name", "transaction_date", "donation",
     }
     xss_table_excludes = {
         "cde.org_period", "cde.expuls_period",

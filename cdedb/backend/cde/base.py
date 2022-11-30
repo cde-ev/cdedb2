@@ -15,7 +15,7 @@ import copy
 import datetime
 import decimal
 from collections import OrderedDict
-from typing import Collection, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import psycopg2.extensions
 
@@ -33,6 +33,7 @@ from cdedb.common import (
 from cdedb.common.exceptions import PrivilegeError, QuotaException
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
+from cdedb.common.query.log_filter import LogFilterFinanceLogLike, LogFilterLike
 from cdedb.common.roles import implying_realms
 from cdedb.common.validation import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS, is_optional,
@@ -78,44 +79,24 @@ class CdEBaseBackend(AbstractBackend):
         return self.sql_insert(rs, "cde.log", data)
 
     @access("cde_admin", "auditor")
-    def retrieve_cde_log(self, rs: RequestState,
-                         codes: Collection[const.CdeLogCodes] = None,
-                         offset: int = None, length: int = None,
-                         persona_id: int = None, submitted_by: int = None,
-                         change_note: str = None,
-                         time_start: datetime.datetime = None,
-                         time_stop: datetime.datetime = None) -> CdEDBLog:
+    def retrieve_cde_log(self, rs: RequestState, log_filter: LogFilterLike
+                         ) -> CdEDBLog:
         """Get recorded activity.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        return self.generic_retrieve_log(
-            rs, const.CdeLogCodes, "persona", "cde.log", codes=codes,
-            offset=offset, length=length, persona_id=persona_id,
-            submitted_by=submitted_by, change_note=change_note,
-            time_start=time_start, time_stop=time_stop)
+        return self.generic_retrieve_log(rs, log_filter, "cde.log")
 
     @access("core_admin", "cde_admin", "auditor")
-    def retrieve_finance_log(self, rs: RequestState,
-                             codes: Collection[const.FinanceLogCodes] = None,
-                             offset: int = None, length: int = None,
-                             persona_id: int = None, submitted_by: int = None,
-                             change_note: str = None,
-                             time_start: datetime.datetime = None,
-                             time_stop: datetime.datetime = None) -> CdEDBLog:
+    def retrieve_finance_log(self, rs: RequestState, log_filter: LogFilterFinanceLogLike
+                             ) -> CdEDBLog:
         """Get financial activity.
 
         Similar to
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        additional_columns = ["delta", "new_balance", "members", "total"]
-        return self.generic_retrieve_log(
-            rs, const.FinanceLogCodes, "persona", "cde.finance_log",
-            codes=codes, offset=offset, length=length, persona_id=persona_id,
-            submitted_by=submitted_by, additional_columns=additional_columns,
-            change_note=change_note, time_start=time_start,
-            time_stop=time_stop)
+        return self.generic_retrieve_log(rs, log_filter, "cde.finance_log")
 
     @access("finance_admin")
     def perform_money_transfers(self, rs: RequestState, data: List[CdEDBObject]
@@ -147,6 +128,7 @@ class CdEBaseBackend(AbstractBackend):
                     new_balance = (personas[datum['persona_id']]['balance']
                                    + datum['amount'])
                     note = datum['note']
+                    date = None
                     if note:
                         try:
                             date = datetime.datetime.strptime(
@@ -162,7 +144,7 @@ class CdEBaseBackend(AbstractBackend):
                     count += self.core.change_persona_balance(
                         rs, datum['persona_id'], new_balance,
                         const.FinanceLogCodes.increase_balance,
-                        change_note=note)
+                        change_note=note, transaction_date=date)
                     if new_balance >= self.conf["MEMBERSHIP_FEE"]:
                         code = self.core.change_membership_easy_mode(
                             rs, datum['persona_id'], is_member=True)
@@ -273,7 +255,7 @@ class CdEBaseBackend(AbstractBackend):
                 order="datum ASC"),
         }
 
-        # Members by first event.
+        # Users/Members by first event.
         query = """SELECT
             COUNT(*) AS num, EXTRACT(year FROM min_tempus.t)::integer AS datum
         FROM
@@ -282,7 +264,7 @@ class CdEBaseBackend(AbstractBackend):
                 FROM
                     (
                         SELECT id FROM core.personas
-                        WHERE is_member = TRUE
+                        {}
                     ) as persona
                     LEFT OUTER JOIN (
                         SELECT DISTINCT persona_id, pevent_id
@@ -304,7 +286,11 @@ class CdEBaseBackend(AbstractBackend):
             datum ASC
         """
         year_stats[n_("members_by_first_event")] = OrderedDict(
-            (e['datum'], e['num']) for e in self.query_all(rs, query, ()))
+            (e['datum'], e['num'])
+            for e in self.query_all(rs, query.format("WHERE is_member = TRUE"), ()))
+        year_stats[n_("users_by_first_event")] = OrderedDict(
+            (e['datum'], e['num'])
+            for e in self.query_all(rs, query.format(""), ()))
 
         # Unique event attendees per year:
         query = """SELECT

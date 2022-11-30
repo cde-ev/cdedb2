@@ -262,6 +262,10 @@ class LDAPsqlBackend:
         # TODO we may restrict access of duas to type of groups
         if dua in {cls.dua_dn("apache"), cls.dua_dn("cloud")}:
             return True
+        # allow RequestTracker access to ml subscriber groups
+        if dua == cls.dua_dn("rqt") and cls.subscriber_groups_dn.contains(group.dn):
+            return True
+
         return False
 
     ###############

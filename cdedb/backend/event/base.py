@@ -39,8 +39,10 @@ from cdedb.common.fields import (
     LODGEMENT_GROUP_FIELDS, PART_GROUP_FIELDS, PERSONA_EVENT_FIELDS,
     PERSONA_STATUS_FIELDS, QUESTIONNAIRE_ROW_FIELDS, REGISTRATION_FIELDS,
     REGISTRATION_PART_FIELDS, REGISTRATION_TRACK_FIELDS, STORED_EVENT_QUERY_FIELDS,
+    TRACK_GROUP_FIELDS,
 )
 from cdedb.common.n_ import n_
+from cdedb.common.query.log_filter import LogFilterEntityLogLike
 from cdedb.common.sorting import mixed_existence_sorter, xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.filter import datetime_filter
@@ -115,29 +117,27 @@ class EventBaseBackend(EventLowLevelBackend):
     orga_info: _OrgaInfoProtocol = singularize(orga_infos, "persona_ids", "persona_id")
 
     @access("event", "auditor")
-    def retrieve_log(self, rs: RequestState,
-                     codes: Collection[const.EventLogCodes] = None,
-                     event_id: int = None, offset: int = None,
-                     length: int = None, persona_id: int = None,
-                     submitted_by: int = None, change_note: str = None,
-                     time_start: datetime.datetime = None,
-                     time_stop: datetime.datetime = None) -> CdEDBLog:
+    def retrieve_log(self, rs: RequestState, log_filter: LogFilterEntityLogLike
+                     ) -> CdEDBLog:
         """Get recorded activity.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        event_id = affirm_optional(vtypes.ID, event_id)
-        if (not (event_id and self.is_orga(rs, event_id=event_id))
-                and not self.is_admin(rs) and "auditor" not in rs.user.roles):
+        log_filter = self.generic_affirm_log_filter(log_filter, "event.log")
+        event_ids = log_filter.get('entity_ids', ())
+        event_ids = affirm_set(vtypes.ID, event_ids)
+
+        if self.is_admin(rs) or "auditor" in rs.user.roles:
+            pass
+        elif not event_ids:
+            raise PrivilegeError(n_("Must be admin to access global log."))
+        elif all(self.is_orga(rs, event_id=event_id) for event_id in event_ids):
+            pass
+        else:
             raise PrivilegeError(n_("Not privileged."))
-        event_ids = [event_id] if event_id else None
-        return self.generic_retrieve_log(
-            rs, const.EventLogCodes, "event", "event.log", codes=codes,
-            entity_ids=event_ids, offset=offset, length=length,
-            persona_id=persona_id, submitted_by=submitted_by,
-            change_note=change_note, time_start=time_start,
-            time_stop=time_stop)
+
+        return self.generic_retrieve_log(rs, log_filter, "event.log")
 
     @access("anonymous")
     def list_events(self, rs: RequestState, visible: bool = None,
@@ -201,73 +201,90 @@ class EventBaseBackend(EventLowLevelBackend):
         """
         event_ids = affirm_set(vtypes.ID, event_ids)
         with Atomizer(rs):
-            data = self.sql_select(rs, "event.events", EVENT_FIELDS, event_ids)
-            ret = {e['id']: e for e in data}
-            data = self.sql_select(rs, "event.event_parts", EVENT_PART_FIELDS,
-                                   event_ids, entity_key="event_id")
-            all_parts = {e['id']: e['event_id'] for e in data}
+            event_data = self.sql_select(rs, "event.events", EVENT_FIELDS, event_ids)
+            ret = {e['id']: e for e in event_data}
             for anid in event_ids:
-                parts = {d['id']: d for d in data if d['event_id'] == anid}
-                if 'parts' in ret[anid]:
-                    raise RuntimeError()
-                ret[anid]['parts'] = parts
+                ret[anid]['orgas'] = set()
+                ret[anid]['parts'] = {}
+                ret[anid]['tracks'] = {}
+                ret[anid]['part_groups'] = {}
+                ret[anid]['track_groups'] = {}
+                ret[anid]['fee_modifiers'] = {}
+            part_data = self.sql_select(
+                rs, "event.event_parts", EVENT_PART_FIELDS,
+                event_ids, entity_key="event_id")
+            all_parts = {e['id']: e['event_id'] for e in part_data}
             part_group_data = self.sql_select(
                 rs, "event.part_groups", PART_GROUP_FIELDS,
                 event_ids, entity_key="event_id")
             part_group_part_data = self.sql_select(
                 rs, "event.part_group_parts", ("part_group_id", "part_id"),
                 all_parts.keys(), entity_key="part_id")
-            for anid in event_ids:
-                ret[anid]['part_groups'] = {}
+            track_data = self.sql_select(
+                rs, "event.course_tracks", COURSE_TRACK_FIELDS,
+                all_parts.keys(), entity_key="part_id")
+            all_tracks = {e['id']: all_parts[e['part_id']] for e in track_data}
+            track_group_data = self.sql_select(
+                rs, "event.track_groups", TRACK_GROUP_FIELDS,
+                event_ids, entity_key="event_id")
+            track_group_track_data = self.sql_select(
+                rs, "event.track_group_tracks", ("track_group_id", "track_id"),
+                all_tracks.keys(), entity_key="track_id")
+            fee_modifier_data = self.sql_select(
+                rs, "event.fee_modifiers", FEE_MODIFIER_FIELDS,
+                all_parts.keys(), entity_key="part_id")
+            orga_data = self.sql_select(
+                rs, "event.orgas", ("persona_id", "event_id"), event_ids,
+                entity_key="event_id")
+            for d in orga_data:
+                ret[d['event_id']]['orgas'].add(d['persona_id'])
+            for d in part_data:
+                d['tracks'] = {}
+                d['fee_modifiers'] = {}
+                d['part_groups'] = {}
+                ret[d['event_id']]['parts'][d['id']] = d
             for d in part_group_data:
                 d['part_ids'] = set()
                 d['constraint_type'] = const.EventPartGroupType(d['constraint_type'])
                 ret[d['event_id']]['part_groups'][d['id']] = d
             for d in part_group_part_data:
-                part_groups = ret[all_parts[d['part_id']]]['part_groups']
-                part_groups[d['part_group_id']]['part_ids'].add(d['part_id'])
-            track_data = self.sql_select(
-                rs, "event.course_tracks", COURSE_TRACK_FIELDS,
-                all_parts.keys(), entity_key="part_id")
-            fee_modifier_data = self.sql_select(
-                rs, "event.fee_modifiers", FEE_MODIFIER_FIELDS,
-                all_parts.keys(), entity_key="part_id")
-            for anid in event_ids:
-                for part_id in ret[anid]['parts']:
-                    tracks = {d['id']: d for d in track_data if d['part_id'] == part_id}
-                    if 'tracks' in ret[anid]['parts'][part_id]:
-                        raise RuntimeError()
-                    ret[anid]['parts'][part_id]['tracks'] = tracks
-                    fee_modifiers = {d['id']: d for d in fee_modifier_data
-                                     if d['part_id'] == part_id}
-                    if 'fee_modifiers' in ret[anid]['parts'][part_id]:
-                        raise RuntimeError()
-                    ret[anid]['parts'][part_id]['fee_modifiers'] = fee_modifiers
-                ret[anid]['tracks'] = {d['id']: d for d in track_data
-                                       if d['part_id'] in ret[anid]['parts']}
-                ret[anid]['fee_modifiers'] = {
-                    d['id']: d for d in fee_modifier_data
-                    if d['part_id'] in ret[anid]['parts']}
-            data = self.sql_select(
-                rs, "event.orgas", ("persona_id", "event_id"), event_ids,
-                entity_key="event_id")
-            for anid in event_ids:
-                orgas = {d['persona_id'] for d in data if d['event_id'] == anid}
-                if 'orgas' in ret[anid]:
-                    raise RuntimeError()
-                ret[anid]['orgas'] = orgas
+                event_id = all_parts[d['part_id']]
+                part_group = ret[event_id]['part_groups'][d['part_group_id']]
+                part_group['part_ids'].add(d['part_id'])
+                part = ret[event_id]['parts'][d['part_id']]
+                part['part_groups'][d['part_group_id']] = part_group
+            for d in track_data:
+                d['track_groups'] = {}
+                event_id = all_tracks[d['id']]
+                ret[event_id]['tracks'][d['id']] = d
+                ret[event_id]['parts'][d['part_id']]['tracks'][d['id']] = d
+            for d in track_group_data:
+                d['track_ids'] = set()
+                d['constraint_type'] = const.CourseTrackGroupType(d['constraint_type'])
+                ret[d['event_id']]['track_groups'][d['id']] = d
+            for d in track_group_track_data:
+                event_id = all_tracks[d['track_id']]
+                track_group = ret[event_id]['track_groups'][d['track_group_id']]
+                track_group['track_ids'].add(d['track_id'])
+                track = ret[event_id]['tracks'][d['track_id']]
+                track['track_groups'][d['track_group_id']] = track_group
+            for d in fee_modifier_data:
+                event_id = all_parts[d['part_id']]
+                ret[event_id]['fee_modifiers'][d['id']] = d
+                ret[event_id]['parts'][d['part_id']]['fee_modifiers'][d['id']] = d
             for event_id, fields in self._get_events_fields(rs, event_ids).items():
                 ret[event_id]['fields'] = fields
         for anid in event_ids:
+            reference_time = now()
             ret[anid]['begin'] = min((p['part_begin']
                                       for p in ret[anid]['parts'].values()))
             ret[anid]['end'] = max((p['part_end']
                                     for p in ret[anid]['parts'].values()))
             ret[anid]['is_open'] = (
                     ret[anid]['registration_start']
-                    and ret[anid]['registration_start'] <= now()
+                    and ret[anid]['registration_start'] <= reference_time
                     and (ret[anid]['registration_hard_limit'] is None
-                         or ret[anid]['registration_hard_limit'] >= now()))
+                         or ret[anid]['registration_hard_limit'] >= reference_time))
         return ret
 
     class _GetEventProtocol(Protocol):
@@ -580,7 +597,10 @@ class EventBaseBackend(EventLowLevelBackend):
                     assert updated is not None
                     updated['id'] = x
                     # Changing the constraint type is not allowed.
-                    updated.pop('constraint_type', None)
+                    new_ct = updated.pop('contraint_type', None)
+                    old_ct = current_part_group_data[x]['constraint_type']
+                    if new_ct and new_ct != old_ct:
+                        raise ValueError(n_("May not change constraint type."))
                     part_ids = updated.pop('part_ids', None)
                     title = updated.get('title', current_part_group_data[x]['title'])
                     if any(updated[k] != current_part_group_data[x][k]
@@ -601,6 +621,108 @@ class EventBaseBackend(EventLowLevelBackend):
                 cascade = ("part_group_parts",)
                 for x in mixed_existence_sorter(deleted_part_groups):
                     ret *= self._delete_part_group(rs, part_group_id=x, cascade=cascade)
+
+        return ret
+
+    @access("event")
+    def set_track_groups(self, rs: RequestState, event_id: int,
+                         track_groups: CdEDBOptionalMap) -> DefaultReturnCode:
+        """Create, delete and/or update track groups for one event."""
+        event_id = affirm(vtypes.ID, event_id)
+        track_groups = affirm(vtypes.EventTrackGroupSetter, track_groups)
+
+        if not (self.is_admin(rs) or self.is_orga(rs, event_id=event_id)):
+            raise PrivilegeError(n_("Not privileged."))
+
+        ret = 1
+        if not track_groups:
+            return ret
+
+        with Atomizer(rs):
+            parts = {e['id']: e for e in self.sql_select(
+                rs, "event.event_parts", EVENT_PART_FIELDS, (event_id,),
+                entity_key="event_id")}
+            tracks = {e['id']: e for e in self.sql_select(
+                rs, "event.course_tracks", COURSE_TRACK_FIELDS, parts.keys(),
+                entity_key="part_id")}
+
+            existing_track_groups = {unwrap(e) for e in self.sql_select(
+                rs, "event.track_groups", ("id",), (event_id,), entity_key="event_id")}
+            new_track_groups = {x for x in track_groups if x < 0}
+            updated_track_groups = {
+                x for x in track_groups if x > 0 and track_groups[x] is not None}
+            deleted_track_groups = {
+                x for x in track_groups if x > 0 and track_groups[x] is None}
+
+            tmp = updated_track_groups | deleted_track_groups
+            if not tmp <= existing_track_groups:
+                raise ValueError(n_("Unknown track group."))
+
+            # Defer unique constraints until end of transaction.
+            self.sql_defer_constraints(
+                rs, "event.track_groups_event_id_shortname_key",
+                "event.track_groups_event_id_title_key",
+                "event.track_group_tracks_track_id_track_group_id_key",
+            )
+
+            # new
+            for x in mixed_existence_sorter(new_track_groups):
+                new_track_group = track_groups[x]
+                assert new_track_group is not None
+                new_track_group['event_id'] = event_id
+                track_ids = affirm_set(vtypes.ID, new_track_group.pop('track_ids'))
+                new_id = self.sql_insert(rs, "event.track_groups", new_track_group)
+                ret *= new_id
+                self.event_log(
+                    rs, const.EventLogCodes.track_group_created, event_id,
+                    change_note=new_track_group['title'])
+                if track_ids:
+                    if not track_ids <= tracks.keys():
+                        raise ValueError(n_("Unknown track for the given event."))
+                    ret *= self._set_track_group_tracks(
+                        rs, event_id, track_group_id=new_id, track_ids=track_ids,
+                        tracks=tracks, track_group_title=new_track_group['title'],
+                        constraint_type=new_track_group['constraint_type'])
+
+            # updated
+            if updated_track_groups:
+                current_track_group_data = {e['id']: e for e in self.sql_select(
+                    rs, "event.track_groups", TRACK_GROUP_FIELDS, updated_track_groups)}
+                for x in mixed_existence_sorter(updated_track_groups):
+                    current = current_track_group_data[x]
+                    updated = track_groups[x]
+                    assert updated is not None
+                    updated['id'] = x
+                    # Changing constraint type is not allowed.
+                    new_ct = updated.pop('contraint_type', None)
+                    old_ct = current_track_group_data[x]['constraint_type']
+                    if new_ct and new_ct != old_ct:
+                        raise ValueError(n_("May not change constraint type."))
+                    track_ids = updated.pop('track_ids', None)
+                    title = updated.get('title', current_track_group_data[x]['title'])
+                    if any(updated[k] != current_track_group_data[x][k]
+                           for k in updated):
+                        ret *= self.sql_update(rs, "event.track_groups", updated)
+                        self.event_log(
+                            rs, const.EventLogCodes.track_group_changed, event_id,
+                            change_note=title)
+                    if track_ids is not None:
+                        track_ids = affirm_set(vtypes.ID, track_ids)
+                        if not track_ids <= tracks.keys():
+                            raise ValueError(n_("Unknown track for the given event."))
+                        ret *= self._set_track_group_tracks(
+                            rs, event_id, track_group_id=x, track_ids=track_ids,
+                            tracks=tracks, track_group_title=title,
+                            constraint_type=const.CourseTrackGroupType(
+                                current['constraint_type']))
+
+            if deleted_track_groups:
+                cascade = ("track_group_tracks",)
+                for x in mixed_existence_sorter(deleted_track_groups):
+                    ret *= self._delete_track_group(
+                        rs, track_group_id=x, cascade=cascade)
+
+            self._track_groups_sanity_check(rs, event_id)
 
         return ret
 
@@ -759,6 +881,9 @@ class EventBaseBackend(EventLowLevelBackend):
                 ('event.part_groups', "event_id", PART_GROUP_FIELDS),
                 ('event.part_group_parts', "part_id", ("part_group_id", "part_id")),
                 ('event.course_tracks', "part_id", COURSE_TRACK_FIELDS),
+                ('event.track_groups', "event_id", TRACK_GROUP_FIELDS),
+                ('event.track_group_tracks', "track_id", (
+                    "track_group_id", "track_id")),
                 ('event.courses', "event_id", COURSE_FIELDS),
                 ('event.course_segments', "track_id", COURSE_SEGMENT_FIELDS),
                 ('event.orgas', "event_id", ('id', 'persona_id', 'event_id',)),
@@ -934,12 +1059,14 @@ class EventBaseBackend(EventLowLevelBackend):
         for part in event['parts'].values():
             del part['id']
             del part['event_id']
+            del part['part_groups']
             for f in ('waitlist_field',):
                 if part[f]:
                     part[f] = event['fields'][part[f]]['field_name']
             for track in part['tracks'].values():
                 del track['id']
                 del track['part_id']
+                del track['track_groups']
             part['fee_modifiers'] = {fm['modifier_name']: fm
                                      for fm in part['fee_modifiers'].values()}
             for fm in part['fee_modifiers'].values():
@@ -953,6 +1080,11 @@ class EventBaseBackend(EventLowLevelBackend):
             del pg['event_id']
             pg['constraint_type'] = const.EventPartGroupType(pg['constraint_type'])
             pg['part_ids'] = xsorted(pg['part_ids'])
+        for tg in event['track_groups'].values():
+            del tg['id']
+            del tg['event_id']
+            tg['constraint_type'] = const.CourseTrackGroupType(tg['constraint_type'])
+            tg['track_ids'] = xsorted(tg['track_ids'])
         for f in ('lodge_field', 'camping_mat_field', 'course_room_field'):
             if event[f]:
                 event[f] = event['fields'][event[f]]['field_name']
@@ -1083,7 +1215,8 @@ class EventBaseBackend(EventLowLevelBackend):
             # since retrieve_log compares timestamps inclusive, we need to increase the
             # timestamp to not include log entries from the latest commit.
             timestamp += datetime.timedelta(seconds=1)
-            _, entries = self.retrieve_log(rs, event_id=event_id, time_start=timestamp)
+            _, entries = self.retrieve_log(
+                rs, {'entity_ids': [event_id], 'ctime': (timestamp, None)})
             # short circuit if there are no new log entries
             if not entries:
                 return None

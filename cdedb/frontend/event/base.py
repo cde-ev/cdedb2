@@ -21,7 +21,7 @@ import operator
 from collections import OrderedDict
 from dataclasses import dataclass
 from typing import (
-    Any, Collection, Dict, Iterable, List, Literal, Optional, Set, Tuple, Type,
+    Any, Collection, Dict, Iterable, List, Literal, Optional, Set, Tuple, Type, Union,
 )
 
 import werkzeug.exceptions
@@ -38,19 +38,16 @@ from cdedb.common.i18n import get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryScope
 from cdedb.common.sorting import EntitySorter, KeyFunction, Sortkey, xsorted
-from cdedb.common.validation import PERSONA_FULL_EVENT_CREATION, filter_none
+from cdedb.common.validation import PERSONA_FULL_CREATION, filter_none
 from cdedb.filter import enum_entries_filter, keydictsort_filter
 from cdedb.frontend.common import (
-    AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access, calculate_db_logparams,
-    calculate_loglinks, event_guard, periodic,
+    AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access, event_guard, periodic,
 )
 from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
 
 
 @dataclass(frozen=True)  # type: ignore[misc]
 class ConstraintViolation:
-    part_group_id: int  # ID of the part group whose constraint is being violated.
-
     @property
     @abc.abstractmethod
     def severity(self) -> int:
@@ -58,12 +55,33 @@ class ConstraintViolation:
 
     @property
     @abc.abstractmethod
+    def constraint_type(self) -> Union[const.EventPartGroupType,
+                                       const.CourseTrackGroupType]:
+        ...
+
+
+@dataclass(frozen=True)  # type: ignore[misc]
+class PartGroupConstraintViolation(ConstraintViolation):
+    part_group_id: int  # ID of the part group whose constraint is being violated.
+
+    @property
+    @abc.abstractmethod
     def constraint_type(self) -> const.EventPartGroupType:
         ...
 
 
+@dataclass(frozen=True)  # type: ignore[misc]
+class TrackGroupConstraintViolation(ConstraintViolation):
+    track_group_id: int  # ID of the track group whose constraint is being violated.
+
+    @property
+    @abc.abstractmethod
+    def constraint_type(self) -> const.CourseTrackGroupType:
+        ...
+
+
 @dataclass(frozen=True)
-class MEPViolation(ConstraintViolation):
+class MEPViolation(PartGroupConstraintViolation):
     registration_id: int
     persona_id: int
     part_ids: List[int]  # Sorted IDs of the parts in violation.
@@ -82,7 +100,7 @@ class MEPViolation(ConstraintViolation):
 
 
 @dataclass(frozen=True)
-class MECViolation(ConstraintViolation):
+class MECViolation(PartGroupConstraintViolation):
     course_id: int
     track_ids: List[int]  # Sorted IDs of the tracks in violation.
     tracks_str: str  # Locale agnostic string representation of said tracks.
@@ -97,6 +115,21 @@ class MECViolation(ConstraintViolation):
             self
     ) -> Literal[const.EventPartGroupType.mutually_exclusive_courses]:
         return const.EventPartGroupType.mutually_exclusive_courses
+
+
+@dataclass(frozen=True)
+class CCSViolation(TrackGroupConstraintViolation):
+    track_group_id: int
+    registration_id: int
+    persona_id: int
+
+    @property
+    def severity(self) -> int:
+        return 2
+
+    @property
+    def constraint_type(self) -> Literal[const.CourseTrackGroupType.course_choice_sync]:
+        return const.CourseTrackGroupType.course_choice_sync
 
 
 class EventBaseFrontend(AbstractUserFrontend):
@@ -122,7 +155,12 @@ class EventBaseFrontend(AbstractUserFrontend):
                         params['is_participant'] = True
             params['has_constraints'] = any(
                 not pg['constraint_type'].is_stats()
-                for pg in rs.ambience['event']['part_groups'].values())
+                for pg in rs.ambience['event']['part_groups'].values()
+            ) or any(
+                tg['constraint_type']
+                for tg in rs.ambience['event']['track_groups'].values()
+            )
+
         return super().render(rs, templatename, params=params)
 
     @classmethod
@@ -143,7 +181,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         return self.render(rs, "user/create_user")
 
     @access("core_admin", "event_admin", modi={"POST"})
-    @REQUESTdatadict(*filter_none(PERSONA_FULL_EVENT_CREATION))
+    @REQUESTdatadict(*filter_none(PERSONA_FULL_CREATION['event']))
     def create_user(self, rs: RequestState, data: CdEDBObject) -> Response:
         defaults = {
             'is_cde_realm': False,
@@ -228,7 +266,8 @@ class EventBaseFrontend(AbstractUserFrontend):
             part_ids = rs.ambience['event']['parts'].keys()
 
         data = self._get_participant_list_data(
-            rs, event_id, part_ids, sortkey=sortkey or "persona", reverse=reverse)
+            rs, event_id, part_ids, include_total_count=True,
+            sortkey=sortkey or "persona", reverse=reverse)
         if len(rs.ambience['event']['parts']) == 1:
             part_id = unwrap(rs.ambience['event']['parts'].keys())
         data['part_id'] = part_id
@@ -240,8 +279,11 @@ class EventBaseFrontend(AbstractUserFrontend):
     def _get_participant_list_data(
             self, rs: RequestState, event_id: int,
             part_ids: Collection[int] = (), orga_list: bool = False,
-            sortkey: str = "persona", reverse: bool = False) -> CdEDBObject:
+            include_total_count: bool = False, sortkey: str = "persona",
+            reverse: bool = False) -> CdEDBObject:
         """This provides data for download and online participant list.
+
+        It filters out the participants which have not given list_consent.
 
         This is un-inlined so download_participant_list can use this
         as well."""
@@ -250,7 +292,8 @@ class EventBaseFrontend(AbstractUserFrontend):
         registration_ids = self.eventproxy.list_participants(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         reg_counts = self.eventproxy.get_num_registrations_by_part(
-            rs, event_id, (const.RegistrationPartStati.participant,))
+            rs, event_id, (const.RegistrationPartStati.participant,),
+            include_total=include_total_count)
 
         if not part_ids:
             part_ids = rs.ambience['event']['parts'].keys()
@@ -376,7 +419,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             elif kind == const.QuestionnaireUsages.registration:
                 if field['kind'] == const.FieldDatatypes.str:
                     type_ = Optional[type_]  # type: ignore[assignment]
-            return (field['field_name'], type_)
+            return (f"fields.{field['field_name']}", type_)
 
         return dict(
             get_validator(entry) for entry in questionnaire
@@ -473,10 +516,17 @@ class EventBaseFrontend(AbstractUserFrontend):
                 }, EntitySorter.event_part_group)
             for constraint in const.EventPartGroupType
         }
+        tgs_by_type = {
+            constraint: keydictsort_filter(
+                {
+                    tg_id: tg
+                    for tg_id, tg in rs.ambience['event']['track_groups'].items()
+                    if tg['constraint_type'] == constraint
+                }, EntitySorter.course_choice_object)
+            for constraint in const.CourseTrackGroupType
+        }
 
-        # Check registrations for violations against mutual exclusiveness constraints.
-        mep = const.EventPartGroupType.mutually_exclusive_participants
-        mep_violations = []
+        # Retrieve registrations.
         if registration_id is None:
             registrations = self.eventproxy.get_registrations(
                 rs, self.eventproxy.list_registrations(rs, event_id))
@@ -493,6 +543,10 @@ class EventBaseFrontend(AbstractUserFrontend):
         def part_id_sorter(part_ids: Collection[int]) -> List[int]:
             return xsorted(part_ids, key=lambda part_id: EntitySorter.event_part(
                 rs.ambience['event']['parts'][part_id]))
+
+        # Check registrations for violations against mutual exclusiveness constraints.
+        mep = const.EventPartGroupType.mutually_exclusive_participants
+        mep_violations = []
 
         for reg_id, reg in registrations.items():
             for pg_id, part_group in pgs_by_type[mep]:
@@ -520,6 +574,17 @@ class EventBaseFrontend(AbstractUserFrontend):
                                   for part_id in sorted_part_ids),
                         guest_violation=True,
                     ))
+
+        # Check registrations for course choice sync violations.
+        ccs = const.CourseTrackGroupType.course_choice_sync
+        ccs_violations = []
+
+        for reg_id, reg in registrations.items():
+            for tg_id, tg in tgs_by_type[ccs]:
+                if any(reg['tracks'][t1]['choices'] != reg['tracks'][t2]['choices']
+                       for t1, t2 in itertools.combinations(tg['track_ids'], 2)):
+                    ccs_violations.append(
+                        CCSViolation(tg_id, reg_id, reg['persona_id']))
 
         # Check courses for violations against mutual exclusiveness constraints.
         mec = const.EventPartGroupType.mutually_exclusive_courses
@@ -558,13 +623,14 @@ class EventBaseFrontend(AbstractUserFrontend):
                     ))
 
         all_violations: Iterable[ConstraintViolation] = itertools.chain(
-            mep_violations, mec_violations)
+            mep_violations, mec_violations, ccs_violations)
         max_severity = max((v.severity for v in all_violations), default=0)
         return {
             'max_severity': max_severity,
             'mep_violations': mep_violations, 'registrations': registrations,
             'personas': personas,
             'mec_violations': mec_violations, 'courses': courses,
+            'ccs_violations': ccs_violations,
         }
 
     @access("event")
@@ -585,35 +651,23 @@ class EventBaseFrontend(AbstractUserFrontend):
                  time_start: Optional[datetime.datetime],
                  time_stop: Optional[datetime.datetime]) -> Response:
         """View activities concerning events organized via DB."""
-        length = length or self.conf["DEFAULT_LOG_LENGTH"]
-        # length is the requested length, _length the theoretically
-        # shown length for an infinite amount of log entries.
-        _offset, _length = calculate_db_logparams(offset, length)
 
-        # no validation since the input stays valid, even if some options
-        # are lost
-        rs.ignore_validation_errors()
-        total, log = self.eventproxy.retrieve_log(
-            rs, codes, event_id, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, change_note=change_note,
-            time_start=time_start, time_stop=time_stop)
-        persona_ids = (
-                {entry['submitted_by'] for entry in log if
-                 entry['submitted_by']}
-                | {entry['persona_id'] for entry in log if entry['persona_id']})
-        personas = self.coreproxy.get_personas(rs, persona_ids)
-        event_ids = {entry['event_id'] for entry in log if entry['event_id']}
+        filter_params = {
+            'entity_ids': [event_id] if event_id else [],
+            'codes': codes, 'offset': offset, 'length': length,
+            'persona_id': persona_id, 'submitted_by': submitted_by,
+            'change_note': change_note, 'ctime': (time_start, time_stop),
+        }
+        event_ids = self.eventproxy.list_events(rs)
+        events = self.eventproxy.get_events(rs, event_ids)
         if self.is_admin(rs):
             registration_map = self.eventproxy.get_registration_map(rs, event_ids)
         else:
             registration_map = {}
-        events = self.eventproxy.get_events(rs, event_ids)
-        all_events = self.eventproxy.list_events(rs)
-        loglinks = calculate_loglinks(rs, total, offset, length)
-        return self.render(rs, "base/view_log", {
-            'log': log, 'total': total, 'length': _length,
-            'personas': personas, 'events': events, 'all_events': all_events,
-            'registration_map': registration_map, 'loglinks': loglinks})
+        return self.generic_view_log(
+            rs, filter_params, "event.log", "base/view_log", {
+            'all_events': events, 'registration_map': registration_map,
+        })
 
     @access("event")
     @event_guard()
@@ -628,28 +682,19 @@ class EventBaseFrontend(AbstractUserFrontend):
                        time_start: Optional[datetime.datetime],
                        time_stop: Optional[datetime.datetime]) -> Response:
         """View activities concerning one event organized via DB."""
-        length = length or self.conf["DEFAULT_LOG_LENGTH"]
-        # length is the requested length, _length the theoretically
-        # shown length for an infinite amount of log entries.
-        _offset, _length = calculate_db_logparams(offset, length)
 
-        # no validation since the input stays valid, even if some options
-        # are lost
-        rs.ignore_validation_errors()
-        total, log = self.eventproxy.retrieve_log(
-            rs, codes, event_id, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, change_note=change_note,
-            time_start=time_start, time_stop=time_stop)
-        persona_ids = (
-                {entry['submitted_by'] for entry in log if
-                 entry['submitted_by']}
-                | {entry['persona_id'] for entry in log if entry['persona_id']})
-        personas = self.coreproxy.get_personas(rs, persona_ids)
+        filter_params = {
+            'entity_ids': [event_id],
+            'codes': codes, 'offset': offset, 'length': length,
+            'persona_id': persona_id, 'submitted_by': submitted_by,
+            'change_note': change_note, 'ctime': (time_start, time_stop),
+        }
+
         registration_map = self.eventproxy.get_registration_map(rs, (event_id,))
-        loglinks = calculate_loglinks(rs, total, offset, length)
-        return self.render(rs, "base/view_event_log", {
-            'log': log, 'total': total, 'length': _length, 'personas': personas,
-            'registration_map': registration_map, 'loglinks': loglinks})
+        return self.generic_view_log(
+            rs, filter_params, "event.log", "base/view_event_log", {
+            'registration_map': registration_map
+        })
 
     @periodic("event_keeper", 2)
     def event_keeper(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject:

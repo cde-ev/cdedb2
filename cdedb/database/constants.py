@@ -133,6 +133,19 @@ class EventPartGroupType(enum.IntEnum):
 
 
 @enum.unique
+class CourseTrackGroupType(enum.IntEnum):
+    course_choice_sync = 1
+
+    def get_icon(self) -> str:
+        return {
+            CourseTrackGroupType.course_choice_sync: "bezier-curve",
+        }[self]
+
+    def is_sync(self) -> bool:
+        return self == CourseTrackGroupType.course_choice_sync
+
+
+@enum.unique
 class GenesisStati(enum.IntEnum):
     """Spec for field case_status of core.genesis_cases."""
     #: created, data logged, email unconfirmed
@@ -201,6 +214,8 @@ class MailinglistTypes(enum.IntEnum):
     semi_public = 50
 
     cdelokal = 60
+
+    public_member_implicit = 70
 
 
 @enum.unique
@@ -305,6 +320,7 @@ class CoreLogCodes(enum.IntEnum):
     genesis_deleted = 23  #:
     genesis_verified = 24  #:
     genesis_merged = 25  #:
+    genesis_change = 28  #:
     privilege_change_pending = 30  #:
     privilege_change_approved = 31  #:
     privilege_change_rejected = 32  #:
@@ -400,6 +416,11 @@ class EventLogCodes(enum.IntEnum):
     part_group_deleted = 102  #:
     part_group_link_created = 105  #:
     part_group_link_deleted = 106  #:
+    track_group_created = 110  #:
+    track_group_changed = 111  #:
+    track_group_deleted = 112  #:
+    track_group_link_created = 113  #:
+    track_group_link_deleted = 114  #:
 
 
 @enum.unique

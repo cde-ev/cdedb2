@@ -29,7 +29,7 @@ class TestPrivacyFrontend(FrontendTest):
         "Zweitadresse": 'address-information',
         "Fachgebiet": 'additional', "Schule, Uni, …": 'additional',
         "Jahrgang, Matrikel, …": 'additional', "Interessen": 'additional',
-        "Sonstiges": 'additional', "Verg. Veranstaltungen": 'past-events',
+        "Verschiedenes": 'additional', "Verg. Veranstaltungen": 'past-events',
         "VCard": 'vcard', "Zahlungsmethode": 'cde-membership',
     }
 
@@ -85,7 +85,7 @@ class TestPrivacyFrontend(FrontendTest):
         expected = {
             "Geburtsname", "Geburtsdatum", "Telefon", "Mobiltelefon", "WWW",
             "Adresse", "Zweitadresse", "Fachgebiet", "Schule, Uni, …",
-            "Jahrgang, Matrikel, …", "Interessen", "Sonstiges",
+            "Jahrgang, Matrikel, …", "Interessen", "Verschiedenes",
             "Verg. Veranstaltungen", "VCard"
         }
         for field in expected:

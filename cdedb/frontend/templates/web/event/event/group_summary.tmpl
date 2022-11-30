@@ -1,0 +1,167 @@
+{% set sidenav_active='event_parts' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+    {{ util.cdedb_script('cdedb_dynamicrow.js') }}
+{% endblock %}
+{% set jshint = 'weak' %}
+{% block title %}
+    {% trans title=ambience['event']['title'] %}
+        Groups_[[part or track]] ({{ title }})
+    {% endtrans %}
+{% endblock %}
+{% block heading %}
+    {{ util.context_heading(gettext("Groups_[[part or track]]"), ambience['event']['title'],
+                            'chalkboard-teacher', gettext("Event")) }}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+    {{ util.breadcrumb_link(cdedblink("event/part_summary"), gettext("Event Parts")) }}
+    {{ util.breadcrumb_link(cdedblink("event/group_summary"), gettext("Groups"), active=True) }}
+{% endblock %}
+
+{% block content %}
+    <p>
+        {{ util.href(cdedblink('event/add_part_group_form'), gettext("Add part group"),
+                               icon='plus', aclass='btn btn-success btn-sm') }}
+        {{ util.href(cdedblink('event/add_track_group_form'), gettext("Add track group"),
+                               icon='plus', aclass='btn btn-success btn-sm') }}
+    </p>
+    <h2>
+        {% trans %}Part Groups{% endtrans %}
+        {{ util.doclink_("Handbuch_Orga_Veranstaltungsteilgruppen") }}
+    </h2>
+    <table id="part-group-summary" class="table table-stats">
+        <thead>
+            <tr>
+                <th>{% trans %}Type{% endtrans %}</th>
+                <th>{% trans %}Title{% endtrans %}</th>
+                <th>{% trans %}Shortname{% endtrans %}</th>
+                <th>{% trans %}Notes{% endtrans %}</th>
+                {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+                    <th {% if loop.first %}class="b-left"{% endif %} title="{% trans %}Event Part{% endtrans %}: {{ part['title'] }}">
+                        {{ part['shortname'] }}
+                    </th>
+                {% endfor %}
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for part_group_id, part_group in ambience['event']['part_groups']|keydictsort(EntitySorter.event_part_group) %}
+                <tr id="partgroup_{{ part_group_id }}">
+                    <td>
+                        {{ util.make_icon(part_group['constraint_type'].get_icon(), title=gettext(part_group['constraint_type']|string)) }}
+                    </td>
+                    <th>
+                        {{ part_group['title'] }}
+                    </th>
+                    <th>
+                        {{ part_group['shortname'] }}
+                    </th>
+                    <td>
+                        {{ part_group['notes'] }}
+                    </td>
+                    {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+                        <td class="{% if loop.first %} b-left {% endif %} {% if loop.last %}b-right{% endif %}">
+                            {{ util.deko_checkbox(part_id in part_group['part_ids'], titles=['', part['shortname']]) }}
+                        </td>
+                    {% endfor %}
+                    <td class="text-nowrap">
+                        {{ util.href(cdedblink("event/change_part_group", {'part_group_id': part_group_id}),
+                                     title=gettext("Change part group %(shortname)s")|format(shortname=part_group['shortname']),
+                                     label=util.make_icon("pen"), anid="partgroup{}_change".format(part_group_id),
+                                     aclass="btn btn-sm btn-warning") }}
+                        <form action="{{ cdedblink("event/delete_part_group", {'part_group_id': part_group_id}) }}"
+                              method="POST" id="deletepartgroupform{{ part_group_id }}"
+                              class="display-inline">
+                            {{ util.anti_csrf_token("event/delete_part_group") }}
+                            {{ util.input_submit(
+                                label=util.make_icon("trash-alt"), aclass="btn btn-sm btn-danger", icon=None,
+                                title=gettext("Delete part group %(shortname)s")|format(shortname=part_group['shortname'])) }}
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>
+        {% trans %}Track Groups{% endtrans %}
+        {{ util.doclink_("Handbuch_Orga_Kursschienengruppen") }}
+    </h2>
+    <p class="text-danger">{{ util.make_icon('exclamation-triangle') }}
+        {% trans %}
+            This feature is still experimental. Use at your own risk, and only if you know what you are doing.
+            You have been warned!
+        {% endtrans %}
+        {% trans %}
+            Track groups may be deleted freely, but you may not be able ro recreate them if registrations already exist.
+        {% endtrans %}
+    </p>
+    <table id="track-group-summary" class="table table-stats">
+        <thead>
+            <tr>
+                <th>{% trans %}Type{% endtrans %}</th>
+                <th>{% trans %}Title{% endtrans %}</th>
+                <th>{% trans %}Shortname{% endtrans %}</th>
+                <th>{% trans %}Notes{% endtrans %}</th>
+                <th>{% trans %}Sortkey{% endtrans %}</th>
+                {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
+                    <th {% if loop.first %}class="b-left"{% endif %} title="{% trans %}Track{% endtrans %}: {{ track['title'] }}">
+                        {{ track['shortname'] }}
+                    </th>
+                {% endfor %}
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for track_group_id, track_group in ambience['event']['track_groups']|keydictsort(EntitySorter.course_track_group) %}
+                <tr id="trackgroup_{{ track_group_id }}">
+                    <td>
+                        {{ util.make_icon(track_group['constraint_type'].get_icon(), title=gettext(track_group['constraint_type']|string)) }}
+                    </td>
+                    <th>
+                        {{ track_group['title'] }}
+                    </th>
+                    <th>
+                        {{ track_group['shortname'] }}
+                    </th>
+                    <td>
+                        {{ track_group['notes'] }}
+                    </td>
+                    <td>
+                        {{ track_group['sortkey'] }}
+                    </td>
+                    {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
+                        <td class="{% if loop.first %} b-left {% endif %} {% if loop.last %}b-right{% endif %}">
+                            {{ util.deko_checkbox(track_id in track_group['track_ids'], titles=['', track['shortname']]) }}
+                        </td>
+                    {% endfor %}
+                    <td class="text-nowrap">
+                        {{ util.href(cdedblink("event/change_track_group", {'track_group_id': track_group_id}),
+                                     title=gettext("Change track group %(shortname)s")|format(shortname=track_group['shortname']),
+                                     label=util.make_icon("pen"), anid="trackgroup{}_change".format(track_group_id),
+                                     aclass="btn btn-sm btn-warning") }}
+                        <form action="{{ cdedblink("event/delete_track_group", {'track_group_id': track_group_id}) }}"
+                              method="POST" id="deletetrackgroupform{{ track_group_id }}"
+                              class="display-inline">
+                            {{ util.anti_csrf_token("event/delete_track_group") }}
+                            {{ util.input_submit(
+                                label=util.make_icon("trash-alt"), aclass="btn btn-sm btn-danger", icon=None,
+                                title=gettext("Delete track group %(shortname)s")|format(shortname=track_group['shortname'])) }}
+                            {% call util.output_errors("ack_delete", wrapper=True) %}
+                                {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
+                            {% endcall %}
+                        </form>
+                        <script nonce="{{ csp_nonce }}">
+                            $('#deletetrackgroupform{{ track_group_id }}').cdedbProtectAction("{{ gettext("The track group will be deleted. You may not be able to recreate it if registrations already exist.") }}");
+                            $('#deletetrackgroupform{{ track_group_id }}').find('[name="ack_delete"]').prop('checked', true).parent().hide();
+                        </script>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

@@ -19,14 +19,15 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
-    GENESIS_CASE_FIELDS, PERSONA_ALL_FIELDS, PERSONA_CORE_FIELDS,
-    REALM_SPECIFIC_GENESIS_FIELDS, REALMS_TO_FIELDS,
+    GENESIS_CASE_FIELDS, PERSONA_CORE_FIELDS, REALM_SPECIFIC_GENESIS_FIELDS,
+    REALMS_TO_FIELDS,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.roles import (
     GENESIS_REALM_OVERRIDE, PERSONA_DEFAULTS, REALM_ADMINS, extract_realms,
     extract_roles, implied_realms,
 )
+from cdedb.common.validation import PERSONA_FULL_CREATION, filter_none
 from cdedb.database.connection import Atomizer
 
 
@@ -295,36 +296,41 @@ class CoreGenesisBackend(CoreBaseBackend):
         genesis_get_cases, "genesis_case_ids", "genesis_case_id")
 
     @access(*REALM_ADMINS)
-    def genesis_modify_case(self, rs: RequestState, data: CdEDBObject,
-                            persona_id: int = None) -> DefaultReturnCode:
-        """Modify a persona creation case.
-
-        :param persona_id: The account, this modification related to. Especially
-            relevant if a new account was created or an existing account was updated.
-        """
+    def genesis_modify_case(self, rs: RequestState, data: CdEDBObject
+                            ) -> DefaultReturnCode:
+        """Modify a persona creation case."""
         data = affirm(vtypes.GenesisCase, data)
-        persona_id = affirm_optional(vtypes.ID, persona_id)
 
         with Atomizer(rs):
             current = self.genesis_get_case(rs, data['id'])
-            # Get case already checks privilege and existance for the current data set.
+            # Get case already checks privilege and existence for the current data set.
             if not {"core_admin", f"{data['realm']}_admin"} & rs.user.roles:
                 raise PrivilegeError(n_("Not privileged."))
             if current['case_status'].is_finalized():
                 raise ValueError(n_("Genesis case already finalized."))
             ret = self.sql_update(rs, "core.genesis_cases", data)
             if 'case_status' in data and data['case_status'] != current['case_status']:
+                # persona_id of the account this modification is related to. Especially
+                # relevant if a new account was created or an existing account was
+                # updated. Hence, we sometimes use get and sometimes use [] here.
                 if data['case_status'] == const.GenesisStati.successful:
                     self.core_log(
-                        rs, const.CoreLogCodes.genesis_approved, persona_id=persona_id,
-                        change_note=current['username'])
+                        rs, const.CoreLogCodes.genesis_approved,
+                        persona_id=data['persona_id'], change_note=current['username'])
                 elif data['case_status'] == const.GenesisStati.rejected:
                     self.core_log(
-                        rs, const.CoreLogCodes.genesis_rejected, persona_id=persona_id,
+                        rs, const.CoreLogCodes.genesis_rejected,
+                        persona_id=data.get('persona_id'),
                         change_note=current['username'])
                 elif data['case_status'] == const.GenesisStati.existing_updated:
                     self.core_log(
-                        rs, const.CoreLogCodes.genesis_merged, persona_id=persona_id)
+                        rs, const.CoreLogCodes.genesis_merged,
+                        persona_id=data['persona_id'])
+            else:
+                # persona_id should be None in this case.
+                self.core_log(rs, const.CoreLogCodes.genesis_change,
+                              persona_id=data.get('persona_id'),
+                              change_note=current['username'])
         return ret
 
     @access(*REALM_ADMINS)
@@ -355,8 +361,9 @@ class CoreGenesisBackend(CoreBaseBackend):
                 'case_status': case_status,
                 'reviewer': rs.user.persona_id,
                 'realm': case['realm'],
+                'persona_id': persona_id,
             }
-            if not self.genesis_modify_case(rs, update, persona_id):
+            if not self.genesis_modify_case(rs, update):
                 raise RuntimeError(n_("Genesis modification failed."))
             if decision.is_create():
                 return self.genesis(rs, case_id)
@@ -412,8 +419,14 @@ class CoreGenesisBackend(CoreBaseBackend):
             case = unwrap(self.genesis_get_cases(rs, (case_id,)))
             if self.verify_existence(rs, case['username'], include_genesis=False):
                 raise ValueError(n_("Email address already taken."))
-            data = {k: v for k, v in case.items()
-                    if k in PERSONA_ALL_FIELDS and k != "id"}
+
+            # filter out genesis information not relevant for the respective realm
+            allowed_keys = (
+                set(filter_none(PERSONA_FULL_CREATION[case['realm']])) & (
+                    set(GENESIS_CASE_FIELDS) |
+                    set(REALM_SPECIFIC_GENESIS_FIELDS[case['realm']])) - {"id"})
+
+            data = {k: v for k, v in case.items() if k in allowed_keys}
             data['display_name'] = data['given_names']
             merge_dicts(data, PERSONA_DEFAULTS)
             # Fix realms, so that the persona validator does the correct thing
@@ -430,6 +443,7 @@ class CoreGenesisBackend(CoreBaseBackend):
                 'id': case_id,
                 'case_status': const.GenesisStati.successful,
                 'realm': case['realm'],
+                'persona_id': new_id,
             }
-            self.genesis_modify_case(rs, update, persona_id=new_id)
+            self.genesis_modify_case(rs, update)
         return new_id

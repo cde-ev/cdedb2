@@ -522,7 +522,7 @@ body.development {
    and also used on the event course list */
 a.headerlink {
     margin-left: 10px;
-    display: inline-block;
+    display: inline;
     color: #777;
     text-decoration: none;
     opacity: 0;
@@ -584,6 +584,11 @@ pre.result {
 span.result-separator, code.result-separator {
     color: #c7254e;
     background-color: #f5f5f5;
+}
+
+/* <details> are clickable, show a cursor */
+details {
+    cursor: pointer;
 }
 
 /* query form */
@@ -1103,6 +1108,16 @@ span.color-legend {
 }
 .btn-wrap {
     white-space: normal;
+}
+.btn-wrap.btn-icon {
+    position: relative;
+    padding-left: 36px;
+}
+.btn-wrap.btn-icon>.fas {
+    position: absolute;
+    top: 50%;
+    margin-top: -7px;
+    left: 10px;
 }
 .clickable {
     cursor: pointer;

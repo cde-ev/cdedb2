@@ -34,7 +34,7 @@ werden können:
 * Schule, Uni, …,
 * Jahrgang, Matrikel, …,
 * Interessen,
-* Sonstiges,
+* Verschiedenes,
 * Vergangene Veranstaltungen
 
 Diese lassen sich in die Folgenden Kategorien einteilen (Mehrfachnennung
@@ -69,7 +69,7 @@ möglich):
     * Schule, Uni, …,
     * Jahrgang, Matrikel, …,
     * Interessen,
-    * Sonstiges,
+    * Verschiedenes,
     * Verg. Veranstaltungen
 * CdE Admin
     * Geschlecht,

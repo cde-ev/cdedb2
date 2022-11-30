@@ -36,15 +36,14 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation import (
-    ASSEMBLY_COMMON_FIELDS, BALLOT_EXPOSED_FIELDS, PERSONA_FULL_ASSEMBLY_CREATION,
-    filter_none,
+    ASSEMBLY_COMMON_FIELDS, BALLOT_EXPOSED_FIELDS, PERSONA_FULL_CREATION, filter_none,
 )
 from cdedb.common.validation.types import CdedbID, Email
+from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, Attachment, REQUESTdata, REQUESTdatadict, REQUESTfile, access,
-    assembly_guard, calculate_db_logparams, calculate_loglinks, cdedburl,
-    check_validation as check, drow_name, inspect_validation, periodic,
-    process_dynamic_input, request_extractor,
+    assembly_guard, cdedburl, check_validation as check, drow_name, inspect_validation,
+    periodic, process_dynamic_input, request_extractor,
 )
 
 #: Magic value to signal abstention during _classical_ voting.
@@ -85,7 +84,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         return super().create_user_form(rs)
 
     @access("core_admin", "assembly_admin", modi={"POST"})
-    @REQUESTdatadict(*filter_none(PERSONA_FULL_ASSEMBLY_CREATION))
+    @REQUESTdatadict(*filter_none(PERSONA_FULL_CREATION['assembly']))
     def create_user(self, rs: RequestState, data: CdEDBObject) -> Response:
         defaults = {
             'is_cde_realm': False,
@@ -130,30 +129,20 @@ class AssemblyFrontend(AbstractUserFrontend):
                  time_start: Optional[datetime.datetime],
                  time_stop: Optional[datetime.datetime]) -> Response:
         """View activities."""
-        length = length or self.conf["DEFAULT_LOG_LENGTH"]
-        # length is the requested length, _length the theoretically
-        # shown length for an infinite amount of log entries.
-        _offset, _length = calculate_db_logparams(offset, length)
 
-        # no validation since the input stays valid, even if some options
-        # are lost
-        rs.ignore_validation_errors()
-        total, log = self.assemblyproxy.retrieve_log(
-            rs, codes, assembly_id, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, change_note=change_note,
-            time_start=time_start, time_stop=time_stop)
-        personas = (
-                {entry['submitted_by'] for entry in log if
-                 entry['submitted_by']}
-                | {entry['persona_id'] for entry in log if entry['persona_id']})
-        personas = self.coreproxy.get_personas(rs, personas)
+        filter_params = {
+            'entity_ids': [assembly_id] if assembly_id else [],
+            'codes': codes, 'offset': offset, 'length': length,
+            'persona_id': persona_id, 'submitted_by': submitted_by,
+            'change_note': change_note, 'ctime': (time_start, time_stop),
+        }
+
         all_assemblies = self.assemblyproxy.list_assemblies(rs)
-        loglinks = calculate_loglinks(rs, total, offset, length)
-        return self.render(rs, "view_log", {
-            'log': log, 'total': total, 'length': _length, 'personas': personas,
-            'all_assemblies': all_assemblies, 'loglinks': loglinks,
-            'may_view': lambda assembly_id: self.assemblyproxy.may_assemble(
-                rs, assembly_id=assembly_id),
+        may_view = lambda id_: self.assemblyproxy.may_assemble(rs, assembly_id=id_)
+
+        return self.generic_view_log(
+            rs, filter_params, "assembly.log", "view_log", {
+            'may_view': may_view, 'all_assemblies': all_assemblies,
         })
 
     @access("assembly")
@@ -161,7 +150,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     @REQUESTdata(*LOG_FIELDS_COMMON)
     def view_assembly_log(self, rs: RequestState,
                           codes: Optional[Collection[const.AssemblyLogCodes]],
-                          assembly_id: Optional[int], offset: Optional[int],
+                          assembly_id: int, offset: Optional[int],
                           length: Optional[vtypes.PositiveInt],
                           persona_id: Optional[CdedbID],
                           submitted_by: Optional[CdedbID],
@@ -169,27 +158,16 @@ class AssemblyFrontend(AbstractUserFrontend):
                           time_start: Optional[datetime.datetime],
                           time_stop: Optional[datetime.datetime]) -> Response:
         """View activities."""
-        length = length or self.conf["DEFAULT_LOG_LENGTH"]
-        # length is the requested length, _length the theoretically
-        # shown length for an infinite amount of log entries.
-        _offset, _length = calculate_db_logparams(offset, length)
 
-        # no validation since the input stays valid, even if some options
-        # are lost
-        rs.ignore_validation_errors()
-        total, log = self.assemblyproxy.retrieve_log(
-            rs, codes, assembly_id, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, change_note=change_note,
-            time_start=time_start, time_stop=time_stop)
-        personas = (
-                {entry['submitted_by'] for entry in log if
-                 entry['submitted_by']}
-                | {entry['persona_id'] for entry in log if entry['persona_id']})
-        personas = self.coreproxy.get_personas(rs, personas)
-        loglinks = calculate_loglinks(rs, total, offset, length)
-        return self.render(rs, "view_assembly_log", {
-            'log': log, 'total': total, 'length': _length, 'personas': personas,
-            'loglinks': loglinks})
+        filter_params = {
+            'entity_ids': [assembly_id],
+            'codes': codes, 'offset': offset, 'length': length,
+            'persona_id': persona_id, 'submitted_by': submitted_by,
+            'change_note': change_note, 'ctime': (time_start, time_stop),
+        }
+
+        return self.generic_view_log(
+            rs, filter_params, "assembly.log", "view_assembly_log")
 
     @access("assembly")
     def show_assembly(self, rs: RequestState, assembly_id: int) -> Response:
@@ -688,6 +666,43 @@ class AssemblyFrontend(AbstractUserFrontend):
         })
 
     @access("assembly")
+    def ballot_template(self, rs: RequestState, assembly_id: int, ballot_id: int
+                        ) -> Response:
+        """Offer a choice of appropriate assemblies to create the new ballot.
+
+        If exactly one appropriate assembly exists, skip this page.
+        If none exists, show a warning instead.
+        """
+        assembly_ids = set(self.assemblyproxy.list_assemblies(rs, is_active=True))
+        if not self.is_admin(rs):
+            assembly_ids &= rs.user.presider
+        assemblies = self.assemblyproxy.get_assemblies(rs, assembly_ids)
+        assembly_entries = keydictsort_filter(assemblies, EntitySorter.assembly,
+                                              reverse=True)
+        if not assembly_entries:
+            rs.notify("warning", n_("Not presiding over any active assemblies."))
+            return self.redirect(rs, "assembly/show_ballot")
+        elif len(assembly_entries) == 1:
+            return self.redirect(rs, "assembly/create_ballot", {
+                'assembly_id': assembly_entries[0][0], 'source_id': ballot_id,
+            })
+        return self.render(rs, "ballot_template", {
+            'assembly_entries': assembly_entries,
+        })
+
+    @access("assembly")
+    @REQUESTdata("target_assembly_id", "source_id")
+    def ballot_template_redirect(self, rs: RequestState, assembly_id: int,
+                                 ballot_id: int, target_assembly_id: int,
+                                 source_id: int) -> Response:
+        """Redirect to the creation page of the chosen target assembly."""
+        if rs.has_validation_errors():
+            return self.ballot_template(rs, assembly_id, ballot_id)
+        return self.redirect(rs, "assembly/create_ballot", {
+            'assembly_id': target_assembly_id, 'source_id': source_id,
+        })
+
+    @access("assembly")
     @REQUESTdata("source_id", _postpone_validation=True)
     @assembly_guard
     def create_ballot_form(self, rs: RequestState, assembly_id: int,
@@ -1054,6 +1069,11 @@ class AssemblyFrontend(AbstractUserFrontend):
         prev_ballot = ballots[ballot_list[i-1]] if i > 0 else None
         next_ballot = ballots[ballot_list[i+1]] if i + 1 < length else None
 
+        # Get ids of managed assemblies.
+        assembly_ids = set(self.assemblyproxy.list_assemblies(rs, is_active=True))
+        if "assembly_presider" not in rs.user.admin_views:
+            assembly_ids &= rs.user.presider
+
         return self.render(rs, "show_ballot", {
             "sorted_candidate_ids": sorted_candidate_ids,
             'latest_versions': latest_versions,
@@ -1064,6 +1084,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             'result': result,
             'prev_ballot': prev_ballot,
             'next_ballot': next_ballot,
+            'managed_assembly_ids': assembly_ids,
             **vote_dict
         })
 
