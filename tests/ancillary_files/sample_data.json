@@ -3871,6 +3871,7 @@
             "delta": null,
             "new_balance": null,
             "change_note": "-4.50€",
+            "transaction_date": null,
             "members": 7,
             "total": "106.50"
         },
@@ -3882,8 +3883,21 @@
             "delta": "5.00",
             "new_balance": "12.50",
             "change_note": "42.23€",
+            "transaction_date": null,
             "members": 7,
             "total": "111.50"
+        },
+        {
+            "ctime": "---now---",
+            "code": 10,
+            "submitted_by": 32,
+            "persona_id": 9,
+            "delta": "5.00",
+            "new_balance": "5.00",
+            "change_note": null,
+            "transaction_date": "---now---",
+            "members": 7,
+            "total": "116.50"
         }
     ],
     "cde.log": [],

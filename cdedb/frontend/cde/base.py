@@ -793,6 +793,8 @@ class CdEBaseFrontend(AbstractUserFrontend):
                          delta_to: Optional[decimal.Decimal],
                          new_balance_from: Optional[decimal.Decimal],
                          new_balance_to: Optional[decimal.Decimal],
+                         transaction_date_from: Optional[datetime.date],
+                         transaction_date_to: Optional[datetime.date],
                          total_from: Optional[decimal.Decimal],
                          total_to: Optional[decimal.Decimal],
                          members_from: Optional[int],
@@ -806,6 +808,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             'change_note': change_note, 'ctime': (time_start, time_stop),
             'delta': (delta_from, delta_to),
             'new_balance': (new_balance_from, new_balance_to),
+            'transaction_date': (transaction_date_from, transaction_date_to),
             'total': (total_from, total_to), 'members': (members_from, members_to),
         }
 

@@ -86,6 +86,11 @@ def sql2json(config: Config, secrets: SecretsConfig) -> Dict[str, List[Dict[str,
     full_sample_data = dict()
     reference_frame = nearly_now(delta=datetime.timedelta(days=30))
 
+    def datetime_from_date(date: datetime.date) -> datetime.datetime:
+        return datetime.datetime(
+            year=date.year, month=date.month, day=date.day,
+            tzinfo=reference_frame.tzinfo)
+
     for table in tables:
         order = ", ".join(sort_table_by.get(table, []) + ['id'])
         query = f"SELECT * FROM {table} ORDER BY {order}"
@@ -103,6 +108,9 @@ def sql2json(config: Config, secrets: SecretsConfig) -> Dict[str, List[Dict[str,
                 elif field in ignored_columns.get(table, {}):
                     sorted_entity[field] = None
                 elif isinstance(value, datetime.datetime) and value == reference_frame:
+                    sorted_entity[field] = "---now---"
+                elif isinstance(value, datetime.date) and datetime_from_date(
+                        value) == reference_frame:
                     sorted_entity[field] = "---now---"
                 else:
                     sorted_entity[field] = value

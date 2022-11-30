@@ -128,6 +128,7 @@ class CdEBaseBackend(AbstractBackend):
                     new_balance = (personas[datum['persona_id']]['balance']
                                    + datum['amount'])
                     note = datum['note']
+                    date = None
                     if note:
                         try:
                             date = datetime.datetime.strptime(
@@ -143,7 +144,7 @@ class CdEBaseBackend(AbstractBackend):
                     count += self.core.change_persona_balance(
                         rs, datum['persona_id'], new_balance,
                         const.FinanceLogCodes.increase_balance,
-                        change_note=note)
+                        change_note=note, transaction_date=date)
                     if new_balance >= self.conf["MEMBERSHIP_FEE"]:
                         code = self.core.change_membership_easy_mode(
                             rs, datum['persona_id'], is_member=True)

@@ -258,4 +258,5 @@ LOG_FIELDS_COMMON = ("codes", "persona_id", "submitted_by", "change_note", "offs
                      "length", "time_start", "time_stop")
 
 FINANCE_LOG_FIELDS = ("delta_from", "delta_to", "new_balance_from", "new_balance_to",
+                      "transaction_date_from", "transaction_date_to",
                       "total_from", "total_to", "members_from", "members_to")
