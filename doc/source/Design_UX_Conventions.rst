@@ -83,6 +83,8 @@ Colours & Icons
 
         - reference-destructive
 
+            - SHOULD be reversible using the logs
+            - MUST be red (btn-danger)
             - SHOULD have the minus icon
 
         - really destructive (deletes data)
@@ -135,7 +137,7 @@ Colours & Icons
             - including links to documentation
             - SHOULD be light blue (btn-info)
 
-    - may be dark blue if icon indicated read only
+    - MAY be dark blue if icon indicated read only
 
 
 Button Sizes
