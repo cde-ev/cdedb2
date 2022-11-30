@@ -266,7 +266,7 @@
                     </p>
                     <div class="p">
                         {% if ambience['event']['offline_lock'] %}
-                            {{ util.href(cdedblink('event/download_export'), gettext("JSON file"), icon='download', aclass='btn btn-primary') }}
+                            {{ util.href(cdedblink('event/download_export'), gettext("JSON file"), icon='download', aclass='btn btn-default') }}
                         {% else %}
                             <form action="{{ cdedblink('event/download_export') }}" method="GET" id="fullexportform" class="display-inline">
                                 {{ util.input_submit(label=gettext("JSON file"), icon='download', aclass='btn btn-default') }}
@@ -301,7 +301,7 @@
                                                        arialabel=gettext("Export of the Offline-DB")) }}
                                     <div class="input-group-btn">
                                         {{ util.input_submit(label=gettext("Unlock"), icon='cloud-upload-alt',
-                                                             aclass='btn btn-success') }}
+                                                             aclass='btn btn-primary') }}
                                     </div>
                                 </div>
                                 {{ util.output_errors('json') }}
