@@ -10232,7 +10232,7 @@ msgstr "Daten sind nicht sichtbar."
 #: cdedb/frontend/templates/web/core/show_user.tmpl:350
 #: cdedb/frontend/templates/web/core/show_user.tmpl:351
 msgid "Method of Payment"
-msgstr "Zahlungsart"
+msgstr "Zahlungsmethode"
 
 #: cdedb/frontend/templates/web/core/show_user.tmpl:363
 msgid "New Direct Debit Authorization …"

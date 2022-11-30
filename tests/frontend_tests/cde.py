@@ -857,7 +857,7 @@ class TestCdEFrontend(FrontendTest):
                       {'description': 'Einzugsermächtigungen'},
                       {'description': 'Bertålotta Beispiel'},)
         self.assertTitle("Einzugsermächtigung Bertålotta Beispiel")
-        self.assertPresence("50,23 €", div='amount', exact=True)
+        self.assertPresence("42,23 €", div='donation', exact=True)
         self.get("/cde/user/2/lastschrift/create")
         f = self.response.forms['createlastschriftform']
         f['iban'] = "DE12 5001 0517 0648 4898 90"
