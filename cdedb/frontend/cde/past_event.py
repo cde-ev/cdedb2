@@ -407,7 +407,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
             return self.show_past_event(rs, pevent_id)
 
         code = self.pasteventproxy.delete_past_event(
-            rs, pevent_id, cascade=("courses", "participants", "log"))
+            rs, pevent_id, cascade=("courses", "participants", "log", "genesis_cases"))
         rs.notify_return_code(code)
         return self.redirect(rs, "cde/list_past_events")
 
@@ -467,7 +467,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
             return self.show_past_course(rs, pevent_id, pcourse_id)
 
         code = self.pasteventproxy.delete_past_course(
-            rs, pcourse_id, cascade=("participants",))
+            rs, pcourse_id, cascade=("participants", "genesis_cases"))
         rs.notify_return_code(code)
         return self.redirect(rs, "cde/show_past_event")
 
