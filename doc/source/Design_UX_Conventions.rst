@@ -108,7 +108,7 @@ Colours & Icons
         - SHOULD be dark blue (btn-primary)
         - SHOULD have the search icon
 
-    - if button submits information to the next step in a wizard, the icon "chevron-right" SHOULD be used
+    - if button submits information to the next step in a wizard, it SHOULD be dark blue (btn-primary) and SHOULD have the icon "chevron-right"
 
 - non actions (links)
 
@@ -136,8 +136,6 @@ Colours & Icons
 
             - including links to documentation
             - SHOULD be light blue (btn-info)
-
-    - MAY be dark blue if icon indicated read only
 
 
 Button Sizes
