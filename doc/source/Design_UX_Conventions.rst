@@ -66,76 +66,71 @@ follow the conventions of [RFC2119].
 Colours & Icons
 ^^^^^^^^^^^^^^^
 
-- effective actions
-
+effective actions
     - "have a persistent effect"
     - are divided into four subtypes:
 
-        - constructive
-
+        #. constructive
             - SHOULD be dark blue (btn-primary)
             - the icon SHOULD be a checkmark
             - least one of both MUST be true
 
-        - rather destructive (e.g. archiving of event)
-
+        #. rather destructive (e.g. archiving of event)
             - MUST be red (btn-danger)
 
-        - reference-destructive
-
+        #. reference-destructive
             - SHOULD be reversible using the logs
             - MUST be red (btn-danger)
             - SHOULD have the minus icon
 
-        - really destructive (deletes data)
-
+        #. really destructive (deletes data)
             - MUST be red (btn-danger)
             - SHOULD have the trash-alt or fire icon ("fire" escalation of "trash", deletes "larger" entities)
 
-- progressive actions
-
+progressive actions
     - "lead to a page to make a persistent effect"
-    - if something will be edited
+
+    - *if* something will be **edited**
 
         - SHOULD be yellow/orange (btn-warning)
 
-    - if something is created
+    - *if* something is **created**
 
         - SHOULD be green (btn-success)
 
-    - exception: when submitting a search form
+    - *if* button submits information to the **next step in a wizard**
+
+        - SHOULD be dark blue (btn-primary)
+        - SHOULD have the icon "chevron-right"
+
+    - *exception*: when submitting a **search form**
 
         - SHOULD be dark blue (btn-primary)
         - SHOULD have the search icon
 
-    - if button submits information to the next step in a wizard, it SHOULD be dark blue (btn-primary) and SHOULD have the icon "chevron-right"
-
-- non actions (links)
-
+non actions (links)
     - "have no effect"
     - are dived into three subtypes:
 
-        - going higher (backwards)
-
+        #. going higher (backwards)
             - SHOULD be light white (btn-default)
             - SHOULD have
 
                 - fa-times icon (cancel = form reset)
                 - chevron-left icon
 
-        - keeping page (e.g. Download buttons) or going to similar page
-
+        #. keeping page (e.g. Download buttons) or going to similar page
             - including dynamic changes to selected items
             - SHOULD be white (btn-default)
 
-        - going to similar page, while considering form inputs on local page (e.g. link to filtered list by selection)
-
+        #. going to similar page, while considering form inputs on local page (e.g. link to filtered list by selection)
             - SHOULD be light blue (btn-info)
 
-        - going deeper (forwards)
-
+        #. going deeper (forwards)
             - including links to documentation
             - SHOULD be light blue (btn-info)
+
+    - MAY be dark blue if icon indicated read only (e.g. Show vote button upon secret entering)
 
 
 Button Sizes
