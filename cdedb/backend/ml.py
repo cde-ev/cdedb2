@@ -538,10 +538,6 @@ class MlBackend(AbstractBackend):
                         data: CdEDBObject) -> DefaultReturnCode:
         """Update some keys of a mailinglist.
 
-        If the keys 'moderators' or 'whitelist' are present you have to pass
-        the complete set of moderator IDs or whitelisted addresses, which
-        will superseed the current list.
-
         If the new mailinglist type does not allow unsubscription,
         all unsubscriptions are dropped without exception.
 
