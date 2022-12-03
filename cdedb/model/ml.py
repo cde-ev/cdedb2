@@ -49,27 +49,12 @@ class Mailinglist:
         return self.domain.get_domain()
 
     # required to set ml_type_class during __post_init__
-    _ml_type_class: Type["GeneralMailinglist"] = dataclasses.field(
-        init=False, repr=False, compare=False)
+    _ml_type_class: InitVar[Type["GeneralMailinglist"]] = None
 
     @property
     def ml_type_class(self) -> Type["GeneralMailinglist"]:
-        return self._ml_type_class
-
-    def __post_init__(self) -> None:
-        self._ml_type_class = get_type(self.ml_type)
+        return self._ml_type_class  # type: ignore
 
     def to_database(self) -> "CdEDBObject":
         """Generate a dict representation of the mailinglist to be saved to the db."""
         return {key: getattr(self, key) for key in MAILINGLIST_FIELDS}
-
-
-@dataclasses.dataclass
-class MailinglistCreate(Mailinglist):
-    id: int = dataclasses.field(init=False, repr=False, compare=False)
-
-    whitelist: List[str] = dataclasses.field(default_factory=list)  # TODO: restrict type
-
-    def to_database(self) -> "CdEDBObject":
-        """Generate a dict representation of the mailinglist to be saved to the db."""
-        return {key: getattr(self, key) for key in MAILINGLIST_FIELDS if key != "id"}
