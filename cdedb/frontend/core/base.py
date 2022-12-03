@@ -51,7 +51,7 @@ from cdedb.frontend.common import (
     check_validation_optional as check_optional, inspect_validation as inspect,
     make_membership_fee_reference, periodic, request_dict_extractor, request_extractor,
 )
-from cdedb.ml_type_aux import MailinglistGroup
+from cdedb.ml_type_aux import Mailinglist, MailinglistGroup
 
 # Name of each realm
 USER_REALM_NAMES = {
@@ -133,14 +133,19 @@ class CoreBaseFrontend(AbstractFrontend):
             # mailinglists moderated
             moderator_info = self.mlproxy.moderator_info(rs, rs.user.persona_id)
             if moderator_info:
-                moderator = self.mlproxy.get_mailinglists(rs, moderator_info)
+                mailinglists = self.mlproxy.get_mailinglists(rs, moderator_info)
                 sub_request = const.SubscriptionState.pending
                 mailman = self.get_mailman()
-                for mailinglist_id, ml in moderator.items():
+                moderator: Dict[int, Dict[str, Any]] = {}
+                for ml_id, ml in mailinglists.items():
                     requests = self.mlproxy.get_subscription_states(
-                        rs, mailinglist_id, states=(sub_request,))
-                    ml['requests'] = len(requests)
-                    ml['held_mails'] = mailman.get_held_message_count(ml)
+                        rs, ml_id, states=(sub_request,))
+                    moderator[ml_id] = {}
+                    moderator[ml_id]['requests'] = len(requests)
+                    moderator[ml_id]['held_mails'] = mailman.get_held_message_count(ml)
+                    moderator[ml_id]['id'] = ml.id
+                    moderator[ml_id]['title'] = ml.title
+                    moderator[ml_id]['is_active'] = ml.is_active
                 dashboard['moderator'] = {k: v for k, v in moderator.items()
                                           if v['is_active']}
             # visible and open events
@@ -683,9 +688,9 @@ class CoreBaseFrontend(AbstractFrontend):
         grouped: Dict[MailinglistGroup, CdEDBObjectMap]
         grouped = collections.defaultdict(dict)
         for mailinglist_id, ml in mailinglists.items():
-            group_id = ml['ml_type_class'].sortkey
+            group_id = ml.ml_type_class.sortkey
             grouped[group_id][mailinglist_id] = {
-                'title': ml['title'],
+                'title': ml.title,
                 'id': mailinglist_id,
                 'address': addresses.get(mailinglist_id)
             }

@@ -37,6 +37,7 @@ from cdedb.frontend.common import (
     event_guard, inspect_validation as inspect, process_dynamic_input,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
+from cdedb.ml_type_aux import MailinglistCreate
 
 
 class EventEventMixin(EventBaseFrontend):
@@ -98,7 +99,7 @@ class EventEventMixin(EventBaseFrontend):
         if "ml" in rs.user.roles:
             ml_data = self._get_mailinglist_setter(rs.ambience['event'])
             params['participant_list'] = self.mlproxy.verify_existence(
-                rs, ml_type.get_full_address(ml_data))
+                rs, ml_data.address)
         if event_id in rs.user.orga or self.is_admin(rs):
             params['institutions'] = self.pasteventproxy.list_institutions(rs)
             params['minor_form_present'] = (
@@ -248,21 +249,21 @@ class EventEventMixin(EventBaseFrontend):
             return self.redirect(rs, "event/show_event")
 
         ml_data = self._get_mailinglist_setter(rs.ambience['event'], orgalist)
-        ml_address = ml_type.get_full_address(ml_data)
-        if not self.mlproxy.verify_existence(rs, ml_address):
+        if not self.mlproxy.verify_existence(rs, ml_data.address):
             if not orgalist:
                 link = cdedburl(rs, "event/register", {'event_id': event_id})
-                ml_data['description'] = ml_data['description'].format(link)
+                assert ml_data.description is not None
+                ml_data.description = ml_data.description.format(link)
             code = self.mlproxy.create_mailinglist(rs, ml_data)
             msg = (n_("Orga mailinglist created.") if orgalist
                    else n_("Participant mailinglist created."))
             rs.notify_return_code(code, success=msg)
             if code and orgalist:
-                data = {'id': event_id, 'orga_address': ml_address}
+                data = {'id': event_id, 'orga_address': ml_data.address}
                 self.eventproxy.set_event(rs, data)
         else:
             rs.notify("info", n_("Mailinglist %(address)s already exists."),
-                      {'address': ml_address})
+                      {'address': ml_data.address})
         return self.redirect(rs, "event/show_event")
 
     def _deletion_blocked_parts(self, rs: RequestState, event_id: int) -> Set[int]:
@@ -789,7 +790,7 @@ class EventEventMixin(EventBaseFrontend):
 
     @staticmethod
     def _get_mailinglist_setter(event: CdEDBObject, orgalist: bool = False
-                                ) -> CdEDBObject:
+                                ) -> MailinglistCreate:
         # During event creation the id is not yet known.
         event_id = event.get('id')
         if orgalist:
@@ -811,7 +812,7 @@ class EventEventMixin(EventBaseFrontend):
                 'moderators': event['orgas'],
                 'ml_type': const.MailinglistTypes.event_orga,
             }
-            return orga_ml_data
+            return MailinglistCreate(**orga_ml_data)
         else:
             descr = ("Dieser Liste kannst Du nur beitreten, indem Du Dich zu "
                      "unserer [Veranstaltung anmeldest]({}) und den Status "
@@ -834,7 +835,7 @@ class EventEventMixin(EventBaseFrontend):
                 'moderators': event['orgas'],
                 'ml_type': const.MailinglistTypes.event_associated,
             }
-            return participant_ml_data
+            return MailinglistCreate(**participant_ml_data)
 
     @access("event_admin")
     def create_event_form(self, rs: RequestState) -> Response:
@@ -901,37 +902,34 @@ class EventEventMixin(EventBaseFrontend):
         assert data is not None
 
         orga_ml_data = None
-        orga_ml_address = None
         if create_orga_list:
             orga_ml_data = self._get_mailinglist_setter(data, orgalist=True)
-            orga_ml_address = ml_type.get_full_address(orga_ml_data)
-            data['orga_address'] = orga_ml_address
-            if self.mlproxy.verify_existence(rs, orga_ml_address):
-                orga_ml_data = None
+            if self.mlproxy.verify_existence(rs, orga_ml_data.address):
                 rs.notify("info", n_("Mailinglist %(address)s already exists."),
-                          {'address': orga_ml_address})
+                          {'address': orga_ml_data.address})
+                orga_ml_data = None
         else:
             data['orga_address'] = None
 
         new_id = self.eventproxy.create_event(rs, data)
         if orga_ml_data:
-            orga_ml_data['event_id'] = new_id
+            orga_ml_data.event_id = new_id
             code = self.mlproxy.create_mailinglist(rs, orga_ml_data)
             rs.notify_return_code(code, success=n_("Orga mailinglist created."))
         if create_participant_list:
             participant_ml_data = self._get_mailinglist_setter(data)
-            participant_ml_address = ml_type.get_full_address(participant_ml_data)
-            if not self.mlproxy.verify_existence(rs, participant_ml_address):
+            if not self.mlproxy.verify_existence(rs, participant_ml_data.address):
                 link = cdedburl(rs, "event/register", {'event_id': new_id})
-                descr = participant_ml_data['description'].format(link)
-                participant_ml_data['description'] = descr
-                participant_ml_data['event_id'] = new_id
+                assert participant_ml_data.description is not None
+                descr = participant_ml_data.description.format(link)
+                participant_ml_data.description = descr
+                participant_ml_data.event_id = new_id
                 code = self.mlproxy.create_mailinglist(rs, participant_ml_data)
                 rs.notify_return_code(code,
                                       success=n_("Participant mailinglist created."))
             else:
                 rs.notify("info", n_("Mailinglist %(address)s already exists."),
-                          {'address': participant_ml_address})
+                          {'address': participant_ml_data.address})
         rs.notify_return_code(new_id, success=n_("Event created."))
         return self.redirect(rs, "event/show_event", {"event_id": new_id})
 

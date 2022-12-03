@@ -45,6 +45,7 @@ from cdedb.frontend.common import (
     assembly_guard, cdedburl, check_validation as check, drow_name, inspect_validation,
     periodic, process_dynamic_input, request_extractor,
 )
+from cdedb.ml_type_aux import MailinglistCreate
 
 #: Magic value to signal abstention during _classical_ voting.
 #: This can not occur as a shortname since it contains forbidden characters.
@@ -205,7 +206,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         if "ml" in rs.user.roles:
             ml_data = self._get_mailinglist_setter(rs.ambience['assembly'])
             params['attendee_list_exists'] = self.mlproxy.verify_existence(
-                rs, ml_type.get_full_address(ml_data))
+                rs, ml_data.address)
 
         return self.render(rs, "show_assembly", params)
 
@@ -290,7 +291,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @staticmethod
     def _get_mailinglist_setter(assembly: CdEDBObject, presider: bool = False
-                                ) -> CdEDBObject:
+                                ) -> MailinglistCreate:
         # The id is not yet known during creation.
         assembly_id = assembly.get('id')
         if presider:
@@ -311,7 +312,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 'moderators': assembly['presiders'],
                 'ml_type': const.MailinglistTypes.assembly_presider,
             }
-            return presider_ml_data
+            return MailinglistCreate(**presider_ml_data)
         else:
             descr = ("Dieser Liste kannst Du nur beitreten, indem Du Dich direkt zu"
                      " der [Versammlung anmeldest]({}).")
@@ -330,7 +331,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 'moderators': assembly['presiders'],
                 'ml_type': const.MailinglistTypes.assembly_associated,
             }
-            return attendee_ml_data
+            return MailinglistCreate(**attendee_ml_data)
 
     @access("assembly_admin", modi={"POST"})
     @REQUESTdata("presider_list")
@@ -343,23 +344,23 @@ class AssemblyFrontend(AbstractUserFrontend):
                       n_("Must have presiders in order to create a mailinglist."))
             return self.redirect(rs, "assembly/show_assembly")
 
-        ml_data = self._get_mailinglist_setter(rs.ambience['assembly'], presider_list)
-        ml_address = ml_type.get_full_address(ml_data)
-        if not self.mlproxy.verify_existence(rs, ml_address):
+        ml = self._get_mailinglist_setter(rs.ambience['assembly'], presider_list)
+        if not self.mlproxy.verify_existence(rs, ml.address):
             if not presider_list:
                 link = cdedburl(rs, "assembly/show_assembly",
                                 {'assembly_id': assembly_id})
-                ml_data['description'] = ml_data['description'].format(link)
-            new_id = self.mlproxy.create_mailinglist(rs, ml_data)
+                assert ml.description is not None
+                ml.description = ml.description.format(link)
+            new_id = self.mlproxy.create_mailinglist(rs, ml)
             msg = (n_("Presider mailinglist created.") if presider_list
                    else n_("Attendee mailinglist created."))
             rs.notify_return_code(new_id, success=msg)
             if new_id and presider_list:
-                data = {'id': assembly_id, 'presider_address': ml_address}
+                data = {'id': assembly_id, 'presider_address': ml.address}
                 self.assemblyproxy.set_assembly(rs, data)
         else:
             rs.notify("info", n_("Mailinglist %(address)s already exists."),
-                      {'address': ml_address})
+                      {'address': ml.address})
         return self.redirect(rs, "assembly/show_assembly")
 
     @access("assembly_admin", modi={"POST"})
@@ -383,8 +384,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 rs.notify("info", n_("Given presider address ignored in favor of"
                                      " newly created mailinglist."))
             presider_ml_data = self._get_mailinglist_setter(data, presider=True)
-            presider_address = ml_type.get_full_address(presider_ml_data)
-            data["presider_address"] = presider_address
+            presider_address = presider_ml_data.address
             if self.mlproxy.verify_existence(rs, presider_address):
                 presider_ml_data = None
                 rs.notify("info", n_("Mailinglist %(address)s already exists."),
@@ -414,22 +414,22 @@ class AssemblyFrontend(AbstractUserFrontend):
         assert data is not None
         new_id = self.assemblyproxy.create_assembly(rs, data)
         if presider_ml_data:
-            presider_ml_data['assembly_id'] = new_id
+            presider_ml_data.assembly_id = new_id
             code = self.mlproxy.create_mailinglist(rs, presider_ml_data)
             rs.notify_return_code(code, success=n_("Presider mailinglist created."))
         if create_attendee_list:
             attendee_ml_data = self._get_mailinglist_setter(data)
-            attendee_address = ml_type.get_full_address(attendee_ml_data)
-            if not self.mlproxy.verify_existence(rs, attendee_address):
+            if not self.mlproxy.verify_existence(rs, attendee_ml_data.address):
                 link = cdedburl(rs, "assembly/show_assembly", {'assembly_id': new_id})
-                descr = attendee_ml_data['description'].format(link)
-                attendee_ml_data['description'] = descr
-                attendee_ml_data['assembly_id'] = new_id
+                assert attendee_ml_data.description is not None
+                descr = attendee_ml_data.description.format(link)
+                attendee_ml_data.description = descr
+                attendee_ml_data.assembly_id = new_id
                 code = self.mlproxy.create_mailinglist(rs, attendee_ml_data)
                 rs.notify_return_code(code, success=n_("Attendee mailinglist created."))
             else:
                 rs.notify("info", n_("Mailinglist %(address)s already exists."),
-                          {'address': attendee_address})
+                          {'address': attendee_ml_data.address})
         rs.notify_return_code(new_id, success=n_("Assembly created."))
         return self.redirect(rs, "assembly/show_assembly", {'assembly_id': new_id})
 

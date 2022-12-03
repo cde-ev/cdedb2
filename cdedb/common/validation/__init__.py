@@ -3894,21 +3894,14 @@ MAILINGLIST_READONLY_FIELDS = {
 
 @_add_typed_validator
 def _mailinglist(
-    val: Any, argname: str = "mailinglist", *,
-    creation: bool = False, _allow_readonly: bool = False, **kwargs: Any
-) -> Mailinglist:
+    val: ml_type.Mailinglist, argname: str = "mailinglist", *,
+    creation: bool = False, **kwargs: Any
+) -> ml_type.Mailinglist:
     """
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
     """
-
-    val = _mapping(val, argname, **kwargs)
-
-    # TODO replace these with generic types
-    if "ml_type" not in val:
-        raise ValidationSummary(ValueError(
-            "ml_type", "Must provide ml_type for setting mailinglist."))
-    atype = ml_type.get_type(val["ml_type"])
+    atype = val.ml_type_class
     mandatory_validation_fields: TypeMapping = {
         'moderators': List[ID],
         **atype.mandatory_validation_fields,
@@ -3925,12 +3918,6 @@ def _mailinglist(
                            (optional_validation_fields, optional_fields)):
         for key, validator in source.items():
             target[key] = validator
-    # Optionally remove readonly attributes, take care to keep the original.
-    if _allow_readonly:
-        val = dict(copy.deepcopy(val))
-        for key in MAILINGLIST_READONLY_FIELDS:
-            if key in val:
-                del val[key]
 
     if creation:
         pass
@@ -3940,29 +3927,32 @@ def _mailinglist(
         optional_fields = dict(optional_fields, **mandatory_fields)
         mandatory_fields = {'id': ID}
 
-    val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs)
+    data = {k: getattr(val, k) for k in dict(optional_fields, **mandatory_fields)}
+    data = _examine_dictionary_fields(
+        data, mandatory_fields, optional_fields, **kwargs)
 
-    if val and "moderators" in val and not val["moderators"]:
+    if data and "moderators" in data and not data["moderators"]:
         # TODO is this legitimate (postpone after other errors?)
         raise ValidationSummary(ValueError(
             "moderators", n_("Must not be empty.")))
 
     errs = ValidationSummary()
 
-    if "domain" not in val:
+    if "domain" not in data:
         errs.append(ValueError(
             "domain", "Must specify domain for setting mailinglist."))
     else:
-        atype = ml_type.get_type(val["ml_type"])
-        if val["domain"].value not in atype.domains:
+        atype = ml_type.get_type(data["ml_type"])
+        if data["domain"].value not in atype.domains:
             errs.append(ValueError("domain", n_(
                 "Invalid domain for this mailinglist type.")))
 
     if errs:
         raise errs
 
-    return Mailinglist(val)
+    if creation:
+        return ml_type.MailinglistCreate(**data)
+    return ml_type.Mailinglist(**data)
 
 
 SUBSCRIPTION_ID_FIELDS: TypeMapping = {

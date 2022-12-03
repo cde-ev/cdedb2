@@ -14,6 +14,7 @@ from cdedb.common.n_ import n_
 from cdedb.frontend.common import REQUESTdata, access, mailinglist_guard, periodic
 from cdedb.frontend.ml.base import MlBaseFrontend
 from cdedb.frontend.ml.mailman import MlMailmanMixin
+from cdedb.ml_type_aux import Mailinglist
 
 __all__ = ['MlFrontend']
 
@@ -24,7 +25,9 @@ class MlFrontend(MlMailmanMixin, MlBaseFrontend):
     def message_moderation_form(self, rs: RequestState, mailinglist_id: int
                                 ) -> Response:
         """Render form."""
-        held = self.get_mailman().get_held_messages(rs.ambience['mailinglist'])
+        ml = rs.ambience["mailinglist"]
+        assert isinstance(ml, Mailinglist)
+        held = self.get_mailman().get_held_messages(ml)
         return self.render(rs, "message_moderation", {'held': held})
 
     _moderate_action_logcodes: Mapping[str, const.MlLogCodes] = {
