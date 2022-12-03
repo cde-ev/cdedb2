@@ -51,7 +51,8 @@ from cdedb.frontend.common import (
     check_validation_optional as check_optional, inspect_validation as inspect,
     make_membership_fee_reference, periodic, request_dict_extractor, request_extractor,
 )
-from cdedb.ml_type_aux import Mailinglist, MailinglistGroup
+from cdedb.ml_type_aux import MailinglistGroup
+from cdedb.model.ml import Mailinglist
 
 # Name of each realm
 USER_REALM_NAMES = {

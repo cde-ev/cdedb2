@@ -104,6 +104,7 @@ from cdedb.common.validation.types import *  # pylint: disable=wildcard-import,u
 from cdedb.config import LazyConfig
 from cdedb.database.constants import FieldAssociations, FieldDatatypes
 from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS
+from cdedb.model.ml import Mailinglist, MailinglistCreate
 
 NoneType = type(None)
 
@@ -3894,9 +3895,9 @@ MAILINGLIST_READONLY_FIELDS = {
 
 @_add_typed_validator
 def _mailinglist(
-    val: ml_type.Mailinglist, argname: str = "mailinglist", *,
+    val: Mailinglist, argname: str = "mailinglist", *,
     creation: bool = False, **kwargs: Any
-) -> ml_type.Mailinglist:
+) -> Mailinglist:
     """
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
@@ -3951,8 +3952,8 @@ def _mailinglist(
         raise errs
 
     if creation:
-        return ml_type.MailinglistCreate(**data)
-    return ml_type.Mailinglist(**data)
+        return MailinglistCreate(**data)
+    return Mailinglist(**data)
 
 
 SUBSCRIPTION_ID_FIELDS: TypeMapping = {

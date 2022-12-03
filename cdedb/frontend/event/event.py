@@ -37,7 +37,7 @@ from cdedb.frontend.common import (
     event_guard, inspect_validation as inspect, process_dynamic_input,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
-from cdedb.ml_type_aux import MailinglistCreate
+from cdedb.model.ml import MailinglistCreate
 
 
 class EventEventMixin(EventBaseFrontend):

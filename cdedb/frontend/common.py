@@ -99,7 +99,7 @@ from cdedb.enums import ENUMS_DICT
 from cdedb.filter import (
     JINJA_FILTERS, cdedbid_filter, enum_entries_filter, safe_filter, sanitize_None,
 )
-from cdedb.ml_type_aux import Mailinglist
+from cdedb.model.ml import Mailinglist
 
 Attachment = typing.TypedDict(
     "Attachment", {'path': PathLike, 'filename': str, 'mimetype': str,

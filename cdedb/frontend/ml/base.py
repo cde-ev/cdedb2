@@ -35,9 +35,9 @@ from cdedb.frontend.common import (
     periodic,
 )
 from cdedb.ml_type_aux import (
-    ADDITIONAL_TYPE_FIELDS, TYPE_MAP, Mailinglist, MailinglistCreate, MailinglistGroup,
-    get_type,
+    ADDITIONAL_TYPE_FIELDS, TYPE_MAP, MailinglistGroup, get_type,
 )
+from cdedb.model.ml import Mailinglist, MailinglistCreate
 
 
 class MlBaseFrontend(AbstractUserFrontend):

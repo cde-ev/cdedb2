@@ -35,7 +35,8 @@ from cdedb.common.query.log_filter import LogFilterEntityLogLike
 from cdedb.common.roles import ADMIN_KEYS, implying_realms
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
-from cdedb.ml_type_aux import Mailinglist, MLType, MLTypeLike
+from cdedb.ml_type_aux import MLType, MLTypeLike
+from cdedb.model.ml import Mailinglist
 
 SubStates = Collection[const.SubscriptionState]
 
