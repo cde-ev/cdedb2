@@ -1,26 +1,25 @@
-import dataclasses
+from dataclasses import InitVar, dataclass, field
 from typing import TYPE_CHECKING, Dict, List, Optional, Type
 
 from subman.machine import SubscriptionPolicy
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.common.fields import MAILINGLIST_FIELDS
 from cdedb.ml_type_aux import get_type
+from cdedb.model.common import CdEDataclass, metadata
 
 if TYPE_CHECKING:
-    from cdedb.common import CdEDBObject
     from cdedb.ml_type_aux import GeneralMailinglist
 
 SubscriptionPolicyMap = Dict[int, SubscriptionPolicy]
 
 
 # TODO move to a better place
-@dataclasses.dataclass
-class Mailinglist:
-    # _: dataclasses.KW_ONLY
-    id: int
-    title: str
-    local_part: str  # TODO restrict type
+@dataclass
+class Mailinglist(CdEDataclass):
+    id: int = field(metadata=metadata(vtypes.ID))
+    title: str = field(metadata=metadata(str))
+    local_part: str = field(metadata=metadata(vtypes.EmailLocalPart))
     domain: const.MailinglistDomain
     mod_policy: const.ModerationPolicy
     attachment_policy: const.AttachmentPolicy
@@ -38,7 +37,7 @@ class Mailinglist:
     # some mailinglist types need additional fields
     assembly_id: Optional[int] = None
     event_id: Optional[int] = None
-    registration_stati: List[const.RegistrationPartStati] = dataclasses.field(default_factory=list)
+    registration_stati: List[const.RegistrationPartStati] = field(default_factory=list)
 
     @property
     def address(self) -> str:
@@ -55,6 +54,5 @@ class Mailinglist:
     def ml_type_class(self) -> Type["GeneralMailinglist"]:
         return self._ml_type_class  # type: ignore
 
-    def to_database(self) -> "CdEDBObject":
-        """Generate a dict representation of the mailinglist to be saved to the db."""
-        return {key: getattr(self, key) for key in MAILINGLIST_FIELDS}
+    def __post_init__(self, _ml_type_class: Type["GeneralMailinglist"]) -> None:
+        self._ml_type_class = get_type(self.ml_type)  # type: ignore
