@@ -610,6 +610,10 @@ def affirm_validation(assertion: Type[T], value: Any, **kwargs: Any) -> T:
     return validate.validate_assert(assertion, value, ignore_warnings=True, **kwargs)
 
 
+def affirm_dataclass(assertion: Type[T], value: Any, **kwargs: Any) -> T:
+    return validate.validate_assert_dataclass(assertion, value, ignore_warnings=True, **kwargs)
+
+
 def affirm_validation_optional(
     assertion: Type[T], value: Any, **kwargs: Any
 ) -> Optional[T]:

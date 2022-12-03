@@ -32,7 +32,7 @@ from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access,
     cdedbid_filter as cdedbid, check_validation as check, csv_output, mailinglist_guard,
-    periodic,
+    periodic, check_dataclass
 )
 from cdedb.ml_type_aux import (
     ADDITIONAL_TYPE_FIELDS, TYPE_MAP, MailinglistGroup, get_type,
@@ -252,7 +252,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         """Make a new list."""
         data["moderators"] = moderators
         data['ml_type'] = ml_type
-        data = check(rs, Mailinglist, MailinglistCreate(**data), creation=True)
+        data = check(rs, vtypes.Mailinglist, data, creation=True)
         if rs.has_validation_errors():
             return self.create_mailinglist_form(rs, ml_type=ml_type)
         if not self.coreproxy.verify_ids(rs, moderators, is_archived=False):
@@ -477,10 +477,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         for key in set(data) - allowed:
             data[key] = ml.to_database()[key]
 
-        # required for constructing the new object, but will be ignored in the backend
-        data["moderators"] = ml.moderators
-        data["whitelist"] = ml.whitelist
-        data = check(rs, Mailinglist, Mailinglist(**data))
+        data = check(rs, vtypes.Mailinglist, data)
         if rs.has_validation_errors():
             return self.change_mailinglist_form(rs, mailinglist_id)
         assert data is not None
@@ -530,7 +527,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         new_type = get_type(data['ml_type'])
         if data['domain'] not in new_type.domains:
             data['domain'] = new_type.domains[0]
-        data = check(rs, Mailinglist, Mailinglist(**data))
+        data = check(rs, vtypes.Mailinglist, data)
         if rs.has_validation_errors():
             return self.change_ml_type_form(rs, mailinglist_id)
         assert data is not None

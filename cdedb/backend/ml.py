@@ -18,7 +18,7 @@ from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_array_validation as affirm_array,
     affirm_set_validation as affirm_set, affirm_validation as affirm, internal,
-    singularize,
+    singularize, affirm_dataclass
 )
 from cdedb.backend.event import EventBackend
 from cdedb.common import (
@@ -189,7 +189,7 @@ class MlBackend(AbstractBackend):
         :return: Tuple of personas whose interaction policies are in
             allowed_pols
         """
-        ml = affirm(Mailinglist, ml)
+        ml = affirm_dataclass(Mailinglist, ml)
         affirm_set(SubscriptionPolicy, allowed_pols)
 
         # persona_ids are validated inside get_personas
@@ -537,7 +537,7 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def set_mailinglist(self, rs: RequestState,
-                        data: Mailinglist) -> DefaultReturnCode:
+                        data: CdEDBObject) -> DefaultReturnCode:
         """Update some keys of a mailinglist.
 
         If the new mailinglist type does not allow unsubscription,
@@ -547,13 +547,14 @@ class MlBackend(AbstractBackend):
         made. Most attributes of the mailinglist may set by moderators, but for
         some you need admin privileges.
         """
-        data = affirm(Mailinglist, data)
+        data = affirm(vtypes.Mailinglist, data)
 
         ret = 1
         with Atomizer(rs):
-            current = self.get_mailinglist(rs, data.id)
+            current = self.get_mailinglist(rs, data['id'])
             current_data = current.to_database()
-            changes = {k: v for k, v in data.to_database().items()
+            mdata = {k: v for k, v in data.items() if k in MAILINGLIST_FIELDS}
+            changed = {k for k, v in mdata.items()
                        if k not in current_data or v != current_data[k]}
             is_admin = self.is_relevant_admin(rs, mailinglist=current)
             is_moderator = self.is_moderator(rs, current.id)
@@ -564,74 +565,82 @@ class MlBackend(AbstractBackend):
                 if not is_moderator:
                     raise PrivilegeError(n_(
                         "Need to be moderator or admin to change mailinglist."))
-                if not set(changes) <= MOD_ALLOWED_FIELDS:
+                if not changed <= MOD_ALLOWED_FIELDS:
                     raise PrivilegeError(n_("Need to be admin to change this."))
-                if not set(changes) <= RESTRICTED_MOD_ALLOWED_FIELDS and is_restricted:
+                if not changed <= RESTRICTED_MOD_ALLOWED_FIELDS and is_restricted:
                     raise PrivilegeError(n_(
                         "Restricted moderators are not allowed to change this."))
 
-            if len(changes) > 1:
-                changes["address"] = data.address
-                ret *= self.sql_update(rs, "ml.mailinglists", changes)
-                self.ml_log(rs, const.MlLogCodes.list_changed, data.id)
-            if 'ml_type' in changes:
+            if len(mdata) > 1:
+                mdata['address'] = self.validate_address(
+                    rs, dict(current_data, **mdata))
+                ret *= self.sql_update(rs, "ml.mailinglists", mdata)
+                self.ml_log(rs, const.MlLogCodes.list_changed, data['id'])
+            if 'ml_type' in changed:
                 # Check if privileges allow new state of the mailinglist.
-                if not self.is_relevant_admin(rs, mailinglist_id=data.id):
+                if not self.is_relevant_admin(rs, mailinglist_id=data['id']):
                     raise PrivilegeError("Not privileged to make this change.")
-                if not ml_type.TYPE_MAP[data.ml_type].allow_unsub:
+                if not ml_type.TYPE_MAP[data['ml_type']].allow_unsub:
                     # Delete all unsubscriptions for mandatory list.
                     query = ("DELETE FROM ml.subscription_states "
                              "WHERE mailinglist_id = %s "
                              "AND subscription_state = ANY(%s)")
                     # noinspection PyTypeChecker
-                    params = (data.id, self.subman.written_states -
+                    params = (data['id'], self.subman.written_states -
                               const.SubscriptionState.subscribing_states())
                     self.query_exec(rs, query, params)
                 ret *= self._ml_type_transition(
-                    rs, data.id, old_type=current.ml_type, new_type=data.ml_type)
+                    rs, data['id'], old_type=current.ml_type, new_type=data['ml_type'])
 
             # only full moderators and admins can make subscription state
             # related changes.
             if is_admin or not is_restricted:
-                ret *= self.write_subscription_states(rs, (data.id,))
+                ret *= self.write_subscription_states(rs, (data['id'],))
         return ret
 
     @access("ml")
     def create_mailinglist(self, rs: RequestState,
-                           ml: Mailinglist) -> DefaultReturnCode:
+                           data: CdEDBObject) -> DefaultReturnCode:
         """Make a new mailinglist.
 
         :returns: the id of the new mailinglist
         """
-        ml = affirm(Mailinglist, ml, creation=True)
-        if not self.is_relevant_admin(rs, mailinglist=ml):
+        data = affirm(vtypes.Mailinglist, data, creation=True)
+        data['address'] = self.validate_address(rs, data)
+        atype = ml_type.get_type(data["ml_type"])
+        if not atype.is_relevant_admin(rs.user):
             raise PrivilegeError("Not privileged to create mailinglist of this type.")
         with Atomizer(rs):
-            data = ml.to_database()
-            self.validate_address(rs, ml)
-            new_id = self.sql_insert(rs, "ml.mailinglists", data)
+            mdata = {k: v for k, v in data.items() if k in MAILINGLIST_FIELDS}
+            new_id = self.sql_insert(rs, "ml.mailinglists", mdata)
             self.ml_log(rs, const.MlLogCodes.list_created, new_id)
-            if ml.moderators:
-                self.add_moderators(rs, new_id, ml.moderators)
+            if data.get("moderators"):
+                self.add_moderators(rs, new_id, data["moderators"])
             self.write_subscription_states(rs, (new_id,))
         return new_id
 
     @access("ml")
-    def validate_address(self, rs: RequestState, ml: Mailinglist) -> None:
-        """Check the complete address for duplicates."""
+    def validate_address(self, rs: RequestState, data: CdEDBObject) -> str:
+        """Construct the complete address and check for duplicates.
+
+        :returns: the id of the new mailinglist
+        """
+        address = ml_type.get_full_address(data)
         addresses = self.list_mailinglist_addresses(rs)
         # address can either be free or taken by the current mailinglist
-        if ml.address in addresses.values() and ml.address != addresses.get(ml.id):
+        if (address in addresses.values()
+                and address != addresses.get(data.get('id', 0))):
             raise ValueError(n_("Non-unique mailinglist address"))
         # address is not allowed to clash with magic mailman lists
         subaddresses = ['admin', 'bounces', 'confirm', 'join', 'leave', 'owner',
                         'request', 'subscribe', 'unsubscribe']
         subaddresses = [f"-{x}@" for x in subaddresses]
         for sub in subaddresses:
-            if sub in ml.address:
+            if sub in address:
                 raise ValueError(
                     n_("Mailinglist address may not contain \"%(subaddress)s\"."),
                     {'subaddress': sub})
+        return address
 
     @access("ml")
     def delete_mailinglist_blockers(self, rs: RequestState,

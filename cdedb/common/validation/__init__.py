@@ -51,6 +51,7 @@ Note that some of this functions may do some additional work,
 f.e. ``check_validation`` registers all errors in the RequestState object.
 """
 
+import dataclasses
 import copy
 import distutils.util
 import functools
@@ -104,7 +105,7 @@ from cdedb.common.validation.types import *  # pylint: disable=wildcard-import,u
 from cdedb.config import LazyConfig
 from cdedb.database.constants import FieldAssociations, FieldDatatypes
 from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS
-from cdedb.model.ml import Mailinglist, MailinglistCreate
+import cdedb.model.ml as model_ml
 
 NoneType = type(None)
 
@@ -179,6 +180,19 @@ class ValidatorStorage(Dict[Type[Any], Callable[..., Any]]):
 
 _ALL_TYPED = ValidatorStorage()
 
+DATACLASS_TO_VALIDATORS = {
+    model_ml.Mailinglist: Mailinglist
+}
+
+
+def validate_assert_dataclass(type_: Type[T], value: Any, ignore_warnings: bool,
+                              **kwargs: Any) -> T:
+    if type_ not in DATACLASS_TO_VALIDATORS:
+        raise RuntimeError
+    validator = DATACLASS_TO_VALIDATORS[type_]
+    validated = validate_assert(validator, value, ignore_warnings=ignore_warnings, **kwargs)
+    return type_(**validated)
+
 
 def validate_assert(type_: Type[T], value: Any, ignore_warnings: bool,
                     **kwargs: Any) -> T:
@@ -209,6 +223,18 @@ def validate_assert_optional(type_: Type[T], value: Any, ignore_warnings: bool,
                              **kwargs: Any) -> Optional[T]:
     """Wrapper to avoid a lot of type-ignore statements due to a mypy bug."""
     return validate_assert(Optional[type_], value, ignore_warnings, **kwargs)  # type: ignore[arg-type]
+
+
+def validate_check_dataclass(type_: Type[T], value: Any, ignore_warnings: bool,
+                              **kwargs: Any) -> Tuple[Optional[T], List[Error]]:
+    if type_ not in DATACLASS_TO_VALIDATORS:
+        raise RuntimeError
+    validator = DATACLASS_TO_VALIDATORS[type_]
+    validated, errors = validate_check(validator, value, ignore_warnings=ignore_warnings, **kwargs)
+    if validated is None:
+        return None, errors
+    else:
+        return type_(**validated), errors
 
 
 def validate_check(type_: Type[T], value: Any, ignore_warnings: bool,
@@ -3895,14 +3921,21 @@ MAILINGLIST_READONLY_FIELDS = {
 
 @_add_typed_validator
 def _mailinglist(
-    val: Mailinglist, argname: str = "mailinglist", *,
-    creation: bool = False, **kwargs: Any
+    val: Any, argname: str = "mailinglist", *,
+    creation: bool = False, _allow_readonly: bool = False, **kwargs: Any
 ) -> Mailinglist:
     """
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
     """
-    atype = val.ml_type_class
+
+    val = _mapping(val, argname, **kwargs)
+
+    # TODO replace these with generic types
+    if "ml_type" not in val:
+        raise ValidationSummary(ValueError(
+            "ml_type", "Must provide ml_type for setting mailinglist."))
+    atype = ml_type.get_type(val["ml_type"])
     mandatory_validation_fields: TypeMapping = {
         'moderators': List[ID],
         **atype.mandatory_validation_fields,
@@ -3919,6 +3952,12 @@ def _mailinglist(
                            (optional_validation_fields, optional_fields)):
         for key, validator in source.items():
             target[key] = validator
+    # Optionally remove readonly attributes, take care to keep the original.
+    if _allow_readonly:
+        val = dict(copy.deepcopy(val))
+        for key in MAILINGLIST_READONLY_FIELDS:
+            if key in val:
+                del val[key]
 
     if creation:
         pass
@@ -3928,32 +3967,29 @@ def _mailinglist(
         optional_fields = dict(optional_fields, **mandatory_fields)
         mandatory_fields = {'id': ID}
 
-    data = {k: getattr(val, k) for k in dict(optional_fields, **mandatory_fields)}
-    data = _examine_dictionary_fields(
-        data, mandatory_fields, optional_fields, **kwargs)
+    val = _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, **kwargs)
 
-    if data and "moderators" in data and not data["moderators"]:
+    if val and "moderators" in val and not val["moderators"]:
         # TODO is this legitimate (postpone after other errors?)
         raise ValidationSummary(ValueError(
             "moderators", n_("Must not be empty.")))
 
     errs = ValidationSummary()
 
-    if "domain" not in data:
+    if "domain" not in val:
         errs.append(ValueError(
             "domain", "Must specify domain for setting mailinglist."))
     else:
-        atype = ml_type.get_type(data["ml_type"])
-        if data["domain"].value not in atype.domains:
+        atype = ml_type.get_type(val["ml_type"])
+        if val["domain"].value not in atype.domains:
             errs.append(ValueError("domain", n_(
                 "Invalid domain for this mailinglist type.")))
 
     if errs:
         raise errs
 
-    if creation:
-        return MailinglistCreate(**data)
-    return Mailinglist(**data)
+    return Mailinglist(val)
 
 
 SUBSCRIPTION_ID_FIELDS: TypeMapping = {
