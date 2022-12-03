@@ -51,8 +51,8 @@ Note that some of this functions may do some additional work,
 f.e. ``check_validation`` registers all errors in the RequestState object.
 """
 
-import dataclasses
 import copy
+import dataclasses
 import distutils.util
 import functools
 import io
@@ -81,6 +81,7 @@ from schulze_condorcet.util import as_vote_tuple
 
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
+import cdedb.model.ml as model_ml
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, EPSILON, EVENT_SCHEMA_VERSION, INFINITE_ENUM_MAGIC_NUMBER,
     CdEDBObjectMap, Error, InfiniteEnum, LineResolutions, asciificator,
@@ -105,7 +106,6 @@ from cdedb.common.validation.types import *  # pylint: disable=wildcard-import,u
 from cdedb.config import LazyConfig
 from cdedb.database.constants import FieldAssociations, FieldDatatypes
 from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS
-import cdedb.model.ml as model_ml
 
 NoneType = type(None)
 
@@ -189,8 +189,11 @@ def validate_assert_dataclass(type_: Type[T], value: Any, ignore_warnings: bool,
                               **kwargs: Any) -> T:
     if type_ not in DATACLASS_TO_VALIDATORS:
         raise RuntimeError
+    if not dataclasses.is_dataclass(value):
+        raise RuntimeError
     validator = DATACLASS_TO_VALIDATORS[type_]
-    validated = validate_assert(validator, value, ignore_warnings=ignore_warnings, **kwargs)
+    val = dataclasses.asdict(value)
+    validated = validate_assert(validator, val, ignore_warnings=ignore_warnings, **kwargs)
     return type_(**validated)
 
 
@@ -229,8 +232,11 @@ def validate_check_dataclass(type_: Type[T], value: Any, ignore_warnings: bool,
                               **kwargs: Any) -> Tuple[Optional[T], List[Error]]:
     if type_ not in DATACLASS_TO_VALIDATORS:
         raise RuntimeError
+    if not dataclasses.is_dataclass(value):
+        raise RuntimeError
     validator = DATACLASS_TO_VALIDATORS[type_]
-    validated, errors = validate_check(validator, value, ignore_warnings=ignore_warnings, **kwargs)
+    val = dataclasses.asdict(value)
+    validated, errors = validate_check(validator, val, ignore_warnings=ignore_warnings, **kwargs)
     if validated is None:
         return None, errors
     else:

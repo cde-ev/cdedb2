@@ -16,9 +16,9 @@ import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.common import (
-    AbstractBackend, access, affirm_array_validation as affirm_array,
+    AbstractBackend, access, affirm_array_validation as affirm_array, affirm_dataclass,
     affirm_set_validation as affirm_set, affirm_validation as affirm, internal,
-    singularize, affirm_dataclass
+    singularize,
 )
 from cdedb.backend.event import EventBackend
 from cdedb.common import (
