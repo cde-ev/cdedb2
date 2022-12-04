@@ -26,9 +26,7 @@ from cdedb.common import (
     RequestState, make_proxy, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
-from cdedb.common.fields import (
-    MAILINGLIST_FIELDS, MOD_ALLOWED_FIELDS, RESTRICTED_MOD_ALLOWED_FIELDS,
-)
+from cdedb.common.fields import MOD_ALLOWED_FIELDS, RESTRICTED_MOD_ALLOWED_FIELDS
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.query.log_filter import LogFilterEntityLogLike
@@ -375,12 +373,10 @@ class MlBackend(AbstractBackend):
         """
         mailinglist_ids = affirm_set(vtypes.ID, mailinglist_ids)
         with Atomizer(rs):
-            data = self.sql_select(rs, "ml.mailinglists", MAILINGLIST_FIELDS,
+            data = self.sql_select(rs, "ml.mailinglists", Mailinglist.database_fields(),
                                    mailinglist_ids)
             ret = {}
             for e in data:
-                # TODO
-                del e["address"]
                 e['ml_type'] = const.MailinglistTypes(e['ml_type'])
                 # e['ml_type_class'] = ml_type.TYPE_MAP[e['ml_type']]
                 e['domain'] = const.MailinglistDomain(e['domain'])
@@ -553,7 +549,8 @@ class MlBackend(AbstractBackend):
         with Atomizer(rs):
             current = self.get_mailinglist(rs, data['id'])
             current_data = current.to_database()
-            mdata = {k: v for k, v in data.items() if k in MAILINGLIST_FIELDS}
+            mdata = {k: v for k, v in data.items()
+                     if k in Mailinglist.database_fields()}
             changed = {k for k, v in mdata.items()
                        if k not in current_data or v != current_data[k]}
             is_admin = self.is_relevant_admin(rs, mailinglist=current)
@@ -611,7 +608,11 @@ class MlBackend(AbstractBackend):
         if not atype.is_relevant_admin(rs.user):
             raise PrivilegeError("Not privileged to create mailinglist of this type.")
         with Atomizer(rs):
-            mdata = {k: v for k, v in data.items() if k in MAILINGLIST_FIELDS}
+            mdata = {k: v for k, v in data.items()
+                     if k in Mailinglist.database_fields()}
+            # The address is a readonly property, but we want to save it into the
+            #  database for convenience.
+            mdata["address"] = data["address"]
             new_id = self.sql_insert(rs, "ml.mailinglists", mdata)
             self.ml_log(rs, const.MlLogCodes.list_created, new_id)
             if data.get("moderators"):

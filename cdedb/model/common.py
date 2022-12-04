@@ -99,3 +99,8 @@ class CdEDataclass:
     def request_fields(cls) -> List[str]:
         return [field.name for field in dataclasses.fields(cls)
                 if is_from_request(field)]
+
+    @classmethod
+    def database_fields(cls) -> List[str]:
+        return [field.name for field in dataclasses.fields(cls)
+                if is_to_database(field)]
