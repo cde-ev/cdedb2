@@ -3895,33 +3895,10 @@ def _serialized_event_questionnaire(
     return SerializedEventQuestionnaire(val)
 
 
-MAILINGLIST_COMMON_FIELDS: Mapping[str, Any] = {
-    'title': str,
-    'local_part': EmailLocalPart,
-    'domain': const.MailinglistDomain,
-    'description': Optional[str],
-    'mod_policy': const.ModerationPolicy,
-    'attachment_policy': const.AttachmentPolicy,
-    'ml_type': const.MailinglistTypes,
-    'subject_prefix': Optional[str],
-    'maxsize': Optional[ID],
-    'is_active': bool,
-    'notes': Optional[str],
-}
-
 MAILINGLIST_TYPE_DEPENDENT_FIELDS: Mapping[str, Any] = {
     'assembly_id': NoneType,
     'event_id': NoneType,
     'registration_stati': EmptyList,
-}
-
-ALL_MAILINGLIST_FIELDS = (MAILINGLIST_COMMON_FIELDS.keys() |
-                          ml_type.ADDITIONAL_TYPE_FIELDS.items())
-
-MAILINGLIST_READONLY_FIELDS = {
-    'address',
-    'domain_str',
-    'ml_type_class',
 }
 
 

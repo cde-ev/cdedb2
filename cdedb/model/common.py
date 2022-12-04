@@ -13,11 +13,13 @@ T = TypeVar("T")
 
 def field(*, default=dataclasses.MISSING, default_factory=dataclasses.MISSING,
           init: bool = True, repr: bool = True, hash: Optional[bool] = None,
-          compare: bool = True, to_database: bool = True, is_optional: bool = False) -> Any:
+          compare: bool = True, to_database: bool = True, is_optional: bool = False,
+          from_request: bool = True) -> Any:
     metadata = {
         "cdedb": {
             "is_optional": is_optional,
             "to_database": to_database,
+            "from_request": from_request
         }
     }
     return dataclasses.field(
@@ -61,6 +63,16 @@ def is_to_database(field: dataclasses.Field[T]) -> bool:
     return field.metadata["cdedb"]["to_database"]
 
 
+def is_from_request(field: dataclasses.Field[T]) -> bool:
+    """Is this field taken via @REQUEST(DATA) decorator?"""
+    if (field.metadata is None
+            or "cdedb" not in field.metadata
+            or "from_request" not in field.metadata["cdedb"]):
+        # TODO which way?
+        # raise RuntimeError(field)
+        return True
+    return field.metadata["cdedb"]["from_request"]
+
 
 @dataclasses.dataclass
 class CdEDataclass:
@@ -82,3 +94,8 @@ class CdEDataclass:
             ret.update({name: get_validator(field) for name, field in fields.items()
                        if is_optional_field(field)})
         return ret
+
+    @classmethod
+    def request_fields(cls) -> List[str]:
+        return [field.name for field in dataclasses.fields(cls)
+                if is_from_request(field)]

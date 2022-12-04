@@ -16,7 +16,7 @@ SubscriptionPolicyMap = Dict[int, SubscriptionPolicy]
 
 @dataclass
 class Mailinglist(CdEDataclass):
-    id: vtypes.ID
+    id: vtypes.ID = field(from_request=False)
     title: str
     local_part: vtypes.EmailLocalPart
     domain: const.MailinglistDomain
@@ -25,8 +25,8 @@ class Mailinglist(CdEDataclass):
     ml_type: const.MailinglistTypes
     is_active: bool
 
-    moderators: List[vtypes.ID] = field(to_database=False)
-    whitelist: List[vtypes.Email] = field(to_database=False, is_optional=True)
+    moderators: List[vtypes.ID] = field(to_database=False, from_request=False)
+    whitelist: List[vtypes.Email] = field(to_database=False, is_optional=True, from_request=False)
 
     description: Optional[str] = None
     subject_prefix: Optional[str] = None
