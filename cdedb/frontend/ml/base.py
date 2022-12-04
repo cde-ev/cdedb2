@@ -189,11 +189,12 @@ class MlBaseFrontend(AbstractUserFrontend):
         subs = self.mlproxy.get_many_subscription_states(
             rs, mailinglist_ids=mailinglists, states=sub_states)
         mailman = self.get_mailman()
-        additional_infos: Dict[int, Dict[str, Any]] = {}
-        for ml_id, ml in mailinglist_infos.items():
-            additional_infos[ml_id] = {}
-            additional_infos[ml_id]['num_subscribers'] = len(subs[ml_id])
-            additional_infos[ml_id]['held_mails'] = mailman.get_held_message_count(ml)
+        additional_infos = {
+            ml_id: {
+                "num_subscribers": len(subs[ml_id]),
+                "held_mails": mailman.get_held_message_count(ml)
+            } for ml_id, ml in mailinglist_infos.items()
+        }
 
         return self.render(rs, endpoint, {
             'groups': MailinglistGroup,

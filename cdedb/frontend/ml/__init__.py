@@ -41,13 +41,14 @@ class MlFrontend(MlMailmanMixin, MlBaseFrontend):
                            action: str) -> Response:
         """Helper to take care of the communication with mailman."""
         dblist = rs.ambience['mailinglist']
+        assert isinstance(dblist, Mailinglist)
         if (self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or (
                 self.conf["CDEDB_DEV"] and not self.conf["CDEDB_TEST"])):  # pragma: no cover
             self.logger.info("Skipping mailman request in dev/offline mode.")
             rs.notify('info', n_("Skipping mailman request in dev/offline mode."))
         else:
             mailman = self.get_mailman()
-            mmlist = mailman.get_list_safe(dblist['address'])
+            mmlist = mailman.get_list_safe(dblist.address)
             if mmlist is None:
                 rs.notify("error", n_("List unavailable."))
                 return self.redirect(rs, "ml/message_moderation")
@@ -69,7 +70,7 @@ class MlFrontend(MlMailmanMixin, MlBaseFrontend):
                             f'Spam score: {headers.get("X-Spam-Score", "—")}')
                         self.mlproxy.log_moderation(
                             rs, self._moderate_action_logcodes[action],
-                            dblist['id'], change_note=change_note)
+                            dblist.id, change_note=change_note)
                     elif response.status_code // 100 == 4:
                         warning += 1
                     else:
@@ -117,10 +118,11 @@ class MlFrontend(MlMailmanMixin, MlBaseFrontend):
         if rs.has_validation_errors():
             return self.message_moderation_form(rs, mailinglist_id)
         dblist = rs.ambience['mailinglist']
+        assert isinstance(dblist, Mailinglist)
 
         # Add to whitelist if requested
         if action == "whitelist":
-            self.mlproxy.add_whitelist_entry(rs, dblist['id'], sender)
+            self.mlproxy.add_whitelist_entry(rs, dblist.id, sender)
             action = "accept"
 
         return self._moderate_messages(rs, [request_id], action)

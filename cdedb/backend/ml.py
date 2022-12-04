@@ -162,13 +162,13 @@ class MlBackend(AbstractBackend):
             mailinglist = self.get_mailinglist(rs, mailinglist_id)
 
         persona_id = affirm(vtypes.ID, persona_id)
-        assert mailinglist is not None
+        mailinglist = affirm_dataclass(Mailinglist, mailinglist)
 
         if not (rs.user.persona_id == persona_id
                 or self.may_manage(rs, mailinglist.id, allow_restricted=False)):
             raise PrivilegeError(n_("Not privileged."))
 
-        return self.get_ml_type(rs, mailinglist.id).get_subscription_policy(
+        return mailinglist.ml_type_class.get_subscription_policy(
             rs, self.backends, mailinglist, persona_id)
 
     @access("ml")
@@ -192,8 +192,7 @@ class MlBackend(AbstractBackend):
 
         # persona_ids are validated inside get_personas
         persona_ids = tuple(e['id'] for e in data)
-        atype = ml_type.get_type(ml.ml_type)
-        persona_policies = atype.get_subscription_policies(
+        persona_policies = ml.ml_type_class.get_subscription_policies(
             rs, self.backends, ml, persona_ids)
         return tuple(e for e in data
                      if persona_policies[e['id']] in allowed_pols)
@@ -204,8 +203,9 @@ class MlBackend(AbstractBackend):
 
         :type: bool
         """
+        ml = affirm_dataclass(Mailinglist, ml)
         is_subscribed = self.is_subscribed(rs, rs.user.persona_id, ml.id)
-        return (is_subscribed or self.get_ml_type(rs, ml.id).may_view(rs)
+        return (is_subscribed or ml.ml_type_class.may_view(rs)
                 or ml.id in rs.user.moderator)
 
     @access("persona")

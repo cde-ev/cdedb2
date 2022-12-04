@@ -141,12 +141,13 @@ class CoreBaseFrontend(AbstractFrontend):
                 for ml_id, ml in mailinglists.items():
                     requests = self.mlproxy.get_subscription_states(
                         rs, ml_id, states=(sub_request,))
-                    moderator[ml_id] = {}
-                    moderator[ml_id]['requests'] = len(requests)
-                    moderator[ml_id]['held_mails'] = mailman.get_held_message_count(ml)
-                    moderator[ml_id]['id'] = ml.id
-                    moderator[ml_id]['title'] = ml.title
-                    moderator[ml_id]['is_active'] = ml.is_active
+                    moderator[ml_id] = {
+                        "id": ml.id,
+                        "title": ml.title,
+                        "is_active": ml.is_active,
+                        "request": len(requests),
+                        "held_mails": mailman.get_held_message_count(ml),
+                    }
                 dashboard['moderator'] = {k: v for k, v in moderator.items()
                                           if v['is_active']}
             # visible and open events
