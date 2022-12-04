@@ -1,4 +1,4 @@
-from dataclasses import InitVar, dataclass, field
+from dataclasses import InitVar, dataclass
 from typing import TYPE_CHECKING, Dict, List, Optional, Type
 
 from subman.machine import SubscriptionPolicy
@@ -6,7 +6,7 @@ from subman.machine import SubscriptionPolicy
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.ml_type_aux import get_type
-from cdedb.model.common import CdEDataclass, metadata
+from cdedb.model.common import CdEDataclass, field
 
 if TYPE_CHECKING:
     from cdedb.ml_type_aux import GeneralMailinglist
@@ -14,29 +14,28 @@ if TYPE_CHECKING:
 SubscriptionPolicyMap = Dict[int, SubscriptionPolicy]
 
 
-# TODO move to a better place
 @dataclass
 class Mailinglist(CdEDataclass):
-    id: int = field(metadata=metadata(vtypes.ID))
-    title: str = field(metadata=metadata(str))
-    local_part: str = field(metadata=metadata(vtypes.EmailLocalPart))
+    id: vtypes.ID
+    title: str
+    local_part: vtypes.EmailLocalPart
     domain: const.MailinglistDomain
     mod_policy: const.ModerationPolicy
     attachment_policy: const.AttachmentPolicy
     ml_type: const.MailinglistTypes
     is_active: bool
 
-    moderators: List[int]
-    whitelist: List[str]  # TODO: restrict type
+    moderators: List[vtypes.ID] = field(to_database=False)
+    whitelist: List[vtypes.Email] = field(to_database=False, is_optional=True)
 
     description: Optional[str] = None
     subject_prefix: Optional[str] = None
-    maxsize: Optional[int] = None  # TODO: restrict type
+    maxsize: Optional[vtypes.PositiveInt] = None
     notes: Optional[str] = None
 
     # some mailinglist types need additional fields
-    assembly_id: Optional[int] = None
-    event_id: Optional[int] = None
+    assembly_id: Optional[vtypes.ID] = None
+    event_id: Optional[vtypes.ID] = None
     registration_stati: List[const.RegistrationPartStati] = field(default_factory=list)
 
     @property
@@ -52,7 +51,7 @@ class Mailinglist(CdEDataclass):
 
     @property
     def ml_type_class(self) -> Type["GeneralMailinglist"]:
-        return self._ml_type_class  # type: ignore
+        return self._ml_type_class  # type: ignore[attr-defined]
 
     def __post_init__(self, _ml_type_class: Type["GeneralMailinglist"]) -> None:
-        self._ml_type_class = get_type(self.ml_type)  # type: ignore
+        self._ml_type_class = get_type(self.ml_type)  # type: ignore[attr-defined]

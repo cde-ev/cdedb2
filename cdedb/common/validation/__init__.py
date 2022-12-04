@@ -3909,7 +3909,7 @@ MAILINGLIST_COMMON_FIELDS: Mapping[str, Any] = {
     'notes': Optional[str],
 }
 
-MAILINGLIST_OPTIONAL_FIELDS: Mapping[str, Any] = {
+MAILINGLIST_TYPE_DEPENDENT_FIELDS: Mapping[str, Any] = {
     'assembly_id': NoneType,
     'event_id': NoneType,
     'registration_stati': EmptyList,
@@ -3942,36 +3942,38 @@ def _mailinglist(
         raise ValidationSummary(ValueError(
             "ml_type", "Must provide ml_type for setting mailinglist."))
     atype = ml_type.get_type(val["ml_type"])
-    mandatory_validation_fields: TypeMapping = {
-        'moderators': List[ID],
-        **atype.mandatory_validation_fields,
-    }
-    optional_validation_fields: TypeMapping = {
-        'whitelist': List[Email],
-        **atype.optional_validation_fields,
-    }
-    mandatory_fields = {**MAILINGLIST_COMMON_FIELDS}
-    optional_fields = {**MAILINGLIST_OPTIONAL_FIELDS}
 
-    # iterable_fields = []
-    for source, target in ((mandatory_validation_fields, mandatory_fields),
-                           (optional_validation_fields, optional_fields)):
-        for key, validator in source.items():
-            target[key] = validator
-    # Optionally remove readonly attributes, take care to keep the original.
-    if _allow_readonly:
-        val = dict(copy.deepcopy(val))
-        for key in MAILINGLIST_READONLY_FIELDS:
-            if key in val:
-                del val[key]
+    mandatory_fields = model_ml.Mailinglist.validation_fields(mandatory=True)
+    optional_fields = model_ml.Mailinglist.validation_fields(optional=True)
+
+    # replace the type specific fields with their absence defaults
+    mandatory_type_fields = atype.mandatory_validation_fields.keys()
+    optional_type_fields = atype.optional_validation_fields.keys()
+    type_fields = {*mandatory_type_fields, *optional_type_fields}
+    for name in MAILINGLIST_TYPE_DEPENDENT_FIELDS:
+        if name in mandatory_type_fields and name in mandatory_fields:
+            pass
+        elif name in mandatory_type_fields and name in optional_fields:
+            mandatory_fields[name] = optional_fields[name]
+            del optional_fields[name]
+        elif name in optional_type_fields and name in mandatory_fields:
+            optional_fields[name] = mandatory_fields[name]
+            del mandatory_fields[name]
+        elif name in optional_type_fields and name in optional_fields:
+            pass
+        elif name not in type_fields:
+            if name in mandatory_fields:
+                mandatory_fields[name] = MAILINGLIST_TYPE_DEPENDENT_FIELDS[name]
+            if name in optional_fields:
+                optional_fields[name] = MAILINGLIST_TYPE_DEPENDENT_FIELDS[name]
+        else:
+            raise RuntimeError("Impossible")
 
     if creation:
-        pass
+        del mandatory_fields["id"]
     else:
-        # The order is important here, so that mandatory fields take
-        # precedence.
-        optional_fields = dict(optional_fields, **mandatory_fields)
-        mandatory_fields = {'id': ID}
+        optional_fields.update(mandatory_fields)
+        mandatory_fields = {"id": mandatory_fields["id"]}
 
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
