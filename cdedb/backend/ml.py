@@ -626,7 +626,7 @@ class MlBackend(AbstractBackend):
 
         :returns: the id of the new mailinglist
         """
-        address = ml_type.get_full_address(data)
+        address = Mailinglist.get_address(data)
         addresses = self.list_mailinglist_addresses(rs)
         # address can either be free or taken by the current mailinglist
         if (address in addresses.values()

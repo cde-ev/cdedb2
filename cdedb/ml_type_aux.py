@@ -39,16 +39,6 @@ class BackendContainer:
         self.assembly = cast("AssemblyBackend", assembly)
 
 
-def get_full_address(val: "CdEDBObject") -> vtypes.Email:
-    """Construct the full address of a mailinglist."""
-    if isinstance(val, dict):
-        return val['local_part'] + '@' + MailinglistDomain(
-            val['domain']).get_domain()
-    else:
-        raise ValueError(n_("Cannot determine full address for %(input)s."),
-                         {'input': val})
-
-
 class MailinglistGroup(enum.IntEnum):
     """To be used in `MlType.sortkey` to group similar mailinglists together."""
     public = 1

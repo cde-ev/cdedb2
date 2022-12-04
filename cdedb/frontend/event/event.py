@@ -37,6 +37,7 @@ from cdedb.frontend.common import (
     event_guard, inspect_validation as inspect, process_dynamic_input,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
+from cdedb.model.ml import Mailinglist
 
 
 class EventEventMixin(EventBaseFrontend):
@@ -98,7 +99,7 @@ class EventEventMixin(EventBaseFrontend):
         if "ml" in rs.user.roles:
             ml_data = self._get_mailinglist_setter(rs, rs.ambience['event'])
             params['participant_list'] = self.mlproxy.verify_existence(
-                rs, ml_type.get_full_address(ml_data))
+                rs, Mailinglist.get_address(ml_data))
         if event_id in rs.user.orga or self.is_admin(rs):
             params['institutions'] = self.pasteventproxy.list_institutions(rs)
             params['minor_form_present'] = (
@@ -248,7 +249,7 @@ class EventEventMixin(EventBaseFrontend):
             return self.redirect(rs, "event/show_event")
 
         ml_data = self._get_mailinglist_setter(rs, rs.ambience['event'], orgalist)
-        ml_address = ml_type.get_full_address(ml_data)
+        ml_address = Mailinglist.get_address(ml_data)
         if not self.mlproxy.verify_existence(rs, ml_address):
             code = self.mlproxy.create_mailinglist(rs, ml_data)
             msg = (n_("Orga mailinglist created.") if orgalist
@@ -901,7 +902,7 @@ class EventEventMixin(EventBaseFrontend):
         orga_ml_data = None
         if create_orga_list:
             orga_ml_data = self._get_mailinglist_setter(rs, data, orgalist=True)
-            orga_ml_address = ml_type.get_full_address(orga_ml_data)
+            orga_ml_address = Mailinglist.get_address(orga_ml_data)
             data['orga_address'] = orga_ml_address
             if self.mlproxy.verify_existence(rs, orga_ml_address):
                 orga_ml_data = None
@@ -917,7 +918,7 @@ class EventEventMixin(EventBaseFrontend):
             rs.notify_return_code(code, success=n_("Orga mailinglist created."))
         if create_participant_list:
             participant_ml_data = self._get_mailinglist_setter(rs, data)
-            participant_ml_address = ml_type.get_full_address(participant_ml_data)
+            participant_ml_address = Mailinglist.get_address(participant_ml_data)
             if not self.mlproxy.verify_existence(rs, participant_ml_address):
                 participant_ml_data['event_id'] = new_id
                 code = self.mlproxy.create_mailinglist(rs, participant_ml_data)

@@ -45,6 +45,7 @@ from cdedb.frontend.common import (
     assembly_guard, cdedburl, check_validation as check, drow_name, inspect_validation,
     periodic, process_dynamic_input, request_extractor,
 )
+from cdedb.model.ml import Mailinglist
 
 #: Magic value to signal abstention during _classical_ voting.
 #: This can not occur as a shortname since it contains forbidden characters.
@@ -205,7 +206,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         if "ml" in rs.user.roles:
             ml_data = self._get_mailinglist_setter(rs, rs.ambience['assembly'])
             params['attendee_list_exists'] = self.mlproxy.verify_existence(
-                rs, ml_type.get_full_address(ml_data))
+                rs, Mailinglist.get_address(ml_data))
 
         return self.render(rs, "show_assembly", params)
 
@@ -345,7 +346,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.redirect(rs, "assembly/show_assembly")
 
         ml = self._get_mailinglist_setter(rs, rs.ambience['assembly'], presider_list)
-        ml_address = ml_type.get_full_address(ml)
+        ml_address = Mailinglist.get_address(ml)
         if not self.mlproxy.verify_existence(rs, ml_address):
             new_id = self.mlproxy.create_mailinglist(rs, ml)
             msg = (n_("Presider mailinglist created.") if presider_list
@@ -380,7 +381,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 rs.notify("info", n_("Given presider address ignored in favor of"
                                      " newly created mailinglist."))
             presider_ml_data = self._get_mailinglist_setter(rs, data, presider=True)
-            presider_address = ml_type.get_full_address(presider_ml_data)
+            presider_address = Mailinglist.get_address(presider_ml_data)
             data["presider_address"] = presider_address
             if self.mlproxy.verify_existence(rs, presider_address):
                 presider_ml_data = None
@@ -416,7 +417,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             rs.notify_return_code(code, success=n_("Presider mailinglist created."))
         if create_attendee_list:
             attendee_ml_data = self._get_mailinglist_setter(rs, data)
-            attendee_address = ml_type.get_full_address(attendee_ml_data)
+            attendee_address = Mailinglist.get_address(attendee_ml_data)
             if not self.mlproxy.verify_existence(rs, attendee_address):
                 attendee_ml_data['assembly_id'] = new_id
                 code = self.mlproxy.create_mailinglist(rs, attendee_ml_data)

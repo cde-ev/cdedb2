@@ -1,10 +1,11 @@
 from dataclasses import InitVar, dataclass
-from typing import TYPE_CHECKING, Dict, List, Optional, Type
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type
 
 from subman.machine import SubscriptionPolicy
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+from cdedb.common.n_ import n_
 from cdedb.ml_type_aux import get_type
 from cdedb.model.common import CdEDataclass, field
 
@@ -12,6 +13,7 @@ if TYPE_CHECKING:
     from cdedb.ml_type_aux import GeneralMailinglist
 
 SubscriptionPolicyMap = Dict[int, SubscriptionPolicy]
+CdEDBObject = Dict[str, Any]
 
 
 @dataclass
@@ -39,8 +41,17 @@ class Mailinglist(CdEDataclass):
     registration_stati: List[const.RegistrationPartStati] = field(default_factory=list)
 
     @property
-    def address(self) -> str:
-        return f"{self.local_part}@{self.domain.get_domain()}"
+    def address(self) -> vtypes.Email:
+        data = {"local_part": self.local_part, "domain": self.domain}
+        return self.get_address(data)
+
+    @classmethod
+    def get_address(cls, data: CdEDBObject) -> vtypes.Email:
+        if "local_part" not in data or "domain" not in data:
+            raise ValueError(n_("Cannot determine full address for %(input)s."),
+                         {'input': data})
+        domain = const.MailinglistDomain(data["domain"]).get_domain()
+        return vtypes.Email(f"{data['local_part']}@{domain}")
 
     @property
     def domain_str(self) -> str:
