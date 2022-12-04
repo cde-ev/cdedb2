@@ -3940,9 +3940,12 @@ def _mailinglist(
             pass
         elif name not in type_fields:
             if name in mandatory_fields:
-                mandatory_fields[name] = MAILINGLIST_TYPE_DEPENDENT_FIELDS[name]
-            if name in optional_fields:
+                del mandatory_fields[name]
                 optional_fields[name] = MAILINGLIST_TYPE_DEPENDENT_FIELDS[name]
+            elif name in optional_fields:
+                optional_fields[name] = MAILINGLIST_TYPE_DEPENDENT_FIELDS[name]
+            else:
+                raise RuntimeError("Impossible")
         else:
             raise RuntimeError("Impossible")
 
