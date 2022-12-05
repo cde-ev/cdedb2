@@ -81,9 +81,10 @@ class CdEDataclass:
 
     def to_database(self) -> "CdEDBObject":
         """Generate a dict representation of this entity to be saved to the database."""
-        fields = dataclasses.fields(self)
-        return {field.name: getattr(self, field.name)
-                for field in fields if is_to_database(field)}
+        database_field_names = {field.name for field in dataclasses.fields(self)
+                                if is_to_database(field)}
+        return {key: value for key, value in vars(self).items()
+                if key in database_field_names}
 
     @classmethod
     def validation_fields(cls, *, mandatory: bool = False, optional: bool = False) -> Dict[str, Type[T]]:
