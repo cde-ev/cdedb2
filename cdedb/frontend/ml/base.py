@@ -29,8 +29,8 @@ from cdedb.common.validation import PERSONA_FULL_CREATION, filter_none
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access,
-    cdedbid_filter as cdedbid, check_dataclass, check_validation as check, csv_output,
-    mailinglist_guard, periodic,
+    cdedbid_filter as cdedbid, check_validation as check, csv_output, mailinglist_guard,
+    periodic,
 )
 from cdedb.ml_type_aux import (
     ADDITIONAL_TYPE_FIELDS, TYPE_MAP, MailinglistGroup, get_type,

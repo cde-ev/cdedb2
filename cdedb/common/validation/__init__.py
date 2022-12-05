@@ -228,21 +228,6 @@ def validate_assert_optional(type_: Type[T], value: Any, ignore_warnings: bool,
     return validate_assert(Optional[type_], value, ignore_warnings, **kwargs)  # type: ignore[arg-type]
 
 
-def validate_check_dataclass(type_: Type[T], value: Any, ignore_warnings: bool,
-                              **kwargs: Any) -> Tuple[Optional[T], List[Error]]:
-    if type_ not in DATACLASS_TO_VALIDATORS:
-        raise RuntimeError
-    if not dataclasses.is_dataclass(value):
-        raise RuntimeError
-    validator = DATACLASS_TO_VALIDATORS[type_]
-    val = dataclasses.asdict(value)
-    validated, errors = validate_check(validator, val, ignore_warnings=ignore_warnings, **kwargs)
-    if validated is None:
-        return None, errors
-    else:
-        return type_(**validated), errors
-
-
 def validate_check(type_: Type[T], value: Any, ignore_warnings: bool,
                    field_prefix: str = "", field_postfix: str = "", **kwargs: Any
                    ) -> Tuple[Optional[T], List[Error]]:
