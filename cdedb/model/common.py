@@ -4,6 +4,8 @@ from typing import (
     get_origin,
 )
 
+import cdedb.common.validation.types as vtypes
+
 if TYPE_CHECKING:
     from cdedb.common import CdEDBObject
 
@@ -13,13 +15,12 @@ T = TypeVar("T")
 
 def field(*, default=dataclasses.MISSING, default_factory=dataclasses.MISSING,
           init: bool = True, repr: bool = True, hash: Optional[bool] = None,
-          compare: bool = True, to_database: bool = True, is_optional: bool = False,
-          from_request: bool = True) -> Any:
+          compare: bool = True, to_database: bool = True, is_optional: bool = False
+          ) -> Any:
     metadata = {
         "cdedb": {
             "is_optional": is_optional,
             "to_database": to_database,
-            "from_request": from_request
         }
     }
     return dataclasses.field(
@@ -76,6 +77,8 @@ def is_from_request(field: dataclasses.Field[T]) -> bool:
 
 @dataclasses.dataclass
 class CdEDataclass:
+    id: vtypes.ID = field()
+
     def to_database(self) -> "CdEDBObject":
         """Generate a dict representation of this entity to be saved to the database."""
         fields = dataclasses.fields(self)
@@ -97,8 +100,11 @@ class CdEDataclass:
 
     @classmethod
     def request_fields(cls) -> List[str]:
-        return [field.name for field in dataclasses.fields(cls)
-                if is_from_request(field)]
+        # TODO Think this over when tackling more complex objects. It is easier and more
+        #  accessible to add than to remove things though.
+        request_fields = cls.database_fields()
+        request_fields.remove("id")
+        return request_fields
 
     @classmethod
     def database_fields(cls) -> List[str]:
