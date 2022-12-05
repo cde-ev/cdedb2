@@ -930,6 +930,7 @@ def _list_of(
         # TODO use escaped_split?
         # Skip emtpy entries which can be produced by JavaScript.
         val = [v for v in val.split(",") if v]
+    # TODO raise ValueError if val is string and _parse_csv is False?
     val = _iterable(val, argname, **kwargs)
     vals: List[T] = []
     errs = ValidationSummary()
@@ -3934,10 +3935,12 @@ def _mailinglist(
         else:
             raise RuntimeError("Impossible")
 
+    # TODO maybe never include the id as validation field?
     if creation:
         del mandatory_fields["id"]
     else:
         optional_fields.update(mandatory_fields)
+        del optional_fields["id"]
         mandatory_fields = {"id": mandatory_fields["id"]}
 
     val = _examine_dictionary_fields(

@@ -1,6 +1,6 @@
 import dataclasses
 from typing import (
-    TYPE_CHECKING, Any, Dict, List, Optional, Type, TypeVar, Union, get_args,
+    TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type, TypeVar, Union, get_args,
     get_origin,
 )
 
@@ -107,6 +107,24 @@ class CdEDataclass:
         request_fields = cls.database_fields()
         request_fields.remove("id")
         return request_fields
+
+    @classmethod
+    def requestdict_fields(cls) -> List[Tuple[str, str]]:
+        # Normally, the type of @REQUESTdata fields is inferred from the type annotation
+        # of the respective frontend function.
+        # In contrast, the types of @REQUESTdatadict are either "str" or "[str]" and not
+        # inferred, default is "str".
+        # So, we need to pass the information if a variable is of list type explicitly.
+        # However, passing explicit types for @REQUESTdata will overwrite the type
+        # annotation which feels undesired.
+        # TODO this is not nice
+        request_fields = cls.database_fields()
+        request_fields.remove("id")
+        fields = [field for field in dataclasses.fields(cls)
+                  if field.name in request_fields]
+        # TODO whats about tuples, sets etc?
+        return [(field.name, "[str]") if get_origin(field.type) is list
+                else (field.name, "str") for field in fields]
 
     @classmethod
     def database_fields(cls) -> List[str]:
