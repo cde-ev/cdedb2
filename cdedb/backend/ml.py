@@ -35,7 +35,7 @@ from cdedb.common.query.log_filter import LogFilterEntityLogLike
 from cdedb.common.roles import ADMIN_KEYS, implying_realms
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
-from cdedb.ml_type_aux import MLType, MLTypeLike
+from cdedb.ml_type_aux import MLType
 
 SubStates = Collection[const.SubscriptionState]
 
@@ -515,8 +515,8 @@ class MlBackend(AbstractBackend):
         return ret
 
     def _ml_type_transition(self, rs: RequestState, mailinglist_id: int,
-                            old_type: MLTypeLike,
-                            new_type: MLTypeLike) -> DefaultReturnCode:
+                            old_type: const.MailinglistTypes,
+                            new_type: const.MailinglistTypes) -> DefaultReturnCode:
         old_type = ml_type.get_type(old_type)
         new_type = ml_type.get_type(new_type)
         # implicitly atomized context.
