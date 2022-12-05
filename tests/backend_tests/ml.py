@@ -11,8 +11,8 @@ import cdedb.ml_type_aux as ml_type
 from cdedb.common import CdEDBObject, RequestState, nearly_now
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.database.constants import SubscriptionState as SS
-from tests.common import USER_DICT, BackendTest, as_users, prepsql
 from cdedb.model.ml import Mailinglist
+from tests.common import USER_DICT, BackendTest, as_users, prepsql
 
 
 class TestMlBackend(BackendTest):

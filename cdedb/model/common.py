@@ -13,6 +13,7 @@ NoneType = type(None)
 T = TypeVar("T")
 
 
+# TODO add proper overloading to soothe mypy
 def field(*, default=dataclasses.MISSING, default_factory=dataclasses.MISSING,
           init: bool = True, repr: bool = True, hash: Optional[bool] = None,
           compare: bool = True, to_database: bool = True, is_optional: bool = False
