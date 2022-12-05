@@ -135,17 +135,16 @@ class CoreBaseFrontend(AbstractFrontend):
             moderator_info = self.mlproxy.moderator_info(rs, rs.user.persona_id)
             if moderator_info:
                 mailinglists = self.mlproxy.get_mailinglists(rs, moderator_info)
-                sub_request = const.SubscriptionState.pending
                 mailman = self.get_mailman()
                 moderator: Dict[int, Dict[str, Any]] = {}
                 for ml_id, ml in mailinglists.items():
                     requests = self.mlproxy.get_subscription_states(
-                        rs, ml_id, states=(sub_request,))
+                        rs, ml_id, states=(const.SubscriptionState.pending,))
                     moderator[ml_id] = {
                         "id": ml.id,
                         "title": ml.title,
                         "is_active": ml.is_active,
-                        "request": len(requests),
+                        "requests": len(requests),
                         "held_mails": mailman.get_held_message_count(ml),
                     }
                 dashboard['moderator'] = {k: v for k, v in moderator.items()
