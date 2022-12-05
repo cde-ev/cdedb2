@@ -196,10 +196,9 @@ class TestMlBackend(BackendTest):
         self.assertEqual(expectation,
                          self.ml.list_mailinglists(self.key, active_only=False))
         expectation = {
-            3: {'local_part': 'witz',
+            3: Mailinglist(**{
+                'local_part': 'witz',
                 'domain': const.MailinglistDomain.lists,
-                'domain_str': 'lists.cde-ev.de',
-                'address': 'witz@lists.cde-ev.de',
                 'description': "Einer geht noch ...",
                 'assembly_id': None,
                 'attachment_policy': const.AttachmentPolicy.pdf_only.value,
@@ -208,18 +207,16 @@ class TestMlBackend(BackendTest):
                 'is_active': True,
                 'maxsize': 2048,
                 'ml_type': const.MailinglistTypes.general_opt_in.value,
-                'ml_type_class': ml_type.GeneralOptInMailinglist,
                 'mod_policy': const.ModerationPolicy.non_subscribers.value,
                 'moderators': {2, 3, 10},
                 'registration_stati': [],
                 'subject_prefix': 'witz',
                 'title': 'Witz des Tages',
                 'notes': None,
-                'whitelist': set()},
-            5: {'local_part': 'kongress',
+                'whitelist': set()}),
+            5: Mailinglist(**{
+                'local_part': 'kongress',
                 'domain': const.MailinglistDomain.lists,
-                'domain_str': 'lists.cde-ev.de',
-                'address': 'kongress@lists.cde-ev.de',
                 'description': None,
                 'assembly_id': 1,
                 'attachment_policy': const.AttachmentPolicy.pdf_only.value,
@@ -228,18 +225,16 @@ class TestMlBackend(BackendTest):
                 'is_active': True,
                 'maxsize': 1024,
                 'ml_type': const.MailinglistTypes.assembly_associated.value,
-                'ml_type_class': ml_type.AssemblyAssociatedMailinglist,
                 'mod_policy': const.ModerationPolicy.non_subscribers.value,
                 'moderators': {2, 23},
                 'registration_stati': [],
                 'subject_prefix': 'kampf',
                 'title': 'Sozialistischer Kampfbrief',
                 'notes': None,
-                'whitelist': set()},
-            7: {'local_part': 'aktivenforum',
+                'whitelist': set()}),
+            7: Mailinglist(**{
+                'local_part': 'aktivenforum',
                 'domain': const.MailinglistDomain.lists,
-                'domain_str': 'lists.cde-ev.de',
-                'address': 'aktivenforum@lists.cde-ev.de',
                 'description': None,
                 'assembly_id': None,
                 'attachment_policy': const.AttachmentPolicy.pdf_only.value,
@@ -248,7 +243,6 @@ class TestMlBackend(BackendTest):
                 'is_active': True,
                 'maxsize': 1024,
                 'ml_type': const.MailinglistTypes.member_opt_in.value,
-                'ml_type_class': ml_type.MemberOptInMailinglist,
                 'mod_policy': const.ModerationPolicy.non_subscribers.value,
                 'moderators': {2, 10},
                 'registration_stati': [],
@@ -257,7 +251,7 @@ class TestMlBackend(BackendTest):
                 'notes': None,
                 'whitelist': {'aliens@example.cde',
                               'captiankirk@example.cde',
-                              'drwho@example.cde'}}}
+                              'drwho@example.cde'}})}
         self.assertEqual(expectation,
                          self.ml.get_mailinglists(self.key, (3, 5, 7)))
         setter = {
@@ -269,12 +263,15 @@ class TestMlBackend(BackendTest):
             'local_part': 'passivenforum',
             'notes': "this list is no more",
         }
-        expectation = expectation[7]
+        moderators = expectation[7].moderators
+        whitelist = expectation[7].whitelist
+        expectation = expectation[7].to_database()
         expectation.update(setter)
-        expectation['ml_type_class'] = ml_type.MemberModeratedOptInMailinglist
-        expectation['address'] = Mailinglist.get_address(expectation)
         self.assertLess(0, self.ml.set_mailinglist(self.key, setter))
-        self.assertEqual(expectation, self.ml.get_mailinglist(self.key, 7))
+        # we need moderators and whitelist to construct the dataclass
+        expectation["moderators"] = moderators
+        expectation["whitelist"] = whitelist
+        self.assertEqual(Mailinglist(**expectation), self.ml.get_mailinglist(self.key, 7))
 
     @as_users("janis")
     def test_list_mailinglists_semi_privileged(self) -> None:
@@ -317,12 +314,7 @@ class TestMlBackend(BackendTest):
         self.assertNotIn(new_id, oldlists)
         self.assertIn(new_id, self.ml.list_mailinglists(self.key))
         new_data['id'] = new_id
-        new_data['address'] = Mailinglist.get_address(new_data)
-        new_data['domain_str'] = new_data['domain'].display_str()  # type: ignore[attr-defined]
-        atype = new_data['ml_type']
-        assert isinstance(atype, const.MailinglistTypes)
-        new_data['ml_type_class'] = ml_type.get_type(atype)
-        self.assertEqual(new_data, self.ml.get_mailinglist(self.key, new_id))
+        self.assertEqual(Mailinglist(**new_data), self.ml.get_mailinglist(self.key, new_id))
         self.assertLess(0, self.ml.delete_mailinglist(
             self.key, new_id, cascade=("subscriptions", "addresses",
                                        "whitelist", "moderators", "log")))
@@ -456,7 +448,8 @@ class TestMlBackend(BackendTest):
             'registration_stati': [const.RegistrationPartStati.applied],
         }
 
-        expectation = self.ml.get_mailinglist(self.key, mailinglist_id)
+        original = self.ml.get_mailinglist(self.key, mailinglist_id)
+        expectation = original.to_database()
 
         for data in admin_mdatas:
             # admins may change any attribute of a mailinglist
@@ -479,12 +472,11 @@ class TestMlBackend(BackendTest):
             expectation.update(full_mod_mdata)
             self.assertLess(0, self.ml.set_mailinglist(self.key, full_mod_mdata))
 
-        if self.user_in('nina'):
-            # adjust address form changed local part
-            expectation['address'] = 'alternativ@aka.cde-ev.de'
-
+        # we need the moderators and whitelist to construct the dataclass
+        expectation["moderators"] = original.moderators
+        expectation["whitelist"] = original.whitelist
         reality = self.ml.get_mailinglist(self.key, mailinglist_id)
-        self.assertEqual(expectation, reality)
+        self.assertEqual(Mailinglist(**expectation), reality)
 
     @as_users("nina", "berta", "paul", "quintus")
     def test_subscriptions(self) -> None:
@@ -1046,7 +1038,7 @@ class TestMlBackend(BackendTest):
                          state=SS.subscribed)
 
         ml_id = 66
-        assembly_id = self.ml.get_mailinglist(self.key, ml_id)["assembly_id"]
+        assembly_id = self.ml.get_mailinglist(self.key, ml_id).assembly_id
 
         expectation = {
             23: SS.implicit,
