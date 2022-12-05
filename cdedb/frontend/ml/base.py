@@ -517,8 +517,8 @@ class MlBaseFrontend(AbstractUserFrontend):
     @REQUESTdatadict(*ADDITIONAL_TYPE_FIELDS.items())
     @REQUESTdata("ml_type")
     def change_ml_type(self, rs: RequestState, mailinglist_id: int,
-                       ml_type: str, data: CdEDBObject) -> Response:
-        ml = rs.ambience["mailinglist"]
+                       ml_type: const.MailinglistTypes, data: CdEDBObject) -> Response:
+        ml = rs.ambience['mailinglist']
         assert isinstance(ml, Mailinglist)
         data['id'] = mailinglist_id
         data['ml_type'] = ml_type
