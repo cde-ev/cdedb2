@@ -42,16 +42,21 @@ class Mailinglist(CdEDataclass):
 
     @property
     def address(self) -> vtypes.Email:
-        data = {"local_part": self.local_part, "domain": self.domain}
-        return self.get_address(data)
+        """Build the address of the Mailinglist.
+
+        We know that this is a valid Email since it passed the validation.
+        """
+        return vtypes.Email(self.get_address(vars(self)))
 
     @classmethod
-    def get_address(cls, data: CdEDBObject) -> vtypes.Email:
-        if "local_part" not in data or "domain" not in data:
-            raise ValueError(n_("Cannot determine full address for %(input)s."),
-                         {'input': data})
+    def get_address(cls, data: CdEDBObject) -> str:
+        """Create an address from the given proto-mailinglist dict.
+
+        We can not ensure that the returned string is a valid Email, since we do not
+        know if it would pass the respective validator.
+        """
         domain = const.MailinglistDomain(data["domain"]).get_domain()
-        return vtypes.Email(f"{data['local_part']}@{domain}")
+        return f"{data['local_part']}@{domain}"
 
     @property
     def domain_str(self) -> str:
