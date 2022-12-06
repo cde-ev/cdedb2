@@ -196,7 +196,7 @@ class TestMlBackend(BackendTest):
         self.assertEqual(expectation,
                          self.ml.list_mailinglists(self.key, active_only=False))
         expectation = {
-            3: Mailinglist(**{
+            3: Mailinglist(**{  # type: ignore[arg-type]
                 'local_part': 'witz',
                 'domain': const.MailinglistDomain.lists,
                 'description': "Einer geht noch ...",
@@ -214,7 +214,7 @@ class TestMlBackend(BackendTest):
                 'title': 'Witz des Tages',
                 'notes': None,
                 'whitelist': set()}),
-            5: Mailinglist(**{
+            5: Mailinglist(**{  # type: ignore[arg-type]
                 'local_part': 'kongress',
                 'domain': const.MailinglistDomain.lists,
                 'description': None,
@@ -232,7 +232,7 @@ class TestMlBackend(BackendTest):
                 'title': 'Sozialistischer Kampfbrief',
                 'notes': None,
                 'whitelist': set()}),
-            7: Mailinglist(**{
+            7: Mailinglist(**{  # type: ignore[arg-type]
                 'local_part': 'aktivenforum',
                 'domain': const.MailinglistDomain.lists,
                 'description': None,
@@ -314,7 +314,8 @@ class TestMlBackend(BackendTest):
         self.assertNotIn(new_id, oldlists)
         self.assertIn(new_id, self.ml.list_mailinglists(self.key))
         new_data['id'] = new_id
-        self.assertEqual(Mailinglist(**new_data), self.ml.get_mailinglist(self.key, new_id))
+        expectation = Mailinglist(**new_data)  # type: ignore[arg-type]
+        self.assertEqual(expectation, self.ml.get_mailinglist(self.key, new_id))
         self.assertLess(0, self.ml.delete_mailinglist(
             self.key, new_id, cascade=("subscriptions", "addresses",
                                        "whitelist", "moderators", "log")))
@@ -1039,6 +1040,7 @@ class TestMlBackend(BackendTest):
 
         ml_id = 66
         assembly_id = self.ml.get_mailinglist(self.key, ml_id).assembly_id
+        assert assembly_id is not None
 
         expectation = {
             23: SS.implicit,
