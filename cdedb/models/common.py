@@ -4,6 +4,7 @@ from typing import (
 )
 
 import cdedb.common.validation.types as vtypes
+from cdedb.common.validation.types import TypeMapping
 
 if TYPE_CHECKING:
     from cdedb.common import CdEDBObject
@@ -26,17 +27,18 @@ class CdEDataclass:
                 if key in self.database_fields()}
 
     @classmethod
-    def validation_fields(cls, *, mandatory: bool = False, optional: bool = False) -> Dict[str, Type[T]]:
-        fields: Dict[str, dataclasses.Field[T]] = {
-            field.name: field for field in dataclasses.fields(cls)}
-        ret: Dict[str, Type[T]] = {}
-        if mandatory:
-            ret.update({name: field.type for name, field in fields.items()
-                        if not is_optional_type(field.type)})
-        if optional:
-            ret.update({name: field.type for name, field in fields.items()
-                       if is_optional_type(field.type)})
-        return ret
+    def validation_fields(cls, *, creation: bool) -> Tuple[TypeMapping, TypeMapping]:
+        all_fields = {field.name: field for field in fields(cls)}
+        # always special case the id, see below
+        del all_fields["id"]
+        mandatory = {name: field.type for name, field in all_fields.items()
+                     if not is_optional_type(field.type)}
+        optional = {name: field.type for name, field in all_fields.items()
+                    if is_optional_type(field.type)}
+        if not creation:
+            optional.update(mandatory)
+            mandatory = {"id": vtypes.ID}
+        return mandatory, optional
 
     @classmethod
     def request_fields(cls) -> List[str]:

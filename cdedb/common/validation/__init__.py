@@ -3906,10 +3906,12 @@ def _mailinglist(
             "ml_type", "Must provide ml_type for setting mailinglist."))
     atype = ml_type.get_type(val["ml_type"])
 
-    mandatory_fields = models_ml.Mailinglist.validation_fields(mandatory=True)
-    optional_fields = models_ml.Mailinglist.validation_fields(optional=True)
+    mandatory_fields, optional_fields = models_ml.Mailinglist.validation_fields(
+        creation=creation)
 
     # replace the type specific fields with their absence defaults
+    # TODO move this into the validation_fields function once the MailinglistTypes are
+    #  properly implemented.
     mandatory_type_fields = atype.mandatory_validation_fields.keys()
     optional_type_fields = atype.optional_validation_fields.keys()
     type_fields = {*mandatory_type_fields, *optional_type_fields}
@@ -3935,10 +3937,7 @@ def _mailinglist(
         else:
             raise RuntimeError("Impossible")
 
-    # TODO maybe never include the id as validation field?
-    if creation:
-        del mandatory_fields["id"]
-    else:
+    if not creation:
         optional_fields.update(mandatory_fields)
         del optional_fields["id"]
         mandatory_fields = {"id": mandatory_fields["id"]}

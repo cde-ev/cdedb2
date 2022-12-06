@@ -1,10 +1,11 @@
-from dataclasses import dataclass, field, fields
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type
+from dataclasses import Field, dataclass, field, fields
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
 
 from subman.machine import SubscriptionPolicy
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+from cdedb.common.validation.types import TypeMapping
 from cdedb.ml_type_aux import get_type
 from cdedb.models.common import CdEDataclass
 
@@ -68,3 +69,11 @@ class Mailinglist(CdEDataclass):
     def database_fields(cls) -> List[str]:
         return [field.name for field in fields(cls)
                 if field.name not in {"moderators", "whitelist"}]
+
+    @classmethod
+    def validation_fields(cls, *, creation: bool) -> Tuple[TypeMapping, TypeMapping]:
+        mandatory, optional = super().validation_fields(creation=creation)
+        if "whitelist" in mandatory:
+            optional["whitelist"] = mandatory["whitelist"]
+            del mandatory["whitelist"]
+        return mandatory, optional
