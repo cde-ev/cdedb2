@@ -1,4 +1,4 @@
-from dataclasses import InitVar, dataclass
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type
 
 from subman.machine import SubscriptionPolicy
@@ -61,12 +61,6 @@ class Mailinglist(CdEDataclass):
     def domain_str(self) -> str:
         return self.domain.get_domain()
 
-    # required to set ml_type_class during __post_init__
-    _ml_type_class: InitVar[Type["GeneralMailinglist"]] = None
-
     @property
     def ml_type_class(self) -> Type["GeneralMailinglist"]:
-        return self._ml_type_class  # type: ignore[attr-defined]
-
-    def __post_init__(self, _ml_type_class: Type["GeneralMailinglist"]) -> None:
-        self._ml_type_class = get_type(self.ml_type)  # type: ignore[attr-defined]
+        return get_type(self.ml_type)
