@@ -81,7 +81,7 @@ from schulze_condorcet.util import as_vote_tuple
 
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
-import cdedb.model.ml as model_ml
+import cdedb.models.ml as models_ml
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, EPSILON, EVENT_SCHEMA_VERSION, INFINITE_ENUM_MAGIC_NUMBER,
     CdEDBObjectMap, Error, InfiniteEnum, LineResolutions, asciificator,
@@ -181,7 +181,7 @@ class ValidatorStorage(Dict[Type[Any], Callable[..., Any]]):
 _ALL_TYPED = ValidatorStorage()
 
 DATACLASS_TO_VALIDATORS = {
-    model_ml.Mailinglist: Mailinglist
+    models_ml.Mailinglist: Mailinglist
 }
 
 
@@ -3906,8 +3906,8 @@ def _mailinglist(
             "ml_type", "Must provide ml_type for setting mailinglist."))
     atype = ml_type.get_type(val["ml_type"])
 
-    mandatory_fields = model_ml.Mailinglist.validation_fields(mandatory=True)
-    optional_fields = model_ml.Mailinglist.validation_fields(optional=True)
+    mandatory_fields = models_ml.Mailinglist.validation_fields(mandatory=True)
+    optional_fields = models_ml.Mailinglist.validation_fields(optional=True)
 
     # replace the type specific fields with their absence defaults
     mandatory_type_fields = atype.mandatory_validation_fields.keys()

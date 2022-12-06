@@ -52,7 +52,7 @@ from cdedb.frontend.common import (
     make_membership_fee_reference, periodic, request_dict_extractor, request_extractor,
 )
 from cdedb.ml_type_aux import MailinglistGroup
-from cdedb.model.ml import Mailinglist
+from cdedb.models.ml import Mailinglist
 
 # Name of each realm
 USER_REALM_NAMES = {

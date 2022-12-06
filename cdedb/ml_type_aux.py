@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from cdedb.backend.core import CoreBackend
     from cdedb.backend.event import EventBackend
     from cdedb.common import RequestState, User
-    from cdedb.model.ml import Mailinglist
+    from cdedb.models.ml import Mailinglist
 else:
     CdEDBObject = RequestState = User = None
 

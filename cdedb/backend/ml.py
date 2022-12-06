@@ -34,7 +34,7 @@ from cdedb.common.roles import ADMIN_KEYS, implying_realms
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.ml_type_aux import MLType
-from cdedb.model.ml import Mailinglist
+from cdedb.models.ml import Mailinglist
 
 SubStates = Collection[const.SubscriptionState]
 

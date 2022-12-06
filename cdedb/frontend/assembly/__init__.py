@@ -45,7 +45,7 @@ from cdedb.frontend.common import (
     assembly_guard, cdedburl, check_validation as check, drow_name, inspect_validation,
     periodic, process_dynamic_input, request_extractor,
 )
-from cdedb.model.ml import Mailinglist
+from cdedb.models.ml import Mailinglist
 
 #: Magic value to signal abstention during _classical_ voting.
 #: This can not occur as a shortname since it contains forbidden characters.

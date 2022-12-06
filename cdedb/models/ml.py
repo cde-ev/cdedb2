@@ -7,7 +7,7 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common.n_ import n_
 from cdedb.ml_type_aux import get_type
-from cdedb.model.common import CdEDataclass, field
+from cdedb.models.common import CdEDataclass, field
 
 if TYPE_CHECKING:
     from cdedb.ml_type_aux import GeneralMailinglist

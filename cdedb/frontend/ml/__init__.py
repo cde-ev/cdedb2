@@ -14,7 +14,7 @@ from cdedb.common.n_ import n_
 from cdedb.frontend.common import REQUESTdata, access, mailinglist_guard, periodic
 from cdedb.frontend.ml.base import MlBaseFrontend
 from cdedb.frontend.ml.mailman import MlMailmanMixin
-from cdedb.model.ml import Mailinglist
+from cdedb.models.ml import Mailinglist
 
 __all__ = ['MlFrontend']
 
