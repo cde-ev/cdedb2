@@ -1,13 +1,12 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field, fields
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type
 
 from subman.machine import SubscriptionPolicy
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.common.n_ import n_
 from cdedb.ml_type_aux import get_type
-from cdedb.models.common import CdEDataclass, field
+from cdedb.models.common import CdEDataclass
 
 if TYPE_CHECKING:
     from cdedb.ml_type_aux import GeneralMailinglist
@@ -26,8 +25,8 @@ class Mailinglist(CdEDataclass):
     ml_type: const.MailinglistTypes
     is_active: bool
 
-    moderators: List[vtypes.ID] = field(to_database=False)
-    whitelist: List[vtypes.Email] = field(to_database=False, is_optional=True)
+    moderators: List[vtypes.ID]
+    whitelist: List[vtypes.Email]
 
     description: Optional[str] = None
     subject_prefix: Optional[str] = None
@@ -64,3 +63,8 @@ class Mailinglist(CdEDataclass):
     @property
     def ml_type_class(self) -> Type["GeneralMailinglist"]:
         return get_type(self.ml_type)
+
+    @classmethod
+    def database_fields(cls) -> List[str]:
+        return [field.name for field in fields(cls)
+                if field.name not in {"moderators", "whitelist"}]
