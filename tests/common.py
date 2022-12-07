@@ -1454,7 +1454,8 @@ class FrontendTest(BackendTest):
             else:
                 self.get("/assembly/log")
         elif realm == "ml":
-            entities = self.ml.get_mailinglists(self.key, entity_ids)
+            entities = {ml_id: ml.to_database() for ml_id, ml
+                        in self.ml.get_mailinglists(self.key, entity_ids).items()}
             if ml_id := kwargs.get('mailinglist_id'):
                 self.get(f"/ml/mailinglist/{ml_id}/log")
                 specific_log = True
