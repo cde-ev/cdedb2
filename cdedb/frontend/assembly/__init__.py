@@ -384,7 +384,9 @@ class AssemblyFrontend(AbstractUserFrontend):
                 rs.notify("info", n_("Given presider address ignored in favor of"
                                      " newly created mailinglist."))
             presider_ml_data = self._get_mailinglist_setter(data, presider=True)
-            presider_address = Mailinglist.get_address(presider_ml_data)
+            # we know that the presider_ml_data produce a valid mailinglist address
+            presider_address = Mailinglist.get_address(presider_ml_data)  # type: ignore[assignment]
+            assert presider_address is not None
             data["presider_address"] = presider_address
             if self.mlproxy.verify_existence(rs, presider_address):
                 presider_ml_data = None

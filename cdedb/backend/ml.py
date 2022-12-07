@@ -1201,7 +1201,7 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def get_implicit_whitelist(self, rs: RequestState, mailinglist_id: int
-                               ) -> Set[str]:
+                               ) -> Set[vtypes.Email]:
         """Get all usernames of users which have a custom subscription address
         configured for the mailinglist.
 

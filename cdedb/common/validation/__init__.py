@@ -191,7 +191,7 @@ def validate_assert_dataclass(type_: Type[T], value: Any, ignore_warnings: bool,
         raise RuntimeError
     if not dataclasses.is_dataclass(value):
         raise RuntimeError
-    validator = DATACLASS_TO_VALIDATORS[type_]
+    validator = DATACLASS_TO_VALIDATORS[type_]  # type: ignore[index]
     val = dataclasses.asdict(value)
     validated = validate_assert(validator, val, ignore_warnings=ignore_warnings, **kwargs)
     return type_(**validated)
