@@ -154,7 +154,7 @@ class TestPrivacyFrontend(FrontendTest):
         expected = {
             "Account aktiv", "Bereiche", "Admin-Privilegien", "Admin-Notizen",
             "Gedruckter exPuls", "Guthaben", "Mitgliedschaft", "Geburtsname",
-            "Geschlecht", "Geburtsdatum", "VCard", "Jährliche Spende",
+            "Geschlecht", "Geburtsdatum", "VCard",
         }
         for field in expected:
             self.assertPresence(field, div=self.FIELD_TO_DIV[field])
