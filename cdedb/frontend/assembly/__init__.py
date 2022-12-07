@@ -313,7 +313,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         else:
             link = cdedburl(rs, "assembly/show_assembly",
                             {'assembly_id': assembly["id"]})
-            descr = ("Dieser Liste kannst Du nur beitreten, indem Du Dich direkt zu"
+            descr = (f"Dieser Liste kannst Du nur beitreten, indem Du Dich direkt zu"
                      f" der [Versammlung anmeldest]({link}).")
             attendee_ml_data = {
                 'title': assembly['title'],

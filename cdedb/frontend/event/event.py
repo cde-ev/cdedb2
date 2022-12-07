@@ -809,11 +809,11 @@ class EventEventMixin(EventBaseFrontend):
             return orga_ml_data
         else:
             link = cdedburl(rs, "event/register", {'event_id': event["id"]})
-            descr = ("Dieser Liste kannst Du nur beitreten, indem Du Dich zu "
+            descr = (f"Dieser Liste kannst Du nur beitreten, indem Du Dich zu "
                      f"unserer [Veranstaltung anmeldest]({link}) und den Status "
-                     "*Teilnehmer* erhälst. Auf dieser Liste stehen alle "
-                     "Teilnehmer unserer Veranstaltung; sie kann im Vorfeld "
-                     "zum Austausch untereinander genutzt werden.")
+                     f"*Teilnehmer* erhälst. Auf dieser Liste stehen alle "
+                     f"Teilnehmer unserer Veranstaltung; sie kann im Vorfeld "
+                     f"zum Austausch untereinander genutzt werden.")
             participant_ml_data = {
                 'title': f"{event['title']} Teilnehmer",
                 'local_part': f"{event['shortname'].lower()}-all",
