@@ -7,7 +7,6 @@ from subman.exceptions import SubscriptionError
 from subman.machine import SubscriptionAction as SA
 
 import cdedb.database.constants as const
-import cdedb.ml_type_aux as ml_type
 from cdedb.common import CdEDBObject, RequestState, nearly_now
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.database.constants import SubscriptionState as SS
@@ -271,7 +270,8 @@ class TestMlBackend(BackendTest):
         # we need moderators and whitelist to construct the dataclass
         expectation["moderators"] = moderators
         expectation["whitelist"] = whitelist
-        self.assertEqual(Mailinglist(**expectation), self.ml.get_mailinglist(self.key, 7))
+        self.assertEqual(
+            Mailinglist(**expectation), self.ml.get_mailinglist(self.key, 7))
 
     @as_users("janis")
     def test_list_mailinglists_semi_privileged(self) -> None:

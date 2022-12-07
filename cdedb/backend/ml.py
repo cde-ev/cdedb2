@@ -4,9 +4,7 @@
 event and assembly realm in the form of specific mailing lists.
 """
 import itertools
-from typing import (
-    Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, cast, overload,
-)
+from typing import Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, overload
 
 import subman
 from subman.machine import SubscriptionAction, SubscriptionPolicy
@@ -22,8 +20,8 @@ from cdedb.backend.common import (
 )
 from cdedb.backend.event import EventBackend
 from cdedb.common import (
-    CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers,
-    RequestState, make_proxy, unwrap,
+    CdEDBLog, CdEDBObject, DefaultReturnCode, DeletionBlockers, RequestState,
+    make_proxy, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import MOD_ALLOWED_FIELDS, RESTRICTED_MOD_ALLOWED_FIELDS

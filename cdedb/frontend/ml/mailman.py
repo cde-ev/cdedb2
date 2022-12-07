@@ -11,7 +11,7 @@ from mailmanclient import Client, MailingList
 
 import cdedb.database.constants as const
 from cdedb.backend.common import DatabaseLock
-from cdedb.common import CdEDBObject, RequestState, make_persona_name
+from cdedb.common import RequestState, make_persona_name
 from cdedb.database.constants import LockType
 from cdedb.frontend.common import cdedburl
 from cdedb.frontend.ml.base import MlBaseFrontend

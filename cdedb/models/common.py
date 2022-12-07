@@ -1,6 +1,8 @@
-from dataclasses import Field, dataclass, fields
+"""Base definition of CdEDB models using dataclasses."""
+
+from dataclasses import dataclass, fields
 from typing import (
-    TYPE_CHECKING, Dict, List, Tuple, Type, TypeVar, Union, get_args, get_origin,
+    TYPE_CHECKING, List, Tuple, Type, TypeVar, Union, get_args, get_origin,
 )
 
 import cdedb.common.validation.types as vtypes
