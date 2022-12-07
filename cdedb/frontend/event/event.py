@@ -906,10 +906,11 @@ class EventEventMixin(EventBaseFrontend):
                 rs.notify("info", n_("Mailinglist %(address)s already exists."),
                           {'address': orga_ml_address})
             else:
-                code = self.eventproxy.set_event(
-                    rs, {"id": new_id, "orga_address": orga_ml_address})
-                code *= self.mlproxy.create_mailinglist(rs, orga_ml_data)
+                code = self.mlproxy.create_mailinglist(rs, orga_ml_data)
                 rs.notify_return_code(code, success=n_("Orga mailinglist created."))
+            code = self.eventproxy.set_event(
+                rs, {"id": new_id, "orga_address": orga_ml_address})
+            rs.notify_return_code(code)
         if create_participant_list:
             participant_ml_data = self._get_mailinglist_setter(rs, data)
             participant_ml_address = ml_type.get_full_address(participant_ml_data)

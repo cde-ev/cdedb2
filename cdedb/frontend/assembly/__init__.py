@@ -410,10 +410,11 @@ class AssemblyFrontend(AbstractUserFrontend):
                 rs.notify("info", n_("Mailinglist %(address)s already exists."),
                           {'address': presider_ml_address})
             else:
-                code = self.assemblyproxy.set_assembly(
-                    rs, {"id": new_id, "presider_address": presider_ml_address})
-                code *= self.mlproxy.create_mailinglist(rs, presider_ml_data)
+                code = self.mlproxy.create_mailinglist(rs, presider_ml_data)
                 rs.notify_return_code(code, success=n_("Presider mailinglist created."))
+            code = self.assemblyproxy.set_assembly(
+                rs, {"id": new_id, "presider_address": presider_ml_address})
+            rs.notify_return_code(code)
         if create_attendee_list:
             attendee_ml_data = self._get_mailinglist_setter(rs, data)
             attendee_address = ml_type.get_full_address(attendee_ml_data)
