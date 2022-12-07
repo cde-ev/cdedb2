@@ -1284,6 +1284,10 @@ etc;anything else""", f['entries_2'].value)
                 'change_note': "Alternative Akademie",
                 'code': const.EventLogCodes.lodgement_group_created,
                 'event_id': 1002,
+            },
+            {
+                'code': const.EventLogCodes.event_changed,
+                'event_id': 1002,
             }
         ])
         self.assertLogEqual(
