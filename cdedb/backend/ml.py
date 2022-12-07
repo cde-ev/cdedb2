@@ -595,26 +595,24 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def create_mailinglist(self, rs: RequestState,
-                           data: CdEDBObject) -> DefaultReturnCode:
+                           data: Mailinglist) -> DefaultReturnCode:
         """Make a new mailinglist.
 
         :returns: the id of the new mailinglist
         """
-        data = affirm(vtypes.Mailinglist, data, creation=True)
-        data['address'] = self.validate_address(rs, data)
-        atype = ml_type.get_type(data["ml_type"])
-        if not atype.is_relevant_admin(rs.user):
+        data = affirm_dataclass(Mailinglist, data, creation=True)
+        self.validate_address(rs, data.to_database())
+        if not data.ml_type_class.is_relevant_admin(rs.user):
             raise PrivilegeError("Not privileged to create mailinglist of this type.")
         with Atomizer(rs):
-            mdata = {k: v for k, v in data.items()
-                     if k in Mailinglist.database_fields()}
+            mdata = data.to_database()
             # The address is a readonly property, but we want to save it into the
             #  database for convenience.
-            mdata["address"] = data["address"]
+            mdata["address"] = data.address
             new_id = self.sql_insert(rs, "ml.mailinglists", mdata)
             self.ml_log(rs, const.MlLogCodes.list_created, new_id)
-            if data.get("moderators"):
-                self.add_moderators(rs, new_id, data["moderators"])
+            if data.moderators:
+                self.add_moderators(rs, new_id, data.moderators)
             self.write_subscription_states(rs, (new_id,))
         return new_id
 

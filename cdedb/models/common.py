@@ -25,8 +25,12 @@ class CdEDataclass:
 
     def to_database(self) -> "CdEDBObject":
         """Generate a dict representation of this entity to be saved to the database."""
-        return {key: value for key, value in vars(self).items()
+        data = {key: value for key, value in vars(self).items()
                 if key in self.database_fields()}
+        # if id is negative, we are about to create this entity, so the id is unknown
+        if self.id < 0:
+            del data["id"]
+        return data
 
     @classmethod
     def validation_fields(cls, *, creation: bool) -> Tuple[TypeMapping, TypeMapping]:
@@ -37,7 +41,9 @@ class CdEDataclass:
                      if not is_optional_type(field.type)}
         optional = {name: field.type for name, field in all_fields.items()
                     if is_optional_type(field.type)}
-        if not creation:
+        if creation:
+            mandatory["id"] = vtypes.ProtoID
+        else:
             optional.update(mandatory)
             mandatory = {"id": vtypes.ID}
         return mandatory, optional

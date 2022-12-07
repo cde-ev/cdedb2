@@ -229,6 +229,23 @@ def validate_assert_optional(type_: Type[T], value: Any, ignore_warnings: bool,
     return validate_assert(Optional[type_], value, ignore_warnings, **kwargs)  # type: ignore[arg-type]
 
 
+
+def validate_check_dataclass(type_: Type[T], value: Any, ignore_warnings: bool,
+                              **kwargs: Any) -> Tuple[Optional[T], List[Error]]:
+    if type_ not in DATACLASS_TO_VALIDATORS:
+        raise RuntimeError
+    if not dataclasses.is_dataclass(value):
+        raise RuntimeError
+    validator = DATACLASS_TO_VALIDATORS[type_]  # type: ignore[index]
+    val = dataclasses.asdict(value)
+    validated, errors = validate_check(
+        validator, val, ignore_warnings=ignore_warnings, **kwargs)
+    if validated is None:
+        return None, errors
+    else:
+        return type_(**validated), errors
+
+
 def validate_check(type_: Type[T], value: Any, ignore_warnings: bool,
                    field_prefix: str = "", field_postfix: str = "", **kwargs: Any
                    ) -> Tuple[Optional[T], List[Error]]:
@@ -542,6 +559,16 @@ def _positive_int(
 
 
 @_add_typed_validator
+def _negative_int(
+    val: Any, argname: str = None, **kwargs: Any
+) -> NegativeInt:
+    val = _int(val, argname, **kwargs)
+    if val >= 0:
+        raise ValidationSummary(ValueError(argname, n_("Must be negative.")))
+    return NegativeInt(val)
+
+
+@_add_typed_validator
 def _id(
     val: Any, argname: str = None, **kwargs: Any
 ) -> ID:
@@ -553,6 +580,20 @@ def _id(
     if val is None or isinstance(val, str) and not val:
         raise ValidationSummary(ValueError(argname, n_("Must not be empty.")))
     return ID(_positive_int(val, argname, **kwargs))
+
+
+@_add_typed_validator
+def _proto_id(
+    val: Any, argname: str = None, **kwargs: Any
+) -> ProtoID:
+    """The proto-id of an object, meaning a negative int.
+
+    This is just a wrapper around `_negative_int`, to differentiate this
+    semantically.
+    """
+    if val is None or isinstance(val, str) and not val:
+        raise ValidationSummary(ValueError(argname, n_("Must not be empty.")))
+    return ProtoID(_negative_int(val, argname, **kwargs))
 
 
 @_add_typed_validator

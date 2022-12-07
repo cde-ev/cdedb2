@@ -29,8 +29,8 @@ from cdedb.common.validation import PERSONA_FULL_CREATION, filter_none
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access,
-    cdedbid_filter as cdedbid, check_validation as check, csv_output, mailinglist_guard,
-    periodic,
+    cdedbid_filter as cdedbid, check_dataclass, check_validation as check, csv_output,
+    mailinglist_guard, periodic,
 )
 from cdedb.ml_type_aux import (
     ADDITIONAL_TYPE_FIELDS, TYPE_MAP, MailinglistGroup, get_type,
@@ -249,9 +249,12 @@ class MlBaseFrontend(AbstractUserFrontend):
                            ml_type: const.MailinglistTypes,
                            moderators: vtypes.CdedbIDList) -> Response:
         """Make a new list."""
+        data["id"] = -1
         data["moderators"] = moderators
+        data["whitelist"] = []
         data['ml_type'] = ml_type
-        data = check(rs, vtypes.Mailinglist, data, creation=True)
+        ml = Mailinglist(**data)
+        ml = check_dataclass(rs, Mailinglist, ml, creation=True)
         if rs.has_validation_errors():
             return self.create_mailinglist_form(rs, ml_type=ml_type)
         if not self.coreproxy.verify_ids(rs, moderators, is_archived=False):
@@ -264,18 +267,17 @@ class MlBaseFrontend(AbstractUserFrontend):
                     "Some of these users are not ml users."))))
         if rs.has_validation_errors():
             return self.create_mailinglist_form(rs, ml_type=ml_type)
-        assert data is not None
+        assert ml is not None
         # Check if mailinglist address is unique and valid
         try:
-            self.mlproxy.validate_address(rs, data)
+            self.mlproxy.validate_address(rs, ml.to_database())
         except ValueError as e:
             rs.extend_validation_errors([("local_part", e), ("domain", e)])
 
         if rs.has_validation_errors():
             return self.create_mailinglist_form(rs, ml_type=ml_type)
-        assert data is not None
 
-        new_id = self.mlproxy.create_mailinglist(rs, data)
+        new_id = self.mlproxy.create_mailinglist(rs, ml)
         rs.notify_return_code(new_id)
         return self.redirect(rs, "ml/show_mailinglist", {
             'mailinglist_id': new_id})
