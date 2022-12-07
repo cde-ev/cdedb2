@@ -651,7 +651,10 @@ def dict_entries_filter(items: List[Tuple[Any, Union[Mapping[str, S], "CdEDatacl
     :return: A list of tuples (e.g. to be used in the input_checkboxes or
       input_select macros), built from the selected fields of the dicts
     """
-    from cdedb.models.common import CdEDataclass
+    # TODO this leads to cyclic imports otherwise
+    from cdedb.models.common import (  # pylint: disable=import-outside-toplevel
+        CdEDataclass,
+    )
     return [tuple(value.to_database()[k]
                   if isinstance(value, CdEDataclass) else value[k] for k in args)
             for key, value in items]
