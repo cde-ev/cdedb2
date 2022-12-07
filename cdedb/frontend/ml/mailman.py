@@ -7,7 +7,7 @@ on the mail VM from within the CdEDB.
 """
 from typing import Set
 
-from mailmanclient import Client, MailingList
+import mailmanclient as mmc
 
 import cdedb.database.constants as const
 from cdedb.backend.common import DatabaseLock
@@ -66,9 +66,9 @@ def template_url(name: str) -> str:
 
 
 class MlMailmanMixin(MlBaseFrontend):
-    def mailman_sync_list_meta(self, rs: RequestState, mailman: Client,
+    def mailman_sync_list_meta(self, rs: RequestState, mailman: mmc.Client,
                                db_list: Mailinglist,
-                               mm_list: MailingList) -> None:
+                               mm_list: mmc.MailingList) -> None:
         prefix = ""
         if db_list.subject_prefix:
             prefix = "[{}] ".format(db_list.subject_prefix or "")
@@ -218,9 +218,9 @@ The original message as received by Mailman is attached.
         for name in set(existing_templates) - set(desired_templates):
             existing_templates[name].delete()
 
-    def mailman_sync_list_subs(self, rs: RequestState, mailman: Client,
+    def mailman_sync_list_subs(self, rs: RequestState, mailman: mmc.Client,
                                db_list: Mailinglist,
-                               mm_list: MailingList) -> None:
+                               mm_list: mmc.MailingList) -> None:
         subscribing_states = const.SubscriptionState.subscribing_states()
         persona_ids = set(self.mlproxy.get_subscription_states(
             rs, db_list.id, states=subscribing_states))
@@ -253,9 +253,9 @@ The original message as received by Mailman is attached.
         for address in delete_subs:
             mm_list.unsubscribe(address, pre_confirmed=True, pre_approved=True)
 
-    def mailman_sync_list_mods(self, rs: RequestState, mailman: Client,
+    def mailman_sync_list_mods(self, rs: RequestState, mailman: mmc.Client,
                                db_list: Mailinglist,
-                               mm_list: MailingList) -> None:
+                               mm_list: mmc.MailingList) -> None:
         personas = self.coreproxy.get_personas(rs, db_list.moderators)
         db_moderators = {
             persona['username']: make_persona_name(persona)
@@ -280,8 +280,10 @@ The original message as received by Mailman is attached.
         for address in delete_owners:
             mm_list.remove_owner(address)
 
-    def mailman_sync_list_whites(self, rs: RequestState, mailman: Client,
-                                 db_list: Mailinglist, mm_list: MailingList) -> None:
+    def mailman_sync_list_whites(
+            self, rs: RequestState, mailman: mmc.Client, db_list: Mailinglist,
+            mm_list: mmc.MailingList
+    ) -> None:
         db_whitelist = set(db_list.whitelist)
         mm_whitelist = {n.email: n for n in mm_list.nonmembers}
 
@@ -307,8 +309,8 @@ The original message as received by Mailman is attached.
         for address in delete_whites:
             mm_list.remove_role('nonmember', address)
 
-    def mailman_sync_list(self, rs: RequestState, mailman: Client,
-                          db_list: Mailinglist, mm_list: MailingList) -> None:
+    def mailman_sync_list(self, rs: RequestState, mailman: mmc.Client,
+                          db_list: Mailinglist, mm_list: mmc.MailingList) -> None:
         self.mailman_sync_list_meta(rs, mailman, db_list, mm_list)
         if db_list.is_active:
             self.mailman_sync_list_subs(rs, mailman, db_list, mm_list)
