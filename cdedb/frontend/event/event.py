@@ -11,7 +11,7 @@ import copy
 import datetime
 import decimal
 from collections import OrderedDict
-from typing import Collection, Optional, Set
+from typing import Collection, List, Optional, Set
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -34,7 +34,7 @@ from cdedb.common.validation import (
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access, cdedburl,
     check_validation as check, check_validation_optional as check_optional, drow_name,
-    event_guard, inspect_validation as inspect, process_dynamic_input,
+    event_guard, inspect_validation as inspect, periodic, process_dynamic_input,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
 
@@ -786,6 +786,56 @@ class EventEventMixin(EventBaseFrontend):
         code = self.eventproxy.set_track_groups(rs, event_id, {track_group_id: None})
         rs.notify_return_code(code)
         return self.redirect(rs, "event/group_summary")
+
+    @periodic("mail_orgateam_reminders", period=24)
+    def mail_orgateam_reminders(self, rs: RequestState, store: CdEDBObject
+                                ) -> CdEDBObject:
+        """Send midterm and post-event mails to orgateams.
+
+        The mails are send only once per pme part group.
+        """
+        event_ids = self.eventproxy.list_events(rs)
+        events = self.eventproxy.get_events(rs, event_ids)
+        pme_type = const.EventPartGroupType.mutually_exclusive_participants
+        right_now = now()
+        one_day = datetime.timedelta(days=1)
+        for event_id, event in events.items():
+            pme_groups = {group for group in event["part_groups"].values()
+                          if group["constraint_type"] == pme_type}
+            # divide the parts affected by pme groups into disjoint sets
+            disjoint_parts: List[Set[int]] = []
+            for group in pme_groups:
+                is_disjoint = True
+                for part_ids in disjoint_parts:
+                    if group["part_ids"] & part_ids:
+                        part_ids |= group["part_ids"]
+                        is_disjoint = False
+                        break
+                if is_disjoint:
+                    disjoint_parts[-1] = group["part_ids"]
+            # add the remaining parts which are not included in any pme group
+            for part_id in event["parts"]:
+                is_disjoint = True
+                for part_ids in disjoint_parts:
+                    if part_id in part_ids:
+                        is_disjoint = False
+                        break
+                if is_disjoint:
+                    disjoint_parts[-1] = {part_id}
+            # send only one mail for each set of disjoint parts
+            for part_ids in disjoint_parts:
+                # choose one of the parts, but make the choice stable
+                part = event["parts"][xsorted(part_ids)[0]]
+                begin: datetime.date = part["part_begin"]
+                end: datetime.date = part["part_end"]
+                duration = end - begin
+                # send midterm mail
+                if begin + duration/2 <= right_now < begin + duration/2 + one_day:
+                    self.do_mail()
+                # send post mail
+                if end + one_day <= right_now < end + 2 * one_day:
+                    self.do_mail()
+        return store
 
     @staticmethod
     def _get_mailinglist_setter(event: CdEDBObject, orgalist: bool = False
