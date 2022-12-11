@@ -142,7 +142,7 @@ do nothing.
 
 [1] {cdedburl(rs, 'ml/message_moderation', {'mailinglist_id': db_list['id']}, force_external=True)}
 """.strip(),
-            'list:admin:notice:disable': f"""
+            'list:admin:notice:disable': """
 $member's subscription has been disabled on $listname due to their bounce score
 exceeding the mailing list's bounce_score_threshold.
 
