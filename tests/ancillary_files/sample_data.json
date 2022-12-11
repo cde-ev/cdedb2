@@ -3871,6 +3871,7 @@
             "delta": null,
             "new_balance": null,
             "change_note": "-4.50€",
+            "transaction_date": null,
             "members": 7,
             "total": "106.50"
         },
@@ -3882,8 +3883,21 @@
             "delta": "5.00",
             "new_balance": "12.50",
             "change_note": "42.23€",
+            "transaction_date": null,
             "members": 7,
             "total": "111.50"
+        },
+        {
+            "ctime": "---now---",
+            "code": 10,
+            "submitted_by": 32,
+            "persona_id": 9,
+            "delta": "5.00",
+            "new_balance": "5.00",
+            "change_note": null,
+            "transaction_date": "---now---",
+            "members": 7,
+            "total": "116.50"
         }
     ],
     "cde.log": [],
@@ -8357,6 +8371,25 @@
             "assembly_id": 1
         },
         {
+            "id": 67,
+            "title": "Globaler Unsinn",
+            "address": "gu@lists.cde-ev.de",
+            "local_part": "gu",
+            "domain": 1,
+            "description": null,
+            "mod_policy": 2,
+            "attachment_policy": 2,
+            "ml_type": 70,
+            "subject_prefix": null,
+            "maxsize": 64,
+            "is_active": true,
+            "notes": null,
+            "gateway": null,
+            "event_id": null,
+            "registration_stati": [],
+            "assembly_id": null
+        },
+        {
             "id": 99,
             "title": "Mailman-Migration",
             "address": "migration@testmail.cde-ev.de",
@@ -8715,6 +8748,11 @@
         {
             "mailinglist_id": 12,
             "persona_id": 11,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 14,
             "subscription_state": 30
         },
         {
@@ -9211,6 +9249,51 @@
             "mailinglist_id": 66,
             "persona_id": 23,
             "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 67,
+            "persona_id": 1,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 67,
+            "persona_id": 2,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 67,
+            "persona_id": 3,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 67,
+            "persona_id": 6,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 67,
+            "persona_id": 7,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 67,
+            "persona_id": 9,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 67,
+            "persona_id": 14,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 67,
+            "persona_id": 15,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 67,
+            "persona_id": 100,
+            "subscription_state": 30
         }
     ],
     "ml.subscription_addresses": [
@@ -9465,6 +9548,10 @@
         {
             "mailinglist_id": 66,
             "persona_id": 23
+        },
+        {
+            "mailinglist_id": 67,
+            "persona_id": 14
         },
         {
             "mailinglist_id": 99,

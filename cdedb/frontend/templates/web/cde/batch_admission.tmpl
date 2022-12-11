@@ -29,9 +29,9 @@
         {{ util.form_input_submit(label=gettext("Create"), horizontal=False) }}
     {% else %}
         {% if data %}
-            {{ util.form_input_submit(label=gettext("Validate Again"), horizontal=False) }}
+            {{ util.form_input_submit(label=gettext("Validate Again"), icon="chevron-right", horizontal=False) }}
         {% else %}
-            {{ util.form_input_submit(label=gettext("Validate"), horizontal=False) }}
+            {{ util.form_input_submit(label=gettext("Validate"), icon="chevron-right", horizontal=False) }}
         {% endif %}
     {% endif %}
 {% endmacro %}

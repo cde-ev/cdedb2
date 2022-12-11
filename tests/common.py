@@ -310,6 +310,13 @@ class BasicTest(unittest.TestCase):
                 return nearly_now()
             return datetime.datetime.fromisoformat(s)
 
+        def parse_date(s: Optional[str]) -> Optional[datetime.date]:
+            if s is None:
+                return None
+            if s == "---now---":
+                return nearly_now().date()
+            return datetime.date.fromisoformat(s)
+
         if keys is None:
             try:
                 keys = next(iter(_SAMPLE_DATA[table].values())).keys()
@@ -328,7 +335,9 @@ class BasicTest(unittest.TestCase):
                     if k == 'balance' and r[k]:
                         r[k] = decimal.Decimal(r[k])
                     if k == 'birthday' and r[k]:
-                        r[k] = datetime.date.fromisoformat(r[k])
+                        r[k] = parse_date(r[k])
+                if k in {'transaction_date'} and r[k]:
+                    r[k] = parse_date(r[k])
                 if k in {'ctime', 'atime', 'vote_begin', 'vote_end',
                          'vote_extension_end', 'signup_end'} and r[k]:
                     r[k] = parse_datetime(r[k])
@@ -462,7 +471,12 @@ class BackendTest(CdEDBTest):
         if realm and not log_retriever:
             log_retriever = getattr(self, realm).retrieve_log
         if log_retriever:
-            _, log = log_retriever(self.key, **kwargs)
+            new_kwargs = dict(kwargs)
+            for k in ('assembly_id', 'event_id', 'mailinglist_id'):
+                if k in kwargs:
+                    new_kwargs['entity_ids'] = [kwargs[k]]
+                    del new_kwargs[k]
+            _, log = log_retriever(self.key, new_kwargs)
         else:
             raise ValueError("No method of log retrieval provided.")
 
@@ -474,7 +488,7 @@ class BackendTest(CdEDBTest):
             if 'submitted_by' not in exp:
                 exp['submitted_by'] = self.user['id']
             for k in ('event_id', 'assembly_id', 'mailinglist_id'):
-                if k in kwargs and k not in exp:
+                if k in kwargs and 'entity_ids' not in exp:
                     exp[k] = kwargs[k]
             for k in ('persona_id', 'change_note'):
                 if k not in exp:
@@ -1489,6 +1503,9 @@ class FrontendTest(BackendTest):
                 specific_log = True
             else:
                 self.get("/ml/log")
+        elif realm == "finance":
+            self.get("/cde/finances")
+            entities = {}
         else:
             self.get(f"/{realm}/log")
             entities = {}

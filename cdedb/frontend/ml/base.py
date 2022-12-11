@@ -30,9 +30,9 @@ from cdedb.common.validation import (
 )
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
-    AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access, calculate_db_logparams,
-    calculate_loglinks, cdedbid_filter as cdedbid, check_validation as check,
-    csv_output, mailinglist_guard, periodic,
+    AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access,
+    cdedbid_filter as cdedbid, check_validation as check, csv_output, mailinglist_guard,
+    periodic,
 )
 from cdedb.ml_type_aux import (
     ADDITIONAL_TYPE_FIELDS, TYPE_MAP, MailinglistGroup, get_type,
@@ -335,45 +335,33 @@ class MlBaseFrontend(AbstractUserFrontend):
                  time_start: Optional[datetime],
                  time_stop: Optional[datetime]) -> Response:
         """View activities."""
-        length = length or self.conf["DEFAULT_LOG_LENGTH"]
-        # length is the requested length, _length the theoretically
-        # shown length for an infinite amount of log entries.
-        _offset, _length = calculate_db_logparams(offset, length)
 
-        # no validation since the input stays valid, even if some options
-        # are lost
-        rs.ignore_validation_errors()
-        db_mailinglist_ids = {mailinglist_id} if mailinglist_id else None
+        db_mailinglist_ids = {mailinglist_id} if mailinglist_id else set()
 
         relevant_mls = self.mlproxy.list_mailinglists(rs, active_only=False,
                                                       managed='managed')
         relevant_set = set(relevant_mls)
         if not self.is_admin(rs):
-            if db_mailinglist_ids is None:
+            if not db_mailinglist_ids:
                 db_mailinglist_ids = relevant_set
             elif not db_mailinglist_ids <= relevant_set:
                 db_mailinglist_ids = db_mailinglist_ids | relevant_set
                 rs.notify("warning", n_(
                     "Not privileged to view log for all these mailinglists."))
 
-        total, log = self.mlproxy.retrieve_log(
-            rs, codes, db_mailinglist_ids, _offset, _length,
-            persona_id=persona_id, submitted_by=submitted_by,
-            change_note=change_note,
-            time_start=time_start, time_stop=time_stop)
-        persona_ids = (
-                {entry['submitted_by'] for entry in log if
-                 entry['submitted_by']}
-                | {entry['persona_id'] for entry in log if entry['persona_id']})
-        personas = self.coreproxy.get_personas(rs, persona_ids)
-        log_mailinglist_ids = {entry['mailinglist_id']
-                               for entry in log if entry['mailinglist_id']}
-        mailinglists = self.mlproxy.get_mailinglists(rs, log_mailinglist_ids)
-        loglinks = calculate_loglinks(rs, total, offset, length)
-        return self.render(rs, "view_log", {
-            'log': log, 'total': total, 'length': _length, 'personas': personas,
-            'mailinglists': mailinglists, 'relevant_mailinglists': relevant_mls,
-            'loglinks': loglinks, 'may_view': lambda ml: self.mlproxy.may_view(rs, ml),
+        filter_params = {
+            'entity_ids': db_mailinglist_ids,
+            'codes': codes, 'offset': offset, 'length': length,
+            'persona_id': persona_id, 'submitted_by': submitted_by,
+            'change_note': change_note, 'ctime': (time_start, time_stop),
+        }
+
+        mailinglists = self.mlproxy.get_mailinglists(rs, relevant_mls)
+        self.logger.debug(mailinglists)
+        return self.generic_view_log(
+            rs, filter_params, "ml.log", "view_log", {
+            'all_mailinglists': mailinglists,
+            'may_view': lambda ml: self.mlproxy.may_view(rs, ml),
         })
 
     @access("ml")
@@ -517,7 +505,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     @REQUESTdatadict(*ADDITIONAL_TYPE_FIELDS.items())
     @REQUESTdata("ml_type")
     def change_ml_type(self, rs: RequestState, mailinglist_id: int,
-                       ml_type: str, data: CdEDBObject) -> Response:
+                       ml_type: const.MailinglistTypes, data: CdEDBObject) -> Response:
         ml = rs.ambience['mailinglist']
         data['id'] = mailinglist_id
         data['ml_type'] = ml_type
@@ -565,29 +553,16 @@ class MlBaseFrontend(AbstractUserFrontend):
                     time_start: Optional[datetime],
                     time_stop: Optional[datetime]) -> Response:
         """View activities pertaining to one list."""
-        length = length or self.conf["DEFAULT_LOG_LENGTH"]
-        # length is the requested length, _length the theoretically
-        # shown length for an infinite amount of log entries.
-        _offset, _length = calculate_db_logparams(offset, length)
 
-        # no validation since the input stays valid, even if some options
-        # are lost
-        rs.ignore_validation_errors()
-        total, log = self.mlproxy.retrieve_log(
-            rs, codes, [mailinglist_id], _offset, _length,
-            persona_id=persona_id, submitted_by=submitted_by,
-            change_note=change_note, time_start=time_start,
-            time_stop=time_stop)
-        persona_ids = (
-                {entry['submitted_by'] for entry in log if
-                 entry['submitted_by']}
-                | {entry['persona_id'] for entry in log if entry['persona_id']})
-        personas = self.coreproxy.get_personas(rs, persona_ids)
-        loglinks = calculate_loglinks(rs, total, offset, length)
-        return self.render(rs, "view_ml_log", {
-            'log': log, 'total': total, 'length': _length, 'personas': personas,
-            'loglinks': loglinks
-        })
+        filter_params = {
+            'entity_ids': [mailinglist_id],
+            'codes': codes, 'offset': offset, 'length': length,
+            'persona_id': persona_id, 'submitted_by': submitted_by,
+            'change_note': change_note, 'ctime': (time_start, time_stop),
+        }
+
+        return self.generic_view_log(
+            rs, filter_params, "ml.log", "view_ml_log")
 
     @access("ml")
     @mailinglist_guard()

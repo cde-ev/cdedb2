@@ -41,7 +41,7 @@
                                                  'aria-pressed': 'false',
                                                  'class': 'btn btn-danger btn-sm',
                                                  'id': 'dynamicrow-delete-button-' + unique_counter})
-                    .append($('<span></span>', {'class': 'fas fa-trash-alt'}));
+                    .append($('<span></span>', {'class': 'far fa-trash-alt'}));
             unique_counter += 1;
 
             if (newrow) {

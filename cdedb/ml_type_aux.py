@@ -716,23 +716,15 @@ class CdeLokalMailinglist(SemiPublicMailinglist):
     relevant_admins = {"cdelokal_admin"}
 
 
-MLTypeLike = Union[MailinglistTypes, Type[GeneralMailinglist]]
+class PublicMemberImplicitMailinglist(AllMembersImplicitMeta, GeneralOptInMailinglist):
+    pass
+
+
 MLType = Type[GeneralMailinglist]
 
 
-def get_type(val: Union[str, int, MLTypeLike]) -> MLType:
-    if isinstance(val, str):
-        if val.startswith(MailinglistTypes.__name__):
-            val = MailinglistTypes[val.replace(MailinglistTypes.__name__ + ".", "")]
-        else:
-            val = int(val)
-    if isinstance(val, int):
-        val = MailinglistTypes(val)
-    if isinstance(val, MailinglistTypes):
-        return TYPE_MAP[val]
-    if issubclass(val, GeneralMailinglist):
-        return val
-    raise ValueError(n_("Cannot determine ml_type from {}".format(val)))
+def get_type(val: MailinglistTypes) -> MLType:
+    return TYPE_MAP[val]
 
 
 def check_appropriate_type(mailinglist: CdEDBObject, ml_type: MLType) -> None:
@@ -770,6 +762,7 @@ TYPE_MAP = {
     MailinglistTypes.general_moderators: GeneralModeratorMailinglist,
     MailinglistTypes.cdelokal_moderators: CdELokalModeratorMailinglist,
     MailinglistTypes.semi_public: SemiPublicMailinglist,
+    MailinglistTypes.public_member_implicit: PublicMemberImplicitMailinglist,
     MailinglistTypes.cdelokal: CdeLokalMailinglist,
 }
 

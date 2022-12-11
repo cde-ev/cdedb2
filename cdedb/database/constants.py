@@ -215,6 +215,8 @@ class MailinglistTypes(enum.IntEnum):
 
     cdelokal = 60
 
+    public_member_implicit = 70
+
 
 @enum.unique
 class MailinglistDomain(enum.IntEnum):

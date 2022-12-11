@@ -27,8 +27,7 @@ from cdedb.common.validation import PAST_COURSE_COMMON_FIELDS, PAST_EVENT_FIELDS
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
     CustomCSVDialect, REQUESTdata, REQUESTdatadict, TransactionObserver, access,
-    calculate_db_logparams, calculate_loglinks, check_validation as check, csv_output,
-    drow_name, process_dynamic_input,
+    check_validation as check, csv_output, drow_name, process_dynamic_input,
 )
 
 COURSESEARCH_DEFAULTS = {
@@ -408,7 +407,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
             return self.show_past_event(rs, pevent_id)
 
         code = self.pasteventproxy.delete_past_event(
-            rs, pevent_id, cascade=("courses", "participants", "log"))
+            rs, pevent_id, cascade=("courses", "participants", "log", "genesis_cases"))
         rs.notify_return_code(code)
         return self.redirect(rs, "cde/list_past_events")
 
@@ -468,7 +467,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
             return self.show_past_course(rs, pevent_id, pcourse_id)
 
         code = self.pasteventproxy.delete_past_course(
-            rs, pcourse_id, cascade=("participants",))
+            rs, pcourse_id, cascade=("participants", "genesis_cases"))
         rs.notify_return_code(code)
         return self.redirect(rs, "cde/show_past_event")
 
@@ -542,26 +541,17 @@ class CdEPastEventMixin(CdEBaseFrontend):
                       time_start: Optional[datetime.datetime],
                       time_stop: Optional[datetime.datetime]) -> Response:
         """View activities concerning concluded events."""
-        length = length or self.conf["DEFAULT_LOG_LENGTH"]
-        # length is the requested length, _length the theoretically
-        # shown length for an infinite amount of log entries.
-        _offset, _length = calculate_db_logparams(offset, length)
 
-        # no validation since the input stays valid, even if some options
-        # are lost
-        rs.ignore_validation_errors()
-        total, log = self.pasteventproxy.retrieve_past_log(
-            rs, codes, pevent_id, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, change_note=change_note,
-            time_start=time_start, time_stop=time_stop)
-        persona_ids = (
-                {entry['submitted_by'] for entry in log if
-                 entry['submitted_by']}
-                | {entry['persona_id'] for entry in log if entry['persona_id']})
-        personas = self.coreproxy.get_personas(rs, persona_ids)
+        filter_params = {
+            'entity_ids': [pevent_id] if pevent_id else [],
+            'codes': codes, 'offset': offset, 'length': length,
+            'persona_id': persona_id, 'submitted_by': submitted_by,
+            'change_note': change_note, 'ctime': (time_start, time_stop),
+        }
+
         pevent_ids = self.pasteventproxy.list_past_events(rs)
         pevents = self.pasteventproxy.get_past_events(rs, pevent_ids)
-        loglinks = calculate_loglinks(rs, total, offset, length)
-        return self.render(rs, "past_event/view_past_log", {
-            'log': log, 'total': total, 'length': _length,
-            'personas': personas, 'pevents': pevents, 'loglinks': loglinks})
+        return self.generic_view_log(
+            rs, filter_params, "past_event.log", "past_event/view_past_log", {
+            'pevents': pevents
+        })
