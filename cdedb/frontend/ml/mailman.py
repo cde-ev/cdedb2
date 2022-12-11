@@ -142,6 +142,16 @@ do nothing.
 
 [1] {cdedburl(rs, 'ml/message_moderation', {'mailinglist_id': db_list['id']}, force_external=True)}
 """.strip(),
+            'list:admin:notice:disable': f"""
+$member's subscription has been disabled on $listname due to their bounce score
+exceeding the mailing list's bounce_score_threshold.
+
+Usually you (the moderator) are unable to do anything about the cause and this
+message only serves the purpose of keeping you in the loop w.r.t. the status
+of your mailing list.
+
+The triggering DSN if available is attached.
+""".strip(),
         }
         desired_header_matches = {
             ('x-spam-flag', 'YES', 'hold'),
