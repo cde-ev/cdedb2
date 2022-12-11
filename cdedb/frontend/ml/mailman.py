@@ -146,6 +146,9 @@ do nothing.
 $member's subscription has been disabled on $listname due to their bounce score
 exceeding the mailing list's bounce_score_threshold.
 
+This means that the mailinglist software will no longer deliver mail to this
+subscriber. Sadly this aspect of mailman is not yet accessible via the CdEDB.
+
 Usually you (the moderator) are unable to do anything about the cause and this
 message only serves the purpose of keeping you in the loop w.r.t. the status
 of your mailing list.
