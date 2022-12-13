@@ -560,7 +560,7 @@ class TestCron(CronTest):
         }
         for key, value in expectation.items():
             self.assertEqual(mm_lists['witz'].settings[key], value)
-        self.assertEqual(mm_lists['werbung'].set_template.call_count, 2)
+        self.assertEqual(mm_lists['werbung'].set_template.call_count, 3)
         # Subscriber update
         self.assertEqual(
             mm_lists['witz'].subscribe.call_args_list,
