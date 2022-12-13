@@ -804,11 +804,17 @@ class EventEventMixin(EventBaseFrontend):
         def is_over(part: CdEDBObject) -> bool:
             end: datetime.date = part["part_end"]
             one_day = datetime.timedelta(days=1)
-            return  end + one_day <= now().date() < end + 2 * one_day
+            return end + one_day <= now().date()
 
         for event_id, event in events.items():
+            # take care, since integer keys are serialized to strings!
+            if str(event_id) not in store:
+                store[str(event_id)] = {}
+            if store[str(event_id)].get("did_past_event_reminder"):
+                continue
             if not event["orga_address"]:
                 continue
+
             headers: Headers = {
                 "To": (event["orga_address"],),
                 "Reply-To": "akademien@lists.cde-ev.de"
@@ -824,6 +830,7 @@ class EventEventMixin(EventBaseFrontend):
                                       " schockiert!")
                 params = {"rechenschafts_deadline": now() + datetime.timedelta(days=90)}
                 self.do_mail(rs, "past_event_reminder", headers, params=params)
+                store[str(event_id)]["did_past_event_reminder"] = True
         return store
 
     @staticmethod
