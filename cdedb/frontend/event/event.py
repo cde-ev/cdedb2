@@ -11,7 +11,7 @@ import copy
 import datetime
 import decimal
 from collections import OrderedDict
-from typing import Collection, List, Optional, Set
+from typing import Collection, Optional, Set
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -790,51 +790,29 @@ class EventEventMixin(EventBaseFrontend):
     @periodic("mail_orgateam_reminders", period=24)
     def mail_orgateam_reminders(self, rs: RequestState, store: CdEDBObject
                                 ) -> CdEDBObject:
-        """Send midterm and post-event mails to orgateams.
-
-        The mails are send only once per pme part group.
-        """
+        """Send halftime and past event mails to orgateams."""
         event_ids = self.eventproxy.list_events(rs)
         events = self.eventproxy.get_events(rs, event_ids)
-        pme_type = const.EventPartGroupType.mutually_exclusive_participants
-        right_now = now()
-        one_day = datetime.timedelta(days=1)
+
+        def is_halftime(part: CdEDBObject) -> bool:
+            begin: datetime.date = part["part_begin"]
+            end: datetime.date = part["part_end"]
+            duration = end - begin
+            one_day = datetime.timedelta(days=1)
+            return begin + duration / 2 <= now() < begin + duration / 2 + one_day
+
+        def is_over(part: CdEDBObject) -> bool:
+            end: datetime.date = part["part_end"]
+            one_day = datetime.timedelta(days=1)
+            return  end + one_day <= now() < end + 2 * one_day
+
         for event_id, event in events.items():
-            pme_groups = {group for group in event["part_groups"].values()
-                          if group["constraint_type"] == pme_type}
-            # divide the parts affected by pme groups into disjoint sets
-            disjoint_parts: List[Set[int]] = []
-            for group in pme_groups:
-                is_disjoint = True
-                for part_ids in disjoint_parts:
-                    if group["part_ids"] & part_ids:
-                        part_ids |= group["part_ids"]
-                        is_disjoint = False
-                        break
-                if is_disjoint:
-                    disjoint_parts[-1] = group["part_ids"]
-            # add the remaining parts which are not included in any pme group
-            for part_id in event["parts"]:
-                is_disjoint = True
-                for part_ids in disjoint_parts:
-                    if part_id in part_ids:
-                        is_disjoint = False
-                        break
-                if is_disjoint:
-                    disjoint_parts[-1] = {part_id}
-            # send only one mail for each set of disjoint parts
-            for part_ids in disjoint_parts:
-                # choose one of the parts, but make the choice stable
-                part = event["parts"][xsorted(part_ids)[0]]
-                begin: datetime.date = part["part_begin"]
-                end: datetime.date = part["part_end"]
-                duration = end - begin
-                # send midterm mail
-                if begin + duration/2 <= right_now < begin + duration/2 + one_day:
-                    self.do_mail()
-                # send post mail
-                if end + one_day <= right_now < end + 2 * one_day:
-                    self.do_mail()
+            # send halftime mail (up to one per part)
+            if any(is_halftime(part) for part in event["parts"].values()):
+                self.do_mail()
+            # send past event mail (one per event)
+            elif all(is_over(part) for part in event["parts"].values()):
+                self.do_mail()
         return store
 
     @staticmethod
