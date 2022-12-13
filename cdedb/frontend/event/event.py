@@ -32,7 +32,7 @@ from cdedb.common.validation import (
     EVENT_TRACK_GROUP_COMMON_FIELDS,
 )
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, REQUESTfile, access, cdedburl,
+    Headers, REQUESTdata, REQUESTdatadict, REQUESTfile, access, cdedburl,
     check_validation as check, check_validation_optional as check_optional, drow_name,
     event_guard, inspect_validation as inspect, periodic, process_dynamic_input,
 )
@@ -799,20 +799,31 @@ class EventEventMixin(EventBaseFrontend):
             end: datetime.date = part["part_end"]
             duration = end - begin
             one_day = datetime.timedelta(days=1)
-            return begin + duration / 2 <= now() < begin + duration / 2 + one_day
+            return begin + duration / 2 <= now().date() < begin + duration / 2 + one_day
 
         def is_over(part: CdEDBObject) -> bool:
             end: datetime.date = part["part_end"]
             one_day = datetime.timedelta(days=1)
-            return  end + one_day <= now() < end + 2 * one_day
+            return  end + one_day <= now().date() < end + 2 * one_day
 
         for event_id, event in events.items():
+            if not event["orga_address"]:
+                continue
+            headers: Headers = {
+                "To": (event["orga_address"],),
+                "Reply-To": "akademien@lists.cde-ev.de"
+            }
             # send halftime mail (up to one per part)
             if any(is_halftime(part) for part in event["parts"].values()):
-                self.do_mail()
+                headers["Subject"] = ("10 Tipps für gute Akademien die bei allen"
+                                      " funktionieren!")
+                self.do_mail(rs, "halftime_reminder", headers)
             # send past event mail (one per event)
             elif all(is_over(part) for part in event["parts"].values()):
-                self.do_mail()
+                headers["Subject"] = ("Diese Informationen haben andere Orgateams"
+                                      " schockiert!")
+                params = {"rechenschafts_deadline": now() + datetime.timedelta(days=90)}
+                self.do_mail(rs, "past_event_reminder", headers, params=params)
         return store
 
     @staticmethod
