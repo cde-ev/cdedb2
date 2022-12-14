@@ -149,7 +149,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
 
     @access("finance_admin", modi={"POST"})
     @REQUESTdatadict(*LASTSCHRIFT_COMMON_FIELDS)
-    @REQUESTdata('persona_id', "donation")
+    @REQUESTdata("persona_id", "donation")
     def lastschrift_create(self, rs: RequestState, persona_id: vtypes.CdedbID,
                            data: CdEDBObject, donation: vtypes.PositiveDecimal
                            ) -> Response:

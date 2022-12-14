@@ -344,10 +344,9 @@ class CdELastschriftBackend(CdEBaseBackend):
             if lastschrift['revoked_at']:
                 raise RuntimeError(n_("Lastschrift already revoked."))
             period = self.current_period(rs)
-            # TODO maybe check that there is no successful transaction
             transaction_ids = self.list_lastschrift_transactions(
                 rs, lastschrift_ids=(lastschrift_id,),
-                periods=(period,), stati=(stati.issued,))
+                periods=(period,), stati=(stati.issued, stati.success))
             if transaction_ids:
                 raise RuntimeError(n_("Existing pending transaction."))
             data = {
