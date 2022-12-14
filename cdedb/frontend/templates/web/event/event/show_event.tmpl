@@ -266,10 +266,10 @@
                     </p>
                     <div class="p">
                         {% if ambience['event']['offline_lock'] %}
-                            {{ util.href(cdedblink('event/download_export'), gettext("JSON file"), icon='download', aclass='btn btn-primary') }}
+                            {{ util.href(cdedblink('event/download_export'), gettext("JSON file"), icon='download', aclass='btn btn-default') }}
                         {% else %}
                             <form action="{{ cdedblink('event/download_export') }}" method="GET" id="fullexportform" class="display-inline">
-                                {{ util.input_submit(label=gettext("JSON file"), icon='download') }}
+                                {{ util.input_submit(label=gettext("JSON file"), icon='download', aclass='btn btn-default') }}
                                 {{ util.input_checkbox(name="agree_unlocked_download", label=gettext("Are you sure to download a full export before locking?")) }}
                             </form>
                             <script nonce="{{ csp_nonce }}">
@@ -301,7 +301,7 @@
                                                        arialabel=gettext("Export of the Offline-DB")) }}
                                     <div class="input-group-btn">
                                         {{ util.input_submit(label=gettext("Unlock"), icon='cloud-upload-alt',
-                                                             aclass='btn btn-success') }}
+                                                             aclass='btn btn-primary') }}
                                     </div>
                                 </div>
                                 {{ util.output_errors('json') }}
@@ -391,8 +391,8 @@
                                 {{ util.anti_csrf_token('event/create_event_mailinglist') }}
                                 {{ util.input_hidden("orgalist", value=True) }}
                                 {{ util.input_submit(
-                                        label=gettext("Create orga mailinglist"), aclass="btn btn-success",
-                                        icon="plus", readonly=not orgas,
+                                        label=gettext("Create orga mailinglist"), aclass="btn btn-primary",
+                                        icon="far fa-plus-square", readonly=not orgas,
                                         title=("" if orgas
                                                else gettext("Must have orgas in order to create a mailinglist."))) }}
                             </form>
@@ -417,7 +417,7 @@
                                 {{ util.input_hidden("orgalist", value=False) }}
                                 {{ util.input_submit(
                                         label=gettext("Create participant mailinglist"),
-                                        aclass="btn btn-success", icon="plus", readonly=not orgas,
+                                        aclass="btn btn-primary", icon="far fa-plus-square", readonly=not orgas,
                                         title=("" if orgas
                                                else gettext("Must have orgas in order to create a mailinglist."))) }}
                             </form>

@@ -105,7 +105,7 @@
                                              label=none, readonly=is_locked, aclass='btn btn-xs btn-success', icon='plus',
                                              title=gettext("Add Lodgement"), anid="create_lodgement_in_group_" + group_id|string) }}
                                 {{ util.href(cdedblink("event/move_lodgements_form", {'group_id': group_id}), label=none,
-                                             icon='dumpster-fire', readonly=is_locked, aclass='btn btn-xs btn-danger',
+                                             icon='dumpster-fire', readonly=is_locked, aclass='btn btn-xs btn-warning',
                                              anid="move_or_delete_lodgements_in_group_" + group_id|string,
                                              title=gettext("Move or delete lodgements from this group")) }}
                             </td>

@@ -720,23 +720,11 @@ class PublicMemberImplicitMailinglist(AllMembersImplicitMeta, GeneralOptInMailin
     pass
 
 
-MLTypeLike = Union[MailinglistTypes, Type[GeneralMailinglist]]
 MLType = Type[GeneralMailinglist]
 
 
-def get_type(val: Union[str, int, MLTypeLike]) -> MLType:
-    if isinstance(val, str):
-        if val.startswith(MailinglistTypes.__name__):
-            val = MailinglistTypes[val.replace(MailinglistTypes.__name__ + ".", "")]
-        else:
-            val = int(val)
-    if isinstance(val, int):
-        val = MailinglistTypes(val)
-    if isinstance(val, MailinglistTypes):
-        return TYPE_MAP[val]
-    if issubclass(val, GeneralMailinglist):
-        return val
-    raise ValueError(n_("Cannot determine ml_type from {}".format(val)))
+def get_type(val: MailinglistTypes) -> MLType:
+    return TYPE_MAP[val]
 
 
 def check_appropriate_type(mailinglist: CdEDBObject, ml_type: MLType) -> None:

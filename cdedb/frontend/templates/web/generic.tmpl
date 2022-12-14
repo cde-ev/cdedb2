@@ -89,7 +89,7 @@
                             icon="plus", aclass="btn btn-success btn-sm") }}
                     {% if scope.realm == 'cde' %}
                         {{ util.href(cdedblink('cde/batch_admission'), gettext("Batch Admission"), icon="file-import",
-                                 aclass="btn btn-default btn-sm") }}
+                                 aclass="btn btn-success btn-sm") }}
                     {% endif %}
                 {% endif %}
             </div>
@@ -452,13 +452,13 @@
         </script>
         <div class="p softhide" id="js-button-group">
             <div class="btn-group">
-                <button type="button" class="btn btn-sm btn-info" title="{% trans %}select all{% endtrans %}" id="btn-select-all">
+                <button type="button" class="btn btn-sm btn-default" title="{% trans %}select all{% endtrans %}" id="btn-select-all">
                     {{ util.make_icon('check-square') }} <span class="hidden-xs">{% trans %}all{% endtrans %}</span>
                 </button>
-                <button type="button" class="btn btn-sm btn-info" title="{% trans %}select none{% endtrans %}" id="btn-select-none">
+                <button type="button" class="btn btn-sm btn-default" title="{% trans %}select none{% endtrans %}" id="btn-select-none">
                     {{ util.make_icon('square') }} <span class="hidden-xs">{% trans %}none{% endtrans %}</span>
                 </button>
-                <button type="button" class="btn btn-sm btn-info" title="{% trans %}invert selection{% endtrans %}" id="btn-select-swap">
+                <button type="button" class="btn btn-sm btn-default" title="{% trans %}invert selection{% endtrans %}" id="btn-select-swap">
                     {{ util.make_icon('caret-square-right') }} <span class="hidden-xs">{% trans %}invert{% endtrans %}</span>
                 </button>
             </div>
