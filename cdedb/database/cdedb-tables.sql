@@ -163,6 +163,7 @@ CREATE TABLE core.personas (
         donation                numeric(8, 2) DEFAULT NULL,
         CONSTRAINT personas_cde_donation
             CHECK(NOT is_cde_realm OR donation IS NOT NULL OR is_purged),
+        legacy_donation         boolean NOT NULL DEFAULT FALSE,
         -- True if user decided (positive or negative) on searchability
         decided_search          boolean DEFAULT FALSE,
         CONSTRAINT personas_cde_consent
