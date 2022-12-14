@@ -3868,6 +3868,7 @@
             "account_address": null,
             "granted_at": "2000-02-22T20:22:22.222222+00:00",
             "revoked_at": "2001-02-22T20:22:22.222222+00:00",
+            "legacy": false,
             "notes": null
         },
         {
@@ -3879,6 +3880,7 @@
             "account_address": "Im Geldspeicher 1",
             "granted_at": "2002-02-22T20:22:22.222222+00:00",
             "revoked_at": null,
+            "legacy": true,
             "notes": "reicher Onkel"
         }
     ],

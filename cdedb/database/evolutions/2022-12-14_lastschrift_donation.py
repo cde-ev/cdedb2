@@ -16,17 +16,15 @@ with s:
     # Add new columns.
     query = """
         ALTER TABLE core.personas ADD COLUMN donation NUMERIC(8, 2) DEFAULT NULL;
-        ALTER TABLE core.personas ADD COLUMN legacy_donation boolean NOT NULL DEFAULT FALSE;
         ALTER TABLE core.changelog ADD COLUMN donation NUMERIC(8, 2);
+        ALTER TABLE cde.lastschrift ADD COLUMN legacy boolean NOT NULL DEFAULT FALSE;
     """
     core.query_exec(s.rs(), query, ())
     print("Added new columns.")
 
     # SELECT lastschrift amounts and insert them properly into personas and changelog.
     query = """
-        UPDATE core.personas SET legacy_donation = True WHERE id IN (
-            SELECT persona_id FROM cde.lastschrift WHERE revoked_at IS NULL
-        );
+        UPDATE cde.lastschrift SET legacy = True WHERE revoked_at IS NOT NULL;
     """
     num = core.query_exec(s.rs(), query, ())
     step = (num // 10) if num > 20 else 1
@@ -40,7 +38,6 @@ with s:
         data = {
             'id': e['persona_id'],
             'donation': e['amount'],
-            # 'legacy_donation': True,
         }
         core.set_persona(s.rs(), data, change_note=msg, automated_change=True)
 

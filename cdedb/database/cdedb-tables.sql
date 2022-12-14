@@ -163,7 +163,6 @@ CREATE TABLE core.personas (
         donation                numeric(8, 2) DEFAULT NULL,
         CONSTRAINT personas_cde_donation
             CHECK(NOT is_cde_realm OR donation IS NOT NULL OR is_purged),
-        legacy_donation         boolean NOT NULL DEFAULT FALSE,
         -- True if user decided (positive or negative) on searchability
         decided_search          boolean DEFAULT FALSE,
         CONSTRAINT personas_cde_consent
@@ -515,6 +514,7 @@ CREATE TABLE cde.lastschrift (
         -- validity
         granted_at              timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
         revoked_at              timestamp WITH TIME ZONE DEFAULT NULL,
+        legacy                  boolean NOT NULL DEFAULT FALSE,
         -- administrative comments
         notes                   varchar
 );
