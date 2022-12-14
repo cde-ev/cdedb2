@@ -787,7 +787,7 @@ class EventEventMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "event/group_summary")
 
-    @periodic("mail_orgateam_reminders", period=24)
+    @periodic("mail_orgateam_reminders", period=4*24)  # once per day
     def mail_orgateam_reminders(self, rs: RequestState, store: CdEDBObject
                                 ) -> CdEDBObject:
         """Send halftime and past event mails to orgateams."""
