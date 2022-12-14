@@ -403,7 +403,7 @@ class TestCron(CronTest):
         # We just want to test that no exception is raised.
         self.execute('event_keeper')
 
-    def test_mail_orgateam_reminders_none(self):
+    def test_mail_orgateam_reminders_none(self) -> None:
         cronjob = "mail_orgateam_reminders"
         self.execute(cronjob)
         self.assertEqual([], [mail.template for mail in self.mails])
