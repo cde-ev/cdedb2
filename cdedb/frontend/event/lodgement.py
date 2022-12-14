@@ -351,10 +351,11 @@ class EventLodgementMxin(EventBaseFrontend):
     @access("event")
     @event_guard()
     @REQUESTdata('all_participants', 'part_id', 'show_lodgements',
-                 'show_lodgement_groups')
+                 'show_lodgement_groups', 'show_full_assigned_edges')
     def lodgement_wishes_graph(
             self, rs: RequestState, event_id: int, all_participants: bool,
-            part_id: Optional[int], show_lodgements: bool, show_lodgement_groups: bool
+            part_id: Optional[int], show_lodgements: bool, show_lodgement_groups: bool,
+            show_full_assigned_edges: bool
     ) -> Response:
         if rs.has_validation_errors():
             return self.lodgement_wishes_graph_form(rs, event_id)
@@ -372,6 +373,10 @@ class EventLodgementMxin(EventBaseFrontend):
             rs.append_validation_error(("show_lodgements", ValueError(msg)))
         if show_lodgement_groups and not part_id:
             rs.append_validation_error(("show_lodgement_groups", ValueError(msg)))
+        msg = n_("Edges between participants who are both assigned to a lodgement can"
+                 " only be hidden if the graph is restricted to a specific part.")
+        if not show_full_assigned_edges and not part_id:
+            rs.append_validation_error(("show_full_assigned_edges", ValueError(msg)))
         if rs.has_validation_errors():
             return self.lodgement_wishes_graph_form(rs, event_id)
 
@@ -390,7 +395,8 @@ class EventLodgementMxin(EventBaseFrontend):
             rs, registrations, wishes, lodgements, lodgement_groups, event, personas,
             filter_part_id=part_id, show_all=all_participants, cluster_part_id=part_id,
             cluster_by_lodgement=show_lodgements,
-            cluster_by_lodgement_group=show_lodgement_groups)
+            cluster_by_lodgement_group=show_lodgement_groups,
+            show_full_assigned_edges=show_full_assigned_edges)
         data: bytes = graph.pipe('svg')
         return self.send_file(rs, "image/svg+xml", data=data)
 
