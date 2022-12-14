@@ -909,7 +909,8 @@ class EventEventMixin(EventBaseFrontend):
                 code = self.mlproxy.create_mailinglist(rs, orga_ml_data)
                 rs.notify_return_code(code, success=n_("Orga mailinglist created."))
             code = self.eventproxy.set_event(
-                rs, {"id": new_id, "orga_address": orga_ml_address})
+                rs, {"id": new_id, "orga_address": orga_ml_address},
+                change_note="Mailadresse der Orgas gesetzt.")
             rs.notify_return_code(code)
         if create_participant_list:
             participant_ml_data = self._get_mailinglist_setter(rs, data)

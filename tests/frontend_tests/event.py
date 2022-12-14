@@ -1286,6 +1286,7 @@ etc;anything else""", f['entries_2'].value)
                 'event_id': 1002,
             },
             {
+                'change_note': "Mailadresse der Orgas gesetzt.",
                 'code': const.EventLogCodes.event_changed,
                 'event_id': 1002,
             }

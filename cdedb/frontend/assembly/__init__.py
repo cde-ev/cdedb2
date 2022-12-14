@@ -413,7 +413,8 @@ class AssemblyFrontend(AbstractUserFrontend):
                 code = self.mlproxy.create_mailinglist(rs, presider_ml_data)
                 rs.notify_return_code(code, success=n_("Presider mailinglist created."))
             code = self.assemblyproxy.set_assembly(
-                rs, {"id": new_id, "presider_address": presider_ml_address})
+                rs, {"id": new_id, "presider_address": presider_ml_address},
+                change_note="Mailadresse der Versammlungsleitung gesetzt.")
             rs.notify_return_code(code)
         if create_attendee_list:
             attendee_ml_data = self._get_mailinglist_setter(rs, data)
