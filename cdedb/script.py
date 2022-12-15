@@ -122,7 +122,7 @@ class Script:
     }
 
     def __init__(self, *, persona_id: int = None, dry_run: bool = None,
-                 dbuser: str = 'cdb_anonymous', dbname: str = 'cdb',
+                 dbuser: str = 'cdb_anonymous',
                  outfile: PathLike = None, outfile_append: bool = None,
                  cursor: psycopg2.extensions.cursor = psycopg2.extras.RealDictCursor,
                  check_system_user: bool = True, configpath: Optional[PathLike] = None,
@@ -139,8 +139,6 @@ class Script:
         :param persona_id: Default ID for the user performing the actions.
         :param dry_run: Whether or not to keep any changes after a transaction.
         :param dbuser: Database user for the connection. Defaults to `'cdb_anonymous'`
-        :param dbname: Database against which to run the script. Defaults to `'cdb'`.
-            May be overridden via environment variable during the evolution trial.
         :param outfile: If given, redirect stdout and stderr into this file, while
             using the Script as a contextmanager.
         :param outfile_append: If True, append to the outfile, rather than replace.
@@ -170,7 +168,6 @@ class Script:
         self.dry_run = bool(os.environ.get("EVOLUTION_TRIAL_OVERRIDE_DRY_RUN", dry_run))
 
         # These parameters can be overridden but are otherwise not taken via env:
-        dbname = os.environ.get("EVOLUTION_TRIAL_OVERRIDE_DBNAME", dbname)
         outfile = os.environ.get("EVOLUTION_TRIAL_OVERRIDE_OUTFILE", outfile)
         self.outfile = pathlib.Path(outfile) if outfile else None
         self.outfile_append = bool(
@@ -191,16 +188,16 @@ class Script:
         self._backends = {}
         self._frontends = {}
         self._request_states: Dict[int, RequestState] = {}
-        self._connect(dbuser, dbname, cursor)
+        self._connect(dbuser, cursor)
 
-    def _connect(self, dbuser: str, dbname: str, cursor: psycopg2.extensions.cursor
+    def _connect(self, dbuser: str, cursor: psycopg2.extensions.cursor
                  ) -> None:
         """Create and save a database connection."""
         if self._conn:
             return  # pragma: no cover
 
         connection_parameters = {
-            "dbname": dbname,
+            "dbname": self.config["CDB_DATABASE_NAME"],
             "user": dbuser,
             "password": self._secrets["CDB_DATABASE_ROLES"][dbuser],
             "host": self.config["DB_HOST"],

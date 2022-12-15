@@ -34,8 +34,8 @@ class TestScript(unittest.TestCase):
         populated state. Tests which rely on specific contents should
         prepare them theirselves.
         """
-        return Script(persona_id=-1, dbname=self.conf["CDB_DATABASE_NAME"],
-                      dbuser="cdb_admin", check_system_user=False, **config)
+        return Script(persona_id=-1, dbuser="cdb_admin", check_system_user=False,
+                      **config)
 
     @staticmethod
     def check_buffer(buffer: typing.IO[str], assertion: Callable[[str, str], None],
@@ -80,8 +80,8 @@ Aborting Dry Run! Time taken: 0.000 seconds.
         self.assertIs(rs_factory(42), rs_factory(42))
 
         with self.assertRaises(ValueError) as cm:
-            Script(dbname=self.conf["CDB_DATABASE_NAME"], dbuser="cdb_admin",
-                   check_system_user=False, CDB_DATABASE_ROLES="{'cdb_admin': 'abc'}")
+            Script(dbuser="cdb_admin", check_system_user=False,
+                   CDB_DATABASE_ROLES="{'cdb_admin': 'abc'}")
         msg = "Override secret config options via kwarg is not possible."
         self.assertIn(msg, cm.exception.args[0])
 

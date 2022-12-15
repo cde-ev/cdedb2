@@ -370,7 +370,6 @@ class CdEDBTest(BasicTest):
         with Script(
             persona_id=-1,
             dbuser="cdb",
-            dbname=self.conf["CDB_DATABASE_NAME"],
             check_system_user=False,
         ).rs().conn as conn:
             conn.set_session(autocommit=True)
