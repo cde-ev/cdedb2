@@ -514,7 +514,8 @@ CREATE TABLE cde.lastschrift (
         -- validity
         granted_at              timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
         revoked_at              timestamp WITH TIME ZONE DEFAULT NULL,
-        legacy                  boolean NOT NULL DEFAULT FALSE,
+        -- we used different lastschrift subscription forms over the years
+        revision                integer NOT NULL DEFAULT 2,
         -- administrative comments
         notes                   varchar
 );

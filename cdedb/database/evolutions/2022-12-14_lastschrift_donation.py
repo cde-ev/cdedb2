@@ -17,18 +17,18 @@ with s:
     query = """
         ALTER TABLE core.personas ADD COLUMN donation NUMERIC(8, 2) DEFAULT NULL;
         ALTER TABLE core.changelog ADD COLUMN donation NUMERIC(8, 2);
-        ALTER TABLE cde.lastschrift ADD COLUMN legacy boolean NOT NULL DEFAULT FALSE;
+        ALTER TABLE cde.lastschrift ADD COLUMN revision integer NOT NULL DEFAULT 2;
     """
     core.query_exec(s.rs(), query, ())
     print("Added new columns.")
 
     # SELECT lastschrift amounts and insert them properly into personas and changelog.
     query = """
-        UPDATE cde.lastschrift SET legacy = True WHERE revoked_at IS NOT NULL;
+        UPDATE cde.lastschrift SET revision = 1 WHERE revoked_at IS NOT NULL;
     """
     num = core.query_exec(s.rs(), query, ())
     step = (num // 10) if num > 20 else 1
-    print(f"Set {num} legacy flags for existing lastschrifts.")
+    print(f"Set {num} revision counters to 1 for existing lastschrifts.")
 
     query = """
         SELECT persona_id, amount FROM cde.lastschrift WHERE revoked_at IS NULL;
