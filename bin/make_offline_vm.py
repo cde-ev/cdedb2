@@ -15,10 +15,8 @@ import subprocess
 import sys
 from typing import Collection
 
-import psycopg2.extensions
 from psycopg2.extras import DictCursor, Json
 
-from cdedb.cli.storage import populate_event_keeper
 from cdedb.common import CdEDBObject
 from cdedb.config import (
     DEFAULT_CONFIGPATH, Config, TestConfig, get_configpath, set_configpath,
