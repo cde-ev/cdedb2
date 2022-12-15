@@ -97,7 +97,7 @@
                 <<% if data["donation"] %>>
                     <<< data["donation"]|money|te >>>
                 <<% else %>>
-                    \makebox[2cm]{\dotfill}€ (mindestens <<< data["min_donation"]|money|te >>>, typischerweise <<< data["typical_donation"]|money|te >>>)
+                    \makebox[2cm]{\dotfill}€ (typischerweise <<< data["typical_donation"]|money|te >>>)
                 <<% endif %>>
         \end{tabular}
 
