@@ -27,7 +27,8 @@ class TestScript(unittest.TestCase):
     def setUp(self) -> None:
         self.script = self.get_script()
 
-    def get_script(self, **config: Any) -> Script:
+    @staticmethod
+    def get_script(**config: Any) -> Script:
         """This gets an instance of our Script class.
 
         Note that it is not guaranteed that the database is in a cleanly
