@@ -108,6 +108,7 @@ Aborting Dry Run! Time taken: 0.000 seconds.
             f.write("SYSLOG_LEVEL = 42\n")
             f.write(f"DB_HOST = '{real_config['DB_HOST']}'\n")
             f.write(f"DB_PORT = {real_config['DB_PORT']}\n")
+            f.write(f"CDB_DATABASE_NAME = '{real_config['CDB_DATABASE_NAME']}'\n")
             f.flush()
             configured_script = self.get_script(configpath=f.name)
             self.assertEqual(42, configured_script.config["SYSLOG_LEVEL"])
@@ -137,6 +138,7 @@ Aborting Dry Run! Time taken: 0.000 seconds.
             f.write("LOCKDOWN = 42\n")
             f.write(f"DB_HOST = '{real_config['DB_HOST']}'\n")
             f.write(f"DB_PORT = {real_config['DB_PORT']}\n")
+            f.write(f"CDB_DATABASE_NAME = '{real_config['CDB_DATABASE_NAME']}'\n")
             f.flush()
             configured_script = self.get_script(configpath=f.name)
             self.assertEqual(
@@ -173,6 +175,7 @@ Aborting Dry Run! Time taken: 0.000 seconds.
             f.write("LOCKDOWN = 42\n")
             f.write(f"DB_HOST = '{real_config['DB_HOST']}'\n")
             f.write(f"DB_PORT = {real_config['DB_PORT']}\n")
+            f.write(f"CDB_DATABASE_NAME = '{real_config['CDB_DATABASE_NAME']}'\n")
             f.flush()
             configured_script = self.get_script(configpath=f.name)
             self.assertEqual(
