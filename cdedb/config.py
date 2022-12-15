@@ -405,6 +405,10 @@ class Config(Mapping[str, Any]):
     def __len__(self) -> int:
         return self._configchain.__len__()
 
+    def __repr__(self) -> str:
+        name = self.__class__.__name__
+        return f"{name}(configpath={self._configpath}, configchain={self._configchain})"
+
 
 class LazyConfig(Config):
     """Lazy config object for usage global namespace.
