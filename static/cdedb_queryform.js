@@ -172,11 +172,11 @@
             var f = fieldList[number];
 
             var $button = $('<button></button>', {
-                'class':"btn btn-sm btn-danger pull-right",
-                'type':"button",
+                'class': "btn btn-sm btn-danger pull-right",
+                'type': "button",
                 'title': settings.labels['del_filter'] || ''
             })
-                .append($('<span></span>',{'class':'fas fa-minus'}))
+                .append($('<span></span>',{'class': 'fas fa-minus'}))
                 .click(function() {
                     f.input_filter_op.val('');
                     f.input_filter_value.val('');
@@ -185,7 +185,7 @@
                 });
             var $fieldbox = $('<span></span>');
             var $opselector = $('<select></select>', {
-                'class':"form-control input-sm input-slim",
+                'class': "form-control input-sm input-slim",
                 'aria-label': settings.labels['filter_op'] || ''
             })
                 .append(f.input_filter_op.children('option').slice(1).clone())
@@ -204,7 +204,7 @@
 
 
             var $item = $('<li></li>',{
-                'class':"list-group-item queryform-filterbox" + (f.error ? " has-error": ""),
+                'class': "list-group-item queryform-filterbox" + (f.error ? " has-error": ""),
                 'data-id': number,
                 'id': 'qf-filter-row-' + unique_counter
             })
@@ -214,7 +214,7 @@
                 .append($button);
             unique_counter += 1;
             if (f.error)
-                $item.append($('<div></div>',{'class':'help-block'}).html(f.error));
+                $item.append($('<div></div>',{'class': 'help-block'}).html(f.error));
 
             $filterFieldList.append($item);
             if (focus) {
@@ -409,15 +409,15 @@
                 'type': "button",
                 'title': settings.labels['del_field'] || ''
             })
-                .append($('<span></span>',{'class':'fas fa-minus'}))
+                .append($('<span></span>',{'class': 'fas fa-minus'}))
                 .click(function() {
                     f.input_select.prop('checked',false);
                     $(this).parent().detach();
                     obj.refreshViewFieldSelect();
                 });
             var $box = $('<span></span>',
-                         {'class':'queryform-fieldbox',
-                          'data-id':number,
+                         {'class': 'queryform-fieldbox',
+                          'data-id': number,
                           'id': 'qf-view-row-' + unique_counter})
                     .text(f.name)
                     .append($button);
@@ -450,7 +450,7 @@
                 'type': "button",
                 'title': settings.labels['del_sort'] || ''
             })
-                .append($('<span></span>',{'class':'fas fa-minus'}))
+                .append($('<span></span>',{'class': 'fas fa-minus'}))
                 .click(function() {
                     $(this).parent().detach();
                     obj.updateSortInputs();
@@ -467,10 +467,10 @@
                     obj.updateSortInputs();
                 });
             var $item = $('<li></li>',
-                          {'class':"list-group-item queryform-filterbox",
-                           'data-id':number,
+                          {'class': "list-group-item queryform-filterbox",
+                           'data-id': number,
                            'id': 'qf-sort-row-' + unique_counter})
-                    .append($('<span></span>',{'class':'num label label-default'})).append('&ensp;')
+                    .append($('<span></span>',{'class': 'num label label-default'})).append('&ensp;')
                     .append(f.name).append('&ensp;')
                     .append($sortselector).append('&ensp;')
                     .append($button);
