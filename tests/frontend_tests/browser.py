@@ -125,7 +125,7 @@ class TestBrowser(BrowserTest):
         page.get_by_text("Emilia E. EventisDB-5-1 • emilia@example.cde").click()
         page.wait_for_url("http://localhost:5000/core/persona/5/show?*")
 
-        expect(page.locator("#content--admin-notes")).to_have_text(
+        expect(page.locator("#admin-notes")).to_have_text(
             ("War früher mal berühmt, hat deswegen ihren Nachnamen geändert."))
 
     @event_keeper
