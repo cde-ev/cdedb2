@@ -2,13 +2,14 @@ Testing
 =======
 
 To ensure our code keeps working properly, all code written should be tested.
-Due to practicality reasons, we restrict ourselves to testing Python and Jinja
-automatically, while JavaScript and CSS are tested manually.
+Due to practicality reasons, we restrict ourselves to automatically testing
+the logic (Python, Jinja, JavaScript) and test the design (CSS) manually.
 
 For backend and other basic testing, we are just calling the functions we want
-to test directly, while for frontend testing, we are using webtest to emulate a
-webserver. Here, we use German as default locale, so be wary for test failures
-when touching translations.
+to test directly, while for frontend testing, we are using webtest to emulate
+a webserver. Here, we use German as default locale, so be wary for test
+failures when touching translations. Additionally playwright is used for
+testing with real browser engines which allows checking the JavaScript.
 
 How to write a good integration test
 ------------------------------------
