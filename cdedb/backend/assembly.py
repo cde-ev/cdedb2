@@ -567,8 +567,8 @@ class AssemblyBackend(AbstractBackend):
         get_assemblies, "assembly_ids", "assembly_id")
 
     @access("assembly")
-    def set_assembly(self, rs: RequestState, data: CdEDBObject
-                     ) -> DefaultReturnCode:
+    def set_assembly(self, rs: RequestState, data: CdEDBObject,
+                     change_note: str = None) -> DefaultReturnCode:
         """Update some keys of an assembly.
 
         In addition to the keys in `cdedb.common.ASSEMBLY_FIELDS`, which is
@@ -589,7 +589,7 @@ class AssemblyBackend(AbstractBackend):
             if assembly_data:
                 ret *= self.sql_update(rs, "assembly.assemblies", assembly_data)
                 self.assembly_log(rs, const.AssemblyLogCodes.assembly_changed,
-                                  data['id'])
+                                  data['id'], change_note=change_note)
         return ret
 
     @access("assembly_admin")
