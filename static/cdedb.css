@@ -157,6 +157,10 @@ ul.slim {
     background-color: #a4eba4;
     background-image: linear-gradient(to right, #a4eba4 0, #fff 50%);
 }
+.form-control-nosp {
+    /* negative help-block margin */
+    margin-bottom: -5px;
+}
 .help-block {
     margin-bottom: 6px;
 }
