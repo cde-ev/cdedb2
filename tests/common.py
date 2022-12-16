@@ -511,6 +511,9 @@ class BackendTest(CdEDBTest):
 class BrowserTest(CdEDBTest):
     """
     Base class for a TestCase that uses a real browser.
+
+    We instantiate a real (development) server for this usecase as a bare WSGI
+    application won't do the trick.
     """
     serverProcess = None
 
