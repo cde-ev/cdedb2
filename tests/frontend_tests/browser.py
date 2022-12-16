@@ -47,7 +47,7 @@ def make_page(*args, headless: bool = True,  # type: ignore[no-untyped-def]
 
 
 class TestBrowser(BrowserTest):
-    """Full simulation tests.
+    """Full simulation tests instrumented via playwright.
 
     Each test should contain a short description so it can be reproduced
     without reverse engineering the code.
@@ -56,7 +56,17 @@ class TestBrowser(BrowserTest):
     playwright codegen https://localhost --ignore-https-errors
     in a shell in a graphical environment. The result has to be postprocessed
     by replacing `https://localhost/db/` with `http://localhost:5000/`.
+
+    The expected way to adjust a test case except for really minor changes is
+    to completely redo it with the code generation.
+
+    These facilities should be used parsimoniously as each test is rather
+    expensive, both in execution time (each case run is expected to take
+    roughly 3 seconds on 2022 hardware) and maintenance effort required. Hence
+    the idea is to have one big test case for each major piece of JS
+    functionality that is deemed important enough to be checked.
     """
+
     @storage
     @make_page
     def test_js_interactive_vote(self, page: Page) -> None:
