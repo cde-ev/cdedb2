@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 
 from cdedb.backend.core import CoreBackend
+from cdedb.backend.cde import CdEBackend
 from cdedb.script import Script
 
 s = Script(dbuser='cdb')
 
 core: CoreBackend = s.make_backend("core", proxy=False)
+cde: CdEBackend = s.make_backend("cde", proxy=False)
 
 if s.persona_id < 0:
     raise RuntimeError("Need persona id to create changelog entries.")
@@ -23,9 +25,7 @@ with s:
     print("Added new columns.")
 
     # SELECT lastschrift amounts and insert them properly into personas and changelog.
-    query = """
-        UPDATE cde.lastschrift SET revision = 1 WHERE revoked_at IS NOT NULL;
-    """
+    query = """UPDATE cde.lastschrift SET revision = 1;"""
     num = core.query_exec(s.rs(), query, ())
     step = (num // 10) if num > 20 else 1
     print(f"Set {num} revision counters to 1 for existing lastschrifts.")
@@ -37,7 +37,7 @@ with s:
     for i, e in enumerate(core.query_all(s.rs(), query, ())):
         data = {
             'id': e['persona_id'],
-            'donation': e['amount'],
+            'donation': e['amount'] - cde.annual_membership_fee(s.rs()),
         }
         core.set_persona(s.rs(), data, change_note=msg, automated_change=True)
 
@@ -69,8 +69,7 @@ with s:
                 'id': e['id'],
                 'donation': 0,
             }
-            core.set_persona(s.rs(), data, change_note=msg, automated_change=True,
-                             allow_specials=("archive",))
+            core.set_persona(s.rs(), data, change_note=msg, automated_change=True)
 
         if i % step == 0:
             print(".", end="", flush=True)
