@@ -576,13 +576,11 @@ class CdELastschriftMixin(CdEBaseFrontend):
             not_minor = not determine_age_class(
                 persona['birthday'], now().date()).is_minor()
         min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
-        max_donation = self.conf["MAXIMAL_LASTSCHRIFT_DONATION"]
         typical_donation = self.conf["TYPICAL_LASTSCHRIFT_DONATION"]
         return self.render(
             rs, "lastschrift/lastschrift_subscription_form_fill", {
                 "persona": persona, "not_minor": not_minor,
-                "min_donation": min_donation, "max_donation": max_donation,
-                "typical_donation": typical_donation
+                "min_donation": min_donation, "typical_donation": typical_donation
             }
         )
 

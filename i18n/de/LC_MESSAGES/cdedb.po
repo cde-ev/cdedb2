@@ -9192,9 +9192,15 @@ msgstr "Mitgliedschaft"
 
 #: cdedb/frontend/templates/web/core/change_user.tmpl:57
 msgid ""
-"You allow the CdE to withdraw this amount annually from your balance or via "
+"You allow the CdE to withdraw this amount annually via "
 "direct debit authorization, in addition to the annual membership fee."
-msgstr "Du erlaubst dem CdE diesen Betrag als jährliche Spende zuzüglich zu deinem Mitgliedsbeitrag von deinem Mitgliedsguthaben oder via Lastschrift einzuziehen."
+msgstr "Du erlaubst dem CdE diesen Betrag als jährliche Spende zuzüglich zu deinem Mitgliedsbeitrag via Lastschrift einzuziehen."
+
+msgid ""
+"Your donation is outside of the minimal and maximal boundary values."
+" Please contact %(mail)s if you want to change it."
+msgstr "Dein Spendenbetrag ist außerhalb des üblichen Wertebereichs."
+" Bitte kontaktiere %(mail)s, wenn du ihn ändern möchtest."
 
 #: cdedb/frontend/templates/web/core/change_user.tmpl:62
 #: cdedb/frontend/templates/web/core/show_user.tmpl:384

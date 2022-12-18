@@ -52,10 +52,20 @@
             <h4 class="heading-underline">{% trans %}Membership{% endtrans %}</h4>
         {% endif %}
         {% if "donation" in shown_fields %}
+            {% if min_donation <= values["donation"] <= max_donation %}
                 {{ util.form_input_text(name="donation", label=gettext("Annual Donation"), type="number",
-                                        attributes='min="0" step="0.01"'|s, addon="€",
-                                        info=gettext("You allow the CdE to withdraw this amount annually from your balance"
-                                                     " or via direct debit authorization, in addition to the annual membership fee.")) }}
+                                        attributes='min="%(min)s" max="%(max)s" step="0.01"'|s|format(min=min_donation, max=max_donation), addon="€",
+                                        info=gettext("You allow the CdE to withdraw this amount annually"
+                                                     " via direct debit authorization, in addition to the annual membership fee.")) }}
+            {% else %}
+                {{ util.form_input_static(label=gettext("Annual Donation"), value=values["donation"]|money(lang=lang),
+                                          info=gettext("You allow the CdE to withdraw this amount annually"
+                                                       " via direct debit authorization, in addition to the annual membership fee.")
+                                               + " " +
+                                               gettext("Your donation is outside of the minimal and maximal boundary values."
+                                                       " Please contact %(mail)s if you want to change it.")|format(mail=MANAGEMENT_ADDRESS)) }}
+                {{ util.input_hidden(name="donation", value=values["donation"]) }}
+            {% endif %}
         {% endif %}
         {% if "paper_expuls" in shown_fields %}
             {{ util.form_input_checkbox(name="paper_expuls", label=gettext("Printed exPuls"),

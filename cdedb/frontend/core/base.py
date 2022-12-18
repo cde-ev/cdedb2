@@ -1088,6 +1088,8 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.render(rs, "change_user", {
             'username': data['username'],
             'shown_fields': shown_fields,
+            'min_donation': self.conf["MINIMAL_LASTSCHRIFT_DONATION"],
+            'max_donation': self.conf["MAXIMAL_LASTSCHRIFT_DONATION"]
         })
 
     @access("persona", modi={"POST"})
@@ -1239,6 +1241,20 @@ class CoreBaseFrontend(AbstractFrontend):
         data = request_dict_extractor(rs, attributes)
         data['id'] = persona_id
         data = check(rs, vtypes.Persona, data)
+        # take special care for annual donations in combination with lastschrift
+        if (data and "donation" in data and self.cdeproxy.list_lastschrift(
+                rs, [persona_id], active=True)):
+            min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
+            max_donation = self.conf["MAXIMAL_LASTSCHRIFT_DONATION"]
+            # The user may specify only donations between a specific minimal and maximal
+            # value. However, admins may change this to arbitrary values, so we allow
+            # to surpass the check if the user didn't change the donation's amount.
+            if (not min_donation <= data["donation"] <= max_donation
+                    and not rs.ignore_warnings):
+                rs.append_validation_error(("donation", ValidationWarning(
+                    n_("Lastschrift donation must be between %(min)s and %(max)s."),
+                    {"min": money_filter(min_donation),
+                     "max": money_filter(max_donation)})))
         if rs.has_validation_errors():
             return self.admin_change_user_form(rs, persona_id)
         assert data is not None
