@@ -93,7 +93,7 @@
                                         info=gettext("Display the lodgement groups of the assigned lodgements as clusters"
                                                      " (reduces graph layout quality)")) }}
         {% endif %}
-        {{ util.form_input_submit(label=gettext("Go!"), readonly=not has_lodge_field) }}
+        {{ util.form_input_submit(label=gettext("Go!"), icon="chevron-right", readonly=not has_lodge_field) }}
     </form>
 
     {% if has_lodge_field %}

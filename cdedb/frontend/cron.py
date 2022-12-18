@@ -7,6 +7,7 @@ This expects a period of 15 minutes.
 
 import inspect
 import pathlib
+from datetime import datetime
 from typing import Collection, Iterator
 
 from cdedb.common import RequestState, User, now
@@ -79,8 +80,8 @@ class CronFrontend(BaseApp):
             }
         if (not self.conf["CDEDB_DEV"]
                 and base_state['tstamp'] + 10*60 > now().timestamp()):  # pragma: no cover
-            print("Last execution at {} skipping this round.".format(
-                base_state['tstamp']))
+            print(f"Last execution at {datetime.fromtimestamp(base_state['tstamp'])}"
+                  f" skipping this round.")
             return False
         base_state['tstamp'] = now().timestamp()
         base_state['period'] += 1

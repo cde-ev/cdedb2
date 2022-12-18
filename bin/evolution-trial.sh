@@ -1,21 +1,11 @@
 #!/bin/bash
 set -e
 
-
-DATABASE_NAME=cdb_test_1
-
 OLDREVISION=$1
 NEWREVISION=$2
 
 
 cd /cdedb2
-
-# create temporary config file to override the default DATABASE_NAME
-tmp_configfile=$(mktemp -t config_XXXXXX.py)
-cp "$(python3 -m cdedb config default-configpath)" $tmp_configfile
-echo 'CDB_DATABASE_NAME="cdb_test_1"' >> $tmp_configfile
-chmod +r $tmp_configfile
-export CDEDB_CONFIGPATH=$tmp_configfile
 
 # silence git output after switching to a detached head
 git config advice.detachedHead false
@@ -67,7 +57,7 @@ while read -r evolution; do
     if [[ $evolution == *.postgres.sql ]]; then
         echo ""
         echo "Apply evolution $evolution as postgres database user."| tee -a /tmp/output-evolution.txt
-        sudo CDEDB_CONFIGPATH=$tmp_configfile POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
+        sudo CDEDB_CONFIGPATH=$CDEDB_CONFIGPATH POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
              python3 -m cdedb dev execute-sql-script --as-postgres -vv \
              -f cdedb/database/evolutions/$evolution \
              -o $evolution_output --outfile-append
@@ -80,12 +70,15 @@ while read -r evolution; do
     elif [[ $evolution == *.py ]]; then
         echo ""
         echo "Run migration script $evolution" | tee -a /tmp/output-evolution.txt
+        # we use a testconfig for the ci call, so we need to make the test module accessible
+        PYTHONPATH="$(python3 -m cdedb config get REPOSITORY_PATH)"
         sudo -u www-data \
-            EVOLUTION_TRIAL_OVERRIDE_DBNAME=$DATABASE_NAME \
             EVOLUTION_TRIAL_OVERRIDE_DRY_RUN='' \
             EVOLUTION_TRIAL_OVERRIDE_PERSONA_ID=1 \
             EVOLUTION_TRIAL_OVERRIDE_OUTFILE=$evolution_output \
             EVOLUTION_TRIAL_OVERRIDE_OUTFILE_APPEND=1 \
+            PYTHONPATH=$PYTHONPATH \
+            CDEDB_CONFIGPATH=$CDEDB_CONFIGPATH \
             python3 cdedb/database/evolutions/$evolution
     else
         echo "Unhandled evolution $evolution" | tee -a /tmp/output-evolution.txt
@@ -115,8 +108,6 @@ echo "EVOLUTION OUTPUT:"
 cat /tmp/output-evolution.txt
 echo ""
 echo "OLD: $OLDREVISION NEW: $NEWREVISION"
-
-rm $tmp_configfile
 
 if [[ -s /tmp/database_difference.txt ]]; then
     exit 1

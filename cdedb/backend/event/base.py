@@ -409,8 +409,8 @@ class EventBaseBackend(EventLowLevelBackend):
         return ret
 
     @access("event")
-    def set_event(self, rs: RequestState,
-                  data: CdEDBObject) -> DefaultReturnCode:
+    def set_event(self, rs: RequestState, data: CdEDBObject,
+                  change_note: str = None) -> DefaultReturnCode:
         """Update some keys of an event organized via DB.
 
         The syntax for updating the associated data on orgas, parts and
@@ -472,7 +472,7 @@ class EventBaseBackend(EventLowLevelBackend):
                             indirect_data[edata['course_room_field']])
                 ret *= self.sql_update(rs, "event.events", edata)
                 self.event_log(rs, const.EventLogCodes.event_changed,
-                               data['id'])
+                               data['id'], change_note=change_note)
 
             if 'orgas' in data:
                 ret *= self.add_event_orgas(rs, data['id'], data['orgas'])

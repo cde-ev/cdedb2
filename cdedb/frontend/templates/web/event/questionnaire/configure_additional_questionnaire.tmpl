@@ -29,9 +29,9 @@
                      aclass="btn btn-info btn-sm", icon='eye') }}
         {{ util.href(cdedblink('event/reorder_questionnaire_form', {'kind': enums['QuestionnaireUsages'].additional.value}),
                      gettext("Reorder Questionnaire"), readonly=is_locked,
-                     aclass="btn btn-info btn-sm", icon='sort') }}
+                     aclass="btn btn-warning btn-sm", icon='sort') }}
         {{ util.href(cdedblink('event/questionnaire_import_form'), gettext("Questionnaire Import"), readonly=is_locked,
-                     aclass="btn btn-info btn-sm", icon='file-upload') }}
+                     aclass="btn btn-warning btn-sm", icon='file-upload') }}
     </div>
     <form action="{{ cdedblink('event/configure_additional_questionnaire') }}" method="POST" id="configurequestionnaireform">
         {{ util.anti_csrf_token('event/configure_additional_questionnaire') }}
