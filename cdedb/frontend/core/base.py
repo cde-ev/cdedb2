@@ -1542,8 +1542,8 @@ class CoreBaseFrontend(AbstractFrontend):
                     data[key] = False
             if data['paper_expuls'] is None:
                 data['paper_expuls'] = True
-            if data["donation"] is None:
-                data["donation"] = decimal.Decimal("0.0")
+            if data['donation'] is None:
+                data['donation'] = decimal.Decimal("0.0")
         elif target_realm == "event":
             reference = {**EVENT_TRANSITION_FIELDS}
         else:

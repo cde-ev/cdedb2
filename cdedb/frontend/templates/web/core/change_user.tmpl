@@ -53,7 +53,7 @@
         {% endif %}
         {% if "donation" in shown_fields %}
                 {{ util.form_input_text(name="donation", label=gettext("Annual Donation"), type="number",
-                                        attributes='min="0" step="0.01"'|s,
+                                        attributes='min="0" step="0.01"'|s, addon="€",
                                         info=gettext("You allow the CdE to withdraw this amount annually from your balance"
                                                      " or via direct debit authorization, in addition to the annual membership fee.")) }}
         {% endif %}

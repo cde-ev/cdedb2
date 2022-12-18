@@ -57,7 +57,7 @@
         {% if 'cde' in admin_bits %}
             {% if "donation" in shown_fields %}
                 {{ util.form_input_text(name="donation", label=gettext("Annual Donation"), type="number",
-                                    attributes='min="0" step="0.01"'|s) }}
+                                    attributes='min="0" step="0.01"'|s, addon="€") }}
             {% endif %}
             {% if "is_searchable" in shown_fields %}
                 {{ util.form_input_checkbox(name="is_searchable", label=gettext("Searchable")) }}

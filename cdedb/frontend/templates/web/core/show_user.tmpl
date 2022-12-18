@@ -361,11 +361,12 @@
                             {% if "finance" in user.admin_views %}
                                 {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
                                              gettext("New Direct Debit Authorization …"), icon="euro-sign") }}
-                            {% endif %}
+                            {% else %}
                             {{ util.output_info(
                                 gettext("You may issue a new %(direct_debit_link)s instead.")|format(
                                     direct_debit_link=util.href(cdedblink("cde/i25p_index"),
                                                                 gettext("Direct Debit Authorization")))|s) }}
+                            {% endif %}
                         {% endif %}
                     </dd>
                 {% endif %}

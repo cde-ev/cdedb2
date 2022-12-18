@@ -58,6 +58,6 @@
         {{ util.form_input_text(name="iban", label=gettext("IBAN"), type="iban") }}
         {{ util.form_input_text(name="account_owner", label=gettext("Account holder (if different)")) }}
 
-        {{ util.form_input_submit(label=gettext("Confirm"), cancellink=cdedblink("cde/index")) }}
+        {{ util.form_input_submit(label=gettext("Confirm"), icon="file-signature", cancellink=cdedblink("cde/index")) }}
     </form>
 {% endblock %}
