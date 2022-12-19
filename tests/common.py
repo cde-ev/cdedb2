@@ -521,7 +521,7 @@ class BrowserTest(CdEDBTest):
     def setUpClass(cls) -> None:
         super().setUpClass()
         cls.serverProcess = subprocess.Popen(
-            ['python3', '-m', 'cdedb', 'dev', 'serve', '-t'],
+            ['python3', '-m', 'cdedb', 'dev', 'serve', '--test'],
             stderr=subprocess.DEVNULL)
         for _ in range(42):
             try:
