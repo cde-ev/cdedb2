@@ -80,7 +80,7 @@ class GeneralMailinglist:
     domains: List[MailinglistDomain] = [MailinglistDomain.lists]
 
     # default value for maxsize in KB
-    maxsize_default = 2048
+    maxsize_default = vtypes.PositiveInt(2048)
 
     allow_unsub: bool = True
 
@@ -254,7 +254,7 @@ class GeneralMailinglist:
 
 class AllUsersImplicitMeta(GeneralMailinglist):
     """Metaclass for all mailinglists with all users as implicit subscribers."""
-    maxsize_default = 64
+    maxsize_default = vtypes.PositiveInt(64)
 
     @classmethod
     def get_implicit_subscribers(cls, rs: RequestState, bc: BackendContainer,
@@ -268,7 +268,7 @@ class AllUsersImplicitMeta(GeneralMailinglist):
 
 class AllMembersImplicitMeta(GeneralMailinglist):
     """Metaclass for all mailinglists with members as implicit subscribers."""
-    maxsize_default = 64
+    maxsize_default = vtypes.PositiveInt(64)
 
     @classmethod
     def get_implicit_subscribers(cls, rs: RequestState, bc: BackendContainer,
@@ -297,7 +297,7 @@ class TeamMeta(GeneralMailinglist):
     sortkey = MailinglistGroup.team
     viewer_roles = {"persona"}
     domains = [MailinglistDomain.lists]
-    maxsize_default = 4096
+    maxsize_default = vtypes.PositiveInt(4096)
 
 
 class ImplicitsSubscribableMeta(GeneralMailinglist):
@@ -494,7 +494,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
 
 class EventOrgaMailinglist(EventAssociatedMeta, ImplicitsSubscribableMeta,
                            EventMailinglist):
-    maxsize_default = 8192
+    maxsize_default = vtypes.PositiveInt(8192)
 
     @classmethod
     def get_subscription_policies(cls, rs: RequestState, bc: BackendContainer,
@@ -597,7 +597,7 @@ class AssemblyAssociatedMailinglist(ImplicitsSubscribableMeta, AssemblyMailingli
 
 
 class AssemblyPresiderMailinglist(AssemblyAssociatedMailinglist):
-    maxsize_default = 8192
+    maxsize_default = vtypes.PositiveInt(8192)
 
     @classmethod
     def get_subscription_policies(cls, rs: RequestState, bc: BackendContainer,
