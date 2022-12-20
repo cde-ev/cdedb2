@@ -594,8 +594,7 @@ class MlBackend(AbstractBackend):
         return ret
 
     @access("ml")
-    def create_mailinglist(self, rs: RequestState,
-                           data: Mailinglist) -> DefaultReturnCode:
+    def create_mailinglist(self, rs: RequestState, data: Mailinglist) -> vtypes.ID:
         """Make a new mailinglist.
 
         :returns: the id of the new mailinglist
@@ -609,7 +608,7 @@ class MlBackend(AbstractBackend):
             # The address is a readonly property, but we want to save it into the
             #  database for convenience.
             mdata["address"] = data.address
-            new_id = self.sql_insert(rs, "ml.mailinglists", mdata)
+            new_id = vtypes.ID(self.sql_insert(rs, "ml.mailinglists", mdata))
             self.ml_log(rs, const.MlLogCodes.list_created, new_id)
             if data.moderators:
                 self.add_moderators(rs, new_id, data.moderators)
