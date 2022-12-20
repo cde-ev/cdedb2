@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-# pylint: disable=missing-module-docstring,no-self-use
+# pylint: disable=no-self-use
+"""Tests for functionality executed in the users's browser, manly JavaScript."""
 
 import functools
 from typing import Callable

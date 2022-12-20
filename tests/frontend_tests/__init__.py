@@ -7,7 +7,6 @@ from tests.frontend_tests.application import TestApplication
 from tests.frontend_tests.assembly import (
     TestAssemblyFrontend, TestMultiAssemblyFrontend,
 )
-from tests.frontend_tests.browser import TestBrowser
 from tests.frontend_tests.cde import TestCdEFrontend
 from tests.frontend_tests.common import TestFrontendCommon
 from tests.frontend_tests.core import TestCoreFrontend
