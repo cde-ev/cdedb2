@@ -168,6 +168,9 @@ class ValidatorStorage(Dict[Type[Any], Callable[..., Any]]):
         elif typing.get_origin(type_) is list:
             [inner_type] = typing.get_args(type_)
             return make_list_validator(inner_type)  # type: ignore[return-value]
+        elif typing.get_origin(type_) is set:
+            [inner_type] = typing.get_args(type_)
+            return make_set_validator(inner_type)  # type: ignore[return-value]
         elif typing.get_origin(type_) is tuple:
             args = typing.get_args(type_)
             if len(args) == 2:
@@ -1015,6 +1018,36 @@ def make_pair_validator(type_: Type[T]) -> PairValidator[T]:
         return _range(val, type_, argname, **kwargs)
 
     return pair_validator
+
+
+@_add_typed_validator
+def _set_of(
+    val: Any, argname: str = None, **kwargs: Any
+) -> Set[T]:
+    val = _iterable(val, argname=argname, **kwargs)
+    # we do not expect strings at this point
+    if isinstance(val, str):
+        raise ValueError
+    try:
+        val = set(val)
+    except (ValueError, TypeError) as e:
+        raise ValidationSummary(ValueError(
+            argname, n_("Invalid input for set."))) from e
+    return val
+
+
+class SetValidator(Protocol[T]):
+    def __call__(self, val: Any, argname: str = None, **kwargs: Any) -> Set[T]:
+        ...
+
+
+def make_set_validator(type_: Type[T]) -> SetValidator[T]:
+
+    @functools.wraps(_set_of)
+    def set_validator(val: Any, argname: str = None, **kwargs: Any) -> Set[T]:
+        return _set_of(val, argname, **kwargs)
+
+    return set_validator
 
 
 @_add_typed_validator
