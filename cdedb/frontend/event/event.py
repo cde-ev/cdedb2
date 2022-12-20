@@ -802,7 +802,7 @@ class EventEventMixin(EventBaseFrontend):
                 subject_prefix=event['shortname'],
                 maxsize=ml_type.EventOrgaMailinglist.maxsize_default,
                 is_active=True,
-                event_id=event["id"],
+                event_id=event['id'],
                 notes=None,
                 moderators=event['orgas'],
                 whitelist=set(),
@@ -905,7 +905,6 @@ class EventEventMixin(EventBaseFrontend):
 
         if create_orga_list:
             orga_ml_data = self._get_mailinglist_setter(rs, data, orgalist=True)
-            code: int
             if self.mlproxy.verify_existence(rs, orga_ml_data.address):
                 rs.notify("info", n_("Mailinglist %(address)s already exists."),
                           {'address': orga_ml_data.address})

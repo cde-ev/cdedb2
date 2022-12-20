@@ -374,7 +374,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                          mailinglist_id: int) -> Response:
         """Details of a list."""
         assert rs.user.persona_id is not None
-        ml = rs.ambience["mailinglist"]
+        ml = rs.ambience['mailinglist']
         assert isinstance(ml, Mailinglist)
         state = self.mlproxy.get_subscription(
             rs, rs.user.persona_id, mailinglist_id=mailinglist_id)
@@ -423,9 +423,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         """Render form."""
         ml = rs.ambience["mailinglist"]
         assert isinstance(ml, Mailinglist)
-        atype = TYPE_MAP[ml.ml_type]
-        available_domains = atype.domains
-        additional_fields = atype.get_additional_fields().keys()
+        additional_fields = ml.ml_type_class.get_additional_fields().keys()
         if "event_id" in additional_fields:
             event_ids = self.eventproxy.list_events(rs)
             events = self.eventproxy.get_events(rs, event_ids)
@@ -440,7 +438,6 @@ class MlBaseFrontend(AbstractUserFrontend):
             assembly_entries = [(k, v['title']) for k, v in sorted_assemblies]
         else:
             assembly_entries = []
-        # TODO
         merge_dicts(rs.values, ml.to_database())
         # restricted is only set if there are actually fields to which access is
         # restricted
@@ -451,7 +448,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         return self.render(rs, "change_mailinglist", {
             'event_entries': event_entries,
             'assembly_entries': assembly_entries,
-            'available_domains': available_domains,
+            'available_domains': ml.ml_type_class.domains,
             'additional_fields': additional_fields,
             'restricted': restricted,
         })
@@ -475,8 +472,9 @@ class MlBaseFrontend(AbstractUserFrontend):
             allowed = RESTRICTED_MOD_ALLOWED_FIELDS
 
         # we discard every entry of not allowed fields silently
+        current = ml.to_database()
         for key in set(data) - allowed:
-            data[key] = ml.to_database()[key]
+            data[key] = current[key]
 
         data = check(rs, vtypes.Mailinglist, data)
         if rs.has_validation_errors():
@@ -500,13 +498,12 @@ class MlBaseFrontend(AbstractUserFrontend):
     def change_ml_type_form(self, rs: RequestState,
                             mailinglist_id: int) -> Response:
         """Render form."""
-        ml = rs.ambience["mailinglist"]
+        ml = rs.ambience['mailinglist']
         assert isinstance(ml, Mailinglist)
         available_types = self.mlproxy.get_available_types(rs)
         event_ids = self.eventproxy.list_events(rs)
         events = self.eventproxy.get_events(rs, event_ids)
         assemblies = self.assemblyproxy.list_assemblies(rs)
-        # TODO
         merge_dicts(rs.values, ml.to_database())
         return self.render(rs, "change_ml_type", {
             'available_types': available_types,
@@ -731,8 +728,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         """Demote persona from moderator status."""
         ml = rs.ambience["mailinglist"]
         assert isinstance(ml, Mailinglist)
-        moderators = set(ml.moderators)
-        if moderator_id not in moderators:
+        if moderator_id not in ml.moderators:
             rs.append_validation_error(
                 ("moderator_id", ValueError(n_("User is no moderator."))))
         if rs.has_validation_errors():
@@ -743,7 +739,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs.notify("error", n_("Not allowed to remove yourself as moderator."))
             return self.management(rs, mailinglist_id)
 
-        if {moderator_id} == moderators:
+        if {moderator_id} == ml.moderators:
             rs.notify("error", n_("Cannot remove last moderator."))
         else:
             code = self.mlproxy.remove_moderator(rs, mailinglist_id, moderator_id)

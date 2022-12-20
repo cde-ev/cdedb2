@@ -75,6 +75,7 @@ class Mailinglist(CdEDataclass):
     @classmethod
     def validation_fields(cls, *, creation: bool) -> Tuple[TypeMapping, TypeMapping]:
         mandatory, optional = super().validation_fields(creation=creation)
+        # make whitelist optional during Mailinglist creation
         if "whitelist" in mandatory:
             optional["whitelist"] = mandatory["whitelist"]
             del mandatory["whitelist"]

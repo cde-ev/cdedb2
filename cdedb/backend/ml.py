@@ -373,7 +373,7 @@ class MlBackend(AbstractBackend):
         with Atomizer(rs):
             data = self.sql_select(rs, "ml.mailinglists", Mailinglist.database_fields(),
                                    mailinglist_ids)
-            ret = {}
+            ret: Dict[int, Mailinglist] = {}
             for e in data:
                 e['ml_type'] = const.MailinglistTypes(e['ml_type'])
                 e['domain'] = const.MailinglistDomain(e['domain'])
@@ -381,24 +381,22 @@ class MlBackend(AbstractBackend):
                 e['attachment_policy'] = const.AttachmentPolicy(e['attachment_policy'])
                 e['registration_stati'] = [
                     const.RegistrationPartStati(v) for v in e['registration_stati']]
-                ret[e['id']] = e
+                e['moderators'] = set()
+                e['whitelist'] = set()
+                ret[e['id']] = Mailinglist(**e)
+            # add moderators
             data = self.sql_select(
                 rs, "ml.moderators", ("persona_id", "mailinglist_id"), mailinglist_ids,
                 entity_key="mailinglist_id")
-            for anid in mailinglist_ids:
-                moderators = {d['persona_id']
-                              for d in data if d['mailinglist_id'] == anid}
-                if 'moderators' in ret[anid]:
-                    raise RuntimeError()
-                ret[anid]['moderators'] = moderators
+            for e in data:
+                ret[e['mailinglist_id']].moderators.add(e['persona_id'])
+            # add whitelist entries
             data = self.sql_select(
                 rs, "ml.whitelist", ("address", "mailinglist_id"), mailinglist_ids,
                 entity_key="mailinglist_id")
-        for ml in ret.values():
-            ml['whitelist'] = set()
-        for e in data:
-            ret[e['mailinglist_id']]['whitelist'].add(e['address'])
-        return {anid: Mailinglist(**ml) for anid, ml in ret.items()}
+            for e in data:
+                ret[e['mailinglist_id']].whitelist.add(e['address'])
+        return ret
 
     class _GetMailinglistProtocol(Protocol):
         def __call__(self, rs: RequestState, mailinglist_id: int) -> Mailinglist: ...
@@ -592,7 +590,8 @@ class MlBackend(AbstractBackend):
         return ret
 
     @access("ml")
-    def create_mailinglist(self, rs: RequestState, data: Mailinglist) -> vtypes.ID:
+    def create_mailinglist(self, rs: RequestState,
+                           data: Mailinglist) -> DefaultReturnCode:
         """Make a new mailinglist.
 
         :returns: the id of the new mailinglist
@@ -606,7 +605,7 @@ class MlBackend(AbstractBackend):
             # The address is a readonly property, but we want to save it into the
             #  database for convenience.
             mdata["address"] = data.address
-            new_id = vtypes.ID(self.sql_insert(rs, "ml.mailinglists", mdata))
+            new_id = self.sql_insert(rs, "ml.mailinglists", mdata)
             self.ml_log(rs, const.MlLogCodes.list_created, new_id)
             if data.moderators:
                 self.add_moderators(rs, new_id, data.moderators)

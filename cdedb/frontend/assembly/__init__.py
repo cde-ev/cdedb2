@@ -307,7 +307,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 subject_prefix=f"{assembly['shortname']}-leitung",
                 maxsize=ml_type.AssemblyPresiderMailinglist.maxsize_default,
                 is_active=True,
-                assembly_id=assembly["id"],
+                assembly_id=assembly['id'],
                 notes=None,
                 moderators=assembly['presiders'],
                 whitelist=set(),
@@ -410,7 +410,6 @@ class AssemblyFrontend(AbstractUserFrontend):
                 rs.notify("info", n_("Given presider address ignored in favor of"
                                      " newly created mailinglist."))
             presider_ml_data = self._get_mailinglist_setter(rs, data, presider=True)
-            code: int
             if self.mlproxy.verify_existence(rs, presider_ml_data.address):
                 rs.notify("info", n_("Mailinglist %(address)s already exists."),
                           {'address': presider_ml_data.address})

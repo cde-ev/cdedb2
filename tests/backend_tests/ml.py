@@ -316,7 +316,7 @@ class TestMlBackend(BackendTest):
         self.assertNotIn(new_id, oldlists)
         self.assertIn(new_id, self.ml.list_mailinglists(self.key))
         expectation = new_data
-        expectation.id = new_id
+        expectation.id = vtypes.ID(new_id)
         self.assertEqual(expectation, self.ml.get_mailinglist(self.key, new_id))
         self.assertLess(0, self.ml.delete_mailinglist(
             self.key, new_id, cascade=("subscriptions", "addresses",
@@ -351,29 +351,29 @@ class TestMlBackend(BackendTest):
         with self.assertRaises(ValueError):
             self.ml.create_mailinglist(self.key, new_data)
         new_data.moderators -= {vtypes.ID(8)}
-        new_data.local_part += "x"  # type: ignore[assignment]
+        new_data.local_part = vtypes.EmailLocalPart(f"{new_data.local_part}x")
         new_data.registration_stati = [const.RegistrationPartStati.guest]
         with self.assertRaises(ValueError):
             self.ml.create_mailinglist(self.key, new_data)
         new_data.registration_stati = []
         self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
-        new_data.local_part += "x"  # type: ignore[assignment]
-        new_data.whitelist = "datenbank@example.cde"  # type: ignore[assignment]
+        new_data.local_part = vtypes.EmailLocalPart(f"{new_data.local_part}x")
+        new_data.whitelist = vtypes.Email("datenbank@example.cde")  # type: ignore[assignment]
         with self.assertRaises(ValueError):
             self.ml.create_mailinglist(self.key, new_data)
-        new_data.local_part += "x"  # type: ignore[assignment]
-        new_data.whitelist = ["datenbank@example.cde"]  # type: ignore[assignment]
+        new_data.local_part = vtypes.EmailLocalPart(f"{new_data.local_part}x")
+        new_data.whitelist = {vtypes.Email("datenbank@example.cde")}
         self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
-        new_data.local_part += "x"  # type: ignore[assignment]
-        new_data.whitelist = []  # type: ignore[assignment]
+        new_data.local_part = vtypes.EmailLocalPart(f"{new_data.local_part}x")
+        new_data.whitelist = set()
         self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
-        new_data.local_part += "x"  # type: ignore[assignment]
+        new_data.local_part = vtypes.EmailLocalPart(f"{new_data.local_part}x")
         new_data.event_id = vtypes.ID(1)
         with self.assertRaises(ValueError):
             self.ml.create_mailinglist(self.key, new_data)
         new_data.event_id = None
         self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
-        new_data.local_part += "x"  # type: ignore[assignment]
+        new_data.local_part = vtypes.EmailLocalPart(f"{new_data.local_part}x")
         new_data.assembly_id = vtypes.ID(1)
         with self.assertRaises(ValueError):
             self.ml.create_mailinglist(self.key, new_data)

@@ -655,9 +655,8 @@ def dict_entries_filter(items: List[Tuple[Any, Union[Mapping[str, S], "CdEDatacl
     from cdedb.models.common import (  # pylint: disable=import-outside-toplevel
         CdEDataclass,
     )
-    return [tuple(value.to_database()[k]
-                  if isinstance(value, CdEDataclass) else value[k] for k in args)
-            for key, value in items]
+    values = [v.to_database() if isinstance(v, CdEDataclass) else v for _, v in items]
+    return [tuple(value[k] for k in args) for value in values]
 
 
 def xdict_entries_filter(items: Sequence[Tuple[Any, CdEDBObject]], *args: str,
