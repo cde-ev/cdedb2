@@ -403,6 +403,46 @@ class TestCron(CronTest):
         # We just want to test that no exception is raised.
         self.execute('event_keeper')
 
+    def test_mail_orgateam_reminders_none(self) -> None:
+        cronjob = "mail_orgateam_reminders"
+        self.execute(cronjob)
+        self.assertEqual([], [mail.template for mail in self.mails])
+        self.assertEqual(
+            {"1": {}, "2": {}, "3": {}, "4": {}}, self.core.get_cron_store(RS, cronjob))
+
+    # this part belongs to "Große Testakademie 2222"
+    @prepsql("UPDATE event.event_parts"
+             " SET (part_begin, part_end) = (CURRENT_DATE, CURRENT_DATE) WHERE id = 1")
+    def test_mail_orgateam_reminders_halftime(self) -> None:
+        cronjob = "mail_orgateam_reminders"
+        self.execute(cronjob)
+        self.assertEqual(["halftime_reminder"], [mail.template for mail in self.mails])
+        self.assertEqual(
+            {"1": {}, "2": {}, "3": {}, "4": {}}, self.core.get_cron_store(RS, cronjob))
+
+    # this part is the only event part of the event "CdE-Party 2050"
+    # we need to set an orga address to the event, otherwise no mails can be sent
+    @prepsql("UPDATE event.event_parts"
+             " SET (part_begin, part_end) = (date '2000-01-01', date '2000-01-01')"
+             " WHERE id = 4;"
+             " UPDATE event.events SET orga_address = 'party@example.cde' WHERE id = 2")
+    def test_mail_orgateam_reminders_past(self) -> None:
+        cronjob = "mail_orgateam_reminders"
+        self.execute(cronjob)
+        self.assertEqual(
+            ["past_event_reminder"], [mail.template for mail in self.mails])
+        self.assertEqual(
+            {"1": {}, "2": {'did_past_event_reminder': True}, "3": {}, "4": {}},
+            self.core.get_cron_store(RS, cronjob))
+
+        # make sure that the past mail is sent only once
+        self.mails = []
+        self.execute(cronjob)
+        self.assertEqual([], [mail.template for mail in self.mails])
+        self.assertEqual(
+            {"1": {}, "2": {'did_past_event_reminder': True}, "3": {}, "4": {}},
+            self.core.get_cron_store(RS, cronjob))
+
     @storage
     @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")
     def test_mailman_sync(self, client_class: unittest.mock.Mock) -> None:

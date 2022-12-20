@@ -32,9 +32,9 @@ from cdedb.common.validation import (
     EVENT_TRACK_GROUP_COMMON_FIELDS,
 )
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, REQUESTfile, access, cdedburl,
+    Headers, REQUESTdata, REQUESTdatadict, REQUESTfile, access, cdedburl,
     check_validation as check, check_validation_optional as check_optional, drow_name,
-    event_guard, inspect_validation as inspect, process_dynamic_input,
+    event_guard, inspect_validation as inspect, periodic, process_dynamic_input,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
 
@@ -783,6 +783,52 @@ class EventEventMixin(EventBaseFrontend):
         code = self.eventproxy.set_track_groups(rs, event_id, {track_group_id: None})
         rs.notify_return_code(code)
         return self.redirect(rs, "event/group_summary")
+
+    @periodic("mail_orgateam_reminders", period=4*24)  # once per day
+    def mail_orgateam_reminders(self, rs: RequestState, store: CdEDBObject
+                                ) -> CdEDBObject:
+        """Send halftime and past event mails to orgateams."""
+        event_ids = self.eventproxy.list_events(rs)
+        events = self.eventproxy.get_events(rs, event_ids)
+
+        def is_halftime(part: CdEDBObject) -> bool:
+            begin: datetime.date = part["part_begin"]
+            end: datetime.date = part["part_end"]
+            duration = end - begin
+            one_day = datetime.timedelta(days=1)
+            return begin + duration / 2 <= now().date() < begin + duration / 2 + one_day
+
+        def is_over(part: CdEDBObject) -> bool:
+            end: datetime.date = part["part_end"]
+            one_day = datetime.timedelta(days=1)
+            return end + one_day <= now().date()
+
+        for event_id, event in events.items():
+            # take care, since integer keys are serialized to strings!
+            if str(event_id) not in store:
+                store[str(event_id)] = {}
+            if store[str(event_id)].get("did_past_event_reminder"):
+                continue
+            if not event["orga_address"]:
+                continue
+
+            headers: Headers = {
+                "To": (event["orga_address"],),
+                "Reply-To": "akademien@lists.cde-ev.de"
+            }
+            # send halftime mail (up to one per part)
+            if any(is_halftime(part) for part in event["parts"].values()):
+                headers["Subject"] = ("10 Tipps für gute Akademien die bei allen"
+                                      " funktionieren!")
+                self.do_mail(rs, "halftime_reminder", headers)
+            # send past event mail (one per event)
+            elif all(is_over(part) for part in event["parts"].values()):
+                headers["Subject"] = ("Diese Informationen haben andere Orgateams"
+                                      " schockiert!")
+                params = {"rechenschafts_deadline": now() + datetime.timedelta(days=90)}
+                self.do_mail(rs, "past_event_reminder", headers, params=params)
+                store[str(event_id)]["did_past_event_reminder"] = True
+        return store
 
     @staticmethod
     def _get_mailinglist_setter(rs: RequestState, event: CdEDBObject,
