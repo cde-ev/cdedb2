@@ -1,7 +1,7 @@
 """Dataclass definitions of mailinglist realm."""
 
 from dataclasses import dataclass, field, fields
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type, Set
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, Type
 
 from subman.machine import SubscriptionPolicy
 

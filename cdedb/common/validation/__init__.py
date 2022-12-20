@@ -191,9 +191,9 @@ DATACLASS_TO_VALIDATORS = {
 def validate_assert_dataclass(type_: Type[T], value: Any, ignore_warnings: bool,
                               **kwargs: Any) -> T:
     if type_ not in DATACLASS_TO_VALIDATORS:
-        raise RuntimeError
+        raise RuntimeError("There is no validator mapped to this dataclass.")
     if not dataclasses.is_dataclass(value):
-        raise RuntimeError
+        raise RuntimeError("Given value is no dataclass instance.")
     validator = DATACLASS_TO_VALIDATORS[type_]  # type: ignore[index]
     val = dataclasses.asdict(value)
     validated = validate_assert(
@@ -230,7 +230,6 @@ def validate_assert_optional(type_: Type[T], value: Any, ignore_warnings: bool,
                              **kwargs: Any) -> Optional[T]:
     """Wrapper to avoid a lot of type-ignore statements due to a mypy bug."""
     return validate_assert(Optional[type_], value, ignore_warnings, **kwargs)  # type: ignore[arg-type]
-
 
 
 def validate_check_dataclass(type_: Type[T], value: Any, ignore_warnings: bool,

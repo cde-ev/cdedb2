@@ -2591,6 +2591,12 @@ msgstr "Darf nicht negativ sein."
 msgid "Must be positive."
 msgstr "Muss positiv sein."
 
+msgid "Must be negative."
+msgstr "Muss negativ sein."
+
+msgid "Invalid input for set."
+msgstr "Ungültige Eingabe für eine Menge."
+
 #: cdedb/common/validation/__init__.py:535
 #: cdedb/common/validation/__init__.py:659
 #: cdedb/common/validation/__init__.py:848
