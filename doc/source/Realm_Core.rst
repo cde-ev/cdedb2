@@ -5,7 +5,6 @@ Core Realm
    :maxdepth: 1
    :hidden:
 
-   Realm_Core_Genesis
    Realm_Core_Privacy
    Realm_Core_Genesis
 
