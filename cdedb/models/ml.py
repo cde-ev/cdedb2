@@ -1,7 +1,7 @@
 """Dataclass definitions of mailinglist realm."""
 
 from dataclasses import dataclass, field, fields
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type, Set
 
 from subman.machine import SubscriptionPolicy
 
@@ -28,8 +28,8 @@ class Mailinglist(CdEDataclass):
     ml_type: const.MailinglistTypes
     is_active: bool
 
-    moderators: List[vtypes.ID]
-    whitelist: List[vtypes.Email]
+    moderators: Set[vtypes.ID]
+    whitelist: Set[vtypes.Email]
 
     description: Optional[str] = None
     subject_prefix: Optional[str] = None
