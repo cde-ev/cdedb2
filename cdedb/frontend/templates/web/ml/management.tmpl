@@ -170,9 +170,8 @@
     {% endif %}
 
     <div class="row" id="subscriber-list">
-        {% set col_width = 4 if subscribers|length > 10 else 6 %}
-        {% for list in subscribers | slice(3 if subscribers|length > 10 else (2 if subscribers|length > 5 else 1)) %}
-            <div class="col-sm-{{ col_width }}">
+        {% for list in subscribers | slice(2 if subscribers|length > 5 else 1) %}
+            <div class="col-sm-6">
                 <ul class="nosp slim">
                     {% for subscriber in list %}
                         <li class="hide-hover-container clearfix-after">
