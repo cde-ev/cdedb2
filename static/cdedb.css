@@ -522,7 +522,7 @@ body.development {
    and also used on the event course list */
 a.headerlink {
     margin-left: 10px;
-    display: inline-block;
+    display: inline;
     color: #777;
     text-decoration: none;
     opacity: 0;
@@ -1108,6 +1108,16 @@ span.color-legend {
 }
 .btn-wrap {
     white-space: normal;
+}
+.btn-wrap.btn-icon {
+    position: relative;
+    padding-left: 31px;
+}
+.btn-wrap.btn-icon>.fa-fw {
+    position: absolute;
+    top: 50%;
+    margin-top: -7px;
+    left: 10px;
 }
 .clickable {
     cursor: pointer;

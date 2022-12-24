@@ -73,8 +73,9 @@ class MlMailmanMixin(MlBaseFrontend):
             prefix = "[{}] ".format(db_list['subject_prefix'] or "")
 
         alias_domains: Set[str] = db_list['domain'].get_acceptable_aliases()
-        acceptable_aliases =\
-            [db_list['local_part'] + '@' + d for d in alias_domains] or ""
+        acceptable_aliases = \
+            ([db_list['local_part'] + '@' + d for d in alias_domains] +
+             self.conf["MAILMAN_ACCEPTABLE_ALIASES"].get(db_list['address'], [])) or ""
 
         # First, specify the generally desired settings, templates and header matches.
         # Settings not specified here can be persistently set otherwise.
@@ -140,6 +141,25 @@ that the paragraph below about email moderation is wrong. Sending mails will
 do nothing.
 
 [1] {cdedburl(rs, 'ml/message_moderation', {'mailinglist_id': db_list['id']}, force_external=True)}
+""".strip(),
+            'list:admin:notice:disable': """
+$member's subscription has been disabled on $listname due to an excessive
+bounce score.
+
+This means that the mailinglist software will no longer deliver mail to this
+subscriber. Sadly this aspect of mailman is not yet accessible via the CdEDB
+and independent of the subscriber status in the CdEDB.
+
+Usually you (the moderator) are unable to do anything about the cause and this
+message only serves the purpose of keeping you in the loop w.r.t. the status
+of your mailing list. Mailman will probe the subscriber address and
+automatically reenable delivery if possible. However this may take a while, so
+as a workaround once the bounce reason is fixed you -- can in the CdEDB --
+unsubscribe the individual, wait 15 minutes, and resubscribe the individual
+(this incantation should push the right buttons inside mailman to get things
+going again).
+
+The triggering DSN if available is attached.
 """.strip(),
         }
         desired_header_matches = {

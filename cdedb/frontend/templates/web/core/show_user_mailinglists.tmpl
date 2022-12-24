@@ -9,7 +9,7 @@
     {{ super() }}
     {{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), util.persona_name(ambience['persona']),
                             icon="user") }}
-    {{ util.breadcrumb_link(cdedblink("core/show_user_mailinglists"), gettext("Mailinglists"), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("core/show_user_mailinglists"), gettext("Show Mailinglist Data"), active=True) }}
 {% endblock %}
 
 {% block heading %}

@@ -20,8 +20,8 @@
 {% endblock %}
 
 {% block heading %}
-    {{ util.context_heading(gettext("Create Accounts"),
-                            doclink="Handbuch_Verwaltungsteam", doclink_anchor="massenaufnahme-von-mitgliedern") }}
+    {{ util.doclink_('Handbuch_Verwaltungsteam', anchor='massenaufnahme-von-mitgliedern') }}
+    <h1 class="title">{{ gettext("Create Accounts") }}</h1>
 {% endblock %}
 
 {% macro ba_submit_button() %}
@@ -29,9 +29,9 @@
         {{ util.form_input_submit(label=gettext("Create"), horizontal=False) }}
     {% else %}
         {% if data %}
-            {{ util.form_input_submit(label=gettext("Validate Again"), horizontal=False) }}
+            {{ util.form_input_submit(label=gettext("Validate Again"), icon="chevron-right", horizontal=False) }}
         {% else %}
-            {{ util.form_input_submit(label=gettext("Validate"), horizontal=False) }}
+            {{ util.form_input_submit(label=gettext("Validate"), icon="chevron-right", horizontal=False) }}
         {% endif %}
     {% endif %}
 {% endmacro %}

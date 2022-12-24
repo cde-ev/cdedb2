@@ -16,7 +16,8 @@
     {{ util.breadcrumb_link(cdedblink("event/create_lodgement"), gettext("Create Lodgement"), active=True) }}
 {% endblock %}
 {% block heading %}
-    {{ util.context_heading(gettext("Create Lodgement"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+    {{ util.context_heading(gettext("Create Lodgement"),
+                            ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('event/create_lodgement') }}" method="POST" id="createlodgementform"
@@ -26,13 +27,18 @@
         {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]")) }}
         {{ util.form_input_text(name="regular_capacity", label=gettext("Regular Capacity"), type="number") }}
         {{ util.form_input_text(name="camping_mat_capacity", label=gettext("Camping Mat Capacity"), type="number") }}
-        {% if groups|length > 1 %}
+        {% if groups|length == 0 %}
+            {{ util.input_hidden(name="group_id", value=none) }}
+            {{ util.form_input_text(name="new_group_title", label=gettext("New Lodgement Group Title"), errorname="group_id") }}
+        {% elif groups|length == 1 %}
+            {{ util.input_hidden(name="group_id", value=groups|first) }}
+        {% elif groups|length > 1 %}
             {{ util.form_input_select(
                 name="group_id", entries=groups.items(), label=gettext("Lodgement Group"),
                 nulloption=gettext("– create new group –"), sort=True) }}
-        {% endif %}
-        {{ util.form_input_text(name="new_group_title", label=gettext("New Lodgement Group Title"), errorname="group_id",
+            {{ util.form_input_text(name="new_group_title", label=gettext("New Lodgement Group Title"), errorname="group_id",
                                 info=gettext("Only for creating a new group.") if groups else "") }}
+        {% endif %}
         {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="5") }}
 
         {{ generic_event.print_field_inputs(enums['FieldAssociations'].lodgement) }}

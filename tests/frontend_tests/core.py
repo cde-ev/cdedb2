@@ -2034,15 +2034,27 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Zelda Zeruda-Hime")
         self.assertPresence("12345", div='address')
 
+    @as_users('nina', 'paul')
     def test_genesis_ml(self) -> None:
+        test_user = self.user
+        self.logout()
         self._genesis_request(self.ML_GENESIS_DATA_NO_REALM, realm='ml')
-        self.login('nina')
+        self.login(test_user)
         self.traverse('Accountanfragen')
         self.assertTitle("Accountanfragen")
         self.assertPresence("zelda@example.cde", div='request-1001')
         self.traverse({"href": "/core/genesis/1001/show"})
         self.assertTitle(f"Accountanfrage von {self.ML_GENESIS_DATA['given_names']}"
                          f" {self.ML_GENESIS_DATA['family_name']}")
+
+        # Set past event and gender that should be ignored
+        self.traverse('Accountanfrage bearbeiten')
+        f = self.response.forms['genesismodifyform']
+        f['gender'].force_value(const.Genders.other)
+        if self.user_in('paul'):
+            f['pevent_id'] = 1
+        self.submit(f)
+
         f = self.response.forms['genesisdecisionform']
         self.submit(f, button="decision", value=str(GenesisDecision.approve))
         link = self.fetch_link()
@@ -2168,12 +2180,14 @@ class TestCoreFrontend(FrontendTest):
             f['realm'] = 'ml'
         self.submit(f)
         self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
-        self.assertPresence("Anhang herunterladen")
-        save = self.response
-        self.traverse({'description': 'Anhang herunterladen'})
-        with open(self.testfile_dir / "form.pdf", 'rb') as f:
-            self.assertEqual(f.read(), self.response.body)
-        self.response = save
+        if self.user_in('quintus'):
+            # attachment is hidden for ml account requests
+            self.assertPresence("Anhang herunterladen")
+            save = self.response
+            self.traverse({'description': 'Anhang herunterladen'})
+            with open(self.testfile_dir / "form.pdf", 'rb') as f:
+                self.assertEqual(f.read(), self.response.body)
+            self.response = save
         self.assertNonPresence("zelda@example.cde")
         self.assertPresence("zorro@example.cde")
         self.traverse("Accountanfrage bearbeiten")
@@ -2195,8 +2209,14 @@ class TestCoreFrontend(FrontendTest):
         self.assertIn("Zelda", mail)
         self.assertIn("Ein herzliches Willkommen", mail)
         self.assertIn("zum ersten Mal in unserer Datenbank anmeldest", mail)  # consent
-
         link = self.fetch_link()
+
+        # Check wether link to account and reviewer work
+        self.get("/core/genesis/1001/show")
+        self.traverse({'href': "/core/persona/2001/"})
+        self.get("/core/genesis/1001/show")
+        self.traverse(self.user['default_name_format'])
+
         self.traverse({'href': '^/$'})
         if not self.user_in('quintus'):
             f = self.response.forms['adminshowuserform']
@@ -2231,7 +2251,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Goethe")
         self.traverse({'href': '/cde'})
         self.assertTitle('CdE-Mitgliederbereich')
-        self.traverse({'description': 'Sonstiges'})
+        self.traverse({'description': 'Verschiedenes'})
 
     @as_users("paul")
     def test_genesis_overview(self) -> None:

@@ -14,8 +14,9 @@
 {{ util.breadcrumb_link(cdedblink("event/field_summary"), gettext("Configure Custom Fields"), active=True) }}
 {% endblock %}
 {% block heading %}
+    {{ util.doclink_('Handbuch_Orga') }}
     {{ util.context_heading(gettext("Configure Custom Fields"), ambience['event']['title'],
-                            'chalkboard-teacher', gettext("Event"), doclink="Handbuch_Orga") }}
+                            'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 
 {# Macro for a general field, that can have each role in the DynamicRow workflow.
@@ -106,7 +107,7 @@
 {% block content %}
     <div class="p button-par">
         {{ util.href(cdedblink('event/questionnaire_import_form'), gettext("Questionnaire Import"), readonly=is_locked,
-                     aclass="btn btn-info btn-sm", icon='file-upload') }}
+                     aclass="btn btn-warning btn-sm", icon='file-upload') }}
     </div>
     <form action="{{ cdedblink('event/field_summary') }}" method="POST" id="fieldsummaryform" class="form-horizontal">
         {{ util.anti_csrf_token('event/field_summary') }}

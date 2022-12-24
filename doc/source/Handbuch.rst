@@ -8,6 +8,7 @@ Handbuch
    Handbuch_Adminteam
    Handbuch_Akademieteam
    Handbuch_CdElokal
+   Handbuch_Dokuteam
    Handbuch_Finanzvorstand
    Handbuch_Moderator
    Handbuch_Orga

@@ -27,15 +27,16 @@ class TestScript(unittest.TestCase):
     def setUp(self) -> None:
         self.script = self.get_script()
 
-    def get_script(self, **config: Any) -> Script:
+    @staticmethod
+    def get_script(**config: Any) -> Script:
         """This gets an instance of our Script class.
 
         Note that it is not guaranteed that the database is in a cleanly
         populated state. Tests which rely on specific contents should
         prepare them theirselves.
         """
-        return Script(persona_id=-1, dbname=self.conf["CDB_DATABASE_NAME"],
-                      dbuser="cdb_admin", check_system_user=False, **config)
+        return Script(persona_id=-1, dbuser="cdb_admin", check_system_user=False,
+                      **config)
 
     @staticmethod
     def check_buffer(buffer: typing.IO[str], assertion: Callable[[str, str], None],
@@ -80,8 +81,8 @@ Aborting Dry Run! Time taken: 0.000 seconds.
         self.assertIs(rs_factory(42), rs_factory(42))
 
         with self.assertRaises(ValueError) as cm:
-            Script(dbname=self.conf["CDB_DATABASE_NAME"], dbuser="cdb_admin",
-                   check_system_user=False, CDB_DATABASE_ROLES="{'cdb_admin': 'abc'}")
+            Script(dbuser="cdb_admin", check_system_user=False,
+                   CDB_DATABASE_ROLES="{'cdb_admin': 'abc'}")
         msg = "Override secret config options via kwarg is not possible."
         self.assertIn(msg, cm.exception.args[0])
 
@@ -108,6 +109,7 @@ Aborting Dry Run! Time taken: 0.000 seconds.
             f.write("SYSLOG_LEVEL = 42\n")
             f.write(f"DB_HOST = '{real_config['DB_HOST']}'\n")
             f.write(f"DB_PORT = {real_config['DB_PORT']}\n")
+            f.write(f"CDB_DATABASE_NAME = '{real_config['CDB_DATABASE_NAME']}'\n")
             f.flush()
             configured_script = self.get_script(configpath=f.name)
             self.assertEqual(42, configured_script.config["SYSLOG_LEVEL"])
@@ -137,6 +139,7 @@ Aborting Dry Run! Time taken: 0.000 seconds.
             f.write("LOCKDOWN = 42\n")
             f.write(f"DB_HOST = '{real_config['DB_HOST']}'\n")
             f.write(f"DB_PORT = {real_config['DB_PORT']}\n")
+            f.write(f"CDB_DATABASE_NAME = '{real_config['CDB_DATABASE_NAME']}'\n")
             f.flush()
             configured_script = self.get_script(configpath=f.name)
             self.assertEqual(
@@ -173,6 +176,7 @@ Aborting Dry Run! Time taken: 0.000 seconds.
             f.write("LOCKDOWN = 42\n")
             f.write(f"DB_HOST = '{real_config['DB_HOST']}'\n")
             f.write(f"DB_PORT = {real_config['DB_PORT']}\n")
+            f.write(f"CDB_DATABASE_NAME = '{real_config['CDB_DATABASE_NAME']}'\n")
             f.flush()
             configured_script = self.get_script(configpath=f.name)
             self.assertEqual(

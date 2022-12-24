@@ -16,12 +16,12 @@
 
 {% block heading %}
     {% if ambience['track_group'] %}
-        {% call util.context_heading(gettext("Change track group"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) %}
-            {{- util.make_icon('bullseye', arialabel=gettext('Track Group')) }}
-            {{ ambience['track_group']['title'] -}}
-        {% endcall %}
+        {{ util.context_heading(gettext("Change track group"),
+                                ambience['event']['title'], 'chalkboard-teacher', gettext("Event"),
+                                ambience['track_group']['title'], 'bullseye', gettext('Track Group')) }}
     {% else %}
-        {{ util.context_heading(gettext("Add track group"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+        {{ util.context_heading(gettext("Add track group"),
+                                ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
     {% endif %}
 {% endblock %}
 

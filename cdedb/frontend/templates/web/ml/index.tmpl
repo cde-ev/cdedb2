@@ -29,13 +29,13 @@
                 <form action="{{ cdedblink("ml/manually_write_subscription_states") }}" method="POST"
                       id="writesubscriptionstates" style="display: inline;">
                     {{ util.anti_csrf_token("ml/manually_write_subscription_states") }}
-                    {{ util.input_submit(label=gettext("Write Subscription States"), aclass="btn btn-sm btn-success",
+                    {{ util.input_submit(label=gettext("Write Subscription States"), aclass="btn btn-sm btn-primary",
                             icon="sync-alt") }}
                 </form>
                 <form action="{{ cdedblink("ml/manual_mailman_sync") }}" method="POST"
                       id="mailmansync" style="display: inline;">
                     {{ util.anti_csrf_token("ml/manual_mailman_sync") }}
-                    {{ util.input_submit(label=gettext("Force mailman sync now"), aclass="btn btn-sm btn-success",
+                    {{ util.input_submit(label=gettext("Force mailman sync now"), aclass="btn btn-sm btn-primary",
                             icon="share") }}
                 </form>
             {% endif %}
