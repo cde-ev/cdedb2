@@ -572,6 +572,10 @@ def _decimal(
     val: Any, argname: str = None, *,
     large: bool = False, **kwargs: Any
 ) -> decimal.Decimal:
+    """decimal.Decimal fitting into a `numeric` postgres column.
+
+    :param large: specifies whether `numeric(8, 2)` or `numeric(11, 2` is used
+    """
     if isinstance(val, str):
         try:
             val = decimal.Decimal(val)
@@ -581,14 +585,10 @@ def _decimal(
     if not isinstance(val, decimal.Decimal):
         raise ValidationSummary(
             TypeError(argname, n_("Must be a decimal.Decimal.")))
-    if not large and abs(val) >= 1e7:
-        # we are using numeric(8,2) columns in postgres
-        # which only support numbers up to this size
+    if not large and abs(val) >= 1e6:
         raise ValidationSummary(
             ValueError(argname, n_("Must be smaller than a million.")))
-    if abs(val) >= 1e10:
-        # we are using numeric(11,2) columns in postgres for summation columns
-        # which only support numbers up to this size
+    if abs(val) >= 1e9:
         raise ValidationSummary(
             ValueError(argname, n_("Must be smaller than a billion.")))
     return val

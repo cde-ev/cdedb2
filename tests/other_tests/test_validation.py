@@ -180,13 +180,13 @@ class TestValidation(unittest.TestCase):
             ("garbage", None, ValueError),
             (12, None, TypeError),
             (12.3, None, TypeError),
-            (decimal.Decimal(1e7) - 1, decimal.Decimal(1e7) - 1, None),
-            (decimal.Decimal(1e7), None, ValueError),  # exceeds maximum value
+            (decimal.Decimal(1e6) - 1, decimal.Decimal(1e6) - 1, None),
+            (decimal.Decimal(1e6), None, ValueError),  # exceeds maximum value
         ))
         self.do_validator_test(decimal.Decimal, (
-            (decimal.Decimal(1e10) - 1, decimal.Decimal(1e10) - 1, None),
-            (decimal.Decimal(-1e10) + 1, decimal.Decimal(-1e10) + 1, None),
-            (decimal.Decimal(1e10), None, ValueError),  # exceeds maximum value
+            (decimal.Decimal(1e9) - 1, decimal.Decimal(1e9) - 1, None),
+            (decimal.Decimal(-1e9) + 1, decimal.Decimal(-1e9) + 1, None),
+            (decimal.Decimal(1e9), None, ValueError),  # exceeds maximum value
         ), extraparams={"large": True})
         self.do_validator_test(NonNegativeDecimal, (
             (decimal.Decimal(0), decimal.Decimal(0), None),
@@ -194,9 +194,9 @@ class TestValidation(unittest.TestCase):
             (decimal.Decimal(-12.3), None, ValueError),
         ))
         self.do_validator_test(NonNegativeLargeDecimal, (
-            (decimal.Decimal(1e10) - 1, decimal.Decimal(1e10) - 1, None),
-            (decimal.Decimal(-1e10) + 1, None, ValueError),
-            (decimal.Decimal(1e10), None, ValueError),  # exceeds maximum value
+            (decimal.Decimal(1e9) - 1, decimal.Decimal(1e9) - 1, None),
+            (decimal.Decimal(-1e9) + 1, None, ValueError),
+            (decimal.Decimal(1e9), None, ValueError),  # exceeds maximum value
         ))
 
     def test_str_type(self) -> None:
