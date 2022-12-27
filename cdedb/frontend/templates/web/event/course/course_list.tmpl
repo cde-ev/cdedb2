@@ -49,9 +49,9 @@
             {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass='panel-primary') %}
                 <form action="{{ cdedblink('event/course_list') }}" method="GET" id="coursefilterform"
                       aria-label="{% trans %}Filter{% endtrans %}">
-                    {% trans %}Show only courses in tracks:{% endtrans %}
-                    {{ util.input_checkboxes(name="track_ids", slice=3,
-                        entries=ambience['event']['tracks']|keydictsort(EntitySorter.course_track)|dict_entries('id', 'title')) }}
+                    {{ util.form_input_checkboxes('track_ids', label=gettext("Show only courses in tracks:"),
+                        entries=ambience['event']['tracks']|keydictsort(EntitySorter.course_track)|dict_entries('id', 'title'),
+                        slice=(2 if ambience['event']['tracks']|length < 7 else 3), horizontal=False) }}
                     {{ util.input_submit(label=gettext("Go!"), icon="filter") }}
                 </form>
             {% endcall %}
