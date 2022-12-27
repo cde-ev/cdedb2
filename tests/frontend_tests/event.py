@@ -439,16 +439,25 @@ class TestEventFrontend(FrontendTest):
 
     @as_users("annika", "berta", "emilia")
     def test_course_list(self) -> None:
-        self.traverse({'description': 'Veranstaltungen'},
-                      {'description': 'Große Testakademie 2222'},
-                      {'description': 'Kursliste'})
+        with self.switch_user('garcia'):  # orga
+            self.traverse("Veranstaltungen", "Große Testakademie 2222", "Kurse",
+                          "Kurs hinzufügen")
+            f = self.response.forms['createcourseform']
+            f['nr'] = "ζ"
+            f['title'] = "Extra-Kurs"
+            f['shortname'] = "Extra"
+            f['description'] = "Besser spät als nie."
+            self.submit(f)
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Kursliste")
         self.assertTitle("Kursliste Große Testakademie 2222")
+        self.assertPresence("Inhaltsverzeichnis")
         self.assertPresence("ToFi")
         self.assertPresence("Wir werden die Bäume drücken.")
         f = self.response.forms['coursefilterform']
         f['track_ids'] = [1, 3]
         self.submit(f)
         self.assertTitle("Kursliste Große Testakademie 2222")
+        self.assertNonPresence("Inhaltsverzeichnis")  # less than 6 courses shown
         self.assertNonPresence("Kurzer Kurs")
         f = self.response.forms['coursefilterform']
         f['track_ids'] = [2]
