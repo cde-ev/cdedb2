@@ -574,7 +574,7 @@ def _decimal(
 ) -> decimal.Decimal:
     """decimal.Decimal fitting into a `numeric` postgres column.
 
-    :param large: specifies whether `numeric(8, 2)` or `numeric(11, 2` is used
+    :param large: specifies whether `numeric(8, 2)` or `numeric(11, 2)` is used
     """
     if isinstance(val, str):
         try:
