@@ -451,9 +451,21 @@ class TestEventFrontend(FrontendTest):
         self.assertTitle("Kursliste Große Testakademie 2222")
         self.assertNonPresence("Kurzer Kurs")
         f = self.response.forms['coursefilterform']
-        f['track_ids'] = [2, 3]
+        f['track_ids'] = [2]
         self.submit(f)
+        self.assertPresence("β. Lustigsein für Fortgeschrittene")
         self.assertPresence("γ. Kurzer Kurs")
+        if self.user_in('annika'):
+            f = self.response.forms['coursefilterform']
+            f['only_taking_place'].checked = True
+            self.submit(f)
+            self.assertNonPresence("β. Lustigsein für Fortgeschrittene")
+            self.assertPresence("γ. Kurzer Kurs")
+        else:
+            # check that taking place filter not accessible for non-privileged users
+            self.assertNonPresence("Zeige nur stattfindende Kurse")
+            self.get(self.response.request.url + '&only_taking_place=True')
+            self.assertPresence("β. Lustigsein für Fortgeschrittene")
 
     @as_users("annika", "garcia", "ferdinand")
     def test_change_event(self) -> None:
