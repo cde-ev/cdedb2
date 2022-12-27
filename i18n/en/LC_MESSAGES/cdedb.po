@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2022-12-27 07:47+0000\n"
+"POT-Creation-Date: 2022-12-27 08:30+0000\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -4445,8 +4445,8 @@ msgid "not offered"
 msgstr ""
 
 #: cdedb/frontend/event/partial_import.py:319
-#: cdedb/frontend/templates/web/event/course/course_list.tmpl:108
-#: cdedb/frontend/templates/web/event/course/course_list.tmpl:115
+#: cdedb/frontend/templates/web/event/course/course_list.tmpl:125
+#: cdedb/frontend/templates/web/event/course/course_list.tmpl:132
 msgid "cancelled"
 msgstr ""
 
@@ -5210,7 +5210,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:173
 #: cdedb/frontend/templates/web/core/show_user.tmpl:318
 #: cdedb/frontend/templates/web/event/base/participant_list.tmpl:175
-#: cdedb/frontend/templates/web/event/course/course_list.tmpl:101
+#: cdedb/frontend/templates/web/event/course/course_list.tmpl:118
 msgid "and"
 msgstr ""
 
@@ -5978,7 +5978,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/show_user.tmpl:386
 #: cdedb/frontend/templates/web/core/show_user.tmpl:389
 #: cdedb/frontend/templates/web/event/course/change_course.tmpl:17
-#: cdedb/frontend/templates/web/event/course/course_list.tmpl:82
+#: cdedb/frontend/templates/web/event/course/course_list.tmpl:99
 #: cdedb/frontend/templates/web/event/course/course_stats.tmpl:144
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:32
 #: cdedb/frontend/templates/web/event/lodgement/change_lodgement.tmpl:17
@@ -6611,7 +6611,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/util.tmpl:98
 #: cdedb/frontend/templates/web/assembly/util.tmpl:117
 #: cdedb/frontend/templates/web/core/genesis/genesis_list_cases.tmpl:38
-#: cdedb/frontend/templates/web/event/course/course_list.tmpl:80
+#: cdedb/frontend/templates/web/event/course/course_list.tmpl:97
 #: cdedb/frontend/templates/web/event/registration/checkin.tmpl:122
 #: cdedb/frontend/templates/web/generic.tmpl:512
 #: cdedb/frontend/templates/web/generic.tmpl:515
@@ -10615,20 +10615,24 @@ msgstr ""
 msgid "Show only courses taking place"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_list.tmpl:76
+#: cdedb/frontend/templates/web/event/course/course_list.tmpl:78
+msgid "Table of Contents"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/course/course_list.tmpl:93
 msgid "Permanent link"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_list.tmpl:91
+#: cdedb/frontend/templates/web/event/course/course_list.tmpl:108
 #, python-format
 msgid "by %(instructors)s"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_list.tmpl:123
+#: cdedb/frontend/templates/web/event/course/course_list.tmpl:140
 msgid "This event does not yet have any courses."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_list.tmpl:125
+#: cdedb/frontend/templates/web/event/course/course_list.tmpl:142
 msgid "This event does not have Courses."
 msgstr ""
 

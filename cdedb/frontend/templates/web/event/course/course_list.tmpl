@@ -65,10 +65,27 @@
             {% endcall %}
         {% endif %}
 
-        <div id="list-courses">
-        {% for anid, entry in courses|keydictsort(EntitySorter.course) if (
-            entry['active_segments'] if only_taking_place and show_course_state else entry['segments']
+        {# Jinja does not support list comprehension... #}
+        {% set courses_to_show = [] %}
+        {% for course_id, course in courses|keydictsort(EntitySorter.course) if (
+            course['active_segments'] if only_taking_place and show_course_state else course['segments']
         ).intersection(track_ids) %}
+            {% do courses_to_show.append((course_id, course)) %}
+        {% endfor %}
+
+        {% if courses_to_show|length > 5 %}
+            <div id="toc">
+            <h3>{% trans %}Table of Contents{% endtrans %}</h3>
+            <ul>
+                {% for course_id, course in courses_to_show %}
+                    <li>{{ util.href("#course-{}".format(course_id), "{}. {}".format(course['nr'], course['title'])) }}</li>
+                {% endfor %}
+            </ul>
+            </div>
+        {% endif %}
+
+        <div id="list-courses">
+        {% for anid, entry in courses_to_show %}
             <div class="hide-hover-container" id="course-{{ entry['id'] }}">
                 <h3>
                     {{ entry['nr'] }}. {{ entry['title'] }}
