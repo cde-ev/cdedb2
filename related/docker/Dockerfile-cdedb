@@ -159,8 +159,11 @@ RUN cp /tmp/autobuild/cdedb-entrypoint.sh /cdedb-entrypoint.sh \
     \
     && touch /CONTAINER
 
-# retrieve browser engines
-RUN sudo -u cdedb /usr/local/bin/playwright install
+# Retrieve browser engines, but only do so for root (which runs the tests in
+# the CI) and not for the cdedb user. Same reasoning as for the auto-build: we
+# want to save some disk space.
+RUN /usr/local/bin/playwright install
+# RUN sudo -u cdedb /usr/local/bin/playwright install
 
 # make config persistent
 VOLUME /etc/cdedb
