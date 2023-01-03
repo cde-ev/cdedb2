@@ -121,7 +121,6 @@ python3 -m pip install --no-cache-dir \
     types-tabulate \
     playwright
 
-
 for file in /var/cache/apt/archives/*.deb
 do
   shred --iteration=0 --zero --remove $file
