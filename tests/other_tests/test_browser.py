@@ -51,7 +51,9 @@ class TestBrowser(BrowserTest):
     """Full simulation tests instrumented via playwright.
 
     Each test should contain a short description so it can be reproduced
-    without reverse engineering the code.
+    without reverse engineering the code. The actual code is
+    semi-auto-generated, meaning that it is created using the playwright code
+    generation feature and only minimally postprocessed.
 
     To start a test generation session execute
     playwright codegen https://localhost --ignore-https-errors
