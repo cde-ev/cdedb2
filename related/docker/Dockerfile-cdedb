@@ -154,7 +154,7 @@ RUN cp /tmp/autobuild/cdedb-entrypoint.sh /cdedb-entrypoint.sh \
     \
     && ln -s /cdedb2/cdedb/ /usr/lib/python3/dist-packages/cdedb \
     \
-    && useradd --no-create-home cdedb \
+    && useradd cdedb \
     && echo "%cdedb ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers \
     \
     && touch /CONTAINER
