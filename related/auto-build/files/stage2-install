@@ -121,10 +121,18 @@ python3 -m pip install --no-cache-dir \
     types-tabulate \
     playwright
 
+
 for file in /var/cache/apt/archives/*.deb
 do
   shred --iteration=0 --zero --remove $file
 done
+
+echo ""
+echo "We do not initialize playwright as this consumes lots of space."
+echo "To do so later run the following command as root:"
+echo "/usr/local/bin/playwright install"
+echo "This matters only when executing the test suite and in that case"
+echo "will fail with a helpful error message."
 
 echo ""
 echo "Disable private temp for Apache (this should be dev only)..."
