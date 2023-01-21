@@ -76,19 +76,6 @@
                         <dt title="{% trans %}Shortname{% endtrans %}">{% trans %}Shortname{% endtrans %}</dt>
                         <dd id="part{{ part_id }}_shortname">{{ part['shortname'] }}</dd>
 
-                        <dt title="{% trans %}Begin{% endtrans %}">{% trans %}Begin{% endtrans %}</dt>
-                        <dd id="part{{ part_id }}_begin">{{ part['part_begin']|date(lang=lang) }}</dd>
-
-                        <dt title="{% trans %}End{% endtrans %}">{% trans %}End{% endtrans %}</dt>
-                        <dd id="part{{ part_id }}_end">{{ part['part_end']|date(lang=lang) }}</dd>
-                    </dl>
-
-                    <dl class="dl-horizontal col-md-6">
-                        <dt title="{% trans %}Event Part Fee{% endtrans %}">
-                            {% trans %}Event Part Fee{% endtrans %}
-                        </dt>
-                        <dd>{{ part['fee']|money }}</dd>
-
                         <dt title="{% trans %}Field for Waitlist{% endtrans %}">
                             {% trans %}Field for Waitlist{% endtrans %}
                         </dt>
@@ -99,6 +86,14 @@
                                 —
                             {% endif %}
                         </dd>
+                    </dl>
+
+                    <dl class="dl-horizontal col-md-6">
+                        <dt title="{% trans %}Begin{% endtrans %}">{% trans %}Begin{% endtrans %}</dt>
+                        <dd id="part{{ part_id }}_begin">{{ part['part_begin']|date(lang=lang) }}</dd>
+
+                        <dt title="{% trans %}End{% endtrans %}">{% trans %}End{% endtrans %}</dt>
+                        <dd id="part{{ part_id }}_end">{{ part['part_end']|date(lang=lang) }}</dd>
                     </dl>
                 </div>
 

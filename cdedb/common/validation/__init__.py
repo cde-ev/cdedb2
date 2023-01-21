@@ -74,6 +74,9 @@ import phonenumbers
 import PIL.Image
 import pytz
 import pytz.tzinfo
+import related.fee_condition_parser.evaluation as fcp_evaluation
+import related.fee_condition_parser.parsing as fcp_parsing
+import related.fee_condition_parser.roundtrip as fcp_roundtrip
 import werkzeug.datastructures
 import zxcvbn
 from schulze_condorcet.util import as_vote_tuple
@@ -2203,6 +2206,7 @@ EVENT_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'orgas': Iterable,
     'parts': Mapping,
     'fields': Mapping,
+    'fees': Mapping,
 }
 
 EVENT_CREATION_OPTIONAL_FIELDS: TypeMapping = {
@@ -2317,13 +2321,13 @@ EVENT_PART_CREATION_MANDATORY_FIELDS: TypeMapping = {
     'shortname': Shortname,
     'part_begin': datetime.date,
     'part_end': datetime.date,
-    'fee': NonNegativeDecimal,
+    # 'fee': NonNegativeDecimal,
     'waitlist_field': Optional[ID],  # type: ignore[dict-item]
 }
 
 EVENT_PART_CREATION_OPTIONAL_FIELDS: TypeMapping = {
     'tracks': Mapping,
-    'fee_modifiers': Mapping,
+    # 'fee_modifiers': Mapping,
 }
 
 EVENT_PART_COMMON_FIELDS: TypeMapping = {
@@ -2385,34 +2389,34 @@ def _event_part(
                     newtracks[anid] = track
         val['tracks'] = newtracks
 
-    if 'fee_modifiers' in val:
-        new_modifiers = {}
-        for anid, fee_modifier in val['fee_modifiers'].items():
-            try:
-                anid = _int(anid, 'fee_modifiers', **kwargs)
-            except ValidationSummary as e:
-                errs.extend(e)
-            else:
-                creation = (anid < 0)
-                try:
-                    fee_modifier = _ALL_TYPED[
-                        Optional[EventFeeModifier]  # type: ignore[index]
-                    ](
-                        fee_modifier, 'fee_modifiers', creation=creation, **kwargs)
-                except ValidationSummary as e:
-                    errs.extend(e)
-                else:
-                    new_modifiers[anid] = fee_modifier
-
-        msg = n_("Must not have multiple fee modifiers linked to the same"
-                 " field in one event part.")
-
-        aniter: Iterable[Tuple[EventFeeModifier, EventFeeModifier]]
-        aniter = itertools.combinations(
-            [fm for fm in val['fee_modifiers'].values() if fm], 2)
-        for e1, e2 in aniter:
-            if e1['field_id'] is not None and e1['field_id'] == e2['field_id']:
-                errs.append(ValueError('fee_modifiers', msg))
+    # if 'fee_modifiers' in val:
+    #     new_modifiers = {}
+    #     for anid, fee_modifier in val['fee_modifiers'].items():
+    #         try:
+    #             anid = _int(anid, 'fee_modifiers', **kwargs)
+    #         except ValidationSummary as e:
+    #             errs.extend(e)
+    #         else:
+    #             creation = (anid < 0)
+    #             try:
+    #                 fee_modifier = _ALL_TYPED[
+    #                     Optional[EventFeeModifier]  # type: ignore[index]
+    #                 ](
+    #                     fee_modifier, 'fee_modifiers', creation=creation, **kwargs)
+    #             except ValidationSummary as e:
+    #                 errs.extend(e)
+    #             else:
+    #                 new_modifiers[anid] = fee_modifier
+    #
+    #     msg = n_("Must not have multiple fee modifiers linked to the same"
+    #              " field in one event part.")
+    #
+    #     aniter: Iterable[Tuple[EventFeeModifier, EventFeeModifier]]
+    #     aniter = itertools.combinations(
+    #         [fm for fm in val['fee_modifiers'].values() if fm], 2)
+    #     for e1, e2 in aniter:
+    #         if e1['field_id'] is not None and e1['field_id'] == e2['field_id']:
+    #             errs.append(ValueError('fee_modifiers', msg))
 
     if errs:
         raise errs
@@ -2672,6 +2676,72 @@ def _event_fee_modifier(
         val, mandatory_fields, optional_fields, **kwargs)
 
     return EventFeeModifier(val)
+
+
+@_add_typed_validator
+def _event_fee_setter(
+    val: Any, argname: str = "fees",
+    **kwargs: Any
+) -> EventFeeSetter:
+    """Validate a `CdEDBOptionalMap` of event fees."""
+    val = _mapping(val, argname)
+
+    new_fees = _optional_object_mapping_helper(
+        val, EventFee, argname, creation_only=False, **kwargs)
+
+    return EventFeeSetter(dict(new_fees))
+
+
+
+EVENT_FEE_COMMON_FIELDS: TypeMapping = {
+    "title": str,
+    "notes": Optional[str],  # type: ignore[dict-item]
+    "amount": decimal.Decimal,
+    "condition": EventFeeCondition,
+}
+
+
+@_add_typed_validator
+def _event_fee(
+    val: Any, argname: str = "event_fee", *,
+        creation: bool = False, **kwargs: Any
+) -> EventFee:
+
+    val = _mapping(val, argname, **kwargs)
+
+    if creation:
+        mandatory_fields = EVENT_FEE_COMMON_FIELDS
+        optional_fields: TypeMapping = {}
+    else:
+        mandatory_fields = {'id': ID}
+        optional_fields = EVENT_FEE_COMMON_FIELDS
+
+    val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
+
+    return EventFee(val)
+
+
+_EVENT_FEE_CONDITION_PARSER = fcp_parsing.create_parser()
+
+@_add_typed_validator
+def _event_fee_condition(
+    val: Any, argname: str = "event_fee_condition", *,
+    event: CdEDBObject, **kwargs: Any
+) -> EventFeeCondition:
+
+    val = _str(val, argname, **kwargs)
+
+    field_names = {f['field_name'] for f in event['fields'].values()
+                   if f['kind'] == const.FieldDatatypes.bool}
+    part_names = {p['shortname'] for p in event['parts'].values()}
+
+    parse_result = _EVENT_FEE_CONDITION_PARSER.parse_string(val)[0]
+    try:
+        fcp_evaluation.check(parse_result, field_names, part_names)
+    except Exception as e:
+        raise ValidationSummary(ValueError(*((argname,) + e.args))) from e
+
+    return EventFeeCondition(fcp_roundtrip.serialize(parse_result))
 
 
 PAST_COURSE_COMMON_FIELDS: Mapping[str, Any] = {

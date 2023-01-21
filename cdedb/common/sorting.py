@@ -180,6 +180,10 @@ class EntitySorter:
         return (part_group['title'], part_group['id'])
 
     @staticmethod
+    def event_fee(event_fee: CdEDBObject) -> Sortkey:
+        return (event_fee['title'], event_fee['id'])
+
+    @staticmethod
     def course_track(course_track: CdEDBObject) -> Sortkey:
         return (course_track['sortkey'], course_track['id'])
 

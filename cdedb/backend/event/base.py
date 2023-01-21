@@ -34,9 +34,9 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
-    COURSE_FIELDS, COURSE_SEGMENT_FIELDS, COURSE_TRACK_FIELDS, EVENT_FIELDS,
-    EVENT_PART_FIELDS, FEE_MODIFIER_FIELDS, FIELD_DEFINITION_FIELDS, LODGEMENT_FIELDS,
-    LODGEMENT_GROUP_FIELDS, PART_GROUP_FIELDS, PERSONA_EVENT_FIELDS,
+    COURSE_FIELDS, COURSE_SEGMENT_FIELDS, COURSE_TRACK_FIELDS, EVENT_FEE_FIELDS,
+    EVENT_FIELDS, EVENT_PART_FIELDS, FEE_MODIFIER_FIELDS, FIELD_DEFINITION_FIELDS,
+    LODGEMENT_FIELDS, LODGEMENT_GROUP_FIELDS, PART_GROUP_FIELDS, PERSONA_EVENT_FIELDS,
     PERSONA_STATUS_FIELDS, QUESTIONNAIRE_ROW_FIELDS, REGISTRATION_FIELDS,
     REGISTRATION_PART_FIELDS, REGISTRATION_TRACK_FIELDS, STORED_EVENT_QUERY_FIELDS,
     TRACK_GROUP_FIELDS,
@@ -209,6 +209,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 ret[anid]['tracks'] = {}
                 ret[anid]['part_groups'] = {}
                 ret[anid]['track_groups'] = {}
+                ret[anid]['fees'] = {}
                 ret[anid]['fee_modifiers'] = {}
             part_data = self.sql_select(
                 rs, "event.event_parts", EVENT_PART_FIELDS,
@@ -230,9 +231,12 @@ class EventBaseBackend(EventLowLevelBackend):
             track_group_track_data = self.sql_select(
                 rs, "event.track_group_tracks", ("track_group_id", "track_id"),
                 all_tracks.keys(), entity_key="track_id")
-            fee_modifier_data = self.sql_select(
-                rs, "event.fee_modifiers", FEE_MODIFIER_FIELDS,
-                all_parts.keys(), entity_key="part_id")
+            # fee_modifier_data = self.sql_select(
+            #     rs, "event.fee_modifiers", FEE_MODIFIER_FIELDS,
+            #     all_parts.keys(), entity_key="part_id")
+            fee_data = self.sql_select(
+                rs, "event.event_fees", EVENT_FEE_FIELDS, event_ids,
+                entity_key="event_id")
             orga_data = self.sql_select(
                 rs, "event.orgas", ("persona_id", "event_id"), event_ids,
                 entity_key="event_id")
@@ -268,10 +272,12 @@ class EventBaseBackend(EventLowLevelBackend):
                 track_group['track_ids'].add(d['track_id'])
                 track = ret[event_id]['tracks'][d['track_id']]
                 track['track_groups'][d['track_group_id']] = track_group
-            for d in fee_modifier_data:
-                event_id = all_parts[d['part_id']]
-                ret[event_id]['fee_modifiers'][d['id']] = d
-                ret[event_id]['parts'][d['part_id']]['fee_modifiers'][d['id']] = d
+            # for d in fee_modifier_data:
+            #     event_id = all_parts[d['part_id']]
+            #     ret[event_id]['fee_modifiers'][d['id']] = d
+            #     ret[event_id]['parts'][d['part_id']]['fee_modifiers'][d['id']] = d
+            for d in fee_data:
+                ret[d['event_id']]['fees'][d['id']] = d
             for event_id, fields in self._get_events_fields(rs, event_ids).items():
                 ret[event_id]['fields'] = fields
         for anid in event_ids:
@@ -723,6 +729,63 @@ class EventBaseBackend(EventLowLevelBackend):
                         rs, track_group_id=x, cascade=cascade)
 
             self._track_groups_sanity_check(rs, event_id)
+
+        return ret
+
+    @access("event")
+    def set_event_fees(self, rs: RequestState, event_id: int, fees: CdEDBOptionalMap
+                       ) -> DefaultReturnCode:
+        """Create, delete and/or update fees for one event."""
+        event_id = affirm(vtypes.ID, event_id)
+
+        if not (self.is_admin(rs) or self.is_orga(rs, event_id=event_id)):
+            raise PrivilegeError(n_("Not privileged."))
+
+        ret = 1
+        if not fees:
+            return ret
+
+        with Atomizer(rs):
+            event = self.get_event(rs, event_id)
+            fees = affirm(vtypes.EventFeeSetter, fees, event=event)
+
+            existing_fees = {unwrap(e) for e in self.sql_select(
+                rs, "event.event_fees", ("id",), (event_id,), entity_key="event_id")}
+            new_fees = {x for x in fees if x < 0}
+            updated_fees = {x for x in fees if x > 0 and fees[x] is not None}
+            deleted_fees = {x for x in fees if x > 0 and fees[x] is None}
+            if not updated_fees | deleted_fees <= existing_fees:
+                raise ValueError(n_("Non-existing event fee specified."))
+
+            if updated_fees or deleted_fees:
+                current_fee_data = {e['id']: e for e in self.sql_select(
+                    rs, "event.event_fees", EVENT_FEE_FIELDS,
+                    updated_fees | deleted_fees)}
+
+                if deleted_fees:
+                    ret *= self.sql_delete(rs, "event.event_fees", deleted_fees)
+                    for x in mixed_existence_sorter(deleted_fees):
+                        current = current_fee_data[x]
+                        self.event_log(rs, const.EventLogCodes.fee_modifier_deleted,
+                                       event_id, change_note=current['title'])
+
+                for x in mixed_existence_sorter(updated_fees):
+                    updated_fee = copy.deepcopy(fees[x])
+                    assert updated_fee is not None
+                    updated_fee['event_id'] = event_id
+                    current = current_fee_data[x]
+                    if any(updated_fee[k] != current[k] for k in updated_fee):
+                        ret *= self.sql_update(rs, "event.event_fees", updated_fee)
+                        self.event_log(rs, const.EventLogCodes.fee_modifier_changed,
+                                       event_id, change_note=current['title'])
+
+            for x in mixed_existence_sorter(new_fees):
+                new_fee = copy.deepcopy(fees[x])
+                assert new_fee is not None
+                new_fee['event_id'] = event_id
+                ret *= self.sql_insert(rs, "event.event_fees", new_fee)
+                self.event_log(rs, const.EventLogCodes.fee_modifier_created, event_id,
+                               change_note=new_fee['title'])
 
         return ret
 

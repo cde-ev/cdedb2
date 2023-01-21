@@ -27,7 +27,7 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation import (
-    EVENT_EXPOSED_FIELDS, EVENT_PART_COMMON_FIELDS,
+    EVENT_EXPOSED_FIELDS, EVENT_FEE_COMMON_FIELDS, EVENT_PART_COMMON_FIELDS,
     EVENT_PART_CREATION_MANDATORY_FIELDS, EVENT_PART_GROUP_COMMON_FIELDS,
     EVENT_TRACK_GROUP_COMMON_FIELDS,
 )
@@ -602,6 +602,52 @@ class EventEventMixin(EventBaseFrontend):
         rs.notify_return_code(code)
 
         return self.redirect(rs, "event/part_summary")
+
+    @access("event")
+    @event_guard()
+    def fee_summary(self, rs: RequestState, event_id: int) -> Response:
+        """Show a summary of all event fees."""
+        return self.render(rs, "event/fee/fee_summary")
+
+    @access("event")
+    @event_guard()
+    def configure_fee_form(self, rs: RequestState, event_id: int, fee_id: int = None
+                           ) -> Response:
+        """Render form to change or create one event fee."""
+        if fee_id:
+            if fee_id not in rs.ambience['event']['fees']:
+                rs.notify("error", n_("Unknown fee."))
+                return self.redirect("event/fee_summary")
+            else:
+                merge_dicts(rs.values, rs.ambience['fee'])
+        return self.render(rs, "event/fee/configure_fee")
+
+    @access("event", modi={"POST"})
+    @event_guard()
+    @REQUESTdatadict(*EVENT_FEE_COMMON_FIELDS.keys())
+    def configure_fee(self, rs: RequestState, event_id: int, data: CdEDBObject,
+                      fee_id: int = None) -> Response:
+        """Submit changes to or creation of one event fee."""
+        if fee_id:
+            data['id'] = fee_id
+        fee_data = check(rs, vtypes.EventFee, data, creation=fee_id is None,
+                         event=rs.ambience['event'])
+        if rs.has_validation_errors() or not fee_data:
+            return self.render(rs, "event/fee/configure_fee")
+        code = self.eventproxy.set_event_fees(rs, event_id, {fee_id or -1: fee_data})
+        rs.notify_return_code(code)
+        return self.redirect(rs, "event/fee_summary")
+
+    @access("event", modi={"POST"})
+    @event_guard()
+    def delete_fee(self, rs: RequestState, event_id: int, fee_id: int) -> Response:
+        """Delete one event fee."""
+        if fee_id not in rs.ambience['event']['fees']:
+            rs.notify("error", n_("Unknown fee."))
+            return self.redirect("event/fee_summary")
+        code = self.eventproxy.set_event_fees(rs, event_id, {fee_id: None})
+        rs.notify_return_code(code)
+        return self.redirect(rs, "event/fee_summary")
 
     @access("event")
     @event_guard()

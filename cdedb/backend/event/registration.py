@@ -1096,9 +1096,10 @@ class EventRegistrationBackend(EventBaseBackend):
 
         # Precompute fees including fee modifiers for every registered-for part.
         fees_to_pay: Dict[int, decimal.Decimal] = {
-            part_id: event['parts'][part_id]['fee']
+            part_id: decimal.Decimal("0.00")
+            # part_id: event['parts'][part_id]['fee']
             for part_id, rpart in reg['parts'].items()
-            if rpart['status'].has_to_pay()
+            # if rpart['status'].has_to_pay()
         }
         for fee_mod in event['fee_modifiers'].values():
             if reg['fields'].get(event['fields'][fee_mod['field_id']]['field_name']):

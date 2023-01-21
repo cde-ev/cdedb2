@@ -121,7 +121,7 @@ EVENT_FIELDS = (
 
 #: Fields of an event part organized via CdEDB
 EVENT_PART_FIELDS = ("id", "event_id", "title", "shortname", "part_begin",
-                     "part_end", "fee", "waitlist_field")
+                     "part_end", "waitlist_field")
 
 PART_GROUP_FIELDS = ("id", "event_id", "title", "shortname", "notes", "constraint_type")
 
@@ -141,6 +141,9 @@ FIELD_DEFINITION_FIELDS = (
 
 #: Fields of a modifier for an event_parts fee.
 FEE_MODIFIER_FIELDS = ("id", "part_id", "modifier_name", "amount", "field_id")
+
+#: Fields of a conditional event fee.
+EVENT_FEE_FIELDS = ("id", "event_id", "title", "amount", "condition", "notes")
 
 #: Fields of a concluded course
 PAST_COURSE_FIELDS = ("id", "pevent_id", "nr", "title", "description")

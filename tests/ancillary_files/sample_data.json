@@ -4165,6 +4165,56 @@
             "course_room_field": null
         }
     ],
+    "event.event_fees": [
+        {
+            "event_id": 1,
+            "title": "Teilnahmebeitrag Warmup",
+            "amount": "10.50",
+            "condition": "part.Wu"
+        },
+        {
+            "event_id": 1,
+            "title": "Teilnahmebeitrag 1. Hälfte",
+            "amount": "123.00",
+            "condition": "part.1.H."
+        },
+        {
+            "event_id": 1,
+            "title": "Teilnahmebeitrag 2. Hälfte",
+            "amount": "450.99",
+            "condition": "part.2.H."
+        },
+        {
+            "event_id": 1,
+            "title": "Kinderpreis Warmup",
+            "amount": "-5.00",
+            "condition": "part.Wu AND field.is_child"
+        },
+        {
+            "event_id": 1,
+            "title": "Kinderpreis 1. Hälfte",
+            "amount": "-12.00",
+            "condition": "part.1.H. AND field.is_child"
+        },
+        {
+            "event_id": 1,
+            "title": "Kinderpreis 2. Hälfte",
+            "amount": "-19.00",
+            "condition": "part.2.H. AND field.is_child"
+        },
+        {
+            "event_id": 2,
+            "title": "Teilnahmebeitrag Party",
+            "amount": "15.00",
+            "condition": "part.Party"
+        },
+        {
+            "event_id": 4,
+            "title": "Unkostenbeitrag Silvesterfeier",
+            "amount": "4.20",
+            "condition": "part.Feier"
+        }
+    ],
     "event.event_parts": [
         {
             "id": 1,
@@ -4173,7 +4223,6 @@
             "shortname": "Wu",
             "part_begin": "2222-02-02",
             "part_end": "2222-02-02",
-            "fee": "10.50",
             "waitlist_field": null
         },
         {
@@ -4183,7 +4232,6 @@
             "shortname": "1.H.",
             "part_begin": "2222-11-01",
             "part_end": "2222-11-11",
-            "fee": "123.00",
             "waitlist_field": null
         },
         {
@@ -4193,7 +4241,6 @@
             "shortname": "2.H.",
             "part_begin": "2222-11-11",
             "part_end": "2222-11-30",
-            "fee": "450.99",
             "waitlist_field": null
         },
         {
@@ -4203,7 +4250,6 @@
             "shortname": "Party",
             "part_begin": "2050-01-15",
             "part_end": "2050-01-15",
-            "fee": "15.00",
             "waitlist_field": null
         },
         {
@@ -4213,7 +4259,6 @@
             "shortname": "cyta",
             "part_begin": "2003-01-02",
             "part_end": "2003-03-04",
-            "fee": "0.00",
             "waitlist_field": null
         },
         {
@@ -4223,7 +4268,6 @@
             "shortname": "O1",
             "part_begin": "3000-01-01",
             "part_end": "3000-02-01",
-            "fee": "0.00",
             "waitlist_field": null
         },
         {
@@ -4233,7 +4277,6 @@
             "shortname": "W1",
             "part_begin": "3000-01-01",
             "part_end": "3000-02-01",
-            "fee": "0.00",
             "waitlist_field": null
         },
         {
@@ -4243,7 +4286,6 @@
             "shortname": "K1",
             "part_begin": "3000-01-01",
             "part_end": "3000-02-01",
-            "fee": "0.00",
             "waitlist_field": null
         },
         {
@@ -4253,7 +4295,6 @@
             "shortname": "O2",
             "part_begin": "3000-02-01",
             "part_end": "3000-03-01",
-            "fee": "0.00",
             "waitlist_field": null
         },
         {
@@ -4263,7 +4304,6 @@
             "shortname": "W2",
             "part_begin": "3000-02-01",
             "part_end": "3000-03-01",
-            "fee": "0.00",
             "waitlist_field": null
         },
         {
@@ -4273,7 +4313,6 @@
             "shortname": "K2",
             "part_begin": "3000-02-01",
             "part_end": "3000-03-01",
-            "fee": "0.00",
             "waitlist_field": null
         },
         {
@@ -4283,7 +4322,6 @@
             "shortname": "Feier",
             "part_begin": "2999-12-31",
             "part_end": "3000-01-01",
-            "fee": "4.20",
             "waitlist_field": null
         }
     ],
@@ -4781,29 +4819,6 @@
             "association": 1,
             "checkin": true,
             "entries": null
-        }
-    ],
-    "event.fee_modifiers": [
-        {
-            "id": 1,
-            "part_id": 1,
-            "modifier_name": "is_child",
-            "amount": "-5.00",
-            "field_id": 7
-        },
-        {
-            "id": 2,
-            "part_id": 2,
-            "modifier_name": "is_child",
-            "amount": "-12.00",
-            "field_id": 7
-        },
-        {
-            "id": 3,
-            "part_id": 3,
-            "modifier_name": "is_child",
-            "amount": "-19.00",
-            "field_id": 7
         }
     ],
     "event.courses": [
