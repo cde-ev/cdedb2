@@ -8,12 +8,13 @@ registrations at once for the mailinglist realm.
 """
 import copy
 import decimal
-import itertools
 from typing import (
-    Any, Collection, Dict, Iterable, List, Mapping, NamedTuple, Optional, Protocol,
-    Sequence, Set, Tuple, TypeVar,
+    Any, Collection, Dict, List, Mapping, NamedTuple, Optional, Protocol, Sequence, Set,
+    Tuple, TypeVar,
 )
 
+import fee_condition_parser.evaluation as fcp_evaluation
+import fee_condition_parser.parsing as fcp_parsing
 import psycopg2.extensions
 
 import cdedb.common.validation.types as vtypes
@@ -47,6 +48,8 @@ CourseChoiceValidationAux = NamedTuple(
         ("orga_input", bool),
     ])
 
+
+_PARSER = fcp_parsing.create_parser()
 
 class EventRegistrationBackend(EventBaseBackend):
     def _get_course_segments_per_course(self, rs: RequestState,
@@ -1064,10 +1067,21 @@ class EventRegistrationBackend(EventBaseBackend):
                     {"type": "registration", "block": blockers.keys()})
         return ret
 
-    @staticmethod
-    def powerset(set_: Collection[T]) -> Iterable[Set[T]]:
-        return itertools.chain.from_iterable(
-            map(set, itertools.combinations(set_, n)) for n in range(len(set_) + 1))
+    def _update_registrations_amount_owed(self, rs: RequestState, event_id: int
+                                          ) -> DefaultReturnCode:
+        self.affirm_atomized_context(rs)
+        registration_ids = self.list_registrations(rs, event_id)
+        fees = self.calculate_fees(rs, registration_ids)
+
+        ret = 1
+        for reg_id, amount_owed in fees.items():
+            update = {
+                'id': reg_id,
+                'amount_owed': amount_owed,
+            }
+            ret *= self.sql_update(rs, "event.registrations", update)
+
+        return ret
 
     def _calculate_single_fee(self, rs: RequestState, reg: CdEDBObject, *,
                               event: CdEDBObject, is_member: bool = None
@@ -1084,61 +1098,33 @@ class EventRegistrationBackend(EventBaseBackend):
 
         :param is_member: If this is None, retrieve membership status here.
         """
-        mep = const.EventPartGroupType.mutually_exclusive_participants
-        zero = decimal.Decimal(0)
+        ret = decimal.Decimal(0)
 
-        # Reverse sorting by length slightly reduces runtime because of lazy evalution
-        #  of `all()` and the fact, that larger part groups are more likely to have
-        #  non-trivial intersections.
-        parts_per_mep = xsorted(
-            (pg['part_ids'] for pg in event['part_groups'].values()
-             if pg['constraint_type'] == mep), key=len, reverse=True)
-
-        # Precompute fees including fee modifiers for every registered-for part.
-        fees_to_pay: Dict[int, decimal.Decimal] = {
-            part_id: decimal.Decimal("0.00")
-            # part_id: event['parts'][part_id]['fee']
-            for part_id, rpart in reg['parts'].items()
-            # if rpart['status'].has_to_pay()
+        reg_part_involvement = {
+            event['parts'][rp['part_id']]['shortname']: rp['status'].is_involved()
+            for rp in reg['parts'].values()
         }
-        for fee_mod in event['fee_modifiers'].values():
-            if reg['fields'].get(event['fields'][fee_mod['field_id']]['field_name']):
-                if fee_mod['part_id'] in fees_to_pay:
-                    fees_to_pay[fee_mod['part_id']] += fee_mod['amount']
+        reg_bool_fields = {
+            f['field_name']: reg['fields'].get(f['field_name'], False)
+            for f in event['fields'].values()
+            if f['association'] == const.FieldAssociations.registration
+               and f['kind'] == const.FieldDatatypes.bool
+        }
+        for fee in event['fees'].values():
+            parse_result = _PARSER.parse_string(fee['condition'])[0]
+            if fcp_evaluation.evaluate(
+                    parse_result, reg_bool_fields, reg_part_involvement):
+                ret += fee['amount']
 
-        def total_cost(part_ids: Collection[int]) -> decimal.Decimal:
-            """Calculate the total cost of the given parts for this registration."""
-            return sum((fees_to_pay[part_id] for part_id in part_ids), start=zero)
-
-        # Split all parts into those belonging to at least one part group and others.
-        mep_parts = set(itertools.chain.from_iterable(
-            pg['part_ids'] for pg in event['part_groups'].values()))
-        other_parts = set(event['parts']) - mep_parts
-
-        # Compute constant fee from non-part-group parts.
-        fee = total_cost(other_parts & fees_to_pay.keys())
-
-        # The following calculation is somewhat complicated and scales very poorly with
-        #  the number of parts belonging to part groups.
-        #  This is deemed acceptable because the number of part groups is not expected
-        #  to exceed problematic threshholds.
-
-        # For every legal subset of the registered-for parts calculate the total cost.
-        #  Determine the maximum of those and add it to the fee.
-        #  Legal subsets are those that only trivially intersect with all part groups.
-        fee += max(
-            (total_cost(ids_) for ids_ in self.powerset(mep_parts & fees_to_pay.keys())
-             if all(len(mep_parts & ids_) <= 1 for mep_parts in parts_per_mep)),
-            default=zero)
-
+        # TODO: Include this in the conditional fees?
         # Add nonmember surcharge if applicable.
         if is_member is None:
             is_member = self.core.get_persona(
                 rs, reg['persona_id'])['is_member']
         if not is_member:
-            fee += event['nonmember_surcharge']
+            ret += event['nonmember_surcharge']
 
-        return fee
+        return ret
 
     @access("event")
     def calculate_fees(self, rs: RequestState, registration_ids: Collection[int]
