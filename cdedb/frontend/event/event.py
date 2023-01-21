@@ -413,11 +413,6 @@ class EventEventMixin(EventBaseFrontend):
 
         sorted_fields = xsorted(rs.ambience['event']['fields'].values(),
                                 key=EntitySorter.event_field)
-        legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['fee_modifier']
-        fee_modifier_fields = [
-            (field['id'], field['field_name']) for field in sorted_fields
-            if field['association'] in legal_assocs and field['kind'] in legal_datatypes
-        ]
         legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['waitlist']
         waitlist_fields = [
             (field['id'], field['field_name']) for field in sorted_fields
@@ -426,7 +421,6 @@ class EventEventMixin(EventBaseFrontend):
         return self.render(rs, "event/change_part", {
             'part_id': part_id,
             'sorted_track_ids': sorted_track_ids,
-            'fee_modifier_fields': fee_modifier_fields,
             'waitlist_fields': waitlist_fields,
             'referenced_tracks': referenced_tracks,
             'has_registrations': has_registrations,

@@ -22,8 +22,8 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
-    COURSE_TRACK_FIELDS, EVENT_FIELD_SPEC, EVENT_PART_FIELDS, FEE_MODIFIER_FIELDS,
-    FIELD_DEFINITION_FIELDS, PART_GROUP_FIELDS, REGISTRATION_FIELDS,
+    COURSE_TRACK_FIELDS, EVENT_FIELD_SPEC, EVENT_PART_FIELDS, FIELD_DEFINITION_FIELDS,
+    PART_GROUP_FIELDS, REGISTRATION_FIELDS,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.sorting import mixed_existence_sorter

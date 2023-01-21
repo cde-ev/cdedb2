@@ -2680,11 +2680,11 @@ def _event_fee_condition(
     }
     part_names = {p['shortname'] for p in event['parts'].values()}
 
-    parse_result = _EVENT_FEE_CONDITION_PARSER.parse_string(val)[0]
     try:
+        parse_result = _EVENT_FEE_CONDITION_PARSER.parse_string(val)[0]
         fcp_evaluation.check(parse_result, field_names, part_names)
     except Exception as e:
-        raise ValidationSummary(ValueError(*((argname,) + e.args))) from e
+        raise ValidationSummary(ValueError(argname, e.args[-1])) from e
 
     return EventFeeCondition(fcp_roundtrip.serialize(parse_result))
 
