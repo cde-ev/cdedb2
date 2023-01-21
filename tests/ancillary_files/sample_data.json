@@ -4170,49 +4170,57 @@
             "event_id": 1,
             "title": "Teilnahmebeitrag Warmup",
             "amount": "10.50",
-            "condition": "part.Wu"
+            "condition": "part.Wu",
+            "notes": null
         },
         {
             "event_id": 1,
             "title": "Teilnahmebeitrag 1. Hälfte",
             "amount": "123.00",
-            "condition": "part.1.H."
+            "condition": "part.1.H.",
+            "notes": null
         },
         {
             "event_id": 1,
             "title": "Teilnahmebeitrag 2. Hälfte",
             "amount": "450.99",
-            "condition": "part.2.H."
+            "condition": "part.2.H.",
+            "notes": null
         },
         {
             "event_id": 1,
             "title": "Kinderpreis Warmup",
             "amount": "-5.00",
-            "condition": "part.Wu AND field.is_child"
+            "condition": "part.Wu AND field.is_child",
+            "notes": null
         },
         {
             "event_id": 1,
             "title": "Kinderpreis 1. Hälfte",
             "amount": "-12.00",
-            "condition": "part.1.H. AND field.is_child"
+            "condition": "part.1.H. AND field.is_child",
+            "notes": null
         },
         {
             "event_id": 1,
             "title": "Kinderpreis 2. Hälfte",
             "amount": "-19.00",
-            "condition": "part.2.H. AND field.is_child"
+            "condition": "part.2.H. AND field.is_child",
+            "notes": null
         },
         {
             "event_id": 2,
             "title": "Teilnahmebeitrag Party",
             "amount": "15.00",
-            "condition": "part.Party"
+            "condition": "part.Party",
+            "notes": null
         },
         {
             "event_id": 4,
             "title": "Unkostenbeitrag Silvesterfeier",
             "amount": "4.20",
-            "condition": "part.Feier"
+            "condition": "part.Feier",
+            "notes": null
         }
     ],
     "event.event_parts": [
