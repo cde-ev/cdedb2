@@ -17,7 +17,6 @@ backend parts.
 import collections
 import copy
 import datetime
-from abc import abstractmethod
 from typing import Any, Collection, Dict, Iterable, List, Optional, Protocol, Set, Tuple
 
 import cdedb.common.validation.types as vtypes
@@ -792,7 +791,6 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return ret
 
-    @abstractmethod
     def _update_registrations_amount_owed(self, rs: RequestState, event_id: int
                                           ) -> DefaultReturnCode:
         pass
