@@ -380,7 +380,7 @@ class TestEventFrontend(FrontendTest):
         orga = {
             "Teilnehmerliste", "Anmeldungen", "Statistik", "Kurse", "Kurseinteilung",
             "Unterkünfte", "Downloads", "Partieller Import", "Überweisungen eintragen",
-            "Konfiguration", "Veranstaltungsteile", "Datenfelder konfigurieren",
+            "Konfiguration", "Veranstaltungsteile", "Fees", "Datenfelder konfigurieren",
             "Anmeldung konfigurieren", "Fragebogen konfigurieren",
             "Log", "Checkin"}
 
@@ -693,7 +693,6 @@ class TestEventFrontend(FrontendTest):
         f['shortname'] = "cd"
         f['part_begin'] = "2244-4-5"
         f['part_end'] = "2233-6-7"
-        f['fee'] = "23456.78"
         self.submit(f, check_notification=False)
         self.assertValidationError('part_end', "Muss später als Beginn sein.")
         f['part_begin'] = "2233-4-5"
@@ -725,7 +724,6 @@ class TestEventFrontend(FrontendTest):
         self.assertEqual("cd", f['shortname'].value)
         self.assertEqual("Chillout Training", f['track_title_1001'].value)
         f['title'] = "Größere Hälfte"
-        f['fee'] = "99.99"
         f['part_end'] = "2222-6-7"
         self.submit(f, check_notification=False)
         self.assertValidationError('part_end', "Muss später als Beginn sein")
@@ -1707,9 +1705,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence(payment_pending)
 
         # unset fee for the only part participated in - no payment needed anymore
-        self.get('/event/event/1/part/3/change')
-        f = self.response.forms['changepartform']
-        f['fee'] = 0
+        self.traverse("Fees")
+        f = self.response.forms['deleteeventfeeform3']
         self.submit(f)
         self.traverse("Index")
         self.assertNonPresence(payment_pending)
@@ -1824,20 +1821,17 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f['association_-1'] = const.FieldAssociations.registration
         self.submit(f)
 
-        self.traverse("Veranstaltungsteile")
-        self.traverse({"href": "/event/event/2/part/4/change"})
-        f = self.response.forms['changepartform']
-        f['fee_modifier_create_-1'].checked = True
-        f['fee_modifier_modifier_name_-1'] = "is_child"
-        f['fee_modifier_amount_-1'] = "-10"
-        f['fee_modifier_field_id_-1'] = 1001
+        self.traverse("Fees", "Add Fee")
+        f = self.response.forms['configureeventfeeform']
+        f['title'] = "Is Child"
+        f['amount'] = "-10"
+        f['condition'] = "part.Party AND field.is_child"
         self.submit(f)
-        self.traverse({"href": "/event/event/2/part/4/change"})
-        f = self.response.forms['changepartform']
-        f['fee_modifier_create_-1'].checked = True
-        f['fee_modifier_modifier_name_-1'] = "plus_one"
-        f['fee_modifier_amount_-1'] = "+14.99"
-        f['fee_modifier_field_id_-1'] = 1002
+        self.traverse("Add Fee")
+        f = self.response.forms['configureeventfeeform']
+        f['title'] = "Plus One"
+        f['amount'] = "+14.99"
+        f['condition'] = "part.Party AND field.plus_one"
         self.submit(f)
 
         self.traverse("Anmeldung konfigurieren")
@@ -1942,7 +1936,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.submit(f)
 
     @event_keeper
-    @unittest.skip
+    @unittest.skip("removed feature.")
     @as_users("annika")
     def test_fee_modifiers(self) -> None:
         self.traverse("Veranstaltungen", "Alle Veranstaltungen", "CdE-Party 2050")
@@ -2600,14 +2594,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f = self.response.forms['batchfeesform']
         f['send_notifications'].checked = True
         f['force'].checked = True
-        f['fee_data'] = """
-266.49;DB-5-1;Eventis;Emilia;01.04.18
-"""
+        f['fee_data'] = """266.49;DB-5-1;Eventis;Emilia;01.04.18"""
         self.submit(f, check_notification=False)
         # submit again because of checksum
-        self.assertPresence("Bestätigen")
-        f = self.response.forms['batchfeesform']
-        self.submit(f, check_notification=False)
         self.assertPresence("Bestätigen")
         f = self.response.forms['batchfeesform']
         self.submit(f)
@@ -2631,13 +2620,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertTitle("Überweisungen eintragen (Große Testakademie 2222)")
         f = self.response.forms['batchfeesform']
         f['send_notifications'].checked = True
-        f['fee_data'] = """
-200.00;DB-5-1;Eventis;Emilia;02.04.18
-"""
+        f['fee_data'] = """200.00;DB-5-1;Eventis;Emilia;02.04.18"""
         self.submit(f, check_notification=False)
         # submit again because of checksum
-        f = self.response.forms['batchfeesform']
-        self.submit(f, check_notification=False)
         f = self.response.forms['batchfeesform']
         self.submit(f)
         for i in range(1):
@@ -5694,7 +5679,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f['shortname'] = "Afterparty"
         f['part_begin'] = "2050-01-16"
         f['part_end'] = "2050-01-17"
-        f['fee'] = "1"
         self.submit(f)
 
         f['title'] = "Pregame"

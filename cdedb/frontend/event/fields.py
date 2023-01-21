@@ -45,7 +45,7 @@ class EventFieldMixin(EventBaseFrontend):
             for key, value in field.items() if key != 'id'}
         merge_dicts(rs.values, current)
         referenced = set()
-        fee_modifiers = set()
+        # TODO: add check back.
         full_questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
         for v in full_questionnaire.values():
             for row in v:
@@ -57,14 +57,11 @@ class EventFieldMixin(EventBaseFrontend):
             referenced.add(rs.ambience['event']['camping_mat_field'])
         if rs.ambience['event']['course_room_field']:
             referenced.add(rs.ambience['event']['course_room_field'])
-        for mod in rs.ambience['event']['fee_modifiers'].values():
-            referenced.add(mod['field_id'])
-            fee_modifiers.add(mod['field_id'])
         for part in rs.ambience['event']['parts'].values():
             if part['waitlist_field']:
                 referenced.add(part['waitlist_field'])
         return self.render(rs, "fields/field_summary", {
-            'referenced': referenced, 'fee_modifiers': fee_modifiers})
+            'referenced': referenced, 'locked': set()})
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)

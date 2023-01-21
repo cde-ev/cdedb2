@@ -35,8 +35,8 @@ from cdedb.common import (
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
     COURSE_FIELDS, COURSE_SEGMENT_FIELDS, COURSE_TRACK_FIELDS, EVENT_FEE_FIELDS,
-    EVENT_FIELDS, EVENT_PART_FIELDS, FEE_MODIFIER_FIELDS, FIELD_DEFINITION_FIELDS,
-    LODGEMENT_FIELDS, LODGEMENT_GROUP_FIELDS, PART_GROUP_FIELDS, PERSONA_EVENT_FIELDS,
+    EVENT_FIELDS, EVENT_PART_FIELDS, FIELD_DEFINITION_FIELDS, LODGEMENT_FIELDS,
+    LODGEMENT_GROUP_FIELDS, PART_GROUP_FIELDS, PERSONA_EVENT_FIELDS,
     PERSONA_STATUS_FIELDS, QUESTIONNAIRE_ROW_FIELDS, REGISTRATION_FIELDS,
     REGISTRATION_PART_FIELDS, REGISTRATION_TRACK_FIELDS, STORED_EVENT_QUERY_FIELDS,
     TRACK_GROUP_FIELDS,
@@ -210,7 +210,6 @@ class EventBaseBackend(EventLowLevelBackend):
                 ret[anid]['part_groups'] = {}
                 ret[anid]['track_groups'] = {}
                 ret[anid]['fees'] = {}
-                ret[anid]['fee_modifiers'] = {}
             part_data = self.sql_select(
                 rs, "event.event_parts", EVENT_PART_FIELDS,
                 event_ids, entity_key="event_id")
@@ -231,9 +230,6 @@ class EventBaseBackend(EventLowLevelBackend):
             track_group_track_data = self.sql_select(
                 rs, "event.track_group_tracks", ("track_group_id", "track_id"),
                 all_tracks.keys(), entity_key="track_id")
-            # fee_modifier_data = self.sql_select(
-            #     rs, "event.fee_modifiers", FEE_MODIFIER_FIELDS,
-            #     all_parts.keys(), entity_key="part_id")
             fee_data = self.sql_select(
                 rs, "event.event_fees", EVENT_FEE_FIELDS, event_ids,
                 entity_key="event_id")
@@ -244,7 +240,6 @@ class EventBaseBackend(EventLowLevelBackend):
                 ret[d['event_id']]['orgas'].add(d['persona_id'])
             for d in part_data:
                 d['tracks'] = {}
-                d['fee_modifiers'] = {}
                 d['part_groups'] = {}
                 ret[d['event_id']]['parts'][d['id']] = d
             for d in part_group_data:
@@ -272,10 +267,6 @@ class EventBaseBackend(EventLowLevelBackend):
                 track_group['track_ids'].add(d['track_id'])
                 track = ret[event_id]['tracks'][d['track_id']]
                 track['track_groups'][d['track_group_id']] = track_group
-            # for d in fee_modifier_data:
-            #     event_id = all_parts[d['part_id']]
-            #     ret[event_id]['fee_modifiers'][d['id']] = d
-            #     ret[event_id]['parts'][d['part_id']]['fee_modifiers'][d['id']] = d
             for d in fee_data:
                 ret[d['event_id']]['fees'][d['id']] = d
             for event_id, fields in self._get_events_fields(rs, event_ids).items():
@@ -422,8 +413,8 @@ class EventBaseBackend(EventLowLevelBackend):
         The syntax for updating the associated data on orgas, parts and
         fields is as follows:
 
-        * If the keys 'parts', 'fee_modifiers' or 'fields' are present,
-          the associated dict mapping the part, fee_modifier or field ids to
+        * If the keys 'parts', or 'fields' are present,
+          the associated dict mapping the part, or field ids to
           the respective data sets can contain an arbitrary number of entities,
           absent entities are not modified.
 
@@ -871,8 +862,7 @@ class EventBaseBackend(EventLowLevelBackend):
                         del e['pos']
             # FIXME what is the correct type here?
             data = affirm(vtypes.Questionnaire, current,  # type: ignore[assignment]
-                          field_definitions=event['fields'],
-                          fee_modifiers=event['fee_modifiers'])
+                          field_definitions=event['fields'])
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=event_id)
@@ -1128,6 +1118,7 @@ class EventBaseBackend(EventLowLevelBackend):
             fee['title']: fee for fee in event['fees'].values()}
         for fee in event['fees'].values():
             del fee['id']
+            del fee['event_id']
             del fee['title']
         for part in event['parts'].values():
             del part['id']

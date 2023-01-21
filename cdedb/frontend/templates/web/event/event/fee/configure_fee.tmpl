@@ -13,7 +13,7 @@
         {% endtrans %}
     {% else %}
         {% trans event_title=ambience['event']['title'] %}
-            Add fee ({{ event_title }})
+            Add Fee ({{ event_title }})
         {% endtrans %}
     {% endif %}
 {% endblock %}
@@ -24,7 +24,7 @@
         {{ util.context_heading(gettext("Edit fee %(fee_title)s")|format(fee_title=ambience['fee']['title']),
                                 ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
     {% else %}
-        {{ util.context_heading(gettext("Add fee"),
+        {{ util.context_heading(gettext("Add Fee"),
                                 ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
     {% endif %}
 {% endblock %}
@@ -37,7 +37,7 @@
         {{ util.breadcrumb_link("", ambience['fee']['title'], icon="coins", readonly=True) }}
         {{ util.breadcrumb_link(cdedblink("event/configure_fee"), gettext("Change"), active=True) }}
     {% else %}
-        {{ util.breadcrumb_link(cdedblink("event/configure_fee"), gettext("Add fee"), active=True) }}
+        {{ util.breadcrumb_link(cdedblink("event/configure_fee"), gettext("Add Fee"), active=True) }}
     {% endif %}
 {% endblock %}
 

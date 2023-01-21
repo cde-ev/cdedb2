@@ -670,28 +670,52 @@
         "course_room_field": "transportation",
         "part_groups": {},
         "track_groups": {},
+        "fees": {
+            "Teilnahmebeitrag Warmup": {
+                "amount": "10.50",
+                "condition": "part.Wu",
+                "notes": null
+            },
+            "Teilnahmebeitrag 1. Hälfte": {
+                "amount": "123.00",
+                "condition": "part.1.H.",
+                "notes": null
+            },
+            "Teilnahmebeitrag 2. Hälfte": {
+                "amount": "450.99",
+                "condition": "part.2.H.",
+                "notes": null
+            },
+            "Kinderpreis Warmup": {
+                "amount": "-5.00",
+                "condition": "part.Wu AND field.is_child",
+                "notes": null
+            },
+            "Kinderpreis 1. Hälfte": {
+                "amount": "-12.00",
+                "condition": "part.1.H. AND field.is_child",
+                "notes": null
+            },
+            "Kinderpreis 2. Hälfte": {
+                "amount": "-19.00",
+                "condition": "part.2.H. AND field.is_child",
+                "notes": null
+            }
+        },
         "parts": {
             "1": {
                 "title": "Warmup",
                 "shortname": "Wu",
                 "part_begin": "2222-02-02",
                 "part_end": "2222-02-02",
-                "fee": "10.50",
                 "waitlist_field": null,
-                "tracks": {},
-                "fee_modifiers": {
-                    "is_child": {
-                        "amount": "-5.00",
-                        "field_name": "is_child"
-                    }
-                }
+                "tracks": {}
             },
             "2": {
                 "title": "Erste H\u00e4lfte",
                 "shortname": "1.H.",
                 "part_begin": "2222-11-01",
                 "part_end": "2222-11-11",
-                "fee": "123.00",
                 "waitlist_field": null,
                 "tracks": {
                     "1": {
@@ -708,12 +732,6 @@
                         "min_choices": 1,
                         "sortkey": 2
                     }
-                },
-                "fee_modifiers": {
-                    "is_child": {
-                        "amount": "-12.00",
-                        "field_name": "is_child"
-                    }
                 }
             },
             "3": {
@@ -721,7 +739,6 @@
                 "shortname": "2.H.",
                 "part_begin": "2222-11-11",
                 "part_end": "2222-11-30",
-                "fee": "450.99",
                 "waitlist_field": null,
                 "tracks": {
                     "3": {
@@ -730,12 +747,6 @@
                         "num_choices": 3,
                         "min_choices": 2,
                         "sortkey": 3
-                    }
-                },
-                "fee_modifiers": {
-                    "is_child": {
-                        "amount": "-19.00",
-                        "field_name": "is_child"
                     }
                 }
             }

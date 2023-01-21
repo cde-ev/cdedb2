@@ -1102,7 +1102,7 @@ class EventRegistrationBackend(EventBaseBackend):
         ret = decimal.Decimal(0)
 
         reg_part_involvement = {
-            event['parts'][part_id]['shortname']: rp['status'].is_involved()
+            event['parts'][part_id]['shortname']: rp['status'].has_to_pay()
             for part_id, rp in reg['parts'].items()
         }
         reg_bool_fields = {

@@ -141,7 +141,7 @@
                         <div class="row">
                         {% for field_id, entry in batch %}
                             {% if field_id > 0 %}
-                                {{ print_field(field_id, association, field_id not in referenced, field_id not in fee_modifiers, 'drow-row') }}
+                                {{ print_field(field_id, association, field_id not in referenced, field_id not in locked, 'drow-row') }}
                             {% else %}
                                 {{ print_field(field_id, association, False, True, 'drow-new', newrow=True) }}
                             {% endif %}

@@ -258,18 +258,6 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             return (lambda d: not d[key] or d[key] in reg_fields,
                     (key, ValueError(n_("Invalid field."))))
 
-        def fee_modifier_kind_constraint(idx: int) -> RequestConstraint:
-            key = field_key(idx)
-            msg = n_("Fee modifier field may only be used in"
-                     " registration questionnaire.")
-            fee_modifier_fields = {
-                e['field_id'] for
-                e in rs.ambience['event']['fee_modifiers'].values()}
-            valid_usages = {const.QuestionnaireUsages.registration.value}
-            return (lambda d: not (d[key] in fee_modifier_fields
-                                   and kind not in valid_usages),
-                    (key, ValueError(msg)))
-
         def readonly_kind_constraint(idx: int) -> RequestConstraint:
             key = readonly_key(idx)
             msg = n_("Registration questionnaire rows may not be readonly.")
@@ -288,7 +276,6 @@ class EventQuestionnaireMixin(EventBaseFrontend):
                    for idx1 in indices for idx2 in indices)))
         constraints += list(itertools.chain.from_iterable(
             (valid_field_constraint(idx),
-             fee_modifier_kind_constraint(idx),
              readonly_kind_constraint(idx),
              duplicate_kind_constraint(idx))
             for idx in indices))

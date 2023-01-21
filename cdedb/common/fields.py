@@ -253,8 +253,6 @@ EVENT_FIELD_SPEC: Dict[
         {const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),
     'course_room_field': ({const.FieldDatatypes.str}, {const.FieldAssociations.course}),
     'waitlist': ({const.FieldDatatypes.int}, {const.FieldAssociations.registration}),
-    'fee_modifier': (
-        {const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),
 }
 
 LOG_FIELDS_COMMON = ("codes", "persona_id", "submitted_by", "change_note", "offset",

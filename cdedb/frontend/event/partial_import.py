@@ -51,7 +51,6 @@ class EventImportMixin(EventBaseFrontend):
         """
         kwargs = {
             'field_definitions': rs.ambience['event']['fields'],
-            'fee_modifiers': rs.ambience['event']['fee_modifiers'],
             'questionnaire': self.eventproxy.get_questionnaire(rs, event_id),
             'extend_questionnaire': extend_questionnaire,
             'skip_existing_fields': skip_existing_fields,

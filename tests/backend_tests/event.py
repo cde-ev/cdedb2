@@ -6,6 +6,7 @@ import copy
 import datetime
 import decimal
 import json
+import unittest
 from typing import Any, Dict, List
 
 import freezegun
@@ -3482,6 +3483,7 @@ class TestEventBackend(BackendTest):
         self.event.set_event(self.key, data)
 
     @as_users("annika")
+    @unittest.skip("Removed feature.")
     def test_fee_modifiers(self) -> None:
         event_id = 2
         event = self.event.get_event(self.key, event_id)

@@ -236,10 +236,9 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                         'camping_mat_field': None,
                     }
                     ret *= self.sql_update(rs, "event.events", deletor)
-                    field_cascade = {"fee_modifiers"}
                     with Silencer(rs):
                         for anid in blockers["field_definitions"]:
-                            ret *= self._delete_event_field(rs, anid, field_cascade)
+                            ret *= self._delete_event_field(rs, anid)
                 if "orgas" in cascade:
                     ret *= self.sql_delete(rs, "event.orgas", blockers["orgas"])
                 if "stored_queries" in cascade:
@@ -323,7 +322,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                       ('event.course_segments', None),
                       ('event.orgas', None),
                       ('event.field_definitions', 'field_id'),
-                      ('event.fee_modifiers', None),
+                      ('event.event_fees', None),
                       ('event.lodgement_groups', 'group_id'),
                       ('event.lodgements', 'lodgement_id'),
                       ('event.registrations', 'registration_id'),

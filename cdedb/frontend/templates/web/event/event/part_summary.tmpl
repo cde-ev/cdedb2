@@ -102,27 +102,6 @@
                 <table class="table table-condensed">
                     <thead>
                         <tr>
-                            <th>{% trans %}Fee Modifier{% endtrans %}</th>
-                            <th>{% trans %}Amount{% endtrans %}</th>
-                            <th>{% trans %}Linked Field{% endtrans %}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for fee_modifier in fee_modifiers_by_part[part_id].values() %}
-                            <tr id="feemodifierrow_{{ part_id }}_{{ fee_modifier['id'] }}">
-                                <td>{{ fee_modifier['modifier_name'] }}</td>
-                                <td>{{ fee_modifier['amount']|money }}</td>
-                                <td>{{ ambience['event']['fields'][fee_modifier['field_id']]['field_name'] }}</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-
-                <hr class="info"/>
-
-                <table class="table table-condensed">
-                    <thead>
-                        <tr>
                             <th>{% trans %}Coursetrack{% endtrans %}</th>
                             <th>{% trans %}Shortname{% endtrans %}</th>
                             <th>{% trans %}Course Choices{% endtrans %}</th>

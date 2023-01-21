@@ -9,7 +9,6 @@ This also includes all functionality directly avalable on the `show_event` page.
 
 import copy
 import datetime
-import decimal
 from collections import OrderedDict
 from typing import Collection, Optional, Set
 
@@ -305,17 +304,7 @@ class EventEventMixin(EventBaseFrontend):
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
         referenced_parts = self._deletion_blocked_parts(rs, event_id)
 
-        fee_modifiers_by_part = {
-            part_id: {
-                e['id']: e
-                for e in rs.ambience['event']['fee_modifiers'].values()
-                if e['part_id'] == part_id
-            }
-            for part_id in rs.ambience['event']['parts']
-        }
-
         return self.render(rs, "event/part_summary", {
-            'fee_modifiers_by_part': fee_modifiers_by_part,
             'referenced_parts': referenced_parts,
             'has_registrations': has_registrations})
 
@@ -396,9 +385,6 @@ class EventEventMixin(EventBaseFrontend):
                          ) -> Response:
         part = rs.ambience['event']['parts'][part_id]
 
-        sorted_fee_modifier_ids = [
-            e["id"] for e in xsorted(part["fee_modifiers"].values(),
-                                     key=EntitySorter.fee_modifier)]
         sorted_track_ids = [
             e["id"] for e in xsorted(part["tracks"].values(),
                                      key=EntitySorter.course_track)]
@@ -420,9 +406,6 @@ class EventEventMixin(EventBaseFrontend):
                         readonly_synced_tracks.add(track_id)
                     else:
                         sync_groups.add(tg_id)
-        for m_id, m in rs.ambience['event']['fee_modifiers'].items():
-            for k in ('modifier_name', 'amount', 'field_id'):
-                current[drow_name(k, entity_id=m_id, prefix="fee_modifier")] = m[k]
         merge_dicts(rs.values, current)
 
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
@@ -443,7 +426,6 @@ class EventEventMixin(EventBaseFrontend):
         return self.render(rs, "event/change_part", {
             'part_id': part_id,
             'sorted_track_ids': sorted_track_ids,
-            'sorted_fee_modifier_ids': sorted_fee_modifier_ids,
             'fee_modifier_fields': fee_modifier_fields,
             'waitlist_fields': waitlist_fields,
             'referenced_tracks': referenced_tracks,
@@ -890,7 +872,6 @@ class EventEventMixin(EventBaseFrontend):
                 'shortname': data['shortname'],
                 'part_begin': part_begin,
                 'part_end': part_end,
-                'fee': decimal.Decimal(0),
                 'waitlist_field': None,
                 'tracks': ({-1: new_track} if create_track else {}),
             }
