@@ -617,7 +617,7 @@ class EventEventMixin(EventBaseFrontend):
         if fee_id:
             if fee_id not in rs.ambience['event']['fees']:
                 rs.notify("error", n_("Unknown fee."))
-                return self.redirect("event/fee_summary")
+                return self.redirect(rs, "event/fee_summary")
             else:
                 merge_dicts(rs.values, rs.ambience['fee'])
         return self.render(rs, "event/fee/configure_fee")
@@ -644,7 +644,7 @@ class EventEventMixin(EventBaseFrontend):
         """Delete one event fee."""
         if fee_id not in rs.ambience['event']['fees']:
             rs.notify("error", n_("Unknown fee."))
-            return self.redirect("event/fee_summary")
+            return self.redirect(rs, "event/fee_summary")
         code = self.eventproxy.set_event_fees(rs, event_id, {fee_id: None})
         rs.notify_return_code(code)
         return self.redirect(rs, "event/fee_summary")

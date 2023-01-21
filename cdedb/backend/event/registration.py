@@ -1166,16 +1166,15 @@ class EventRegistrationBackend(EventBaseBackend):
 
             event_id = unwrap(events)
             regs = self.get_registrations(rs, registration_ids)
-            user_id = rs.user.persona_id
+            persona_ids = {e['persona_id'] for e in regs.values()}
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)
-                    and {r['persona_id'] for r in regs.values()} != {user_id}):
+                    and persona_ids != {rs.user.persona_id}):
                 raise PrivilegeError(n_("Not privileged."))
 
-            persona_ids = {e['persona_id'] for e in regs.values()}
             personas = self.core.get_personas(rs, persona_ids)
-
             event = self.get_event(rs, event_id)
+
             ret: Dict[int, decimal.Decimal] = {}
             for reg_id, reg in regs.items():
                 is_member = personas[reg['persona_id']]['is_member']

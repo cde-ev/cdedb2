@@ -1517,7 +1517,7 @@ def reconnoitre_ambience(obj: AbstractFrontend,
               ((lambda a: do_assert(a['track_group']['event_id']
                                     == a['event']['id'])),)),
         # Dirty hack, that relies on the event being retrieved into ambience first.
-        Scout(lambda anid: ambience['event']['fees'][anid],
+        Scout(lambda anid: ambience['event']['fees'][anid],  # type: ignore[has-type]
               'fee_id', 'fee',
               ((lambda a: do_assert(a['fee']['event_id'] == a['event']['id'])),)),
         Scout(lambda anid: obj.assemblyproxy.get_attachment(rs, anid),
