@@ -1,6 +1,6 @@
 [tool.isort]
 profile = "black"
 known_third_party = ["subman"]
-src_paths = ["cdedb", "tests"]
+src_paths = ["cdedb", "tests", "fee_condition_parser"]
 multi_line_output = 5
 combine_as_imports = true

@@ -69,9 +69,6 @@ from typing import (
     get_args, get_origin, get_type_hints, overload,
 )
 
-import fee_condition_parser.evaluation as fcp_evaluation
-import fee_condition_parser.parsing as fcp_parsing
-import fee_condition_parser.roundtrip as fcp_roundtrip
 import magic
 import phonenumbers
 import PIL.Image
@@ -83,6 +80,9 @@ from schulze_condorcet.util import as_vote_tuple
 
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
+import fee_condition_parser.evaluation as fcp_evaluation
+import fee_condition_parser.parsing as fcp_parsing
+import fee_condition_parser.roundtrip as fcp_roundtrip
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, EPSILON, EVENT_SCHEMA_VERSION, INFINITE_ENUM_MAGIC_NUMBER,
     CdEDBObjectMap, Error, InfiniteEnum, LineResolutions, asciificator,
@@ -2692,7 +2692,6 @@ def _event_fee_setter(
     return EventFeeSetter(dict(new_fees))
 
 
-
 EVENT_FEE_COMMON_FIELDS: TypeMapping = {
     "title": str,
     "notes": Optional[str],  # type: ignore[dict-item]
@@ -2722,6 +2721,7 @@ def _event_fee(
 
 
 _EVENT_FEE_CONDITION_PARSER = fcp_parsing.create_parser()
+
 
 @_add_typed_validator
 def _event_fee_condition(
