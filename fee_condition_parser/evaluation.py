@@ -1,11 +1,11 @@
 
 from functools import partial
-from typing import Callable, Dict, AbstractSet
+from typing import AbstractSet, Callable, Dict, Tuple
 
 import pyparsing as pp
 
 
-def check(result: pp.ParseResults, field_names: AbstractSet[str], part_names: AbstractSet[str]):
+def check(result: pp.ParseResults, field_names: AbstractSet[str], part_names: AbstractSet[str]) -> None:
     if result.get_name() == "field":
         if not result[0] in field_names:
             raise RuntimeError(f"Unknown field '{result[0]}'")
@@ -35,7 +35,7 @@ def evaluate(result: pp.ParseResults, field_values: Dict[str, bool], part_values
 
 
 #: Tuple (evaluator, evaluate_args) for each result Group name.
-_EVALUATOR_FUNCTIONS = {
+_EVALUATOR_FUNCTIONS: Dict[str, Tuple[Callable[..., bool], bool]] = {
     'and': (lambda x, y, f, p: x(f, p) and y(f, p), True),
     'or': (lambda x, y, f, p: x(f, p) or y(f, p), True),
     'xor': (lambda x, y, f, p: x(f, p) != y(f, p), True),
@@ -54,4 +54,3 @@ def create_evaluator(result: pp.ParseResults) -> Callable[[Dict[str, bool], Dict
         return partial(evaluator, *(create_evaluator(token) for token in result))
     else:
         return partial(evaluator, *result)
-

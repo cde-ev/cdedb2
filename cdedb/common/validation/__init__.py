@@ -69,14 +69,14 @@ from typing import (
     get_args, get_origin, get_type_hints, overload,
 )
 
+import fee_condition_parser.evaluation as fcp_evaluation
+import fee_condition_parser.parsing as fcp_parsing
+import fee_condition_parser.roundtrip as fcp_roundtrip
 import magic
 import phonenumbers
 import PIL.Image
 import pytz
 import pytz.tzinfo
-import related.fee_condition_parser.evaluation as fcp_evaluation
-import related.fee_condition_parser.parsing as fcp_parsing
-import related.fee_condition_parser.roundtrip as fcp_roundtrip
 import werkzeug.datastructures
 import zxcvbn
 from schulze_condorcet.util import as_vote_tuple

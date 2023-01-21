@@ -1,4 +1,4 @@
-from typing import Optional, Dict, Callable, List, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 import pyparsing as pp
 
@@ -22,7 +22,7 @@ def serialize(result: pp.ParseResults, parenthesis_if_not: Optional[str] = None)
 
 
 def visual_debug(result: pp.ParseResults, field_values: Dict[str, bool], part_values: Dict[str, bool],
-                 parenthesis_if_not: Optional[str] = None, top_level: bool = True) -> (bool, str):
+                 parenthesis_if_not: Optional[str] = None, top_level: bool = True) -> Tuple[bool, str]:
     functions: Dict[str, Callable[[List[Tuple[bool, str]]], Tuple[bool, str]]] = {
         'and': lambda sr: (sub_results[0][0] and sub_results[1][0], f"{sub_results[0][1]} <b>and</b> {sub_results[1][1]}"),
         'or': lambda sr: (sub_results[0][0] or sub_results[1][0], f"{sub_results[0][1]} <b>or</b> {sub_results[1][1]}"),

@@ -58,7 +58,7 @@ def create_parser() -> pp.ParserElement:
         | operator_and
     ).set_name("expression")
 
-    operator_or << (
+    operator_or << (  # type: ignore[operator]
         pp.Group(
             operator_xor + pp.CaselessKeyword("or").suppress() - operator_or
         ).set_results_name("or")
