@@ -957,7 +957,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 ('event.course_segments', "track_id", COURSE_SEGMENT_FIELDS),
                 ('event.orgas', "event_id", ('id', 'persona_id', 'event_id',)),
                 ('event.field_definitions', "event_id", FIELD_DEFINITION_FIELDS),
-                ('event.fee_modifiers', "part_id", FEE_MODIFIER_FIELDS),
+                ('event.event_fees', "event_id", EVENT_FEE_FIELDS),
                 ('event.lodgement_groups', "event_id", LODGEMENT_GROUP_FIELDS),
                 ('event.lodgements', "event_id", LODGEMENT_FIELDS),
                 ('event.registrations', "event_id", REGISTRATION_FIELDS),
@@ -1124,7 +1124,11 @@ class EventBaseBackend(EventLowLevelBackend):
         # Delete this later.
         # del event['orgas']
         del event['tracks']
-        del event['fee_modifiers']
+        event['fees'] = {
+            fee['title']: fee for fee in event['fees'].values()}
+        for fee in event['fees'].values():
+            del fee['id']
+            del fee['title']
         for part in event['parts'].values():
             del part['id']
             del part['event_id']
@@ -1136,14 +1140,6 @@ class EventBaseBackend(EventLowLevelBackend):
                 del track['id']
                 del track['part_id']
                 del track['track_groups']
-            part['fee_modifiers'] = {fm['modifier_name']: fm
-                                     for fm in part['fee_modifiers'].values()}
-            for fm in part['fee_modifiers'].values():
-                del fm['id']
-                del fm['modifier_name']
-                del fm['part_id']
-                fm['field_name'] = event['fields'][fm['field_id']]['field_name']
-                del fm['field_id']
         for pg in event['part_groups'].values():
             del pg['id']
             del pg['event_id']

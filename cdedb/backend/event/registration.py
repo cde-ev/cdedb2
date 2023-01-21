@@ -51,6 +51,7 @@ CourseChoiceValidationAux = NamedTuple(
 
 _PARSER = fcp_parsing.create_parser()
 
+
 class EventRegistrationBackend(EventBaseBackend):
     def _get_course_segments_per_course(self, rs: RequestState,
                                         event_id: int) -> Dict[int, Set[int]]:
@@ -1101,8 +1102,8 @@ class EventRegistrationBackend(EventBaseBackend):
         ret = decimal.Decimal(0)
 
         reg_part_involvement = {
-            event['parts'][rp['part_id']]['shortname']: rp['status'].is_involved()
-            for rp in reg['parts'].values()
+            event['parts'][part_id]['shortname']: rp['status'].is_involved()
+            for part_id, rp in reg['parts'].items()
         }
         reg_bool_fields = {
             f['field_name']: reg['fields'].get(f['field_name'], False)

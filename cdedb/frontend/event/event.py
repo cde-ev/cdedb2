@@ -461,7 +461,6 @@ class EventEventMixin(EventBaseFrontend):
         # this will be added at the end after processing the dynamic input and will only
         # yield false validation errors
         del data['tracks']
-        del data['fee_modifiers']
         data = check(rs, vtypes.EventPart, data)
         if rs.has_validation_errors():
             return self.change_part_form(rs, event_id, part_id)
@@ -504,73 +503,7 @@ class EventEventMixin(EventBaseFrontend):
         if new_tracks and has_registrations:
             raise ValueError(n_("Registrations exist, no track creation possible."))
 
-        #
-        # process the dynamic fee modifier input
-        #
-        fee_modifier_existing = [
-            mod['id'] for mod in rs.ambience['event']['fee_modifiers'].values()
-            if mod['part_id'] == part_id
-        ]
-        fee_modifier_spec = {
-            'modifier_name': vtypes.RestrictiveIdentifier,
-            'amount': decimal.Decimal,
-            'field_id': vtypes.ID,
-        }
-        fee_modifier_prefix = "fee_modifier"
-        # do not change fee modifiers once registrations exist
-        if has_registrations:
-            fee_modifier_data = dict()
-        else:
-            fee_modifier_data = process_dynamic_input(
-                rs, vtypes.EventFeeModifier, fee_modifier_existing, fee_modifier_spec,
-                prefix=fee_modifier_prefix)
-        if rs.has_validation_errors():
-            return self.change_part_form(rs, event_id, part_id)
-
-        # Check if each linked field exists and is inside the spec
-        legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['fee_modifier']
-        missing_msg = n_("Fee Modifier linked to non-existing field.")
-        spec_msg = n_("Fee Modifier linked to non-fitting field.")
-        for anid, modifier in fee_modifier_data.items():
-            if modifier is None:
-                continue
-            field = rs.ambience["event"]["fields"].get(modifier["field_id"])
-            if field is None:
-                rs.append_validation_error(
-                    (drow_name("field_id", anid, prefix=fee_modifier_prefix),
-                     ValueError(missing_msg)))
-            elif (field["association"] not in legal_assocs
-                  or field["kind"] not in legal_datatypes):
-                rs.append_validation_error(
-                    (drow_name("field_id", anid, prefix=fee_modifier_prefix),
-                     ValueError(spec_msg)))
-
-        # Check if each linked field and fee modifier name is unique.
-        used_fields: Set[int] = set()
-        used_names: Set[str] = set()
-        field_msg = n_("Must not have multiple fee modifiers linked to the same"
-                       " field in one event part.")
-        name_msg = n_("Must not have multiple fee modifiers with the same name "
-                      "in one event part.")
-        for anid, modifier in fee_modifier_data.items():
-            if modifier is None:
-                continue
-            if modifier['field_id'] in used_fields:
-                rs.append_validation_error(
-                    (drow_name("field_id", anid, prefix=fee_modifier_prefix),
-                     ValueError(field_msg)))
-            if modifier['modifier_name'] in used_names:
-                rs.append_validation_error(
-                    (drow_name("modifier_name", anid, prefix=fee_modifier_prefix),
-                     ValueError(name_msg)))
-            used_fields.add(modifier['field_id'])
-            used_names.add(modifier['modifier_name'])
-
-        if rs.has_validation_errors():
-            return self.change_part_form(rs, event_id, part_id)
-
         data['tracks'] = track_data
-        data['fee_modifiers'] = fee_modifier_data
         part_data = {part_id: data}
 
         # For every sync track group take the first track by id and propagate it's
@@ -1122,7 +1055,7 @@ class EventEventMixin(EventBaseFrontend):
         blockers = self.eventproxy.delete_event_blockers(rs, event_id)
         cascade = {
             "registrations", "courses", "lodgement_groups", "lodgements",
-            "field_definitions", "course_tracks", "event_parts", "fee_modifiers",
+            "field_definitions", "course_tracks", "event_parts", "event_fees",
             "orgas", "questionnaire", "stored_queries", "log", "mailinglists",
             "part_groups"
         }

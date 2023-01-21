@@ -44,8 +44,8 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
         * field_definitions: A custom datafield associated with the event.
         * courses: A course associated with the event. This can have it's own
                    blockers.
+        * event_fees: A fee of the event.
         * event_parts: An event part.
-        * fee_modifiers: A fee modifier of an event part.
         * course_tracks: A course track of the event, belonging to an event part.
         * part_groups: A group of event parts.
         * part_group_parts: A link between an event part and a part group.
@@ -81,15 +81,15 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
         if courses:
             blockers["courses"] = [e["id"] for e in courses]
 
+        event_fees = self.sql_select(
+            rs, "event.event_fees", ("id",), (event_id,), entity_key="event_id")
+        if event_fees:
+            blockers["event_fees"] = [e["id"] for e in event_fees]
+
         event_parts = self.sql_select(
             rs, "event.event_parts", ("id",), (event_id,), entity_key="event_id")
         if event_parts:
             blockers["event_parts"] = [e["id"] for e in event_parts]
-            fee_modifiers = self.sql_select(
-                rs, "event.fee_modifiers", ("id",), blockers["event_parts"],
-                entity_key="part_id")
-            if fee_modifiers:
-                blockers["fee_modifiers"] = [e["id"] for e in fee_modifiers]
             course_tracks = self.sql_select(
                 rs, "event.course_tracks", ("id",), blockers["event_parts"],
                 entity_key="part_id")
@@ -211,8 +211,11 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                         part_group_cascade = {"part_group_parts"} & cascade
                         for anid in blockers["part_groups"]:
                             self._delete_part_group(rs, anid, part_group_cascade)
+                if "event_fees" in cascade:
+                    ret *= self.sql_delete(rs, "event.event_fees",
+                                           blockers["event_fees"])
                 if "event_parts" in cascade:
-                    part_cascade = {"course_tracks", "fee_modifiers"} & cascade
+                    part_cascade = {"course_tracks"} & cascade
                     with Silencer(rs):
                         for anid in blockers["event_parts"]:
                             self._delete_event_part(rs, anid, part_cascade)

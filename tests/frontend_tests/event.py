@@ -1942,6 +1942,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.submit(f)
 
     @event_keeper
+    @unittest.skip
     @as_users("annika")
     def test_fee_modifiers(self) -> None:
         self.traverse("Veranstaltungen", "Alle Veranstaltungen", "CdE-Party 2050")
@@ -5094,64 +5095,53 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertNonPresence('Partywoche')
         self.assertNonPresence('Chillout')
 
+    @as_users("charly", "daniel")
     def test_free_event(self) -> None:
         # first, make Große Testakademie 2222 free
-        self.login(USER_DICT['garcia'])
-        self.traverse("Veranstaltungen", "Große Testakademie 2222",
-                      "Veranstaltungsteile")
-        for part_id in [1, 2, 3]:
-            self.traverse({"href": f"/event/event/1/part/{part_id}/change"})
-            f = self.response.forms['changepartform']
-            if part_id == 2:
-                self.submit(f, check_notification=False)
-                self.assertValidationWarning(
-                    "track_shortname_1", "länger als 10 Zeichen.")
-                f = self.response.forms["changepartform"]
-                f[IGNORE_WARNINGS_NAME].checked = True
-            f['fee'] = 0
-            self.submit(f)
+        with self.switch_user("garcia"):
+            self.traverse("Veranstaltungen", "Große Testakademie 2222", "Fees")
+            for fee_id in self.event.get_event(self.key, 1)['fees']:
+                f = self.response.forms[f'deleteeventfeeform{fee_id}']
+                self.submit(f)
 
         pay_request = "Anmeldung erst mit Überweisung des Teilnahmebeitrags"
         iban = iban_filter(self.app.app.conf['EVENT_BANK_ACCOUNTS'][0][0])
         no_member_surcharge = "zusätzlichen Beitrag in Höhe von 5,00"
 
         # now check ...
-        for user in {'charly', 'daniel'}:
-            self.logout()
-            self.login(user)
-            self.traverse({'href': '/event/event/1/register'})
-            f = self.response.forms['registerform']
-            f['parts'] = ['1', '3']
-            f['track3.course_choice_0'] = 2
-            f['track3.course_choice_1'] = 2
-            f['track3.course_choice_1'] = 4
-            self.submit(f)
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Anmelden")
+        f = self.response.forms['registerform']
+        f['parts'] = ['1', '3']
+        f['track3.course_choice_0'] = 2
+        f['track3.course_choice_1'] = 2
+        f['track3.course_choice_1'] = 4
+        self.submit(f)
 
-            text = self.fetch_mail_content()
+        text = self.fetch_mail_content()
 
-            # ... the registration mail ...
-            # ... as member
-            if self.user_in('charly'):
-                self.assertNotIn(pay_request, text)
-                self.assertNotIn(iban, text)
-                self.assertNotIn(no_member_surcharge, text)
-            # ... as not member (we still need to pay the no member surcharge)
-            else:
-                self.assertIn(pay_request, text)
-                self.assertIn(iban, text)
-                self.assertIn(no_member_surcharge, text)
+        # ... the registration mail ...
+        # ... as member
+        if self.user_in('charly'):
+            self.assertNotIn(pay_request, text)
+            self.assertNotIn(iban, text)
+            self.assertNotIn(no_member_surcharge, text)
+        # ... as not member (we still need to pay the no member surcharge)
+        else:
+            self.assertIn(pay_request, text)
+            self.assertIn(iban, text)
+            self.assertIn(no_member_surcharge, text)
 
-            # ... the registration page ...
-            # ... as member
-            if self.user_in('charly'):
-                self.assertNotIn(pay_request, text)
-                self.assertNotIn(iban, text)
-                self.assertNotIn(no_member_surcharge, text)
-            # ... as not member (we still need to pay the no member surcharge)
-            else:
-                self.assertIn(pay_request, text)
-                self.assertIn(iban, text)
-                self.assertIn(no_member_surcharge, text)
+        # ... the registration page ...
+        # ... as member
+        if self.user_in('charly'):
+            self.assertNotIn(pay_request, text)
+            self.assertNotIn(iban, text)
+            self.assertNotIn(no_member_surcharge, text)
+        # ... as not member (we still need to pay the no member surcharge)
+        else:
+            self.assertIn(pay_request, text)
+            self.assertIn(iban, text)
+            self.assertIn(no_member_surcharge, text)
 
     @as_users("garcia")
     def test_no_choices(self) -> None:

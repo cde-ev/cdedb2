@@ -390,11 +390,7 @@ class EventLowLevelBackend(AbstractBackend):
         part_id = affirm(vtypes.ID, part_id)
         blockers = {}
 
-        fee_modifiers = self.sql_select(
-            rs, "event.fee_modifiers", ("id",), (part_id,),
-            entity_key="part_id")
-        if fee_modifiers:
-            blockers["fee_modifiers"] = [e["id"] for e in fee_modifiers]
+        # TODO: add check for event fees.
 
         course_tracks = self.sql_select(
             rs, "event.course_tracks", ("id",), (part_id,),
@@ -445,9 +441,6 @@ class EventLowLevelBackend(AbstractBackend):
         # Implicit atomized context.
         self.affirm_atomized_context(rs)
         if cascade:
-            if "fee_modifiers" in cascade:
-                ret *= self.sql_delete(rs, "event.fee_modifiers",
-                                       blockers["fee_modifiers"])
             if "course_tracks" in cascade:
                 track_cascade = ("course_segments", "registration_tracks",
                                  "course_choices", "track_group_tracks")
@@ -847,8 +840,6 @@ class EventLowLevelBackend(AbstractBackend):
 
         Possible blockers:
 
-        * fee_modifiers:      A modification to the fee for a part depending on
-                              this event field.
         * questionnaire_rows: A questionnaire row that uses this field.
         * lodge_fields:       An event that uses this field for lodging wishes.
         * camping_mat_fields: An event that uses this field for camping mat
@@ -864,11 +855,7 @@ class EventLowLevelBackend(AbstractBackend):
         field_id = affirm(vtypes.ID, field_id)
         blockers = {}
 
-        fee_modifiers = self.sql_select(
-            rs, "event.fee_modifiers", ("id",), (field_id,),
-            entity_key="field_id")
-        if fee_modifiers:
-            blockers["fee_modifiers"] = [e["id"] for e in fee_modifiers]
+        # TODO: check event fees.
 
         questionnaire_rows = self.sql_select(
             rs, "event.questionnaire_rows", ("id",), (field_id,),
@@ -936,9 +923,6 @@ class EventLowLevelBackend(AbstractBackend):
         # implicit atomized context.
         self.affirm_atomized_context(rs)
         if cascade:
-            if "fee_modifiers" in cascade:
-                ret *= self.sql_delete(rs, "event.fee_modifiers",
-                                       blockers["fee_modifiers"])
             if "questionnaire_rows" in cascade:
                 ret *= self.sql_delete(rs, "event.questionnaire_rows",
                                        blockers["fee_modifiers"])
@@ -1025,10 +1009,6 @@ class EventLowLevelBackend(AbstractBackend):
                            change_note=new_field['field_name'])
 
         if updated_fields:
-            fee_modifier_fields = {unwrap(e) for e in self.sql_select(
-                rs, "event.fee_modifiers", ("field_id",),
-                updated_fields | deleted_fields,
-                entity_key="field_id")}
             current_field_data = {e['id']: e for e in self.sql_select(
                 rs, "event.field_definitions", FIELD_DEFINITION_FIELDS, updated_fields)}
             for x in mixed_existence_sorter(updated_fields):
@@ -1038,14 +1018,15 @@ class EventLowLevelBackend(AbstractBackend):
                 updated_field['event_id'] = event_id
                 current = current_field_data[x]
                 if any(updated_field[k] != current[k] for k in updated_field):
-                    if x in fee_modifier_fields:
-                        # Only optional fields of event fields associated with
-                        #  fee modifiers may be changed.
-                        if not all(updated_field[k] == current[k]
-                                   for k in EVENT_FIELD_COMMON_FIELDS
-                                   if k in updated_field):
-                            raise ValueError(n_("Cannot change field that is"
-                                                " associated with a fee modifier."))
+                    # TODO: Add this check back in.
+                    # if x in fee_modifier_fields:
+                    #     # Only optional fields of event fields associated with
+                    #     #  fee modifiers may be changed.
+                    #     if not all(updated_field[k] == current[k]
+                    #                for k in EVENT_FIELD_COMMON_FIELDS
+                    #                if k in updated_field):
+                    #         raise ValueError(n_("Cannot change field that is"
+                    #                             " associated with a fee modifier."))
                     kind = current_field_data[x]['kind']
                     if updated_field.get('kind', kind) != kind:
                         self._cast_field_values(rs, current, updated_field['kind'])
