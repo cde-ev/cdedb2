@@ -21,7 +21,7 @@
 {% block heading %}
     {{ util.doclink_("Handbuch_Orga_Teilnahmebeitraege") }}
     {% if fee_id %}
-        {{ util.context_heading(gettext("Edit fee %(fee_title)s")|format(fee_title=ambience['fee']['title']),
+        {{ util.context_heading(gettext("Change fee %(fee_title)s")|format(fee_title=ambience['fee']['title']),
                                 ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
     {% else %}
         {{ util.context_heading(gettext("Add Fee"),

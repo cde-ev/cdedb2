@@ -46,7 +46,7 @@
                     <td class="text-nowrap">
                         {{ util.href(
                             cdedblink("event/configure_fee_form", {'fee_id': fee_id}),
-                            title=gettext("Change fee %(title)s")|format(title=fee['title']),
+                            title=gettext("Change fee %(fee_title)s")|format(fee_title=fee['title']),
                             label=util.make_icon("pen"),
                             anid="eventfee{}_change".format(fee_id),
                             aclass="btn btn-sm btn-warning") }}
@@ -55,7 +55,7 @@
                               class="display-inline">
                             {{ util.anti_csrf_token("event/delete_fee") }}
                             {{ util.input_submit(
-                                title=gettext("Delete fee %(title)s")|format(title=fee['title']),
+                                title=gettext("Delete fee %(fee_title)s")|format(fee_title=fee['title']),
                                 label=util.make_icon("trash-alt"), icon=none,
                                 aclass="btn btn-sm btn-danger") }}
                         </form>
