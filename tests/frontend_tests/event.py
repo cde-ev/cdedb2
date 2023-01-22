@@ -380,7 +380,7 @@ class TestEventFrontend(FrontendTest):
         orga = {
             "Teilnehmerliste", "Anmeldungen", "Statistik", "Kurse", "Kurseinteilung",
             "Unterkünfte", "Downloads", "Partieller Import", "Überweisungen eintragen",
-            "Konfiguration", "Veranstaltungsteile", "Fees", "Datenfelder konfigurieren",
+            "Konfiguration", "Veranstaltungsteile", "Teilnahmebeiträge", "Datenfelder konfigurieren",
             "Anmeldung konfigurieren", "Fragebogen konfigurieren",
             "Log", "Checkin"}
 
@@ -1705,7 +1705,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence(payment_pending)
 
         # unset fee for the only part participated in - no payment needed anymore
-        self.traverse("Fees")
+        self.traverse("Teilnahmebeiträge")
         f = self.response.forms['deleteeventfeeform3']
         self.submit(f)
         self.traverse("Index")
@@ -1821,13 +1821,13 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f['association_-1'] = const.FieldAssociations.registration
         self.submit(f)
 
-        self.traverse("Fees", "Add Fee")
+        self.traverse("Teilnahmebeiträge", "Teilnahmebeitrag hinzufügen")
         f = self.response.forms['configureeventfeeform']
         f['title'] = "Is Child"
         f['amount'] = "-10"
         f['condition'] = "part.Party AND field.is_child"
         self.submit(f)
-        self.traverse("Add Fee")
+        self.traverse("Teilnahmebeitrag hinzufügen")
         f = self.response.forms['configureeventfeeform']
         f['title'] = "Plus One"
         f['amount'] = "+14.99"
@@ -5084,7 +5084,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
     def test_free_event(self) -> None:
         # first, make Große Testakademie 2222 free
         with self.switch_user("garcia"):
-            self.traverse("Veranstaltungen", "Große Testakademie 2222", "Fees")
+            self.traverse("Veranstaltungen", "Große Testakademie 2222", "Teilnahmebeiträge")
             for fee_id in self.event.get_event(self.key, 1)['fees']:
                 f = self.response.forms[f'deleteeventfeeform{fee_id}']
                 self.submit(f)
