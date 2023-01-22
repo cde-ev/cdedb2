@@ -67,7 +67,9 @@ def work(
     posted_urls.clear()
     posted_urls.update({
         '/core/logout', '/core/logout/all', '/core/locale',
-        '/event/event/1/lock', '/event/event/2/lock', '/event/event/3/lock'})
+        '/event/event/1/lock', '/event/event/2/lock', '/event/event/3/lock',
+        '/event/event/2/fee/7/delete',
+    })
     visited_urls.clear()
 
     # login as Anton and add the start page
