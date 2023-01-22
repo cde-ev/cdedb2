@@ -2211,6 +2211,7 @@ EVENT_OPTIONAL_FIELDS: Mapping[str, Any] = {
 
 EVENT_CREATION_OPTIONAL_FIELDS: TypeMapping = {
     'lodgement_groups': Mapping,
+    'fees': Mapping,
 }
 
 
@@ -2309,6 +2310,12 @@ def _event(
             val['lodgement_groups'] = _optional_object_mapping_helper(
                 val['lodgement_groups'], LodgementGroup, 'lodgement_groups',
                 creation_only=creation, nested_creation=creation, **kwargs)
+
+    if 'fees' in val:
+        with errs:
+            val['fees'] = _optional_object_mapping_helper(
+                val['fees'], EventFee, 'fees', creation_only=creation, event=val,
+                **kwargs)
 
     if errs:
         raise errs
@@ -2654,7 +2661,7 @@ def _event_fee(
         mandatory_fields = EVENT_FEE_COMMON_FIELDS
         optional_fields: TypeMapping = {}
     else:
-        mandatory_fields = {'id': ID}
+        mandatory_fields = {}
         optional_fields = EVENT_FEE_COMMON_FIELDS
 
     val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)

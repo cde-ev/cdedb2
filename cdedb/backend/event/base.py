@@ -511,6 +511,8 @@ class EventBaseBackend(EventLowLevelBackend):
                     'event_id': new_id,
                 })
                 self.create_lodgement_group(rs, lg_data)
+            if fees := data.get('fees'):
+                self.set_event_fees(rs, new_id, fees)
             self.event_keeper_create(rs, new_id)
         return new_id
 
@@ -763,7 +765,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 for x in mixed_existence_sorter(updated_fees):
                     updated_fee = copy.deepcopy(fees[x])
                     assert updated_fee is not None
-                    updated_fee['event_id'] = event_id
+                    updated_fee['id'] = x
                     current = current_fee_data[x]
                     if any(updated_fee[k] != current[k] for k in updated_fee):
                         ret *= self.sql_update(rs, "event.event_fees", updated_fee)
