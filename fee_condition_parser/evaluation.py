@@ -1,22 +1,46 @@
-
+import dataclasses
 from functools import partial
 from typing import AbstractSet, Callable, Dict, Tuple
 
 import pyparsing as pp
 
 
+@dataclasses.dataclass
+class ReferencedNames:
+    field_names: set[str] = dataclasses.field(default_factory=set)
+    part_names: set[str] = dataclasses.field(default_factory=set)
+
+    def update(self, other: "ReferencedNames") -> None:
+        self.field_names.update(other.field_names)
+        self.part_names.update(other.part_names)
+
+    def __add__(self, other: "ReferencedNames") -> "ReferencedNames":
+        return self.__class__(self.field_names | other.field_names, self.part_names | other.part_names)
+
+
 def check(result: pp.ParseResults, field_names: AbstractSet[str], part_names: AbstractSet[str]) -> None:
+    rn = get_referenced_names(result)
+    msgs = []
+    if not rn.field_names <= field_names:
+        msgs.append(f"Unknown field(s): {', '.join(repr(x) for x in sorted(rn.field_names - field_names))}.")
+    if not rn.part_names <= part_names:
+        msgs.append(f"Unknown part shortname(s): {', '.join(repr(x) for x in sorted(rn.part_names - part_names))}.")
+    if msgs:
+        raise RuntimeError(" ".join(msgs))
+
+
+def get_referenced_names(result: pp.ParseResults) -> ReferencedNames:
+    referenced_names = ReferencedNames()
     if result.get_name() == "field":
-        if not result[0] in field_names:
-            raise RuntimeError(f"Unknown field '{result[0]}'")
+        referenced_names.field_names.add(result[0])
     elif result.get_name() == "part":
-        if not result[0] in part_names:
-            raise RuntimeError(f"Unknown part shortname '{result[0]}'")
+        referenced_names.part_names.add(result[0])
     elif result.get_name() in ('and', 'or', 'xor'):
-        check(result[0], field_names, part_names)
-        check(result[1], field_names, part_names)
+        referenced_names.update(get_referenced_names(result[0]))
+        referenced_names.update(get_referenced_names(result[1]))
     elif result.get_name() == 'not':
-        check(result[0], field_names, part_names)
+        referenced_names.update(get_referenced_names(result[0]))
+    return referenced_names
 
 
 def evaluate(result: pp.ParseResults, field_values: Dict[str, bool], part_values: Dict[str, bool]) -> bool:

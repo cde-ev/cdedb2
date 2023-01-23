@@ -44,8 +44,11 @@ class EventFieldMixin(EventBaseFrontend):
             for field_id, field in rs.ambience['event']['fields'].items()
             for key, value in field.items() if key != 'id'}
         merge_dicts(rs.values, current)
-        referenced = set()
-        # TODO: add check back.
+        event_fee_referencing = self.eventproxy.get_event_fee_referencing(rs, event_id)
+        referenced = {
+            field_id
+            for field_id, fee_ids in event_fee_referencing.fields.items() if fee_ids
+        }
         full_questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
         for v in full_questionnaire.values():
             for row in v:
