@@ -380,9 +380,9 @@ class TestEventFrontend(FrontendTest):
         orga = {
             "Teilnehmerliste", "Anmeldungen", "Statistik", "Kurse", "Kurseinteilung",
             "Unterkünfte", "Downloads", "Partieller Import", "Überweisungen eintragen",
-            "Konfiguration", "Veranstaltungsteile", "Teilnahmebeiträge", "Datenfelder konfigurieren",
-            "Anmeldung konfigurieren", "Fragebogen konfigurieren",
-            "Log", "Checkin"}
+            "Konfiguration", "Veranstaltungsteile", "Teilnahmebeiträge",
+            "Datenfelder konfigurieren", "Anmeldung konfigurieren",
+            "Fragebogen konfigurieren", "Log", "Checkin"}
 
         # TODO this could be more expanded (event without courses, distinguish
         #  between registered and participant, ...
@@ -5084,7 +5084,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
     def test_free_event(self) -> None:
         # first, make Große Testakademie 2222 free
         with self.switch_user("garcia"):
-            self.traverse("Veranstaltungen", "Große Testakademie 2222", "Teilnahmebeiträge")
+            self.traverse("Veranstaltungen", "Große Testakademie 2222",
+                          "Teilnahmebeiträge")
             for fee_id in self.event.get_event(self.key, 1)['fees']:
                 f = self.response.forms[f'deleteeventfeeform{fee_id}']
                 self.submit(f)

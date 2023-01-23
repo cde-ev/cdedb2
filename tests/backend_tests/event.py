@@ -227,7 +227,6 @@ class TestEventBackend(BackendTest):
                     del data['fees'][old_fee_id]
                     break
 
-
         self.assertEqual(data, self.event.get_event(self.key, new_id))
         data['title'] = "Alternate Universe Academy"
         newpart = {
@@ -3325,7 +3324,6 @@ class TestEventBackend(BackendTest):
     @as_users("berta")
     def test_uniqueness(self) -> None:
         event_id = 2
-        part_id = 4
         unique_name = 'unique_name'
         data = {
             'id': event_id,
@@ -3354,7 +3352,6 @@ class TestEventBackend(BackendTest):
             },
         }
         self.event.set_event(self.key, data)
-
 
     @as_users("annika")
     @unittest.skip("Removed feature.")
@@ -4387,7 +4384,7 @@ class TestEventBackend(BackendTest):
         # }
         # self.event.set_part_groups(self.key, event_id, pg_data)
 
-        fee_data = {
+        fee_data: CdEDBOptionalMap = {
             -1: {
                 "title": "A",
                 "notes": None,
