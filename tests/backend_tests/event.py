@@ -265,7 +265,6 @@ class TestEventBackend(BackendTest):
                 'amount': decimal.Decimal("123.40"),
                 'condition': "part.third",
             },
-            1001: None,
             1002: {
                 'amount': decimal.Decimal("1.23"),
             },

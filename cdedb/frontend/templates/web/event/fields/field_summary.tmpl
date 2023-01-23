@@ -82,7 +82,7 @@
                     {{ util.input_hidden(name=drow_name('association', field_id), value=association) }}
                 {% endif %}
                 {{ util.form_input_textarea(name=drow_name('entries', field_id), label=gettext("Options"),
-                                            actualreadonly=not changeable, aclass='drow-input',
+                                            aclass='drow-input',
                                             attributes=util.drow_basename('entries')|s if newrow else '') }}
                 {% if association == enums['FieldAssociations'].registration %}
                     {{ util.form_input_checkbox(label=gettext("Display at Checkin"), name=drow_name('checkin', field_id),

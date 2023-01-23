@@ -422,7 +422,6 @@ class EventLowLevelBackend(AbstractBackend):
     def set_event_fees(self, rs: RequestState, event_id: int, fees: CdEDBOptionalMap
                        ) -> DefaultReturnCode: ...
 
-
     @internal
     def _delete_event_part_blockers(self, rs: RequestState,
                                     part_id: int) -> DeletionBlockers:

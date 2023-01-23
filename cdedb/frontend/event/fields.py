@@ -45,7 +45,8 @@ class EventFieldMixin(EventBaseFrontend):
             for key, value in field.items() if key != 'id'}
         merge_dicts(rs.values, current)
         event_fee_referencing = self.eventproxy.get_event_fee_referencing(rs, event_id)
-        referenced = {
+        referenced = set()
+        locked = {
             field_id
             for field_id, fee_ids in event_fee_referencing.fields.items() if fee_ids
         }
@@ -64,7 +65,7 @@ class EventFieldMixin(EventBaseFrontend):
             if part['waitlist_field']:
                 referenced.add(part['waitlist_field'])
         return self.render(rs, "fields/field_summary", {
-            'referenced': referenced, 'locked': set()})
+            'referenced': referenced, 'locked': locked})
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)

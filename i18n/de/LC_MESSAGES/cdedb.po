@@ -1055,6 +1055,13 @@ msgstr "Alle Kursschienen müssen zur gleichen Veranstaltung gehören."
 msgid "Non-existing fields specified."
 msgstr "Angegebene Felder existieren nicht."
 
+#: cdedb/backend/event/lowlevel.py:1097
+msgid ""
+"Cannot change association or kind of a field referenced by an event fee."
+msgstr ""
+"Die Zugehörigkeit und der Datentyp eines Feldes können nicht geändert "
+"werden, falls es in einem Teilnahmbebeitrag referenziert wird."
+
 #: cdedb/backend/event/lowlevel.py:1045
 #, python-format
 msgid "Unfit field for %(field)s."
