@@ -738,6 +738,7 @@ CREATE TABLE event.event_parts (
         event_id                integer NOT NULL REFERENCES event.events(id),
         title                   varchar NOT NULL,
         shortname               varchar NOT NULL,
+        UNIQUE (event_id, shortname) DEFERRABLE INITIALLY IMMEDIATE,
         -- we implicitly assume, that parts are non-overlapping
         part_begin              date NOT NULL,
         part_end                date NOT NULL,
