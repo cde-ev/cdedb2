@@ -37,7 +37,7 @@ _PARSER = create_parser()
 
 
 @dataclasses.dataclass
-class EventFeeReferencing:
+class EventFeesPerEntity:
     fields: Dict[int, Set[int]]
     parts: Dict[int, Set[int]]
 
@@ -390,8 +390,8 @@ class EventLowLevelBackend(AbstractBackend):
         }
 
     @access("event")
-    def get_event_fee_referencing(self, rs: RequestState, event_id: int
-                                  ) -> EventFeeReferencing:
+    def get_event_fees_per_entity(self, rs: RequestState, event_id: int
+                                  ) -> EventFeesPerEntity:
         field_names_to_id = {
             e['field_name']: e['id'] for e in self.sql_select(
                 rs, "event.field_definitions", ("id", "field_name"), (event_id,),
@@ -414,7 +414,7 @@ class EventLowLevelBackend(AbstractBackend):
             for pn in rn.part_names:
                 parts[part_names_to_id[pn]].add(fee_id)
 
-        return EventFeeReferencing(
+        return EventFeesPerEntity(
             fields=fields, parts=parts
         )
 
@@ -443,8 +443,8 @@ class EventLowLevelBackend(AbstractBackend):
                                    ("event_id", "title"), part_id)
         assert part is not None
 
-        event_fee_referencing = self.get_event_fee_referencing(rs, part['event_id'])
-        if fee_ids := event_fee_referencing.parts[part_id]:
+        event_fees_per_part = self.get_event_fees_per_entity(rs, part['event_id']).parts
+        if fee_ids := event_fees_per_part[part_id]:
             blockers["event_fees"] = list(fee_ids)
 
         course_tracks = self.sql_select(
@@ -916,8 +916,9 @@ class EventLowLevelBackend(AbstractBackend):
             rs, "event.field_definitions", FIELD_DEFINITION_FIELDS, field_id)
         assert current is not None
 
-        event_fee_referencing = self.get_event_fee_referencing(rs, current['event_id'])
-        if fee_ids := event_fee_referencing.fields[field_id]:
+        event_fees_per_field = self.get_event_fees_per_entity(
+            rs, current['event_id']).fields
+        if fee_ids := event_fees_per_field[field_id]:
             blockers["event_fees"] = list(fee_ids)
 
         questionnaire_rows = self.sql_select(
@@ -1063,7 +1064,7 @@ class EventLowLevelBackend(AbstractBackend):
         if not updated_fields | deleted_fields <= existing_fields:
             raise ValueError(n_("Non-existing fields specified."))
 
-        event_fee_referencing = self.get_event_fee_referencing(rs, event_id)
+        event_fees_per_field = self.get_event_fees_per_entity(rs, event_id).fields
 
         # Do deletion first to avoid error due to duplicate field names.
         for x in mixed_existence_sorter(deleted_fields):
@@ -1088,7 +1089,7 @@ class EventLowLevelBackend(AbstractBackend):
                 updated_field['event_id'] = event_id
                 current = current_field_data[x]
                 if any(updated_field[k] != current[k] for k in updated_field):
-                    if event_fee_referencing.fields[x]:
+                    if event_fees_per_field[x]:
                         # Fields used in event fees may not have their kind
                         #  or association changed.
                         if not all(updated_field[k] == current[k]
