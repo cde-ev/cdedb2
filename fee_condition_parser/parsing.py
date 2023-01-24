@@ -17,9 +17,10 @@ def create_parser() -> pp.ParserElement:
         .set_results_name("part")
     operator_true = pp.Group(pp.CaselessKeyword("true").suppress()).setResultsName("true")
     operator_false = pp.Group(pp.CaselessKeyword("false").suppress()).setResultsName("false")
+    operator_other_bool = pp.Group(pp.CaselessKeyword("is_orga") | pp.CaselessKeyword("is_member")).setResultsName("bool")
 
-    operator_bool_atom = (operator_field | operator_part | operator_true | operator_false)\
-        .set_name("field, part, true or false")
+    operator_bool_atom = (operator_field | operator_part | operator_true | operator_false | operator_other_bool)\
+        .set_name("field, part, special bool, true or false")
 
     # full expressions (forward declaration) and parenthesized expressions
     operator_or = pp.Forward().set_name("expression")

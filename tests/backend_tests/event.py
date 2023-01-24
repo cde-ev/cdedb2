@@ -66,7 +66,6 @@ class TestEventBackend(BackendTest):
                                                          tzinfo=pytz.utc),
             'registration_hard_limit': None,
             'iban': None,
-            'nonmember_surcharge': decimal.Decimal("6.66"),
             'registration_text': None,
             'mail_text': None,
             'participant_info': """Welcome to our
@@ -127,6 +126,12 @@ class TestEventBackend(BackendTest):
                     "notes": None,
                     "amount": decimal.Decimal("-7.00"),
                     "condition": "part.second and field.is_child",
+                },
+                -4: {
+                    "title": "Externenzusatzbeitrag",
+                    "notes": None,
+                    "amount": decimal.Decimal("6.66"),
+                    "condition": "not is_member",
                 }
             },
             'fields': {
@@ -370,8 +375,8 @@ class TestEventBackend(BackendTest):
         del data['fees'][1001]
         data['fees'][1002].update(updated_fees[1002])
         data['fees'][1003].update(updated_fees[1003])
-        data['fees'][1004] = updated_fees[-1]
-        data['fees'][1004].update({'id': 1004, 'event_id': new_id})
+        data['fees'][1005] = updated_fees[-1]
+        data['fees'][1005].update({'id': 1005, 'event_id': new_id})
 
         self.assertEqual(data, self.event.get_event(self.key, new_id))
 
@@ -1603,7 +1608,6 @@ class TestEventBackend(BackendTest):
             'shortname': "KreAka",
             'institution': 1,
             'description': None,
-            'nonmember_surcharge': "0",
             'parts': {
                 -1: {
                     'part_begin': "2222-02-02",
@@ -2330,8 +2334,7 @@ class TestEventBackend(BackendTest):
             if isinstance(v, dict):
                 ret[k] = self.cleanup_event_export(v)
             elif isinstance(v, str):
-                if k in {"balance", "amount_paid", "amount_owed", "amount",
-                         "fee", "nonmember_surcharge"}:
+                if k in {"balance", "amount_paid", "amount_owed", "amount"}:
                     ret[k] = decimal.Decimal(v)
                 elif k in {"birthday", "payment", "part_begin", "part_end"}:
                     ret[k] = datetime.date.fromisoformat(v)
@@ -3614,7 +3617,6 @@ class TestEventBackend(BackendTest):
                                                          tzinfo=pytz.utc),
             'registration_hard_limit': None,
             'iban': None,
-            'nonmember_surcharge': decimal.Decimal("6.66"),
             'registration_text': None,
             'mail_text': None,
             'use_additional_questionnaire': False,
@@ -4321,7 +4323,6 @@ class TestEventBackend(BackendTest):
             "shortname": "frAka",
             "institution": 1,
             "description": None,
-            "nonmember_surcharge": "0",
             "parts": {
                 -1: {
                     "title": "A",

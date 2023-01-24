@@ -13,6 +13,7 @@ def serialize(result: pp.ParseResults, parenthesis_if_not: Optional[str] = None)
         'false': lambda x_: "false",
         'field': lambda x: f"field.{x[0]}",
         'part': lambda x: f"part.{x[0]}",
+        'bool': lambda x: f"{x[0]}",
     }
     name = result.get_name()
     if name in ('and', 'or', 'xor') and parenthesis_if_not is not None and name != parenthesis_if_not:
@@ -22,7 +23,8 @@ def serialize(result: pp.ParseResults, parenthesis_if_not: Optional[str] = None)
 
 
 def visual_debug(result: pp.ParseResults, field_values: Dict[str, bool], part_values: Dict[str, bool],
-                 parenthesis_if_not: Optional[str] = None, top_level: bool = True) -> Tuple[bool, str]:
+                 other_values: Dict[str, bool], parenthesis_if_not: Optional[str] = None, top_level: bool = True
+                 ) -> Tuple[bool, str]:
     functions: Dict[str, Callable[[List[Tuple[bool, str]]], Tuple[bool, str]]] = {
         'and': lambda sr: (sub_results[0][0] and sub_results[1][0], f"{sub_results[0][1]} <b>and</b> {sub_results[1][1]}"),
         'or': lambda sr: (sub_results[0][0] or sub_results[1][0], f"{sub_results[0][1]} <b>or</b> {sub_results[1][1]}"),
@@ -38,7 +40,9 @@ def visual_debug(result: pp.ParseResults, field_values: Dict[str, bool], part_va
     if name == "field":
         value, text = field_values[result[0]], f"field.{result[0]}"
     elif name == "part":
-        value, text = field_values[result[0]], f"part.{result[0]}"
+        value, text = part_values[result[0]], f"part.{result[0]}"
+    elif name == "bool":
+        value, text = other_values[result[0]], f"{result[0]}"
     else:
         sub_results = [visual_debug(token, field_values, part_values, sub_parenthesis_if_not, False)
                        for token in result]
@@ -51,7 +55,7 @@ def visual_debug(result: pp.ParseResults, field_values: Dict[str, bool], part_va
             return value, f"<span class=\"block {'true' if value else 'false'}\">{text}</span>"
         else:
             return value, text
-    elif name in ('true', 'false', 'field', 'part'):
+    elif name in ('true', 'false', 'field', 'part', 'bool'):
         return value, f"<span class=\"atom {'true' if value else 'false'}\">{text}</span>"
     elif name == 'not':
         return value, f"<span class=\"block {'true' if value else 'false'}\">{text}</span>"

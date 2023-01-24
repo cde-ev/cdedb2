@@ -74,7 +74,7 @@ def prepare_aux(data: CdEDBObject, config: Config, secrets: SecretsConfig) -> Au
         "ctime", "atime", "dtime", "foto", "amount", "iban", "granted_at", "revoked_at",
         "issued_at", "processed_at", "tally", "total", "delta", "shortname", "tempus",
         "registration_start", "registration_soft_limit", "registration_hard_limit",
-        "nonmember_surcharge", "part_begin", "part_end", "fee", "field_name",
+        "part_begin", "part_end", "fee", "field_name",
         "amount_paid", "amount_owed", "payment", "presider_address", "signup_end",
         "vote_begin", "vote_end", "vote_extension_end", "secret", "vote", "salt",
         "hash", "filename", "file_hash", "address", "local_part", "new_balance",

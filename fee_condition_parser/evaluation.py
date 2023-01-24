@@ -43,16 +43,18 @@ def get_referenced_names(result: pp.ParseResults) -> ReferencedNames:
     return referenced_names
 
 
-def evaluate(result: pp.ParseResults, field_values: Dict[str, bool], part_values: Dict[str, bool]) -> bool:
+def evaluate(result: pp.ParseResults, field_values: Dict[str, bool], part_values: Dict[str, bool],
+             other_values: Dict[str, bool]) -> bool:
     functions = {
-        'and': lambda x: evaluate(x[0], field_values, part_values) and evaluate(x[1], field_values, part_values),
-        'or': lambda x: evaluate(x[0], field_values, part_values) or evaluate(x[1], field_values, part_values),
-        'xor': lambda x: evaluate(x[0], field_values, part_values) != evaluate(x[1], field_values, part_values),
-        'not': lambda x: not evaluate(x[0], field_values, part_values),
+        'and': lambda x: evaluate(x[0], field_values, part_values, other_values) and evaluate(x[1], field_values, part_values, other_values),
+        'or': lambda x: evaluate(x[0], field_values, part_values, other_values) or evaluate(x[1], field_values, part_values, other_values),
+        'xor': lambda x: evaluate(x[0], field_values, part_values, other_values) != evaluate(x[1], field_values, part_values, other_values),
+        'not': lambda x: not evaluate(x[0], field_values, part_values, other_values),
         'true': lambda x_: True,
         'false': lambda x_: False,
         'field': lambda x: field_values[x[0]],
         'part': lambda x: part_values[x[0]],
+        'bool': lambda x: other_values[x[0]],
     }
     # print(result.get_name())
     return functions[result.get_name()](result)
@@ -60,14 +62,15 @@ def evaluate(result: pp.ParseResults, field_values: Dict[str, bool], part_values
 
 #: Tuple (evaluator, evaluate_args) for each result Group name.
 _EVALUATOR_FUNCTIONS: Dict[str, Tuple[Callable[..., bool], bool]] = {
-    'and': (lambda x, y, f, p: x(f, p) and y(f, p), True),
-    'or': (lambda x, y, f, p: x(f, p) or y(f, p), True),
-    'xor': (lambda x, y, f, p: x(f, p) != y(f, p), True),
-    'not': (lambda x, f, p: not x(f, p), True),
-    'true': (lambda f, p: True, False),
-    'false': (lambda f, p: False, False),
-    'field': (lambda t, f, p: f[t], False),
-    'part': (lambda t, f, p: p[t], False),
+    'and': (lambda x, y, f, p, o: x(f, p, o) and y(f, p, o), True),
+    'or': (lambda x, y, f, p, o: x(f, p, o) or y(f, p, o), True),
+    'xor': (lambda x, y, f, p, o: x(f, p, o) != y(f, p, o), True),
+    'not': (lambda x, f, p, o: not x(f, p, o), True),
+    'true': (lambda f, p, o: True, False),
+    'false': (lambda f, p,o : False, False),
+    'field': (lambda t, f, p, o: f[t], False),
+    'part': (lambda t, f, p, o: p[t], False),
+    'bool': (lambda t, f, p, o: o[t], False),
 }
 
 

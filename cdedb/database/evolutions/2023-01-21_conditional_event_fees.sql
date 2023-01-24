@@ -21,4 +21,9 @@ BEGIN;
     SELECT ep.event_id, modifier_name AS title, amount, 'part.' || shortname || ' and field.' || field_name FROM event.fee_modifiers AS fm JOIN event.event_parts AS ep ON ep.id = fm.part_id JOIN event.field_definitions ON fm.field_id = field_definitions.id;
 
     DROP TABLE event.fee_modifiers;
+
+    INSERT INTO event.event_fees(event_id, title, amount, condition)
+    SELECT id, 'Externenzusatzbeitrag' AS title, non_member_surcharge, 'not is_member' FROM event.events WHERE nonmember_surcharge != 0;
+
+    ALTER TABLE event.events DROP COLUMN nonmember_surcharge;
 COMMIT;

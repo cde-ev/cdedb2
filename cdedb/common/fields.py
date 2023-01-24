@@ -112,7 +112,7 @@ PAST_EVENT_FIELDS = ("id", "title", "shortname", "institution", "description",
 #: Fields of an event organized via the CdEDB
 EVENT_FIELDS = (
     "id", "title", "institution", "description", "shortname", "registration_start",
-    "registration_soft_limit", "registration_hard_limit", "iban", "nonmember_surcharge",
+    "registration_soft_limit", "registration_hard_limit", "iban",
     "orga_address", "registration_text", "mail_text", "use_additional_questionnaire",
     "notes", "participant_info", "offline_lock", "is_visible",
     "is_course_list_visible", "is_course_state_visible", "is_participant_list_visible",

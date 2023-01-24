@@ -1111,19 +1111,17 @@ class EventRegistrationBackend(EventBaseBackend):
             if f['association'] == const.FieldAssociations.registration
                and f['kind'] == const.FieldDatatypes.bool
         }
+        other_bools = {
+            'is_orga': reg['persona_id'] in event['orgas'],
+            'is_member':
+                self.core.get_persona(rs, reg['persona_id'])['is_member']
+                if is_member is None else is_member,
+        }
         for fee in event['fees'].values():
             parse_result = _PARSER.parse_string(fee['condition'])[0]
             if fcp_evaluation.evaluate(
-                    parse_result, reg_bool_fields, reg_part_involvement):
+                    parse_result, reg_bool_fields, reg_part_involvement, other_bools):
                 ret += fee['amount']
-
-        # TODO: Include this in the conditional fees?
-        # Add nonmember surcharge if applicable.
-        if is_member is None:
-            is_member = self.core.get_persona(
-                rs, reg['persona_id'])['is_member']
-        if not is_member:
-            ret += event['nonmember_surcharge']
 
         return ret
 

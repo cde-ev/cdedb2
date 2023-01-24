@@ -1167,7 +1167,6 @@ etc;anything else""", f['entries_2'].value)
         f['shortname'] = "UnAka"
         f['part_begin'] = "2345-01-01"
         f['part_end'] = "1345-6-7"
-        f['nonmember_surcharge'] = "6.66"
         f['notes'] = "Die spinnen die Orgas."
         f['orga_ids'] = "DB-10-8"
         self.submit(f, check_notification=False)
@@ -1228,7 +1227,6 @@ etc;anything else""", f['entries_2'].value)
         f['shortname'] = ""
         f['part_begin'] = "2345-01-01"
         f['part_end'] = "2345-6-7"
-        f['nonmember_surcharge'] = "4.20"
         f['orga_ids'] = "DB-1-9, DB-5-1"
         f['create_track'].checked = True
         f['create_orga_list'].checked = True
@@ -1453,21 +1451,13 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Kein Teilnehmer der Veranstaltung.", div='notifications')
 
         # now, start registration testing
-        surcharge = "Da Du kein CdE-Mitglied bist, musst du einen zusätzlichen Beitrag"
-        membership_fee = "Du kannst auch stattdessen Deinen regulären Mitgliedsbeitrag"
         self.traverse("Anmelden")
         self.assertTitle("Anmeldung für Große Testakademie 2222")
         if self.user_in('charly'):
-            self.assertNonPresence(surcharge)
-            self.assertNonPresence(membership_fee)
             self.assertPresence("13.05.1984")
         elif self.user_in('daniel'):
-            self.assertPresence(surcharge, div="nonmember-surcharge")
-            self.assertPresence(membership_fee, div="nonmember-surcharge")
             self.assertPresence("19.02.1963")
         elif self.user_in('rowena'):
-            self.assertPresence(surcharge, div="nonmember-surcharge")
-            self.assertNonPresence(membership_fee)
             self.assertPresence("26.08.932")
         else:
             self.fail("Please reconfigure the users for the above checks.")
@@ -1513,12 +1503,8 @@ etc;anything else""", f['entries_2'].value)
             self.assertIn("461,49", text)
         elif self.user_in('daniel'):
             self.assertIn("466,49", text)
-            self.assertIn(surcharge, text)
-            self.assertIn(membership_fee, text)
         elif self.user_in('rowena'):
             self.assertIn("466,49", text)
-            self.assertIn(surcharge, text)
-            self.assertNotIn(membership_fee, text)
         else:
             self.fail("Please reconfigure the users for the above checks.")
         self.assertPresence("Ich freu mich schon so zu kommen")
@@ -5086,13 +5072,14 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         with self.switch_user("garcia"):
             self.traverse("Veranstaltungen", "Große Testakademie 2222",
                           "Teilnahmebeiträge")
-            for fee_id in self.event.get_event(self.key, 1)['fees']:
+            for fee_id, fee in self.event.get_event(self.key, 1)['fees'].items():
+                if fee['title'] == "Externenzusatzbeitrag":
+                    continue
                 f = self.response.forms[f'deleteeventfeeform{fee_id}']
                 self.submit(f)
 
         pay_request = "Anmeldung erst mit Überweisung des Teilnahmebeitrags"
         iban = iban_filter(self.app.app.conf['EVENT_BANK_ACCOUNTS'][0][0])
-        no_member_surcharge = "zusätzlichen Beitrag in Höhe von 5,00"
 
         # now check ...
         self.traverse("Veranstaltungen", "Große Testakademie 2222", "Anmelden")
@@ -5110,24 +5097,20 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         if self.user_in('charly'):
             self.assertNotIn(pay_request, text)
             self.assertNotIn(iban, text)
-            self.assertNotIn(no_member_surcharge, text)
         # ... as not member (we still need to pay the no member surcharge)
         else:
             self.assertIn(pay_request, text)
             self.assertIn(iban, text)
-            self.assertIn(no_member_surcharge, text)
 
         # ... the registration page ...
         # ... as member
         if self.user_in('charly'):
             self.assertNotIn(pay_request, text)
             self.assertNotIn(iban, text)
-            self.assertNotIn(no_member_surcharge, text)
         # ... as not member (we still need to pay the no member surcharge)
         else:
             self.assertIn(pay_request, text)
             self.assertIn(iban, text)
-            self.assertIn(no_member_surcharge, text)
 
     @as_users("garcia")
     def test_no_choices(self) -> None:

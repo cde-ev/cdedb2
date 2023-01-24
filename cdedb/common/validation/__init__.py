@@ -2186,7 +2186,6 @@ EVENT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'is_course_assignment_visible': bool,
     'is_cancelled': bool,
     'iban': Optional[IBAN],
-    'nonmember_surcharge': NonNegativeDecimal,
     'mail_text': Optional[str],
     'registration_text': Optional[str],
     'orga_address': Optional[Email],
