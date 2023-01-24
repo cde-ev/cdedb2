@@ -13,6 +13,7 @@ from typing import Any, Callable, Collection, Dict, Optional, Protocol, Set
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import fee_condition_parser.parsing as fcp_parsing
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_set_validation as affirm_set,
     affirm_validation as affirm, internal, singularize,
@@ -31,9 +32,6 @@ from cdedb.common.sorting import mixed_existence_sorter
 from cdedb.common.validation import parse_date, parse_datetime
 from cdedb.database.query import DatabaseValue_s
 from fee_condition_parser.evaluation import ReferencedNames, get_referenced_names
-from fee_condition_parser.parsing import create_parser
-
-_PARSER = create_parser()
 
 
 @dataclasses.dataclass
@@ -384,7 +382,7 @@ class EventLowLevelBackend(AbstractBackend):
                                   ) -> Dict[int, ReferencedNames]:
         """Retrieve a map of event fee id to collection of names referenced by it."""
         return {
-            fd['id']: get_referenced_names(_PARSER.parseString(fd['condition'])[0])
+            fd['id']: get_referenced_names(fcp_parsing.parse(fd['condition']))
             for fd in self.sql_select(
                 rs, "event.event_fees", ("id", "condition",), (event_id,),
                 entity_key="event_id")

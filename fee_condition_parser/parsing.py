@@ -67,3 +67,10 @@ def create_parser() -> pp.ParserElement:
     ).set_name("expression")
 
     return operator_or
+
+
+_PARSER = create_parser()
+
+
+def parse(s: str) -> pp.ParseResults:
+    return _PARSER.parse_string(s)[0]

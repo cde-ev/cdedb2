@@ -49,9 +49,6 @@ CourseChoiceValidationAux = NamedTuple(
     ])
 
 
-_PARSER = fcp_parsing.create_parser()
-
-
 class EventRegistrationBackend(EventBaseBackend):
     def _get_course_segments_per_course(self, rs: RequestState,
                                         event_id: int) -> Dict[int, Set[int]]:
@@ -1118,7 +1115,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 if is_member is None else is_member,
         }
         for fee in event['fees'].values():
-            parse_result = _PARSER.parse_string(fee['condition'])[0]
+            parse_result = fcp_parsing.parse(fee['condition'])
             if fcp_evaluation.evaluate(
                     parse_result, reg_bool_fields, reg_part_involvement, other_bools):
                 ret += fee['amount']

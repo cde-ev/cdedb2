@@ -2668,9 +2668,6 @@ def _event_fee(
     return EventFee(val)
 
 
-_EVENT_FEE_CONDITION_PARSER = fcp_parsing.create_parser()
-
-
 @_add_typed_validator
 def _event_fee_condition(
     val: Any, argname: str = "event_fee_condition", *,
@@ -2687,7 +2684,7 @@ def _event_fee_condition(
     part_names = {p['shortname'] for p in event['parts'].values()}
 
     try:
-        parse_result = _EVENT_FEE_CONDITION_PARSER.parse_string(val)[0]
+        parse_result = fcp_parsing.parse(val)
         fcp_evaluation.check(parse_result, field_names, part_names)
     except Exception as e:
         raise ValidationSummary(ValueError(argname, e.args[-1])) from e
