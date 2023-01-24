@@ -263,7 +263,7 @@ class TestEventBackend(BackendTest):
                 }
             },
         }
-        updated_fees = {
+        updated_fees: CdEDBOptionalMap = {
             -1: {
                 'title': "third",
                 'notes': None,
