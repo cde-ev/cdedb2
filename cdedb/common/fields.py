@@ -139,9 +139,6 @@ FIELD_DEFINITION_FIELDS = (
     "checkin", "entries",
 )
 
-#: Fields of a modifier for an event_parts fee.
-FEE_MODIFIER_FIELDS = ("id", "part_id", "modifier_name", "amount", "field_id")
-
 #: Fields of a conditional event fee.
 EVENT_FEE_FIELDS = ("id", "event_id", "title", "amount", "condition", "notes")
 

@@ -429,9 +429,10 @@ class EventLowLevelBackend(AbstractBackend):
 
         Possible blockers:
 
-        * course_tracks: A course track in this part.
+        * event_fees:        An event fee referencing this part.
+        * course_tracks:     A course track in this part.
         * registration_part: A registration part for this part.
-        * part_group_parts: A link to a part group.
+        * part_group_parts:  A link to a part group.
 
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
@@ -897,6 +898,7 @@ class EventLowLevelBackend(AbstractBackend):
 
         Possible blockers:
 
+        * event_fees:         An event fee referencing this field.
         * questionnaire_rows: A questionnaire row that uses this field.
         * lodge_fields:       An event that uses this field for lodging wishes.
         * camping_mat_fields: An event that uses this field for camping mat
