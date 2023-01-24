@@ -13,7 +13,7 @@ All parts are combined together in the `EventBackend` class via multiple inherit
 together with a handful of high-level methods, that use functionalities of multiple
 backend parts.
 """
-
+import abc
 import collections
 import copy
 import datetime
@@ -784,9 +784,9 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return ret
 
+    @abc.abstractmethod
     def _update_registrations_amount_owed(self, rs: RequestState, event_id: int
-                                          ) -> DefaultReturnCode:
-        pass
+                                          ) -> DefaultReturnCode: ...
 
     @access("event")
     def check_orga_addition_limit(self, rs: RequestState,

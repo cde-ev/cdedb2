@@ -382,6 +382,7 @@ class EventLowLevelBackend(AbstractBackend):
 
     def _get_event_fee_references(self, rs: RequestState, event_id: int
                                   ) -> Dict[int, ReferencedNames]:
+        """Retrieve a map of event fee id to collection of names referenced by it."""
         return {
             fd['id']: get_referenced_names(_PARSER.parseString(fd['condition'])[0])
             for fd in self.sql_select(
@@ -392,6 +393,7 @@ class EventLowLevelBackend(AbstractBackend):
     @access("event")
     def get_event_fees_per_entity(self, rs: RequestState, event_id: int
                                   ) -> EventFeesPerEntity:
+        """Retrieve maps of entites to all event fees, referencing that entity."""
         field_names_to_id = {
             e['field_name']: e['id'] for e in self.sql_select(
                 rs, "event.field_definitions", ("id", "field_name"), (event_id,),
