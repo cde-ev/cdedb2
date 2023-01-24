@@ -44,7 +44,7 @@ def visual_debug(result: pp.ParseResults, field_values: Dict[str, bool], part_va
     elif name == "bool":
         value, text = other_values[result[0]], f"{result[0]}"
     else:
-        sub_results = [visual_debug(token, field_values, part_values, sub_parenthesis_if_not, False)
+        sub_results = [visual_debug(token, field_values, part_values, other_values, sub_parenthesis_if_not, False)
                        for token in result]
         value, text = functions[name](sub_results)
 
