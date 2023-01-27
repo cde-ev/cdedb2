@@ -1,6 +1,6 @@
 version: '3.4'
 
-authentik-default-envs: &authentik-envs-anchor
+x-authentik-default-envs: &authentik-envs-anchor
   AUTHENTIK_SECRET_KEY: authentiksecretkey
   AUTHENTIK_BOOTSTRAP_PASSWORD: akadminpass
   AUTHENTIK_BOOTSTRAP_TOKEN: akadmintoken
@@ -87,7 +87,7 @@ services:
     #   - ./media:/media
     #   - ./custom-templates:/templates
     ports:
-      - 127.0.0.1:9080:9080
+      - 127.0.0.1:9080:9000
       - 127.0.0.1:9443:9443
   worker:
     image: ghcr.io/goauthentik/server:2023.1.2
