@@ -1,4 +1,19 @@
-version: "3.2"
+version: '3.4'
+
+authentik-default-envs: &authentik-envs-anchor
+  AUTHENTIK_SECRET_KEY: authentiksecretkey
+  AUTHENTIK_BOOTSTRAP_PASSWORD: akadminpass
+  AUTHENTIK_BOOTSTRAP_TOKEN: akadmintoken
+  AUTHENTIK_POSTGRESQL__HOST: authentikpostgres
+  AUTHENTIK_POSTGRESQL__USER: authentik
+  AUTHENTIK_POSTGRESQL__NAME: authentik
+  AUTHENTIK_POSTGRESQL__PASSWORD: authentikdbpass
+  AUTHENTIK_REDIS__HOST: redis
+  AUTHENTIK_DISABLE_UPDATE_CHECK: true
+  AUTHENTIK_ERROR_REPORTING__ENABLED: false
+  AUTHENTIK_DISABLE_STARTUP_ANALYTICS: true
+  AUTHENTIK_AVATARS: none
+  # TODO set up mailhog once included
 
 services:
   cdb:
@@ -22,7 +37,7 @@ services:
       - files:/var/lib/cdedb # attachments etc
       - config:/etc/cdedb # config files
       - cert:/etc/ssl/apache2 # dynamic self-signed certificate
-      - ldap:/etc/ssl/ldap # dynamic self-signed ldap certificate
+      - ldap:/etc/ssl/ldap:ro # dynamic self-signed ldap certificate
       - ../..:/cdedb2:z # the :z is for SELinux (see #2053)
     ports:
       - 127.0.0.1:5000:5000 # werkzeug server including interactive debugger
@@ -50,9 +65,46 @@ services:
     ports:
       - 127.0.0.1:8080:8080
 
+  authentikpostgres:
+    # keep in sync with cdepostgres image base such that only a single image is used
+    image: postgres:13.3
+    volumes:
+      - authentikdatabase:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=authentikdbpass
+      - POSTGRES_USER=authentik
+      - POSTGRES_DB=authentik
+  redis:
+    image: docker.io/library/redis:alpine
+    command: --save 60 1 --loglevel warning
+    volumes:
+      - redis:/data
+  server:
+    image: ghcr.io/goauthentik/server:2023.1.2
+    command: server
+    environment: *authentik-envs-anchor
+    # volumes:
+    #   - ./media:/media
+    #   - ./custom-templates:/templates
+    ports:
+      - 127.0.0.1:9080:9080
+      - 127.0.0.1:9443:9443
+  worker:
+    image: ghcr.io/goauthentik/server:2023.1.2
+    command: worker
+    environment: *authentik-envs-anchor
+    volumes:
+      - ldap:/certs/ldap:ro # dynamic self-signed ldap certificate
+      - authentikcerts:/certs # dynamic self-signed certificate for dashboard
+    #   - ./media:/media
+    #   - ./custom-templates:/templates
+
 volumes:
   config:
   database:
   files:
   ldap:
   cert:
+  authentikdatabase:
+  redis:
+  authentikcerts:

@@ -39,6 +39,11 @@ async def main() -> None:
     logger.info("Opening LDAP server ...")
     loop = asyncio.get_event_loop()
     context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+    if conf["CDEDB_DEV"]:
+        # This is required for Apache Directory Studio to successfully connect.
+        # See https://issues.apache.org/jira/browse/DIRSTUDIO-1287
+        # and https://issues.apache.org/jira/browse/DIRAPI-381.
+        context.maximum_version = ssl.TLSVersion.TLSv1_2
     context.load_cert_chain(
         certfile=conf["LDAP_PEM_PATH"], keyfile=conf["LDAP_KEY_PATH"])
     server = await loop.create_server(lambda: LdapServer(root), port=conf["LDAP_PORT"],
