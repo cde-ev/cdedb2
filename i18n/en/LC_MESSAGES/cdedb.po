@@ -14656,15 +14656,15 @@ msgstr "Lodgement group deleted"
 
 #: cdedb/i18n_additional.py:111
 msgid "EventLogCodes.fee_modifier_created"
-msgstr "Fee Modifier created"
+msgstr "Fee created"
 
 #: cdedb/i18n_additional.py:112
 msgid "EventLogCodes.fee_modifier_changed"
-msgstr "Fee modifier changed"
+msgstr "Fee changed"
 
 #: cdedb/i18n_additional.py:113
 msgid "EventLogCodes.fee_modifier_deleted"
-msgstr "Fee Modifier deleted"
+msgstr "Fee deleted"
 
 #: cdedb/i18n_additional.py:114
 msgid "EventLogCodes.minor_form_updated"

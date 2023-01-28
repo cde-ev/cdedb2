@@ -15505,15 +15505,15 @@ msgstr "Unterkunftsgruppe gelöscht"
 
 #: cdedb/i18n_additional.py:111
 msgid "EventLogCodes.fee_modifier_created"
-msgstr "Beitragsmodifikator angelegt"
+msgstr "Teilnahmebeitrag angelegt"
 
 #: cdedb/i18n_additional.py:112
 msgid "EventLogCodes.fee_modifier_changed"
-msgstr "Beitragsmodifikator geändert"
+msgstr "Teilnahmebeitrag geändert"
 
 #: cdedb/i18n_additional.py:113
 msgid "EventLogCodes.fee_modifier_deleted"
-msgstr "Beitragsmodifikator entfernt"
+msgstr "Teilnahmebeitrag entfernt"
 
 #: cdedb/i18n_additional.py:114
 msgid "EventLogCodes.minor_form_updated"
