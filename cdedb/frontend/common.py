@@ -1176,7 +1176,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             persona_fields = {'submitted_by', 'persona_id', 'reviewed_by'}.intersection(
                 log_filter.get_columns()
             )
-            cdedbids = {persona_id : cdedbid_filter(persona_id)
+            cdedbids = {persona_id: cdedbid_filter(persona_id)
                         for persona_id in persona_ids}
             substitutions = {persona_field: cdedbids
                               for persona_field in persona_fields}
@@ -1199,7 +1199,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                                       data=csv_data)
         else:
             # Create pagination.
-            loglinks = calculate_loglinks(rs, total, log_filter._offset,
+            loglinks = calculate_loglinks(rs, total, log_filter._offset,  # pylint: disable=protected-access
                                           log_filter._length)  # pylint: disable=protected-access
             return self.render(rs, template, {
                 'log': log, 'total': total, 'length': log_filter.length,

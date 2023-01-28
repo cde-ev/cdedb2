@@ -2800,7 +2800,6 @@ class TestCdEFrontend(FrontendTest):
             self.response.text)
         self.assertNotIn('Beispiel', self.response.text)
 
-
     @as_users("vera")
     def test_changelog_meta(self) -> None:
         self.traverse({'description': 'Nutzerdaten-Log'})
