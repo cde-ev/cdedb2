@@ -3112,9 +3112,10 @@ QUESTIONNAIRE_ROW_MANDATORY_FIELDS: TypeMapping = {
 
 
 def _questionnaire_row(
-    val: Any, field_definitions: Optional[CdEDBObjectMap] = None,
+    val: Any, argname: str = "questionnaire_row", *,
+    field_definitions: CdEDBObjectMap, fees_by_field: Mapping[int, Set[int]],
     kind: Optional[const.QuestionnaireUsages] = None,
-    argname: str = "questionnaire_row", **kwargs: Any,
+    **kwargs: Any
 ) -> QuestionnaireRow:
 
     argname_prefix = argname + "." if argname else ""
@@ -3146,8 +3147,12 @@ def _questionnaire_row(
         raise errs
     assert kind is not None
 
-    fields_by_name = ({f['field_name']: f for f in field_definitions.values()}
-                      if field_definitions else {})
+    field_definitions = {
+        field_id: field for field_id, field in field_definitions.items()
+        if field['association'] == const.FieldAssociations.registration
+           and (kind.allow_fee_condition() or not fees_by_field.get(field_id))
+    }
+    fields_by_name = {f['field_name']: f for f in field_definitions.values()}
     if 'field_name' in value:
         if not value['field_name']:
             del value['field_name']
@@ -3168,12 +3173,11 @@ def _questionnaire_row(
     if 'field_id' not in value:
         value['field_id'] = None
 
-    if field_definitions and value['field_id']:
+    if value['field_id']:
         field = field_definitions.get(value['field_id'], None)
         if not field:
-            raise ValidationSummary(
-                KeyError(argname_prefix + 'default_value',
-                         n_("Referenced field does not exist.")))
+            raise ValidationSummary(KeyError(
+                argname_prefix + 'default_value', n_("Invalid field.")))
         if value['default_value']:
             value['default_value'] = _by_field_datatype(
                 value['default_value'], "default_value",
@@ -3191,12 +3195,11 @@ def _questionnaire_row(
     return QuestionnaireRow(value)
 
 
-# TODO change parameter order to make more consistent?
 @_add_typed_validator
 def _questionnaire(
-    val: Any, field_definitions: CdEDBObjectMap,
-    argname: str = "questionnaire",
-    **kwargs: Any
+    val: Any, argname: str = "questionnaire", *,
+    field_definitions: CdEDBObjectMap, fees_by_field: Mapping[int, Set[int]],
+    **kwargs: Any,
 ) -> Questionnaire:
 
     val = _mapping(val, argname, **kwargs)
@@ -3215,7 +3218,8 @@ def _questionnaire(
                 row_argname = argname + f"[{k.name}][{i+1}]"
                 try:
                     value = _questionnaire_row(
-                        value, field_definitions, kind=k, argname=row_argname, **kwargs)
+                        value, row_argname, field_definitions=field_definitions,
+                        fees_by_field=fees_by_field, kind=k, **kwargs)
                 except ValidationSummary as e:
                     errs.extend(e)
                     continue
@@ -3798,7 +3802,7 @@ def _serialized_event_questionnaire_upload(
 @_add_typed_validator
 def _serialized_event_questionnaire(
     val: Any, argname: str = "serialized_event_questionnaire", *,
-    field_definitions: CdEDBObjectMap,
+    field_definitions: CdEDBObjectMap, fees_by_field: Dict[int, Set[int]],
     questionnaire: Dict[const.QuestionnaireUsages, List[QuestionnaireRow]],
     extend_questionnaire: bool, skip_existing_fields: bool,
     **kwargs: Any
@@ -3847,8 +3851,9 @@ def _serialized_event_questionnaire(
 
     if 'questionnaire' in val:
         try:
-            new_questionnaire = _questionnaire(
-                val['questionnaire'], field_definitions, **kwargs)
+            new_questionnaire = _ALL_TYPED[Questionnaire](
+                val['questionnaire'], field_definitions=field_definitions,
+                fees_by_field=fees_by_field, **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
         else:
@@ -3858,8 +3863,9 @@ def _serialized_event_questionnaire(
                     for kind in const.QuestionnaireUsages
                 }
                 try:
-                    new_questionnaire = _questionnaire(
-                        tmp, field_definitions, **kwargs)
+                    new_questionnaire = _ALL_TYPED[Questionnaire](
+                        tmp, field_definitions=field_definitions,
+                        fees_by_field=fees_by_field, **kwargs)
                 except ValidationSummary as e:
                     errs.extend(e)
 

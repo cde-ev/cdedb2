@@ -855,16 +855,14 @@ class EventBaseBackend(EventLowLevelBackend):
         """
         event_id = affirm(vtypes.ID, event_id)
         event = self.get_event(rs, event_id)
+        fees_by_field = self.get_event_fees_per_entity(rs, event_id).fields
         if data is not None:
             current = self.get_questionnaire(rs, event_id)
             current.update(data)
-            for v in current.values():
-                for e in v:
-                    if 'pos' in e:
-                        del e['pos']
             # FIXME what is the correct type here?
             data = affirm(vtypes.Questionnaire, current,  # type: ignore[assignment]
-                          field_definitions=event['fields'])
+                          field_definitions=event['fields'],
+                          fees_by_field=fees_by_field)
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=event_id)

@@ -58,14 +58,17 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         """Helper to retrieve some data for questionnaire configuration."""
         questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(kind,)))
+        fees_by_field = self.eventproxy.get_event_fees_per_entity(rs, event_id).fields
         current = {
-            "{}_{}".format(key, i): value
+            f"{key}_{i}": value
             for i, entry in enumerate(questionnaire)
             for key, value in entry.items()}
         merge_dicts(rs.values, current)
         registration_fields = {
             k: v for k, v in rs.ambience['event']['fields'].items()
-            if v['association'] == const.FieldAssociations.registration}
+            if v['association'] == const.FieldAssociations.registration
+               and (kind.allow_fee_condition() or not fees_by_field[k])
+        }
         return questionnaire, registration_fields
 
     @access("event", modi={"POST"})
@@ -106,15 +109,13 @@ class EventQuestionnaireMixin(EventBaseFrontend):
                            ) -> Optional[DefaultReturnCode]:
         """Deduplicated code to set questionnaire rows of one kind."""
         other_kinds = set(const.QuestionnaireUsages) - {kind}
-        old_questionnaire = unwrap(self.eventproxy.get_questionnaire(
-            rs, event_id, kinds=(kind,)))
         other_questionnaire = self.eventproxy.get_questionnaire(
             rs, event_id, kinds=other_kinds)
         other_used_fields = {e['field_id'] for v in other_questionnaire.values()
                              for e in v if e['field_id']}
-        registration_fields = {
-            k: v for k, v in rs.ambience['event']['fields'].items()
-            if v['association'] == const.FieldAssociations.registration}
+
+        old_questionnaire, registration_fields = self._prepare_questionnaire_form(
+            rs, event_id, kind)
 
         new_questionnaire = self.process_questionnaire_input(
             rs, len(old_questionnaire), registration_fields, kind,

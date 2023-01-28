@@ -108,6 +108,9 @@ class QuestionnaireUsages(enum.IntEnum):
         """Whether or not rows with this usage are allowed to be readonly."""
         return self == QuestionnaireUsages.additional
 
+    def allow_fee_condition(self) -> bool:
+        """Whether or not rows with this usage may use fee condition fields."""
+        return self == QuestionnaireUsages.registration
 
 @enum.unique
 class EventPartGroupType(enum.IntEnum):
