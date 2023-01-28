@@ -693,14 +693,21 @@ class TestEventFrontend(FrontendTest):
         f['shortname'] = "cd"
         f['part_begin'] = "2244-4-5"
         f['part_end'] = "2233-6-7"
+        f['fee'] = "123.45"
         self.submit(f, check_notification=False)
         self.assertValidationError('part_end', "Muss später als Beginn sein.")
         f['part_begin'] = "2233-4-5"
         self.submit(f)
-        log_expectation.append({
-            'code': const.EventLogCodes.part_created,
-            'change_note': f['title'].value,
-        })
+        log_expectation.extend([
+            {
+                'code': const.EventLogCodes.part_created,
+                'change_note': f['title'].value,
+            },
+            {
+                'code': const.EventLogCodes.fee_modifier_created,
+                'change_note': f['title'].value,
+            },
+        ])
 
         # Add a track to newly added part.
         self.traverse({"href": "/event/event/2/part/1001/change"})
@@ -775,10 +782,12 @@ class TestEventFrontend(FrontendTest):
         self.assertEqual("Nacht", f['track_shortname_1002'].value)
         f['track_delete_1002'].checked = True
         self.submit(f)
-        log_expectation.append({
-            'code': const.EventLogCodes.track_removed,
-            'change_note': log_expectation[-1]['change_note'],
-        })
+        log_expectation.extend([
+            {
+                'code': const.EventLogCodes.track_removed,
+                'change_note': log_expectation[-1]['change_note'],
+            },
+        ])
         self.assertTitle("Veranstaltungsteile konfigurieren (CdE-Party 2050)")
         self.assertNonPresence("Nachtschicht", div="part1001")
 
@@ -786,14 +795,20 @@ class TestEventFrontend(FrontendTest):
         f = self.response.forms['deletepartform1001']
         f['ack_delete'].checked = True
         self.submit(f)
-        log_expectation.append({
-            'code': const.EventLogCodes.track_removed,
-            'change_note': "Chillout Training",
-        })
-        log_expectation.append({
-            'code': const.EventLogCodes.part_deleted,
-            'change_note': "Größere Hälfte",
-        })
+        log_expectation.extend([
+            {
+                'code': const.EventLogCodes.track_removed,
+                'change_note': "Chillout Training",
+            },
+            {
+                'code': const.EventLogCodes.fee_modifier_deleted,
+                'change_note': log_expectation[0]['change_note'],
+            },
+            {
+                'code': const.EventLogCodes.part_deleted,
+                'change_note': "Größere Hälfte",
+            }
+        ])
 
         self.assertTitle("Veranstaltungsteile konfigurieren (CdE-Party 2050)")
         self.assertNonPresence("Größere Hälfte")
@@ -5663,12 +5678,14 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f['shortname'] = "Afterparty"
         f['part_begin'] = "2050-01-16"
         f['part_end'] = "2050-01-17"
+        f['fee'] = "1"
         self.submit(f)
 
         f['title'] = "Pregame"
         f['shortname'] = "Pregame"
         f['part_begin'] = "2050-01-14"
         f['part_end'] = "2050-01-15"
+        f['fee'] = "2"
         self.submit(f)
 
         self.traverse(

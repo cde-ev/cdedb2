@@ -352,8 +352,10 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard()
+    @REQUESTdata("fee")
     @REQUESTdatadict(*EVENT_PART_CREATION_MANDATORY_FIELDS)
-    def add_part(self, rs: RequestState, event_id: int, data: CdEDBObject) -> Response:
+    def add_part(self, rs: RequestState, event_id: int, data: CdEDBObject,
+                 fee: vtypes.NonNegativeDecimal) -> Response:
         if self.eventproxy.has_registrations(rs, event_id):
             raise ValueError(n_("Registrations exist, no part creation possible."))
 
@@ -375,6 +377,14 @@ class EventEventMixin(EventBaseFrontend):
 
         event = {'id': event_id, 'parts': {-1: data}}
         code = self.eventproxy.set_event(rs, event)
+        if code:
+            new_fee = {
+                'title': data['title'],
+                'notes': None,
+                'amount': fee,
+                'condition': f"part.{data['shortname']}",
+            }
+            self.eventproxy.set_event_fees(rs, event_id, {-1: new_fee})
         rs.notify_return_code(code)
 
         return self.redirect(rs, "event/part_summary")
@@ -844,32 +854,54 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event_admin", modi={"POST"})
     @REQUESTdata("part_begin", "part_end", "orga_ids", "create_track",
+                 "fee", "nonmember_surcharge",
                  "create_orga_list", "create_participant_list")
     @REQUESTdatadict(*EVENT_EXPOSED_FIELDS)
     def create_event(self, rs: RequestState, part_begin: datetime.date,
                      part_end: datetime.date, orga_ids: vtypes.CdedbIDList,
+                     fee: vtypes.NonNegativeDecimal,
+                     nonmember_surcharge: vtypes.NonNegativeDecimal,
                      create_track: bool, create_orga_list: bool,
                      create_participant_list: bool, data: CdEDBObject
                      ) -> Response:
         """Create a new event, organized via DB."""
         # multi part events will have to edit this later on
-        data["orgas"] = orga_ids
-        new_track = {
-            'title': data['title'],
-            'shortname': data['shortname'],
-            'num_choices': DEFAULT_NUM_COURSE_CHOICES,
-            'min_choices': DEFAULT_NUM_COURSE_CHOICES,
-            'sortkey': 1}
-        data['parts'] = {
-            -1: {
-                'title': data['title'],
-                'shortname': data['shortname'],
-                'part_begin': part_begin,
-                'part_end': part_end,
-                'waitlist_field': None,
-                'tracks': ({-1: new_track} if create_track else {}),
-            }
-        }
+        data.update({
+            'orgas': orga_ids,
+            'parts': {
+                -1: {
+                    'title': data['title'],
+                    'shortname': data['shortname'],
+                    'part_begin': part_begin,
+                    'part_end': part_end,
+                    'waitlist_field': None,
+                    'tracks': (
+                        {
+                            -1: {
+                                'title': data['title'],
+                                'shortname': data['shortname'],
+                                'num_choices': DEFAULT_NUM_COURSE_CHOICES,
+                                'min_choices': DEFAULT_NUM_COURSE_CHOICES,
+                            },
+                        } if create_track else {}
+                    ),
+                },
+            },
+            'fees': {
+                -1: {
+                    'title': data['title'],
+                    'notes': None,
+                    'amount': fee,
+                    'condition': f"part.{data['shortname']}",
+                },
+                -2: {
+                    'title': "Externenzusatzbeitrag",
+                    'notes': None,
+                    'amount': nonmember_surcharge,
+                    'condition': "not is_member",
+                }
+            },
+        })
         data = check(rs, vtypes.Event, data, creation=True)
         if orga_ids:
             if not self.coreproxy.verify_ids(rs, orga_ids, is_archived=False):

@@ -26,6 +26,7 @@
         {{ util.form_input_text(name="shortname", label=gettext("Shortname"), info=gettext("e.g. \"1.H\" or \"O1\".")) }}
         {{ util.form_input_text(name="part_begin", label=gettext("Begin"), type='date', placeholder="YYYY-MM-DD") }}
         {{ util.form_input_text(name="part_end", label=gettext("End"), type='date', placeholder="YYYY-MM-DD") }}
+        {{ util.form_input_text(name="fee", label=gettext("Event Part Fee"), type="number", addon='€') }}
         {{ util.form_input_select(name="waitlist_field", entries=waitlist_fields,
                                   label=gettext("Field for Waitlist"), nulloption=nbsp,
                                   info=gettext("Field to store the %(link)s ranking of this part."
