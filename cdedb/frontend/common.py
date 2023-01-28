@@ -1192,7 +1192,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     else:
                         entry[f"{k}_given_names"] = entry[f"{k}_family_name"] = None
 
-            # Sorting required for determinism
+            # Sorting required to group associated columns together
             csv_data = csv_output(log, xsorted(columns), replace_newlines=True,
                                   substitutions=substitutions)
             return self.send_csv_file(rs, "text/csv", f"{table.value}.csv",
