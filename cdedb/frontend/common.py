@@ -90,7 +90,7 @@ from cdedb.common.roles import (
     ADMIN_KEYS, ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS, PERSONA_DEFAULTS,
     roles_to_db_role,
 )
-from cdedb.common.sorting import EntitySorter
+from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.config import Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -1120,8 +1120,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         return None
 
     def generic_view_log(self, rs: RequestState, filter_params: CdEDBObject,
-                         table: str, template: str, template_kwargs: CdEDBObject = None
-                         ) -> werkzeug.Response:
+                         table: str, template: str, download: bool = False,
+                         template_kwargs: CdEDBObject = None) -> werkzeug.Response:
         """Generic helper to retrieve log data and render the result."""
         table = LogTable(table)
         # Convert filter params into LogFilter.
@@ -1171,13 +1171,41 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         )
         personas = self.coreproxy.get_personas(rs, persona_ids)
 
-        # Create pagination.
-        loglinks = calculate_loglinks(rs, total, log_filter._offset, log_filter._length)  # pylint: disable=protected-access
-        return self.render(rs, template, {
-            'log': log, 'total': total, 'length': log_filter.length,
-            'personas': personas, 'loglinks': loglinks,
-            **(template_kwargs or {})
-        })
+        if download:
+            # Postprocess persona information: Add names and cdedb id.
+            persona_fields = {'submitted_by', 'persona_id', 'reviewed_by'}.intersection(
+                log_filter.get_columns()
+            )
+            cdedbids = {persona_id : cdedbid_filter(persona_id)
+                        for persona_id in persona_ids}
+            substitutions = {persona_field: cdedbids
+                              for persona_field in persona_fields}
+
+            given_names = tuple(f"{key}_given_names" for key in persona_fields)
+            family_names = tuple(f"{key}_family_name" for key in persona_fields)
+            columns = log_filter.get_columns() + given_names + family_names
+            for entry in log:
+                for k in persona_fields:
+                    if entry.get(k):
+                        entry[f"{k}_given_names"] = personas[entry[k]]['given_names']
+                        entry[f"{k}_family_name"] = personas[entry[k]]['family_name']
+                    else:
+                        entry[f"{k}_given_names"] = entry[f"{k}_family_name"] = None
+
+            # Sorting required for determinism
+            csv_data = csv_output(log, xsorted(columns), replace_newlines=True,
+                                  substitutions=substitutions)
+            return self.send_csv_file(rs, "text/csv", f"{table.value}.csv",
+                                      data=csv_data)
+        else:
+            # Create pagination.
+            loglinks = calculate_loglinks(rs, total, log_filter._offset,
+                                          log_filter._length)  # pylint: disable=protected-access
+            return self.render(rs, template, {
+                'log': log, 'total': total, 'length': log_filter.length,
+                'personas': personas, 'loglinks': loglinks,
+                **(template_kwargs or {})
+            })
 
 
 class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):

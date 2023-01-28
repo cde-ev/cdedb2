@@ -139,7 +139,13 @@
             {{ util.form_input_text('offset', label=gettext("Offset"), type='number', small=True) }}
             {{ util.form_input_from_to(
                 'time_start', 'time_stop', label=gettext("Timestamp"), type='datetime-local', small=True) }}
-            {{ util.form_input_submit(label=gettext("Apply"), small=True) }}
+            <div class="form-group mosp">
+                <div class="col-sm-offset-2 col-sm-10">
+                    {{ util.input_submit(label=gettext("Apply")) }}
+                    {{ util.input_submit(label=gettext("CSV file"), value="csv", name="download", icon="download",
+                                 aclass="btn btn-default") }}
+                </div>
+            </div>
         </form>
     {% endcall %}
 {% endmacro %}
