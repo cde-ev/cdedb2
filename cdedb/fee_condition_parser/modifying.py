@@ -1,3 +1,4 @@
+# pylint: disable=line-too-long,missing-module-docstring
 from typing import Dict
 
 import pyparsing as pp
@@ -14,4 +15,3 @@ def rename(result: pp.ParseResults, field_name_updates: Dict[str, str], part_sho
     else:
         for token in result:
             rename(token, field_name_updates, part_shortname_updates)
-

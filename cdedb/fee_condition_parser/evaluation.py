@@ -1,3 +1,4 @@
+# pylint: disable=line-too-long,bad-builtin,missing-module-docstring
 import dataclasses
 from functools import partial
 from typing import AbstractSet, Callable, Dict, Tuple
@@ -67,7 +68,7 @@ _EVALUATOR_FUNCTIONS: Dict[str, Tuple[Callable[..., bool], bool]] = {
     'xor': (lambda x, y, f, p, o: x(f, p, o) != y(f, p, o), True),
     'not': (lambda x, f, p, o: not x(f, p, o), True),
     'true': (lambda f, p, o: True, False),
-    'false': (lambda f, p,o : False, False),
+    'false': (lambda f, p, o: False, False),
     'field': (lambda t, f, p, o: f[t], False),
     'part': (lambda t, f, p, o: p[t], False),
     'bool': (lambda t, f, p, o: o[t], False),
