@@ -2684,10 +2684,10 @@ def _event_fee_condition(
         if row['field_id']
     }
     field_names = {
-        f['field_name'] for f in event.get('fields', {}).values()
+        f['field_name'] for field_id, f in event.get('fields', {}).items()
         if f['association'] == const.FieldAssociations.registration
            and f['kind'] == const.FieldDatatypes.bool
-           and f['id'] not in additional_questionnaire_fields
+           and field_id not in additional_questionnaire_fields
     }
     part_names = {p['shortname'] for p in event['parts'].values()}
 
