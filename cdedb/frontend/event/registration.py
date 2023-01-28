@@ -370,7 +370,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             if fn.strip()
         }
         if rs.has_validation_errors() or not field_names <= fields_by_name.keys():
-            return Response(str(field_names) + str(fields_by_name), mimetype='text/plain')
+            return Response("", mimetype='text/plain')
 
         field_ids = {fields_by_name[fn] for fn in field_names}
 

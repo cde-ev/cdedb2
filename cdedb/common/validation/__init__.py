@@ -3382,10 +3382,10 @@ def _serialized_event(
                           'registration_id': ID, 'rank': int}),
         # Is it easier to throw away broken ones at the end of the import.
         'event.questionnaire_rows': _augment_dict_validator(
-            _empty_dict, {'id': ID, 'event_id': ID, 'title': Optional[str],
-                          'info': Optional[str], 'input_size': Optional[str],
-                          'readonly': Optional[bool], 'default_value': Optional[str],
-                          'field_id': Optional[ID], 'kind': const.QuestionnaireUsages,
+            _empty_dict, {'id': ID, 'event_id': ID, 'title': Optional[str],  # type: ignore[dict-item]
+                          'info': Optional[str], 'input_size': Optional[str],  # type: ignore[dict-item]
+                          'readonly': Optional[bool], 'default_value': Optional[str],  # type: ignore[dict-item]
+                          'field_id': Optional[ID], 'kind': const.QuestionnaireUsages,  # type: ignore[dict-item]
                           'pos': int}),
         'event.event_fees': _augment_dict_validator(
             _empty_dict, {'id': ID, 'event_id': ID, 'title': str,
