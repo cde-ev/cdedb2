@@ -109,6 +109,8 @@
             {{ util.form_input_checkboxes(name="parts", label=gettext("Event Parts"),
                                           entries=ambience['event']['parts']|keydictsort(EntitySorter.event_part)
                                               |dict_entries('id', 'title')) }}
+            {{ util.form_input_static(label=gettext("Fee"), anid="fee-preview",
+                                      value=gettext("Activate JavaScript for automatic fee preview.")) }}
         {% elif ambience['event']['parts']|length == 1 %}
             {{ util.input_hidden(name="parts", value=(ambience['event']['parts']|list)[0]) }}
         {% endif %}
@@ -139,6 +141,9 @@
                 </p>
             {% endif %}
         {% endcall %}
+        {{ util.form_input_static(label=gettext("Fee"), anid="fee-preview",
+                                  value=gettext("Activate JavaScript for automatic fee preview.")) }}
+
         {% if not preview %}
         {{ util.form_input_submit(label=gettext("Register"), cancellink=cdedblink('event/show_event')) }}
         {% endif %}
@@ -147,11 +152,13 @@
     <script nonce="{{ csp_nonce }}">
         var $form = $('#registerform');
         $form.cdedbProtectChanges();
-        var checkboxes = $form.find('[type="checkbox"][name="parts"]');
+        var part_checkboxes = $form.find('[type="checkbox"][name="parts"]');
+        var field_checkboxes = $form.find('[type="checkbox"][id^="event-input-fields"]');
+
         /* Map part to part selection checkbox ($-encapsulated) */
-        checkbox_map = {};
-        checkboxes.each(function(){
-            checkbox_map[$(this).val()] = $(this);
+        part_checkbox_map = {};
+        part_checkboxes.each(function(){
+            part_checkbox_map[$(this).val()] = $(this);
         });
         ccos_per_part = {{ ccos_per_part|tojson }};
         var containers = $('.course_choice_container');
@@ -161,16 +168,45 @@
                 $(this).hide();
             });
             Object.keys(ccos_per_part).forEach(function(key){
-                if (checkbox_map[key].prop('checked'))
+                if (part_checkbox_map[key].prop('checked'))
                     ccos_per_part[key].forEach(function(element){
                         $('#course-choice-container-' + element).show();
                     });
             });
         };
 
-        if (checkboxes.length) {
-            checkboxes.change(updateCourseChoiceContainers);
-            updateCourseChoiceContainers();
+        var fee_preview = $form.find('[id="fee-preview"]');
+        var updateFeePreview = function() {
+            var part_ids = "";
+            for (var pcb of part_checkboxes) {
+                if (pcb.checked)
+                    part_ids += pcb.value + ",";
+            }
+            console.log(part_ids);
+            var field_names = "";
+            for (var fcb of field_checkboxes) {
+                if (fcb.checked)
+                    field_names += fcb.name + ",";
+            }
+            console.log(field_checkboxes.length);
+            console.log(field_names);
+            $.post('{{ cdedblink("event/precompute_fee") }}',
+                { part_ids: part_ids, field_names: field_names},
+                function(result) {
+                    fee_preview.html(result);
+                }
+            );
         }
+
+
+        if (part_checkboxes.length) {
+            part_checkboxes.change(updateCourseChoiceContainers);
+            updateCourseChoiceContainers();
+            part_checkboxes.change(updateFeePreview);
+        }
+        if (field_checkboxes.length) {
+            field_checkboxes.change(updateFeePreview);
+        }
+        updateFeePreview();
     </script>
 {% endblock %}

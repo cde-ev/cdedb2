@@ -1123,6 +1123,35 @@ class EventRegistrationBackend(EventBaseBackend):
         return ret
 
     @access("event")
+    def precompute_fee(self, rs: RequestState, event_id: int, persona_id: int,
+                       part_ids: Collection[int], field_ids: Collection[int],
+                       ) -> decimal.Decimal:
+        event_id = affirm(vtypes.ID, event_id)
+        persona_id = affirm(vtypes.ID, persona_id)
+        part_ids = affirm_set(vtypes.ID, part_ids)
+        field_ids = affirm_set(vtypes.ID, field_ids)
+
+        event = self.get_event(rs, event_id)
+
+        fake_registration = {
+            'persona_id': persona_id,
+            'parts': {
+                part_id: {
+                    'status':
+                        const.RegistrationPartStati.applied
+                        if part_id in part_ids
+                        else const.RegistrationPartStati.not_applied
+                }
+                for part_id in event['parts']
+            },
+            'fields': {
+                event['fields'][field_id]['field_name']: field_id in field_ids
+                for field_id in event['fields']
+            }
+        }
+        return self._calculate_single_fee(rs, fake_registration, event=event)
+
+    @access("event")
     def calculate_fees(self, rs: RequestState, registration_ids: Collection[int]
                        ) -> Dict[int, decimal.Decimal]:
         """Calculate the total fees for some registrations.

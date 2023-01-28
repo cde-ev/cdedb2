@@ -429,6 +429,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                          endpoint="configure_registration_form"),
                     rule("/config", methods=_POST,
                          endpoint="configure_registration"),
+                    rule("/fee", methods=_POST,
+                         endpoint="precompute_fee"),
                 )),
                 sub('/questionnaire', (
                     rule("/config", methods=_GET,

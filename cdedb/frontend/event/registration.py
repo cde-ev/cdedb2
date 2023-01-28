@@ -27,7 +27,7 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.types import VALIDATOR_LOOKUP
-from cdedb.filter import keydictsort_filter
+from cdedb.filter import keydictsort_filter, money_filter
 from cdedb.frontend.common import (
     CustomCSVDialect, Headers, REQUESTdata, REQUESTfile, TransactionObserver, access,
     cdedbid_filter, check_validation_optional as check_optional, event_guard,
@@ -350,6 +350,35 @@ class EventRegistrationMixin(EventBaseFrontend):
             'reg_questionnaire': reg_questionnaire, 'preview': preview,
             **course_choice_params,
         })
+
+    @access("event", modi={"POST"}, check_anti_csrf=False)
+    @REQUESTdata("part_ids", "field_names")
+    def precompute_fee(self, rs: RequestState, event_id: int,
+                       part_ids: vtypes.IntCSVList, field_names: Optional[str],
+                       ) -> Response:
+        persona_id = rs.user.persona_id
+
+        if len(all_part_ids := rs.ambience['event']['parts']) == 1:
+            part_ids = all_part_ids.keys()
+
+        fields_by_name = {
+            f['field_name']: f['id'] for f in rs.ambience['event']['fields'].values()
+        }
+        field_names = {
+            fn.removeprefix('fields.')
+            for fn in (field_names or "").split(',')
+            if fn.strip()
+        }
+        if rs.has_validation_errors() or not field_names <= fields_by_name.keys():
+            return Response(str(field_names) + str(fields_by_name), mimetype='text/plain')
+
+        field_ids = {fields_by_name[fn] for fn in field_names}
+
+        fee = self.eventproxy.precompute_fee(
+            rs, event_id, persona_id, part_ids, field_ids)
+
+        ret = money_filter(fee, lang=rs.lang) or ""
+        return Response(ret, mimetype='text/plain')
 
     def new_process_registration_input(
             self, rs: RequestState, orga_input: bool, parts: CdEDBObjectMap = None,
