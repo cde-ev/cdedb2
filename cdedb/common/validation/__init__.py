@@ -2314,7 +2314,7 @@ def _event(
         with errs:
             val['fees'] = _optional_object_mapping_helper(
                 val['fees'], EventFee, 'fees', creation_only=creation, event=val,
-                **kwargs)
+                questionnaire={}, **kwargs)
 
     if errs:
         raise errs
@@ -2651,7 +2651,7 @@ EVENT_FEE_COMMON_FIELDS: TypeMapping = {
 @_add_typed_validator
 def _event_fee(
     val: Any, argname: str = "event_fee", *,
-        creation: bool = False, **kwargs: Any
+    creation: bool = False, **kwargs: Any
 ) -> EventFee:
 
     val = _mapping(val, argname, **kwargs)
@@ -2671,15 +2671,23 @@ def _event_fee(
 @_add_typed_validator
 def _event_fee_condition(
     val: Any, argname: str = "event_fee_condition", *,
-    event: CdEDBObject, **kwargs: Any
+    event: CdEDBObject,
+    questionnaire: Dict[const.QuestionnaireUsages, List[CdEDBObject]],
+    **kwargs: Any
 ) -> EventFeeCondition:
 
     val = _str(val, argname, **kwargs)
 
+    additional_questionnaire_fields = {
+        row['field_id'] for row in questionnaire.get(
+            const.QuestionnaireUsages.additional, [])
+        if row['field_id']
+    }
     field_names = {
         f['field_name'] for f in event.get('fields', {}).values()
         if f['association'] == const.FieldAssociations.registration
            and f['kind'] == const.FieldDatatypes.bool
+           and f['id'] not in additional_questionnaire_fields
     }
     part_names = {p['shortname'] for p in event['parts'].values()}
 
