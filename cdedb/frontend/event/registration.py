@@ -352,11 +352,10 @@ class EventRegistrationMixin(EventBaseFrontend):
         })
 
     @access("event", modi={"POST"}, check_anti_csrf=False)
-    @REQUESTdata("part_ids", "field_names")
-    def precompute_fee(self, rs: RequestState, event_id: int,
+    @REQUESTdata("persona_id", "part_ids", "field_names")
+    def precompute_fee(self, rs: RequestState, event_id: int, persona_id: int,
                        part_ids: vtypes.IntCSVList, field_names: Optional[str],
                        ) -> Response:
-        persona_id = rs.user.persona_id
 
         if len(all_part_ids := rs.ambience['event']['parts']) == 1:
             part_ids = all_part_ids.keys()

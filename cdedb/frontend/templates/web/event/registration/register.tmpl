@@ -182,16 +182,13 @@
                 if (pcb.checked)
                     part_ids += pcb.value + ",";
             }
-            console.log(part_ids);
             var field_names = "";
             for (var fcb of field_checkboxes) {
                 if (fcb.checked)
                     field_names += fcb.name + ",";
             }
-            console.log(field_checkboxes.length);
-            console.log(field_names);
             $.post('{{ cdedblink("event/precompute_fee") }}',
-                { part_ids: part_ids, field_names: field_names},
+                { persona_id: {{ user.persona_id }}, part_ids: part_ids, field_names: field_names},
                 function(result) {
                     fee_preview.html(result);
                 }
