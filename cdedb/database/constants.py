@@ -112,6 +112,7 @@ class QuestionnaireUsages(enum.IntEnum):
         """Whether or not rows with this usage may use fee condition fields."""
         return self == QuestionnaireUsages.registration
 
+
 @enum.unique
 class EventPartGroupType(enum.IntEnum):
     # Weak constraints that only produce warnings:

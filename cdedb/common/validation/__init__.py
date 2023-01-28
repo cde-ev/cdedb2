@@ -2677,7 +2677,7 @@ def _event_fee_condition(
     val = _str(val, argname, **kwargs)
 
     field_names = {
-        f['field_name'] for f in event['fields'].values()
+        f['field_name'] for f in event.get('fields', {}).values()
         if f['association'] == const.FieldAssociations.registration
            and f['kind'] == const.FieldDatatypes.bool
     }

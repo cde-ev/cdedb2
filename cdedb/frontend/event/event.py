@@ -882,6 +882,7 @@ class EventEventMixin(EventBaseFrontend):
                                 'shortname': data['shortname'],
                                 'num_choices': DEFAULT_NUM_COURSE_CHOICES,
                                 'min_choices': DEFAULT_NUM_COURSE_CHOICES,
+                                'sortkey': 0,
                             },
                         } if create_track else {}
                     ),

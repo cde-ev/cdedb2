@@ -1184,6 +1184,8 @@ etc;anything else""", f['entries_2'].value)
         f['part_end'] = "1345-6-7"
         f['notes'] = "Die spinnen die Orgas."
         f['orga_ids'] = "DB-10-8"
+        f['fee'] = "123.45"
+        f['nonmember_surcharge'] = "8"
         self.submit(f, check_notification=False)
         self.assertValidationError(
             'orga_ids', "Einige dieser Nutzer sind keine Veranstaltungsnutzer.")
@@ -1229,7 +1231,17 @@ etc;anything else""", f['entries_2'].value)
                 'change_note': "Universale Akademie",
                 'code': const.EventLogCodes.lodgement_group_created,
                 'event_id': 1001,
-            }
+            },
+            {
+                'change_note': "Universale Akademie",
+                'code': const.EventLogCodes.fee_modifier_created,
+                'event_id': 1001,
+            },
+            {
+                'change_note': "Externenzusatzbeitrag",
+                'code': const.EventLogCodes.fee_modifier_created,
+                'event_id': 1001,
+            },
         ]
 
         # Create another event with course track and orga mailinglist
@@ -1243,6 +1255,8 @@ etc;anything else""", f['entries_2'].value)
         f['part_begin'] = "2345-01-01"
         f['part_end'] = "2345-6-7"
         f['orga_ids'] = "DB-1-9, DB-5-1"
+        f['fee'] = "0"
+        f['nonmember_surcharge'] = "0"
         f['create_track'].checked = True
         f['create_orga_list'].checked = True
         f['create_participant_list'].checked = True
@@ -1294,6 +1308,16 @@ etc;anything else""", f['entries_2'].value)
             {
                 'change_note': "Alternative Akademie",
                 'code': const.EventLogCodes.lodgement_group_created,
+                'event_id': 1002,
+            },
+            {
+                'change_note': "Alternative Akademie",
+                'code': const.EventLogCodes.fee_modifier_created,
+                'event_id': 1002,
+            },
+            {
+                'change_note': "Externenzusatzbeitrag",
+                'code': const.EventLogCodes.fee_modifier_created,
                 'event_id': 1002,
             },
             {
