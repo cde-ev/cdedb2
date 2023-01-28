@@ -79,10 +79,10 @@ import zxcvbn
 from schulze_condorcet.util import as_vote_tuple
 
 import cdedb.database.constants as const
+import cdedb.fee_condition_parser.evaluation as fcp_evaluation
+import cdedb.fee_condition_parser.parsing as fcp_parsing
+import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
 import cdedb.ml_type_aux as ml_type
-import fee_condition_parser.evaluation as fcp_evaluation
-import fee_condition_parser.parsing as fcp_parsing
-import fee_condition_parser.roundtrip as fcp_roundtrip
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, EPSILON, EVENT_SCHEMA_VERSION, INFINITE_ENUM_MAGIC_NUMBER,
     CdEDBObjectMap, Error, InfiniteEnum, LineResolutions, asciificator,
