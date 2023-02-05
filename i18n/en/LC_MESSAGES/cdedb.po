@@ -8995,7 +8995,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:221
 msgid "Update_[[genesis case]]"
-msgstr ""
+msgstr "Update"
 
 #: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:226
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:139
