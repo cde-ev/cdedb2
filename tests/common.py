@@ -18,10 +18,14 @@ import os
 import pathlib
 import re
 import shutil
+import socket
+import subprocess
 import sys
 import tempfile
+import time
 import unittest
 import urllib.parse
+import urllib.request
 from typing import (
     Any, Callable, ClassVar, Dict, Generator, Iterable, List, Mapping, MutableMapping,
     NamedTuple, Optional, Pattern, Sequence, Set, Tuple, Type, TypeVar, Union, cast,
@@ -501,6 +505,45 @@ class BackendTest(CdEDBTest):
     @classmethod
     def initialize_backend(cls, backendcls: Type[B]) -> B:
         return _make_backend_shim(backendcls(), internal=True)
+
+
+class BrowserTest(CdEDBTest):
+    """
+    Base class for a TestCase that uses a real browser.
+
+    We instantiate a real (development) server for this usecase as a bare WSGI
+    application won't do the trick.
+    """
+    serverProcess = None
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        cls.serverProcess = subprocess.Popen(
+            ['python3', '-m', 'cdedb', 'dev', 'serve', '--test'],
+            stderr=subprocess.DEVNULL)
+        for _ in range(42):
+            try:
+                response = urllib.request.urlopen("http://localhost:5000/",
+                                                  timeout=.1)
+                if response.status == 200:
+                    break
+            except urllib.error.URLError:
+                time.sleep(.1)
+            except socket.timeout:
+                time.sleep(.1)
+        else:
+            raise RuntimeError('Test server failed to start.')
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        if cls.serverProcess:
+            cls.serverProcess.terminate()
+            cls.serverProcess.wait(2)
+            cls.serverProcess.kill()
+            cls.serverProcess.wait()
+            cls.serverProcess = None
+        super().tearDownClass()
 
 
 # A reference of the most important attributes for all users. This is used for

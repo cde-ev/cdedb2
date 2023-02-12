@@ -18,6 +18,18 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "Generated-By: Babel 2.6.0\n"
 
+msgid "Invalid input for set."
+msgstr "Ungültige Eingabe für eine Menge."
+
+msgid "Must be negative."
+msgstr "Muss negativ sein."
+
+msgid "Transaction Date"
+msgstr "Überweisungsdatum"
+
+msgid "View in Registrations"
+msgstr "In Anmeldungsliste anzeigen"
+
 #: bin/archive/migrate_execute.py:394
 msgid "Initial import."
 msgstr "Ursprünglicher Import."
@@ -2337,6 +2349,10 @@ msgstr "Anzahl Teilnehmer"
 msgid "instructor count"
 msgstr "Anzahl Kursleiter"
 
+#: cdedb/common/query/__init__.py:1079
+msgid "potential instructor count"
+msgstr "Anzahl potentieller Kursleiter"
+
 #: cdedb/common/query/__init__.py:1087
 msgid "{rank}. choices"
 msgstr "{rank}. Wahlen"
@@ -2590,12 +2606,6 @@ msgstr "Darf nicht negativ sein."
 #: cdedb/common/validation/__init__.py:521
 msgid "Must be positive."
 msgstr "Muss positiv sein."
-
-msgid "Must be negative."
-msgstr "Muss negativ sein."
-
-msgid "Invalid input for set."
-msgstr "Ungültige Eingabe für eine Menge."
 
 #: cdedb/common/validation/__init__.py:535
 #: cdedb/common/validation/__init__.py:659
@@ -11101,9 +11111,6 @@ msgstr "In Kurs einteilen"
 msgid "View Registrations"
 msgstr "In Anmeldungsliste anzeigen"
 
-msgid "View in Registrations"
-msgstr "In Anmeldungsliste anzeigen"
-
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:176
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:31
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:78
@@ -17427,6 +17434,3 @@ msgstr "Kann aus {} keinen ml_type bestimmen"
 #, python-format
 msgid "%(ml_type)s is not an appropriate type for this mailinglist."
 msgstr "%(ml_type)s ist kein geeigneter Typ für diese Mailingliste."
-
-msgid "Transaction Date"
-msgstr "Überweisungsdatum"
