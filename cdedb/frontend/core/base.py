@@ -1247,12 +1247,12 @@ class CoreBaseFrontend(AbstractFrontend):
             min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
             max_donation = self.conf["MAXIMAL_LASTSCHRIFT_DONATION"]
             # The user may specify only donations between a specific minimal and maximal
-            # value. However, admins may change this to arbitrary values, so we allow
-            # to surpass the check if the user didn't change the donation's amount.
+            # value. However, admins may change this to arbitrary values.
             if (not min_donation <= data["donation"] <= max_donation
                     and not rs.ignore_warnings):
                 rs.append_validation_error(("donation", ValidationWarning(
-                    n_("Lastschrift donation must be between %(min)s and %(max)s."),
+                    n_("Lastschrift donation is outside of %(min)s and %(max)s."
+                       " The user will not be able to change this amount by himself."),
                     {"min": money_filter(min_donation),
                      "max": money_filter(max_donation)})))
         if rs.has_validation_errors():
