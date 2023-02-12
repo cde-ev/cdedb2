@@ -97,15 +97,15 @@
                 <<% if data["donation"] %>>
                     <<< data["donation"]|money|te >>>
                 <<% else %>>
-                    \makebox[2cm]{\dotfill}€ (typischerweise <<< data["typical_donation"]|money|te >>>)
+                    \makebox[2cm]{\dotfill}€ (mindestens <<< min_donation|money|te >>>, typischerweise <<< typical_donation|money|te >>>)
                 <<% endif %>>
         \end{tabular}
 
         \emph{SEPA-Lastschriftmandat:} Hiermit ermächtige ich den Club der Ehemaligen der Deutschen SchülerAkademien
         e.\,V., von meinem oben angegebenem Konto mittels Lastschrift den jährlichen Mitgliedsbeitrag
-        zuzüglich der in der Mitgliederdatenbank hinterlegten jährlichen Spende jährlich einzuziehen.
+        \textbf{zuzüglich} der in der Mitgliederdatenbank hinterlegten jährlichen Spende jährlich einzuziehen.
         Zugleich weise ich mein Kreditinstitut an, die von dem Club der Ehemaligen der Deutschen
-        SchülerAkademien e.\,V.  gezogenen Lastschriften einzulösen. Den einzuziehenden Betrag kann ich jederzeit
+        SchülerAkademien e.\,V.  gezogenen Lastschriften einzulösen. Die Höhe der einzuziehenden Spende kann ich jederzeit
         in der Mitgliederdatenbank ändern. Eine Änderung wird zum nächsten Einzug gültig, sofern dieser nicht
         bereits per Mail angekündigt wurde.
 
@@ -116,9 +116,8 @@
 
         \enlargethispage*{5cm}
 
-        Von dem eingezogenen Betrag wird der jeweils geltende jährliche Mitgliedsbeitrag (derzeit <<< annual_fee >>>\,€) beglichen. Der
-        verbleibende Betrag ist eine Spende an den CdE e.\,V.  Der CdE e.\,V. beabsichtigt, mit einem Teil der so
-        eingehenden Mittel die Organisation, Betreuung und Durchführung von Deutschen SchülerAkademien durch Bildung
+        Der CdE e.\,V. beabsichtigt, mit einem Teil der auf diese Weise eingehenden Spendenmittel die Organisation,
+        Betreuung und Durchführung von Deutschen SchülerAkademien durch Bildung
         \& Begabung gem. GmbH, Bonn, zu unterstützen.
 
         \closing{}
@@ -130,7 +129,7 @@
         Sofern Du die Erlaubnis dazu erteilst, zieht der CdE e.,V. in Zukunft wie oben beschrieben jährlich den
         -- jeweils aktuellen -- Mitgliedsbeitrag (von derzeit <<< annual_fee|money >>>) zuzüglich einer in der Datenbank
         angegebenen Spende ein.
-        Dabei gilt derzeit insgesamt ein Mindestbetrag von 10,€.
+        Dabei gilt derzeit insgesamt ein Mindestbetrag von <<< (annual_fee + min_donation)|money|te >>>.
         Im Rahmen der Vereinsarbeit soll darauf geachtet werden, dass von den dadurch eingehenden Spenden in etwa
         40 bis 50 Prozent davon der Deutschen SchülerAkademie gespendet oder für eine
         sonstige Unterstützung der "`Idee SchülerAkademie"' verwendet werden.
