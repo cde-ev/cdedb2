@@ -21,6 +21,7 @@ def is_optional_type(type_: Type[T]) -> bool:
 
 @dataclass
 class CdEDataclass:
+    # On creation, this is always a vtypes.ProtoID (and needs a type:ignore, sadly...)
     id: vtypes.ID
 
     def to_database(self) -> "CdEDBObject":
@@ -34,6 +35,11 @@ class CdEDataclass:
 
     @classmethod
     def validation_fields(cls, *, creation: bool) -> Tuple[TypeMapping, TypeMapping]:
+        """Map the field names to the type of the fields to validate this entity.
+
+        This returns two TypeMapping tuples, for mandatory and optional validation
+        fields, respectively. Each TypeMapping maps the name of the field to its type.
+        """
         all_fields = {field.name: field for field in fields(cls)}
         # always special case the id, see below
         del all_fields["id"]
@@ -48,25 +54,21 @@ class CdEDataclass:
             mandatory = {"id": vtypes.ID}
         return mandatory, optional
 
-    @classmethod
-    def request_fields(cls) -> List[str]:
+    # @classmethod
+    # def request_fields(cls) -> List[str]:
         # TODO Think this over when tackling more complex objects. It is easier and more
         #  accessible to add than to remove things though.
-        request_fields = cls.database_fields()
-        request_fields.remove("id")
-        return request_fields
+        # request_fields = cls.database_fields()
+        # request_fields.remove("id")
+        # return request_fields
 
     @classmethod
     def requestdict_fields(cls) -> List[Tuple[str, str]]:
-        # Normally, the type of @REQUESTdata fields is inferred from the type annotation
-        # of the respective frontend function.
-        # In contrast, the types of @REQUESTdatadict are either "str" or "[str]" and not
-        # inferred, default is "str".
-        # So, we need to pass the information if a variable is of list type explicitly.
-        # However, passing explicit types for @REQUESTdata will overwrite the type
-        # annotation which feels undesired.
-        # TODO this is not nice
-        request_field_names = cls.database_fields()
+        """Determine which fields of this entity are extracted via @REQUESTdatadict.
+
+        This uses the database_fields by default, but may be overwritten if needed.
+        """
+        request_field_names = set(cls.database_fields())
         request_field_names.remove("id")
         request_fields = [field for field in fields(cls)
                           if field.name in request_field_names]
@@ -76,4 +78,5 @@ class CdEDataclass:
 
     @classmethod
     def database_fields(cls) -> List[str]:
+        """List all fields of this entity which are saved to the database."""
         return [field.name for field in fields(cls)]

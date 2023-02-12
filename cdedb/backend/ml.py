@@ -373,17 +373,28 @@ class MlBackend(AbstractBackend):
         with Atomizer(rs):
             data = self.sql_select(rs, "ml.mailinglists", Mailinglist.database_fields(),
                                    mailinglist_ids)
-            ret: Dict[int, Mailinglist] = {}
-            for e in data:
-                e['ml_type'] = const.MailinglistTypes(e['ml_type'])
-                e['domain'] = const.MailinglistDomain(e['domain'])
-                e['mod_policy'] = const.ModerationPolicy(e['mod_policy'])
-                e['attachment_policy'] = const.AttachmentPolicy(e['attachment_policy'])
-                e['registration_stati'] = [
-                    const.RegistrationPartStati(v) for v in e['registration_stati']]
-                e['moderators'] = set()
-                e['whitelist'] = set()
-                ret[e['id']] = Mailinglist(**e)
+            ret: Dict[int, Mailinglist] = {
+                e['id']: Mailinglist(
+                    id=e["id"],
+                    title=e["title"],
+                    local_part=e["local_part"],
+                    domain=const.MailinglistDomain(e['domain']),
+                    mod_policy=const.ModerationPolicy(e['mod_policy']),
+                    attachment_policy=const.AttachmentPolicy(e['attachment_policy']),
+                    ml_type=const.MailinglistTypes(e['ml_type']),
+                    is_active=e["is_active"],
+                    moderators=set(),
+                    whitelist=set(),
+                    description=e["description"],
+                    subject_prefix=e["subject_prefix"],
+                    maxsize=e["maxsize"],
+                    notes=e["notes"],
+                    assembly_id=e["assembly_id"],
+                    event_id=e["event_id"],
+                    registration_stati=[const.RegistrationPartStati(v)
+                                        for v in e['registration_stati']],
+                ) for e in data
+            }
             # add moderators
             data = self.sql_select(
                 rs, "ml.moderators", ("persona_id", "mailinglist_id"), mailinglist_ids,

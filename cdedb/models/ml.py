@@ -3,8 +3,6 @@
 from dataclasses import dataclass, field, fields
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, Type
 
-from subman.machine import SubscriptionPolicy
-
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common.validation.types import TypeMapping
@@ -14,7 +12,6 @@ from cdedb.models.common import CdEDataclass
 if TYPE_CHECKING:
     from cdedb.ml_type_aux import GeneralMailinglist
 
-SubscriptionPolicyMap = Dict[int, SubscriptionPolicy]
 CdEDBObject = Dict[str, Any]
 
 
