@@ -1076,6 +1076,8 @@ def make_course_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None,
             f"track{track_id}.attendees": QuerySpecEntry(
                 "int", n_("attendee count"), prefix),
             f"track{track_id}.instructors": QuerySpecEntry(
+                "int", n_("potential instructor count"), prefix),
+            f"track{track_id}.assigned_instructors": QuerySpecEntry(
                 "int", n_("instructor count"), prefix),
         }
 

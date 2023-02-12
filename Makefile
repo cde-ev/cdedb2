@@ -156,7 +156,7 @@ lint: isort flake8 pylint
 
 .PHONY: check
 check:
-	$(PYTHONBIN) bin/check.py --verbose $(or $(TESTPATTERNS), )
+	$(PYTHONBIN) bin/check.py --verbose
 
 .PHONY: xss-check
 xss-check:

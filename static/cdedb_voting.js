@@ -68,6 +68,7 @@ if (!String.prototype.format) {
     var PrefVote = function($container, candidates, bar_shortname, $input_preferencelist, labels) {
         /** Associative list of candidate jQuery DOM elements indexed by their shortname */
         var candidate_list = {};
+        var unique_counter = 0;
         
         /* ***************************** *
          * Private function definitions  *
@@ -232,7 +233,10 @@ if (!String.prototype.format) {
         
         /** Create a new .prefvote_spacer box and return jQuery reference. */
         function createSpacer() {
-            var $sp = $('<div></div>', {'class': 'prefvote_spacer', 'tabindex': '0'});
+            var $sp = $('<div></div>', {'class': 'prefvote_spacer',
+                                        'tabindex': '0',
+                                        'id': 'vote_spacer_' + unique_counter});
+            unique_counter += 1;
             $sp.on('dragover',allowDrop);
             $sp.on('drop',spacer_drop);
             $sp.on('dragenter',dragenter);
@@ -243,7 +247,10 @@ if (!String.prototype.format) {
         }
         /** Create a new .prefvote_stage box and return jQuery reference. */
         function createStage() {
-            var $st = $('<div></div>', {'class': 'prefvote_stage', 'tabindex': '0'});
+            var $st = $('<div></div>', {'class': 'prefvote_stage',
+                                        'tabindex': '0',
+                                        'id': 'vote_stage_' + unique_counter});
+            unique_counter += 1;
             $st.on('dragover',allowDrop);
             $st.on('drop',stage_drop);
             $st.on('dragenter',dragenter);

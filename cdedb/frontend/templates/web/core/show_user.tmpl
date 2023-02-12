@@ -275,7 +275,7 @@
                         <dt title="{% trans %}Admin Notes{% endtrans %}">
                             {% trans %}Admin Notes{% endtrans %}
                         </dt>
-                        <dd>{{ data['notes']|md|linebreaks }}</dd>
+                        <dd id="admin-notes">{{ data['notes']|md|linebreaks }}</dd>
                     {% endif %}
                 </dl>
             {% endif %}

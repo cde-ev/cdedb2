@@ -11894,11 +11894,6 @@ msgstr ""
 msgid "Reject"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:165
-#: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:221
-msgid "Update_[[genesis case]]"
-msgstr ""
-
 #: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:170
 #: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:226
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:139
@@ -11914,6 +11909,10 @@ msgstr ""
 #: cdedb/i18n_additional.py:367
 msgid "Cancel"
 msgstr ""
+
+#: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:221
+msgid "Update_[[genesis case]]"
+msgstr "Update"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:8
 #: cdedb/frontend/templates/web/core/login.tmpl:9
