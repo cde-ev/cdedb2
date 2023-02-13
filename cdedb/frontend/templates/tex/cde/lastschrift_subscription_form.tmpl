@@ -6,7 +6,7 @@
     \def\@mysignature{%
         \begin{tabular}{ll}
         \makebox[5cm]{\dotfill} & \makebox[10cm]{\dotfill} \\
-        Ort, Datum & Unterschrift Kontoinhaber/-in\\
+        \,Ort, Datum & \,Unterschrift Kontoinhaber/-in\\
         \end{tabular}}
     \setkomavar{signature}{\@mysignature}
     \makeatother
@@ -97,7 +97,7 @@
                 <<% if data["donation"] %>>
                     <<< data["donation"]|money|te >>>
                 <<% else %>>
-                    \makebox[2cm]{\dotfill}€ (mindestens <<< min_donation|money|te >>>, typischerweise <<< typical_donation|money|te >>>)
+                    \kern2pt\makebox[1.35cm]{\dotfill}€ (mindestens <<< min_donation|money|te >>>, typischerweise <<< typical_donation|money|te >>>)
                 <<% endif %>>
         \end{tabular}
 
@@ -117,8 +117,7 @@
         \enlargethispage*{5cm}
 
         Der CdE e.\,V. beabsichtigt, mit einem Teil der auf diese Weise eingehenden Spendenmittel die Organisation,
-        Betreuung und Durchführung von Deutschen SchülerAkademien durch Bildung
-        \& Begabung gem. GmbH, Bonn, zu unterstützen.
+        Betreuung und Durchführung von Deutschen SchülerAkademien durch Bildung \& Begabung gGmbH, Bonn, zu unterstützen.
 
         \closing{}
 
@@ -148,10 +147,10 @@
         Teil der auf diesem Weg erhaltenen Spenden an Bildung \& Begabung gem. GmbH weiterreichen oder aber auf anderem Wege
         die SchülerAkademien fördern.
 
-        \subsection{Änderung des Lastschriftbetrags & Kündigung}
+        \subsection{Änderung des Lastschriftbetrags \& Kündigung}
 
-        Du kannst den Betrag für den Einzug jederzeit in der Datenbank anpassen. Falls du nicht selbst Kontoinhaber/-in bist,
-        musst diese Person natürlich vorher zustimmen. Du kannst das Lastschriftmandat außerdem jederzeit per Mail
+        Du kannst den Betrag für den Einzug jederzeit in der Datenbank\footnote{<<< cdedblink('core/mydata') >>>} anpassen. Falls du nicht selbst Kontoinhaber/-in bist,
+        muss diese Person natürlich vorher zustimmen. Du kannst das Lastschriftmandat außerdem jederzeit per Mail
         an \url{<<< MANAGEMENT_ADDRESS >>>} kündigen.
 
         Etwa zwei Wochen vor einem Lastschrifteinzug erhälst du eine Ankündigung per Mail über den anstehenden Einzug.
