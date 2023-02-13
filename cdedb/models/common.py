@@ -28,10 +28,15 @@ class CdEDataclass:
         """Generate a dict representation of this entity to be saved to the database."""
         data = {key: value for key, value in vars(self).items()
                 if key in self.database_fields()}
-        # if id is negative, we are about to create this entity, so the id is unknown
-        if self.id < 0:
+        # during creation the id is unknown
+        if self.is_created:
             del data["id"]
         return data
+
+    @property
+    def is_created(self) -> bool:
+        """This dataset will be used to create a new entity."""
+        return self.id < 0
 
     @classmethod
     def validation_fields(cls, *, creation: bool) -> Tuple[TypeMapping, TypeMapping]:
