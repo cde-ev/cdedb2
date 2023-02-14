@@ -585,13 +585,13 @@ class CdELastschriftMixin(CdEBaseFrontend):
         )
 
     @access("anonymous")
-    @REQUESTdata("full_name", "db_id", "username", "not_minor", "address_supplement",
+    @REQUESTdata("full_name", "db_id", "username", "address_supplement",
                  "address", "postal_code", "location", "country", "iban", "donation",
                  "account_holder")
     def lastschrift_subscription_form(
             self, rs: RequestState, full_name: Optional[str],
             db_id: Optional[vtypes.CdedbID], username: Optional[vtypes.Email],
-            not_minor: bool, address_supplement: Optional[str], address: Optional[str],
+            address_supplement: Optional[str], address: Optional[str],
             postal_code: Optional[vtypes.GermanPostalCode], location: Optional[str],
             country: Optional[str], iban: Optional[vtypes.IBAN],
             account_holder: Optional[str], donation: Optional[vtypes.PositiveDecimal]
@@ -605,7 +605,6 @@ class CdELastschriftMixin(CdEBaseFrontend):
             "full_name": full_name or "",
             "db_id": db_id,
             "username": username or "",
-            "not_minor": not_minor,
             "address_supplement": address_supplement or "",
             "address": address or "",
             "postal_code": postal_code or "",
@@ -614,15 +613,16 @@ class CdELastschriftMixin(CdEBaseFrontend):
             "iban": iban or "",
             "donation": float(donation) if donation else None,
             "account_holder": account_holder or "",
-            "min_donation": self.conf["MINIMAL_LASTSCHRIFT_DONATION"],
-            "typical_donation": self.conf["TYPICAL_LASTSCHRIFT_DONATION"],
         }
 
-        meta_info = self.coreproxy.get_meta_info(rs)
-        annual_fee = self.conf["MEMBERSHIP_FEE"] * self.conf["PERIODS_PER_YEAR"]
-        tex = self.fill_template(rs, "tex", "lastschrift_subscription_form",
-                                 {'meta_info': meta_info, 'data': data,
-                                  "annual_fee": annual_fee})
+        params = {
+            "data": data,
+            "meta_info": self.coreproxy.get_meta_info(rs),
+            "min_donation": self.conf["MINIMAL_LASTSCHRIFT_DONATION"],
+            "typical_donation": self.conf["TYPICAL_LASTSCHRIFT_DONATION"],
+            "annual_fee": self.cdeproxy.annual_membership_fee(rs),
+        }
+        tex = self.fill_template(rs, "tex", "lastschrift_subscription_form", params)
         errormsg = n_("Form could not be created. Please refrain from using "
                       "special characters if possible.")
         pdf = self.serve_latex_document(
