@@ -348,6 +348,9 @@ class TestMlBackend(BackendTest):
             notes=None,
             subject_prefix='viva la revolution',
             title='Proletarier aller Länder',
+            assembly_id=None,
+            event_id=None,
+            registration_stati=[],
         )
         self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
         new_data.moderators |= {self.as_id(100000)}
@@ -1878,6 +1881,7 @@ class TestMlBackend(BackendTest):
                 local_part=vtypes.EmailLocalPart("cyber"),
                 domain=const.MailinglistDomain.aka,
                 description="Für alle, die nicht ohne Akademien können.",
+                assembly_id=None,
                 event_id=None,
                 ml_type=const.MailinglistTypes.event_associated,
                 is_active=True,
@@ -1950,6 +1954,9 @@ class TestMlBackend(BackendTest):
                 title="Arbeitsgruppe Mitgliederversammlung",
                 mod_policy=const.ModerationPolicy.non_subscribers,
                 notes=None,
+                assembly_id=None,
+                event_id=None,
+                registration_stati=[],
             )
             new_id = self.ml.create_mailinglist(self.key, data)
             self.assertGreater(new_id, 0)
@@ -2002,6 +2009,9 @@ class TestMlBackend(BackendTest):
                 title="Buchclub",
                 mod_policy=const.ModerationPolicy.non_subscribers,
                 notes=None,
+                assembly_id=None,
+                event_id=None,
+                registration_stati=[],
             )
             new_id = self.ml.create_mailinglist(self.key, data)
             self.assertGreater(new_id, 0)

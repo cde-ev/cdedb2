@@ -1,6 +1,6 @@
 """Dataclass definitions of mailinglist realm."""
 
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, fields
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, Type
 
 import cdedb.common.validation.types as vtypes
@@ -28,15 +28,15 @@ class Mailinglist(CdEDataclass):
     moderators: Set[vtypes.ID]
     whitelist: Set[vtypes.Email]
 
-    description: Optional[str] = None
-    subject_prefix: Optional[str] = None
-    maxsize: Optional[vtypes.PositiveInt] = None
-    notes: Optional[str] = None
+    description: Optional[str]
+    subject_prefix: Optional[str]
+    maxsize: Optional[vtypes.PositiveInt]
+    notes: Optional[str]
 
     # some mailinglist types need additional fields
-    assembly_id: Optional[vtypes.ID] = None
-    event_id: Optional[vtypes.ID] = None
-    registration_stati: List[const.RegistrationPartStati] = field(default_factory=list)
+    assembly_id: Optional[vtypes.ID]
+    event_id: Optional[vtypes.ID]
+    registration_stati: List[const.RegistrationPartStati]
 
     @property
     def address(self) -> vtypes.Email:
