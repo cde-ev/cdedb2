@@ -838,7 +838,7 @@ class EventEventMixin(EventBaseFrontend):
                      " unserer Veranstaltung zusammenhängen, über diese Liste"
                      " an uns.")
             orga_ml_data = Mailinglist(
-                id=vtypes.ProtoID(-1),  # type: ignore[arg-type]
+                id=vtypes.CreationID(vtypes.ProtoID(-1)),
                 title=f"{event['title']} Orgateam",
                 local_part=vtypes.EmailLocalPart(event['shortname'].lower()),
                 domain=const.MailinglistDomain.aka,
@@ -863,7 +863,7 @@ class EventEventMixin(EventBaseFrontend):
                      f"Teilnehmer unserer Veranstaltung; sie kann im Vorfeld "
                      f"zum Austausch untereinander genutzt werden.")
             participant_ml_data = Mailinglist(
-                id=vtypes.ProtoID(-1),  # type: ignore[arg-type]
+                id=vtypes.CreationID(vtypes.ProtoID(-1)),
                 title=f"{event['title']} Teilnehmer",
                 local_part=vtypes.EmailLocalPart(f"{event['shortname'].lower()}-all"),
                 domain=const.MailinglistDomain.aka,

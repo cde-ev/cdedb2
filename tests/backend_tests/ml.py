@@ -18,6 +18,14 @@ from tests.common import USER_DICT, BackendTest, as_users, prepsql
 class TestMlBackend(BackendTest):
     used_backends = ("core", "ml")
 
+    @staticmethod
+    def as_id(anid: int) -> vtypes.ID:
+        return vtypes.ID(vtypes.ProtoID(anid))
+
+    @staticmethod
+    def as_creation_id(anid: int) -> vtypes.CreationID:
+        return vtypes.CreationID(vtypes.ProtoID(anid))
+
     @as_users("janis")
     def test_basics(self) -> None:
         data = self.core.get_ml_user(self.key, self.user['id'])
@@ -293,7 +301,7 @@ class TestMlBackend(BackendTest):
     def test_mailinglist_creation_deletion(self) -> None:
         oldlists = self.ml.list_mailinglists(self.key)
         new_data = Mailinglist(
-            id=-1,  # type: ignore[arg-type]
+            id=self.as_creation_id(-1),
             local_part=vtypes.EmailLocalPart('revolution'),
             domain=const.MailinglistDomain.lists,
             description='Vereinigt Euch',
@@ -303,7 +311,7 @@ class TestMlBackend(BackendTest):
             is_active=True,
             maxsize=None,
             mod_policy=const.ModerationPolicy.unmoderated,
-            moderators={vtypes.ID(1), vtypes.ID(2)},
+            moderators={self.as_id(1), self.as_id(2)},
             whitelist=set(),
             registration_stati=[],
             subject_prefix='viva la revolution',
@@ -316,7 +324,7 @@ class TestMlBackend(BackendTest):
         self.assertNotIn(new_id, oldlists)
         self.assertIn(new_id, self.ml.list_mailinglists(self.key))
         expectation = new_data
-        expectation.id = vtypes.ID(new_id)
+        expectation.id = self.as_id(new_id)
         self.assertEqual(expectation, self.ml.get_mailinglist(self.key, new_id))
         self.assertLess(0, self.ml.delete_mailinglist(
             self.key, new_id, cascade=("subscriptions", "addresses",
@@ -335,22 +343,22 @@ class TestMlBackend(BackendTest):
             maxsize=None,
             ml_type=const.MailinglistTypes.member_moderated_opt_in,
             mod_policy=const.ModerationPolicy.unmoderated,
-            moderators={vtypes.ID(2), vtypes.ID(9)},
+            moderators={self.as_id(2), self.as_id(9)},
             whitelist=set(),
             notes=None,
             subject_prefix='viva la revolution',
             title='Proletarier aller Länder',
         )
         self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
-        new_data.moderators |= {vtypes.ID(100000)}
+        new_data.moderators |= {self.as_id(100000)}
         with self.assertRaises(ValueError):
             self.ml.create_mailinglist(self.key, new_data)
-        new_data.moderators -= {vtypes.ID(100000)}
+        new_data.moderators -= {self.as_id(100000)}
         # Hades is archived.
-        new_data.moderators |= {vtypes.ID(8)}
+        new_data.moderators |= {self.as_id(8)}
         with self.assertRaises(ValueError):
             self.ml.create_mailinglist(self.key, new_data)
-        new_data.moderators -= {vtypes.ID(8)}
+        new_data.moderators -= {self.as_id(8)}
         new_data.local_part = vtypes.EmailLocalPart(f"{new_data.local_part}x")
         new_data.registration_stati = [const.RegistrationPartStati.guest]
         with self.assertRaises(ValueError):
@@ -368,13 +376,13 @@ class TestMlBackend(BackendTest):
         new_data.whitelist = set()
         self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
         new_data.local_part = vtypes.EmailLocalPart(f"{new_data.local_part}x")
-        new_data.event_id = vtypes.ID(1)
+        new_data.event_id = self.as_id(1)
         with self.assertRaises(ValueError):
             self.ml.create_mailinglist(self.key, new_data)
         new_data.event_id = None
         self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
         new_data.local_part = vtypes.EmailLocalPart(f"{new_data.local_part}x")
-        new_data.assembly_id = vtypes.ID(1)
+        new_data.assembly_id = self.as_id(1)
         with self.assertRaises(ValueError):
             self.ml.create_mailinglist(self.key, new_data)
         new_data.assembly_id = None
@@ -1307,7 +1315,7 @@ class TestMlBackend(BackendTest):
     @as_users("nina")
     def test_change_sub_policy(self) -> None:
         data = Mailinglist(
-            id=vtypes.ProtoID(-1),  # type: ignore[arg-type]
+            id=self.as_creation_id(-1),
             local_part=vtypes.EmailLocalPart('revolution'),
             domain=const.MailinglistDomain.lists,
             description='Vereinigt Euch',
@@ -1317,7 +1325,7 @@ class TestMlBackend(BackendTest):
             is_active=True,
             maxsize=None,
             mod_policy=const.ModerationPolicy.unmoderated,
-            moderators={vtypes.ID(2)},
+            moderators={self.as_id(2)},
             registration_stati=[],
             subject_prefix='viva la revolution',
             title='Proletarier aller Länder',
@@ -1420,17 +1428,17 @@ class TestMlBackend(BackendTest):
     @as_users("nina")
     def test_change_mailinglist_association(self) -> None:
         data = Mailinglist(
-            id=vtypes.ProtoID(-1),  # type: ignore[arg-type]
+            id=self.as_creation_id(-1),
             local_part=vtypes.EmailLocalPart('orga'),
             domain=const.MailinglistDomain.aka,
             description=None,
             assembly_id=None,
             attachment_policy=const.AttachmentPolicy.forbid,
-            event_id=vtypes.ID(2),
+            event_id=self.as_id(2),
             is_active=True,
             maxsize=None,
             mod_policy=const.ModerationPolicy.unmoderated,
-            moderators={vtypes.ID(2)},
+            moderators={self.as_id(2)},
             whitelist=set(),
             registration_stati=[],
             subject_prefix='orga',
@@ -1866,7 +1874,7 @@ class TestMlBackend(BackendTest):
         if self.user_in("annika", "nina"):
             # Create a new event mailinglist.
             data = Mailinglist(
-                id=vtypes.ProtoID(-1),  # type: ignore[arg-type]
+                id=self.as_creation_id(-1),
                 local_part=vtypes.EmailLocalPart("cyber"),
                 domain=const.MailinglistDomain.aka,
                 description="Für alle, die nicht ohne Akademien können.",
@@ -1927,7 +1935,7 @@ class TestMlBackend(BackendTest):
         if self.user_in("viktor", "nina"):
             # Create a new assembly mailinglist.
             data = Mailinglist(
-                id=vtypes.ProtoID(-1),  # type: ignore[arg-type]
+                id=self.as_creation_id(-1),
                 local_part=vtypes.EmailLocalPart("mgv-ag"),
                 domain=const.MailinglistDomain.lists,
                 description="Vor der nächsten MGV müssen wir noch ein paar"
@@ -1980,7 +1988,7 @@ class TestMlBackend(BackendTest):
         if self.user_in("quintus", "nina"):
             # Create a new member mailinglist.
             data = Mailinglist(
-                id=vtypes.ProtoID(-1),  # type: ignore[arg-type]
+                id=self.as_creation_id(-1),
                 local_part=vtypes.EmailLocalPart("literatir"),
                 domain=const.MailinglistDomain.lists,
                 description="Wir reden hier über coole Bücher die wir gelesen haben.",
@@ -2041,7 +2049,7 @@ class TestMlBackend(BackendTest):
         self.ml.set_subscription_address(self.key, **datum)
         self.ml.do_subscription_action(self.key, SA.add_subscriber, 7, 1)
         new_data = Mailinglist(
-            id=vtypes.ProtoID(-1),  # type: ignore[arg-type]
+            id=self.as_creation_id(-1),
             local_part=vtypes.EmailLocalPart('revolution'),
             domain=const.MailinglistDomain.lists,
             description='Vereinigt Euch',
@@ -2051,7 +2059,7 @@ class TestMlBackend(BackendTest):
             is_active=True,
             maxsize=None,
             mod_policy=const.ModerationPolicy.unmoderated,
-            moderators={vtypes.ID(1), vtypes.ID(2)},
+            moderators={self.as_id(1), self.as_id(2)},
             whitelist=set(),
             registration_stati=[],
             subject_prefix='viva la revolution',

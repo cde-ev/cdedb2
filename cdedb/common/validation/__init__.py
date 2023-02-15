@@ -571,6 +571,16 @@ def _negative_int(
 
 
 @_add_typed_validator
+def _non_zero_int(
+    val: Any, argname: str = None, **kwargs: Any
+) -> NonZeroInt:
+    val = _int(val, argname, **kwargs)
+    if val == 0:
+        raise ValidationSummary(ValueError(argname, n_("Must not be zero.")))
+    return NonZeroInt(val)
+
+
+@_add_typed_validator
 def _id(
     val: Any, argname: str = None, **kwargs: Any
 ) -> ID:
@@ -581,21 +591,36 @@ def _id(
     """
     if val is None or isinstance(val, str) and not val:
         raise ValidationSummary(ValueError(argname, n_("Must not be empty.")))
-    return ID(_positive_int(val, argname, **kwargs))
+    val = _positive_int(val, argname, **kwargs)
+    return ID(_proto_id(val, argname, **kwargs))
 
 
 @_add_typed_validator
-def _proto_id(
+def _creation_id(
     val: Any, argname: str = None, **kwargs: Any
-) -> ProtoID:
-    """The proto-id of an object, meaning a negative int.
+) -> CreationID:
+    """ID of an object which is currently under creation.
 
     This is just a wrapper around `_negative_int`, to differentiate this
     semantically.
     """
     if val is None or isinstance(val, str) and not val:
         raise ValidationSummary(ValueError(argname, n_("Must not be empty.")))
-    return ProtoID(_negative_int(val, argname, **kwargs))
+    val = _negative_int(val, argname, **kwargs)
+    return CreationID(_proto_id(val, argname, **kwargs))
+
+
+@_add_typed_validator
+def _proto_id(
+    val: Any, argname: str = None, **kwargs: Any
+) -> ProtoID:
+    """An object with a proto-id may already exist or is currently under creation.
+
+    This implies that the id may either be positive or negative, but must not be zero.
+    """
+    if val is None or isinstance(val, str) and not val:
+        raise ValidationSummary(ValueError(argname, n_("Must not be empty.")))
+    return ProtoID(_non_zero_int(val, argname, **kwargs))
 
 
 @_add_typed_validator

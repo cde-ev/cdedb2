@@ -296,7 +296,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             descr = ("Bitte wende Dich bei Fragen oder Problemen, die mit dieser"
                      " Versammlung zusammenhängen, über diese Liste an uns.")
             presider_ml_data = Mailinglist(
-                id=vtypes.ProtoID(-1),  # type: ignore[arg-type]
+                id=vtypes.CreationID(vtypes.ProtoID(-1)),
                 title=f"{assembly['title']} Versammlungsleitung",
                 local_part=vtypes.EmailLocalPart(
                     f"{assembly['shortname'].lower()}-leitung"),
@@ -320,7 +320,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             descr = (f"Dieser Liste kannst Du nur beitreten, indem Du Dich direkt zu"
                      f" der [Versammlung anmeldest]({link}).")
             attendee_ml_data = Mailinglist(
-                id=vtypes.ProtoID(-1),  # type: ignore[arg-type]
+                id=vtypes.CreationID(vtypes.ProtoID(-1)),
                 title=assembly["title"],
                 local_part=vtypes.EmailLocalPart(assembly['shortname'].lower()),
                 domain=const.MailinglistDomain.lists,

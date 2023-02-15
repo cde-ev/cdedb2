@@ -21,8 +21,7 @@ def is_optional_type(type_: Type[T]) -> bool:
 
 @dataclass
 class CdEDataclass:
-    # On creation, this is always a vtypes.ProtoID (and needs a type:ignore, sadly...)
-    id: vtypes.ID
+    id: vtypes.ProtoID
 
     def to_database(self) -> "CdEDBObject":
         """Generate a dict representation of this entity to be saved to the database."""
@@ -53,7 +52,7 @@ class CdEDataclass:
         optional = {name: field.type for name, field in all_fields.items()
                     if is_optional_type(field.type)}
         if creation:
-            mandatory["id"] = vtypes.ProtoID
+            mandatory["id"] = vtypes.CreationID
         else:
             optional.update(mandatory)
             mandatory = {"id": vtypes.ID}
