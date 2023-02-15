@@ -1627,7 +1627,7 @@ class FrontendTest(BackendTest):
         # Check csv export
         save = self.response
         self.response = f.submit("download", value="csv")
-        self.assertIn('change_note;code;ctime;', self.response.text)
+        self.assertIn('id;ctime;code;change_note;', self.response.text)
         self.assertIn('persona_id;persona_id_family_name;persona_id_given_names;',
                       self.response.text)
         self.assertIn('submitted_by;submitted_by_family_name;submitted_by_given_names',

@@ -1181,9 +1181,15 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             substitutions = {persona_field: cdedbids
                               for persona_field in persona_fields}
 
-            given_names = tuple(f"{key}_given_names" for key in persona_fields)
-            family_names = tuple(f"{key}_family_name" for key in persona_fields)
-            columns = log_filter.get_columns() + given_names + family_names
+            given_names = {f"{key}_given_names" for key in persona_fields}
+            family_names = {f"{key}_family_name" for key in persona_fields}
+
+            # Compile columns in a readable order
+            ordered_cols = ("id", "ctime", "code", "change_note")
+            unordered_cols = set(log_filter.get_columns()) | given_names | family_names
+            unordered_cols.difference_update(ordered_cols)
+            columns = ordered_cols + tuple(xsorted(unordered_cols))
+
             for entry in log:
                 for k in persona_fields:
                     if entry.get(k):
@@ -1192,8 +1198,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     else:
                         entry[f"{k}_given_names"] = entry[f"{k}_family_name"] = None
 
-            # Sorting required to group associated columns together
-            csv_data = csv_output(log, xsorted(columns), replace_newlines=True,
+            csv_data = csv_output(log, columns, replace_newlines=True,
                                   substitutions=substitutions)
             return self.send_csv_file(rs, "text/csv", f"{table.value}.csv",
                                       data=csv_data)
