@@ -28,12 +28,12 @@ class CdEDataclass:
         data = {key: value for key, value in vars(self).items()
                 if key in self.database_fields()}
         # during creation the id is unknown
-        if self.is_created:
+        if self.in_creation:
             del data["id"]
         return data
 
     @property
-    def is_created(self) -> bool:
+    def in_creation(self) -> bool:
         """This dataset will be used to create a new entity."""
         return self.id < 0
 
@@ -57,14 +57,6 @@ class CdEDataclass:
             optional.update(mandatory)
             mandatory = {"id": vtypes.ID}
         return mandatory, optional
-
-    # @classmethod
-    # def request_fields(cls) -> List[str]:
-        # TODO Think this over when tackling more complex objects. It is easier and more
-        #  accessible to add than to remove things though.
-        # request_fields = cls.database_fields()
-        # request_fields.remove("id")
-        # return request_fields
 
     @classmethod
     def requestdict_fields(cls) -> List[Tuple[str, str]]:
