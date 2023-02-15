@@ -373,10 +373,10 @@ class EventLodgementMxin(EventBaseFrontend):
             rs.append_validation_error(("show_lodgements", ValueError(msg)))
         if show_lodgement_groups and not part_id:
             rs.append_validation_error(("show_lodgement_groups", ValueError(msg)))
-        msg = n_("Edges between participants who are both assigned to a lodgement can"
-                 " only be hidden if the graph is restricted to a specific part.")
         if not show_full_assigned_edges and not part_id:
-            rs.append_validation_error(("show_full_assigned_edges", ValueError(msg)))
+            rs.append_validation_error(("show_full_assigned_edges", ValueError(
+                n_("Edges between participants who are both assigned to a lodgement can"
+                   " only be hidden if the graph is restricted to a specific part."))))
         if rs.has_validation_errors():
             return self.lodgement_wishes_graph_form(rs, event_id)
 

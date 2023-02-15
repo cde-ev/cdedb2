@@ -314,7 +314,8 @@ def create_lodgement_wishes_graph(
     """
     if ((cluster_by_lodgement_group or cluster_by_lodgement
             or not show_full_assigned_edges) and not cluster_part_id):
-        raise RuntimeError("Clusters can only be displayed if restricted to one part.")
+        raise RuntimeError("Clusters can only be displayed and full assigned edges can"
+                           " only be hidden if restricted to one part.")
 
     graph = graphviz.Digraph(
         engine=('fdp' if cluster_by_lodgement_group or cluster_by_lodgement
@@ -413,7 +414,8 @@ def create_lodgement_wishes_graph(
         # hide the edge if both participants are already assigned to a lodgement
         if (not show_full_assigned_edges
                 and registrations[wish.wishing]["parts"][filter_part_id]["lodgement_id"]
-                and registrations[wish.wished]["parts"][filter_part_id]["lodgement_id"]):
+                and registrations[wish.wished]["parts"][filter_part_id][
+                        "lodgement_id"]):
             continue
         graph.edge(str(wish.wishing), str(wish.wished),
                    style='solid' if wish.present_together else 'dashed',
