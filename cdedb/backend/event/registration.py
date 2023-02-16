@@ -1089,6 +1089,8 @@ class EventRegistrationBackend(EventBaseBackend):
         registration_ids = self.list_registrations(rs, event_id)
         fees = self.calculate_fees(rs, registration_ids)
 
+        # TODO: make this more efficient by cahing parse results and evaluators somehow.
+
         ret = 1
         for reg_id, amount_owed in fees.items():
             update = {
@@ -1168,7 +1170,7 @@ class EventRegistrationBackend(EventBaseBackend):
     @access("event")
     def precompute_fee(self, rs: RequestState, event_id: int, persona_id: int,
                        part_ids: Collection[int], field_ids: Collection[int],
-                       ) -> decimal.Decimal:
+                       ) -> RegistrationFee:
         """Alternate access point to calculate a single fee, that does not need
         an existing registration.
 
@@ -1202,7 +1204,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 for field_id in event['fields']
             }
         }
-        return self._calculate_single_fee(rs, fake_registration, event=event)
+        return self._calculate_complex_fee(rs, fake_registration, event=event)
 
     @access("event")
     def calculate_fees(self, rs: RequestState, registration_ids: Collection[int]

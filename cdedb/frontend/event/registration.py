@@ -21,7 +21,7 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, RequestState, build_msg, determine_age_class,
-    diacritic_patterns, get_hash, merge_dicts, now, unwrap,
+    diacritic_patterns, get_hash, json_serialize, merge_dicts, now, unwrap,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
@@ -369,15 +369,22 @@ class EventRegistrationMixin(EventBaseFrontend):
             if fn.strip()
         }
         if rs.has_validation_errors() or not field_names <= fields_by_name.keys():
-            return Response("", mimetype='text/plain')
+            return Response("{}", mimetype='application/json')
 
         field_ids = {fields_by_name[fn] for fn in field_names}
 
-        fee = self.eventproxy.precompute_fee(
+        complex_fee = self.eventproxy.precompute_fee(
             rs, event_id, persona_id, part_ids, field_ids)
 
-        ret = money_filter(fee, lang=rs.lang) or ""
-        return Response(ret, mimetype='text/plain')
+        msg = rs.gettext("Because your are not a CdE-Member, you have to pay an"
+                         " additional fee of %s.")
+
+        ret = {
+            'fee': money_filter(complex_fee.amount, lang=rs.lang) or "",
+            'nonmember': msg % money_filter(
+                complex_fee.nonmember_surcharge_amount, lang=rs.lang) or "",
+        }
+        return Response(json_serialize(ret), mimetype='application/json')
 
     def new_process_registration_input(
             self, rs: RequestState, orga_input: bool, parts: CdEDBObjectMap = None,

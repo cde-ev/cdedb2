@@ -109,10 +109,34 @@
             {{ util.form_input_checkboxes(name="parts", label=gettext("Event Parts"),
                                           entries=ambience['event']['parts']|keydictsort(EntitySorter.event_part)
                                               |dict_entries('id', 'title')) }}
-            {{ util.form_input_static(label=gettext("Fee"), anid="fee-preview",
-                                      value=gettext("Activate JavaScript for automatic fee preview.")) }}
+
+            <div class="panel panel-primary">
+                <div class="panel-body">
+                    {{ util.form_input_static(label=gettext("Fee"), anid="fee-preview",
+                                              value=gettext("Activate JavaScript for automatic fee preview.")) }}
+                </div>
+            </div>
+
         {% elif ambience['event']['parts']|length == 1 %}
             {{ util.input_hidden(name="parts", value=(ambience['event']['parts']|list)[0]) }}
+        {% endif %}
+
+        {% if not persona["is_member"] %}
+            <div class="heading-underline text-info" style="font-weight: bold;">
+                <p id="nonmember-surcharge">
+                {% trans %}
+                    Because you are not a CdE-Member, you might have to pay an additional fee.
+                {% endtrans %}
+                </p>
+                {% if persona["is_cde_realm"] %}
+                    <p>
+                    {% trans semester_fee=semester_fee|money(lang=lang) %}
+                        You can instead just pay your regular membership fee of {{ semester_fee }} per semester and you won't have to pay the additional fee.
+                        If you choose to do so, please do so with two separate payments.
+                    {% endtrans %}
+                    </p>
+                {% endif %}
+            </div>
         {% endif %}
 
         {% if choice_objects %}
@@ -141,8 +165,12 @@
                 </p>
             {% endif %}
         {% endcall %}
-        {{ util.form_input_static(label=gettext("Fee"), anid="fee-preview",
-                                  value=gettext("Activate JavaScript for automatic fee preview.")) }}
+        <div class="panel panel-primary">
+            <div class="panel-body">
+                {{ util.form_input_static(label=gettext("Fee"), anid="fee-preview", aclass="font-bold",
+                                          value=gettext("Activate JavaScript for automatic fee preview.")) }}
+            </div>
+        </div>
 
         {% if not preview %}
         {{ util.form_input_submit(label=gettext("Register"), cancellink=cdedblink('event/show_event')) }}
@@ -176,6 +204,7 @@
         };
 
         var fee_preview = $form.find('[id="fee-preview"]');
+        var nonmember_surcharge = $form.find('[id="nonmember-surcharge"]');
         var updateFeePreview = function() {
             var part_ids = "";
             for (var pcb of part_checkboxes) {
@@ -190,7 +219,10 @@
             $.get('{{ cdedblink("event/precompute_fee") }}',
                 { persona_id: {{ user.persona_id }}, part_ids: part_ids, field_names: field_names},
                 function(result) {
-                    fee_preview.html(result);
+                    fee_preview.html(result["fee"]);
+                    if (nonmember_surcharge) {
+                        nonmember_surcharge.html(result["nonmember"]);
+                    }
                 }
             );
         }
