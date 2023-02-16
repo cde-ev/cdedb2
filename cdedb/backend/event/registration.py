@@ -1143,6 +1143,7 @@ class EventRegistrationBackend(EventBaseBackend):
                and f['kind'] == const.FieldDatatypes.bool
         }
         for tmp_is_member in (True, False):
+            # Other bools can be added here, but also require adjustment to the parser.
             other_bools = {
                 'is_orga': reg['persona_id'] in event['orgas'],
                 'is_member': tmp_is_member,
@@ -1151,7 +1152,8 @@ class EventRegistrationBackend(EventBaseBackend):
             for fee in event['fees'].values():
                 parse_result = fcp_parsing.parse(fee['condition'])
                 if fcp_evaluation.evaluate(
-                        parse_result, reg_bool_fields, reg_part_involvement, other_bools):
+                        parse_result, reg_bool_fields, reg_part_involvement,
+                        other_bools):
                     ret[tmp_is_member] += fee['amount']
 
         if is_member is None:
