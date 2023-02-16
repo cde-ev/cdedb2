@@ -187,7 +187,7 @@
                 if (fcb.checked)
                     field_names += fcb.name + ",";
             }
-            $.post('{{ cdedblink("event/precompute_fee") }}',
+            $.get('{{ cdedblink("event/precompute_fee") }}',
                 { persona_id: {{ user.persona_id }}, part_ids: part_ids, field_names: field_names},
                 function(result) {
                     fee_preview.html(result);

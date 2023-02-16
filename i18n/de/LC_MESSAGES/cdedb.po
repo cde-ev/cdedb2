@@ -13797,7 +13797,7 @@ msgstr "Fomular zum Bearbeiten des Profils"
 #: cdedb/frontend/templates/web/event/registration/register.tmpl:145
 msgid "Activate JavaScript for automatic fee preview."
 msgstr ""
-"Aktiere JavaScript um eine automatische Teilnahmebeitragvorschau zu erhalten."
+"Aktiviere JavaScript um eine automatische Teilnahmebeitragvorschau zu erhalten."
 
 #: cdedb/frontend/templates/web/event/registration/register.tmpl:130
 msgid ""

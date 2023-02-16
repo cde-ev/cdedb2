@@ -351,7 +351,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             **course_choice_params,
         })
 
-    @access("event", modi={"POST"}, check_anti_csrf=False)
+    @access("event", check_anti_csrf=False)
     @REQUESTdata("persona_id", "part_ids", "field_names")
     def precompute_fee(self, rs: RequestState, event_id: int, persona_id: int,
                        part_ids: vtypes.IntCSVList, field_names: Optional[str],
