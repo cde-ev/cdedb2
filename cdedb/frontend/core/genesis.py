@@ -368,9 +368,8 @@ class CoreGenesisMixin(CoreBaseFrontend):
             # Capture both course without event and with unassociated event
             if data.get('pevent_id') != self.pasteventproxy.get_past_course(
                     rs, data['pcourse_id'])['pevent_id']:
-                rs.append_validation_error(("pcourse_id", ValueError(n_(
-                    "Course not associated with past event specified."))
-                ))
+                e = ValueError(n_("Course not associated with past event specified."))
+                rs.extend_validation_errors((("pcourse_id", e), ("pevent_id", e)))
         if rs.has_validation_errors():
             return self.genesis_modify_form(rs, genesis_case_id)
 
