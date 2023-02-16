@@ -470,8 +470,7 @@ class CoreBaseBackend(AbstractBackend):
             # commit changes
             ret = 0
             if len(udata) > 1:
-                ret = self.commit_persona(
-                    rs, udata, change_note="Änderung eingetragen.")
+                ret = self.commit_persona(rs, udata)
                 if not ret:
                     raise RuntimeError(n_("Modification failed."))
         return ret
@@ -644,8 +643,7 @@ class CoreBaseBackend(AbstractBackend):
             query += " WHERE " + " AND ".join(constraints)
         return unwrap(self.query_one(rs, query, params))
 
-    def commit_persona(self, rs: RequestState, data: CdEDBObject,
-                       change_note: Optional[str]) -> DefaultReturnCode:
+    def commit_persona(self, rs: RequestState, data: CdEDBObject) -> DefaultReturnCode:
         """Actually update a persona data set.
 
         This is the innermost layer of the changelog functionality and

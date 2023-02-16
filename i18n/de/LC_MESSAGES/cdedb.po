@@ -2337,6 +2337,10 @@ msgstr "Anzahl Teilnehmer"
 msgid "instructor count"
 msgstr "Anzahl Kursleiter"
 
+#: cdedb/common/query/__init__.py:1079
+msgid "potential instructor count"
+msgstr "Anzahl potentieller Kursleiter"
+
 #: cdedb/common/query/__init__.py:1087
 msgid "{rank}. choices"
 msgstr "{rank}. Wahlen"
