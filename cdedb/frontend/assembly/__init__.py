@@ -127,7 +127,8 @@ class AssemblyFrontend(AbstractUserFrontend):
                  length: Optional[vtypes.PositiveInt], persona_id: Optional[CdedbID],
                  submitted_by: Optional[CdedbID], change_note: Optional[str],
                  time_start: Optional[datetime.datetime],
-                 time_stop: Optional[datetime.datetime]) -> Response:
+                 time_stop: Optional[datetime.datetime],
+                 download: bool = False,) -> Response:
         """View activities."""
 
         filter_params = {
@@ -141,7 +142,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         may_view = lambda id_: self.assemblyproxy.may_assemble(rs, assembly_id=id_)
 
         return self.generic_view_log(
-            rs, filter_params, "assembly.log", "view_log", {
+            rs, filter_params, "assembly.log", "view_log", download, {
             'may_view': may_view, 'all_assemblies': all_assemblies,
         })
 
@@ -156,7 +157,8 @@ class AssemblyFrontend(AbstractUserFrontend):
                           submitted_by: Optional[CdedbID],
                           change_note: Optional[str],
                           time_start: Optional[datetime.datetime],
-                          time_stop: Optional[datetime.datetime]) -> Response:
+                          time_stop: Optional[datetime.datetime],
+                          download: bool = False) -> Response:
         """View activities."""
 
         filter_params = {
@@ -167,7 +169,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         }
 
         return self.generic_view_log(
-            rs, filter_params, "assembly.log", "view_assembly_log")
+            rs, filter_params, "assembly.log", "view_assembly_log", download)
 
     @access("assembly")
     def show_assembly(self, rs: RequestState, assembly_id: int) -> Response:

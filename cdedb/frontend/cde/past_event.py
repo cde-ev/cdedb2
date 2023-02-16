@@ -539,7 +539,8 @@ class CdEPastEventMixin(CdEBaseFrontend):
                       submitted_by: Optional[vtypes.CdedbID],
                       change_note: Optional[str],
                       time_start: Optional[datetime.datetime],
-                      time_stop: Optional[datetime.datetime]) -> Response:
+                      time_stop: Optional[datetime.datetime],
+                      download: bool = False) -> Response:
         """View activities concerning concluded events."""
 
         filter_params = {
@@ -552,6 +553,6 @@ class CdEPastEventMixin(CdEBaseFrontend):
         pevent_ids = self.pasteventproxy.list_past_events(rs)
         pevents = self.pasteventproxy.get_past_events(rs, pevent_ids)
         return self.generic_view_log(
-            rs, filter_params, "past_event.log", "past_event/view_past_log", {
+            rs, filter_params, "past_event.log", "past_event/view_past_log", download, {
             'pevents': pevents
         })
