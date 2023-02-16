@@ -2161,6 +2161,17 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Accountanfrage bearbeiten")
         f = self.response.forms['genesismodifyform']
         f['pcourse_id'] = 2
+        f['pevent_id'] = ''
+        self.submit(f, check_notification=False)
+        self.assertValidationError('pevent_id',
+                                   "nicht mit der angegebenen Vergangenen")
+        f = self.response.forms['genesismodifyform']
+        self.assertPresence("Kurs kann angegeben werden, wenn eine Vergangene")
+        f['pevent_id'] = 1
+        self.submit(f)
+        self.traverse({'href': '/core/genesis/1001/modify'})
+        f = self.response.forms['genesismodifyform']
+        f['pcourse_id'] = 2
         self.submit(f)
         self.assertPresence("Goethe")
         if self.user_in("paul"):
