@@ -7,6 +7,7 @@ waitlist, calculating and booking event fees and checking the status of multiple
 registrations at once for the mailinglist realm.
 """
 import copy
+import dataclasses
 import decimal
 from typing import (
     Any, Collection, Dict, List, Mapping, NamedTuple, Optional, Protocol, Sequence, Set,
@@ -47,6 +48,23 @@ CourseChoiceValidationAux = NamedTuple(
         ("involved_tracks", Set[int]),
         ("orga_input", bool),
     ])
+
+
+@dataclasses.dataclass
+class RegistrationFee:
+    amount: decimal.Decimal
+    member_fee: decimal.Decimal
+    nonmember_fee: decimal.Decimal
+    is_member: bool
+
+    @property
+    def nonmember_surcharge_amount(self) -> decimal.Decimal:
+        return self.nonmember_fee - self.member_fee
+
+    @property
+    def nonmember_surcharge(self) -> bool:
+        return not self.is_member and self.nonmember_surcharge_amount > 0
+
 
 
 class EventRegistrationBackend(EventBaseBackend):
@@ -1081,9 +1099,25 @@ class EventRegistrationBackend(EventBaseBackend):
 
         return ret
 
+    @access("event")
+    def calculate_complex_fee(self, rs: RequestState, registration_id: int
+                              ) -> RegistrationFee:
+        """Public access point for retrieving complex fee data."""
+        registration_id = affirm(vtypes.ID, registration_id)
+        registration = self.get_registration(rs, registration_id)
+        event = self.get_event(rs, registration['event_id'])
+        return self._calculate_complex_fee(rs, registration, event=event)
+
     def _calculate_single_fee(self, rs: RequestState, reg: CdEDBObject, *,
-                              event: CdEDBObject, is_member: bool = None
-                              ) -> decimal.Decimal:
+                               event: CdEDBObject, is_member: bool = None
+                               ) -> decimal.Decimal:
+        """Helper to only calculate return the fee amount for a single registration."""
+        return self._calculate_complex_fee(
+            rs, reg, event=event, is_member=is_member).amount
+
+    def _calculate_complex_fee(self, rs: RequestState, reg: CdEDBObject, *,
+                               event: CdEDBObject, is_member: bool = None
+                               ) -> RegistrationFee:
         """Helper function to calculate the fee for one registration.
 
         This is used inside `create_registration` and `set_registration`,
@@ -1096,7 +1130,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
         :param is_member: If this is None, retrieve membership status here.
         """
-        ret = decimal.Decimal(0)
+        ret = {}
 
         reg_part_involvement = {
             event['parts'][part_id]['shortname']: rp['status'].has_to_pay()
@@ -1108,30 +1142,47 @@ class EventRegistrationBackend(EventBaseBackend):
             if f['association'] == const.FieldAssociations.registration
                and f['kind'] == const.FieldDatatypes.bool
         }
-        other_bools = {
-            'is_orga': reg['persona_id'] in event['orgas'],
-            'is_member':
-                self.core.get_persona(rs, reg['persona_id'])['is_member']
-                if is_member is None else is_member,
-        }
-        for fee in event['fees'].values():
-            parse_result = fcp_parsing.parse(fee['condition'])
-            if fcp_evaluation.evaluate(
-                    parse_result, reg_bool_fields, reg_part_involvement, other_bools):
-                ret += fee['amount']
+        for tmp_is_member in (True, False):
+            other_bools = {
+                'is_orga': reg['persona_id'] in event['orgas'],
+                'is_member': tmp_is_member,
+            }
+            ret[tmp_is_member] = decimal.Decimal(0)
+            for fee in event['fees'].values():
+                parse_result = fcp_parsing.parse(fee['condition'])
+                if fcp_evaluation.evaluate(
+                        parse_result, reg_bool_fields, reg_part_involvement, other_bools):
+                    ret[tmp_is_member] += fee['amount']
 
-        return ret
+        if is_member is None:
+            is_member = self.core.get_persona(rs, reg['persona_id'])['is_member']
+            assert is_member is not None
+
+        return RegistrationFee(
+            amount=ret[is_member], member_fee=ret[True], nonmember_fee=ret[False],
+            is_member=is_member,
+        )
 
     @access("event")
     def precompute_fee(self, rs: RequestState, event_id: int, persona_id: int,
                        part_ids: Collection[int], field_ids: Collection[int],
                        ) -> decimal.Decimal:
+        """Alternate access point to calculate a single fee, that does not need
+        an existing registration.
+
+        :param part_ids: Collection of part ids the user is (supposedly) registered for.
+        :param field_ids: Collection of fields, which have a truthy value.
+        """
         event_id = affirm(vtypes.ID, event_id)
         persona_id = affirm(vtypes.ID, persona_id)
         part_ids = affirm_set(vtypes.ID, part_ids)
         field_ids = affirm_set(vtypes.ID, field_ids)
 
         event = self.get_event(rs, event_id)
+
+        if not (persona_id == rs.user.persona_id or self.is_orga(rs, event_id=event_id)
+                or self.is_admin(rs)):
+            raise PrivilegeError
 
         fake_registration = {
             'persona_id': persona_id,

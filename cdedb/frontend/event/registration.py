@@ -664,21 +664,19 @@ class EventRegistrationMixin(EventBaseFrontend):
         registration['mixed_lodging'] = (registration['mixed_lodging']
                                          and age.may_mix())
         new_id = self.eventproxy.create_registration(rs, registration, orga_input=False)
-        meta_info = self.coreproxy.get_meta_info(rs)
-        fee = self.eventproxy.calculate_fee(rs, new_id)
-        semester_fee = self.conf["MEMBERSHIP_FEE"]
 
-        subject = "Anmeldung für {}".format(rs.ambience['event']['title'])
+        payment_data = self._get_payment_data(rs, event_id)
+
+        subject = f"Anmeldung für {rs.ambience['event']['title']}"
         reply_to = (rs.ambience['event']['orga_address'] or
                     self.conf["EVENT_ADMIN_ADDRESS"])
-        reference = make_event_fee_reference(persona, rs.ambience['event'])
         self.do_mail(
             rs, "register",
             {'To': (rs.user.username,),
              'Subject': subject,
              'Reply-To': reply_to},
-            {'fee': fee, 'age': age, 'meta_info': meta_info,
-             'semester_fee': semester_fee, 'reference': reference})
+            {'age': age, 'mail_text': rs.ambience['event']['mail_text'],
+             **payment_data})
         rs.notify_return_code(new_id, success=n_("Registered for event."))
         return self.redirect(rs, "event/registration_status")
 
@@ -1230,14 +1228,15 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         meta_info = self.coreproxy.get_meta_info(rs)
         reference = make_event_fee_reference(persona, rs.ambience['event'])
-        fee = self.eventproxy.calculate_fee(rs, registration_id)
+        complex_fee = self.eventproxy.calculate_complex_fee(rs, registration_id)
+        fee = complex_fee.amount
         to_pay = fee - registration['amount_paid']
 
         return {
             'registration': registration, 'persona': persona,
             'meta_info': meta_info, 'reference': reference, 'to_pay': to_pay,
             'iban': rs.ambience['event']['iban'], 'fee': fee,
-            'semester_fee': self.conf['MEMBERSHIP_FEE']
+            'complex_fee': complex_fee, 'semester_fee': self.conf['MEMBERSHIP_FEE'],
         }
 
     @access("event")
