@@ -687,7 +687,8 @@ class CoreBaseFrontend(AbstractFrontend):
             grouped[group_id][mailinglist_id] = {
                 'title': ml['title'],
                 'id': mailinglist_id,
-                'address': addresses.get(mailinglist_id)
+                'address': addresses.get(mailinglist_id),
+                'is_active': ml['is_active'],
             }
 
         return self.render(rs, "show_user_mailinglists", {
