@@ -15266,15 +15266,15 @@ msgstr "Anhangsversion geändert"
 
 #: cdedb/i18n_additional.py:40
 msgid "AttachmentPolicy.allow"
-msgstr "HTML-E-Mails & alle Anhänge erlaubt"
+msgstr "Alle Anhänge erlaubt"
 
 #: cdedb/i18n_additional.py:41
 msgid "AttachmentPolicy.pdf_only"
-msgstr "Nur Text-E-Mails mit PDF-Anhängen erlaubt"
+msgstr "Nur PDF-Anhänge erlaubt"
 
 #: cdedb/i18n_additional.py:42
 msgid "AttachmentPolicy.forbid"
-msgstr "Nur Text-E-Mails ohne Anhänge erlaubt"
+msgstr "Nur E-Mails ohne Anhänge erlaubt"
 
 #: cdedb/i18n_additional.py:44
 msgid "CdeLogCodes.semester_bill"

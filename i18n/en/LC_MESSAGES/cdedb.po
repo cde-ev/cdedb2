@@ -14408,15 +14408,15 @@ msgstr "Attachment version changed"
 
 #: cdedb/i18n_additional.py:40
 msgid "AttachmentPolicy.allow"
-msgstr "HTML emails and all attachments allowed"
+msgstr "All attachments allowed"
 
 #: cdedb/i18n_additional.py:41
 msgid "AttachmentPolicy.pdf_only"
-msgstr "Only plain text emails with PDF files allowed"
+msgstr "Only PDF attachments allowed"
 
 #: cdedb/i18n_additional.py:42
 msgid "AttachmentPolicy.forbid"
-msgstr "Only plain text emails without attachments allowed"
+msgstr "Only emails without attachments allowed"
 
 #: cdedb/i18n_additional.py:44
 msgid "CdeLogCodes.semester_bill"
