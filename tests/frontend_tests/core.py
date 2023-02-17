@@ -2589,7 +2589,6 @@ class TestCoreFrontend(FrontendTest):
         self.traverse(self.EVENT_GENESIS_DATA['family_name'])
         self.response = save
 
-
         # Check that a cde genesis request cannot be merged into a non-cde account.
         self.traverse("Accountanfrage bearbeiten")
         f = self.response.forms['genesismodifyform']
