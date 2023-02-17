@@ -93,6 +93,22 @@
                 "2": true,
                 "3": false
             }
+        },
+        "13": {
+            "title": "Extra-Kurs",
+            "description": "Besser spät als nie.",
+            "nr": "\u03b6",
+            "shortname": "Extra",
+            "instructors": null,
+            "min_size": null,
+            "max_size": null,
+            "notes": null,
+            "fields": {},
+            "segments": {
+                "1": false,
+                "2": true,
+                "3": true
+            }
         }
     },
     "lodgement_groups": {
