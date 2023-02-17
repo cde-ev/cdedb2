@@ -56,7 +56,7 @@
                         entries=ambience['event']['tracks']|keydictsort(EntitySorter.course_track)|dict_entries('id', 'title'),
                         slice=(2 if ambience['event']['tracks']|length < 7 else 3), horizontal=False) }}
                     {% if show_course_state %}
-                        {{ util.form_input_checkbox('only_taking_place',
+                        {{ util.form_input_checkbox('active_only',
                             label=gettext("Show only courses taking place"),
                             horizontal=False) }}
                     {% endif %}
@@ -68,7 +68,7 @@
         {# Jinja does not support list comprehension... #}
         {% set courses_to_show = [] %}
         {% for course_id, course in courses|keydictsort(EntitySorter.course) if (
-            course['active_segments'] if only_taking_place and show_course_state else course['segments']
+            course['active_segments'] if active_only and show_course_state else course['segments']
         ).intersection(track_ids) %}
             {% do courses_to_show.append((course_id, course)) %}
         {% endfor %}

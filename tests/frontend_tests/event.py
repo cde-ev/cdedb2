@@ -457,14 +457,14 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("γ. Kurzer Kurs")
         if self.user_in('annika'):
             f = self.response.forms['coursefilterform']
-            f['only_taking_place'].checked = True
+            f['active_only'].checked = True
             self.submit(f)
             self.assertNonPresence("β. Lustigsein für Fortgeschrittene")
             self.assertPresence("γ. Kurzer Kurs")
         else:
             # check that taking place filter not accessible for non-privileged users
             self.assertNonPresence("Zeige nur stattfindende Kurse")
-            self.get(self.response.request.url + '&only_taking_place=True')
+            self.get(self.response.request.url + '&active_only=True')
             self.assertPresence("β. Lustigsein für Fortgeschrittene")
 
     @as_users("annika", "garcia", "ferdinand")

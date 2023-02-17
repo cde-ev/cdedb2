@@ -31,10 +31,10 @@ from cdedb.frontend.event.base import EventBaseFrontend
 
 class EventCourseMixin(EventBaseFrontend):
     @access("anonymous")
-    @REQUESTdata("track_ids", "only_taking_place")
+    @REQUESTdata("track_ids", "active_only")
     def course_list(self, rs: RequestState, event_id: int,
                     track_ids: Collection[int] = None,
-                    only_taking_place: bool = False) -> Response:
+                    active_only: bool = False) -> Response:
         """List courses from an event."""
         if (not rs.ambience['event']['is_course_list_visible']
                 and not (event_id in rs.user.orga or self.is_admin(rs))):
@@ -42,7 +42,7 @@ class EventCourseMixin(EventBaseFrontend):
             rs.notify("warning", n_("Course list not published yet."))
             return self.redirect(rs, "event/show_event")
         # validation converted anything into valid boolean input
-        rs.values['only_taking_place'] = only_taking_place
+        rs.values['active_only'] = active_only
         if rs.has_validation_errors() or not track_ids:
             track_ids = rs.ambience['event']['tracks'].keys()
         course_ids = self.eventproxy.list_courses(rs, event_id)
@@ -51,7 +51,7 @@ class EventCourseMixin(EventBaseFrontend):
             courses = self.eventproxy.get_courses(rs, course_ids.keys())
         return self.render(rs, "course/course_list",
                            {'courses': courses, 'track_ids': track_ids,
-                            'only_taking_place': only_taking_place})
+                            'active_only': active_only})
 
     @access("event")
     @event_guard()
