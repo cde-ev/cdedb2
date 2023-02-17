@@ -2585,6 +2585,10 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence(alternate_username)
         self.assertPresence("Ähnliche Accounts")
         self.assertPresence(self.EVENT_GENESIS_DATA['username'], div="doppelgangers")
+        save = self.response
+        self.traverse(self.EVENT_GENESIS_DATA['family_name'])
+        self.response = save
+
 
         # Check that a cde genesis request cannot be merged into a non-cde account.
         self.traverse("Accountanfrage bearbeiten")
