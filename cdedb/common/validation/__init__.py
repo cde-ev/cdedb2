@@ -3869,6 +3869,7 @@ MAILINGLIST_COMMON_FIELDS: Mapping[str, Any] = {
     'description': Optional[str],
     'mod_policy': const.ModerationPolicy,
     'attachment_policy': const.AttachmentPolicy,
+    'convert_html': bool,
     'ml_type': const.MailinglistTypes,
     'subject_prefix': Optional[str],
     'maxsize': Optional[ID],

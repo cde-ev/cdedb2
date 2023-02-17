@@ -185,14 +185,14 @@ STORED_EVENT_QUERY_FIELDS = (
 #: Fields of a mailing list entry (that is one mailinglist)
 MAILINGLIST_FIELDS = (
     "id", "title", "address", "local_part", "domain", "description",
-    "mod_policy", "notes", "attachment_policy", "ml_type",
+    "mod_policy", "notes", "attachment_policy", "convert_html", "ml_type",
     "subject_prefix", "maxsize", "is_active", "event_id", "registration_stati",
     "assembly_id")
 
 #: Fields of a mailinglist which may be changed by all moderators, even restricted ones
 RESTRICTED_MOD_ALLOWED_FIELDS = {
-    "description", "mod_policy", "notes", "attachment_policy", "subject_prefix",
-    "maxsize"}
+    "description", "mod_policy", "notes", "attachment_policy", "convert_html",
+    "subject_prefix", "maxsize"}
 
 #: Fields of a mailinglist which require full moderator access to be changed
 FULL_MOD_REQUIRING_FIELDS = {
