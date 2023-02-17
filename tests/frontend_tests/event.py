@@ -461,6 +461,13 @@ class TestEventFrontend(FrontendTest):
             self.submit(f)
             self.assertNonPresence("β. Lustigsein für Fortgeschrittene")
             self.assertPresence("γ. Kurzer Kurs")
+            # check that validation converting works and is shown in the form
+            self.get(self.response.request.url.replace('active_only=True',
+                                                       'active_only=nonBoolButTrue'))
+            self.assertTrue(
+                self.response.forms['coursefilterform']['active_only'].checked)
+            self.assertNonPresence("β. Lustigsein für Fortgeschrittene")
+            self.assertPresence("γ. Kurzer Kurs")
         else:
             # check that taking place filter not accessible for non-privileged users
             self.assertNonPresence("Zeige nur stattfindende Kurse")

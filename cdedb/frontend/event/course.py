@@ -41,8 +41,10 @@ class EventCourseMixin(EventBaseFrontend):
             rs.ignore_validation_errors()
             rs.notify("warning", n_("Course list not published yet."))
             return self.redirect(rs, "event/show_event")
-        # validation converted anything into valid boolean input
+        # write the validation output tu rs.values, s.t. form field gets pre-filled
         rs.values['active_only'] = active_only
+        # Validation converted anything into valid boolean input, so in case of errors
+        #  they originate from track_ids.
         if rs.has_validation_errors() or not track_ids:
             track_ids = rs.ambience['event']['tracks'].keys()
         course_ids = self.eventproxy.list_courses(rs, event_id)
