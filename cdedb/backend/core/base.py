@@ -469,7 +469,11 @@ class CoreBaseBackend(AbstractBackend):
             udata = {key: data[key] for key in relevant_keys}
             # commit changes
             ret = 0
-            if len(udata) > 1:
+            if len(udata) == 1:
+                rs.notify('warning', n_("Change has reverted pending change."))
+                # notify_return_code will be suppressed in the frontend
+                return ret
+            elif len(udata) > 1:
                 ret = self.commit_persona(rs, udata)
                 if not ret:
                     raise RuntimeError(n_("Modification failed."))
