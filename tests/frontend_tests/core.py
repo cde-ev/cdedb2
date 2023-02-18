@@ -1609,7 +1609,7 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'Guthaben anpassen'})
         f = self.response.forms['modifybalanceform']
         f['trial_member'].checked = True
-        f['change_note'] = "deduct lost cookies"
+        f['change_note'] = "deduct lost coofkies"
         self.submit(f)
         self.assertPresence("CdE-Mitglied (Probemitgliedschaft)",
                             div='membership')
@@ -1688,6 +1688,44 @@ class TestCoreFrontend(FrontendTest):
             self.submit(f)
             self.admin_view_profile("berta", check=False)
             self.assertPresence("Geschlecht männlich")
+
+    @as_users("berta")
+    def test_changelog_displacement(self) -> None:
+        for family_name in {"Ganon", "Beispiel"}:
+            with self.subTest(family_name=family_name):
+                self.traverse("Meine Daten", "Bearbeiten")
+                f = self.response.forms['changedataform']
+                f['family_name'] = "Ganondorf"
+                self.submit(f, check_notification=False)
+                self.assertPresence("Die Änderung wartet auf Bestätigung.",
+                                    div='notifications')
+                self.assertPresence(self.user['family_name'],
+                                    div='personal-information')
+                self.assertPresence("Gemeinser", div='personal-information')
+                self.assertNonPresence('Ganondorf')
+                with self.switch_user("quintus"):
+                    self.traverse({'description': 'Änderungen prüfen'})
+                    self.assertTitle("Zu prüfende Profiländerungen [1]")
+                    self.traverse({'description': 'Ganondorf'},
+                                  {'description': 'Änderungen bearbeiten'})
+                    self.assertTitle("Bertå Ganondorf bearbeiten")
+                    self.assertPresence("Profil speichern")
+                    f = self.response.forms['changedataform']
+                    f['family_name'] = family_name
+                    if family_name == "Ganon":
+                        self.submit(f)
+                        self.assertTitle("Bertå Ganon")
+                        self.assertNonPresence("Beispiel", div='personal-information')
+                    else:
+                        self.submit(f, check_notification=False)
+                        self.assertNotification(
+                            "Änderung hat eine ausstehende Änderung zurückgesetzt.",
+                            'warning')
+                        self.assertPresence("Beispiel")
+                        self.assertNonPresence("Ganon")
+                    self.assertNonPresence("dorf")
+                    self.traverse({'description': 'Änderungen prüfen'})
+                    self.assertTitle("Zu prüfende Profiländerungen [0]")
 
     @as_users("vera")
     def test_history(self) -> None:
