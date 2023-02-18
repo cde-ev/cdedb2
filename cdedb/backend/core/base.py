@@ -498,7 +498,7 @@ class CoreBaseBackend(AbstractBackend):
     changelog_get_generation: _ChangelogGetGenerationProtocol = singularize(
         changelog_get_generations)
 
-    @access("core_admin")
+    @access("core_admin", "cde_admin")
     def changelog_get_changes(self, rs: RequestState,
                               stati: Collection[const.MemberChangeStati]
                               ) -> CdEDBObjectMap:

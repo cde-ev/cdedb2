@@ -2013,7 +2013,7 @@ class CoreBaseFrontend(AbstractFrontend):
         rs.notify_return_code(code)
         return self.redirect_show_user(rs, persona_id)
 
-    @access("core_admin")
+    @access("core_admin", "cde_admin")
     def list_pending_changes(self, rs: RequestState) -> Response:
         """List non-committed changelog entries."""
         pending = self.coreproxy.changelog_get_changes(
@@ -2052,7 +2052,7 @@ class CoreBaseFrontend(AbstractFrontend):
             }
         return store
 
-    @access("core_admin")
+    @access("core_admin", "cde_admin")
     def inspect_change(self, rs: RequestState, persona_id: int) -> Response:
         """Look at a pending change."""
         history = self.coreproxy.changelog_get_history(rs, persona_id,
@@ -2069,7 +2069,7 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.render(rs, "inspect_change", {
             'pending': pending, 'current': current, 'diff': diff})
 
-    @access("core_admin", modi={"POST"})
+    @access("core_admin", "cde_admin", modi={"POST"})
     @REQUESTdata("generation", "ack")
     def resolve_change(self, rs: RequestState, persona_id: int,
                        generation: int, ack: bool) -> Response:
