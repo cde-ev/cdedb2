@@ -255,7 +255,7 @@
 		}
 	},
         "EVENT_SCHEMA_VERSION": [
-			15,
-			7
+			16,
+			0
 		]
 }
