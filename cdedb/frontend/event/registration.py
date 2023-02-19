@@ -275,7 +275,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         registration_ids = self.eventproxy.list_registrations(
             rs, event_id, rs.user.persona_id)
         if registration_ids and not orga:
-            reg = self.eventproxy.get_registration(rs, unwrap(registration_ids))
+            reg = self.eventproxy.get_registration(rs, unwrap(registration_ids.keys()))
             involved_parts = {part_id for part_id, rpart in reg['parts'].items()
                               if rpart['status'].is_involved()}
 

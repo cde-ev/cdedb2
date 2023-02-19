@@ -780,13 +780,12 @@ class EventRegistrationBackend(EventBaseBackend):
             current = self._get_registration_info(rs, reg_id=data['id'])
             if current is None:
                 raise ValueError(n_("Registration does not exist."))
-            persona_id, event_id = current['persona_id'], current['event_id']
 
             # Actually alter the registration.
             ret = self._set_registration(rs, data, change_note, orga_input)
 
             # Perform sanity checks.
-            self._track_groups_sanity_check(rs, event_id)
+            self._track_groups_sanity_check(rs, current['event_id'])
 
         return ret
 
