@@ -21,7 +21,7 @@
 
 
 {% macro list_courses(registration) %}
-    {% for track_id in parts[part_id]['tracks'] -%}
+    {% for track_id, _ in parts[part_id]['tracks']|keydictsort(EntitySorter.course_track) -%}
         {% with course_id = registration['tracks'][track_id]['course_id'] %}
             {% if course_id %}
                 {{ courses[course_id]['nr']+ "." + nbsp + courses[course_id]['shortname'] }}
