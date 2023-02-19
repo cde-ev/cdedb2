@@ -37,6 +37,8 @@
 
         {% for i in range(num_choices) %}
             {{ util.form_input_select(name=choice_name.format(i), nulloption=nbsp,
+                                      aclass="choice_group_select" if track_group else "",
+                                      attributes="track_group_id={}".format(track_group['id']) if track_group else "",
                                       label=gettext("%s. Choice")|format(i + 1), entries=course_entries,
                                       info=(gettext("Optional choice") if i >= min_choices else "")) }}
         {% endfor %}

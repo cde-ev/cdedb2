@@ -1,4 +1,5 @@
 {% set sidenav_active='event_configure_registration' if preview else 'event_register' %}
+{% set jshint = 'strong' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/event/generic.tmpl" as generic_event with context %}
@@ -186,9 +187,31 @@
             });
         };
 
+
+        part_map = {{ parts_per_track_group_per_course|tojson }};
+
+        var updateCourseChoiceOptions = function() {
+            $('.choice_group_select > option').each(function() {
+                course_id = $(this).val();
+                track_group_id = $(this).parent().attr('track_group_id');
+                if (!course_id || part_map[course_id][track_group_id].some(
+                        (part_id) => checkbox_map[part_id].prop('checked'))
+                ) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                    if ($(this).parent().val() == course_id) {
+                        $(this).parent().val("");
+                    }
+                };
+            });
+        }
+
         if (checkboxes.length) {
             checkboxes.change(updateCourseChoiceContainers);
+            checkboxes.change(updateCourseChoiceOptions);
             updateCourseChoiceContainers();
+            updateCourseChoiceOptions();
         }
     </script>
 {% endblock %}

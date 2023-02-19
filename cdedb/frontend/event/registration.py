@@ -269,6 +269,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         event = rs.ambience['event']
         tracks = event['tracks']
         track_groups = event['track_groups']
+        ccs = const.CourseTrackGroupType.course_choice_sync
 
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
@@ -300,6 +301,21 @@ class EventRegistrationMixin(EventBaseFrontend):
         choice_objects = [t for t_id, t in tracks.items() if t_id in simple_tracks] + [
             tg for tg in track_groups.values() if tg['constraint_type'].is_sync()]
         choice_objects = xsorted(choice_objects, key=EntitySorter.course_choice_object)
+
+        # For every course and track, determine all tracks that allow you to choose
+        #  this course in this track.
+        parts_per_track_group_per_course = {
+            course_id: {
+                tg_id: {
+                    event['tracks'][t_id]['part_id'] for t_id in
+                    (tg['track_ids'] & course['segments'])
+                }
+                for tg_id, tg in event['track_groups'].items()
+                if tg['constraint_type'] == ccs
+            }
+            for course_id, course in courses.items()
+        }
+
         return {
             'courses': courses, 'courses_per_track': courses_per_track,
             'all_courses_per_track': all_courses_per_track,
@@ -308,6 +324,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             'reference_tracks': reference_tracks, 'simple_tracks': simple_tracks,
             'choice_objects': choice_objects, 'sync_track_groups': sync_track_groups,
             'track_group_map': track_group_map, 'ccos_per_part': ccos_per_part,
+            'parts_per_track_group_per_course': parts_per_track_group_per_course,
         }
 
     @access("event")
