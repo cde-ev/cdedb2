@@ -891,6 +891,12 @@ class AssemblyFrontend(AbstractUserFrontend):
             rs, attachment_id)
         is_deletable = self.assemblyproxy.is_attachment_version_deletable(
             rs, attachment_id)
+
+        # Prefill information, if possible and untouched
+        for metadatum in {'title', 'authors', 'filename'}:
+            if metadatum not in rs.values:
+                rs.values[metadatum] = latest_version[metadatum]
+
         return self.render(
             rs, "add_attachment_version", {
                 'latest_version': latest_version,
