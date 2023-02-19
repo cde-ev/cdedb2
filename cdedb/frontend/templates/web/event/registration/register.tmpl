@@ -220,8 +220,12 @@
                 { persona_id: {{ user.persona_id }}, part_ids: part_ids, field_names: field_names},
                 function(result) {
                     fee_preview.html(result["fee"]);
-                    if (nonmember_surcharge) {
+                    if (result["show_nonmember"]) {
                         nonmember_surcharge.html(result["nonmember"]);
+                        nonmember_surcharge.parent().show();
+                    }
+                    else {
+                        nonmember_surcharge.parent().hide();
                     }
                 }
             );

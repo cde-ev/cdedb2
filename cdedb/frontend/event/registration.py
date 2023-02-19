@@ -377,12 +377,14 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs, event_id, persona_id, part_ids, field_ids)
 
         msg = rs.gettext("Because your are not a CdE-Member, you have to pay an"
-                         " additional fee of %s.")
+                         " additional fee of {additional_fee}"
+                         " (already included in the above figure).")
 
         ret = {
             'fee': money_filter(complex_fee.amount, lang=rs.lang) or "",
-            'nonmember': msg % money_filter(
-                complex_fee.nonmember_surcharge_amount, lang=rs.lang) or "",
+            'nonmember': msg.format(additional_fee=money_filter(
+                complex_fee.nonmember_surcharge_amount, lang=rs.lang) or ""),
+            'show_nonmember': complex_fee.nonmember_surcharge,
         }
         return Response(json_serialize(ret), mimetype='application/json')
 
@@ -1223,12 +1225,11 @@ class EventRegistrationMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, 'event/checkin', {'part_ids': part_ids})
 
-    def _get_payment_data(self, rs: RequestState, event_id: int
-                          ) -> Optional[CdEDBObject]:
+    def _get_payment_data(self, rs: RequestState, event_id: int) -> CdEDBObject:
         reg_list = self.eventproxy.list_registrations(
             rs, event_id, persona_id=rs.user.persona_id)
         if not reg_list:
-            return None
+            return {}
         registration_id = unwrap(reg_list.keys())
         registration = self.eventproxy.get_registration(rs, registration_id)
         persona = self.coreproxy.get_event_user(rs, rs.user.persona_id, event_id)
