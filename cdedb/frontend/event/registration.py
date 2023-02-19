@@ -376,14 +376,17 @@ class EventRegistrationMixin(EventBaseFrontend):
         complex_fee = self.eventproxy.precompute_fee(
             rs, event_id, persona_id, part_ids, field_ids)
 
-        msg = rs.gettext("Because your are not a CdE-Member, you have to pay an"
-                         " additional fee of {additional_fee}"
+        msg = rs.gettext("Because you are not a CdE-Member, you will have to pay an"
+                         " additional fee of %(additional_fee)s"
                          " (already included in the above figure).")
+        nonmember_msg = msg % {
+            'additional_fee': money_filter(
+                complex_fee.nonmember_surcharge_amount, lang=rs.lang) or ""
+        }
 
         ret = {
             'fee': money_filter(complex_fee.amount, lang=rs.lang) or "",
-            'nonmember': msg.format(additional_fee=money_filter(
-                complex_fee.nonmember_surcharge_amount, lang=rs.lang) or ""),
+            'nonmember': nonmember_msg,
             'show_nonmember': complex_fee.nonmember_surcharge,
         }
         return Response(json_serialize(ret), mimetype='application/json')

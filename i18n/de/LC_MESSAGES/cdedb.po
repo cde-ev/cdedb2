@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2023-02-19 13:32+0000\n"
+"POT-Creation-Date: 2023-02-19 18:17+0000\n"
 "PO-Revision-Date: 2020-12-06 11:30+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -57,18 +57,18 @@ msgstr "Nur Admins dürfen auf das globale Log zugreifen."
 #: cdedb/backend/event/lowlevel.py:1138 cdedb/backend/event/query.py:60
 #: cdedb/backend/event/query.py:254 cdedb/backend/event/query.py:280
 #: cdedb/backend/event/query.py:428 cdedb/backend/event/query.py:704
-#: cdedb/backend/event/query.py:718 cdedb/backend/event/registration.py:320
-#: cdedb/backend/event/registration.py:358
-#: cdedb/backend/event/registration.py:411
-#: cdedb/backend/event/registration.py:443
-#: cdedb/backend/event/registration.py:468
-#: cdedb/backend/event/registration.py:582
-#: cdedb/backend/event/registration.py:741
-#: cdedb/backend/event/registration.py:826
-#: cdedb/backend/event/registration.py:943
-#: cdedb/backend/event/registration.py:1042
-#: cdedb/backend/event/registration.py:1239
-#: cdedb/backend/event/registration.py:1272 cdedb/backend/ml.py:171
+#: cdedb/backend/event/query.py:718 cdedb/backend/event/registration.py:319
+#: cdedb/backend/event/registration.py:357
+#: cdedb/backend/event/registration.py:410
+#: cdedb/backend/event/registration.py:442
+#: cdedb/backend/event/registration.py:467
+#: cdedb/backend/event/registration.py:581
+#: cdedb/backend/event/registration.py:740
+#: cdedb/backend/event/registration.py:825
+#: cdedb/backend/event/registration.py:942
+#: cdedb/backend/event/registration.py:1041
+#: cdedb/backend/event/registration.py:1238
+#: cdedb/backend/event/registration.py:1271 cdedb/backend/ml.py:171
 #: cdedb/backend/ml.py:281 cdedb/backend/ml.py:483 cdedb/backend/ml.py:506
 #: cdedb/backend/ml.py:660 cdedb/backend/ml.py:706 cdedb/backend/ml.py:860
 #: cdedb/backend/ml.py:904 cdedb/backend/ml.py:930 cdedb/backend/ml.py:963
@@ -177,8 +177,8 @@ msgstr "Eine aktive Abstimmung kann nicht gelöscht werden."
 #: cdedb/backend/event/lowlevel.py:643 cdedb/backend/event/lowlevel.py:670
 #: cdedb/backend/event/lowlevel.py:742 cdedb/backend/event/lowlevel.py:769
 #: cdedb/backend/event/lowlevel.py:982 cdedb/backend/event/lowlevel.py:1042
-#: cdedb/backend/event/registration.py:1051
-#: cdedb/backend/event/registration.py:1082 cdedb/backend/ml.py:713
+#: cdedb/backend/event/registration.py:1050
+#: cdedb/backend/event/registration.py:1081 cdedb/backend/ml.py:713
 #: cdedb/backend/ml.py:749 cdedb/backend/past_event.py:343
 #: cdedb/backend/past_event.py:381 cdedb/backend/past_event.py:492
 #, python-format
@@ -960,7 +960,7 @@ msgid "Unknown part group."
 msgstr "Unbekannte Veranstaltungsteilgruppe."
 
 #: cdedb/backend/event/base.py:585 cdedb/backend/event/base.py:614
-#: cdedb/backend/event/registration.py:494
+#: cdedb/backend/event/registration.py:493
 msgid "Unknown part for the given event."
 msgstr "Unbekannter Veranstaltungsteil dieser Veranstaltung."
 
@@ -1018,7 +1018,7 @@ msgstr "Unterkünfte referenzieren mehr als eine Veranstaltung."
 msgid "Lodgement does not exist."
 msgstr "Unterkunft existiert nicht."
 
-#: cdedb/backend/event/lowlevel.py:260 cdedb/backend/event/registration.py:878
+#: cdedb/backend/event/lowlevel.py:260 cdedb/backend/event/registration.py:877
 msgid "Non-existing tracks specified."
 msgstr "Nicht-existente Kursschiene angegeben."
 
@@ -1099,69 +1099,69 @@ msgstr ""
 "Suchabfrage mit dem Namen '%(query)s' existiert bereits für diese "
 "Veranstaltung."
 
-#: cdedb/backend/event/registration.py:288
+#: cdedb/backend/event/registration.py:287
 msgid "Wrong track for course."
 msgstr "Schiene ist unzulässig für Kurs."
 
-#: cdedb/backend/event/registration.py:525
-#: cdedb/backend/event/registration.py:544
+#: cdedb/backend/event/registration.py:524
+#: cdedb/backend/event/registration.py:543
 msgid "Must be orga to access full waitlist."
 msgstr "Nur Orgas dürfen die volle Warteliste einsehen."
 
-#: cdedb/backend/event/registration.py:547
+#: cdedb/backend/event/registration.py:546
 msgid "Not registered for this event."
 msgstr "Nicht für diese Veranstaltung angemeldet."
 
-#: cdedb/backend/event/registration.py:728
-#: cdedb/backend/event/registration.py:1230
+#: cdedb/backend/event/registration.py:727
+#: cdedb/backend/event/registration.py:1229
 msgid "Only registrations from exactly one event allowed."
 msgstr "Nur Anmeldungen einer Veranstaltung werden unterstützt."
 
-#: cdedb/backend/event/registration.py:762 cdedb/frontend/event/base.py:251
+#: cdedb/backend/event/registration.py:761 cdedb/frontend/event/base.py:251
 #: cdedb/frontend/event/base.py:404
 msgid "No participant of event."
 msgstr "Kein Teilnehmer der Veranstaltung."
 
-#: cdedb/backend/event/registration.py:820
+#: cdedb/backend/event/registration.py:819
 msgid "Registration does not exist."
 msgstr "Anmeldung existiert nicht."
 
-#: cdedb/backend/event/registration.py:853
+#: cdedb/backend/event/registration.py:852
 msgid "Non-existing parts specified."
 msgstr "Angegebene Teile existieren Nicht."
 
-#: cdedb/backend/event/registration.py:874
-#: cdedb/backend/event/registration.py:907
+#: cdedb/backend/event/registration.py:873
+#: cdedb/backend/event/registration.py:906
 msgid "This is not useful."
 msgstr "Dies ist nicht unterstützt."
 
-#: cdedb/backend/event/registration.py:946
+#: cdedb/backend/event/registration.py:945
 #: cdedb/frontend/assembly/__init__.py:540 cdedb/frontend/event/event.py:212
 #: cdedb/frontend/event/registration.py:977
 msgid "This user does not exist or is archived."
 msgstr "Dieser Benutzer existiert nicht oder ist archiviert."
 
-#: cdedb/backend/event/registration.py:948 cdedb/frontend/event/event.py:215
+#: cdedb/backend/event/registration.py:947 cdedb/frontend/event/event.py:215
 #: cdedb/frontend/event/registration.py:981
 msgid "This user is not an event user."
 msgstr "Dieser Nutzer ist kein Veranstaltungsnutzer."
 
-#: cdedb/backend/event/registration.py:950
+#: cdedb/backend/event/registration.py:949
 #: cdedb/frontend/event/registration.py:321
 #: cdedb/frontend/event/registration.py:655
 #: cdedb/frontend/event/registration.py:986
 msgid "Already registered."
 msgstr "Bereits angemeldet."
 
-#: cdedb/backend/event/registration.py:959
+#: cdedb/backend/event/registration.py:958
 msgid "Missing part dataset."
 msgstr "Datensatz für Teil fehlt."
 
-#: cdedb/backend/event/registration.py:963
+#: cdedb/backend/event/registration.py:962
 msgid "Missing track dataset."
 msgstr "Fehlende Daten für Kursschiene."
 
-#: cdedb/backend/event/registration.py:1284
+#: cdedb/backend/event/registration.py:1283
 msgid "Mismatched registrations, not associated with the event."
 msgstr "Fehlassoziierte Anmeldung, nicht mit der Veranstaltung verknüpft."
 
@@ -4852,12 +4852,14 @@ msgstr ""
 "Minderjährige können sich nicht anmelden. Kontaktiere bitte das Orgateam."
 
 #: cdedb/frontend/event/registration.py:379
+#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:121
+#, python-format
 msgid ""
-"Because your are not a CdE-Member, you have to pay an additional fee of "
-"{additional_fee} (already included in the above figure)."
+"Because you are not a CdE-Member, you will have to pay an additional fee of "
+"%(additional_fee)s (already included in the above figure)."
 msgstr ""
 "Da Du kein CdE-Mitglied bist, musst du einen zusätzlichen Beitrag in Höhe "
-"von {additional_fee} bezahlen (bereits in der obigen Summe enthalten)."
+"von %(additional_fee)s bezahlen (bereits in der obigen Summe enthalten)."
 
 #: cdedb/frontend/event/registration.py:578
 msgid "Instructed course must not be chosen."
@@ -13812,7 +13814,8 @@ msgstr ""
 msgid ""
 "Because you are not a CdE-Member, you might have to pay an additional fee."
 msgstr ""
-"Da Du kein CdE-Mitglied bist, musst möglicherweise einen höheren Beitrag bezahlen."
+"Da Du kein CdE-Mitglied bist, musst möglicherweise einen höheren Beitrag "
+"bezahlen."
 
 #: cdedb/frontend/templates/web/event/registration/register.tmpl:133
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:127
@@ -13912,14 +13915,6 @@ msgstr ""
 "Hinweis: Nachdem das Geld auf unserem Konto eingegangen ist, kann es "
 "möglicherweise wenige Wochen dauern, bis die Zahlung hier berücksichtigt "
 "wird."
-
-#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:121
-msgid ""
-"Because you are not a CdE-Member, you will have to pay an additional fee of "
-"%(additional_fee)s (already included in the above figure)."
-msgstr ""
-"Da Du kein CdE-Mitglied bist, musst du einen zusätzlichen Beitrag in Höhe "
-"von {additional_fee} bezahlen (bereits in der obigen Summe enthalten)."
 
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:141
 #, python-format
