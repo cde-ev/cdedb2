@@ -66,7 +66,6 @@ class RegistrationFee:
         return not self.is_member and self.nonmember_surcharge_amount > 0
 
 
-
 class EventRegistrationBackend(EventBaseBackend):
     def _get_course_segments_per_course(self, rs: RequestState,
                                         event_id: int) -> Dict[int, Set[int]]:
@@ -1111,8 +1110,8 @@ class EventRegistrationBackend(EventBaseBackend):
         return self._calculate_complex_fee(rs, registration, event=event)
 
     def _calculate_single_fee(self, rs: RequestState, reg: CdEDBObject, *,
-                               event: CdEDBObject, is_member: bool = None
-                               ) -> decimal.Decimal:
+                              event: CdEDBObject, is_member: bool = None
+                              ) -> decimal.Decimal:
         """Helper to only calculate return the fee amount for a single registration."""
         return self._calculate_complex_fee(
             rs, reg, event=event, is_member=is_member).amount
