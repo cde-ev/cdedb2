@@ -115,7 +115,7 @@
                 {% endtrans %}
             </p>
         {% endif %}
-        {% if not complex_fee.nonmember_surcharge %}
+        {% if complex_fee.nonmember_surcharge %}
             <div class="text-info" id="nonmember-surcharge" style="font-weight: bold;">
                 <p>
                 {% trans additional_fee=complex_fee.nonmember_surcharge_amount|money(lang=lang) %}
