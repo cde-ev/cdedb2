@@ -380,7 +380,7 @@ class EventEventMixin(EventBaseFrontend):
         if code:
             new_fee = {
                 'title': data['title'],
-                'notes': None,
+                'notes': "Automatisch erstellt.",
                 'amount': fee,
                 'condition': f"part.{data['shortname']}",
             }
@@ -890,13 +890,13 @@ class EventEventMixin(EventBaseFrontend):
             'fees': {
                 -1: {
                     'title': data['title'],
-                    'notes': None,
+                    'notes': "Automatisch erstellt.",
                     'amount': fee,
                     'condition': f"part.{data['shortname']}",
                 },
                 -2: {
                     'title': "Externenzusatzbeitrag",
-                    'notes': None,
+                    'notes': "Automatisch erstellt",
                     'amount': nonmember_surcharge,
                     'condition': "not is_member",
                 }
