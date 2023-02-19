@@ -791,6 +791,8 @@ class EventCourseMixin(EventBaseFrontend):
         code = 1
         change_note = ("Kursteilnehmer von"
                        f" {rs.ambience['course']['shortname']} geändert.")
+
+        reg_data = []
         for registration_id, registration in registrations.items():
             new_reg: CdEDBObject = {
                 'id': registration_id,
@@ -808,6 +810,8 @@ class EventCourseMixin(EventBaseFrontend):
                         'course_id': (course_id if new_attendee else None)
                     }
             if new_reg['tracks']:
-                code *= self.eventproxy.set_registration(rs, new_reg, change_note)
+                reg_data.append(new_reg)
+
+        code = self.eventproxy.set_registrations(rs, reg_data, change_note)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/show_course")

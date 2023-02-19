@@ -770,6 +770,57 @@ class EventRegistrationBackend(EventBaseBackend):
     def set_registration(self, rs: RequestState, data: CdEDBObject,
                          change_note: str = None, orga_input: bool = True,
                          ) -> DefaultReturnCode:
+        """Public entry point for setting a registration. Perform sanity checks after.
+        """
+        data = affirm(vtypes.Registration, data)
+        change_note = affirm_optional(str, change_note)
+
+        with Atomizer(rs):
+            # Retrieve some basic data about the registration.
+            current = self._get_registration_info(rs, reg_id=data['id'])
+            if current is None:
+                raise ValueError(n_("Registration does not exist."))
+            persona_id, event_id = current['persona_id'], current['event_id']
+
+            # Actually alter the registration.
+            ret = self._set_registration(rs, data, change_note, orga_input)
+
+            # Perform sanity checks.
+            self._track_groups_sanity_check(rs, event_id)
+
+    @access("event")
+    def set_registrations(self, rs: RequestState, data: Collection[CdEDBObject],
+                          change_note: str = None) -> DefaultReturnCode:
+        """Helper for setting multiple registrations at once.
+
+        All registrations must belong to the same event.
+        Perform sanity checks only once after everything has been updated.
+        """
+        data = affirm_array(vtypes.Registration, data)
+        change_note = affirm_optional(str, change_note)
+
+        with Atomizer(rs):
+            event_ids = {e['event_id'] for e in self.sql_select(
+                rs, "event.registrations", ("event_id",),
+                [datum['id'] for datum in data])}
+            if not len(event_ids) == 1:
+                raise ValueError(n_(
+                    "Only registrations from exactly one event allowed."))
+            event_id = unwrap(event_ids)
+            if not self.is_orga(rs, event_id=event_id) or self.is_admin(rs):
+                raise PrivilegeError
+
+            ret = 1
+            for datum in data:
+                ret *= self._set_registration(rs, datum, change_note, orga_input=True)
+
+            self._track_groups_sanity_check(rs, event_id)
+
+        return ret
+
+    def _set_registration(self, rs: RequestState, data: CdEDBObject,
+                          change_note: str = None, orga_input: bool = True,
+                          ) -> DefaultReturnCode:
         """Update some keys of a registration.
 
         The syntax for updating the non-trivial keys fields, parts and
@@ -788,8 +839,6 @@ class EventRegistrationBackend(EventBaseBackend):
           'choices' key is handled separately and if present replaces
           the current list of course choices.
         """
-        data = affirm(vtypes.Registration, data)
-        change_note = affirm_optional(str, change_note)
         with Atomizer(rs):
             # Retrieve some basic data about the registration.
             current = self._get_registration_info(rs, reg_id=data['id'])
@@ -895,7 +944,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 rs, const.EventLogCodes.registration_changed, event_id,
                 persona_id=persona_id, change_note=change_note)
 
-            self._track_groups_sanity_check(rs, event_id)
+            # Sanity check is handled by public entry point.
 
         return ret
 

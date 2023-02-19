@@ -1135,7 +1135,6 @@ class EventRegistrationMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.change_registrations_form(rs, event_id, reg_ids, change_note)
 
-        code = 1
         self.logger.info(
             f"Updating registrations {reg_ids} with data {registration}")
         msg1 = build_msg("Snapshot vor Bearbeitung mehrerer Anmeldungen", change_note)
@@ -1143,9 +1142,11 @@ class EventRegistrationMixin(EventBaseFrontend):
         change_note = build_msg("Multi-Edit", change_note)
 
         self.eventproxy.event_keeper_commit(rs, event_id, msg1)
-        for reg_id in reg_ids:
-            registration['id'] = reg_id
-            code *= self.eventproxy.set_registration(rs, registration, change_note)
+        data = [
+            {'id': reg_id, **registration}
+            for reg_id in reg_ids
+        ]
+        code = self.eventproxy.set_registrations(rs, data, change_note)
         self.eventproxy.event_keeper_commit(rs, event_id, msg2, after_change=True)
         rs.notify_return_code(code)
 
