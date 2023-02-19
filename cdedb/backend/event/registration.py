@@ -808,7 +808,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 raise ValueError(n_(
                     "Only registrations from exactly one event allowed."))
             event_id = unwrap(event_ids)
-            if not self.is_orga(rs, event_id=event_id) or self.is_admin(rs):
+            if not (self.is_orga(rs, event_id=event_id) or self.is_admin(rs)):
                 raise PrivilegeError
 
             ret = 1
