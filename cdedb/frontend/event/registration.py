@@ -271,6 +271,14 @@ class EventRegistrationMixin(EventBaseFrontend):
         track_groups = event['track_groups']
         ccs = const.CourseTrackGroupType.course_choice_sync
 
+        involved_parts = None
+        registration_ids = self.eventproxy.list_registrations(
+            rs, event_id, rs.user.persona_id)
+        if registration_ids and not orga:
+            reg = self.eventproxy.get_registration(rs, unwrap(registration_ids))
+            involved_parts = {part_id for part_id, rpart in reg['parts'].items()
+                              if rpart['status'].is_involved()}
+
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         courses_per_track = self.eventproxy.get_course_segments_per_track(
@@ -278,7 +286,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         all_courses_per_track = (
             self.eventproxy.get_course_segments_per_track(rs, event_id))
         courses_per_track_group = self.eventproxy.get_course_segments_per_track_group(
-            rs, event_id, event['is_course_state_visible'] and not orga)
+            rs, event_id, event['is_course_state_visible'] and not orga, involved_parts)
         all_courses_per_track_group = (
             self.eventproxy.get_course_segments_per_track_group(rs, event_id))
         reference_tracks = {}

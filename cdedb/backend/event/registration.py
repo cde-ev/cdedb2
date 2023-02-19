@@ -217,6 +217,7 @@ class EventRegistrationBackend(EventBaseBackend):
     @access("event")
     def get_course_segments_per_track_group(self, rs: RequestState, event_id: int,
                                             active_only: bool = False,
+                                            involved_parts: Collection[int] = None,
                                             ) -> Dict[int, Set[int]]:
         """Determine which courses can be chosen in each track group.
 
@@ -229,15 +230,26 @@ class EventRegistrationBackend(EventBaseBackend):
             SELECT tg.id, ARRAY_REMOVE(ARRAY_AGG(DISTINCT cs.course_id), NULL) AS courses
             FROM event.track_groups AS tg
                 LEFT JOIN event.track_group_tracks AS tgt ON tg.id = tgt.track_group_id
-                LEFT JOIN event.course_segments AS cs ON tgt.track_id = cs.track_id {}
+                LEFT JOIN event.course_segments AS cs ON tgt.track_id = cs.track_id {is_active}
+                LEFT JOIN event.course_tracks AS ct ON cs.track_id = ct.id {involved_parts}
             WHERE tg.event_id = %s AND tg.constraint_type = %s
             GROUP BY tg.id
         """
 
         event_id = affirm(vtypes.ID, event_id)
         active_only = affirm(bool, active_only)
-        query = query.format("AND is_active = True" if active_only else "")
-        params = (event_id, const.CourseTrackGroupType.course_choice_sync)
+
+        params = []
+
+        if involved_parts is not None:
+            involved_parts = affirm_set(vtypes.ID, involved_parts)
+            params.append(involved_parts)
+
+        query = query.format(
+            is_active="AND is_active = True" if active_only else "",
+            involved_parts="AND ct.part_id = ANY(%s)" if involved_parts else ""
+        )
+        params.extend((event_id, const.CourseTrackGroupType.course_choice_sync))
 
         return {
             e['id']: set(e['courses'])
