@@ -221,6 +221,12 @@ _DEFAULTS = {
     "MAILMAN_USER": "restadmin",
     # user for mailman to retrieve templates
     "MAILMAN_BASIC_AUTH_USER": "mailman",
+    # aliases which are recognized for mailinglists
+    "MAILMAN_ACCEPTABLE_ALIASES": {
+        "vorstand@lists.cde-ev.de": ["info@cde-ev.de"],
+        "doku@lists.cde-ev.de": ["team@dokuforge.de"],
+        "dokuforge2@lists.cde-ev.de": ["df2@dokuforge.de"],
+    },
 
     #################
     # Backend stuff #
@@ -398,6 +404,10 @@ class Config(Mapping[str, Any]):
 
     def __len__(self) -> int:
         return self._configchain.__len__()
+
+    def __repr__(self) -> str:
+        name = self.__class__.__name__
+        return f"{name}(configpath={self._configpath}, configchain={self._configchain})"
 
 
 class LazyConfig(Config):

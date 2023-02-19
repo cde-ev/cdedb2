@@ -11,8 +11,8 @@
 {% endblock %}
 
 {% block heading %}
-    {{ util.context_heading(gettext("Detailed Results"), ambience['ballot']['title'], 'thumbs-up', gettext("Ballot"),
-                            doclink='Realm_Assembly_Voting-Procedere') }}
+    {{ util.doclink_('Realm_Assembly_Voting-Procedere') }}
+    {{ util.context_heading(gettext("Detailed Results"), ambience['ballot']['title'], 'thumbs-up', gettext("Ballot")) }}
 {% endblock %}
 
 {% block breadcrumb %}
@@ -258,7 +258,7 @@
                         </label></span>
                         {{ util.input_text(name="secret", anid="input-secret") }}
                         <div class="input-group-btn">
-                            {{ util.input_submit(label=gettext("Show Vote"), aclass="btn btn-success", icon="lock") }}
+                            {{ util.input_submit(label=gettext("Show Vote"), icon="eye") }}
                         </div>
                     </div>
                 {% endcall %}

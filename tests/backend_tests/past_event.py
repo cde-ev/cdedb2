@@ -67,15 +67,60 @@ class TestPastEventBackend(BackendTest):
     @as_users("vera")
     def test_delete_past_course_cascade(self) -> None:
         self.assertIn(1, self.pastevent.list_past_courses(self.key, 1))
+        # add the past course to a genesis case
+        genesis_case = self.core.genesis_get_case(self.key, 3)
+        genesis_case.update({
+            'pevent_id': 1,
+            'pcourse_id': 1,
+            'reviewer': self.user['id']})
+        self.assertTrue(self.core.genesis_modify_case(self.key, genesis_case))
+
+        with self.assertRaises(ValueError) as e:
+            self.pastevent.delete_past_course(
+                self.key, 1, cascade=("genesis_cases",))
+        self.assertIn("participants", e.exception.args[1].get('block'))
+        with self.assertRaises(ValueError) as e:
+            self.pastevent.delete_past_course(
+                self.key, 1, cascade=("participants",))
+        self.assertIn("genesis_cases", e.exception.args[1].get('block'))
         self.pastevent.delete_past_course(
-            self.key, 1, cascade=("participants",))
+            self.key, 1, cascade=("participants", "genesis_cases"))
         self.assertNotIn(1, self.pastevent.list_past_courses(self.key, 1))
 
     @as_users("vera")
     def test_delete_past_event_cascade(self) -> None:
-        self.assertIn(1, self.pastevent.list_past_events(self.key))
+        # create a log entry for this past event
+        pevent = self.pastevent.get_past_event(self.key, 1)
+        pevent['description'] = "changed"
+        self.assertTrue(self.pastevent.set_past_event(self.key, pevent))
+        # add the past event to a genesis case
+        genesis_case = self.core.genesis_get_case(self.key, 3)
+        genesis_case.update({
+            'pevent_id': 1,
+            'reviewer': self.user['id']})
+        self.assertTrue(self.core.genesis_modify_case(self.key, genesis_case))
+
+        with self.assertRaises(ValueError) as e:
+            self.pastevent.delete_past_event(
+                self.key, 1, cascade=("participants", "log", "genesis_cases"))
+        self.assertIn("courses", e.exception.args[1].get('block'))
+        with self.assertRaises(ValueError) as e:
+            self.pastevent.delete_past_event(
+                self.key, 1,
+                cascade=("courses", "log", "genesis_cases"))
+        self.assertIn("participants", e.exception.args[1].get('block'))
+        with self.assertRaises(ValueError) as e:
+            self.pastevent.delete_past_event(
+                self.key, 1,
+                cascade=("courses", "participants", "genesis_cases"))
+        self.assertIn("log", e.exception.args[1].get('block'))
+        with self.assertRaises(ValueError) as e:
+            self.pastevent.delete_past_event(
+                self.key, 1,
+                cascade=("courses", "participants", "log"))
+        self.assertIn("genesis_cases", e.exception.args[1].get('block'))
         self.pastevent.delete_past_event(
-            self.key, 1, cascade=("courses", "participants", "log"))
+            self.key, 1, cascade=("courses", "participants", "log", "genesis_cases"))
         self.assertNotIn(1, self.pastevent.list_past_events(self.key))
 
     @as_users("vera")
@@ -269,7 +314,7 @@ class TestPastEventBackend(BackendTest):
         self.pastevent.remove_participant(self.key, 1, None, 5)
 
         # now check it
-        expectation = (7, (
+        expectation = (
             {'id': 1001,
              'change_note': None,
              'code': const.PastEventLogCodes.event_created,
@@ -318,8 +363,8 @@ class TestPastEventBackend(BackendTest):
              'ctime': nearly_now(),
              'pevent_id': 1,
              'persona_id': 5,
-             'submitted_by': self.user['id']}))
-        self.assertEqual(expectation, self.pastevent.retrieve_past_log(self.key))
+             'submitted_by': self.user['id']})
+        self.assertLogEqual(expectation, log_retriever=self.pastevent.retrieve_past_log)
 
     @as_users("anton")
     def test_archive(self) -> None:

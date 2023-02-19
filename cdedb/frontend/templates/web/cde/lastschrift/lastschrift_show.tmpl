@@ -18,7 +18,7 @@
 {% block breadcrumb %}
     {{ super() }}
     {% if "finance" in user.admin_views or ambience['persona']['id'] != user.persona_id %}
-        {{ util.breadcrumb_link(cdedblink("cde/lastschrift_index"), gettext("Direct Debit Authorization")) }}
+        {{ util.breadcrumb_link(cdedblink("cde/lastschrift_index"), gettext("Direct Debit Authorizations")) }}
     {% endif %}
     {{ util.breadcrumb_link(cdedblink("cde/lastschrift_show", {'persona_id': values['persona_id']}),
                             util.persona_name(ambience['persona'], only_given_names=True), active=True,
@@ -119,7 +119,7 @@
                     {{ util.anti_csrf_token('cde/lastschrift_download_sepapain') }}
                     {{ util.input_hidden(name="lastschrift_id", value=active_permit) }}
                     {{ util.input_submit(label=gettext("Create SEPA-PAIN-file"), icon="download",
-                                         aclass="btn btn-sm btn-primary") }}
+                                         aclass="btn btn-sm btn-default") }}
                 </form>
                 <form action="{{ cdedblink('cde/lastschrift_generate_transactions') }}" method="POST"
                     id="generatetransactionform" style="display: inline;">

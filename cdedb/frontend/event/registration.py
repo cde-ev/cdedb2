@@ -27,6 +27,7 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.types import VALIDATOR_LOOKUP
+from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     CustomCSVDialect, Headers, REQUESTdata, REQUESTfile, TransactionObserver, access,
     cdedbid_filter, check_validation_optional as check_optional, event_guard,
@@ -698,12 +699,11 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         age = determine_age_class(
             persona['birthday'], rs.ambience['event']['begin'])
-        part_order = xsorted(
-            registration['parts'].keys(),
-            key=lambda anid:
-                rs.ambience['event']['parts'][anid]['part_begin'])
         registration['parts'] = OrderedDict(
-            (part_id, registration['parts'][part_id]) for part_id in part_order)
+            (part_id, registration['parts'][part_id])
+            for part_id, _ in keydictsort_filter(
+                rs.ambience['event']['parts'], EntitySorter.event_part)
+            if part_id in registration['parts'])
         reg_questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, (const.QuestionnaireUsages.registration,)))
         waitlist_position = self.eventproxy.get_waitlist_position(
@@ -714,7 +714,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         status = lambda track: registration['parts'][track['part_id']]['status']
         involved_tracks = {
             track_id for track_id, track in rs.ambience['event']['tracks'].items()
-            if const.RegistrationPartStati(status(track)).is_involved()}
+            if status(track).is_involved()}
 
         return self.render(rs, "registration/registration_status", {
             'registration': registration, 'age': age,

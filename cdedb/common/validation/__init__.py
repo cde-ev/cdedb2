@@ -92,6 +92,9 @@ from cdedb.common.query import (
     MULTI_VALUE_OPERATORS, NO_VALUE_OPERATORS, VALID_QUERY_OPERATORS, QueryOperators,
     QueryOrder, QueryScope, QuerySpec,
 )
+from cdedb.common.query.log_filter import (
+    LogFilter, LogFilterChangelog, LogFilterEntityLog, LogFilterFinanceLog, LogTable,
+)
 from cdedb.common.roles import ADMIN_KEYS, extract_roles
 from cdedb.common.sorting import xsorted
 from cdedb.common.validation.data import (
@@ -110,6 +113,7 @@ _LOGGER = logging.getLogger(__name__)
 _CONFIG = LazyConfig()
 
 T = TypeVar('T')
+T_Co = TypeVar('T_Co', covariant=True)
 F = TypeVar('F', bound=Callable[..., Any])
 
 
@@ -162,6 +166,12 @@ class ValidatorStorage(Dict[Type[Any], Callable[..., Any]]):
         elif typing.get_origin(type_) is list:
             [inner_type] = typing.get_args(type_)
             return make_list_validator(inner_type)  # type: ignore[return-value]
+        elif typing.get_origin(type_) is tuple:
+            args = typing.get_args(type_)
+            if len(args) == 2:
+                type_a, type_b = args
+                if type_a is type_b:
+                    return cast(Callable[..., T], make_pair_validator(type_a))
         # TODO more container types like tuple
         return super().__getitem__(type_)
 
@@ -562,6 +572,10 @@ def _decimal(
     val: Any, argname: str = None, *,
     large: bool = False, **kwargs: Any
 ) -> decimal.Decimal:
+    """decimal.Decimal fitting into a `numeric` postgres column.
+
+    :param large: specifies whether `numeric(8, 2)` or `numeric(11, 2)` is used
+    """
     if isinstance(val, str):
         try:
             val = decimal.Decimal(val)
@@ -571,14 +585,10 @@ def _decimal(
     if not isinstance(val, decimal.Decimal):
         raise ValidationSummary(
             TypeError(argname, n_("Must be a decimal.Decimal.")))
-    if not large and abs(val) >= 1e7:
-        # we are using numeric(8,2) columns in postgres
-        # which only support numbers up to this size
+    if not large and abs(val) >= 1e6:
         raise ValidationSummary(
             ValueError(argname, n_("Must be smaller than a million.")))
-    if abs(val) >= 1e10:
-        # we are using numeric(11,2) columns in postgres for summation columns
-        # which only support numbers up to this size
+    if abs(val) >= 1e9:
         raise ValidationSummary(
             ValueError(argname, n_("Must be smaller than a billion.")))
     return val
@@ -931,6 +941,21 @@ def make_list_validator(type_: Type[T]) -> ListValidator[T]:
     return list_validator
 
 
+class PairValidator(Protocol[T_Co]):
+    def __call__(self, val: Any, argname: str = None, **kargs: Any
+                 ) -> Tuple[T_Co, T_Co]:
+        ...
+
+
+def make_pair_validator(type_: Type[T]) -> PairValidator[T]:
+
+    @functools.wraps(_range)
+    def pair_validator(val: Any, argname: str = None, **kwargs: Any) -> Tuple[T, T]:
+        return _range(val, type_, argname, **kwargs)
+
+    return pair_validator
+
+
 @_add_typed_validator
 def _int_csv_list(
     val: Any, argname: str = None, **kwargs: Any
@@ -1124,14 +1149,13 @@ PERSONA_EVENT_CREATION: Mapping[str, Any] = {
     'country': Optional[Country],
 }
 
-PERSONA_FULL_ML_CREATION = {**PERSONA_BASE_CREATION}
-
-PERSONA_FULL_ASSEMBLY_CREATION = {**PERSONA_BASE_CREATION}
-
-PERSONA_FULL_EVENT_CREATION = {**PERSONA_BASE_CREATION, **PERSONA_EVENT_CREATION}
-
-PERSONA_FULL_CDE_CREATION = {**PERSONA_BASE_CREATION, **PERSONA_CDE_CREATION,
-                             'is_member': bool, 'is_searchable': bool}
+PERSONA_FULL_CREATION: Mapping[str, Dict[str, Any]] = {
+    'ml': {**PERSONA_BASE_CREATION},
+    'assembly': {**PERSONA_BASE_CREATION},
+    'event': {**PERSONA_BASE_CREATION, **PERSONA_EVENT_CREATION},
+    'cde': {**PERSONA_BASE_CREATION, **PERSONA_CDE_CREATION,
+            'is_member': bool, 'is_searchable': bool}
+}
 
 PERSONA_COMMON_FIELDS: Dict[str, Any] = {
     'username': Email,
@@ -1482,6 +1506,7 @@ GENESIS_CASE_COMMON_FIELDS: TypeMapping = {
 GENESIS_CASE_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'case_status': const.GenesisStati,
     'reviewer': ID,
+    'persona_id': Optional[ID],
     'pevent_id': Optional[ID],
     'pcourse_id': Optional[ID],
 }
@@ -4641,6 +4666,90 @@ def _query(
 
     # TODO why deepcopy?
     return copy.deepcopy(val)
+
+
+def _range(
+    val: Any, type_: Type[T], argname: str = None, **kwargs: Any
+) -> Tuple[T, T]:
+    """Validate val to be a tuple of exactly two values of the given type.
+
+    Used to specify a range to filter for.
+    """
+    val = _sequence(val, argname, **kwargs)
+
+    if not len(val) == 2:
+        raise ValidationSummary(ValueError(n_("Must contain exactly two elements.")))
+
+    errs = ValidationSummary()
+    new_val = []
+    for v in val:
+        with errs:
+            new_val.append(_ALL_TYPED[type_](v, argname, **kwargs))
+
+    if errs:
+        raise errs
+
+    from_val, to_val = new_val  # pylint: disable=unbalanced-tuple-unpacking
+    return (from_val, to_val)
+
+
+@_add_typed_validator
+def _log_filter(
+    val: Any, argname: str = None, *, log_table: LogTable, **kwargs: Any
+) -> LogFilter:
+    return _log_filter_common(
+        val, argname, log_table=log_table, filter_class=LogFilter)
+
+
+@_add_typed_validator
+def _log_filter_changelog(
+    val: Any, argname: str = None, *, log_table: LogTable, **kwargs: Any
+) -> LogFilterChangelog:
+    return _log_filter_common(
+        val, argname, log_table=log_table, filter_class=LogFilterChangelog)
+
+
+@_add_typed_validator
+def _log_filter_entity_log(
+    val: Any, argname: str = None, *, log_table: LogTable, **kwargs: Any
+) -> LogFilterEntityLog:
+    return _log_filter_common(
+        val, argname, log_table=log_table, filter_class=LogFilterEntityLog)
+
+
+@_add_typed_validator
+def _log_filter_finance(
+    val: Any, argname: str = None, *, log_table: LogTable, **kwargs: Any
+) -> LogFilterFinanceLog:
+    return _log_filter_common(
+        val, argname, log_table=log_table, filter_class=LogFilterFinanceLog)
+
+
+LF = TypeVar("LF", bound=LogFilter)
+
+
+def _log_filter_common(
+    val: Any, argname: str = None,
+    *, log_table: LogTable, filter_class: Type[LF],
+    **kwargs: Any
+) -> LF:
+
+    if isinstance(val, filter_class):
+        val_dict = val.__dict__
+    else:
+        val_dict = dict(_mapping(val, argname, **kwargs))
+
+    if not val_dict.get('length'):
+        val_dict['length'] = _CONFIG['DEFAULT_LOG_LENGTH']
+    if val_dict.get('table', log_table) != log_table:
+        raise ValidationSummary(ValueError(n_("Table mismatch.")))
+    # Ensure this is an enum member, not just a string.
+    val_dict['table'] = LogTable(log_table)
+
+    val_dict = _examine_dictionary_fields(
+        val_dict, {}, typing.get_type_hints(filter_class))
+
+    return filter_class(**val_dict)
 
 
 E = TypeVar('E', bound=Enum)

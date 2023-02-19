@@ -191,7 +191,7 @@ CREATE INDEX personas_is_member_idx ON core.personas(is_member);
 CREATE INDEX personas_is_searchable_idx ON core.personas(is_searchable);
 GRANT SELECT (id, username, password_hash, is_active, is_meta_admin, is_core_admin, is_cde_admin, is_finance_admin, is_event_admin, is_ml_admin, is_assembly_admin, is_cdelokal_admin, is_auditor, is_cde_realm, is_event_realm, is_ml_realm, is_assembly_realm, is_member, is_searchable, is_archived, is_purged) ON core.personas TO cdb_anonymous, cdb_ldap;
 GRANT UPDATE (username, password_hash) ON core.personas TO cdb_persona;
-GRANT SELECT, UPDATE (display_name, given_names, family_name, title, name_supplement, gender, birthday, telephone, mobile, address_supplement, address, postal_code, location, country, fulltext) ON core.personas TO cdb_persona;
+GRANT SELECT, UPDATE (display_name, given_names, family_name, title, name_supplement, pronouns, pronouns_nametag, pronouns_profile, gender, birthday, telephone, mobile, address_supplement, address, postal_code, location, country, fulltext) ON core.personas TO cdb_persona;
 GRANT SELECT (display_name, given_names, family_name, title, name_supplement) ON core.personas TO cdb_ldap;
 GRANT SELECT, UPDATE ON core.personas TO cdb_member; -- TODO maybe restrict notes to cdb_admin
 GRANT INSERT ON core.personas TO cdb_admin;
@@ -236,6 +236,8 @@ CREATE TABLE core.genesis_cases (
         case_status             integer NOT NULL DEFAULT 0,
         -- who moderated the request
         reviewer                integer REFERENCES core.personas(id) DEFAULT NULL,
+        -- the created or account merged into, if any
+        persona_id              integer REFERENCES core.personas(id) DEFAULT NULL,
         -- past event and course to be added to the new user
         pevent_id               integer DEFAULT NULL, -- REFERENCES past_event.events(id)
         pcourse_id              integer DEFAULT NULL -- REFERENCES past_event.courses(id)
@@ -546,6 +548,7 @@ CREATE TABLE cde.finance_log (
         delta                   numeric(8, 2),
         new_balance             numeric(8, 2),
         change_note             varchar,
+        transaction_date        date,
         -- checksums
         -- number of members (SELECT COUNT(*) FROM core.personas WHERE status = ...)
         members                 integer NOT NULL,

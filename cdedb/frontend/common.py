@@ -83,6 +83,9 @@ from cdedb.common.i18n import format_country_code, get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query
 from cdedb.common.query.defaults import DEFAULT_QUERIES
+from cdedb.common.query.log_filter import (
+    LogFilterChangelog, LogFilterEntityLog, LogFilterFinanceLog, LogTable,
+)
 from cdedb.common.roles import (
     ADMIN_KEYS, ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS, PERSONA_DEFAULTS,
     roles_to_db_role,
@@ -926,7 +929,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             params['quote_me'] = True
         return self.redirect(rs, 'core/show_user', params=params)
 
-    def safe_compile(self, rs: RequestState, target_file: str, cwd: PathLike,
+    def safe_compile(self, rs: RequestState, target_file: str, cwd: pathlib.Path,
                      runs: int, errormsg: Optional[str]) -> pathlib.Path:
         """Helper to compile latex documents in a safe way.
 
@@ -951,17 +954,18 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         try:
             for _ in range(runs):
                 subprocess.run(args, cwd=cwd, check=True,
-                               stdout=subprocess.DEVNULL)
+                               capture_output=True, text=True)
         except subprocess.CalledProcessError as e:
             if pdf_path.exists():
                 self.logger.debug(f"Deleting corrupted file {pdf_path}")
                 pdf_path.unlink()
-            self.logger.debug(f"Exception \"{e}\" caught and handled.")
+            self.logger.debug(f"Exception \"{e}\" caught and handled. Output follows:")
+            self.logger.debug(e.stdout)  # lualatex puts its errors to stdout
             if self.conf["CDEDB_DEV"]:
                 tstamp = round(now().timestamp())
                 backup_path = "/tmp/cdedb-latex-error-{}.tex".format(tstamp)
                 self.logger.info(f"Copying source file to {backup_path}")
-                shutil.copy2(target_file, backup_path)
+                shutil.copy2(cwd / target_file, backup_path)
             errormsg = errormsg or n_(
                 "LaTeX compilation failed. Try downloading the "
                 "source files and compiling them manually.")
@@ -984,7 +988,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 tmp_file.write(data.encode('utf8'))
                 tmp_file.flush()
                 path = self.safe_compile(
-                    rs, tmp_file.name, tmp_dir, runs=runs, errormsg=errormsg)
+                    rs, tmp_file.name, pathlib.Path(tmp_dir), runs=runs,
+                    errormsg=errormsg)
                 if path.exists():
                     # noinspection PyTypeChecker
                     with open(path, 'rb') as pdf:
@@ -1113,6 +1118,66 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if val != token_payload:
             return n_("Anti CSRF token is invalid.")
         return None
+
+    def generic_view_log(self, rs: RequestState, filter_params: CdEDBObject,
+                         table: str, template: str, template_kwargs: CdEDBObject = None
+                         ) -> werkzeug.Response:
+        """Generic helper to retrieve log data and render the result."""
+        table = LogTable(table)
+        # Convert filter params into LogFilter.
+        log_filter = check_validation(
+            rs, table.get_filter_class(), filter_params, log_table=table)
+        if rs.has_validation_errors() or log_filter is None:
+            # If validation fails, there is no good way to get a partial filter
+            #  that is valid, so we use an empty filter instead. This should not
+            #  matter much in practice because, with regular usage there should not
+            #  be a way to input invalid filter values.
+            log_filter = check_validation(
+                rs, table.get_filter_class(), {}, log_table=table)
+            rs.ignore_validation_errors()
+            assert log_filter is not None
+
+        # Retrieve entry count and log entries.
+        if table == LogTable.core_log:
+            total, log = self.coreproxy.retrieve_log(rs, log_filter)
+        elif table == LogTable.core_changelog:
+            assert isinstance(log_filter, LogFilterChangelog)
+            total, log = self.coreproxy.retrieve_changelog_meta(rs, log_filter)
+        elif table == LogTable.cde_finance_log:
+            assert isinstance(log_filter, LogFilterFinanceLog)
+            total, log = self.cdeproxy.retrieve_finance_log(rs, log_filter)
+        elif table == LogTable.cde_log:
+            total, log = self.cdeproxy.retrieve_cde_log(rs, log_filter)
+        elif table == LogTable.past_event_log:
+            assert isinstance(log_filter, LogFilterEntityLog)
+            total, log = self.pasteventproxy.retrieve_past_log(rs, log_filter)
+        elif table == LogTable.event_log:
+            assert isinstance(log_filter, LogFilterEntityLog)
+            total, log = self.eventproxy.retrieve_log(rs, log_filter)
+        elif table == LogTable.assembly_log:
+            assert isinstance(log_filter, LogFilterEntityLog)
+            total, log = self.assemblyproxy.retrieve_log(rs, log_filter)
+        elif table == LogTable.ml_log:
+            assert isinstance(log_filter, LogFilterEntityLog)
+            total, log = self.mlproxy.retrieve_log(rs, log_filter)
+        else:
+            raise RuntimeError(n_("Impossible."))
+
+        # Retrieve linked personas.
+        persona_ids = (
+                set(e['submitted_by'] for e in log if e['submitted_by'])
+                | set(e['persona_id'] for e in log if e['persona_id'])
+                | set(e['reviewed_by'] for e in log if e.get('reviewed_by'))
+        )
+        personas = self.coreproxy.get_personas(rs, persona_ids)
+
+        # Create pagination.
+        loglinks = calculate_loglinks(rs, total, log_filter._offset, log_filter._length)  # pylint: disable=protected-access
+        return self.render(rs, template, {
+            'log': log, 'total': total, 'length': log_filter.length,
+            'personas': personas, 'loglinks': loglinks,
+            **(template_kwargs or {})
+        })
 
 
 class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
@@ -2376,22 +2441,6 @@ def query_result_to_json(data: Collection[CdEDBObject], fields: Iterable[str],
             row[field] = value
         json_data.append(row)
     return json_serialize(json_data)
-
-
-def calculate_db_logparams(offset: Optional[int], length: int
-                           ) -> Tuple[Optional[int], int]:
-    """Modify the offset and length values used in the frontend to
-    allow for guaranteed valid sql queries.
-    """
-    _offset = offset
-    _length = length
-    if _offset and _offset < 0:
-        # Avoid non-positive lengths
-        if -_offset < length:
-            _length = _length + _offset
-        _offset = 0
-
-    return _offset, _length
 
 
 def calculate_loglinks(rs: RequestState, total: int,

@@ -285,13 +285,17 @@ class CoreGenesisMixin(CoreBaseFrontend):
         if (not self.is_admin(rs)
                 and "{}_admin".format(case['realm']) not in rs.user.roles):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        reviewer = pevent = pcourse = None
+        persona = reviewer = pevent = pcourse = None
+        if case['persona_id']:
+            persona = self.coreproxy.get_persona(rs, case['persona_id'])
         if case['reviewer']:
             reviewer = self.coreproxy.get_persona(rs, case['reviewer'])
-        if case['pevent_id']:
-            pevent = self.pasteventproxy.get_past_event(rs, case['pevent_id'])
-        if case['pcourse_id']:
-            pcourse = self.pasteventproxy.get_past_course(rs, case['pcourse_id'])
+        if "event" in rs.user.roles:
+            # e.g. for ml-only ml admins
+            if case['pevent_id']:
+                pevent = self.pasteventproxy.get_past_event(rs, case['pevent_id'])
+            if case['pcourse_id']:
+                pcourse = self.pasteventproxy.get_past_course(rs, case['pcourse_id'])
         persona_data = {k: v for k, v in case.items() if k in PERSONA_COMMON_FIELDS}
         # Set a valid placeholder value, that will pass the input validation.
         persona_data['id'] = 1
@@ -309,7 +313,8 @@ class CoreGenesisMixin(CoreBaseFrontend):
         }
         return self.render(rs, "genesis/genesis_show_case", {
             'reviewer': reviewer, 'pevent': pevent, 'pcourse': pcourse,
-            'doppelgangers': doppelgangers,
+            'persona': persona, 'doppelgangers': doppelgangers,
+            'REALM_SPECIFIC_GENESIS_FIELDS': REALM_SPECIFIC_GENESIS_FIELDS,
             'disabled_radios': non_editable_doppelgangers, 'title_map': title_map,
         })
 
@@ -428,7 +433,8 @@ class CoreGenesisMixin(CoreBaseFrontend):
             rs.notify("error", n_("Failed."))
             return self.genesis_show_case(rs, genesis_case_id)
 
-        if (decision.is_create() or decision.is_update()) and case['pevent_id']:
+        if ((decision.is_create() or decision.is_update()) and case['pevent_id']
+                and case['realm'] == 'cde'):
             code = self.pasteventproxy.add_participant(
                 rs, pevent_id=case['pevent_id'], pcourse_id=case['pcourse_id'],
                 persona_id=persona_id)

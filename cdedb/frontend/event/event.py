@@ -32,9 +32,9 @@ from cdedb.common.validation import (
     EVENT_TRACK_GROUP_COMMON_FIELDS,
 )
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, REQUESTfile, access, cdedburl,
+    Headers, REQUESTdata, REQUESTdatadict, REQUESTfile, access, cdedburl,
     check_validation as check, check_validation_optional as check_optional, drow_name,
-    event_guard, inspect_validation as inspect, process_dynamic_input,
+    event_guard, inspect_validation as inspect, periodic, process_dynamic_input,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
 
@@ -96,7 +96,7 @@ class EventEventMixin(EventBaseFrontend):
                         rs, rs.ambience['event']['orgas']).values(),
                     key=EntitySorter.persona))
         if "ml" in rs.user.roles:
-            ml_data = self._get_mailinglist_setter(rs.ambience['event'])
+            ml_data = self._get_mailinglist_setter(rs, rs.ambience['event'])
             params['participant_list'] = self.mlproxy.verify_existence(
                 rs, ml_type.get_full_address(ml_data))
         if event_id in rs.user.orga or self.is_admin(rs):
@@ -247,12 +247,9 @@ class EventEventMixin(EventBaseFrontend):
                       n_("Must have orgas in order to create a mailinglist."))
             return self.redirect(rs, "event/show_event")
 
-        ml_data = self._get_mailinglist_setter(rs.ambience['event'], orgalist)
+        ml_data = self._get_mailinglist_setter(rs, rs.ambience['event'], orgalist)
         ml_address = ml_type.get_full_address(ml_data)
         if not self.mlproxy.verify_existence(rs, ml_address):
-            if not orgalist:
-                link = cdedburl(rs, "event/register", {'event_id': event_id})
-                ml_data['description'] = ml_data['description'].format(link)
             code = self.mlproxy.create_mailinglist(rs, ml_data)
             msg = (n_("Orga mailinglist created.") if orgalist
                    else n_("Participant mailinglist created."))
@@ -297,8 +294,7 @@ class EventEventMixin(EventBaseFrontend):
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         for course in courses.values():
             blocked_tracks.update(course['segments'])
-        event = self.eventproxy.get_event(rs, event_id)
-        for tg in event['track_groups'].values():
+        for tg in rs.ambience['event']['track_groups'].values():
             blocked_tracks.update(tg['track_ids'])
         return blocked_tracks
 
@@ -788,11 +784,55 @@ class EventEventMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "event/group_summary")
 
-    @staticmethod
-    def _get_mailinglist_setter(event: CdEDBObject, orgalist: bool = False
+    @periodic("mail_orgateam_reminders", period=4*24)  # once per day
+    def mail_orgateam_reminders(self, rs: RequestState, store: CdEDBObject
                                 ) -> CdEDBObject:
-        # During event creation the id is not yet known.
-        event_id = event.get('id')
+        """Send halftime and past event mails to orgateams."""
+        event_ids = self.eventproxy.list_events(rs)
+        events = self.eventproxy.get_events(rs, event_ids)
+
+        def is_halftime(part: CdEDBObject) -> bool:
+            begin: datetime.date = part["part_begin"]
+            end: datetime.date = part["part_end"]
+            duration = end - begin
+            one_day = datetime.timedelta(days=1)
+            return begin + duration / 2 <= now().date() < begin + duration / 2 + one_day
+
+        def is_over(part: CdEDBObject) -> bool:
+            end: datetime.date = part["part_end"]
+            one_day = datetime.timedelta(days=1)
+            return end + one_day <= now().date()
+
+        for event_id, event in events.items():
+            # take care, since integer keys are serialized to strings!
+            if str(event_id) not in store:
+                store[str(event_id)] = {}
+            if store[str(event_id)].get("did_past_event_reminder"):
+                continue
+            if not event["orga_address"]:
+                continue
+
+            headers: Headers = {
+                "To": (event["orga_address"],),
+                "Reply-To": "akademien@lists.cde-ev.de"
+            }
+            # send halftime mail (up to one per part)
+            if any(is_halftime(part) for part in event["parts"].values()):
+                headers["Subject"] = ("10 Tipps für gute Akademien die bei allen"
+                                      " funktionieren!")
+                self.do_mail(rs, "halftime_reminder", headers)
+            # send past event mail (one per event)
+            elif all(is_over(part) for part in event["parts"].values()):
+                headers["Subject"] = ("Diese Informationen haben andere Orgateams"
+                                      " schockiert!")
+                params = {"rechenschafts_deadline": now() + datetime.timedelta(days=90)}
+                self.do_mail(rs, "past_event_reminder", headers, params=params)
+                store[str(event_id)]["did_past_event_reminder"] = True
+        return store
+
+    @staticmethod
+    def _get_mailinglist_setter(rs: RequestState, event: CdEDBObject,
+                                orgalist: bool = False) -> CdEDBObject:
         if orgalist:
             descr = ("Bitte wende Dich bei Fragen oder Problemen, die mit"
                      " unserer Veranstaltung zusammenhängen, über diese Liste"
@@ -807,18 +847,19 @@ class EventEventMixin(EventBaseFrontend):
                 'subject_prefix': event['shortname'],
                 'maxsize': ml_type.EventOrgaMailinglist.maxsize_default,
                 'is_active': True,
-                'event_id': event_id,
+                'event_id': event["id"],
                 'notes': None,
                 'moderators': event['orgas'],
                 'ml_type': const.MailinglistTypes.event_orga,
             }
             return orga_ml_data
         else:
-            descr = ("Dieser Liste kannst Du nur beitreten, indem Du Dich zu "
-                     "unserer [Veranstaltung anmeldest]({}) und den Status "
-                     "*Teilnehmer* erhälst. Auf dieser Liste stehen alle "
-                     "Teilnehmer unserer Veranstaltung; sie kann im Vorfeld "
-                     "zum Austausch untereinander genutzt werden.")
+            link = cdedburl(rs, "event/register", {'event_id': event["id"]})
+            descr = (f"Dieser Liste kannst Du nur beitreten, indem Du Dich zu "
+                     f"unserer [Veranstaltung anmeldest]({link}) und den Status "
+                     f"*Teilnehmer* erhälst. Auf dieser Liste stehen alle "
+                     f"Teilnehmer unserer Veranstaltung; sie kann im Vorfeld "
+                     f"zum Austausch untereinander genutzt werden.")
             participant_ml_data = {
                 'title': f"{event['title']} Teilnehmer",
                 'local_part': f"{event['shortname'].lower()}-all",
@@ -829,7 +870,7 @@ class EventEventMixin(EventBaseFrontend):
                 'subject_prefix': event['shortname'],
                 'maxsize': ml_type.EventAssociatedMailinglist.maxsize_default,
                 'is_active': True,
-                'event_id': event_id,
+                'event_id': event["id"],
                 'registration_stati': [const.RegistrationPartStati.participant],
                 'notes': None,
                 'moderators': event['orgas'],
@@ -901,32 +942,26 @@ class EventEventMixin(EventBaseFrontend):
             return self.create_event_form(rs)
         assert data is not None
 
-        orga_ml_data = None
-        orga_ml_address = None
+        new_id = self.eventproxy.create_event(rs, data)
+        data["id"] = new_id
+
         if create_orga_list:
-            orga_ml_data = self._get_mailinglist_setter(data, orgalist=True)
+            orga_ml_data = self._get_mailinglist_setter(rs, data, orgalist=True)
             orga_ml_address = ml_type.get_full_address(orga_ml_data)
-            data['orga_address'] = orga_ml_address
             if self.mlproxy.verify_existence(rs, orga_ml_address):
-                orga_ml_data = None
                 rs.notify("info", n_("Mailinglist %(address)s already exists."),
                           {'address': orga_ml_address})
-        else:
-            data['orga_address'] = None
-
-        new_id = self.eventproxy.create_event(rs, data)
-        if orga_ml_data:
-            orga_ml_data['event_id'] = new_id
-            code = self.mlproxy.create_mailinglist(rs, orga_ml_data)
-            rs.notify_return_code(code, success=n_("Orga mailinglist created."))
+            else:
+                code = self.mlproxy.create_mailinglist(rs, orga_ml_data)
+                rs.notify_return_code(code, success=n_("Orga mailinglist created."))
+            code = self.eventproxy.set_event(
+                rs, {"id": new_id, "orga_address": orga_ml_address},
+                change_note="Mailadresse der Orgas gesetzt.")
+            rs.notify_return_code(code)
         if create_participant_list:
-            participant_ml_data = self._get_mailinglist_setter(data)
+            participant_ml_data = self._get_mailinglist_setter(rs, data)
             participant_ml_address = ml_type.get_full_address(participant_ml_data)
             if not self.mlproxy.verify_existence(rs, participant_ml_address):
-                link = cdedburl(rs, "event/register", {'event_id': new_id})
-                descr = participant_ml_data['description'].format(link)
-                participant_ml_data['description'] = descr
-                participant_ml_data['event_id'] = new_id
                 code = self.mlproxy.create_mailinglist(rs, participant_ml_data)
                 rs.notify_return_code(code,
                                       success=n_("Participant mailinglist created."))

@@ -1049,7 +1049,7 @@ def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = N
 
     spec.update({
         f"reg_fields.xfield_{f['field_name']}": QuerySpecEntry(
-            f['kind'].name, f['field_name'], choices=field_choices[f['field_name']])
+            f['kind'].name, f['title'], choices=field_choices[f['field_name']])
         for f in sorted_fields[const.FieldAssociations.registration]
     })
     return spec
@@ -1100,6 +1100,8 @@ def make_course_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None,
             f"track{track_id}.attendees": QuerySpecEntry(
                 "int", n_("attendee count"), prefix),
             f"track{track_id}.instructors": QuerySpecEntry(
+                "int", n_("potential instructor count"), prefix),
+            f"track{track_id}.assigned_instructors": QuerySpecEntry(
                 "int", n_("instructor count"), prefix),
         }
 
@@ -1163,7 +1165,7 @@ def make_course_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None,
 
     spec.update({
         f"course_fields.xfield_{field['field_name']}": QuerySpecEntry(
-            field['kind'].name, field['field_name'],
+            field['kind'].name, field['title'],
             choices=field_choices[field['field_name']])
         for field in sorted_course_fields
     })
@@ -1244,7 +1246,7 @@ def make_lodgement_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None
 
     spec.update({
         f"lodgement_fields.xfield_{f['field_name']}": QuerySpecEntry(
-            f['kind'].name, f['field_name'], choices=field_choices[f['field_name']])
+            f['kind'].name, f['title'], choices=field_choices[f['field_name']])
         for f in sorted_lodgement_fields
     })
 
