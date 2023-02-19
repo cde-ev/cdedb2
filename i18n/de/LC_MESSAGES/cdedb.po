@@ -4858,7 +4858,7 @@ msgid ""
 "Because you are not a CdE-Member, you will have to pay an additional fee of "
 "%(additional_fee)s (already included in the above figure)."
 msgstr ""
-"Da Du kein CdE-Mitglied bist, musst du einen zusätzlichen Beitrag in Höhe "
+"Da Du kein CdE-Mitglied bist, musst Du einen zusätzlichen Beitrag in Höhe "
 "von %(additional_fee)s bezahlen (bereits in der obigen Summe enthalten)."
 
 #: cdedb/frontend/event/registration.py:578
@@ -13814,7 +13814,7 @@ msgstr ""
 msgid ""
 "Because you are not a CdE-Member, you might have to pay an additional fee."
 msgstr ""
-"Da Du kein CdE-Mitglied bist, musst möglicherweise einen höheren Beitrag "
+"Da Du kein CdE-Mitglied bist, musst Du möglicherweise einen höheren Beitrag "
 "bezahlen."
 
 #: cdedb/frontend/templates/web/event/registration/register.tmpl:133

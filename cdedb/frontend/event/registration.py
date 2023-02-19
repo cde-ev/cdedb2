@@ -354,24 +354,22 @@ class EventRegistrationMixin(EventBaseFrontend):
     @access("event", check_anti_csrf=False)
     @REQUESTdata("persona_id", "part_ids", "field_names")
     def precompute_fee(self, rs: RequestState, event_id: int, persona_id: int,
-                       part_ids: vtypes.IntCSVList, field_names: Optional[str],
+                       part_ids: vtypes.IntCSVList, field_ids: vtypes.IntCSVList,
                        ) -> Response:
+        """Compute the total fee for a user based on seleceted parts and bool fields.
+
+        Note that this does not require an existing registration, so this can be used
+        for a preview during registration.
+
+        :returns: A dict with localized text to be used in the preview.
+        """
 
         if len(all_part_ids := rs.ambience['event']['parts']) == 1:
             part_ids = all_part_ids.keys()
 
-        fields_by_name = {
-            f['field_name']: f['id'] for f in rs.ambience['event']['fields'].values()
-        }
-        field_names = {
-            fn.removeprefix('fields.')
-            for fn in (field_names or "").split(',')
-            if fn.strip()
-        }
-        if rs.has_validation_errors() or not field_names <= fields_by_name.keys():
+        if not (self.eventproxy.is_orga(rs, event_id=event_id) or self.is_admin(rs)
+                or persona_id == rs.user.persona_id) or rs.has_validation_errors():
             return Response("{}", mimetype='application/json')
-
-        field_ids = {fields_by_name[fn] for fn in field_names}
 
         complex_fee = self.eventproxy.precompute_fee(
             rs, event_id, persona_id, part_ids, field_ids)
