@@ -793,18 +793,16 @@ class EventCourseMixin(EventBaseFrontend):
                        f" {rs.ambience['course']['shortname']} geändert.")
 
         reg_data = []
-        for registration_id, registration in registrations.items():
+        for reg_id, registration in registrations.items():
             new_reg: CdEDBObject = {
-                'id': registration_id,
+                'id': reg_id,
                 'tracks': {},
             }
             # Check if registration is new attendee or deleted attendee
             # in any track of the course
             for track_id in rs.ambience['course']['segments']:
-                new_attendee = (
-                        registration_id in data["new_{}".format(track_id)])
-                deleted_attendee = data.get(
-                    "delete_{}_{}".format(track_id, registration_id), False)
+                new_attendee = reg_id in data[f"new_{track_id}"]
+                deleted_attendee = data.get(f"delete_{track_id}_{reg_id}", False)
                 if new_attendee or deleted_attendee:
                     new_reg['tracks'][track_id] = {
                         'course_id': (course_id if new_attendee else None)

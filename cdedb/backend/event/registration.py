@@ -800,6 +800,9 @@ class EventRegistrationBackend(EventBaseBackend):
         data = affirm_array(vtypes.Registration, data)
         change_note = affirm_optional(str, change_note)
 
+        if not data:
+            return 1
+
         with Atomizer(rs):
             event_ids = {e['event_id'] for e in self.sql_select(
                 rs, "event.registrations", ("event_id",),
