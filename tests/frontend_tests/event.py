@@ -5657,12 +5657,17 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertValidationError('title', "Darf nicht leer sein.")
         self.assertValidationError('shortname', "Darf nicht leer sein.")
         f['title'] = f['shortname'] = "abc"
+        f['track_ids'] = []
+        self.submit(f, check_notification=False)
+        self.assertValidationError(
+            'track_ids', "Darf nicht leer sein.", index=0)
         f['track_ids'] = [1, 2]
         self.submit(f, check_notification=False)
         self.assertValidationError(
-            'track_ids', "Kursschienensynchronisierung fehlgeschlagen,"
-                         " weil bereits Kurswahlen existieren.",
-            index=0)
+            'track_ids', "Inkompatible Kursschienen", index=0)
+        self.assertValidationError(
+            'track_ids', "Kursschienensynchronisierung fehlgeschlagen, weil"
+                         " inkompatible Kurswahlen existieren.", index=0)
 
         # Now a valid one.
         self.traverse("Veranstaltungen", "TripelAkademie", "Veranstaltungsteile",
