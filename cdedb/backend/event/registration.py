@@ -239,7 +239,7 @@ class EventRegistrationBackend(EventBaseBackend):
         event_id = affirm(vtypes.ID, event_id)
         active_only = affirm(bool, active_only)
 
-        params = []
+        params: List[Any] = []
 
         if involved_parts is not None:
             involved_parts = affirm_set(vtypes.ID, involved_parts)
@@ -787,6 +787,8 @@ class EventRegistrationBackend(EventBaseBackend):
 
             # Perform sanity checks.
             self._track_groups_sanity_check(rs, event_id)
+
+        return ret
 
     @access("event")
     def set_registrations(self, rs: RequestState, data: Collection[CdEDBObject],
