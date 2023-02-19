@@ -702,7 +702,7 @@
             },
             "Externenzusatzbeitrag": {
                 "amount": "5.00",
-                "condition": "not (is_member or fields.is_child)",
+                "condition": "not (is_member or field.is_child)",
                 "notes": null
             }
         },
