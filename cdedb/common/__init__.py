@@ -208,8 +208,7 @@ class RequestState(ConnectionContainer):
     def notify_return_code(self, code: Union[DefaultReturnCode, bool], *,
                            success: str = n_("Change committed."),
                            info: str = n_("Change pending."),
-                           error: str = n_("Change failed."),
-                           suppress_on_notification: bool = False) -> None:
+                           error: str = n_("Change failed.")) -> None:
         """Small helper to issue a notification based on a return code.
 
         We allow some flexibility in what type of return code we accept. It
@@ -220,11 +219,8 @@ class RequestState(ConnectionContainer):
         :param success: Affirmative message for positive return codes.
         :param info: Message for negative return codes signalling review.
         :param error: Exception message for zero return codes.
-        :param suppress_on_notification: Silence if another notificiation is present.
         """
-        if self.notifications and suppress_on_notification:
-            return
-        elif not code:
+        if not code:
             self.notify("error", error)
         elif code is True or code > 0:
             self.notify("success", success)

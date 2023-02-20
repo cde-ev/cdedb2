@@ -473,8 +473,7 @@ class CoreBaseBackend(AbstractBackend):
             ret = 0
             if len(udata) == 1:
                 rs.notify('warning', n_("Change has reverted pending change."))
-                # notify_return_code will be suppressed in the frontend
-                return ret
+                return 1
             elif len(udata) > 1:
                 ret = self.commit_persona(rs, udata)
                 if not ret:

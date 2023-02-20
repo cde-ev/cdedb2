@@ -1099,7 +1099,7 @@ class CoreBaseFrontend(AbstractFrontend):
         change_note = "Normale Änderung."
         code = self.coreproxy.change_persona(
             rs, data, generation=generation, change_note=change_note)
-        rs.notify_return_code(code, suppress_on_notification=True)
+        rs.notify_return_code(code)
         return self.redirect_show_user(rs, rs.user.persona_id)
 
     @access("core_admin")
