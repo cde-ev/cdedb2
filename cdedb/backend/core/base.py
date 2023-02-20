@@ -341,8 +341,9 @@ class CoreBaseBackend(AbstractBackend):
                                  "WHERE persona_id = %s AND generation = %s")
                     self.query_exec(rs, query, (const.MemberChangeStati.pending,
                                                 data['id'], current_generation))
-                if {"core_admin", "cde_admin"} & rs.user.roles:
-                    # if user is admin, set the change as reviewed
+                if (current_state != committed_state
+                        and {"core_admin", "cde_admin"} & rs.user.roles):
+                    # if user is admin, set pending change as reviewed
                     return self.changelog_resolve_change(
                         rs, data['id'], current_generation, ack=True)
                 # We successfully made the data set match to the requested
