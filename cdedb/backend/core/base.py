@@ -341,11 +341,13 @@ class CoreBaseBackend(AbstractBackend):
                                  "WHERE persona_id = %s AND generation = %s")
                     self.query_exec(rs, query, (const.MemberChangeStati.pending,
                                                 data['id'], current_generation))
+                if {"core_admin", "cde_admin"} & rs.user.roles:
+                    # if user is admin, set the change as reviewed
+                    return self.changelog_resolve_change(
+                        rs, data['id'], current_generation, ack=True)
                 # We successfully made the data set match to the requested
-                # values. It's not our fault, that we didn't have to do any
-                # work.
+                # values. It's not our fault, that we didn't have to do any work.
                 return 1
-
             # Determine if something requiring a review changed.
             fields_requiring_review = {
                 "birthday", "family_name", "given_names", "birth_name",
