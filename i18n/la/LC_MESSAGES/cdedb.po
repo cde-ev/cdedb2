@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2023-02-18 13:41+0100\n"
+"POT-Creation-Date: 2023-02-20 01:25+0100\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -36,8 +36,8 @@ msgstr ""
 #: cdedb/backend/assembly.py:2042 cdedb/backend/assembly.py:2172
 #: cdedb/backend/assembly.py:2197 cdedb/backend/assembly.py:2252
 #: cdedb/backend/cde/lastschrift.py:87 cdedb/backend/cde/lastschrift.py:112
-#: cdedb/backend/cde/lastschrift.py:263 cdedb/backend/core/base.py:529
-#: cdedb/backend/core/base.py:752 cdedb/backend/core/genesis.py:254
+#: cdedb/backend/cde/lastschrift.py:263 cdedb/backend/core/base.py:531
+#: cdedb/backend/core/base.py:754 cdedb/backend/core/genesis.py:254
 #: cdedb/backend/core/genesis.py:257 cdedb/backend/core/genesis.py:285
 #: cdedb/backend/core/genesis.py:308 cdedb/backend/core/genesis.py:374
 #: cdedb/backend/event/__init__.py:283 cdedb/backend/event/__init__.py:380
@@ -94,7 +94,7 @@ msgid "Not privileged."
 msgstr ""
 
 #: cdedb/backend/assembly.py:364 cdedb/backend/cde/base.py:543
-#: cdedb/backend/core/base.py:2569 cdedb/backend/event/query.py:582
+#: cdedb/backend/core/base.py:2571 cdedb/backend/event/query.py:582
 #: cdedb/backend/ml.py:306 cdedb/backend/past_event.py:821
 msgid "Bad scope."
 msgstr ""
@@ -374,8 +374,8 @@ msgstr ""
 
 #: cdedb/backend/assembly.py:2332 cdedb/backend/cde/base.py:436
 #: cdedb/backend/cde/lastschrift.py:423 cdedb/backend/common.py:420
-#: cdedb/backend/core/base.py:2058 cdedb/backend/event/base.py:914
-#: cdedb/common/__init__.py:232 cdedb/frontend/assembly/__init__.py:1298
+#: cdedb/backend/core/base.py:2060 cdedb/backend/event/base.py:914
+#: cdedb/common/__init__.py:230 cdedb/frontend/assembly/__init__.py:1298
 #: cdedb/frontend/cde/base.py:702 cdedb/frontend/cde/lastschrift.py:479
 #: cdedb/frontend/cde/parse_statement.py:652 cdedb/frontend/common.py:611
 #: cdedb/frontend/common.py:1164 cdedb/frontend/event/base.py:481
@@ -453,7 +453,7 @@ msgstr ""
 msgid "May not grant trial membership to member."
 msgstr ""
 
-#: cdedb/backend/cde/base.py:508 cdedb/backend/core/base.py:1877
+#: cdedb/backend/cde/base.py:508 cdedb/backend/core/base.py:1879
 msgid "Too many queries."
 msgstr ""
 
@@ -573,276 +573,276 @@ msgstr ""
 msgid "No contamination!"
 msgstr ""
 
-#: cdedb/backend/core/base.py:401
+#: cdedb/backend/core/base.py:403
 msgid "Non-waiting change not committed."
 msgstr ""
 
-#: cdedb/backend/core/base.py:406
+#: cdedb/backend/core/base.py:408
 msgid "Conflicting pending change."
 msgstr ""
 
-#: cdedb/backend/core/base.py:473
+#: cdedb/backend/core/base.py:475
 msgid "Change has reverted pending change."
 msgstr ""
 
-#: cdedb/backend/core/base.py:478
+#: cdedb/backend/core/base.py:480
 msgid "Modification failed."
 msgstr ""
 
-#: cdedb/backend/core/base.py:658 cdedb/backend/core/base.py:2420
-#: cdedb/backend/core/base.py:2443 cdedb/frontend/core/base.py:1760
+#: cdedb/backend/core/base.py:660 cdedb/backend/core/base.py:2422
+#: cdedb/backend/core/base.py:2445 cdedb/frontend/core/base.py:1760
 msgid "Nonexistent user."
 msgstr ""
 
-#: cdedb/backend/core/base.py:705 cdedb/backend/core/base.py:2226
-#: cdedb/backend/core/base.py:2249 cdedb/backend/core/base.py:2379
+#: cdedb/backend/core/base.py:707 cdedb/backend/core/base.py:2228
+#: cdedb/backend/core/base.py:2251 cdedb/backend/core/base.py:2381
 msgid "Persona does not exist."
 msgstr ""
 
-#: cdedb/backend/core/base.py:708
+#: cdedb/backend/core/base.py:710
 msgid "Non-waiting change without generation override."
 msgstr ""
 
-#: cdedb/backend/core/base.py:714
+#: cdedb/backend/core/base.py:716
 msgid "Realm modification prevented."
 msgstr ""
 
-#: cdedb/backend/core/base.py:720
+#: cdedb/backend/core/base.py:722
 msgid "Admin privilege modification prevented."
 msgstr ""
 
-#: cdedb/backend/core/base.py:724
+#: cdedb/backend/core/base.py:726
 msgid "Membership modification prevented."
 msgstr ""
 
-#: cdedb/backend/core/base.py:727
+#: cdedb/backend/core/base.py:729
 msgid "Hiding prevented."
 msgstr ""
 
-#: cdedb/backend/core/base.py:731
+#: cdedb/backend/core/base.py:733
 msgid "Archive modification prevented."
 msgstr ""
 
-#: cdedb/backend/core/base.py:739
+#: cdedb/backend/core/base.py:741
 msgid "Modification of balance prevented."
 msgstr ""
 
-#: cdedb/backend/core/base.py:741
+#: cdedb/backend/core/base.py:743
 msgid "Modification of email address prevented."
 msgstr ""
 
-#: cdedb/backend/core/base.py:743
+#: cdedb/backend/core/base.py:745
 msgid "Modification of foto prevented."
 msgstr ""
 
-#: cdedb/backend/core/base.py:745
+#: cdedb/backend/core/base.py:747
 msgid "Own activation prevented."
 msgstr ""
 
-#: cdedb/backend/core/base.py:759
+#: cdedb/backend/core/base.py:761
 msgid "Editing archived member impossible."
 msgstr ""
 
-#: cdedb/backend/core/base.py:768
+#: cdedb/backend/core/base.py:770
 msgid "Special change not committed."
 msgstr ""
 
-#: cdedb/backend/core/base.py:893 cdedb/backend/core/base.py:957
+#: cdedb/backend/core/base.py:895 cdedb/backend/core/base.py:959
 #: cdedb/frontend/core/base.py:1313 cdedb/frontend/core/base.py:1394
 msgid "Cannot modify own meta admin privileges."
 msgstr ""
 
-#: cdedb/backend/core/base.py:900
+#: cdedb/backend/core/base.py:902
 msgid "Pending privilege change."
 msgstr ""
 
-#: cdedb/backend/core/base.py:907
+#: cdedb/backend/core/base.py:909
 msgid "User does not fit the requirements for this admin privilege."
 msgstr ""
 
-#: cdedb/backend/core/base.py:951
+#: cdedb/backend/core/base.py:953
 #, python-format
 msgid "Invalid privilege change state: %(status)s."
 msgstr ""
 
-#: cdedb/backend/core/base.py:960 cdedb/frontend/core/base.py:1397
+#: cdedb/backend/core/base.py:962 cdedb/frontend/core/base.py:1397
 msgid ""
 "Only a different admin than the submitter may approve a privilege change."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1006
+#: cdedb/backend/core/base.py:1008
 msgid "Invalid new privilege change status."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1082
+#: cdedb/backend/core/base.py:1084
 msgid "No realm provided."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1114
+#: cdedb/backend/core/base.py:1116
 msgid "Tried to credit balance to non-cde person."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1154
+#: cdedb/backend/core/base.py:1156
 msgid "Not a CdE account."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1165
+#: cdedb/backend/core/base.py:1167
 msgid "Active lastschrift permit found."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1375
+#: cdedb/backend/core/base.py:1377
 msgid "You are not allowed to archive this user."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1383
+#: cdedb/backend/core/base.py:1385
 msgid "Cannot archive admins."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1392
+#: cdedb/backend/core/base.py:1394
 msgid "Active lastschrift exists."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1406
+#: cdedb/backend/core/base.py:1408
 msgid "Failed to revoke membership."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1410
+#: cdedb/backend/core/base.py:1412
 msgid "Failed to remove foto."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1501
+#: cdedb/backend/core/base.py:1503
 msgid "Involved in unfinished event."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1530
+#: cdedb/backend/core/base.py:1532
 #, python-format
 msgid "Sole moderator of a mailinglist %(ml_ids)s."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1556
+#: cdedb/backend/core/base.py:1558
 msgid "Cannot archive silently."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1577 cdedb/frontend/common.py:1245
+#: cdedb/backend/core/base.py:1579 cdedb/frontend/common.py:1245
 #: cdedb/frontend/core/base.py:2126
 msgid "User with this E-Mail exists already."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1606
+#: cdedb/backend/core/base.py:1608
 msgid "Persona is not archived."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1642
+#: cdedb/backend/core/base.py:1644
 msgid "Cannot purge silently."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1668 cdedb/frontend/core/base.py:1914
+#: cdedb/backend/core/base.py:1670 cdedb/frontend/core/base.py:1914
 msgid "Name collision."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1688 cdedb/frontend/core/genesis.py:132
+#: cdedb/backend/core/base.py:1690 cdedb/frontend/core/genesis.py:132
 #: cdedb/frontend/core/genesis.py:433
 msgid "Failed."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1769
+#: cdedb/backend/core/base.py:1771
 msgid "Access to persona data inhibited."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1771
+#: cdedb/backend/core/base.py:1773
 msgid "Not an event user."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1817
+#: cdedb/backend/core/base.py:1819
 msgid "May not provide more than one input."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1880
+#: cdedb/backend/core/base.py:1882
 msgid "Not a CdE user."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1886
+#: cdedb/backend/core/base.py:1888
 msgid "Improper access to member data."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1899
+#: cdedb/backend/core/base.py:1901
 msgid "Not an ml user."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1911
+#: cdedb/backend/core/base.py:1913
 msgid "Not an assembly user."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1928
+#: cdedb/backend/core/base.py:1930
 msgid "Must be privileged."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1953
+#: cdedb/backend/core/base.py:1955
 msgid "Unable to create this sort of persona."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2040 cdedb/backend/core/base.py:2304
-#: cdedb/backend/core/base.py:2373
+#: cdedb/backend/core/base.py:2042 cdedb/backend/core/base.py:2306
+#: cdedb/backend/core/base.py:2375
 msgid "Atomized – impossible to escalate."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2231
+#: cdedb/backend/core/base.py:2233
 msgid "Preventing reset of admin."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2254 cdedb/frontend/common.py:1863
+#: cdedb/backend/core/base.py:2256 cdedb/frontend/common.py:1863
 msgid "Link expired."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2256 cdedb/backend/core/base.py:2258
+#: cdedb/backend/core/base.py:2258 cdedb/backend/core/base.py:2260
 msgid "Link invalid or already used."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2280
+#: cdedb/backend/core/base.py:2282
 msgid "Selecting persona allowed for reset only."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2283
+#: cdedb/backend/core/base.py:2285
 msgid "Could not determine persona to reset."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2285
+#: cdedb/backend/core/base.py:2287
 msgid "No authorization provided."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2288
+#: cdedb/backend/core/base.py:2290
 msgid "Password verification failed."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2294
+#: cdedb/backend/core/base.py:2296
 msgid "No new password provided."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2297 cdedb/common/validation/__init__.py:1007
+#: cdedb/backend/core/base.py:2299 cdedb/common/validation/__init__.py:1007
 #: cdedb/frontend/core/base.py:1717 cdedb/frontend/core/base.py:1883
 msgid "Password too weak."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2352 cdedb/frontend/cde/base.py:640
+#: cdedb/backend/core/base.py:2354 cdedb/frontend/cde/base.py:640
 #: cdedb/frontend/cde/parse.py:362 cdedb/frontend/common.py:869
 #: cdedb/frontend/event/registration.py:219
 msgid "No input provided."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2354
+#: cdedb/backend/core/base.py:2356
 msgid "More than one input provided."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2359 cdedb/frontend/core/base.py:1866
+#: cdedb/backend/core/base.py:2361 cdedb/frontend/core/base.py:1866
 #, fuzzy
 msgid "Unknown email address."
 msgstr "inscriptio electronica nova"
 
-#: cdedb/backend/core/base.py:2422
+#: cdedb/backend/core/base.py:2424
 msgid "Inactive user."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2445
+#: cdedb/backend/core/base.py:2447
 msgid "Lockdown active."
 msgstr ""
 
@@ -1284,51 +1284,51 @@ msgstr ""
 msgid "Change failed."
 msgstr ""
 
-#: cdedb/common/__init__.py:243
+#: cdedb/common/__init__.py:241
 msgid "Input seems faulty. Please double-check if you really want to save it."
 msgstr ""
 
-#: cdedb/common/__init__.py:246
+#: cdedb/common/__init__.py:244
 msgid "Failed validation."
 msgstr ""
 
-#: cdedb/common/__init__.py:363
+#: cdedb/common/__init__.py:361
 #, python-format
 msgid "Attribute %(name)s not public"
 msgstr ""
 
-#: cdedb/common/__init__.py:445
+#: cdedb/common/__init__.py:443
 msgid "No inputs given."
 msgstr ""
 
-#: cdedb/common/__init__.py:535 cdedb/common/sorting.py:72
+#: cdedb/common/__init__.py:533 cdedb/common/sorting.py:72
 msgid "Invalid use of keyword parameters."
 msgstr ""
 
-#: cdedb/common/__init__.py:613 cdedb/common/__init__.py:648
+#: cdedb/common/__init__.py:611 cdedb/common/__init__.py:646
 msgid "Out of supported scope."
 msgstr ""
 
-#: cdedb/common/__init__.py:637 cdedb/common/__init__.py:665
+#: cdedb/common/__init__.py:635 cdedb/common/__init__.py:663
 msgid "Not supported."
 msgstr ""
 
-#: cdedb/common/__init__.py:748
+#: cdedb/common/__init__.py:746
 #, python-format
 msgid "Cannot unwrap str or bytes. Got %(data)s."
 msgstr ""
 
-#: cdedb/common/__init__.py:752
+#: cdedb/common/__init__.py:750
 #, python-format
 msgid "Can only unwrap collections. Got %(data)s."
 msgstr ""
 
-#: cdedb/common/__init__.py:756
+#: cdedb/common/__init__.py:754
 #, python-format
 msgid "Can only unwrap collections with one element. Got %(len)s elements."
 msgstr ""
 
-#: cdedb/common/__init__.py:1319
+#: cdedb/common/__init__.py:1317
 msgid "Security degradation: anonymous and non-expiring parameter"
 msgstr ""
 

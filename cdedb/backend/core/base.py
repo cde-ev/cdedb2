@@ -699,7 +699,7 @@ class CoreBaseBackend(AbstractBackend):
         """
         if not change_note:
             self.logger.info(f"No change note specified (persona_id={data['id']}).")
-            change_note = "Allgemeine Änderung"
+            change_note = "Allgemeine Änderung."
 
         current = self.sql_select_one(
             rs, "core.personas", ("is_archived", "decided_search"), data['id'])

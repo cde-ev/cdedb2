@@ -3,7 +3,7 @@
 import random
 import re
 import urllib.parse
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple, Union
 
 import webtest
 
@@ -1609,7 +1609,7 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'Guthaben anpassen'})
         f = self.response.forms['modifybalanceform']
         f['trial_member'].checked = True
-        f['change_note'] = "deduct lost coofkies"
+        f['change_note'] = "deduct lost cookies"
         self.submit(f)
         self.assertPresence("CdE-Mitglied (Probemitgliedschaft)",
                             div='membership')
@@ -1689,10 +1689,11 @@ class TestCoreFrontend(FrontendTest):
             self.admin_view_profile("berta", check=False)
             self.assertPresence("Geschlecht männlich")
 
-    @as_users("berta")
+    @as_users("quintus")
     def test_changelog_displacement(self) -> None:
-        for family_name in {"Ganon", "Beispiel"}:
-            with self.subTest(family_name=family_name):
+
+        def _berta_change_profile() -> None:
+            with self.switch_user("berta"):
                 self.traverse("Meine Daten", "Bearbeiten")
                 f = self.response.forms['changedataform']
                 f['family_name'] = "Ganondorf"
@@ -1703,29 +1704,101 @@ class TestCoreFrontend(FrontendTest):
                                     div='personal-information')
                 self.assertPresence("Gemeinser", div='personal-information')
                 self.assertNonPresence('Ganondorf')
-                with self.switch_user("quintus"):
-                    self.traverse({'description': 'Änderungen prüfen'})
-                    self.assertTitle("Zu prüfende Profiländerungen [1]")
-                    self.traverse({'description': 'Ganondorf'},
-                                  {'description': 'Änderungen bearbeiten'})
-                    self.assertTitle("Bertå Ganondorf bearbeiten")
-                    self.assertPresence("Profil speichern")
-                    f = self.response.forms['changedataform']
-                    f['family_name'] = family_name
-                    if family_name == "Ganon":
-                        self.submit(f)
-                        self.assertTitle("Bertå Ganon")
-                        self.assertNonPresence("Beispiel", div='personal-information')
-                    else:
-                        self.submit(f, check_notification=False)
-                        self.assertNotification(
-                            "Änderung hat eine ausstehende Änderung zurückgesetzt.",
-                            'warning')
-                        self.assertPresence("Beispiel")
-                        self.assertNonPresence("Ganon")
-                    self.assertNonPresence("dorf")
-                    self.traverse({'description': 'Änderungen prüfen'})
-                    self.assertTitle("Zu prüfende Profiländerungen [0]")
+
+        def _quintus_displace_change(family_name: str) -> None:
+            self.traverse({'description': 'Änderungen prüfen'})
+            self.assertTitle("Zu prüfende Profiländerungen [1]")
+            self.traverse({'description': 'Ganondorf'},
+                          {'description': 'Änderungen bearbeiten'})
+            self.assertTitle("Bertå Ganondorf bearbeiten")
+            self.assertPresence("Profil speichern")
+            f = self.response.forms['changedataform']
+            f['family_name'] = family_name
+            self.submit(f)
+
+        def _reset() -> None:
+            self.realm_admin_view_profile("berta", 'cde', check=False)
+            self.traverse("Bearbeiten")
+            f = self.response.forms['changedataform']
+            f['family_name'] = "Beispiel"
+            self.submit(f)
+            self.assertTitle("Bertå Beispiel")
+
+        with self.switch_user("paul"):
+            total_entries = self.core.retrieve_changelog_meta(self.key, {})[0]
+
+        _berta_change_profile()
+        _quintus_displace_change("Beispiel")
+        self.assertTitle("Bertå Beispiel")
+        self.assertNotification("Änderung hat eine ausstehende Änderung zurückgesetzt.",
+                                'warning')
+        self.assertPresence("Beispiel")
+        self.assertNonPresence("Ganon")
+        self.assertNonPresence("dorf")
+
+        _berta_change_profile()
+        _quintus_displace_change("Ganon")
+        self.assertTitle("Bertå Ganon")
+        self.assertNonPresence("Beispiel", div='personal-information')
+        self.assertNonPresence("dorf")
+
+        _reset()
+        _berta_change_profile()
+        _quintus_displace_change("Ganondorf")
+        self.assertTitle("Bertå Ganondorf")
+        self.assertNonPresence("Beispiel", div='personal-information')
+        self.traverse({'description': 'Änderungen prüfen'})
+        self.assertTitle("Zu prüfende Profiländerungen [0]")
+
+        # Check for proper logging
+        with self.switch_user("paul"):
+            changelog_expectation: Tuple[Dict[str, Union[int, str, None]], ...] = (
+                {
+                    'code': const.MemberChangeStati.superseded,
+                    'reviewed_by': None,
+                    'submitted_by': 2,
+                },
+                {
+                    'code': const.MemberChangeStati.committed,
+                    'reviewed_by': None,
+                    'submitted_by': 17,
+                },
+                {
+                    'code': const.MemberChangeStati.superseded,
+                    'reviewed_by': None,
+                    'submitted_by': 2,
+                },
+                {
+                    'code': const.MemberChangeStati.committed,
+                    'reviewed_by': None,
+                    'submitted_by': 17,
+                },
+                {
+                    'code': const.MemberChangeStati.committed,
+                    'reviewed_by': None,
+                    'submitted_by': 17,
+                },
+                {
+                    'code': const.MemberChangeStati.committed.value,
+                    'reviewed_by': 17,
+                    'submitted_by': 2,
+                },
+            )
+            i = 2
+            for entry in changelog_expectation:
+                entry['generation'] = i
+                entry['persona_id'] = 2
+                entry['automated_change'] = False
+                i += 1
+                if entry['submitted_by'] == 2:
+                    entry['change_note'] = "Normale Änderung."
+                else:
+                    entry['change_note'] = "Allgemeine Änderung."
+
+            # Set offset to avoid selecting the Init. changelog entries
+            self.assertLogEqual(changelog_expectation, realm='changelog',
+                                log_retriever=self.core.retrieve_changelog_meta,
+                                offset=total_entries)
 
     @as_users("vera")
     def test_history(self) -> None:
