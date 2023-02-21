@@ -1084,6 +1084,10 @@ class CoreBaseFrontend(AbstractFrontend):
             rs.notify("info", n_("Change pending."))
         del data['change_note']
         merge_dicts(rs.values, data)
+        # The values of rs.values are converted to strings if there was a validation
+        #  error. This is a bit hacky, but ensures that donation is always a decimal.
+        if "donation" in rs.values:
+            rs.values["donation"] = decimal.Decimal(rs.values["donation"])
         shown_fields = self._changeable_persona_fields(rs, rs.user, restricted=True)
         return self.render(rs, "change_user", {
             'username': data['username'],
@@ -1217,6 +1221,10 @@ class CoreBaseFrontend(AbstractFrontend):
             rs, persona_id, (generation,)))
         del data['change_note']
         merge_dicts(rs.values, data)
+        # The values of rs.values are converted to strings if there was a validation
+        #  error. This is a bit hacky, but ensures that donation is always a decimal.
+        if "donation" in rs.values:
+            rs.values["donation"] = decimal.Decimal(rs.values["donation"])
         if data['code'] == const.MemberChangeStati.pending:
             rs.notify("info", n_("Change pending."))
         roles = extract_roles(rs.ambience['persona'], introspection_only=True)
