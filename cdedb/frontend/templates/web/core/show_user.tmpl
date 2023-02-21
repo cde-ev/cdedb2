@@ -206,7 +206,7 @@
                     {% trans %}Pronouns{% endtrans %}
                     </dt>
                     <dd id="pronouns">
-                        {{ data.get("pronouns", "–") }}
+                        {{ data["pronouns"] or "–" }}
                     </dd>
                 {% endif %}
                 <dt title="{% trans %}Pronouns on nametags{% endtrans %}">
