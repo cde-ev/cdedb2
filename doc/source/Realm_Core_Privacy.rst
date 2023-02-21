@@ -16,6 +16,8 @@ werden können:
 * Geburstname,
 * Geburtsdatum,
 * Geschlecht,
+* Pronomen,
+* Pronomen auf Namensschild,
 * CdEDB-ID,
 * Account aktiv,
 * Bereiche,
@@ -52,6 +54,8 @@ möglich):
 * Veranstaltungsbezogen
     * Geburtsdatum,
     * Geschlecht,
+    * Pronomen,
+    * Pronomen auf Namensschild,
     * E-Mail
     * Telefon,
     * Mobiltelefon,
@@ -73,6 +77,8 @@ möglich):
     * Verg. Veranstaltungen
 * CdE Admin
     * Geschlecht,
+    * Pronomen,
+    * Pronomen auf Namensschild,
     * Mitgliedschaft,
     * Guthaben,
     * Sichtbarkeit
@@ -217,7 +223,8 @@ auf den Profilen anderer Benutzer sehen darf.
     Der Zugriff ist durch ein tägliches Limit von maximal 42 Zugriffen auf
     fremde Profile beschränkt.
 
-      * Mitglied *und* Suchbar: "Mitglieder"
+      * Mitglied *und* Suchbar: "Mitglieder", zudem Pronomen,
+        sofern "Pronomen auf Profil" ausgewählt ist.
 
 * Man selbst
     Jeder aktive Benutzer hat fast vollständigen Zugriff auf sein eigenes Profil.
