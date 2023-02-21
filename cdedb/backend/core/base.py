@@ -1446,6 +1446,9 @@ class CoreBaseBackend(AbstractBackend):
                 'title': None,
                 'name_supplement': None,
                 # 'gender' kept for later recognition
+                'pronouns': None,
+                'pronouns_profile': False,
+                'pronouns_nametag': False,
                 # 'birthday' kept for later recognition
                 'telephone': None,
                 'mobile': None,
