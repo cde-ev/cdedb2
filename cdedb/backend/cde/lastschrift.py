@@ -309,7 +309,7 @@ class CdELastschriftBackend(CdEBaseBackend):
     get_lastschrift_transaction: _GetLastschriftTransactionProtocol = singularize(
         get_lastschrift_transactions)
 
-    @access("cde")
+    @access("anonymous")
     def annual_membership_fee(self, rs: RequestState) -> decimal.Decimal:
         """The (expected) annual membership fee.
 
