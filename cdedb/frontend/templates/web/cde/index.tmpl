@@ -47,9 +47,9 @@
                 {% if has_lastschrift %}
                     <p>
                         {% trans link=util.href(cdedblink("cde/i25p_index"), gettext("More Information")),
-                                 amount=25|money(lang=lang), idea=gettext("Idee SchülerAkademie") -%}
+                                 idea=gettext("Idee SchülerAkademie") -%}
                             With the Lastschriftinitiative you can support the CdE and the “{{ idea }}” financially,
-                            via Direct Debit of {{ amount }} or more annually. {{ link }}
+                            via Direct Debit of the annual membership fee and a donation. {{ link }}
                         {% endtrans %}
                     </p>
                     <p>
@@ -65,9 +65,10 @@
                     </p>
                 {% else %}
                     <p>
-                        {% trans amount=25|money(lang=lang), idea=gettext("Idee SchülerAkademie") %}
+                        {% trans idea=gettext("Idee SchülerAkademie") %}
                             You want to support the CdE and the “{{ idea }}“ financially?
-                            You can give authorization for the CdE to withdraw {{ amount }} or more annually via Direct Debit.
+                            Then give your authorization for the CdE to withdraw the annual
+                            membership fee and a donation via Direct Debit!
                         {% endtrans %}
                     </p>
                     <p>

@@ -2592,9 +2592,8 @@ msgid "Must be positive."
 msgstr "Muss positiv sein."
 
 #: cdedb/common/validation/__init__.py:569
-#, fuzzy
 msgid "Must be negative."
-msgstr "Darf nicht negativ sein."
+msgstr "Muss negativ sein."
 
 #: cdedb/common/validation/__init__.py:583
 #: cdedb/common/validation/__init__.py:597
@@ -2731,9 +2730,8 @@ msgid "Must be comma separated identifiers."
 msgstr "Muss eine kommagetrennte Liste von zulässigen Bezeichnern sein."
 
 #: cdedb/common/validation/__init__.py:1034
-#, fuzzy
 msgid "Invalid input for set."
-msgstr "Ungültige Eingabe für eine Zeichenkette."
+msgstr "Ungültige Eingabe für eine Menge."
 
 #: cdedb/common/validation/__init__.py:1104
 msgid "Password too weak for admin account."
@@ -7449,10 +7447,10 @@ msgstr "Weitere Informationen"
 #, python-format
 msgid ""
 "With the Lastschriftinitiative you can support the CdE and the “%(idea)s” "
-"financially, via Direct Debit of %(amount)s or more annually. %(link)s"
+"financially, via Direct Debit of the annual membership fee and a donation. %(link)s"
 msgstr ""
 "Mit der Lastschriftinitiative unterstützt Du den CdE und die „%(idea)s“ "
-"finanziell durch einen Lastschrifteinzug von jährlich %(amount)s oder mehr. "
+"finanziell durch den Lastschrifteinzug des jährlichen Mitgliedsbeitrags und einer Spende. "
 "%(link)s"
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:50
@@ -7478,14 +7476,13 @@ msgstr "bestehende Einzugsermächtigung"
 #: cdedb/frontend/templates/web/cde/index.tmpl:68
 #, python-format
 msgid ""
-"You want to support the CdE and the “%(idea)s“ financially? You can give "
-"authorization for the CdE to withdraw %(amount)s or more annually via Direct "
-"Debit."
+"You want to support the CdE and the “%(idea)s“ financially? Then give "
+"your authorization for the CdE to withdraw the annual membership fee "
+"and a donation via Direct Debit!"
 msgstr ""
-"Du möchtest den CdE und die „%(idea)s“ finanziell unterstützen? Sofern Du "
-"die Erlaubnis dazu erteilst, zieht der CdE in Zukunft jährlich %(amount)s "
-"oder einen beliebigen höheren Betrag als Lastschrift von Deinem Konto ein: "
-"25+ eben."
+"Du möchtest den CdE und die „%(idea)s“ finanziell unterstützen? Dann "
+"erteile dem CdE die Erlaubnis, den jährlichen Mitgliedsbeitrag "
+"und eine Spende als Lastschrift von deinem Konto einzuziehen!"
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:74
 #, python-format
@@ -7650,10 +7647,11 @@ msgstr "Bildung & Begabung gem. GmbH"
 #, python-format
 msgid ""
 "For legal reasons, we need the Direct Debit Authorization Form in written "
-"form. Please fill %(link)s and send it to us by mail (not E-Mail)."
+"form. Please fill the formula linked below and send it to us by mail (not E-Mail)."
 msgstr ""
 "Aus rechtlichen Gründen benötigen wir die Lastschriftermächtigung in "
-"Schriftform. Fülle dazu bitte %(link)s aus und schicke es uns per Post zu."
+"Schriftform. Fülle dazu bitte das unten verlinkte Forumla aus und schicke "
+"es uns per Post zu."
 
 #: cdedb/frontend/templates/web/cde/lastschrift/i25p_index.tmpl:58
 msgid "this form"
