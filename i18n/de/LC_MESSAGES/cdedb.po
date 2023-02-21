@@ -2190,7 +2190,7 @@ msgstr "CdEDB-ID"
 
 #: cdedb/common/query/__init__.py:854
 msgid "Pronouns on Nametag"
-msgstr "Pronomen auf Namenschild"
+msgstr "Pronomen auf Namensschild"
 
 #: cdedb/common/query/__init__.py:864
 #: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:62
@@ -9166,7 +9166,7 @@ msgstr "er/ihm, sie/ihr, they/them, o.ä."
 #: cdedb/frontend/templates/web/event/registration/register.tmpl:81
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:48
 msgid "Show pronouns on nametags"
-msgstr "Pronomen auf Namenschildern anzeigen"
+msgstr "Pronomen auf Namensschildern anzeigen"
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:49
 #: cdedb/frontend/templates/web/core/change_user.tmpl:48
@@ -11707,7 +11707,7 @@ msgstr "Drucksachen"
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:22
 msgid "Nametags"
-msgstr "Namenschilder"
+msgstr "Namensschilder"
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:23
 #: cdedb/frontend/templates/web/event/downloads.tmpl:28
@@ -14112,7 +14112,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/registration/register.tmpl:81
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:48
 msgid "Pronouns on nametags"
-msgstr "Pronomen auf Namenschild"
+msgstr "Pronomen auf Namensschild"
 
 #: cdedb/frontend/templates/web/event/registration/register.tmpl:99
 #, python-format
