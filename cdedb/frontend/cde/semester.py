@@ -296,7 +296,8 @@ class CdESemesterMixin(CdEBaseFrontend):
                      submitted_by: Optional[vtypes.CdedbID],
                      change_note: Optional[str],
                      time_start: Optional[datetime.datetime],
-                     time_stop: Optional[datetime.datetime]) -> Response:
+                     time_stop: Optional[datetime.datetime],
+                     download: bool = False) -> Response:
         """View semester activity."""
 
         filter_params = {
@@ -306,4 +307,4 @@ class CdESemesterMixin(CdEBaseFrontend):
         }
 
         return self.generic_view_log(
-            rs, filter_params, "cde.log", "semester/view_cde_log")
+            rs, filter_params, "cde.log", "semester/view_cde_log", download)

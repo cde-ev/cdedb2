@@ -1982,7 +1982,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("zelda@example.cde", div='request-1001')
         self.assertNonPresence("zorro@example.cde")
         self.traverse({'href': '/core/genesis/1001/modify'})
-        self.assertTitle("Accountanfrage bearbeiten")
+        self.assertTitle("Accountanfrage bearbeiten (Zelda Zeruda-Hime)")
         f = self.response.forms['genesismodifyform']
         f['username'] = 'zorro@example.cde'
         f['realm'] = 'ml'
@@ -2138,7 +2138,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertNonPresence("Zickzack")
         self.assertNonPresence("PfingstAkademie")
         self.traverse({'href': '/core/genesis/1001/modify'})
-        self.assertTitle("Accountanfrage bearbeiten")
+        self.assertTitle("Accountanfrage bearbeiten (Zelda Zeruda-Hime)")
         f = self.response.forms['genesismodifyform']
         f['birth_name'] = "Zickzack"
         f['pevent_id'] = 1
@@ -2158,7 +2158,18 @@ class TestCoreFrontend(FrontendTest):
 
         # select a past course
         self.traverse({'href': '/core/genesis/1001/modify'})
-        self.assertTitle("Accountanfrage bearbeiten")
+        self.assertTitle("Accountanfrage bearbeiten (Zelda Zeruda-Hime)")
+        f = self.response.forms['genesismodifyform']
+        f['pcourse_id'] = 2
+        f['pevent_id'] = ''
+        self.submit(f, check_notification=False)
+        self.assertValidationError('pevent_id',
+                                   "nicht mit der angegebenen Vergangenen")
+        f = self.response.forms['genesismodifyform']
+        self.assertPresence("Kurs kann angegeben werden, wenn eine Vergangene")
+        f['pevent_id'] = 1
+        self.submit(f)
+        self.traverse({'href': '/core/genesis/1001/modify'})
         f = self.response.forms['genesismodifyform']
         f['pcourse_id'] = 2
         self.submit(f)
@@ -2173,7 +2184,7 @@ class TestCoreFrontend(FrontendTest):
 
         # modify username and realm (wtf) of genesis request
         self.traverse({'href': '/core/genesis/1001/modify'})
-        self.assertTitle("Accountanfrage bearbeiten")
+        self.assertTitle("Accountanfrage bearbeiten (Zelda Zeruda-Hime)")
         f = self.response.forms['genesismodifyform']
         f['username'] = 'zorro@example.cde'
         if not self.user_in('quintus'):  # quintus is cde-only admin
@@ -2574,6 +2585,9 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence(alternate_username)
         self.assertPresence("Ähnliche Accounts")
         self.assertPresence(self.EVENT_GENESIS_DATA['username'], div="doppelgangers")
+        save = self.response
+        self.traverse(self.EVENT_GENESIS_DATA['family_name'])
+        self.response = save
 
         # Check that a cde genesis request cannot be merged into a non-cde account.
         self.traverse("Accountanfrage bearbeiten")

@@ -19,8 +19,13 @@ from tests.common import USER_DICT, FrontendTest, as_users, prepsql
 
 
 def _get_registration_part_stati(f: webtest.Form) -> Set[const.RegistrationPartStati]:
+    # If an input with multiple checkboxes is readonly, we only have one hidden input
+    # containing the string of all set values. So we iterate over the disabled, but
+    # user-facing input with the checkboxes.
+    fieldname = ("readonlyregistration_stati"
+                 if "readonlyregistration_stati" in f.fields else "registration_stati")
     return set(filter(
-        None, (f.get("registration_stati", index=i).value
+        None, (f.get(fieldname, index=i).value
                for i in range(len(const.RegistrationPartStati)))))
 
 

@@ -3,21 +3,25 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
+{# Since the dataset is no full persona (esp. it does not contain a display_name entry), we can not use the
+   util.persona_name makro here. #}
+{% set genesis_case_name = ambience['genesis_case']['given_names'] + " " + ambience['genesis_case']['family_name'] %}
 {% block title %}
-    {% trans %}
-    	Edit Account Request
+    {% trans name=genesis_case_name %}
+        Edit Account Request ({{ name }})
     {% endtrans %}
+{% endblock %}
+{% block heading %}
+    {{ util.context_heading(gettext("Edit Account Request"), genesis_case_name, 'door-open', gettext("Account Request")) }}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("core/genesis_list_cases"), gettext("Account Requests")) }}
-{# Since the dataset is no full persona (esp. it does not contain a display_name entry), we can not use the
-   util.persona_name makro here. #}
+{{ util.breadcrumb_link(cdedblink("core/genesis_show_case"), genesis_case_name, icon="door-open") }}
 {{ util.breadcrumb_link(cdedblink("core/genesis_modify_form", {'case_id': values['genesis_case_id']}),
-                        gettext("Edit Account Request from %(name)s")|format(
-                            name=values['given_names']+" "+values['family_name']),
-                        active="True", icon="user") }}
+                        gettext("Edit"), active="True") }}
 {% endblock %}
+
 {% block content %}
     <form action="{{ cdedblink('core/genesis_modify') }}" method="POST" id="genesismodifyform" class="form-horizontal">
         {{ util.anti_csrf_token('core/genesis_modify') }}

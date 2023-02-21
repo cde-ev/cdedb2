@@ -2792,6 +2792,14 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle(f"Finanz-Log [1–{n} von {n}]")
         self.assertNonPresence("LogCodes")
 
+        f = self.response.forms['logshowform']
+        f['length'] = 2
+        self.response = f.submit("download", value="csv")
+        self.assertIn(
+            ';5.00;7;5.00;DB-9-4;Iota;Inga;DB-32-9;Finanzvorstand;Farin;116.50;20',
+            self.response.text)
+        self.assertNotIn('Beispiel', self.response.text)
+
     @as_users("vera")
     def test_changelog_meta(self) -> None:
         self.traverse({'description': 'Nutzerdaten-Log'})

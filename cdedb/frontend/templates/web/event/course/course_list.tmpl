@@ -80,7 +80,7 @@
         {% for anid, entry in courses %}
             <div class="hide-hover-container" id="course-{{ entry['id'] }}">
                 <h3>
-                    {{ entry['nr'] }}. {{ entry['title'] }}
+                    {{ entry['nr'] }}. {{ entry['title'] }}&nbsp;{# prevent linebreak before the (invisible) headerlink -#}
                     <a class="headerlink" href="#course-{{ entry['id'] }}"
                        title="{% trans %}Permanent link{% endtrans %}">&para;</a>
                 </h3>
