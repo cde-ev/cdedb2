@@ -7760,11 +7760,12 @@ msgstr "Weitere Informationen"
 #: cdedb/frontend/templates/web/cde/index.tmpl:49
 #, python-format
 msgid ""
-"With the Initiative 25+ you can support the CdE and the “%(idea)s” "
+"With the Lastschriftinitiative you can support the CdE and the “%(idea)s” "
 "financially, via Direct Debit of %(amount)s or more annually. %(link)s"
 msgstr ""
-"Mit der Initiative 25+ unterstützt Du den CdE und die „%(idea)s“ finanziell "
-"durch einen Lastschrifteinzug von jährlich %(amount)s oder mehr. %(link)s"
+"Mit der Lastschriftinitiative unterstützt Du den CdE und die „%(idea)s“ "
+"finanziell durch einen Lastschrifteinzug von jährlich %(amount)s oder mehr. "
+"%(link)s"
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:50
 #: cdedb/frontend/templates/web/cde/index.tmpl:68
@@ -7888,37 +7889,36 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift/i25p_index.tmpl:9
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_subscription_form_fill.tmpl:7
-msgid "Initiative 25+ (Additional Information)"
-msgstr "Initiative 25+ (weitere Informationen)"
+msgid "Lastschriftinitiative (Additional Information)"
+msgstr "Lastschriftinitiative (weitere Informationen)"
 
 #: cdedb/frontend/templates/web/cde/lastschrift/i25p_index.tmpl:12
-msgid "Initiative 25+ – What’s that?"
-msgstr "Initiative 25+ – Was ist das?"
+msgid "Lastschriftinitiative – What’s that?"
+msgstr "Lastschriftinitiative – Was ist das?"
 
 #: cdedb/frontend/templates/web/cde/lastschrift/i25p_index.tmpl:15
 #, python-format
 msgid ""
-"If you give the authorization, the CdE will withdraw %(amount)s or more "
-"annually via Direct Debit."
+"If you give the authorization, the CdE will withdraw the annual membership fee "
+"(currently %(annual_fee)s) and an additional donation via Direct Debit."
 msgstr ""
 "Sofern Du die Erlaubnis dazu erteilst, zieht der CdE in Zukunft jährlich "
-"%(amount)s oder einen beliebigen höheren Betrag als Lastschrift von Deinem "
-"Konto ein: 25+ eben."
+"den jährlichen Mitgliedsbeitrag (aktuell %(annual_fee)s) und eine zusätzliche "
+"Spende als Lastschrift von Deinem Konto ein."
 
 #: cdedb/frontend/templates/web/cde/lastschrift/i25p_index.tmpl:22
 #, python-format
 msgid ""
-"These %(amount)s will be used to pay the annual membership fee currently in "
-"force, currently %(fee)s. The remainder is a donation to the CdE. The CdE "
-"will make sure that about 40 to 50 percent of this is given to %(dsa)s or "
-"otherwise used to support the “%(idea)s”."
+"The minimal donation is currently %(min_donation)s, but typical members "
+"of the Lastschriftinitiative donate %(typical_donation)s. "
+"The CdE will make sure that about 40 to 50 percent of the donation "
+"is given to %(dsa)s or otherwise used to support the “%(idea)s”."
 msgstr ""
-"Mit diesen mindestens %(amount)s wird zunächst der – jeweils aktuelle – "
-"Mitgliedsbeitrag für ein Jahr verrechnet, derzeit also %(fee)s. Der "
-"Restbetrag kommt dem CdE als Spende zugute. Im Rahmen der Vereinsarbeit soll "
-"darauf geachtet werden, dass in etwa 40 bis 50 Prozent davon der %(dsa)s "
-"gespendet oder für eine sonstige Unterstützung der „%(idea)s“ verwendet "
-"werden."
+"Die Mindestspendenhöhe beträgt aktuell %(min_donation)s, aber die typische "
+"Spendenhöhe in der Lastschriftinitiative beträgt %(typical_donation)s. "
+"Im Rahmen der Vereinsarbeit soll darauf geachtet werden, dass in etwa "
+"40 bis 50 Prozent der Spendengelder der %(dsa)s gespendet oder für eine "
+"sonstige Unterstützung der „%(idea)s“ verwendet werden."
 
 #: cdedb/frontend/templates/web/cde/lastschrift/i25p_index.tmpl:23
 msgid "Deutsche SchülerAkademie"
@@ -7970,7 +7970,7 @@ msgid ""
 "form. Please fill %(link)s and send it to us by mail (not E-Mail)."
 msgstr ""
 "Aus rechtlichen Gründen benötigen wir die Lastschriftermächtigung in "
-"Schriftform. Fülle dazu bitte %(link)s aus und schicke es uns zu."
+"Schriftform. Fülle dazu bitte %(link)s aus und schicke es uns per Post zu."
 
 #: cdedb/frontend/templates/web/cde/lastschrift/i25p_index.tmpl:58
 msgid "this form"
