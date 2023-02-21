@@ -1982,7 +1982,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("zelda@example.cde", div='request-1001')
         self.assertNonPresence("zorro@example.cde")
         self.traverse({'href': '/core/genesis/1001/modify'})
-        self.assertTitle("Accountanfrage bearbeiten")
+        self.assertTitle("Accountanfrage bearbeiten (Zelda Zeruda-Hime)")
         f = self.response.forms['genesismodifyform']
         f['username'] = 'zorro@example.cde'
         f['realm'] = 'ml'
@@ -2138,7 +2138,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertNonPresence("Zickzack")
         self.assertNonPresence("PfingstAkademie")
         self.traverse({'href': '/core/genesis/1001/modify'})
-        self.assertTitle("Accountanfrage bearbeiten")
+        self.assertTitle("Accountanfrage bearbeiten (Zelda Zeruda-Hime)")
         f = self.response.forms['genesismodifyform']
         f['birth_name'] = "Zickzack"
         f['pevent_id'] = 1
@@ -2158,7 +2158,7 @@ class TestCoreFrontend(FrontendTest):
 
         # select a past course
         self.traverse({'href': '/core/genesis/1001/modify'})
-        self.assertTitle("Accountanfrage bearbeiten")
+        self.assertTitle("Accountanfrage bearbeiten (Zelda Zeruda-Hime)")
         f = self.response.forms['genesismodifyform']
         f['pcourse_id'] = 2
         f['pevent_id'] = ''
@@ -2184,7 +2184,7 @@ class TestCoreFrontend(FrontendTest):
 
         # modify username and realm (wtf) of genesis request
         self.traverse({'href': '/core/genesis/1001/modify'})
-        self.assertTitle("Accountanfrage bearbeiten")
+        self.assertTitle("Accountanfrage bearbeiten (Zelda Zeruda-Hime)")
         f = self.response.forms['genesismodifyform']
         f['username'] = 'zorro@example.cde'
         if not self.user_in('quintus'):  # quintus is cde-only admin
