@@ -5,10 +5,7 @@
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("cde/lastschrift_index"), gettext("Direct Debit Authorizations"),
-        readonly=True) }}
-    {{ util.breadcrumb_link(cdedblink("cde/i25p_index"),
-        gettext("Lastschriftinitiative"), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("cde/i25p_index"), gettext("Lastschriftinitiative"), active=True) }}
 {% endblock %}
 {% block content %}
     <h2>{% trans %}Lastschriftinitiative – What’s that?{% endtrans %}</h2>
@@ -57,9 +54,11 @@
     <h2>{% trans %}Authorization Form{% endtrans %}</h2>
 
     <p>
-        {% trans link=util.href(cdedblink("cde/lastschrift_subscription_form_fill"), gettext("this form")) %}
+        {% trans %}
         	For legal reasons, we need the Direct Debit Authorization Form in written form.
-            Please fill {{ link }} and send it to us by mail (not E-Mail).
+            Please fill the formula linked below and send it to us by mail (not E-Mail).
         {% endtrans %}
     </p>
+
+   {{ util.href(cdedblink('cde/lastschrift_subscription_form_fill'), gettext("Participate"), aclass="btn btn-primary", icon='chevron-right') }}
 {% endblock %}
