@@ -48,7 +48,7 @@
     {% if courses %}
         {% set show_course_state = (ambience['event']['is_course_state_visible'] or ambience['event']['id'] in user.orga
                                     or 'event_orga' in user.admin_views) %}
-        {% if ambience['event']['tracks']|length > 1 %}
+        {% if ambience['event']['tracks']|length > 1 or show_course_state %}
             {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass='panel-primary') %}
                 <form action="{{ cdedblink('event/course_list') }}" method="GET" id="coursefilterform"
                       aria-label="{% trans %}Filter{% endtrans %}">
@@ -56,9 +56,11 @@
                         {{ util.form_input_checkbox('active_only', label=gettext("Show only courses taking place"),
                                                     horizontal=False) }}
                     {% endif %}
-                    {{ util.form_input_checkboxes('track_ids', label=gettext("Show only courses in tracks:"),
-                        entries=ambience['event']['tracks']|keydictsort(EntitySorter.course_track)|dict_entries('id', 'title'),
-                        slice=(2 if ambience['event']['tracks']|length < 7 else 3), horizontal=False) }}
+                    {% if ambience['event']['tracks']|length > 1 %}
+                        {{ util.form_input_checkboxes('track_ids', label=gettext("Show only courses in tracks:"),
+                            entries=ambience['event']['tracks']|keydictsort(EntitySorter.course_track)|dict_entries('id', 'title'),
+                            slice=(2 if ambience['event']['tracks']|length < 7 else 3), horizontal=False) }}
+                    {% endif %}
                     {{ util.input_submit(label=gettext("Go!"), icon="filter") }}
                 </form>
             {% endcall %}
