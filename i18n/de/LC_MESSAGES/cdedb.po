@@ -4679,6 +4679,14 @@ msgstr ""
 "Cluster können nur angezeigt werden, wenn der Graph auf einen einzelnen "
 "Veranstaltungsteil eingeschränkt wird."
 
+msgid ""
+"Edges between participants who are both assigned to a lodgement can only be"
+" hidden if the graph is restricted to a specific part."
+msgstr ""
+"Kanten zwischen Teilnehmern, die beide einer Unterkunft zugeordnet sind, können"
+" nur ausgeblendet werden, wenn der Graph auf einen einzelnen Veranstaltungsteil"
+" eingeschränkt wird."
+
 #: cdedb/frontend/event/lodgement.py:738
 msgid "Nothing to do."
 msgstr "Nichts zu tun."
@@ -13500,6 +13508,12 @@ msgid ""
 msgstr ""
 "Zeige die Unterkunftsgruppen der zugewiesenen Unterkünfte als Cluster an "
 "(verschlechtert die Qualität des Graph-Layouts)"
+
+msgid "Show edges between assigned Participants"
+msgstr "Zeige Kanten zwischen bereits zugewiesenen Teilnehmern"
+
+msgid "Display an edge between two particpants even if both are already assigned to a lodgement."
+msgstr "Zeige auch dann eine Kante zwischen zwei Teilnehmern, wenn beide bereits einer Unterkunft zugewiesen sind."
 
 #: cdedb/frontend/templates/web/event/lodgement/lodgement_wishes_graph_form.tmpl:112
 msgid "No wish issues detected."
