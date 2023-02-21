@@ -1086,7 +1086,7 @@ class CoreBaseFrontend(AbstractFrontend):
         merge_dicts(rs.values, data)
         # The values of rs.values are converted to strings if there was a validation
         #  error. This is a bit hacky, but ensures that donation is always a decimal.
-        if "donation" in rs.values:
+        if rs.values.get("donation") is not None:
             rs.values["donation"] = decimal.Decimal(rs.values["donation"])
         shown_fields = self._changeable_persona_fields(rs, rs.user, restricted=True)
         return self.render(rs, "change_user", {
@@ -1223,7 +1223,7 @@ class CoreBaseFrontend(AbstractFrontend):
         merge_dicts(rs.values, data)
         # The values of rs.values are converted to strings if there was a validation
         #  error. This is a bit hacky, but ensures that donation is always a decimal.
-        if "donation" in rs.values:
+        if rs.values.get("donation") is not None:
             rs.values["donation"] = decimal.Decimal(rs.values["donation"])
         if data['code'] == const.MemberChangeStati.pending:
             rs.notify("info", n_("Change pending."))
