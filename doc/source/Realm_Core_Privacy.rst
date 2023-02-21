@@ -75,7 +75,7 @@ möglich):
     * Interessen,
     * Verschiedenes,
     * Verg. Veranstaltungen
-* CdE Admin
+* CdE-Admin
     * Geschlecht,
     * Pronomen,
     * Pronomen auf Namensschild,
@@ -85,7 +85,7 @@ möglich):
 
 Darüber hinaus gibt es die sogenannte ``Änderungshistorie`` eines Benutzers.
 In dieser werden die Änderungen an einem Benutzerprofil gespeichert.
-Diese ist lediglich Core-Admins zugänglich.
+Diese ist lediglich den relativen Administratoren des jeweiligen Bereichs zugänglich.
 
 
 Welche Arten von Benutzern gibt es?
@@ -111,7 +111,7 @@ unterscheiden:
 
 * Kriterien, die **den Benutzer** berechtigen können, Daten einzusehen:
 
-  * Bereiche, in denen der Benutzer Admin Rechte besitzt
+  * Bereiche, in denen der Benutzer Admin-Rechte besitzt
   * ist der Benutzer Orga einer Veranstaltung?
   * ist der Benutzer Moderator einer Mailingliste?
   * ist der Benutzer Mitglied *und* Suchbar?
@@ -129,18 +129,18 @@ unterscheiden:
 Welche Arten von Admins gibt es?
 --------------------------------
 
-In der folgenden Betrachtung wird der Core Admin ausgeklammert, da dieser
+In der folgenden Betrachtung wird der Core-Admin ausgeklammert, da dieser
 **vollständigen** Zugriff auf **jeden** Benutzer hat.
 
 Jeder der Bereiche Mailinglisten, Versammlungen, Veranstaltungen und CdE besitzt
-eine Admin Rolle. Jedoch darf immer nur die "höchste" Admin Rolle (der sogn.
+eine Admin-Rolle. Jedoch darf immer nur die "höchste" Admin-Rolle (der sogn.
 "relative Admin") einen (nicht archivierten) Benutzer auch tatsächlich einsehen.
 Dieser wird an der Gesamtmenge an Bereichen festgemacht, die ein Benutzer
 besitzt (das maximale Element der Bereiche):
 
 * Mailinglisten:
     Besitzt ein Benutzer nur den Mailinglisten Bereich, ist dies der
-    Mailinglisten Admin
+    Mailinglisten-Admin
 * Veranstaltungen und Versammlungen:
     Hier sind Veranstaltungen und Versammlungen beide maximal: Besitzt ein
     Benutzer also Mailinglisten und (Veranstaltungen oder / und Versammlungs)
@@ -150,7 +150,7 @@ besitzt (das maximale Element der Bereiche):
     Besitzt ein Benutzer den CdE Bereich, ist automatisch nur der CdE-Admin
     relativer Admin.
 
-Alle User mit Admin Rechten sind unter ``Core/Administratorenübersicht``
+Alle User mit Admin-Rechten sind unter ``Core/Administratorenübersicht``
 aufgelistet.
 
 
@@ -165,12 +165,12 @@ auf den Profilen anderer Benutzer sehen darf.
 * Deaktivierte oder Archivierte Benutzer
     Diese haben beide nicht das Recht, sich in die Datenbank einzuloggen, können
     dementsprechend auch keine anderen Benutzer einsehen. Zudem können
-    archivierte Benutzer auch nicht von anderen Benutzern (ausgenommen Core
-    Admins) gesehen werden. Deaktivierte Nutzer dagegen verhalten sich für
+    archivierte Benutzer auch nicht von anderen Benutzern (ausgenommen Core-Admins)
+    gesehen werden. Deaktivierte Nutzer dagegen verhalten sich für
     andere wie ein äquivalenter aktiver Benutzer.
 
       * Deaktiviert: Niemanden
-      * Archiviert: Niemanden, kann von niemandem (außer Core Admin) gesehen
+      * Archiviert: Niemanden, kann von niemandem (außer Core-Admin) gesehen
         werden
 
 * Grundlegend
@@ -204,23 +204,23 @@ auf den Profilen anderer Benutzer sehen darf.
     Jeder Benutzer darf von seinem relativen Admin(s) eingesehen werden. Diese
     haben dabei Zugriff auf die Kategorien "Administrativ" sowie
 
-      * Veranstaltungs Admin: "Veranstaltungsbezogen"
-      * CdE Admin: "Mitglieder" und "CdE Admin"
+      * Veranstaltungs-Admin: "Veranstaltungsbezogen"
+      * CdE-Admin: "Mitglieder" und "CdE-Admin"
 
     Darüber hinaus existiert die Rolle des Meta-Admins. Dieser allein hat das
-    Recht, Admin Rechte zu vergeben und zu entziehen. Dazu hat er bei **ALLEN**
+    Recht, Admin-Rechte zu vergeben und zu entziehen. Dazu hat er bei **ALLEN**
     Nutzern Zugriff auf:
 
-      * Meta Admin: "Administrativ"
+      * Meta-Admin: "Administrativ"
 
 * Mitglieder
     Mitglieder sind Benutzer, die den CdE-Bereich besitzen und darüber hinaus
     das Attribut "Mitglied" haben (≙ ihren Mitgliedsbeitrag für das laufende
     Semester bezahlt haben). Darüber hinaus können sie der Datenschutzerklärung
-    zustimmen. Tuen Sie dies, erhalten sie weiterhin das Attribut "Suchbar".
+    zustimmen. Tun Sie dies, erhalten sie weiterhin das Attribut "Suchbar".
     Mitglieder, die diese beiden Attribute besitzen, erhalten erweiterten
     Zugriff auf andere Mitglieder, die ebenfalls diese beiden Attribute besitzen.
-    Der Zugriff ist durch ein tägliches Limit von maximal 42 Zugriffen auf
+    Der Zugriff ist durch ein tägliches Limit von maximal 64 Zugriffen auf
     fremde Profile beschränkt.
 
       * Mitglied *und* Suchbar: "Mitglieder", zudem Pronomen,
@@ -234,11 +234,11 @@ auf den Profilen anderer Benutzer sehen darf.
 
       * Man selbst: Alle Felder des eigenen Profils, ausgenommen Admin-Notizen
 
-* Core Admins
-    Der Core Admin hat **vollen** Zugriff auf **alle** (aktiven, deaktiverten
+* Core-Admins
+    Der Core-Admin hat **vollen** Zugriff auf **alle** (aktiven, deaktiverten
     und archiverten) Benutzer.
 
-      * Core Admin: Alle Felder auf allen Profilen
+      * Core-Admin: Alle Felder auf allen Profilen
 
 
 Technische Details zu den Profilseiten
