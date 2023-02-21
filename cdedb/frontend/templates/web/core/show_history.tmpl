@@ -157,7 +157,7 @@
                 {% for key in ADMIN_KEYS if entries[c][key] %}
                     {{ util.privilege_icon(key, desc=True) }}
                 {% else %}
-                    <i>Keine</i>
+                    <i>{{ gettext("None") }}</i>
                 {% endfor %}
             {% endcall %}
         {% endcall %}
