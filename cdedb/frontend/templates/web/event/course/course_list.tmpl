@@ -23,8 +23,7 @@
         {% call util.notification('info', id='course-not-visible') %}
             {% trans %}The Courselist is currently only visible to Orgas and Admins.{% endtrans %}
         {% endcall %}
-    {% elif not ambience['event']['is_course_state_visible'] and (ambience['event']['id'] in user.orga
-                                                                  or 'event_orga' in user.admin_views) %}
+    {% elif not ambience['event']['is_course_state_visible'] and show_course_state %}
         {% call util.notification('info', id='cancelled-not-visible') %}
             {% if ambience['event']['tracks']|length > 1 %}
                 {% trans %}
