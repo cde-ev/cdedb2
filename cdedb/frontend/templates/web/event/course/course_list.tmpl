@@ -46,8 +46,6 @@
 {% endblock %}
 {% block content %}
     {% if courses %}
-        {% set show_course_state = (ambience['event']['is_course_state_visible'] or ambience['event']['id'] in user.orga
-                                    or 'event_orga' in user.admin_views) %}
         {% if ambience['event']['tracks']|length > 1 or show_course_state %}
             {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass='panel-primary') %}
                 <form action="{{ cdedblink('event/course_list') }}" method="GET" id="coursefilterform"
@@ -66,20 +64,12 @@
             {% endcall %}
         {% endif %}
 
-        {# Jinja does not support list comprehension... #}
-        {% set courses_to_show = [] %}
-        {% for course_id, course in courses|keydictsort(EntitySorter.course) if (
-            course['active_segments'] if active_only and show_course_state else course['segments']
-        ).intersection(track_ids) %}
-            {% do courses_to_show.append((course_id, course)) %}
-        {% endfor %}
-
-        {% if courses_to_show|length > 5 %}
+        {% if courses|length > 5 %}
             <div id="toc">
             <details open>
                 <summary class="h3">{% trans %}Table of Contents{% endtrans %}</summary>
                 <ul>
-                    {% for course_id, course in courses_to_show %}
+                    {% for course_id, course in courses %}
                         <li>{{ util.href("#course-{}".format(course_id), "{}. {}".format(course['nr'], course['title'])) }}</li>
                     {% endfor %}
                 </ul>
@@ -88,7 +78,7 @@
         {% endif %}
 
         <div id="list-courses">
-        {% for anid, entry in courses_to_show %}
+        {% for anid, entry in courses %}
             <div class="hide-hover-container" id="course-{{ entry['id'] }}">
                 <h3>
                     {{ entry['nr'] }}. {{ entry['title'] }}

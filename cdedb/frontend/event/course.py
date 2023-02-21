@@ -22,6 +22,7 @@ from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation import COURSE_COMMON_FIELDS
 from cdedb.common.validation.types import VALIDATOR_LOOKUP
+from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, check_validation as check, event_guard,
     request_extractor,
@@ -47,13 +48,22 @@ class EventCourseMixin(EventBaseFrontend):
         #  they originate from track_ids.
         if rs.has_validation_errors() or not track_ids:
             track_ids = rs.ambience['event']['tracks'].keys()
+
+        show_course_state = (rs.ambience['event']['is_course_state_visible']
+                             or event_id in rs.user.orga
+                             or 'event_orga' in rs.user.admin_views)
         course_ids = self.eventproxy.list_courses(rs, event_id)
-        courses = None
+        courses = {}
         if course_ids:
             courses = self.eventproxy.get_courses(rs, course_ids.keys())
+            courses = {
+                course_id: course for course_id, course in courses.items()
+                if (course['active_segments'] if active_only and show_course_state
+                    else course['segments']).intersection(track_ids)
+            }
         return self.render(rs, "course/course_list",
-                           {'courses': courses, 'track_ids': track_ids,
-                            'active_only': active_only})
+                           {'courses': keydictsort_filter(courses, EntitySorter.course),
+                            'show_course_state': show_course_state})
 
     @access("event")
     @event_guard()
