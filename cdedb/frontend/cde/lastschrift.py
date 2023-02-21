@@ -2,7 +2,7 @@
 
 """Lastschrift related services for the cde realm.
 
-Viewing general information on the Initiative 25+ and filling in a lastschrift form
+Viewing general information on the Lastschriftinitiative and filling in a lastschrift form
 requires no privileges. Viewing ones own lastschrift requires the "member" role.
 Everything else here requires the "finance_admin" role.
 """
@@ -401,7 +401,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
                     lastschrift['persona_id'], lastschrift['id']),
                 'glaeubiger_id': self.conf["SEPA_GLAEUBIGERID"],
             }
-            subject = "Anstehender Lastschrifteinzug Initiative 25+"
+            subject = "Anstehender Lastschrifteinzug Lastschriftinitiative"
             self.do_mail(rs, "lastschrift/sepa_pre-notification",
                          {'To': (persona['username'],),
                           'Subject': subject},

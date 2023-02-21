@@ -9803,7 +9803,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/index.tmpl:46
 #: cdedb/frontend/templates/web/cde/lastschrift/i25p_index.tmpl:4
 #: cdedb/frontend/templates/web/cde/lastschrift/i25p_index.tmpl:45
-msgid "Initiative 25+"
+msgid "Lastschriftinitiative"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:49
@@ -9814,7 +9814,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/index.tmpl:49
 #, python-format
 msgid ""
-"With the Initiative 25+ you can support the CdE and the “%(idea)s” "
+"With the Lastschriftinitiative you can support the CdE and the “%(idea)s” "
 "financially, via Direct Debit of %(amount)s or more annually. %(link)s"
 msgstr ""
 
@@ -9826,7 +9826,7 @@ msgid "Idee SchülerAkademie"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:57
-msgid "You are already a part of the Initiative 25+."
+msgid "You are already a part of the Lastschriftinitiative."
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:61
@@ -9932,11 +9932,11 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift/i25p_index.tmpl:9
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_subscription_form_fill.tmpl:7
-msgid "Initiative 25+ (Additional Information)"
+msgid "Lastschriftinitiative (Additional Information)"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift/i25p_index.tmpl:12
-msgid "Initiative 25+ – What’s that?"
+msgid "Lastschriftinitiative – What’s that?"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift/i25p_index.tmpl:15

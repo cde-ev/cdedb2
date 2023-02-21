@@ -43,19 +43,19 @@
             {% endcall %}
         </div>
         <div class="col-md-6">
-            {% call util.bootstrap_panel(title=gettext("Initiative 25+"), icon='euro-sign') %}
+            {% call util.bootstrap_panel(title=gettext("Lastschriftinitiative"), icon='euro-sign') %}
                 {% if has_lastschrift %}
                     <p>
                         {% trans link=util.href(cdedblink("cde/i25p_index"), gettext("More Information")),
                                  amount=25|money(lang=lang), idea=gettext("Idee SchülerAkademie") -%}
-                            With the Initiative 25+ you can support the CdE and the “{{ idea }}” financially,
+                            With the Lastschriftinitiative you can support the CdE and the “{{ idea }}” financially,
                             via Direct Debit of {{ amount }} or more annually. {{ link }}
                         {% endtrans %}
                     </p>
                     <p>
                         <strong>
                             {% trans %}
-                                You are already a part of the Initiative 25+.
+                                You are already a part of the Lastschriftinitiative.
                             {% endtrans %}
                         </strong>
                         {% trans link=util.href(cdedblink("core/my_lastschrift"),
