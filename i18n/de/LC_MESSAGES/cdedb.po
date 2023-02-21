@@ -15085,6 +15085,12 @@ msgstr ""
 "Beachte, dass es bis zu 15 Minuten dauern kann, bis eine Änderung wirksam "
 "wird."
 
+#: cdedb/frontend/templates/web/ml/management.tmpl:38
+msgid "Note that mailinglist creation can take up to 15 minutes to take effect."
+msgstr ""
+"Beachte, dass es bis zu 15 Minuten dauern kann, bis die Mailingliste erstellt "
+"wird."
+
 #: cdedb/frontend/templates/web/ml/management.tmpl:48
 msgid "Only users can be moderators."
 msgstr "Nur Nutzer können Moderatoren sein."
@@ -15348,8 +15354,10 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:211
 msgid ""
-"Deletes the mailinglist including description and all subscriber information."
-msgstr "Löscht die Mailingliste inklusive Beschreibung und allen Abonnements."
+"Deletes the mailinglist including description and all subscriber information. "
+"Note that this can take up to 15 minutes to take effect."
+msgstr "Löscht die Mailingliste inklusive Beschreibung und allen Abonnements. "
+"Beachte, dass es bis zu 15 Minuten dauern kann, bis dies wirksam wird."
 
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:217
 msgid "The mailinglist will be permanently deleted."
