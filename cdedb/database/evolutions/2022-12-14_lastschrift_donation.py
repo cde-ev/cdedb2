@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-from cdedb.backend.core import CoreBackend
 from cdedb.backend.cde import CdEBackend
+from cdedb.backend.core import CoreBackend
 from cdedb.script import Script
 
 s = Script(dbuser='cdb')

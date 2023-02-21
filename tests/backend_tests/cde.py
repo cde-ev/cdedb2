@@ -12,7 +12,7 @@ from cdedb.common.fields import (
     PERSONA_CDE_FIELDS, PERSONA_CORE_FIELDS, PERSONA_EVENT_FIELDS,
 )
 from cdedb.common.query import Query, QueryOperators, QueryScope
-from tests.common import USER_DICT, BackendTest, as_users, nearly_now
+from tests.common import USER_DICT, BackendTest, as_users, execsql, nearly_now
 
 
 class TestCdEBackend(BackendTest):
@@ -319,6 +319,14 @@ class TestCdEBackend(BackendTest):
                 # retrieve it in each subtest
                 old_balance = self.core.get_cde_user(
                     self.key, USER_DICT["berta"]["id"])["balance"]
+                # issuing a lastschrift transaction if there is already a pending or
+                #  successful one is forbidden, so we need to delete it via sql first
+                if status == ltstati.cancelled:
+                    with self.assertRaises(RuntimeError):
+                        self.cde.issue_lastschrift_transaction(
+                            self.key, lastschrift_id=2)
+                    execsql(f"DELETE FROM cde.lastschrift_transactions"
+                            f" WHERE id = {new_id}")
                 new_id = self.cde.issue_lastschrift_transaction(
                     self.key, lastschrift_id=2)
                 self.assertLess(0, new_id)
