@@ -313,6 +313,7 @@ class TestCdEBackend(BackendTest):
     @as_users("farin")
     def test_lastschrift_transaction_finalization(self) -> None:
         ltstati = const.LastschriftTransactionStati
+        new_id: int
         for status in (ltstati.success, ltstati.cancelled, ltstati.failure):
             with self.subTest(status=status):
                 # since this is modified by the successful lastschrift test, we need to
@@ -326,7 +327,7 @@ class TestCdEBackend(BackendTest):
                         self.cde.issue_lastschrift_transaction(
                             self.key, lastschrift_id=2)
                     execsql(f"DELETE FROM cde.lastschrift_transactions"
-                            f" WHERE id = {new_id}")
+                            f" WHERE id = {new_id}")  # noqa: F821
                 new_id = self.cde.issue_lastschrift_transaction(
                     self.key, lastschrift_id=2)
                 self.assertLess(0, new_id)
