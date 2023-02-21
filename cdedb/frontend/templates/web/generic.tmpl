@@ -82,13 +82,11 @@
     <div class="row">
         <div class="col-md-4">
             <div class="p button-par">
-                {% if not scope.includes_archived %}
-                    {{ util.href(cdedblink("{}/create_user_form".format(scope.realm)), gettext("Create User"),
-                            icon="plus", aclass="btn btn-success btn-sm") }}
-                    {% if scope.realm == 'cde' %}
-                        {{ util.href(cdedblink('cde/batch_admission'), gettext("Batch Admission"), icon="file-import",
-                                 aclass="btn btn-success btn-sm") }}
-                    {% endif %}
+                {{ util.href(cdedblink("{}/create_user_form".format(scope.realm)), gettext("Create User"),
+                        icon="plus", aclass="btn btn-success btn-sm") }}
+                {% if scope.realm == 'cde' %}
+                    {{ util.href(cdedblink('cde/batch_admission'), gettext("Batch Admission"), icon="file-import",
+                             aclass="btn btn-success btn-sm") }}
                 {% endif %}
             </div>
             {% if info %}

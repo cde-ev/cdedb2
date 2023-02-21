@@ -824,15 +824,14 @@ class CoreBaseFrontend(AbstractFrontend):
         # Precise search didn't uniquely match, hence a fulltext search now. Results
         # will be a superset of the above, since all relevant fields are in fulltext.
         query.constraints = [('fulltext', QueryOperators.containsall, terms)]
+        if not include_archived:
+            query.constraints.extend([('archived', QueryOperators.equal, False)])
         result = self.coreproxy.submit_general_query(rs, query)
         if len(result) == 1:
             return self.redirect_show_user(rs, result[0]["id"])
         elif result:
             params = query.serialize_to_url()
             rs.values.update(params)
-            if include_archived:
-                return self.full_user_search(
-                    rs, is_search=True, download=None, query=query)
             return self.user_search(rs, is_search=True, download=None, query=query)
         else:
             rs.notify("warning", n_("No account found."))
@@ -1117,7 +1116,7 @@ class CoreBaseFrontend(AbstractFrontend):
                     rs.gettext if download is None else rs.default_gettext)),
         }
         return self.generic_user_search(
-            rs, download, is_search, QueryScope.core_user, QueryScope.core_user,
+            rs, download, is_search, QueryScope.all_core_users,
             self.coreproxy.submit_general_query, choices=choices, query=query)
 
     @access("core_admin")
@@ -1137,22 +1136,6 @@ class CoreBaseFrontend(AbstractFrontend):
         if rs.has_validation_errors():
             return self.create_user_form(rs)
         return self.redirect(rs, realm + "/create_user")
-
-    @access("core_admin")
-    @REQUESTdata("download", "is_search")
-    def full_user_search(self, rs: RequestState, download: Optional[str],
-                         is_search: bool, query: Query = None) -> Response:
-        """Search all users, both archived and not archived."""
-        choices: Dict[str, Dict[Any, str]] = {
-            'gender': collections.OrderedDict(
-                enum_entries_filter(
-                    const.Genders,
-                    rs.gettext if download is None else rs.default_gettext)),
-        }
-        return self.generic_user_search(
-            rs, download, is_search,
-            QueryScope.all_core_users, QueryScope.all_core_users,
-            self.coreproxy.submit_general_query, choices=choices, query=query)
 
     @staticmethod
     def admin_bits(rs: RequestState) -> Set[Realm]:

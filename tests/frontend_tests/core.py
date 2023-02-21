@@ -122,8 +122,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("CdE-Datenbank")
         everyone = {"Index", "Übersicht", "Meine Daten", "Administratorenübersicht"}
         genesis = {"Accountanfragen"}
-        core_admin = {"Nutzer verwalten", "Alle Nutzer verwalten", "Änderungen prüfen",
-                      "Metadaten"}
+        core_admin = {"Nutzer verwalten", "Änderungen prüfen", "Metadaten"}
         meta_admin = {"Admin-Änderungen"}
         log = {"Account-Log", "Nutzerdaten-Log"}
 

@@ -2547,7 +2547,7 @@ msgstr "Dokuteam Courselist"
 
 #: cdedb/common/query/defaults.py:190
 msgid "00_query_cde_user_all"
-msgstr "All Users"
+msgstr "All (non-archived) Users"
 
 #: cdedb/common/query/defaults.py:196
 msgid "02_query_cde_members"
@@ -2563,11 +2563,11 @@ msgstr "Address Export exPuls"
 
 #: cdedb/common/query/defaults.py:219
 msgid "00_query_archived_persona_all"
-msgstr "All archived users"
+msgstr "All (non-archived) archived users"
 
 #: cdedb/common/query/defaults.py:230
 msgid "00_query_event_user_all"
-msgstr "All Users"
+msgstr "All (non-archived) Users"
 
 #: cdedb/common/query/defaults.py:236
 msgid "10_query_event_user_minors"

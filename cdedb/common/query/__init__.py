@@ -247,26 +247,13 @@ class QueryScope(enum.IntEnum):
             prefix, target = "query", "lodgement_query"
         elif self == QueryScope.event_course:
             prefix, target = "query", "course_query"
-        elif self == QueryScope.event_user:
+        elif self in {QueryScope.event_user, QueryScope.all_event_users}:
             prefix, target = "user", "user_search"
-        elif self == QueryScope.all_event_users:
-            prefix, target = "user", "full_user_search"
-        elif self == QueryScope.core_user:
+        elif self in {QueryScope.core_user, QueryScope.all_core_users,
+                      QueryScope.assembly_user, QueryScope.all_assembly_users,
+                      QueryScope.cde_user, QueryScope.all_cde_users,
+                      QueryScope.ml_user, QueryScope.all_ml_users}:
             target = "user_search"
-        elif self == QueryScope.assembly_user:
-            target = "user_search"
-        elif self == QueryScope.cde_user:
-            target = "user_search"
-        elif self == QueryScope.ml_user:
-            target = "user_search"
-        elif self == QueryScope.all_core_users:
-            target = "full_user_search"
-        elif self == QueryScope.all_assembly_users:
-            target = "full_user_search"
-        elif self == QueryScope.all_cde_users:
-            target = "full_user_search"
-        elif self == QueryScope.all_ml_users:
-            target = "full_user_search"
         else:
             prefix, target = "", ""
         if redirect and self.realm:

@@ -2589,7 +2589,7 @@ msgstr "Dokuteam Kursliste"
 
 #: cdedb/common/query/defaults.py:190
 msgid "00_query_cde_user_all"
-msgstr "Alle Nutzer"
+msgstr "Alle (nicht-archivierten) Nutzer"
 
 #: cdedb/common/query/defaults.py:196
 msgid "02_query_cde_members"
@@ -2609,7 +2609,7 @@ msgstr "Alle archivierten Nutzer"
 
 #: cdedb/common/query/defaults.py:230
 msgid "00_query_event_user_all"
-msgstr "Alle Nutzer"
+msgstr "Alle (nicht-archivierten) Nutzer"
 
 #: cdedb/common/query/defaults.py:236
 msgid "10_query_event_user_minors"
@@ -2617,7 +2617,7 @@ msgstr "Minderjährige"
 
 #: cdedb/common/query/defaults.py:246
 msgid "00_query_core_user_all"
-msgstr "Alle Nutzer"
+msgstr "Alle (nicht-archivierten) Nutzer"
 
 #: cdedb/common/query/defaults.py:251
 msgid "10_query_core_any_admin"
@@ -2625,11 +2625,11 @@ msgstr "Alle Admins"
 
 #: cdedb/common/query/defaults.py:258
 msgid "00_query_assembly_user_all"
-msgstr "Alle Nutzer"
+msgstr "Alle (nicht-archivierten) Nutzer"
 
 #: cdedb/common/query/defaults.py:266
 msgid "00_query_ml_user_all"
-msgstr "Alle Nutzer"
+msgstr "Alle (nicht-archivierten) Nutzer"
 
 #: cdedb/common/roles.py:245
 msgid "is_meta_admin"

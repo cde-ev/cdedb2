@@ -101,11 +101,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                      endpoint="do_password_reset_form"),
                 rule("/reset", methods=_POST,
                      endpoint="do_password_reset"),)),
-            sub('/search', (
-                rule("/user", methods=_GET,
-                     endpoint="user_search"),
-                rule("/fulluser", methods=_GET,
-                     endpoint="full_user_search"),)),
+            rule('/search/user', methods=_GET,
+                 endpoint="user_search"),
             sub('/persona/<int:persona_id>', (
                 rule("/adminchange", methods=_GET,
                      endpoint="admin_change_user_form"),
@@ -234,8 +231,6 @@ CDEDB_PATHS = werkzeug.routing.Map((
                      endpoint="member_search"),
                 rule("/user", methods=_GET,
                      endpoint="user_search"),
-                rule("/fulluser", methods=_GET,
-                     endpoint="full_user_search"),
                 rule("/course", methods=_GET,
                      endpoint="past_course_search"),)),
             rule("/i25p", methods=_GET,
@@ -346,11 +341,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
         sub('/event', (
             rule("/", methods=_GET,
                  endpoint="index"),
-            sub('/search', (
-                rule("/user", methods=_GET,
-                     endpoint="user_search"),
-                rule("/fulluser", methods=_GET,
-                     endpoint="full_user_search"),)),
+            rule('/search/user', methods=_GET,
+                 endpoint="user_search"),
             rule("/registration/select", methods=_GET,
                  endpoint="select_registration"),
             rule("/offline/partial", methods=_GET,
@@ -663,11 +655,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                  endpoint="index"),
             rule("/verify_result.pyz", methods=_GET,
                  endpoint="download_verify_result_script"),
-            sub('/search', (
-                rule("/user", methods=_GET,
-                     endpoint="user_search"),
-                rule("/fulluser", methods=_GET,
-                     endpoint="full_user_search"),)),
+            rule('/search/user', methods=_GET,
+                 endpoint="user_search"),
             rule("/user/create", methods=_GET,
                  endpoint="create_user_form"),
             rule("/user/create", methods=_POST,
@@ -802,11 +791,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
         sub('/ml', (
             rule("/", methods=_GET,
                  endpoint="index"),
-            sub('/search', (
-                rule("/user", methods=_GET,
-                     endpoint="user_search"),
-                rule("/fulluser", methods=_GET,
-                     endpoint="full_user_search"),)),
+            rule('/search/user', methods=_GET,
+                 endpoint="user_search"),
             sub("/user", (
                 rule("/create", methods=_GET,
                      endpoint="create_user_form"),
