@@ -439,13 +439,13 @@ class TestPastEventBackend(BackendTest):
             set(self.pastevent.list_past_courses(
                 self.key, pevent_data[2]['id']).values()))
         expectation = {
-            (7, 1007): {'pcourse_id': 1007,
+            (7, 1008): {'pcourse_id': 1008,
                         'is_instructor': False,
                         'is_orga': True,
                         'persona_id': 7},
-            (100, 1007): {'is_instructor': False,
+            (100, 1008): {'is_instructor': False,
                           'is_orga': False,
-                          'pcourse_id': 1007,
+                          'pcourse_id': 1008,
                           'persona_id': 100}}
         self.assertEqual(expectation,
-                         self.pastevent.list_participants(self.key, pcourse_id=1007))
+                         self.pastevent.list_participants(self.key, pcourse_id=1008))

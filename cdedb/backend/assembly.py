@@ -678,7 +678,7 @@ class AssemblyBackend(AbstractBackend):
 
         Possible blockers:
 
-        * assembly_is_locked: Wether the assembly has been locked. In contrast to
+        * assembly_is_locked: Whether the assembly has been locked. In contrast to
                               individual objects linked to the assembly, this does not
                               prevent deletion and cascading of this blocker will also
                               cascade it for the individual objects.

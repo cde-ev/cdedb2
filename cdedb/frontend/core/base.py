@@ -691,7 +691,8 @@ class CoreBaseFrontend(AbstractFrontend):
             grouped[group_id][mailinglist_id] = {
                 'title': ml['title'],
                 'id': mailinglist_id,
-                'address': addresses.get(mailinglist_id)
+                'address': addresses.get(mailinglist_id),
+                'is_active': ml['is_active'],
             }
 
         return self.render(rs, "show_user_mailinglists", {
@@ -2217,7 +2218,8 @@ class CoreBaseFrontend(AbstractFrontend):
                             change_note: Optional[str],
                             time_start: Optional[datetime.datetime],
                             time_stop: Optional[datetime.datetime],
-                            reviewed_by: Optional[CdedbID]) -> Response:
+                            reviewed_by: Optional[CdedbID],
+                            download: bool = False) -> Response:
         """View changelog activity."""
 
         filter_params = {
@@ -2228,7 +2230,7 @@ class CoreBaseFrontend(AbstractFrontend):
         }
 
         return self.generic_view_log(
-            rs, filter_params, "core.changelog", "view_changelog_meta")
+            rs, filter_params, "core.changelog", "view_changelog_meta", download)
 
     @access("core_admin", "auditor")
     @REQUESTdata(*LOG_FIELDS_COMMON)
@@ -2237,7 +2239,8 @@ class CoreBaseFrontend(AbstractFrontend):
                  persona_id: Optional[CdedbID], submitted_by: Optional[CdedbID],
                  change_note: Optional[str],
                  time_start: Optional[datetime.datetime],
-                 time_stop: Optional[datetime.datetime]) -> Response:
+                 time_stop: Optional[datetime.datetime],
+                 download: bool = False) -> Response:
         """View activity."""
 
         filter_params = {
@@ -2247,7 +2250,7 @@ class CoreBaseFrontend(AbstractFrontend):
         }
 
         return self.generic_view_log(
-            rs, filter_params, "core.log", "view_log")
+            rs, filter_params, "core.log", "view_log", download)
 
     @access("anonymous")
     def debug_email(self, rs: RequestState, token: str) -> Response:

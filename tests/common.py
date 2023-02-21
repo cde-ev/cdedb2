@@ -1626,6 +1626,16 @@ class FrontendTest(BackendTest):
         for field in f.fields['codes']:
             self.assertTrue(field.checked)
 
+        # Check csv export
+        save = self.response
+        self.response = f.submit("download", value="csv")
+        self.assertIn('id;ctime;code;change_note;', self.response.text)
+        self.assertIn('persona_id;persona_id_family_name;persona_id_given_names;',
+                      self.response.text)
+        self.assertIn('submitted_by;submitted_by_family_name;submitted_by_given_names',
+                      self.response.text)
+        self.response = save
+
     def _log_subroutine(self, title: str,
                         all_logs: Tuple[Tuple[int, enum.IntEnum], ...],
                         start: int, end: int) -> None:

@@ -802,6 +802,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
                          total_to: Optional[decimal.Decimal],
                          members_from: Optional[int],
                          members_to: Optional[int],
+                         download: bool = False,
                          ) -> Response:
         """View financial activity."""
 
@@ -816,4 +817,4 @@ class CdEBaseFrontend(AbstractUserFrontend):
         }
 
         return self.generic_view_log(
-            rs, filter_params, "cde.finance_log", "view_finance_log")
+            rs, filter_params, "cde.finance_log", "view_finance_log", download)
