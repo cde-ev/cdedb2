@@ -1213,7 +1213,7 @@ class TestCdEFrontend(FrontendTest):
     def test_lastschrift_subscription_form_fill_fail(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Weitere Informationen'},
-                      {'description': 'dieses Formular'})
+                      {'description': 'Teilnehmen'})
         self.assertTitle("Einzugsermächtigung ausfüllen")
         f = self.response.forms['filllastschriftform']
         f["db_id"] = "DB-1-8"
