@@ -1690,7 +1690,7 @@ class TestCoreFrontend(FrontendTest):
             self.assertPresence("Geschlecht männlich")
 
     @as_users("quintus")
-    def test_changelog_displacement(self) -> None:
+    def test_changelog_review(self) -> None:
 
         def _berta_change_profile() -> None:
             with self.switch_user("berta"):

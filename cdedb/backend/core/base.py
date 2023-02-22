@@ -341,7 +341,7 @@ class CoreBaseBackend(AbstractBackend):
                                  "WHERE persona_id = %s AND generation = %s")
                     self.query_exec(rs, query, (const.MemberChangeStati.pending,
                                                 data['id'], current_generation))
-                if (current_state != committed_state
+                elif (current_state != committed_state
                         and {"core_admin", "cde_admin"} & rs.user.roles):
                     # if user is admin, set pending change as reviewed
                     return self.changelog_resolve_change(
