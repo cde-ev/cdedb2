@@ -693,7 +693,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 'title': ml.title,
                 'id': mailinglist_id,
                 'address': addresses.get(mailinglist_id),
-                'is_active': ml['is_active'],
+                'is_active': ml.is_active,
             }
 
         return self.render(rs, "show_user_mailinglists", {
