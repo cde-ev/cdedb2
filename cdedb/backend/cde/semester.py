@@ -234,10 +234,11 @@ class CdESemesterBackend(CdELastschriftBackend):
                 'id': period_id,
                 'ejection_state': None,
                 'ejection_done': now(),
+                # this is a legacy field and no longer used
+                'ejection_balance': decimal.Decimal("0"),
             }
             ret = self.set_period(rs, period_update)
             msg = f"{period['ejection_count']} inaktive Mitglieder gestrichen."
-            msg += f" {period['ejection_balance']} € Guthaben eingezogen."
             self.cde_log(
                 rs, const.CdeLogCodes.semester_ejection, persona_id=None,
                 change_note=msg)
@@ -467,8 +468,6 @@ class CdESemesterBackend(CdELastschriftBackend):
                 self.change_membership(rs, persona_id, is_member=False)
                 period_update['ejection_count'] = \
                     period['ejection_count'] + 1
-                period_update['ejection_balance'] = \
-                    period['ejection_balance'] + persona['balance']
             else:
                 persona = None  # type: ignore[assignment]
             self.set_period(rs, period_update)

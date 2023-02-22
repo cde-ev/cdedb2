@@ -8914,21 +8914,19 @@ msgstr "Streichung inaktiver Mitglieder"
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:100
 #, python-format
 msgid ""
-"Done up until %(state)s. %(count)s memberships have been ended so far. A "
-"total of %(balance)s has been deducted so far."
+"Done up until %(state)s. %(count)s memberships have been ended so far."
 msgstr ""
-"Erledigt bis %(state)s. %(count)s Mitgliedschaften wurden bisher beendet. "
-"%(balance)s an Guthaben wurde bisher eingezogen."
+"Erledigt bis %(state)s. %(count)s Mitgliedschaften wurden bisher beendet."
 
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:110
 #, python-format
 msgid ""
-"%(low_count)s members have insufficient balance (total of %(low_total)s) "
+"%(low_count)s members have insufficient balance "
 "right now (%(low_last_count)s of these with an active lastschrift). "
 "Additionally we have %(trial_count)s trial members."
 msgstr ""
-"Derzeit haben %(low_count)s Mitglieder ein zu niedriges Guthaben (insgesamt "
-"%(low_total)s, davon %(low_last_count)s mit einer aktiven "
+"Derzeit haben %(low_count)s Mitglieder ein zu niedriges Guthaben (davon "
+"%(low_last_count)s mit einer aktiven "
 "Einzugsermächtigung). Zusätzlich gibt es %(trial_count)s Probemitglieder."
 
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:125
@@ -8941,11 +8939,9 @@ msgstr "Später zu erledigen."
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:128
 #, python-format
 msgid ""
-"Done on the %(date)s. %(count)s memberships were ended. A total of "
-"%(balance)s was deducted."
+"Done on the %(date)s. %(count)s memberships were ended."
 msgstr ""
-"Erledigt am %(date)s. %(count)s Mitgliedschaften beendet. %(balance)s an "
-"Guthaben eingezogen."
+"Erledigt am %(date)s. %(count)s Mitgliedschaften beendet."
 
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:144
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:171
