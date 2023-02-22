@@ -1504,6 +1504,7 @@ AmbienceDict = typing.TypedDict(
     }
 )
 
+
 def reconnoitre_ambience(obj: AbstractFrontend,
                          rs: RequestState) -> AmbienceDict:
     """Provide automatic lookup of objects in a standard way.
