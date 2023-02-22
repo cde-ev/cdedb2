@@ -429,7 +429,7 @@ class CoreBaseBackend(AbstractBackend):
         that the reviewers won't get plagued too much.
 
         :param ack: whether to commit or refuse the change
-        :param reviewed: Signals wether the change was reviewed. This exists,
+        :param reviewed: Signals whether the change was reviewed. This exists,
           so that automatically resolved changes are not marked as reviewed.
         """
         if not ack:
@@ -653,8 +653,7 @@ class CoreBaseBackend(AbstractBackend):
             num = self.sql_update(rs, "core.personas", data)
             if not num:
                 raise ValueError(n_("Nonexistent user."))
-            current = unwrap(self.retrieve_personas(
-                rs, (data['id'],), columns=PERSONA_ALL_FIELDS))
+            current = self.retrieve_persona(rs, data['id'], columns=PERSONA_CDE_FIELDS)
             fulltext = self.create_fulltext(current)
             fulltext_update = {
                 'id': data['id'],
@@ -1105,8 +1104,8 @@ class CoreBaseBackend(AbstractBackend):
             'id': persona_id,
         }
         with Atomizer(rs):
-            current = unwrap(self.retrieve_personas(
-                rs, (persona_id,), ("balance", "is_cde_realm", "trial_member")))
+            current = self.retrieve_persona(
+                rs, persona_id, ("balance", "is_cde_realm", "trial_member"))
             if not current['is_cde_realm']:
                 raise RuntimeError(
                     n_("Tried to credit balance to non-cde person."))
@@ -1146,8 +1145,8 @@ class CoreBaseBackend(AbstractBackend):
             'is_member': is_member,
         }
         with Atomizer(rs):
-            current = unwrap(self.retrieve_personas(
-                rs, (persona_id,), ('is_member', 'balance', 'is_cde_realm')))
+            current = self.retrieve_persona(
+                rs, persona_id, ('is_member', 'balance', 'is_cde_realm'))
             if not current['is_cde_realm']:
                 raise RuntimeError(n_("Not a CdE account."))
             if current['is_member'] == is_member:
@@ -2195,7 +2194,7 @@ class CoreBaseBackend(AbstractBackend):
     @access("anonymous")
     def verify_existence(self, rs: RequestState, email: str,
                          include_genesis: bool = True) -> bool:
-        """Check wether a certain email belongs to any persona."""
+        """Check whether a certain email belongs to any persona."""
         email = affirm(vtypes.Email, email)
         query = "SELECT COUNT(*) AS num FROM core.personas WHERE username = %s"
         num = unwrap(self.query_one(rs, query, (email,))) or 0

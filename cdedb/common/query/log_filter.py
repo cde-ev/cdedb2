@@ -159,9 +159,13 @@ class LogFilter:
         conditions, params = self._get_sql_conditions()
         return f"WHERE {' AND '.join(conditions)}" if conditions else "", tuple(params)
 
-    def get_columns(self) -> str:
+    def get_columns(self) -> tuple[str, ...]:
+        """Get a list of columns in the respective log table."""
+        return _DEFAULT_LOG_COLUMNS + self.table.get_additional_columns()
+
+    def get_columns_str(self) -> str:
         """Get a comma-separated list of columns to select from the log table."""
-        return ", ".join(_DEFAULT_LOG_COLUMNS + self.table.get_additional_columns())
+        return ", ".join(self.get_columns())
 
 
 @dataclasses.dataclass

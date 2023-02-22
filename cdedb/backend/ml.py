@@ -311,7 +311,7 @@ class MlBackend(AbstractBackend):
                           managed: str = None) -> Dict[vtypes.ID, str]:
         """List all mailinglists you may view
 
-        :param active_only: Toggle wether inactive lists should be included.
+        :param active_only: Toggle whether inactive lists should be included.
         :param managed: Valid values:
 
             * None:         no additional filter

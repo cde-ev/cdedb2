@@ -4972,6 +4972,19 @@
             "max_size": null,
             "notes": null,
             "fields": {}
+        },
+        {
+            "id": 13,
+            "event_id": 1,
+            "nr": "ζ",
+            "title": "Extra-Kurs",
+            "description": "Besser spät als nie.",
+            "shortname": "Extra",
+            "instructors": null,
+            "min_size": null,
+            "max_size": null,
+            "notes": null,
+            "fields": {}
         }
     ],
     "event.course_segments": [
@@ -5143,6 +5156,21 @@
         {
             "course_id": 12,
             "track_id": 7,
+            "is_active": true
+        },
+        {
+            "course_id": 13,
+            "track_id": 1,
+            "is_active": false
+        },
+        {
+            "course_id": 13,
+            "track_id": 2,
+            "is_active": true
+        },
+        {
+            "course_id": 13,
+            "track_id": 3,
             "is_active": true
         }
     ],

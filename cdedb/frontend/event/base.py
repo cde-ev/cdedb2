@@ -651,7 +651,8 @@ class EventBaseFrontend(AbstractUserFrontend):
                  submitted_by: Optional[vtypes.CdedbID],
                  change_note: Optional[str],
                  time_start: Optional[datetime.datetime],
-                 time_stop: Optional[datetime.datetime]) -> Response:
+                 time_stop: Optional[datetime.datetime],
+                 download: bool = False) -> Response:
         """View activities concerning events organized via DB."""
 
         filter_params = {
@@ -667,7 +668,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         else:
             registration_map = {}
         return self.generic_view_log(
-            rs, filter_params, "event.log", "base/view_log", {
+            rs, filter_params, "event.log", "base/view_log", download, {
             'all_events': events, 'registration_map': registration_map,
         })
 
@@ -682,7 +683,8 @@ class EventBaseFrontend(AbstractUserFrontend):
                        submitted_by: Optional[vtypes.CdedbID],
                        change_note: Optional[str],
                        time_start: Optional[datetime.datetime],
-                       time_stop: Optional[datetime.datetime]) -> Response:
+                       time_stop: Optional[datetime.datetime],
+                       download: bool = False) -> Response:
         """View activities concerning one event organized via DB."""
 
         filter_params = {
@@ -694,7 +696,7 @@ class EventBaseFrontend(AbstractUserFrontend):
 
         registration_map = self.eventproxy.get_registration_map(rs, (event_id,))
         return self.generic_view_log(
-            rs, filter_params, "event.log", "base/view_event_log", {
+            rs, filter_params, "event.log", "base/view_event_log", download, {
             'registration_map': registration_map
         })
 
