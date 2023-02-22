@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2023-02-19 18:17+0000\n"
+"POT-Creation-Date: 2023-02-22 16:14+0100\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -67,8 +67,8 @@ msgstr ""
 #: cdedb/backend/event/registration.py:825
 #: cdedb/backend/event/registration.py:942
 #: cdedb/backend/event/registration.py:1041
-#: cdedb/backend/event/registration.py:1238
-#: cdedb/backend/event/registration.py:1271 cdedb/backend/ml.py:171
+#: cdedb/backend/event/registration.py:1242
+#: cdedb/backend/event/registration.py:1275 cdedb/backend/ml.py:171
 #: cdedb/backend/ml.py:281 cdedb/backend/ml.py:483 cdedb/backend/ml.py:506
 #: cdedb/backend/ml.py:660 cdedb/backend/ml.py:706 cdedb/backend/ml.py:860
 #: cdedb/backend/ml.py:904 cdedb/backend/ml.py:930 cdedb/backend/ml.py:963
@@ -1079,7 +1079,7 @@ msgid "Not registered for this event."
 msgstr ""
 
 #: cdedb/backend/event/registration.py:727
-#: cdedb/backend/event/registration.py:1229
+#: cdedb/backend/event/registration.py:1233
 msgid "Only registrations from exactly one event allowed."
 msgstr ""
 
@@ -1103,19 +1103,19 @@ msgstr ""
 
 #: cdedb/backend/event/registration.py:945
 #: cdedb/frontend/assembly/__init__.py:540 cdedb/frontend/event/event.py:212
-#: cdedb/frontend/event/registration.py:977
+#: cdedb/frontend/event/registration.py:983
 msgid "This user does not exist or is archived."
 msgstr ""
 
 #: cdedb/backend/event/registration.py:947 cdedb/frontend/event/event.py:215
-#: cdedb/frontend/event/registration.py:981
+#: cdedb/frontend/event/registration.py:987
 msgid "This user is not an event user."
 msgstr ""
 
 #: cdedb/backend/event/registration.py:949
 #: cdedb/frontend/event/registration.py:321
-#: cdedb/frontend/event/registration.py:655
-#: cdedb/frontend/event/registration.py:986
+#: cdedb/frontend/event/registration.py:661
+#: cdedb/frontend/event/registration.py:992
 msgid "Already registered."
 msgstr ""
 
@@ -1127,7 +1127,7 @@ msgstr ""
 msgid "Missing track dataset."
 msgstr ""
 
-#: cdedb/backend/event/registration.py:1283
+#: cdedb/backend/event/registration.py:1287
 msgid "Mismatched registrations, not associated with the event."
 msgstr ""
 
@@ -3184,7 +3184,7 @@ msgstr ""
 #: cdedb/frontend/event/course.py:222 cdedb/frontend/event/event.py:319
 #: cdedb/frontend/event/event.py:744 cdedb/frontend/event/event.py:1016
 #: cdedb/frontend/event/event.py:1054 cdedb/frontend/event/lodgement.py:504
-#: cdedb/frontend/event/registration.py:1010 cdedb/frontend/ml/base.py:533
+#: cdedb/frontend/event/registration.py:1016 cdedb/frontend/ml/base.py:533
 msgid "Must be checked."
 msgstr ""
 
@@ -4308,7 +4308,7 @@ msgstr ""
 msgid "Field name not unique."
 msgstr ""
 
-#: cdedb/frontend/event/fields.py:182 cdedb/frontend/event/registration.py:1215
+#: cdedb/frontend/event/fields.py:182 cdedb/frontend/event/registration.py:1221
 msgid "Wrong associated event."
 msgstr ""
 
@@ -4640,9 +4640,9 @@ msgstr ""
 
 #: cdedb/frontend/event/questionnaire.py:148
 #: cdedb/frontend/event/questionnaire.py:189
-#: cdedb/frontend/event/registration.py:697
-#: cdedb/frontend/event/registration.py:776
-#: cdedb/frontend/event/registration.py:823
+#: cdedb/frontend/event/registration.py:703
+#: cdedb/frontend/event/registration.py:782
+#: cdedb/frontend/event/registration.py:829
 msgid "Not registered for event."
 msgstr ""
 
@@ -4654,9 +4654,9 @@ msgstr ""
 #: cdedb/frontend/event/questionnaire.py:156
 #: cdedb/frontend/event/questionnaire.py:196
 #: cdedb/frontend/event/registration.py:327
-#: cdedb/frontend/event/registration.py:649
-#: cdedb/frontend/event/registration.py:788
-#: cdedb/frontend/event/registration.py:833
+#: cdedb/frontend/event/registration.py:655
+#: cdedb/frontend/event/registration.py:794
+#: cdedb/frontend/event/registration.py:839
 msgid "Event locked."
 msgstr ""
 
@@ -4671,9 +4671,9 @@ msgstr ""
 
 #: cdedb/frontend/event/questionnaire.py:199
 #: cdedb/frontend/event/registration.py:330
-#: cdedb/frontend/event/registration.py:652
-#: cdedb/frontend/event/registration.py:779
-#: cdedb/frontend/event/registration.py:830
+#: cdedb/frontend/event/registration.py:658
+#: cdedb/frontend/event/registration.py:785
+#: cdedb/frontend/event/registration.py:836
 msgid "Event is already archived."
 msgstr ""
 
@@ -4719,16 +4719,16 @@ msgid "Unexpected error on line {num}."
 msgstr ""
 
 #: cdedb/frontend/event/registration.py:324
-#: cdedb/frontend/event/registration.py:646
+#: cdedb/frontend/event/registration.py:652
 msgid "Registration not open."
 msgstr ""
 
 #: cdedb/frontend/event/registration.py:333
-#: cdedb/frontend/event/registration.py:669
+#: cdedb/frontend/event/registration.py:675
 msgid "No minors may register. Please contact the Orgateam."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:379
+#: cdedb/frontend/event/registration.py:382
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:121
 #, python-format
 msgid ""
@@ -4736,54 +4736,54 @@ msgid ""
 "%(additional_fee)s (already included in the above figure)."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:578
+#: cdedb/frontend/event/registration.py:584
 msgid "Instructed course must not be chosen."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:580
+#: cdedb/frontend/event/registration.py:586
 msgid "You may not choose your own course."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:588
+#: cdedb/frontend/event/registration.py:594
 #, python-format
 msgid "Cannot have the same course as %(i)s. and %(j)s. choice."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:591
+#: cdedb/frontend/event/registration.py:597
 #, python-format
 msgid "You cannot have the same course as %(i)s. and %(j)s. choice."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:600
+#: cdedb/frontend/event/registration.py:606
 msgid "Invalid course choice for this track."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:607
+#: cdedb/frontend/event/registration.py:613
 #, python-format
 msgid "You must choose at least %(min_choices)s courses."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:689
+#: cdedb/frontend/event/registration.py:695
 msgid "Registered for event."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:785
+#: cdedb/frontend/event/registration.py:791
 msgid "Registration closed, no changes possible."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:827
+#: cdedb/frontend/event/registration.py:833
 msgid "No changes allowed anymore."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:991
+#: cdedb/frontend/event/registration.py:997
 msgid "Rate-limit reached."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:1046
+#: cdedb/frontend/event/registration.py:1052
 msgid "No participants found to edit."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:1217
+#: cdedb/frontend/event/registration.py:1223
 msgid "Already checked in."
 msgstr ""
 
