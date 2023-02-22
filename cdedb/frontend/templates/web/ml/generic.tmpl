@@ -10,7 +10,7 @@
    management    Whether the link should point to the mailinglist management instead of the show_mailinglist page #}
 {% macro format_entry(ml, ml_additional, subscriptions, events, assemblies, management) %}
     <div id="mailinglist-{{ ml['id'] }}-row"
-         class="row list-group-item{% if not ml['is_active'] %} list-group-item-muted{% endif %}">
+         class="row list-group-item{% if not ml.is_active %} list-group-item-muted{% endif %}">
         <div class="col-sm-3">
             {% if management %}
                 {{ util.href(cdedblink("ml/management", {'mailinglist_id': ml['id']}), ml['title']) }}
@@ -20,7 +20,7 @@
             {% if ml['id'] in subscriptions %}
                 {{ util.state_checkbox(subscriptions.get(ml['id'])) }}
             {% endif %}<br />
-            {% if not ml['is_active'] %}
+            {% if not ml.is_active %}
                 <span class="small">{% trans %}inactive{% endtrans %}</span>
             {% endif %}
         </div>
