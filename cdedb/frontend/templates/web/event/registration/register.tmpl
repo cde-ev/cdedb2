@@ -185,9 +185,10 @@
                         <tbody>
                         {% for fee_id, fee in ambience['event']['fees']|keydictsort(EntitySorter.event_fee) %}
                             <tr id="active-fee" data-fee_id="{{ fee_id }}">
-                                <th id="active-fee-title" data-orig-title="{{ fee['title'] }}">{{ fee['title'] }}</th>
+                                <th class="alert" id="active-fee-title" data-orig-title="{{ fee['title'] }}">{{ fee['title'] }}</th>
                                 <th class="{{ 'text-success' if fee['amount'] < 0 }}" style="text-align: right;">
-                                    {{ fee['amount']|money(lang=lang) }}</th>
+                                    {{ fee['amount']|money(lang=lang) }}
+                                </th>
                                 <th id="active-fee-condition"><pre>{{ fee['condition'] }}</pre></th>
                             </tr>
                         {% endfor %}
@@ -277,10 +278,10 @@
                             orig_title = title.data('orig-title');
                             if ($.inArray($(this).data('fee_id'), result["active_fees"]) >= 0) {
                                 title.html('{{ util.deko_checkbox(True).strip() + nbsp }}' + orig_title);
-                                title.attr('title', '{{ gettext("Active") }}').addClass('alert-success');
+                                title.attr('title', '{{ gettext("Active") }}').removeClass('alert-danger').addClass('alert-success');
                             } else {
                                 title.html('{{ util.deko_checkbox(False).strip() + nbsp }}' + orig_title);
-                                title.attr('title', '{{ gettext("Inactive") }}').addClass('alert-danger');
+                                title.attr('title', '{{ gettext("Inactive") }}').removeClass('alert-success').addClass('alert-danger');
                             }
                         });
                     }
