@@ -298,6 +298,8 @@ class EventRegistrationMixin(EventBaseFrontend):
         ccos_per_part: Dict[int, List[str]] = {
             part_id: [] for part_id in event['parts']}
         for track_group_id, track_group in sync_track_groups.items():
+            if not track_group['constraint_type'] == ccs:
+                continue
             simple_tracks.difference_update(track_group['track_ids'])
             track_group_map.update(
                 {track_id: track_group_id for track_id in track_group['track_ids']})
@@ -305,6 +307,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                 ccos_per_part[tracks[track_id]['part_id']].append(
                     f"group-{track_group_id}")
                 reference_tracks[track_group_id] = tracks[track_id]
+                track_group['num_choices'] = tracks[track_id]['num_choices']
         for track_id in simple_tracks:
             ccos_per_part[tracks[track_id]['part_id']].append(f"{track_id}")
         choice_objects = [t for t_id, t in tracks.items() if t_id in simple_tracks] + [
@@ -711,15 +714,26 @@ class EventRegistrationMixin(EventBaseFrontend):
         course_choice_parameters = self.get_course_choice_params(
             rs, event_id, orga=False)
 
-        status = lambda track: registration['parts'][track['part_id']]['status']
-        involved_tracks = {
-            track_id for track_id, track in rs.ambience['event']['tracks'].items()
-            if status(track).is_involved()}
+        sorted_involved_tracks = {
+            track_id: track for track_id, track in keydictsort_filter(
+                rs.ambience['event']['tracks'], EntitySorter.course_track)
+            if registration['parts'][track['part_id']]['status'].is_involved()
+        }
+
+        is_involved = lambda cco: (cco['track_ids'] & sorted_involved_tracks.keys()
+                                   if 'track_ids' in cco
+                                   else cco['id'] in sorted_involved_tracks)
+        filtered_choice_objects = [
+            cco for cco in course_choice_parameters['choice_objects']
+            if cco['num_choices'] and is_involved(cco)
+        ]
 
         return self.render(rs, "registration/registration_status", {
             'registration': registration, 'age': age,
             'reg_questionnaire': reg_questionnaire,
-            'waitlist_position': waitlist_position, 'involved_tracks': involved_tracks,
+            'waitlist_position': waitlist_position,
+            'sorted_involved_tracks': sorted_involved_tracks,
+            'filtered_choice_objects': filtered_choice_objects,
             **payment_data, **course_choice_parameters,
         })
 

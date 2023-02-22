@@ -29,6 +29,18 @@
         {% endcall %}
     {% endif %}
 {% endblock %}
+
+{% macro print_course(reg_track, courses) %}
+<dd>
+    {% if reg_track['course_id'] %}
+        {{ util.href(cdedblink('event/course_list') + '#course-' + reg_track['course_id']|string,
+                "{}. {}".format(courses[reg_track['course_id']]['nr'], courses[reg_track['course_id']]['title'])) }}
+    {% else %}
+        —
+    {% endif %}
+</dd>
+{% endmacro %}
+
 {% block content %}
     {% if ambience['event']['registration_text'] %}
         {% call util.bootstrap_panel(title=gettext("Note of the Orga Team"), icon="info-circle", aclass="panel-info") %}
@@ -146,23 +158,25 @@
 
     <h3 class="heading-underline">Status</h3>
     <dl class="dl-horizontal">
-        {% for part_id, part in registration['parts'].items() %}
-            <dt title="{{ ambience['event']['parts'][part_id]['title'] }}">
-                {% if ambience['event']['parts']|length > 1 %}
-                    {{ ambience['event']['parts'][part_id]['title'] }}
-                {% else %}
+        {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+            {% if ambience['event']['parts']|length > 1 %}
+                <dt title="{{ part['title'] }}">
+                    {{ part['title'] }}
+                </dt>
+            {% else %}
+                <dt title="{% trans %}Registration Status{% endtrans %}">
                     {% trans %}Registration Status{% endtrans %}
-                {% endif %}
-            </dt>
+                </dt>
+            {% endif %}
             <dd id="registration_status_part{{ part_id }}">
-                {{ gettext(part['status']|enum(enums['RegistrationPartStati'])) }}
+                {{ gettext(registration['parts'][part_id]['status']|enum(enums['RegistrationPartStati'])) }}
                 {# We assume that an orga sets 'payment' if enough has been paid for admission as participant.
-                   E.g. one might only request a second instalment of the fee by participants shortly before the event
+                   E.g. one might only request a second installment of the fee by participants shortly before the event
                    See also EventRegistrationBackend.get_registration_payment_info() #}
-                {% if part['status'].has_to_pay() and not registration['payment'] and fee %}
+                {% if registration['parts'][part_id]['status'].has_to_pay() and not registration['payment'] and fee %}
                     <span class="text-danger">({% trans %}payment pending{% endtrans %})</span>
                 {% endif %}
-                {% if part['status'] == enums['RegistrationPartStati'].waitlist and waitlist_position[part_id] %}
+                {% if registration['parts'][part_id]['status'] == enums['RegistrationPartStati'].waitlist and waitlist_position[part_id] %}
                     ({% trans %}Placement{% endtrans %}{{ nbsp }}{{ waitlist_position[part_id] }})
                 {% endif %}
             </dd>
@@ -170,74 +184,57 @@
     </dl>
 
     {% set sorted_tracks = ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
-    {% set filtered_choice_objects = [] %}
-    {% for cco in choice_objects %}
-        {% if 'constraint_type' in cco %}
-            {% if cco['track_ids'] and reference_tracks[cco['id']]['num_choices'] %}
-                {% do filtered_choice_objects.append(cco) %}
-            {% endif %}
-        {% elif cco['num_choices'] %}
-            {% do filtered_choice_objects.append(cco) %}
-        {% endif %}
-    {% endfor %}
 
     {% for batch in filtered_choice_objects|batch(2) %}
         <div class="row">
         {% for cco in batch %}
-        <div class="col-md-6">
         {% set track, track_group = (reference_tracks[cco['id']], cco) if 'constraint_type' in cco else (cco, None) %}
-        {% set track_ids = [track['id']] if track_group is none else track_group['track_ids'] %}
-        {% set sorted_involved_tracks = [] %}
-        {% for track_id, track in sorted_tracks if track_id in track_ids and registration['parts'][track['part_id']]['status'].is_involved() %}
-            {% do sorted_involved_tracks.append((track_id, track)) %}
-        {% endfor %}
         {% set id_suffix = "group-{}".format(track_group['id']) if track_group else track['id'] %}
         {% set reg_track = registration['tracks'][track['id']] %}
 
-        {% if 'track_ids' in cco and cco['track_ids'].intersection(involved_tracks) or cco['id'] in involved_tracks %}
-            <h4>
+        <div class="col-md-6">
+            <h3>
                 {% trans %}Course{% endtrans %}
-                {% if choice_objects|length > 1 %}
+                {% if filtered_choice_objects|length > 1 %}
                     {% trans %}for{% endtrans %}
                     {{ cco['title'] }}
                 {% endif %}
-            </h4>
+            </h3>
 
             {% if ambience['event']['is_course_assignment_visible'] %}
                 {% if sorted_involved_tracks|length > 1 %}
-                    <h5>
+                    <h4 class="heading-undrline">
                         {% trans %}Assigned to{% endtrans %}
-                    </h5>
+                    </h4>
                 {% endif %}
                 <dl class="dl-horizontal" id="course-assignment-{{ id_suffix }}">
-                    {% for track_id, track in sorted_involved_tracks %}
-                        {% if sorted_involved_tracks|length > 1 %}
+                    {% if 'track_ids' in cco %}
+                        {% for track_id, track in sorted_tracks if track_id in cco['track_ids'] %}
                             <dt title="{{ track['title'] }}">
                                 {{ track['title'] }}
                             </dt>
-                        {% else %}
-                            <dt title="{% trans %}Assigned to{% endtrans %}">
-                                {% trans %}
-                                    Assigned to
-                                {% endtrans %}
-                            </dt>
-                        {% endif %}
-                        <dd>
-                            {% if registration['tracks'][track_id]['course_id'] %}
-                                {{ util.href(cdedblink('event/course_list') + '#course-' + reg_track['course_id']|string,
-                                        "{}. {}".format(courses[reg_track['course_id']]['nr'], courses[reg_track['course_id']]['title'])) }}
-                            {% else %}
-                                —
-                            {% endif %}
-                        </dd>
-                    {% endfor %}
+                            {{ print_course(registration['tracks'][track_id], courses) }}
+                        {% endfor %}
+                    {% elif sorted_involved_tracks|length > 1 %}
+                        <dt title="{{ track['title'] }}">
+                            {{ track['title'] }}
+                        </dt>
+                        {{ print_course(reg_track, courses) }}
+                    {% else %}
+                        <dt title="{% trans %}Assigned to{% endtrans %}">
+                            {% trans %}
+                                Assigned to
+                            {% endtrans %}
+                        </dt>
+                        {{ print_course(reg_track, courses) }}
+                    {% endif %}
                 </dl>
-            {% endif %}
-            {% if sorted_involved_tracks|length > 1 %}
-                {# Only show this heading if the heading above is shown too. #}
-                <h5>
-                    {% trans %}Course Choices{% endtrans %}
-                </h5>
+                {% if sorted_involved_tracks|length > 1 %}
+                    {# Only show this heading if the heading above is shown too. #}
+                    <h4 class="heading-underine">
+                        {% trans %}Course Choices{% endtrans %}
+                    </h4>
+                {% endif %}
             {% endif %}
             <dl class="dl-horizontal" id="course-choices-{{ id_suffix }}">
                 {% if reg_track['course_instructor'] %}
@@ -262,7 +259,6 @@
                     </dd>
                 {% endfor %}
             </dl>
-        {% endif %}
         </div>
         {% endfor %}
         </div>
