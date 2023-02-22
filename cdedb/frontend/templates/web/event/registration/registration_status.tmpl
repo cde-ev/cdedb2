@@ -202,11 +202,6 @@
             </h3>
 
             {% if ambience['event']['is_course_assignment_visible'] %}
-                {% if sorted_involved_tracks|length > 1 %}
-                    <h4>
-                        {% trans %}Assigned to{% endtrans %}
-                    </h4>
-                {% endif %}
                 <dl class="dl-horizontal" id="course-assignment-{{ id_suffix }}">
                     {% if 'track_ids' in cco %}
                         {% for track_id, track in sorted_tracks if track_id in cco['track_ids'] %}
@@ -215,11 +210,6 @@
                             </dt>
                             {{ print_course(registration['tracks'][track_id], courses) }}
                         {% endfor %}
-                    {% elif sorted_involved_tracks|length > 1 %}
-                        <dt title="{{ track['title'] }}">
-                            {{ track['title'] }}
-                        </dt>
-                        {{ print_course(reg_track, courses) }}
                     {% else %}
                         <dt title="{% trans %}Assigned to{% endtrans %}">
                             {% trans %}
@@ -229,12 +219,6 @@
                         {{ print_course(reg_track, courses) }}
                     {% endif %}
                 </dl>
-                {% if sorted_involved_tracks|length > 1 %}
-                    {# Only show this heading if the heading above is shown too. #}
-                    <h4>
-                        {% trans %}Course Choices{% endtrans %}
-                    </h4>
-                {% endif %}
             {% endif %}
             <dl class="dl-horizontal" id="course-choices-{{ id_suffix }}">
                 {% if reg_track['course_instructor'] %}
