@@ -20,6 +20,7 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.fee_condition_parser.evaluation as fcp_evaluation
 import cdedb.fee_condition_parser.parsing as fcp_parsing
+import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
 from cdedb.backend.common import (
     access, affirm_array_validation as affirm_array,
     affirm_set_validation as affirm_set, affirm_validation as affirm,
@@ -54,6 +55,7 @@ CourseChoiceValidationAux = NamedTuple(
 class RegistrationFee:
     amount: decimal.Decimal
     active_fees: set[int]
+    visual_debug: dict[int, str]
 
 
 @dataclasses.dataclass
@@ -1167,6 +1169,7 @@ class EventRegistrationBackend(EventBaseBackend):
             }
             amount = decimal.Decimal(0)
             active_fees = set()
+            visual_debug = {}
             for fee in event['fees'].values():
                 parse_result = fcp_parsing.parse(fee['condition'])
                 if fcp_evaluation.evaluate(
@@ -1174,7 +1177,9 @@ class EventRegistrationBackend(EventBaseBackend):
                         other_bools):
                     amount += fee['amount']
                     active_fees.add(fee['id'])
-            ret[tmp_is_member] = RegistrationFee(amount, active_fees)
+                visual_debug[fee['id']] = fcp_roundtrip.visual_debug(
+                    parse_result, reg_bool_fields, reg_part_involvement, other_bools)[1]
+            ret[tmp_is_member] = RegistrationFee(amount, active_fees, visual_debug)
 
         if is_member is None:
             is_member = self.core.get_persona(rs, reg['persona_id'])['is_member']

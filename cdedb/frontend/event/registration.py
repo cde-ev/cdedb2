@@ -394,7 +394,8 @@ class EventRegistrationMixin(EventBaseFrontend):
             'fee': money_filter(complex_fee.amount, lang=rs.lang) or "",
             'nonmember': nonmember_msg,
             'show_nonmember': complex_fee.nonmember_surcharge,
-            'active_fees': complex_fee.fee.active_fees
+            'active_fees': complex_fee.fee.active_fees,
+            'visual_debug': complex_fee.fee.visual_debug,
         }
         return Response(json_serialize(ret), mimetype='application/json')
 

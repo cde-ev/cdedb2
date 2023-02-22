@@ -184,10 +184,10 @@
                         </thead>
                         <tbody>
                         {% for fee_id, fee in ambience['event']['fees']|keydictsort(EntitySorter.event_fee) %}
-                            <tr>
-                                <th>{{ fee['title'] }}</th>
+                            <tr id="active-fee" data-fee_id="{{ fee_id }}">
+                                <th id="active-fee-title">{{ fee['title'] }}</th>
                                 <th>{{ fee['amount']|money(lang=lang) }}</th>
-                                <th id="active-fee" data-fee_id="{{ fee_id }}"><pre>{{ fee['condition'] }}</pre></th>
+                                <th id="active-fee-condition"><pre>{{ fee['condition'] }}</pre></th>
                             </tr>
                         {% endfor %}
                         </tbody>
@@ -272,12 +272,11 @@
                     console.log(result);
                     if (fee_summary) {
                         fee_summary.each(function() {
+                            $(this).find('#active-fee-condition').html(result["visual_debug"][$(this).data("fee_id")]);
                             if ($.inArray($(this).data('fee_id'), result["active_fees"]) >= 0) {
-                                $(this).find('pre').css('background-color', 'green');
-                                $(this).parents('tr').attr('title', '{{ gettext("Active") }}');
+                                $(this).attr('title', '{{ gettext("Active") }}').find('#active-fee-title').css('background-color', '#66FF66');
                             } else {
-                                $(this).find('pre').css('background-color', 'red');
-                                $(this).parents('tr').attr('title', '{{ gettext("Inactive") }}');
+                                $(this).attr('title', '{{ gettext("Inactive") }}').find('#active-fee-title').css('background-color', '#FF6666');
                             }
                         });
                     }
