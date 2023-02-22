@@ -348,6 +348,8 @@ class CoreBaseBackend(AbstractBackend):
                         rs, data['id'], current_generation, ack=True)
                 # We successfully made the data set match to the requested
                 # values. It's not our fault, that we didn't have to do any work.
+                rs.notify('info', n_("Nothing changed."))
+                rs.mute_notify_return_code = True
                 return 1
             # Determine if something requiring a review changed.
             fields_requiring_review = {

@@ -179,6 +179,8 @@ class RequestState(ConnectionContainer):
         # is executed and then to True with the corresponding methods
         # of this class
         self.validation_appraised: Optional[bool] = None
+        # Silence the output of notify_return_code
+        self.mute_notify_return_code = False
 
     @property
     def gettext(self) -> Callable[[str], str]:
@@ -216,10 +218,14 @@ class RequestState(ConnectionContainer):
         the number of changed entries, and negative numbers for entries with
         pending review).
 
+        Can be muted with rs.mute_notify_return_code = True.
+
         :param success: Affirmative message for positive return codes.
         :param info: Message for negative return codes signalling review.
         :param error: Exception message for zero return codes.
         """
+        if self.mute_notify_return_code:
+            return
         if not code:
             self.notify("error", error)
         elif code is True or code > 0:
