@@ -364,12 +364,12 @@ class CoreGenesisMixin(CoreBaseFrontend):
             if self.coreproxy.verify_existence(rs, data['username']):
                 rs.append_validation_error(
                     ("username", ValueError(n_("Email address already taken."))))
-        if data.get('pevent_id') and data.get('pcourse_id'):
-            if data['pevent_id'] != self.pasteventproxy.get_past_course(
+        if data.get('pcourse_id'):
+            # Capture both course without event and with unassociated event
+            if data.get('pevent_id') != self.pasteventproxy.get_past_course(
                     rs, data['pcourse_id'])['pevent_id']:
-                rs.append_validation_error(("pcourse_id", ValueError(n_(
-                    "Course not associated with past event specified."))
-                ))
+                e = ValueError(n_("Course not associated with past event specified."))
+                rs.extend_validation_errors((("pcourse_id", e), ("pevent_id", e)))
         if rs.has_validation_errors():
             return self.genesis_modify_form(rs, genesis_case_id)
 

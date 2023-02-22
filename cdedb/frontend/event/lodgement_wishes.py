@@ -270,7 +270,8 @@ def create_lodgement_wishes_graph(
         filter_part_id: Optional[int], show_all: bool,
         cluster_part_id: Optional[int],
         cluster_by_lodgement: bool,
-        cluster_by_lodgement_group: bool) -> graphviz.Digraph:
+        cluster_by_lodgement_group: bool,
+        show_full_assigned_edges: bool) -> graphviz.Digraph:
     """
     Plot the Lodgement Wishes Graph of the given event.
 
@@ -303,13 +304,18 @@ def create_lodgement_wishes_graph(
         assigned lodgment in that event part.
     :param cluster_by_lodgement_group: Works analogously to cluster_by_lodgement. Both
         can be combined to produce sub-sub-graphs of lodgements and lodgement groups.
+    :param show_full_assigned_edges: May only be false if cluster_part_id provides a
+        part id. If false, edges between participants which are both assigned into a
+        lodgement will not be drawn.
     :return: The fully constructed by not-yet rendered graph as a graphviz
         Digraph object. The graph can be rendered and layouted by calling
         `.pipe()` on the graph object which will run the graphviz program as a
         subprocess and return the resulting graphic file.
     """
-    if (cluster_by_lodgement_group or cluster_by_lodgement) and not cluster_part_id:
-        raise RuntimeError("Clusters can only be displayed if restricted to one part.")
+    if ((cluster_by_lodgement_group or cluster_by_lodgement
+            or not show_full_assigned_edges) and not cluster_part_id):
+        raise RuntimeError("Clusters can only be displayed and full assigned edges can"
+                           " only be hidden if restricted to one part.")
 
     graph = graphviz.Digraph(
         engine=('fdp' if cluster_by_lodgement_group or cluster_by_lodgement
@@ -405,6 +411,12 @@ def create_lodgement_wishes_graph(
 
     # Add wishes as edges
     for wish in wishes:
+        # hide the edge if both participants are already assigned to a lodgement
+        if (not show_full_assigned_edges
+                and registrations[wish.wishing]["parts"][filter_part_id]["lodgement_id"]
+                and registrations[wish.wished]["parts"][filter_part_id][
+                        "lodgement_id"]):
+            continue
         graph.edge(str(wish.wishing), str(wish.wished),
                    style='solid' if wish.present_together else 'dashed',
                    dir='both' if wish.bidirectional else 'forward',

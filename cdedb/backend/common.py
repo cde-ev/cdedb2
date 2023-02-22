@@ -470,7 +470,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
         log_code = log_filter.table.get_log_code_class()
 
         condition, params = log_filter.to_sql_condition()
-        columns = log_filter.get_columns()
+        columns = log_filter.get_columns_str()
 
         # The first query determines the absolute number of logs existing
         # matching the given criteria

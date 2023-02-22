@@ -338,7 +338,8 @@ class MlBaseFrontend(AbstractUserFrontend):
                  submitted_by: Optional[vtypes.CdedbID],
                  change_note: Optional[str],
                  time_start: Optional[datetime],
-                 time_stop: Optional[datetime]) -> Response:
+                 time_stop: Optional[datetime],
+                 download: bool = False) -> Response:
         """View activities."""
 
         db_mailinglist_ids = {mailinglist_id} if mailinglist_id else set()
@@ -364,7 +365,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         mailinglists = self.mlproxy.get_mailinglists(rs, relevant_mls)
         self.logger.debug(mailinglists)
         return self.generic_view_log(
-            rs, filter_params, "ml.log", "view_log", {
+            rs, filter_params, "ml.log", "view_log", download, {
             'all_mailinglists': mailinglists,
             'may_view': lambda ml: self.mlproxy.may_view(rs, ml),
         })
@@ -558,7 +559,8 @@ class MlBaseFrontend(AbstractUserFrontend):
                     submitted_by: Optional[vtypes.CdedbID],
                     change_note: Optional[str],
                     time_start: Optional[datetime],
-                    time_stop: Optional[datetime]) -> Response:
+                    time_stop: Optional[datetime],
+                    download: bool = False) -> Response:
         """View activities pertaining to one list."""
 
         filter_params = {
@@ -569,7 +571,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         }
 
         return self.generic_view_log(
-            rs, filter_params, "ml.log", "view_ml_log")
+            rs, filter_params, "ml.log", "view_ml_log", download)
 
     @access("ml")
     @mailinglist_guard()

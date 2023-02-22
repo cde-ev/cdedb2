@@ -1140,6 +1140,7 @@ ul.styleless {
 
 .list-button-float {
     float: right;
+    margin-left: 1em;
 }
 
 .clearfix-after::after {
@@ -1158,6 +1159,10 @@ ul.styleless {
 
 .clear-both {
     clear: both;
+}
+
+.flex-width {
+    width: fit-content;
 }
 
 /* Display icons in light gray. */
