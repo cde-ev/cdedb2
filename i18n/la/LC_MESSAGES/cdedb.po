@@ -7371,7 +7371,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/lastschrift/i25p_index.tmpl:57
 msgid ""
 "For legal reasons, we need the Direct Debit Authorization Form in written "
-"form. Please fill the formula linked below and send it to us by mail (not E-"
+"form. Please fill out the form linked below and send it to us by mail (not E-"
 "Mail)."
 msgstr ""
 
