@@ -185,8 +185,8 @@
                         <tbody>
                         {% for fee_id, fee in ambience['event']['fees']|keydictsort(EntitySorter.event_fee) %}
                             <tr id="active-fee" data-fee_id="{{ fee_id }}">
-                                <th id="active-fee-title">{{ fee['title'] }}</th>
-                                <th>{{ fee['amount']|money(lang=lang) }}</th>
+                                <th id="active-fee-title" data-orig-title="{{ fee['title'] }}">{{ fee['title'] }}</th>
+                                <th class="{{ 'text-success' if fee['amount'] < 0 else 'text-danger' }}">{{ fee['amount']|money(lang=lang) }}</th>
                                 <th id="active-fee-condition"><pre>{{ fee['condition'] }}</pre></th>
                             </tr>
                         {% endfor %}
@@ -269,14 +269,17 @@
                     else {
                         nonmember_surcharge.parent().hide();
                     }
-                    console.log(result);
                     if (fee_summary) {
                         fee_summary.each(function() {
                             $(this).find('#active-fee-condition').html(result["visual_debug"][$(this).data("fee_id")]);
+                            title = $(this).find('#active-fee-title');
+                            orig_title = title.data('orig-title');
                             if ($.inArray($(this).data('fee_id'), result["active_fees"]) >= 0) {
-                                $(this).attr('title', '{{ gettext("Active") }}').find('#active-fee-title').css('background-color', '#66FF66');
+                                title.html('{{ util.deko_checkbox(True).strip() + nbsp }}' + orig_title);
+                                title.attr('title', '{{ gettext("Active") }}').addClass('alert-success');
                             } else {
-                                $(this).attr('title', '{{ gettext("Inactive") }}').find('#active-fee-title').css('background-color', '#FF6666');
+                                title.html('{{ util.deko_checkbox(False).strip() + nbsp }}' + orig_title);
+                                title.attr('title', '{{ gettext("Inactive") }}').addClass('alert-danger');
                             }
                         });
                     }
