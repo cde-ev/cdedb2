@@ -14,8 +14,7 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.backend.cde import CdEBaseBackend
 from cdedb.backend.common import (
-    access, affirm_array_validation as affirm_array,
-    affirm_set_validation as affirm_set, affirm_validation as affirm,
+    access, affirm_set_validation as affirm_set, affirm_validation as affirm,
     affirm_validation_optional as affirm_optional, batchify, singularize,
 )
 from cdedb.common import (
@@ -443,7 +442,7 @@ class CdELastschriftBackend(CdEBaseBackend):
             status: const.LastschriftTransactionStati
     ) -> DefaultReturnCode:
         """Atomized multiplex variant of finalize_lastschrift_transaction."""
-        transaction_ids = affirm_array(vtypes.ID, transaction_ids)
+        transaction_ids = affirm_set(vtypes.ID, transaction_ids)
         status = affirm(const.LastschriftTransactionStati, status)
         code = 1
         with Atomizer(rs):
