@@ -266,6 +266,9 @@ class EventRegistrationMixin(EventBaseFrontend):
         """Helper to gather all info needed for course choice forms.
 
         The return can be unpacked and passed to the template directly.
+
+        :param orga: Whether we are retrieving input from an orga form like
+            change_registration or a participant form, like register.
         """
         event = rs.ambience['event']
         tracks = event['tracks']
