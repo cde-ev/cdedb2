@@ -52,10 +52,8 @@
         {% endif %}
     </p>
 
-    {% if preview %}
-    <form class="form-horizontal">
-    {% else %}
     <form action="{{ cdedblink('event/register') }}" method="POST" id="registerform" class="form-horizontal">
+    {% if not preview %}
         {{ util.anti_csrf_token('event/register') }}
     {% endif %}
 
@@ -206,18 +204,21 @@
         var fee_preview = $form.find('[id="fee-preview"]');
         var nonmember_surcharge = $form.find('[id="nonmember-surcharge"]');
         var updateFeePreview = function() {
-            var part_ids = "";
-            for (var pcb of part_checkboxes) {
-                if (pcb.checked)
-                    part_ids += pcb.value + ",";
-            }
-            var field_ids = "";
-            for (var fcb of field_checkboxes) {
-                if (fcb.checked)
-                    field_names += fcb.attr('field_id') + ",";
-            }
+            var part_ids = [];
+            part_checkboxes.each(function() {
+                if ($(this).prop('checked')) {
+                    part_ids.push($(this).val());
+                }
+            });
+            var field_ids = [];
+            field_checkboxes.each(function() {
+                if ($(this).prop('checked')) {
+                    field_ids.push($(this).parents('[id^="questionnaire_field_entry"]').data('field_id'));
+                }
+            });
+
             $.get('{{ cdedblink("event/precompute_fee") }}',
-                { persona_id: {{ user.persona_id }}, part_ids: part_ids, field_ids: field_ids},
+                { persona_id: {{ user.persona_id }}, part_ids: part_ids.join(","), field_ids: field_ids.join(",")},
                 function(result) {
                     fee_preview.html(result["fee"]);
                     if (result["show_nonmember"]) {

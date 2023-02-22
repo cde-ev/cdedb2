@@ -367,7 +367,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         if len(all_part_ids := rs.ambience['event']['parts']) == 1:
             part_ids = all_part_ids.keys()
 
-        if self.eventproxy.is_orga(rs, event_id=event_id):
+        if self.is_orga(rs, event_id):
             pass
         elif persona_id == rs.user.persona_id and (
                 rs.ambience['event']['is_open']
@@ -375,6 +375,8 @@ class EventRegistrationMixin(EventBaseFrontend):
             pass
         else:
             return Response("{}", mimetype='application/json', status=403)
+        if rs.has_validation_errors():
+            return Response("{}", mimetype='application/json', status=400)
 
         complex_fee = self.eventproxy.precompute_fee(
             rs, event_id, persona_id, part_ids, field_ids)

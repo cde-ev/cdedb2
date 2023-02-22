@@ -167,6 +167,9 @@ class EventBaseFrontend(AbstractUserFrontend):
     def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
 
+    def is_orga(self, rs: RequestState, event_id: int) -> bool:
+        return event_id in rs.user.orga or self.is_admin(rs)
+
     def is_locked(self, event: CdEDBObject) -> bool:
         """Shorthand to determine locking state of an event."""
         return event['offline_lock'] != self.conf["CDEDB_OFFLINE_DEPLOYMENT"]
