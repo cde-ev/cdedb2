@@ -213,8 +213,7 @@
                     {% trans %}Pronouns on nametags{% endtrans %}
                 </dt>
                 <dd id="pronouns_nametag">
-                    {{ util.deko_checkbox(checked=data['pronouns_nametag'], anid='activity_checkbox',
-                                          titles=[gettext("No"), gettext("Yes")]) }}
+                    {{ util.deko_checkbox(checked=data['pronouns_nametag'], titles=[gettext("No"), gettext("Yes")]) }}
                 </dd>
             {% endif %}
         </dl>
