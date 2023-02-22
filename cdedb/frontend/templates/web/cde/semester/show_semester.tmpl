@@ -39,8 +39,6 @@
                 "{{ gettext("All inactive Members will be removed. This cannot be undone and it can only be done once per Semester.") }}");
             $('#balanceform').cdedbProtectAction(
                 "{{ gettext("The Balance of all Members will be updated. This cannot be undone.") }}");
-            $('#proceedform').cdedbProtectAction(
-                "{{ gettext("The new Semester will be created.") }}");
             $('#addresscheckform').cdedbProtectAction(
                 "{{ gettext("Address-Check-Mails will be sent.") }}",
                 function() {
@@ -180,29 +178,6 @@
                                 A total of {{ total }} was deducted.
                             {% endtrans %}
                         </span>
-                    {% endif %}
-                </div>
-            </div>
-
-            <div id="next-semester" class="panel {% if current_period_step == "advance" %}panel-primary{% else %}panel-default{% endif %}">
-                <div class="panel-heading">
-                    <span class="pull-right">(01.07./01.01.)</span>
-                    <h4 class="panel-title">{% trans %}Next Semester{% endtrans %}</h4>
-                </div>
-                <div class="panel-body">
-                    <p>
-                        {% trans %}
-                            The Semesterstate influences the display of Balances. This button should be pressed at the
-                            target date (give or take three weeks).
-                        {% endtrans %}
-                    </p>
-                    {% if current_period_step == "advance" %}
-                        <form action="{{ cdedblink('cde/semester_advance') }}" method="POST" id="proceedform">
-                            {{ util.anti_csrf_token('cde/semester_advance') }}
-                            {{ util.input_submit(label=gettext("Next Semester")) }}
-                        </form>
-                    {% else %}
-                        <span class="text-muted">{% trans %}To be done later.{% endtrans %}</span>
                     {% endif %}
                 </div>
             </div>

@@ -37,7 +37,7 @@ class CdESemesterMixin(CdEBaseFrontend):
         elif self.cdeproxy.may_start_semester_balance_update(rs):
             current_period_step = SemesterSteps.balance
         elif self.cdeproxy.may_advance_semester(rs):
-            current_period_step = SemesterSteps.advance
+            current_period_step = SemesterSteps.billing
         else:
             rs.notify("error", n_("Inconsistent semester state."))
             current_period_step = SemesterSteps.error
@@ -61,6 +61,16 @@ class CdESemesterMixin(CdEBaseFrontend):
         """
         if rs.has_validation_errors():
             return self.redirect(rs, "cde/show_semester")
+
+        # advance to the next semester
+        old_period_id = self.cdeproxy.current_period(rs)
+        old_period = self.cdeproxy.get_period(rs, old_period_id)
+        if not old_period['balance_done']:
+            rs.notify("error", n_("Wrong timing for advancing the semester."))
+            return self.redirect(rs, "cde/show_semester")
+        self.cdeproxy.advance_semester(rs)
+
+        # get the period_id again after advancing to the next semester
         period_id = self.cdeproxy.current_period(rs)
         if not self.cdeproxy.may_start_semester_bill(rs):
             rs.notify("error", n_("Billing already done."))
@@ -217,20 +227,6 @@ class CdESemesterMixin(CdEBaseFrontend):
 
         Worker.create(rs, "semester_balance_update", update_balance, self.conf)
         rs.notify("success", n_("Started updating balance."))
-        return self.redirect(rs, "cde/show_semester")
-
-    @access("finance_admin", modi={"POST"})
-    def semester_advance(self, rs: RequestState) -> Response:
-        """Proceed to next period."""
-        if rs.has_validation_errors():  # pragma: no cover
-            self.redirect(rs, "cde/show_semester")
-        period_id = self.cdeproxy.current_period(rs)
-        period = self.cdeproxy.get_period(rs, period_id)
-        if not period['balance_done']:
-            rs.notify("error", n_("Wrong timing for advancing the semester."))
-            return self.redirect(rs, "cde/show_semester")
-        self.cdeproxy.advance_semester(rs)
-        rs.notify("success", n_("New period started."))
         return self.redirect(rs, "cde/show_semester")
 
     @access("finance_admin", modi={"POST"})
