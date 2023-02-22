@@ -1741,7 +1741,7 @@ def _period(
     prefix_map = {
         'billing': ('state', 'done', 'count'),
         'ejection': ('state', 'done', 'count', 'balance'),
-        'balance': ('state', 'done', 'trialmembers', 'total'),
+        'balance': ('state', 'done', 'trialmembers', 'exmembers', 'total'),
         'archival_notification': ('state', 'done', 'count'),
         'archival': ('state', 'done', 'count'),
     }
@@ -1749,7 +1749,7 @@ def _period(
         'state': Optional[ID],  # type: ignore[dict-item]
         'done': datetime.datetime, 'count': NonNegativeInt,
         'trialmembers': NonNegativeInt, 'total': NonNegativeDecimal,
-        'balance': NonNegativeDecimal,
+        'balance': NonNegativeDecimal, 'exmembers': NonNegativeDecimal,
     }
 
     optional_fields = {

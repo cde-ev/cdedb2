@@ -270,11 +270,13 @@ class CdESemesterBackend(CdELastschriftBackend):
                 'balance_done': now(),
             }
             ret = self.set_period(rs, period_update)
-            msg = "{} Probemitgliedschaften beendet. {} € Guthaben abgebucht."
+            msg = (f"{period['balance_trialmembers']} Probemitgliedschaften beendet."
+                   f" {period['balance_total']} € Guthaben abgebucht."
+                   f" {period['balance_exmembers']} € Guthaben von Exmitgliedern"
+                   f" aufgelöst.")
             self.cde_log(
                 rs, const.CdeLogCodes.semester_balance_update, persona_id=None,
-                change_note=msg.format(period['balance_trialmembers'],
-                                           period['balance_total']))
+                change_note=msg)
         return ret
 
     @access("finance_admin")
@@ -576,12 +578,13 @@ class CdESemesterBackend(CdELastschriftBackend):
             return True, persona
 
     @access("finance_admin")
-    def remove_exmember_balance(self, rs) -> DefaultReturnCode:
+    def remove_exmember_balance(self, rs, period_id: int) -> DefaultReturnCode:
         """Set the balance of all former members to zero.
 
         We keep the balance of all former members during one semester, so they get their
         remaining balance back if the pay again in this time.
         """
+        period_id = affirm(int, period_id)
         with Atomizer(rs):
             if not self.may_start_semester_balance_update(rs):
                 raise RuntimeError
@@ -592,6 +595,11 @@ class CdESemesterBackend(CdELastschriftBackend):
             # TODO where is the correct place to note this? CdE Log and the semester
             #  table?
             data = self.query_one(rs, query, (zero,))
+            update = {
+                "id": period_id,
+                "balance_exmembers": data["total"]
+            }
+            self.set_period(rs, update)
             query = ("UPDATE core.personas SET balance = %s "
                      " WHERE is_member = False AND balance > %s")
             ret = self.query_exec(rs, query, (zero, zero))

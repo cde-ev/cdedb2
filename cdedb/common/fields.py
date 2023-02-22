@@ -224,6 +224,7 @@ ORG_PERIOD_FIELDS = (
     "id", "billing_state", "billing_done", "billing_count",
     "ejection_state", "ejection_done", "ejection_count", "ejection_balance",
     "balance_state", "balance_done", "balance_trialmembers", "balance_total",
+    "balance_exmembers",
     "archival_notification_state", "archival_notification_count",
     "archival_notification_done", "archival_state", "archival_count", "archival_done",
     "semester_done")

@@ -8970,10 +8970,11 @@ msgstr ""
 #, python-format
 msgid ""
 "Done on the %(date)s. %(count)s trial memberships were ended. A total of "
-"%(total)s was deducted."
+"%(total)s was deducted. Additionally, %(exmembers)s was deducted from Exmembers."
 msgstr ""
 "Erledigt am %(date)s. %(count)s Probemitgliedschaften wurden beendet. "
-"Insgesamt wurden %(total)s abgebucht."
+"Insgesamt wurden %(total)s abgebucht. Zusätztlich wurde %(exmembers)s von Exmitgliedern "
+"eingezogen."
 
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:190
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:202

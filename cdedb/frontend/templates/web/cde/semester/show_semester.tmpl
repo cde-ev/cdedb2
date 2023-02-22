@@ -167,10 +167,12 @@
                         <span class="text-success">
                             {% trans date=period['balance_done']|datetime(lang=lang),
                                      count=period['balance_trialmembers'],
-                                     total=period['balance_total']|money(lang=lang) %}
+                                     total=period['balance_total']|money(lang=lang),
+                                     exmembers=period['balance_exmembers']|money(lang=lang) %}
                                 Done on the {{ date }}.
                                 {{ count }} trial memberships were ended.
                                 A total of {{ total }} was deducted.
+                                Additionally, {{ exmembers }} was deducted from Exmembers.
                             {% endtrans %}
                         </span>
                     {% endif %}
@@ -198,6 +200,7 @@
                 <th>{% trans %}Automated Archival Done{% endtrans %}</th>
                 <th>{% trans %}Trial Memberships Ended{% endtrans %}</th>
                 <th>{% trans %}Balance Deducted{% endtrans %}</th>
+                <th>{% trans %}Balance of Exmembers{% endtrans %}</th>
                 <th>{% trans %}Balance Update Done{% endtrans %}</th>
                 <th>{% trans %}Semester Done{% endtrans %}</th>
             </tr>
@@ -217,6 +220,7 @@
                     <td>{{ period['archival_done']|datetime(lang=lang) }}</td>
                     <td>{{ period['balance_trialmembers'] }}</td>
                     <td>{{ period['balance_total']|money(lang=lang) }}</td>
+                    <td>{{ period['balance_exmembers']|money(lang=lang) }}</td>
                     <td>{{ period['balance_done']|datetime(lang=lang) }}</td>
                     <td>{{ period['semester_done']|datetime(lang=lang) }}</td>
                 </tr>
