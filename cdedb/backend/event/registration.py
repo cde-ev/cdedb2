@@ -1183,8 +1183,12 @@ class EventRegistrationBackend(EventBaseBackend):
 
         event = self.get_event(rs, event_id)
 
-        if not (persona_id == rs.user.persona_id or self.is_orga(rs, event_id=event_id)
-                or self.is_admin(rs)):
+        if self.is_orga(rs, event_id=event_id):
+            pass
+        elif persona_id == rs.user.persona_id and (
+                event['is_open'] or self.list_registrations(rs, event_id, persona_id)):
+            pass
+        else:
             raise PrivilegeError
 
         fake_registration = {

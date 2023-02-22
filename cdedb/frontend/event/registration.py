@@ -351,7 +351,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             **course_choice_params,
         })
 
-    @access("event", check_anti_csrf=False)
+    @access("event")
     @REQUESTdata("persona_id", "part_ids", "field_names")
     def precompute_fee(self, rs: RequestState, event_id: int, persona_id: int,
                        part_ids: vtypes.IntCSVList, field_ids: vtypes.IntCSVList,
@@ -367,9 +367,14 @@ class EventRegistrationMixin(EventBaseFrontend):
         if len(all_part_ids := rs.ambience['event']['parts']) == 1:
             part_ids = all_part_ids.keys()
 
-        if not (self.eventproxy.is_orga(rs, event_id=event_id) or self.is_admin(rs)
-                or persona_id == rs.user.persona_id) or rs.has_validation_errors():
-            return Response("{}", mimetype='application/json')
+        if self.eventproxy.is_orga(rs, event_id=event_id):
+            pass
+        elif persona_id == rs.user.persona_id and (
+                rs.ambience['event']['is_open']
+                or self.eventproxy.list_registrations(rs, event_id, persona_id)):
+            pass
+        else:
+            return Response("{}", mimetype='application/json', status=403)
 
         complex_fee = self.eventproxy.precompute_fee(
             rs, event_id, persona_id, part_ids, field_ids)
