@@ -203,7 +203,7 @@
 
             {% if ambience['event']['is_course_assignment_visible'] %}
                 {% if sorted_involved_tracks|length > 1 %}
-                    <h4 class="heading-undrline">
+                    <h4>
                         {% trans %}Assigned to{% endtrans %}
                     </h4>
                 {% endif %}
@@ -231,7 +231,7 @@
                 </dl>
                 {% if sorted_involved_tracks|length > 1 %}
                     {# Only show this heading if the heading above is shown too. #}
-                    <h4 class="heading-underine">
+                    <h4>
                         {% trans %}Course Choices{% endtrans %}
                     </h4>
                 {% endif %}
