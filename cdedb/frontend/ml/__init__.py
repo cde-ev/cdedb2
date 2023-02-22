@@ -26,7 +26,6 @@ class MlFrontend(MlMailmanMixin, MlBaseFrontend):
                                 ) -> Response:
         """Render form."""
         ml = rs.ambience["mailinglist"]
-        assert isinstance(ml, Mailinglist)
         held = self.get_mailman().get_held_messages(ml)
         return self.render(rs, "message_moderation", {'held': held})
 
@@ -41,7 +40,6 @@ class MlFrontend(MlMailmanMixin, MlBaseFrontend):
                            action: str) -> Response:
         """Helper to take care of the communication with mailman."""
         dblist = rs.ambience['mailinglist']
-        assert isinstance(dblist, Mailinglist)
         if (self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or (
                 self.conf["CDEDB_DEV"] and not self.conf["CDEDB_TEST"])):  # pragma: no cover
             self.logger.info("Skipping mailman request in dev/offline mode.")
@@ -118,7 +116,6 @@ class MlFrontend(MlMailmanMixin, MlBaseFrontend):
         if rs.has_validation_errors():
             return self.message_moderation_form(rs, mailinglist_id)
         dblist = rs.ambience['mailinglist']
-        assert isinstance(dblist, Mailinglist)
 
         # Add to whitelist if requested
         if action == "whitelist":

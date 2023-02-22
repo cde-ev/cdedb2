@@ -1446,8 +1446,33 @@ class Worker(threading.Thread):
         return worker
 
 
+AmbienceDict = typing.TypedDict(
+    "AmbienceDict",
+    {
+        'persona': CdEDBObject,
+        'privilege_change': CdEDBObject,
+        'genesis_case': CdEDBObject,
+        'lastschrift': CdEDBObject,
+        'transaction':  CdEDBObject,
+        'institution':  CdEDBObject,
+        'event': CdEDBObject,
+        'pevent': CdEDBObject,
+        'course': CdEDBObject,
+        'pcourse': CdEDBObject,
+        'registration': CdEDBObject,
+        'group': CdEDBObject,
+        'lodgement': CdEDBObject,
+        'part_group': CdEDBObject,
+        'track_group': CdEDBObject,
+        'attachment': CdEDBObject,
+        'assembly': CdEDBObject,
+        'ballot': CdEDBObject,
+        'mailinglist': Mailinglist,
+    }
+)
+
 def reconnoitre_ambience(obj: AbstractFrontend,
-                         rs: RequestState) -> Dict[str, CdEDBObject]:
+                         rs: RequestState) -> AmbienceDict:
     """Provide automatic lookup of objects in a standard way.
 
     This creates an ambience dict providing objects for all ids passed
@@ -1555,7 +1580,7 @@ def reconnoitre_ambience(obj: AbstractFrontend,
         if param in scouts_dict:
             for consistency_checker in scouts_dict[param].dependencies:
                 consistency_checker(ambience)
-    return ambience
+    return cast("AmbienceDict", ambience)
 
 
 F = TypeVar('F', bound=Callable[..., Any])

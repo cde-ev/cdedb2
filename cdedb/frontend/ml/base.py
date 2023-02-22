@@ -375,7 +375,6 @@ class MlBaseFrontend(AbstractUserFrontend):
         """Details of a list."""
         assert rs.user.persona_id is not None
         ml = rs.ambience['mailinglist']
-        assert isinstance(ml, Mailinglist)
         state = self.mlproxy.get_subscription(
             rs, rs.user.persona_id, mailinglist_id=mailinglist_id)
 
@@ -422,7 +421,6 @@ class MlBaseFrontend(AbstractUserFrontend):
                                 mailinglist_id: int) -> Response:
         """Render form."""
         ml = rs.ambience["mailinglist"]
-        assert isinstance(ml, Mailinglist)
         additional_fields = ml.ml_type_class.get_additional_fields().keys()
         if "event_id" in additional_fields:
             event_ids = self.eventproxy.list_events(rs)
@@ -460,7 +458,6 @@ class MlBaseFrontend(AbstractUserFrontend):
                            data: CdEDBObject) -> Response:
         """Modify simple attributes of mailinglists."""
         ml = rs.ambience["mailinglist"]
-        assert isinstance(ml, Mailinglist)
         data['id'] = mailinglist_id
 
         if self.mlproxy.is_relevant_admin(rs, mailinglist_id=mailinglist_id):
@@ -499,7 +496,6 @@ class MlBaseFrontend(AbstractUserFrontend):
                             mailinglist_id: int) -> Response:
         """Render form."""
         ml = rs.ambience['mailinglist']
-        assert isinstance(ml, Mailinglist)
         available_types = self.mlproxy.get_available_types(rs)
         event_ids = self.eventproxy.list_events(rs)
         events = self.eventproxy.get_events(rs, event_ids)
@@ -518,7 +514,6 @@ class MlBaseFrontend(AbstractUserFrontend):
     def change_ml_type(self, rs: RequestState, mailinglist_id: int,
                        ml_type: const.MailinglistTypes, data: CdEDBObject) -> Response:
         ml = rs.ambience['mailinglist']
-        assert isinstance(ml, Mailinglist)
         data['id'] = mailinglist_id
         data['ml_type'] = ml_type
         data['domain'] = ml.domain
@@ -581,7 +576,6 @@ class MlBaseFrontend(AbstractUserFrontend):
     def management(self, rs: RequestState, mailinglist_id: int) -> Response:
         """Render form."""
         ml = rs.ambience["mailinglist"]
-        assert isinstance(ml, Mailinglist)
         sub_states = const.SubscriptionState.subscribing_states()
         subscribers = self.mlproxy.get_subscription_states(
             rs, mailinglist_id, states=sub_states)
@@ -616,7 +610,6 @@ class MlBaseFrontend(AbstractUserFrontend):
     def advanced_management(self, rs: RequestState, mailinglist_id: int) -> Response:
         """Render form."""
         ml = rs.ambience["mailinglist"]
-        assert isinstance(ml, Mailinglist)
         subscription_overrides = self.mlproxy.get_subscription_states(
             rs, mailinglist_id,
             states=(const.SubscriptionState.subscription_override,))
@@ -659,7 +652,6 @@ class MlBaseFrontend(AbstractUserFrontend):
                                          mailinglist_id: int) -> Response:
         """Create CSV file with all subscribers and their subscription state"""
         ml = rs.ambience["mailinglist"]
-        assert isinstance(ml, Mailinglist)
         personas_state = self.mlproxy.get_subscription_states(
             rs, mailinglist_id)
         if not personas_state:
@@ -727,7 +719,6 @@ class MlBaseFrontend(AbstractUserFrontend):
                          moderator_id: vtypes.ID) -> Response:
         """Demote persona from moderator status."""
         ml = rs.ambience["mailinglist"]
-        assert isinstance(ml, Mailinglist)
         if moderator_id not in ml.moderators:
             rs.append_validation_error(
                 ("moderator_id", ValueError(n_("User is no moderator."))))
