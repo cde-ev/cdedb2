@@ -1160,11 +1160,11 @@ class CoreBaseBackend(AbstractBackend):
                 params = [persona_id]
                 if self.query_all(rs, query, params):
                     raise RuntimeError(n_("Active lastschrift permit found."))
-                delta = -current['balance']
-                new_balance = decimal.Decimal(0)
+                # Display this to be not surprised if you look at the finance log and
+                #  observe the decreasing of the total balance
+                delta = decimal.Decimal(0)
+                new_balance = current["balance"]
                 code = const.FinanceLogCodes.lose_membership
-                # Do not modify searchability.
-                update['balance'] = decimal.Decimal(0)
             else:
                 delta = None
                 new_balance = None

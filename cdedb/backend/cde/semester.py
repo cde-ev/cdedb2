@@ -13,7 +13,7 @@ For every step "foo" of semester management, there are the following methods:
   - `finish_foo`
     - Advance the semester to the next state so that further steps are allowed.
 """
-
+import decimal
 from typing import Optional, Tuple
 
 import cdedb.common.validation.types as vtypes
@@ -575,6 +575,28 @@ class CdESemesterBackend(CdELastschriftBackend):
                     period_update['balance_total'] = new_total
             self.set_period(rs, period_update)
             return True, persona
+
+    @access("finance_admin")
+    def remove_exmember_balance(self, rs) -> DefaultReturnCode:
+        """Set the balance of all former members to zero.
+
+        We keep the balance of all former members during one semester, so they get their
+        remaining balance back if the pay again in this time.
+        """
+        with Atomizer(rs):
+            if not self.may_start_semester_balance_update(rs):
+                raise RuntimeError
+            zero = decimal.Decimal("0.00")
+            query = ("SELECT COALESCE(SUM(balance), 0) as total,"
+                     " COUNT(*) as count FROM core.personas "
+                     " WHERE is_member = False AND balance > %s")
+            # TODO where is the correct place to note this? CdE Log and the semester
+            #  table?
+            data = self.query_one(rs, query, (zero,))
+            query = ("UPDATE core.personas SET balance = %s "
+                     " WHERE is_member = False AND balance > %s")
+            ret = self.query_exec(rs, query, (zero, zero))
+        return ret
 
     @access("finance_admin")
     def process_for_expuls_check(self, rs: RequestState, expuls_id: int,

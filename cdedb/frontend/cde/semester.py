@@ -204,6 +204,9 @@ class CdESemesterMixin(CdEBaseFrontend):
             rs.notify("error", n_("Wrong timing for balance update."))
             return self.redirect(rs, "cde/show_semester")
 
+        ret = self.cdeproxy.remove_exmember_balance(rs)
+        rs.notify_return_code(ret)
+
         # The rs parameter shadows the outer request state, making sure that
         # it doesn't leak
         def update_balance(rrs: RequestState, rs: None = None) -> bool:
