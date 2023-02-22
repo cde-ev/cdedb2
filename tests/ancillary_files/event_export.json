@@ -750,6 +750,19 @@
             "max_size": null,
             "instructors": "Stephen Hawking und Richard Feynman",
             "notes": null
+        },
+        "13": {
+            "id": 13,
+            "event_id": 1,
+            "nr": "ζ",
+            "title": "Extra-Kurs",
+            "description": "Besser spät als nie.",
+            "shortname": "Extra",
+            "instructors": null,
+            "min_size": null,
+            "max_size": null,
+            "notes": null,
+            "fields": {}
         }
     },
     "id": 1,
@@ -1094,6 +1107,24 @@
             "id": 11,
             "track_id": 2,
             "course_id": 5
+        },
+        "35": {
+            "is_active": false,
+            "id": 35,
+            "track_id": 1,
+            "course_id": 13
+        },
+        "36": {
+            "is_active": true,
+            "id": 36,
+            "track_id": 2,
+            "course_id": 13
+        },
+        "37": {
+            "is_active": true,
+            "id": 37,
+            "track_id": 3,
+            "course_id": 13
         }
     },
     "core.personas": {

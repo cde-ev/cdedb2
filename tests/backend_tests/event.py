@@ -2090,6 +2090,14 @@ class TestEventBackend(BackendTest):
              'track1.attendees': 0,
              'track2.is_offered': True,
              'track3.instructors': 0,
+             'track3.num_choices1': 0},
+            {'course.id': 13,
+             'course_fields.xfield_room': None,
+             'id': 13,
+             'max_size': None,
+             'track1.attendees': 0,
+             'track2.is_offered': True,
+             'track3.instructors': 0,
              'track3.num_choices1': 0})
         self.assertEqual(result, expectation)
 

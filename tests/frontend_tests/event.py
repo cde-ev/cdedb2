@@ -439,21 +439,40 @@ class TestEventFrontend(FrontendTest):
 
     @as_users("annika", "berta", "emilia")
     def test_course_list(self) -> None:
-        self.traverse({'description': 'Veranstaltungen'},
-                      {'description': 'Große Testakademie 2222'},
-                      {'description': 'Kursliste'})
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Kursliste")
         self.assertTitle("Kursliste Große Testakademie 2222")
+        self.assertPresence("Inhaltsverzeichnis")
         self.assertPresence("ToFi")
         self.assertPresence("Wir werden die Bäume drücken.")
         f = self.response.forms['coursefilterform']
         f['track_ids'] = [1, 3]
         self.submit(f)
         self.assertTitle("Kursliste Große Testakademie 2222")
+        self.assertNonPresence("Inhaltsverzeichnis")  # less than 6 courses shown
         self.assertNonPresence("Kurzer Kurs")
         f = self.response.forms['coursefilterform']
-        f['track_ids'] = [2, 3]
+        f['track_ids'] = [2]
         self.submit(f)
+        self.assertPresence("β. Lustigsein für Fortgeschrittene")
         self.assertPresence("γ. Kurzer Kurs")
+        if self.user_in('annika'):
+            f = self.response.forms['coursefilterform']
+            f['active_only'].checked = True
+            self.submit(f)
+            self.assertNonPresence("β. Lustigsein für Fortgeschrittene")
+            self.assertPresence("γ. Kurzer Kurs")
+            # check that validation converting works and is shown in the form
+            self.get(self.response.request.url.replace('active_only=True',
+                                                       'active_only=nonBoolButTrue'))
+            self.assertTrue(
+                self.response.forms['coursefilterform']['active_only'].checked)
+            self.assertNonPresence("β. Lustigsein für Fortgeschrittene")
+            self.assertPresence("γ. Kurzer Kurs")
+        else:
+            # check that taking place filter not accessible for non-privileged users
+            self.assertNonPresence("Zeige nur stattfindende Kurse")
+            self.get(self.response.request.url + '&active_only=True')
+            self.assertPresence("β. Lustigsein für Fortgeschrittene")
 
     @as_users("annika", "garcia", "ferdinand")
     def test_change_event(self) -> None:

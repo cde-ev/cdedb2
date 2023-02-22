@@ -48,11 +48,17 @@
             $('#changelistform').cdedbProtectChanges().cdedbChangeMailinglist();
         });
     </script>
+     <p class="text-info">
+        {{ util.make_icon('info-circle') }}
+        {% trans %}
+            Note that every change can take up to 15 minutes to take effect.
+        {% endtrans %}
+    </p>
     {% set readonly = not ambience['mailinglist']['ml_type_class'].has_management_view(user) %}
     <form action="{{ cdedblink('ml/change_mailinglist') }}" method="POST" id="changelistform" class="form-horizontal">
         {{ util.anti_csrf_token('ml/change_mailinglist') }}
     <h4 class="heading-underline">{% trans %}Meta{% endtrans %}</h4>
-        {{ util.form_input_checkbox(name="is_active", label=gettext("Active"), readonly=readonly) }}
+        {{ util.form_input_checkbox(name="is_active", label=gettext("Active"), actualreadonly=readonly) }}
         {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]"), actualreadonly=readonly) }}
         {{ util.form_input_text(name="local_part", label=gettext("Address"), actualreadonly=readonly,
                                 addon='@' + enums['MailinglistDomain'](ambience['mailinglist']['domain']).display_str()) }}
@@ -87,16 +93,16 @@
         {% endif %}
         {% if 'event_id' in additional_fields %}
             {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption=nbsp,
-                    entries=event_entries, readonly=readonly, info=gettext("The participants of this event will be "
+                    entries=event_entries, actualreadonly=readonly, info=gettext("The participants of this event will be "
                         "subscribers of this mailinglist. (Opt-Out)")) }}
         {% endif %}
         {% if 'registration_stati' in additional_fields %}
             {{ util.form_input_checkboxes(name="registration_stati", label=gettext("Event Audience"),
-                    entries=enums['RegistrationPartStati']|enum_entries(processing=gettext), readonly=restricted) }}
+                    entries=enums['RegistrationPartStati']|enum_entries(processing=gettext), actualreadonly=restricted) }}
         {% endif %}
         {% if 'assembly_id' in additional_fields %}
             {{ util.form_input_select(name="assembly_id", label=gettext("Assembly"), nulloption=nbsp,
-                readonly=readonly, entries=assembly_entries, info=gettext("The participants of this assembly will "
+                actualreadonly=readonly, entries=assembly_entries, info=gettext("The participants of this assembly will "
                     "be subscribers of this mailinglist. (Opt-Out)")) }}
         {% endif %}
 
