@@ -18,6 +18,24 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "Generated-By: Babel 2.6.0\n"
 
+msgid ""
+"Display an edge between two particpants even if both are already assigned to "
+"a lodgement."
+msgstr ""
+"Zeige auch dann eine Kante zwischen zwei Teilnehmern, wenn beide bereits "
+"einer Unterkunft zugewiesen sind."
+
+msgid ""
+"Edges between participants who are both assigned to a lodgement can only be "
+"hidden if the graph is restricted to a specific part."
+msgstr ""
+"Kanten zwischen Teilnehmern, die beide einer Unterkunft zugeordnet sind, "
+"können nur ausgeblendet werden, wenn der Graph auf einen einzelnen "
+"Veranstaltungsteil eingeschränkt wird."
+
+msgid "Show edges between assigned Participants"
+msgstr "Zeige Kanten zwischen bereits zugewiesenen Teilnehmern"
+
 #: bin/archive/migrate_execute.py:394
 msgid "Initial import."
 msgstr "Ursprünglicher Import."
@@ -4678,14 +4696,6 @@ msgid ""
 msgstr ""
 "Cluster können nur angezeigt werden, wenn der Graph auf einen einzelnen "
 "Veranstaltungsteil eingeschränkt wird."
-
-msgid ""
-"Edges between participants who are both assigned to a lodgement can only be"
-" hidden if the graph is restricted to a specific part."
-msgstr ""
-"Kanten zwischen Teilnehmern, die beide einer Unterkunft zugeordnet sind, können"
-" nur ausgeblendet werden, wenn der Graph auf einen einzelnen Veranstaltungsteil"
-" eingeschränkt wird."
 
 #: cdedb/frontend/event/lodgement.py:738
 msgid "Nothing to do."
@@ -13509,12 +13519,6 @@ msgstr ""
 "Zeige die Unterkunftsgruppen der zugewiesenen Unterkünfte als Cluster an "
 "(verschlechtert die Qualität des Graph-Layouts)"
 
-msgid "Show edges between assigned Participants"
-msgstr "Zeige Kanten zwischen bereits zugewiesenen Teilnehmern"
-
-msgid "Display an edge between two particpants even if both are already assigned to a lodgement."
-msgstr "Zeige auch dann eine Kante zwischen zwei Teilnehmern, wenn beide bereits einer Unterkunft zugewiesen sind."
-
 #: cdedb/frontend/templates/web/event/lodgement/lodgement_wishes_graph_form.tmpl:112
 msgid "No wish issues detected."
 msgstr "Keine Probleme mit den Wünschen erkannt."
@@ -15085,6 +15089,13 @@ msgstr ""
 "Beachte, dass es bis zu 15 Minuten dauern kann, bis eine Änderung wirksam "
 "wird."
 
+#: cdedb/frontend/templates/web/ml/management.tmpl:38
+msgid ""
+"Note that mailinglist creation can take up to 15 minutes to take effect."
+msgstr ""
+"Beachte, dass es bis zu 15 Minuten dauern kann, bis die Mailingliste "
+"erstellt wird."
+
 #: cdedb/frontend/templates/web/ml/management.tmpl:48
 msgid "Only users can be moderators."
 msgstr "Nur Nutzer können Moderatoren sein."
@@ -15350,6 +15361,14 @@ msgstr ""
 msgid ""
 "Deletes the mailinglist including description and all subscriber information."
 msgstr "Löscht die Mailingliste inklusive Beschreibung und allen Abonnements."
+
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:211
+msgid ""
+"Deletes the mailinglist including description and all subscriber "
+"information. Note that this can take up to 15 minutes to take effect."
+msgstr ""
+"Löscht die Mailingliste inklusive Beschreibung und allen Abonnements. "
+"Beachte, dass es bis zu 15 Minuten dauern kann, bis dies wirksam wird."
 
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:217
 msgid "The mailinglist will be permanently deleted."
