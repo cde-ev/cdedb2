@@ -27,7 +27,7 @@
             {% endif %}
             {% if "genesis" in user.admin_views %}
                 {{ util.href(cdedblink("core/genesis_list_cases"), gettext("Account Requests"), aclass="list-group-item",
-                        icon="flag", active=(sidenav_active=='core_genesis_list')) }}
+                        icon="door-open", active=(sidenav_active=='core_genesis_list')) }}
             {% endif %}
             {% if "meta_admin" in user.admin_views %}
                 {{ util.href(cdedblink("core/list_privilege_changes"), gettext("Privilege Changes"), aclass="list-group-item",

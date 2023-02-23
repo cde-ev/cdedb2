@@ -133,14 +133,19 @@ class CoreBaseFrontend(AbstractFrontend):
             # mailinglists moderated
             moderator_info = self.mlproxy.moderator_info(rs, rs.user.persona_id)
             if moderator_info:
-                moderator = self.mlproxy.get_mailinglists(rs, moderator_info)
-                sub_request = const.SubscriptionState.pending
+                mailinglists = self.mlproxy.get_mailinglists(rs, moderator_info)
                 mailman = self.get_mailman()
-                for mailinglist_id, ml in moderator.items():
+                moderator: Dict[int, Dict[str, Any]] = {}
+                for ml_id, ml in mailinglists.items():
                     requests = self.mlproxy.get_subscription_states(
-                        rs, mailinglist_id, states=(sub_request,))
-                    ml['requests'] = len(requests)
-                    ml['held_mails'] = mailman.get_held_message_count(ml)
+                        rs, ml_id, states=(const.SubscriptionState.pending,))
+                    moderator[ml_id] = {
+                        "id": ml.id,
+                        "title": ml.title,
+                        "is_active": ml.is_active,
+                        "requests": len(requests),
+                        "held_mails": mailman.get_held_message_count(ml),
+                    }
                 dashboard['moderator'] = {k: v for k, v in moderator.items()
                                           if v['is_active']}
             # visible and open events
@@ -683,12 +688,12 @@ class CoreBaseFrontend(AbstractFrontend):
         grouped: Dict[MailinglistGroup, CdEDBObjectMap]
         grouped = collections.defaultdict(dict)
         for mailinglist_id, ml in mailinglists.items():
-            group_id = ml['ml_type_class'].sortkey
+            group_id = ml.ml_type_class.sortkey
             grouped[group_id][mailinglist_id] = {
-                'title': ml['title'],
+                'title': ml.title,
                 'id': mailinglist_id,
                 'address': addresses.get(mailinglist_id),
-                'is_active': ml['is_active'],
+                'is_active': ml.is_active,
             }
 
         return self.render(rs, "show_user_mailinglists", {

@@ -26,6 +26,12 @@
             $('#createlistform').cdedbProtectChanges();
         });
     </script>
+     <p class="text-info">
+        {{ util.make_icon('info-circle') }}
+        {% trans %}
+            Note that mailinglist creation can take up to 15 minutes to take effect.
+        {% endtrans %}
+    </p>
     <form action="{{ cdedblink('ml/create_mailinglist') }}" method="POST" id="createlistform" class="form-horizontal">
         {{ util.anti_csrf_token('ml/create_mailinglist') }}
         <h4 class="heading-underline">{% trans %}Meta{% endtrans %}</h4>

@@ -429,7 +429,7 @@ class CoreBaseBackend(AbstractBackend):
         that the reviewers won't get plagued too much.
 
         :param ack: whether to commit or refuse the change
-        :param reviewed: Signals wether the change was reviewed. This exists,
+        :param reviewed: Signals whether the change was reviewed. This exists,
           so that automatically resolved changes are not marked as reviewed.
         """
         if not ack:
@@ -2194,7 +2194,7 @@ class CoreBaseBackend(AbstractBackend):
     @access("anonymous")
     def verify_existence(self, rs: RequestState, email: str,
                          include_genesis: bool = True) -> bool:
-        """Check wether a certain email belongs to any persona."""
+        """Check whether a certain email belongs to any persona."""
         email = affirm(vtypes.Email, email)
         query = "SELECT COUNT(*) AS num FROM core.personas WHERE username = %s"
         num = unwrap(self.query_one(rs, query, (email,))) or 0

@@ -37,6 +37,12 @@
     {% endif %}
 {% endblock %}
 {% block content %}
+     <p class="text-info">
+        {{ util.make_icon('info-circle') }}
+        {% trans %}
+            Note that every change can take up to 15 minutes to take effect.
+        {% endtrans %}
+    </p>
     <div class="row">
         <div class="col-md-6">
             <h2>{% trans %}Forced Subscribers{% endtrans %} [{{ subscription_overrides|length }}]</h2>
