@@ -578,7 +578,8 @@ class CdESemesterBackend(CdELastschriftBackend):
             return True, persona
 
     @access("finance_admin")
-    def remove_exmember_balance(self, rs, period_id: int) -> DefaultReturnCode:
+    def remove_exmember_balance(self, rs: RequestState, period_id: int
+                                ) -> DefaultReturnCode:
         """Set the balance of all former members to zero.
 
         We keep the balance of all former members during one semester, so they get their
@@ -597,7 +598,7 @@ class CdESemesterBackend(CdELastschriftBackend):
             data = self.query_one(rs, query, (zero,))
             update = {
                 "id": period_id,
-                "balance_exmembers": data["total"]
+                "balance_exmembers": data["total"] if data else 0
             }
             self.set_period(rs, update)
             query = ("UPDATE core.personas SET balance = %s "
