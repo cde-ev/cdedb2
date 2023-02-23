@@ -127,7 +127,7 @@
         {{ util.form_input_select(name="attachment_policy", label=gettext("MIME filter / Attachments"),
                 entries=enums['AttachmentPolicy']|enum_entries(processing=gettext)) }}
         {{ util.form_input_checkbox(name="convert_html",
-                label=gettext("Automatically convert HTML emails to plaintext"), defaultvalue=True,
+                label=gettext("Automatically convert HTML emails to plaintext"),
                 info=gettext("Do not use this for mailinglists with a wide audience.")) }}
         {{ util.form_input_text(name="maxsize", label=gettext("max. message size (in kB)"), type="number",
                 info=gettext("Larger messages will be held for moderation.")) }}
