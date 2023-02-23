@@ -600,7 +600,7 @@ class CoreBaseFrontend(AbstractFrontend):
                     "is_ml_realm", "is_assembly_realm", "is_archived",
                     "notes"])
             if "orga" not in access_levels:
-                masks.extend(["is_member", "gender"])
+                masks.extend(["is_member", "gender", "pronouns_nametag"])
             for key in masks:
                 if key in data:
                     del data[key]
