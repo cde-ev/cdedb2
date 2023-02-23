@@ -18,7 +18,7 @@
     {{ util.context_heading(gettext("Change History"), util.persona_name(current), 'user', gettext("User")) }}
 {% endblock %}
 
-{% set STATUS={enums["MemberChangeStati"].pending: ('pending','check',gettext("pending")),
+{% set STATUS={enums["MemberChangeStati"].pending: ('pending','user-clock',gettext("pending")),
                 enums["MemberChangeStati"].committed: ('','',''),
                 enums["MemberChangeStati"].superseded: ('superseded', 'sync', gettext("superseded")),
                 enums["MemberChangeStati"].nacked: ('nacked', 'ban', gettext("nacked")),
