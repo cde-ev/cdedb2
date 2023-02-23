@@ -2006,7 +2006,8 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Warnungen ignorieren")
         f = self.response.forms['changedataform']
         f[IGNORE_WARNINGS_NAME].checked = True
-        self.submit(f)
+        self.submit(f, check_notification=False)
+        self.assertNotification("Keine Änderungen.", 'info')
 
         self.get("/core/genesis/request")
         self.assertTitle("Account anfordern")
