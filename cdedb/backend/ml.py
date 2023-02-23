@@ -88,7 +88,7 @@ class MlBackend(AbstractBackend):
             if mailinglist_id is not None:
                 if mailinglist.id != mailinglist_id:
                     raise ValueError(n_("Different mailinglists specified."))
-            atype = ml_type.get_type(mailinglist.ml_type)
+            atype = mailinglist.ml_type_class
         return atype.is_relevant_admin(rs.user)
 
     @access("ml")

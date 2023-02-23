@@ -62,7 +62,7 @@ def template_url(name: str) -> str:
     The handling of templates in mailman is a bit tricky involving a
     separate URI for each template which we construct here.
     """
-    return "https://db.cde-ev.de/mailman_templates/{}".format(name)
+    return f"https://db.cde-ev.de/mailman_templates/{name}"
 
 
 class MlMailmanMixin(MlBaseFrontend):
@@ -71,7 +71,7 @@ class MlMailmanMixin(MlBaseFrontend):
                                mm_list: mmc.MailingList) -> None:
         prefix = ""
         if db_list.subject_prefix:
-            prefix = "[{}] ".format(db_list.subject_prefix or "")
+            prefix = f"[{db_list.subject_prefix or ''}] "
 
         alias_domains: Set[str] = db_list.domain.get_acceptable_aliases()
         acceptable_aliases = \
@@ -212,7 +212,7 @@ The original message as received by Mailman is attached.
         }
         store_path = self.conf["STORAGE_DIR"] / 'mailman_templates'
         for name, text in desired_templates.items():
-            file_name = "{}__{}".format(db_list.id, name)
+            file_name = f"{db_list.id}__{name}"
             file_path = store_path / file_name
             todo = False
             if not file_path.exists():
