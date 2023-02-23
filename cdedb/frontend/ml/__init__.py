@@ -24,7 +24,8 @@ class MlFrontend(MlMailmanMixin, MlBaseFrontend):
     def message_moderation_form(self, rs: RequestState, mailinglist_id: int
                                 ) -> Response:
         """Render form."""
-        held = self.get_mailman().get_held_messages(rs.ambience['mailinglist'])
+        ml = rs.ambience["mailinglist"]
+        held = self.get_mailman().get_held_messages(ml)
         return self.render(rs, "message_moderation", {'held': held})
 
     _moderate_action_logcodes: Mapping[str, const.MlLogCodes] = {
@@ -44,7 +45,7 @@ class MlFrontend(MlMailmanMixin, MlBaseFrontend):
             rs.notify('info', n_("Skipping mailman request in dev/offline mode."))
         else:
             mailman = self.get_mailman()
-            mmlist = mailman.get_list_safe(dblist['address'])
+            mmlist = mailman.get_list_safe(dblist.address)
             if mmlist is None:
                 rs.notify("error", n_("List unavailable."))
                 return self.redirect(rs, "ml/message_moderation")
@@ -66,7 +67,7 @@ class MlFrontend(MlMailmanMixin, MlBaseFrontend):
                             f'Spam score: {headers.get("X-Spam-Score", "—")}')
                         self.mlproxy.log_moderation(
                             rs, self._moderate_action_logcodes[action],
-                            dblist['id'], change_note=change_note)
+                            dblist.id, change_note=change_note)
                     elif response.status_code // 100 == 4:
                         warning += 1
                     else:
@@ -117,7 +118,7 @@ class MlFrontend(MlMailmanMixin, MlBaseFrontend):
 
         # Add to whitelist if requested
         if action == "whitelist":
-            self.mlproxy.add_whitelist_entry(rs, dblist['id'], sender)
+            self.mlproxy.add_whitelist_entry(rs, dblist.id, sender)
             action = "accept"
 
         return self._moderate_messages(rs, [request_id], action)

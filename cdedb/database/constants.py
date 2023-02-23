@@ -8,7 +8,7 @@ their symbolic names provided by this module should be used.
 """
 
 import enum
-from typing import Dict, Set
+from typing import Dict, Optional, Set
 
 from subman.machine import (  # pylint: disable=unused-import # noqa: F401
     SubscriptionAction, SubscriptionState,
@@ -167,6 +167,15 @@ class GenesisStati(enum.IntEnum):
 
     def is_finalized(self) -> bool:
         return self in self.finalized_stati()
+
+    def get_icon(self) -> Optional[str]:
+        return {
+            GenesisStati.unconfirmed: "hourglass-start",
+            GenesisStati.to_review: "user-clock",
+            GenesisStati.successful: "check",
+            GenesisStati.existing_updated: "user-check",
+            GenesisStati.rejected: "ban",
+        }.get(self)
 
 
 @enum.unique
