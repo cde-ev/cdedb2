@@ -4601,7 +4601,7 @@
             "id": 2,
             "event_id": 4,
             "title": "Kurs 2. Hälfte nachmittags",
-            "shortname": "K2nS",
+            "shortname": "Kurs2n",
             "notes": null,
             "constraint_type": 1,
             "sortkey": 4
@@ -4610,7 +4610,7 @@
             "id": 3,
             "event_id": 4,
             "title": "Kurs 2. Hälfte morgens",
-            "shortname": "K2mS",
+            "shortname": "Kurs2m",
             "notes": null,
             "constraint_type": 1,
             "sortkey": 3

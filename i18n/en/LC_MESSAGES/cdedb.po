@@ -4289,8 +4289,8 @@ msgstr ""
 msgid "Incompatible tracks."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:734
-msgid "Cannot create CCS group if course choices exist."
+#: cdedb/frontend/event/event.py:738
+msgid "Cannot create CCS group due to incompatible choices."
 msgstr ""
 
 #: cdedb/frontend/event/event.py:1005
