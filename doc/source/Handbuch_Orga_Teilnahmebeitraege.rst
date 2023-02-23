@@ -2,39 +2,40 @@ Konfiguration von Teilnahmebeiträgen
 ====================================
 
 Die Teilnahmebeträge, die Teilnehmende von Veranstaltungen entrichten müssen,
-sind (im Gegensatz zur ursprünglichen Implementierung) nicht direkt mit den
-Veranstaltungsteilen verknüpft, sondern werden über eine eigene Seite
-konfiguriert.
+sind nicht direkt mit den Veranstaltungsteilen verknüpft, sondern werden über
+eine eigene Seite konfiguriert.
 
-Dort können diverse Bedingungen festgelegt werden, unter denen bestimmte
+Dort können diverse Bedingungen festgelegt werden, unter denen dann bestimmte
 Beträge auf den Gesamtbeitrag aufgeschlagen oder davon abgezogen werden sollen.
-Hier können diverse boolesche Informationen (Ja/Nein) miteinbezogen werden.
+Hierfür können diverse boolesche Informationen (Ja/Nein) miteinbezogen werden.
 
-Die Teilnehmer erhalten bevor und nachdem sie ihre Anmeldung abschicken den
+Die Teilnehmenden erhalten bevor und nachdem sie ihre Anmeldung abschicken den
 für die gültigen Betrag angezeigt; er findet sich auch in der Mail, die sie nach
 ihrer Anmeldung erhalten.
 
 Darüber hinaus ist es beim Anlegen von Veranstaltungen und Veranstaltungsteilen
-möglich,
+möglich, direkt Teilnahmebeträge anzugeben, zu denen dann entsprechende
+Bedingungen erstellt werden.
 
 Operatoren und Tokens
 ---------------------
 
 Die Formeln werden aus einer beliebigen Anzahl von Tokens aufgebaut, die
-untereinander durch Operatoren verknüpft werden. Wertet die Gesamtformel als
-wahr aus, wird der entsprechende Betrag, der auch negativ sein kann, addiert.
+untereinander durch Operatoren verknüpft werden. Trifft die Bedingung zu, die
+als Formel angegeben ist, wird der entsprechende Betrag, der auch negativ sein
+kann, addiert.
 
 Folgende Tokens stehen zur Verfügung, die in den Formeln verknüpft werden können:
 
 * ``True``: immer wahr
 * ``False``: immer falsch
-* ``part.<Kurzname>``: Ist der Status für den Teil "Offen" oder "Teilnehmer"?
+* ``part.<Kurzname>``: Ist der Status für den Teil "Offen", "Teilnehmer" oder "Warteliste"?
 * ``field.<Kurzname>``: Ist der Wert des entsprechenden Feldes wahr oder falsch?
 * ``is_member``: Ist die Person derzeit CdE-Mitglied?
 * ``is_orga``: Ist die Person derzeit Orga der Veranstaltung?
 
-Felder, die hier referenziert wird, dürfen nur im Anmeldungsfragebogen, nicht aber
-im Zusätzlichen Fragebogen referenziert sein.
+Felder, die hier referenziert werden, dürfen nur im Anmeldungsfragebogen, nicht aber
+im Zusätzlichen Fragebogen abgefragt werden.
 
 Folgende Operatoren stehen zur Verfügung, um diese Tokens zu verknüpfen:
 
@@ -63,7 +64,7 @@ die entsprechenden :doc:`Handbuch_Orga_Datenfelder` vom Typ ``Anmeldungsfeld`` m
    * Optionen: *(Feld leer lassen)*
 
 Zudem müssen noch Einträge im Anmeldungsfragebogen angelegt werden, damit
-die Teilnehmer bei der Anmeldung angeben können was auf sie zutrifft. Das
+die Teilnehmenden bei der Anmeldung angeben können was auf sie zutrifft. Das
 geht unter "Anmeldung konfigurieren":
 
 1. * Titel: "Ich möchte den Solidarzusatzbeitrag bezahlen."
@@ -75,7 +76,7 @@ geht unter "Anmeldung konfigurieren":
 Beispiel 2
 ----------
 
-Es gibt eine SommerAkademie mit drei Teilen. Die Teilnahme am mittleren Teil kostet 240 Euro,
+Es gibt eine SommerAkademie mit drei Teilen. Die Teilnahme am mittleren Teil kostet 230 Euro,
 während die beiden anderen Teile 215 Euro kosten.
 
 * ``part.A1 OR part.A2 OR part.A3`` => 215 Euro
@@ -85,7 +86,7 @@ Sie sollen angeben können, dass sie nur zu einem der Teile oder zu nur zwei Tei
 für die sie sich angemeldet haben, kommen.
 
 * ``((part.A1 AND part.A2) OR (part.A2 AND part.A3) OR (part.A3 AND part.A1)) AND NOT field.one_part`` => 215 Euro
-* ``part.A1 AND part.A2 AND part.A3 AND NOT field.two_parts``  => 215 Euro
+* ``part.A1 AND part.A2 AND part.A3 AND NOT field.not_all_parts``  => 215 Euro
 
 Hier ist anzumerken, dass diese Formeln fehlertolerant sind: Sie werten auch dann
 richtig aus, wenn die Person sowieso nur für die entsprehende Zahl an Teilen angemeldet ist.
@@ -96,9 +97,9 @@ Kinder unter 13 Jahren kosten beim Feriendorf weniger, daher müssen sie
 * ``(part.A1 OR part.A2 OR part.A3) AND field.is_child`` => -15 Euro
 * ``((part.A1 AND part.A2) OR (part.A2 AND part.A3) OR (part.A3 AND part.A1))``
   ``AND NOT field.one_part AND field.is_child`` => -15 Euro
-* ``part.A1 AND part.A2 AND part.A3 AND NOT field.two_parts AND field.is_child`` => -15 Euro
+* ``part.A1 AND part.A2 AND part.A3 AND NOT field.not_all_parts AND field.is_child`` => -15 Euro
 
-Finanziell besser situierte Teilnehmer sollen die
+Finanziell besser situierte Teilnehmende sollen die
 Möglichkeit bekommen, mit einem "Solidarzusatzbeitrag" in Höhe von 9 Euro pro Teil den
 Verein und zukünftige Veranstaltungen zu unterstützen.
 
@@ -118,7 +119,7 @@ Die entsprechenden :doc:`Handbuch_Orga_Datenfelder` vom Typ ``Anmeldungsfeld`` m
    * Datentyp: "Ja/Nein"
    * Optionen: *(Feld leer lassen)*
 
-2. * Feldname: "two_parts"
+2. * Feldname: "not_all_parts"
    * Datentyp: "Ja/Nein"
    * Optionen: *(Feld leer lassen)*
 
@@ -131,7 +132,7 @@ Die entsprechenden :doc:`Handbuch_Orga_Datenfelder` vom Typ ``Anmeldungsfeld`` m
    * Optionen: *(Feld leer lassen)*
 
 Zudem müssen noch Einträge im Anmeldungsfragebogen angelegt werden, damit
-die Teilnehmer bei der Anmeldung angeben können was auf sie zutrifft. Das
+die Teilnehmenden bei der Anmeldung angeben können was auf sie zutrifft. Das
 geht unter "Anmeldung konfigurieren":
 
 1. * Titel: "Ich möchte nur an einem der Teile, für die ich mich angemeldet habe, teilnehmen."
@@ -140,8 +141,8 @@ geht unter "Anmeldung konfigurieren":
    * Vorgabewert: *(Feld leer lassen)*
    * Schreibgeschützt: Nein
 
-2. * Titel: "Ich möchte nur an zwei der Teile, für die ich mich angemeldet habe, teilnehmen."
-   * Abfrage: "one_part"
+2. * Titel: "Ich möchte nicht an allen Teilen, für die ich mich angemeldet habe, teilnehmen."
+   * Abfrage: "not_all_parts"
    * Text: *(keiner)*
    * Vorgabewert: *(Feld leer lassen)*
    * Schreibgeschützt: Nein
@@ -158,5 +159,5 @@ geht unter "Anmeldung konfigurieren":
    * Vorgabewert: *(Feld leer lassen)*
    * Schreibgeschützt: Nein
 
-Speichern und fertig! Während der Anmeldung bekommen alle Teilnehmer nun die
+Speichern und fertig! Während der Anmeldung bekommen alle Teilnehmenden nun die
 entsprechenden vier Checkboxen angezeigt.
