@@ -50,13 +50,17 @@
     </script>
 
     <div class="row">
-            <div class="col-md-6">
+        <div class="col-md-12">
             <div id="payment-request" class="panel {% if current_period_step == "billing" %}panel-primary{% else %}panel-default{% endif %}">
                 <div class="panel-heading">
                     <span class="pull-right">(01.01./01.07.)</span>
                     <h4 class="panel-title">{% trans %}Send Payment Requests/Information{% endtrans %}</h4>
                 </div>
-                <div class="panel-body">
+                <div class="row panel-body">
+                    <div class="col-md-6">
+                        Erklärtext
+                    </div>
+                    <div class="col-md-6">
                     {% if current_period_step == "billing" %}
                         {% if period['billing_state'] %}
                             <p>
@@ -83,15 +87,22 @@
                             {% endtrans %}
                         </span>
                     {% endif %}
+                    </div>
                 </div>
             </div>
+        </div>
 
+        <div class="col-md-12">
             <div id="eject-members" class="panel {% if current_period_step == "ejection" %}panel-primary{% else %}panel-default{% endif %}">
                 <div class="panel-heading">
                     <span class="pull-right">(01.02./01.08.)</span>
                     <h4 class="panel-title">{% trans %}Remove inactive Members{% endtrans %}</h4>
                 </div>
-                <div class="panel-body">
+                <div class="row panel-body">
+                    <div class="col-md-6">
+                        Erklärtext
+                    </div>
+                    <div class="col-md-6">
                     {% if current_period_step == "ejection" %}
                         {% if period['ejection_state'] %}
                             <p>
@@ -127,16 +138,22 @@
                             {% endtrans %}
                         </span>
                     {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-6">
+
+        <div class="col-md-12">
             <div id="balance-update" class="panel {% if current_period_step == "balance" %}panel-primary{% else %}panel-default{% endif %}">
                 <div class="panel-heading">
                     <span class="pull-right">(15.02./15.08.)</span>
                     <h4 class="panel-title">{% trans %}Update Balances{% endtrans %}</h4>
                 </div>
-                <div class="panel-body">
+                <div class="row panel-body">
+                    <div class="col-md-6">
+                        Erklärtext
+                    </div>
+                    <div class="col-md-6">
                     {% if current_period_step in ["billing", "ejection"] %}
                         <span class="text-muted">{% trans %}To be done later.{% endtrans %}</span>
                     {% elif current_period_step == "balance" %}
@@ -176,6 +193,7 @@
                             {% endtrans %}
                         </span>
                     {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
