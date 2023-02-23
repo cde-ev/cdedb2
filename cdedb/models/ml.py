@@ -1,7 +1,7 @@
 """Dataclass definitions of mailinglist realm."""
 
 from dataclasses import dataclass, fields
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, Type
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, Set, Tuple, Type
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const

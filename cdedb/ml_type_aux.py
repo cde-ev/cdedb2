@@ -3,7 +3,7 @@
 import enum
 import itertools
 from typing import (
-    TYPE_CHECKING, Collection, Dict, List, Literal, Mapping, Optional, OrderedDict, Set,
+    TYPE_CHECKING, Collection, ClassVar, Dict, List, Literal, Mapping, Optional, OrderedDict, Set,
     Type, Union, cast, get_origin,
 )
 
@@ -75,18 +75,18 @@ class GeneralMailinglist:
     def __init__(self) -> None:
         raise RuntimeError()
 
-    sortkey: MailinglistGroup = MailinglistGroup.public
+    sortkey: ClassVar[MailinglistGroup] = MailinglistGroup.public
 
-    domains: List[MailinglistDomain] = [MailinglistDomain.lists]
+    domains: ClassVar[List[MailinglistDomain]] = [MailinglistDomain.lists]
 
     # default value for maxsize in KB
-    maxsize_default = vtypes.PositiveInt(2048)
+    maxsize_default: ClassVar = vtypes.PositiveInt(2048)
 
-    allow_unsub: bool = True
+    allow_unsub: ClassVar[bool] = True
 
     # Additional fields for validation. See docstring for details.
-    mandatory_validation_fields: vtypes.TypeMapping = {}
-    optional_validation_fields: vtypes.TypeMapping = {}
+    mandatory_validation_fields: ClassVar[vtypes.TypeMapping] = {}
+    optional_validation_fields: ClassVar[vtypes.TypeMapping] = {}
 
     @classmethod
     def get_additional_fields(cls) -> Mapping[
@@ -254,7 +254,7 @@ class GeneralMailinglist:
 
 class AllUsersImplicitMeta(GeneralMailinglist):
     """Metaclass for all mailinglists with all users as implicit subscribers."""
-    maxsize_default = vtypes.PositiveInt(64)
+    maxsize_default: ClassVar = vtypes.PositiveInt(64)
 
     @classmethod
     def get_implicit_subscribers(cls, rs: RequestState, bc: BackendContainer,
@@ -281,7 +281,7 @@ class AllMembersImplicitMeta(GeneralMailinglist):
 class EventAssociatedMeta(GeneralMailinglist):
     """Metaclass for all event associated mailinglists."""
     # Allow empty event_id to mark legacy event-lists.
-    mandatory_validation_fields: vtypes.TypeMapping = {
+    mandatory_validation_fields: ClassVar[vtypes.TypeMapping] = {
         "event_id": Optional[vtypes.ID]  # type: ignore[dict-item]
     }
 
@@ -404,7 +404,7 @@ class RestrictedTeamMailinglist(TeamMeta, MemberInvitationOnlyMailinglist):
 
 
 class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
-    mandatory_validation_fields: vtypes.TypeMapping = {
+    mandatory_validation_fields: ClassVar[vtypes.TypeMapping] = {
             **EventAssociatedMeta.mandatory_validation_fields,
             "registration_stati": List[RegistrationPartStati],
     }
@@ -494,7 +494,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
 
 class EventOrgaMailinglist(EventAssociatedMeta, ImplicitsSubscribableMeta,
                            EventMailinglist):
-    maxsize_default = vtypes.PositiveInt(8192)
+    maxsize_default: ClassVar = vtypes.PositiveInt(8192)
 
     @classmethod
     def get_subscription_policies(cls, rs: RequestState, bc: BackendContainer,
@@ -533,7 +533,7 @@ class EventOrgaMailinglist(EventAssociatedMeta, ImplicitsSubscribableMeta,
 
 class AssemblyAssociatedMailinglist(ImplicitsSubscribableMeta, AssemblyMailinglist):
     # Allow empty assembly_id to mark legacy assembly-lists.
-    mandatory_validation_fields: vtypes.TypeMapping = {
+    mandatory_validation_fields: ClassVar[vtypes.TypeMapping] = {
         "assembly_id": Optional[vtypes.ID]  # type: ignore[dict-item]
     }
 
