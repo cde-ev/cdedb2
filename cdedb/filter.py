@@ -8,8 +8,9 @@ import re
 import threading
 from collections import Counter
 from typing import (
-    Any, Callable, Collection, Container, Dict, ItemsView, Iterable, List, Literal,
-    Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, overload,
+    TYPE_CHECKING, Any, Callable, Collection, Container, Dict, ItemsView, Iterable,
+    List, Literal, Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar, Union,
+    overload,
 )
 
 import bleach
@@ -24,6 +25,9 @@ import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, compute_checkdigit
 from cdedb.common.sorting import xsorted
 from cdedb.config import LazyConfig
+
+if TYPE_CHECKING:
+    from cdedb.models.common import CdEDataclass
 
 _LOGGER = logging.getLogger(__name__)
 _CONFIG = LazyConfig()
@@ -627,8 +631,8 @@ def enum_entries_filter(enum: Iterable[enum.Enum],
     return xsorted(to_sort, key=lambda e: e[0].value)
 
 
-def dict_entries_filter(items: List[Tuple[Any, Mapping[T, S]]],
-                        *args: T) -> List[Tuple[S, ...]]:
+def dict_entries_filter(items: List[Tuple[Any, Union[Mapping[str, S], "CdEDataclass"]]],
+                        *args: str) -> List[Tuple[S, ...]]:
     """
     Transform a list of dict items with dict-type values into a list of
     tuples of specified fields of the value dict.
@@ -647,7 +651,12 @@ def dict_entries_filter(items: List[Tuple[Any, Mapping[T, S]]],
     :return: A list of tuples (e.g. to be used in the input_checkboxes or
       input_select macros), built from the selected fields of the dicts
     """
-    return [tuple(value[k] for k in args) for key, value in items]
+    # TODO this leads to cyclic imports otherwise
+    from cdedb.models.common import (  # pylint: disable=import-outside-toplevel
+        CdEDataclass,
+    )
+    values = [v.to_database() if isinstance(v, CdEDataclass) else v for _, v in items]
+    return [tuple(value[k] for k in args) for value in values]
 
 
 def xdict_entries_filter(items: Sequence[Tuple[Any, CdEDBObject]], *args: str,

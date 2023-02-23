@@ -8,6 +8,8 @@ import re
 import shutil
 import subprocess
 import tempfile
+from types import SimpleNamespace
+from typing import cast
 
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
@@ -17,6 +19,7 @@ from cdedb.common import (
 from cdedb.common.roles import extract_roles
 from cdedb.common.sorting import mixed_existence_sorter, xsorted
 from cdedb.enums import ALL_ENUMS
+from cdedb.models.ml import Mailinglist
 from tests.common import ANONYMOUS, BasicTest
 
 
@@ -218,7 +221,8 @@ class TestCommon(BasicTest):
                                   " these and remove the '#, fuzzy' marker afterwards.")
 
     def test_ml_type_mismatch(self) -> None:
-        pseudo_mailinglist = {"ml_type": const.MailinglistTypes.event_associated}
+        pseudo_mailinglist = cast(Mailinglist, SimpleNamespace())
+        pseudo_mailinglist.ml_type = const.MailinglistTypes.event_associated
         bc = ml_type.BackendContainer()
         with self.assertRaises(RuntimeError):
             # Cannot use method of a non-parent-non-child class
@@ -226,8 +230,10 @@ class TestCommon(BasicTest):
                 ANONYMOUS, bc, pseudo_mailinglist)
         with self.assertRaises(RuntimeError):
             # Cannot use method of a child class
+            pseudo_mailinglist2 = cast(Mailinglist, SimpleNamespace())
+            pseudo_mailinglist2.ml_type = const.MailinglistTypes.general_opt_in
             ml_type.AssemblyAssociatedMailinglist.get_implicit_subscribers(
-                ANONYMOUS, bc, {"ml_type": const.MailinglistTypes.general_opt_in})
+                ANONYMOUS, bc, pseudo_mailinglist2)
         # Can use method of a parent class
         ml_type.GeneralMailinglist.get_implicit_subscribers(
             ANONYMOUS, bc, pseudo_mailinglist)
