@@ -1,4 +1,5 @@
 # pylint: disable=line-too-long,missing-module-docstring,expression-not-assigned
+from functools import lru_cache
 
 import pyparsing as pp
 
@@ -74,5 +75,6 @@ def create_parser() -> pp.ParserElement:
 _PARSER = create_parser()
 
 
+@lru_cache
 def parse(s: str) -> pp.ParseResults:
     return _PARSER.parse_string(s)[0]
