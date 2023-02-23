@@ -334,7 +334,7 @@ class TestMlBackend(BackendTest):
     @as_users("nina")
     def test_mailinglist_creation_optional_fields(self) -> None:
         new_data = Mailinglist(
-            id=-1,  # type: ignore[arg-type]
+            id=self.as_creation_id(-1),
             local_part=vtypes.EmailLocalPart('revolution'),
             domain=const.MailinglistDomain.lists,
             description='Vereinigt Euch',
