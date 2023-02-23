@@ -25,7 +25,6 @@ from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.ml_type_aux as ml_type
 from cdedb.backend.assembly import GroupedBallots
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, CdEDBObject, DefaultReturnCode, RequestState,
@@ -45,7 +44,9 @@ from cdedb.frontend.common import (
     assembly_guard, cdedburl, check_validation as check, drow_name, inspect_validation,
     periodic, process_dynamic_input, request_extractor,
 )
-from cdedb.models.ml import Mailinglist
+from cdedb.models.ml import (
+    AssemblyAssociatedMailinglist, AssemblyPresiderMailinglist, Mailinglist,
+)
 
 #: Magic value to signal abstention during _classical_ voting.
 #: This can not occur as a shortname since it contains forbidden characters.
@@ -307,7 +308,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 mod_policy=const.ModerationPolicy.unmoderated,
                 attachment_policy=const.AttachmentPolicy.allow,
                 subject_prefix=f"{assembly['shortname']}-leitung",
-                maxsize=ml_type.AssemblyPresiderMailinglist.maxsize_default,
+                maxsize=AssemblyPresiderMailinglist.maxsize_default,
                 is_active=True,
                 assembly_id=assembly['id'],
                 event_id=None,
@@ -332,7 +333,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 mod_policy=const.ModerationPolicy.non_subscribers,
                 attachment_policy=const.AttachmentPolicy.pdf_only,
                 subject_prefix=assembly['shortname'],
-                maxsize=ml_type.AssemblyAssociatedMailinglist.maxsize_default,
+                maxsize=AssemblyAssociatedMailinglist.maxsize_default,
                 is_active=True,
                 assembly_id=assembly["id"],
                 event_id=None,

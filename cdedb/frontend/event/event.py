@@ -18,7 +18,6 @@ from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.ml_type_aux as ml_type
 from cdedb.common import (
     DEFAULT_NUM_COURSE_CHOICES, CdEDBObject, RequestState, merge_dicts, now, unwrap,
 )
@@ -37,7 +36,9 @@ from cdedb.frontend.common import (
     event_guard, inspect_validation as inspect, periodic, process_dynamic_input,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
-from cdedb.models.ml import Mailinglist
+from cdedb.models.ml import (
+    EventAssociatedMailinglist, EventOrgaMailinglist, Mailinglist,
+)
 
 
 class EventEventMixin(EventBaseFrontend):
@@ -846,7 +847,7 @@ class EventEventMixin(EventBaseFrontend):
                 mod_policy=const.ModerationPolicy.unmoderated,
                 attachment_policy=const.AttachmentPolicy.allow,
                 subject_prefix=event['shortname'],
-                maxsize=ml_type.EventOrgaMailinglist.maxsize_default,
+                maxsize=EventOrgaMailinglist.maxsize_default,
                 is_active=True,
                 assembly_id=None,
                 event_id=event['id'],
@@ -873,7 +874,7 @@ class EventEventMixin(EventBaseFrontend):
                 mod_policy=const.ModerationPolicy.non_subscribers,
                 attachment_policy=const.AttachmentPolicy.pdf_only,
                 subject_prefix=event['shortname'],
-                maxsize=ml_type.EventAssociatedMailinglist.maxsize_default,
+                maxsize=EventAssociatedMailinglist.maxsize_default,
                 is_active=True,
                 assembly_id=None,
                 event_id=event["id"],

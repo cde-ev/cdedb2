@@ -80,7 +80,6 @@ import zxcvbn
 from schulze_condorcet.util import as_vote_tuple
 
 import cdedb.database.constants as const
-import cdedb.ml_type_aux as ml_type
 import cdedb.models.ml as models_ml
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, EPSILON, EVENT_SCHEMA_VERSION, INFINITE_ENUM_MAGIC_NUMBER,
@@ -3995,7 +3994,7 @@ def _mailinglist(
     if "ml_type" not in val:
         raise ValidationSummary(ValueError(
             "ml_type", "Must provide ml_type for setting mailinglist."))
-    atype = ml_type.get_type(val["ml_type"])
+    atype = models_ml.get_ml_type(val["ml_type"])
 
     mandatory_fields, optional_fields = models_ml.Mailinglist.validation_fields(
         creation=creation)
@@ -4047,8 +4046,8 @@ def _mailinglist(
         errs.append(ValueError(
             "domain", "Must specify domain for setting mailinglist."))
     else:
-        atype = ml_type.get_type(val["ml_type"])
-        if val["domain"].value not in atype.domains:
+        atype = models_ml.get_ml_type(val["ml_type"])
+        if val["domain"].value not in atype.available_domains:
             errs.append(ValueError("domain", n_(
                 "Invalid domain for this mailinglist type.")))
 

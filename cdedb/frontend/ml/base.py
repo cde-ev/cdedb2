@@ -32,10 +32,9 @@ from cdedb.frontend.common import (
     cdedbid_filter as cdedbid, check_dataclass, check_validation as check, csv_output,
     mailinglist_guard, periodic,
 )
-from cdedb.ml_type_aux import (
-    ADDITIONAL_TYPE_FIELDS, TYPE_MAP, MailinglistGroup, get_type,
+from cdedb.models.ml import (
+    ADDITIONAL_TYPE_FIELDS, ML_TYPE_MAP, Mailinglist, MailinglistGroup, get_ml_type,
 )
-from cdedb.models.ml import Mailinglist
 
 
 class MlBaseFrontend(AbstractUserFrontend):
@@ -219,12 +218,12 @@ class MlBaseFrontend(AbstractUserFrontend):
                     'ml_type': None,
                 })
         else:
-            atype = TYPE_MAP[ml_type]
+            atype = ML_TYPE_MAP[ml_type]
             if not atype.is_relevant_admin(rs.user):
                 rs.append_validation_error(
                     ("ml_type", ValueError(n_(
                         "May not create mailinglist of this type."))))
-            available_domains = atype.domains
+            available_domains = atype.available_domains
             additional_fields = atype.get_additional_fields().keys()
             if "event_id" in additional_fields:
                 event_ids = self.eventproxy.list_events(rs)
@@ -422,7 +421,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                                 mailinglist_id: int) -> Response:
         """Render form."""
         ml = rs.ambience["mailinglist"]
-        additional_fields = ml.ml_type_class.get_additional_fields().keys()
+        additional_fields = ml.get_additional_fields().keys()
         if "event_id" in additional_fields:
             event_ids = self.eventproxy.list_events(rs)
             events = self.eventproxy.get_events(rs, event_ids)
@@ -447,7 +446,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         return self.render(rs, "change_mailinglist", {
             'event_entries': event_entries,
             'assembly_entries': assembly_entries,
-            'available_domains': ml.ml_type_class.domains,
+            'available_domains': ml.available_domains,
             'additional_fields': additional_fields,
             'restricted': restricted,
         })
@@ -518,9 +517,9 @@ class MlBaseFrontend(AbstractUserFrontend):
         data['id'] = mailinglist_id
         data['ml_type'] = ml_type
         data['domain'] = ml.domain
-        new_type = get_type(data['ml_type'])
-        if data['domain'] not in new_type.domains:
-            data['domain'] = new_type.domains[0]
+        new_type = get_ml_type(data['ml_type'])
+        if data['domain'] not in new_type.available_domains:
+            data['domain'] = new_type.available_domains[0]
         data = check(rs, vtypes.Mailinglist, data)
         if rs.has_validation_errors():
             return self.change_ml_type_form(rs, mailinglist_id)

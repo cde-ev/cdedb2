@@ -51,7 +51,7 @@ from cdedb.frontend.common import (
     check_validation_optional as check_optional, inspect_validation as inspect,
     make_membership_fee_reference, periodic, request_dict_extractor, request_extractor,
 )
-from cdedb.ml_type_aux import MailinglistGroup
+from cdedb.models.ml import MailinglistGroup
 
 # Name of each realm
 USER_REALM_NAMES = {
@@ -688,8 +688,7 @@ class CoreBaseFrontend(AbstractFrontend):
         grouped: Dict[MailinglistGroup, CdEDBObjectMap]
         grouped = collections.defaultdict(dict)
         for mailinglist_id, ml in mailinglists.items():
-            group_id = ml.ml_type_class.sortkey
-            grouped[group_id][mailinglist_id] = {
+            grouped[ml.sortkey][mailinglist_id] = {
                 'title': ml.title,
                 'id': mailinglist_id,
                 'address': addresses.get(mailinglist_id),
