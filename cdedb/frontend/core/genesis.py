@@ -268,13 +268,22 @@ class CoreGenesisMixin(CoreBaseFrontend):
         realms = [realm for realm in REALM_SPECIFIC_GENESIS_FIELDS
                   if {"{}_admin".format(realm), 'core_admin'} & rs.user.roles]
         data = self.coreproxy.genesis_list_cases(
-            rs, stati=(const.GenesisStati.to_review,), realms=realms)
+            rs, realms=realms, stati={
+                const.GenesisStati.to_review, const.GenesisStati.successful,
+                const.GenesisStati.existing_updated, const.GenesisStati.rejected})
         cases = self.coreproxy.genesis_get_cases(rs, set(data))
-        cases_by_realm = {
-            realm: {k: v for k, v in cases.items() if v['realm'] == realm}
+        current_cases_by_realm = {
+            realm: {k: v for k, v in cases.items() if v['realm'] == realm
+                        and v['case_status'] == const.GenesisStati.to_review}
             for realm in realms}
+        concluded_cases = {k: v for k, v in cases.items()
+                           if v['case_status'] != const.GenesisStati.to_review}
+        created_account_ids = [case['persona_id'] for case in concluded_cases.values()
+                               if case['persona_id']]
+        personas = self.coreproxy.get_personas(rs, created_account_ids)
         return self.render(rs, "genesis/genesis_list_cases", {
-            'cases_by_realm': cases_by_realm})
+            'current_cases_by_realm': current_cases_by_realm,
+            'concluded_cases': concluded_cases, 'personas': personas})
 
     @access("core_admin", *("{}_admin".format(realm)
                             for realm in REALM_SPECIFIC_GENESIS_FIELDS))
