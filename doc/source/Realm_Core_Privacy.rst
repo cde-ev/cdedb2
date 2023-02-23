@@ -150,7 +150,7 @@ besitzt (das maximale Element der Bereiche):
     Besitzt ein Benutzer den CdE Bereich, ist automatisch nur der CdE-Admin
     relativer Admin.
 
-Alle User mit Admin-Rechten sind unter ``Core/Administratorenübersicht``
+Alle User mit Admin-Rechten sind unter ``Index/Administratorenübersicht``
 aufgelistet.
 
 
