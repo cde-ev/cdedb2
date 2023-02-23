@@ -818,13 +818,12 @@ class EventEventMixin(EventBaseFrontend):
             }
             # send halftime mail (up to one per part)
             if any(is_halftime(part) for part in event["parts"].values()):
-                headers["Subject"] = ("10 Tipps für gute Akademien die bei allen"
-                                      " funktionieren!")
+                headers["Subject"] = ("Halbzeit! Was ihr vor Ende der Akademie nicht"
+                                      " vergessen solltet")
                 self.do_mail(rs, "halftime_reminder", headers)
             # send past event mail (one per event)
             elif all(is_over(part) for part in event["parts"].values()):
-                headers["Subject"] = ("Diese Informationen haben andere Orgateams"
-                                      " schockiert!")
+                headers["Subject"] = "Wichtige Nach-Aka-Checkliste vom Akademieteam"
                 params = {"rechenschafts_deadline": now() + datetime.timedelta(days=90)}
                 self.do_mail(rs, "past_event_reminder", headers, params=params)
                 store[str(event_id)]["did_past_event_reminder"] = True
