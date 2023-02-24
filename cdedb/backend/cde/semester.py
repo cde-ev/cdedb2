@@ -155,13 +155,10 @@ class CdESemesterBackend(CdELastschriftBackend):
             ret = self.set_period(rs, period_update)
             msg = f"{period['billing_count']} E-Mails versandt."
             if addresscheck:
-                self.cde_log(
-                    rs, const.CdeLogCodes.semester_bill_with_addresscheck,
-                    persona_id=None, change_note=msg)
+                code = const.CdeLogCodes.semester_bill_with_addresscheck
             else:
-                self.cde_log(
-                    rs, const.CdeLogCodes.semester_bill,
-                    persona_id=None, change_note=msg)
+                code = const.CdeLogCodes.semester_bill
+            self.cde_log(rs, code, persona_id=None, change_note=msg)
         return ret
 
     @access("finance_admin")
@@ -503,7 +500,7 @@ class CdESemesterBackend(CdELastschriftBackend):
             persona = None
             if self.core.is_persona_automatically_archivable(
                     rs, persona_id, reference_date=period['billing_done']):
-                note = "Autmoatisch archiviert wegen Inaktivität."
+                note = "Automatisch archiviert wegen Inaktivität."
                 try:
                     code = self.core.archive_persona(rs, persona_id, note)
                 except ArchiveError:
@@ -583,7 +580,7 @@ class CdESemesterBackend(CdELastschriftBackend):
         """Set the balance of all former members to zero.
 
         We keep the balance of all former members during one semester, so they get their
-        remaining balance back if the pay again in this time.
+        remaining balance back if they pay again in this time.
         """
         period_id = affirm(int, period_id)
         with Atomizer(rs):

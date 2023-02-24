@@ -58,19 +58,21 @@ class CdESemesterMixin(CdEBaseFrontend):
         """Send billing mail to all members and archival notification to inactive users.
 
         In case of a test run we send a single mail of each to the button presser.
+        As a side effect, this also advances the cde_period.
+
+        It may happen that the Worker sending the mails crashs. Then, calling this
+        function will start a new worker, but take the latest state of the old worker
+        into account, so no mails will be sent twice.
         """
         if rs.has_validation_errors():
             return self.redirect(rs, "cde/show_semester")
 
         # advance to the next semester
-        old_period_id = self.cdeproxy.current_period(rs)
-        old_period = self.cdeproxy.get_period(rs, old_period_id)
-        if not old_period['balance_done']:
-            rs.notify("error", n_("Wrong timing for advancing the semester."))
-            return self.redirect(rs, "cde/show_semester")
-        self.cdeproxy.advance_semester(rs)
+        # This does not throw an error if we may not advance, since the function must
+        #  be idempotent if the sending crushes midway.
+        if self.cdeproxy.may_advance_semester(rs):
+            self.cdeproxy.advance_semester(rs)
 
-        # get the period_id again after advancing to the next semester
         period_id = self.cdeproxy.current_period(rs)
         if not self.cdeproxy.may_start_semester_bill(rs):
             rs.notify("error", n_("Billing already done."))
@@ -152,7 +154,11 @@ class CdESemesterMixin(CdEBaseFrontend):
 
     @access("finance_admin", modi={"POST"})
     def semester_eject(self, rs: RequestState) -> Response:
-        """Eject members without enough credit and archive inactive users."""
+        """Eject members without enough credit and archive inactive users.
+
+        It may happen that the Worker crashs. Then, calling this function will start a
+        new worker, but take the latest state of the old worker into account.
+        """
         if rs.has_validation_errors():  # pragma: no cover
             self.redirect(rs, "cde/show_semester")
         period_id = self.cdeproxy.current_period(rs)
@@ -206,7 +212,14 @@ class CdESemesterMixin(CdEBaseFrontend):
 
     @access("finance_admin", modi={"POST"})
     def semester_balance_update(self, rs: RequestState) -> Response:
-        """Deduct membership fees from all member accounts."""
+        """Deduct membership fees from all member accounts.
+
+        This also deduct all remaining balance from exmembers, which accumulated during
+        the previous semester.
+
+        It may happen that the Worker crashs. Then, calling this function will start a
+        new worker, but take the latest state of the old worker into account.
+        """
         if rs.has_validation_errors():  # pragma: no cover
             self.redirect(rs, "cde/show_semester")
         period_id = self.cdeproxy.current_period(rs)
@@ -215,9 +228,11 @@ class CdESemesterMixin(CdEBaseFrontend):
             return self.redirect(rs, "cde/show_semester")
 
         period = self.cdeproxy.get_period(rs, period_id)
+        # Make sure to perform this step only once, so the amount of balance removed
+        #  in this way is not overwritten by later calls.
         if not period["balance_exmembers"]:
             ret = self.cdeproxy.remove_exmember_balance(rs, period_id)
-            rs.notify_return_code(ret)
+            rs.notify_return_code(ret, success=n_("Balance of exmembers removed."))
 
         # The rs parameter shadows the outer request state, making sure that
         # it doesn't leak
