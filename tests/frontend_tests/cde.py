@@ -2707,61 +2707,53 @@ class TestCdEFrontend(FrontendTest):
         # First: generate data
         logs = []
 
-        # Payment Request
+        # Payment Request already done
         link = {'description': 'Semesterverwaltung'}
         self.traverse({'description': 'Mitglieder'}, link)
-        f = self.response.forms['billform']
-        self.submit(f)
-        self.join_worker_thread('semester_bill', link)
-        logs.append((1001, const.CdeLogCodes.semester_bill))
-        logs.append((1002, const.CdeLogCodes.automated_archival_notification_done))
 
         # Remove Inactive Members
         f = self.response.forms['ejectform']
         self.submit(f)
         self.join_worker_thread('semester_eject', link)
-        logs.append((1003, const.CdeLogCodes.semester_ejection))
-        logs.append((1004, const.CdeLogCodes.automated_archival_done))
+        logs.append((1001, const.CdeLogCodes.semester_ejection))
+        logs.append((1002, const.CdeLogCodes.automated_archival_done))
 
         # Update Balances
         f = self.response.forms['balanceform']
         self.submit(f)
         self.join_worker_thread('semester_balance_update', link)
-        logs.append((1005, const.CdeLogCodes.semester_balance_update))
-
-        # Next Semester
-        f = self.response.forms['proceedform']
-        self.submit(f)
-        logs.append((1006, const.CdeLogCodes.semester_advance))
+        logs.append((1003, const.CdeLogCodes.semester_balance_update))
 
         # Payment Request with addresscheck
+        # (the variant without addresscheck is tested in test_semester)
         f = self.response.forms['billform']
         f['addresscheck'].checked = True
         self.submit(f)
         self.join_worker_thread('semester_bill', link)
-        logs.append((1007, const.CdeLogCodes.semester_bill_with_addresscheck))
-        logs.append((1008, const.CdeLogCodes.automated_archival_notification_done))
+        logs.append((1004, const.CdeLogCodes.semester_advance))
+        logs.append((1005, const.CdeLogCodes.semester_bill_with_addresscheck))
+        logs.append((1006, const.CdeLogCodes.automated_archival_notification_done))
 
         # exPuls with addresscheck
         f = self.response.forms['addresscheckform']
         self.submit(f)
         self.join_worker_thread('expuls_addresscheck', link)
-        logs.append((1009, const.CdeLogCodes.expuls_addresscheck))
+        logs.append((1007, const.CdeLogCodes.expuls_addresscheck))
+
+        # Next exPuls
+        f = self.response.forms['proceedexpulsform']
+        self.submit(f)
+        logs.append((1008, const.CdeLogCodes.expuls_advance))
+
+        # exPuls without addresscheck
+        f = self.response.forms['noaddresscheckform']
+        self.submit(f)
+        logs.append((1009, const.CdeLogCodes.expuls_addresscheck_skipped))
 
         # Next exPuls
         f = self.response.forms['proceedexpulsform']
         self.submit(f)
         logs.append((1010, const.CdeLogCodes.expuls_advance))
-
-        # exPuls without addresscheck
-        f = self.response.forms['noaddresscheckform']
-        self.submit(f)
-        logs.append((1011, const.CdeLogCodes.expuls_addresscheck_skipped))
-
-        # Next exPuls
-        f = self.response.forms['proceedexpulsform']
-        self.submit(f)
-        logs.append((1012, const.CdeLogCodes.expuls_advance))
 
         # Now check it
         self.traverse({'description': "CdE-Log"})
