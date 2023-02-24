@@ -336,14 +336,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                     rs, table, data[table], current[table], translations,
                     entity=entity, extra_translations=extra_translations)
             # Third fix the amounts owed for all registrations.
-            reg_ids = self.list_registrations(rs, event_id=data['id'])
-            fees_owed = self.calculate_fees(rs, reg_ids)
-            for reg_id, fee in fees_owed.items():
-                update = {
-                    'id': reg_id,
-                    'amount_owed': fee,
-                }
-                ret *= self.sql_update(rs, "event.registrations", update)
+            self._update_registrations_amount_owed(rs, data['id'])
 
             # Forth unlock the event
             update = {
@@ -736,6 +729,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
             if token is not None and result != token:
                 raise PartialImportError("The delta changed.")
             if not dryrun:
+                self._update_registrations_amount_owed(rs, data['id'])
                 self.event_log(rs, const.EventLogCodes.event_partial_import,
                                data['id'], change_note=data.get('summary'))
                 msg = build_msg("Importiere partiell", data.get('summary'))
