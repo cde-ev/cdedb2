@@ -99,6 +99,7 @@ from cdedb.enums import ENUMS_DICT
 from cdedb.filter import (
     JINJA_FILTERS, cdedbid_filter, enum_entries_filter, safe_filter, sanitize_None,
 )
+from cdedb.models.ml import Mailinglist
 
 Attachment = typing.TypedDict(
     "Attachment", {'path': PathLike, 'filename': str, 'mimetype': str,
@@ -1312,7 +1313,7 @@ class CdEMailmanClient(mailmanclient.Client):
                 self.logger.exception("Mailman connection failed!")
             return None
 
-    def get_held_messages(self, dblist: CdEDBObject) -> Optional[
+    def get_held_messages(self, dblist: Mailinglist) -> Optional[
             List[mailmanclient.restobjects.held_message.HeldMessage]]:
         """Returns all held messages for mailman lists.
 
@@ -1322,20 +1323,20 @@ class CdEMailmanClient(mailmanclient.Client):
             self.logger.info("Skipping mailman query in dev/offline mode.")
             if self.conf["CDEDB_DEV"]:
                 # Some diversity regarding moderation.
-                if dblist['id'] % 2 == 0:
+                if dblist.id % 2 == 0:
                     return HELD_MESSAGE_SAMPLE
                 else:
                     return []
             return None
         else:
-            mmlist = self.get_list_safe(dblist['address'])
+            mmlist = self.get_list_safe(dblist.address)
             try:
                 return mmlist.held if mmlist else None
             except urllib.error.HTTPError:
                 self.logger.exception("Mailman connection failed!")
         return None
 
-    def get_held_message_count(self, dblist: CdEDBObject) -> Optional[int]:
+    def get_held_message_count(self, dblist: Mailinglist) -> Optional[int]:
         """Returns the number of held messages for a mailman list.
 
         If the list is not managed by mailman, this returns None instead.
@@ -1344,12 +1345,12 @@ class CdEMailmanClient(mailmanclient.Client):
             self.logger.info("Skipping mailman query in dev/offline mode.")
             if self.conf["CDEDB_DEV"]:
                 # Add some diversity.
-                if dblist['id'] % 2 == 0:
+                if dblist.id % 2 == 0:
                     return len(HELD_MESSAGE_SAMPLE)
                 else:
                     return 0
         else:
-            mmlist = self.get_list_safe(dblist['address'])
+            mmlist = self.get_list_safe(dblist.address)
             try:
                 return mmlist.get_held_count() if mmlist else None
             except urllib.error.HTTPError:
@@ -1478,8 +1479,34 @@ class Worker(threading.Thread):
         return worker
 
 
+AmbienceDict = typing.TypedDict(
+    "AmbienceDict",
+    {
+        'persona': CdEDBObject,
+        'privilege_change': CdEDBObject,
+        'genesis_case': CdEDBObject,
+        'lastschrift': CdEDBObject,
+        'transaction':  CdEDBObject,
+        'institution':  CdEDBObject,
+        'event': CdEDBObject,
+        'pevent': CdEDBObject,
+        'course': CdEDBObject,
+        'pcourse': CdEDBObject,
+        'registration': CdEDBObject,
+        'group': CdEDBObject,
+        'lodgement': CdEDBObject,
+        'part_group': CdEDBObject,
+        'track_group': CdEDBObject,
+        'attachment': CdEDBObject,
+        'assembly': CdEDBObject,
+        'ballot': CdEDBObject,
+        'mailinglist': Mailinglist,
+    }
+)
+
+
 def reconnoitre_ambience(obj: AbstractFrontend,
-                         rs: RequestState) -> Dict[str, CdEDBObject]:
+                         rs: RequestState) -> AmbienceDict:
     """Provide automatic lookup of objects in a standard way.
 
     This creates an ambience dict providing objects for all ids passed
@@ -1591,7 +1618,7 @@ def reconnoitre_ambience(obj: AbstractFrontend,
         if param in scouts_dict:
             for consistency_checker in scouts_dict[param].dependencies:
                 consistency_checker(ambience)
-    return ambience
+    return cast("AmbienceDict", ambience)
 
 
 F = TypeVar('F', bound=Callable[..., Any])
@@ -2129,6 +2156,23 @@ def assembly_guard(fun: F) -> F:
         return fun(obj, rs, *args, **kwargs)
 
     return cast(F, new_fun)
+
+
+def check_dataclass(rs: RequestState, type_: Type[T], value: Any,
+                    name: str = None, **kwargs: Any) -> Optional[T]:
+    """Wrapper to call asserts in :py:mod:`cdedb.validation`.
+
+    This is similar to :func:`~cdedb.frontend.common.check_validation`
+    but used for dataclass objects.
+    """
+    if name is not None:
+        ret, errs = validate.validate_check_dataclass(
+            type_, value, ignore_warnings=rs.ignore_warnings, argname=name, **kwargs)
+    else:
+        ret, errs = validate.validate_check_dataclass(
+            type_, value, ignore_warnings=rs.ignore_warnings, **kwargs)
+    rs.extend_validation_errors(errs)
+    return ret
 
 
 def check_validation(rs: RequestState, type_: Type[T], value: Any,

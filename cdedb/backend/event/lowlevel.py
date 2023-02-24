@@ -849,14 +849,14 @@ class EventLowLevelBackend(AbstractBackend):
             SELECT track_group_id, registration_id, COUNT(*)
             FROM (
                 -- Per reg_track gather ordered choices, eliminating duplicates.
-                SELECT DISTINCT rt.registration_id, tg.id AS track_group_id,
+                SELECT DISTINCT rt.registration_id, tg.id AS track_group_id, rt.course_instructor,
                     ARRAY_REMOVE(ARRAY_AGG(cc.course_id ORDER BY cc.rank ASC), NULL) AS choices
                 FROM event.registration_tracks AS rt
                     LEFT JOIN event.track_group_tracks AS tgt ON rt.track_id = tgt.track_id
                     LEFT JOIN event.track_groups AS tg ON tgt.track_group_id = tg.id
                     LEFT JOIN event.course_choices AS cc ON rt.track_id = cc.track_id AND rt.registration_id = cc.registration_id
                 WHERE tg.event_id = %s AND tg.constraint_type = %s
-                GROUP BY rt.registration_id, rt.track_id, tg.id
+                GROUP BY rt.registration_id, rt.track_id, rt.course_instructor, tg.id
             ) AS tmp
             GROUP BY registration_id, track_group_id
             -- Filter for non-unique combinations.
@@ -865,6 +865,69 @@ class EventLowLevelBackend(AbstractBackend):
         params = (event_id, const.CourseTrackGroupType.course_choice_sync)
         if self.query_all(rs, query, params):
             raise ValueError(n_("Incompatible course choices present."))
+
+    @access("event")
+    def may_create_ccs_group(self, rs: RequestState, track_ids: Collection[int]
+                             ) -> bool:
+        """Determine whether a CCS group with the given tracks may be created."""
+        track_ids = affirm_set(vtypes.ID, track_ids)
+
+        # Check that the given tracks are from the same event.
+        query = """
+            SELECT COUNT(DISTINCT ep.event_id)
+            FROM event.event_parts AS ep
+                LEFT JOIN event.course_tracks AS ct on ep.id = ct.part_id
+            WHERE ct.id = ANY(%s)
+            HAVING COUNT(DISTINCT ep.event_id) > 1
+        """
+        params = (track_ids,)
+        if self.query_all(rs, query, params):
+            return False
+
+        # Check that the given tracks have the same number of choices.
+        query = """
+            SELECT COUNT(*)
+            FROM (
+                SELECT DISTINCT num_choices, min_choices
+                FROM event.course_tracks
+                WHERE id = ANY(%s)
+            ) AS tmp
+            HAVING COUNT(*) > 1
+        """
+        params = (track_ids,)
+        if self.query_all(rs, query, params):
+            return False
+
+        # Check that the given tracks are not part of another CCS group.
+        query = """
+            SELECT tgt.track_id
+            FROM event.track_group_tracks AS tgt
+                LEFT JOIN event.track_groups AS tg on tg.id = tgt.track_group_id
+            WHERE tg.constraint_type = %s AND tgt.track_id = ANY(%s)
+        """
+        params = (const.CourseTrackGroupType.course_choice_sync, track_ids)
+        if self.query_all(rs, query, params):
+            return False
+
+        # Check that course choices and course instructors are compatible.
+        query = """
+            SELECT registration_id, COUNT(*)
+            FROM (
+                SELECT DISTINCT rt.registration_id, rt.course_instructor,
+                    ARRAY_REMOVE(ARRAY_AGG(cc.course_id ORDER BY cc.rank ASC), NULL) AS choices
+                FROM event.registration_tracks AS rt
+                    LEFT JOIN event.course_choices AS cc ON rt.track_id = cc.track_id AND rt.registration_id = cc.registration_id
+                WHERE rt.track_id = ANY(%s)
+                GROUP BY rt.registration_id, rt.course_instructor, rt.track_id
+            ) AS tmp
+            GROUP BY registration_id
+            HAVING COUNT(*) > 1
+        """
+        params = (track_ids,)
+        if self.query_all(rs, query, params):
+            return False
+
+        return True
 
     @access("event")
     def do_course_choices_exist(self, rs: RequestState, track_ids: Collection[int]

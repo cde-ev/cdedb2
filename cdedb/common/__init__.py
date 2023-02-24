@@ -123,6 +123,10 @@ class User:
         self.admin_views = self.available_admin_views & set(enabled_views)
 
 
+if TYPE_CHECKING:
+    from cdedb.frontend.common import AmbienceDict
+
+
 class RequestState(ConnectionContainer):
     """Container for request info. Besides this and db accesses the python
     code should be state-less. This data structure enables several
@@ -153,7 +157,7 @@ class RequestState(ConnectionContainer):
             gettext translation object.
         :param begin: time where we started to process the request
         """
-        self.ambience: Dict[str, CdEDBObject] = {}
+        self.ambience: "AmbienceDict" = {}  # type: ignore[typeddict-item]
         self.sessionkey = sessionkey
         self.apitoken = apitoken
         self.user = user

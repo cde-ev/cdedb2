@@ -27,20 +27,14 @@
             {% trans %}Status{% endtrans %}
         </dt>
         <dd id="status">
+            {{ util.make_icon(enums['GenesisStati'](ambience['genesis_case']['case_status']).get_icon()) }}
             {{ gettext(enums['GenesisStati'](ambience['genesis_case']['case_status'])|string) }}
         </dd>
         <dt title="{% trans %}Realm{% endtrans %}">
             {% trans %}Realm{% endtrans %}
         </dt>
         <dd id="realm">
-            {% with (icon, caption) = {
-                        'ml': ('envelope', gettext("Mailinglists")),
-                        'event': ('chalkboard-teacher', gettext("Events")),
-                        'cde': ('graduation-cap', gettext("Members")),
-                        'assembly': ('bullhorn', gettext("Assemblies"))
-                    }.get(ambience['genesis_case']['realm']) %}
-                {{ util.make_icon(icon) }} {{ caption }}
-            {% endwith %}
+            {{ util.realm_icon("is_" + ambience['genesis_case']['realm'] + "_realm", desc=True) }}
         </dd>
         <dt title="{% trans %}Creation Time{% endtrans %}">
             {% trans %}Creation Time{% endtrans %}
