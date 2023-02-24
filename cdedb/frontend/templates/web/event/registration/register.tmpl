@@ -209,6 +209,7 @@
 
         part_checkboxes = $form.find('[type="checkbox"][name="parts"]');
         field_checkboxes = $form.find('[type="checkbox"][id^="event-input-fields"]');
+        field_selects = $form.find('select[id^="event-input-fields"]');
         is_orga_checkbox = $('#fee-precompute-is-orga');
         is_member_checkbox = $('#fee-precompute-is-member');
 
@@ -245,6 +246,11 @@
             var field_ids = [];
             field_checkboxes.each(function() {
                 if ($(this).prop('checked')) {
+                    field_ids.push($(this).parents('[id^="questionnaire_field_entry"]').data('field_id'));
+                }
+            });
+            field_selects.each(function() {
+                if ($(this).val() == 'True') {
                     field_ids.push($(this).parents('[id^="questionnaire_field_entry"]').data('field_id'));
                 }
             });
@@ -297,6 +303,9 @@
         }
         if (field_checkboxes.length) {
             field_checkboxes.change(updateFeePreview);
+        }
+        if (field_selects.length) {
+            field_selects.change(updateFeePreview);
         }
         if (is_orga_checkbox) {
             is_orga_checkbox.change(updateFeePreview);
