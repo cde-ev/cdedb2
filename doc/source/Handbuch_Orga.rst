@@ -6,7 +6,7 @@ Orgas
    :hidden:
 
    Handbuch_Orga_Datenfelder
-   Handbuch_Orga_Teilnahmebeiträge
+   Handbuch_Orga_Teilnahmebeitraege
    Handbuch_Orga_Warteliste
    Handbuch_Orga_Mitnahmeversion
    Handbuch_Orga_Template-Renderer
