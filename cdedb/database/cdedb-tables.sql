@@ -475,7 +475,7 @@ CREATE TABLE cde.org_period (
         balance_state           integer REFERENCES core.personas(id),
         balance_done            timestamp WITH TIME ZONE DEFAULT NULL,
         balance_trialmembers    integer NOT NULL DEFAULT 0,
-        balance_exmembers       integer NOT NULL DEFAULT 0,
+        balance_exmembers       numeric(11, 2) NOT NULL DEFAULT 0,
         balance_total           numeric(11, 2) NOT NULL DEFAULT 0,
         -- keep track of automated archival progress and stats.
         archival_notification_state     integer REFERENCES core.personas(id),

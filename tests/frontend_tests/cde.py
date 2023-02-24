@@ -2000,7 +2000,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("1 Accounts archiviert.", div="2-1002")
         self.assertPresence("2 Probemitgliedschaften beendet", div="3-1003")
         self.assertPresence("16,00 € Guthaben abgebucht.", div="3-1003")
-        self.assertPresence("613,00 € Guthaben von Exmitgliedern", div="3-1003")
+        self.assertPresence("612,55 € Guthaben von Exmitgliedern", div="3-1003")
         self.assertPresence("Nächstes Semester", div="4-1004")
         self.assertPresence("44", div="4-1004")
 

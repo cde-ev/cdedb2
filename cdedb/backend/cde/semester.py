@@ -596,7 +596,7 @@ class CdESemesterBackend(CdELastschriftBackend):
             data = self.query_one(rs, query, (zero,))
             update = {
                 "id": period_id,
-                "balance_exmembers": decimal.Decimal(data["total"] if data else 0)
+                "balance_exmembers": data["total"] if data else decimal.Decimal(0)
             }
             self.set_period(rs, update)
             query = ("UPDATE core.personas SET balance = %s "
