@@ -1,5 +1,6 @@
 """Dataclass definitions of mailinglist realm."""
 
+import dataclasses
 import enum
 import itertools
 from dataclasses import dataclass, fields
@@ -85,7 +86,7 @@ class Mailinglist(CdEDataclass):
     domain: const.MailinglistDomain
     mod_policy: const.ModerationPolicy
     attachment_policy: const.AttachmentPolicy
-    ml_type: const.MailinglistTypes
+    ml_type: const.MailinglistTypes = dataclasses.field(init=False)
     is_active: bool
 
     moderators: Set[vtypes.ID]
@@ -110,6 +111,11 @@ class Mailinglist(CdEDataclass):
     # Additional fields for validation. See docstring for details.
     mandatory_validation_fields: ClassVar[vtypes.TypeMapping] = {}
     optional_validation_fields: ClassVar[vtypes.TypeMapping] = {}
+
+    def __post_init__(self) -> None:
+        if self.__class__ == Mailinglist:
+            raise TypeError("Cannot instantiate abstract class.")
+        self.ml_type = ML_TYPE_MAP_INV[self.__class__]
 
     @property
     def address(self) -> vtypes.Email:
@@ -136,11 +142,12 @@ class Mailinglist(CdEDataclass):
     @classmethod
     def database_fields(cls) -> List[str]:
         return [field.name for field in fields(cls)
-                if field.name not in {"moderators", "whitelist"}]
+                if field.name not in {"moderators", "whitelist"}] + ["ml_type"]
 
     @classmethod
     def validation_fields(cls, *, creation: bool) -> Tuple[TypeMapping, TypeMapping]:
         mandatory, optional = super().validation_fields(creation=creation)
+        mandatory["ml_type"] = const.MailinglistTypes
         # make whitelist optional during Mailinglist creation
         if "whitelist" in mandatory:
             optional["whitelist"] = mandatory["whitelist"]
@@ -179,7 +186,7 @@ class Mailinglist(CdEDataclass):
         return (bool((cls.viewer_roles | {"ml_admin"}) & rs.user.roles)
                 or cls.is_relevant_admin(rs.user))
 
-    def is_restricted_moderator(self, rs: RequestState, bc: BackendContainer) -> bool:
+    def is_restricted_moderator(self, rs: RequestState, bc: BackendContainer) -> bool:  # pylint: disable=no-self-use
         """Check if the user is a restricted moderator.
 
         Everyone with ml realm may be moderator of any mailinglist. But for some
@@ -216,7 +223,7 @@ class Mailinglist(CdEDataclass):
     if TYPE_CHECKING:
         # pylint: disable=unsubscriptable-object
         role_map: ClassVar[OrderedDict[str, SubscriptionPolicy]]
-    role_map: ClassVar = OrderedDict()  #  type: ignore[no-redef]
+    role_map: ClassVar = OrderedDict()  # type: ignore[no-redef]
 
     @classmethod
     def moderator_admin_views(cls) -> Set[str]:
@@ -292,19 +299,18 @@ class Mailinglist(CdEDataclass):
                 ret[persona_id] = SubscriptionPolicy.none
         return ret
 
-    def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer
+    def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer  # pylint: disable=no-self-use
                                  ) -> Set[int]:
         """Retrieve a set of personas, which should be subscribers."""
         return set()
 
-    def periodic_cleanup(self, rs: RequestState) -> bool:
+    def periodic_cleanup(self, rs: RequestState) -> bool:  # pylint: disable=no-self-use
         """Whether or not to do periodic subscription cleanup on this list."""
         return True
 
 
 class GeneralMailinglist(Mailinglist):
     """Shall gain a __post_init__ to set ml_type automatically."""
-    pass
 
 
 class AllUsersImplicitMeta(GeneralMailinglist):
@@ -743,6 +749,8 @@ ML_TYPE_MAP: Mapping[MailinglistTypes, Type[Mailinglist]] = {
     MailinglistTypes.public_member_implicit: PublicMemberImplicitMailinglist,
     MailinglistTypes.cdelokal: CdeLokalMailinglist,
 }
+
+ML_TYPE_MAP_INV = {v: k for k, v in ML_TYPE_MAP.items()}
 
 ADDITIONAL_TYPE_FIELDS = dict(itertools.chain.from_iterable(
     atype.get_additional_fields().items()

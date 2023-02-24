@@ -187,17 +187,46 @@ DATACLASS_TO_VALIDATORS: Mapping[Type[Any], Type[Any]] = {
 }
 
 
-def validate_assert_dataclass(type_: Type[T], value: Any, ignore_warnings: bool,
-                              **kwargs: Any) -> T:
-    if type_ not in DATACLASS_TO_VALIDATORS:
+def _validate_dataclass_preprocess(type_: Type[T], value: Any
+                                   ) -> Tuple[Type[T], Type[T]]:
+    # Keep subclassing intact if possible.
+    subtype = type_
+    if isinstance(value, type_):
+        subtype = type(value)
+
+    # Figure out the closest validator on the class hierarchy.
+    if not any(issubclass(type_, dclass) for dclass in DATACLASS_TO_VALIDATORS):
         raise RuntimeError("There is no validator mapped to this dataclass.")
     if not dataclasses.is_dataclass(value):
         raise RuntimeError("Given value is not an instance of a dataclass.")
-    validator = DATACLASS_TO_VALIDATORS[type_]
+    for supertype in type_.mro():
+        if supertype in DATACLASS_TO_VALIDATORS:
+            validator = DATACLASS_TO_VALIDATORS[supertype]
+            break
+    else:
+        raise RuntimeError(n_("Impossible."))
+
+    return subtype, validator
+
+
+def _validate_dataclass_postprocess(subtype: Type[T], validated: T) -> T:
+    dataclass_keys = {field.name for field in dataclasses.fields(subtype)
+                      if field.init}
+    validated = {k: v for k, v in validated.items() if k in dataclass_keys}  # type: ignore[attr-defined]
+    return subtype(**validated)
+
+
+def validate_assert_dataclass(type_: Type[T], value: Any, ignore_warnings: bool,
+                              **kwargs: Any) -> T:
+    """Wrapper of validate_assert that accepts dataclasses.
+
+    Allows for subclasses, and figures out the appropriate superclass, for which
+    a validator exists, dynamically."""
+    subtype, validator = _validate_dataclass_preprocess(type_, value)
     val = dataclasses.asdict(value)
     validated = validate_assert(
         validator, val, ignore_warnings=ignore_warnings, **kwargs)
-    return type_(**validated)
+    return _validate_dataclass_postprocess(subtype, validated)
 
 
 def validate_assert(type_: Type[T], value: Any, ignore_warnings: bool,
@@ -233,18 +262,18 @@ def validate_assert_optional(type_: Type[T], value: Any, ignore_warnings: bool,
 
 def validate_check_dataclass(type_: Type[T], value: Any, ignore_warnings: bool,
                               **kwargs: Any) -> Tuple[Optional[T], List[Error]]:
-    if type_ not in DATACLASS_TO_VALIDATORS:
-        raise RuntimeError("There is no validator mapped to this dataclass.")
-    if not dataclasses.is_dataclass(value):
-        raise RuntimeError("Given value is not an instance of a dataclass.")
-    validator = DATACLASS_TO_VALIDATORS[type_]
+    """Wrapper of validate_assert that accepts dataclasses.
+
+    Allows for subclasses, and figures out the appropriate superclass, for which
+    a validator exists, dynamically."""
+    subtype, validator = _validate_dataclass_preprocess(type_, value)
     val = dataclasses.asdict(value)
     validated, errors = validate_check(
         validator, val, ignore_warnings=ignore_warnings, **kwargs)
     if validated is None:
         return None, errors
     else:
-        return type_(**validated), errors
+        return _validate_dataclass_postprocess(subtype, validated), errors
 
 
 def validate_check(type_: Type[T], value: Any, ignore_warnings: bool,

@@ -29,8 +29,8 @@ from cdedb.common.validation import PERSONA_FULL_CREATION, filter_none
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access,
-    cdedbid_filter as cdedbid, check_dataclass, check_validation as check, csv_output,
-    mailinglist_guard, periodic,
+    cdedbid_filter as cdedbid, check_validation as check, csv_output, mailinglist_guard,
+    periodic,
 )
 from cdedb.models.ml import (
     ADDITIONAL_TYPE_FIELDS, ML_TYPE_MAP, Mailinglist, MailinglistGroup, get_ml_type,
@@ -252,10 +252,12 @@ class MlBaseFrontend(AbstractUserFrontend):
         data["moderators"] = moderators
         data["whitelist"] = []
         data['ml_type'] = ml_type
-        ml = Mailinglist(**data)
-        ml = check_dataclass(rs, Mailinglist, ml, creation=True)
+        data = check(rs, vtypes.Mailinglist, data, creation=True)
         if rs.has_validation_errors():
             return self.create_mailinglist_form(rs, ml_type=ml_type)
+        assert data is not None
+        ml_type = data.pop('ml_type')
+        ml = get_ml_type(ml_type)(**data)
         if not self.coreproxy.verify_ids(rs, moderators, is_archived=False):
             rs.append_validation_error(
                 ("moderators", ValueError(n_(

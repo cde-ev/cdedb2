@@ -838,7 +838,7 @@ class EventEventMixin(EventBaseFrontend):
             descr = ("Bitte wende Dich bei Fragen oder Problemen, die mit"
                      " unserer Veranstaltung zusammenhängen, über diese Liste"
                      " an uns.")
-            orga_ml_data = Mailinglist(
+            orga_ml_data = EventOrgaMailinglist(
                 id=vtypes.CreationID(vtypes.ProtoID(-1)),
                 title=f"{event['title']} Orgateam",
                 local_part=vtypes.EmailLocalPart(event['shortname'].lower()),
@@ -855,7 +855,6 @@ class EventEventMixin(EventBaseFrontend):
                 notes=None,
                 moderators=event['orgas'],
                 whitelist=set(),
-                ml_type=const.MailinglistTypes.event_orga,
             )
             return orga_ml_data
         else:
@@ -865,7 +864,7 @@ class EventEventMixin(EventBaseFrontend):
                      f"*Teilnehmer* erhälst. Auf dieser Liste stehen alle "
                      f"Teilnehmer unserer Veranstaltung; sie kann im Vorfeld "
                      f"zum Austausch untereinander genutzt werden.")
-            participant_ml_data = Mailinglist(
+            participant_ml_data = EventAssociatedMailinglist(
                 id=vtypes.CreationID(vtypes.ProtoID(-1)),
                 title=f"{event['title']} Teilnehmer",
                 local_part=vtypes.EmailLocalPart(f"{event['shortname'].lower()}-all"),
@@ -882,7 +881,6 @@ class EventEventMixin(EventBaseFrontend):
                 notes=None,
                 moderators=event['orgas'],
                 whitelist=set(),
-                ml_type=const.MailinglistTypes.event_associated,
             )
             return participant_ml_data
 

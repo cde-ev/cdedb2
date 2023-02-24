@@ -15,6 +15,7 @@ from cdedb.common import (
 from cdedb.common.roles import extract_roles
 from cdedb.common.sorting import mixed_existence_sorter, xsorted
 from cdedb.enums import ALL_ENUMS
+from cdedb.models.ml import ML_TYPE_MAP, ML_TYPE_MAP_INV
 from tests.common import BasicTest
 
 
@@ -243,3 +244,6 @@ class TestCommon(BasicTest):
                 self.assertEqual(enum_.__name__, enum_name)
                 self.assertEqual(member.name, member_name)
                 self.assertEqual(member, enum_[member_name])
+
+    def test_ml_type_uniqueness(self) -> None:
+        self.assertEqual(len(ML_TYPE_MAP), len(ML_TYPE_MAP_INV))

@@ -298,7 +298,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         if presider:
             descr = ("Bitte wende Dich bei Fragen oder Problemen, die mit dieser"
                      " Versammlung zusammenhängen, über diese Liste an uns.")
-            presider_ml_data = Mailinglist(
+            presider_ml_data = AssemblyPresiderMailinglist(
                 id=vtypes.CreationID(vtypes.ProtoID(-1)),
                 title=f"{assembly['title']} Versammlungsleitung",
                 local_part=vtypes.EmailLocalPart(
@@ -316,7 +316,6 @@ class AssemblyFrontend(AbstractUserFrontend):
                 notes=None,
                 moderators=assembly['presiders'],
                 whitelist=set(),
-                ml_type=const.MailinglistTypes.assembly_presider,
             )
             return presider_ml_data
         else:
@@ -324,7 +323,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                             {'assembly_id': assembly["id"]})
             descr = (f"Dieser Liste kannst Du nur beitreten, indem Du Dich direkt zu"
                      f" der [Versammlung anmeldest]({link}).")
-            attendee_ml_data = Mailinglist(
+            attendee_ml_data = AssemblyAssociatedMailinglist(
                 id=vtypes.CreationID(vtypes.ProtoID(-1)),
                 title=assembly["title"],
                 local_part=vtypes.EmailLocalPart(assembly['shortname'].lower()),
@@ -341,7 +340,6 @@ class AssemblyFrontend(AbstractUserFrontend):
                 notes=None,
                 moderators=assembly['presiders'],
                 whitelist=set(),
-                ml_type=const.MailinglistTypes.assembly_associated,
             )
             return attendee_ml_data
 
