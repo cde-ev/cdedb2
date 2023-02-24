@@ -247,7 +247,7 @@ class TestCdEFrontend(FrontendTest):
 
         # Test Finance Admin View
         self.traverse({'href': '/cde/search/user'})
-        self.assertNoLink('/cde/semester/show')
+        self.traverse({'href': '/cde/semester/show'})
         self.assertNoLink('/cde/lastschrift/')
         self.realm_admin_view_profile('berta', 'cde')
         self.assertNoLink('/lastschrift')
