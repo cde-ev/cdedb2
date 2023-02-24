@@ -4208,7 +4208,21 @@
             "event_id": 1,
             "title": "Externenzusatzbeitrag",
             "amount": "5.00",
-            "condition": "not (is_member or field.is_child)",
+            "condition": "any_part and not (is_member or field.is_child)",
+            "notes": null
+        },
+        {
+            "event_id": 1,
+            "title": "Mengenrabatt",
+            "amount": "-0.01",
+            "condition": "all_parts",
+            "notes": null
+        },
+        {
+            "event_id": 1,
+            "title": "Orgarabatt",
+            "amount": "-50.00",
+            "condition": "(part.1.H. and part.2.H.) and is_orga",
             "notes": null
         },
         {
@@ -4222,7 +4236,7 @@
             "event_id": 2,
             "title": "Externenzusatzbeitrag",
             "amount": "2.00",
-            "condition": "not is_member",
+            "condition": "any_part and not is_member",
             "notes": null
         },
         {
@@ -5372,7 +5386,7 @@
             "orga_notes": null,
             "payment": "2014-03-03",
             "amount_paid": "0.00",
-            "amount_owed": "584.49",
+            "amount_owed": "534.48",
             "parental_agreement": true,
             "mixed_lodging": true,
             "checkin": null,
@@ -5414,7 +5428,7 @@
             "orga_notes": null,
             "payment": null,
             "amount_paid": "0.00",
-            "amount_owed": "584.49",
+            "amount_owed": "584.48",
             "parental_agreement": true,
             "mixed_lodging": false,
             "checkin": null,

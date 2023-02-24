@@ -898,7 +898,7 @@ class EventEventMixin(EventBaseFrontend):
                     'title': "Externenzusatzbeitrag",
                     'notes': "Automatisch erstellt",
                     'amount': nonmember_surcharge,
-                    'condition': "not is_member",
+                    'condition': "any_part and not is_member",
                 }
             },
         })

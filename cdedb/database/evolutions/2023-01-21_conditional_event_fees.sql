@@ -23,7 +23,7 @@ BEGIN;
     DROP TABLE event.fee_modifiers;
 
     INSERT INTO event.event_fees(event_id, title, amount, condition)
-    SELECT id, 'Externenzusatzbeitrag' AS title, nonmember_surcharge, 'not is_member' FROM event.events WHERE nonmember_surcharge != 0;
+    SELECT id, 'Externenzusatzbeitrag' AS title, nonmember_surcharge, 'any_part and not is_member' FROM event.events WHERE nonmember_surcharge != 0;
 
     ALTER TABLE event.events DROP COLUMN nonmember_surcharge;
 COMMIT;

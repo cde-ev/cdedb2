@@ -131,7 +131,7 @@ class TestEventBackend(BackendTest):
                     "title": "Externenzusatzbeitrag",
                     "notes": None,
                     "amount": decimal.Decimal("6.66"),
-                    "condition": "not is_member",
+                    "condition": "any_part and not is_member",
                 }
             },
             'fields': {
@@ -1149,7 +1149,7 @@ class TestEventBackend(BackendTest):
             self.assertLess(0, new_id)
             new_reg['id'] = new_id
             # amount_owed include non-member additional fee
-            new_reg['amount_owed'] = decimal.Decimal("589.49")
+            new_reg['amount_owed'] = decimal.Decimal("589.48")
             new_reg['fields'] = {}
             new_reg['parts'][1]['part_id'] = 1
             new_reg['parts'][1]['registration_id'] = new_id
@@ -1445,7 +1445,7 @@ class TestEventBackend(BackendTest):
         new_id = self.event.create_registration(self.key, new_reg)
         self.assertLess(0, new_id)
         new_reg['id'] = new_id
-        new_reg['amount_owed'] = decimal.Decimal("584.49")
+        new_reg['amount_owed'] = decimal.Decimal("584.48")
         new_reg['fields'] = {}
         new_reg['parts'][1]['part_id'] = 1
         new_reg['parts'][1]['registration_id'] = new_id
@@ -2652,6 +2652,8 @@ class TestEventBackend(BackendTest):
             'amount_paid': decimal.Decimal("42.00"),
             'amount_owed': decimal.Decimal("666.66"),
         }
+        stored_data['event.registrations'][3]['amount_owed'] += decimal.Decimal("0.01")
+        stored_data['event.registrations'][5]['amount_owed'] += decimal.Decimal("0.01")
         stored_data['event.registration_parts'].update({
             1001: {
                 'id': 1001,
@@ -3291,9 +3293,9 @@ class TestEventBackend(BackendTest):
             expectation = {
                 1: decimal.Decimal("573.99"),
                 2: decimal.Decimal("466.49"),
-                3: decimal.Decimal("584.49"),
+                3: decimal.Decimal("534.48"),
                 4: decimal.Decimal("431.99"),
-                5: decimal.Decimal("584.49"),
+                5: decimal.Decimal("584.48"),
                 6: decimal.Decimal("10.50"),
             }
             self.assertEqual(expectation, self.event.calculate_fees(self.key, reg_ids))

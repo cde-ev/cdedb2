@@ -19,7 +19,8 @@ def create_parser() -> pp.ParserElement:
         .set_results_name("part")
     operator_true = pp.Group(pp.CaselessKeyword("true").suppress()).setResultsName("true")
     operator_false = pp.Group(pp.CaselessKeyword("false").suppress()).setResultsName("false")
-    operator_other_bool = pp.Group(pp.CaselessKeyword("is_orga") | pp.CaselessKeyword("is_member"))\
+    operator_other_bool = pp.Group(pp.CaselessKeyword("is_orga") | pp.CaselessKeyword("is_member")
+                                   | pp.CaselessKeyword("any_part") | pp.CaselessKeyword("all_parts"))\
         .setResultsName("bool")
 
     operator_bool_atom = (operator_field | operator_part | operator_true | operator_false | operator_other_bool)\

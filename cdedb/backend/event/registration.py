@@ -1166,6 +1166,8 @@ class EventRegistrationBackend(EventBaseBackend):
                 'is_orga':
                     reg['persona_id'] in event['orgas'] if is_orga is None else is_orga,
                 'is_member': tmp_is_member,
+                'any_part': any(reg_part_involvement.values()),
+                'all_parts': all(reg_part_involvement.values()),
             }
             amount = decimal.Decimal(0)
             active_fees = set()
