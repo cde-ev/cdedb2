@@ -1497,6 +1497,7 @@ AmbienceDict = typing.TypedDict(
         'lodgement': CdEDBObject,
         'part_group': CdEDBObject,
         'track_group': CdEDBObject,
+        'fee': CdEDBObject,
         'attachment': CdEDBObject,
         'assembly': CdEDBObject,
         'ballot': CdEDBObject,
