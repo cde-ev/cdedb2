@@ -11220,6 +11220,10 @@ msgstr "Zeige nur stattfindende Kurse"
 msgid "Show only courses in tracks:"
 msgstr "Zeige nur Kurse in den Kursschienen:"
 
+#: cdedb/frontend/templates/web/event/course/course_list.tmpl:66
+msgid "No matching courses found."
+msgstr "Keine passenden Kurse gefunden."
+
 #: cdedb/frontend/templates/web/event/course/course_list.tmpl:69
 msgid "Table of Contents"
 msgstr "Inhaltsverzeichnis"
