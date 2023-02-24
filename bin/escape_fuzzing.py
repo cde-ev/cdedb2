@@ -68,7 +68,7 @@ def work(
     posted_urls.update({
         '/core/logout', '/core/logout/all', '/core/locale',
         '/event/event/1/lock', '/event/event/2/lock', '/event/event/3/lock',
-        '/event/event/2/fee/8/delete', '/event/event/2/fee/9/delete',
+        '/event/event/2/fee/10/delete', '/event/event/2/fee/11/delete',
     })
     visited_urls.clear()
 
