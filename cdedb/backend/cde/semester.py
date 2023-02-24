@@ -31,7 +31,7 @@ from cdedb.filter import money_filter
 
 
 class CdESemesterBackend(CdELastschriftBackend):
-    @access("finance_admin")
+    @access("cde_admin", "finance_admin")
     def finance_statistics(self, rs: RequestState) -> CdEDBObject:
         """Compute some financial statistics.
 
@@ -61,7 +61,7 @@ class CdESemesterBackend(CdELastschriftBackend):
                 rs, query, (self.conf["MEMBERSHIP_FEE"],)))
         return ret
 
-    @access("finance_admin")
+    @access("cde_admin", "finance_admin")
     def get_period_history(self, rs: RequestState) -> CdEDBObjectMap:
         """Get the history of all org periods."""
         query = f"SELECT {', '.join(ORG_PERIOD_FIELDS)} FROM cde.org_period"
@@ -90,7 +90,7 @@ class CdESemesterBackend(CdELastschriftBackend):
                 raise RuntimeError(n_("Only able to modify current period."))
             return self.sql_update(rs, "cde.org_period", period)
 
-    @access("finance_admin")
+    @access("cde_admin", "finance_admin")
     def may_advance_semester(self, rs: RequestState) -> bool:
         """Helper to determine if now is the right time to advance the semester.
 
@@ -122,7 +122,7 @@ class CdESemesterBackend(CdELastschriftBackend):
                          persona_id=None, change_note=str(ret))
         return ret
 
-    @access("finance_admin")
+    @access("cde_admin", "finance_admin")
     def may_start_semester_bill(self, rs: RequestState) -> bool:
         """Helper to determine if now is the right time to start/resume billing.
 
@@ -181,7 +181,7 @@ class CdESemesterBackend(CdELastschriftBackend):
                 persona_id=None, change_note=msg)
         return ret
 
-    @access("finance_admin")
+    @access("cde_admin", "finance_admin")
     def may_start_semester_ejection(self, rs: RequestState) -> bool:
         """Helper to determine if now is the right time to start/resume ejection.
 
@@ -241,7 +241,7 @@ class CdESemesterBackend(CdELastschriftBackend):
                 change_note=msg)
         return ret
 
-    @access("finance_admin")
+    @access("cde_admin", "finance_admin")
     def may_start_semester_balance_update(self, rs: RequestState) -> bool:
         """Helper to determine if now is the right time to start/resume balance update.
 
@@ -276,7 +276,7 @@ class CdESemesterBackend(CdELastschriftBackend):
                 change_note=msg)
         return ret
 
-    @access("finance_admin")
+    @access("cde_admin", "finance_admin")
     def get_expuls_history(self, rs: RequestState) -> CdEDBObjectMap:
         """Get the history of all expuls semesters."""
         q = f"SELECT {', '.join(EXPULS_PERIOD_FIELDS)} FROM cde.expuls_period"

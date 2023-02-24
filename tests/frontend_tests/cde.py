@@ -145,11 +145,11 @@ class TestCdEFrontend(FrontendTest):
         member = {"Verschiedenes", "Datenschutzerklärung"}
         searchable = {"CdE-Mitglied suchen"}
         cde_admin_or_member = {"Mitglieder-Statistik"}
-        cde_admin = {"Nutzer verwalten", "Alle Nutzer verwalten",
+        cde_admin = {"Nutzer verwalten", "Alle Nutzer verwalten", "Semesterverwaltung",
                      "Organisationen verwalten"}
         cde_admin_or_auditor = {"Finanz-Log", "CdE-Log", "Verg.-Veranstaltungen-Log"}
         finance_admin = {"Einzugsermächtigungen", "Kontoauszug parsen",
-                         "Überweisungen eintragen", "Semesterverwaltung"}
+                         "Überweisungen eintragen"}
 
         # non-members
         if self.user_in('annika', 'werner', 'martin'):

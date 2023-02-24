@@ -24,7 +24,7 @@ from cdedb.frontend.common import (
 
 
 class CdESemesterMixin(CdEBaseFrontend):
-    @access("finance_admin")
+    @access("cde_admin", "finance_admin")
     def show_semester(self, rs: RequestState) -> Response:
         """Show information."""
         period_id = self.cdeproxy.current_period(rs)
