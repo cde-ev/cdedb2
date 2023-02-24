@@ -590,9 +590,8 @@ class CdESemesterBackend(CdELastschriftBackend):
             zero = decimal.Decimal("0.00")
             query = ("SELECT COALESCE(SUM(balance), 0) as total,"
                      " COUNT(*) as count FROM core.personas "
-                     " WHERE is_member = False AND balance > %s")
-            # TODO where is the correct place to note this? CdE Log and the semester
-            #  table?
+                     " WHERE is_member = False AND balance > %s"
+                     " AND is_cde_realm = True AND is_archived = False")
             data = self.query_one(rs, query, (zero,))
             update = {
                 "id": period_id,
