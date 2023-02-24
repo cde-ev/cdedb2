@@ -31,7 +31,8 @@ from cdedb.frontend.event.query_stats import (
     StatisticMixin, StatisticPartMixin, StatisticTrackMixin, get_id_constraint,
 )
 from tests.common import (
-    USER_DICT, FrontendTest, UserObject, as_users, event_keeper, prepsql, storage,
+    USER_DICT, FrontendTest, UserObject, as_users, event_keeper, execsql, prepsql,
+    storage,
 )
 
 
@@ -468,6 +469,15 @@ class TestEventFrontend(FrontendTest):
                 self.response.forms['coursefilterform']['active_only'].checked)
             self.assertNonPresence("β. Lustigsein für Fortgeschrittene")
             self.assertPresence("γ. Kurzer Kurs")
+            # check handling if no courses match the search
+            execsql("UPDATE event.course_segments"
+                    " SET is_active = False WHERE track_id = 1")
+            f = self.response.forms['coursefilterform']
+            f['active_only'].checked = True
+            f['track_ids'] = [1]
+            self.submit(f)
+            self.assertPresence("Filter")
+            self.assertPresence("Keine passenden Kurse gefunden.")
         else:
             # check that taking place filter not accessible for non-privileged users
             self.assertNonPresence("Zeige nur stattfindende Kurse")
