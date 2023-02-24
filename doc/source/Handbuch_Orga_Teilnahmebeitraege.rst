@@ -29,8 +29,10 @@ Folgende Tokens stehen zur Verfügung, die in den Formeln verknüpft werden kön
 
 * ``True``: immer wahr
 * ``False``: immer falsch
-* ``part.<Kurzname>``: Ist der Status für den Teil "Offen", "Teilnehmer" oder "Warteliste"?
 * ``field.<Kurzname>``: Ist der Wert des entsprechenden Feldes wahr oder falsch?
+* ``part.<Kurzname>``: Ist der Status für den Teil "Offen", "Teilnehmer" oder "Warteliste"?
+* ``any_part``: Gilt ein entsprechender Status für mindestens einen Teil der Veranstaltung?
+* ``all_parts``: Gilt ein entsprechender Status für alle Teile der Veranstaltung?
 * ``is_member``: Ist die Person derzeit CdE-Mitglied?
 * ``is_orga``: Ist die Person derzeit Orga der Veranstaltung?
 
@@ -53,9 +55,9 @@ Es gibt eine Akademie mit einem einzigen Teil, wo die Teilnahme 90 Euro kosten
 soll. Nichtmitglieder müssen 8 Euro mehr zahlen, zudem kann ein
 Solidarzusatzbeitrag von 9 Euro bezahlt werden. Orgas sollen nichts zahlen.
 
-* ``part.aka and NOT is_orga`` => 90 Euro
-* ``NOT is_member`` => 8 Euro
-* ``field.solidarity`` => 9 Euro
+* ``part.aka AND NOT is_orga`` => 90 Euro
+* ``any_part AND NOT is_member`` => 8 Euro
+* ``part.aka AND field.solidarity`` => 9 Euro
 
 die entsprechenden :doc:`Handbuch_Orga_Datenfelder` vom Typ ``Anmeldungsfeld`` müssen zuvor angelegt werden:
 
@@ -76,20 +78,26 @@ geht unter "Anmeldung konfigurieren":
 Beispiel 2
 ----------
 
-Es gibt eine SommerAkademie mit drei Teilen. Die Teilnahme am mittleren Teil kostet 230 Euro,
-während die beiden anderen Teile 215 Euro kosten.
+Es gibt eine SommerAkademie mit drei Teilen. Die Teilnahme am mittleren Teil
+ostet 230 Euro, während die beiden anderen Teile 215 Euro kosten.
 
 * ``part.A1 OR part.A2 OR part.A3`` => 215 Euro
 * ``part.A2`` => 15 Euro
 
-Sie sollen angeben können, dass sie nur zu einem der Teile oder zu nur zwei Teilen,
-für die sie sich angemeldet haben, kommen.
+Darüber hinaus wird für die Erstellung einer Anmeldung eine Bearbeitungsgebühr
+in Höhe von 5 Euro erhoben.
+
+* ``True`` => 5 Euro
+
+Die Teilnehmenden sollen angeben können, dass sie nur zu einem der Teile oder
+nicht zu allen Teilen, für die sie sich angemeldet haben, kommen.
 
 * ``((part.A1 AND part.A2) OR (part.A2 AND part.A3) OR (part.A3 AND part.A1)) AND NOT field.one_part`` => 215 Euro
 * ``part.A1 AND part.A2 AND part.A3 AND NOT field.not_all_parts``  => 215 Euro
 
-Hier ist anzumerken, dass diese Formeln fehlertolerant sind: Sie werten auch dann
-richtig aus, wenn die Person sowieso nur für die entsprehende Zahl an Teilen angemeldet ist.
+Hier ist anzumerken, dass diese Formeln fehlertolerant sind: Sie werten auch
+dann richtig aus, wenn die Person sowieso nur für die entsprechende Zahl an
+Teilen angemeldet ist.
 
 Kinder unter 13 Jahren kosten beim Feriendorf weniger, daher müssen sie
 15 Euro weniger bezahlen.
@@ -99,21 +107,24 @@ Kinder unter 13 Jahren kosten beim Feriendorf weniger, daher müssen sie
   ``AND NOT field.one_part AND field.is_child`` => -15 Euro
 * ``part.A1 AND part.A2 AND part.A3 AND NOT field.not_all_parts AND field.is_child`` => -15 Euro
 
-Finanziell besser situierte Teilnehmende sollen die
-Möglichkeit bekommen, mit einem "Solidarzusatzbeitrag" in Höhe von 9 Euro pro Teil den
-Verein und zukünftige Veranstaltungen zu unterstützen.
+Finanziell besser situierte Teilnehmende sollen die Möglichkeit bekommen,
+mit einem "Solidarzusatzbeitrag" in Höhe von 9 Euro pro Teil den Verein und
+zukünftige Veranstaltungen zu unterstützen.
 
 * ``part.A1 AND field.solidarity`` => 9 Euro
 * ``part.A2 AND field.solidarity`` => 9 Euro
 * ``part.A3 AND field.solidarity`` => 9 Euro
 
-Nicht-Mitglieder müssen einen Zusatzbeitrag in Höhe des Mitgliedsbeitrags errichten, wenn sie teilnehmen möchten.
+Nicht-Mitglieder müssen einen Zusatzbeitrag in Höhe des Mitgliedsbeitrags
+errichten, wenn sie teilnehmen möchten.
 Wer eine Doku möchte, muss 10 Euro extra zahlen.
 
-* ``NOT is_member`` => 8 Euro
-* ``field.doku`` => 10 Euro
+* ``any_part AND NOT is_member`` => 8 Euro
+* ``any_part field.doku`` => 10 Euro
 
-Die entsprechenden :doc:`Handbuch_Orga_Datenfelder` vom Typ ``Anmeldungsfeld`` müssen zuvor angelegt werden:
+
+Die entsprechenden :doc:`Handbuch_Orga_Datenfelder` vom Typ ``Anmeldungsfeld``
+müssen zuvor angelegt werden:
 
 1. * Feldname: "one_part"
    * Datentyp: "Ja/Nein"
