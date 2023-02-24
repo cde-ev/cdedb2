@@ -24,7 +24,7 @@ from cdedb.frontend.common import (
 
 
 class CdESemesterMixin(CdEBaseFrontend):
-    @access("cde_admin", "finance_admin")
+    @access("cde_admin")
     def show_semester(self, rs: RequestState) -> Response:
         """Show information."""
         period_id = self.cdeproxy.current_period(rs)
@@ -62,7 +62,7 @@ class CdESemesterMixin(CdEBaseFrontend):
 
         It may happen that the Worker sending the mails crashs. Then, calling this
         function will start a new worker, but take the latest state of the old worker
-        into account, so no mails will be sent twice.
+        into account, so mails will not be sent twice.
         """
         if rs.has_validation_errors():
             return self.redirect(rs, "cde/show_semester")
