@@ -1531,6 +1531,11 @@ class CoreBaseBackend(AbstractBackend):
             #
             self.sql_delete(rs, "core.log", (persona_id,), "persona_id")
             # finance log stays untouched to keep balance correct
+            # therefore, we log if the persona had any remaining balance
+            if persona["balance"]:
+                log_code = const.FinanceLogCodes.remove_balance_on_archival
+                self.finance_log(rs, log_code, persona_id, delta=-persona['balance'],
+                                 new_balance=decimal.Decimal("0"))
             self.sql_delete(rs, "cde.log", (persona_id,), "persona_id")
             # past event log stays untouched since we keep past events
             # event log stays untouched since events have a separate life cycle

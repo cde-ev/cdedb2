@@ -1004,6 +1004,7 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(expectation, self.core.get_total_persona(self.key, 2))
 
     @as_users("paul", "quintus")
+    @prepsql("UPDATE core.personas SET balance = 5 WHERE id = 3")
     def test_archive(self) -> None:
         persona_id = 3
         data = self.core.get_total_persona(self.key, persona_id)
@@ -1015,6 +1016,20 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(True, data['is_cde_realm'])
         data = self.core.get_total_persona(self.key, persona_id)
         self.assertEqual(True, data['is_archived'])
+        # The user may have balance if he lost his membership in the ongoing semester
+        #  Ensure that the removal of the balance is logged correctly
+        log = [{
+            "code": const.FinanceLogCodes.remove_balance_on_archival,
+            "submitted_by": self.user['id'],
+            "persona_id": persona_id,
+            "delta": "-5.00",
+            "new_balance": "0.00",
+            "members": 7,
+            "total": "113.76",
+            "transaction_date": None,
+        }]
+        self.assertLogEqual(log, log_retriever=self.cde.retrieve_finance_log,
+                            codes=[const.FinanceLogCodes.remove_balance_on_archival])
         ret = self.core.dearchive_persona(self.key, persona_id,
                                           new_username="charly@example.cde")
         self.assertLess(0, ret)
