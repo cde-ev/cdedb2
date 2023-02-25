@@ -1,5 +1,6 @@
 {% set sidenav_active='assembly_ballots' %}
 {% extends "web/assembly/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
 {% block title %}
     {% trans title=ambience['assembly']['title'] %}
         Ballots ({{ title }})
@@ -25,7 +26,7 @@
                                            (gettext("Current Ballots"), grouped_ballots.running, True),
                                            (gettext("Concluded Ballots"), grouped_ballots.concluded, False))
                                        if sample %}
-        <h3>{{ heading }}</h3>
+        {{ util.heading(heading) }}
         <ul class="flex-width">
             {% for ballot_id, ballot in sample|keydictsort(EntitySorter.ballot) %}
                 <li class="hide-hover-container clearfix-after">

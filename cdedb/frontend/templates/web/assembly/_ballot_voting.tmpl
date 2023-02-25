@@ -2,7 +2,7 @@
 
 {# Classical voting: Presentation of candidates #}
 {% macro show_classical_candidates() -%}
-    <h3>{% trans %}Candidates{% endtrans %}</h3>
+    {{ util.heading(n_("Candidates")) }}
     <ul id="classical-candidates">
         {% for candidate_id, candidate in ambience['ballot']['candidates']|keydictsort(EntitySorter.candidates) %}
             <li>
@@ -16,7 +16,7 @@
 
 {# Classical voting: Voting form #}
 {% macro show_classical_voting() -%}
-    <h3>{% trans %}Ballot{% endtrans %}</h3>
+    {{ util.heading(n_("Ballot")) }}
     <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="voteform" class="form-horizontal">
         {{ util.anti_csrf_token('assembly/vote') }}
         {{ util.form_input_checkboxes("vote", label=gettext("Candidates"),
@@ -61,7 +61,7 @@
 
 {# Preferential voting: Presentation of candidates #}
 {% macro show_preferential_candidates() -%}
-    <h3>{% trans %}Candidates{% endtrans %}</h3>
+    {{ util.heading(n_("Candidates")) }}
     <ul id="preferential-candidates">
         {% for candidate_id, candidate in ambience['ballot']['candidates']|keydictsort(EntitySorter.candidates) %}
             <li>
@@ -220,7 +220,7 @@
 
 {# Preferential voting: Voting form #}
 {% macro show_preferential_voting() -%}
-    <h3 class="mosp">{% trans %}Ballot{% endtrans %}</h3>
+    {{ util.heading(n_("Ballot"), aclass="mosp") }}
 
     {# Tab controls to switch to javascript preferential voting form #}
     <ul class="nav nav-tabs mosp softhide" role="tablist" id="tablist-formselect">
@@ -316,7 +316,7 @@
 
 
 {% macro add_candidate_form() -%}
-    <h3>{% trans %}Candidates{% endtrans %}</h3>
+    {{ util.heading(n_("Candidates")) }}
 
     <form action="{{ cdedblink('assembly/edit_candidates') }}" method="POST" id="candidatessummaryform">
         {{ util.anti_csrf_token('assembly/edit_candidates') }}
