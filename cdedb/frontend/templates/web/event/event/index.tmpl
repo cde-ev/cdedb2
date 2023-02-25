@@ -10,7 +10,7 @@
 {{ util.breadcrumb_link(cdedblink("event/index"), gettext("Events"), active=True) }}
 {% endblock %}
 {% block content %}
-    <h3>{% trans %}Current Events{% endtrans %}</h3>
+    {{ util.heading(n_("Current Events")) }}
     {% if open_events %}
         <ul class="spaced" id="current-events">
             {% for event_id, event in open_events|keydictsort(EntitySorter.event) %}
@@ -92,7 +92,7 @@
     {% endif %}
 
     {% if orga_events %}
-        <h3>{% trans %}Organized Events{% endtrans %}</h3>
+        {{ util.heading(n_("Organized Events")) }}
         <ul class="spaced" id="organized-events">
             {% for event_id, entry in orga_events|keydictsort(EntitySorter.event) %}
                 <li>
@@ -118,7 +118,7 @@
     {% endif %}
 
     {% if other_events %}
-        <h3>{% trans %}Other Events{% endtrans %}</h3>
+        {{ util.heading(n_("Other Events")) }}
         <ul class="spaced" id="other-events">
             {% for event_id, event in other_events|keydictsort(EntitySorter.event) %}
                 <li>
@@ -132,7 +132,7 @@
             {% endfor %}
         </ul>
     {% endif %}
-        <h3>{% trans %}Past Events_[[long form]]{% endtrans %}</h3>
+        {{ util.heading(n_("Past Events_[[long form]]")) }}
         <p id="past-events">
             {% if 'cde' in user.roles %}
                 {% trans link=util.href(cdedblink('cde/list_past_events'), gettext('Past Events_[[long form]]'))|s,

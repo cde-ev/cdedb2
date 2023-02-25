@@ -49,7 +49,7 @@
     {% endif %}
     {% if fee %}
     {% if registration['amount_paid'] >= fee %}
-        <h3 class="heading-underline">{% trans %}Payment{% endtrans %}</h3>
+        {{ util.heading(n_("Payment"), underline=true) }}
         <p>
             {% trans fee=fee|money(lang=lang) %}
                 You have already paid the registration fee of {{ fee }}.
@@ -61,7 +61,7 @@
             {{ util.href(cdedblink('event/registration_fee_qr'), label=gettext("QR"), icon='qrcode',
                          aclass="btn btn-sm btn-default pull-right", anid="show-registration-fee-qr",
                          title=gettext("Bank transfer data as QR code")) }}
-            <h3 class="heading-underline">{% trans %}Bank Transfer{% endtrans %}</h3>
+            {{ util.heading(n_("Bank Transfer"), underline=true) }}
             <script nonce="{{ csp_nonce }}">
                 $("#show-registration-fee-qr").cdedbQRCodeModal(
                     {{ {'title': ambience['event']['title'],
@@ -106,7 +106,7 @@
                 </tbody>
             </table>
         {% else %}
-            <h3 class="heading-underline">{% trans %}Payment{% endtrans %}</h3>
+            {{ util.heading(n_("Payment"), underline=true) }}
             <p>
                 {% trans %}
                     The orgas will tell you separately how to pay your fee of {{ to_pay }}.
@@ -148,7 +148,7 @@
     {% endif %}
 
     {% if age.is_minor() and not registration['parental_agreement'] %}
-        <h3 class="heading-underline">{% trans %}Parental Consent{% endtrans %}</h3>
+        {{ util.heading(n_("Parental Consent"), underline=true) }}
         <p>
             {% trans link=util.href(cdedblink('event/get_minor_form'), gettext("here"), icon='file') %}
                 You need to send the parental consent form to the Orgas. You can find the form {{ link }}.
@@ -156,7 +156,7 @@
         </p>
     {% endif %}
 
-    <h3 class="heading-underline">Status</h3>
+    {{ util.heading(n_("Status"), underline=true) }}
     <dl class="dl-horizontal">
         {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
             {% if ambience['event']['parts']|length > 1 %}
@@ -248,7 +248,7 @@
         </div>
     {% endfor %}
 
-    <h3 class="heading-underline">{% trans %}Registration Data{% endtrans %}</h3>
+    {{ util.heading(n_("Registration Data"), underline=true) }}
     {% if ambience['event']['registration_soft_limit'] is none or
             ambience['event']['registration_soft_limit'] >= now() and not ambience['event']['is_archived'] %}
         <p>
