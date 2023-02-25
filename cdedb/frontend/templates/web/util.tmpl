@@ -891,16 +891,16 @@ mailto:
    h4 are underlined headings by default. Turn this off by setting underline=false.
    Take care to put the title in n_() to only mark it for translation.
 #}
-{% macro heading(title, size=3, underline=none, anchor=none, aclass=none) %}
-    {% if anchor is none and size != 1 %}
+{% macro heading(title, level=3, underline=none, anchor=none, aclass=none) %}
+    {% if anchor is none and level != 1 %}
         {# TODO: convert spaces and other special chars? #}
         {% set anchor = title %}
     {% endif %}
-    {% if size == 4 and underline is none %}
+    {% if level == 4 and underline is none %}
         {% set underline = true %}
     {% endif %}
-    <h{{ size }} class="
-            {%- if size == 1 %}title {% endif -%}
+    <h{{ level }} class="
+            {%- if level == 1 %}title {% endif -%}
             {%- if underline %}heading-underline {% endif -%}
             {%- if aclass %}{{ aclass }}{% endif -%}"
         {%- if anchor %} id="{{ anchor }}"{% endif -%}
@@ -913,14 +913,14 @@ mailto:
             {{- nbsp }}<a class="headerlink" href="#{{ anchor }}"
                title="{% trans %}Permanent link{% endtrans %}">&para;</a>
         {%- endif %}
-    </h{{ size }}>
+    </h{{ level }}>
 {% endmacro %}
 
 {# Macro to unify the style of primary headings with context (events, personas, assemblies, ...) #}
 {% macro context_heading(title,
                          subtitle=none, icon=none, icon_arialabel=none,
                          subtitle2=none, icon2=none, icon_arialabel2=none) %}
-    {% call heading(title, size=1) -%}
+    {% call heading(title, level=1) -%}
         {% if subtitle and subtitle2 %}<div>{% endif %}
         {% if subtitle %}
             <small>
