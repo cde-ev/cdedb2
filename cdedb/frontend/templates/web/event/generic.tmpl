@@ -266,7 +266,7 @@
             {% if entry['kind'] == enums['QuestionnaireUsages'].additional %}
                 {{ util.heading(entry['title'], underline=true) }}
             {% else %}
-                {{ util.heading(entry['title'], size=4) }}
+                {{ util.heading(entry['title'], level=4) }}
             {% endif %}
         {% endif %}
         {{ entry.get('info', '')|md }}
