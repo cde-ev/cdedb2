@@ -83,13 +83,12 @@ class MlBackend(AbstractBackend):
         if mailinglist is None:
             if mailinglist_id is None:
                 raise ValueError(n_("No mailinglist specified."))
-            atype = self.get_ml_type(rs, mailinglist_id)
+            return self.get_ml_type(rs, mailinglist_id).is_relevant_admin(rs.user)
         else:
             if mailinglist_id is not None:
                 if mailinglist.id != mailinglist_id:
                     raise ValueError(n_("Different mailinglists specified."))
-            atype = mailinglist.__class__
-        return atype.is_relevant_admin(rs.user)
+            return mailinglist.is_relevant_admin(rs.user)
 
     @access("ml")
     def is_moderator(self, rs: RequestState, ml_id: int,

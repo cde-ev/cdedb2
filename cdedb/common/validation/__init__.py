@@ -193,10 +193,10 @@ def _validate_dataclass_preprocess(type_: Type[T], value: Any
     subtype = type_
     if isinstance(value, type_):
         subtype = type(value)
+    else:
+        raise RuntimeError("Value is no instance os given type.")
 
     # Figure out the closest validator on the class hierarchy.
-    if not any(issubclass(type_, dclass) for dclass in DATACLASS_TO_VALIDATORS):
-        raise RuntimeError("There is no validator mapped to this dataclass.")
     if not dataclasses.is_dataclass(value):
         raise RuntimeError("Given value is not an instance of a dataclass.")
     for supertype in type_.mro():
@@ -204,7 +204,7 @@ def _validate_dataclass_preprocess(type_: Type[T], value: Any
             validator = DATACLASS_TO_VALIDATORS[supertype]
             break
     else:
-        raise RuntimeError(n_("Impossible."))
+        raise RuntimeError("There is no validator mapped to this dataclass.")
 
     return subtype, validator
 
