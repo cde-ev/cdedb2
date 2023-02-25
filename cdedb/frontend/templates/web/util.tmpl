@@ -886,12 +886,13 @@ mailto:
 
 
 {# Macro to handle headings in a uniform way.
-   Adds an anchor to make it linkable as well as a hoverable link referring to it.
-   Take care to put the heading in _() to only mark it for translation.
+   Adds an anchor (for everything smaller than h1) to make it linkable
+   as well as a hoverable link referring to it.
+   Take care to put the title in n_() to only mark it for translation.
 #}
 {% macro heading(title, size=3, underline=false, anchor=none, aclass=none) %}
     {% if anchor is none and size != 1 %}
-        {# TODO: convert spaces and other special chars #}
+        {# TODO: convert spaces and other special chars? #}
         {% set anchor = title %}
     {% endif %}
     <h{{ size }} class="
