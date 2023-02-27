@@ -187,8 +187,10 @@ def access(*roles: Role) -> Callable[[F], F]:
                     **kwargs: Any) -> Any:
             if rs.user.roles.isdisjoint(roles):
                 raise PrivilegeError(
-                    n_("%(user_roles)s is disjoint from %(roles)s"),
-                    {"user_roles": rs.user.roles, "roles": roles}
+                    n_("%(user_roles)s is disjoint from %(roles)s"
+                       " for method %(method)s."),
+                    {"user_roles": rs.user.roles, "roles": roles,
+                     "method": function.__name__}
                 )
             return function(self, rs, *args, **kwargs)
 
