@@ -24,6 +24,7 @@
                 <th>{% trans %}Affected{% endtrans %}</th>
                 <th>{% trans %}Amount{% endtrans %}</th>
                 <th>{% trans %}Balance{% endtrans %}</th>
+                <th>{% trans %}Transaction Date{% endtrans %}</th>
                 <th>{% trans %}Annotation{% endtrans %}</th>
                 <th>{% trans %}Members{% endtrans %}</th>
                 <th>{% trans %}Overall Balance{% endtrans %}</th>
@@ -50,6 +51,7 @@
                     </td>
                     <td>{{ entry['delta']|money(lang=lang) }}</td>
                     <td>{{ entry['new_balance']|money(lang=lang) }}</td>
+                    <td>{{ entry['transaction_date']|date(lang=lang) }}</td>
                     <td>{{ entry['change_note'] }}</td>
                     <td>{{ entry['members'] }}</td>
                     <td>{{ entry['total']|money(lang=lang) }}</td>
@@ -59,5 +61,5 @@
     </table>
 
     {{ logging.navigation('cde/view_finance_log', total, length, loglinks) }}
-    {{ logging.filter('cde/view_finance_log', enums['FinanceLogCodes'], 'cde_user') }}
+    {{ logging.filter('cde/view_finance_log', enums['FinanceLogCodes'], 'cde_user', 'finance') }}
 {% endblock %}

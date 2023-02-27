@@ -9,16 +9,14 @@ template for all services.
 import abc
 import cgitb
 import copy
-import datetime
-import enum
 import functools
 import logging
 import sys
 import uuid
 from types import TracebackType
 from typing import (
-    Any, Callable, ClassVar, Collection, Dict, Iterable, List, Literal, Mapping,
-    Optional, Set, Tuple, Type, TypeVar, Union, cast, overload,
+    Any, Callable, ClassVar, Dict, Iterable, List, Literal, Mapping, Optional, Set,
+    Tuple, Type, TypeVar, Union, cast, overload,
 )
 
 import psycopg2.errors
@@ -26,7 +24,6 @@ import psycopg2.extensions
 import psycopg2.extras
 
 import cdedb.common.validation as validate
-import cdedb.common.validation.types as vtypes
 from cdedb.common import (
     CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Error, RequestState, Role,
     diacritic_patterns, glue, make_proxy, setup_logger, unwrap,
@@ -34,12 +31,13 @@ from cdedb.common import (
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators
+from cdedb.common.query.log_filter import LogFilter, LogFilterLike, LogTable
 from cdedb.common.sorting import LOCALE
 from cdedb.common.validation import parse_date, parse_datetime
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
 from cdedb.database.constants import FieldDatatypes, LockType
-from cdedb.database.query import DatabaseValue, DatabaseValue_s, SqlQueryBackend
+from cdedb.database.query import DatabaseValue, SqlQueryBackend
 
 F = TypeVar('F', bound=Callable[..., Any])
 T = TypeVar('T')
@@ -438,19 +436,15 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
             q = glue(q, "ORDER BY", ", ".join(orders))
         return self.query_all(rs, q, params)
 
-    def generic_retrieve_log(self, rs: RequestState, code_validator: Type[T],
-                             entity_name: str, table: str,
-                             codes: Collection[int] = None,
-                             entity_ids: Collection[int] = None,
-                             offset: int = None, length: int = None,
-                             additional_columns: Collection[str] = None,
-                             persona_id: int = None,
-                             submitted_by: int = None,
-                             reviewed_by: int = None,
-                             change_note: str = None,
-                             time_start: datetime.datetime = None,
-                             time_stop: datetime.datetime = None
-                             ) -> CdEDBLog:
+    @staticmethod
+    def generic_affirm_log_filter(log_filter: LogFilterLike, table: str) -> LogFilter:
+        """Validate a LogFilter"""
+        log_table = LogTable(table)
+        return affirm_validation(
+            log_table.get_filter_class(), log_filter, log_table=log_table)
+
+    def generic_retrieve_log(self, rs: RequestState, log_filter: LogFilterLike,
+                             table: str) -> CdEDBLog:
         """Get recorded activity.
 
         Each realm has it's own log as well as potentially additional
@@ -467,81 +461,16 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
         history).
 
         However this handles the finance_log for financial transactions.
-
-        :param code_validator: e.g. "enum_mllogcodes"
-        :param entity_name: e.g. "event" or "mailinglist"
-        :param table: e.g. "ml.log" or "event.log"
-        :param offset: How many entries to skip at the start.
-        :param length: How many entries to list.
-        :param additional_columns: Extra values to retrieve.
-        :param persona_id: Filter for persona_id column.
-        :param submitted_by: Filter for submitted_by column.
-        :param reviewed_by: Filter for reviewed_by column.
-            Only for core.changelog.
-        :param change_note: Filter for change_note column
-        :param time_start: lower bound for ctime columns
-        :param time_stop: upper bound for ctime column
         """
-        assert issubclass(code_validator, enum.IntEnum)
-        codes = affirm_set_validation(code_validator, codes or set())
-        entity_ids = affirm_set_validation(vtypes.ID, entity_ids or set())
-        offset: Optional[int] = affirm_validation_optional(
-            vtypes.NonNegativeInt, offset)
-        length: Optional[int] = affirm_validation_optional(vtypes.PositiveInt, length)
-        additional_columns = affirm_set_validation(
-            vtypes.RestrictiveIdentifier, additional_columns or set())
-        persona_id = affirm_validation_optional(vtypes.ID, persona_id)
-        submitted_by = affirm_validation_optional(vtypes.ID, submitted_by)
-        reviewed_by = affirm_validation_optional(vtypes.ID, reviewed_by)
-        change_note = affirm_validation_optional(vtypes.Regex, change_note)
-        time_start = affirm_validation_optional(datetime.datetime, time_start)
-        time_stop = affirm_validation_optional(datetime.datetime, time_stop)
+        log_filter = self.generic_affirm_log_filter(log_filter, table)
 
-        length = length or self.conf["DEFAULT_LOG_LENGTH"]
-        additional_columns: List[str] = list(additional_columns or [])
+        table = log_filter.table.value
+        length = log_filter.length or 0
+        offset = log_filter.offset
+        log_code = log_filter.table.get_log_code_class()
 
-        # First, define the common WHERE filter clauses
-        conditions = []
-        params: List[DatabaseValue_s] = []
-        if codes:
-            conditions.append("code = ANY(%s)")
-            params.append(codes)
-        if entity_ids:
-            conditions.append("{}_id = ANY(%s)".format(entity_name))
-            params.append(entity_ids)
-        if persona_id:
-            conditions.append("persona_id = %s")
-            params.append(persona_id)
-        if submitted_by:
-            conditions.append("submitted_by = %s")
-            params.append(submitted_by)
-        if change_note:
-            conditions.append("change_note ~* %s")
-            params.append(diacritic_patterns(change_note))
-        if time_start and time_stop:
-            conditions.append("%s <= ctime AND ctime <= %s")
-            params.extend((time_start, time_stop))
-        elif time_start:
-            conditions.append("%s <= ctime")
-            params.append(time_start)
-        elif time_stop:
-            conditions.append("ctime <= %s")
-            params.append(time_stop)
-
-        # Special column for core.changelog
-        if table == "core.changelog":
-            additional_columns += ["reviewed_by", "generation"]
-            if reviewed_by:
-                conditions.append("reviewed_by = %s")
-                params.append(reviewed_by)
-        elif reviewed_by:
-            raise ValueError(
-                "reviewed_by column only defined for changelog.")
-
-        if conditions:
-            condition = "WHERE {}".format(" AND ".join(conditions))
-        else:
-            condition = ""
+        condition, params = log_filter.to_sql_condition()
+        columns = log_filter.get_columns_str()
 
         # The first query determines the absolute number of logs existing
         # matching the given criteria
@@ -553,20 +482,15 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
         elif offset is None and total > length:
             offset = length * ((total - 1) // length)
 
-        extra_columns = ", ".join(additional_columns)
-        if extra_columns:
-            extra_columns = ", " + extra_columns
-
         # Now, query the actual information
-        query = (f"SELECT id, ctime, code, submitted_by, {entity_name}_id,"
-                 f" persona_id, change_note {extra_columns} FROM {table}"
-                 f" {condition} ORDER BY id LIMIT {length}")
-        if offset is not None:
-            query = glue(query, "OFFSET {}".format(offset))
+        query = f"""
+            SELECT {columns} FROM {table} {condition}
+            ORDER BY id LIMIT {length} {f' OFFSET {offset}' if offset else ''}
+        """
 
         data = self.query_all(rs, query, params)
         for e in data:
-            e['code'] = code_validator(e['code'])
+            e['code'] = log_code(e['code'])
         return total, data
 
 
@@ -684,6 +608,16 @@ def affirm_validation(assertion: Type[T], value: Any, **kwargs: Any) -> T:
     must **ignore** them always to reduce redundancy between frontend and backend.
     """
     return validate.validate_assert(assertion, value, ignore_warnings=True, **kwargs)
+
+
+def affirm_dataclass(assertion: Type[T], value: Any, **kwargs: Any) -> T:
+    """Wrapper to call asserts in :py:mod:`cdedb.validation`.
+
+    This is similar to :func:`~cdedb.backend.common.affirm_validation`
+    but used for dataclass objects.
+    """
+    return validate.validate_assert_dataclass(
+        assertion, value, ignore_warnings=True, **kwargs)
 
 
 def affirm_validation_optional(

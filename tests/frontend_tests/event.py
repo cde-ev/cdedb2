@@ -31,7 +31,8 @@ from cdedb.frontend.event.query_stats import (
     StatisticMixin, StatisticPartMixin, StatisticTrackMixin, get_id_constraint,
 )
 from tests.common import (
-    USER_DICT, FrontendTest, UserObject, as_users, event_keeper, prepsql, storage,
+    USER_DICT, FrontendTest, UserObject, as_users, event_keeper, execsql, prepsql,
+    storage,
 )
 
 
@@ -439,21 +440,49 @@ class TestEventFrontend(FrontendTest):
 
     @as_users("annika", "berta", "emilia")
     def test_course_list(self) -> None:
-        self.traverse({'description': 'Veranstaltungen'},
-                      {'description': 'Große Testakademie 2222'},
-                      {'description': 'Kursliste'})
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Kursliste")
         self.assertTitle("Kursliste Große Testakademie 2222")
+        self.assertPresence("Inhaltsverzeichnis")
         self.assertPresence("ToFi")
         self.assertPresence("Wir werden die Bäume drücken.")
         f = self.response.forms['coursefilterform']
         f['track_ids'] = [1, 3]
         self.submit(f)
         self.assertTitle("Kursliste Große Testakademie 2222")
+        self.assertNonPresence("Inhaltsverzeichnis")  # less than 6 courses shown
         self.assertNonPresence("Kurzer Kurs")
         f = self.response.forms['coursefilterform']
-        f['track_ids'] = [2, 3]
+        f['track_ids'] = [2]
         self.submit(f)
+        self.assertPresence("β. Lustigsein für Fortgeschrittene")
         self.assertPresence("γ. Kurzer Kurs")
+        if self.user_in('annika'):
+            f = self.response.forms['coursefilterform']
+            f['active_only'].checked = True
+            self.submit(f)
+            self.assertNonPresence("β. Lustigsein für Fortgeschrittene")
+            self.assertPresence("γ. Kurzer Kurs")
+            # check that validation converting works and is shown in the form
+            self.get(self.response.request.url.replace('active_only=True',
+                                                       'active_only=nonBoolButTrue'))
+            self.assertTrue(
+                self.response.forms['coursefilterform']['active_only'].checked)
+            self.assertNonPresence("β. Lustigsein für Fortgeschrittene")
+            self.assertPresence("γ. Kurzer Kurs")
+            # check handling if no courses match the search
+            execsql("UPDATE event.course_segments"
+                    " SET is_active = False WHERE track_id = 1")
+            f = self.response.forms['coursefilterform']
+            f['active_only'].checked = True
+            f['track_ids'] = [1]
+            self.submit(f)
+            self.assertPresence("Filter")
+            self.assertPresence("Keine passenden Kurse gefunden.")
+        else:
+            # check that taking place filter not accessible for non-privileged users
+            self.assertNonPresence("Zeige nur stattfindende Kurse")
+            self.get(self.response.request.url + '&active_only=True')
+            self.assertPresence("β. Lustigsein für Fortgeschrittene")
 
     @as_users("annika", "garcia", "ferdinand")
     def test_change_event(self) -> None:
@@ -1284,6 +1313,11 @@ etc;anything else""", f['entries_2'].value)
                 'change_note': "Alternative Akademie",
                 'code': const.EventLogCodes.lodgement_group_created,
                 'event_id': 1002,
+            },
+            {
+                'change_note': "Mailadresse der Orgas gesetzt.",
+                'code': const.EventLogCodes.event_changed,
+                'event_id': 1002,
             }
         ])
         self.assertLogEqual(
@@ -1345,7 +1379,7 @@ etc;anything else""", f['entries_2'].value)
             },
         ]
         self.assertLogEqual(
-            ml_log_expectation, realm="ml", mailinglist_ids={1001, 1002})
+            ml_log_expectation, realm="ml", entity_ids={1001, 1002})
 
     @as_users("annika", "garcia")
     def test_change_course(self) -> None:
@@ -3224,6 +3258,51 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertTitle("Unterkunft anlegen (Große Testakademie 2222)")
         f = self.response.forms['createlodgementform']
         self.assertEqual("1001", f['group_id'].value)
+
+    @event_keeper
+    @as_users("anton")
+    def test_lodgement_creation_with_groups(self) -> None:
+        self.traverse("CdE-Party 2050", "Unterkünfte", "Unterkunftsgruppen verwalten")
+        # only one lodgement group exists
+        f = self.response.forms["lodgementgroupsummaryform"]
+        self.assertEqual(f["title_4"].value, "CdE-Party")
+        self.traverse("Unterkünfte", "Unterkunft anlegen")
+        f = self.response.forms["createlodgementform"]
+        # existing lodgement group is a hidden input
+        self.assertEqual(f["group_id"].value, "4")
+        self.assertNonPresence("Unterkunftsgruppe")
+        f["title"] = "Testzimmer"
+        f["regular_capacity"] = 1
+        f["camping_mat_capacity"] = 0
+        self.submit(f)
+        self.traverse("Unterkünfte")
+        # check the new lodgement was created
+        self.assertPresence("Testzimmer")
+
+        self.traverse("Veranstaltungen", "TripelAkademie", "Unterkünfte",
+                      "Unterkunftsgruppen verwalten")
+        # delete all lodgement groups
+        f = self.response.forms["lodgementgroupsummaryform"]
+        self.assertEqual(f["title_6"].value, "Kaub")
+        self.assertEqual(f["title_7"].value, "Oberwesel")
+        self.assertEqual(f["title_8"].value, "Windischleuba")
+        f["delete_6"] = True
+        f["delete_7"] = True
+        f["delete_8"] = True
+        self.submit(f)
+        # create new lodgement and new lodgement group
+        self.traverse("Unterkünfte", "Unterkunft anlegen")
+        self.assertPresence("Titel der neuen Unterkunftsgruppe")
+        f = self.response.forms["createlodgementform"]
+        self.assertEqual(f["group_id"].value, "")
+        f["title"] = "Testzimmer"
+        f["regular_capacity"] = 1
+        f["camping_mat_capacity"] = 0
+        f["new_group_title"] = "Testgruppe"
+        self.submit(f)
+        self.traverse("Unterkünfte")
+        # check the new lodgement was created
+        self.assertPresence("Testzimmer")
 
     @as_users("garcia")
     def test_lodgement_capacities(self) -> None:
@@ -5272,7 +5351,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         event_id = 4
         event = self.event.get_event(self.key, event_id)
         log_expectation = []
-        offset = self.event.retrieve_log(self.key, event_id=event_id)[0]
+        offset = self.event.retrieve_log(self.key, {'entity_ids': [event_id]})[0]
 
         self.traverse("Veranstaltungen", event['title'], "Veranstaltungsteile",
                       "Gruppen")
@@ -5692,12 +5771,17 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertValidationError('title', "Darf nicht leer sein.")
         self.assertValidationError('shortname', "Darf nicht leer sein.")
         f['title'] = f['shortname'] = "abc"
+        f['track_ids'] = []
+        self.submit(f, check_notification=False)
+        self.assertValidationError(
+            'track_ids', "Darf nicht leer sein.", index=0)
         f['track_ids'] = [1, 2]
         self.submit(f, check_notification=False)
         self.assertValidationError(
-            'track_ids', "Kursschienensynchronisierung fehlgeschlagen,"
-                         " weil bereits Kurswahlen existieren.",
-            index=0)
+            'track_ids', "Inkompatible Kursschienen", index=0)
+        self.assertValidationError(
+            'track_ids', "Kursschienensynchronisierung fehlgeschlagen, weil"
+                         " inkompatible Kurswahlen existieren.", index=0)
 
         # Now a valid one.
         self.traverse("Veranstaltungen", "TripelAkademie", "Veranstaltungsteile",
@@ -5996,3 +6080,64 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                                 div="course-choices-group-3")
             self.assertPresence("Kurs KV 3. Nostalgie")
             self.assertPresence("Kurs OK1 1. Niebelungenlied")
+
+        # Check that a CCS group can be recreated after being deleted, while
+        #  compatible choices exist.
+        event_id = 4
+        event = self.event.get_event(self.key, event_id)
+        self.traverse("Veranstaltungsteile", "Gruppen")
+        f = self.response.forms['deletetrackgroupform1']
+        f['ack_delete'] = True
+        self.submit(f)
+        self.traverse("Kursschienengruppe hinzufügen")
+        f = self.response.forms['configuretrackgroupform']
+        f['title'] = f['shortname'] = "K1"
+        f['track_ids'] = list(str(id_) for id_ in event['track_groups'][1]['track_ids'])
+        self.submit(f)
+
+        # Check failing creation after changing choices for the tracks.
+        f = self.response.forms['deletetrackgroupform1001']
+        f['ack_delete'] = True
+        self.submit(f)
+
+        track_ids = list(event['track_groups'][1]['track_ids'])
+        reg_id = list(self.event.list_registrations(self.key, event_id))[0]
+        self.event.set_registration(self.key, {
+            'id': reg_id,
+            'tracks': {
+                track_ids[0]: {
+                    'course_instructor': 10,
+                },
+                track_ids[1]: {
+                    'course_instructor': 11,
+                },
+            },
+        })
+
+        self.traverse("Kursschienengruppe hinzufügen")
+        f = self.response.forms['configuretrackgroupform']
+        f['title'] = f['shortname'] = "K1"
+        f['track_ids'] = list(str(id_) for id_ in event['track_groups'][1]['track_ids'])
+        self.submit(f, check_notification=False)
+        self.assertValidationError(
+            'track_ids', "Kursschienensynchronisierung fehlgeschlagen, weil"
+                         " inkompatible Kurswahlen existieren.", index=0)
+
+    @as_users("emilia")
+    def test_ccs_cancelled_courses(self) -> None:
+        self.event.set_event(
+            self.key, {'id': 4, 'is_course_state_visible': True,
+                       'is_participant_list_visible': True,
+                       'is_course_assignment_visible': True})
+        course_id = 9
+        self.event.set_course(self.key, {'id': course_id, 'active_segments': []})
+
+        self.traverse("Veranstaltungen", "TripelAkademie", "Meine Anmeldung", "Ändern")
+        f = self.response.forms['amendregistrationform']
+        with self.assertRaises(ValueError):
+            f['group1.course_choice_0'] = course_id
+        f['group1.course_instructor'] = course_id
+        self.traverse("Anmeldungen", "Alle Anmeldungen", "Details", "Bearbeiten")
+        f = self.response.forms['changeregistrationform']
+        f['group1.course_choice_0'] = course_id
+        f['group1.course_instructor'] = course_id

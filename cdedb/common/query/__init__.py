@@ -952,13 +952,23 @@ def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = N
     def get_course_choice_spec(track: CdEDBObject) -> QuerySpec:
         track_id = track['id']
         prefix = "" if len(event['tracks']) <= 1 else track['shortname']
-        return {
+        ret = {
             f"course_choices{track_id}.rank{i}": QuerySpecEntry(
                 "id", n_("{rank}. Choice"), prefix, {'rank': str(i + 1)},
                 choices=course_choices,
             )
             for i in range(track['num_choices'])
         }
+
+        # If there are course choices for the track, add an entry for any choice.
+        if key := ",".join(ret.keys()):
+            # Don't overwrite a potential existing spec.
+            #  This happens if there is exactly one choice.
+            if key not in ret:
+                ret[key] = QuerySpecEntry(
+                    "id", n_("Any Choice"), prefix, choices=course_choices)
+
+        return ret
 
     # Presort part specs, so we can iterate over them in order.
     part_specs = {
@@ -986,16 +996,12 @@ def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = N
                                                   EntitySorter.course_track):
             spec.update(track_specs[track_id])
 
-            course_choice_spec = course_choice_specs[track_id]
-            # If there are course choices for the track, add an entry for any choice.
-            if key := ",".join(course_choice_spec.keys()):
-                # Don't overwrite a potential existing spec.
-                # This happens if there is exactly one choice.
-                if key not in course_choice_spec:
-                    prefix = "" if len(event['tracks']) <= 1 else track['shortname']
-                    spec[key] = QuerySpecEntry(
-                        "id", n_("Any Choice"), prefix, choices=course_choices)
-            spec.update(course_choice_spec)
+            # Skip course choice filters if track is synced.
+            if any(tg['constraint_type']
+                   == const.CourseTrackGroupType.course_choice_sync
+                   for tg in track['track_groups'].values()):
+                continue
+            spec.update(course_choice_specs[track_id])
 
         # Add Entries for all tracks in this part.
         spec.update(_combine_specs(
@@ -1022,6 +1028,24 @@ def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = N
             track_specs, track_ids, prefix=prefix or n_("any track")))
         spec.update(_combine_specs(
             course_choice_specs, track_ids, prefix=prefix or n_("any track")))
+
+    # Add entries for track groups.
+    sorted_track_groups = xsorted(
+        event['track_groups'].values(), key=EntitySorter.course_track_group)
+    for track_group in sorted_track_groups:
+        if (track_group['constraint_type']
+                != const.CourseTrackGroupType.course_choice_sync):
+            continue
+
+        # Randomly choose a track in the group to use for filtering.
+        #  Since all synced tracks have identical entries, this choice does not matter.
+        track_id = next(iter(track_group['track_ids']))
+        fake_track = {
+            'id': track_id,
+            'num_choices': event['tracks'][track_id]['num_choices'],
+            'shortname': track_group['shortname'],
+        }
+        spec.update(get_course_choice_spec(fake_track))
 
     spec.update({
         f"reg_fields.xfield_{f['field_name']}": QuerySpecEntry(
@@ -1076,6 +1100,8 @@ def make_course_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None,
             f"track{track_id}.attendees": QuerySpecEntry(
                 "int", n_("attendee count"), prefix),
             f"track{track_id}.instructors": QuerySpecEntry(
+                "int", n_("potential instructor count"), prefix),
+            f"track{track_id}.assigned_instructors": QuerySpecEntry(
                 "int", n_("instructor count"), prefix),
         }
 

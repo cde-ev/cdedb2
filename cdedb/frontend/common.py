@@ -83,11 +83,14 @@ from cdedb.common.i18n import format_country_code, get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query
 from cdedb.common.query.defaults import DEFAULT_QUERIES
+from cdedb.common.query.log_filter import (
+    LogFilterChangelog, LogFilterEntityLog, LogFilterFinanceLog, LogTable,
+)
 from cdedb.common.roles import (
     ADMIN_KEYS, ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS, PERSONA_DEFAULTS,
     roles_to_db_role,
 )
-from cdedb.common.sorting import EntitySorter
+from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.config import Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -96,6 +99,7 @@ from cdedb.enums import ENUMS_DICT
 from cdedb.filter import (
     JINJA_FILTERS, cdedbid_filter, enum_entries_filter, safe_filter, sanitize_None,
 )
+from cdedb.models.ml import Mailinglist
 
 Attachment = typing.TypedDict(
     "Attachment", {'path': PathLike, 'filename': str, 'mimetype': str,
@@ -1116,6 +1120,99 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             return n_("Anti CSRF token is invalid.")
         return None
 
+    def generic_view_log(self, rs: RequestState, filter_params: CdEDBObject,
+                         table: str, template: str, download: bool = False,
+                         template_kwargs: CdEDBObject = None) -> werkzeug.Response:
+        """Generic helper to retrieve log data and render the result."""
+        table = LogTable(table)
+        # Convert filter params into LogFilter.
+        log_filter = check_validation(
+            rs, table.get_filter_class(), filter_params, log_table=table)
+        if rs.has_validation_errors() or log_filter is None:
+            # If validation fails, there is no good way to get a partial filter
+            #  that is valid, so we use an empty filter instead. This should not
+            #  matter much in practice because, with regular usage there should not
+            #  be a way to input invalid filter values.
+            log_filter = check_validation(
+                rs, table.get_filter_class(), {}, log_table=table)
+            rs.ignore_validation_errors()
+            assert log_filter is not None
+
+        # Retrieve entry count and log entries.
+        if table == LogTable.core_log:
+            total, log = self.coreproxy.retrieve_log(rs, log_filter)
+        elif table == LogTable.core_changelog:
+            assert isinstance(log_filter, LogFilterChangelog)
+            total, log = self.coreproxy.retrieve_changelog_meta(rs, log_filter)
+        elif table == LogTable.cde_finance_log:
+            assert isinstance(log_filter, LogFilterFinanceLog)
+            total, log = self.cdeproxy.retrieve_finance_log(rs, log_filter)
+        elif table == LogTable.cde_log:
+            total, log = self.cdeproxy.retrieve_cde_log(rs, log_filter)
+        elif table == LogTable.past_event_log:
+            assert isinstance(log_filter, LogFilterEntityLog)
+            total, log = self.pasteventproxy.retrieve_past_log(rs, log_filter)
+        elif table == LogTable.event_log:
+            assert isinstance(log_filter, LogFilterEntityLog)
+            total, log = self.eventproxy.retrieve_log(rs, log_filter)
+        elif table == LogTable.assembly_log:
+            assert isinstance(log_filter, LogFilterEntityLog)
+            total, log = self.assemblyproxy.retrieve_log(rs, log_filter)
+        elif table == LogTable.ml_log:
+            assert isinstance(log_filter, LogFilterEntityLog)
+            total, log = self.mlproxy.retrieve_log(rs, log_filter)
+        else:
+            raise RuntimeError(n_("Impossible."))
+
+        # Retrieve linked personas.
+        persona_ids = (
+                set(e['submitted_by'] for e in log if e['submitted_by'])
+                | set(e['persona_id'] for e in log if e['persona_id'])
+                | set(e['reviewed_by'] for e in log if e.get('reviewed_by'))
+        )
+        personas = self.coreproxy.get_personas(rs, persona_ids)
+
+        if download:
+            # Postprocess persona information: Add names and cdedb id.
+            persona_fields = {'submitted_by', 'persona_id', 'reviewed_by'}.intersection(
+                log_filter.get_columns()
+            )
+            cdedbids = {persona_id: cdedbid_filter(persona_id)
+                        for persona_id in persona_ids}
+            substitutions = {persona_field: cdedbids
+                              for persona_field in persona_fields}
+
+            given_names = {f"{key}_given_names" for key in persona_fields}
+            family_names = {f"{key}_family_name" for key in persona_fields}
+
+            # Compile columns in a readable order
+            ordered_cols = ("id", "ctime", "code", "change_note")
+            unordered_cols = set(log_filter.get_columns()) | given_names | family_names
+            unordered_cols.difference_update(ordered_cols)
+            columns = ordered_cols + tuple(xsorted(unordered_cols))
+
+            for entry in log:
+                for k in persona_fields:
+                    if entry.get(k):
+                        entry[f"{k}_given_names"] = personas[entry[k]]['given_names']
+                        entry[f"{k}_family_name"] = personas[entry[k]]['family_name']
+                    else:
+                        entry[f"{k}_given_names"] = entry[f"{k}_family_name"] = None
+
+            csv_data = csv_output(log, columns, replace_newlines=True,
+                                  substitutions=substitutions)
+            return self.send_csv_file(rs, "text/csv", f"{table.value}.csv",
+                                      data=csv_data)
+        else:
+            # Create pagination.
+            loglinks = calculate_loglinks(rs, total, log_filter._offset,  # pylint: disable=protected-access
+                                          log_filter._length)  # pylint: disable=protected-access
+            return self.render(rs, template, {
+                'log': log, 'total': total, 'length': log_filter.length,
+                'personas': personas, 'loglinks': loglinks,
+                **(template_kwargs or {})
+            })
+
 
 class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     """Base class for all frontends which have their own user realm.
@@ -1216,7 +1313,7 @@ class CdEMailmanClient(mailmanclient.Client):
                 self.logger.exception("Mailman connection failed!")
             return None
 
-    def get_held_messages(self, dblist: CdEDBObject) -> Optional[
+    def get_held_messages(self, dblist: Mailinglist) -> Optional[
             List[mailmanclient.restobjects.held_message.HeldMessage]]:
         """Returns all held messages for mailman lists.
 
@@ -1226,20 +1323,20 @@ class CdEMailmanClient(mailmanclient.Client):
             self.logger.info("Skipping mailman query in dev/offline mode.")
             if self.conf["CDEDB_DEV"]:
                 # Some diversity regarding moderation.
-                if dblist['id'] % 2 == 0:
+                if dblist.id % 2 == 0:
                     return HELD_MESSAGE_SAMPLE
                 else:
                     return []
             return None
         else:
-            mmlist = self.get_list_safe(dblist['address'])
+            mmlist = self.get_list_safe(dblist.address)
             try:
                 return mmlist.held if mmlist else None
             except urllib.error.HTTPError:
                 self.logger.exception("Mailman connection failed!")
         return None
 
-    def get_held_message_count(self, dblist: CdEDBObject) -> Optional[int]:
+    def get_held_message_count(self, dblist: Mailinglist) -> Optional[int]:
         """Returns the number of held messages for a mailman list.
 
         If the list is not managed by mailman, this returns None instead.
@@ -1248,12 +1345,12 @@ class CdEMailmanClient(mailmanclient.Client):
             self.logger.info("Skipping mailman query in dev/offline mode.")
             if self.conf["CDEDB_DEV"]:
                 # Add some diversity.
-                if dblist['id'] % 2 == 0:
+                if dblist.id % 2 == 0:
                     return len(HELD_MESSAGE_SAMPLE)
                 else:
                     return 0
         else:
-            mmlist = self.get_list_safe(dblist['address'])
+            mmlist = self.get_list_safe(dblist.address)
             try:
                 return mmlist.get_held_count() if mmlist else None
             except urllib.error.HTTPError:
@@ -1382,8 +1479,34 @@ class Worker(threading.Thread):
         return worker
 
 
+AmbienceDict = typing.TypedDict(
+    "AmbienceDict",
+    {
+        'persona': CdEDBObject,
+        'privilege_change': CdEDBObject,
+        'genesis_case': CdEDBObject,
+        'lastschrift': CdEDBObject,
+        'transaction':  CdEDBObject,
+        'institution':  CdEDBObject,
+        'event': CdEDBObject,
+        'pevent': CdEDBObject,
+        'course': CdEDBObject,
+        'pcourse': CdEDBObject,
+        'registration': CdEDBObject,
+        'group': CdEDBObject,
+        'lodgement': CdEDBObject,
+        'part_group': CdEDBObject,
+        'track_group': CdEDBObject,
+        'attachment': CdEDBObject,
+        'assembly': CdEDBObject,
+        'ballot': CdEDBObject,
+        'mailinglist': Mailinglist,
+    }
+)
+
+
 def reconnoitre_ambience(obj: AbstractFrontend,
-                         rs: RequestState) -> Dict[str, CdEDBObject]:
+                         rs: RequestState) -> AmbienceDict:
     """Provide automatic lookup of objects in a standard way.
 
     This creates an ambience dict providing objects for all ids passed
@@ -1491,7 +1614,7 @@ def reconnoitre_ambience(obj: AbstractFrontend,
         if param in scouts_dict:
             for consistency_checker in scouts_dict[param].dependencies:
                 consistency_checker(ambience)
-    return ambience
+    return cast("AmbienceDict", ambience)
 
 
 F = TypeVar('F', bound=Callable[..., Any])
@@ -2031,6 +2154,23 @@ def assembly_guard(fun: F) -> F:
     return cast(F, new_fun)
 
 
+def check_dataclass(rs: RequestState, type_: Type[T], value: Any,
+                    name: str = None, **kwargs: Any) -> Optional[T]:
+    """Wrapper to call asserts in :py:mod:`cdedb.validation`.
+
+    This is similar to :func:`~cdedb.frontend.common.check_validation`
+    but used for dataclass objects.
+    """
+    if name is not None:
+        ret, errs = validate.validate_check_dataclass(
+            type_, value, ignore_warnings=rs.ignore_warnings, argname=name, **kwargs)
+    else:
+        ret, errs = validate.validate_check_dataclass(
+            type_, value, ignore_warnings=rs.ignore_warnings, **kwargs)
+    rs.extend_validation_errors(errs)
+    return ret
+
+
 def check_validation(rs: RequestState, type_: Type[T], value: Any,
                      name: str = None, **kwargs: Any) -> Optional[T]:
     """Wrapper to call checks in :py:mod:`cdedb.validation`.
@@ -2378,22 +2518,6 @@ def query_result_to_json(data: Collection[CdEDBObject], fields: Iterable[str],
             row[field] = value
         json_data.append(row)
     return json_serialize(json_data)
-
-
-def calculate_db_logparams(offset: Optional[int], length: int
-                           ) -> Tuple[Optional[int], int]:
-    """Modify the offset and length values used in the frontend to
-    allow for guaranteed valid sql queries.
-    """
-    _offset = offset
-    _length = length
-    if _offset and _offset < 0:
-        # Avoid non-positive lengths
-        if -_offset < length:
-            _length = _length + _offset
-        _offset = 0
-
-    return _offset, _length
 
 
 def calculate_loglinks(rs: RequestState, total: int,

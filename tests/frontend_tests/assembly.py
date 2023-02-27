@@ -1169,13 +1169,20 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertEqual(data, self.response.body)
         self.response = saved_response
 
-        # Add a new version
+        # Add a new version and check prefilling works properly
         self.traverse({"href": "/assembly/assembly/1/attachment/1001/add"})
         self.assertNonPresence("Eine verknüpfte Abstimmung wurde bereits gesperrt",
                                div='static-notifications', check_div=True)
         f = self.response.forms['addattachmentversionform']
+        self.assertEqual(f['title'].value, "Vorläufige Beschlussvorlage")
+        f['title'] = ""
+        f['filename'] = "//"
+        self.submit(f, check_notification=False)
+        self.assertValidationError('filename', " Muss ein zulässiger Bezeichner sein")
+        self.assertEqual(f['title'].value, "")
         f['title'] = "Maßgebliche Beschlussvorlage"
         f['authors'] = "Der Vorstand"
+        f['filename'] = ""
         f['attachment'] = webtest.Upload("form.pdf", data, "application/octet-stream")
         self.submit(f)
 

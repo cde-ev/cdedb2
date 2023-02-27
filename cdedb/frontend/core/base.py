@@ -47,8 +47,7 @@ from cdedb.common.validation.types import CdedbID
 from cdedb.filter import enum_entries_filter, markdown_parse_safe
 from cdedb.frontend.common import (
     AbstractFrontend, Headers, REQUESTdata, REQUESTdatadict, REQUESTfile,
-    TransactionObserver, access, basic_redirect, calculate_db_logparams,
-    calculate_loglinks, check_validation as check,
+    TransactionObserver, access, basic_redirect, check_validation as check,
     check_validation_optional as check_optional, inspect_validation as inspect,
     make_membership_fee_reference, periodic, request_dict_extractor, request_extractor,
 )
@@ -134,14 +133,19 @@ class CoreBaseFrontend(AbstractFrontend):
             # mailinglists moderated
             moderator_info = self.mlproxy.moderator_info(rs, rs.user.persona_id)
             if moderator_info:
-                moderator = self.mlproxy.get_mailinglists(rs, moderator_info)
-                sub_request = const.SubscriptionState.pending
+                mailinglists = self.mlproxy.get_mailinglists(rs, moderator_info)
                 mailman = self.get_mailman()
-                for mailinglist_id, ml in moderator.items():
+                moderator: Dict[int, Dict[str, Any]] = {}
+                for ml_id, ml in mailinglists.items():
                     requests = self.mlproxy.get_subscription_states(
-                        rs, mailinglist_id, states=(sub_request,))
-                    ml['requests'] = len(requests)
-                    ml['held_mails'] = mailman.get_held_message_count(ml)
+                        rs, ml_id, states=(const.SubscriptionState.pending,))
+                    moderator[ml_id] = {
+                        "id": ml.id,
+                        "title": ml.title,
+                        "is_active": ml.is_active,
+                        "requests": len(requests),
+                        "held_mails": mailman.get_held_message_count(ml),
+                    }
                 dashboard['moderator'] = {k: v for k, v in moderator.items()
                                           if v['is_active']}
             # visible and open events
@@ -596,7 +600,7 @@ class CoreBaseFrontend(AbstractFrontend):
                     "is_ml_realm", "is_assembly_realm", "is_archived",
                     "notes"])
             if "orga" not in access_levels:
-                masks.extend(["is_member", "gender"])
+                masks.extend(["is_member", "gender", "pronouns_nametag"])
             for key in masks:
                 if key in data:
                     del data[key]
@@ -684,11 +688,12 @@ class CoreBaseFrontend(AbstractFrontend):
         grouped: Dict[MailinglistGroup, CdEDBObjectMap]
         grouped = collections.defaultdict(dict)
         for mailinglist_id, ml in mailinglists.items():
-            group_id = ml['ml_type_class'].sortkey
+            group_id = ml.ml_type_class.sortkey
             grouped[group_id][mailinglist_id] = {
-                'title': ml['title'],
+                'title': ml.title,
                 'id': mailinglist_id,
-                'address': addresses.get(mailinglist_id)
+                'address': addresses.get(mailinglist_id),
+                'is_active': ml.is_active,
             }
 
         return self.render(rs, "show_user_mailinglists", {
@@ -2157,31 +2162,19 @@ class CoreBaseFrontend(AbstractFrontend):
                             change_note: Optional[str],
                             time_start: Optional[datetime.datetime],
                             time_stop: Optional[datetime.datetime],
-                            reviewed_by: Optional[CdedbID]) -> Response:
+                            reviewed_by: Optional[CdedbID],
+                            download: bool = False) -> Response:
         """View changelog activity."""
-        length = length or self.conf["DEFAULT_LOG_LENGTH"]
-        # length is the requested length, _length the theoretically
-        # shown length for an infinite amount of log entries.
-        _offset, _length = calculate_db_logparams(offset, length)
 
-        # no validation since the input stays valid, even if some options
-        # are lost
-        rs.ignore_validation_errors()
-        total, log = self.coreproxy.retrieve_changelog_meta(
-            rs, codes, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, change_note=change_note,
-            time_start=time_start, time_stop=time_stop, reviewed_by=reviewed_by)
-        persona_ids = (
-                {entry['submitted_by'] for entry in log if
-                 entry['submitted_by']}
-                | {entry['reviewed_by'] for entry in log if
-                   entry['reviewed_by']}
-                | {entry['persona_id'] for entry in log if entry['persona_id']})
-        personas = self.coreproxy.get_personas(rs, persona_ids)
-        loglinks = calculate_loglinks(rs, total, offset, length)
-        return self.render(rs, "view_changelog_meta", {
-            'log': log, 'total': total, 'length': _length,
-            'personas': personas, 'loglinks': loglinks})
+        filter_params = {
+            'codes': codes, 'offset': offset, 'length': length,
+            'persona_id': persona_id, 'submitted_by': submitted_by,
+            'change_note': change_note, 'ctime': (time_start, time_stop),
+            'reviewed_by': reviewed_by,
+        }
+
+        return self.generic_view_log(
+            rs, filter_params, "core.changelog", "view_changelog_meta", download)
 
     @access("core_admin", "auditor")
     @REQUESTdata(*LOG_FIELDS_COMMON)
@@ -2190,29 +2183,18 @@ class CoreBaseFrontend(AbstractFrontend):
                  persona_id: Optional[CdedbID], submitted_by: Optional[CdedbID],
                  change_note: Optional[str],
                  time_start: Optional[datetime.datetime],
-                 time_stop: Optional[datetime.datetime]) -> Response:
+                 time_stop: Optional[datetime.datetime],
+                 download: bool = False) -> Response:
         """View activity."""
-        length = length or self.conf["DEFAULT_LOG_LENGTH"]
-        # length is the requested length, _length the theoretically
-        # shown length for an infinite amount of log entries.
-        _offset, _length = calculate_db_logparams(offset, length)
 
-        # no validation since the input stays valid, even if some options
-        # are lost
-        rs.ignore_validation_errors()
-        total, log = self.coreproxy.retrieve_log(
-            rs, codes, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, change_note=change_note,
-            time_start=time_start, time_stop=time_stop)
-        persona_ids = (
-                {entry['submitted_by'] for entry in log if
-                 entry['submitted_by']}
-                | {entry['persona_id'] for entry in log if entry['persona_id']})
-        personas = self.coreproxy.get_personas(rs, persona_ids)
-        loglinks = calculate_loglinks(rs, total, offset, length)
-        return self.render(rs, "view_log", {
-            'log': log, 'total': total, 'length': _length,
-            'personas': personas, 'loglinks': loglinks})
+        filter_params = {
+            'codes': codes, 'offset': offset, 'length': length,
+            'persona_id': persona_id, 'submitted_by': submitted_by,
+            'change_note': change_note, 'ctime': (time_start, time_stop),
+        }
+
+        return self.generic_view_log(
+            rs, filter_params, "core.log", "view_log", download)
 
     @access("anonymous")
     def debug_email(self, rs: RequestState, token: str) -> Response:

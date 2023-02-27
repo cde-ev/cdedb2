@@ -18,8 +18,8 @@ from cdedb.common.fields import LOG_FIELDS_COMMON
 from cdedb.common.n_ import n_
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
-    REQUESTdata, TransactionObserver, Worker, access, calculate_db_logparams,
-    calculate_loglinks, make_membership_fee_reference, make_postal_address,
+    REQUESTdata, TransactionObserver, Worker, access, make_membership_fee_reference,
+    make_postal_address,
 )
 
 
@@ -296,26 +296,15 @@ class CdESemesterMixin(CdEBaseFrontend):
                      submitted_by: Optional[vtypes.CdedbID],
                      change_note: Optional[str],
                      time_start: Optional[datetime.datetime],
-                     time_stop: Optional[datetime.datetime]) -> Response:
+                     time_stop: Optional[datetime.datetime],
+                     download: bool = False) -> Response:
         """View semester activity."""
-        length = length or self.conf["DEFAULT_LOG_LENGTH"]
-        # length is the requested length, _length the theoretically
-        # shown length for an infinite amount of log entries.
-        _offset, _length = calculate_db_logparams(offset, length)
 
-        # no validation since the input stays valid, even if some options
-        # are lost
-        rs.ignore_validation_errors()
-        total, log = self.cdeproxy.retrieve_cde_log(
-            rs, codes, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, change_note=change_note,
-            time_start=time_start, time_stop=time_stop)
-        persona_ids = (
-                {entry['submitted_by'] for entry in log if
-                 entry['submitted_by']}
-                | {entry['persona_id'] for entry in log if entry['persona_id']})
-        personas = self.coreproxy.get_personas(rs, persona_ids)
-        loglinks = calculate_loglinks(rs, total, offset, length)
-        return self.render(rs, "semester/view_cde_log", {
-            'log': log, 'total': total, 'length': _length,
-            'personas': personas, 'loglinks': loglinks})
+        filter_params = {
+            'codes': codes, 'offset': offset, 'length': length,
+            'persona_id': persona_id, 'submitted_by': submitted_by,
+            'change_note': change_note, 'ctime': (time_start, time_stop),
+        }
+
+        return self.generic_view_log(
+            rs, filter_params, "cde.log", "semester/view_cde_log", download)

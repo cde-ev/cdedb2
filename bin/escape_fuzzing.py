@@ -205,7 +205,7 @@ def check(response_data: ResponseData, *, payload: str,
         try:
             new_response = form.submit()
             new_response = new_response.maybe_follow()
-        except webtest.app.AppError as e:
+        except Exception as e:
             log_error(f"Got error when posting to {form.action}: {fmt(e)}")
             continue
         posted_urls.add(form.action)
@@ -220,7 +220,7 @@ def check(response_data: ResponseData, *, payload: str,
         try:
             new_response = form.submit()
             new_response = new_response.maybe_follow()
-        except webtest.app.AppError as e:
+        except Exception as e:
             log_error(f"Got error when posting to {form.action} with payload: {fmt(e)}")
             continue
         ret.queue.append(ResponseData(new_response, form.action + " [P+token]", url))

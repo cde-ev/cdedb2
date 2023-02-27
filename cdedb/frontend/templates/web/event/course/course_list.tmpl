@@ -23,7 +23,7 @@
         {% call util.notification('info', id='course-not-visible') %}
             {% trans %}The Courselist is currently only visible to Orgas and Admins.{% endtrans %}
         {% endcall %}
-    {% elif not ambience['event']['is_course_state_visible'] and ambience['event']['id'] in user.orga %}
+    {% elif not ambience['event']['is_course_state_visible'] and show_course_state %}
         {% call util.notification('info', id='cancelled-not-visible') %}
             {% if ambience['event']['tracks']|length > 1 %}
                 {% trans %}
@@ -44,24 +44,46 @@
     {% endif %}
 {% endblock %}
 {% block content %}
-    {% if courses %}
-        {% if ambience['event']['tracks']|length > 1 %}
+    {% if courses_exist %}
+        {% if ambience['event']['tracks']|length > 1 or show_course_state %}
             {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass='panel-primary') %}
                 <form action="{{ cdedblink('event/course_list') }}" method="GET" id="coursefilterform"
                       aria-label="{% trans %}Filter{% endtrans %}">
-                    {% trans %}Show only courses in tracks:{% endtrans %}
-                    {{ util.input_checkboxes(name="track_ids", slice=3,
-                        entries=ambience['event']['tracks']|keydictsort(EntitySorter.course_track)|dict_entries('id', 'title')) }}
+                    {% if show_course_state %}
+                        {{ util.form_input_checkbox('active_only', label=gettext("Show only courses taking place"),
+                                                    horizontal=False) }}
+                    {% endif %}
+                    {% if ambience['event']['tracks']|length > 1 %}
+                        {{ util.form_input_checkboxes('track_ids', label=gettext("Show only courses in tracks:"),
+                            entries=ambience['event']['tracks']|keydictsort(EntitySorter.course_track)|dict_entries('id', 'title'),
+                            slice=(2 if ambience['event']['tracks']|length < 7 else 3), horizontal=False) }}
+                    {% endif %}
                     {{ util.input_submit(label=gettext("Go!"), icon="filter") }}
                 </form>
             {% endcall %}
         {% endif %}
+        {% if not courses %}
+            <p>{% trans %}No matching courses found.{% endtrans %}</p>
+        {% endif %}
+
+        {% if courses|length > 5 %}
+            <div id="toc">
+            <details open>
+                <summary class="h3">{% trans %}Table of Contents{% endtrans %}</summary>
+                <ul>
+                    {% for course_id, course in courses %}
+                        <li>{{ util.href("#course-{}".format(course_id), "{}. {}".format(course['nr'], course['title'])) }}</li>
+                    {% endfor %}
+                </ul>
+                </details>
+            </div>
+        {% endif %}
 
         <div id="list-courses">
-        {% for anid, entry in courses|keydictsort(EntitySorter.course) if entry['segments'].intersection(track_ids) %}
+        {% for anid, entry in courses %}
             <div class="hide-hover-container" id="course-{{ entry['id'] }}">
                 <h3>
-                    {{ entry['nr'] }}. {{ entry['title'] }}
+                    {{ entry['nr'] }}. {{ entry['title'] }}&nbsp;{# prevent linebreak before the (invisible) headerlink -#}
                     <a class="headerlink" href="#course-{{ entry['id'] }}"
                        title="{% trans %}Permanent link{% endtrans %}">&para;</a>
                 </h3>
@@ -93,18 +115,15 @@
                                     ,
                                 {% endif %}
                             {%- endif %}
-                            {%- if track_id not in entry['active_segments'] and
-                                    (ambience['event']['is_course_state_visible']
-                                        or ambience['event']['id'] in user.orga) %}
+                            {%- if track_id not in entry['active_segments'] and show_course_state %}
                                 <i><s>{{ track['title'] }}</s></i>{# -#}
                                 <span class="sr-only"> ({% trans %}cancelled{% endtrans %})</span>
                             {%- else %}
                                 <i>{{ track['title'] }}</i>
                             {%- endif %}
                         {%- endfor %}</span>.
-                    {% elif (ambience['event']['tracks'].keys()|list)[0] not in entry['active_segments'] and
-                            (ambience['event']['is_course_state_visible']
-                                or ambience['event']['id'] in user.orga) %}
+                    {% elif (ambience['event']['tracks'].keys()|list)[0] not in entry['active_segments']
+                             and show_course_state %}
                         – <span class="text-info">{% trans %}cancelled{% endtrans %}</span>
                     {% endif %}
                 </p>

@@ -58,6 +58,7 @@ from cdedb.common.fields import (
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
+from cdedb.common.query.log_filter import LogFilterEntityLogLike
 from cdedb.common.roles import implying_realms
 from cdedb.common.sorting import EntitySorter, mixed_existence_sorter, xsorted
 from cdedb.database.connection import Atomizer
@@ -314,35 +315,27 @@ class AssemblyBackend(AbstractBackend):
         return self.query_exec(rs, query, params)
 
     @access("assembly", "auditor")
-    def retrieve_log(self, rs: RequestState,
-                     codes: Collection[const.AssemblyLogCodes] = None,
-                     assembly_id: int = None, offset: int = None,
-                     length: int = None, persona_id: int = None,
-                     submitted_by: int = None, change_note: str = None,
-                     time_start: datetime.datetime = None,
-                     time_stop: datetime.datetime = None) -> CdEDBLog:
+    def retrieve_log(self, rs: RequestState, log_filter: LogFilterEntityLogLike
+                     ) -> CdEDBLog:
         """Get recorded activity.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        assembly_id = affirm_optional(vtypes.ID, assembly_id)
-        if assembly_id is None:
-            if not self.is_admin(rs) and "auditor" not in rs.user.roles:
-                raise PrivilegeError(n_("Must be admin to access global log."))
-            assembly_ids = None
+        log_filter = self.generic_affirm_log_filter(log_filter, "assembly.log")
+        assembly_ids = log_filter.get('entity_ids', ())
+        assembly_ids = affirm_set(vtypes.ID, assembly_ids)
+
+        if self.is_admin(rs) or "auditor" in rs.user.roles:
+            pass
+        elif not assembly_ids:
+            raise PrivilegeError(n_("Must be admin to access global log."))
+        elif all(self.is_presider(rs, assembly_id=id_) for id_ in assembly_ids):
+            pass
         else:
-            if (not self.is_presider(rs, assembly_id=assembly_id)
-                    and "auditor" not in rs.user.roles):
-                raise PrivilegeError(n_("Must have privileged access to view"
-                                        " assembly log."))
-            assembly_ids = [assembly_id]
-        return self.generic_retrieve_log(
-            rs, const.AssemblyLogCodes, "assembly", "assembly.log", codes,
-            entity_ids=assembly_ids, offset=offset, length=length,
-            persona_id=persona_id, submitted_by=submitted_by,
-            change_note=change_note, time_start=time_start,
-            time_stop=time_stop)
+            raise PrivilegeError(n_("Not privileged."))
+
+        return self.generic_retrieve_log(rs, log_filter, "assembly.log")
 
     @access("core_admin", "assembly_admin")
     def submit_general_query(self, rs: RequestState,
@@ -574,8 +567,8 @@ class AssemblyBackend(AbstractBackend):
         get_assemblies, "assembly_ids", "assembly_id")
 
     @access("assembly")
-    def set_assembly(self, rs: RequestState, data: CdEDBObject
-                     ) -> DefaultReturnCode:
+    def set_assembly(self, rs: RequestState, data: CdEDBObject,
+                     change_note: str = None) -> DefaultReturnCode:
         """Update some keys of an assembly.
 
         In addition to the keys in `cdedb.common.ASSEMBLY_FIELDS`, which is
@@ -596,7 +589,7 @@ class AssemblyBackend(AbstractBackend):
             if assembly_data:
                 ret *= self.sql_update(rs, "assembly.assemblies", assembly_data)
                 self.assembly_log(rs, const.AssemblyLogCodes.assembly_changed,
-                                  data['id'])
+                                  data['id'], change_note=change_note)
         return ret
 
     @access("assembly_admin")
@@ -685,7 +678,7 @@ class AssemblyBackend(AbstractBackend):
 
         Possible blockers:
 
-        * assembly_is_locked: Wether the assembly has been locked. In contrast to
+        * assembly_is_locked: Whether the assembly has been locked. In contrast to
                               individual objects linked to the assembly, this does not
                               prevent deletion and cascading of this blocker will also
                               cascade it for the individual objects.

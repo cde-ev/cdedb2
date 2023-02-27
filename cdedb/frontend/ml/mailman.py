@@ -7,14 +7,15 @@ on the mail VM from within the CdEDB.
 """
 from typing import Set
 
-from mailmanclient import Client, MailingList
+import mailmanclient as mmc
 
 import cdedb.database.constants as const
 from cdedb.backend.common import DatabaseLock
-from cdedb.common import CdEDBObject, RequestState, make_persona_name
+from cdedb.common import RequestState, make_persona_name
 from cdedb.database.constants import LockType
 from cdedb.frontend.common import cdedburl
 from cdedb.frontend.ml.base import MlBaseFrontend
+from cdedb.models.ml import Mailinglist
 
 POLICY_MEMBER_CONVERT = {
     const.ModerationPolicy.unmoderated: 'defer',
@@ -61,21 +62,21 @@ def template_url(name: str) -> str:
     The handling of templates in mailman is a bit tricky involving a
     separate URI for each template which we construct here.
     """
-    return "https://db.cde-ev.de/mailman_templates/{}".format(name)
+    return f"https://db.cde-ev.de/mailman_templates/{name}"
 
 
 class MlMailmanMixin(MlBaseFrontend):
-    def mailman_sync_list_meta(self, rs: RequestState, mailman: Client,
-                               db_list: CdEDBObject,
-                               mm_list: MailingList) -> None:
+    def mailman_sync_list_meta(self, rs: RequestState, mailman: mmc.Client,
+                               db_list: Mailinglist,
+                               mm_list: mmc.MailingList) -> None:
         prefix = ""
-        if db_list['subject_prefix']:
-            prefix = "[{}] ".format(db_list['subject_prefix'] or "")
+        if db_list.subject_prefix:
+            prefix = f"[{db_list.subject_prefix or ''}] "
 
-        alias_domains: Set[str] = db_list['domain'].get_acceptable_aliases()
+        alias_domains: Set[str] = db_list.domain.get_acceptable_aliases()
         acceptable_aliases = \
-            ([db_list['local_part'] + '@' + d for d in alias_domains] +
-             self.conf["MAILMAN_ACCEPTABLE_ALIASES"].get(db_list['address'], [])) or ""
+            ([db_list.local_part + '@' + d for d in alias_domains] +
+             self.conf["MAILMAN_ACCEPTABLE_ALIASES"].get(db_list.address, [])) or ""
 
         # First, specify the generally desired settings, templates and header matches.
         # Settings not specified here can be persistently set otherwise.
@@ -96,27 +97,25 @@ class MlMailmanMixin(MlBaseFrontend):
             'administrivia': True,
             'member_roster_visibility': 'moderators',
             'advertised': True,
-            'display_name': db_list['title'],
-            'description': db_list['title'],
-            'info': db_list['description'] or "",
+            'display_name': db_list.title,
+            'description': db_list.title,
+            'info': db_list.description or "",
             'subject_prefix': prefix,
             'acceptable_aliases': acceptable_aliases,
             'require_explicit_destination': True,
-            'max_message_size': db_list['maxsize'] or 0,
+            'max_message_size': db_list.maxsize or 0,
             'max_num_recipients': 0,
-            'default_member_action': POLICY_MEMBER_CONVERT[
-                db_list['mod_policy']],
-            'default_nonmember_action': POLICY_OTHER_CONVERT[
-                db_list['mod_policy']],
+            'default_member_action': POLICY_MEMBER_CONVERT[db_list.mod_policy],
+            'default_nonmember_action': POLICY_OTHER_CONVERT[db_list.mod_policy],
             'digests_enabled': False,
             # Dropping mails silently, even after moderation is worse than rejecting...
             'filter_content': True,
             'filter_action': 'reject',
             'convert_html_to_plaintext': ATTACHMENT_HTML_CONVERT[
-                db_list['attachment_policy']],
+                db_list.attachment_policy],
             'pass_extensions': ATTACHMENT_EXTENSIONS_CONVERT[
-                db_list['attachment_policy']],
-            'pass_types': ATTACHMENT_MIME_CONVERT[db_list['attachment_policy']],
+                db_list.attachment_policy],
+            'pass_types': ATTACHMENT_MIME_CONVERT[db_list.attachment_policy],
         }
         desired_templates = {
             # pylint: disable=line-too-long
@@ -140,13 +139,32 @@ At your convenience, visit the CdEDB [1] to approve or deny the request. Note
 that the paragraph below about email moderation is wrong. Sending mails will
 do nothing.
 
-[1] {cdedburl(rs, 'ml/message_moderation', {'mailinglist_id': db_list['id']}, force_external=True)}
+[1] {cdedburl(rs, 'ml/message_moderation', {'mailinglist_id': db_list.id}, force_external=True)}
+""".strip(),
+            'list:admin:notice:disable': """
+$member's subscription has been disabled on $listname due to an excessive
+bounce score.
+
+This means that the mailinglist software will no longer deliver mail to this
+subscriber. Sadly this aspect of mailman is not yet accessible via the CdEDB
+and independent of the subscriber status in the CdEDB.
+
+Usually you (the moderator) are unable to do anything about the cause and this
+message only serves the purpose of keeping you in the loop w.r.t. the status
+of your mailing list. Mailman will probe the subscriber address and
+automatically reenable delivery if possible. However this may take a while, so
+as a workaround once the bounce reason is fixed you -- can in the CdEDB --
+unsubscribe the individual, wait 15 minutes, and resubscribe the individual
+(this incantation should push the right buttons inside mailman to get things
+going again).
+
+The triggering DSN if available is attached.
 """.strip(),
         }
         desired_header_matches = {
             ('x-spam-flag', 'YES', 'hold'),
         }
-        if not db_list['is_active']:
+        if not db_list.is_active:
             desired_settings.update({
                 'advertised': False,
                 'default_member_action': 'reject',
@@ -165,7 +183,7 @@ The original message as received by Mailman is attached.
             }
 
         # Special case admin mailinglist due to existence of many aliases
-        if db_list['address'] == 'admin@lists.cde-ev.de':
+        if db_list.address == 'admin@lists.cde-ev.de':
             desired_settings['require_explicit_destination'] = False
 
         # Second, update values to mailman if changed
@@ -194,7 +212,7 @@ The original message as received by Mailman is attached.
         }
         store_path = self.conf["STORAGE_DIR"] / 'mailman_templates'
         for name, text in desired_templates.items():
-            file_name = "{}__{}".format(db_list['id'], name)
+            file_name = f"{db_list.id}__{name}"
             file_path = store_path / file_name
             todo = False
             if not file_path.exists():
@@ -219,21 +237,21 @@ The original message as received by Mailman is attached.
         for name in set(existing_templates) - set(desired_templates):
             existing_templates[name].delete()
 
-    def mailman_sync_list_subs(self, rs: RequestState, mailman: Client,
-                               db_list: CdEDBObject,
-                               mm_list: MailingList) -> None:
+    def mailman_sync_list_subs(self, rs: RequestState, mailman: mmc.Client,
+                               db_list: Mailinglist,
+                               mm_list: mmc.MailingList) -> None:
         subscribing_states = const.SubscriptionState.subscribing_states()
         persona_ids = set(self.mlproxy.get_subscription_states(
-            rs, db_list['id'], states=subscribing_states))
+            rs, db_list.id, states=subscribing_states))
         db_addresses = self.mlproxy.get_subscription_addresses(
-            rs, db_list['id'], persona_ids)
+            rs, db_list.id, persona_ids)
         personas = self.coreproxy.get_personas(rs, persona_ids)
 
         # Before updating subscribers, delete spurious (un)subscription requests
         # submitted via mailman.
         requests = mm_list.requests + mm_list.unsubscription_requests
         for request in requests:
-            url = cdedburl(rs, 'ml/show_mailinglist', {'mailinglist_id': db_list['id']},
+            url = cdedburl(rs, 'ml/show_mailinglist', {'mailinglist_id': db_list.id},
                            force_external=True)
             mm_list.moderate_request(request['token'], 'reject',
                 f"Please use the CdE-Datenbank at {url} to manage your subscription.")
@@ -254,11 +272,10 @@ The original message as received by Mailman is attached.
         for address in delete_subs:
             mm_list.unsubscribe(address, pre_confirmed=True, pre_approved=True)
 
-    def mailman_sync_list_mods(self, rs: RequestState, mailman: Client,
-                               db_list: CdEDBObject,
-                               mm_list: MailingList) -> None:
-        personas = self.coreproxy.get_personas(
-            rs, db_list['moderators'])
+    def mailman_sync_list_mods(self, rs: RequestState, mailman: mmc.Client,
+                               db_list: Mailinglist,
+                               mm_list: mmc.MailingList) -> None:
+        personas = self.coreproxy.get_personas(rs, db_list.moderators)
         db_moderators = {
             persona['username']: make_persona_name(persona)
             for persona in personas.values() if persona['username']
@@ -282,14 +299,16 @@ The original message as received by Mailman is attached.
         for address in delete_owners:
             mm_list.remove_owner(address)
 
-    def mailman_sync_list_whites(self, rs: RequestState, mailman: Client,
-                                 db_list: CdEDBObject, mm_list: MailingList) -> None:
-        db_whitelist = db_list['whitelist']
+    def mailman_sync_list_whites(
+            self, rs: RequestState, mailman: mmc.Client, db_list: Mailinglist,
+            mm_list: mmc.MailingList
+    ) -> None:
+        db_whitelist = set(db_list.whitelist)
         mm_whitelist = {n.email: n for n in mm_list.nonmembers}
 
         # implicitly whitelist username for personas with custom address
-        if db_list['mod_policy'] == const.ModerationPolicy.non_subscribers:
-            db_whitelist |= self.mlproxy.get_implicit_whitelist(rs, db_list['id'])
+        if db_list.mod_policy == const.ModerationPolicy.non_subscribers:
+            db_whitelist |= self.mlproxy.get_implicit_whitelist(rs, db_list.id)
 
         new_whites = set(db_whitelist) - set(mm_whitelist)
         current_whites = set(mm_whitelist) - new_whites
@@ -309,10 +328,10 @@ The original message as received by Mailman is attached.
         for address in delete_whites:
             mm_list.remove_role('nonmember', address)
 
-    def mailman_sync_list(self, rs: RequestState, mailman: Client,
-                          db_list: CdEDBObject, mm_list: MailingList) -> None:
+    def mailman_sync_list(self, rs: RequestState, mailman: mmc.Client,
+                          db_list: Mailinglist, mm_list: mmc.MailingList) -> None:
         self.mailman_sync_list_meta(rs, mailman, db_list, mm_list)
-        if db_list['is_active']:
+        if db_list.is_active:
             self.mailman_sync_list_subs(rs, mailman, db_list, mm_list)
             self.mailman_sync_list_mods(rs, mailman, db_list, mm_list)
             self.mailman_sync_list_whites(rs, mailman, db_list, mm_list)
@@ -345,7 +364,7 @@ The original message as received by Mailman is attached.
             return False
         db_lists = self.mlproxy.get_mailinglists(
             rs, self.mlproxy.list_mailinglists(rs, active_only=False))
-        db_lists = {lst['address']: lst for lst in db_lists.values()}
+        db_lists = {lst.address: lst for lst in db_lists.values()}
         mm_lists = {lst.fqdn_listname: lst for lst in mailman.lists}
         new_lists = set(db_lists) - set(mm_lists)
         current_lists = set(db_lists) - new_lists

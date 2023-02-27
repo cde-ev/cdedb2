@@ -3871,6 +3871,7 @@
             "delta": null,
             "new_balance": null,
             "change_note": "-4.50€",
+            "transaction_date": null,
             "members": 7,
             "total": "106.50"
         },
@@ -3882,8 +3883,21 @@
             "delta": "5.00",
             "new_balance": "12.50",
             "change_note": "42.23€",
+            "transaction_date": null,
             "members": 7,
             "total": "111.50"
+        },
+        {
+            "ctime": "---now---",
+            "code": 10,
+            "submitted_by": 32,
+            "persona_id": 9,
+            "delta": "5.00",
+            "new_balance": "5.00",
+            "change_note": null,
+            "transaction_date": "---now---",
+            "members": 7,
+            "total": "116.50"
         }
     ],
     "cde.log": [],
@@ -4587,7 +4601,7 @@
             "id": 2,
             "event_id": 4,
             "title": "Kurs 2. Hälfte nachmittags",
-            "shortname": "K2nS",
+            "shortname": "Kurs2n",
             "notes": null,
             "constraint_type": 1,
             "sortkey": 4
@@ -4596,7 +4610,7 @@
             "id": 3,
             "event_id": 4,
             "title": "Kurs 2. Hälfte morgens",
-            "shortname": "K2mS",
+            "shortname": "Kurs2m",
             "notes": null,
             "constraint_type": 1,
             "sortkey": 3
@@ -4958,6 +4972,19 @@
             "max_size": null,
             "notes": null,
             "fields": {}
+        },
+        {
+            "id": 13,
+            "event_id": 1,
+            "nr": "ζ",
+            "title": "Extra-Kurs",
+            "description": "Besser spät als nie.",
+            "shortname": "Extra",
+            "instructors": null,
+            "min_size": null,
+            "max_size": null,
+            "notes": null,
+            "fields": {}
         }
     ],
     "event.course_segments": [
@@ -5129,6 +5156,21 @@
         {
             "course_id": 12,
             "track_id": 7,
+            "is_active": true
+        },
+        {
+            "course_id": 13,
+            "track_id": 1,
+            "is_active": false
+        },
+        {
+            "course_id": 13,
+            "track_id": 2,
+            "is_active": true
+        },
+        {
+            "course_id": 13,
+            "track_id": 3,
             "is_active": true
         }
     ],

@@ -16,20 +16,33 @@ from tests.common import (
 class TestPrivacyFrontend(FrontendTest):
 
     FIELD_TO_DIV = {
-        "Name": 'personal-information', "Geburtsname": 'personal-information',
+        "Name": 'personal-information',
+        "Geburtsname": 'personal-information',
         "Geburtsdatum": 'personal-information',
-        "Geschlecht": 'personal-information', "CdEDB-ID": 'account',
-        "Account aktiv": 'account', "Bereiche": 'account',
-        "Admin-Privilegien": 'account', "Admin-Notizen": 'account',
+        "Geschlecht": 'personal-information',
+        "Pronomen": 'personal-information',
+        "Pronomen auf Namensschild": 'personal-information',
+        "CdEDB-ID": 'account',
+        "Account aktiv": 'account',
+        "Bereiche": 'account',
+        "Admin-Privilegien": 'account',
+        "Admin-Notizen": 'account',
         "Gedruckter exPuls": 'paper-expuls',
-        "Mitgliedschaft": 'cde-membership', "Guthaben": 'cde-membership',
-        "Sichtbarkeit": 'cde-membership', "E-Mail": 'contact-information',
-        "Telefon": 'contact-information', "Mobiltelefon": 'contact-information',
-        "WWW": 'contact-information', "Adresse": 'address-information',
+        "Mitgliedschaft": 'cde-membership',
+        "Guthaben": 'cde-membership',
+        "Sichtbarkeit": 'cde-membership',
+        "E-Mail": 'contact-information',
+        "Telefon": 'contact-information',
+        "Mobiltelefon": 'contact-information',
+        "WWW": 'contact-information',
+        "Adresse": 'address-information',
         "Zweitadresse": 'address-information',
-        "Fachgebiet": 'additional', "Schule, Uni, …": 'additional',
-        "Jahrgang, Matrikel, …": 'additional', "Interessen": 'additional',
-        "Verschiedenes": 'additional', "Verg. Veranstaltungen": 'past-events',
+        "Fachgebiet": 'additional',
+        "Schule, Uni, …": 'additional',
+        "Jahrgang, Matrikel, …": 'additional',
+        "Interessen": 'additional',
+        "Verschiedenes": 'additional',
+        "Verg. Veranstaltungen": 'past-events',
         "VCard": 'vcard'
     }
 
@@ -64,7 +77,8 @@ class TestPrivacyFrontend(FrontendTest):
 
     def _profile_event_context_view(self, inspected: UserObject) -> Set[str]:
         expected = {
-            "Geburtsdatum", "Geschlecht", "Telefon", "Mobiltelefon", "Adresse"
+            "Geburtsdatum", "Geschlecht", "Pronomen", "Pronomen auf Namensschild",
+            "Telefon", "Mobiltelefon", "Adresse"
         }
         for field in expected:
             self.assertPresence(field, div=self.FIELD_TO_DIV[field])
@@ -97,8 +111,8 @@ class TestPrivacyFrontend(FrontendTest):
 
     def _profile_cde_admin_view(self, inspected: UserObject) -> Set[str]:
         expected = {
-            "Geschlecht", "Mitgliedschaft", "Guthaben", "Sichtbarkeit",
-            "Gedruckter exPuls"
+            "Geschlecht", "Pronomen", "Pronomen auf Namensschild", "Mitgliedschaft",
+            "Guthaben", "Sichtbarkeit", "Gedruckter exPuls"
         }
         for field in expected:
             self.assertPresence(field, div=self.FIELD_TO_DIV[field])
@@ -154,7 +168,8 @@ class TestPrivacyFrontend(FrontendTest):
         expected = {
             "Account aktiv", "Bereiche", "Admin-Privilegien", "Admin-Notizen",
             "Gedruckter exPuls", "Guthaben", "Mitgliedschaft", "Geburtsname",
-            "Geschlecht", "Geburtsdatum", "VCard"
+            "Geschlecht", "Geburtsdatum", "VCard", "Pronomen",
+            "Pronomen auf Namensschild",
         }
         for field in expected:
             self.assertPresence(field, div=self.FIELD_TO_DIV[field])

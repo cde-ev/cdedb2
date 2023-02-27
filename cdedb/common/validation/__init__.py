@@ -52,6 +52,7 @@ f.e. ``check_validation`` registers all errors in the RequestState object.
 """
 
 import copy
+import dataclasses
 import distutils.util
 import functools
 import io
@@ -80,6 +81,7 @@ from schulze_condorcet.util import as_vote_tuple
 
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
+import cdedb.models.ml as models_ml
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, EPSILON, EVENT_SCHEMA_VERSION, INFINITE_ENUM_MAGIC_NUMBER,
     CdEDBObjectMap, Error, InfiniteEnum, LineResolutions, asciificator,
@@ -91,6 +93,9 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import (
     MULTI_VALUE_OPERATORS, NO_VALUE_OPERATORS, VALID_QUERY_OPERATORS, QueryOperators,
     QueryOrder, QueryScope, QuerySpec,
+)
+from cdedb.common.query.log_filter import (
+    LogFilter, LogFilterChangelog, LogFilterEntityLog, LogFilterFinanceLog, LogTable,
 )
 from cdedb.common.roles import ADMIN_KEYS, extract_roles
 from cdedb.common.sorting import xsorted
@@ -110,6 +115,7 @@ _LOGGER = logging.getLogger(__name__)
 _CONFIG = LazyConfig()
 
 T = TypeVar('T')
+T_Co = TypeVar('T_Co', covariant=True)
 F = TypeVar('F', bound=Callable[..., Any])
 
 
@@ -162,11 +168,37 @@ class ValidatorStorage(Dict[Type[Any], Callable[..., Any]]):
         elif typing.get_origin(type_) is list:
             [inner_type] = typing.get_args(type_)
             return make_list_validator(inner_type)  # type: ignore[return-value]
+        elif typing.get_origin(type_) is set:
+            [inner_type] = typing.get_args(type_)
+            return make_set_validator(inner_type)  # type: ignore[return-value]
+        elif typing.get_origin(type_) is tuple:
+            args = typing.get_args(type_)
+            if len(args) == 2:
+                type_a, type_b = args
+                if type_a is type_b:
+                    return cast(Callable[..., T], make_pair_validator(type_a))
         # TODO more container types like tuple
         return super().__getitem__(type_)
 
 
 _ALL_TYPED = ValidatorStorage()
+
+DATACLASS_TO_VALIDATORS: Mapping[Type[Any], Type[Any]] = {
+    models_ml.Mailinglist: Mailinglist
+}
+
+
+def validate_assert_dataclass(type_: Type[T], value: Any, ignore_warnings: bool,
+                              **kwargs: Any) -> T:
+    if type_ not in DATACLASS_TO_VALIDATORS:
+        raise RuntimeError("There is no validator mapped to this dataclass.")
+    if not dataclasses.is_dataclass(value):
+        raise RuntimeError("Given value is not an instance of a dataclass.")
+    validator = DATACLASS_TO_VALIDATORS[type_]
+    val = dataclasses.asdict(value)
+    validated = validate_assert(
+        validator, val, ignore_warnings=ignore_warnings, **kwargs)
+    return type_(**validated)
 
 
 def validate_assert(type_: Type[T], value: Any, ignore_warnings: bool,
@@ -198,6 +230,22 @@ def validate_assert_optional(type_: Type[T], value: Any, ignore_warnings: bool,
                              **kwargs: Any) -> Optional[T]:
     """Wrapper to avoid a lot of type-ignore statements due to a mypy bug."""
     return validate_assert(Optional[type_], value, ignore_warnings, **kwargs)  # type: ignore[arg-type]
+
+
+def validate_check_dataclass(type_: Type[T], value: Any, ignore_warnings: bool,
+                              **kwargs: Any) -> Tuple[Optional[T], List[Error]]:
+    if type_ not in DATACLASS_TO_VALIDATORS:
+        raise RuntimeError("There is no validator mapped to this dataclass.")
+    if not dataclasses.is_dataclass(value):
+        raise RuntimeError("Given value is not an instance of a dataclass.")
+    validator = DATACLASS_TO_VALIDATORS[type_]
+    val = dataclasses.asdict(value)
+    validated, errors = validate_check(
+        validator, val, ignore_warnings=ignore_warnings, **kwargs)
+    if validated is None:
+        return None, errors
+    else:
+        return type_(**validated), errors
 
 
 def validate_check(type_: Type[T], value: Any, ignore_warnings: bool,
@@ -513,6 +561,26 @@ def _positive_int(
 
 
 @_add_typed_validator
+def _negative_int(
+    val: Any, argname: str = None, **kwargs: Any
+) -> NegativeInt:
+    val = _int(val, argname, **kwargs)
+    if val >= 0:
+        raise ValidationSummary(ValueError(argname, n_("Must be negative.")))
+    return NegativeInt(val)
+
+
+@_add_typed_validator
+def _non_zero_int(
+    val: Any, argname: str = None, **kwargs: Any
+) -> NonZeroInt:
+    val = _int(val, argname, **kwargs)
+    if val == 0:
+        raise ValidationSummary(ValueError(argname, n_("Must not be zero.")))
+    return NonZeroInt(val)
+
+
+@_add_typed_validator
 def _id(
     val: Any, argname: str = None, **kwargs: Any
 ) -> ID:
@@ -523,7 +591,36 @@ def _id(
     """
     if val is None or isinstance(val, str) and not val:
         raise ValidationSummary(ValueError(argname, n_("Must not be empty.")))
-    return ID(_positive_int(val, argname, **kwargs))
+    val = _positive_int(val, argname, **kwargs)
+    return ID(_proto_id(val, argname, **kwargs))
+
+
+@_add_typed_validator
+def _creation_id(
+    val: Any, argname: str = None, **kwargs: Any
+) -> CreationID:
+    """ID of an object which is currently under creation.
+
+    This is just a wrapper around `_negative_int`, to differentiate this
+    semantically.
+    """
+    if val is None or isinstance(val, str) and not val:
+        raise ValidationSummary(ValueError(argname, n_("Must not be empty.")))
+    val = _negative_int(val, argname, **kwargs)
+    return CreationID(_proto_id(val, argname, **kwargs))
+
+
+@_add_typed_validator
+def _proto_id(
+    val: Any, argname: str = None, **kwargs: Any
+) -> ProtoID:
+    """An object with a proto-id may already exist or is currently under creation.
+
+    This implies that the id may either be positive or negative, but must not be zero.
+    """
+    if val is None or isinstance(val, str) and not val:
+        raise ValidationSummary(ValueError(argname, n_("Must not be empty.")))
+    return ProtoID(_non_zero_int(val, argname, **kwargs))
 
 
 @_add_typed_validator
@@ -562,6 +659,10 @@ def _decimal(
     val: Any, argname: str = None, *,
     large: bool = False, **kwargs: Any
 ) -> decimal.Decimal:
+    """decimal.Decimal fitting into a `numeric` postgres column.
+
+    :param large: specifies whether `numeric(8, 2)` or `numeric(11, 2)` is used
+    """
     if isinstance(val, str):
         try:
             val = decimal.Decimal(val)
@@ -571,14 +672,10 @@ def _decimal(
     if not isinstance(val, decimal.Decimal):
         raise ValidationSummary(
             TypeError(argname, n_("Must be a decimal.Decimal.")))
-    if not large and abs(val) >= 1e7:
-        # we are using numeric(8,2) columns in postgres
-        # which only support numbers up to this size
+    if not large and abs(val) >= 1e6:
         raise ValidationSummary(
             ValueError(argname, n_("Must be smaller than a million.")))
-    if abs(val) >= 1e10:
-        # we are using numeric(11,2) columns in postgres for summation columns
-        # which only support numbers up to this size
+    if abs(val) >= 1e9:
         raise ValidationSummary(
             ValueError(argname, n_("Must be smaller than a billion.")))
     return val
@@ -902,6 +999,7 @@ def _list_of(
         # TODO use escaped_split?
         # Skip emtpy entries which can be produced by JavaScript.
         val = [v for v in val.split(",") if v]
+    # TODO raise ValueError if val is string and _parse_csv is False?
     val = _iterable(val, argname, **kwargs)
     vals: List[T] = []
     errs = ValidationSummary()
@@ -929,6 +1027,43 @@ def make_list_validator(type_: Type[T]) -> ListValidator[T]:
         return _list_of(val, type_, argname, **kwargs)
 
     return list_validator
+
+
+class PairValidator(Protocol[T_Co]):
+    def __call__(self, val: Any, argname: str = None, **kargs: Any
+                 ) -> Tuple[T_Co, T_Co]:
+        ...
+
+
+def make_pair_validator(type_: Type[T]) -> PairValidator[T]:
+
+    @functools.wraps(_range)
+    def pair_validator(val: Any, argname: str = None, **kwargs: Any) -> Tuple[T, T]:
+        return _range(val, type_, argname, **kwargs)
+
+    return pair_validator
+
+
+def _set_of(
+    val: Any, atype: Type[T], argname: str = None, **kwargs: Any
+) -> Set[T]:
+    # TODO maybe disallow strings here (see also _list_of)
+    val = _iterable(val, argname=argname, **kwargs)
+    return {_ALL_TYPED[atype](v, argname, **kwargs) for v in val}
+
+
+class SetValidator(Protocol[T]):
+    def __call__(self, val: Any, argname: str = None, **kwargs: Any) -> Set[T]:
+        ...
+
+
+def make_set_validator(type_: Type[T]) -> SetValidator[T]:
+
+    @functools.wraps(_set_of)
+    def set_validator(val: Any, argname: str = None, **kwargs: Any) -> Set[T]:
+        return _set_of(val, type_, argname, **kwargs)
+
+    return set_validator
 
 
 @_add_typed_validator
@@ -3837,33 +3972,10 @@ def _serialized_event_questionnaire(
     return SerializedEventQuestionnaire(val)
 
 
-MAILINGLIST_COMMON_FIELDS: Mapping[str, Any] = {
-    'title': str,
-    'local_part': EmailLocalPart,
-    'domain': const.MailinglistDomain,
-    'description': Optional[str],
-    'mod_policy': const.ModerationPolicy,
-    'attachment_policy': const.AttachmentPolicy,
-    'ml_type': const.MailinglistTypes,
-    'subject_prefix': Optional[str],
-    'maxsize': Optional[ID],
-    'is_active': bool,
-    'notes': Optional[str],
-}
-
-MAILINGLIST_OPTIONAL_FIELDS: Mapping[str, Any] = {
+MAILINGLIST_TYPE_DEPENDENT_FIELDS: Mapping[str, Any] = {
     'assembly_id': NoneType,
     'event_id': NoneType,
     'registration_stati': EmptyList,
-}
-
-ALL_MAILINGLIST_FIELDS = (MAILINGLIST_COMMON_FIELDS.keys() |
-                          ml_type.ADDITIONAL_TYPE_FIELDS.items())
-
-MAILINGLIST_READONLY_FIELDS = {
-    'address',
-    'domain_str',
-    'ml_type_class',
 }
 
 
@@ -3884,36 +3996,42 @@ def _mailinglist(
         raise ValidationSummary(ValueError(
             "ml_type", "Must provide ml_type for setting mailinglist."))
     atype = ml_type.get_type(val["ml_type"])
-    mandatory_validation_fields: TypeMapping = {
-        'moderators': List[ID],
-        **atype.mandatory_validation_fields,
-    }
-    optional_validation_fields: TypeMapping = {
-        'whitelist': List[Email],
-        **atype.optional_validation_fields,
-    }
-    mandatory_fields = {**MAILINGLIST_COMMON_FIELDS}
-    optional_fields = {**MAILINGLIST_OPTIONAL_FIELDS}
 
-    # iterable_fields = []
-    for source, target in ((mandatory_validation_fields, mandatory_fields),
-                           (optional_validation_fields, optional_fields)):
-        for key, validator in source.items():
-            target[key] = validator
-    # Optionally remove readonly attributes, take care to keep the original.
-    if _allow_readonly:
-        val = dict(copy.deepcopy(val))
-        for key in MAILINGLIST_READONLY_FIELDS:
-            if key in val:
-                del val[key]
+    mandatory_fields, optional_fields = models_ml.Mailinglist.validation_fields(
+        creation=creation)
 
-    if creation:
-        pass
-    else:
-        # The order is important here, so that mandatory fields take
-        # precedence.
-        optional_fields = dict(optional_fields, **mandatory_fields)
-        mandatory_fields = {'id': ID}
+    # replace the type specific fields with their absence defaults
+    # TODO move this into the validation_fields function once the MailinglistTypes are
+    #  properly implemented.
+    mandatory_type_fields = atype.mandatory_validation_fields.keys()
+    optional_type_fields = atype.optional_validation_fields.keys()
+    type_fields = {*mandatory_type_fields, *optional_type_fields}
+    for name in MAILINGLIST_TYPE_DEPENDENT_FIELDS:
+        if name in mandatory_type_fields and name in mandatory_fields:
+            pass
+        elif name in mandatory_type_fields and name in optional_fields:
+            mandatory_fields[name] = optional_fields[name]
+            del optional_fields[name]
+        elif name in optional_type_fields and name in mandatory_fields:
+            optional_fields[name] = mandatory_fields[name]
+            del mandatory_fields[name]
+        elif name in optional_type_fields and name in optional_fields:
+            pass
+        elif name not in type_fields:
+            if name in mandatory_fields:
+                del mandatory_fields[name]
+                optional_fields[name] = MAILINGLIST_TYPE_DEPENDENT_FIELDS[name]
+            elif name in optional_fields:
+                optional_fields[name] = MAILINGLIST_TYPE_DEPENDENT_FIELDS[name]
+            else:
+                raise RuntimeError("Impossible")
+        else:
+            raise RuntimeError("Impossible")
+
+    if not creation:
+        optional_fields.update(mandatory_fields)
+        del optional_fields["id"]
+        mandatory_fields = {"id": mandatory_fields["id"]}
 
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
@@ -4641,6 +4759,90 @@ def _query(
 
     # TODO why deepcopy?
     return copy.deepcopy(val)
+
+
+def _range(
+    val: Any, type_: Type[T], argname: str = None, **kwargs: Any
+) -> Tuple[T, T]:
+    """Validate val to be a tuple of exactly two values of the given type.
+
+    Used to specify a range to filter for.
+    """
+    val = _sequence(val, argname, **kwargs)
+
+    if not len(val) == 2:
+        raise ValidationSummary(ValueError(n_("Must contain exactly two elements.")))
+
+    errs = ValidationSummary()
+    new_val = []
+    for v in val:
+        with errs:
+            new_val.append(_ALL_TYPED[type_](v, argname, **kwargs))
+
+    if errs:
+        raise errs
+
+    from_val, to_val = new_val  # pylint: disable=unbalanced-tuple-unpacking
+    return (from_val, to_val)
+
+
+@_add_typed_validator
+def _log_filter(
+    val: Any, argname: str = None, *, log_table: LogTable, **kwargs: Any
+) -> LogFilter:
+    return _log_filter_common(
+        val, argname, log_table=log_table, filter_class=LogFilter)
+
+
+@_add_typed_validator
+def _log_filter_changelog(
+    val: Any, argname: str = None, *, log_table: LogTable, **kwargs: Any
+) -> LogFilterChangelog:
+    return _log_filter_common(
+        val, argname, log_table=log_table, filter_class=LogFilterChangelog)
+
+
+@_add_typed_validator
+def _log_filter_entity_log(
+    val: Any, argname: str = None, *, log_table: LogTable, **kwargs: Any
+) -> LogFilterEntityLog:
+    return _log_filter_common(
+        val, argname, log_table=log_table, filter_class=LogFilterEntityLog)
+
+
+@_add_typed_validator
+def _log_filter_finance(
+    val: Any, argname: str = None, *, log_table: LogTable, **kwargs: Any
+) -> LogFilterFinanceLog:
+    return _log_filter_common(
+        val, argname, log_table=log_table, filter_class=LogFilterFinanceLog)
+
+
+LF = TypeVar("LF", bound=LogFilter)
+
+
+def _log_filter_common(
+    val: Any, argname: str = None,
+    *, log_table: LogTable, filter_class: Type[LF],
+    **kwargs: Any
+) -> LF:
+
+    if isinstance(val, filter_class):
+        val_dict = val.__dict__
+    else:
+        val_dict = dict(_mapping(val, argname, **kwargs))
+
+    if not val_dict.get('length'):
+        val_dict['length'] = _CONFIG['DEFAULT_LOG_LENGTH']
+    if val_dict.get('table', log_table) != log_table:
+        raise ValidationSummary(ValueError(n_("Table mismatch.")))
+    # Ensure this is an enum member, not just a string.
+    val_dict['table'] = LogTable(log_table)
+
+    val_dict = _examine_dictionary_fields(
+        val_dict, {}, typing.get_type_hints(filter_class))
+
+    return filter_class(**val_dict)
 
 
 E = TypeVar('E', bound=Enum)

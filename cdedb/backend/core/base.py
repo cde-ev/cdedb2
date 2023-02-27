@@ -42,6 +42,7 @@ from cdedb.common.fields import (
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
+from cdedb.common.query.log_filter import LogFilterChangelogLike, LogFilterLike
 from cdedb.common.roles import (
     ADMIN_KEYS, ALL_ROLES, REALM_ADMINS, extract_roles, privilege_tier,
 )
@@ -213,7 +214,8 @@ class CoreBaseBackend(AbstractBackend):
     def finance_log(self, rs: RequestState, code: const.FinanceLogCodes,
                     persona_id: Optional[int], delta: Optional[decimal.Decimal],
                     new_balance: Optional[decimal.Decimal],
-                    change_note: str = None) -> DefaultReturnCode:
+                    change_note: str = None, transaction_date: datetime.date = None,
+                    ) -> DefaultReturnCode:
         """Make an entry in the finance log.
 
         See
@@ -234,7 +236,8 @@ class CoreBaseBackend(AbstractBackend):
             "persona_id": persona_id,
             "delta": delta,
             "new_balance": new_balance,
-            "change_note": change_note
+            "change_note": change_note,
+            "transaction_date": transaction_date,
         }
         with Atomizer(rs):
             query = """
@@ -251,44 +254,24 @@ class CoreBaseBackend(AbstractBackend):
             return self.sql_insert(rs, "cde.finance_log", data)
 
     @access("core_admin", "auditor")
-    def retrieve_log(self, rs: RequestState,
-                     codes: Collection[const.CoreLogCodes] = None,
-                     offset: int = None, length: int = None,
-                     persona_id: int = None, submitted_by: int = None,
-                     change_note: str = None,
-                     time_start: datetime.datetime = None,
-                     time_stop: datetime.datetime = None) -> CdEDBLog:
+    def retrieve_log(self, rs: RequestState, log_filter: LogFilterLike
+                     ) -> CdEDBLog:
         """Get recorded activity.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        return self.generic_retrieve_log(
-            rs, const.CoreLogCodes, "persona", "core.log", codes=codes,
-            offset=offset, length=length, persona_id=persona_id,
-            submitted_by=submitted_by, change_note=change_note,
-            time_start=time_start, time_stop=time_stop)
+        return self.generic_retrieve_log(rs, log_filter, "core.log")
 
     @access("core_admin", "auditor")
-    def retrieve_changelog_meta(
-            self, rs: RequestState,
-            stati: Collection[const.MemberChangeStati] = None,
-            offset: int = None, length: int = None, persona_id: int = None,
-            submitted_by: int = None, change_note: str = None,
-            time_start: datetime.datetime = None,
-            time_stop: datetime.datetime = None,
-            reviewed_by: int = None) -> CdEDBLog:
+    def retrieve_changelog_meta(self, rs: RequestState,
+                                log_filter: LogFilterChangelogLike) -> CdEDBLog:
         """Get changelog activity.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        return self.generic_retrieve_log(
-            rs, const.MemberChangeStati, "persona", "core.changelog",
-            additional_columns=['automated_change'], codes=stati, offset=offset,
-            length=length, persona_id=persona_id, submitted_by=submitted_by,
-            reviewed_by=reviewed_by, change_note=change_note, time_start=time_start,
-            time_stop=time_stop)
+        return self.generic_retrieve_log(rs, log_filter, "core.changelog")
 
     def changelog_submit_change(self, rs: RequestState, data: CdEDBObject,
                                 generation: Optional[int], may_wait: bool,
@@ -446,7 +429,7 @@ class CoreBaseBackend(AbstractBackend):
         that the reviewers won't get plagued too much.
 
         :param ack: whether to commit or refuse the change
-        :param reviewed: Signals wether the change was reviewed. This exists,
+        :param reviewed: Signals whether the change was reviewed. This exists,
           so that automatically resolved changes are not marked as reviewed.
         """
         if not ack:
@@ -487,8 +470,7 @@ class CoreBaseBackend(AbstractBackend):
             # commit changes
             ret = 0
             if len(udata) > 1:
-                ret = self.commit_persona(
-                    rs, udata, change_note="Änderung eingetragen.")
+                ret = self.commit_persona(rs, udata)
                 if not ret:
                     raise RuntimeError(n_("Modification failed."))
         return ret
@@ -661,8 +643,7 @@ class CoreBaseBackend(AbstractBackend):
             query += " WHERE " + " AND ".join(constraints)
         return unwrap(self.query_one(rs, query, params))
 
-    def commit_persona(self, rs: RequestState, data: CdEDBObject,
-                       change_note: Optional[str]) -> DefaultReturnCode:
+    def commit_persona(self, rs: RequestState, data: CdEDBObject) -> DefaultReturnCode:
         """Actually update a persona data set.
 
         This is the innermost layer of the changelog functionality and
@@ -672,8 +653,7 @@ class CoreBaseBackend(AbstractBackend):
             num = self.sql_update(rs, "core.personas", data)
             if not num:
                 raise ValueError(n_("Nonexistent user."))
-            current = unwrap(self.retrieve_personas(
-                rs, (data['id'],), columns=PERSONA_ALL_FIELDS))
+            current = self.retrieve_persona(rs, data['id'], columns=PERSONA_CDE_FIELDS)
             fulltext = self.create_fulltext(current)
             fulltext_update = {
                 'id': data['id'],
@@ -1107,8 +1087,9 @@ class CoreBaseBackend(AbstractBackend):
     def change_persona_balance(self, rs: RequestState, persona_id: int,
                                balance: Union[str, decimal.Decimal],
                                log_code: const.FinanceLogCodes,
-                               change_note: str = None,
-                               trial_member: bool = None) -> DefaultReturnCode:
+                               change_note: str = None, trial_member: bool = None,
+                               transaction_date: datetime.date = None
+                               ) -> DefaultReturnCode:
         """Special modification function for monetary aspects.
 
         :param trial_member: If not None, set trial membership to this.
@@ -1118,12 +1099,13 @@ class CoreBaseBackend(AbstractBackend):
         log_code = affirm(const.FinanceLogCodes, log_code)
         trial_member = affirm_optional(bool, trial_member)
         change_note = affirm_optional(str, change_note)
+        transaction_date = affirm_optional(datetime.date, transaction_date)
         update: CdEDBObject = {
             'id': persona_id,
         }
         with Atomizer(rs):
-            current = unwrap(self.retrieve_personas(
-                rs, (persona_id,), ("balance", "is_cde_realm", "trial_member")))
+            current = self.retrieve_persona(
+                rs, persona_id, ("balance", "is_cde_realm", "trial_member"))
             if not current['is_cde_realm']:
                 raise RuntimeError(
                     n_("Tried to credit balance to non-cde person."))
@@ -1137,8 +1119,9 @@ class CoreBaseBackend(AbstractBackend):
                     rs, update, may_wait=False, change_note=change_note,
                     allow_specials=("finance",))
                 if 'balance' in update:
-                    self.finance_log(rs, log_code, persona_id,
-                                     balance - current['balance'], balance)
+                    self.finance_log(
+                        rs, log_code, persona_id, balance - current['balance'], balance,
+                        transaction_date=transaction_date)
                 return ret
             else:
                 return 0
@@ -1162,8 +1145,8 @@ class CoreBaseBackend(AbstractBackend):
             'is_member': is_member,
         }
         with Atomizer(rs):
-            current = unwrap(self.retrieve_personas(
-                rs, (persona_id,), ('is_member', 'balance', 'is_cde_realm')))
+            current = self.retrieve_persona(
+                rs, persona_id, ('is_member', 'balance', 'is_cde_realm'))
             if not current['is_cde_realm']:
                 raise RuntimeError(n_("Not a CdE account."))
             if current['is_member'] == is_member:
@@ -1463,6 +1446,9 @@ class CoreBaseBackend(AbstractBackend):
                 'title': None,
                 'name_supplement': None,
                 # 'gender' kept for later recognition
+                'pronouns': None,
+                'pronouns_profile': False,
+                'pronouns_nametag': False,
                 # 'birthday' kept for later recognition
                 'telephone': None,
                 'mobile': None,
@@ -2211,7 +2197,7 @@ class CoreBaseBackend(AbstractBackend):
     @access("anonymous")
     def verify_existence(self, rs: RequestState, email: str,
                          include_genesis: bool = True) -> bool:
-        """Check wether a certain email belongs to any persona."""
+        """Check whether a certain email belongs to any persona."""
         email = affirm(vtypes.Email, email)
         query = "SELECT COUNT(*) AS num FROM core.personas WHERE username = %s"
         num = unwrap(self.query_one(rs, query, (email,))) or 0

@@ -18,7 +18,7 @@
     {{ util.context_heading(gettext("Change History"), util.persona_name(current), 'user', gettext("User")) }}
 {% endblock %}
 
-{% set STATUS={enums["MemberChangeStati"].pending: ('pending','check',gettext("pending")),
+{% set STATUS={enums["MemberChangeStati"].pending: ('pending','user-clock',gettext("pending")),
                 enums["MemberChangeStati"].committed: ('','',''),
                 enums["MemberChangeStati"].superseded: ('superseded', 'sync', gettext("superseded")),
                 enums["MemberChangeStati"].nacked: ('nacked', 'ban', gettext("nacked")),
@@ -136,6 +136,17 @@
             {% endcall %}
         {% endif %}
 
+        {% call history_field(gettext("Pronouns")) %}
+            {{ print_history('pronouns') }}
+        {% endcall %}
+
+        {% call history_field(gettext("Pronouns on nametags")) %}
+            {{ print_history('pronouns_nametag') }}
+        {% endcall %}
+
+        {% call history_field(gettext("Pronouns on profile")) %}
+            {{ print_history('pronouns_profile') }}
+        {% endcall %}
 
         <h4 class="heading-underline">{% trans %}Account & Membership{% endtrans %}</h4>
 
@@ -157,7 +168,7 @@
                 {% for key in ADMIN_KEYS if entries[c][key] %}
                     {{ util.privilege_icon(key, desc=True) }}
                 {% else %}
-                    <i>Keine</i>
+                    <i>{{ gettext("None") }}</i>
                 {% endfor %}
             {% endcall %}
         {% endcall %}

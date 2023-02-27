@@ -25,18 +25,17 @@ from cdedb.common.fields import (
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
-from cdedb.common.validation import (
-    ALL_MAILINGLIST_FIELDS, PERSONA_FULL_CREATION, filter_none,
-)
+from cdedb.common.validation import PERSONA_FULL_CREATION, filter_none
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
-    AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access, calculate_db_logparams,
-    calculate_loglinks, cdedbid_filter as cdedbid, check_validation as check,
-    csv_output, mailinglist_guard, periodic,
+    AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access,
+    cdedbid_filter as cdedbid, check_dataclass, check_validation as check, csv_output,
+    mailinglist_guard, periodic,
 )
 from cdedb.ml_type_aux import (
     ADDITIONAL_TYPE_FIELDS, TYPE_MAP, MailinglistGroup, get_type,
 )
+from cdedb.models.ml import Mailinglist
 
 
 class MlBaseFrontend(AbstractUserFrontend):
@@ -176,7 +175,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         for ml_id in mailinglists:
             group_id = self.mlproxy.get_ml_type(rs, ml_id).sortkey
             grouped[group_id][ml_id] = {
-                'title': mailinglist_infos[ml_id]['title'], 'id': ml_id}
+                'title': mailinglist_infos[ml_id].title, 'id': ml_id}
         event_ids = self.eventproxy.list_events(rs)
         events = self.eventproxy.get_events(rs, event_ids)
         for event in events.values():
@@ -190,15 +189,19 @@ class MlBaseFrontend(AbstractUserFrontend):
         subs = self.mlproxy.get_many_subscription_states(
             rs, mailinglist_ids=mailinglists, states=sub_states)
         mailman = self.get_mailman()
-        for ml_id, ml in mailinglist_infos.items():
-            ml['num_subscribers'] = len(subs[ml_id])
-            ml['held_mails'] = mailman.get_held_message_count(ml)
+        additional_infos = {
+            ml_id: {
+                "num_subscribers": len(subs[ml_id]),
+                "held_mails": mailman.get_held_message_count(ml)
+            } for ml_id, ml in mailinglist_infos.items()
+        }
 
         return self.render(rs, endpoint, {
             'groups': MailinglistGroup,
             'mailinglists': grouped,
             'subscriptions': subscriptions,
             'mailinglist_infos': mailinglist_infos,
+            'additional_infos': additional_infos,
             'events': events,
             'assemblies': assemblies})
 
@@ -240,15 +243,18 @@ class MlBaseFrontend(AbstractUserFrontend):
             })
 
     @access("ml", modi={"POST"})
-    @REQUESTdatadict(*ALL_MAILINGLIST_FIELDS)
+    @REQUESTdatadict(*Mailinglist.requestdict_fields())
     @REQUESTdata("ml_type", "moderators")
     def create_mailinglist(self, rs: RequestState, data: Dict[str, Any],
                            ml_type: const.MailinglistTypes,
                            moderators: vtypes.CdedbIDList) -> Response:
         """Make a new list."""
+        data["id"] = -1
         data["moderators"] = moderators
+        data["whitelist"] = []
         data['ml_type'] = ml_type
-        data = check(rs, vtypes.Mailinglist, data, creation=True)
+        ml = Mailinglist(**data)
+        ml = check_dataclass(rs, Mailinglist, ml, creation=True)
         if rs.has_validation_errors():
             return self.create_mailinglist_form(rs, ml_type=ml_type)
         if not self.coreproxy.verify_ids(rs, moderators, is_archived=False):
@@ -261,18 +267,17 @@ class MlBaseFrontend(AbstractUserFrontend):
                     "Some of these users are not ml users."))))
         if rs.has_validation_errors():
             return self.create_mailinglist_form(rs, ml_type=ml_type)
-        assert data is not None
+        assert ml is not None
         # Check if mailinglist address is unique and valid
         try:
-            self.mlproxy.validate_address(rs, data)
+            self.mlproxy.validate_address(rs, ml.to_database())
         except ValueError as e:
             rs.extend_validation_errors([("local_part", e), ("domain", e)])
 
         if rs.has_validation_errors():
             return self.create_mailinglist_form(rs, ml_type=ml_type)
-        assert data is not None
 
-        new_id = self.mlproxy.create_mailinglist(rs, data)
+        new_id = self.mlproxy.create_mailinglist(rs, ml)
         rs.notify_return_code(new_id)
         return self.redirect(rs, "ml/show_mailinglist", {
             'mailinglist_id': new_id})
@@ -333,47 +338,36 @@ class MlBaseFrontend(AbstractUserFrontend):
                  submitted_by: Optional[vtypes.CdedbID],
                  change_note: Optional[str],
                  time_start: Optional[datetime],
-                 time_stop: Optional[datetime]) -> Response:
+                 time_stop: Optional[datetime],
+                 download: bool = False) -> Response:
         """View activities."""
-        length = length or self.conf["DEFAULT_LOG_LENGTH"]
-        # length is the requested length, _length the theoretically
-        # shown length for an infinite amount of log entries.
-        _offset, _length = calculate_db_logparams(offset, length)
 
-        # no validation since the input stays valid, even if some options
-        # are lost
-        rs.ignore_validation_errors()
-        db_mailinglist_ids = {mailinglist_id} if mailinglist_id else None
+        db_mailinglist_ids = {mailinglist_id} if mailinglist_id else set()
 
         relevant_mls = self.mlproxy.list_mailinglists(rs, active_only=False,
                                                       managed='managed')
         relevant_set = set(relevant_mls)
         if not self.is_admin(rs):
-            if db_mailinglist_ids is None:
+            if not db_mailinglist_ids:
                 db_mailinglist_ids = relevant_set
             elif not db_mailinglist_ids <= relevant_set:
                 db_mailinglist_ids = db_mailinglist_ids | relevant_set
                 rs.notify("warning", n_(
                     "Not privileged to view log for all these mailinglists."))
 
-        total, log = self.mlproxy.retrieve_log(
-            rs, codes, db_mailinglist_ids, _offset, _length,
-            persona_id=persona_id, submitted_by=submitted_by,
-            change_note=change_note,
-            time_start=time_start, time_stop=time_stop)
-        persona_ids = (
-                {entry['submitted_by'] for entry in log if
-                 entry['submitted_by']}
-                | {entry['persona_id'] for entry in log if entry['persona_id']})
-        personas = self.coreproxy.get_personas(rs, persona_ids)
-        log_mailinglist_ids = {entry['mailinglist_id']
-                               for entry in log if entry['mailinglist_id']}
-        mailinglists = self.mlproxy.get_mailinglists(rs, log_mailinglist_ids)
-        loglinks = calculate_loglinks(rs, total, offset, length)
-        return self.render(rs, "view_log", {
-            'log': log, 'total': total, 'length': _length, 'personas': personas,
-            'mailinglists': mailinglists, 'relevant_mailinglists': relevant_mls,
-            'loglinks': loglinks, 'may_view': lambda ml: self.mlproxy.may_view(rs, ml),
+        filter_params = {
+            'entity_ids': db_mailinglist_ids,
+            'codes': codes, 'offset': offset, 'length': length,
+            'persona_id': persona_id, 'submitted_by': submitted_by,
+            'change_note': change_note, 'ctime': (time_start, time_stop),
+        }
+
+        mailinglists = self.mlproxy.get_mailinglists(rs, relevant_mls)
+        self.logger.debug(mailinglists)
+        return self.generic_view_log(
+            rs, filter_params, "ml.log", "view_log", download, {
+            'all_mailinglists': mailinglists,
+            'may_view': lambda ml: self.mlproxy.may_view(rs, ml),
         })
 
     @access("ml")
@@ -394,24 +388,24 @@ class MlBaseFrontend(AbstractUserFrontend):
                 rs, mailinglist_id, rs.user.persona_id, explicits_only=True)
 
         event = None
-        if ml['event_id']:
-            event = self.eventproxy.get_event(rs, ml['event_id'])
+        if ml.event_id:
+            event = self.eventproxy.get_event(rs, ml.event_id)
             event['is_visible'] = (
                 "event_admin" in rs.user.roles
                 or rs.user.persona_id in event['orgas']
                 or event['is_visible'])
 
         assembly = None
-        if ml['assembly_id']:
+        if ml.assembly_id:
             all_assemblies = self.assemblyproxy.list_assemblies(rs)
-            assembly = all_assemblies[ml['assembly_id']]
+            assembly = all_assemblies[ml.assembly_id]
             assembly['is_visible'] = self.assemblyproxy.may_assemble(
                 rs, assembly_id=assembly['id'])
 
         subscription_policy = self.mlproxy.get_subscription_policy(
             rs, rs.user.persona_id, mailinglist=ml)
         allow_unsub = self.mlproxy.get_ml_type(rs, mailinglist_id).allow_unsub
-        personas = self.coreproxy.get_personas(rs, ml['moderators'])
+        personas = self.coreproxy.get_personas(rs, ml.moderators)
         moderators = collections.OrderedDict(
             (anid, personas[anid]) for anid in xsorted(
                 personas,
@@ -427,9 +421,8 @@ class MlBaseFrontend(AbstractUserFrontend):
     def change_mailinglist_form(self, rs: RequestState,
                                 mailinglist_id: int) -> Response:
         """Render form."""
-        atype = TYPE_MAP[rs.ambience['mailinglist']['ml_type']]
-        available_domains = atype.domains
-        additional_fields = atype.get_additional_fields().keys()
+        ml = rs.ambience["mailinglist"]
+        additional_fields = ml.ml_type_class.get_additional_fields().keys()
         if "event_id" in additional_fields:
             event_ids = self.eventproxy.list_events(rs)
             events = self.eventproxy.get_events(rs, event_ids)
@@ -444,7 +437,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             assembly_entries = [(k, v['title']) for k, v in sorted_assemblies]
         else:
             assembly_entries = []
-        merge_dicts(rs.values, rs.ambience['mailinglist'])
+        merge_dicts(rs.values, ml.to_database())
         # restricted is only set if there are actually fields to which access is
         # restricted
         has_restricted_fields = additional_fields & FULL_MOD_REQUIRING_FIELDS
@@ -454,17 +447,18 @@ class MlBaseFrontend(AbstractUserFrontend):
         return self.render(rs, "change_mailinglist", {
             'event_entries': event_entries,
             'assembly_entries': assembly_entries,
-            'available_domains': available_domains,
+            'available_domains': ml.ml_type_class.domains,
             'additional_fields': additional_fields,
             'restricted': restricted,
         })
 
     @access("ml", modi={"POST"})
     @mailinglist_guard()
-    @REQUESTdatadict(*ALL_MAILINGLIST_FIELDS)
+    @REQUESTdatadict(*Mailinglist.requestdict_fields())
     def change_mailinglist(self, rs: RequestState, mailinglist_id: int,
                            data: CdEDBObject) -> Response:
         """Modify simple attributes of mailinglists."""
+        ml = rs.ambience["mailinglist"]
         data['id'] = mailinglist_id
 
         if self.mlproxy.is_relevant_admin(rs, mailinglist_id=mailinglist_id):
@@ -476,8 +470,9 @@ class MlBaseFrontend(AbstractUserFrontend):
             allowed = RESTRICTED_MOD_ALLOWED_FIELDS
 
         # we discard every entry of not allowed fields silently
+        current = ml.to_database()
         for key in set(data) - allowed:
-            data[key] = rs.ambience['mailinglist'][key]
+            data[key] = current[key]
 
         data = check(rs, vtypes.Mailinglist, data)
         if rs.has_validation_errors():
@@ -501,11 +496,12 @@ class MlBaseFrontend(AbstractUserFrontend):
     def change_ml_type_form(self, rs: RequestState,
                             mailinglist_id: int) -> Response:
         """Render form."""
+        ml = rs.ambience['mailinglist']
         available_types = self.mlproxy.get_available_types(rs)
         event_ids = self.eventproxy.list_events(rs)
         events = self.eventproxy.get_events(rs, event_ids)
         assemblies = self.assemblyproxy.list_assemblies(rs)
-        merge_dicts(rs.values, rs.ambience['mailinglist'])
+        merge_dicts(rs.values, ml.to_database())
         return self.render(rs, "change_ml_type", {
             'available_types': available_types,
             'events': events,
@@ -517,11 +513,11 @@ class MlBaseFrontend(AbstractUserFrontend):
     @REQUESTdatadict(*ADDITIONAL_TYPE_FIELDS.items())
     @REQUESTdata("ml_type")
     def change_ml_type(self, rs: RequestState, mailinglist_id: int,
-                       ml_type: str, data: CdEDBObject) -> Response:
+                       ml_type: const.MailinglistTypes, data: CdEDBObject) -> Response:
         ml = rs.ambience['mailinglist']
         data['id'] = mailinglist_id
         data['ml_type'] = ml_type
-        data['domain'] = ml['domain']
+        data['domain'] = ml.domain
         new_type = get_type(data['ml_type'])
         if data['domain'] not in new_type.domains:
             data['domain'] = new_type.domains[0]
@@ -563,36 +559,25 @@ class MlBaseFrontend(AbstractUserFrontend):
                     submitted_by: Optional[vtypes.CdedbID],
                     change_note: Optional[str],
                     time_start: Optional[datetime],
-                    time_stop: Optional[datetime]) -> Response:
+                    time_stop: Optional[datetime],
+                    download: bool = False) -> Response:
         """View activities pertaining to one list."""
-        length = length or self.conf["DEFAULT_LOG_LENGTH"]
-        # length is the requested length, _length the theoretically
-        # shown length for an infinite amount of log entries.
-        _offset, _length = calculate_db_logparams(offset, length)
 
-        # no validation since the input stays valid, even if some options
-        # are lost
-        rs.ignore_validation_errors()
-        total, log = self.mlproxy.retrieve_log(
-            rs, codes, [mailinglist_id], _offset, _length,
-            persona_id=persona_id, submitted_by=submitted_by,
-            change_note=change_note, time_start=time_start,
-            time_stop=time_stop)
-        persona_ids = (
-                {entry['submitted_by'] for entry in log if
-                 entry['submitted_by']}
-                | {entry['persona_id'] for entry in log if entry['persona_id']})
-        personas = self.coreproxy.get_personas(rs, persona_ids)
-        loglinks = calculate_loglinks(rs, total, offset, length)
-        return self.render(rs, "view_ml_log", {
-            'log': log, 'total': total, 'length': _length, 'personas': personas,
-            'loglinks': loglinks
-        })
+        filter_params = {
+            'entity_ids': [mailinglist_id],
+            'codes': codes, 'offset': offset, 'length': length,
+            'persona_id': persona_id, 'submitted_by': submitted_by,
+            'change_note': change_note, 'ctime': (time_start, time_stop),
+        }
+
+        return self.generic_view_log(
+            rs, filter_params, "ml.log", "view_ml_log", download)
 
     @access("ml")
     @mailinglist_guard()
     def management(self, rs: RequestState, mailinglist_id: int) -> Response:
         """Render form."""
+        ml = rs.ambience["mailinglist"]
         sub_states = const.SubscriptionState.subscribing_states()
         subscribers = self.mlproxy.get_subscription_states(
             rs, mailinglist_id, states=sub_states)
@@ -601,8 +586,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         explicits = {k: v for (k, v) in explicits.items() if v is not None}
         requests = self.mlproxy.get_subscription_states(
             rs, mailinglist_id, states=(const.SubscriptionState.pending,))
-        persona_ids = (set(rs.ambience['mailinglist']['moderators'])
-                       | set(subscribers.keys()) | set(requests))
+        persona_ids = (set(ml.moderators) | set(subscribers.keys()) | set(requests))
         personas = self.coreproxy.get_personas(rs, persona_ids)
         subscribers = collections.OrderedDict(
             (anid, personas[anid]) for anid in xsorted(
@@ -610,7 +594,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                 key=lambda anid: EntitySorter.persona(personas[anid])))
         moderators = collections.OrderedDict(
             (anid, personas[anid]) for anid in xsorted(
-                rs.ambience['mailinglist']['moderators'],
+                ml.moderators,
                 key=lambda anid: EntitySorter.persona(personas[anid])))
         requests = collections.OrderedDict(
             (anid, personas[anid]) for anid in xsorted(
@@ -627,6 +611,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     @mailinglist_guard()
     def advanced_management(self, rs: RequestState, mailinglist_id: int) -> Response:
         """Render form."""
+        ml = rs.ambience["mailinglist"]
         subscription_overrides = self.mlproxy.get_subscription_states(
             rs, mailinglist_id,
             states=(const.SubscriptionState.subscription_override,))
@@ -637,7 +622,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs, mailinglist_id, states=(const.SubscriptionState.unsubscribed,))
         redundant_unsubscriptions = self.mlproxy.get_redundant_unsubscriptions(
             rs, mailinglist_id)
-        persona_ids = (set(rs.ambience['mailinglist']['moderators'])
+        persona_ids = (set(ml.moderators)
                        | set(subscription_overrides.keys())
                        | set(unsubscription_overrides.keys())
                        | set(all_unsubscriptions.keys()))
@@ -668,6 +653,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     def download_csv_subscription_states(self, rs: RequestState,
                                          mailinglist_id: int) -> Response:
         """Create CSV file with all subscribers and their subscription state"""
+        ml = rs.ambience["mailinglist"]
         personas_state = self.mlproxy.get_subscription_states(
             rs, mailinglist_id)
         if not personas_state:
@@ -702,8 +688,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             columns)
         return self.send_csv_file(
             rs, data=csv_data, inline=False,
-            filename="{}_subscription_states.csv".format(
-                rs.ambience['mailinglist']['id']))
+            filename=f"{ml.id}_subscription_states.csv")
 
     @access("ml", modi={"POST"})
     @mailinglist_guard()
@@ -735,8 +720,8 @@ class MlBaseFrontend(AbstractUserFrontend):
     def remove_moderator(self, rs: RequestState, mailinglist_id: int,
                          moderator_id: vtypes.ID) -> Response:
         """Demote persona from moderator status."""
-        moderators = set(rs.ambience['mailinglist']['moderators'])
-        if moderator_id not in moderators:
+        ml = rs.ambience["mailinglist"]
+        if moderator_id not in ml.moderators:
             rs.append_validation_error(
                 ("moderator_id", ValueError(n_("User is no moderator."))))
         if rs.has_validation_errors():
@@ -747,7 +732,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs.notify("error", n_("Not allowed to remove yourself as moderator."))
             return self.management(rs, mailinglist_id)
 
-        if {moderator_id} == moderators:
+        if {moderator_id} == ml.moderators:
             rs.notify("error", n_("Cannot remove last moderator."))
         else:
             code = self.mlproxy.remove_moderator(rs, mailinglist_id, moderator_id)
@@ -1144,7 +1129,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                 if new_request or current > ml_store['tstamp'] + 7*24*60*60:
                     ml_store['tstamp'] = current
                     ml = self.mlproxy.get_mailinglist(rs, ml_id)
-                    owner = ml['address'].replace("@", "-owner@")
+                    owner = ml.address.replace("@", "-owner@")
                     self.do_mail(rs, "subscription_request_remind",
                                  {'To': (owner,),
                                   'Subject': "Offene Abonnement-Anfragen"},

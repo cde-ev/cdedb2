@@ -217,6 +217,7 @@ class EventRegistrationBackend(EventBaseBackend):
     @access("event")
     def get_course_segments_per_track_group(self, rs: RequestState, event_id: int,
                                             active_only: bool = False,
+                                            involved_parts: Collection[int] = None,
                                             ) -> Dict[int, Set[int]]:
         """Determine which courses can be chosen in each track group.
 
@@ -229,15 +230,26 @@ class EventRegistrationBackend(EventBaseBackend):
             SELECT tg.id, ARRAY_REMOVE(ARRAY_AGG(DISTINCT cs.course_id), NULL) AS courses
             FROM event.track_groups AS tg
                 LEFT JOIN event.track_group_tracks AS tgt ON tg.id = tgt.track_group_id
-                LEFT JOIN event.course_segments AS cs ON tgt.track_id = cs.track_id {}
+                LEFT JOIN event.course_segments AS cs ON tgt.track_id = cs.track_id {is_active}
+                LEFT JOIN event.course_tracks AS ct ON cs.track_id = ct.id {involved_parts}
             WHERE tg.event_id = %s AND tg.constraint_type = %s
             GROUP BY tg.id
         """
 
         event_id = affirm(vtypes.ID, event_id)
         active_only = affirm(bool, active_only)
-        query = query.format("AND is_active = True" if active_only else "")
-        params = (event_id, const.CourseTrackGroupType.course_choice_sync)
+
+        params: List[Any] = []
+
+        if involved_parts is not None:
+            involved_parts = affirm_set(vtypes.ID, involved_parts)
+            params.append(involved_parts)
+
+        query = query.format(
+            is_active="AND is_active = True" if active_only else "",
+            involved_parts="AND ct.part_id = ANY(%s)" if involved_parts else ""
+        )
+        params.extend((event_id, const.CourseTrackGroupType.course_choice_sync))
 
         return {
             e['id']: set(e['courses'])
@@ -774,6 +786,61 @@ class EventRegistrationBackend(EventBaseBackend):
     def set_registration(self, rs: RequestState, data: CdEDBObject,
                          change_note: str = None, orga_input: bool = True,
                          ) -> DefaultReturnCode:
+        """Public entry point for setting a registration. Perform sanity checks after.
+        """
+        data = affirm(vtypes.Registration, data)
+        change_note = affirm_optional(str, change_note)
+
+        with Atomizer(rs):
+            # Retrieve some basic data about the registration.
+            current = self._get_registration_info(rs, reg_id=data['id'])
+            if current is None:
+                raise ValueError(n_("Registration does not exist."))
+
+            # Actually alter the registration.
+            ret = self._set_registration(rs, data, change_note, orga_input)
+
+            # Perform sanity checks.
+            self._track_groups_sanity_check(rs, current['event_id'])
+
+        return ret
+
+    @access("event")
+    def set_registrations(self, rs: RequestState, data: Collection[CdEDBObject],
+                          change_note: str = None) -> DefaultReturnCode:
+        """Helper for setting multiple registrations at once.
+
+        All registrations must belong to the same event.
+        Perform sanity checks only once after everything has been updated.
+        """
+        data = affirm_array(vtypes.Registration, data)
+        change_note = affirm_optional(str, change_note)
+
+        if not data:
+            return 1
+
+        with Atomizer(rs):
+            event_ids = {e['event_id'] for e in self.sql_select(
+                rs, "event.registrations", ("event_id",),
+                [datum['id'] for datum in data])}
+            if not len(event_ids) == 1:
+                raise ValueError(n_(
+                    "Only registrations from exactly one event allowed."))
+            event_id = unwrap(event_ids)
+            if not (self.is_orga(rs, event_id=event_id) or self.is_admin(rs)):
+                raise PrivilegeError
+
+            ret = 1
+            for datum in data:
+                ret *= self._set_registration(rs, datum, change_note, orga_input=True)
+
+            self._track_groups_sanity_check(rs, event_id)
+
+        return ret
+
+    def _set_registration(self, rs: RequestState, data: CdEDBObject,
+                          change_note: str = None, orga_input: bool = True,
+                          ) -> DefaultReturnCode:
         """Update some keys of a registration.
 
         The syntax for updating the non-trivial keys fields, parts and
@@ -792,8 +859,6 @@ class EventRegistrationBackend(EventBaseBackend):
           'choices' key is handled separately and if present replaces
           the current list of course choices.
         """
-        data = affirm(vtypes.Registration, data)
-        change_note = affirm_optional(str, change_note)
         with Atomizer(rs):
             # Retrieve some basic data about the registration.
             current = self._get_registration_info(rs, reg_id=data['id'])
@@ -899,7 +964,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 rs, const.EventLogCodes.registration_changed, event_id,
                 persona_id=persona_id, change_note=change_note)
 
-            self._track_groups_sanity_check(rs, event_id)
+            # Sanity check is handled by public entry point.
 
         return ret
 
@@ -965,6 +1030,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 new_track['registration_id'] = new_id
                 new_track['track_id'] = track_id
                 self.sql_insert(rs, "event.registration_tracks", new_track)
+            self._track_groups_sanity_check(rs, data['event_id'])
             self.event_log(
                 rs, const.EventLogCodes.registration_created, data['event_id'],
                 persona_id=data['persona_id'])

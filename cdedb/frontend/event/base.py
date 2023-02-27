@@ -41,8 +41,7 @@ from cdedb.common.sorting import EntitySorter, KeyFunction, Sortkey, xsorted
 from cdedb.common.validation import PERSONA_FULL_CREATION, filter_none
 from cdedb.filter import enum_entries_filter, keydictsort_filter
 from cdedb.frontend.common import (
-    AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access, calculate_db_logparams,
-    calculate_loglinks, event_guard, periodic,
+    AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access, event_guard, periodic,
 )
 from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
 
@@ -583,6 +582,8 @@ class EventBaseFrontend(AbstractUserFrontend):
         for reg_id, reg in registrations.items():
             for tg_id, tg in tgs_by_type[ccs]:
                 if any(reg['tracks'][t1]['choices'] != reg['tracks'][t2]['choices']
+                       or reg['tracks'][t1]['course_instructor']
+                       != reg['tracks'][t2]['course_instructor']
                        for t1, t2 in itertools.combinations(tg['track_ids'], 2)):
                     ccs_violations.append(
                         CCSViolation(tg_id, reg_id, reg['persona_id']))
@@ -650,37 +651,26 @@ class EventBaseFrontend(AbstractUserFrontend):
                  submitted_by: Optional[vtypes.CdedbID],
                  change_note: Optional[str],
                  time_start: Optional[datetime.datetime],
-                 time_stop: Optional[datetime.datetime]) -> Response:
+                 time_stop: Optional[datetime.datetime],
+                 download: bool = False) -> Response:
         """View activities concerning events organized via DB."""
-        length = length or self.conf["DEFAULT_LOG_LENGTH"]
-        # length is the requested length, _length the theoretically
-        # shown length for an infinite amount of log entries.
-        _offset, _length = calculate_db_logparams(offset, length)
 
-        # no validation since the input stays valid, even if some options
-        # are lost
-        rs.ignore_validation_errors()
-        total, log = self.eventproxy.retrieve_log(
-            rs, codes, event_id, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, change_note=change_note,
-            time_start=time_start, time_stop=time_stop)
-        persona_ids = (
-                {entry['submitted_by'] for entry in log if
-                 entry['submitted_by']}
-                | {entry['persona_id'] for entry in log if entry['persona_id']})
-        personas = self.coreproxy.get_personas(rs, persona_ids)
-        event_ids = {entry['event_id'] for entry in log if entry['event_id']}
+        filter_params = {
+            'entity_ids': [event_id] if event_id else [],
+            'codes': codes, 'offset': offset, 'length': length,
+            'persona_id': persona_id, 'submitted_by': submitted_by,
+            'change_note': change_note, 'ctime': (time_start, time_stop),
+        }
+        event_ids = self.eventproxy.list_events(rs)
+        events = self.eventproxy.get_events(rs, event_ids)
         if self.is_admin(rs):
             registration_map = self.eventproxy.get_registration_map(rs, event_ids)
         else:
             registration_map = {}
-        events = self.eventproxy.get_events(rs, event_ids)
-        all_events = self.eventproxy.list_events(rs)
-        loglinks = calculate_loglinks(rs, total, offset, length)
-        return self.render(rs, "base/view_log", {
-            'log': log, 'total': total, 'length': _length,
-            'personas': personas, 'events': events, 'all_events': all_events,
-            'registration_map': registration_map, 'loglinks': loglinks})
+        return self.generic_view_log(
+            rs, filter_params, "event.log", "base/view_log", download, {
+            'all_events': events, 'registration_map': registration_map,
+        })
 
     @access("event")
     @event_guard()
@@ -693,30 +683,22 @@ class EventBaseFrontend(AbstractUserFrontend):
                        submitted_by: Optional[vtypes.CdedbID],
                        change_note: Optional[str],
                        time_start: Optional[datetime.datetime],
-                       time_stop: Optional[datetime.datetime]) -> Response:
+                       time_stop: Optional[datetime.datetime],
+                       download: bool = False) -> Response:
         """View activities concerning one event organized via DB."""
-        length = length or self.conf["DEFAULT_LOG_LENGTH"]
-        # length is the requested length, _length the theoretically
-        # shown length for an infinite amount of log entries.
-        _offset, _length = calculate_db_logparams(offset, length)
 
-        # no validation since the input stays valid, even if some options
-        # are lost
-        rs.ignore_validation_errors()
-        total, log = self.eventproxy.retrieve_log(
-            rs, codes, event_id, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, change_note=change_note,
-            time_start=time_start, time_stop=time_stop)
-        persona_ids = (
-                {entry['submitted_by'] for entry in log if
-                 entry['submitted_by']}
-                | {entry['persona_id'] for entry in log if entry['persona_id']})
-        personas = self.coreproxy.get_personas(rs, persona_ids)
+        filter_params = {
+            'entity_ids': [event_id],
+            'codes': codes, 'offset': offset, 'length': length,
+            'persona_id': persona_id, 'submitted_by': submitted_by,
+            'change_note': change_note, 'ctime': (time_start, time_stop),
+        }
+
         registration_map = self.eventproxy.get_registration_map(rs, (event_id,))
-        loglinks = calculate_loglinks(rs, total, offset, length)
-        return self.render(rs, "base/view_event_log", {
-            'log': log, 'total': total, 'length': _length, 'personas': personas,
-            'registration_map': registration_map, 'loglinks': loglinks})
+        return self.generic_view_log(
+            rs, filter_params, "event.log", "base/view_event_log", download, {
+            'registration_map': registration_map
+        })
 
     @periodic("event_keeper", 2)
     def event_keeper(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject:
