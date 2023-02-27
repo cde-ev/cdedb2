@@ -190,11 +190,10 @@ DATACLASS_TO_VALIDATORS: Mapping[Type[Any], Type[Any]] = {
 def _validate_dataclass_preprocess(type_: Type[T], value: Any
                                    ) -> Tuple[Type[T], Type[T]]:
     # Keep subclassing intact if possible.
-    subtype = type_
     if isinstance(value, type_):
         subtype = type(value)
     else:
-        raise RuntimeError("Value is no instance os given type.")
+        raise RuntimeError("Value is no instance of given type.")
 
     # Figure out the closest validator on the class hierarchy.
     if not dataclasses.is_dataclass(value):
