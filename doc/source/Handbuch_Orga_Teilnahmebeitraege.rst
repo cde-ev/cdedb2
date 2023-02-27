@@ -10,7 +10,7 @@ Beträge auf den Gesamtbeitrag aufgeschlagen oder davon abgezogen werden sollen.
 Hierfür können diverse boolesche Informationen (Ja/Nein) miteinbezogen werden.
 
 Die Teilnehmenden erhalten bevor und nachdem sie ihre Anmeldung abschicken den
-für die gültigen Betrag angezeigt; er findet sich auch in der Mail, die sie nach
+für sie gültigen Betrag angezeigt; er findet sich auch in der Mail, die sie nach
 ihrer Anmeldung erhalten.
 
 Darüber hinaus ist es beim Anlegen von Veranstaltungen und Veranstaltungsteilen
