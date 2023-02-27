@@ -247,8 +247,8 @@ class EventRegistrationBackend(EventBaseBackend):
 
         query = query.format(
             is_active="AND is_active = True" if active_only else "",
-            involved_parts=
-                "AND ct.part_id = ANY(%s)" if involved_parts is not None else ""
+            involved_parts=(
+                "AND ct.part_id = ANY(%s)" if involved_parts is not None else ""),
         )
         params.extend((event_id, const.CourseTrackGroupType.course_choice_sync))
 
