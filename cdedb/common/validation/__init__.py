@@ -1741,7 +1741,8 @@ def _period(
     prefix_map = {
         'billing': ('state', 'done', 'count'),
         'ejection': ('state', 'done', 'count', 'balance'),
-        'balance': ('state', 'done', 'trialmembers', 'exmembers', 'total'),
+        'exmember': ('balance', 'count'),
+        'balance': ('state', 'done', 'trialmembers', 'total'),
         'archival_notification': ('state', 'done', 'count'),
         'archival': ('state', 'done', 'count'),
     }

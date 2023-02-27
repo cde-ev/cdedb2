@@ -283,9 +283,10 @@
                 <th>{% trans %}Ejection Done{% endtrans %}</th>
                 <th>{% trans %}Accounts Archived{% endtrans %}</th>
                 <th>{% trans %}Automated Archival Done{% endtrans %}</th>
+                <th>{% trans %}Balance of Exmembers{% endtrans %}</th>
+                <th>{% trans %}Affected Exmembers{% endtrans %}</th>
                 <th>{% trans %}Trial Memberships Ended{% endtrans %}</th>
                 <th>{% trans %}Balance Deducted{% endtrans %}</th>
-                <th>{% trans %}Balance of Exmembers{% endtrans %}</th>
                 <th>{% trans %}Balance Update Done{% endtrans %}</th>
                 <th>{% trans %}Semester Done{% endtrans %}</th>
             </tr>
@@ -303,9 +304,10 @@
                     <td>{{ period['ejection_done']|datetime(lang=lang) }}</td>
                     <td>{{ period['archival_count'] }}</td>
                     <td>{{ period['archival_done']|datetime(lang=lang) }}</td>
+                    <td>{{ period['exmember_balance']|money(lang=lang) }}</td>
+                    <td>{{ period['exmember_count'] }}</td>
                     <td>{{ period['balance_trialmembers'] }}</td>
                     <td>{{ period['balance_total']|money(lang=lang) }}</td>
-                    <td>{{ period['balance_exmembers']|money(lang=lang) }}</td>
                     <td>{{ period['balance_done']|datetime(lang=lang) }}</td>
                     <td>{{ period['semester_done']|datetime(lang=lang) }}</td>
                 </tr>

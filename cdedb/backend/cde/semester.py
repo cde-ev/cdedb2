@@ -268,10 +268,11 @@ class CdESemesterBackend(CdELastschriftBackend):
             }
             ret = self.set_period(rs, period_update)
             total = money_filter(period["balance_total"], lang="de")
-            exmembers = money_filter(period["balance_exmembers"], lang="de")
+            exbalance = money_filter(period["exmember_balance"], lang="de")
+            exmembers = period["exmember_count"]
             msg = (f"{period['balance_trialmembers']} Probemitgliedschaften beendet."
                    f" {total} Guthaben abgebucht."
-                   f" {exmembers} Guthaben von Exmitgliedern aufgelöst.")
+                   f" {exbalance} Guthaben von {exmembers} Exmitgliedern aufgelöst.")
             self.cde_log(
                 rs, const.CdeLogCodes.semester_balance_update, persona_id=None,
                 change_note=msg)
@@ -595,11 +596,13 @@ class CdESemesterBackend(CdELastschriftBackend):
             data = self.query_one(rs, query, (zero,))
             update = {
                 "id": period_id,
-                "balance_exmembers": data["total"] if data else decimal.Decimal(0)
+                "exmember_balance": data["total"] if data else decimal.Decimal(0),
+                "exmember_count": data["count"] if data else 0,
             }
             self.set_period(rs, update)
             query = ("UPDATE core.personas SET balance = %s "
-                     " WHERE is_member = False AND balance > %s")
+                     " WHERE is_member = False AND balance > %s"
+                     " AND is_cde_realm = True AND is_archived = False")
             ret = self.query_exec(rs, query, (zero, zero))
         return ret
 

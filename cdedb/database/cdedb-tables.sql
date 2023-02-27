@@ -470,12 +470,13 @@ CREATE TABLE cde.org_period (
         ejection_done           timestamp WITH TIME ZONE DEFAULT NULL,
         ejection_count          integer NOT NULL DEFAULT 0,
         ejection_balance        numeric(8, 2) NOT NULL DEFAULT 0,
+        exmember_balance        numeric(11, 2) NOT NULL DEFAULT 0,
+        exmember_count          integer NOT NULL DEFAULT 0,
         -- has the balance already been adjusted? If so, up to which ID
         -- (it is done incrementally)
         balance_state           integer REFERENCES core.personas(id),
         balance_done            timestamp WITH TIME ZONE DEFAULT NULL,
         balance_trialmembers    integer NOT NULL DEFAULT 0,
-        balance_exmembers       numeric(11, 2) NOT NULL DEFAULT 0,
         balance_total           numeric(11, 2) NOT NULL DEFAULT 0,
         -- keep track of automated archival progress and stats.
         archival_notification_state     integer REFERENCES core.personas(id),

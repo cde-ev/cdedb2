@@ -230,7 +230,7 @@ class CdESemesterMixin(CdEBaseFrontend):
         period = self.cdeproxy.get_period(rs, period_id)
         # Make sure to perform this step only once, so the amount of balance removed
         #  in this way is not overwritten by later calls.
-        if not period["balance_exmembers"]:
+        if not period["exmember_balance"]:
             ret = self.cdeproxy.remove_exmember_balance(rs, period_id)
             rs.notify_return_code(ret, success=n_("Balance of exmembers removed."))
 
