@@ -86,6 +86,7 @@ class Mailinglist(CdEDataclass):
     domain: const.MailinglistDomain
     mod_policy: const.ModerationPolicy
     attachment_policy: const.AttachmentPolicy
+    convert_html: bool
     ml_type: const.MailinglistTypes = dataclasses.field(init=False)
     is_active: bool
 

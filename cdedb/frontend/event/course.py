@@ -54,6 +54,7 @@ class EventCourseMixin(EventBaseFrontend):
                              or 'event_orga' in rs.user.admin_views)
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = {}
+        courses_exist = bool(course_ids)
         if course_ids:
             courses = self.eventproxy.get_courses(rs, course_ids.keys())
             courses = {
@@ -63,7 +64,8 @@ class EventCourseMixin(EventBaseFrontend):
             }
         return self.render(rs, "course/course_list",
                            {'courses': keydictsort_filter(courses, EntitySorter.course),
-                            'show_course_state': show_course_state})
+                            'show_course_state': show_course_state,
+                            'courses_exist': courses_exist})
 
     @access("event")
     @event_guard()
