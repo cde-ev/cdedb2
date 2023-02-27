@@ -8996,6 +8996,50 @@ msgstr ""
 msgid "Next Semester"
 msgstr "Nächstes Semester"
 
+msgid "Affected Exmembers"
+msgstr "Betroffene Exmitglieder"
+
+msgid "Balance of Exmembers"
+msgstr "Guthaben von Exmitgliedern"
+
+msgid "Balance of Exmembers removed."
+msgstr "Guthaben von Exmitgliedern entfernt"
+
+msgid "The payment request is sent to all members. You may also include the semiannual "
+"address check in this mail. Make sure to initialize the %(lastschriften)s after this."
+msgstr "Die Zahlungsaufforderung (mit optionaler halbjährlicher Adressabfrage) wird "
+"an alle Mitglieder verschickt. Im Anschluss sollen die %(lastschriften)s "
+"initialisiert werden."
+
+msgid "Direct Debits"
+msgstr "Lastschriften"
+
+msgid "The archival notification is sent to all users which will be automatically "
+"archived. Those are all users which were not active for the last two years."
+msgstr "Die Archivierungsbenachrichtigung wird an alle Benutzer gesendet, die "
+"automatisch archiviert werden (Nutzer, die in den letzten zwei Jahren nicht aktiv waren)."
+
+msgid "Eject all members whose balance is lower than the membership fee and who are "
+"not a trial member. Make sure to finalize all pending %(lastschriften)s beforehand."
+msgstr "Streicht alle Mitglieder mit zu geringem Guthaben, die keine Probemitglieder "
+"sind. Vorher müssen alle ausstehenden %(lastschriften)s abgeschlossen werden."
+
+msgid "Archive all users who received an archival notification in the previous "
+"step and took no measurements against this."
+msgstr "Archiviert alle Benutzer, die im vorigen Schritt eine "
+"Archivierungsbenachrichtigung erhalten und keine Maßnahmen gegen die "
+"Archivierung ergriffen haben."
+
+msgid "Subtract the membership fee from all members. Trial members lose their trial "
+"membership instead and are normal members afterwards."
+msgstr "Zieht den Mitgliedsbeitrag vom Guthaben aller Mitglieder ab. Probemitglieder "
+"verlieren stattdessen ihre Probemitgliedschaft und sind danach normale Mitglieder."
+
+msgid "Remove the remaining balance from all non-members, since losing your "
+"membership leaves your balance untouched."
+msgstr "Entfernt das Restguthaben aller Nicht-Mitglieder, da das Streichen der "
+"Mitgliedschaft das Guthaben des Mitglieds nicht ändert."
+
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:194
 msgid ""
 "The Semesterstate influences the display of Balances. This button should be "
@@ -9072,6 +9116,12 @@ msgstr "exPuls-Semester"
 #, python-format
 msgid "The next exPuls will be number %(number)s."
 msgstr "Der nächste exPuls trägt die Nummer %(number)s."
+
+msgid "Done up until %(state)s. %(count)s emails have been sent so far."
+msgstr "Erledigt bis %(state)s. %(count)s E-Mails wurden bisher versandt."
+
+msgid "Done on the %(date)s. %(count)s emails were sent."
+msgstr "Erledigt am %(date)s. %(count)s E-Mails versandt."
 
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:277
 msgid "Send Address-Checks"

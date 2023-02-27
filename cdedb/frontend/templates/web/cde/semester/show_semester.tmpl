@@ -59,10 +59,11 @@
                 <div class="row panel-body">
                     <div class="col-md-8">
                         <p>
-                            {% trans %}
+                            {% trans lastschriften=util.href(cdedblink('cde/lastschrift_index'), gettext("Direct Debits"),
+                                                    readonly="finance" not in user.admin_views) %}
                                 The payment request is sent to all members.
                                 You may also include the semiannual address check in this mail.
-                                Make sure to initialize the direct debits after this.
+                                Make sure to initialize the {{ lastschriften }} after this.
                             {% endtrans %}
                         </p>
                         <p>
@@ -132,9 +133,10 @@
                 <div class="row panel-body">
                     <div class="col-md-8">
                         <p>
-                            {% trans %}
+                            {% trans lastschriften=util.href(cdedblink('cde/lastschrift_index'), gettext("Direct Debits"),
+                                                    readonly="finance" not in user.admin_views) %}
                                 Eject all members whose balance is lower than the membership fee and who are not a trial member.
-                                Make sure to finalize all pending direct debits beforehand.
+                                Make sure to finalize all pending {{ lastschriften }} beforehand.
                             {% endtrans %}
                         </p>
                         <p>
@@ -221,7 +223,7 @@
                         <p>
                             {% trans %}
                                 Remove the remaining balance from all non-members, since losing your membership leaves your
-                                balance untouched, so you can gain it back if you rejoin in the same semester.
+                                balance untouched.
                             {% endtrans %}
                         </p>
                     </div>
