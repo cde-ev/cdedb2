@@ -799,6 +799,7 @@ class TestMlFrontend(FrontendTest):
         f['title'] = "Munkelwand"
         f['mod_policy'] = const.ModerationPolicy.unmoderated
         f['attachment_policy'] = const.AttachmentPolicy.pdf_only
+        f['convert_html'].checked = False
         f['subject_prefix'] = "munkel"
         f['maxsize'] = 512
         f['is_active'].checked = True
@@ -1227,6 +1228,7 @@ class TestMlFrontend(FrontendTest):
         f['mod_policy'] = const.ModerationPolicy.unmoderated
         f['subject_prefix'] = "party"
         f['attachment_policy'] = const.AttachmentPolicy.allow
+        f['convert_html'] = True
         f['maxsize'] = 1111
         self.submit(f)
 
@@ -1255,6 +1257,7 @@ class TestMlFrontend(FrontendTest):
         self.assertEqual("party", f['subject_prefix'].value)
         self.assertEqual(str(const.AttachmentPolicy.allow),
                          f['attachment_policy'].value)
+        self.assertEqual('True', f['convert_html'].value)
         self.assertEqual("1111", f['maxsize'].value)
 
     @as_users("janis")

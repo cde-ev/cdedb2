@@ -1277,6 +1277,7 @@ CREATE TABLE ml.mailinglists (
         mod_policy              integer NOT NULL,
         -- see cdedb.database.constants.AttachmentPolicy
         attachment_policy       integer NOT NULL,
+        convert_html            boolean NOT NULL DEFAULT TRUE,
         -- see cdedb.database.constants.MailinglistTypes
         ml_type                 integer NOT NULL,
         subject_prefix          varchar,

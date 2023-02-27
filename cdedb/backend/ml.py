@@ -381,6 +381,7 @@ class MlBackend(AbstractBackend):
                     domain=const.MailinglistDomain(e['domain']),
                     mod_policy=const.ModerationPolicy(e['mod_policy']),
                     attachment_policy=const.AttachmentPolicy(e['attachment_policy']),
+                    convert_html=e["convert_html"],
                     ml_type=const.MailinglistTypes(e['ml_type']),
                     is_active=e["is_active"],
                     moderators=set(),
