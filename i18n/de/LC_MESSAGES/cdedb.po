@@ -8629,14 +8629,20 @@ msgid "The new exPuls-Semester will be created."
 msgstr "Das neue exPuls-Semester wird angelegt."
 
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:59
-msgid "Send Payment Requests/Information"
-msgstr "Zahlungsaufforderung/-information versenden"
+msgid "Send Payment Requests & Archival Notification"
+msgstr "Zahlungsaufforderungen & Archivierungsbenachrichtigungen versenden"
 
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:65
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:289
 #, python-format
-msgid "Done up until %(state)s. %(count)s emails have been sent so far."
-msgstr "Erledigt bis %(state)s. %(count)s E-Mails wurden bisher versandt."
+msgid "Done up until %(state)s."
+msgstr "Erledigt bis %(state)s."
+
+msgid "%(count)s billing emails have been sent so far."
+msgstr "%(count)s Zahlungsaufforderungen wurden bisher versandt."
+
+msgid "%(count)s archival emails have been sent so far."
+msgstr "%(count)s Archivierungsmails wurden bisher versandt."
 
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:74
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:298
@@ -8655,33 +8661,41 @@ msgstr "Mails verschicken"
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:83
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:282
 #, python-format
-msgid "Done on the %(date)s. %(count)s emails were sent."
-msgstr "Erledigt am %(date)s. %(count)s E-Mails versandt."
+msgid "Done on the %(date)s."
+msgstr "Erledigt am %(date)s."
+
+msgid "%(count)s billing emails were sent."
+msgstr "%(count)s Zahlungsaufforderungen versandt."
+
+msgid "%(count)s archival emails were sent."
+msgstr "%(count)s Archivierungsmails versandt."
 
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:94
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:122
-msgid "Remove inactive Members"
-msgstr "Streichung inaktiver Mitglieder"
+msgid "Remove inactive Members & Perform Automatic Archival"
+msgstr "Streichung inaktiver Mitglieder & Automatische Archivierung"
+
+msgid "Process Accounts"
+msgstr "Nutzer verarbeiten"
 
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:100
 #, python-format
-msgid ""
-"Done up until %(state)s. %(count)s memberships have been ended so far. A "
-"total of %(balance)s has been deducted so far."
-msgstr ""
-"Erledigt bis %(state)s. %(count)s Mitgliedschaften wurden bisher beendet. "
-"%(balance)s an Guthaben wurde bisher eingezogen."
+msgid "%(count)s memberships have been ended so far."
+msgstr "%(count)s Mitgliedschaften wurden bisher beendet."
+
+msgid "%(count)s accounts have been archived so far."
+msgstr "%(count)s Benutzer wurden bisher archiviert."
 
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:110
 #, python-format
-msgid ""
-"%(low_count)s members have insufficient balance (total of %(low_total)s) "
-"right now (%(low_last_count)s of these with an active lastschrift). "
-"Additionally we have %(trial_count)s trial members."
-msgstr ""
-"Derzeit haben %(low_count)s Mitglieder ein zu niedriges Guthaben (insgesamt "
-"%(low_total)s, davon %(low_last_count)s mit einer aktiven "
-"Einzugsermächtigung). Zusätzlich gibt es %(trial_count)s Probemitglieder."
+msgid "%(low_count)s members with insufficient balance."
+msgstr "Zu geringes Guthaben: %(low_count)s Mitglieder"
+
+msgid "%(low_last_count)s of these with a lastschrift."
+msgstr "Davon %(low_last_count)s mit Einzugsermächtigung."
+
+msgid "Additionally, we have %(trial_count)s trial members."
+msgstr "Zusätzlich gibt es %(trial_count)s Probemitglieder."
 
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:125
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:148
@@ -8692,12 +8706,11 @@ msgstr "Später zu erledigen."
 
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:128
 #, python-format
-msgid ""
-"Done on the %(date)s. %(count)s memberships were ended. A total of "
-"%(balance)s was deducted."
-msgstr ""
-"Erledigt am %(date)s. %(count)s Mitgliedschaften beendet. %(balance)s an "
-"Guthaben eingezogen."
+msgid "%(count)s memberships were ended."
+msgstr "%(count)s Mitgliedschaften beendet."
+
+msgid "%(count)s accounts were archived."
+msgstr "%(count)s Benutzer archiviert."
 
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:144
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:171
@@ -8706,35 +8719,78 @@ msgstr "Guthaben aktualisieren"
 
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:152
 #, python-format
-msgid ""
-"Done up until %(state)s. %(count)s trial meberships have been ended so far. "
-"A total of %(total)s has been deducted so far."
-msgstr ""
-"Erledigt bis %(state)s. %(count)s Probemitgliedschaften wurden bisher "
-"beendet. Bisher wurden %(total)s abgebucht."
+msgid "%(count)s trial meberships have been ended so far."
+msgstr "%(count)s Probemitgliedschaften wurden bisher beendet."
+
+msgid "A total of %(total)s has been deducted so far."
+msgstr "Bisher wurden %(total)s abgebucht."
 
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:163
 #, python-format
-msgid ""
-"%(total_count)s Members total, %(trial_count)s of which have a Trial-"
-"Membership right now."
-msgstr ""
-"Insgesamt %(total_count)s Mitglieder, %(trial_count)s davon haben eine "
-"Probemitgliedschaft."
+msgid "%(total_count)s Members in total."
+msgstr "Insgesamt %(total_count)s Mitglieder."
+
+msgid "%(trial_count)s of these are trial members."
+msgstr "Davon %(trial_count)s Probemitglieder."
 
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:175
 #, python-format
 msgid ""
 "Done on the %(date)s. %(count)s trial memberships were ended. A total of "
-"%(total)s was deducted."
+"%(total)s was deducted. Additionally, %(exmembers)s was deducted from Exmembers."
 msgstr ""
 "Erledigt am %(date)s. %(count)s Probemitgliedschaften wurden beendet. "
-"Insgesamt wurden %(total)s abgebucht."
+"Insgesamt wurden %(total)s abgebucht. Zusätztlich wurde %(exmembers)s von Exmitgliedern "
+"eingezogen."
 
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:190
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:202
 msgid "Next Semester"
 msgstr "Nächstes Semester"
+
+msgid "Affected Exmembers"
+msgstr "Betroffene Exmitglieder"
+
+msgid "Balance of Exmembers"
+msgstr "Guthaben von Exmitgliedern"
+
+msgid "Balance of Exmembers removed."
+msgstr "Guthaben von Exmitgliedern entfernt"
+
+msgid "The payment request is sent to all members. You may also include the semiannual "
+"address check in this mail. Make sure to initialize the %(lastschriften)s after this."
+msgstr "Die Zahlungsaufforderung (mit optionaler halbjährlicher Adressabfrage) wird "
+"an alle Mitglieder verschickt. Im Anschluss sollen die %(lastschriften)s "
+"initialisiert werden."
+
+msgid "Direct Debits"
+msgstr "Lastschriften"
+
+msgid "The archival notification is sent to all users which will be automatically "
+"archived. Those are all users which were not active for the last two years."
+msgstr "Die Archivierungsbenachrichtigung wird an alle Benutzer gesendet, die "
+"automatisch archiviert werden (Nutzer, die in den letzten zwei Jahren nicht aktiv waren)."
+
+msgid "Eject all members whose balance is lower than the membership fee and who are "
+"not a trial member. Make sure to finalize all pending %(lastschriften)s beforehand."
+msgstr "Streicht alle Mitglieder mit zu geringem Guthaben, die keine Probemitglieder "
+"sind. Vorher müssen alle ausstehenden %(lastschriften)s abgeschlossen werden."
+
+msgid "Archive all users who received an archival notification in the previous "
+"step and took no measurements against this."
+msgstr "Archiviert alle Benutzer, die im vorigen Schritt eine "
+"Archivierungsbenachrichtigung erhalten und keine Maßnahmen gegen die "
+"Archivierung ergriffen haben."
+
+msgid "Subtract the membership fee from all members. Trial members lose their trial "
+"membership instead and are normal members afterwards."
+msgstr "Zieht den Mitgliedsbeitrag vom Guthaben aller Mitglieder ab. Probemitglieder "
+"verlieren stattdessen ihre Probemitgliedschaft und sind danach normale Mitglieder."
+
+msgid "Remove the remaining balance from all non-members, since losing your "
+"membership leaves your balance untouched."
+msgstr "Entfernt das Restguthaben aller Nicht-Mitglieder, da das Streichen der "
+"Mitgliedschaft das Guthaben des Mitglieds nicht ändert."
 
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:194
 msgid ""
@@ -8812,6 +8868,12 @@ msgstr "exPuls-Semester"
 #, python-format
 msgid "The next exPuls will be number %(number)s."
 msgstr "Der nächste exPuls trägt die Nummer %(number)s."
+
+msgid "Done up until %(state)s. %(count)s emails have been sent so far."
+msgstr "Erledigt bis %(state)s. %(count)s E-Mails wurden bisher versandt."
+
+msgid "Done on the %(date)s. %(count)s emails were sent."
+msgstr "Erledigt am %(date)s. %(count)s E-Mails versandt."
 
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:277
 msgid "Send Address-Checks"
@@ -15686,6 +15748,9 @@ msgstr "Ende der Probemitgliedschaft"
 #: cdedb/i18n_additional.py:135
 msgid "FinanceLogCodes.manual_balance_correction"
 msgstr "Manuelle Guthabenkorrektur"
+
+msgid "FinanceLogCodes.remove_balance_on_archival"
+msgstr "Guthaben bei Archivierung gelöscht"
 
 #: cdedb/i18n_additional.py:136
 msgid "FinanceLogCodes.grant_lastschrift"

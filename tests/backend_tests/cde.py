@@ -421,31 +421,12 @@ class TestCdEBackend(BackendTest):
         for k, v in period.items():
             if k == "id":
                 self.assertEqual(v, period_id)
-            elif k == "semester_start":
+            elif k in {"semester_start", "billing_done", "archival_notification_done"}:
                 self.assertEqual(v, nearly_now())
             else:
                 self.assertFalse(v)
 
-        self.assertTrue(self.cde.may_start_semester_bill(self.key))
-        self.assertFalse(self.cde.may_start_semester_ejection(self.key))
-        self.assertFalse(self.cde.may_start_semester_balance_update(self.key))
-        self.assertFalse(self.cde.may_advance_semester(self.key))
-
-        if self.user_in("anton"):
-            self.cde.finish_semester_bill(self.key)
-        elif self.user_in("farin"):
-            self.cde.finish_archival_notification(self.key)
-        else:
-            self.fail("Invalid user configuration for this test.")
-        self.assertTrue(self.cde.may_start_semester_bill(self.key))
-        self.assertFalse(self.cde.may_start_semester_ejection(self.key))
-        self.assertFalse(self.cde.may_start_semester_balance_update(self.key))
-        self.assertFalse(self.cde.may_advance_semester(self.key))
-
-        if self.user_in("anton"):
-            self.cde.finish_archival_notification(self.key)
-        elif self.user_in("farin"):
-            self.cde.finish_semester_bill(self.key)
+        # step 2
         self.assertFalse(self.cde.may_start_semester_bill(self.key))
         self.assertTrue(self.cde.may_start_semester_ejection(self.key))
         self.assertFalse(self.cde.may_start_semester_balance_update(self.key))
@@ -469,15 +450,38 @@ class TestCdEBackend(BackendTest):
         self.assertTrue(self.cde.may_start_semester_balance_update(self.key))
         self.assertFalse(self.cde.may_advance_semester(self.key))
 
+        # step 3
         self.cde.finish_semester_balance_update(self.key)
         self.assertFalse(self.cde.may_start_semester_bill(self.key))
         self.assertFalse(self.cde.may_start_semester_ejection(self.key))
         self.assertFalse(self.cde.may_start_semester_balance_update(self.key))
         self.assertTrue(self.cde.may_advance_semester(self.key))
 
+        # step 4 (in the UI, this is the first part of step 1)
         self.cde.advance_semester(self.key)
         self.assertTrue(self.cde.may_start_semester_bill(self.key))
         self.assertFalse(self.cde.may_start_semester_ejection(self.key))
+        self.assertFalse(self.cde.may_start_semester_balance_update(self.key))
+        self.assertFalse(self.cde.may_advance_semester(self.key))
+
+        # step 1
+        if self.user_in("anton"):
+            self.cde.finish_semester_bill(self.key)
+        elif self.user_in("farin"):
+            self.cde.finish_archival_notification(self.key)
+        else:
+            self.fail("Invalid user configuration for this test.")
+        self.assertTrue(self.cde.may_start_semester_bill(self.key))
+        self.assertFalse(self.cde.may_start_semester_ejection(self.key))
+        self.assertFalse(self.cde.may_start_semester_balance_update(self.key))
+        self.assertFalse(self.cde.may_advance_semester(self.key))
+
+        if self.user_in("anton"):
+            self.cde.finish_archival_notification(self.key)
+        elif self.user_in("farin"):
+            self.cde.finish_semester_bill(self.key)
+        self.assertFalse(self.cde.may_start_semester_bill(self.key))
+        self.assertTrue(self.cde.may_start_semester_ejection(self.key))
         self.assertFalse(self.cde.may_start_semester_balance_update(self.key))
         self.assertFalse(self.cde.may_advance_semester(self.key))
 
