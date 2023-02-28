@@ -6792,7 +6792,7 @@ msgid ""
 "information. This is only possible while no ballots have begun voting."
 msgstr ""
 "Löscht die Verrsammlung inklusive aller Abstimmungen und Teilnehmer\n"
-"irreversibel.Das ist nur möglich, solange noch keine Abstimmung begonnen\n"
+"irreversibel. Das ist nur möglich, solange noch keine Abstimmung begonnen\n"
 "hat."
 
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:247
@@ -8844,7 +8844,7 @@ msgstr "Der Teilnehmer wird aus der Veranstaltung entfernt."
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:16
 msgid ""
 "The actions on this site affect all Members, therefore they are basically "
-"irreversibel. Only use them, if You are absolutely sure what You are doing."
+"irreversible. Only use them, if You are absolutely sure what You are doing."
 msgstr ""
 "Die auf dieser Seite enthaltenen Aktionen betreffen alle Mitglieder. Aus "
 "diesem Grund sind sie praktisch nicht rückgängig zu machen. Führe diese "
