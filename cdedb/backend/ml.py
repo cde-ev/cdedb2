@@ -514,24 +514,36 @@ class MlBackend(AbstractBackend):
                             mailinglist_id, change_note=address)
         return ret
 
-    def _ml_type_transition(self, rs: RequestState, mailinglist_id: int,
-                            old_type: const.MailinglistTypes,
-                            new_type: const.MailinglistTypes) -> DefaultReturnCode:
-        old_type = get_ml_type(old_type)
-        new_type = get_ml_type(new_type)
-        # implicitly atomized context.
-        self.affirm_atomized_context(rs)
-        obsolete_fields = (
-            old_type.get_additional_fields().keys()
-            - new_type.get_additional_fields().keys()
-        )
-        if obsolete_fields:
-            setter = ", ".join(f"{f} = DEFAULT" for f in obsolete_fields)
-            query = f"UPDATE ml.mailinglists SET {setter} WHERE id = %s"
-            params = (mailinglist_id,)
-            return self.query_exec(rs, query, params)
-        else:
-            return 1
+    @access("ml")
+    def change_ml_type(self, rs: RequestState, mailinglist_id: int,
+                       ml_type: const.MailinglistTypes) -> DefaultReturnCode:
+        """Change the type of a mailinglist."""
+        ret = 1
+        update = {"id": mailinglist_id, "ml_type": ml_type}
+        with Atomizer(rs):
+            if not self.is_relevant_admin(rs, mailinglist_id=mailinglist_id):
+                raise PrivilegeError("Not privileged to make this change.")
+            new_type = get_ml_type(ml_type)
+            old_type = self.get_ml_type(rs, mailinglist_id)
+            if not new_type.allow_unsub:
+                # Delete all unsubscriptions for mandatory list.
+                query = ("DELETE FROM ml.subscription_states "
+                         "WHERE mailinglist_id = %s "
+                         "AND subscription_state = ANY(%s)")
+                # noinspection PyTypeChecker
+                params = (mailinglist_id, self.subman.written_states -
+                          const.SubscriptionState.subscribing_states())
+                self.query_exec(rs, query, params)
+            obsolete_fields = (
+                old_type.get_additional_fields().keys()
+                - new_type.get_additional_fields().keys()
+            )
+            if obsolete_fields:
+                setter = ", ".join(f"{f} = DEFAULT" for f in obsolete_fields)
+                query = f"UPDATE ml.mailinglists SET {setter} WHERE id = %s"
+                ret *= self.query_exec(rs, query, (mailinglist_id,))
+            ret *= self.sql_update(rs, "ml.mailinglists", update)
+        return ret
 
     @access("ml")
     def set_mailinglist(self, rs: RequestState,
@@ -575,21 +587,6 @@ class MlBackend(AbstractBackend):
                     rs, dict(current_data, **mdata))
                 ret *= self.sql_update(rs, "ml.mailinglists", mdata)
                 self.ml_log(rs, const.MlLogCodes.list_changed, data['id'])
-            if 'ml_type' in changed:
-                # Check if privileges allow new state of the mailinglist.
-                if not self.is_relevant_admin(rs, mailinglist_id=data['id']):
-                    raise PrivilegeError("Not privileged to make this change.")
-                if not get_ml_type(data['ml_type']).allow_unsub:
-                    # Delete all unsubscriptions for mandatory list.
-                    query = ("DELETE FROM ml.subscription_states "
-                             "WHERE mailinglist_id = %s "
-                             "AND subscription_state = ANY(%s)")
-                    # noinspection PyTypeChecker
-                    params = (data['id'], self.subman.written_states -
-                              const.SubscriptionState.subscribing_states())
-                    self.query_exec(rs, query, params)
-                ret *= self._ml_type_transition(
-                    rs, data['id'], old_type=current.ml_type, new_type=data['ml_type'])
 
             # only full moderators and admins can make subscription state
             # related changes.
