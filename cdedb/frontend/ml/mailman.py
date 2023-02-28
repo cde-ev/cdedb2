@@ -106,6 +106,7 @@ class MlMailmanMixin(MlBaseFrontend):
             'filter_content': True,
             'filter_action': 'reject',
             'convert_html_to_plaintext': db_list.convert_html,
+            'collapse_alternatives': db_list.convert_html,
             'pass_extensions': ATTACHMENT_EXTENSIONS_CONVERT[
                 db_list.attachment_policy],
             'pass_types': ATTACHMENT_MIME_CONVERT[db_list.attachment_policy],
