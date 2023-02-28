@@ -14,7 +14,7 @@ from cdedb.common.query import QueryOperators
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
 from cdedb.devsamples import HELD_MESSAGE_SAMPLE, MockHeldMessage
 from cdedb.frontend.common import CustomCSVDialect
-from cdedb.ml_type_aux import CdeLokalMailinglist
+from cdedb.models.ml import CdeLokalMailinglist
 from tests.common import USER_DICT, FrontendTest, as_users, prepsql
 
 
@@ -1368,7 +1368,7 @@ class TestMlFrontend(FrontendTest):
         f['local_part'] = "littlewhinging"
         f['domain'] = const.MailinglistDomain.cdelokal
         self.assertEqual(len(f['domain'].options),
-                         len(CdeLokalMailinglist.domains))
+                         len(CdeLokalMailinglist.available_domains))
         moderator = USER_DICT["berta"]
         f['moderators'] = moderator["DB-ID"]
         self.submit(f)

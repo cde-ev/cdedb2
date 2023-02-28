@@ -54,7 +54,7 @@
             Note that every change can take up to 15 minutes to take effect.
         {% endtrans %}
     </p>
-    {% set readonly = not ambience['mailinglist']['ml_type_class'].has_management_view(user) %}
+    {% set readonly = not ambience['mailinglist'].has_management_view(user) %}
     <form action="{{ cdedblink('ml/change_mailinglist') }}" method="POST" id="changelistform" class="form-horizontal">
         {{ util.anti_csrf_token('ml/change_mailinglist') }}
     <h4 class="heading-underline">{% trans %}Meta{% endtrans %}</h4>

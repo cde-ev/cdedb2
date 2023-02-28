@@ -18,7 +18,6 @@ from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.ml_type_aux as ml_type
 from cdedb.common import (
     DEFAULT_NUM_COURSE_CHOICES, CdEDBObject, RequestState, merge_dicts, now, unwrap,
 )
@@ -37,7 +36,9 @@ from cdedb.frontend.common import (
     event_guard, inspect_validation as inspect, periodic, process_dynamic_input,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
-from cdedb.models.ml import Mailinglist
+from cdedb.models.ml import (
+    EventAssociatedMailinglist, EventOrgaMailinglist, Mailinglist,
+)
 
 
 class EventEventMixin(EventBaseFrontend):
@@ -836,7 +837,7 @@ class EventEventMixin(EventBaseFrontend):
             descr = ("Bitte wende Dich bei Fragen oder Problemen, die mit"
                      " unserer Veranstaltung zusammenhängen, über diese Liste"
                      " an uns.")
-            orga_ml_data = Mailinglist(
+            orga_ml_data = EventOrgaMailinglist(
                 id=vtypes.CreationID(vtypes.ProtoID(-1)),
                 title=f"{event['title']} Orgateam",
                 local_part=vtypes.EmailLocalPart(event['shortname'].lower()),
@@ -846,7 +847,7 @@ class EventEventMixin(EventBaseFrontend):
                 attachment_policy=const.AttachmentPolicy.allow,
                 convert_html=True,
                 subject_prefix=event['shortname'],
-                maxsize=ml_type.EventOrgaMailinglist.maxsize_default,
+                maxsize=EventOrgaMailinglist.maxsize_default,
                 is_active=True,
                 assembly_id=None,
                 event_id=event['id'],
@@ -854,7 +855,6 @@ class EventEventMixin(EventBaseFrontend):
                 notes=None,
                 moderators=event['orgas'],
                 whitelist=set(),
-                ml_type=const.MailinglistTypes.event_orga,
             )
             return orga_ml_data
         else:
@@ -864,7 +864,7 @@ class EventEventMixin(EventBaseFrontend):
                      f"*Teilnehmer* erhälst. Auf dieser Liste stehen alle "
                      f"Teilnehmer unserer Veranstaltung; sie kann im Vorfeld "
                      f"zum Austausch untereinander genutzt werden.")
-            participant_ml_data = Mailinglist(
+            participant_ml_data = EventAssociatedMailinglist(
                 id=vtypes.CreationID(vtypes.ProtoID(-1)),
                 title=f"{event['title']} Teilnehmer",
                 local_part=vtypes.EmailLocalPart(f"{event['shortname'].lower()}-all"),
@@ -874,7 +874,7 @@ class EventEventMixin(EventBaseFrontend):
                 attachment_policy=const.AttachmentPolicy.pdf_only,
                 convert_html=True,
                 subject_prefix=event['shortname'],
-                maxsize=ml_type.EventAssociatedMailinglist.maxsize_default,
+                maxsize=EventAssociatedMailinglist.maxsize_default,
                 is_active=True,
                 assembly_id=None,
                 event_id=event["id"],
@@ -882,7 +882,6 @@ class EventEventMixin(EventBaseFrontend):
                 notes=None,
                 moderators=event['orgas'],
                 whitelist=set(),
-                ml_type=const.MailinglistTypes.event_associated,
             )
             return participant_ml_data
 
