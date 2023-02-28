@@ -591,10 +591,11 @@ class MlBackend(AbstractBackend):
         ret = 1
         update = {"id": mailinglist_id, "ml_type": ml_type}
         with Atomizer(rs):
-            if not self.is_relevant_admin(rs, mailinglist_id=mailinglist_id):
-                raise PrivilegeError("Not privileged to make this change.")
             new_type = get_ml_type(ml_type)
             old_type = self.get_ml_type(rs, mailinglist_id)
+            if not (new_type.is_relevant_admin(rs.user)
+                    and old_type.is_relevant_admin(rs.user)):
+                raise PrivilegeError("Not privileged to make this change.")
             if not new_type.allow_unsub:
                 # Delete all unsubscriptions for mandatory list.
                 query = ("DELETE FROM ml.subscription_states "
@@ -613,6 +614,7 @@ class MlBackend(AbstractBackend):
                 query = f"UPDATE ml.mailinglists SET {setter} WHERE id = %s"
                 ret *= self.query_exec(rs, query, (mailinglist_id,))
             ret *= self.sql_update(rs, "ml.mailinglists", update)
+            ret *= self.write_subscription_states(rs, (mailinglist_id,))
         return ret
 
     @access("ml")
