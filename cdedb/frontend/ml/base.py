@@ -33,7 +33,9 @@ from cdedb.frontend.common import (
     periodic,
 )
 from cdedb.models.ml import (
-    ADDITIONAL_TYPE_FIELDS, ML_TYPE_MAP, Mailinglist, MailinglistGroup, get_ml_type,
+    ADDITIONAL_TYPE_FIELDS, ML_TYPE_MAP, AssemblyAssociatedMailinglist,
+    EventAssociatedMailinglist, EventAssociatedMeta as EventAssociatedMetaMailinglist,
+    Mailinglist, MailinglistGroup, get_ml_type,
 )
 
 
@@ -388,7 +390,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                 rs, mailinglist_id, rs.user.persona_id, explicits_only=True)
 
         event = None
-        if ml.event_id:
+        if isinstance(ml, EventAssociatedMetaMailinglist) and ml.event_id:
             event = self.eventproxy.get_event(rs, ml.event_id)
             event['is_visible'] = (
                 "event_admin" in rs.user.roles
@@ -396,7 +398,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                 or event['is_visible'])
 
         assembly = None
-        if ml.assembly_id:
+        if isinstance(ml, AssemblyAssociatedMailinglist) and ml.assembly_id:
             all_assemblies = self.assemblyproxy.list_assemblies(rs)
             assembly = all_assemblies[ml.assembly_id]
             assembly['is_visible'] = self.assemblyproxy.may_assemble(
@@ -513,18 +515,19 @@ class MlBaseFrontend(AbstractUserFrontend):
     @REQUESTdatadict(*ADDITIONAL_TYPE_FIELDS.items())
     @REQUESTdata("ml_type")
     def change_ml_type(self, rs: RequestState, mailinglist_id: int,
-                       ml_type: const.MailinglistTypes, data: CdEDBObject) -> Response:
+                       ml_type: const.MailinglistTypes, data: CdEDBObject
+                       ) -> Response:
         ml = rs.ambience['mailinglist']
-        data['id'] = mailinglist_id
-        data['ml_type'] = ml_type
-        data['domain'] = ml.domain
-        new_type = get_ml_type(data['ml_type'])
-        if data['domain'] not in new_type.available_domains:
-            data['domain'] = new_type.available_domains[0]
-        data = check(rs, vtypes.Mailinglist, data)
+        update = {"id": mailinglist_id, "domain": ml.domain}
+        new_type = get_ml_type(ml_type)
+        if update['domain'] not in new_type.available_domains:
+            update['domain'] = new_type.available_domains[0]
+        for field in new_type.get_additional_fields():
+            update[field] = data[field]
+        update = check(rs, vtypes.Mailinglist, update, subtype=new_type)
         if rs.has_validation_errors():
             return self.change_ml_type_form(rs, mailinglist_id)
-        assert data is not None
+        assert update is not None
 
         code = self.mlproxy.change_ml_type(rs, mailinglist_id, ml_type)
         code *= self.mlproxy.set_mailinglist(rs, update)
