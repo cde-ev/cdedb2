@@ -557,12 +557,13 @@ class MlBackend(AbstractBackend):
         made. Most attributes of the mailinglist may set by moderators, but for
         some you need admin privileges.
         """
-        data = affirm(vtypes.Mailinglist, data)
-
         ret = 1
         with Atomizer(rs):
             current = self.get_mailinglist(rs, data['id'])
+            data = affirm(vtypes.Mailinglist, data,
+                          subtype=get_ml_type(current.ml_type))
             current_data = current.to_database()
+
             mdata = {k: v for k, v in data.items()
                      if k in Mailinglist.database_fields()}
             changed = {k for k, v in mdata.items()
@@ -571,6 +572,7 @@ class MlBackend(AbstractBackend):
             is_moderator = self.is_moderator(rs, current.id)
             is_restricted = not self.is_moderator(rs, current.id,
                                                   allow_restricted=False)
+
             # determinate if changes are permitted
             if not is_admin:
                 if not is_moderator:
@@ -610,6 +612,8 @@ class MlBackend(AbstractBackend):
             # The address is a readonly property, but we want to save it into the
             #  database for convenience.
             mdata["address"] = data.address
+            # The ml_type is not included in the to_database
+            mdata["ml_type"] = data.ml_type
             new_id = self.sql_insert(rs, "ml.mailinglists", mdata)
             self.ml_log(rs, const.MlLogCodes.list_created, new_id)
             if data.moderators:

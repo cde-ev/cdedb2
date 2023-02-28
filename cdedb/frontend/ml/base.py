@@ -251,13 +251,12 @@ class MlBaseFrontend(AbstractUserFrontend):
         data["id"] = -1
         data["moderators"] = moderators
         data["whitelist"] = []
-        data['ml_type'] = ml_type
-        data = check(rs, vtypes.Mailinglist, data, creation=True)
+        ml_class = get_ml_type(ml_type)
+        data = check(rs, vtypes.Mailinglist, data, creation=True, subtype=ml_class)
         if rs.has_validation_errors():
             return self.create_mailinglist_form(rs, ml_type=ml_type)
         assert data is not None
-        ml_type = data.pop('ml_type')
-        ml = get_ml_type(ml_type)(**data)
+        ml = ml_class(**data)
         if not self.coreproxy.verify_ids(rs, moderators, is_archived=False):
             rs.append_validation_error(
                 ("moderators", ValueError(n_(
@@ -475,7 +474,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         for key in set(data) - allowed:
             data[key] = current[key]
 
-        data = check(rs, vtypes.Mailinglist, data)
+        data = check(rs, vtypes.Mailinglist, data, subtype=get_ml_type(ml.ml_type))
         if rs.has_validation_errors():
             return self.change_mailinglist_form(rs, mailinglist_id)
         assert data is not None
@@ -527,7 +526,8 @@ class MlBaseFrontend(AbstractUserFrontend):
             return self.change_ml_type_form(rs, mailinglist_id)
         assert data is not None
 
-        code = self.mlproxy.set_mailinglist(rs, data)
+        code = self.mlproxy.change_ml_type(rs, mailinglist_id, ml_type)
+        code *= self.mlproxy.set_mailinglist(rs, update)
         rs.notify_return_code(code)
         return self.redirect(rs, "ml/change_mailinglist")
 

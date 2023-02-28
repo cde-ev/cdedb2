@@ -224,7 +224,7 @@ def validate_assert_dataclass(type_: Type[T], value: Any, ignore_warnings: bool,
     subtype, validator = _validate_dataclass_preprocess(type_, value)
     val = dataclasses.asdict(value)
     validated = validate_assert(
-        validator, val, ignore_warnings=ignore_warnings, **kwargs)
+        validator, val, ignore_warnings=ignore_warnings, subtype=subtype, **kwargs)
     return _validate_dataclass_postprocess(subtype, validated)
 
 
@@ -4009,18 +4009,18 @@ MAILINGLIST_TYPE_DEPENDENT_FIELDS: Mapping[str, Any] = {
 
 @_add_typed_validator
 def _mailinglist(
-    val: Any, argname: str = "mailinglist", *,
-    creation: bool = False, _allow_readonly: bool = False, **kwargs: Any
+    val: Any, argname: str = "mailinglist", *, creation: bool = False,
+    subtype: models_ml.MLType = models_ml.Mailinglist, **kwargs: Any
 ) -> Mailinglist:
     """
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
+    :param subtype: Mandatory parameter to check for suitability for the given subtype.
     """
 
     val = _mapping(val, argname, **kwargs)
 
-    # TODO replace these with generic types
-    if "ml_type" not in val:
+    if subtype == models_ml.Mailinglist:
         raise ValidationSummary(ValueError(
             "ml_type", "Must provide ml_type for setting mailinglist."))
     atype = models_ml.get_ml_type(val["ml_type"])
@@ -4056,10 +4056,7 @@ def _mailinglist(
         else:
             raise RuntimeError("Impossible")
 
-    if not creation:
-        optional_fields.update(mandatory_fields)
-        del optional_fields["id"]
-        mandatory_fields = {"id": mandatory_fields["id"]}
+    mandatory_fields, optional_fields = subtype.validation_fields(creation=creation)
 
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
@@ -4075,8 +4072,7 @@ def _mailinglist(
         errs.append(ValueError(
             "domain", "Must specify domain for setting mailinglist."))
     else:
-        atype = models_ml.get_ml_type(val["ml_type"])
-        if val["domain"].value not in atype.available_domains:
+        if val["domain"].value not in subtype.available_domains:
             errs.append(ValueError("domain", n_(
                 "Invalid domain for this mailinglist type.")))
 

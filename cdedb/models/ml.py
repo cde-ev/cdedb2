@@ -145,12 +145,11 @@ class Mailinglist(CdEDataclass):
     @classmethod
     def database_fields(cls) -> List[str]:
         return [field.name for field in fields(cls)
-                if field.name not in {"moderators", "whitelist"}] + ["ml_type"]
+                if field.name not in {"moderators", "whitelist"}]
 
     @classmethod
     def validation_fields(cls, *, creation: bool) -> Tuple[TypeMapping, TypeMapping]:
         mandatory, optional = super().validation_fields(creation=creation)
-        mandatory["ml_type"] = const.MailinglistTypes
         # make whitelist optional during Mailinglist creation
         if "whitelist" in mandatory:
             optional["whitelist"] = mandatory["whitelist"]
