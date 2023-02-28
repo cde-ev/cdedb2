@@ -637,7 +637,7 @@ class MlBackend(AbstractBackend):
             current_data = current.to_database()
 
             mdata = {k: v for k, v in data.items()
-                     if k in Mailinglist.database_fields()}
+                     if k in current.database_fields()}
             changed = {k for k, v in mdata.items()
                        if k not in current_data or v != current_data[k]}
             is_admin = self.is_relevant_admin(rs, mailinglist=current)
