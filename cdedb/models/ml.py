@@ -97,11 +97,6 @@ class Mailinglist(CdEDataclass):
     maxsize: Optional[vtypes.PositiveInt]
     notes: Optional[str]
 
-    # some mailinglist types need additional fields
-    assembly_id: Optional[vtypes.ID]
-    event_id: Optional[vtypes.ID]
-    registration_stati: List[const.RegistrationPartStati]
-
     sortkey: ClassVar[MailinglistGroup] = MailinglistGroup.public
     available_domains: ClassVar[List[MailinglistDomain]] = [MailinglistDomain.lists]
     # default value for maxsize in KB
@@ -344,9 +339,7 @@ class AllMembersImplicitMeta(GeneralMailinglist):
 class EventAssociatedMeta(GeneralMailinglist):
     """Metaclass for all event associated mailinglists."""
     # Allow empty event_id to mark legacy event-lists.
-    mandatory_validation_fields: ClassVar[vtypes.TypeMapping] = {
-        "event_id": Optional[vtypes.ID]  # type: ignore[dict-item]
-    }
+    event_id: Optional[vtypes.ID]
 
     def periodic_cleanup(self, rs: RequestState) -> bool:
         """Disable periodic cleanup to freeze legacy event-lists."""
@@ -506,10 +499,7 @@ class RestrictedTeamMailinglist(TeamMeta, MemberInvitationOnlyMailinglist):
 
 @dataclass
 class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
-    mandatory_validation_fields: ClassVar[vtypes.TypeMapping] = {
-            **EventAssociatedMeta.mandatory_validation_fields,
-            "registration_stati": List[RegistrationPartStati],
-    }
+    registration_stati: List[const.RegistrationPartStati]
 
     @property
     def ml_type(self) -> MailinglistTypes:
@@ -625,9 +615,7 @@ class EventOrgaMailinglist(EventAssociatedMeta, ImplicitsSubscribableMeta,
 @dataclass
 class AssemblyAssociatedMailinglist(ImplicitsSubscribableMeta, AssemblyMailinglist):
     # Allow empty assembly_id to mark legacy assembly-lists.
-    mandatory_validation_fields: ClassVar[vtypes.TypeMapping] = {
-        "assembly_id": Optional[vtypes.ID]  # type: ignore[dict-item]
-    }
+    assembly_id: Optional[vtypes.ID]
 
     @property
     def ml_type(self) -> MailinglistTypes:
