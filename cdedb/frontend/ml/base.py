@@ -244,7 +244,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             })
 
     @access("ml", modi={"POST"})
-    @REQUESTdatadict(*Mailinglist.requestdict_fields())
+    @REQUESTdatadict(*Mailinglist.requestdict_fields(), *ADDITIONAL_TYPE_FIELDS.items())
     @REQUESTdata("ml_type", "moderators")
     def create_mailinglist(self, rs: RequestState, data: Dict[str, Any],
                            ml_type: const.MailinglistTypes,
@@ -254,10 +254,15 @@ class MlBaseFrontend(AbstractUserFrontend):
         data["moderators"] = moderators
         data["whitelist"] = []
         ml_class = get_ml_type(ml_type)
+        # silently discard superfluous fields
+        for field in ADDITIONAL_TYPE_FIELDS:
+            if field not in ml_class.get_additional_fields():
+                del data[field]
         data = check(rs, vtypes.Mailinglist, data, creation=True, subtype=ml_class)
         if rs.has_validation_errors():
             return self.create_mailinglist_form(rs, ml_type=ml_type)
         assert data is not None
+
         ml = ml_class(**data)
         if not self.coreproxy.verify_ids(rs, moderators, is_archived=False):
             rs.append_validation_error(
@@ -456,7 +461,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("ml", modi={"POST"})
     @mailinglist_guard()
-    @REQUESTdatadict(*Mailinglist.requestdict_fields())
+    @REQUESTdatadict(*Mailinglist.requestdict_fields(), *ADDITIONAL_TYPE_FIELDS.items())
     def change_mailinglist(self, rs: RequestState, mailinglist_id: int,
                            data: CdEDBObject) -> Response:
         """Modify simple attributes of mailinglists."""
@@ -470,6 +475,11 @@ class MlBaseFrontend(AbstractUserFrontend):
             allowed = MOD_ALLOWED_FIELDS
         else:
             allowed = RESTRICTED_MOD_ALLOWED_FIELDS
+
+        # silently discard superfluous fields
+        for field in ADDITIONAL_TYPE_FIELDS:
+            if field not in ml.get_additional_fields():
+                del data[field]
 
         # we discard every entry of not allowed fields silently
         current = ml.to_database()
