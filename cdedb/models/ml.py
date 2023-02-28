@@ -69,10 +69,6 @@ class Mailinglist(CdEDataclass):
             mailinglist of this type.
         * `allow_unsub`: Whether or not to allow unsubscribing from a mailinglist
             of this type.
-        * `mandatory_validation_fields`: A Set of additional (mandatory) fields to be
-            checked during validation for mailinglists of this type.
-        * `optional_validation_fields`: Like `madatory_validation_fields` but optional
-            instead.
         * `viewer_roles`: Determines who may view the mailinglist.
             See `may_view()` for details.
         * `relevant_admins`: Determines who may administrate the mailinglist. See
@@ -102,10 +98,6 @@ class Mailinglist(CdEDataclass):
     # default value for maxsize in KB
     maxsize_default: ClassVar = vtypes.PositiveInt(2048)
     allow_unsub: ClassVar[bool] = True
-
-    # Additional fields for validation. See docstring for details.
-    mandatory_validation_fields: ClassVar[vtypes.TypeMapping] = {}
-    optional_validation_fields: ClassVar[vtypes.TypeMapping] = {}
 
     def __post_init__(self) -> None:
         if self.__class__ == Mailinglist:
@@ -156,14 +148,11 @@ class Mailinglist(CdEDataclass):
         str, Union[Literal["str"], Literal["[str]"]]
     ]:
         ret: Dict[str, Union[Literal["str"], Literal["[str]"]]] = {}
-        for field, argtype in {
-            **cls.mandatory_validation_fields,
-            **cls.optional_validation_fields,
-        }.items():
-            if get_origin(argtype) is list:
-                ret[field] = "[str]"
+        for field in (set(fields(cls)) - set(fields(Mailinglist))):
+            if get_origin(field.type) is list:
+                ret[field.name] = "[str]"
             else:
-                ret[field] = "str"
+                ret[field.name] = "str"
         return ret
 
     viewer_roles: ClassVar[Set[str]] = {"ml"}

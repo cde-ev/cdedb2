@@ -4000,13 +4000,6 @@ def _serialized_event_questionnaire(
     return SerializedEventQuestionnaire(val)
 
 
-MAILINGLIST_TYPE_DEPENDENT_FIELDS: Mapping[str, Any] = {
-    'assembly_id': NoneType,
-    'event_id': NoneType,
-    'registration_stati': EmptyList,
-}
-
-
 @_add_typed_validator
 def _mailinglist(
     val: Any, argname: str = "mailinglist", *, creation: bool = False,
@@ -4023,38 +4016,6 @@ def _mailinglist(
     if subtype == models_ml.Mailinglist:
         raise ValidationSummary(ValueError(
             "ml_type", "Must provide ml_type for setting mailinglist."))
-    atype = models_ml.get_ml_type(val["ml_type"])
-
-    mandatory_fields, optional_fields = models_ml.Mailinglist.validation_fields(
-        creation=creation)
-
-    # replace the type specific fields with their absence defaults
-    # TODO move this into the validation_fields function once the MailinglistTypes are
-    #  properly implemented.
-    mandatory_type_fields = atype.mandatory_validation_fields.keys()
-    optional_type_fields = atype.optional_validation_fields.keys()
-    type_fields = {*mandatory_type_fields, *optional_type_fields}
-    for name in MAILINGLIST_TYPE_DEPENDENT_FIELDS:
-        if name in mandatory_type_fields and name in mandatory_fields:
-            pass
-        elif name in mandatory_type_fields and name in optional_fields:
-            mandatory_fields[name] = optional_fields[name]
-            del optional_fields[name]
-        elif name in optional_type_fields and name in mandatory_fields:
-            optional_fields[name] = mandatory_fields[name]
-            del mandatory_fields[name]
-        elif name in optional_type_fields and name in optional_fields:
-            pass
-        elif name not in type_fields:
-            if name in mandatory_fields:
-                del mandatory_fields[name]
-                optional_fields[name] = MAILINGLIST_TYPE_DEPENDENT_FIELDS[name]
-            elif name in optional_fields:
-                optional_fields[name] = MAILINGLIST_TYPE_DEPENDENT_FIELDS[name]
-            else:
-                raise RuntimeError("Impossible")
-        else:
-            raise RuntimeError("Impossible")
 
     mandatory_fields, optional_fields = subtype.validation_fields(creation=creation)
 
