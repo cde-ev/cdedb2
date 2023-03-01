@@ -8844,6 +8844,15 @@ msgstr "Der Teilnehmer wird aus der Veranstaltung entfernt."
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:16
 msgid ""
 "The actions on this site affect all Members, therefore they are basically "
+"irreversibel. Only use them, if You are absolutely sure what You are doing."
+msgstr ""
+"Die auf dieser Seite enthaltenen Aktionen betreffen alle Mitglieder. Aus "
+"diesem Grund sind sie praktisch nicht rückgängig zu machen. Führe diese "
+"Aktionen bitte nur aus, wenn Du Dir sicher bist, was Du tust."
+
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:16
+msgid ""
+"The actions on this site affect all Members, therefore they are basically "
 "irreversible. Only use them, if You are absolutely sure what You are doing."
 msgstr ""
 "Die auf dieser Seite enthaltenen Aktionen betreffen alle Mitglieder. Aus "
@@ -10156,6 +10165,10 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/modify_membership.tmpl:29
 msgid "loss of membership fee balance"
 msgstr "Verlust des Mitgliedsbeitragguthabens"
+
+#: cdedb/frontend/templates/web/core/modify_membership.tmpl:29
+msgid "loss of membership fee balance (in up to 6 months)"
+msgstr "Verlust des Mitgliedsbeitragguthabens (in spätestens 6 Monaten)"
 
 #: cdedb/frontend/templates/web/core/modify_membership.tmpl:30
 msgid "revocation of any active direct debit authorization"
