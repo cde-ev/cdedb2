@@ -105,7 +105,9 @@ class Mailinglist(CdEDataclass):
 
     @property
     def ml_type(self) -> MailinglistTypes:
-        raise NotImplementedError
+        if self.__class__ not in ML_TYPE_MAP_INV:
+            raise NotImplementedError
+        return ML_TYPE_MAP_INV[self.__class__]
 
     @property
     def address(self) -> vtypes.Email:
@@ -408,11 +410,6 @@ class MemberMailinglist(CdEMailinglist):
 
 @dataclass
 class MemberMandatoryMailinglist(AllMembersImplicitMeta, MemberMailinglist):
-
-    @property
-    def ml_type(self) -> MailinglistTypes:
-        return MailinglistTypes.member_mandatory
-
     role_map = OrderedDict([
         ("member", SubscriptionPolicy.subscribable)
     ])
@@ -424,11 +421,6 @@ class MemberMandatoryMailinglist(AllMembersImplicitMeta, MemberMailinglist):
 
 @dataclass
 class MemberOptOutMailinglist(AllMembersImplicitMeta, MemberMailinglist):
-
-    @property
-    def ml_type(self) -> MailinglistTypes:
-        return MailinglistTypes.member_opt_out
-
     role_map = OrderedDict([
         ("member", SubscriptionPolicy.subscribable)
     ])
@@ -436,11 +428,6 @@ class MemberOptOutMailinglist(AllMembersImplicitMeta, MemberMailinglist):
 
 @dataclass
 class MemberOptInMailinglist(MemberMailinglist):
-
-    @property
-    def ml_type(self) -> MailinglistTypes:
-        return MailinglistTypes.member_opt_in
-
     role_map = OrderedDict([
         ("member", SubscriptionPolicy.subscribable)
     ])
@@ -448,11 +435,6 @@ class MemberOptInMailinglist(MemberMailinglist):
 
 @dataclass
 class MemberModeratedOptInMailinglist(MemberMailinglist):
-
-    @property
-    def ml_type(self) -> MailinglistTypes:
-        return MailinglistTypes.member_moderated_opt_in
-
     role_map = OrderedDict([
         ("member", SubscriptionPolicy.moderated_opt_in)
     ])
@@ -460,11 +442,6 @@ class MemberModeratedOptInMailinglist(MemberMailinglist):
 
 @dataclass
 class MemberInvitationOnlyMailinglist(MemberMailinglist):
-
-    @property
-    def ml_type(self) -> MailinglistTypes:
-        return MailinglistTypes.member_invitation_only
-
     role_map = OrderedDict([
         ("member", SubscriptionPolicy.invitation_only)
     ])
@@ -472,27 +449,17 @@ class MemberInvitationOnlyMailinglist(MemberMailinglist):
 
 @dataclass
 class TeamMailinglist(TeamMeta, MemberModeratedOptInMailinglist):
-
-    @property
-    def ml_type(self) -> MailinglistTypes:
-        return MailinglistTypes.team
+    pass
 
 
 @dataclass
 class RestrictedTeamMailinglist(TeamMeta, MemberInvitationOnlyMailinglist):
-
-    @property
-    def ml_type(self) -> MailinglistTypes:
-        return MailinglistTypes.restricted_team
+    pass
 
 
 @dataclass
 class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
     registration_stati: List[const.RegistrationPartStati]
-
-    @property
-    def ml_type(self) -> MailinglistTypes:
-        return MailinglistTypes.event_associated
 
     def is_restricted_moderator(self, rs: RequestState, bc: BackendContainer) -> bool:
         """Check if the user is a restricted moderator.
@@ -569,10 +536,6 @@ class EventOrgaMailinglist(EventAssociatedMeta, ImplicitsSubscribableMeta,
                            EventMailinglist):
     maxsize_default: ClassVar = vtypes.PositiveInt(8192)
 
-    @property
-    def ml_type(self) -> MailinglistTypes:
-        return MailinglistTypes.event_orga
-
     def get_subscription_policies(self, rs: RequestState, bc: BackendContainer,
                                   persona_ids: Collection[int],
                                   ) -> SubscriptionPolicyMap:
@@ -605,10 +568,6 @@ class EventOrgaMailinglist(EventAssociatedMeta, ImplicitsSubscribableMeta,
 class AssemblyAssociatedMailinglist(ImplicitsSubscribableMeta, AssemblyMailinglist):
     # Allow empty assembly_id to mark legacy assembly-lists.
     assembly_id: Optional[vtypes.ID]
-
-    @property
-    def ml_type(self) -> MailinglistTypes:
-        return MailinglistTypes.assembly_associated
 
     def periodic_cleanup(self, rs: RequestState) -> bool:
         """Disable periodic cleanup to freeze legacy assembly-lists."""
@@ -659,10 +618,6 @@ class AssemblyAssociatedMailinglist(ImplicitsSubscribableMeta, AssemblyMailingli
 class AssemblyPresiderMailinglist(AssemblyAssociatedMailinglist):
     maxsize_default = vtypes.PositiveInt(8192)
 
-    @property
-    def ml_type(self) -> MailinglistTypes:
-        return MailinglistTypes.assembly_presider
-
     def get_subscription_policies(self, rs: RequestState, bc: BackendContainer,
                                   persona_ids: Collection[int],
                                   ) -> SubscriptionPolicyMap:
@@ -692,11 +647,6 @@ class AssemblyPresiderMailinglist(AssemblyAssociatedMailinglist):
 
 @dataclass
 class AssemblyOptInMailinglist(AssemblyMailinglist):
-
-    @property
-    def ml_type(self) -> MailinglistTypes:
-        return MailinglistTypes.assembly_opt_in
-
     role_map = OrderedDict([
         ("assembly", SubscriptionPolicy.subscribable)
     ])
@@ -704,11 +654,6 @@ class AssemblyOptInMailinglist(AssemblyMailinglist):
 
 @dataclass
 class GeneralMandatoryMailinglist(AllUsersImplicitMeta, Mailinglist):
-
-    @property
-    def ml_type(self) -> MailinglistTypes:
-        return MailinglistTypes.general_mandatory
-
     role_map = OrderedDict([
         ("ml", SubscriptionPolicy.subscribable)
     ])
@@ -718,11 +663,6 @@ class GeneralMandatoryMailinglist(AllUsersImplicitMeta, Mailinglist):
 
 @dataclass
 class GeneralOptInMailinglist(GeneralMailinglist):
-
-    @property
-    def ml_type(self) -> MailinglistTypes:
-        return MailinglistTypes.general_opt_in
-
     role_map = OrderedDict([
         ("ml", SubscriptionPolicy.subscribable)
     ])
@@ -730,11 +670,6 @@ class GeneralOptInMailinglist(GeneralMailinglist):
 
 @dataclass
 class GeneralModeratedOptInMailinglist(GeneralMailinglist):
-
-    @property
-    def ml_type(self) -> MailinglistTypes:
-        return MailinglistTypes.general_moderated_opt_in
-
     role_map = OrderedDict([
         ("ml", SubscriptionPolicy.moderated_opt_in)
     ])
@@ -742,11 +677,6 @@ class GeneralModeratedOptInMailinglist(GeneralMailinglist):
 
 @dataclass
 class GeneralInvitationOnlyMailinglist(GeneralMailinglist):
-
-    @property
-    def ml_type(self) -> MailinglistTypes:
-        return MailinglistTypes.general_invitation_only
-
     role_map = OrderedDict([
         ("ml", SubscriptionPolicy.invitation_only)
     ])
@@ -756,10 +686,6 @@ class GeneralInvitationOnlyMailinglist(GeneralMailinglist):
 class GeneralModeratorMailinglist(ImplicitsSubscribableMeta, Mailinglist):
     # For mandatory lists, ignore all unsubscriptions.
     allow_unsub = False
-
-    @property
-    def ml_type(self) -> MailinglistTypes:
-        return MailinglistTypes.general_moderators
 
     def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer
                                  ) -> Set[int]:
@@ -775,10 +701,6 @@ class GeneralModeratorMailinglist(ImplicitsSubscribableMeta, Mailinglist):
 class CdELokalModeratorMailinglist(GeneralModeratorMailinglist):
     relevant_admins = {"cdelokal_admin"}
 
-    @property
-    def ml_type(self) -> MailinglistTypes:
-        return MailinglistTypes.cdelokal_moderators
-
     def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer,
                                  ) -> Set[int]:
         """Get a list of people that should be on this mailinglist.
@@ -791,11 +713,6 @@ class CdELokalModeratorMailinglist(GeneralModeratorMailinglist):
 
 @dataclass
 class SemiPublicMailinglist(GeneralMailinglist):
-
-    @property
-    def ml_type(self) -> MailinglistTypes:
-        return MailinglistTypes.semi_public
-
     role_map = OrderedDict([
         ("member", SubscriptionPolicy.subscribable),
         ("ml", SubscriptionPolicy.moderated_opt_in)
@@ -808,17 +725,10 @@ class CdeLokalMailinglist(SemiPublicMailinglist):
     available_domains = [MailinglistDomain.cdelokal]
     relevant_admins = {"cdelokal_admin"}
 
-    @property
-    def ml_type(self) -> MailinglistTypes:
-        return MailinglistTypes.cdelokal
-
 
 @dataclass
 class PublicMemberImplicitMailinglist(AllMembersImplicitMeta, GeneralOptInMailinglist):
-
-    @property
-    def ml_type(self) -> MailinglistTypes:
-        return MailinglistTypes.public_member_implicit
+    pass
 
 
 MLType = Type[Mailinglist]
@@ -828,7 +738,6 @@ def get_ml_type(val: MailinglistTypes) -> MLType:
     return ML_TYPE_MAP[val]
 
 
-# TODO remove redundancy with class information
 ML_TYPE_MAP: Mapping[MailinglistTypes, Type[Mailinglist]] = {
     MailinglistTypes.member_mandatory: MemberMandatoryMailinglist,
     MailinglistTypes.member_opt_out: MemberOptOutMailinglist,
