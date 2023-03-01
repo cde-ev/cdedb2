@@ -1,6 +1,5 @@
 """Dataclass definitions of mailinglist realm."""
 
-import dataclasses
 import enum
 import itertools
 from dataclasses import dataclass, fields
@@ -17,9 +16,7 @@ from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.roles import extract_roles
 from cdedb.common.validation.types import TypeMapping
-from cdedb.database.constants import (
-    MailinglistDomain, MailinglistTypes, RegistrationPartStati,
-)
+from cdedb.database.constants import MailinglistDomain, MailinglistTypes
 from cdedb.models.common import CdEDataclass
 
 if TYPE_CHECKING:
@@ -93,6 +90,8 @@ class Mailinglist(CdEDataclass):
     maxsize: Optional[vtypes.PositiveInt]
     notes: Optional[str]
 
+    # some mailinglist types define additional fields
+
     sortkey: ClassVar[MailinglistGroup] = MailinglistGroup.public
     available_domains: ClassVar[List[MailinglistDomain]] = [MailinglistDomain.lists]
     # default value for maxsize in KB
@@ -150,7 +149,7 @@ class Mailinglist(CdEDataclass):
         str, Union[Literal["str"], Literal["[str]"]]
     ]:
         ret: Dict[str, Union[Literal["str"], Literal["[str]"]]] = {}
-        for field in (set(fields(cls)) - set(fields(Mailinglist))):
+        for field in (set(fields(cls)) - set(fields(Mailinglist))):  # pylint: disable=superfluous-parens
             if get_origin(field.type) is list:
                 ret[field.name] = "[str]"
             else:
@@ -299,7 +298,7 @@ class Mailinglist(CdEDataclass):
 
 @dataclass
 class GeneralMailinglist(Mailinglist):
-    """Shall gain a __post_init__ to set ml_type automatically."""
+    pass
 
 
 @dataclass

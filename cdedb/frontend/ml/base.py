@@ -34,8 +34,8 @@ from cdedb.frontend.common import (
 )
 from cdedb.models.ml import (
     ADDITIONAL_TYPE_FIELDS, ML_TYPE_MAP, AssemblyAssociatedMailinglist,
-    EventAssociatedMailinglist, EventAssociatedMeta as EventAssociatedMetaMailinglist,
-    Mailinglist, MailinglistGroup, get_ml_type,
+    EventAssociatedMeta as EventAssociatedMetaMailinglist, Mailinglist,
+    MailinglistGroup, get_ml_type,
 )
 
 
