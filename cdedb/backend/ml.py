@@ -586,18 +586,36 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def change_ml_type(self, rs: RequestState, mailinglist_id: int,
-                       ml_type: const.MailinglistTypes) -> DefaultReturnCode:
-        """Change the type of a mailinglist."""
+                       ml_type: const.MailinglistTypes, update: CdEDBObject = None
+                       ) -> DefaultReturnCode:
+        """Change the type of a mailinglist.
+
+        To preserve data integrity, some additional changes may be specified via update.
+        """
         ret = 1
-        update = {"id": mailinglist_id, "ml_type": ml_type}
+        update = update or {}
         with Atomizer(rs):
             new_type = get_ml_type(ml_type)
             old_type = self.get_ml_type(rs, mailinglist_id)
+            obsolete_fields = (
+                old_type.get_additional_fields().keys()
+                - new_type.get_additional_fields().keys()
+            )
+
             if not (new_type.is_relevant_admin(rs.user)
                     and old_type.is_relevant_admin(rs.user)):
                 raise PrivilegeError("Not privileged to make this change.")
+
+            # check that the type change preserves the data integrity
+            ml = self.get_mailinglist(rs, mailinglist_id)
+            new_ml = ml.to_database()
+            new_ml.update(update)
+            for field in obsolete_fields:
+                del new_ml[field]
+            affirm(vtypes.Mailinglist, new_ml, subtype=new_type)
+
+            # Delete all unsubscriptions for mandatory list.
             if not new_type.allow_unsub:
-                # Delete all unsubscriptions for mandatory list.
                 query = ("DELETE FROM ml.subscription_states "
                          "WHERE mailinglist_id = %s "
                          "AND subscription_state = ANY(%s)")
@@ -605,16 +623,19 @@ class MlBackend(AbstractBackend):
                 params = (mailinglist_id, self.subman.written_states -
                           const.SubscriptionState.subscribing_states())
                 self.query_exec(rs, query, params)
-            obsolete_fields = (
-                old_type.get_additional_fields().keys()
-                - new_type.get_additional_fields().keys()
-            )
+
+            # delete all obsolete additional fields
             if obsolete_fields:
                 setter = ", ".join(f"{f} = DEFAULT" for f in obsolete_fields)
                 query = f"UPDATE ml.mailinglists SET {setter} WHERE id = %s"
                 ret *= self.query_exec(rs, query, (mailinglist_id,))
+
+            # perform the actual change
+            update.update({"id": mailinglist_id, "ml_type": ml_type})
             ret *= self.sql_update(rs, "ml.mailinglists", update)
-            ret *= self.write_subscription_states(rs, (mailinglist_id,))
+
+        # update the subscription states
+        ret *= self.write_subscription_states(rs, (mailinglist_id,))
         return ret
 
     @access("ml")

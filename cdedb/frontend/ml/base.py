@@ -523,15 +523,13 @@ class MlBaseFrontend(AbstractUserFrontend):
     @access("ml", modi={"POST"})
     @mailinglist_guard(allow_moderators=False)
     @REQUESTdatadict(*ADDITIONAL_TYPE_FIELDS.items())
-    @REQUESTdata("ml_type")
-    def change_ml_type(self, rs: RequestState, mailinglist_id: int,
-                       ml_type: const.MailinglistTypes, data: CdEDBObject
-                       ) -> Response:
-        ml = rs.ambience['mailinglist']
-        update = {"id": mailinglist_id, "domain": ml.domain}
+    @REQUESTdata("ml_type", "domain")
+    def change_ml_type(
+        self, rs: RequestState, mailinglist_id: int, ml_type: const.MailinglistTypes,
+        domain: const.MailinglistDomain, data: CdEDBObject
+    ) -> Response:
+        update = {"id": mailinglist_id, "domain": domain}
         new_type = get_ml_type(ml_type)
-        if update['domain'] not in new_type.available_domains:
-            update['domain'] = new_type.available_domains[0]
         for field in new_type.get_additional_fields():
             update[field] = data[field]
         update = check(rs, vtypes.Mailinglist, update, subtype=new_type)
@@ -539,8 +537,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             return self.change_ml_type_form(rs, mailinglist_id)
         assert update is not None
 
-        code = self.mlproxy.change_ml_type(rs, mailinglist_id, ml_type)
-        code *= self.mlproxy.set_mailinglist(rs, update)
+        code = self.mlproxy.change_ml_type(rs, mailinglist_id, ml_type, update)
         rs.notify_return_code(code)
         return self.redirect(rs, "ml/change_mailinglist")
 

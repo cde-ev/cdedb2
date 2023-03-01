@@ -460,7 +460,8 @@ class TestMlBackend(BackendTest):
                 self.key, mailinglist_id, const.MailinglistTypes.event_orga))
             # revert the change for the following test
             self.assertLess(0, self.ml.change_ml_type(
-                self.key, mailinglist_id, const.MailinglistTypes.event_associated))
+                self.key, mailinglist_id, const.MailinglistTypes.event_associated,
+                update={"registration_stati": [const.RegistrationPartStati.applied]}))
         else:
             with self.assertRaises(PrivilegeError):
                 self.ml.change_ml_type(
@@ -1391,7 +1392,8 @@ class TestMlBackend(BackendTest):
 
         # Making the list mandatory should get rid of all unsubscriptions, even
         # outside of the audience.
-        self.ml.change_ml_type(self.key, new_id, const.MailinglistTypes.member_mandatory)
+        self.ml.change_ml_type(
+            self.key, new_id, const.MailinglistTypes.member_mandatory)
 
         expectation = {
             1: SS.implicit,
@@ -1471,7 +1473,8 @@ class TestMlBackend(BackendTest):
             'assembly_id': 1,
         }
         self.ml.change_ml_type(
-            self.key, new_id, const.MailinglistTypes.assembly_associated)
+            self.key, new_id, const.MailinglistTypes.assembly_associated,
+            update={"domain": const.MailinglistDomain.lists})
         self.ml.set_mailinglist(self.key, mdata)
 
         expectation = {
@@ -1484,6 +1487,34 @@ class TestMlBackend(BackendTest):
         }
         result = self.ml.get_subscription_states(self.key, new_id)
         self.assertEqual(expectation, result)
+
+    @as_users("nina")
+    def test_change_ml_type(self) -> None:
+        ml_id = 59
+        expectation = self.ml.get_mailinglist(self.key, ml_id)
+        assert isinstance(expectation, models_ml.EventOrgaMailinglist)
+
+        # no changes if the type does not change
+        self.assertLess(0, self.ml.change_ml_type(
+            self.key, ml_id, const.MailinglistTypes.event_orga))
+        self.assertEqual(expectation, self.ml.get_mailinglist(self.key, ml_id))
+
+        # no requirements to update non-mandatory fields, keep shared optional fields
+        self.assertLess(0, self.ml.change_ml_type(
+            self.key, ml_id, const.MailinglistTypes.event_associated))
+        event_associated = self.ml.get_mailinglist(self.key, ml_id)
+        assert isinstance(event_associated, models_ml.EventAssociatedMailinglist)
+        self.assertEqual([], event_associated.registration_stati)
+        self.assertEqual(expectation.event_id, event_associated.event_id)
+
+        # preserve data integrity
+        with self.assertRaises(ValueError) as e:
+            self.ml.change_ml_type(
+                self.key, ml_id, const.MailinglistTypes.assembly_associated)
+        self.assertIn("Invalid domain", str(e.exception))
+        self.assertLess(0, self.ml.change_ml_type(
+            self.key, ml_id, const.MailinglistTypes.assembly_associated,
+            update={"domain": const.MailinglistDomain.lists}))
 
     @as_users("nina", "janis")
     def test_subscription_addresses(self) -> None:
@@ -1895,11 +1926,16 @@ class TestMlBackend(BackendTest):
             ml_type = const.MailinglistTypes.member_opt_out
             if not self.user_in("nina"):
                 with self.assertRaises(PrivilegeError) as cm:
-                    self.ml.change_ml_type(self.key, new_id, ml_type)
+                    self.ml.change_ml_type(
+                        self.key, new_id, ml_type,
+                        update={"domain": const.MailinglistDomain.lists})
                 self.assertEqual(cm.exception.args,
                                  ("Not privileged to make this change.",))
             else:
-                self.assertTrue(self.ml.change_ml_type(self.key, new_id, ml_type))
+                self.assertTrue(
+                    self.ml.change_ml_type(
+                        self.key, new_id, ml_type,
+                        update={"domain": const.MailinglistDomain.lists}))
 
             # Delete the mailinglist.
             self.assertTrue(self.ml.delete_mailinglist(
