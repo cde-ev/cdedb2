@@ -10154,8 +10154,8 @@ msgstr ""
 "gelistet"
 
 #: cdedb/frontend/templates/web/core/modify_membership.tmpl:29
-msgid "loss of membership fee balance"
-msgstr "Verlust des Mitgliedsbeitragguthabens"
+msgid "loss of membership fee balance (in up to 6 months)"
+msgstr "Verlust des Mitgliedsbeitragguthabens (in spätestens 6 Monaten)"
 
 #: cdedb/frontend/templates/web/core/modify_membership.tmpl:30
 msgid "revocation of any active direct debit authorization"
