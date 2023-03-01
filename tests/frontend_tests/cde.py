@@ -980,8 +980,19 @@ class TestCdEFrontend(FrontendTest):
             self.assertNotIn("receiptform3", self.response.forms)
 
     def test_membership_lastschrift_revoke(self) -> None:
+        # create a new lastschrift
+        self.login("farin")
+        self.admin_view_profile("charly")
+        self.traverse("Neue Einzugsermächtigung …", "Anlegen")
+        f = self.response.forms["createlastschriftform"]
+        f["amount"] = "25"
+        f["iban"] = "DE26370205000008068900"
+        self.submit(f)
+        self.logout()
+
+        # revoke membership
         self.login(USER_DICT["vera"])
-        self.admin_view_profile('berta')
+        self.admin_view_profile('charly')
         self.assertPresence("Einzugsermächtigung", div="balance")
         self.assertNonPresence("Neue Einzugsermächtigung", div="balance")
         self.traverse({'description': 'Status ändern'})
@@ -989,9 +1000,11 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertPresence("Aktives Lastschriftmandat widerrufen", div="notifications")
         self.assertNonPresence("Einzugsermächtigung", div="balance")
+
+        # check lastschrift revoke
         self.logout()
         self.login(USER_DICT["farin"])
-        self.get('/cde/user/2/lastschrift')
+        self.get('/cde/user/3/lastschrift')
         self.assertPresence("Keine aktive Einzugsermächtigung")
 
     @as_users("farin")
