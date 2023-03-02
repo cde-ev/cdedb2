@@ -723,7 +723,7 @@ msgstr "Guthaben zu niedrig."
 #: cdedb/backend/common.py:190
 #, python-format
 msgid "%(user_roles)s is disjoint from %(roles)s for method %(method)s."
-msgstr "%(user_roles)s ist disjunkt zu %(roles)s für Method %(method)s."
+msgstr "%(user_roles)s ist disjunkt zu %(roles)s für Methode %(method)s."
 
 #: cdedb/backend/common.py:216 cdedb/database/connection.py:237
 msgid "No contamination!"
