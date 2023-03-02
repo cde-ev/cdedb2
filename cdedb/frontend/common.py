@@ -1839,7 +1839,8 @@ def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
 
 # noinspection PyPep8Naming
 def REQUESTdata(
-    *spec: str, _hints: vtypes.TypeMapping = None, _postpone_validation: bool = False
+    *spec: str, _hints: vtypes.TypeMapping = None, _postpone_validation: bool = False,
+        _omit_missing: bool = False,
 ) -> Callable[[F], F]:
     """Decorator to extract parameters from requests and validate them.
 
@@ -1885,6 +1886,10 @@ def REQUESTdata(
                     else:
                         type_ = hints[name]
                         optional = False
+
+                    # Optionally skip items that are not given.
+                    if _omit_missing and name not in rs.request.values:
+                        continue
 
                     val = rs.request.values.get(name, "")
 
@@ -1988,7 +1993,9 @@ RequestConstraint = Tuple[Callable[[CdEDBObject], bool], Error]
 def request_extractor(
         rs: RequestState, spec: vtypes.TypeMapping,
         constraints: Collection[RequestConstraint] = None,
-        postpone_validation: bool = False) -> CdEDBObject:
+        postpone_validation: bool = False,
+        omit_missing: bool = False,
+) -> CdEDBObject:
     """Utility to apply REQUESTdata later than usual.
 
     This is intended to bu used, when the parameter list is not known before
@@ -2011,7 +2018,8 @@ def request_extractor(
     :param postpone_validation: handed through to the decorator
     :returns: dict containing the requested values
     """
-    @REQUESTdata(*spec, _hints=spec, _postpone_validation=postpone_validation)
+    @REQUESTdata(*spec, _hints=spec, _postpone_validation=postpone_validation,
+                 _omit_missing=omit_missing)
     def fun(_: None, rs: RequestState, **kwargs: Any) -> CdEDBObject:
         if not rs.has_validation_errors():
             for checker, error in constraints or []:
