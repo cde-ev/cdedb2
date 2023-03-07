@@ -59,7 +59,7 @@ class MlBackend(AbstractBackend):
         return super().is_admin(rs)
 
     @access("ml")
-    def get_mls_type(self, rs: RequestState, mailinglist_ids: Collection[int]
+    def get_ml_types(self, rs: RequestState, mailinglist_ids: Collection[int]
                      ) -> Dict[int, MLType]:
         mailinglist_ids = affirm_set(vtypes.ID, mailinglist_ids)
         data = self.sql_select(rs, "ml.mailinglists",
@@ -71,7 +71,7 @@ class MlBackend(AbstractBackend):
 
     class _GetMlTypeProtocol(Protocol):
         def __call__(self, rs: RequestState, mailinglist_id: int) -> MLType: ...
-    get_ml_type: _GetMlTypeProtocol = singularize(get_mls_type)
+    get_ml_type: _GetMlTypeProtocol = singularize(get_ml_types)
 
     @overload
     def is_relevant_admin(self, rs: RequestState, *,
@@ -376,7 +376,7 @@ class MlBackend(AbstractBackend):
         """
         mailinglist_ids = affirm_set(vtypes.ID, mailinglist_ids)
         with Atomizer(rs):
-            ml_types = self.get_mls_type(rs, mailinglist_ids)
+            ml_types = self.get_ml_types(rs, mailinglist_ids)
             fields = Mailinglist.database_fields()
             fields.extend(ADDITIONAL_TYPE_FIELDS)
             data = self.sql_select(rs, "ml.mailinglists", fields, mailinglist_ids)
