@@ -1,8 +1,9 @@
 """Dataclass definitions of mailinglist realm."""
 
+import dataclasses
 import enum
 import itertools
-from dataclasses import dataclass, fields, field
+from dataclasses import dataclass, fields
 from typing import (
     TYPE_CHECKING, Any, ClassVar, Collection, Dict, List, Literal, Mapping, Optional,
     OrderedDict, Set, Tuple, Type, Union, cast, get_origin,
@@ -458,7 +459,8 @@ class RestrictedTeamMailinglist(TeamMeta, MemberInvitationOnlyMailinglist):
 
 @dataclass
 class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
-    registration_stati: List[const.RegistrationPartStati] = field(default_factory=list)
+    registration_stati: List[const.RegistrationPartStati] = dataclasses.field(
+        default_factory=list)
 
     def is_restricted_moderator(self, rs: RequestState, bc: BackendContainer) -> bool:
         """Check if the user is a restricted moderator.
