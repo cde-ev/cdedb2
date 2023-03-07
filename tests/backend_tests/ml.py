@@ -350,10 +350,6 @@ class TestMlBackend(BackendTest):
             self.ml.create_mailinglist(self.key, new_data)
         new_data.moderators -= {self.as_id(8)}
         new_data.local_part = vtypes.EmailLocalPart(f"{new_data.local_part}x")
-        new_data.registration_stati = [const.RegistrationPartStati.guest]
-        with self.assertRaises(ValueError):
-            self.ml.create_mailinglist(self.key, new_data)
-        new_data.registration_stati = []
         self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
         new_data.local_part = vtypes.EmailLocalPart(f"{new_data.local_part}x")
         new_data.whitelist = vtypes.Email("datenbank@example.cde")  # type: ignore[assignment]
@@ -366,16 +362,8 @@ class TestMlBackend(BackendTest):
         new_data.whitelist = set()
         self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
         new_data.local_part = vtypes.EmailLocalPart(f"{new_data.local_part}x")
-        new_data.event_id = self.as_id(1)
-        with self.assertRaises(ValueError):
-            self.ml.create_mailinglist(self.key, new_data)
-        new_data.event_id = None
         self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
         new_data.local_part = vtypes.EmailLocalPart(f"{new_data.local_part}x")
-        new_data.assembly_id = self.as_id(1)
-        with self.assertRaises(ValueError):
-            self.ml.create_mailinglist(self.key, new_data)
-        new_data.assembly_id = None
         self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
 
     @as_users("nina")
@@ -1044,7 +1032,9 @@ class TestMlBackend(BackendTest):
                          state=SS.subscribed)
 
         ml_id = 66
-        assembly_id = self.ml.get_mailinglist(self.key, ml_id).assembly_id
+        assembly_ml = self.ml.get_mailinglist(self.key, ml_id)
+        assert isinstance(assembly_ml, models_ml.AssemblyAssociatedMailinglist)
+        assembly_id = assembly_ml.assembly_id
         assert assembly_id is not None
 
         expectation = {
