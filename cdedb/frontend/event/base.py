@@ -582,6 +582,8 @@ class EventBaseFrontend(AbstractUserFrontend):
         for reg_id, reg in registrations.items():
             for tg_id, tg in tgs_by_type[ccs]:
                 if any(reg['tracks'][t1]['choices'] != reg['tracks'][t2]['choices']
+                       or reg['tracks'][t1]['course_instructor']
+                       != reg['tracks'][t2]['course_instructor']
                        for t1, t2 in itertools.combinations(tg['track_ids'], 2)):
                     ccs_violations.append(
                         CCSViolation(tg_id, reg_id, reg['persona_id']))

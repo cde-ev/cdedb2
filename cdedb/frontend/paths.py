@@ -335,8 +335,7 @@ CDEDB_PATHS = werkzeug.routing.Map((
                      endpoint="semester_eject"),
                 rule("/balance", methods=_POST,
                      endpoint="semester_balance_update"),
-                rule("/advance", methods=_POST,
-                     endpoint="semester_advance"),)),
+            )),
             sub('/expuls', (
                 rule("/address", methods=_POST,
                      endpoint="expuls_addresscheck"),

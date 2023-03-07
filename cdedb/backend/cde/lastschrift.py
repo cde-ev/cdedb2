@@ -54,7 +54,7 @@ class CdELastschriftBackend(CdEBaseBackend):
                 lastschrift_ids = self.list_lastschrift(
                     rs, persona_ids=(persona_id,), active=True)
                 # at most one active lastschrift per user is allowed
-                if lastschrift_id := unwrap(lastschrift_ids or None):
+                if lastschrift_id := unwrap(lastschrift_ids.keys() or None):
                     if self.list_lastschrift_transactions(
                             rs, lastschrift_ids=(lastschrift_id,),
                             stati=(const.LastschriftTransactionStati.issued,)):

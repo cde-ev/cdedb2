@@ -21,7 +21,11 @@ TypeMapping = MutableMapping[str, Type[Any]]
 
 NonNegativeInt = _NewType("NonNegativeInt", int)
 PositiveInt = _NewType("PositiveInt", int)
-ID = _NewType("ID", int)
+NegativeInt = _NewType("NegativeInt", int)
+NonZeroInt = _NewType("NonZeroInt", int)
+ProtoID = _NewType("ProtoID", int)
+ID = _NewType("ID", ProtoID)
+CreationID = _NewType("CreationID", ProtoID)
 CdedbID = _NewType("CdedbID", ID)  # subtype of ID as it also uses that validator
 PartialImportID = _NewType("PartialImportID", int)
 SingleDigitInt = _NewType("SingleDigitInt", int)

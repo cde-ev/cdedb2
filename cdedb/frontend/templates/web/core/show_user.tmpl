@@ -199,8 +199,24 @@
                 </dt>
                 <dd>{{ gettext(enums['Genders'](data['gender'])|string) }}</dd>
             {% endif %}
-        </dl>
 
+            {% if "pronouns_nametag" in data %}
+                {% if "pronouns" in data %}
+                    <dt title="{% trans %}Pronouns{% endtrans %}">
+                    {% trans %}Pronouns{% endtrans %}
+                    </dt>
+                    <dd id="pronouns">
+                        {{ data["pronouns"] or "–" }}
+                    </dd>
+                {% endif %}
+                <dt title="{% trans %}Pronouns on nametags{% endtrans %}">
+                    {% trans %}Pronouns on nametags{% endtrans %}
+                </dt>
+                <dd id="pronouns_nametag">
+                    {{ util.deko_checkbox(checked=data['pronouns_nametag'], titles=[gettext("No"), gettext("Yes")]) }}
+                </dd>
+            {% endif %}
+        </dl>
 
         <h4 class="heading-underline">{% trans %}Account & Membership{% endtrans %}</h4>
         <div id="account">

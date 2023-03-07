@@ -31,7 +31,7 @@
             <h3>{{ gettext(group|string) }}</h3>
             <div class="list-group list-group-hover list-group-condensed">
             {% for mailinglist_id, ml in mailinglists[group]|keydictsort(EntitySorter.mailinglist) %}
-                {{ generic_ml.format_entry(mailinglist_infos[mailinglist_id], subscriptions, events, assemblies, False) }}
+                {{ generic_ml.format_entry(mailinglist_infos[mailinglist_id], additional_infos[mailinglist_id], subscriptions, events, assemblies, False) }}
             {% endfor %}
             </div>
         {% endif %}

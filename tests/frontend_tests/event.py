@@ -31,7 +31,8 @@ from cdedb.frontend.event.query_stats import (
     StatisticMixin, StatisticPartMixin, StatisticTrackMixin, get_id_constraint,
 )
 from tests.common import (
-    USER_DICT, FrontendTest, UserObject, as_users, event_keeper, prepsql, storage,
+    USER_DICT, FrontendTest, UserObject, as_users, event_keeper, execsql, prepsql,
+    storage,
 )
 
 
@@ -468,6 +469,15 @@ class TestEventFrontend(FrontendTest):
                 self.response.forms['coursefilterform']['active_only'].checked)
             self.assertNonPresence("β. Lustigsein für Fortgeschrittene")
             self.assertPresence("γ. Kurzer Kurs")
+            # check handling if no courses match the search
+            execsql("UPDATE event.course_segments"
+                    " SET is_active = False WHERE track_id = 1")
+            f = self.response.forms['coursefilterform']
+            f['active_only'].checked = True
+            f['track_ids'] = [1]
+            self.submit(f)
+            self.assertPresence("Filter")
+            self.assertPresence("Keine passenden Kurse gefunden.")
         else:
             # check that taking place filter not accessible for non-privileged users
             self.assertNonPresence("Zeige nur stattfindende Kurse")
@@ -1736,6 +1746,16 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertNonPresence(payment_pending)
         self.traverse("angemeldet")
         self.assertNonPresence(payment_pending)
+
+        self.traverse("Veranstaltunge", "CdE-Party", "Anmeldungen",
+                      "Anmeldung hinzufügen")
+        f = self.response.forms['addregistrationform']
+        f['persona.persona_id'] = self.user['DB-ID']
+        f['part4.status'] = const.RegistrationPartStati.cancelled
+        self.submit(f)
+        self.traverse("Meine Anmeldung")
+        self.assertPresence("Anmeldestatus Abgemeldet")
+        self.assertNonPresence("Bezahlung")
 
     def test_register_no_registration_end(self) -> None:
         # Remove registration end (soft and hard) from Große Testakademie 2222
@@ -5761,12 +5781,17 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertValidationError('title', "Darf nicht leer sein.")
         self.assertValidationError('shortname', "Darf nicht leer sein.")
         f['title'] = f['shortname'] = "abc"
+        f['track_ids'] = []
+        self.submit(f, check_notification=False)
+        self.assertValidationError(
+            'track_ids', "Darf nicht leer sein.", index=0)
         f['track_ids'] = [1, 2]
         self.submit(f, check_notification=False)
         self.assertValidationError(
-            'track_ids', "Kursschienensynchronisierung fehlgeschlagen,"
-                         " weil bereits Kurswahlen existieren.",
-            index=0)
+            'track_ids', "Inkompatible Kursschienen", index=0)
+        self.assertValidationError(
+            'track_ids', "Kursschienensynchronisierung fehlgeschlagen, weil"
+                         " inkompatible Kurswahlen existieren.", index=0)
 
         # Now a valid one.
         self.traverse("Veranstaltungen", "TripelAkademie", "Veranstaltungsteile",
@@ -6065,3 +6090,64 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                                 div="course-choices-group-3")
             self.assertPresence("Kurs KV 3. Nostalgie")
             self.assertPresence("Kurs OK1 1. Niebelungenlied")
+
+        # Check that a CCS group can be recreated after being deleted, while
+        #  compatible choices exist.
+        event_id = 4
+        event = self.event.get_event(self.key, event_id)
+        self.traverse("Veranstaltungsteile", "Gruppen")
+        f = self.response.forms['deletetrackgroupform1']
+        f['ack_delete'] = True
+        self.submit(f)
+        self.traverse("Kursschienengruppe hinzufügen")
+        f = self.response.forms['configuretrackgroupform']
+        f['title'] = f['shortname'] = "K1"
+        f['track_ids'] = list(str(id_) for id_ in event['track_groups'][1]['track_ids'])
+        self.submit(f)
+
+        # Check failing creation after changing choices for the tracks.
+        f = self.response.forms['deletetrackgroupform1001']
+        f['ack_delete'] = True
+        self.submit(f)
+
+        track_ids = list(event['track_groups'][1]['track_ids'])
+        reg_id = list(self.event.list_registrations(self.key, event_id))[0]
+        self.event.set_registration(self.key, {
+            'id': reg_id,
+            'tracks': {
+                track_ids[0]: {
+                    'course_instructor': 10,
+                },
+                track_ids[1]: {
+                    'course_instructor': 11,
+                },
+            },
+        })
+
+        self.traverse("Kursschienengruppe hinzufügen")
+        f = self.response.forms['configuretrackgroupform']
+        f['title'] = f['shortname'] = "K1"
+        f['track_ids'] = list(str(id_) for id_ in event['track_groups'][1]['track_ids'])
+        self.submit(f, check_notification=False)
+        self.assertValidationError(
+            'track_ids', "Kursschienensynchronisierung fehlgeschlagen, weil"
+                         " inkompatible Kurswahlen existieren.", index=0)
+
+    @as_users("emilia")
+    def test_ccs_cancelled_courses(self) -> None:
+        self.event.set_event(
+            self.key, {'id': 4, 'is_course_state_visible': True,
+                       'is_participant_list_visible': True,
+                       'is_course_assignment_visible': True})
+        course_id = 9
+        self.event.set_course(self.key, {'id': course_id, 'active_segments': []})
+
+        self.traverse("Veranstaltungen", "TripelAkademie", "Meine Anmeldung", "Ändern")
+        f = self.response.forms['amendregistrationform']
+        with self.assertRaises(ValueError):
+            f['group1.course_choice_0'] = course_id
+        f['group1.course_instructor'] = course_id
+        self.traverse("Anmeldungen", "Alle Anmeldungen", "Details", "Bearbeiten")
+        f = self.response.forms['changeregistrationform']
+        f['group1.course_choice_0'] = course_id
+        f['group1.course_instructor'] = course_id
