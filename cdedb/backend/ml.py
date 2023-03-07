@@ -384,83 +384,30 @@ class MlBackend(AbstractBackend):
             ret: Dict[int, Mailinglist] = {}
             for e in data:
                 ml_type = ml_types[e["id"]]
-                if issubclass(ml_type, EventAssociatedMailinglist):
-                    ret[e["id"]] = ml_type(
-                        id=e["id"],
-                        title=e["title"],
-                        local_part=e["local_part"],
-                        domain=const.MailinglistDomain(e['domain']),
-                        mod_policy=const.ModerationPolicy(e['mod_policy']),
-                        attachment_policy=const.AttachmentPolicy(
-                            e['attachment_policy']),
-                        convert_html=e["convert_html"],
-                        is_active=e["is_active"],
-                        moderators=set(),
-                        whitelist=set(),
-                        description=e["description"],
-                        subject_prefix=e["subject_prefix"],
-                        maxsize=e["maxsize"],
-                        notes=e["notes"],
-                        event_id=e["event_id"],
-                        registration_stati=[const.RegistrationPartStati(v)
-                                            for v in e['registration_stati']]
-                    )
-                elif issubclass(ml_type, EventAssociatedMetaMailinglist):
-                    ret[e["id"]] = ml_type(
-                        id=e["id"],
-                        title=e["title"],
-                        local_part=e["local_part"],
-                        domain=const.MailinglistDomain(e['domain']),
-                        mod_policy=const.ModerationPolicy(e['mod_policy']),
-                        attachment_policy=const.AttachmentPolicy(
-                            e['attachment_policy']),
-                        convert_html=e["convert_html"],
-                        is_active=e["is_active"],
-                        moderators=set(),
-                        whitelist=set(),
-                        description=e["description"],
-                        subject_prefix=e["subject_prefix"],
-                        maxsize=e["maxsize"],
-                        notes=e["notes"],
-                        event_id=e["event_id"],
-                    )
-                elif issubclass(ml_type, AssemblyAssociatedMailinglist):
-                    ret[e["id"]] = ml_type(
-                        id=e["id"],
-                        title=e["title"],
-                        local_part=e["local_part"],
-                        domain=const.MailinglistDomain(e['domain']),
-                        mod_policy=const.ModerationPolicy(e['mod_policy']),
-                        attachment_policy=const.AttachmentPolicy(
-                            e['attachment_policy']),
-                        convert_html=e["convert_html"],
-                        is_active=e["is_active"],
-                        moderators=set(),
-                        whitelist=set(),
-                        description=e["description"],
-                        subject_prefix=e["subject_prefix"],
-                        maxsize=e["maxsize"],
-                        notes=e["notes"],
-                        assembly_id=e["assembly_id"],
-                    )
-                else:
-                    ret[e["id"]] = ml_type(
-                        id=e["id"],
-                        title=e["title"],
-                        local_part=e["local_part"],
-                        domain=const.MailinglistDomain(e['domain']),
-                        mod_policy=const.ModerationPolicy(e['mod_policy']),
-                        attachment_policy=const.AttachmentPolicy(
-                            e['attachment_policy']),
-                        convert_html=e["convert_html"],
-                        is_active=e["is_active"],
-                        moderators=set(),
-                        whitelist=set(),
-                        description=e["description"],
-                        subject_prefix=e["subject_prefix"],
-                        maxsize=e["maxsize"],
-                        notes=e["notes"],
-                    )
+                ml = ml_type(
+                    id=e["id"],
+                    title=e["title"],
+                    local_part=e["local_part"],
+                    domain=const.MailinglistDomain(e['domain']),
+                    mod_policy=const.ModerationPolicy(e['mod_policy']),
+                    attachment_policy=const.AttachmentPolicy(e['attachment_policy']),
+                    convert_html=e["convert_html"],
+                    is_active=e["is_active"],
+                    moderators=set(),
+                    whitelist=set(),
+                    description=e["description"],
+                    subject_prefix=e["subject_prefix"],
+                    maxsize=e["maxsize"],
+                    notes=e["notes"],
+                )
+                if isinstance(ml, EventAssociatedMetaMailinglist):
+                    ml.event_id = e["event_id"]
+                if isinstance(ml, EventAssociatedMailinglist):
+                    ml.registration_stati = [
+                        const.RegistrationPartStati(v) for v in e['registration_stati']]
+                if isinstance(ml, AssemblyAssociatedMailinglist):
+                    ml.assembly_id = e["assembly_id"]
+                ret[e["id"]] = ml
 
             # add moderators
             data = self.sql_select(

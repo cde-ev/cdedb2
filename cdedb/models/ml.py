@@ -2,7 +2,7 @@
 
 import enum
 import itertools
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, fields, field
 from typing import (
     TYPE_CHECKING, Any, ClassVar, Collection, Dict, List, Literal, Mapping, Optional,
     OrderedDict, Set, Tuple, Type, Union, cast, get_origin,
@@ -329,7 +329,7 @@ class AllMembersImplicitMeta(GeneralMailinglist):
 class EventAssociatedMeta(GeneralMailinglist):
     """Metaclass for all event associated mailinglists."""
     # Allow empty event_id to mark legacy event-lists.
-    event_id: Optional[vtypes.ID]
+    event_id: Optional[vtypes.ID] = None
 
     def periodic_cleanup(self, rs: RequestState) -> bool:
         """Disable periodic cleanup to freeze legacy event-lists."""
@@ -458,7 +458,7 @@ class RestrictedTeamMailinglist(TeamMeta, MemberInvitationOnlyMailinglist):
 
 @dataclass
 class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
-    registration_stati: List[const.RegistrationPartStati]
+    registration_stati: List[const.RegistrationPartStati] = field(default_factory=list)
 
     def is_restricted_moderator(self, rs: RequestState, bc: BackendContainer) -> bool:
         """Check if the user is a restricted moderator.
@@ -566,7 +566,7 @@ class EventOrgaMailinglist(EventAssociatedMeta, ImplicitsSubscribableMeta,
 @dataclass
 class AssemblyAssociatedMailinglist(ImplicitsSubscribableMeta, AssemblyMailinglist):
     # Allow empty assembly_id to mark legacy assembly-lists.
-    assembly_id: Optional[vtypes.ID]
+    assembly_id: Optional[vtypes.ID] = None
 
     def periodic_cleanup(self, rs: RequestState) -> bool:
         """Disable periodic cleanup to freeze legacy assembly-lists."""
