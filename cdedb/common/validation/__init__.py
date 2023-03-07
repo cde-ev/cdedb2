@@ -4018,17 +4018,13 @@ def _mailinglist(
             "ml_type", "Must provide ml_type for setting mailinglist."))
 
     mandatory_fields, optional_fields = subtype.validation_fields(creation=creation)
-
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
 
-    if val and "moderators" in val and not val["moderators"]:
-        # TODO is this legitimate (postpone after other errors?)
-        raise ValidationSummary(ValueError(
-            "moderators", n_("Must not be empty.")))
-
     errs = ValidationSummary()
 
+    if val and "moderators" in val and not val["moderators"]:
+        errs.append(ValueError("moderators", n_("Must not be empty.")))
     if "domain" not in val:
         errs.append(ValueError(
             "domain", "Must specify domain for setting mailinglist."))
