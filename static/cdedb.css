@@ -424,6 +424,9 @@ h1.title {
     display: block;
     overflow: hidden;
 }
+.float-right {
+    float: right;
+}
 .text-right-responsive {
     text-align: center;
 }

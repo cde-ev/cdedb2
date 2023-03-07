@@ -34,19 +34,25 @@
                     {% call util.bootstrap_panel(title=(track['title'] if ambience['event']['tracks']|length > 1
                                                                        else gettext("Assigned Attendees")),
                                                  aclass="panel-info") %}
-                        <ul class="slim">
+                        <table class="table table-condensed">
+                            <tbody>
                             {% for registration_id in attendees[(ambience['course']['id'], track_id)] %}
-                                <li>
-                                    {{ util.persona_name(personas[registrations[registration_id]['persona_id']]) }}
-                                    &ensp;{{ util.input_checkbox('delete_%s_%s'|format(track_id, registration_id),
+                                <tr id="attendee-{{ track_id }}-{{ registration_id }}">
+                                    <td>
+                                        {{ util.persona_name(personas[registrations[registration_id]['persona_id']]) }}
+                                    </td>
+                                    <td>
+                                        &ensp;{{ util.input_checkbox('delete_%s_%s'|format(track_id, registration_id),
                                             gettext("Remove"), aclass="del-box") }}
-                                </li>
+                                    </td>
+                                </tr>
                             {% else %}
-                                <li class="text-muted">
-                                    {% trans %}There are currently no attendees assigned.{% endtrans %}
-                                </li>
+                                <tr class="text-muted no-upper-border">
+                                    <td>{% trans %}There are currently no attendees assigned.{% endtrans %}</td>
+                                </tr>
                             {% endfor %}
-                        </ul>
+                            </tbody>
+                        </table>
 
                         {{ util.form_input_multi_select(name="new_" + track_id|string, entries=without_course[track_id],
                                                         label=(util.make_icon('plus') + gettext("Add Attendee")),
