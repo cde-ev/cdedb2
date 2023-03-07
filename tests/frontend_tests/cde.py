@@ -984,7 +984,7 @@ class TestCdEFrontend(FrontendTest):
         self.admin_view_profile("charly")
         self.traverse("Neue Einzugsermächtigung …", "Anlegen")
         f = self.response.forms["createlastschriftform"]
-        f["amount"] = "25"
+        f["donation"] = "25"
         f["iban"] = "DE26370205000008068900"
         self.submit(f)
         self.logout()
