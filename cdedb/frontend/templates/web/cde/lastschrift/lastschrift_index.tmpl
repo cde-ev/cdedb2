@@ -135,7 +135,8 @@
                     <tr>
                         <th></th>
                         <th>{% trans %}Member{% endtrans %}</th>
-                        <th>{% trans %}Date{% endtrans %}</th>
+                        <th>{% trans %}Created{% endtrans %}</th>
+                        <th>{% trans %}Payment date{% endtrans %}</th>
                         <th>{% trans %}Amount{% endtrans %}</th></tr>
                 </thead>
                 <tbody>
@@ -158,6 +159,7 @@
                             {% endif %}
                         </td>
                         <td>{{ transaction['issued_at']|datetime(lang=lang) }}</td>
+                        <td>{{ transaction['payment_date']|date(lang=lang) }}</td>
                         <td>{{ transaction['amount'] }}€</td>
                    </tr>
                 {% endfor %}

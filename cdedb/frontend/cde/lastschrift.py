@@ -389,8 +389,10 @@ class CdELastschriftMixin(CdEBaseFrontend):
             if not self.determine_open_permits(rs, lastschrift_ids):
                 rs.notify("error", n_("Existing pending transaction."))
                 return self.lastschrift_index(rs)
+
+        payment_date = self._calculate_payment_date()
         transaction_ids = self.cdeproxy.issue_lastschrift_transaction_batch(
-            rs, lastschrift_ids).values()
+            rs, lastschrift_ids, payment_date=payment_date).values()
         if not transaction_ids:
             return self.lastschrift_index(rs)
 
@@ -403,7 +405,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             persona = personas[lastschrift['persona_id']]
             data = {
                 'persona': persona,
-                'payment_date': self._calculate_payment_date(),
+                'payment_date': payment_date,
                 'amount': transaction["amount"],
                 'iban': lastschrift['iban'],
                 'account_owner': lastschrift['account_owner'],

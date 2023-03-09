@@ -8911,6 +8911,9 @@ msgstr "Getätigte Lastschriften"
 msgid "Created"
 msgstr "Erstellt"
 
+msgid "Payment date"
+msgstr "Ausführungsdatum"
+
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:145
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:146
 msgid "Finalized"

@@ -143,6 +143,7 @@
 	    <thead>
             <tr>
                 <th>{% trans %}Created{% endtrans %}</th>
+                <th>{% trans %}Payment date{% endtrans %}</th>
                 <th>{% trans %}Finalized{% endtrans %}</th>
                 <th>{% trans %}Semester{% endtrans %}</th>
                 <th>{% trans %}Status{% endtrans %}</th>
@@ -156,6 +157,7 @@
             {% for transaction_id, transaction in transactions|keydictsort(EntitySorter.transaction, reverse=True) %}
                 <tr>
                     <td>{{ transaction['issued_at']|datetime(lang=lang) }}</td>
+                    <td>{{ transaction['payment_date']|date(lang=lang) }}</td>
                     <td>{{ transaction['processed_at']|datetime(lang=lang) }}</td>
                     <td>{{ transaction['period_id'] }}</td>
                     <td>{{ gettext(transaction['status']|enum(enums['LastschriftTransactionStati'])) }}</td>

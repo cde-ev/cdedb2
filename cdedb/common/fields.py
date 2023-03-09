@@ -233,7 +233,7 @@ LASTSCHRIFT_FIELDS = (
 #: Fields of one interaction on behalf of a direct debit permit
 LASTSCHRIFT_TRANSACTION_FIELDS = (
     "id", "submitted_by", "lastschrift_id", "period_id", "status", "amount",
-    "issued_at", "processed_at", "tally")
+    "issued_at", "payment_date", "processed_at", "tally")
 
 #: Datatype and Association of special purpose event fields
 EVENT_FIELD_SPEC: Dict[

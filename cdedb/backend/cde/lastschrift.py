@@ -329,16 +329,19 @@ class CdELastschriftBackend(CdEBaseBackend):
     @access("finance_admin")
     def issue_lastschrift_transaction_batch(
             self, rs: RequestState, lastschrift_ids: Collection[int],
+            payment_date: datetime.date
     ) -> Dict[int, int]:
         """Make a new direct debit transaction for each given lastschrift.
 
         This only creates the database entry. The SEPA file will be
         generated in the frontend.
 
+        :param payment_date: The date at which the bank will perform the transaction.
         :returns: The lastschrift ids mapped to the id of the new transaction.
         """
         stati = const.LastschriftTransactionStati
         lastschrift_ids = affirm_set(vtypes.ID, lastschrift_ids)
+        payment_date = affirm(datetime.date, payment_date)
         timestamp = now()
         ret = {}
         with Atomizer(rs):
@@ -356,6 +359,7 @@ class CdELastschriftBackend(CdEBaseBackend):
                 data = {
                     'lastschrift_id': lastschrift_id,
                     'issued_at': timestamp,
+                    'payment_date': payment_date,
                     'processed_at': None,
                     'tally': None,
                     'submitted_by': rs.user.persona_id,
