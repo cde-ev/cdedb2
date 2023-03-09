@@ -24,7 +24,7 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, RequestState, asciificator, determine_age_class, glue,
-    int_to_words, lastschrift_reference, merge_dicts, now,
+    int_to_words, lastschrift_reference, merge_dicts, now, unwrap,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.sorting import EntitySorter, Sortkey, xsorted
@@ -93,8 +93,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             raise werkzeug.exceptions.Forbidden()
         lastschrift_ids = self.cdeproxy.list_lastschrift(
             rs, persona_ids=(persona_id,), active=None)
-        lastschrifts = self.cdeproxy.get_lastschrifts(rs,
-                                                      lastschrift_ids.keys())
+        lastschrifts = self.cdeproxy.get_lastschrifts(rs, lastschrift_ids.keys())
         transactions: CdEDBObjectMap = {}
         if lastschrifts:
             transaction_ids = self.cdeproxy.list_lastschrift_transactions(
@@ -206,12 +205,16 @@ class CdELastschriftMixin(CdEBaseFrontend):
             rs, lastschrift_ids=(lastschrift_id,),
             stati=(const.LastschriftTransactionStati.issued,))
         if transaction_ids:
+            transactions = self.cdeproxy.get_lastschrift_transactions(
+                rs, transaction_ids)
+            transaction = unwrap(transactions)
             subject = glue("Einzugsermächtigung zu ausstehender Lastschrift"
                            "widerrufen.")
             self.do_mail(rs, "lastschrift/pending_lastschrift_revoked",
                          {'To': (self.conf["MANAGEMENT_ADDRESS"],),
                           'Subject': subject},
-                         {'persona_id': persona_id})
+                         {'persona_id': persona_id,
+                          'payment_date': transaction['payment_date']})
         return self.redirect(rs, "cde/lastschrift_show", {
             'persona_id': rs.ambience['lastschrift']['persona_id']})
 
@@ -515,12 +518,16 @@ class CdELastschriftMixin(CdEBaseFrontend):
             rs, lastschrift_ids=(lastschrift_id,),
             stati=(const.LastschriftTransactionStati.issued,))
         if transaction_ids:
+            transactions = self.cdeproxy.get_lastschrift_transactions(
+                rs, transaction_ids)
+            transaction = unwrap(transactions)
             subject = glue("Einzugsermächtigung zu ausstehender Lastschrift"
                            "widerrufen.")
             self.do_mail(rs, "lastschrift/pending_lastschrift_revoked",
                          {'To': (self.conf["MANAGEMENT_ADDRESS"],),
                           'Subject': subject},
-                         {'persona_id': persona_id})
+                         {'persona_id': persona_id,
+                          'payment_date': transaction['payment_date']})
         if persona_id:
             return self.redirect(rs, "cde/lastschrift_show",
                                  {'persona_id': persona_id})
