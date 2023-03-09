@@ -368,8 +368,12 @@ class CdELastschriftMixin(CdEBaseFrontend):
         if not sepapain_file:
             rs.notify("error", n_("Creation of SEPA-PAIN-file failed."))
             return self.lastschrift_index(rs)
-        return self.send_file(rs, data=sepapain_file, inline=False,
-                              filename="i25p_semester{}.xml".format(period))
+
+        if len(lastschrifts) == 1:
+            filename = f"i25p_semester{period}_persona{unwrap(lastschrifts)['id']}.xml"
+        else:
+            filename = f"i25p_semester{period}.xml"
+        return self.send_file(rs, data=sepapain_file, inline=False, filename=filename)
 
     @access("finance_admin", modi={"POST"})
     @REQUESTdata("lastschrift_id")
