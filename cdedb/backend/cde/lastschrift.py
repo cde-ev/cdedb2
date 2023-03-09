@@ -15,7 +15,7 @@ import cdedb.database.constants as const
 from cdedb.backend.cde import CdEBaseBackend
 from cdedb.backend.common import (
     access, affirm_set_validation as affirm_set, affirm_validation as affirm,
-    affirm_validation_optional as affirm_optional, batchify, singularize,
+    affirm_validation_optional as affirm_optional, singularize,
 )
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, RequestState, now,
@@ -327,44 +327,53 @@ class CdELastschriftBackend(CdEBaseBackend):
         return user["donation"] + self.annual_membership_fee(rs)
 
     @access("finance_admin")
-    def issue_lastschrift_transaction(self, rs: RequestState, lastschrift_id: int,
-                                      ) -> DefaultReturnCode:
-        """Make a new direct debit transaction.
+    def issue_lastschrift_transaction_batch(
+            self, rs: RequestState, lastschrift_ids: Collection[int],
+    ) -> Dict[int, int]:
+        """Make a new direct debit transaction for each given lastschrift.
 
         This only creates the database entry. The SEPA file will be
         generated in the frontend.
 
-        :returns: The id of the new transaction.
+        :returns: The lastschrift ids mapped to the id of the new transaction.
         """
         stati = const.LastschriftTransactionStati
-        lastschrift_id = affirm(vtypes.ID, lastschrift_id)
+        lastschrift_ids = affirm_set(vtypes.ID, lastschrift_ids)
+        timestamp = now()
+        ret = {}
         with Atomizer(rs):
-            lastschrift = self.get_lastschrift(rs, lastschrift_id)
-            if lastschrift['revoked_at']:
+            lastschrifts = self.get_lastschrifts(rs, lastschrift_ids)
+            if any(lastschrift['revoked_at'] for lastschrift in lastschrifts.values()):
                 raise RuntimeError(n_("Lastschrift already revoked."))
             period = self.current_period(rs)
             transaction_ids = self.list_lastschrift_transactions(
-                rs, lastschrift_ids=(lastschrift_id,),
-                periods=(period,), stati=(stati.issued, stati.success))
+                rs, lastschrift_ids=lastschrift_ids, periods=[period],
+                stati=(stati.issued, stati.success))
             if transaction_ids:
                 raise RuntimeError(n_("Existing pending transaction."))
-            data = {
-                'lastschrift_id': lastschrift_id,
-                'issued_at': now(),
-                'processed_at': None,
-                'tally': None,
-                'submitted_by': rs.user.persona_id,
-                'period_id': period,
-                'status': stati.issued,
-                'amount': self.transaction_amount(rs, lastschrift["persona_id"])
-            }
-            ret = self.sql_insert(rs, "cde.lastschrift_transactions", data)
-            self.core.finance_log(
-                rs, const.FinanceLogCodes.lastschrift_transaction_issue,
-                lastschrift['persona_id'], None, None, change_note=str(data['amount']))
+            for lastschrift_id, lastschrift in lastschrifts.items():
+                persona_id = lastschrift["persona_id"]
+                data = {
+                    'lastschrift_id': lastschrift_id,
+                    'issued_at': timestamp,
+                    'processed_at': None,
+                    'tally': None,
+                    'submitted_by': rs.user.persona_id,
+                    'period_id': period,
+                    'status': stati.issued,
+                    'amount': self.transaction_amount(rs, persona_id)
+                }
+                ret[lastschrift_id] = self.sql_insert(
+                    rs, "cde.lastschrift_transactions", data)
+                self.core.finance_log(
+                    rs, const.FinanceLogCodes.lastschrift_transaction_issue,
+                    persona_id, None, None, change_note=str(data['amount']))
         return ret
-    issue_lastschrift_transaction_batch = batchify(
-        issue_lastschrift_transaction)
+
+    class _IssueLastschriftTransactionProtocol(Protocol):
+        def __call__(self, rs: RequestState, lastschrift_id: int) -> int: ...
+    issue_lastschrift_transaction: _IssueLastschriftTransactionProtocol = singularize(
+        issue_lastschrift_transaction_batch, "lastschrift_ids", "lastschrift_id")
 
     @access("finance_admin")
     def finalize_lastschrift_transaction(

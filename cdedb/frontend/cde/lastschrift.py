@@ -380,7 +380,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
                 rs.notify("error", n_("Existing pending transaction."))
                 return self.lastschrift_index(rs)
         transaction_ids = self.cdeproxy.issue_lastschrift_transaction_batch(
-            rs, lastschrift_ids)
+            rs, lastschrift_ids).values()
         if not transaction_ids:
             return self.lastschrift_index(rs)
 
