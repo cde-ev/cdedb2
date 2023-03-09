@@ -199,12 +199,12 @@
             <div class="col-sm-4">
                 <ul class="nosp slim">
                     {% for lastschrift_id, lastschrift in chunk %}
-                        <li>
+                        <li class="clearfix-after">
                             {% set persona = personas[lastschrift['persona_id']] %}
                             {{ util.href(cdedblink('cde/lastschrift_show', {'persona_id': lastschrift['persona_id']}),
                                          util.persona_name(persona, only_given_names=True)) }}
                             {{ util.href(show_user_link(user, lastschrift['persona_id']),
-                                         gettext("Profile"), icon='user', aclass="btn btn-xs btn-default") }}
+                                         gettext("Profile"), icon='user', aclass="btn btn-xs btn-default float-right") }}
                         </li>
                     {% endfor %}
                 </ul>
