@@ -376,7 +376,8 @@ class CdELastschriftBackend(CdEBaseBackend):
         return ret
 
     class _IssueLastschriftTransactionProtocol(Protocol):
-        def __call__(self, rs: RequestState, lastschrift_id: int) -> int: ...
+        def __call__(self, rs: RequestState, lastschrift_id: int,
+                     payment_date: datetime.date) -> int: ...
     issue_lastschrift_transaction: _IssueLastschriftTransactionProtocol = singularize(
         issue_lastschrift_transaction_batch, "lastschrift_ids", "lastschrift_id")
 
