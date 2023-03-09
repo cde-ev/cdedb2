@@ -1233,6 +1233,7 @@ PERSONA_BASE_CREATION: Mapping[str, Any] = {
     'bub_search': NoneType,
     'foto': NoneType,
     'paper_expuls': NoneType,
+    'donation': NoneType,
 }
 
 PERSONA_CDE_CREATION: Mapping[str, Any] = {
@@ -1267,6 +1268,7 @@ PERSONA_CDE_CREATION: Mapping[str, Any] = {
     'bub_search': bool,
     # 'foto': Optional[str], # No foto -- this is another special
     'paper_expuls': bool,
+    'donation': NonNegativeDecimal,
 }
 
 PERSONA_EVENT_CREATION: Mapping[str, Any] = {
@@ -1345,6 +1347,7 @@ PERSONA_COMMON_FIELDS: Dict[str, Any] = {
     'interests': Optional[str],
     'free_form': Optional[str],
     'balance': NonNegativeDecimal,
+    'donation': NonNegativeDecimal,
     'trial_member': bool,
     'decided_search': bool,
     'bub_search': bool,
@@ -1916,7 +1919,6 @@ def _expuls(
 
 
 LASTSCHRIFT_COMMON_FIELDS: Mapping[str, Any] = {
-    'amount': PositiveDecimal,
     'iban': IBAN,
     'account_owner': Optional[str],
     'account_address': Optional[str],
@@ -2011,54 +2013,6 @@ def _iban(
         raise errs
 
     return IBAN(val)
-
-
-LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS: Mapping[str, Any] = {
-    'amount': PositiveDecimal,
-    'status': const.LastschriftTransactionStati,
-    'issued_at': datetime.datetime,
-    'processed_at': Optional[datetime.datetime],
-    'tally': Optional[decimal.Decimal],
-}
-
-
-@_add_typed_validator
-def _lastschrift_transaction(
-    val: Any, argname: str = "lastschrift_transaction", *,
-    creation: bool = False, **kwargs: Any
-) -> LastschriftTransaction:
-    """
-    :param creation: If ``True`` test the data set on fitness for creation
-      of a new entity.
-    # TODO make a unified approach for creation validation?
-    """
-    val = _mapping(val, argname, **kwargs)
-    if creation:
-        mandatory_fields = {
-            'lastschrift_id': ID,
-            'period_id': ID,
-        }
-        optional_fields = {**LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS}
-    else:
-        raise ValidationSummary(ValueError(argname, n_(
-            "Modification of lastschrift transactions not supported.")))
-    return LastschriftTransaction(_examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs))
-
-
-@_add_typed_validator
-def _lastschrift_transaction_entry(
-        val: Any, argname: str = "lastschrift_transaction_entry",
-        **kwargs: Any) -> LastschriftTransactionEntry:
-    val = _mapping(val, argname, **kwargs)
-    mandatory_fields: Dict[str, Any] = {
-        'transaction_id': int,
-        'tally': Optional[decimal.Decimal],
-        'status': const.LastschriftTransactionStati,
-    }
-    optional_fields: TypeMapping = {}
-    return LastschriftTransactionEntry(_examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs))
 
 
 SEPA_TRANSACTIONS_FIELDS: TypeMapping = {

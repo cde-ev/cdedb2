@@ -334,6 +334,8 @@ class BasicTest(unittest.TestCase):
                 if table == 'core.personas':
                     if k == 'balance' and r[k]:
                         r[k] = decimal.Decimal(r[k])
+                    if k == 'donation' and r[k]:
+                        r[k] = decimal.Decimal(r[k])
                     if k == 'birthday' and r[k]:
                         r[k] = parse_date(r[k])
                 if k in {'transaction_date'} and r[k]:

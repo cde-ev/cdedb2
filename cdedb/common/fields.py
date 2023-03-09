@@ -51,7 +51,7 @@ PERSONA_CDE_FIELDS = PERSONA_EVENT_FIELDS + (
     "address_supplement2", "address2", "postal_code2", "location2",
     "country2", "weblink", "specialisation", "affiliation", "timeline",
     "interests", "free_form", "balance", "decided_search", "trial_member",
-    "bub_search", "foto", "paper_expuls", "birth_name",
+    "bub_search", "foto", "paper_expuls", "birth_name", "donation",
 )
 
 #: Names of columns associated to a ml user.
@@ -92,7 +92,6 @@ REALM_SPECIFIC_GENESIS_FIELDS: Dict[Realm, Tuple[str, ...]] = {
             "address_supplement", "address", "postal_code", "location",
             "country", "birth_name", "attachment_hash", "pevent_id", "pcourse_id"),
 }
-
 
 #: Fields of a pending privilege change.
 PRIVILEGE_CHANGE_FIELDS = (
@@ -228,7 +227,7 @@ EXPULS_PERIOD_FIELDS = (
 
 #: Fields of one direct debit permit
 LASTSCHRIFT_FIELDS = (
-    "id", "submitted_by", "persona_id", "amount", "iban",
+    "id", "submitted_by", "persona_id", "iban",
     "account_owner", "account_address", "granted_at", "revoked_at", "notes")
 
 #: Fields of one interaction on behalf of a direct debit permit

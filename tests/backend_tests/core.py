@@ -65,6 +65,7 @@ PERSONA_TEMPLATE = {
     'bub_search': None,
     'foto': None,
     'paper_expuls': None,
+    'donation': None,
 }
 # This can be used whenever an ip needs to be specified.
 IP = "127.0.0.0"
@@ -327,6 +328,7 @@ class TestCoreBackend(BackendTest):
             'bub_search': False,
             'foto': None,
             'paper_expuls': True,
+            'donation': decimal.Decimal(0)
         })
         new_id = self.core.create_persona(self.key, data)
         data["id"] = new_id
@@ -469,6 +471,9 @@ class TestCoreBackend(BackendTest):
             if key == "paper_expuls":
                 if persona[key] is None:
                     persona[key] = True
+            if key == "donation":
+                if persona[key] is None:
+                    persona[key] = decimal.Decimal(0)
         merge_dicts(data, persona)
         change_note = "Bereichsänderung"
         self.assertLess(0, self.core.change_persona_realms(self.key, data, change_note))
@@ -854,6 +859,7 @@ class TestCoreBackend(BackendTest):
             'name_supplement': None,
             'title': None,
             'balance': decimal.Decimal("0.00"),
+            'donation': decimal.Decimal("0.00"),
             'trial_member': True,
             'decided_search': False,
             'bub_search': False,
@@ -982,6 +988,7 @@ class TestCoreBackend(BackendTest):
             'address_supplement2': None,
             'affiliation': 'Jedermann',
             'balance': decimal.Decimal('12.50'),
+            'donation': decimal.Decimal('42.23'),
             'birth_name': 'Gemeinser',
             'bub_search': True,
             'country2': 'GB',
@@ -1039,7 +1046,6 @@ class TestCoreBackend(BackendTest):
         # Test correct handling of lastschrift during archival.
         self.login("anton")
         ls_data = {
-            "amount": decimal.Decimal("25.00"),
             "persona_id": persona_id,
             "iban": "DE12500105170648489890",
             "account_owner": "Der Opa",
@@ -1048,9 +1054,11 @@ class TestCoreBackend(BackendTest):
             "granted_at": datetime.datetime.fromisoformat("2000-01-01"),
             "revoked_at": datetime.datetime.fromisoformat("2000-01-01"),
         }
-        old_ls_id = self.cde.create_lastschrift(self.key, ls_data)
+        old_ls_id = self.cde.create_lastschrift(
+            self.key, ls_data, initial_donation=decimal.Decimal("5"))
         del ls_data["revoked_at"]
-        ls_id = self.cde.create_lastschrift(self.key, ls_data)
+        ls_id = self.cde.create_lastschrift(
+            self.key, ls_data, initial_donation=decimal.Decimal("7"))
         self.login("vera")
         with self.assertRaises(ArchiveError) as cm:
             self.core.archive_persona(self.key, persona_id, "Testing")
@@ -1070,7 +1078,6 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(old_ls["iban"], "")
         self.assertEqual(old_ls["account_owner"], "")
         self.assertEqual(old_ls["account_address"], "")
-        self.assertEqual(old_ls["amount"], 0)
         self.assertEqual(old_ls["notes"], ls_data["notes"])
         self.core.dearchive_persona(self.key, persona_id,
                                     new_username="charly@example.cde")

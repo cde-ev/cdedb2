@@ -28,8 +28,10 @@ class TestPrivacyFrontend(FrontendTest):
         "Admin-Privilegien": 'account',
         "Admin-Notizen": 'account',
         "Gedruckter exPuls": 'paper-expuls',
+        "Jährliche Spende": 'cde-membership',
         "Mitgliedschaft": 'cde-membership',
         "Guthaben": 'cde-membership',
+        "Zahlungsmethode": 'cde-membership',
         "Sichtbarkeit": 'cde-membership',
         "E-Mail": 'contact-information',
         "Telefon": 'contact-information',
@@ -112,7 +114,8 @@ class TestPrivacyFrontend(FrontendTest):
     def _profile_cde_admin_view(self, inspected: UserObject) -> Set[str]:
         expected = {
             "Geschlecht", "Pronomen", "Pronomen auf Namensschild", "Mitgliedschaft",
-            "Guthaben", "Sichtbarkeit", "Gedruckter exPuls"
+            "Guthaben", "Sichtbarkeit", "Gedruckter exPuls", "Jährliche Spende",
+            "Zahlungsmethode"
         }
         for field in expected:
             self.assertPresence(field, div=self.FIELD_TO_DIV[field])

@@ -1,30 +1,29 @@
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans %}Initiative 25+{% endtrans %}
+    {% trans %}Lastschriftinitiative{% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
-{{ super() }}
-    {{ util.breadcrumb_link(cdedblink("cde/i25p_index"),
-        gettext("Initiative 25+ (Additional Information)"), active=True) }}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("cde/i25p_index"), gettext("Lastschriftinitiative"), active=True) }}
 {% endblock %}
 {% block content %}
-    <h2>{% trans %}Initiative 25+ – What’s that?{% endtrans %}</h2>
+    <h2>{% trans %}Lastschriftinitiative – What’s that?{% endtrans %}</h2>
 
     <p>
-        {% trans amount=25|money(lang=lang) %}
-        	If you give the authorization, the CdE will withdraw {{ amount }}
-            or more annually via Direct Debit.
+        {% trans annual_fee=annual_fee|money(lang=lang) %}
+            If you give the authorization, the CdE will withdraw the annual membership fee
+            (currently {{ annual_fee }}) and an additional donation via Direct Debit.
         {% endtrans %}
     </p>
 
     <p>
-        {% trans amount=25|money(lang=lang), fee=annual_fee|money(lang=lang), dsa=
-                gettext("Deutsche SchülerAkademie"), idea=gettext("Idee SchülerAkademie")-%}
-        	These {{ amount }} will be used to pay the annual membership fee
-            currently in force, currently {{ fee }}. The remainder is a donation
-            to the CdE. The CdE will make sure that about 40 to 50 percent of
-            this is given to {{ dsa }} or otherwise used to support the “{{ idea }}”.
+        {% trans min_donation=min_donation|money(lang=lang), typical_donation=typical_donation|money(lang=lang),
+                 dsa= gettext("Deutsche SchülerAkademie"), idea=gettext("Idee SchülerAkademie")-%}
+            The minimal donation is currently {{ min_donation }}, but typical members
+            of the Lastschriftinitiative donate {{ typical_donation }}.
+            The CdE will make sure that about 40 to 50 percent of the donation
+            is given to {{ dsa }} or otherwise used to support the “{{ idea }}”.
         {% endtrans %}
     </p>
 
@@ -42,7 +41,7 @@
     <h3>{% trans %}Supporting the SchülerAkademie{% endtrans %}</h3>
 
     <p>
-        {% trans initiative=("<em>%s</em>"|s|format(gettext("Initiative 25+"))),
+        {% trans initiative=("<em>%s</em>"|s|format(gettext("Lastschriftinitiative"))),
                 idea=gettext("Idee SchülerAkademie"),
                 bub=gettext("Bildung & Begabung gem. GmbH") -%}
         	The {{ initiative }} implements a decision of the General Assembly 2008
@@ -55,9 +54,11 @@
     <h2>{% trans %}Authorization Form{% endtrans %}</h2>
 
     <p>
-        {% trans link=util.href(cdedblink("cde/lastschrift_subscription_form_fill"), gettext("this form")) %}
+        {% trans %}
         	For legal reasons, we need the Direct Debit Authorization Form in written form.
-            Please fill {{ link }} and send it to us by mail (not E-Mail).
+            Please fill out the form linked below and send it to us by mail (not E-Mail).
         {% endtrans %}
     </p>
+
+   {{ util.href(cdedblink('cde/lastschrift_subscription_form_fill'), gettext("Participate"), aclass="btn btn-primary", icon='chevron-right') }}
 {% endblock %}

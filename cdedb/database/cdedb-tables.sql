@@ -160,6 +160,9 @@ CREATE TABLE core.personas (
         balance                 numeric(8, 2) DEFAULT NULL,
         CONSTRAINT personas_cde_balance
             CHECK(NOT is_cde_realm OR balance IS NOT NULL OR is_purged),
+        donation                numeric(8, 2) DEFAULT NULL,
+        CONSTRAINT personas_cde_donation
+            CHECK(NOT is_cde_realm OR donation IS NOT NULL OR is_purged),
         -- True if user decided (positive or negative) on searchability
         decided_search          boolean DEFAULT FALSE,
         CONSTRAINT personas_cde_consent
@@ -416,6 +419,7 @@ CREATE TABLE core.changelog (
         interests               varchar,
         free_form               varchar,
         balance                 numeric(8, 2),
+        donation                numeric(8, 2),
         decided_search          boolean,
         trial_member            boolean,
         bub_search              boolean,
@@ -509,7 +513,6 @@ CREATE TABLE cde.lastschrift (
         submitted_by            integer REFERENCES core.personas(id) NOT NULL,
         -- actual data
         persona_id              integer REFERENCES core.personas(id) NOT NULL,
-        amount                  numeric(8, 2) NOT NULL,
         iban                    varchar NOT NULL,
         -- if different from the paying member
         account_owner           varchar,
@@ -517,6 +520,8 @@ CREATE TABLE cde.lastschrift (
         -- validity
         granted_at              timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
         revoked_at              timestamp WITH TIME ZONE DEFAULT NULL,
+        -- we used different lastschrift subscription forms over the years
+        revision                integer NOT NULL DEFAULT 2,
         -- administrative comments
         notes                   varchar
 );
