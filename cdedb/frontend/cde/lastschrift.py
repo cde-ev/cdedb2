@@ -27,7 +27,7 @@ from cdedb.common import (
     int_to_words, lastschrift_reference, merge_dicts, now,
 )
 from cdedb.common.n_ import n_
-from cdedb.common.sorting import EntitySorter, xsorted
+from cdedb.common.sorting import EntitySorter, Sortkey, xsorted
 from cdedb.common.validation import LASTSCHRIFT_COMMON_FIELDS
 from cdedb.filter import money_filter
 from cdedb.frontend.cde.base import CdEBaseFrontend
@@ -68,6 +68,16 @@ class CdELastschriftMixin(CdEBaseFrontend):
                 personas[lastschrifts[anid]['persona_id']]))
         lastschrifts = OrderedDict(
             (last_id, lastschrifts[last_id]) for last_id in last_order)
+
+        def transaction_sortkey(transaction_id: int) -> Sortkey:
+            trans = transactions[transaction_id]
+            persona = personas[all_lastschrifts[trans["lastschrift_id"]]["persona_id"]]
+            return trans['issued_at'], *EntitySorter.persona(persona)
+
+        transaction_order = xsorted(transactions.keys(), key=transaction_sortkey)
+        transactions = OrderedDict(
+            (trans_id, transactions[trans_id]) for trans_id in transaction_order)
+
         return self.render(rs, "lastschrift/lastschrift_index", {
             'lastschrifts': lastschrifts, 'personas': personas,
             'transactions': transactions, 'all_lastschrifts': all_lastschrifts})
