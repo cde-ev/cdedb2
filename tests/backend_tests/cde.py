@@ -231,7 +231,8 @@ class TestCdEBackend(BackendTest):
             ["revoked_at", "transactions"],
             list(self.cde.delete_lastschrift_blockers(self.key, 2)))
 
-        transaction_id = self.cde.issue_lastschrift_transaction(self.key, new_id)
+        transaction_id = self.cde.issue_lastschrift_transaction(
+            self.key, new_id, payment_date=datetime.date.today())
         self.assertEqual(
             ["revoked_at", "transactions", "active_transactions"],
             list(self.cde.delete_lastschrift_blockers(self.key, new_id)))
@@ -285,6 +286,7 @@ class TestCdEBackend(BackendTest):
                 'issued_at': datetime.datetime(2000, 3, 21, 22, 0, tzinfo=pytz.utc),
                 'lastschrift_id': 1,
                 'period_id': 41,
+                'payment_date': datetime.date(2000, 4, 4),
                 'processed_at': datetime.datetime(2012, 3, 22, 20, 22, 22, 222222,
                                                   tzinfo=pytz.utc),
                 'status': 12,
@@ -294,13 +296,15 @@ class TestCdEBackend(BackendTest):
         }
         self.assertEqual(expectation,
                          self.cde.get_lastschrift_transactions(self.key, (1,)))
-        new_id = self.cde.issue_lastschrift_transaction(self.key, lastschrift_id=2)
+        new_id = self.cde.issue_lastschrift_transaction(
+            self.key, lastschrift_id=2, payment_date=datetime.date.today())
         self.assertLess(0, new_id)
         newdata = {
             'id': new_id,
             'lastschrift_id': 2,
             'amount': decimal.Decimal('42.23') + 2 * self.conf["MEMBERSHIP_FEE"],
             'issued_at': nearly_now(),
+            'payment_date': datetime.date.today(),
             'processed_at': None,
             'status': 1,
             'submitted_by': self.user['id'],
@@ -325,17 +329,19 @@ class TestCdEBackend(BackendTest):
                 if status == ltstati.cancelled:
                     with self.assertRaises(RuntimeError):
                         self.cde.issue_lastschrift_transaction(
-                            self.key, lastschrift_id=2)
+                            self.key, lastschrift_id=2,
+                            payment_date=datetime.date.today())
                     execsql(f"DELETE FROM cde.lastschrift_transactions"
                             f" WHERE id = {new_id}")  # noqa: F821
                 new_id = self.cde.issue_lastschrift_transaction(
-                    self.key, lastschrift_id=2)
+                    self.key, lastschrift_id=2, payment_date=datetime.date.today())
                 self.assertLess(0, new_id)
                 newdata = {
                     'id': new_id,
                     'lastschrift_id': 2,
                     'amount': decimal.Decimal('42.23') + 2*self.conf["MEMBERSHIP_FEE"],
                     'issued_at': nearly_now(),
+                    'payment_date': datetime.date.today(),
                     'processed_at': None,
                     'status': ltstati.issued,
                     'submitted_by': self.user['id'],
@@ -367,13 +373,15 @@ class TestCdEBackend(BackendTest):
     @as_users("farin")
     def test_lastschrift_transaction_rollback(self) -> None:
         ltstati = const.LastschriftTransactionStati
-        new_id = self.cde.issue_lastschrift_transaction(self.key, lastschrift_id=2)
+        new_id = self.cde.issue_lastschrift_transaction(
+            self.key, lastschrift_id=2, payment_date=datetime.date.today())
         self.assertLess(0, new_id)
         newdata = {
             'id': new_id,
             'lastschrift_id': 2,
             'amount': decimal.Decimal('42.23') + 2 * self.conf["MEMBERSHIP_FEE"],
             'issued_at': nearly_now(),
+            'payment_date': datetime.date.today(),
             'processed_at': None,
             'status': ltstati.issued,
             'submitted_by': self.user['id'],
