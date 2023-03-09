@@ -196,7 +196,7 @@
                                                          value=enums['LastschriftTransactionStati'].cancelled.value) }}
                                     {{ util.input_submit(label=gettext("Cancelled"), aclass="btn btn-xs btn-warning", icon="times-circle") }}
                                 </form>
-                                {% if not active_permit %}
+                                {% if lastschrifts[transaction["lastschrift_id"]]["revoked_at"] %}
                                     <br />
                                     <b class="text-danger">
                                         {{ util.make_icon('exclamation-triangle') }}
