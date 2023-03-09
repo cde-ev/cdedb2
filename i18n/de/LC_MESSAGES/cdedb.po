@@ -8886,6 +8886,9 @@ msgstr "Aktive Einzugsermächtigung"
 msgid "Submitted by"
 msgstr "Erteilt durch"
 
+msgid "The account is owned by the member."
+msgstr "Das Mitglied ist der Kontoinhaber."
+
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:98
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:99
 msgid "Acc. holder’s address"

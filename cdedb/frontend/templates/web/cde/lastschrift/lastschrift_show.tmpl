@@ -93,13 +93,19 @@
 
                 <dt title="{% trans %}Account holder{% endtrans %}">{% trans %}Account holder{% endtrans %}</dt>
                 <dd id="account-holder">
-                    {{ lastschrift['account_owner'] }}
+                    {% if lastschrift['account_owner'] %}
+                        {{ lastschrift['account_owner'] }}
+                    {% else %}
+                        <i>{% trans %}The account is owned by the member.{% endtrans %}</i>
+                    {% endif %}
                 </dd>
 
+                {% if lastschrift['account_address'] %}
                 <dt title="{% trans %}Acc. holder’s address{% endtrans %}">{% trans %}Acc. holder’s address{% endtrans %}</dt>
                 <dd id="account-holder-address">
                     {{ lastschrift['account_address']|linebreaks }}
                 </dd>
+                {% endif %}
 
                 <dt title="{% trans %}Granted{% endtrans %}">{% trans %}Granted{% endtrans %}</dt>
                 <dd id="granted-at">{{ lastschrift['granted_at']|datetime(lang=lang) }}</dd>
