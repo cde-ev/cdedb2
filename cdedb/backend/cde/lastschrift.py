@@ -343,7 +343,6 @@ class CdELastschriftBackend(CdEBaseBackend):
         stati = const.LastschriftTransactionStati
         lastschrift_ids = affirm_set(vtypes.ID, lastschrift_ids)
         payment_date = affirm(datetime.date, payment_date)
-        timestamp = now()
         ret = {}
         with Atomizer(rs):
             lastschrifts = self.get_lastschrifts(rs, lastschrift_ids)
@@ -359,7 +358,6 @@ class CdELastschriftBackend(CdEBaseBackend):
                 persona_id = lastschrift["persona_id"]
                 data = {
                     'lastschrift_id': lastschrift_id,
-                    'issued_at': timestamp,
                     'payment_date': payment_date,
                     'processed_at': None,
                     'tally': None,

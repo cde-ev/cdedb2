@@ -29,7 +29,7 @@ from cdedb.common import (
 from cdedb.common.n_ import n_
 from cdedb.common.sorting import EntitySorter, Sortkey, xsorted
 from cdedb.common.validation import LASTSCHRIFT_COMMON_FIELDS
-from cdedb.filter import money_filter
+from cdedb.filter import money_filter, keydictsort_filter
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, cdedbid_filter, check_validation as check,
@@ -69,18 +69,16 @@ class CdELastschriftMixin(CdEBaseFrontend):
         lastschrifts = OrderedDict(
             (last_id, lastschrifts[last_id]) for last_id in last_order)
 
-        def transaction_sortkey(transaction_id: int) -> Sortkey:
-            trans = transactions[transaction_id]
-            persona = personas[all_lastschrifts[trans["lastschrift_id"]]["persona_id"]]
-            return trans['issued_at'], *EntitySorter.persona(persona)
+        def transaction_sortkey(transaction: CdEDBObject) -> Sortkey:
+            lastschrift_id = transaction["lastschrift_id"]
+            persona = personas[all_lastschrifts[lastschrift_id]["persona_id"]]
+            return transaction['issued_at'], *EntitySorter.persona(persona)
 
-        transaction_order = xsorted(transactions.keys(), key=transaction_sortkey)
-        transactions = OrderedDict(
-            (trans_id, transactions[trans_id]) for trans_id in transaction_order)
+        sorted_transactions = keydictsort_filter(transactions, sortkey=transaction_sortkey)
 
         return self.render(rs, "lastschrift/lastschrift_index", {
             'lastschrifts': lastschrifts, 'personas': personas,
-            'transactions': transactions, 'all_lastschrifts': all_lastschrifts})
+            'transactions': sorted_transactions, 'all_lastschrifts': all_lastschrifts})
 
     @access("member", "finance_admin")
     def lastschrift_show(self, rs: RequestState, persona_id: int) -> Response:
@@ -369,8 +367,8 @@ class CdELastschriftMixin(CdEBaseFrontend):
             rs.notify("error", n_("Creation of SEPA-PAIN-file failed."))
             return self.lastschrift_index(rs)
 
-        if len(lastschrifts) == 1:
-            filename = f"i25p_semester{period}_persona{unwrap(lastschrifts)['id']}.xml"
+        if lastschrift_id:
+            filename = f"i25p_semester{period}_persona{lastschrift_id}.xml"
         else:
             filename = f"i25p_semester{period}.xml"
         return self.send_file(rs, data=sepapain_file, inline=False, filename=filename)

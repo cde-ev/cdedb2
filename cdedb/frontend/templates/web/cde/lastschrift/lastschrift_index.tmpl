@@ -140,7 +140,7 @@
                         <th>{% trans %}Amount{% endtrans %}</th></tr>
                 </thead>
                 <tbody>
-                {% for transaction_id, transaction in transactions.items() %}
+                {% for transaction_id, transaction in transactions %}
                     <tr class="ls-item">
                         <td>
                             {{ util.input_checkbox(name="transaction_ids", value=transaction_id, aclass="rowSelector") }}
