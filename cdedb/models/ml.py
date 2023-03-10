@@ -18,7 +18,7 @@ from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.roles import extract_roles
 from cdedb.common.validation.types import TypeMapping
 from cdedb.database.constants import MailinglistDomain, MailinglistTypes
-from cdedb.models.common import CdEDataclass
+from cdedb.models.common import CdEDataclass, requestdict_field_spec
 
 if TYPE_CHECKING:
     from cdedb.backend.assembly import AssemblyBackend
@@ -146,16 +146,10 @@ class Mailinglist(CdEDataclass):
         return mandatory, optional
 
     @classmethod
-    def get_additional_fields(cls) -> Mapping[
-        str, Union[Literal["str"], Literal["[str]"]]
-    ]:
-        ret: Dict[str, Union[Literal["str"], Literal["[str]"]]] = {}
-        for field in (set(fields(cls)) - set(fields(Mailinglist))):  # pylint: disable=superfluous-parens
-            if get_origin(field.type) is list:
-                ret[field.name] = "[str]"
-            else:
-                ret[field.name] = "str"
-        return ret
+    def get_additional_fields(cls) -> Mapping[str, Literal["str", "[str]"]]:
+        additional_fields = set(fields(cls)) - set(fields(Mailinglist))
+        return {field.name: requestdict_field_spec(field)
+                for field in additional_fields}
 
     viewer_roles: ClassVar[Set[str]] = {"ml"}
 
