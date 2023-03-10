@@ -630,10 +630,9 @@ class MlBackend(AbstractBackend):
                 ret *= self.sql_update(rs, "ml.mailinglists", mdata)
                 self.ml_log(rs, const.MlLogCodes.list_changed, data['id'])
 
-            # only full moderators and admins can make subscription state
-            # related changes.
-            if is_admin or not is_restricted:
-                ret *= self.write_subscription_states(rs, (data['id'],))
+        # only full moderators and admins can make subscription state related changes.
+        if (is_admin or not is_restricted) and len(mdata) > 1:
+            ret *= self.write_subscription_states(rs, (data['id'],))
         return ret
 
     @access("ml")
