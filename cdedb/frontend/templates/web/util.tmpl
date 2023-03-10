@@ -886,10 +886,11 @@ mailto:
 
 
 {# Macro to handle headings in a uniform way.
-   Take care to put the title in n_() to only mark it for translation.
-   Adds an anchor (for everything smaller than h1) to make it linkable as well as a hoverable link referring to it.
+    Adds an anchor (for everything smaller than h1) to make it linkable as well as a hoverable link referring to it.
+    Take care to put the title in n_() to do postpone localization to this macro (we need the english variant
+    for uniform IDs). For headings not to be localized, just set translate=False.
 #}
-{% macro heading(title, level=3, underline=False, anchor=none, aclass=none) %}
+{% macro heading(title, level=3, underline=False, translate=True, anchor=none, aclass=none) %}
     {% if anchor is none and level != 1 %}
         {# TODO: convert spaces and other special chars? #}
         {% set anchor = title %}
@@ -900,7 +901,11 @@ mailto:
             {%- if aclass %}{{ aclass }}{% endif -%}"
         {%- if anchor %} id="{{ anchor }}"{% endif -%}
     >
-        {{ gettext(title) -}}
+        {% if translate %}
+            {{- gettext(title) -}}
+        {% else %}
+            {{- title -}}
+        {% endif %}
         {% if caller %}
             {{ caller() }}
         {% endif %}

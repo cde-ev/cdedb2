@@ -263,11 +263,8 @@
     {# Text-only entry #}
     {% else %}
         {% if entry['title'] %}
-            {% if entry['kind'] == enums['QuestionnaireUsages'].additional %}
-                {{ util.heading(entry['title'], underline=true) }}
-            {% else %}
-                {{ util.heading(entry['title'], level=4, underline=True) }}
-            {% endif %}
+            {{ util.heading(entry['title'], level=(3 if entry['kind'] == enums['QuestionnaireUsages'].additional else 4),
+                            underline=True, translate=False) }}
         {% endif %}
         {{ entry.get('info', '')|md }}
     {% endif %}

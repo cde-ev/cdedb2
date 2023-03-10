@@ -22,9 +22,9 @@
                     icon="plus") }}
         </div>
     {% endif %}
-    {% for heading, sample, show_state in ((gettext("Upcoming Ballots"), grouped_ballots.upcoming, False),
-                                           (gettext("Current Ballots"), grouped_ballots.running, True),
-                                           (gettext("Concluded Ballots"), grouped_ballots.concluded, False))
+    {% for heading, sample, show_state in ((n_("Upcoming Ballots"), grouped_ballots.upcoming, False),
+                                           (n_("Current Ballots"), grouped_ballots.running, True),
+                                           (n_("Concluded Ballots"), grouped_ballots.concluded, False))
                                        if sample %}
         {{ util.heading(heading) }}
         <ul class="flex-width">
