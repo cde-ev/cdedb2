@@ -198,7 +198,7 @@ class CdESemesterBackend(CdELastschriftBackend):
             period_id = self.current_period(rs)
             period = self.get_period(rs, period_id)
             if SemesterSteps.automated_archival not in self.allowed_semester_steps(rs):
-                raise RuntimeError(n_("Wrong time for automated archival."))
+                raise RuntimeError(n_("Wrong timing for automated archival."))
             period_update = {
                 'id': period_id,
                 'archival_state': None,
@@ -567,7 +567,7 @@ class CdESemesterBackend(CdELastschriftBackend):
         period_id = affirm(int, period_id)
         with Atomizer(rs):
             if SemesterSteps.balance not in self.allowed_semester_steps(rs):
-                raise RuntimeError(n_("Wrong time for removing exmembers."))
+                raise RuntimeError(n_("Wrong timing for removing exmembers."))
             zero = decimal.Decimal("0.00")
             query = ("SELECT COALESCE(SUM(balance), 0) as total,"
                      " COUNT(*) as count FROM core.personas "

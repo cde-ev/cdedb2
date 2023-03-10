@@ -4417,7 +4417,7 @@ msgstr "Falscher Zeitpunkt für Guthabenaktualisierung."
 msgid "Wrong timing for automated archival."
 msgstr "Falscher Zeitpunkt für automatische Archivierung."
 
-msgid "Wrong time for removing exmembers."
+msgid "Wrong timing for removing exmembers."
 msgstr "Falscher Zeitpunkt zum Streichen von Exmitgliedern."
 
 #: cdedb/frontend/cde/semester.py:216
