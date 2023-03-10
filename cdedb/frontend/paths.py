@@ -238,8 +238,7 @@ CDEDB_PATHS = werkzeug.routing.Map((
                      endpoint="full_user_search"),
                 rule("/course", methods=_GET,
                      endpoint="past_course_search"),)),
-            rule("/i25p", methods=_GET,
-                 endpoint="i25p_index"),
+            rule("/i25p", endpoint="", redirect_to="cde/lastschrift/info"),
             sub("/lastschrift/", (
                 rule("/", methods=_GET,
                      endpoint="lastschrift_index"),
@@ -251,6 +250,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                      endpoint="lastschrift_subscription_form"),
                 rule("/form/fill", methods=_GET,
                      endpoint="lastschrift_subscription_form_fill"),
+                rule("/info", methods=_GET,
+                     endpoint="i25p_index"),
                 rule("/transaction/download", methods=_GET,
                      endpoint="lastschrift_download_sepapain"),
                 rule("/transaction/generate", methods=_POST,
@@ -334,8 +335,7 @@ CDEDB_PATHS = werkzeug.routing.Map((
                      endpoint="semester_eject"),
                 rule("/balance", methods=_POST,
                      endpoint="semester_balance_update"),
-                rule("/advance", methods=_POST,
-                     endpoint="semester_advance"),)),
+            )),
             sub('/expuls', (
                 rule("/address", methods=_POST,
                      endpoint="expuls_addresscheck"),

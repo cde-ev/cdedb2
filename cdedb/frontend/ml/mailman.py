@@ -43,16 +43,10 @@ ATTACHMENT_EXTENSIONS_CONVERT = {
 
 ATTACHMENT_MIME_CONVERT = {
     const.AttachmentPolicy.allow: "",
-    # HTML parts will be stripped afterwards due to the conversion.
+    # HTML parts will be stripped afterwards if 'convert_html' is True.
     const.AttachmentPolicy.pdf_only: ['multipart', 'text/plain', 'application/pdf',
                                       'text/html'],
     const.AttachmentPolicy.forbid: ['text/plain', 'text/html'],
-}
-
-ATTACHMENT_HTML_CONVERT = {
-    const.AttachmentPolicy.allow: True,
-    const.AttachmentPolicy.pdf_only: True,
-    const.AttachmentPolicy.forbid: True,
 }
 
 
@@ -111,8 +105,8 @@ class MlMailmanMixin(MlBaseFrontend):
             # Dropping mails silently, even after moderation is worse than rejecting...
             'filter_content': True,
             'filter_action': 'reject',
-            'convert_html_to_plaintext': ATTACHMENT_HTML_CONVERT[
-                db_list.attachment_policy],
+            'convert_html_to_plaintext': db_list.convert_html,
+            'collapse_alternatives': db_list.convert_html,
             'pass_extensions': ATTACHMENT_EXTENSIONS_CONVERT[
                 db_list.attachment_policy],
             'pass_types': ATTACHMENT_MIME_CONVERT[db_list.attachment_policy],

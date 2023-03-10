@@ -1747,6 +1747,16 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.traverse("angemeldet")
         self.assertNonPresence(payment_pending)
 
+        self.traverse("Veranstaltunge", "CdE-Party", "Anmeldungen",
+                      "Anmeldung hinzufügen")
+        f = self.response.forms['addregistrationform']
+        f['persona.persona_id'] = self.user['DB-ID']
+        f['part4.status'] = const.RegistrationPartStati.cancelled
+        self.submit(f)
+        self.traverse("Meine Anmeldung")
+        self.assertPresence("Anmeldestatus Abgemeldet")
+        self.assertNonPresence("Bezahlung")
+
     def test_register_no_registration_end(self) -> None:
         # Remove registration end (soft and hard) from Große Testakademie 2222
         self.login(USER_DICT['garcia'])

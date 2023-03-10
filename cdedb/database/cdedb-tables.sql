@@ -160,6 +160,9 @@ CREATE TABLE core.personas (
         balance                 numeric(8, 2) DEFAULT NULL,
         CONSTRAINT personas_cde_balance
             CHECK(NOT is_cde_realm OR balance IS NOT NULL OR is_purged),
+        donation                numeric(8, 2) DEFAULT NULL,
+        CONSTRAINT personas_cde_donation
+            CHECK(NOT is_cde_realm OR donation IS NOT NULL OR is_purged),
         -- True if user decided (positive or negative) on searchability
         decided_search          boolean DEFAULT FALSE,
         CONSTRAINT personas_cde_consent
@@ -416,6 +419,7 @@ CREATE TABLE core.changelog (
         interests               varchar,
         free_form               varchar,
         balance                 numeric(8, 2),
+        donation                numeric(8, 2),
         decided_search          boolean,
         trial_member            boolean,
         bub_search              boolean,
@@ -470,6 +474,8 @@ CREATE TABLE cde.org_period (
         ejection_done           timestamp WITH TIME ZONE DEFAULT NULL,
         ejection_count          integer NOT NULL DEFAULT 0,
         ejection_balance        numeric(8, 2) NOT NULL DEFAULT 0,
+        exmember_balance        numeric(11, 2) NOT NULL DEFAULT 0,
+        exmember_count          integer NOT NULL DEFAULT 0,
         -- has the balance already been adjusted? If so, up to which ID
         -- (it is done incrementally)
         balance_state           integer REFERENCES core.personas(id),
@@ -507,7 +513,6 @@ CREATE TABLE cde.lastschrift (
         submitted_by            integer REFERENCES core.personas(id) NOT NULL,
         -- actual data
         persona_id              integer REFERENCES core.personas(id) NOT NULL,
-        amount                  numeric(8, 2) NOT NULL,
         iban                    varchar NOT NULL,
         -- if different from the paying member
         account_owner           varchar,
@@ -515,6 +520,8 @@ CREATE TABLE cde.lastschrift (
         -- validity
         granted_at              timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
         revoked_at              timestamp WITH TIME ZONE DEFAULT NULL,
+        -- we used different lastschrift subscription forms over the years
+        revision                integer NOT NULL DEFAULT 2,
         -- administrative comments
         notes                   varchar
 );
@@ -1275,6 +1282,7 @@ CREATE TABLE ml.mailinglists (
         mod_policy              integer NOT NULL,
         -- see cdedb.database.constants.AttachmentPolicy
         attachment_policy       integer NOT NULL,
+        convert_html            boolean NOT NULL DEFAULT TRUE,
         -- see cdedb.database.constants.MailinglistTypes
         ml_type                 integer NOT NULL,
         subject_prefix          varchar,

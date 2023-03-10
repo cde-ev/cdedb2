@@ -13,7 +13,7 @@ For every step "foo" of semester management, there are the following methods:
   - `finish_foo`
     - Advance the semester to the next state so that further steps are allowed.
 """
-
+import decimal
 from typing import Optional, Tuple
 
 import cdedb.common.validation.types as vtypes
@@ -31,7 +31,7 @@ from cdedb.filter import money_filter
 
 
 class CdESemesterBackend(CdELastschriftBackend):
-    @access("finance_admin")
+    @access("cde_admin")
     def finance_statistics(self, rs: RequestState) -> CdEDBObject:
         """Compute some financial statistics.
 
@@ -61,7 +61,7 @@ class CdESemesterBackend(CdELastschriftBackend):
                 rs, query, (self.conf["MEMBERSHIP_FEE"],)))
         return ret
 
-    @access("finance_admin")
+    @access("cde_admin")
     def get_period_history(self, rs: RequestState) -> CdEDBObjectMap:
         """Get the history of all org periods."""
         query = f"SELECT {', '.join(ORG_PERIOD_FIELDS)} FROM cde.org_period"
@@ -90,7 +90,7 @@ class CdESemesterBackend(CdELastschriftBackend):
                 raise RuntimeError(n_("Only able to modify current period."))
             return self.sql_update(rs, "cde.org_period", period)
 
-    @access("finance_admin")
+    @access("cde_admin")
     def may_advance_semester(self, rs: RequestState) -> bool:
         """Helper to determine if now is the right time to advance the semester.
 
@@ -122,7 +122,7 @@ class CdESemesterBackend(CdELastschriftBackend):
                          persona_id=None, change_note=str(ret))
         return ret
 
-    @access("finance_admin")
+    @access("cde_admin")
     def may_start_semester_bill(self, rs: RequestState) -> bool:
         """Helper to determine if now is the right time to start/resume billing.
 
@@ -155,13 +155,10 @@ class CdESemesterBackend(CdELastschriftBackend):
             ret = self.set_period(rs, period_update)
             msg = f"{period['billing_count']} E-Mails versandt."
             if addresscheck:
-                self.cde_log(
-                    rs, const.CdeLogCodes.semester_bill_with_addresscheck,
-                    persona_id=None, change_note=msg)
+                code = const.CdeLogCodes.semester_bill_with_addresscheck
             else:
-                self.cde_log(
-                    rs, const.CdeLogCodes.semester_bill,
-                    persona_id=None, change_note=msg)
+                code = const.CdeLogCodes.semester_bill
+            self.cde_log(rs, code, persona_id=None, change_note=msg)
         return ret
 
     @access("finance_admin")
@@ -184,7 +181,7 @@ class CdESemesterBackend(CdELastschriftBackend):
                 persona_id=None, change_note=msg)
         return ret
 
-    @access("finance_admin")
+    @access("cde_admin")
     def may_start_semester_ejection(self, rs: RequestState) -> bool:
         """Helper to determine if now is the right time to start/resume ejection.
 
@@ -234,16 +231,17 @@ class CdESemesterBackend(CdELastschriftBackend):
                 'id': period_id,
                 'ejection_state': None,
                 'ejection_done': now(),
+                # this is a legacy field and no longer used
+                'ejection_balance': decimal.Decimal("0"),
             }
             ret = self.set_period(rs, period_update)
             msg = f"{period['ejection_count']} inaktive Mitglieder gestrichen."
-            msg += f" {period['ejection_balance']} € Guthaben eingezogen."
             self.cde_log(
                 rs, const.CdeLogCodes.semester_ejection, persona_id=None,
                 change_note=msg)
         return ret
 
-    @access("finance_admin")
+    @access("cde_admin")
     def may_start_semester_balance_update(self, rs: RequestState) -> bool:
         """Helper to determine if now is the right time to start/resume balance update.
 
@@ -269,14 +267,18 @@ class CdESemesterBackend(CdELastschriftBackend):
                 'balance_done': now(),
             }
             ret = self.set_period(rs, period_update)
-            msg = "{} Probemitgliedschaften beendet. {} € Guthaben abgebucht."
+            total = money_filter(period["balance_total"], lang="de")
+            exbalance = money_filter(period["exmember_balance"], lang="de")
+            exmembers = period["exmember_count"]
+            msg = (f"{period['balance_trialmembers']} Probemitgliedschaften beendet."
+                   f" {total} Guthaben abgebucht."
+                   f" {exbalance} Guthaben von {exmembers} Exmitgliedern aufgelöst.")
             self.cde_log(
                 rs, const.CdeLogCodes.semester_balance_update, persona_id=None,
-                change_note=msg.format(period['balance_trialmembers'],
-                                           period['balance_total']))
+                change_note=msg)
         return ret
 
-    @access("finance_admin")
+    @access("cde_admin")
     def get_expuls_history(self, rs: RequestState) -> CdEDBObjectMap:
         """Get the history of all expuls semesters."""
         q = f"SELECT {', '.join(EXPULS_PERIOD_FIELDS)} FROM cde.expuls_period"
@@ -467,8 +469,6 @@ class CdESemesterBackend(CdELastschriftBackend):
                 self.change_membership(rs, persona_id, is_member=False)
                 period_update['ejection_count'] = \
                     period['ejection_count'] + 1
-                period_update['ejection_balance'] = \
-                    period['ejection_balance'] + persona['balance']
             else:
                 persona = None  # type: ignore[assignment]
             self.set_period(rs, period_update)
@@ -502,7 +502,7 @@ class CdESemesterBackend(CdELastschriftBackend):
             persona = None
             if self.core.is_persona_automatically_archivable(
                     rs, persona_id, reference_date=period['billing_done']):
-                note = "Autmoatisch archiviert wegen Inaktivität."
+                note = "Automatisch archiviert wegen Inaktivität."
                 try:
                     code = self.core.archive_persona(rs, persona_id, note)
                 except ArchiveError:
@@ -575,6 +575,36 @@ class CdESemesterBackend(CdELastschriftBackend):
                     period_update['balance_total'] = new_total
             self.set_period(rs, period_update)
             return True, persona
+
+    @access("finance_admin")
+    def remove_exmember_balance(self, rs: RequestState, period_id: int
+                                ) -> DefaultReturnCode:
+        """Set the balance of all former members to zero.
+
+        We keep the balance of all former members during one semester, so they get their
+        remaining balance back if they pay again in this time.
+        """
+        period_id = affirm(int, period_id)
+        with Atomizer(rs):
+            if not self.may_start_semester_balance_update(rs):
+                raise RuntimeError
+            zero = decimal.Decimal("0.00")
+            query = ("SELECT COALESCE(SUM(balance), 0) as total,"
+                     " COUNT(*) as count FROM core.personas "
+                     " WHERE is_member = False AND balance > %s"
+                     " AND is_cde_realm = True AND is_archived = False")
+            data = self.query_one(rs, query, (zero,))
+            update = {
+                "id": period_id,
+                "exmember_balance": data["total"] if data else decimal.Decimal(0),
+                "exmember_count": data["count"] if data else 0,
+            }
+            self.set_period(rs, update)
+            query = ("UPDATE core.personas SET balance = %s "
+                     " WHERE is_member = False AND balance > %s"
+                     " AND is_cde_realm = True AND is_archived = False")
+            ret = self.query_exec(rs, query, (zero, zero))
+        return ret
 
     @access("finance_admin")
     def process_for_expuls_check(self, rs: RequestState, expuls_id: int,

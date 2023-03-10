@@ -62,7 +62,7 @@
                 <dt title="{% trans %}Member{% endtrans %}">
                     {% trans %}Member{% endtrans %}
                 </dt>
-                <dd>{{ util.persona_anchor(personas[values['persona_id']]) }}</dd>
+                <dd>{{ util.persona_anchor(main_persona) }}</dd>
             {% if "finance" in user.admin_views %}
                 <dt title="{% trans %}Submitted by{% endtrans %}">
                     {% trans %}Submitted by{% endtrans %}
@@ -78,9 +78,10 @@
             {% endif %}
             </dl>
             <dl class="dl-horizontal">
-                <dt title="{% trans %}Amount{% endtrans %}">{% trans %}Amount{% endtrans %}</dt>
-                <dd id="amount">{{ lastschrift['amount']|money(lang=lang) }}</dd>
-
+                <dt title="{% trans %}Donation{% endtrans %}">
+                    {% trans %}Donation{% endtrans %}
+                </dt>
+                <dd id="donation">{{ main_persona["donation"]|money(lang=lang) }}</dd>
                 <dt title="{% trans %}IBAN{% endtrans %}">
                     {% trans %}IBAN{% endtrans %}
                 </dt>

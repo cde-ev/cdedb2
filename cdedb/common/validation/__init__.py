@@ -80,7 +80,6 @@ import zxcvbn
 from schulze_condorcet.util import as_vote_tuple
 
 import cdedb.database.constants as const
-import cdedb.ml_type_aux as ml_type
 import cdedb.models.ml as models_ml
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, EPSILON, EVENT_SCHEMA_VERSION, INFINITE_ENUM_MAGIC_NUMBER,
@@ -188,17 +187,45 @@ DATACLASS_TO_VALIDATORS: Mapping[Type[Any], Type[Any]] = {
 }
 
 
-def validate_assert_dataclass(type_: Type[T], value: Any, ignore_warnings: bool,
-                              **kwargs: Any) -> T:
-    if type_ not in DATACLASS_TO_VALIDATORS:
-        raise RuntimeError("There is no validator mapped to this dataclass.")
+def _validate_dataclass_preprocess(type_: Type[T], value: Any
+                                   ) -> Tuple[Type[T], Type[T]]:
+    # Keep subclassing intact if possible.
+    if isinstance(value, type_):
+        subtype = type(value)
+    else:
+        raise RuntimeError("Value is no instance of given type.")
+
+    # Figure out the closest validator on the class hierarchy.
     if not dataclasses.is_dataclass(value):
         raise RuntimeError("Given value is not an instance of a dataclass.")
-    validator = DATACLASS_TO_VALIDATORS[type_]
+    for supertype in type_.mro():
+        if supertype in DATACLASS_TO_VALIDATORS:
+            validator = DATACLASS_TO_VALIDATORS[supertype]
+            break
+    else:
+        raise RuntimeError("There is no validator mapped to this dataclass.")
+
+    return subtype, validator
+
+
+def _validate_dataclass_postprocess(subtype: Type[T], validated: T) -> T:
+    dataclass_keys = {field.name for field in dataclasses.fields(subtype)
+                      if field.init}
+    validated = {k: v for k, v in validated.items() if k in dataclass_keys}  # type: ignore[attr-defined]
+    return subtype(**validated)
+
+
+def validate_assert_dataclass(type_: Type[T], value: Any, ignore_warnings: bool,
+                              **kwargs: Any) -> T:
+    """Wrapper of validate_assert that accepts dataclasses.
+
+    Allows for subclasses, and figures out the appropriate superclass, for which
+    a validator exists, dynamically."""
+    subtype, validator = _validate_dataclass_preprocess(type_, value)
     val = dataclasses.asdict(value)
     validated = validate_assert(
         validator, val, ignore_warnings=ignore_warnings, **kwargs)
-    return type_(**validated)
+    return _validate_dataclass_postprocess(subtype, validated)
 
 
 def validate_assert(type_: Type[T], value: Any, ignore_warnings: bool,
@@ -234,18 +261,18 @@ def validate_assert_optional(type_: Type[T], value: Any, ignore_warnings: bool,
 
 def validate_check_dataclass(type_: Type[T], value: Any, ignore_warnings: bool,
                               **kwargs: Any) -> Tuple[Optional[T], List[Error]]:
-    if type_ not in DATACLASS_TO_VALIDATORS:
-        raise RuntimeError("There is no validator mapped to this dataclass.")
-    if not dataclasses.is_dataclass(value):
-        raise RuntimeError("Given value is not an instance of a dataclass.")
-    validator = DATACLASS_TO_VALIDATORS[type_]
+    """Wrapper of validate_assert that accepts dataclasses.
+
+    Allows for subclasses, and figures out the appropriate superclass, for which
+    a validator exists, dynamically."""
+    subtype, validator = _validate_dataclass_preprocess(type_, value)
     val = dataclasses.asdict(value)
     validated, errors = validate_check(
         validator, val, ignore_warnings=ignore_warnings, **kwargs)
     if validated is None:
         return None, errors
     else:
-        return type_(**validated), errors
+        return _validate_dataclass_postprocess(subtype, validated), errors
 
 
 def validate_check(type_: Type[T], value: Any, ignore_warnings: bool,
@@ -1206,6 +1233,7 @@ PERSONA_BASE_CREATION: Mapping[str, Any] = {
     'bub_search': NoneType,
     'foto': NoneType,
     'paper_expuls': NoneType,
+    'donation': NoneType,
 }
 
 PERSONA_CDE_CREATION: Mapping[str, Any] = {
@@ -1240,6 +1268,7 @@ PERSONA_CDE_CREATION: Mapping[str, Any] = {
     'bub_search': bool,
     # 'foto': Optional[str], # No foto -- this is another special
     'paper_expuls': bool,
+    'donation': NonNegativeDecimal,
 }
 
 PERSONA_EVENT_CREATION: Mapping[str, Any] = {
@@ -1318,6 +1347,7 @@ PERSONA_COMMON_FIELDS: Dict[str, Any] = {
     'interests': Optional[str],
     'free_form': Optional[str],
     'balance': NonNegativeDecimal,
+    'donation': NonNegativeDecimal,
     'trial_member': bool,
     'decided_search': bool,
     'bub_search': bool,
@@ -1851,6 +1881,7 @@ def _period(
     prefix_map = {
         'billing': ('state', 'done', 'count'),
         'ejection': ('state', 'done', 'count', 'balance'),
+        'exmember': ('balance', 'count'),
         'balance': ('state', 'done', 'trialmembers', 'total'),
         'archival_notification': ('state', 'done', 'count'),
         'archival': ('state', 'done', 'count'),
@@ -1859,7 +1890,7 @@ def _period(
         'state': Optional[ID],  # type: ignore[dict-item]
         'done': datetime.datetime, 'count': NonNegativeInt,
         'trialmembers': NonNegativeInt, 'total': NonNegativeDecimal,
-        'balance': NonNegativeDecimal,
+        'balance': NonNegativeDecimal, 'exmembers': NonNegativeDecimal,
     }
 
     optional_fields = {
@@ -1888,7 +1919,6 @@ def _expuls(
 
 
 LASTSCHRIFT_COMMON_FIELDS: Mapping[str, Any] = {
-    'amount': PositiveDecimal,
     'iban': IBAN,
     'account_owner': Optional[str],
     'account_address': Optional[str],
@@ -1983,54 +2013,6 @@ def _iban(
         raise errs
 
     return IBAN(val)
-
-
-LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS: Mapping[str, Any] = {
-    'amount': PositiveDecimal,
-    'status': const.LastschriftTransactionStati,
-    'issued_at': datetime.datetime,
-    'processed_at': Optional[datetime.datetime],
-    'tally': Optional[decimal.Decimal],
-}
-
-
-@_add_typed_validator
-def _lastschrift_transaction(
-    val: Any, argname: str = "lastschrift_transaction", *,
-    creation: bool = False, **kwargs: Any
-) -> LastschriftTransaction:
-    """
-    :param creation: If ``True`` test the data set on fitness for creation
-      of a new entity.
-    # TODO make a unified approach for creation validation?
-    """
-    val = _mapping(val, argname, **kwargs)
-    if creation:
-        mandatory_fields = {
-            'lastschrift_id': ID,
-            'period_id': ID,
-        }
-        optional_fields = {**LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS}
-    else:
-        raise ValidationSummary(ValueError(argname, n_(
-            "Modification of lastschrift transactions not supported.")))
-    return LastschriftTransaction(_examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs))
-
-
-@_add_typed_validator
-def _lastschrift_transaction_entry(
-        val: Any, argname: str = "lastschrift_transaction_entry",
-        **kwargs: Any) -> LastschriftTransactionEntry:
-    val = _mapping(val, argname, **kwargs)
-    mandatory_fields: Dict[str, Any] = {
-        'transaction_id': int,
-        'tally': Optional[decimal.Decimal],
-        'status': const.LastschriftTransactionStati,
-    }
-    optional_fields: TypeMapping = {}
-    return LastschriftTransactionEntry(_examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs))
 
 
 SEPA_TRANSACTIONS_FIELDS: TypeMapping = {
@@ -3995,7 +3977,7 @@ def _mailinglist(
     if "ml_type" not in val:
         raise ValidationSummary(ValueError(
             "ml_type", "Must provide ml_type for setting mailinglist."))
-    atype = ml_type.get_type(val["ml_type"])
+    atype = models_ml.get_ml_type(val["ml_type"])
 
     mandatory_fields, optional_fields = models_ml.Mailinglist.validation_fields(
         creation=creation)
@@ -4047,8 +4029,8 @@ def _mailinglist(
         errs.append(ValueError(
             "domain", "Must specify domain for setting mailinglist."))
     else:
-        atype = ml_type.get_type(val["ml_type"])
-        if val["domain"].value not in atype.domains:
+        atype = models_ml.get_ml_type(val["ml_type"])
+        if val["domain"].value not in atype.available_domains:
             errs.append(ValueError("domain", n_(
                 "Invalid domain for this mailinglist type.")))
 

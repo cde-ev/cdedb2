@@ -2,13 +2,12 @@
 
 """Lastschrift related services for the cde realm.
 
-Viewing general information on the Initiative 25+ and filling in a lastschrift form
-requires no privileges. Viewing ones own lastschrift requires the "member" role.
+Viewing general information on the Lastschriftinitiative and filling in a lastschrift
+form requires no privileges. Viewing ones own lastschrift requires the "member" role.
 Everything else here requires the "finance_admin" role.
 """
 
 import datetime
-import decimal
 import pathlib
 import random
 import shutil
@@ -30,6 +29,7 @@ from cdedb.common import (
 from cdedb.common.n_ import n_
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation import LASTSCHRIFT_COMMON_FIELDS
+from cdedb.filter import money_filter
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, cdedbid_filter, check_validation as check,
@@ -91,10 +91,11 @@ class CdELastschriftMixin(CdEBaseFrontend):
                 rs, lastschrift_ids=lastschrift_ids.keys())
             transactions = self.cdeproxy.get_lastschrift_transactions(
                 rs, transaction_ids.keys())
-        persona_ids = {persona_id}.union({
-            x['submitted_by'] for x in lastschrifts.values()}).union(
+        persona_ids = {x['submitted_by'] for x in lastschrifts.values()}.union(
             {x['submitted_by'] for x in transactions.values()})
         personas = self.coreproxy.get_personas(rs, persona_ids)
+        # we need to access the donation property of the associated user
+        main_persona = self.coreproxy.get_cde_user(rs, persona_id)
         active_permit = None
         for lastschrift in lastschrifts.values():
             if not lastschrift['revoked_at']:
@@ -102,7 +103,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         active_open = bool(
             active_permit and self.determine_open_permits(rs, (active_permit,)))
         return self.render(rs, "lastschrift/lastschrift_show", {
-            'lastschrifts': lastschrifts,
+            'lastschrifts': lastschrifts, 'main_persona': main_persona,
             'active_permit': active_permit, 'active_open': active_open,
             'personas': personas, 'transactions': transactions,
         })
@@ -112,7 +113,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
                                 ) -> Response:
         """Render form."""
         merge_dicts(rs.values, rs.ambience['lastschrift'])
-        persona = self.coreproxy.get_persona(
+        persona = self.coreproxy.get_cde_user(
             rs, rs.ambience['lastschrift']['persona_id'])
         return self.render(rs, "lastschrift/lastschrift_change", {'persona': persona})
 
@@ -135,16 +136,34 @@ class CdELastschriftMixin(CdEBaseFrontend):
     def lastschrift_create_form(self, rs: RequestState, persona_id: int = None
                                 ) -> Response:
         """Render form."""
-        return self.render(rs, "lastschrift/lastschrift_create")
+        min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
+        typical_donation = self.conf["TYPICAL_LASTSCHRIFT_DONATION"]
+        current_donation = None
+        if persona_id:
+            persona = self.coreproxy.get_cde_user(rs, persona_id)
+            current_donation = persona["donation"] or None
+        return self.render(rs, "lastschrift/lastschrift_create", {
+            "min_donation": min_donation, "typical_donation": typical_donation,
+            "current_donation": current_donation,
+        })
 
     @access("finance_admin", modi={"POST"})
     @REQUESTdatadict(*LASTSCHRIFT_COMMON_FIELDS)
-    @REQUESTdata('persona_id')
+    @REQUESTdata("persona_id", "donation")
     def lastschrift_create(self, rs: RequestState, persona_id: vtypes.CdedbID,
-                           data: CdEDBObject) -> Response:
+                           data: CdEDBObject, donation: vtypes.PositiveDecimal
+                           ) -> Response:
         """Create a new permit."""
         data['persona_id'] = persona_id
         data = check(rs, vtypes.Lastschrift, data, creation=True)
+        if not self.coreproxy.verify_persona(rs, persona_id, ["cde"]):
+            rs.add_validation_error(("persona_id", ValueError(
+                n_("Persona must have cde realm."))))
+        min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
+        if donation < min_donation:
+            rs.add_validation_error(("donation", ValueError(
+                n_("Lastschrift donation must be at least %(min)s."),
+                {"min": money_filter(min_donation)})))
         if rs.has_validation_errors():
             return self.lastschrift_create_form(rs, persona_id)
         assert data is not None
@@ -153,7 +172,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             rs.notify("error", n_("Multiple active permits are disallowed."))
             return self.redirect(rs, "cde/lastschrift_show", {
                 'persona_id': persona_id})
-        new_id = self.cdeproxy.create_lastschrift(rs, data)
+        new_id = self.cdeproxy.create_lastschrift(rs, data, initial_donation=donation)
         rs.notify_return_code(new_id)
         return self.redirect(
             rs, "cde/lastschrift_show", {'persona_id': persona_id})
@@ -307,7 +326,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
                 'period_id': period,
                 'mandate_reference': lastschrift_reference(
                     persona['id'], lastschrift['id']),
-                'amount': lastschrift['amount'],
+                'amount': self.cdeproxy.transaction_amount(rs, persona['id']),
                 'iban': lastschrift['iban'],
                 'type': "RCUR",  # TODO remove this, hardcode it in template
             }
@@ -351,7 +370,6 @@ class CdELastschriftMixin(CdEBaseFrontend):
         """
         if rs.has_validation_errors():
             return self.lastschrift_index(rs)
-        period = self.cdeproxy.current_period(rs)
         if not lastschrift_id:
             all_lids = self.cdeproxy.list_lastschrift(rs)
             lastschrift_ids = tuple(self.determine_open_permits(
@@ -361,35 +379,29 @@ class CdELastschriftMixin(CdEBaseFrontend):
             if not self.determine_open_permits(rs, lastschrift_ids):
                 rs.notify("error", n_("Existing pending transaction."))
                 return self.lastschrift_index(rs)
-        new_transactions = tuple(
-            {
-                'issued_at': now(),
-                'lastschrift_id': anid,
-                'period_id': period,
-            } for anid in lastschrift_ids
-        )
         transaction_ids = self.cdeproxy.issue_lastschrift_transaction_batch(
-            rs, new_transactions, check_unique=True)
+            rs, lastschrift_ids)
         if not transaction_ids:
             return self.lastschrift_index(rs)
 
-        lastschrifts = self.cdeproxy.get_lastschrifts(
-            rs, lastschrift_ids)
+        lastschrifts = self.cdeproxy.get_lastschrifts(rs, lastschrift_ids)
+        transactions = self.cdeproxy.get_lastschrift_transactions(rs, transaction_ids)
         personas = self.coreproxy.get_personas(
             rs, tuple(e['persona_id'] for e in lastschrifts.values()))
-        for lastschrift in lastschrifts.values():
+        for transaction in transactions.values():
+            lastschrift = lastschrifts[transaction["lastschrift_id"]]
             persona = personas[lastschrift['persona_id']]
             data = {
                 'persona': persona,
                 'payment_date': self._calculate_payment_date(),
-                'amount': lastschrift['amount'],
+                'amount': transaction["amount"],
                 'iban': lastschrift['iban'],
                 'account_owner': lastschrift['account_owner'],
                 'mandate_reference': lastschrift_reference(
                     lastschrift['persona_id'], lastschrift['id']),
                 'glaeubiger_id': self.conf["SEPA_GLAEUBIGERID"],
             }
-            subject = "Anstehender Lastschrifteinzug Initiative 25+"
+            subject = "Anstehender Lastschrifteinzug Lastschriftinitiative"
             self.do_mail(rs, "lastschrift/sepa_pre-notification",
                          {'To': (persona['username'],),
                           'Subject': subject},
@@ -422,13 +434,6 @@ class CdELastschriftMixin(CdEBaseFrontend):
         else:
             return self.redirect(rs, "cde/lastschrift_index")
 
-    def tally_for_lastschrift_status(self, status: const.LastschriftTransactionStati
-                                     ) -> Optional[decimal.Decimal]:
-        """Retrieve preset tally associated with each status."""
-        return (-self.conf["SEPA_ROLLBACK_FEE"]
-                if status == const.LastschriftTransactionStati.failure else
-                None)
-
     @access("finance_admin", modi={"POST"})
     @REQUESTdata("status", "persona_id")
     def lastschrift_finalize_transaction(
@@ -444,8 +449,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         if rs.has_validation_errors():
             return self.lastschrift_index(rs)
         code = self.cdeproxy.finalize_lastschrift_transaction(
-            rs, transaction_id, status,
-            tally=self.tally_for_lastschrift_status(status))
+            rs, transaction_id, status)
         rs.notify_return_code(code)
         if persona_id:
             return self.redirect(rs, "cde/lastschrift_show",
@@ -468,7 +472,6 @@ class CdELastschriftMixin(CdEBaseFrontend):
         if not transaction_ids:
             rs.notify("warning", n_("No transactions selected."))
             return self.redirect(rs, "cde/lastschrift_index")
-        status = None
         if success:
             status = const.LastschriftTransactionStati.success
         elif cancelled:
@@ -477,15 +480,8 @@ class CdELastschriftMixin(CdEBaseFrontend):
             status = const.LastschriftTransactionStati.failure
         else:
             raise RuntimeError(n_("Impossible."))
-        code = 1
-        transactions = [
-            {
-                'transaction_id': transaction_id,
-                'status': status,
-                'tally': self.tally_for_lastschrift_status(status),
-            }
-            for transaction_id in transaction_ids]
-        code = self.cdeproxy.finalize_lastschrift_transactions(rs, transactions)
+        code = self.cdeproxy.finalize_lastschrift_transactions(
+            rs, transaction_ids, status)
         rs.notify_return_code(code)
         return self.redirect(rs, "cde/lastschrift_index")
 
@@ -501,9 +497,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         """
         if rs.has_validation_errors():
             return self.lastschrift_index(rs)
-        tally = -self.conf["SEPA_ROLLBACK_FEE"]
-        code = self.cdeproxy.rollback_lastschrift_transaction(
-            rs, transaction_id, tally)
+        code = self.cdeproxy.rollback_lastschrift_transaction(rs, transaction_id)
         rs.notify_return_code(code)
         transaction_ids = self.cdeproxy.list_lastschrift_transactions(
             rs, lastschrift_ids=(lastschrift_id,),
@@ -581,20 +575,27 @@ class CdELastschriftMixin(CdEBaseFrontend):
             persona = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
             not_minor = not determine_age_class(
                 persona['birthday'], now().date()).is_minor()
-        return self.render(rs, "lastschrift/lastschrift_subscription_form_fill",
-                           {"persona": persona, "not_minor": not_minor})
+        min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
+        typical_donation = self.conf["TYPICAL_LASTSCHRIFT_DONATION"]
+        return self.render(
+            rs, "lastschrift/lastschrift_subscription_form_fill", {
+                "persona": persona, "not_minor": not_minor,
+                "min_donation": min_donation, "typical_donation": typical_donation
+            }
+        )
 
     @access("anonymous")
-    @REQUESTdata("full_name", "db_id", "username", "not_minor", "address_supplement",
-                 "address", "postal_code", "location", "country", "amount",
-                 "iban", "account_holder")
+    @REQUESTdata("full_name", "db_id", "username", "address_supplement",
+                 "address", "postal_code", "location", "country", "iban", "donation",
+                 "account_holder")
     def lastschrift_subscription_form(
             self, rs: RequestState, full_name: Optional[str],
             db_id: Optional[vtypes.CdedbID], username: Optional[vtypes.Email],
-            not_minor: bool, address_supplement: Optional[str], address: Optional[str],
+            address_supplement: Optional[str], address: Optional[str],
             postal_code: Optional[vtypes.GermanPostalCode], location: Optional[str],
-            country: Optional[str], amount: Optional[vtypes.PositiveDecimal],
-            iban: Optional[vtypes.IBAN], account_holder: Optional[str]) -> Response:
+            country: Optional[str], iban: Optional[vtypes.IBAN],
+            account_holder: Optional[str], donation: Optional[vtypes.PositiveDecimal]
+    ) -> Response:
         """Fill the direct debit authorization template with information."""
 
         if rs.has_validation_errors():
@@ -604,22 +605,24 @@ class CdELastschriftMixin(CdEBaseFrontend):
             "full_name": full_name or "",
             "db_id": db_id,
             "username": username or "",
-            "not_minor": not_minor,
             "address_supplement": address_supplement or "",
             "address": address or "",
             "postal_code": postal_code or "",
             "location": location or "",
             "country": country or "",
-            "amount": float(amount) if amount else None,
             "iban": iban or "",
+            "donation": float(donation) if donation else None,
             "account_holder": account_holder or "",
         }
 
-        meta_info = self.coreproxy.get_meta_info(rs)
-        annual_fee = self.conf["MEMBERSHIP_FEE"] * self.conf["PERIODS_PER_YEAR"]
-        tex = self.fill_template(rs, "tex", "lastschrift_subscription_form",
-                                 {'meta_info': meta_info, 'data': data,
-                                  "annual_fee": annual_fee})
+        params = {
+            "data": data,
+            "meta_info": self.coreproxy.get_meta_info(rs),
+            "min_donation": self.conf["MINIMAL_LASTSCHRIFT_DONATION"],
+            "typical_donation": self.conf["TYPICAL_LASTSCHRIFT_DONATION"],
+            "annual_fee": self.cdeproxy.annual_membership_fee(rs),
+        }
+        tex = self.fill_template(rs, "tex", "lastschrift_subscription_form", params)
         errormsg = n_("Form could not be created. Please refrain from using "
                       "special characters if possible.")
         pdf = self.serve_latex_document(
@@ -657,6 +660,9 @@ class CdELastschriftMixin(CdEBaseFrontend):
 
     @access("anonymous")
     def i25p_index(self, rs: RequestState) -> Response:
-        """Show information about 'Initiative 25+'."""
-        annual_fee = self.conf["MEMBERSHIP_FEE"] * self.conf["PERIODS_PER_YEAR"]
-        return self.render(rs, "lastschrift/i25p_index", {"annual_fee": annual_fee})
+        """Show information about 'Lastschriftinitiative' (former 'Initiative 25+')."""
+        annual_fee = self.cdeproxy.annual_membership_fee(rs)
+        return self.render(rs, "lastschrift/i25p_index", {
+            "annual_fee": annual_fee,
+            "min_donation": self.conf["MINIMAL_LASTSCHRIFT_DONATION"],
+            "typical_donation": self.conf["TYPICAL_LASTSCHRIFT_DONATION"]})
