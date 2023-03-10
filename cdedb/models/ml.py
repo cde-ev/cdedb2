@@ -6,7 +6,7 @@ import itertools
 from dataclasses import dataclass, fields
 from typing import (
     TYPE_CHECKING, Any, ClassVar, Collection, Dict, List, Literal, Mapping, Optional,
-    OrderedDict, Set, Tuple, Type, Union, cast, get_origin,
+    OrderedDict, Set, Tuple, Type, cast,
 )
 
 from subman.machine import SubscriptionPolicy
