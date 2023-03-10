@@ -259,22 +259,6 @@ def validate_assert_optional(type_: Type[T], value: Any, ignore_warnings: bool,
     return validate_assert(Optional[type_], value, ignore_warnings, **kwargs)  # type: ignore[arg-type]
 
 
-def validate_check_dataclass(type_: Type[T], value: Any, ignore_warnings: bool,
-                              **kwargs: Any) -> Tuple[Optional[T], List[Error]]:
-    """Wrapper of validate_assert that accepts dataclasses.
-
-    Allows for subclasses, and figures out the appropriate superclass, for which
-    a validator exists, dynamically."""
-    subtype, validator = _validate_dataclass_preprocess(type_, value)
-    val = dataclasses.asdict(value)
-    validated, errors = validate_check(
-        validator, val, ignore_warnings=ignore_warnings, **kwargs)
-    if validated is None:
-        return None, errors
-    else:
-        return _validate_dataclass_postprocess(subtype, validated), errors
-
-
 def validate_check(type_: Type[T], value: Any, ignore_warnings: bool,
                    field_prefix: str = "", field_postfix: str = "", **kwargs: Any
                    ) -> Tuple[Optional[T], List[Error]]:
