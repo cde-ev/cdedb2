@@ -30,17 +30,7 @@ class CdESemesterMixin(CdEBaseFrontend):
         period_id = self.cdeproxy.current_period(rs)
         period = self.cdeproxy.get_period(rs, period_id)
         period_history = self.cdeproxy.get_period_history(rs)
-        if self.cdeproxy.may_start_semester_bill(rs):
-            current_period_step = SemesterSteps.billing
-        elif self.cdeproxy.may_start_semester_ejection(rs):
-            current_period_step = SemesterSteps.ejection
-        elif self.cdeproxy.may_start_semester_balance_update(rs):
-            current_period_step = SemesterSteps.balance
-        elif self.cdeproxy.may_advance_semester(rs):
-            current_period_step = SemesterSteps.billing
-        else:
-            rs.notify("error", n_("Inconsistent semester state."))
-            current_period_step = SemesterSteps.error
+        allowed_semester_steps = self.cdeproxy.allowed_semester_steps(rs)
         expuls_id = self.cdeproxy.current_expuls(rs)
         expuls = self.cdeproxy.get_expuls(rs, expuls_id)
         expuls_history = self.cdeproxy.get_expuls_history(rs)
@@ -48,7 +38,7 @@ class CdESemesterMixin(CdEBaseFrontend):
         return self.render(rs, "semester/show_semester", {
             'period': period, 'expuls': expuls, 'stats': stats,
             'period_history': period_history, 'expuls_history': expuls_history,
-            'current_period_step': current_period_step,
+            'allowed_semester_steps': allowed_semester_steps,
         })
 
     @access("finance_admin", modi={"POST"})
@@ -70,11 +60,11 @@ class CdESemesterMixin(CdEBaseFrontend):
         # advance to the next semester
         # This does not throw an error if we may not advance, since the function must
         #  be idempotent if the sending crushes midway.
-        if self.cdeproxy.may_advance_semester(rs):
+        if SemesterSteps.advance in self.cdeproxy.allowed_semester_steps(rs):
             self.cdeproxy.advance_semester(rs)
 
         period_id = self.cdeproxy.current_period(rs)
-        if not self.cdeproxy.may_start_semester_bill(rs):
+        if SemesterSteps.billing not in self.cdeproxy.allowed_semester_steps(rs):
             rs.notify("error", n_("Billing already done."))
             return self.redirect(rs, "cde/show_semester")
         open_lastschrift = self.determine_open_permits(rs)
@@ -162,7 +152,7 @@ class CdESemesterMixin(CdEBaseFrontend):
         if rs.has_validation_errors():  # pragma: no cover
             self.redirect(rs, "cde/show_semester")
         period_id = self.cdeproxy.current_period(rs)
-        if not self.cdeproxy.may_start_semester_ejection(rs):
+        if SemesterSteps.ejection not in self.cdeproxy.allowed_semester_steps(rs):
             rs.notify("error", n_("Wrong timing for ejection."))
             return self.redirect(rs, "cde/show_semester")
 
@@ -223,7 +213,7 @@ class CdESemesterMixin(CdEBaseFrontend):
         if rs.has_validation_errors():  # pragma: no cover
             self.redirect(rs, "cde/show_semester")
         period_id = self.cdeproxy.current_period(rs)
-        if not self.cdeproxy.may_start_semester_balance_update(rs):
+        if SemesterSteps.balance not in self.cdeproxy.allowed_semester_steps(rs):
             rs.notify("error", n_("Wrong timing for balance update."))
             return self.redirect(rs, "cde/show_semester")
 
