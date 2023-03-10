@@ -18,7 +18,7 @@
 {% endblock %}
 
 {% block content %}
-    {{ util.heading(n_("Global information"), level=4) }}
+    {{ util.heading(n_("Global information"), level=4, underline=True) }}
         <dl class="dl-horizontal">
             <dt title="{% trans %}Name{% endtrans %}">
                 {% trans %}Name{% endtrans %}
@@ -40,7 +40,7 @@
             </dd>
         </dl>
 
-    {{ util.heading(n_("Mailinglist information"), level=4) }}
+    {{ util.heading(n_("Mailinglist information"), level=4, underline=True) }}
     {% trans %}
         This lists all mailinglists this user is related to.
         In particular, this includes lists they are or have recently been subscribed to,

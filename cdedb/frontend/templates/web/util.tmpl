@@ -887,18 +887,12 @@ mailto:
 
 {# Macro to handle headings in a uniform way.
    Take care to put the title in n_() to only mark it for translation.
-
-   - Adds an anchor (for everything smaller than h1) to make it linkable as well as a hoverable link referring to it.
-   - h4 are underlined headings by default (we commonly use that to divide e.g. form sections).
-     Turn this off by setting underline=false.
+   Adds an anchor (for everything smaller than h1) to make it linkable as well as a hoverable link referring to it.
 #}
-{% macro heading(title, level=3, underline=none, anchor=none, aclass=none) %}
+{% macro heading(title, level=3, underline=False, anchor=none, aclass=none) %}
     {% if anchor is none and level != 1 %}
         {# TODO: convert spaces and other special chars? #}
         {% set anchor = title %}
-    {% endif %}
-    {% if level == 4 and underline is none %}
-        {% set underline = true %}
     {% endif %}
     <h{{ level }} class="
             {%- if level == 1 %}title {% endif -%}
