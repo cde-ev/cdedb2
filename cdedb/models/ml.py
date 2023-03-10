@@ -100,7 +100,7 @@ class Mailinglist(CdEDataclass):
     allow_unsub: ClassVar[bool] = True
 
     def __post_init__(self) -> None:
-        if self.__class__ == Mailinglist:
+        if self.__class__ not in ML_TYPE_MAP_INV:
             raise TypeError("Cannot instantiate abstract class.")
 
     @property
