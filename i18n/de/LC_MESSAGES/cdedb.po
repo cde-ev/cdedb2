@@ -4181,6 +4181,9 @@ msgstr "*Hier gibt es noch nichts.*"
 msgid "Persona must have cde realm."
 msgstr "Account ist kein CdE-Account"
 
+msgid "User already set a different donation of %(donation)s."
+msgstr "Der Nutzer hat bereits eine abweichende Spende von %(donation)s hinterlegt."
+
 #: cdedb/frontend/cde/lastschrift.py:165
 #, python-format
 msgid "Lastschrift donation must be at least %(min)s."

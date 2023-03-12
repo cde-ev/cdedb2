@@ -26,10 +26,11 @@ from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, RequestState, asciificator, determine_age_class, glue,
     int_to_words, lastschrift_reference, merge_dicts, now, unwrap,
 )
+from cdedb.common.exceptions import ValidationWarning
 from cdedb.common.n_ import n_
 from cdedb.common.sorting import EntitySorter, Sortkey, xsorted
 from cdedb.common.validation import LASTSCHRIFT_COMMON_FIELDS
-from cdedb.filter import money_filter, keydictsort_filter
+from cdedb.filter import keydictsort_filter, money_filter
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, cdedbid_filter, check_validation as check,
@@ -170,6 +171,12 @@ class CdELastschriftMixin(CdEBaseFrontend):
         if not self.coreproxy.verify_persona(rs, persona_id, ["cde"]):
             rs.add_validation_error(("persona_id", ValueError(
                 n_("Persona must have cde realm."))))
+        persona = self.coreproxy.get_cde_user(rs, persona_id)
+        if (persona["donation"] and persona["donation"] != donation
+                and not rs.ignore_warnings):
+            rs.add_validation_error(("donation", ValidationWarning(
+                n_("User already set a different donation of %(donation)s."),
+                {"donation": money_filter(persona["donation"])})))
         min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
         if donation < min_donation:
             rs.add_validation_error(("donation", ValueError(
