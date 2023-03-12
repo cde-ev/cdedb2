@@ -15,7 +15,7 @@ For every step "foo" of semester management, there are the following methods:
 """
 import dataclasses
 import decimal
-from typing import Optional, Set, Tuple
+from typing import Optional, Tuple
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
