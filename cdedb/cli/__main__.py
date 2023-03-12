@@ -195,7 +195,7 @@ def compile_sample_data_json(config: TestConfig, secrets: SecretsConfig,
                              outfile: pathlib.Path) -> None:
     """Generate a JSON-file from the current state of the database."""
     data = sql2json(config, secrets)
-    with open(outfile, "w") as f:
+    with open(outfile, "w", encoding='UTF-8') as f:
         json.dump(data, f, cls=CustomJSONEncoder, indent=4, ensure_ascii=False)
         f.write("\n")
 

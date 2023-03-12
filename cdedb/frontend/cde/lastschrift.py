@@ -579,7 +579,8 @@ class CdELastschriftMixin(CdEBaseFrontend):
         with tempfile.TemporaryDirectory() as tmp_dir:
             work_dir = pathlib.Path(tmp_dir) / 'workdir'
             work_dir.mkdir()
-            with open(work_dir / "lastschrift_receipt.tex", 'w') as f:
+            with open(work_dir / "lastschrift_receipt.tex", 'w', encoding='UTF-8') as f:
+                #raise RuntimeError(tex)
                 f.write(tex)
             logo_src = self.conf["REPOSITORY_PATH"] / "misc/cde-logo.jpg"
             shutil.copy(logo_src, work_dir / "cde-logo.jpg")

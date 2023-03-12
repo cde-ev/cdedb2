@@ -907,8 +907,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             s.send_message(msg)
             s.quit()
         else:
-            with tempfile.NamedTemporaryFile(mode='w', prefix="cdedb-mail-",
-                                             suffix=".txt", delete=False) as f:
+            with tempfile.NamedTemporaryFile(
+                    mode='w', prefix="cdedb-mail-", suffix=".txt", delete=False,
+                    encoding='UTF-8') as f:
                 f.write(str(msg))
                 self.logger.debug(f"Stored mail to {f.name}.")
                 ret = f.name
