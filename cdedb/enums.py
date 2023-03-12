@@ -14,7 +14,7 @@ import cdedb.database.constants as const
 from cdedb.common import (
     Accounts, AgeClasses, ConfidenceLevel, CourseChoiceToolActions,
     CourseFilterPositions, GenesisDecision, LineResolutions, LodgementsSortkeys,
-    TransactionType,
+    SemesterSteps, TransactionType,
 )
 from cdedb.common.query import QueryOperators, QueryScope
 from cdedb.common.query.log_filter import LogTable
@@ -56,6 +56,7 @@ ALL_ENUMS: Tuple[Type[Enum], ...] = (
     Accounts,
     TransactionType,
     ConfidenceLevel,
+    SemesterSteps,
 )
 
 #: The list of infinite enums

@@ -14,7 +14,7 @@ For every step "foo" of semester management, there are the following methods:
     - Advance the semester to the next state so that further steps are allowed.
 """
 import decimal
-from typing import List, Optional, Tuple
+from typing import Optional, Set, Tuple
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -92,7 +92,7 @@ class CdESemesterBackend(CdELastschriftBackend):
             return self.sql_update(rs, "cde.org_period", period)
 
     @access("cde_admin")
-    def allowed_semester_steps(self, rs: RequestState) -> List[SemesterSteps]:
+    def allowed_semester_steps(self, rs: RequestState) -> Set[SemesterSteps]:
         """Helper to determine which semester steps may currently be performed.
 
         :returns: A list of all valid SemesterSteps.
@@ -100,32 +100,32 @@ class CdESemesterBackend(CdELastschriftBackend):
         with Atomizer(rs):
             period_id = self.current_period(rs)
             period = self.get_period(rs, period_id)
-        ret = []
+        ret = set()
 
         # at the beginning of the semester, do billing and archival_notification
         if not period["billing_done"]:
-            ret.append(SemesterSteps.billing)
+            ret.add(SemesterSteps.billing)
         if not period["archival_notification_done"]:
-            ret.append(SemesterSteps.archival_notification)
+            ret.add(SemesterSteps.archival_notification)
         if ret:
             return ret
 
         # after both are done, next ones are member ejections and archival
         if not period["ejection_done"]:
-            ret.append(SemesterSteps.ejection)
+            ret.add(SemesterSteps.ejection)
         if not period["archival_done"]:
-            ret.append(SemesterSteps.automated_archival)
+            ret.add(SemesterSteps.automated_archival)
         if ret:
             return ret
 
         # after both are done, next one is balance update
         if not period["balance_done"]:
-            ret.append(SemesterSteps.balance)
+            ret.add(SemesterSteps.balance)
         if ret:
             return ret
 
         # finally, we may advance to the next semester
-        ret.append(SemesterSteps.advance)
+        ret.add(SemesterSteps.advance)
         return ret
 
     @access("finance_admin")

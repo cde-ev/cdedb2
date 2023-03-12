@@ -1120,11 +1120,6 @@ class SemesterSteps(enum.Enum):
     advance = 30
     error = 100
 
-    def __eq__(self, other: Any) -> bool:
-        if isinstance(other, str):
-            return self.name == other  # pylint: disable=comparison-with-callable
-        return super().__eq__(other)
-
 
 UMLAUT_MAP = {
     "ä": "ae", "æ": "ae",
