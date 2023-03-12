@@ -7,7 +7,7 @@ import decimal
 import pytz
 
 import cdedb.database.constants as const
-from cdedb.common import SemesterSteps
+from cdedb.backend.cde.semester import AllowedSemesterSteps
 from cdedb.common.exceptions import QuotaException
 from cdedb.common.fields import (
     PERSONA_CDE_FIELDS, PERSONA_CORE_FIELDS, PERSONA_EVENT_FIELDS,
@@ -424,43 +424,43 @@ class TestCdEBackend(BackendTest):
                 self.assertFalse(v)
 
         # step 2
-        self.assertEqual({SemesterSteps.ejection, SemesterSteps.automated_archival},
+        self.assertEqual(AllowedSemesterSteps(ejection=True, automated_archival=True),
                          self.cde.allowed_semester_steps(self.key))
 
         if self.user_in("anton"):
             self.cde.finish_semester_ejection(self.key)
-            self.assertEqual({SemesterSteps.automated_archival},
+            self.assertEqual(AllowedSemesterSteps(automated_archival=True),
                              self.cde.allowed_semester_steps(self.key))
         elif self.user_in("farin"):
             self.cde.finish_automated_archival(self.key)
-            self.assertEqual({SemesterSteps.ejection},
+            self.assertEqual(AllowedSemesterSteps(ejection=True),
                              self.cde.allowed_semester_steps(self.key))
 
         if self.user_in("anton"):
             self.cde.finish_automated_archival(self.key)
         elif self.user_in("farin"):
             self.cde.finish_semester_ejection(self.key)
-        self.assertEqual({SemesterSteps.balance},
+        self.assertEqual(AllowedSemesterSteps(balance=True),
                          self.cde.allowed_semester_steps(self.key))
 
         # step 3
         self.cde.finish_semester_balance_update(self.key)
-        self.assertEqual({SemesterSteps.advance},
+        self.assertEqual(AllowedSemesterSteps(advance=True),
                          self.cde.allowed_semester_steps(self.key))
 
         # step 4 (in the UI, this is the first part of step 1)
         self.cde.advance_semester(self.key)
-        self.assertEqual({SemesterSteps.billing, SemesterSteps.archival_notification},
+        self.assertEqual(AllowedSemesterSteps(billing=True, archival_notification=True),
                          self.cde.allowed_semester_steps(self.key))
 
         # step 1
         if self.user_in("anton"):
             self.cde.finish_semester_bill(self.key)
-            self.assertEqual({SemesterSteps.archival_notification},
+            self.assertEqual(AllowedSemesterSteps(archival_notification=True),
                              self.cde.allowed_semester_steps(self.key))
         elif self.user_in("farin"):
             self.cde.finish_archival_notification(self.key)
-            self.assertEqual({SemesterSteps.billing},
+            self.assertEqual(AllowedSemesterSteps(billing=True),
                              self.cde.allowed_semester_steps(self.key))
         else:
             self.fail("Invalid user configuration for this test.")
@@ -469,7 +469,7 @@ class TestCdEBackend(BackendTest):
             self.cde.finish_archival_notification(self.key)
         elif self.user_in("farin"):
             self.cde.finish_semester_bill(self.key)
-        self.assertEqual({SemesterSteps.ejection, SemesterSteps.automated_archival},
+        self.assertEqual(AllowedSemesterSteps(ejection=True, automated_archival=True),
                          self.cde.allowed_semester_steps(self.key))
 
     @as_users("vera")

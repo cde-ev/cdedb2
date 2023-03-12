@@ -50,9 +50,9 @@
     </script>
 
     <div class="row">
-        {% set in_step_1 = enums.SemesterSteps.advance in allowed_semester_steps
-                           or enums.SemesterSteps.billing in allowed_semester_steps
-                           or enums.SemesterSteps.archival_notification in allowed_semester_steps %}
+        {% set in_step_1 = allowed_semester_steps.advance
+                           or allowed_semester_steps.billing
+                           or allowed_semester_steps.archival_notification %}
         {% set during_step_1 = period["billing_state"] or period["archival_notification_state"] %}
         <div class="col-md-12">
             <div id="payment-request" class="panel {% if in_step_1 %}panel-primary{% else %}panel-default{% endif %}">
@@ -128,8 +128,8 @@
             </div>
         </div>
 
-        {% set in_step_2 = enums.SemesterSteps.ejection in allowed_semester_steps
-                           or enums.SemesterSteps.automated_archival in allowed_semester_steps %}
+        {% set in_step_2 = allowed_semester_steps.ejection
+                           or allowed_semester_steps.automated_archival %}
         {% set during_step_2 = period['ejection_state'] or period['archival_state'] %}
         <div class="col-md-12">
             <div id="eject-members" class="panel {% if in_step_2 %}panel-primary{% else %}panel-default{% endif %}">
@@ -213,7 +213,7 @@
             </div>
         </div>
 
-        {% set in_step_3 = enums.SemesterSteps.balance in allowed_semester_steps %}
+        {% set in_step_3 = allowed_semester_steps.balance %}
         {% set during_step_3 = period['balance_state'] %}
         <div class="col-md-12">
             <div id="balance-update" class="panel {% if in_step_3 %}panel-primary{% else %}panel-default{% endif %}">

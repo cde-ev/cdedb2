@@ -13,6 +13,7 @@ For every step "foo" of semester management, there are the following methods:
   - `finish_foo`
     - Advance the semester to the next state so that further steps are allowed.
 """
+import dataclasses
 import decimal
 from typing import Optional, Set, Tuple
 
@@ -21,14 +22,28 @@ import cdedb.database.constants as const
 from cdedb.backend.cde import CdELastschriftBackend
 from cdedb.backend.common import access, affirm_validation as affirm
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, RequestState, SemesterSteps, now,
-    unwrap,
+    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, RequestState, now, unwrap,
 )
 from cdedb.common.exceptions import ArchiveError
 from cdedb.common.fields import EXPULS_PERIOD_FIELDS, ORG_PERIOD_FIELDS
 from cdedb.common.n_ import n_
 from cdedb.database.connection import Atomizer
 from cdedb.filter import money_filter
+
+
+@dataclasses.dataclass
+class AllowedSemesterSteps:
+    billing: bool = False
+    archival_notification: bool = False
+    ejection: bool = False
+    automated_archival: bool = False
+    balance: bool = False
+    advance: bool = False
+
+    @property
+    def any(self) -> bool:
+        """Is any semester step allowed?"""
+        return any(value for value in dataclasses.asdict(self).values())
 
 
 class CdESemesterBackend(CdELastschriftBackend):
@@ -92,48 +107,45 @@ class CdESemesterBackend(CdELastschriftBackend):
             return self.sql_update(rs, "cde.org_period", period)
 
     @access("cde_admin")
-    def allowed_semester_steps(self, rs: RequestState) -> Set[SemesterSteps]:
-        """Helper to determine which semester steps may currently be performed.
-
-        :returns: A list of all valid SemesterSteps.
-        """
+    def allowed_semester_steps(self, rs: RequestState) -> AllowedSemesterSteps:
+        """Helper to determine which semester steps may currently be performed."""
         with Atomizer(rs):
             period_id = self.current_period(rs)
             period = self.get_period(rs, period_id)
-        ret = set()
+        allowed_steps = AllowedSemesterSteps()
 
         # at the beginning of the semester, do billing and archival_notification
         if not period["billing_done"]:
-            ret.add(SemesterSteps.billing)
+            allowed_steps.billing = True
         if not period["archival_notification_done"]:
-            ret.add(SemesterSteps.archival_notification)
-        if ret:
-            return ret
+            allowed_steps.archival_notification = True
+        if allowed_steps.any:
+            return allowed_steps
 
         # after both are done, next ones are member ejections and archival
         if not period["ejection_done"]:
-            ret.add(SemesterSteps.ejection)
+            allowed_steps.ejection = True
         if not period["archival_done"]:
-            ret.add(SemesterSteps.automated_archival)
-        if ret:
-            return ret
+            allowed_steps.automated_archival = True
+        if allowed_steps.any:
+            return allowed_steps  # type: ignore[unreachable]
 
         # after both are done, next one is balance update
         if not period["balance_done"]:
-            ret.add(SemesterSteps.balance)
-        if ret:
-            return ret
+            allowed_steps.balance = True
+        if allowed_steps.any:
+            return allowed_steps  # type: ignore[unreachable]
 
         # finally, we may advance to the next semester
-        ret.add(SemesterSteps.advance)
-        return ret
+        allowed_steps.advance = True
+        return allowed_steps
 
     @access("finance_admin")
     def advance_semester(self, rs: RequestState) -> DefaultReturnCode:
         """Mark  the current semester as finished and create a new semester."""
         with Atomizer(rs):
             current_id = self.current_period(rs)
-            if SemesterSteps.advance not in self.allowed_semester_steps(rs):
+            if not self.allowed_semester_steps(rs).advance:
                 raise RuntimeError(n_("Current period not finalized."))
             update = {
                 'id': current_id,
@@ -154,7 +166,7 @@ class CdESemesterBackend(CdELastschriftBackend):
         with Atomizer(rs):
             period_id = self.current_period(rs)
             period = self.get_period(rs, period_id)
-            if SemesterSteps.billing not in self.allowed_semester_steps(rs):
+            if not self.allowed_semester_steps(rs).billing:
                 raise RuntimeError(n_("Billing already done for this period."))
             period_update = {
                 'id': period_id,
@@ -176,8 +188,7 @@ class CdESemesterBackend(CdELastschriftBackend):
         with Atomizer(rs):
             period_id = self.current_period(rs)
             period = self.get_period(rs, period_id)
-            if (SemesterSteps.archival_notification
-                    not in self.allowed_semester_steps(rs)):
+            if not self.allowed_semester_steps(rs).archival_notification:
                 raise RuntimeError(n_("Archival notifications done for this period."))
             period_update = {
                 'id': period_id,
@@ -197,7 +208,7 @@ class CdESemesterBackend(CdELastschriftBackend):
         with Atomizer(rs):
             period_id = self.current_period(rs)
             period = self.get_period(rs, period_id)
-            if SemesterSteps.automated_archival not in self.allowed_semester_steps(rs):
+            if not self.allowed_semester_steps(rs).automated_archival:
                 raise RuntimeError(n_("Wrong timing for automated archival."))
             period_update = {
                 'id': period_id,
@@ -217,7 +228,7 @@ class CdESemesterBackend(CdELastschriftBackend):
         with Atomizer(rs):
             period_id = self.current_period(rs)
             period = self.get_period(rs, period_id)
-            if SemesterSteps.ejection not in self.allowed_semester_steps(rs):
+            if not self.allowed_semester_steps(rs).ejection:
                 raise RuntimeError(n_("Wrong timing for ejection."))
             period_update = {
                 'id': period_id,
@@ -239,7 +250,7 @@ class CdESemesterBackend(CdELastschriftBackend):
         with Atomizer(rs):
             period_id = self.current_period(rs)
             period = self.get_period(rs, period_id)
-            if SemesterSteps.balance not in self.allowed_semester_steps(rs):
+            if not self.allowed_semester_steps(rs).balance:
                 raise RuntimeError(n_("Not the right time to finish balance update."))
             period_update = {
                 'id': period_id,
@@ -566,7 +577,7 @@ class CdESemesterBackend(CdELastschriftBackend):
         """
         period_id = affirm(int, period_id)
         with Atomizer(rs):
-            if SemesterSteps.balance not in self.allowed_semester_steps(rs):
+            if not self.allowed_semester_steps(rs).balance:
                 raise RuntimeError(n_("Wrong timing for removing exmembers."))
             zero = decimal.Decimal("0.00")
             query = ("SELECT COALESCE(SUM(balance), 0) as total,"

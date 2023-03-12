@@ -13,7 +13,7 @@ from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.common import RequestState, SemesterSteps, lastschrift_reference, unwrap
+from cdedb.common import RequestState, lastschrift_reference, unwrap
 from cdedb.common.fields import LOG_FIELDS_COMMON
 from cdedb.common.n_ import n_
 from cdedb.frontend.cde.base import CdEBaseFrontend
@@ -60,11 +60,11 @@ class CdESemesterMixin(CdEBaseFrontend):
         # advance to the next semester
         # This does not throw an error if we may not advance, since the function must
         #  be idempotent if the sending crushes midway.
-        if SemesterSteps.advance in self.cdeproxy.allowed_semester_steps(rs):
+        if self.cdeproxy.allowed_semester_steps(rs).advance:
             self.cdeproxy.advance_semester(rs)
 
         period_id = self.cdeproxy.current_period(rs)
-        if SemesterSteps.billing not in self.cdeproxy.allowed_semester_steps(rs):
+        if not self.cdeproxy.allowed_semester_steps(rs).billing:
             rs.notify("error", n_("Billing already done."))
             return self.redirect(rs, "cde/show_semester")
         open_lastschrift = self.determine_open_permits(rs)
@@ -152,7 +152,7 @@ class CdESemesterMixin(CdEBaseFrontend):
         if rs.has_validation_errors():  # pragma: no cover
             self.redirect(rs, "cde/show_semester")
         period_id = self.cdeproxy.current_period(rs)
-        if SemesterSteps.ejection not in self.cdeproxy.allowed_semester_steps(rs):
+        if not self.cdeproxy.allowed_semester_steps(rs).ejection:
             rs.notify("error", n_("Wrong timing for ejection."))
             return self.redirect(rs, "cde/show_semester")
 
@@ -213,7 +213,7 @@ class CdESemesterMixin(CdEBaseFrontend):
         if rs.has_validation_errors():  # pragma: no cover
             self.redirect(rs, "cde/show_semester")
         period_id = self.cdeproxy.current_period(rs)
-        if SemesterSteps.balance not in self.cdeproxy.allowed_semester_steps(rs):
+        if not self.cdeproxy.allowed_semester_steps(rs).balance:
             rs.notify("error", n_("Wrong timing for balance update."))
             return self.redirect(rs, "cde/show_semester")
 
