@@ -39,6 +39,7 @@
                 $('#revokeform').cdedbProtectAction("{{ gettext("This action cannot be undone.") }}");
                 $('#skiptransactionform').cdedbProtectAction("{{ gettext("This action cannot be undone.") }}");
                 $('#generatetransactionform').cdedbProtectAction("{{ gettext("Direct Debit will be created.") }}");
+                $('.rollback-form').cdedbProtectAction("{{ gettext("This action cannot be undone.") }}");
                 $('.failure-form').cdedbProtectAction("{{ gettext("This action cannot be undone.") }}");
                 $('.success-form').cdedbProtectAction("{{ gettext("This action cannot be undone.") }}");
             });
@@ -224,15 +225,14 @@
                                 <form action="{{ cdedblink('cde/lastschrift_receipt',
                                                            {'lastschrift_id': transaction['lastschrift_id'],
                                                             'transaction_id': transaction_id}) }}"
-                                    method="GET" id="receiptform{{ transaction_id }}"
-                                    class="rollback-form">
+                                    method="GET" id="receiptform{{ transaction_id }}">
                                     {{ util.input_submit(label=gettext("Donation receipt"), aclass="btn btn-xs btn-default",
                                                          icon='download') }}
                                 </form>
                                 <form action="{{ cdedblink('cde/lastschrift_rollback_transaction',
                                                {'lastschrift_id': transaction['lastschrift_id'],
                                                 'transaction_id': transaction_id}) }}"
-                                    method="POST" id="transactionrollbackform{{ transaction_id }}">
+                                    method="POST" id="transactionrollbackform{{ transaction_id }}" class="rollback-form">
                                     {{ util.anti_csrf_token('cde/lastschrift_rollback_transaction') }}
                                     {{ util.input_hidden(name="persona_id", value=values['persona_id']) }}
                                     {{ util.input_submit(label=gettext("Reverse"), aclass="btn btn-xs btn-warning",
