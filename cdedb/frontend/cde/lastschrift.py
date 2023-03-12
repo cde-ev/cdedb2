@@ -75,7 +75,8 @@ class CdELastschriftMixin(CdEBaseFrontend):
             persona = personas[all_lastschrifts[lastschrift_id]["persona_id"]]
             return transaction['issued_at'], *EntitySorter.persona(persona)
 
-        sorted_transactions = keydictsort_filter(transactions, sortkey=transaction_sortkey)
+        sorted_transactions = keydictsort_filter(
+            transactions, sortkey=transaction_sortkey)
         payment_date = self._calculate_payment_date()
 
         return self.render(rs, "lastschrift/lastschrift_index", {
@@ -580,7 +581,6 @@ class CdELastschriftMixin(CdEBaseFrontend):
             work_dir = pathlib.Path(tmp_dir) / 'workdir'
             work_dir.mkdir()
             with open(work_dir / "lastschrift_receipt.tex", 'w', encoding='UTF-8') as f:
-                #raise RuntimeError(tex)
                 f.write(tex)
             logo_src = self.conf["REPOSITORY_PATH"] / "misc/cde-logo.jpg"
             shutil.copy(logo_src, work_dir / "cde-logo.jpg")
