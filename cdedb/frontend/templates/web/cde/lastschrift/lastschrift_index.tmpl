@@ -39,6 +39,11 @@
             This sends a notification to the members informing them about the transaction.
         {% endtrans %}
     </p>
+    <p>
+        {% trans date=payment_date|date(lang=lang) %}
+           Transactions which are initialised today will be booked at {{ date }}.
+        {% endtrans %}
+    </p>
 
     <table class="table table-condensed" id="open-dd-authorization">
         <tbody>

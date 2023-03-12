@@ -120,6 +120,11 @@
     {% if transactions or active_open %}
         <h2>{% trans %}Transactions{% endtrans %}</h2>
 		{% if active_open and "finance" in user.admin_views %}
+            <p>
+                {% trans date=payment_date|date(lang=lang) %}
+                    Transactions which are initialised today will be booked at {{ date }}.
+                {% endtrans %}
+            </p>
             <div class="p">
                 <form action="{{ cdedblink('cde/lastschrift_download_sepapain') }}" method="GET"
                     id="downloadsepapainform" style="display: inline;">

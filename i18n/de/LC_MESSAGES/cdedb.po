@@ -8740,6 +8740,9 @@ msgstr ""
 "Klick auf „Bankeinzug ausführen“. Dies versendet eine Benachrichtigung an "
 "die Mitglieder über den bevorstehenden Lastschrifteinzug."
 
+msgid "Transactions which are initialised today will be booked at %(date)s."
+msgstr "Transaktionen, die heute initialisiert werden, werden am %(date)s gebucht."
+
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:57
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:86
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:121

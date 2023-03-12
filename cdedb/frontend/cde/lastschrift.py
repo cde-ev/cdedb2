@@ -75,10 +75,12 @@ class CdELastschriftMixin(CdEBaseFrontend):
             return transaction['issued_at'], *EntitySorter.persona(persona)
 
         sorted_transactions = keydictsort_filter(transactions, sortkey=transaction_sortkey)
+        payment_date = self._calculate_payment_date()
 
         return self.render(rs, "lastschrift/lastschrift_index", {
             'lastschrifts': lastschrifts, 'personas': personas,
-            'transactions': sorted_transactions, 'all_lastschrifts': all_lastschrifts})
+            'transactions': sorted_transactions, 'all_lastschrifts': all_lastschrifts,
+            'payment_date': payment_date})
 
     @access("member", "finance_admin")
     def lastschrift_show(self, rs: RequestState, persona_id: int) -> Response:
@@ -109,10 +111,12 @@ class CdELastschriftMixin(CdEBaseFrontend):
                 active_permit = lastschrift['id']
         active_open = bool(
             active_permit and self.determine_open_permits(rs, (active_permit,)))
+        payment_date = self._calculate_payment_date()
         return self.render(rs, "lastschrift/lastschrift_show", {
             'lastschrifts': lastschrifts, 'main_persona': main_persona,
             'active_permit': active_permit, 'active_open': active_open,
             'personas': personas, 'transactions': transactions,
+            'payment_date': payment_date,
         })
 
     @access("finance_admin")
