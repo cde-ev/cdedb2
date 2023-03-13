@@ -1742,6 +1742,8 @@ class CoreBaseBackend(AbstractBackend):
                 and not (rs.user.roles
                          & {"event_admin", "cde_admin", "core_admin",
                             "droid_quick_partial_export"})):
+            # Accessing the event scheme from the core backend is a bit of a
+            # transgression, but we value the added security higher than correctness.
             query = """
                 SELECT DISTINCT
                     regs.id, regs.persona_id
