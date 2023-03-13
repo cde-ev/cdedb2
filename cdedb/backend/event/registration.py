@@ -1199,7 +1199,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
     def _calculate_complex_fee(self, rs: RequestState, reg: CdEDBObject, *,
                                event: CdEDBObject, is_member: bool = None,
-                               is_orga: bool = None
+                               is_orga: bool = None, visual_debug: bool = False,
                                ) -> RegistrationFeeData:
         """Helper function to calculate the fee for one registration.
 
@@ -1213,6 +1213,8 @@ class EventRegistrationBackend(EventBaseBackend):
 
         :param is_member: If this is None, retrieve membership status here.
         :param is_orga: If this is None, determine orga status regularly.
+        :param visual_debug: If True, create a html representation of the
+            evaluated condition.
         """
         ret = {}
 
@@ -1237,7 +1239,7 @@ class EventRegistrationBackend(EventBaseBackend):
             }
             amount = decimal.Decimal(0)
             active_fees = set()
-            visual_debug = {}
+            visual_debug_data: Dict[int, str] = {}
             for fee in event['fees'].values():
                 parse_result = fcp_parsing.parse(fee['condition'])
                 if fcp_evaluation.evaluate(
@@ -1245,9 +1247,12 @@ class EventRegistrationBackend(EventBaseBackend):
                         other_bools):
                     amount += fee['amount']
                     active_fees.add(fee['id'])
-                visual_debug[fee['id']] = fcp_roundtrip.visual_debug(
-                    parse_result, reg_bool_fields, reg_part_involvement, other_bools)[1]
-            ret[tmp_is_member] = RegistrationFee(amount, active_fees, visual_debug)
+                if visual_debug_data:
+                    visual_debug_data[fee['id']] = fcp_roundtrip.visual_debug(
+                        parse_result, reg_bool_fields, reg_part_involvement,
+                        other_bools
+                    )[1]
+            ret[tmp_is_member] = RegistrationFee(amount, active_fees, visual_debug_data)
 
         if is_member is None:
             is_member = self.core.get_persona(rs, reg['persona_id'])['is_member']
@@ -1304,7 +1309,8 @@ class EventRegistrationBackend(EventBaseBackend):
             }
         }
         return self._calculate_complex_fee(
-            rs, fake_registration, event=event, is_member=is_member, is_orga=is_orga)
+            rs, fake_registration, event=event, is_member=is_member, is_orga=is_orga,
+            visual_debug=True)
 
     @access("event")
     def calculate_fees(self, rs: RequestState, registration_ids: Collection[int]

@@ -168,6 +168,11 @@ class EventBaseFrontend(AbstractUserFrontend):
         return super().is_admin(rs)
 
     def is_orga(self, rs: RequestState, event_id: int) -> bool:
+        """Whether the user has orga access to the given event.
+
+        Note that this includes admins who are not orgas.
+        If necessary, this distinction should get a keyword argument.
+        """
         return event_id in rs.user.orga or self.is_admin(rs)
 
     def is_locked(self, event: CdEDBObject) -> bool:

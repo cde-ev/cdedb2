@@ -3,8 +3,8 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}
     {{ util.cdedb_script('cdedb_helper.js') }}
-    {{ util.cdedb_script('cdedb_dynamicrow.js') }}
 {% endblock %}
+{% set jshint='weak' %}
 
 {% block title %}
     {% if ambience['fee'] %}
@@ -54,4 +54,7 @@
         {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("event/fee_summary")) }}
     </form>
 
+    <script nonce="{{ csp_nonce }}">
+        $('#configureeventfeeform').cdedbProtectChanges();
+    </script>
 {% endblock %}

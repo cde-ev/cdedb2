@@ -46,6 +46,11 @@ Folgende Operatoren stehen zur Verfügung, um diese Tokens zu verknüpfen:
 * ``or`` (Ist mindestens einer der verknüpften Tokens wahr?)
 * ``xor`` (Ist genau einer der verknüpften Tokens wahr?)
 
+Die Operatoren sind in der Reihenfolge ihrer Präzedenz gelistet, d.h. ``not`` gilt
+vor ``and``, ``and`` gilt vor ``or``, ``or`` vor ``xor``, etc.
+Zusätzlich ist es möglich runde Klammern (``()``) zu verwenden um die
+Auswertungsreihenfolge zu verändern.
+
 Die Verwendung solcher Formeln sei hier anhand eines Beispiels erläutert:
 
 Beispiel 1
@@ -120,7 +125,7 @@ errichten, wenn sie teilnehmen möchten.
 Wer eine Doku möchte, muss 10 Euro extra zahlen.
 
 * ``any_part AND NOT is_member`` => 8 Euro
-* ``any_part field.doku`` => 10 Euro
+* ``any_part AND field.doku`` => 10 Euro
 
 
 Die entsprechenden :doc:`eigenen Datenfelder <Handbuch_Orga_Datenfelder>` vom Typ ``Anmeldungsfeld``
