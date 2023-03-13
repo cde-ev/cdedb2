@@ -2154,23 +2154,6 @@ def assembly_guard(fun: F) -> F:
     return cast(F, new_fun)
 
 
-def check_dataclass(rs: RequestState, type_: Type[T], value: Any,
-                    name: str = None, **kwargs: Any) -> Optional[T]:
-    """Wrapper to call asserts in :py:mod:`cdedb.validation`.
-
-    This is similar to :func:`~cdedb.frontend.common.check_validation`
-    but used for dataclass objects.
-    """
-    if name is not None:
-        ret, errs = validate.validate_check_dataclass(
-            type_, value, ignore_warnings=rs.ignore_warnings, argname=name, **kwargs)
-    else:
-        ret, errs = validate.validate_check_dataclass(
-            type_, value, ignore_warnings=rs.ignore_warnings, **kwargs)
-    rs.extend_validation_errors(errs)
-    return ret
-
-
 def check_validation(rs: RequestState, type_: Type[T], value: Any,
                      name: str = None, **kwargs: Any) -> Optional[T]:
     """Wrapper to call checks in :py:mod:`cdedb.validation`.

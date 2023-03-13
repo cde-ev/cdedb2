@@ -224,7 +224,7 @@ def validate_assert_dataclass(type_: Type[T], value: Any, ignore_warnings: bool,
     subtype, validator = _validate_dataclass_preprocess(type_, value)
     val = dataclasses.asdict(value)
     validated = validate_assert(
-        validator, val, ignore_warnings=ignore_warnings, **kwargs)
+        validator, val, ignore_warnings=ignore_warnings, subtype=subtype, **kwargs)
     return _validate_dataclass_postprocess(subtype, validated)
 
 
@@ -257,22 +257,6 @@ def validate_assert_optional(type_: Type[T], value: Any, ignore_warnings: bool,
                              **kwargs: Any) -> Optional[T]:
     """Wrapper to avoid a lot of type-ignore statements due to a mypy bug."""
     return validate_assert(Optional[type_], value, ignore_warnings, **kwargs)  # type: ignore[arg-type]
-
-
-def validate_check_dataclass(type_: Type[T], value: Any, ignore_warnings: bool,
-                              **kwargs: Any) -> Tuple[Optional[T], List[Error]]:
-    """Wrapper of validate_assert that accepts dataclasses.
-
-    Allows for subclasses, and figures out the appropriate superclass, for which
-    a validator exists, dynamically."""
-    subtype, validator = _validate_dataclass_preprocess(type_, value)
-    val = dataclasses.asdict(value)
-    validated, errors = validate_check(
-        validator, val, ignore_warnings=ignore_warnings, **kwargs)
-    if validated is None:
-        return None, errors
-    else:
-        return _validate_dataclass_postprocess(subtype, validated), errors
 
 
 def validate_check(type_: Type[T], value: Any, ignore_warnings: bool,
@@ -3954,83 +3938,36 @@ def _serialized_event_questionnaire(
     return SerializedEventQuestionnaire(val)
 
 
-MAILINGLIST_TYPE_DEPENDENT_FIELDS: Mapping[str, Any] = {
-    'assembly_id': NoneType,
-    'event_id': NoneType,
-    'registration_stati': EmptyList,
-}
-
-
 @_add_typed_validator
 def _mailinglist(
-    val: Any, argname: str = "mailinglist", *,
-    creation: bool = False, _allow_readonly: bool = False, **kwargs: Any
+    val: Any, argname: str = "mailinglist", *, creation: bool = False,
+    subtype: models_ml.MLType = models_ml.Mailinglist, **kwargs: Any
 ) -> Mailinglist:
     """
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
+    :param subtype: Mandatory parameter to check for suitability for the given subtype.
     """
 
     val = _mapping(val, argname, **kwargs)
 
-    # TODO replace these with generic types
-    if "ml_type" not in val:
+    if subtype == models_ml.Mailinglist:
         raise ValidationSummary(ValueError(
             "ml_type", "Must provide ml_type for setting mailinglist."))
-    atype = models_ml.get_ml_type(val["ml_type"])
 
-    mandatory_fields, optional_fields = models_ml.Mailinglist.validation_fields(
-        creation=creation)
-
-    # replace the type specific fields with their absence defaults
-    # TODO move this into the validation_fields function once the MailinglistTypes are
-    #  properly implemented.
-    mandatory_type_fields = atype.mandatory_validation_fields.keys()
-    optional_type_fields = atype.optional_validation_fields.keys()
-    type_fields = {*mandatory_type_fields, *optional_type_fields}
-    for name in MAILINGLIST_TYPE_DEPENDENT_FIELDS:
-        if name in mandatory_type_fields and name in mandatory_fields:
-            pass
-        elif name in mandatory_type_fields and name in optional_fields:
-            mandatory_fields[name] = optional_fields[name]
-            del optional_fields[name]
-        elif name in optional_type_fields and name in mandatory_fields:
-            optional_fields[name] = mandatory_fields[name]
-            del mandatory_fields[name]
-        elif name in optional_type_fields and name in optional_fields:
-            pass
-        elif name not in type_fields:
-            if name in mandatory_fields:
-                del mandatory_fields[name]
-                optional_fields[name] = MAILINGLIST_TYPE_DEPENDENT_FIELDS[name]
-            elif name in optional_fields:
-                optional_fields[name] = MAILINGLIST_TYPE_DEPENDENT_FIELDS[name]
-            else:
-                raise RuntimeError("Impossible")
-        else:
-            raise RuntimeError("Impossible")
-
-    if not creation:
-        optional_fields.update(mandatory_fields)
-        del optional_fields["id"]
-        mandatory_fields = {"id": mandatory_fields["id"]}
-
+    mandatory_fields, optional_fields = subtype.validation_fields(creation=creation)
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
 
-    if val and "moderators" in val and not val["moderators"]:
-        # TODO is this legitimate (postpone after other errors?)
-        raise ValidationSummary(ValueError(
-            "moderators", n_("Must not be empty.")))
-
     errs = ValidationSummary()
 
+    if val and "moderators" in val and not val["moderators"]:
+        errs.append(ValueError("moderators", n_("Must not be empty.")))
     if "domain" not in val:
         errs.append(ValueError(
             "domain", "Must specify domain for setting mailinglist."))
     else:
-        atype = models_ml.get_ml_type(val["ml_type"])
-        if val["domain"].value not in atype.available_domains:
+        if val["domain"].value not in subtype.available_domains:
             errs.append(ValueError("domain", n_(
                 "Invalid domain for this mailinglist type.")))
 
