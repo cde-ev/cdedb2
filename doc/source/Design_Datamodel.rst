@@ -1,7 +1,7 @@
 Data Model Design
 =================
 
-In python, entities are modeled as ``dataclasses``, using the same named python package.
+In python, entities are modeled as ``dataclasses``, using the identically named python package.
 This makes coding with an IDE very convenient, since it provides proper knowledge about
 methods and attributes of those entities.
 
@@ -26,7 +26,8 @@ or if the data comes from the backend.
 Changes to an entity are modeled as incomplete data – only changes with regard to
 the current state of the entity are transmitted, not the entity as a whole in the new desired state.
 Consequently, changes which shall be applied to an entity are not modeled as dataclass,
-but as dict.
+but as dict. Nonetheless, the type information given in the dataclass is used for the validation
+of these dicts.
 
 At the moment, most entities are always modeled as dict. A long term goal is to rewrite
 the respective code to follow the paradigms described above.
