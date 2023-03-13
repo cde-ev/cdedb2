@@ -84,7 +84,7 @@ Beispiel 2
 ----------
 
 Es gibt eine SommerAkademie mit drei Teilen. Die Teilnahme am mittleren Teil
-ostet 230 Euro, während die beiden anderen Teile 215 Euro kosten.
+kostet 230 Euro, während die beiden anderen Teile 215 Euro kosten.
 
 * ``part.A1 OR part.A2 OR part.A3`` => 215 Euro
 * ``part.A2`` => 15 Euro
