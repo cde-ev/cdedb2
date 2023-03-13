@@ -3,7 +3,10 @@
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/event/generic.tmpl" as generic_event with context %}
-{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+    {{ util.cdedb_script('cdedb_register.js') }}
+{% endblock %}
 {% block title %}
     {% if preview %}
         {% trans title=ambience['event']['title'] %}
@@ -206,137 +209,20 @@
 
     <script nonce="{{ csp_nonce }}">
         var $form = $('#registerform');
-        $form.cdedbProtectChanges();
 
-        part_checkboxes = $form.find('[type="checkbox"][name="parts"]');
-        field_checkboxes = $form.find('[type="checkbox"][id^="event-input-fields"]');
-        field_selects = $form.find('select[id^="event-input-fields"]');
-        is_orga_checkbox = $('#fee-precompute-is-orga');
-        is_member_checkbox = $('#fee-precompute-is-member');
-
-        /* Map part to part selection checkbox ($-encapsulated) */
-        part_checkbox_map = {};
-        part_checkboxes.each(function(){
-            part_checkbox_map[$(this).val()] = $(this);
-        });
         ccos_per_part = {{ ccos_per_part|tojson }};
-        containers = $('.course_choice_container');
-        updateCourseChoiceContainers = function() {
-            /* Hide everything, then show available containers */
-            containers.each(function(){
-                $(this).hide();
-            });
-            Object.keys(ccos_per_part).forEach(function(key){
-                if (part_checkbox_map[key].prop('checked'))
-                    ccos_per_part[key].forEach(function(element){
-                        $('#course-choice-container-' + element).show();
-                    });
-            });
-        };
-
-        fee_preview = $form.find('[id="fee-preview"]');
-        nonmember_surcharge = $form.find('[id="nonmember-surcharge"]');
-        fee_summary = $form.find('[id="active-fee"]');
-        updateFeePreview = function() {
-            var part_ids = [];
-            part_checkboxes.each(function() {
-                if ($(this).prop('checked')) {
-                    part_ids.push($(this).val());
-                }
-            });
-            var field_ids = [];
-            field_checkboxes.each(function() {
-                if ($(this).prop('checked')) {
-                    field_ids.push($(this).parents('[id^="questionnaire_field_entry"]').data('field_id'));
-                }
-            });
-            field_selects.each(function() {
-                if ($(this).val() == 'True') {
-                    field_ids.push($(this).parents('[id^="questionnaire_field_entry"]').data('field_id'));
-                }
-            });
-
-            params = {
-                persona_id: {{ user.persona_id }},
-                part_ids: part_ids.join(","),
-                field_ids: field_ids.join(",")
-            }
-            if (is_orga_checkbox) {
-                params['is_orga'] = is_orga_checkbox.prop('checked');
-            }
-            if (is_member_checkbox) {
-                params['is_member'] = is_member_checkbox.prop('checked');
-            }
-
-            $.get('{{ cdedblink("event/precompute_fee") }}', params,
-                function(result) {
-                    fee_preview.html(result["fee"]);
-                    if (result["show_nonmember"]) {
-                        nonmember_surcharge.html(result["nonmember"]);
-                        nonmember_surcharge.parent().show();
-                    }
-                    else {
-                        nonmember_surcharge.parent().hide();
-                    }
-                    if (fee_summary) {
-                        fee_summary.each(function() {
-                            $(this).find('#active-fee-condition').html(result["visual_debug"][$(this).data("fee_id")]);
-                            title = $(this).find('#active-fee-title');
-                            orig_title = title.data('orig-title');
-                            if ($.inArray($(this).data('fee_id'), result["active_fees"]) >= 0) {
-                                title.html('{{ util.deko_checkbox(True).strip() + nbsp }}' + orig_title);
-                                title.attr('title', '{{ gettext("Active") }}').removeClass('alert-danger').addClass('alert-success');
-                            } else {
-                                title.html('{{ util.deko_checkbox(False).strip() + nbsp }}' + orig_title);
-                                title.attr('title', '{{ gettext("Inactive") }}').removeClass('alert-success').addClass('alert-danger');
-                            }
-                        });
-                    }
-                }
-            );
-        }
-
         part_map = {{ parts_per_track_group_per_course|tojson }};
 
-        var updateCourseChoiceOptions = function() {
-            $('.choice_group_select > option').each(function() {
-                course_id = $(this).val();
-                track_group_id = $(this).parent().attr('track_group_id');
-                if (!course_id || part_map[course_id][track_group_id].some(
-                        (part_id) => checkbox_map[part_id].prop('checked'))
-                ) {
-                    $(this).show();
-                } else {
-                    $(this).hide();
-                    if ($(this).parent().val() == course_id) {
-                        $(this).parent().val("");
-                    }
-                };
-            });
+        feePreviewConstants = {
+            'endpoint': '{{ cdedblink('event/precompute_fee') }}',
+            'persona_id': {{ user.persona_id }},
+            'deko_true': '{{ util.deko_checkbox(True).strip() + nbsp }}',
+            'deko_false': '{{ util.deko_checkbox(False).strip() + nbsp }}',
+            'title_active': '{{ gettext("Active") }}',
+            'title_inactive': '{{ gettext("Inactive") }}',
         }
 
-        if (part_checkboxes.length) {
-            part_checkboxes.change(updateCourseChoiceContainers);
-            updateCourseChoiceContainers();
-            part_checkboxes.change(updateFeePreview);
-            part_checkboxes.change(updateCourseChoiceOptions);
-        }
-        if (field_checkboxes.length) {
-            field_checkboxes.change(updateFeePreview);
-        }
-        if (field_selects.length) {
-            field_selects.change(updateFeePreview);
-        }
-        if (is_orga_checkbox) {
-            is_orga_checkbox.change(updateFeePreview);
-        }
-        if (is_member_checkbox) {
-            is_member_checkbox.change(updateFeePreview);
-        }
-        if (fee_summary) {
-            fee_summary.parents('table').show();
-        }
-
-        updateFeePreview();
+        $form.cdedbProtectChanges().dynamicCourseChoices(ccos_per_part, part_map)
+            .cdedbFeePreview(feePreviewConstants);
     </script>
 {% endblock %}
