@@ -59,7 +59,7 @@ Solidarzusatzbeitrag von 9 Euro bezahlt werden. Orgas sollen nichts zahlen.
 * ``any_part AND NOT is_member`` => 8 Euro
 * ``part.aka AND field.solidarity`` => 9 Euro
 
-die entsprechenden :doc:`Handbuch_Orga_Datenfelder` vom Typ ``Anmeldungsfeld`` müssen zuvor angelegt werden:
+die entsprechenden :doc:`eigenen Datenfelder <Handbuch_Orga_Datenfelder>` vom Typ ``Anmeldungsfeld`` müssen zuvor angelegt werden:
 
 1. * Feldname: "solidarity"
    * Datentyp: "Ja/Nein"
@@ -123,7 +123,7 @@ Wer eine Doku möchte, muss 10 Euro extra zahlen.
 * ``any_part field.doku`` => 10 Euro
 
 
-Die entsprechenden :doc:`Handbuch_Orga_Datenfelder` vom Typ ``Anmeldungsfeld``
+Die entsprechenden :doc:`eigenen Datenfelder <Handbuch_Orga_Datenfelder>` vom Typ ``Anmeldungsfeld``
 müssen zuvor angelegt werden:
 
 1. * Feldname: "one_part"
