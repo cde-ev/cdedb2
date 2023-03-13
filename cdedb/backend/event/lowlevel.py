@@ -36,6 +36,10 @@ from cdedb.fee_condition_parser.evaluation import ReferencedNames, get_reference
 
 @dataclasses.dataclass
 class EventFeesPerEntity:
+    """Simple container for data on event fee references.
+
+    Each member is a map of entities to a set of fees that reference that entity.
+    """
     fields: Dict[int, Set[int]]
     parts: Dict[int, Set[int]]
 

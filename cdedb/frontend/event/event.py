@@ -278,6 +278,10 @@ class EventEventMixin(EventBaseFrontend):
         for course in courses.values():
             for track_id in course['segments']:
                 blocked_parts.add(rs.ambience['event']['tracks'][track_id]['part_id'])
+        part_fees = self.eventproxy.get_event_fees_per_entity(rs, event_id).parts
+        for part_id, fees in part_fees.items():
+            if fees:
+                blocked_parts.add(part_id)
         return blocked_parts
 
     def _deletion_blocked_tracks(self, rs: RequestState, event_id: int) -> Set[int]:
@@ -320,9 +324,12 @@ class EventEventMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.part_summary(rs, event_id)
         if self.eventproxy.has_registrations(rs, event_id):
-            raise ValueError(n_("Registrations exist, no deletion."))
+            rs.notify("error", n_("Registrations exist, no deletion."))
+            return self.part_summary(rs, event_id)
         if part_id in self._deletion_blocked_parts(rs, event_id):
-            raise ValueError(n_("This part can not be deleted."))
+            rs.notify("error", n_("This part can not be deleted."))
+            return self.part_summary(rs, event_id)
+
 
         event = {
             'id': event_id,
