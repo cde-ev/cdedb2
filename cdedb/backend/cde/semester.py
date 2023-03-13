@@ -40,7 +40,6 @@ class AllowedSemesterSteps:
     balance: bool = False
     advance: bool = False
 
-    @property
     def any(self) -> bool:
         """Is any semester step allowed?"""
         return any(value for value in dataclasses.asdict(self).values())
@@ -119,7 +118,7 @@ class CdESemesterBackend(CdELastschriftBackend):
             allowed_steps.billing = True
         if not period["archival_notification_done"]:
             allowed_steps.archival_notification = True
-        if allowed_steps.any:
+        if allowed_steps.any():
             return allowed_steps
 
         # after both are done, next ones are member ejections and archival
@@ -127,14 +126,14 @@ class CdESemesterBackend(CdELastschriftBackend):
             allowed_steps.ejection = True
         if not period["archival_done"]:
             allowed_steps.automated_archival = True
-        if allowed_steps.any:
-            return allowed_steps  # type: ignore[unreachable]
+        if allowed_steps.any():
+            return allowed_steps
 
         # after both are done, next one is balance update
         if not period["balance_done"]:
             allowed_steps.balance = True
-        if allowed_steps.any:
-            return allowed_steps  # type: ignore[unreachable]
+        if allowed_steps.any():
+            return allowed_steps
 
         # finally, we may advance to the next semester
         allowed_steps.advance = True
