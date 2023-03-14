@@ -324,7 +324,7 @@ _QUERY_VIEWS = {
             SELECT
                 id, granted_at, revoked_at,
                 revoked_at IS NULL AS active_lastschrift,
-                amount, persona_id
+                persona_id
             FROM cde.lastschrift
             WHERE (granted_at, persona_id) IN (
                 SELECT MAX(granted_at) AS granted_at, persona_id
@@ -449,6 +449,7 @@ _QUERY_SPECS = {
             "is_searchable": QuerySpecEntry("bool", n_("Searchable")),
             "decided_search": QuerySpecEntry("bool", n_("Searchability Decided")),
             "balance": QuerySpecEntry("float", n_("Membership-Fee Balance")),
+            "donation": QuerySpecEntry("float", n_("Annual Donation")),
             "is_archived": QuerySpecEntry("bool", n_("Archived Account")),
             **{
                 k: QuerySpecEntry("bool", k, n_("Admin"))
@@ -469,7 +470,6 @@ _QUERY_SPECS = {
                 "datetime", n_("Lastschrift Revoked")),
             "lastschrift.active_lastschrift": QuerySpecEntry(
                 "bool", n_("Active Lastschrift")),
-            "lastschrift.amount": QuerySpecEntry("float", n_("Lastschrift Amount")),
             "notes": QuerySpecEntry("str", n_("Admin Notes")),
         },
     # Basic view of an event-realm user.

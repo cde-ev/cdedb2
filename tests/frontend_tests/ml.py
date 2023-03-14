@@ -14,7 +14,7 @@ from cdedb.common.query import QueryOperators
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
 from cdedb.devsamples import HELD_MESSAGE_SAMPLE, MockHeldMessage
 from cdedb.frontend.common import CustomCSVDialect
-from cdedb.ml_type_aux import CdeLokalMailinglist
+from cdedb.models.ml import CdeLokalMailinglist
 from tests.common import USER_DICT, FrontendTest, as_users, prepsql
 
 
@@ -799,6 +799,7 @@ class TestMlFrontend(FrontendTest):
         f['title'] = "Munkelwand"
         f['mod_policy'] = const.ModerationPolicy.unmoderated
         f['attachment_policy'] = const.AttachmentPolicy.pdf_only
+        f['convert_html'].checked = False
         f['subject_prefix'] = "munkel"
         f['maxsize'] = 512
         f['is_active'].checked = True
@@ -928,34 +929,16 @@ class TestMlFrontend(FrontendTest):
         for ml_type in const.MailinglistTypes:
             with self.subTest(ml_type=ml_type):
                 f['ml_type'] = ml_type
-                f['event_id'] = event_id
-                f['registration_stati'] = [
-                    const.RegistrationPartStati.participant,
-                    const.RegistrationPartStati.waitlist,
-                ]
-                f['assembly_id'] = assembly_id
-                # no ml type should allow event *and* assembly fields to be set
-                self.submit(f, check_notification=False)
-                if ml_type not in event_types:
-                    self.assertValidationError('event_id', "Muss leer sein.")
-                    self.assertValidationError("registration_stati",
-                                               "Muss eine leere Liste sein.",
-                                               index=0)
-                elif ml_type == const.MailinglistTypes.event_orga:
-                    self.assertValidationError("registration_stati",
-                                               "Muss eine leere Liste sein.",
-                                               index=0)
-                else:
-                    self.assertNonPresence("Muss eine leere Liste sein.")
-                if ml_type not in assembly_types:
-                    self.assertValidationError('assembly_id', "Muss leer sein.")
-
+                f['domain'] = const.MailinglistDomain.lists
                 f['event_id'] = ''
                 f['registration_stati'] = []
                 f['assembly_id'] = ''
                 if ml_type in general_types:
+                    if ml_type == const.MailinglistTypes.cdelokal:
+                        f["domain"] = const.MailinglistDomain.cdelokal
                     self.submit(f)
                 elif ml_type in event_types:
+                    f["domain"] = const.MailinglistDomain.aka
                     self.submit(f)  # only works if all event-associated ml
                     # types can also not be associated with an event, which may
                     # change in future
@@ -1227,6 +1210,7 @@ class TestMlFrontend(FrontendTest):
         f['mod_policy'] = const.ModerationPolicy.unmoderated
         f['subject_prefix'] = "party"
         f['attachment_policy'] = const.AttachmentPolicy.allow
+        f['convert_html'] = True
         f['maxsize'] = 1111
         self.submit(f)
 
@@ -1255,6 +1239,7 @@ class TestMlFrontend(FrontendTest):
         self.assertEqual("party", f['subject_prefix'].value)
         self.assertEqual(str(const.AttachmentPolicy.allow),
                          f['attachment_policy'].value)
+        self.assertEqual('True', f['convert_html'].value)
         self.assertEqual("1111", f['maxsize'].value)
 
     @as_users("janis")
@@ -1365,7 +1350,7 @@ class TestMlFrontend(FrontendTest):
         f['local_part'] = "littlewhinging"
         f['domain'] = const.MailinglistDomain.cdelokal
         self.assertEqual(len(f['domain'].options),
-                         len(CdeLokalMailinglist.domains))
+                         len(CdeLokalMailinglist.available_domains))
         moderator = USER_DICT["berta"]
         f['moderators'] = moderator["DB-ID"]
         self.submit(f)

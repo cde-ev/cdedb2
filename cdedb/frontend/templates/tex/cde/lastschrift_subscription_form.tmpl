@@ -4,11 +4,9 @@
 
     \makeatletter
     \def\@mysignature{%
-        \begin{tabular}{lll}
-        \makebox[3cm]{\dotfill} & \makebox[6cm]{\dotfill} &
-            <<% if not data["not_minor"] == True %>>\makebox[6cm]{\dotfill} <<% endif %>> \\
-        Ort, Datum & Unterschrift & <<% if not data["not_minor"] == True %>>\emph{bei Minderjährigen:}<<% endif %>>\\
-         & & <<% if not data["not_minor"] == True %>>Unterschrift Erziehungsberechtigte/-r<<% endif %>>\\
+        \begin{tabular}{ll}
+        \makebox[5cm]{\dotfill} & \makebox[10cm]{\dotfill} \\
+        \,Ort, Datum & \,Unterschrift Kontoinhaber/-in\\
         \end{tabular}}
     \setkomavar{signature}{\@mysignature}
     \makeatother
@@ -39,8 +37,9 @@
 
         \opening{}
 
+        \vspace{-3em}
         \begin{tabular}{ll}
-            Name &
+            Name des Mitglieds &
                 <<% if data["full_name"] %>>
                     <<< data["full_name"]|te >>>\\
                 <<% else %>>
@@ -82,7 +81,7 @@
                 <<% else %>>
                     \makebox[10cm]{\dotfill}\\
                 <<% endif %>>
-            Kontoinhaber (falls abweichend) &
+            Kontoinhaber/-in (falls abweichend) &
                 <<% if data["account_holder"] %>>
                     <<< data["acount_holder"]|te >>>\\
                 <<% else %>>
@@ -94,19 +93,22 @@
                 <<% else %>>
                     \makebox[10cm]{\dotfill}\\
                 <<% endif %>>
+            Initiale Spende &
+                <<% if data["donation"] %>>
+                    <<< data["donation"]|money|te >>>
+                <<% else %>>
+
+                    \kern2pt\makebox[1.35cm]{\dotfill}€ (mindestens <<< min_donation|money|te >>>, typischerweise <<< typical_donation|money|te >>>)
+                <<% endif %>>
         \end{tabular}
 
         \emph{SEPA-Lastschriftmandat:} Hiermit ermächtige ich den Club der Ehemaligen der Deutschen SchülerAkademien
-        e.\,V., von meinem oben angegebenem Konto mittels Lastschrift jährlich
-        \begin{center}
-            <<% if data["amount"] %>>
-                <<< data["amount"]|money|te >>>
-            <<% else %>>
-                \makebox[4cm]{\dotfill}€ (mindestens 25\,€)
-            <<% endif %>>
-        \end{center}
-        einzuziehen. Zugleich weise ich mein Kreditinstitut an, die von dem Club der Ehemaligen der Deutschen
-        SchülerAkademien e.\,V.  gezogenen Lastschriften einzulösen.
+        e.\,V., von meinem oben angegebenem Konto mittels Lastschrift den jährlichen Mitgliedsbeitrag
+        \textbf{zuzüglich} der in der Mitgliederdatenbank hinterlegten jährlichen Spende jährlich einzuziehen.
+        Zugleich weise ich mein Kreditinstitut an, die von dem Club der Ehemaligen der Deutschen
+        SchülerAkademien e.\,V.  gezogenen Lastschriften einzulösen. Die Höhe der einzuziehenden Spende kann ich jederzeit
+        in der Mitgliederdatenbank ändern. Eine Änderung wird zum nächsten Einzug gültig, sofern dieser nicht
+        bereits per Mail angekündigt wurde.
 
         \emph{Hinweis:} Ich kann innerhalb von acht Wochen, beginnend mit dem Belastungsdatum, die Erstattung des
         belasteten Betrages verlangen. Es gelten dabei die mit meinem Kreditinstitut vereinbarten Bedingungen. Die
@@ -114,24 +116,25 @@
 
         \enlargethispage*{5cm}
 
-        Von dem eingezogenen Betrag wird der jeweils geltende jährliche Mitgliedsbeitrag (derzeit <<< annual_fee >>>\,€) beglichen. Der
-        verbleibende Betrag ist eine Spende an den CdE e.\,V.  Der CdE e.\,V. beabsichtigt, mit einem Teil der so
-        eingehenden Mittel die Organisation, Betreuung und Durchführung von Deutschen SchülerAkademien durch Bildung
-        \& Begabung gem. GmbH, Bonn, zu unterstützen.
+        Der CdE e.\,V. beabsichtigt, mit einem Teil der auf diese Weise eingehenden Spendenmittel die Organisation,
+        Betreuung und Durchführung von Deutschen SchülerAkademien durch Bildung \& Begabung gGmbH, Bonn, zu unterstützen.
 
         \closing{}
 
         \ps\newpage
 
-        \subsection{Initiative 25+}
+        \subsection{Lastschriftinitiative}
 
-        Sofern Du die Erlaubnis dazu erteilst, zieht der CdE in Zukunft jährlich 25\,€ oder einen beliebigen höheren
-        Betrag als Lastschrift von Deinem Konto ein: 25+ eben.
-
-        Mit diesen mindestens 25\,€ wird zunächst der -- jeweils aktuelle -- Mitgliedsbeitrag für ein Jahr verrechnet,
-        derzeit also <<< annual_fee >>>\,€. Der Restbetrag kommt dem CdE e.\,V. als Spende zugute. Im Rahmen der Vereinsarbeit soll
-        darauf geachtet werden, dass in etwa 40 bis 50 Prozent davon der Deutschen SchülerAkademie gespendet oder für eine
+        Sofern Du die Erlaubnis dazu erteilst, zieht der CdE e.,V. in Zukunft wie oben beschrieben jährlich den
+        -- jeweils aktuellen -- Mitgliedsbeitrag (von derzeit <<< annual_fee|money >>>) zuzüglich einer in der Datenbank
+        angegebenen Spende ein.
+        Dabei gilt derzeit insgesamt ein Mindestbetrag von <<< (annual_fee + min_donation)|money|te >>>.
+        Im Rahmen der Vereinsarbeit soll darauf geachtet werden, dass von den dadurch eingehenden Spenden in etwa
+        40 bis 50 Prozent davon der Deutschen SchülerAkademie gespendet oder für eine
         sonstige Unterstützung der "`Idee SchülerAkademie"' verwendet werden.
+
+        Aus rechtlichen Gründen benötigen wir die Einzugsermächtigung im Original. Schicke uns daher bitte die
+        ausgefüllte und unterschriebene Ermächtigung an die oben aufgeführte Adresse zu.
 
         \subsection{Wofür benötigt der CdE Spenden?}
 
@@ -142,10 +145,20 @@
 
         \subsection{Die SchülerAkademie fördern}
 
-        Mit der \emph{Initiative 25+} soll außerdem ein Beschluss der Mitgliederversammlung 2008 umgesetzt und von nun
-        an die "`Idee SchülerAkademie"' auch finanziell unterstützt werden.  Dazu darf der CdE einen Teil der auf diesem
-        Weg erhaltenen Spenden an Bildung \& Begabung gem. GmbH weiterreichen oder aber auf anderem Wege die
-        SchülerAkademien fördern.
+        Mit der \emph{Lastschriftinitiative} (vormals: Initiative 25+) soll außerdem ein Beschluss der Mitgliederversammlung 2008
+        umgesetzt und von nun an die "`Idee SchülerAkademie"' auch finanziell unterstützt werden.  Dazu darf der CdE einen
+        Teil der auf diesem Weg erhaltenen Spenden an Bildung \& Begabung gem. GmbH weiterreichen oder aber auf anderem Wege
+        die SchülerAkademien fördern.
+
+        \subsection{Änderung des Lastschriftbetrags \& Kündigung}
+
+        Du kannst den Betrag für den Einzug jederzeit in der Datenbank\footnote{<<< cdedblink('core/mydata') >>>} anpassen. Falls du nicht selbst Kontoinhaber/-in bist,
+        muss diese Person natürlich vorher zustimmen. Du kannst das Lastschriftmandat außerdem jederzeit per Mail
+        an \url{<<< MANAGEMENT_ADDRESS >>>} kündigen.
+
+        Etwa zwei Wochen vor einem Lastschrifteinzug erhälst du eine Ankündigung per Mail über den anstehenden Einzug.
+        Ab diesem Zeitpunkt kann der Betrag nicht mehr geändert werden oder eine Kündigung erfolgen. Diese werden dann erst
+        mit dem nächsten Einzug wirksam.
 
         \subsection{Fragen?}
 

@@ -44,7 +44,7 @@
     {% endif %}
 {% endblock %}
 {% block content %}
-    {% if courses %}
+    {% if courses_exist %}
         {% if ambience['event']['tracks']|length > 1 or show_course_state %}
             {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass='panel-primary') %}
                 <form action="{{ cdedblink('event/course_list') }}" method="GET" id="coursefilterform"
@@ -61,6 +61,9 @@
                     {{ util.input_submit(label=gettext("Go!"), icon="filter") }}
                 </form>
             {% endcall %}
+        {% endif %}
+        {% if not courses %}
+            <p>{% trans %}No matching courses found.{% endtrans %}</p>
         {% endif %}
 
         {% if courses|length > 5 %}

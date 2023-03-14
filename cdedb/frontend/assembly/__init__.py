@@ -25,7 +25,6 @@ from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.ml_type_aux as ml_type
 from cdedb.backend.assembly import GroupedBallots
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, CdEDBObject, DefaultReturnCode, RequestState,
@@ -45,7 +44,9 @@ from cdedb.frontend.common import (
     assembly_guard, cdedburl, check_validation as check, drow_name, inspect_validation,
     periodic, process_dynamic_input, request_extractor,
 )
-from cdedb.models.ml import Mailinglist
+from cdedb.models.ml import (
+    AssemblyAssociatedMailinglist, AssemblyPresiderMailinglist, Mailinglist,
+)
 
 #: Magic value to signal abstention during _classical_ voting.
 #: This can not occur as a shortname since it contains forbidden characters.
@@ -297,7 +298,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         if presider:
             descr = ("Bitte wende Dich bei Fragen oder Problemen, die mit dieser"
                      " Versammlung zusammenhängen, über diese Liste an uns.")
-            presider_ml_data = Mailinglist(
+            presider_ml_data = AssemblyPresiderMailinglist(
                 id=vtypes.CreationID(vtypes.ProtoID(-1)),
                 title=f"{assembly['title']} Versammlungsleitung",
                 local_part=vtypes.EmailLocalPart(
@@ -306,16 +307,14 @@ class AssemblyFrontend(AbstractUserFrontend):
                 description=descr,
                 mod_policy=const.ModerationPolicy.unmoderated,
                 attachment_policy=const.AttachmentPolicy.allow,
+                convert_html=True,
                 subject_prefix=f"{assembly['shortname']}-leitung",
-                maxsize=ml_type.AssemblyPresiderMailinglist.maxsize_default,
+                maxsize=AssemblyPresiderMailinglist.maxsize_default,
                 is_active=True,
                 assembly_id=assembly['id'],
-                event_id=None,
-                registration_stati=[],
                 notes=None,
                 moderators=assembly['presiders'],
                 whitelist=set(),
-                ml_type=const.MailinglistTypes.assembly_presider,
             )
             return presider_ml_data
         else:
@@ -323,7 +322,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                             {'assembly_id': assembly["id"]})
             descr = (f"Dieser Liste kannst Du nur beitreten, indem Du Dich direkt zu"
                      f" der [Versammlung anmeldest]({link}).")
-            attendee_ml_data = Mailinglist(
+            attendee_ml_data = AssemblyAssociatedMailinglist(
                 id=vtypes.CreationID(vtypes.ProtoID(-1)),
                 title=assembly["title"],
                 local_part=vtypes.EmailLocalPart(assembly['shortname'].lower()),
@@ -331,16 +330,14 @@ class AssemblyFrontend(AbstractUserFrontend):
                 description=descr,
                 mod_policy=const.ModerationPolicy.non_subscribers,
                 attachment_policy=const.AttachmentPolicy.pdf_only,
+                convert_html=True,
                 subject_prefix=assembly['shortname'],
-                maxsize=ml_type.AssemblyAssociatedMailinglist.maxsize_default,
+                maxsize=AssemblyAssociatedMailinglist.maxsize_default,
                 is_active=True,
                 assembly_id=assembly["id"],
-                event_id=None,
-                registration_stati=[],
                 notes=None,
                 moderators=assembly['presiders'],
                 whitelist=set(),
-                ml_type=const.MailinglistTypes.assembly_associated,
             )
             return attendee_ml_data
 

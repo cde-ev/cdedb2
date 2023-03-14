@@ -1160,11 +1160,11 @@ class CoreBaseBackend(AbstractBackend):
                 params = [persona_id]
                 if self.query_all(rs, query, params):
                     raise RuntimeError(n_("Active lastschrift permit found."))
-                delta = -current['balance']
-                new_balance = decimal.Decimal(0)
+                # Display this to be not surprised if you look at the finance log and
+                #  observe the decreasing of the total balance
+                delta = decimal.Decimal(0)
+                new_balance = current["balance"]
                 code = const.FinanceLogCodes.lose_membership
-                # Do not modify searchability.
-                update['balance'] = decimal.Decimal(0)
             else:
                 delta = None
                 new_balance = None
@@ -1388,12 +1388,12 @@ class CoreBaseBackend(AbstractBackend):
             if any(not ls['revoked_at'] for ls in lastschrift):
                 raise ArchiveError(n_("Active lastschrift exists."))
             query = ("UPDATE cde.lastschrift"
-                     " SET (amount, iban, account_owner, account_address)"
-                     " = (%s, %s, %s, %s)"
+                     " SET (iban, account_owner, account_address)"
+                     " = (%s, %s, %s)"
                      " WHERE persona_id = %s"
                      " AND revoked_at < now() - interval '14 month'")
             if lastschrift:
-                self.query_exec(rs, query, (0, "", "", "", persona_id))
+                self.query_exec(rs, query, ("", "", "", persona_id))
             #
             # 3. Remove complicated attributes (membership, foto and password)
             #
@@ -1470,6 +1470,7 @@ class CoreBaseBackend(AbstractBackend):
                 'interests': None,
                 'free_form': None,
                 'balance': 0 if persona['balance'] is not None else None,
+                'donation': 0 if persona['donation'] is not None else None,
                 'decided_search': False,
                 'trial_member': False,
                 'bub_search': False,
@@ -1534,6 +1535,11 @@ class CoreBaseBackend(AbstractBackend):
             #
             self.sql_delete(rs, "core.log", (persona_id,), "persona_id")
             # finance log stays untouched to keep balance correct
+            # therefore, we log if the persona had any remaining balance
+            if persona["balance"]:
+                log_code = const.FinanceLogCodes.remove_balance_on_archival
+                self.finance_log(rs, log_code, persona_id, delta=-persona['balance'],
+                                 new_balance=decimal.Decimal("0"))
             self.sql_delete(rs, "cde.log", (persona_id,), "persona_id")
             # past event log stays untouched since we keep past events
             # event log stays untouched since events have a separate life cycle

@@ -35,6 +35,7 @@ DEFAULTS = {
         'is_searchable': False,
         'is_active': True,
         'balance': 0,
+        'donation': 0,
         'birth_name': None,
         'address_supplement2': None,
         'address2': None,
