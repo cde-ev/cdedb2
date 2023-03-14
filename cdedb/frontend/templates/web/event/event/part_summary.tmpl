@@ -36,6 +36,9 @@
             registrations are present yet. Course tracks can only be deleted, if
             there are no courses associated with them.
         {% endtrans %}
+        {% trans %}
+            Part shortnames cannot be changed while referenced by a fee.
+        {% endtrans %}
     </p>
 
     {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}

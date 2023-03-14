@@ -13664,6 +13664,11 @@ msgstr ""
 "werden, falls noch keine Anmeldungen vorliegen. Kursschienen können nur "
 "gelöscht werden, falls ihnen keine Kurse zugeordnet sind."
 
+msgid "Part shortnames cannot be changed while referenced by a fee."
+msgstr ""
+"Kurznamen von Veranstaltungsteilen können nicht geändert werden, wenn sie "
+"in einem Teilnahmebeitrag referenziert werden."
+
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:53
 msgid "Fee Modifiers"
 msgstr "Beitragsmodifikatoren"

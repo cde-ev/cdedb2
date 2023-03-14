@@ -560,6 +560,8 @@ class EventLowLevelBackend(AbstractBackend):
         if deleted_parts >= existing_parts | new_parts:
             raise ValueError(n_("At least one event part required."))
 
+        part_fees = self.get_event_fees_per_entity(rs, event_id).parts
+
         # Do some additional validation for any given waitlist fields.
         waitlist_fields: Set[int] = set(
             filter(None, (p.get('waitlist_field') for p in parts.values() if p)))
@@ -587,9 +589,15 @@ class EventLowLevelBackend(AbstractBackend):
             for x in mixed_existence_sorter(updated_parts):
                 updated = copy.deepcopy(parts[x])
                 assert updated is not None
-                updated['id'] = x
                 tracks = updated.pop('tracks', {})
-                if any(updated[k] != current_part_data[x][k] for k in updated):
+                updated = {
+                    k: v for k, v in updated.items() if v != current_part_data[x][k]
+                }
+                updated['id'] = x
+                if updated:
+                    if 'shortname' in updated and part_fees[x]:
+                        raise ValueError(n_(
+                            "Cannot change shortname of part referenced by event fee."))
                     ret *= self.sql_update(rs, "event.event_parts", updated)
                     self.event_log(
                         rs, const.EventLogCodes.part_changed, event_id,
