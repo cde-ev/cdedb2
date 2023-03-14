@@ -530,15 +530,23 @@ class AssemblyBackend(AbstractBackend):
         }
         attendee_data = self.core.get_assembly_users(rs, all_attendees)
 
-        q = "SELECT persona_id FROM assembly.log WHERE assembly_id = %s AND ctime < %s"
+        q = """
+            SELECT persona_id FROM assembly.log
+            WHERE assembly_id = %s AND code = %s AND ctime < %s
+        """
         early_attendees = {
             e['persona_id']: attendee_data[e['persona_id']]
-            for e in self.query_all(rs, q, (assembly_id, cutoff))
+            for e in self.query_all(
+                rs, q, (assembly_id, const.AssemblyLogCodes.new_attendee, cutoff))
         }
-        q = "SELECT persona_id FROM assembly.log WHERE assembly_id = %s AND ctime >= %s"
+        q = """
+            SELECT persona_id FROM assembly.log
+            WHERE assembly_id = %s AND code = %s AND ctime >= %s
+        """
         late_attendees = {
             e['persona_id']: attendee_data[e['persona_id']]
-            for e in self.query_all(rs, q, (assembly_id, cutoff))
+            for e in self.query_all(
+                rs, q, (assembly_id, const.AssemblyLogCodes.new_attendee, cutoff))
         }
         if early_attendees.keys() & late_attendees.keys():
             raise ValueError("Unexpected overlap in early and late attendees.")
@@ -552,7 +560,6 @@ class AssemblyBackend(AbstractBackend):
             },
             cutoff=cutoff
         )
-
 
     @access("persona")
     def list_assemblies(self, rs: RequestState,
