@@ -19378,3 +19378,6 @@ msgstr "Vollständige Adresse für %(input)s kann nicht bestimmt werden."
 #, python-format
 msgid "%(ml_type)s is not an appropriate type for this mailinglist."
 msgstr "%(ml_type)s ist kein geeigneter Typ für diese Mailingliste."
+
+msgid "Must not contain whitespace."
+msgstr "Darf keine Leerzeichen enthalten."

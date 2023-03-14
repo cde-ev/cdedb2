@@ -596,8 +596,9 @@ class EventLowLevelBackend(AbstractBackend):
                 if updated:
                     updated['id'] = x
                     if 'shortname' in updated and part_fees[x]:
-                        raise ValueError(n_(
-                            "Cannot change shortname of part referenced by event fee."))
+                        raise ValueError(n_(  # pragma: no cover
+                            "Part shortnames cannot be changed while referenced by"
+                            " a fee."))
                     ret *= self.sql_update(rs, "event.event_parts", updated)
                     self.event_log(
                         rs, const.EventLogCodes.part_changed, event_id,
