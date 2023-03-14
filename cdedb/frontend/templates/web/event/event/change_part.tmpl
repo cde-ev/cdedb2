@@ -33,15 +33,12 @@
             registrations are present yet. Course tracks can only be deleted, if
             there are no courses associated with them.
         {% endtrans %}
-        {% trans %}
-            Part shortnames cannot be changed while referenced by a fee.
-        {% endtrans %}
     </p>
 
     <form action="{{ cdedblink('event/change_part') }}" method="POST" id="changepartform" class="form-horizontal">
         {{ util.anti_csrf_token('event/change_part') }}
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
-        {{ util.form_input_text(name="shortname", label=gettext("Shortname"), actualreadonly=shortname_readonly) }}
+        {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
         {{ util.form_input_text(name="part_begin", label=gettext("Begin"), type='date', placeholder="YYYY-MM-DD") }}
         {{ util.form_input_text(name="part_end", label=gettext("End"), type='date', placeholder="YYYY-MM-DD") }}
         {{ util.form_input_select(name="waitlist_field", entries=waitlist_fields,

@@ -427,8 +427,6 @@ class EventEventMixin(EventBaseFrontend):
 
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
         referenced_tracks = self._deletion_blocked_tracks(rs, event_id)
-        shortname_readonly = bool(self.eventproxy.get_event_fees_per_entity(
-            rs, event_id).parts[part_id])
 
         sorted_fields = xsorted(rs.ambience['event']['fields'].values(),
                                 key=EntitySorter.event_field)
@@ -445,7 +443,6 @@ class EventEventMixin(EventBaseFrontend):
             'has_registrations': has_registrations,
             'DEFAULT_NUM_COURSE_CHOICES': DEFAULT_NUM_COURSE_CHOICES,
             'readonly_synced_tracks': readonly_synced_tracks,
-            'shortname_readonly': shortname_readonly,
         })
 
     @access("event", modi={"POST"})

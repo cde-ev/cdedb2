@@ -4534,3 +4534,29 @@ class TestEventBackend(BackendTest):
             fee = self.event.calculate_fee(self.key, reg_id)
             with self.subTest(combination=combination):
                 self.assertEqual(fee, decimal.Decimal(expected_fee))
+
+    @as_users("garcia")
+    def test_part_shortname_change(self) -> None:
+        event_id = 1
+        new_fee = {
+            'title': "Test",
+            'amount': "1",
+            'condition': "part.1.H. and not part.2.H.",
+            'notes': None,
+        }
+        self.event.set_event_fees(self.key, event_id, {-1: new_fee})
+        event_data = {
+            'id': event_id,
+            'parts': {
+                2: {
+                    'shortname': "2.H.",
+                },
+                3: {
+                    'shortname': "1.H.",
+                }
+            }
+        }
+        self.event.set_event(self.key, event_data)
+        event = self.event.get_event(self.key, event_id)
+        self.assertEqual(
+            "part.2.H. and not part.1.H.", event['fees'][1001]['condition'])

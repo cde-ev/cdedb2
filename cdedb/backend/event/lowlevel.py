@@ -571,6 +571,8 @@ class EventLowLevelBackend(AbstractBackend):
         for field in waitlist_field_data.values():
             self._validate_special_event_field(rs, event_id, "waitlist", field)
 
+        self.sql_defer_constraints(rs, "event.event_parts_event_id_shortname_key")
+
         for x in mixed_existence_sorter(new_parts):
             new_part = copy.deepcopy(parts[x])
             assert new_part is not None
@@ -586,6 +588,18 @@ class EventLowLevelBackend(AbstractBackend):
             # Retrieve current data, so we can check if anything actually changed.
             current_part_data = {e['id']: e for e in self.sql_select(
                 rs, "event.event_parts", EVENT_PART_FIELDS, updated_parts)}
+
+            # Event fees reference event parts via shortname.
+            # Temporarily replace theses references with id references.
+            q = """SELECT id, condition FROM event.event_fees WHERE event_id = %s"""
+            fee_conditions: Dict[int, str] = {
+                e['id']: e['condition'] for e in self.query_all(rs, q, (event_id,))}
+            new_fee_conditions = dict(fee_conditions)
+            for part_id, part_data in current_part_data.items():
+                for fee_id, condition in new_fee_conditions.items():
+                    new_fee_conditions[fee_id] = condition.replace(
+                        f"part.{part_data['shortname']}", f"part_id.{part_id}")
+
             for x in mixed_existence_sorter(updated_parts):
                 updated = copy.deepcopy(parts[x])
                 assert updated is not None
@@ -595,15 +609,26 @@ class EventLowLevelBackend(AbstractBackend):
                 }
                 if updated:
                     updated['id'] = x
-                    if 'shortname' in updated and part_fees[x]:
-                        raise ValueError(n_(  # pragma: no cover
-                            "Part shortnames cannot be changed while referenced by"
-                            " a fee."))
                     ret *= self.sql_update(rs, "event.event_parts", updated)
                     self.event_log(
                         rs, const.EventLogCodes.part_changed, event_id,
                         change_note=updated.get('title', current_part_data[x]['title']))
                 ret *= self._set_tracks(rs, event_id, x, tracks)
+
+            # Translate id references back to shortname references.
+            new_part_data = {e['id']: e for e in self.sql_select(
+                rs, "event.event_parts", EVENT_PART_FIELDS, updated_parts)}
+            for part_id, part_data in new_part_data.items():
+                for fee_id, condition in new_fee_conditions.items():
+                    new_fee_conditions[fee_id] = condition.replace(
+                        f"part_id.{part_id}", f"part.{part_data['shortname']}")
+
+            # Update any fee conditions that changed
+            #  (i.e. those referencing a part which got a new shortname).
+            for fee_id, condition in new_fee_conditions.items():
+                if condition != fee_conditions[fee_id]:
+                    self.sql_update(rs, "event.event_fees",
+                                    {'id': fee_id, 'condition': condition})
 
         if deleted_parts:
             # Recursively delete fee modifiers and tracks, but not registrations, since
