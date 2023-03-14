@@ -560,8 +560,6 @@ class EventLowLevelBackend(AbstractBackend):
         if deleted_parts >= existing_parts | new_parts:
             raise ValueError(n_("At least one event part required."))
 
-        part_fees = self.get_event_fees_per_entity(rs, event_id).parts
-
         # Do some additional validation for any given waitlist fields.
         waitlist_fields: Set[int] = set(
             filter(None, (p.get('waitlist_field') for p in parts.values() if p)))
