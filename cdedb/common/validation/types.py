@@ -50,6 +50,7 @@ PrintableASCII = _NewType("PrintableASCII", str)  # TODO make these subtypes?
 Identifier = _NewType("Identifier", str)
 RestrictiveIdentifier = _NewType("RestrictiveIdentifier", str)
 CSVIdentifier = _NewType("CSVIdentifier", str)
+NoWhitespaceString = _NewType("NoWhitespaceString", str)
 PasswordStrength = _NewType("PasswordStrength", str)
 Email = _NewType("Email", str)
 EmailLocalPart = _NewType("EmailLocalPart", str)

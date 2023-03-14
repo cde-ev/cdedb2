@@ -993,6 +993,16 @@ def _csv_identifier(
     return CSVIdentifier(val)
 
 
+@_add_typed_validator
+def _no_whitespace_string(
+        val: Any, argname: str = None, **kwargs: Any
+) -> NoWhitespaceString:
+    val = _str(val, argname, **kwargs)
+    if re.search(r'\s', val):
+        raise ValidationSummary(ValueError(argname, n_("Must not contain whitespace.")))
+    return NoWhitespaceString(val)
+
+
 # TODO manual handling of @_add_typed_validator inside decorator or storage?
 @_add_typed_validator
 def _list_of(
@@ -2400,7 +2410,7 @@ def _event(
 
 EVENT_PART_CREATION_MANDATORY_FIELDS: TypeMapping = {
     'title': str,
-    'shortname': Shortname,
+    'shortname': NoWhitespaceString,
     'part_begin': datetime.date,
     'part_end': datetime.date,
     # 'fee': NonNegativeDecimal,

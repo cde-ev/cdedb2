@@ -12,6 +12,8 @@ BEGIN;
     GRANT SELECT, UPDATE on event.event_fees_id_seq TO cdb_persona;
     GRANT SELECT on event.event_fees TO cdb_anonymous;
 
+    UPDATE event.event_parts SET shortname = REPLACE(shortname, ' ', '');
+
     INSERT INTO event.event_fees(event_id, title, amount, condition)
     SELECT event_id, shortname AS title, fee AS amount, 'part.' || shortname AS condition FROM event.event_parts;
 
