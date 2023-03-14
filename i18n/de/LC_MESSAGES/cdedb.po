@@ -6403,6 +6403,9 @@ msgstr "TeX-Liste"
 msgid "A download TeX-Snipped to generate a participant list in the protocol."
 msgstr "Die Teilnehmerliste als TeX-Schnipsel für das Protokoll."
 
+msgid "Cutoff"
+msgstr "Stichtag/-zeit"
+
 #: cdedb/frontend/templates/web/assembly/list_ballots.tmpl:4
 #, python-format
 msgid "Ballots (%(title)s)"

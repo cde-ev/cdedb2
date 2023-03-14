@@ -70,23 +70,15 @@
 
     {% if "assembly_presider" in user.admin_views or ambience['assembly']['id'] in user.presider %}
         {% call util.bootstrap_panel(title=gettext("Download"), icon="file-download", aclass="panel-default mosp") %}
-            <div class="row">
-                <div class="col-sm-5">
-                    <div>
-                        <form action="{{ cdedblink('assembly/download_list_attendees') }}" method="GET" id="downloadattendeesform" class="form-horizontal">
-                            {{ util.form_input_text(name='cutoff', label=gettext("Cutoff"), type='datetime-local') }}
-                            {{ util.form_input_submit(label=gettext("TeX-List"), icon="download", aclass="btn btn-default btn-sm") }}
-                        </form>
-                    </div>
-                </div>
-                <div class="col-sm-7">
-                    <p class="text-muted">
-                        {% trans %}
-                            A download TeX-Snipped to generate a participant list in the protocol.
-                        {% endtrans %}
-                    </p>
-                </div>
-            </div>
+            <p class="text-muted">
+                {% trans %}
+                    A download TeX-Snipped to generate a participant list in the protocol.
+                {% endtrans %}
+            </p>
+            <form action="{{ cdedblink('assembly/download_list_attendees') }}" method="GET" id="downloadattendeesform" class="form-horizontal">
+                {{ util.form_input_text(name='cutoff', label=gettext("Cutoff"), type='datetime-local', small=False) }}
+                {{ util.form_input_submit(label=gettext("TeX-List"), icon="download", aclass="btn btn-default btn-sm", small=False) }}
+            </form>
         {% endcall %}
     {% endif %}
 {% endblock %}

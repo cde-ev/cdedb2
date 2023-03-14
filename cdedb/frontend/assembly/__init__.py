@@ -568,7 +568,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                                 cutoff: datetime.datetime) -> Response:
         """Provides a tex-snipped with all attendes of an assembly."""
         if rs.has_validation_errors() or not cutoff:
-            cutoff = now()
+            return self.list_attendees(rs, assembly_id)
 
         attendees = self.assemblyproxy.get_attendees(rs, assembly_id, cutoff=cutoff)
         if not attendees.all:
