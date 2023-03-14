@@ -868,7 +868,8 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs, event_id, kinds=(const.QuestionnaireUsages.registration,)))
         course_choice_params = self.get_course_choice_params(rs, event_id, orga=False)
         return self.render(rs, "registration/amend_registration", {
-            'age': age, 'involved_tracks': involved_tracks, 'persona': persona,
+            'age': age, 'involved_tracks': involved_tracks,
+            'persona': persona, 'semester_fee': self.conf['MEMBERSHIP_FEE'],
             'reg_questionnaire': reg_questionnaire, 'payment_parts': payment_parts,
             **course_choice_params,
         })

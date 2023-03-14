@@ -331,7 +331,6 @@ class EventEventMixin(EventBaseFrontend):
             rs.notify("error", n_("This part can not be deleted."))
             return self.part_summary(rs, event_id)
 
-
         event = {
             'id': event_id,
             'parts': {part_id: None},
