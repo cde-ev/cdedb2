@@ -861,12 +861,15 @@ class EventRegistrationMixin(EventBaseFrontend):
             track_id for track_id, track in tracks.items()
             if const.RegistrationPartStati(stat(track)).is_involved()}
 
+        payment_parts = {part_id for part_id, reg_part in registration['parts'].items()
+                         if reg_part['status'].has_to_pay()}
+
         reg_questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(const.QuestionnaireUsages.registration,)))
         course_choice_params = self.get_course_choice_params(rs, event_id, orga=False)
         return self.render(rs, "registration/amend_registration", {
-            'age': age, 'involved_tracks': involved_tracks,
-            'reg_questionnaire': reg_questionnaire,
+            'age': age, 'involved_tracks': involved_tracks, 'persona': persona,
+            'reg_questionnaire': reg_questionnaire, 'payment_parts': payment_parts,
             **course_choice_params,
         })
 

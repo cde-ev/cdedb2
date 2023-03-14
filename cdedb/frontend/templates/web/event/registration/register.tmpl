@@ -216,6 +216,8 @@
         feePreviewConstants = {
             'endpoint': '{{ cdedblink('event/precompute_fee') }}',
             'persona_id': {{ user.persona_id }},
+            'is_member': {{ persona['is_member']|tojson }},
+            'is_orga': {{ (ambience['event']['id'] in user.orga)|tojson }},
             'deko_true': '{{ util.deko_checkbox(True).strip() + nbsp }}',
             'deko_false': '{{ util.deko_checkbox(False).strip() + nbsp }}',
             'title_active': '{{ gettext("Active") }}',

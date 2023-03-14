@@ -97,11 +97,15 @@
              *  Gather values of checked part checkboxes.
              */
             var part_ids = [];
-            part_checkboxes.each(function() {
-                if ($(this).prop('checked')) {
-                    part_ids.push($(this).val());
-                }
-            });
+            if (constants['part_ids']) {
+                part_ids = constants['part_ids']
+            } else {
+                part_checkboxes.each(function () {
+                    if ($(this).prop('checked')) {
+                        part_ids.push($(this).val());
+                    }
+                });
+            }
 
             /**
              *  Gather field ids of bool field inputs.
@@ -128,12 +132,14 @@
             params = {
                 persona_id: constants['persona_id'],
                 part_ids: part_ids.join(","),
-                field_ids: field_ids.join(",")
+                field_ids: field_ids.join(","),
+                is_orga: constants['is_orga'],
+                is_member: constants['is_member'],
             }
-            if (is_orga_checkbox) {
+            if (is_orga_checkbox.length) {
                 params['is_orga'] = is_orga_checkbox.prop('checked');
             }
-            if (is_member_checkbox) {
+            if (is_member_checkbox.length) {
                 params['is_member'] = is_member_checkbox.prop('checked');
             }
 
@@ -185,13 +191,13 @@
         if (field_selects.length) {
             field_selects.change(updateFeePreview);
         }
-        if (is_orga_checkbox) {
+        if (is_orga_checkbox.length) {
             is_orga_checkbox.change(updateFeePreview);
         }
-        if (is_member_checkbox) {
+        if (is_member_checkbox.length) {
             is_member_checkbox.change(updateFeePreview);
         }
-        if (fee_summary) {
+        if (fee_summary.length) {
             fee_summary.parents('table').show();
         }
 

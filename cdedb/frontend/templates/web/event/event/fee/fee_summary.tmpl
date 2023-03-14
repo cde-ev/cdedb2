@@ -1,10 +1,6 @@
 {% set sidenav_active='event_fees' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block scripts %}
-    {{ util.cdedb_script('cdedb_helper.js') }}
-    {{ util.cdedb_script('cdedb_dynamicrow.js') }}
-{% endblock %}
 {% block title %}
     {% trans title=ambience['event']['title'] %}
         Fees ({{ title }})

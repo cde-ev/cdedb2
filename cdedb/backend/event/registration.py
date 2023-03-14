@@ -1247,7 +1247,7 @@ class EventRegistrationBackend(EventBaseBackend):
                         other_bools):
                     amount += fee['amount']
                     active_fees.add(fee['id'])
-                if visual_debug_data:
+                if visual_debug:
                     visual_debug_data[fee['id']] = fcp_roundtrip.visual_debug(
                         parse_result, reg_bool_fields, reg_part_involvement,
                         other_bools
