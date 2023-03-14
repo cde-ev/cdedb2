@@ -593,8 +593,8 @@ class EventLowLevelBackend(AbstractBackend):
                 updated = {
                     k: v for k, v in updated.items() if v != current_part_data[x][k]
                 }
-                updated['id'] = x
                 if updated:
+                    updated['id'] = x
                     if 'shortname' in updated and part_fees[x]:
                         raise ValueError(n_(
                             "Cannot change shortname of part referenced by event fee."))

@@ -821,17 +821,21 @@ class TestEventFrontend(FrontendTest):
         self.assertNonPresence("Nachtschicht", div="part1001")
 
         # delete new part
+        self.traverse("Teilnahmebeiträge")
+        f = self.response.forms['deleteeventfeeform1001']
+        self.submit(f)
+        self.traverse("Veranstaltungsteile")
         f = self.response.forms['deletepartform1001']
         f['ack_delete'].checked = True
         self.submit(f)
         log_expectation.extend([
             {
-                'code': const.EventLogCodes.track_removed,
-                'change_note': "Chillout Training",
-            },
-            {
                 'code': const.EventLogCodes.fee_modifier_deleted,
                 'change_note': log_expectation[0]['change_note'],
+            },
+            {
+                'code': const.EventLogCodes.track_removed,
+                'change_note': "Chillout Training",
             },
             {
                 'code': const.EventLogCodes.part_deleted,
