@@ -274,7 +274,7 @@ class MlBackend(AbstractBackend):
             pass
         elif not ml_ids:
             # Limit global log to managed lists for non-admins/non-auditors.
-            log_filter._mailinglist_ids = list(
+            log_filter._mailinglist_ids = list(  # pylint: disable=protected-access
                 self.list_mailinglists(rs, active_only=False, managed='managed'))
             log_filter = affirm(MlLogFilter, log_filter)
         elif all(self.may_manage(rs, ml_id) for ml_id in ml_ids):

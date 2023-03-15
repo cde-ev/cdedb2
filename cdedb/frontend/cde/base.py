@@ -783,4 +783,4 @@ class CdEBaseFrontend(AbstractUserFrontend):
     @access("cde_admin", "auditor")
     def view_finance_log(self, rs: RequestState) -> Response:
         """View financial activity."""
-        return self.generic_view_log(rs,"cde.finance_log", "view_finance_log")
+        return self.generic_view_log(rs, "cde.finance_log", "view_finance_log")
