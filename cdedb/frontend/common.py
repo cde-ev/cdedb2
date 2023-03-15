@@ -1964,12 +1964,13 @@ def REQUESTdatadict(*proto_spec: Union[str, Tuple[str, str]]
             for name, argtype in spec:
                 if argtype == "str":
                     data[name] = rs.request.values.get(name, "")
+                    rs.values[name] = data[name]
                 elif argtype == "[str]":
                     data[name] = tuple(rs.request.values.getlist(name))
+                    rs.values.setlist(name, data[name])
                 else:
                     raise ValueError(n_("Invalid argtype {t} found.").format(
                         t=repr(argtype)))
-                rs.values[name] = data[name]
             return fun(obj, rs, *args, data=data, **kwargs)
 
         return cast(F, new_fun)
@@ -2017,8 +2018,9 @@ def request_extractor(
     return fun(None, rs)
 
 
-def request_dict_extractor(rs: RequestState,
-                           args: Collection[str]) -> CdEDBObject:
+def request_dict_extractor(
+        rs: RequestState, args: Collection[Union[str, Tuple[str, str]]]
+) -> CdEDBObject:
     """Utility to apply REQUESTdatadict later than usual.
 
     Like :py:meth:`request_extractor`.
