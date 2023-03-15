@@ -60,8 +60,8 @@ import werkzeug.wrappers
 import werkzeug.wsgi
 
 import cdedb.common.query as query_mod
-import cdedb.common.validation as validate
 import cdedb.common.validation.types as vtypes
+import cdedb.common.validation.validate as validate
 import cdedb.database.constants as const
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend

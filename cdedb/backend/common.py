@@ -23,7 +23,7 @@ import psycopg2.errors
 import psycopg2.extensions
 import psycopg2.extras
 
-import cdedb.common.validation as validate
+import cdedb.common.validation.validate as validate
 from cdedb.common import (
     CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Error, RequestState, Role,
     diacritic_patterns, glue, make_proxy, setup_logger, unwrap,
@@ -33,7 +33,7 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators
 from cdedb.common.query.log_filter import LogFilter, LogFilterLike, LogTable
 from cdedb.common.sorting import LOCALE
-from cdedb.common.validation import parse_date, parse_datetime
+from cdedb.common.validation.validate import parse_date, parse_datetime
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
 from cdedb.database.constants import FieldDatatypes, LockType

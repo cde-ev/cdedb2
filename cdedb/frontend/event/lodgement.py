@@ -19,8 +19,8 @@ from cdedb.common import (
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, Sortkey, xsorted
-from cdedb.common.validation import LODGEMENT_COMMON_FIELDS
 from cdedb.common.validation.types import VALIDATOR_LOOKUP
+from cdedb.common.validation.validate import LODGEMENT_COMMON_FIELDS
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, check_validation as check, drow_name,
