@@ -3,7 +3,6 @@
 """Base class providing fundamental ml services."""
 
 import collections
-from datetime import datetime
 from typing import Any, Collection, Dict, Optional
 
 import werkzeug
@@ -19,8 +18,7 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
-    FULL_MOD_REQUIRING_FIELDS, LOG_FIELDS_COMMON, MOD_ALLOWED_FIELDS,
-    RESTRICTED_MOD_ALLOWED_FIELDS,
+    FULL_MOD_REQUIRING_FIELDS, MOD_ALLOWED_FIELDS, RESTRICTED_MOD_ALLOWED_FIELDS,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryScope
@@ -337,42 +335,14 @@ class MlBaseFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/merge_accounts")
 
     @access("ml")
-    @REQUESTdata(*LOG_FIELDS_COMMON, "mailinglist_id")
-    def view_log(self, rs: RequestState, codes: Collection[const.MlLogCodes],
-                 mailinglist_id: Optional[vtypes.ID], offset: Optional[int],
-                 length: Optional[vtypes.PositiveInt],
-                 persona_id: Optional[vtypes.CdedbID],
-                 submitted_by: Optional[vtypes.CdedbID],
-                 change_note: Optional[str],
-                 time_start: Optional[datetime],
-                 time_stop: Optional[datetime],
-                 download: bool = False) -> Response:
+    def view_log(self, rs: RequestState) -> Response:
         """View activities."""
-
-        db_mailinglist_ids = {mailinglist_id} if mailinglist_id else set()
-
-        relevant_mls = self.mlproxy.list_mailinglists(rs, active_only=False,
-                                                      managed='managed')
-        relevant_set = set(relevant_mls)
-        if not self.is_admin(rs):
-            if not db_mailinglist_ids:
-                db_mailinglist_ids = relevant_set
-            elif not db_mailinglist_ids <= relevant_set:
-                db_mailinglist_ids = db_mailinglist_ids | relevant_set
-                rs.notify("warning", n_(
-                    "Not privileged to view log for all these mailinglists."))
-
-        filter_params = {
-            'entity_ids': db_mailinglist_ids,
-            'codes': codes, 'offset': offset, 'length': length,
-            'persona_id': persona_id, 'submitted_by': submitted_by,
-            'change_note': change_note, 'ctime': (time_start, time_stop),
-        }
-
+        relevant_mls = self.mlproxy.list_mailinglists(
+            rs, active_only=False, managed='managed')
         mailinglists = self.mlproxy.get_mailinglists(rs, relevant_mls)
-        self.logger.debug(mailinglists)
+
         return self.generic_view_log(
-            rs, filter_params, "ml.log", "view_log", download, {
+            rs, "ml.log", "view_log", {
             'all_mailinglists': mailinglists,
             'may_view': lambda ml: self.mlproxy.may_view(rs, ml),
         })
@@ -562,27 +532,9 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("ml")
     @mailinglist_guard()
-    @REQUESTdata(*LOG_FIELDS_COMMON)
-    def view_ml_log(self, rs: RequestState, mailinglist_id: int,
-                    codes: Collection[const.MlLogCodes], offset: Optional[int],
-                    length: Optional[vtypes.PositiveInt],
-                    persona_id: Optional[vtypes.CdedbID],
-                    submitted_by: Optional[vtypes.CdedbID],
-                    change_note: Optional[str],
-                    time_start: Optional[datetime],
-                    time_stop: Optional[datetime],
-                    download: bool = False) -> Response:
+    def view_ml_log(self, rs: RequestState, mailinglist_id: int) -> Response:
         """View activities pertaining to one list."""
-
-        filter_params = {
-            'entity_ids': [mailinglist_id],
-            'codes': codes, 'offset': offset, 'length': length,
-            'persona_id': persona_id, 'submitted_by': submitted_by,
-            'change_note': change_note, 'ctime': (time_start, time_stop),
-        }
-
-        return self.generic_view_log(
-            rs, filter_params, "ml.log", "view_ml_log", download)
+        return self.generic_view_log(rs, "ml.log", "view_ml_log")
 
     @access("ml")
     @mailinglist_guard()

@@ -25,7 +25,6 @@ from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, Error, LineResolutions, RequestState, deduct_years,
     get_hash, merge_dicts, now,
 )
-from cdedb.common.fields import FINANCE_LOG_FIELDS, LOG_FIELDS_COMMON
 from cdedb.common.i18n import get_country_code_from_country, get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryConstraint, QueryOperators, QueryScope
@@ -782,39 +781,6 @@ class CdEBaseFrontend(AbstractUserFrontend):
         return self.render(rs, "view_misc", {"cde_misc": cde_misc})
 
     @access("cde_admin", "auditor")
-    @REQUESTdata(*LOG_FIELDS_COMMON, *FINANCE_LOG_FIELDS)
-    def view_finance_log(self, rs: RequestState,
-                         codes: Collection[const.FinanceLogCodes],
-                         offset: Optional[int],
-                         length: Optional[vtypes.PositiveInt],
-                         persona_id: Optional[vtypes.CdedbID],
-                         submitted_by: Optional[vtypes.CdedbID],
-                         change_note: Optional[str],
-                         time_start: Optional[datetime.datetime],
-                         time_stop: Optional[datetime.datetime],
-                         delta_from: Optional[decimal.Decimal],
-                         delta_to: Optional[decimal.Decimal],
-                         new_balance_from: Optional[decimal.Decimal],
-                         new_balance_to: Optional[decimal.Decimal],
-                         transaction_date_from: Optional[datetime.date],
-                         transaction_date_to: Optional[datetime.date],
-                         total_from: Optional[decimal.Decimal],
-                         total_to: Optional[decimal.Decimal],
-                         members_from: Optional[int],
-                         members_to: Optional[int],
-                         download: bool = False,
-                         ) -> Response:
+    def view_finance_log(self, rs: RequestState) -> Response:
         """View financial activity."""
-
-        filter_params = {
-            'codes': codes, 'offset': offset, 'length': length,
-            'persona_id': persona_id, 'submitted_by': submitted_by,
-            'change_note': change_note, 'ctime': (time_start, time_stop),
-            'delta': (delta_from, delta_to),
-            'new_balance': (new_balance_from, new_balance_to),
-            'transaction_date': (transaction_date_from, transaction_date_to),
-            'total': (total_from, total_to), 'members': (members_from, members_to),
-        }
-
-        return self.generic_view_log(
-            rs, filter_params, "cde.finance_log", "view_finance_log", download)
+        return self.generic_view_log(rs,"cde.finance_log", "view_finance_log")

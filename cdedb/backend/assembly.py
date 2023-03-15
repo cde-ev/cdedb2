@@ -58,7 +58,7 @@ from cdedb.common.fields import (
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
-from cdedb.common.query.log_filter import LogFilterEntityLogLike
+from cdedb.common.query.log_filter import AssemblyLogFilter
 from cdedb.common.roles import implying_realms
 from cdedb.common.sorting import EntitySorter, mixed_existence_sorter, xsorted
 from cdedb.database.connection import Atomizer
@@ -315,15 +315,14 @@ class AssemblyBackend(AbstractBackend):
         return self.query_exec(rs, query, params)
 
     @access("assembly", "auditor")
-    def retrieve_log(self, rs: RequestState, log_filter: LogFilterEntityLogLike
-                     ) -> CdEDBLog:
+    def retrieve_log(self, rs: RequestState, log_filter: AssemblyLogFilter) -> CdEDBLog:
         """Get recorded activity.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        log_filter = self.generic_affirm_log_filter(log_filter, "assembly.log")
-        assembly_ids = log_filter.get('entity_ids', ())
+        log_filter = affirm(AssemblyLogFilter, log_filter)
+        assembly_ids = {log_filter.assembly_id} if log_filter.assembly_id else ()
         assembly_ids = affirm_set(vtypes.ID, assembly_ids)
 
         if self.is_admin(rs) or "auditor" in rs.user.roles:
@@ -335,7 +334,7 @@ class AssemblyBackend(AbstractBackend):
         else:
             raise PrivilegeError(n_("Not privileged."))
 
-        return self.generic_retrieve_log(rs, log_filter, "assembly.log")
+        return self.generic_retrieve_log(rs, log_filter)
 
     @access("core_admin", "assembly_admin")
     def submit_general_query(self, rs: RequestState,

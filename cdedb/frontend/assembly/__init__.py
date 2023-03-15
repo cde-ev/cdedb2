@@ -30,7 +30,6 @@ from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, CdEDBObject, DefaultReturnCode, RequestState,
     abbreviation_mapper, get_hash, merge_dicts, now, unwrap,
 )
-from cdedb.common.fields import LOG_FIELDS_COMMON
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
@@ -122,56 +121,21 @@ class AssemblyFrontend(AbstractUserFrontend):
             self.assemblyproxy.submit_general_query)
 
     @access("assembly_admin", "auditor")
-    @REQUESTdata(*LOG_FIELDS_COMMON, "assembly_id")
-    def view_log(self, rs: RequestState,
-                 codes: Collection[const.AssemblyLogCodes],
-                 assembly_id: Optional[vtypes.ID], offset: Optional[int],
-                 length: Optional[vtypes.PositiveInt], persona_id: Optional[CdedbID],
-                 submitted_by: Optional[CdedbID], change_note: Optional[str],
-                 time_start: Optional[datetime.datetime],
-                 time_stop: Optional[datetime.datetime],
-                 download: bool = False,) -> Response:
+    def view_log(self, rs: RequestState) -> Response:
         """View activities."""
-
-        filter_params = {
-            'entity_ids': [assembly_id] if assembly_id else [],
-            'codes': codes, 'offset': offset, 'length': length,
-            'persona_id': persona_id, 'submitted_by': submitted_by,
-            'change_note': change_note, 'ctime': (time_start, time_stop),
-        }
-
         all_assemblies = self.assemblyproxy.list_assemblies(rs)
         may_view = lambda id_: self.assemblyproxy.may_assemble(rs, assembly_id=id_)
 
         return self.generic_view_log(
-            rs, filter_params, "assembly.log", "view_log", download, {
+            rs, "assembly.log", "view_log", {
             'may_view': may_view, 'all_assemblies': all_assemblies,
         })
 
     @access("assembly")
     @assembly_guard
-    @REQUESTdata(*LOG_FIELDS_COMMON)
-    def view_assembly_log(self, rs: RequestState,
-                          codes: Optional[Collection[const.AssemblyLogCodes]],
-                          assembly_id: int, offset: Optional[int],
-                          length: Optional[vtypes.PositiveInt],
-                          persona_id: Optional[CdedbID],
-                          submitted_by: Optional[CdedbID],
-                          change_note: Optional[str],
-                          time_start: Optional[datetime.datetime],
-                          time_stop: Optional[datetime.datetime],
-                          download: bool = False) -> Response:
+    def view_assembly_log(self, rs: RequestState, assembly_id: int) -> Response:
         """View activities."""
-
-        filter_params = {
-            'entity_ids': [assembly_id],
-            'codes': codes, 'offset': offset, 'length': length,
-            'persona_id': persona_id, 'submitted_by': submitted_by,
-            'change_note': change_note, 'ctime': (time_start, time_stop),
-        }
-
-        return self.generic_view_log(
-            rs, filter_params, "assembly.log", "view_assembly_log", download)
+        return self.generic_view_log(rs, "assembly.log", "view_assembly_log")
 
     @access("assembly")
     def show_assembly(self, rs: RequestState, assembly_id: int) -> Response:

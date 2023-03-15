@@ -31,7 +31,7 @@ from cdedb.common import (
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators
-from cdedb.common.query.log_filter import LogFilter, LogFilterLike, LogTable
+from cdedb.common.query.log_filter import GenericLogFilter
 from cdedb.common.sorting import LOCALE
 from cdedb.common.validation.validate import parse_date, parse_datetime
 from cdedb.config import Config
@@ -40,6 +40,7 @@ from cdedb.database.constants import FieldDatatypes, LockType
 from cdedb.database.query import DatabaseValue, SqlQueryBackend
 
 F = TypeVar('F', bound=Callable[..., Any])
+LF = TypeVar('LF', bound=GenericLogFilter)
 T = TypeVar('T')
 S = TypeVar('S')
 
@@ -438,15 +439,8 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
             q = glue(q, "ORDER BY", ", ".join(orders))
         return self.query_all(rs, q, params)
 
-    @staticmethod
-    def generic_affirm_log_filter(log_filter: LogFilterLike, table: str) -> LogFilter:
-        """Validate a LogFilter"""
-        log_table = LogTable(table)
-        return affirm_validation(
-            log_table.get_filter_class(), log_filter, log_table=log_table)
-
-    def generic_retrieve_log(self, rs: RequestState, log_filter: LogFilterLike,
-                             table: str) -> CdEDBLog:
+    def generic_retrieve_log(self, rs: RequestState, log_filter: GenericLogFilter
+                             ) -> CdEDBLog:
         """Get recorded activity.
 
         Each realm has it's own log as well as potentially additional
@@ -464,19 +458,16 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
 
         However this handles the finance_log for financial transactions.
         """
-        log_filter = self.generic_affirm_log_filter(log_filter, table)
-
-        table = log_filter.table.value
         length = log_filter.length or 0
         offset = log_filter.offset
-        log_code = log_filter.table.get_log_code_class()
+        log_code = log_filter.log_code_class
 
         condition, params = log_filter.to_sql_condition()
         columns = log_filter.get_columns_str()
 
         # The first query determines the absolute number of logs existing
         # matching the given criteria
-        query = f"SELECT COUNT(*) AS count FROM {table} {condition}"
+        query = f"SELECT COUNT(*) AS count FROM {log_filter.log_table} {condition}"
         total: int = unwrap(self.query_one(rs, query, params)) or 0
         if offset and offset > total:
             # Why you do this
@@ -486,7 +477,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
 
         # Now, query the actual information
         query = f"""
-            SELECT {columns} FROM {table} {condition}
+            SELECT {columns} FROM {log_filter.log_table} {condition}
             ORDER BY id LIMIT {length} {f' OFFSET {offset}' if offset else ''}
         """
 

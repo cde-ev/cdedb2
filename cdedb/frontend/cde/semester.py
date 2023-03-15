@@ -303,24 +303,6 @@ class CdESemesterMixin(CdEBaseFrontend):
         return self.redirect(rs, "cde/show_semester")
 
     @access("cde_admin", "auditor")
-    @REQUESTdata(*LOG_FIELDS_COMMON)
-    def view_cde_log(self, rs: RequestState,
-                     codes: Collection[const.CdeLogCodes],
-                     offset: Optional[int],
-                     length: Optional[vtypes.PositiveInt],
-                     persona_id: Optional[vtypes.CdedbID],
-                     submitted_by: Optional[vtypes.CdedbID],
-                     change_note: Optional[str],
-                     time_start: Optional[datetime.datetime],
-                     time_stop: Optional[datetime.datetime],
-                     download: bool = False) -> Response:
+    def view_cde_log(self, rs: RequestState) -> Response:
         """View semester activity."""
-
-        filter_params = {
-            'codes': codes, 'offset': offset, 'length': length,
-            'persona_id': persona_id, 'submitted_by': submitted_by,
-            'change_note': change_note, 'ctime': (time_start, time_stop),
-        }
-
-        return self.generic_view_log(
-            rs, filter_params, "cde.log", "semester/view_cde_log", download)
+        return self.generic_view_log(rs, "cde.log", "semester/view_cde_log")

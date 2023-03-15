@@ -84,7 +84,8 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import Query
 from cdedb.common.query.defaults import DEFAULT_QUERIES
 from cdedb.common.query.log_filter import (
-    LogFilterChangelog, LogFilterEntityLog, LogFilterFinanceLog, LogTable,
+    LOG_TABLE_FILTER_MAP, AssemblyLogFilter, CdELogFilter, ChangelogLogFilter,
+    CoreLogFilter, EventLogFilter, FinanceLogFilter, MlLogFilter, PastEventLogFilter,
 )
 from cdedb.common.roles import (
     ADMIN_KEYS, ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS, PERSONA_DEFAULTS,
@@ -1120,63 +1121,56 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             return n_("Anti CSRF token is invalid.")
         return None
 
-    def generic_view_log(self, rs: RequestState, filter_params: CdEDBObject,
-                         table: str, template: str, download: bool = False,
+    def generic_view_log(self, rs: RequestState, table: str, template: str,
                          template_kwargs: CdEDBObject = None) -> werkzeug.Response:
         """Generic helper to retrieve log data and render the result."""
-        table = LogTable(table)
-        # Convert filter params into LogFilter.
-        log_filter = check_validation(
-            rs, table.get_filter_class(), filter_params, log_table=table)
+        filter_class = LOG_TABLE_FILTER_MAP[table]
+
+        # Extract parameters from request, keep parameters already present (via URL).
+        filter_spec = filter_class.request_spec()
+        filter_spec = [
+            (name, argtype) for name, argtype in filter_spec
+            if name not in rs.values
+        ]
+
+        data = request_dict_extractor(rs, filter_spec)
+        merge_dicts(data, rs.values)
+
+        log_filter = check_validation(rs, filter_class, data)
         if rs.has_validation_errors() or log_filter is None:
             # If validation fails, there is no good way to get a partial filter
             #  that is valid, so we use an empty filter instead. This should not
             #  matter much in practice because, with regular usage there should not
             #  be a way to input invalid filter values.
-            log_filter = check_validation(
-                rs, table.get_filter_class(), {}, log_table=table)
-            rs.ignore_validation_errors()
-            assert log_filter is not None
+            log_filter = filter_class()
 
         # Retrieve entry count and log entries.
-        if table == LogTable.core_log:
+        if isinstance(log_filter, CoreLogFilter):
             total, log = self.coreproxy.retrieve_log(rs, log_filter)
-        elif table == LogTable.core_changelog:
-            assert isinstance(log_filter, LogFilterChangelog)
+        elif isinstance(log_filter, ChangelogLogFilter):
             total, log = self.coreproxy.retrieve_changelog_meta(rs, log_filter)
-        elif table == LogTable.cde_finance_log:
-            assert isinstance(log_filter, LogFilterFinanceLog)
+        elif isinstance(log_filter, FinanceLogFilter):
             total, log = self.cdeproxy.retrieve_finance_log(rs, log_filter)
-        elif table == LogTable.cde_log:
+        elif isinstance(log_filter, CdELogFilter):
             total, log = self.cdeproxy.retrieve_cde_log(rs, log_filter)
-        elif table == LogTable.past_event_log:
-            assert isinstance(log_filter, LogFilterEntityLog)
+        elif isinstance(log_filter, PastEventLogFilter):
             total, log = self.pasteventproxy.retrieve_past_log(rs, log_filter)
-        elif table == LogTable.event_log:
-            assert isinstance(log_filter, LogFilterEntityLog)
+        elif isinstance(log_filter, EventLogFilter):
             total, log = self.eventproxy.retrieve_log(rs, log_filter)
-        elif table == LogTable.assembly_log:
-            assert isinstance(log_filter, LogFilterEntityLog)
+        elif isinstance(log_filter, AssemblyLogFilter):
             total, log = self.assemblyproxy.retrieve_log(rs, log_filter)
-        elif table == LogTable.ml_log:
-            assert isinstance(log_filter, LogFilterEntityLog)
+        elif isinstance(log_filter, MlLogFilter):
             total, log = self.mlproxy.retrieve_log(rs, log_filter)
         else:
             raise RuntimeError(n_("Impossible."))
 
         # Retrieve linked personas.
-        persona_ids = (
-                set(e['submitted_by'] for e in log if e['submitted_by'])
-                | set(e['persona_id'] for e in log if e['persona_id'])
-                | set(e['reviewed_by'] for e in log if e.get('reviewed_by'))
-        )
+        persona_ids = log_filter.get_persona_ids(log)
         personas = self.coreproxy.get_personas(rs, persona_ids)
 
-        if download:
+        if request_extractor(rs, {'download': bool})['download']:
             # Postprocess persona information: Add names and cdedb id.
-            persona_fields = {'submitted_by', 'persona_id', 'reviewed_by'}.intersection(
-                log_filter.get_columns()
-            )
+            persona_fields = log_filter.get_persona_columns()
             cdedbids = {persona_id: cdedbid_filter(persona_id)
                         for persona_id in persona_ids}
             substitutions = {persona_field: cdedbids
@@ -1201,8 +1195,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
             csv_data = csv_output(log, columns, replace_newlines=True,
                                   substitutions=substitutions)
-            return self.send_csv_file(rs, "text/csv", f"{table.value}.csv",
-                                      data=csv_data)
+            return self.send_csv_file(rs, "text/csv", f"{table}.csv", data=csv_data)
         else:
             # Create pagination.
             loglinks = calculate_loglinks(rs, total, log_filter._offset,  # pylint: disable=protected-access

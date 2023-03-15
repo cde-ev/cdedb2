@@ -11,6 +11,7 @@ import cdedb.database.constants as const
 import cdedb.models.ml as models_ml
 from cdedb.common import CdEDBObject, RequestState, nearly_now
 from cdedb.common.exceptions import PrivilegeError
+from cdedb.common.query.log_filter import MlLogFilter
 from cdedb.database.constants import SubscriptionState as SS
 from tests.common import USER_DICT, BackendTest, as_users, prepsql
 
@@ -589,7 +590,7 @@ class TestMlBackend(BackendTest):
                 'persona_id': persona_id,
             }
             _, log_entries = self.ml.retrieve_log(
-                self.key, {'entity_ids': [mailinglist_id]})
+                self.key, MlLogFilter(mailinglist_id=mailinglist_id))
             # its a bit annoying to check always the correct log id
             log_entries = [{k: v for k, v in log.items()
                             if k not in {'id', 'submitted_by'}}
@@ -1200,7 +1201,7 @@ class TestMlBackend(BackendTest):
 
         # Check that this has been logged
         _, log_entries = self.ml.retrieve_log(
-            self.key, {'entity_ids': [mailinglist_id]})
+            self.key, MlLogFilter(mailinglist_id=mailinglist_id))
         expected_log = {
             'id': 1001,
             'change_note': None,
@@ -2123,11 +2124,12 @@ class TestMlBackend(BackendTest):
         self.assertLogEqual(expectation, realm="ml")
         self.assertEqual(
             (len(expectation), expectation[2:5]),
-            self.ml.retrieve_log(self.key, {'offset': 2, 'length': 3}))
+            self.ml.retrieve_log(self.key, MlLogFilter(offset=2, length=3)))
+
         self.assertEqual(
             (4, expectation[3:7]),
-            self.ml.retrieve_log(self.key, {'entity_ids': [new_id]}))
+            self.ml.retrieve_log(self.key, MlLogFilter(mailinglist_id=new_id)))
         self.assertEqual(
             (2, expectation[4:6]),
             self.ml.retrieve_log(
-                self.key, {'codes': (const.MlLogCodes.moderator_added,)}))
+                self.key, MlLogFilter(codes=[const.MlLogCodes.moderator_added])))

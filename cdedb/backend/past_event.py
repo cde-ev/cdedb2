@@ -25,7 +25,7 @@ from cdedb.common.fields import (
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryScope
-from cdedb.common.query.log_filter import LogFilterEntityLogLike
+from cdedb.common.query.log_filter import PastEventLogFilter
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 
@@ -107,14 +107,15 @@ class PastEventBackend(AbstractBackend):
         return self.sql_insert(rs, "past_event.log", data)
 
     @access("cde_admin", "event_admin", "auditor")
-    def retrieve_past_log(self, rs: RequestState, log_filter: LogFilterEntityLogLike
+    def retrieve_past_log(self, rs: RequestState, log_filter: PastEventLogFilter
                           ) -> CdEDBLog:
         """Get recorded activity for concluded events.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        return self.generic_retrieve_log(rs, log_filter, "past_event.log")
+        log_filter = affirm(PastEventLogFilter, log_filter)
+        return self.generic_retrieve_log(rs, log_filter)
 
     @access("cde", "event")
     def list_institutions(self, rs: RequestState) -> Dict[int, str]:

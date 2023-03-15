@@ -94,7 +94,8 @@ from cdedb.common.query import (
     QueryOrder, QueryScope, QuerySpec,
 )
 from cdedb.common.query.log_filter import (
-    LogFilter, LogFilterChangelog, LogFilterEntityLog, LogFilterFinanceLog, LogTable,
+    AssemblyLogFilter, CdELogFilter, ChangelogLogFilter, CoreLogFilter, EventLogFilter,
+    FinanceLogFilter, GenericLogFilter, MlLogFilter, PastEventLogFilter,
 )
 from cdedb.common.roles import ADMIN_KEYS, extract_roles
 from cdedb.common.sorting import xsorted
@@ -4706,62 +4707,81 @@ def _range(
 
 
 @_add_typed_validator
-def _log_filter(
-    val: Any, argname: str = None, *, log_table: LogTable, **kwargs: Any
-) -> LogFilter:
-    return _log_filter_common(
-        val, argname, log_table=log_table, filter_class=LogFilter)
+def _core_log_filter(
+    val: Any, argname: str = None, **kwargs: Any
+) -> CoreLogFilter:
+    return _log_filter_common(val, argname, filter_class=CoreLogFilter)
 
 
 @_add_typed_validator
-def _log_filter_changelog(
-    val: Any, argname: str = None, *, log_table: LogTable, **kwargs: Any
-) -> LogFilterChangelog:
-    return _log_filter_common(
-        val, argname, log_table=log_table, filter_class=LogFilterChangelog)
+def _cde_log_filter(
+    val: Any, argname: str = None, **kwargs: Any
+) -> CdELogFilter:
+    return _log_filter_common(val, argname, filter_class=CdELogFilter)
 
 
 @_add_typed_validator
-def _log_filter_entity_log(
-    val: Any, argname: str = None, *, log_table: LogTable, **kwargs: Any
-) -> LogFilterEntityLog:
-    return _log_filter_common(
-        val, argname, log_table=log_table, filter_class=LogFilterEntityLog)
+def _changelog_log_filter(
+    val: Any, argname: str = None, **kwargs: Any
+) -> ChangelogLogFilter:
+    return _log_filter_common(val, argname, filter_class=ChangelogLogFilter)
 
 
 @_add_typed_validator
-def _log_filter_finance(
-    val: Any, argname: str = None, *, log_table: LogTable, **kwargs: Any
-) -> LogFilterFinanceLog:
-    return _log_filter_common(
-        val, argname, log_table=log_table, filter_class=LogFilterFinanceLog)
+def _finance_log_filter(
+    val: Any, argname: str = None, **kwargs: Any
+) -> FinanceLogFilter:
+    return _log_filter_common(val, argname, filter_class=FinanceLogFilter)
 
 
-LF = TypeVar("LF", bound=LogFilter)
+@_add_typed_validator
+def _assembly_log_filter(
+    val: Any, argname: str = None, **kwargs: Any
+) -> AssemblyLogFilter:
+    return _log_filter_common(val, argname, filter_class=AssemblyLogFilter)
+
+
+@_add_typed_validator
+def _event_log_filter(
+    val: Any, argname: str = None, **kwargs: Any
+) -> EventLogFilter:
+    return _log_filter_common(val, argname, filter_class=EventLogFilter)
+
+
+@_add_typed_validator
+def _ml_log_filter(
+    val: Any, argname: str = None, **kwargs: Any
+) -> MlLogFilter:
+    return _log_filter_common(val, argname, filter_class=MlLogFilter)
+
+
+@_add_typed_validator
+def _past_event_log_filter(
+    val: Any, argname: str = None, **kwargs: Any
+) -> PastEventLogFilter:
+    return _log_filter_common(val, argname, filter_class=PastEventLogFilter)
+
+
+LF = TypeVar("LF", bound=GenericLogFilter)
 
 
 def _log_filter_common(
     val: Any, argname: str = None,
-    *, log_table: LogTable, filter_class: Type[LF],
+    *, filter_class: Type[LF],
     **kwargs: Any
 ) -> LF:
 
     if isinstance(val, filter_class):
-        val_dict = val.__dict__
-    else:
-        val_dict = dict(_mapping(val, argname, **kwargs))
+        val = val.to_validation()
+    val = dict(_mapping(val, argname, **kwargs))
 
-    if not val_dict.get('length'):
-        val_dict['length'] = _CONFIG['DEFAULT_LOG_LENGTH']
-    if val_dict.get('table', log_table) != log_table:
-        raise ValidationSummary(ValueError(n_("Table mismatch.")))
-    # Ensure this is an enum member, not just a string.
-    val_dict['table'] = LogTable(log_table)
+    if not val.get('length'):
+        val['length'] = _CONFIG['DEFAULT_LOG_LENGTH']
 
-    val_dict = _examine_dictionary_fields(
-        val_dict, {}, typing.get_type_hints(filter_class))
+    mandatory, optional = filter_class.get_validation_fields()
+    val = _examine_dictionary_fields(val, mandatory, optional)
 
-    return filter_class(**val_dict)
+    return filter_class(**val)
 
 
 E = TypeVar('E', bound=Enum)

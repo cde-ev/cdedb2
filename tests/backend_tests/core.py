@@ -16,6 +16,7 @@ from cdedb.common.exceptions import ArchiveError, PrivilegeError
 from cdedb.common.fields import (
     PERSONA_CDE_FIELDS, PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS,
 )
+from cdedb.common.query.log_filter import ChangelogLogFilter, CoreLogFilter
 from cdedb.common.validation.validate import PERSONA_CDE_CREATION
 from tests.common import (
     ANONYMOUS, USER_DICT, BackendTest, as_users, create_mock_image, prepsql, storage,
@@ -211,7 +212,7 @@ class TestCoreBackend(BackendTest):
             'submitted_by': self.user['id'],
             'change_note': newaddress,
         }
-        _, log_entry = self.core.retrieve_log(self.key, {})
+        _, log_entry = self.core.retrieve_log(self.key, CoreLogFilter())
         self.assertIn(expected_log, log_entry)
 
     @storage
@@ -485,7 +486,7 @@ class TestCoreBackend(BackendTest):
             'submitted_by': self.user['id'],
             'change_note': change_note,
         }
-        _, expected_log = self.core.retrieve_log(self.key, {})
+        _, expected_log = self.core.retrieve_log(self.key, CoreLogFilter())
         self.assertIn(log_entry, expected_log)
 
     @as_users("vera")
@@ -586,7 +587,8 @@ class TestCoreBackend(BackendTest):
             'persona_id': None,
             'submitted_by': self.user['id'],
         }
-        _, log_entries = self.core.retrieve_log(self.key, {'codes': (genesis_deleted,)})
+        _, log_entries = self.core.retrieve_log(
+            self.key, CoreLogFilter(codes=[genesis_deleted]))
         self.assertIn(log_entry_expectation, log_entries)
 
     @as_users("annika", "vera")
@@ -916,7 +918,7 @@ class TestCoreBackend(BackendTest):
         self.assertLess(ret, 0)
         self.login(USER_DICT["anton"])
         total, _ = self.core.retrieve_log(
-            self.key, {'codes': (const.CoreLogCodes.genesis_verified,)})
+            self.key, CoreLogFilter(codes=[const.CoreLogCodes.genesis_verified]))
         self.assertEqual(1, total)
 
     @as_users("vera")
@@ -1180,10 +1182,11 @@ class TestCoreBackend(BackendTest):
                 'submitted_by': admin2['id'],
             },
         ))
-        result = self.core.retrieve_log(self.key, {})
+        result = self.core.retrieve_log(self.key, CoreLogFilter())
         self.assertEqual(core_log_expectation, result)
 
-        total_entries = self.core.retrieve_changelog_meta(self.key, {})[0]
+        total_entries = self.core.retrieve_changelog_meta(
+            self.key, ChangelogLogFilter())[0]
         changelog_expectation = (
             # Committing the changed admin bits.
             {
@@ -1405,5 +1408,5 @@ class TestCoreBackend(BackendTest):
                             "automated_change")
                 self.assertLogEqual(
                     tuple(self.get_sample_data(table, keys=keys).values()),
-                    log_retriever=retriever,
+                    log_retriever=retriever,  # type: ignore[arg-type]
                 )

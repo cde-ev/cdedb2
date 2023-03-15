@@ -15,7 +15,6 @@ The base aswell as all its subclasses (the event frontend mixins) combine togeth
 become the full `EventFrontend` in this modules `__init__.py`.
 """
 import abc
-import datetime
 import itertools
 import operator
 from collections import OrderedDict
@@ -33,7 +32,6 @@ from cdedb.common import (
     EVENT_SCHEMA_VERSION, CdEDBObject, CdEDBObjectMap, RequestState, merge_dicts,
     unwrap,
 )
-from cdedb.common.fields import LOG_FIELDS_COMMON
 from cdedb.common.i18n import get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryScope
@@ -643,24 +641,8 @@ class EventBaseFrontend(AbstractUserFrontend):
         return self.render(rs, "base/constraint_violations", params)
 
     @access("event_admin", "auditor")
-    @REQUESTdata(*LOG_FIELDS_COMMON, "event_id")
-    def view_log(self, rs: RequestState, codes: Collection[const.EventLogCodes],
-                 event_id: Optional[vtypes.ID], offset: Optional[int],
-                 length: Optional[vtypes.PositiveInt],
-                 persona_id: Optional[vtypes.CdedbID],
-                 submitted_by: Optional[vtypes.CdedbID],
-                 change_note: Optional[str],
-                 time_start: Optional[datetime.datetime],
-                 time_stop: Optional[datetime.datetime],
-                 download: bool = False) -> Response:
+    def view_log(self, rs: RequestState) -> Response:
         """View activities concerning events organized via DB."""
-
-        filter_params = {
-            'entity_ids': [event_id] if event_id else [],
-            'codes': codes, 'offset': offset, 'length': length,
-            'persona_id': persona_id, 'submitted_by': submitted_by,
-            'change_note': change_note, 'ctime': (time_start, time_stop),
-        }
         event_ids = self.eventproxy.list_events(rs)
         events = self.eventproxy.get_events(rs, event_ids)
         if self.is_admin(rs):
@@ -668,35 +650,18 @@ class EventBaseFrontend(AbstractUserFrontend):
         else:
             registration_map = {}
         return self.generic_view_log(
-            rs, filter_params, "event.log", "base/view_log", download, {
+            rs, "event.log", "base/view_log", {
             'all_events': events, 'registration_map': registration_map,
         })
 
     @access("event")
     @event_guard()
-    @REQUESTdata(*LOG_FIELDS_COMMON)
-    def view_event_log(self, rs: RequestState,
-                       codes: Collection[const.EventLogCodes],
-                       event_id: int, offset: Optional[int],
-                       length: Optional[vtypes.PositiveInt],
-                       persona_id: Optional[vtypes.CdedbID],
-                       submitted_by: Optional[vtypes.CdedbID],
-                       change_note: Optional[str],
-                       time_start: Optional[datetime.datetime],
-                       time_stop: Optional[datetime.datetime],
-                       download: bool = False) -> Response:
+    def view_event_log(self, rs: RequestState, event_id: int) -> Response:
         """View activities concerning one event organized via DB."""
-
-        filter_params = {
-            'entity_ids': [event_id],
-            'codes': codes, 'offset': offset, 'length': length,
-            'persona_id': persona_id, 'submitted_by': submitted_by,
-            'change_note': change_note, 'ctime': (time_start, time_stop),
-        }
 
         registration_map = self.eventproxy.get_registration_map(rs, (event_id,))
         return self.generic_view_log(
-            rs, filter_params, "event.log", "base/view_event_log", download, {
+            rs, "event.log", "base/view_event_log", {
             'registration_map': registration_map
         })
 

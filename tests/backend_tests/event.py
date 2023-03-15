@@ -23,6 +23,7 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import PartialImportError, PrivilegeError
 from cdedb.common.query import Query, QueryOperators, QueryScope
+from cdedb.common.query.log_filter import EventLogFilter
 from tests.common import (
     ANONYMOUS, USER_DICT, BackendTest, as_users, event_keeper, json_keys_to_int,
     storage,
@@ -663,9 +664,10 @@ class TestEventBackend(BackendTest):
         self.assertEqual(minor_form, self.event.get_minor_form(self.key, event_id))
         self.assertGreater(0, self.event.change_minor_form(self.key, event_id, None))
         count, log = self.event.retrieve_log(
-            self.key, {'codes': {const.EventLogCodes.minor_form_updated,
-                                 const.EventLogCodes.minor_form_removed},
-                       'entity_ids': [event_id]}
+            self.key, EventLogFilter(
+                codes=[const.EventLogCodes.minor_form_updated,
+                       const.EventLogCodes.minor_form_removed],
+                event_id=event_id)
         )
         expectation = [
             {
