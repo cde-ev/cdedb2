@@ -1677,9 +1677,14 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
                             rs, "error", n_("You must login."))])
                     ret.set_cookie("displaynote", notifications)
                     return ret
-                raise werkzeug.exceptions.Forbidden(
-                    rs.gettext("Access denied to {realm}/{endpoint}.").format(
-                        realm=obj.__class__.__name__, endpoint=fun.__name__))
+                msg = n_("Access denied to {realm}/{endpoint}.")
+                params = {
+                    'realm': obj.__class__.__name__,
+                    'endpoint': fun.__name__,
+                }
+                log_msg = msg.format(**params) + f" Roles: {rs.user.roles}."
+                _LOGGER.error(log_msg)
+                raise werkzeug.exceptions.Forbidden(rs.gettext(msg).format(**params))
 
         new_fun.access_list = access_list  # type: ignore[attr-defined]
         new_fun.modi = modi  # type: ignore[attr-defined]
