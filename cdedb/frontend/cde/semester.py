@@ -6,15 +6,9 @@ Everything here requires the "finance_admin" role, except viewing the semester l
 which requires "cde_admin". Note that every "finance_admin" is also a "cde_admin".
 """
 
-import datetime
-from typing import Collection, Optional
-
 from werkzeug import Response
 
-import cdedb.common.validation.types as vtypes
-import cdedb.database.constants as const
 from cdedb.common import RequestState, SemesterSteps, lastschrift_reference, unwrap
-from cdedb.common.fields import LOG_FIELDS_COMMON
 from cdedb.common.n_ import n_
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (

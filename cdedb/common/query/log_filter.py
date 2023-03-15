@@ -137,7 +137,7 @@ class GenericLogFilter:
         del optional['length']
         optional['codes'] = list[cls.log_code_class]  # type: ignore[name-defined]
         for k in cls.get_persona_columns():
-            optional[k] = Optional[vtypes.CdedbID]
+            optional[k] = Optional[vtypes.CdedbID]  # type: ignore[assignment]
         return mandatory, optional
 
     @classmethod
@@ -186,7 +186,7 @@ class ChangelogLogFilter(GenericLogFilter):
 @dataclasses.dataclass
 class AssemblyLogFilter(GenericLogFilter):
     log_table = "assembly.log"
-    log_code_class = const.EventLogCodes
+    log_code_class = const.AssemblyLogCodes
     additional_columns = ("assembly_id",)
 
     assembly_id: Optional[int] = None

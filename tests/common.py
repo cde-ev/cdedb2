@@ -24,6 +24,7 @@ import sys
 import tempfile
 import time
 import unittest
+import urllib.error
 import urllib.parse
 import urllib.request
 from typing import (
@@ -472,12 +473,7 @@ class BackendTest(CdEDBTest):
         if realm and not log_retriever:
             log_retriever = getattr(self, realm).retrieve_log
         if log_retriever:
-            new_kwargs = dict(kwargs)
-            for k in ('assembly_id', 'event_id', 'mailinglist_id'):
-                if k in kwargs:
-                    new_kwargs['entity_ids'] = [kwargs[k]]
-                    del new_kwargs[k]
-            _, log = log_retriever(self.key, new_kwargs)
+            _, log = log_retriever(self.key, kwargs)
         else:
             raise ValueError("No method of log retrieval provided.")
 
