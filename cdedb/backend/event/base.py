@@ -124,8 +124,7 @@ class EventBaseBackend(EventLowLevelBackend):
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
         log_filter = affirm(EventLogFilter, log_filter)
-        event_ids = {log_filter.event_id} if log_filter.event_id else ()
-        event_ids = affirm_set(vtypes.ID, event_ids)
+        event_ids = affirm_set(vtypes.ID, log_filter.event_ids())
 
         if self.is_admin(rs) or "auditor" in rs.user.roles:
             pass

@@ -190,13 +190,19 @@ class AssemblyLogFilter(GenericLogFilter):
     additional_columns = ("assembly_id",)
 
     assembly_id: Optional[int] = None
+    _assembly_ids: list[int] = dataclasses.field(default_factory=list)
+
+    def assembly_ids(self) -> list[int]:
+        if self.assembly_id:
+            return [self.assembly_id]
+        return self._assembly_ids
 
     def _get_sql_conditions(self) -> tuple[list[str], list[DatabaseValue_s]]:
         conditions, params = super()._get_sql_conditions()
 
-        if self.assembly_id:
-            conditions.append("assembly_id = %s")
-            params.append(self.assembly_id)
+        if self.assembly_ids():
+            conditions.append("assembly_id = ANY(%s)")
+            params.append(self.assembly_ids())
 
         return conditions, params
 
@@ -208,13 +214,19 @@ class EventLogFilter(GenericLogFilter):
     additional_columns = ("event_id",)
 
     event_id: Optional[int] = None
+    _event_ids: list[int] = dataclasses.field(default_factory=list)
+
+    def event_ids(self) -> list[int]:
+        if self.event_id:
+            return [self.event_id]
+        return self._event_ids
 
     def _get_sql_conditions(self) -> tuple[list[str], list[DatabaseValue_s]]:
         conditions, params = super()._get_sql_conditions()
 
-        if self.event_id:
-            conditions.append("event_id = %s")
-            params.append(self.event_id)
+        if self.event_ids():
+            conditions.append("event_id = ANY(%s)")
+            params.append(self.event_ids())
 
         return conditions, params
 
@@ -226,22 +238,19 @@ class MlLogFilter(GenericLogFilter):
     additional_columns = ("mailinglist_id",)
 
     mailinglist_id: Optional[int] = None
-    mailinglist_ids: list[int] = dataclasses.field(default_factory=list)
+    _mailinglist_ids: list[int] = dataclasses.field(default_factory=list)
 
-    def ml_ids(self) -> list[int]:
+    def mailinglist_ids(self) -> list[int]:
         if self.mailinglist_id:
             return [self.mailinglist_id]
-        return self.mailinglist_ids
+        return self._mailinglist_ids
 
     def _get_sql_conditions(self) -> tuple[list[str], list[DatabaseValue_s]]:
         conditions, params = super()._get_sql_conditions()
 
-        if self.mailinglist_id:
-            conditions.append("mailinglist_id = %s")
-            params.append(self.mailinglist_id)
-        if self.mailinglist_ids:
+        if self.mailinglist_ids():
             conditions.append("mailinglist_id = ANY(%s)")
-            params.append(self.mailinglist_ids)
+            params.append(self.mailinglist_ids())
 
         return conditions, params
 
@@ -253,13 +262,19 @@ class PastEventLogFilter(GenericLogFilter):
     additional_columns = ("pevent_id",)
 
     pevent_id: Optional[int] = None
+    _pevent_ids: list[int] = dataclasses.field(default_factory=list)
+
+    def pevent_ids(self) -> list[int]:
+        if self.pevent_id:
+            return [self.pevent_id]
+        return self._pevent_ids
 
     def _get_sql_conditions(self) -> tuple[list[str], list[DatabaseValue_s]]:
         conditions, params = super()._get_sql_conditions()
 
-        if self.pevent_id:
-            conditions.append("pevent_id = %s")
-            params.append(self.pevent_id)
+        if self.pevent_ids():
+            conditions.append("pevent_id = ANY(%s)")
+            params.append(self.pevent_ids())
 
         return conditions, params
 

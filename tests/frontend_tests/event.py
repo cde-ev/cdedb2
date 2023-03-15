@@ -1380,7 +1380,7 @@ etc;anything else""", f['entries_2'].value)
             },
         ]
         self.assertLogEqual(
-            ml_log_expectation, realm="ml", entity_ids={1001, 1002})
+            ml_log_expectation, realm="ml", _mailinglist_ids={1001, 1002})
 
     @as_users("annika", "garcia")
     def test_change_course(self) -> None:
