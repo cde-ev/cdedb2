@@ -4778,7 +4778,7 @@ def _log_filter_common(
     if not val.get('length'):
         val['length'] = _CONFIG['DEFAULT_LOG_LENGTH']
 
-    mandatory, optional = filter_class.get_validation_fields()
+    mandatory, optional = filter_class.validation_fields()
     val = _examine_dictionary_fields(val, mandatory, optional)
 
     return filter_class(**val)

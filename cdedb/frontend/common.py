@@ -1123,18 +1123,33 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
     def generic_view_log(self, rs: RequestState, table: str, template: str,
                          template_kwargs: CdEDBObject = None) -> werkzeug.Response:
-        """Generic helper to retrieve log data and render the result."""
+        """Generic helper to retrieve log data and render the result.
+
+        This takes care of extracting and vallidating filter input.
+        """
+        # Determine if the user wants to download the log.
+        download = request_extractor(rs, {'download': bool})['download']
+
+        # Extract and validate filter input.
         filter_class = LOG_TABLE_FILTER_MAP[table]
 
-        # Extract parameters from request, keep parameters already present (via URL).
-        filter_spec = filter_class.request_spec()
-        filter_spec = [
+        # URL parameters (like "/event/event/<event_id>") are already present in
+        #  `rs.values`. Trying to extract them from the request would overwrite this,
+        #  so we skip extraction of all keys that are already present.
+        filter_spec = filter_class.requestdict_fields()
+        limited_filter_spec = [
             (name, argtype) for name, argtype in filter_spec
             if name not in rs.values
         ]
+        data = request_dict_extractor(rs, limited_filter_spec)
 
-        data = request_dict_extractor(rs, filter_spec)
-        merge_dicts(data, rs.values)
+        # Now add the keys we skipped previously.
+        for name, argtype in filter_spec:
+            if name in rs.values:
+                if argtype == "[str]":
+                    data[name] = tuple(rs.values.getlist(name))
+                else:
+                    data[name] = rs.values[name]
 
         log_filter = check_validation(rs, filter_class, data)
         if rs.has_validation_errors() or log_filter is None:
@@ -1168,7 +1183,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         persona_ids = log_filter.get_persona_ids(log)
         personas = self.coreproxy.get_personas(rs, persona_ids)
 
-        if request_extractor(rs, {'download': bool})['download']:
+        if download:
             # Postprocess persona information: Add names and cdedb id.
             persona_fields = log_filter.get_persona_columns()
             cdedbids = {persona_id: cdedbid_filter(persona_id)

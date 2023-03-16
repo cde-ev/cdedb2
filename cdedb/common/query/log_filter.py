@@ -115,7 +115,11 @@ class GenericLogFilter:
         return ", ".join(cls.get_columns())
 
     @classmethod
-    def request_spec(cls) -> list[tuple[str, str]]:
+    def requestdict_fields(cls) -> list[tuple[str, str]]:
+        """Determine which fields should be extracted from the request.
+
+        For use with `REQUESTdatadict` or `request_dict_extractor`.
+        """
         return [
             (field.name, requestdict_field_spec(field))
             for field in dataclasses.fields(cls)
@@ -123,13 +127,22 @@ class GenericLogFilter:
         ]
 
     def to_validation(self) -> CdEDBObject:
+        """Turn an instance of the dataclass into a dict, that can be validated.
+
+        Because CdEDB-ID validation is not idempotent, we need to fix some data.
+        """
         ret = dataclasses.asdict(self)
         for k in self.get_persona_columns():
             ret[k] = cdedbid_filter(ret[k])
         return ret
 
     @classmethod
-    def get_validation_fields(cls) -> tuple[TypeMapping, TypeMapping]:
+    def validation_fields(cls) -> tuple[TypeMapping, TypeMapping]:
+        """Create a specification for validating the dataclass.
+
+        Returns two dicts, with mandatory and optional keys respectively.
+        Some type annotations differ slightly from the validation type.
+        """
         mandatory: TypeMapping = {'length': int}
         optional: TypeMapping = {
             field.name: field.type for field in dataclasses.fields(cls)
@@ -142,10 +155,12 @@ class GenericLogFilter:
 
     @classmethod
     def get_persona_columns(cls) -> tuple[str, ...]:
+        """Determine which filter attributes are persona ids."""
         return _DEFAULT_PERSONA_COLUMNS + cls.additional_persona_columns
 
     @classmethod
     def get_persona_ids(cls, log_entries: Collection[CdEDBObject]) -> set[int]:
+        """Extract a set of all persona ids in the given log entries."""
         ret: set[int] = set()
         for k in cls.get_persona_columns():
             ret.update(e[k] for e in log_entries if e[k])
