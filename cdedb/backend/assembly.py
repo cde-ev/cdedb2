@@ -322,8 +322,7 @@ class AssemblyBackend(AbstractBackend):
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
         log_filter = affirm(AssemblyLogFilter, log_filter)
-        assembly_ids = {log_filter.assembly_id} if log_filter.assembly_id else ()
-        assembly_ids = affirm_set(vtypes.ID, assembly_ids)
+        assembly_ids = affirm_set(vtypes.ID, log_filter.assembly_ids())
 
         if self.is_admin(rs) or "auditor" in rs.user.roles:
             pass
