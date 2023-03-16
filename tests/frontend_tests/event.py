@@ -6152,11 +6152,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f['group1.course_choice_0'] = course_id
         f['group1.course_instructor'] = course_id
 
-
     @event_keeper
     @as_users("anton")
     def test_registration_strict_bool(self) -> None:
-        event_id = 2
         self.traverse("Veranstaltungen", "CdE-Party", "Konfiguration")
         f = self.response.forms['changeeventform']
         f['registration_start'] = now()
@@ -6167,7 +6165,12 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f['kind_-1'] = const.FieldDatatypes.bool
         f['association_-1'] = const.FieldAssociations.registration
         f['title_-1'] = f['field_name_-1'] = "test"
+        f['entries_-1'] = ""
         self.submit(f)
+        f = self.response.forms['fieldsummaryform']
+        f['create_-1'] = True
+        f['kind_-1'] = const.FieldDatatypes.bool
+        f['association_-1'] = const.FieldAssociations.registration
         f['title_-1'] = f['field_name_-1'] = "test2"
         f['entries_-1'] = "1;Ja\n0;Nein"
         self.submit(f)
@@ -6176,6 +6179,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f['create_-1'] = True
         f['field_id_-1'] = 1001
         self.submit(f)
+        f = self.response.forms['configureregistrationform']
+        f['create_-1'] = True
         f['field_id_-1'] = 1002
         self.submit(f)
         self.traverse("Anmelden")
