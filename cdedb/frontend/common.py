@@ -1133,23 +1133,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         # Extract and validate filter input.
         filter_class = LOG_TABLE_FILTER_MAP[table]
 
-        # URL parameters (like "/event/event/<event_id>") are already present in
-        #  `rs.values`. Trying to extract them from the request would overwrite this,
-        #  so we skip extraction of all keys that are already present.
-        filter_spec = filter_class.requestdict_fields()
-        limited_filter_spec = [
-            (name, argtype) for name, argtype in filter_spec
-            if name not in rs.values
-        ]
-        data = request_dict_extractor(rs, limited_filter_spec)
-
-        # Now add the keys we skipped previously.
-        for name, argtype in filter_spec:
-            if name in rs.values:
-                if argtype == "[str]":
-                    data[name] = tuple(rs.values.getlist(name))
-                else:
-                    data[name] = rs.values[name]
+        # Take care not to overwrite existing parameters (which come in via URL).
+        data = request_dict_extractor(
+            rs, filter_class.requestdict_fields(), skip_existing=True)
 
         data = check_validation(rs, vtypes.LogFilter, data, subtype=filter_class)
         if rs.has_validation_errors() or data is None:
@@ -1947,7 +1933,8 @@ def REQUESTdata(
 
 
 # noinspection PyPep8Naming
-def REQUESTdatadict(*proto_spec: Union[str, Tuple[str, str]]
+def REQUESTdatadict(*proto_spec: Union[str, Tuple[str, str]],
+                    skip_existing: bool = False,
                     ) -> Callable[[F], F]:
     """Similar to :py:meth:`REQUESTdata`, but doesn't hand down the
     parameters as keyword-arguments, instead packs them all into a dict and
@@ -1958,6 +1945,8 @@ def REQUESTdatadict(*proto_spec: Union[str, Tuple[str, str]]
       but the only two allowed argument types are ``str`` and
       ``[str]``. Additionally the argument type may be omitted and a default
       of ``str`` is assumed.
+    :param skip_existing: If True, do not extract parameters alread in `rs.values`,
+        use the existing parameter instead.
     """
     spec = []
     for arg in proto_spec:
@@ -1973,11 +1962,17 @@ def REQUESTdatadict(*proto_spec: Union[str, Tuple[str, str]]
             data = {}
             for name, argtype in spec:
                 if argtype == "str":
-                    data[name] = rs.request.values.get(name, "")
-                    rs.values[name] = data[name]
+                    if name in rs.values and skip_existing:
+                        data[name] = rs.values[name]
+                    else:
+                        data[name] = rs.request.values.get(name, "")
+                        rs.values[name] = data[name]
                 elif argtype == "[str]":
-                    data[name] = tuple(rs.request.values.getlist(name))
-                    rs.values.setlist(name, data[name])
+                    if name in rs.values and skip_existing:
+                        data[name] = tuple(rs.values.getlist(name))
+                    else:
+                        data[name] = tuple(rs.request.values.getlist(name))
+                        rs.values.setlist(name, data[name])
                 else:
                     raise ValueError(n_("Invalid argtype {t} found.").format(
                         t=repr(argtype)))
@@ -2029,7 +2024,8 @@ def request_extractor(
 
 
 def request_dict_extractor(
-        rs: RequestState, args: Collection[Union[str, Tuple[str, str]]]
+        rs: RequestState, args: Collection[Union[str, Tuple[str, str]]],
+        skip_existing: bool = False,
 ) -> CdEDBObject:
     """Utility to apply REQUESTdatadict later than usual.
 
@@ -2039,7 +2035,7 @@ def request_dict_extractor(
     :returns: dict containing the requested values
     """
 
-    @REQUESTdatadict(*args)
+    @REQUESTdatadict(*args, skip_existing=skip_existing)
     def fun(_: None, rs: RequestState, data: CdEDBObject) -> CdEDBObject:
         return data
 
