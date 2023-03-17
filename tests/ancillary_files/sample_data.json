@@ -4285,7 +4285,7 @@
             "event_id": 1,
             "title": "Orgarabatt",
             "amount": "-50.00",
-            "condition": "(part.1.H. and part.2.H.) and is_orga",
+            "condition": "part.1.H. and part.2.H. and is_orga",
             "notes": null
         },
         {
