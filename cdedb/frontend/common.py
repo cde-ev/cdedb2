@@ -1151,13 +1151,15 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 else:
                     data[name] = rs.values[name]
 
-        log_filter = check_validation(rs, filter_class, data)
-        if rs.has_validation_errors() or log_filter is None:
+        data = check_validation(rs, vtypes.LogFilter, data, subtype=filter_class)
+        if rs.has_validation_errors() or data is None:
             # If validation fails, there is no good way to get a partial filter
             #  that is valid, so we use an empty filter instead. This should not
             #  matter much in practice because, with regular usage there should not
             #  be a way to input invalid filter values.
             log_filter = filter_class()
+        else:
+            log_filter = filter_class(**data)
 
         # Retrieve entry count and log entries.
         if isinstance(log_filter, CoreLogFilter):

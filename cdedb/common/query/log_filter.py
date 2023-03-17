@@ -15,6 +15,12 @@ from cdedb.database.query import DatabaseValue_s
 from cdedb.filter import cdedbid_filter
 from cdedb.models.common import requestdict_field_spec
 
+__all__ = [
+    'GenericLogFilter', 'CoreLogFilter', 'CdELogFilter', 'ChangelogLogFilter',
+    'FinanceLogFilter', 'AssemblyLogFilter', 'EventLogFilter', 'MlLogFilter',
+    'PastEventLogFilter',
+]
+
 _CONFIG = LazyConfig()
 _DEFAULT_LOG_COLUMNS = (
     "id", "ctime", "code", "submitted_by", "persona_id", "change_note",

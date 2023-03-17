@@ -93,10 +93,7 @@ from cdedb.common.query import (
     MULTI_VALUE_OPERATORS, NO_VALUE_OPERATORS, VALID_QUERY_OPERATORS, QueryOperators,
     QueryOrder, QueryScope, QuerySpec,
 )
-from cdedb.common.query.log_filter import (
-    AssemblyLogFilter, CdELogFilter, ChangelogLogFilter, CoreLogFilter, EventLogFilter,
-    FinanceLogFilter, GenericLogFilter, MlLogFilter, PastEventLogFilter,
-)
+from cdedb.common.query.log_filter import GenericLogFilter
 from cdedb.common.roles import ADMIN_KEYS, extract_roles
 from cdedb.common.sorting import xsorted
 from cdedb.common.validation.data import (
@@ -184,7 +181,8 @@ class ValidatorStorage(Dict[Type[Any], Callable[..., Any]]):
 _ALL_TYPED = ValidatorStorage()
 
 DATACLASS_TO_VALIDATORS: Mapping[Type[Any], Type[Any]] = {
-    models_ml.Mailinglist: Mailinglist
+    models_ml.Mailinglist: Mailinglist,
+    GenericLogFilter: LogFilter,
 }
 
 
@@ -223,7 +221,10 @@ def validate_assert_dataclass(type_: Type[T], value: Any, ignore_warnings: bool,
     Allows for subclasses, and figures out the appropriate superclass, for which
     a validator exists, dynamically."""
     subtype, validator = _validate_dataclass_preprocess(type_, value)
-    val = dataclasses.asdict(value)
+    if hasattr(value, 'to_validation'):
+        val = value.to_validation()
+    else:
+        val = dataclasses.asdict(value)
     validated = validate_assert(
         validator, val, ignore_warnings=ignore_warnings, subtype=subtype, **kwargs)
     return _validate_dataclass_postprocess(subtype, validated)
@@ -4707,81 +4708,23 @@ def _range(
 
 
 @_add_typed_validator
-def _core_log_filter(
-    val: Any, argname: str = None, **kwargs: Any
-) -> CoreLogFilter:
-    return _log_filter_common(val, argname, filter_class=CoreLogFilter)
-
-
-@_add_typed_validator
-def _cde_log_filter(
-    val: Any, argname: str = None, **kwargs: Any
-) -> CdELogFilter:
-    return _log_filter_common(val, argname, filter_class=CdELogFilter)
-
-
-@_add_typed_validator
-def _changelog_log_filter(
-    val: Any, argname: str = None, **kwargs: Any
-) -> ChangelogLogFilter:
-    return _log_filter_common(val, argname, filter_class=ChangelogLogFilter)
-
-
-@_add_typed_validator
-def _finance_log_filter(
-    val: Any, argname: str = None, **kwargs: Any
-) -> FinanceLogFilter:
-    return _log_filter_common(val, argname, filter_class=FinanceLogFilter)
-
-
-@_add_typed_validator
-def _assembly_log_filter(
-    val: Any, argname: str = None, **kwargs: Any
-) -> AssemblyLogFilter:
-    return _log_filter_common(val, argname, filter_class=AssemblyLogFilter)
-
-
-@_add_typed_validator
-def _event_log_filter(
-    val: Any, argname: str = None, **kwargs: Any
-) -> EventLogFilter:
-    return _log_filter_common(val, argname, filter_class=EventLogFilter)
-
-
-@_add_typed_validator
-def _ml_log_filter(
-    val: Any, argname: str = None, **kwargs: Any
-) -> MlLogFilter:
-    return _log_filter_common(val, argname, filter_class=MlLogFilter)
-
-
-@_add_typed_validator
-def _past_event_log_filter(
-    val: Any, argname: str = None, **kwargs: Any
-) -> PastEventLogFilter:
-    return _log_filter_common(val, argname, filter_class=PastEventLogFilter)
-
-
-LF = TypeVar("LF", bound=GenericLogFilter)
-
-
-def _log_filter_common(
+def _log_filter(
     val: Any, argname: str = None,
-    *, filter_class: Type[LF],
+    *, subtype: Type[GenericLogFilter],
     **kwargs: Any
-) -> LF:
+) -> LogFilter:
 
-    if isinstance(val, filter_class):
+    if isinstance(val, GenericLogFilter):
         val = val.to_validation()
     val = dict(_mapping(val, argname, **kwargs))
 
     if not val.get('length'):
         val['length'] = _CONFIG['DEFAULT_LOG_LENGTH']
 
-    mandatory, optional = filter_class.validation_fields()
+    mandatory, optional = subtype.validation_fields()
     val = _examine_dictionary_fields(val, mandatory, optional)
 
-    return filter_class(**val)
+    return LogFilter(val)
 
 
 E = TypeVar('E', bound=Enum)

@@ -364,7 +364,7 @@ class TestPastEventBackend(BackendTest):
              'pevent_id': 1,
              'persona_id': 5,
              'submitted_by': self.user['id']})
-        self.assertLogEqual(expectation, log_retriever=self.pastevent.retrieve_past_log)
+        self.assertLogEqual(expectation, 'past_event')
 
     @as_users("anton")
     def test_archive(self) -> None:

@@ -43,9 +43,9 @@ from schulze_condorcet import schulze_evaluate
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.backend.common import (
-    AbstractBackend, Silencer, access, affirm_set_validation as affirm_set,
-    affirm_validation as affirm, affirm_validation_optional as affirm_optional,
-    internal, singularize,
+    AbstractBackend, Silencer, access, affirm_dataclass,
+    affirm_set_validation as affirm_set, affirm_validation as affirm,
+    affirm_validation_optional as affirm_optional, internal, singularize,
 )
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
@@ -321,8 +321,8 @@ class AssemblyBackend(AbstractBackend):
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        log_filter = affirm(AssemblyLogFilter, log_filter)
-        assembly_ids = affirm_set(vtypes.ID, log_filter.assembly_ids())
+        log_filter = affirm_dataclass(AssemblyLogFilter, log_filter)
+        assembly_ids = log_filter.assembly_ids()
 
         if self.is_admin(rs) or "auditor" in rs.user.roles:
             pass

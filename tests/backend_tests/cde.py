@@ -487,4 +487,4 @@ class TestCdEBackend(BackendTest):
         # TODO more when available
 
         # now check it
-        self.assertLogEqual([], log_retriever=self.cde.retrieve_cde_log)
+        self.assertLogEqual([], 'cde')

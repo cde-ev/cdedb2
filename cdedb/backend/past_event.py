@@ -10,9 +10,10 @@ from typing import Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.backend.common import (
-    AbstractBackend, Silencer, access, affirm_set_validation as affirm_set,
-    affirm_validation as affirm, affirm_validation_optional as affirm_optional,
-    read_conditional_write_composer, singularize,
+    AbstractBackend, Silencer, access, affirm_dataclass,
+    affirm_set_validation as affirm_set, affirm_validation as affirm,
+    affirm_validation_optional as affirm_optional, read_conditional_write_composer,
+    singularize,
 )
 from cdedb.backend.event import EventBackend
 from cdedb.common import (
@@ -114,7 +115,7 @@ class PastEventBackend(AbstractBackend):
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        log_filter = affirm(PastEventLogFilter, log_filter)
+        log_filter = affirm_dataclass(PastEventLogFilter, log_filter)
         return self.generic_retrieve_log(rs, log_filter)
 
     @access("cde", "event")

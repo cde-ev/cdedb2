@@ -22,7 +22,7 @@ import psycopg2.extensions
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.backend.common import (
-    AbstractBackend, access, affirm_array_validation as affirm_array,
+    AbstractBackend, access, affirm_array_validation as affirm_array, affirm_dataclass,
     affirm_validation as affirm,
 )
 from cdedb.backend.past_event import PastEventBackend
@@ -85,7 +85,7 @@ class CdEBaseBackend(AbstractBackend):
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        log_filter = affirm(CdELogFilter, log_filter)
+        log_filter = affirm_dataclass(CdELogFilter, log_filter)
         return self.generic_retrieve_log(rs, log_filter)
 
     @access("core_admin", "cde_admin", "auditor")
@@ -96,7 +96,7 @@ class CdEBaseBackend(AbstractBackend):
         Similar to
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        log_filter = affirm(FinanceLogFilter, log_filter)
+        log_filter = affirm_dataclass(FinanceLogFilter, log_filter)
         return self.generic_retrieve_log(rs, log_filter)
 
     @access("finance_admin")

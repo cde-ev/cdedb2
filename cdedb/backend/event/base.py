@@ -22,8 +22,9 @@ from typing import Any, Collection, Dict, Iterable, List, Optional, Protocol, Se
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.backend.common import (
-    Silencer, access, affirm_set_validation as affirm_set, affirm_validation as affirm,
-    affirm_validation_optional as affirm_optional, cast_fields, internal, singularize,
+    Silencer, access, affirm_dataclass, affirm_set_validation as affirm_set,
+    affirm_validation as affirm, affirm_validation_optional as affirm_optional,
+    cast_fields, internal, singularize,
 )
 from cdedb.backend.entity_keeper import EntityKeeper
 from cdedb.backend.event.lowlevel import EventLowLevelBackend
@@ -123,8 +124,8 @@ class EventBaseBackend(EventLowLevelBackend):
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        log_filter = affirm(EventLogFilter, log_filter)
-        event_ids = affirm_set(vtypes.ID, log_filter.event_ids())
+        log_filter = affirm_dataclass(EventLogFilter, log_filter)
+        event_ids = log_filter.event_ids()
 
         if self.is_admin(rs) or "auditor" in rs.user.roles:
             pass
