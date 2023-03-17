@@ -14,6 +14,7 @@ from typing import Any, Callable, Collection, Dict, Optional, Protocol, Set
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.fee_condition_parser.parsing as fcp_parsing
+import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_set_validation as affirm_set,
     affirm_validation as affirm, internal, singularize,
@@ -587,17 +588,6 @@ class EventLowLevelBackend(AbstractBackend):
             current_part_data = {e['id']: e for e in self.sql_select(
                 rs, "event.event_parts", EVENT_PART_FIELDS, updated_parts)}
 
-            # Event fees reference event parts via shortname.
-            # Temporarily replace theses references with id references.
-            q = """SELECT id, condition FROM event.event_fees WHERE event_id = %s"""
-            fee_conditions: Dict[int, str] = {
-                e['id']: e['condition'] for e in self.query_all(rs, q, (event_id,))}
-            new_fee_conditions = dict(fee_conditions)
-            for part_id, part_data in current_part_data.items():
-                for fee_id, condition in new_fee_conditions.items():
-                    new_fee_conditions[fee_id] = condition.replace(
-                        f"part.{part_data['shortname']}", f"part_id.{part_id}")
-
             for x in mixed_existence_sorter(updated_parts):
                 updated = copy.deepcopy(parts[x])
                 assert updated is not None
@@ -613,20 +603,34 @@ class EventLowLevelBackend(AbstractBackend):
                         change_note=updated.get('title', current_part_data[x]['title']))
                 ret *= self._set_tracks(rs, event_id, x, tracks)
 
-            # Translate id references back to shortname references.
+            # Construct a dict of part shortname changes.
             new_part_data = {e['id']: e for e in self.sql_select(
                 rs, "event.event_parts", EVENT_PART_FIELDS, updated_parts)}
-            for part_id, part_data in new_part_data.items():
-                for fee_id, condition in new_fee_conditions.items():
-                    new_fee_conditions[fee_id] = condition.replace(
-                        f"part_id.{part_id}", f"part.{part_data['shortname']}")
+            changed_shortnames = {
+                old_shortname: new_shortname
+                for part_id, part in new_part_data.items()
+                if (old_shortname := current_part_data[part_id]['shortname'])
+                   != (new_shortname := part['shortname'])
 
-            # Update any fee conditions that changed
-            #  (i.e. those referencing a part which got a new shortname).
-            for fee_id, condition in new_fee_conditions.items():
-                if condition != fee_conditions[fee_id]:
-                    self.sql_update(rs, "event.event_fees",
-                                    {'id': fee_id, 'condition': condition})
+            }
+            if changed_shortnames:
+                # Substitute changed shortnames in existing fee conditions.
+                q = """SELECT id, condition FROM event.event_fees WHERE event_id = %s"""
+                fee_conditions: Dict[int, str] = {
+                    e['id']: e['condition'] for e in self.query_all(rs, q, (event_id,))}
+
+                # Update any fee conditions that changed
+                #  (i.e. those referencing a part which got a new shortname).
+                for fee_id, condition in fee_conditions.items():
+                    parse_result = fcp_parsing.parse(condition)
+                    new_condition = fcp_roundtrip.serialize(
+                        parse_result, part_substitutions=changed_shortnames)
+                    if new_condition != condition:
+                        log_msg = (f"Replacing fee ({fee_id}): '{condition}' with"
+                                   f" '{new_condition}' due to part shortname changes.")
+                        self.logger.debug(log_msg)
+                        self.sql_update(rs, "event.event_fees",
+                                        {'id': fee_id, 'condition': new_condition})
 
         if deleted_parts:
             # Recursively delete fee modifiers and tracks, but not registrations, since
