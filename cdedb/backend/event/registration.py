@@ -1273,8 +1273,8 @@ class EventRegistrationBackend(EventBaseBackend):
 
         :param part_ids: Collection of part ids the user is (supposedly) registered for.
         :param field_ids: Collection of fields, which have a truthy value.
-        :param is_member:
-        :param is_orga:
+        :param is_member: Optional override for membership status in fee calculation.
+        :param is_orga: Optional override for orga status in fee calculation.
         """
         event_id = affirm(vtypes.ID, event_id)
         persona_id = affirm(vtypes.ID, persona_id)
