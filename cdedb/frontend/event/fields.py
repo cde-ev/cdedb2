@@ -20,8 +20,8 @@ from cdedb.common import (
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
-from cdedb.common.validation import EVENT_FIELD_ALL_FIELDS
 from cdedb.common.validation.types import VALIDATOR_LOOKUP
+from cdedb.common.validation.validate import EVENT_FIELD_ALL_FIELDS
 from cdedb.filter import safe_filter
 from cdedb.frontend.common import (
     REQUESTdata, access, drow_name, event_guard, process_dynamic_input,

@@ -2292,7 +2292,6 @@ EVENT_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'orgas': Iterable,
     'parts': Mapping,
     'fields': Mapping,
-    'fees': Mapping,
 }
 
 EVENT_CREATION_OPTIONAL_FIELDS: TypeMapping = {
@@ -2414,7 +2413,6 @@ EVENT_PART_CREATION_MANDATORY_FIELDS: TypeMapping = {
     'shortname': TokenString,
     'part_begin': datetime.date,
     'part_end': datetime.date,
-    # 'fee': NonNegativeDecimal,
     'waitlist_field': Optional[ID],  # type: ignore[dict-item]
 }
 

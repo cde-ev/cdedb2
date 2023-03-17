@@ -38,7 +38,7 @@ from cdedb.common.i18n import get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryScope
 from cdedb.common.sorting import EntitySorter, KeyFunction, Sortkey, xsorted
-from cdedb.common.validation import PERSONA_FULL_CREATION, filter_none
+from cdedb.common.validation.validate import PERSONA_FULL_CREATION, filter_none
 from cdedb.filter import enum_entries_filter, keydictsort_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access, event_guard, periodic,

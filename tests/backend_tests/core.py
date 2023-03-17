@@ -16,7 +16,7 @@ from cdedb.common.exceptions import ArchiveError, PrivilegeError
 from cdedb.common.fields import (
     PERSONA_CDE_FIELDS, PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS,
 )
-from cdedb.common.validation import PERSONA_CDE_CREATION
+from cdedb.common.validation.validate import PERSONA_CDE_CREATION
 from tests.common import (
     ANONYMOUS, USER_DICT, BackendTest, as_users, create_mock_image, prepsql, storage,
 )

@@ -1736,21 +1736,15 @@ class CoreBaseBackend(AbstractBackend):
         # all event users who are related to their event) or 'participant'
         # of the requested event (to get access to all event users who are also
         # 'participant' at the same event).
-        #
-        # This is a bit of a transgression since we access the event
-        # schema from the core backend, but we go for security instead of
-        # correctness here.
+        is_orga = False
         if event_id:
-            orga = ("SELECT event_id FROM event.orgas WHERE persona_id = %s"
-                    " AND event_id = %s")
-            is_orga = bool(
-                self.query_all(rs, orga, (rs.user.persona_id, event_id)))
-        else:
-            is_orga = False
+            is_orga = event_id in rs.user.orga
         if (persona_ids != {rs.user.persona_id}
                 and not (rs.user.roles
                          & {"event_admin", "cde_admin", "core_admin",
                             "droid_quick_partial_export"})):
+            # Accessing the event scheme from the core backend is a bit of a
+            # transgression, but we value the added security higher than correctness.
             query = """
                 SELECT DISTINCT
                     regs.id, regs.persona_id

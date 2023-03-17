@@ -28,7 +28,7 @@ from cdedb.common import (
 )
 from cdedb.common.n_ import n_
 from cdedb.common.sorting import EntitySorter, xsorted
-from cdedb.common.validation import LASTSCHRIFT_COMMON_FIELDS
+from cdedb.common.validation.validate import LASTSCHRIFT_COMMON_FIELDS
 from cdedb.filter import money_filter
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (

@@ -79,6 +79,9 @@ msgstr ""
 msgid "FinanceLogCodes.remove_balance_on_archival"
 msgstr "Guthaben bei Archivierung gelöscht"
 
+msgid "Must not contain whitespace or parentheses."
+msgstr "Darf keine Leerzeichen oder Klammern enthalten."
+
 msgid "Process Accounts"
 msgstr "Nutzer verarbeiten"
 
@@ -833,6 +836,11 @@ msgstr "Guthaben zu niedrig."
 #, python-format
 msgid "%(user_roles)s is disjoint from %(roles)s"
 msgstr "%(user_roles)s ist disjunkt zu %(roles)s"
+
+#: cdedb/backend/common.py:190
+#, python-format
+msgid "%(user_roles)s is disjoint from %(roles)s for method %(method)s."
+msgstr "%(user_roles)s ist disjunkt zu %(roles)s für Methode %(method)s."
 
 #: cdedb/backend/common.py:216 cdedb/database/connection.py:237
 msgid "No contamination!"
@@ -19373,6 +19381,3 @@ msgstr "Vollständige Adresse für %(input)s kann nicht bestimmt werden."
 #, python-format
 msgid "%(ml_type)s is not an appropriate type for this mailinglist."
 msgstr "%(ml_type)s ist kein geeigneter Typ für diese Mailingliste."
-
-msgid "Must not contain whitespace or parentheses."
-msgstr "Darf keine Leerzeichen oder Klammern enthalten."
