@@ -119,32 +119,32 @@ isort:
 	@echo $(BANNERLINE)
 	@echo "All of isort"
 	@echo $(BANNERLINE)
-	@echo ""
 	$(ISORT) --check-only bin/*.py cdedb tests
+	@echo ""
 
 .PHONY: flake8
 flake8:
 	@echo $(BANNERLINE)
 	@echo "All of flake8"
 	@echo $(BANNERLINE)
-	@echo ""
 	$(FLAKE8) cdedb tests
+	@echo ""
 
 .PHONY: pylint
 pylint:
 	@echo $(BANNERLINE)
 	@echo "All of pylint"
 	@echo $(BANNERLINE)
-	@echo ""
 	$(PYLINT) cdedb tests
+	@echo ""
 
 .PHONY: template-line-length
 template-line-length:
 	@echo $(BANNERLINE)
 	@echo "Lines too long in templates"
 	@echo $(BANNERLINE)
-	@echo ""
 	grep -E -R '^.{121,}' cdedb/frontend/templates/ | grep 'tmpl:'
+	@echo ""
 
 .PHONY: lint
 lint: isort flake8 pylint
