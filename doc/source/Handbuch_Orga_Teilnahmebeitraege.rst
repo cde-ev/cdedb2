@@ -1,40 +1,77 @@
-Konfiguration von Teilnahmebeiträgen
-====================================
+Teilnahmebeiträge
+=================
 
-Die Teilnahmebeträge, die Teilnehmende von Veranstaltungen entrichten müssen,
-sind nicht direkt mit den Veranstaltungsteilen verknüpft, sondern werden über
-eine eigene Seite konfiguriert.
+Für die automatische Berechnung von Teilnahmebeiträgen für Teilnehmende von
+Veranstaltungen gibt es die Möglichkeit auch komplizierte Sachverhalte durch
+boolsche Funktionen akkurat abzubilden.
 
-Dort können diverse Bedingungen festgelegt werden, unter denen dann bestimmte
-Beträge auf den Gesamtbeitrag aufgeschlagen oder davon abgezogen werden sollen.
-Hierfür können diverse boolesche Informationen (Ja/Nein) miteinbezogen werden.
+Für viele Veranstaltungen ist dies kaum notwendig. Beim Erstellen der
+Verantaltung werden automatisch zwei Teilnahmebeiträge eingerichtet, in Folge
+dessen müsst ihr als Orgas lediglich die Höhe des Teilnahmebeitrags und des
+Externenzusatzbeitrags -- beides in Absprache mit dem Vorstand -- anpassen.
 
-Die Teilnehmenden erhalten bevor und nachdem sie ihre Anmeldung abschicken den
-für sie gültigen Betrag angezeigt; er findet sich auch in der Mail, die sie nach
-ihrer Anmeldung erhalten.
+Sollte eure Veranstaltung jedoch über mehrere Veranstaltungsteile verfügen,
+eine Möglichkeit zum freiwillgen Entrichten eines höheren Beitrages oder
+eine vergünstigte Teilnahme für Orgas, Vortragende, Kinder, etc. vorsehen,
+könnt ihr zusätzliche Teilnahmebeiträge anlegen und diese mit selbst
+definierten Datenfeldern verknüpfen. Diese Datenfelder solltet ihr dann auch
+bei der Anmeldung abfragen.
 
-Darüber hinaus ist es beim Anlegen von Veranstaltungen und Veranstaltungsteilen
-möglich, direkt Teilnahmebeträge anzugeben, zu denen dann entsprechende
-Bedingungen erstellt werden.
+Wie das alles funktioniert und was mit diesem System möglich ist erfahrt ihr hier.
+
+
+Bedingte Teilnahmebeiträge
+--------------------------
+
+Teilnahmebeträge sind -- anders als früher -- nicht direkt mit Veranstaltungsteilen
+verknüpft. Es gibt eine eigene Konfigurations- und Übersichtsseite für
+Teilnahmebeiträge, erreichbar über den Knopf "Teilnahmebeiträge" in der
+Navigationsleiste der Veranstaltung.
+
+Für jeden Teilnahmebeitrag können hier Titel, Betrag, Bedingung und optional
+Notizen konfiguriert werden. Die Bedingung ist eine boolsche Formeln, d.h. eine
+Formel, die abhängig von den enthaltenen Variablen, entweder "wahr" oder "falsch"
+ist. Falls das Ergebnis "wahr" ist, trifft die Formel zu und der entsprechende
+Betrag wird zum Gesamtbetrag addiert. Für Vergünstigungen können negative Beträge
+eingestellt werden.
+
+Als Orgas könnt ihr unter "Anmeldung konfigurieren" -> "Anmeldungsvorschau" ansehen,
+wie eure Anmeldung konfiguriert ist und erhaltet am Ende der Seite eine detaillierte
+Live-Vorschau welche Teilnahmebeiträge bei der gerade eingestellten Anmeldung fällig
+werden und warum. (Für diese Vorschau ist JavaScript notwendig).
+
+Teilnehmende erhalten während der Anmeldung ebenfalls eine Live-Vorschau über den
+finalen Teilnahmebeitrag, allerdings ohne die detaillierte Tabelle. Nach der Anmeldung
+wird ihnen der Teilnahmebeitrag auf der "Meine Anmeldung"-Seite, sowie in der
+automatisch nach Anmeldung versandten Mail angezeigt.
+
+Beim Anlegen neuer Veranstaltungsteile wird automatisch ein einfacher
+Teilnahmebeitrag für diesen Veranstaltungsteil angelegt, dieser kann ganz
+normal angepasst werden.
+
+Die Bedingung
+-------------
 
 Operatoren und Tokens
----------------------
+^^^^^^^^^^^^^^^^^^^^^
 
 Die Formeln werden aus einer beliebigen Anzahl von Tokens aufgebaut, die
-untereinander durch Operatoren verknüpft werden. Trifft die Bedingung zu, die
-als Formel angegeben ist, wird der entsprechende Betrag, der auch negativ sein
+untereinander durch Operatoren verknüpft werden. Jedes Token ist entweder wahr
+oder falsch, Vergleiche wie ``X > 3`` sind nicht möglich.
+
+Trifft die gesamte Bedingung zu, wird der entsprechende Betrag, der auch negativ sein
 kann, addiert.
 
 Folgende Tokens stehen zur Verfügung, die in den Formeln verknüpft werden können:
 
-* ``True``: immer wahr
-* ``False``: immer falsch
 * ``field.<Kurzname>``: Ist der Wert des entsprechenden Feldes wahr oder falsch?
 * ``part.<Kurzname>``: Ist der Status für den Teil "Offen", "Teilnehmer" oder "Warteliste"?
 * ``any_part``: Gilt ein entsprechender Status für mindestens einen Teil der Veranstaltung?
 * ``all_parts``: Gilt ein entsprechender Status für alle Teile der Veranstaltung?
 * ``is_member``: Ist die Person derzeit CdE-Mitglied?
 * ``is_orga``: Ist die Person derzeit Orga der Veranstaltung?
+* ``True``: immer wahr
+* ``False``: immer falsch
 
 Felder, die hier referenziert werden, dürfen nur im Anmeldungsfragebogen, nicht aber
 im Zusätzlichen Fragebogen abgefragt werden.
@@ -51,10 +88,10 @@ vor ``and``, ``and`` gilt vor ``or``, ``or`` vor ``xor``, etc.
 Zusätzlich ist es möglich runde Klammern (``()``) zu verwenden um die
 Auswertungsreihenfolge zu verändern.
 
-Die Verwendung solcher Formeln sei hier anhand eines Beispiels erläutert:
+Die Verwendung solcher Formeln sei im Folgenden anhand von Beispielen erläutert:
 
-Beispiel 1
-----------
+Beispiel 1 (einfache Veranstaltung)
+-----------------------------------
 
 Es gibt eine Akademie mit einem einzigen Teil, wo die Teilnahme 90 Euro kosten
 soll. Nichtmitglieder müssen 8 Euro mehr zahlen, zudem kann ein
@@ -80,8 +117,8 @@ geht unter "Anmeldung konfigurieren":
    * Vorgabewert: *(Feld leer lassen)*
    * Schreibgeschützt: Nein
 
-Beispiel 2
-----------
+Beispiel 2 (mehrteilige Veranstaltung)
+--------------------------------------
 
 Es gibt eine SommerAkademie mit drei Teilen. Die Teilnahme am mittleren Teil
 kostet 230 Euro, während die beiden anderen Teile 215 Euro kosten.
@@ -141,11 +178,18 @@ müssen zuvor angelegt werden:
 
 3. * Feldname: "doku"
    * Datentyp: "Ja/Nein"
-   * Optionen: *(Feld leer lassen)*
+   * Optionen: "True;Ich möchte eine gedruckte Doku haben (10 Euro) *(neue Zeile)* False;Ich verzichte auf die gedruckte Doku"
 
 4. * Feldname: "solidarity"
    * Datentyp: "Ja/Nein"
    * Optionen: *(Feld leer lassen)*
+
+Anmerkung: Durch die Vorgabe von Optionen wird die Abfrage bei der Anmeldung als
+Dropdown mit insgesamt drei Einträgen (leer, wahr oder falsch) dargestellt.
+Sofern nicht in der Konfiguration anders eingestellt (siehe unten), ist die leere
+Option vorausgewählt. Es ist nicht möglich, die Anmeldung abzuschicken, ohne hier
+etwas auszuwählen, daher eignet sich diese Variante dazu die Teilnehmenden zu
+zwingen eine Entscheidung zu treffen.
 
 Zudem müssen noch Einträge im Anmeldungsfragebogen angelegt werden, damit
 die Teilnehmenden bei der Anmeldung angeben können was auf sie zutrifft. Das
