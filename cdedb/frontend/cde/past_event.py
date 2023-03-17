@@ -23,7 +23,9 @@ from cdedb.common.fields import LOG_FIELDS_COMMON
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
-from cdedb.common.validation import PAST_COURSE_COMMON_FIELDS, PAST_EVENT_FIELDS
+from cdedb.common.validation.validate import (
+    PAST_COURSE_COMMON_FIELDS, PAST_EVENT_FIELDS,
+)
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
     CustomCSVDialect, REQUESTdata, REQUESTdatadict, TransactionObserver, access,

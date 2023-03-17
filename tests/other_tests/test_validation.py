@@ -11,7 +11,7 @@ from typing import (
 
 import pytz
 
-import cdedb.common.validation as validate
+import cdedb.common.validation.validate as validate
 import cdedb.database.constants as const
 from cdedb.common import now
 from cdedb.common.exceptions import ValidationWarning

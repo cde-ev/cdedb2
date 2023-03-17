@@ -20,7 +20,7 @@ from cdedb.common import (
 )
 from cdedb.common.n_ import n_
 from cdedb.common.sorting import mixed_existence_sorter
-from cdedb.common.validation import QUESTIONNAIRE_ROW_MANDATORY_FIELDS
+from cdedb.common.validation.validate import QUESTIONNAIRE_ROW_MANDATORY_FIELDS
 from cdedb.frontend.common import (
     RequestConstraint, REQUESTdata, access, check_validation_optional as check_optional,
     event_guard, request_extractor,

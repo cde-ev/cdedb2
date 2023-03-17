@@ -40,11 +40,11 @@ from cdedb.common.roles import (
     REALM_INHERITANCE, extract_roles, implied_realms,
 )
 from cdedb.common.sorting import EntitySorter, xsorted
-from cdedb.common.validation import (
+from cdedb.common.validation.types import CdedbID
+from cdedb.common.validation.validate import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
     PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS,
 )
-from cdedb.common.validation.types import CdedbID
 from cdedb.filter import enum_entries_filter, markdown_parse_safe, money_filter
 from cdedb.frontend.common import (
     AbstractFrontend, Headers, REQUESTdata, REQUESTdatadict, REQUESTfile,

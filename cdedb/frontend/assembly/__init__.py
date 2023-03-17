@@ -34,10 +34,10 @@ from cdedb.common.fields import LOG_FIELDS_COMMON
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
-from cdedb.common.validation import (
+from cdedb.common.validation.types import CdedbID, Email
+from cdedb.common.validation.validate import (
     ASSEMBLY_COMMON_FIELDS, BALLOT_EXPOSED_FIELDS, PERSONA_FULL_CREATION, filter_none,
 )
-from cdedb.common.validation.types import CdedbID, Email
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, Attachment, REQUESTdata, REQUESTdatadict, REQUESTfile, access,

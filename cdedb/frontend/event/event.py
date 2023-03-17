@@ -25,7 +25,7 @@ from cdedb.common.fields import EVENT_FIELD_SPEC
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.sorting import EntitySorter, xsorted
-from cdedb.common.validation import (
+from cdedb.common.validation.validate import (
     EVENT_EXPOSED_FIELDS, EVENT_PART_COMMON_FIELDS,
     EVENT_PART_CREATION_MANDATORY_FIELDS, EVENT_PART_GROUP_COMMON_FIELDS,
     EVENT_TRACK_GROUP_COMMON_FIELDS,
