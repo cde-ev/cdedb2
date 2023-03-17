@@ -3,16 +3,16 @@ Teilnahmebeiträge
 
 Für die automatische Berechnung von Teilnahmebeiträgen für Teilnehmende von
 Veranstaltungen gibt es die Möglichkeit auch komplizierte Sachverhalte durch
-boolsche Funktionen akkurat abzubilden.
+boolsche Funktionen akurat abzubilden.
 
 Für viele Veranstaltungen ist dies kaum notwendig. Beim Erstellen der
-Verantaltung werden automatisch zwei Teilnahmebeiträge eingerichtet, in Folge
+Veranstaltung werden automatisch zwei Teilnahmebeiträge eingerichtet, in Folge
 dessen müsst ihr als Orgas lediglich die Höhe des Teilnahmebeitrags und des
 Externenzusatzbeitrags -- beides in Absprache mit dem Vorstand -- anpassen.
 
 Sollte eure Veranstaltung jedoch über mehrere Veranstaltungsteile verfügen,
 eine Möglichkeit zum freiwillgen Entrichten eines höheren Beitrages oder
-eine vergünstigte Teilnahme für Orgas, Vortragende, Kinder, etc. vorsehen,
+eine vergünstigte Teilnahme für Orgas, Vortragende, Kinder etc. vorsehen,
 könnt ihr zusätzliche Teilnahmebeiträge anlegen und diese mit selbst
 definierten Datenfeldern verknüpfen. Diese Datenfelder solltet ihr dann auch
 bei der Anmeldung abfragen.
