@@ -460,6 +460,7 @@ class LazyConfig(Config):
         self.__init()
         return super().__repr__()
 
+
 class TestConfig(Config):
     """Main configuration for tests.
 
