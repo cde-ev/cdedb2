@@ -602,42 +602,48 @@ class TestPrivacyFrontend(FrontendTest):
                     self.get('/core/search/user')
                     self.assertTitle("Allgemeine Nutzerverwaltung")
                 else:
-                    self.get('/core/search/user', status="403 FORBIDDEN")
+                    self.get('/core/search/user',
+                             status="403 Zugriff auf CoreFrontend/* verweigert.")
                     self.assertTitle("403: Forbidden")
 
                 if self.user_in(*archive):
                     self.get('/core/search/fulluser')
                     self.assertTitle("Vollständige Nutzerverwaltung")
                 else:
-                    self.get('/core/search/fulluser', status="403 FORBIDDEN")
+                    self.get('/core/search/fulluser',
+                             status="403 Zugriff auf CoreFrontend/* verweigert.")
                     self.assertTitle("403: Forbidden")
 
                 if self.user_in(*(core | cde)):
                     self.get('/cde/search/user')
                     self.assertTitle("CdE-Nutzerverwaltung")
                 else:
-                    self.get('/cde/search/user', status="403 FORBIDDEN")
+                    self.get('/cde/search/user',
+                             status="403 Zugriff auf CdeFrontend/* verweigert.")
                     self.assertTitle("403: Forbidden")
 
                 if self.user_in(*(core | event)):
                     self.get('/event/search/user')
                     self.assertTitle("Veranstaltungsnutzerverwaltung")
                 else:
-                    self.get('/event/search/user', status="403 FORBIDDEN")
+                    self.get('/event/search/user',
+                             status="403 Zugriff auf EventFrontend/* verweigert.")
                     self.assertTitle("403: Forbidden")
 
                 if self.user_in(*(core | ml)):
                     self.get('/ml/search/user')
                     self.assertTitle("Mailinglistennutzerverwaltung")
                 else:
-                    self.get('/ml/search/user', status="403 FORBIDDEN")
+                    self.get('/ml/search/user',
+                             status="403 Zugriff auf MlFrontend/* verweigert.")
                     self.assertTitle("403: Forbidden")
 
                 if self.user_in(*(core | assembly)):
                     self.get('/assembly/search/user')
                     self.assertTitle("Versammlungsnutzerverwaltung")
                 else:
-                    self.get('/assembly/search/user', status="403 FORBIDDEN")
+                    self.get('/assembly/search/user',
+                             status="403 Zugriff auf AssemblyFrontend/* verweigert.")
                     self.assertTitle("403: Forbidden")
 
             if self.user:
@@ -692,7 +698,8 @@ class TestPrivacyFrontend(FrontendTest):
         ferdinand = "Ferdinand Findus"
         # non-members should not have access if they are no cde admin
         if self.user_in('daniel'):
-            self.get('/cde/past/event/list', status="403 FORBIDDEN")
+            self.get('/cde/past/event/list',
+                     status="403 Zugriff auf CdEFrontend/* verweigert.")
         else:
             self.traverse({'description': 'Mitglieder'},
                           {'description': 'Verg. Veranstaltungen'},
@@ -728,7 +735,8 @@ class TestPrivacyFrontend(FrontendTest):
         ferdinand = "Ferdinand Findus"
         # non-members should not have access if they are no cde admin
         if self.user_in('daniel'):
-            self.get('/cde/past/event/1/course/2/show', status="403 FORBIDDEN")
+            self.get('/cde/past/event/1/course/2/show',
+                     status="403 Zugriff auf CdEFrontend/* verweigert.")
         else:
             self.traverse({'description': 'Mitglieder'},
                           {'description': 'Verg. Veranstaltungen'},

@@ -36,7 +36,7 @@
             }
 
             // Calculate and change visibility of participant checkboxes
-            var box_visibility = fields['event_id'].val() != '';
+            var box_visibility = fields['event_id'].val() != '' && fields['ml_type'].val() == "MailinglistTypes.event_associated";
             if (box_visibility) {
                 boxes.first().closest('.form-group').show();
             } else {
