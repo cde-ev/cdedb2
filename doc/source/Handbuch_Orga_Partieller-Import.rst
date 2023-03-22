@@ -165,6 +165,7 @@ Hier sind die Änderungen gelistet, die in den jeweiligen Inkrementierungen der
 Export-Version neu eingeführt wurden. Für jede Version ist angegeben, ob die
 Version für den partiellen Import strikt abwärtskompatibel sind oder nicht.
 
+* Version (16, 0): Einführung von Conditional Event Fees.
 * Version (15, 7): Kursschienengruppen sind nun im vollen und partiellen Export
   enthalten. Beide werden nun beim vollen Import übernommen.
 * Version (15, 6): Keine Änderungen am partiellen Export.

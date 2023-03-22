@@ -7,17 +7,20 @@ waitlist, calculating and booking event fees and checking the status of multiple
 registrations at once for the mailinglist realm.
 """
 import copy
+import dataclasses
 import decimal
-import itertools
 from typing import (
-    Any, Collection, Dict, Iterable, List, Mapping, NamedTuple, Optional, Protocol,
-    Sequence, Set, Tuple, TypeVar,
+    Any, Collection, Dict, List, Mapping, NamedTuple, Optional, Protocol, Sequence, Set,
+    Tuple, TypeVar,
 )
 
 import psycopg2.extensions
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.fee_condition_parser.evaluation as fcp_evaluation
+import cdedb.fee_condition_parser.parsing as fcp_parsing
+import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
 from cdedb.backend.common import (
     access, affirm_array_validation as affirm_array,
     affirm_set_validation as affirm_set, affirm_validation as affirm,
@@ -46,6 +49,36 @@ CourseChoiceValidationAux = NamedTuple(
         ("involved_tracks", Set[int]),
         ("orga_input", bool),
     ])
+
+
+@dataclasses.dataclass
+class RegistrationFee:
+    amount: decimal.Decimal
+    active_fees: set[int]
+    visual_debug: dict[int, str]
+
+
+@dataclasses.dataclass
+class RegistrationFeeData:
+    member_fee: RegistrationFee
+    nonmember_fee: RegistrationFee
+    is_member: bool
+
+    @property
+    def fee(self) -> RegistrationFee:
+        return self.member_fee if self.is_member else self.nonmember_fee
+
+    @property
+    def amount(self) -> decimal.Decimal:
+        return self.fee.amount
+
+    @property
+    def nonmember_surcharge_amount(self) -> decimal.Decimal:
+        return self.nonmember_fee.amount - self.member_fee.amount
+
+    @property
+    def nonmember_surcharge(self) -> bool:
+        return not self.is_member and self.nonmember_surcharge_amount > 0
 
 
 class EventRegistrationBackend(EventBaseBackend):
@@ -1131,14 +1164,44 @@ class EventRegistrationBackend(EventBaseBackend):
                     {"type": "registration", "block": blockers.keys()})
         return ret
 
-    @staticmethod
-    def powerset(set_: Collection[T]) -> Iterable[Set[T]]:
-        return itertools.chain.from_iterable(
-            map(set, itertools.combinations(set_, n)) for n in range(len(set_) + 1))
+    def _update_registrations_amount_owed(self, rs: RequestState, event_id: int
+                                          ) -> DefaultReturnCode:
+        self.affirm_atomized_context(rs)
+        registration_ids = self.list_registrations(rs, event_id)
+        fees = self.calculate_fees(rs, registration_ids)
+
+        # TODO: make this more efficient by cahing parse results and evaluators somehow.
+
+        ret = 1
+        for reg_id, amount_owed in fees.items():
+            update = {
+                'id': reg_id,
+                'amount_owed': amount_owed,
+            }
+            ret *= self.sql_update(rs, "event.registrations", update)
+
+        return ret
+
+    @access("event")
+    def calculate_complex_fee(self, rs: RequestState, registration_id: int
+                              ) -> RegistrationFeeData:
+        """Public access point for retrieving complex fee data."""
+        registration_id = affirm(vtypes.ID, registration_id)
+        registration = self.get_registration(rs, registration_id)
+        event = self.get_event(rs, registration['event_id'])
+        return self._calculate_complex_fee(rs, registration, event=event)
 
     def _calculate_single_fee(self, rs: RequestState, reg: CdEDBObject, *,
                               event: CdEDBObject, is_member: bool = None
                               ) -> decimal.Decimal:
+        """Helper to only calculate return the fee amount for a single registration."""
+        return self._calculate_complex_fee(
+            rs, reg, event=event, is_member=is_member).amount
+
+    def _calculate_complex_fee(self, rs: RequestState, reg: CdEDBObject, *,
+                               event: CdEDBObject, is_member: bool = None,
+                               is_orga: bool = None, visual_debug: bool = False,
+                               ) -> RegistrationFeeData:
         """Helper function to calculate the fee for one registration.
 
         This is used inside `create_registration` and `set_registration`,
@@ -1150,61 +1213,105 @@ class EventRegistrationBackend(EventBaseBackend):
         fees is calculated. The final fee will be the maximum of all such totals.
 
         :param is_member: If this is None, retrieve membership status here.
+        :param is_orga: If this is None, determine orga status regularly.
+        :param visual_debug: If True, create a html representation of the
+            evaluated condition.
         """
-        mep = const.EventPartGroupType.mutually_exclusive_participants
-        zero = decimal.Decimal(0)
+        ret = {}
 
-        # Reverse sorting by length slightly reduces runtime because of lazy evalution
-        #  of `all()` and the fact, that larger part groups are more likely to have
-        #  non-trivial intersections.
-        parts_per_mep = xsorted(
-            (pg['part_ids'] for pg in event['part_groups'].values()
-             if pg['constraint_type'] == mep), key=len, reverse=True)
-
-        # Precompute fees including fee modifiers for every registered-for part.
-        fees_to_pay: Dict[int, decimal.Decimal] = {
-            part_id: event['parts'][part_id]['fee']
-            for part_id, rpart in reg['parts'].items()
-            if rpart['status'].has_to_pay()
+        reg_part_involvement = {
+            event['parts'][part_id]['shortname']: rp['status'].has_to_pay()
+            for part_id, rp in reg['parts'].items()
         }
-        for fee_mod in event['fee_modifiers'].values():
-            if reg['fields'].get(event['fields'][fee_mod['field_id']]['field_name']):
-                if fee_mod['part_id'] in fees_to_pay:
-                    fees_to_pay[fee_mod['part_id']] += fee_mod['amount']
+        reg_bool_fields = {
+            f['field_name']: reg['fields'].get(f['field_name'], False)
+            for f in event['fields'].values()
+            if f['association'] == const.FieldAssociations.registration
+               and f['kind'] == const.FieldDatatypes.bool
+        }
+        for tmp_is_member in (True, False):
+            # Other bools can be added here, but also require adjustment to the parser.
+            other_bools = {
+                'is_orga':
+                    reg['persona_id'] in event['orgas'] if is_orga is None else is_orga,
+                'is_member': tmp_is_member,
+                'any_part': any(reg_part_involvement.values()),
+                'all_parts': all(reg_part_involvement.values()),
+            }
+            amount = decimal.Decimal(0)
+            active_fees = set()
+            visual_debug_data: Dict[int, str] = {}
+            for fee in event['fees'].values():
+                parse_result = fcp_parsing.parse(fee['condition'])
+                if fcp_evaluation.evaluate(
+                        parse_result, reg_bool_fields, reg_part_involvement,
+                        other_bools):
+                    amount += fee['amount']
+                    active_fees.add(fee['id'])
+                if visual_debug:
+                    visual_debug_data[fee['id']] = fcp_roundtrip.visual_debug(
+                        parse_result, reg_bool_fields, reg_part_involvement,
+                        other_bools
+                    )[1]
+            ret[tmp_is_member] = RegistrationFee(amount, active_fees, visual_debug_data)
 
-        def total_cost(part_ids: Collection[int]) -> decimal.Decimal:
-            """Calculate the total cost of the given parts for this registration."""
-            return sum((fees_to_pay[part_id] for part_id in part_ids), start=zero)
-
-        # Split all parts into those belonging to at least one part group and others.
-        mep_parts = set(itertools.chain.from_iterable(
-            pg['part_ids'] for pg in event['part_groups'].values()))
-        other_parts = set(event['parts']) - mep_parts
-
-        # Compute constant fee from non-part-group parts.
-        fee = total_cost(other_parts & fees_to_pay.keys())
-
-        # The following calculation is somewhat complicated and scales very poorly with
-        #  the number of parts belonging to part groups.
-        #  This is deemed acceptable because the number of part groups is not expected
-        #  to exceed problematic threshholds.
-
-        # For every legal subset of the registered-for parts calculate the total cost.
-        #  Determine the maximum of those and add it to the fee.
-        #  Legal subsets are those that only trivially intersect with all part groups.
-        fee += max(
-            (total_cost(ids_) for ids_ in self.powerset(mep_parts & fees_to_pay.keys())
-             if all(len(mep_parts & ids_) <= 1 for mep_parts in parts_per_mep)),
-            default=zero)
-
-        # Add nonmember surcharge if applicable.
         if is_member is None:
-            is_member = self.core.get_persona(
-                rs, reg['persona_id'])['is_member']
-        if not is_member:
-            fee += event['nonmember_surcharge']
+            is_member = self.core.get_persona(rs, reg['persona_id'])['is_member']
+            assert is_member is not None
 
-        return fee
+        return RegistrationFeeData(
+            member_fee=ret[True], nonmember_fee=ret[False], is_member=is_member,
+        )
+
+    @access("event")
+    def precompute_fee(self, rs: RequestState, event_id: int, persona_id: int,
+                       part_ids: Collection[int], field_ids: Collection[int],
+                       is_member: Optional[bool], is_orga: Optional[bool],
+                       ) -> RegistrationFeeData:
+        """Alternate access point to calculate a single fee, that does not need
+        an existing registration.
+
+        :param part_ids: Collection of part ids the user is (supposedly) registered for.
+        :param field_ids: Collection of fields, which have a truthy value.
+        :param is_member: Optional override for membership status in fee calculation.
+        :param is_orga: Optional override for orga status in fee calculation.
+        """
+        event_id = affirm(vtypes.ID, event_id)
+        persona_id = affirm(vtypes.ID, persona_id)
+        part_ids = affirm_set(vtypes.ID, part_ids)
+        field_ids = affirm_set(vtypes.ID, field_ids)
+        is_member = affirm_optional(bool, is_member)
+        is_orga = affirm_optional(bool, is_orga)
+
+        event = self.get_event(rs, event_id)
+
+        if self.is_orga(rs, event_id=event_id):
+            pass
+        elif persona_id == rs.user.persona_id and (
+                event['is_open'] or self.list_registrations(rs, event_id, persona_id)):
+            pass
+        else:
+            raise PrivilegeError
+
+        fake_registration = {
+            'persona_id': persona_id,
+            'parts': {
+                part_id: {
+                    'status':
+                        const.RegistrationPartStati.applied
+                        if part_id in part_ids
+                        else const.RegistrationPartStati.not_applied
+                }
+                for part_id in event['parts']
+            },
+            'fields': {
+                event['fields'][field_id]['field_name']: field_id in field_ids
+                for field_id in event['fields']
+            }
+        }
+        return self._calculate_complex_fee(
+            rs, fake_registration, event=event, is_member=is_member, is_orga=is_orga,
+            visual_debug=True)
 
     @access("event")
     def calculate_fees(self, rs: RequestState, registration_ids: Collection[int]
@@ -1232,16 +1339,15 @@ class EventRegistrationBackend(EventBaseBackend):
 
             event_id = unwrap(events)
             regs = self.get_registrations(rs, registration_ids)
-            user_id = rs.user.persona_id
+            persona_ids = {e['persona_id'] for e in regs.values()}
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)
-                    and {r['persona_id'] for r in regs.values()} != {user_id}):
+                    and persona_ids != {rs.user.persona_id}):
                 raise PrivilegeError(n_("Not privileged."))
 
-            persona_ids = {e['persona_id'] for e in regs.values()}
             personas = self.core.get_personas(rs, persona_ids)
-
             event = self.get_event(rs, event_id)
+
             ret: Dict[int, decimal.Decimal] = {}
             for reg_id, reg in regs.items():
                 is_member = personas[reg['persona_id']]['is_member']

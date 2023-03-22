@@ -111,7 +111,7 @@ PAST_EVENT_FIELDS = ("id", "title", "shortname", "institution", "description",
 #: Fields of an event organized via the CdEDB
 EVENT_FIELDS = (
     "id", "title", "institution", "description", "shortname", "registration_start",
-    "registration_soft_limit", "registration_hard_limit", "iban", "nonmember_surcharge",
+    "registration_soft_limit", "registration_hard_limit", "iban",
     "orga_address", "registration_text", "mail_text", "use_additional_questionnaire",
     "notes", "participant_info", "offline_lock", "is_visible",
     "is_course_list_visible", "is_course_state_visible", "is_participant_list_visible",
@@ -120,7 +120,7 @@ EVENT_FIELDS = (
 
 #: Fields of an event part organized via CdEDB
 EVENT_PART_FIELDS = ("id", "event_id", "title", "shortname", "part_begin",
-                     "part_end", "fee", "waitlist_field")
+                     "part_end", "waitlist_field")
 
 PART_GROUP_FIELDS = ("id", "event_id", "title", "shortname", "notes", "constraint_type")
 
@@ -138,8 +138,8 @@ FIELD_DEFINITION_FIELDS = (
     "checkin", "entries",
 )
 
-#: Fields of a modifier for an event_parts fee.
-FEE_MODIFIER_FIELDS = ("id", "part_id", "modifier_name", "amount", "field_id")
+#: Fields of a conditional event fee.
+EVENT_FEE_FIELDS = ("id", "event_id", "title", "amount", "condition", "notes")
 
 #: Fields of a concluded course
 PAST_COURSE_FIELDS = ("id", "pevent_id", "nr", "title", "description")
@@ -243,8 +243,6 @@ EVENT_FIELD_SPEC: Dict[
         {const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),
     'course_room_field': ({const.FieldDatatypes.str}, {const.FieldAssociations.course}),
     'waitlist': ({const.FieldDatatypes.int}, {const.FieldAssociations.registration}),
-    'fee_modifier': (
-        {const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),
 }
 
 LOG_FIELDS_COMMON = ("codes", "persona_id", "submitted_by", "change_note", "offset",

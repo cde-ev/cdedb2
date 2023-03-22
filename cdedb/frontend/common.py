@@ -1498,6 +1498,7 @@ AmbienceDict = typing.TypedDict(
         'lodgement': CdEDBObject,
         'part_group': CdEDBObject,
         'track_group': CdEDBObject,
+        'fee': CdEDBObject,
         'attachment': CdEDBObject,
         'assembly': CdEDBObject,
         'ballot': CdEDBObject,
@@ -1577,6 +1578,10 @@ def reconnoitre_ambience(obj: AbstractFrontend,
               'track_group_id', 'track_group',
               ((lambda a: do_assert(a['track_group']['event_id']
                                     == a['event']['id'])),)),
+        # Dirty hack, that relies on the event being retrieved into ambience first.
+        Scout(lambda anid: ambience['event']['fees'][anid],  # type: ignore[has-type]
+              'fee_id', 'fee',
+              ((lambda a: do_assert(a['fee']['event_id'] == a['event']['id'])),)),
         Scout(lambda anid: obj.assemblyproxy.get_attachment(rs, anid),
               'attachment_id', 'attachment',
               ((lambda a: do_assert(a['attachment']['assembly_id']
