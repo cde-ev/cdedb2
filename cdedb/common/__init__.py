@@ -1111,21 +1111,6 @@ class TransactionType(enum.IntEnum):
         return display_str.get(self, str(self))
 
 
-class SemesterSteps(enum.Enum):
-    billing = 1
-    archival_notification = 2
-    ejection = 10
-    automated_archival = 11
-    balance = 20
-    advance = 30
-    error = 100
-
-    def __eq__(self, other: Any) -> bool:
-        if isinstance(other, str):
-            return self.name == other  # pylint: disable=comparison-with-callable
-        return super().__eq__(other)
-
-
 UMLAUT_MAP = {
     "ä": "ae", "æ": "ae",
     "Ä": "AE", "Æ": "AE",

@@ -7,6 +7,7 @@ import decimal
 import pytz
 
 import cdedb.database.constants as const
+from cdedb.backend.cde.semester import AllowedSemesterSteps
 from cdedb.common.exceptions import QuotaException
 from cdedb.common.fields import (
     PERSONA_CDE_FIELDS, PERSONA_CORE_FIELDS, PERSONA_EVENT_FIELDS,
@@ -431,63 +432,53 @@ class TestCdEBackend(BackendTest):
                 self.assertFalse(v)
 
         # step 2
-        self.assertFalse(self.cde.may_start_semester_bill(self.key))
-        self.assertTrue(self.cde.may_start_semester_ejection(self.key))
-        self.assertFalse(self.cde.may_start_semester_balance_update(self.key))
-        self.assertFalse(self.cde.may_advance_semester(self.key))
+        self.assertEqual(AllowedSemesterSteps(ejection=True, automated_archival=True),
+                         self.cde.allowed_semester_steps(self.key))
 
         if self.user_in("anton"):
             self.cde.finish_semester_ejection(self.key)
+            self.assertEqual(AllowedSemesterSteps(automated_archival=True),
+                             self.cde.allowed_semester_steps(self.key))
         elif self.user_in("farin"):
             self.cde.finish_automated_archival(self.key)
-        self.assertFalse(self.cde.may_start_semester_bill(self.key))
-        self.assertTrue(self.cde.may_start_semester_ejection(self.key))
-        self.assertFalse(self.cde.may_start_semester_balance_update(self.key))
-        self.assertFalse(self.cde.may_advance_semester(self.key))
+            self.assertEqual(AllowedSemesterSteps(ejection=True),
+                             self.cde.allowed_semester_steps(self.key))
 
         if self.user_in("anton"):
             self.cde.finish_automated_archival(self.key)
         elif self.user_in("farin"):
             self.cde.finish_semester_ejection(self.key)
-        self.assertFalse(self.cde.may_start_semester_bill(self.key))
-        self.assertFalse(self.cde.may_start_semester_ejection(self.key))
-        self.assertTrue(self.cde.may_start_semester_balance_update(self.key))
-        self.assertFalse(self.cde.may_advance_semester(self.key))
+        self.assertEqual(AllowedSemesterSteps(balance=True),
+                         self.cde.allowed_semester_steps(self.key))
 
         # step 3
         self.cde.finish_semester_balance_update(self.key)
-        self.assertFalse(self.cde.may_start_semester_bill(self.key))
-        self.assertFalse(self.cde.may_start_semester_ejection(self.key))
-        self.assertFalse(self.cde.may_start_semester_balance_update(self.key))
-        self.assertTrue(self.cde.may_advance_semester(self.key))
+        self.assertEqual(AllowedSemesterSteps(advance=True),
+                         self.cde.allowed_semester_steps(self.key))
 
         # step 4 (in the UI, this is the first part of step 1)
         self.cde.advance_semester(self.key)
-        self.assertTrue(self.cde.may_start_semester_bill(self.key))
-        self.assertFalse(self.cde.may_start_semester_ejection(self.key))
-        self.assertFalse(self.cde.may_start_semester_balance_update(self.key))
-        self.assertFalse(self.cde.may_advance_semester(self.key))
+        self.assertEqual(AllowedSemesterSteps(billing=True, archival_notification=True),
+                         self.cde.allowed_semester_steps(self.key))
 
         # step 1
         if self.user_in("anton"):
             self.cde.finish_semester_bill(self.key)
+            self.assertEqual(AllowedSemesterSteps(archival_notification=True),
+                             self.cde.allowed_semester_steps(self.key))
         elif self.user_in("farin"):
             self.cde.finish_archival_notification(self.key)
+            self.assertEqual(AllowedSemesterSteps(billing=True),
+                             self.cde.allowed_semester_steps(self.key))
         else:
             self.fail("Invalid user configuration for this test.")
-        self.assertTrue(self.cde.may_start_semester_bill(self.key))
-        self.assertFalse(self.cde.may_start_semester_ejection(self.key))
-        self.assertFalse(self.cde.may_start_semester_balance_update(self.key))
-        self.assertFalse(self.cde.may_advance_semester(self.key))
 
         if self.user_in("anton"):
             self.cde.finish_archival_notification(self.key)
         elif self.user_in("farin"):
             self.cde.finish_semester_bill(self.key)
-        self.assertFalse(self.cde.may_start_semester_bill(self.key))
-        self.assertTrue(self.cde.may_start_semester_ejection(self.key))
-        self.assertFalse(self.cde.may_start_semester_balance_update(self.key))
-        self.assertFalse(self.cde.may_advance_semester(self.key))
+        self.assertEqual(AllowedSemesterSteps(ejection=True, automated_archival=True),
+                         self.cde.allowed_semester_steps(self.key))
 
     @as_users("vera")
     def test_cde_log(self) -> None:
