@@ -632,6 +632,16 @@ class EventRegistrationMixin(EventBaseFrontend):
         else:
             field_params = self._questionnaire_params(
                 rs, const.QuestionnaireUsages.registration)
+
+            # Take special care to disallow empty fields with entries.
+            tmp_fields = request_extractor(rs, field_params, postpone_validation=True)
+            fields_by_name = {
+                f"fields.{f['field_name']}": f for f in event['fields'].values()}
+            for key, val in tmp_fields.items():
+                if val == "" and fields_by_name[key]['entries']:
+                    rs.append_validation_error(
+                        (key, ValueError(n_("Must not be empty."))))
+
             registration['fields'] = {
                 key.removeprefix("fields."): val
                 for key, val in request_extractor(rs, field_params).items()

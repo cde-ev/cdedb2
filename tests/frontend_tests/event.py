@@ -6151,3 +6151,43 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f = self.response.forms['changeregistrationform']
         f['group1.course_choice_0'] = course_id
         f['group1.course_instructor'] = course_id
+
+    @event_keeper
+    @as_users("anton")
+    def test_registration_strict_bool(self) -> None:
+        self.traverse("Veranstaltungen", "CdE-Party", "Konfiguration")
+        f = self.response.forms['changeeventform']
+        f['registration_start'] = now()
+        self.submit(f)
+        self.traverse("Datenfelder konfigurieren")
+        f = self.response.forms['fieldsummaryform']
+        f['create_-1'] = True
+        f['kind_-1'] = const.FieldDatatypes.bool
+        f['association_-1'] = const.FieldAssociations.registration
+        f['title_-1'] = f['field_name_-1'] = "test"
+        f['entries_-1'] = ""
+        self.submit(f)
+        f = self.response.forms['fieldsummaryform']
+        f['create_-1'] = True
+        f['kind_-1'] = const.FieldDatatypes.bool
+        f['association_-1'] = const.FieldAssociations.registration
+        f['title_-1'] = f['field_name_-1'] = "test2"
+        f['entries_-1'] = "1;Ja\n0;Nein"
+        self.submit(f)
+        self.traverse("Anmeldung konfigurieren")
+        f = self.response.forms['configureregistrationform']
+        f['create_-1'] = True
+        f['field_id_-1'] = 1001
+        self.submit(f)
+        f = self.response.forms['configureregistrationform']
+        f['create_-1'] = True
+        f['field_id_-1'] = 1002
+        self.submit(f)
+        self.traverse("Anmelden")
+        f = self.response.forms['registerform']
+        f['fields.test'] = ""
+        f['fields.test2'] = ""
+        self.submit(f, check_notification=False)
+        self.assertValidationError('fields.test2', "Darf nicht leer sein.")
+        f['fields.test2'] = False
+        self.submit(f)
