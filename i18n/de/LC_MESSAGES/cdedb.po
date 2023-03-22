@@ -9633,6 +9633,18 @@ msgstr "Zahlungsaufforderung/-information versenden"
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:65
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:289
 #, python-format
+msgid "Billing done up until %(state)s."
+msgstr "Zahlungsaufforderung erledigt bis %(state)s."
+
+msgid "Archival mails done up until %(state)s."
+msgstr "Archivierungsmails erledigt bis %(state)s."
+
+msgid "Ejection done up until %(state)s."
+msgstr "Streichung erledigt bis %(state)s."
+
+msgid "Archival done up until %(state)s."
+msgstr "Archivierung erledigt bis %(state)s."
+
 msgid "Done up until %(state)s."
 msgstr "Erledigt bis %(state)s."
 

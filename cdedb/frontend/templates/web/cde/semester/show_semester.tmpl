@@ -81,14 +81,22 @@
                     {% if in_step_1 %}
                         {% if during_step_1 %}
                             <p>
-                                {% trans state=(period['billing_state'] or period['archival_notification_state'])|cdedbid %}
-                                    Done up until {{ state }}.
-                                {% endtrans %}
-                                <br />
+                                {% if period['billing_state'] %}
+                                    {% trans state=period['billing_state']|cdedbid %}
+                                        Billing done up until {{ state }}.
+                                    {% endtrans %}
+                                    <br />
+                                {% endif %}
                                 {% trans count=period['billing_count'] %}
                                     {{ count }} billing emails have been sent so far.
                                 {% endtrans %}
                                 <br />
+                                {% if period['archival_notification_state'] %}
+                                    {% trans state=period['archival_notification_state']|cdedbid %}
+                                        Archival mails done up until {{ state }}.
+                                    {% endtrans %}
+                                    <br />
+                                {% endif %}
                                 {% trans count=period['archival_notification_count'] %}
                                     {{ count }} archival emails have been sent so far.
                                 {% endtrans %}
@@ -157,14 +165,22 @@
                     {% if in_step_2 %}
                         {% if during_step_2 %}
                             <p>
-                                {% trans state=(period['ejection_state'] or period['archival_state'])|cdedbid %}
-                                    Done up until {{ state }}.
-                                {% endtrans %}
-                                <br />
+                                {% if period['ejection_state'] %}
+                                    {% trans state=period['ejection_state']|cdedbid %}
+                                        Ejection done up until {{ state }}.
+                                    {% endtrans %}
+                                    <br />
+                                {% endif %}
                                 {% trans count=period['ejection_count'] %}
                                     {{ count }} memberships have been ended so far.
                                 {% endtrans %}
                                 <br />
+                                {% if period['archival_state'] %}
+                                    {% trans state=period['archival_state']|cdedbid %}
+                                        Archival done up until {{ state }}.
+                                    {% endtrans %}
+                                    <br />
+                                {% endif %}
                                 {% trans count=period['archival_count'] %}
                                     {{ count }} accounts have been archived so far.
                                 {% endtrans %}
@@ -242,7 +258,7 @@
                     {% elif in_step_3 %}
                         {% if during_step_3 %}
                             <p>
-                                {% trans state=period['balance_state'] %}
+                                {% trans state=period['balance_state']|cdedbid %}
                                     Done up until {{ state }}.
                                 {% endtrans %}
                                 <br />
