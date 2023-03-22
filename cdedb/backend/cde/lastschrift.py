@@ -15,7 +15,7 @@ import cdedb.database.constants as const
 from cdedb.backend.cde import CdEBaseBackend
 from cdedb.backend.common import (
     access, affirm_set_validation as affirm_set, affirm_validation as affirm,
-    affirm_validation_optional as affirm_optional, batchify, singularize,
+    affirm_validation_optional as affirm_optional, singularize,
 )
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, RequestState, now,
@@ -31,7 +31,7 @@ class CdELastschriftBackend(CdEBaseBackend):
     @access("core_admin", "cde_admin")
     def change_membership(
             self, rs: RequestState, persona_id: int, is_member: bool
-    ) -> Tuple[DefaultReturnCode, Optional[int], bool]:
+    ) -> Tuple[DefaultReturnCode, Optional[int], Optional[int]]:
         """Special modification function for membership.
 
         This is similar to the version from the core backend, but can
@@ -42,23 +42,24 @@ class CdELastschriftBackend(CdEBaseBackend):
         :param is_member: Desired target state of membership.
         :returns: A tuple containing the return code, the id of the
             revoked lastschrift permit or None, and whether any in-flight
-            transactions are affected.
+            transactions are affected and if yes, which one.
         """
         persona_id = affirm(vtypes.ID, persona_id)
         is_member = affirm(bool, is_member)
         code = 1
         revoked_permit = None
-        collateral_transactions = False
+        collateral_transaction = None
         with Atomizer(rs):
             if not is_member:
                 lastschrift_ids = self.list_lastschrift(
                     rs, persona_ids=(persona_id,), active=True)
                 # at most one active lastschrift per user is allowed
                 if lastschrift_id := unwrap(lastschrift_ids.keys() or None):
-                    if self.list_lastschrift_transactions(
+                    if transactions := self.list_lastschrift_transactions(
                             rs, lastschrift_ids=(lastschrift_id,),
                             stati=(const.LastschriftTransactionStati.issued,)):
-                        collateral_transactions = True
+                        # at most one issued transaction per lastschrift is allowed
+                        collateral_transaction = unwrap(transactions)
                     data = {
                         'id': lastschrift_id,
                         'revoked_at': now(),
@@ -69,7 +70,7 @@ class CdELastschriftBackend(CdEBaseBackend):
                             "Failed to revoke active lastschrift permit"))
                     revoked_permit = lastschrift_id
             code = self.core.change_membership_easy_mode(rs, persona_id, is_member)
-        return code, revoked_permit, collateral_transactions
+        return code, revoked_permit, collateral_transaction
 
     @access("member", "core_admin", "cde_admin")
     def list_lastschrift(self, rs: RequestState,
@@ -327,44 +328,56 @@ class CdELastschriftBackend(CdEBaseBackend):
         return user["donation"] + self.annual_membership_fee(rs)
 
     @access("finance_admin")
-    def issue_lastschrift_transaction(self, rs: RequestState, lastschrift_id: int,
-                                      ) -> DefaultReturnCode:
-        """Make a new direct debit transaction.
+    def issue_lastschrift_transaction_batch(
+            self, rs: RequestState, lastschrift_ids: Collection[int],
+            payment_date: datetime.date
+    ) -> Dict[int, int]:
+        """Make a new direct debit transaction for each given lastschrift.
 
         This only creates the database entry. The SEPA file will be
         generated in the frontend.
 
-        :returns: The id of the new transaction.
+        :param payment_date: The date at which the bank will perform the transaction.
+        :returns: The lastschrift ids mapped to the id of the new transaction.
         """
         stati = const.LastschriftTransactionStati
-        lastschrift_id = affirm(vtypes.ID, lastschrift_id)
+        lastschrift_ids = affirm_set(vtypes.ID, lastschrift_ids)
+        payment_date = affirm(datetime.date, payment_date)
+        ret = {}
         with Atomizer(rs):
-            lastschrift = self.get_lastschrift(rs, lastschrift_id)
-            if lastschrift['revoked_at']:
+            lastschrifts = self.get_lastschrifts(rs, lastschrift_ids)
+            if any(lastschrift['revoked_at'] for lastschrift in lastschrifts.values()):
                 raise RuntimeError(n_("Lastschrift already revoked."))
             period = self.current_period(rs)
             transaction_ids = self.list_lastschrift_transactions(
-                rs, lastschrift_ids=(lastschrift_id,),
-                periods=(period,), stati=(stati.issued, stati.success))
+                rs, lastschrift_ids=lastschrift_ids, periods=[period],
+                stati=(stati.issued, stati.success))
             if transaction_ids:
                 raise RuntimeError(n_("Existing pending transaction."))
-            data = {
-                'lastschrift_id': lastschrift_id,
-                'issued_at': now(),
-                'processed_at': None,
-                'tally': None,
-                'submitted_by': rs.user.persona_id,
-                'period_id': period,
-                'status': stati.issued,
-                'amount': self.transaction_amount(rs, lastschrift["persona_id"])
-            }
-            ret = self.sql_insert(rs, "cde.lastschrift_transactions", data)
-            self.core.finance_log(
-                rs, const.FinanceLogCodes.lastschrift_transaction_issue,
-                lastschrift['persona_id'], None, None, change_note=str(data['amount']))
+            for lastschrift_id, lastschrift in lastschrifts.items():
+                persona_id = lastschrift["persona_id"]
+                data = {
+                    'lastschrift_id': lastschrift_id,
+                    'payment_date': payment_date,
+                    'processed_at': None,
+                    'tally': None,
+                    'submitted_by': rs.user.persona_id,
+                    'period_id': period,
+                    'status': stati.issued,
+                    'amount': self.transaction_amount(rs, persona_id)
+                }
+                ret[lastschrift_id] = self.sql_insert(
+                    rs, "cde.lastschrift_transactions", data)
+                self.core.finance_log(
+                    rs, const.FinanceLogCodes.lastschrift_transaction_issue,
+                    persona_id, None, None, change_note=str(data['amount']))
         return ret
-    issue_lastschrift_transaction_batch = batchify(
-        issue_lastschrift_transaction)
+
+    class _IssueLastschriftTransactionProtocol(Protocol):
+        def __call__(self, rs: RequestState, lastschrift_id: int,
+                     payment_date: datetime.date) -> int: ...
+    issue_lastschrift_transaction: _IssueLastschriftTransactionProtocol = singularize(
+        issue_lastschrift_transaction_batch, "lastschrift_ids", "lastschrift_id")
 
     @access("finance_admin")
     def finalize_lastschrift_transaction(

@@ -222,7 +222,7 @@ The original message as received by Mailman is attached.
             elif existing_templates[name].uri != url:
                 todo = True
             if todo:
-                with open(file_path, 'w') as f:
+                with open(file_path, 'w', encoding='UTF-8') as f:
                     f.write(text)
                 mm_list.set_template(
                     name, template_url(file_name),

@@ -24,12 +24,13 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, RequestState, asciificator, determine_age_class, glue,
-    int_to_words, lastschrift_reference, merge_dicts, now,
+    int_to_words, lastschrift_reference, merge_dicts, now, unwrap,
 )
+from cdedb.common.exceptions import ValidationWarning
 from cdedb.common.n_ import n_
-from cdedb.common.sorting import EntitySorter, xsorted
+from cdedb.common.sorting import EntitySorter, Sortkey, xsorted
 from cdedb.common.validation.validate import LASTSCHRIFT_COMMON_FIELDS
-from cdedb.filter import money_filter
+from cdedb.filter import keydictsort_filter, money_filter
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, cdedbid_filter, check_validation as check,
@@ -68,9 +69,20 @@ class CdELastschriftMixin(CdEBaseFrontend):
                 personas[lastschrifts[anid]['persona_id']]))
         lastschrifts = OrderedDict(
             (last_id, lastschrifts[last_id]) for last_id in last_order)
+
+        def transaction_sortkey(transaction: CdEDBObject) -> Sortkey:
+            lastschrift_id = transaction["lastschrift_id"]
+            persona = personas[all_lastschrifts[lastschrift_id]["persona_id"]]
+            return transaction['issued_at'], *EntitySorter.persona(persona)
+
+        sorted_transactions = keydictsort_filter(
+            transactions, sortkey=transaction_sortkey)
+        payment_date = self._calculate_payment_date()
+
         return self.render(rs, "lastschrift/lastschrift_index", {
             'lastschrifts': lastschrifts, 'personas': personas,
-            'transactions': transactions, 'all_lastschrifts': all_lastschrifts})
+            'transactions': sorted_transactions, 'all_lastschrifts': all_lastschrifts,
+            'payment_date': payment_date})
 
     @access("member", "finance_admin")
     def lastschrift_show(self, rs: RequestState, persona_id: int) -> Response:
@@ -83,8 +95,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             raise werkzeug.exceptions.Forbidden()
         lastschrift_ids = self.cdeproxy.list_lastschrift(
             rs, persona_ids=(persona_id,), active=None)
-        lastschrifts = self.cdeproxy.get_lastschrifts(rs,
-                                                      lastschrift_ids.keys())
+        lastschrifts = self.cdeproxy.get_lastschrifts(rs, lastschrift_ids.keys())
         transactions: CdEDBObjectMap = {}
         if lastschrifts:
             transaction_ids = self.cdeproxy.list_lastschrift_transactions(
@@ -102,10 +113,12 @@ class CdELastschriftMixin(CdEBaseFrontend):
                 active_permit = lastschrift['id']
         active_open = bool(
             active_permit and self.determine_open_permits(rs, (active_permit,)))
+        payment_date = self._calculate_payment_date()
         return self.render(rs, "lastschrift/lastschrift_show", {
             'lastschrifts': lastschrifts, 'main_persona': main_persona,
             'active_permit': active_permit, 'active_open': active_open,
             'personas': personas, 'transactions': transactions,
+            'payment_date': payment_date,
         })
 
     @access("finance_admin")
@@ -159,6 +172,12 @@ class CdELastschriftMixin(CdEBaseFrontend):
         if not self.coreproxy.verify_persona(rs, persona_id, ["cde"]):
             rs.add_validation_error(("persona_id", ValueError(
                 n_("Persona must have cde realm."))))
+        persona = self.coreproxy.get_cde_user(rs, persona_id)
+        if (persona["donation"] and persona["donation"] != donation
+                and not rs.ignore_warnings):
+            rs.add_validation_error(("donation", ValidationWarning(
+                n_("User already set a different donation of %(donation)s."),
+                {"donation": money_filter(persona["donation"])})))
         min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
         if donation < min_donation:
             rs.add_validation_error(("donation", ValueError(
@@ -196,12 +215,16 @@ class CdELastschriftMixin(CdEBaseFrontend):
             rs, lastschrift_ids=(lastschrift_id,),
             stati=(const.LastschriftTransactionStati.issued,))
         if transaction_ids:
+            transactions = self.cdeproxy.get_lastschrift_transactions(
+                rs, transaction_ids)
+            transaction = unwrap(transactions)
             subject = glue("Einzugsermächtigung zu ausstehender Lastschrift"
                            "widerrufen.")
             self.do_mail(rs, "lastschrift/pending_lastschrift_revoked",
                          {'To': (self.conf["MANAGEMENT_ADDRESS"],),
                           'Subject': subject},
-                         {'persona_id': persona_id})
+                         {'persona_id': persona_id,
+                          'payment_date': transaction['payment_date']})
         return self.redirect(rs, "cde/lastschrift_show", {
             'persona_id': rs.ambience['lastschrift']['persona_id']})
 
@@ -355,8 +378,13 @@ class CdELastschriftMixin(CdEBaseFrontend):
         if not sepapain_file:
             rs.notify("error", n_("Creation of SEPA-PAIN-file failed."))
             return self.lastschrift_index(rs)
-        return self.send_file(rs, data=sepapain_file, inline=False,
-                              filename="i25p_semester{}.xml".format(period))
+
+        if lastschrift_id:
+            persona_id = lastschrifts[lastschrift_id]["persona_id"]
+            filename = f"i25p_semester{period}_persona{persona_id}.xml"
+        else:
+            filename = f"i25p_semester{period}.xml"
+        return self.send_file(rs, data=sepapain_file, inline=False, filename=filename)
 
     @access("finance_admin", modi={"POST"})
     @REQUESTdata("lastschrift_id")
@@ -379,8 +407,10 @@ class CdELastschriftMixin(CdEBaseFrontend):
             if not self.determine_open_permits(rs, lastschrift_ids):
                 rs.notify("error", n_("Existing pending transaction."))
                 return self.lastschrift_index(rs)
+
+        payment_date = self._calculate_payment_date()
         transaction_ids = self.cdeproxy.issue_lastschrift_transaction_batch(
-            rs, lastschrift_ids)
+            rs, lastschrift_ids, payment_date=payment_date).values()
         if not transaction_ids:
             return self.lastschrift_index(rs)
 
@@ -393,7 +423,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             persona = personas[lastschrift['persona_id']]
             data = {
                 'persona': persona,
-                'payment_date': self._calculate_payment_date(),
+                'payment_date': payment_date,
                 'amount': transaction["amount"],
                 'iban': lastschrift['iban'],
                 'account_owner': lastschrift['account_owner'],
@@ -503,12 +533,16 @@ class CdELastschriftMixin(CdEBaseFrontend):
             rs, lastschrift_ids=(lastschrift_id,),
             stati=(const.LastschriftTransactionStati.issued,))
         if transaction_ids:
+            transactions = self.cdeproxy.get_lastschrift_transactions(
+                rs, transaction_ids)
+            transaction = unwrap(transactions)
             subject = glue("Einzugsermächtigung zu ausstehender Lastschrift"
                            "widerrufen.")
             self.do_mail(rs, "lastschrift/pending_lastschrift_revoked",
                          {'To': (self.conf["MANAGEMENT_ADDRESS"],),
                           'Subject': subject},
-                         {'persona_id': persona_id})
+                         {'persona_id': persona_id,
+                          'payment_date': transaction['payment_date']})
         if persona_id:
             return self.redirect(rs, "cde/lastschrift_show",
                                  {'persona_id': persona_id})
@@ -547,7 +581,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         with tempfile.TemporaryDirectory() as tmp_dir:
             work_dir = pathlib.Path(tmp_dir) / 'workdir'
             work_dir.mkdir()
-            with open(work_dir / "lastschrift_receipt.tex", 'w') as f:
+            with open(work_dir / "lastschrift_receipt.tex", 'w', encoding='UTF-8') as f:
                 f.write(tex)
             logo_src = self.conf["REPOSITORY_PATH"] / "misc/cde-logo.jpg"
             shutil.copy(logo_src, work_dir / "cde-logo.jpg")

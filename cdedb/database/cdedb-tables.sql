@@ -539,6 +539,7 @@ CREATE TABLE cde.lastschrift_transactions (
         status                  integer NOT NULL,
         amount                  numeric(8, 2) NOT NULL,
         issued_at               timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
+        payment_date            date DEFAULT NULL,
         processed_at            timestamp WITH TIME ZONE DEFAULT NULL,
         -- positive for money we got and negative if bounced with fee
         tally                   numeric(8, 2) DEFAULT NULL
