@@ -380,7 +380,8 @@ class CdELastschriftMixin(CdEBaseFrontend):
             return self.lastschrift_index(rs)
 
         if lastschrift_id:
-            filename = f"i25p_semester{period}_persona{lastschrift_id}.xml"
+            persona_id = lastschrifts[lastschrift_id]["persona_id"]
+            filename = f"i25p_semester{period}_persona{persona_id}.xml"
         else:
             filename = f"i25p_semester{period}.xml"
         return self.send_file(rs, data=sepapain_file, inline=False, filename=filename)
