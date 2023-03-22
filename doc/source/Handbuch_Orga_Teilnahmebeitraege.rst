@@ -3,7 +3,7 @@ Teilnahmebeiträge
 
 Für die automatische Berechnung von Teilnahmebeiträgen für Teilnehmende von
 Veranstaltungen gibt es die Möglichkeit auch komplizierte Sachverhalte durch
-boolsche Funktionen akurat abzubilden.
+boolsche Funktionen akkurat abzubilden.
 
 Für viele Veranstaltungen ist dies kaum notwendig. Beim Erstellen der
 Veranstaltung werden automatisch zwei Teilnahmebeiträge eingerichtet, in Folge
