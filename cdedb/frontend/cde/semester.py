@@ -31,6 +31,12 @@ class CdESemesterMixin(CdEBaseFrontend):
         period = self.cdeproxy.get_period(rs, period_id)
         period_history = self.cdeproxy.get_period_history(rs)
         allowed_semester_steps = self.cdeproxy.allowed_semester_steps(rs)
+        # group all allowed steps into the three steps we display to the user
+        in_step_1 = (allowed_semester_steps.advance or allowed_semester_steps.billing
+                     or allowed_semester_steps.archival_notification)
+        in_step_2 = (allowed_semester_steps.ejection
+                     or allowed_semester_steps.automated_archival)
+        in_step_3 = allowed_semester_steps.balance
         expuls_id = self.cdeproxy.current_expuls(rs)
         expuls = self.cdeproxy.get_expuls(rs, expuls_id)
         expuls_history = self.cdeproxy.get_expuls_history(rs)
@@ -38,7 +44,7 @@ class CdESemesterMixin(CdEBaseFrontend):
         return self.render(rs, "semester/show_semester", {
             'period': period, 'expuls': expuls, 'stats': stats,
             'period_history': period_history, 'expuls_history': expuls_history,
-            'allowed_semester_steps': allowed_semester_steps,
+            'in_step_1': in_step_1, 'in_step_2': in_step_2, 'in_step_3': in_step_3,
         })
 
     @access("finance_admin", modi={"POST"})
