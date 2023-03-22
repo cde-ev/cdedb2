@@ -80,6 +80,9 @@ import zxcvbn
 from schulze_condorcet.util import as_vote_tuple
 
 import cdedb.database.constants as const
+import cdedb.fee_condition_parser.evaluation as fcp_evaluation
+import cdedb.fee_condition_parser.parsing as fcp_parsing
+import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
 import cdedb.models.ml as models_ml
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, EPSILON, EVENT_SCHEMA_VERSION, INFINITE_ENUM_MAGIC_NUMBER,
@@ -990,6 +993,17 @@ def _csv_identifier(
         raise ValidationSummary(ValueError(argname, n_(
             "Must be comma separated identifiers.")))
     return CSVIdentifier(val)
+
+
+@_add_typed_validator
+def _token_string(
+        val: Any, argname: str = None, **kwargs: Any
+) -> TokenString:
+    val = _str(val, argname, **kwargs)
+    if re.search(r'[\s()]', val):
+        raise ValidationSummary(ValueError(argname, n_(
+            "Must not contain whitespace or parentheses.")))
+    return TokenString(val)
 
 
 # TODO manual handling of @_add_typed_validator inside decorator or storage?
@@ -2261,7 +2275,6 @@ EVENT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'is_course_assignment_visible': bool,
     'is_cancelled': bool,
     'iban': Optional[IBAN],
-    'nonmember_surcharge': NonNegativeDecimal,
     'mail_text': Optional[str],
     'registration_text': Optional[str],
     'orga_address': Optional[Email],
@@ -2285,6 +2298,7 @@ EVENT_OPTIONAL_FIELDS: Mapping[str, Any] = {
 
 EVENT_CREATION_OPTIONAL_FIELDS: TypeMapping = {
     'lodgement_groups': Mapping,
+    'fees': Mapping,
 }
 
 
@@ -2384,6 +2398,12 @@ def _event(
                 val['lodgement_groups'], LodgementGroup, 'lodgement_groups',
                 creation_only=creation, nested_creation=creation, **kwargs)
 
+    if 'fees' in val:
+        with errs:
+            val['fees'] = _optional_object_mapping_helper(
+                val['fees'], EventFee, 'fees', creation_only=creation, event=val,
+                questionnaire={}, **kwargs)
+
     if errs:
         raise errs
 
@@ -2392,16 +2412,14 @@ def _event(
 
 EVENT_PART_CREATION_MANDATORY_FIELDS: TypeMapping = {
     'title': str,
-    'shortname': Shortname,
+    'shortname': TokenString,
     'part_begin': datetime.date,
     'part_end': datetime.date,
-    'fee': NonNegativeDecimal,
     'waitlist_field': Optional[ID],  # type: ignore[dict-item]
 }
 
 EVENT_PART_CREATION_OPTIONAL_FIELDS: TypeMapping = {
     'tracks': Mapping,
-    'fee_modifiers': Mapping,
 }
 
 EVENT_PART_COMMON_FIELDS: TypeMapping = {
@@ -2462,35 +2480,6 @@ def _event_part(
                 else:
                     newtracks[anid] = track
         val['tracks'] = newtracks
-
-    if 'fee_modifiers' in val:
-        new_modifiers = {}
-        for anid, fee_modifier in val['fee_modifiers'].items():
-            try:
-                anid = _int(anid, 'fee_modifiers', **kwargs)
-            except ValidationSummary as e:
-                errs.extend(e)
-            else:
-                creation = (anid < 0)
-                try:
-                    fee_modifier = _ALL_TYPED[
-                        Optional[EventFeeModifier]  # type: ignore[index]
-                    ](
-                        fee_modifier, 'fee_modifiers', creation=creation, **kwargs)
-                except ValidationSummary as e:
-                    errs.extend(e)
-                else:
-                    new_modifiers[anid] = fee_modifier
-
-        msg = n_("Must not have multiple fee modifiers linked to the same"
-                 " field in one event part.")
-
-        aniter: Iterable[Tuple[EventFeeModifier, EventFeeModifier]]
-        aniter = itertools.combinations(
-            [fm for fm in val['fee_modifiers'].values() if fm], 2)
-        for e1, e2 in aniter:
-            if e1['field_id'] is not None and e1['field_id'] == e2['field_id']:
-                errs.append(ValueError('fee_modifiers', msg))
 
     if errs:
         raise errs
@@ -2724,32 +2713,78 @@ def _event_field(
     return EventField(val)
 
 
-EVENT_FEE_MODIFIER_COMMON_FIELDS: TypeMapping = {
-    "modifier_name": RestrictiveIdentifier,
+@_add_typed_validator
+def _event_fee_setter(
+    val: Any, argname: str = "fees",
+    **kwargs: Any
+) -> EventFeeSetter:
+    """Validate a `CdEDBOptionalMap` of event fees."""
+    val = _mapping(val, argname)
+
+    new_fees = _optional_object_mapping_helper(
+        val, EventFee, argname, creation_only=False, **kwargs)
+
+    return EventFeeSetter(dict(new_fees))
+
+
+EVENT_FEE_COMMON_FIELDS: TypeMapping = {
+    "title": str,
+    "notes": Optional[str],  # type: ignore[dict-item]
     "amount": decimal.Decimal,
-    "field_id": ID,
+    "condition": EventFeeCondition,
 }
 
 
 @_add_typed_validator
-def _event_fee_modifier(
-    val: Any, argname: str = "fee_modifiers", *,
+def _event_fee(
+    val: Any, argname: str = "event_fee", *,
     creation: bool = False, **kwargs: Any
-) -> EventFeeModifier:
+) -> EventFee:
 
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        mandatory_fields = EVENT_FEE_MODIFIER_COMMON_FIELDS
-        optional_fields: TypeMapping = {'id': ID}
+        mandatory_fields = EVENT_FEE_COMMON_FIELDS
+        optional_fields: TypeMapping = {}
     else:
         mandatory_fields = {}
-        optional_fields = dict(EVENT_FEE_MODIFIER_COMMON_FIELDS, id=ID)
+        optional_fields = EVENT_FEE_COMMON_FIELDS
 
-    val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs)
+    val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
 
-    return EventFeeModifier(val)
+    return EventFee(val)
+
+
+@_add_typed_validator
+def _event_fee_condition(
+    val: Any, argname: str = "event_fee_condition", *,
+    event: CdEDBObject,
+    questionnaire: Dict[const.QuestionnaireUsages, List[CdEDBObject]],
+    **kwargs: Any
+) -> EventFeeCondition:
+
+    val = _str(val, argname, **kwargs)
+
+    additional_questionnaire_fields = {
+        row['field_id'] for row in questionnaire.get(
+            const.QuestionnaireUsages.additional, [])
+        if row['field_id']
+    }
+    field_names = {
+        f['field_name'] for field_id, f in event.get('fields', {}).items()
+        if f['association'] == const.FieldAssociations.registration
+           and f['kind'] == const.FieldDatatypes.bool
+           and field_id not in additional_questionnaire_fields
+    }
+    part_names = {p['shortname'] for p in event['parts'].values()}
+
+    try:
+        parse_result = fcp_parsing.parse(val)
+        fcp_evaluation.check(parse_result, field_names, part_names)
+    except Exception as e:
+        raise ValidationSummary(ValueError(argname, e.args[-1])) from e
+
+    return EventFeeCondition(fcp_roundtrip.serialize(parse_result))
 
 
 PAST_COURSE_COMMON_FIELDS: Mapping[str, Any] = {
@@ -3172,10 +3207,10 @@ QUESTIONNAIRE_ROW_MANDATORY_FIELDS: TypeMapping = {
 
 
 def _questionnaire_row(
-    val: Any, field_definitions: Optional[CdEDBObjectMap] = None,
-    fee_modifier_fields: Optional[Set[int]] = None,
+    val: Any, argname: str = "questionnaire_row", *,
+    field_definitions: CdEDBObjectMap, fees_by_field: Mapping[int, Set[int]],
     kind: Optional[const.QuestionnaireUsages] = None,
-    argname: str = "questionnaire_row", **kwargs: Any,
+    **kwargs: Any
 ) -> QuestionnaireRow:
 
     argname_prefix = argname + "." if argname else ""
@@ -3207,8 +3242,12 @@ def _questionnaire_row(
         raise errs
     assert kind is not None
 
-    fields_by_name = ({f['field_name']: f for f in field_definitions.values()}
-                      if field_definitions else {})
+    field_definitions = {
+        field_id: field for field_id, field in field_definitions.items()
+        if field['association'] == const.FieldAssociations.registration
+           and (kind.allow_fee_condition() or not fees_by_field.get(field_id))
+    }
+    fields_by_name = {f['field_name']: f for f in field_definitions.values()}
     if 'field_name' in value:
         if not value['field_name']:
             del value['field_name']
@@ -3229,12 +3268,11 @@ def _questionnaire_row(
     if 'field_id' not in value:
         value['field_id'] = None
 
-    if field_definitions and value['field_id']:
+    if value['field_id']:
         field = field_definitions.get(value['field_id'], None)
         if not field:
-            raise ValidationSummary(
-                KeyError(argname_prefix + 'default_value',
-                         n_("Referenced field does not exist.")))
+            raise ValidationSummary(KeyError(
+                argname_prefix + 'default_value', n_("Invalid field.")))
         if value['default_value']:
             value['default_value'] = _by_field_datatype(
                 value['default_value'], "default_value",
@@ -3242,11 +3280,6 @@ def _questionnaire_row(
 
     field_id = value['field_id']
     value['readonly'] = bool(value['readonly']) if field_id else None
-    if fee_modifier_fields:
-        if field_id and field_id in fee_modifier_fields:
-            if not kind.allow_fee_modifier():
-                msg = n_("Inappropriate questionnaire usage for fee modifier field.")
-                errs.append(ValueError(argname_prefix + 'kind', msg))
     if value['readonly'] and not kind.allow_readonly():
         msg = n_("Registration questionnaire rows may not be readonly.")
         errs.append(ValueError(argname_prefix + 'readonly', msg))
@@ -3257,20 +3290,17 @@ def _questionnaire_row(
     return QuestionnaireRow(value)
 
 
-# TODO change parameter order to make more consistent?
-# TODO type fee_modifiers
 @_add_typed_validator
 def _questionnaire(
-    val: Any, field_definitions: CdEDBObjectMap, fee_modifiers: CdEDBObjectMap,
-    argname: str = "questionnaire",
-    **kwargs: Any
+    val: Any, argname: str = "questionnaire", *,
+    field_definitions: CdEDBObjectMap, fees_by_field: Mapping[int, Set[int]],
+    **kwargs: Any,
 ) -> Questionnaire:
 
     val = _mapping(val, argname, **kwargs)
 
     errs = ValidationSummary()
     ret: Dict[int, List[QuestionnaireRow]] = {}
-    fee_modifier_fields = {e['field_id'] for e in fee_modifiers.values()}
     for k, v in copy.deepcopy(val).items():
         try:
             k = _ALL_TYPED[const.QuestionnaireUsages](k, argname, **kwargs)
@@ -3283,8 +3313,8 @@ def _questionnaire(
                 row_argname = argname + f"[{k.name}][{i+1}]"
                 try:
                     value = _questionnaire_row(
-                        value, field_definitions, fee_modifier_fields,
-                        kind=k, argname=row_argname, **kwargs)
+                        value, row_argname, field_definitions=field_definitions,
+                        fees_by_field=fees_by_field, kind=k, **kwargs)
                 except ValidationSummary as e:
                     errs.extend(e)
                     continue
@@ -3378,7 +3408,7 @@ def _serialized_event(
         'event.registration_tracks': Mapping,
         'event.course_choices': Mapping,
         'event.questionnaire_rows': Mapping,
-        'event.fee_modifiers': Mapping,
+        'event.event_fees': Mapping,
         'event.stored_queries': Mapping,
     }
     optional_fields: TypeMapping = {
@@ -3437,11 +3467,17 @@ def _serialized_event(
         'event.course_choices': _augment_dict_validator(
             _empty_dict, {'id': ID, 'course_id': ID, 'track_id': ID,
                           'registration_id': ID, 'rank': int}),
-        'event.questionnaire_rows': _augment_dict_validator(
-            _questionnaire_row, {'id': ID, 'event_id': ID}),
-        'event.fee_modifiers': _augment_dict_validator(
-            _event_fee_modifier, {'id': ID, 'part_id': ID}),
         # Is it easier to throw away broken ones at the end of the import.
+        'event.questionnaire_rows': _augment_dict_validator(
+            _empty_dict, {'id': ID, 'event_id': ID, 'title': Optional[str],  # type: ignore[dict-item]
+                          'info': Optional[str], 'input_size': Optional[str],  # type: ignore[dict-item]
+                          'readonly': Optional[bool], 'default_value': Optional[str],  # type: ignore[dict-item]
+                          'field_id': Optional[ID], 'kind': const.QuestionnaireUsages,  # type: ignore[dict-item]
+                          'pos': int}),
+        'event.event_fees': _augment_dict_validator(
+            _empty_dict, {'id': ID, 'event_id': ID, 'title': str,
+                          'notes': Optional[str],  # type: ignore[dict-item]
+                          'condition': str, 'amount': decimal.Decimal}),
         'event.stored_queries': _augment_dict_validator(
             _empty_dict, {'id': ID, 'event_id': ID, 'query_name': str,
                           'scope': QueryScope, 'serialized_query': Mapping})
@@ -3865,7 +3901,7 @@ def _serialized_event_questionnaire_upload(
 @_add_typed_validator
 def _serialized_event_questionnaire(
     val: Any, argname: str = "serialized_event_questionnaire", *,
-    field_definitions: CdEDBObjectMap, fee_modifiers: CdEDBObjectMap,
+    field_definitions: CdEDBObjectMap, fees_by_field: Dict[int, Set[int]],
     questionnaire: Dict[const.QuestionnaireUsages, List[QuestionnaireRow]],
     extend_questionnaire: bool, skip_existing_fields: bool,
     **kwargs: Any
@@ -3914,8 +3950,9 @@ def _serialized_event_questionnaire(
 
     if 'questionnaire' in val:
         try:
-            new_questionnaire = _questionnaire(
-                val['questionnaire'], field_definitions, fee_modifiers, **kwargs)
+            new_questionnaire = _ALL_TYPED[Questionnaire](
+                val['questionnaire'], field_definitions=field_definitions,
+                fees_by_field=fees_by_field, **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
         else:
@@ -3925,8 +3962,9 @@ def _serialized_event_questionnaire(
                     for kind in const.QuestionnaireUsages
                 }
                 try:
-                    new_questionnaire = _questionnaire(
-                        tmp, field_definitions, fee_modifiers, **kwargs)
+                    new_questionnaire = _ALL_TYPED[Questionnaire](
+                        tmp, field_definitions=field_definitions,
+                        fees_by_field=fees_by_field, **kwargs)
                 except ValidationSummary as e:
                     errs.extend(e)
 

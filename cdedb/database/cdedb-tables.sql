@@ -539,6 +539,7 @@ CREATE TABLE cde.lastschrift_transactions (
         status                  integer NOT NULL,
         amount                  numeric(8, 2) NOT NULL,
         issued_at               timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
+        payment_date            date DEFAULT NULL,
         processed_at            timestamp WITH TIME ZONE DEFAULT NULL,
         -- positive for money we got and negative if bounced with fee
         tally                   numeric(8, 2) DEFAULT NULL
@@ -701,7 +702,6 @@ CREATE TABLE event.events (
         -- automatically warned about registering late
         registration_hard_limit      timestamp WITH TIME ZONE,
         iban                         varchar,
-        nonmember_surcharge          numeric(8, 2) NOT NULL DEFAULT 0,
         orga_address                 varchar,
         registration_text            varchar,
         mail_text                    varchar,
@@ -732,16 +732,27 @@ GRANT INSERT, DELETE ON event.events TO cdb_admin;
 GRANT SELECT, UPDATE ON event.events_id_seq TO cdb_admin;
 GRANT SELECT ON event.events to cdb_anonymous;
 
+CREATE TABLE event.event_fees (
+        id                           serial PRIMARY KEY,
+        event_id                     integer NOT NULL REFERENCES event.events (id),
+        title                        varchar NOT NULL,
+        amount                       numeric(8, 2) NOT NULL,
+        condition                    varchar NOT NULL,
+        notes                        varchar
+);
+GRANT INSERT, SELECT, UPDATE, DELETE ON event.event_fees TO cdb_persona;
+GRANT SELECT, UPDATE on event.event_fees_id_seq TO cdb_persona;
+GRANT SELECT on event.event_fees TO cdb_anonymous;
+
 CREATE TABLE event.event_parts (
         id                      serial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
         title                   varchar NOT NULL,
         shortname               varchar NOT NULL,
+        UNIQUE (event_id, shortname) DEFERRABLE INITIALLY IMMEDIATE,
         -- we implicitly assume, that parts are non-overlapping
         part_begin              date NOT NULL,
         part_end                date NOT NULL,
-        -- fees are cummulative
-        fee                     numeric(8, 2) NOT NULL,
         -- reference to custom data field for waitlist management
         waitlist_field          integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
 );
@@ -849,22 +860,6 @@ ALTER TABLE event.events ADD FOREIGN KEY (lodge_field) REFERENCES event.field_de
 ALTER TABLE event.events ADD FOREIGN KEY (camping_mat_field) REFERENCES event.field_definitions(id);
 ALTER TABLE event.events ADD FOREIGN KEY (course_room_field) REFERENCES event.field_definitions(id);
 ALTER TABLE event.event_parts ADD FOREIGN KEY (waitlist_field) REFERENCES event.field_definitions(id);
-
-CREATE TABLE event.fee_modifiers (
-        id                      serial PRIMARY KEY,
-        -- the event part this modifier is available in.
-        part_id                 integer NOT NULL REFERENCES event.event_parts(id),
-        modifier_name           varchar NOT NULL,
-        -- the amount to modify the fee by. Can be negative.
-        amount                  numeric(8, 2) NOT NULL,
-        -- in which field do we save the information whether the modifier has been selected:
-        field_id                integer NOT NULL REFERENCES event.field_definitions(id),
-        UNIQUE (part_id, modifier_name),
-        UNIQUE (part_id, field_id)
-);
-GRANT INSERT, UPDATE, DELETE ON event.fee_modifiers TO cdb_persona;
-GRANT SELECT ON event.fee_modifiers TO cdb_anonymous;
-GRANT SELECT, UPDATE ON event.fee_modifiers_id_seq TO cdb_persona;
 
 CREATE TABLE event.courses (
         id                      serial PRIMARY KEY,

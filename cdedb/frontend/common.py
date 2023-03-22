@@ -908,8 +908,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             s.send_message(msg)
             s.quit()
         else:
-            with tempfile.NamedTemporaryFile(mode='w', prefix="cdedb-mail-",
-                                             suffix=".txt", delete=False) as f:
+            with tempfile.NamedTemporaryFile(
+                    mode='w', prefix="cdedb-mail-", suffix=".txt", delete=False,
+                    encoding='UTF-8') as f:
                 f.write(str(msg))
                 self.logger.debug(f"Stored mail to {f.name}.")
                 ret = f.name
@@ -1493,6 +1494,7 @@ AmbienceDict = typing.TypedDict(
         'lodgement': CdEDBObject,
         'part_group': CdEDBObject,
         'track_group': CdEDBObject,
+        'fee': CdEDBObject,
         'attachment': CdEDBObject,
         'assembly': CdEDBObject,
         'ballot': CdEDBObject,
@@ -1572,6 +1574,10 @@ def reconnoitre_ambience(obj: AbstractFrontend,
               'track_group_id', 'track_group',
               ((lambda a: do_assert(a['track_group']['event_id']
                                     == a['event']['id'])),)),
+        # Dirty hack, that relies on the event being retrieved into ambience first.
+        Scout(lambda anid: ambience['event']['fees'][anid],  # type: ignore[has-type]
+              'fee_id', 'fee',
+              ((lambda a: do_assert(a['fee']['event_id'] == a['event']['id'])),)),
         Scout(lambda anid: obj.assemblyproxy.get_attachment(rs, anid),
               'attachment_id', 'attachment',
               ((lambda a: do_assert(a['attachment']['assembly_id']

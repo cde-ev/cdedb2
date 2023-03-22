@@ -8,7 +8,7 @@ which requires "cde_admin". Note that every "finance_admin" is also a "cde_admin
 
 from werkzeug import Response
 
-from cdedb.common import RequestState, SemesterSteps, lastschrift_reference, unwrap
+from cdedb.common import RequestState, lastschrift_reference, unwrap
 from cdedb.common.n_ import n_
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
@@ -24,17 +24,13 @@ class CdESemesterMixin(CdEBaseFrontend):
         period_id = self.cdeproxy.current_period(rs)
         period = self.cdeproxy.get_period(rs, period_id)
         period_history = self.cdeproxy.get_period_history(rs)
-        if self.cdeproxy.may_start_semester_bill(rs):
-            current_period_step = SemesterSteps.billing
-        elif self.cdeproxy.may_start_semester_ejection(rs):
-            current_period_step = SemesterSteps.ejection
-        elif self.cdeproxy.may_start_semester_balance_update(rs):
-            current_period_step = SemesterSteps.balance
-        elif self.cdeproxy.may_advance_semester(rs):
-            current_period_step = SemesterSteps.billing
-        else:
-            rs.notify("error", n_("Inconsistent semester state."))
-            current_period_step = SemesterSteps.error
+        allowed_semester_steps = self.cdeproxy.allowed_semester_steps(rs)
+        # group all allowed steps into the three steps we display to the user
+        in_step_1 = (allowed_semester_steps.advance or allowed_semester_steps.billing
+                     or allowed_semester_steps.archival_notification)
+        in_step_2 = (allowed_semester_steps.ejection
+                     or allowed_semester_steps.automated_archival)
+        in_step_3 = allowed_semester_steps.balance
         expuls_id = self.cdeproxy.current_expuls(rs)
         expuls = self.cdeproxy.get_expuls(rs, expuls_id)
         expuls_history = self.cdeproxy.get_expuls_history(rs)
@@ -42,7 +38,7 @@ class CdESemesterMixin(CdEBaseFrontend):
         return self.render(rs, "semester/show_semester", {
             'period': period, 'expuls': expuls, 'stats': stats,
             'period_history': period_history, 'expuls_history': expuls_history,
-            'current_period_step': current_period_step,
+            'in_step_1': in_step_1, 'in_step_2': in_step_2, 'in_step_3': in_step_3,
         })
 
     @access("finance_admin", modi={"POST"})
@@ -64,11 +60,11 @@ class CdESemesterMixin(CdEBaseFrontend):
         # advance to the next semester
         # This does not throw an error if we may not advance, since the function must
         #  be idempotent if the sending crushes midway.
-        if self.cdeproxy.may_advance_semester(rs):
+        if self.cdeproxy.allowed_semester_steps(rs).advance:
             self.cdeproxy.advance_semester(rs)
 
         period_id = self.cdeproxy.current_period(rs)
-        if not self.cdeproxy.may_start_semester_bill(rs):
+        if not self.cdeproxy.allowed_semester_steps(rs).billing:
             rs.notify("error", n_("Billing already done."))
             return self.redirect(rs, "cde/show_semester")
         open_lastschrift = self.determine_open_permits(rs)
@@ -156,7 +152,7 @@ class CdESemesterMixin(CdEBaseFrontend):
         if rs.has_validation_errors():  # pragma: no cover
             self.redirect(rs, "cde/show_semester")
         period_id = self.cdeproxy.current_period(rs)
-        if not self.cdeproxy.may_start_semester_ejection(rs):
+        if not self.cdeproxy.allowed_semester_steps(rs).ejection:
             rs.notify("error", n_("Wrong timing for ejection."))
             return self.redirect(rs, "cde/show_semester")
 
@@ -217,7 +213,7 @@ class CdESemesterMixin(CdEBaseFrontend):
         if rs.has_validation_errors():  # pragma: no cover
             self.redirect(rs, "cde/show_semester")
         period_id = self.cdeproxy.current_period(rs)
-        if not self.cdeproxy.may_start_semester_balance_update(rs):
+        if not self.cdeproxy.allowed_semester_steps(rs).balance:
             rs.notify("error", n_("Wrong timing for balance update."))
             return self.redirect(rs, "cde/show_semester")
 

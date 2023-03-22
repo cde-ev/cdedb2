@@ -21,13 +21,13 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, RequestState, build_msg, determine_age_class,
-    diacritic_patterns, get_hash, merge_dicts, now, unwrap,
+    diacritic_patterns, get_hash, json_serialize, merge_dicts, now, unwrap,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.types import VALIDATOR_LOOKUP
-from cdedb.filter import keydictsort_filter
+from cdedb.filter import keydictsort_filter, money_filter
 from cdedb.frontend.common import (
     CustomCSVDialect, Headers, REQUESTdata, REQUESTfile, TransactionObserver, access,
     cdedbid_filter, check_validation_optional as check_optional, event_guard,
@@ -389,6 +389,54 @@ class EventRegistrationMixin(EventBaseFrontend):
             **course_choice_params,
         })
 
+    @access("event")
+    @REQUESTdata("persona_id", "part_ids", "field_ids", "is_member", "is_orga")
+    def precompute_fee(self, rs: RequestState, event_id: int, persona_id: int,
+                       part_ids: vtypes.IntCSVList, field_ids: vtypes.IntCSVList,
+                       is_member: bool = None, is_orga: bool = None,
+                       ) -> Response:
+        """Compute the total fee for a user based on seleceted parts and bool fields.
+
+        Note that this does not require an existing registration, so this can be used
+        for a preview during registration.
+
+        :returns: A dict with localized text to be used in the preview.
+        """
+
+        if len(all_part_ids := rs.ambience['event']['parts']) == 1:
+            part_ids = all_part_ids.keys()
+
+        if self.is_orga(rs, event_id):
+            pass
+        elif persona_id == rs.user.persona_id and (
+                rs.ambience['event']['is_open']
+                or self.eventproxy.list_registrations(rs, event_id, persona_id)):
+            pass
+        else:
+            return Response("{}", mimetype='application/json', status=403)
+        if rs.has_validation_errors():
+            return Response("{}", mimetype='application/json', status=400)
+
+        complex_fee = self.eventproxy.precompute_fee(
+            rs, event_id, persona_id, part_ids, field_ids, is_member, is_orga)
+
+        msg = rs.gettext("Because you are not a CdE-Member, you will have to pay an"
+                         " additional fee of %(additional_fee)s"
+                         " (already included in the above figure).")
+        nonmember_msg = msg % {
+            'additional_fee': money_filter(
+                complex_fee.nonmember_surcharge_amount, lang=rs.lang) or ""
+        }
+
+        ret = {
+            'fee': money_filter(complex_fee.amount, lang=rs.lang) or "",
+            'nonmember': nonmember_msg,
+            'show_nonmember': complex_fee.nonmember_surcharge,
+            'active_fees': complex_fee.fee.active_fees,
+            'visual_debug': complex_fee.fee.visual_debug,
+        }
+        return Response(json_serialize(ret), mimetype='application/json')
+
     def new_process_registration_input(
             self, rs: RequestState, orga_input: bool, parts: CdEDBObjectMap = None,
             skip: Collection[str] = (), check_enabled: bool = False,
@@ -632,6 +680,16 @@ class EventRegistrationMixin(EventBaseFrontend):
         else:
             field_params = self._questionnaire_params(
                 rs, const.QuestionnaireUsages.registration)
+
+            # Take special care to disallow empty fields with entries.
+            tmp_fields = request_extractor(rs, field_params, postpone_validation=True)
+            fields_by_name = {
+                f"fields.{f['field_name']}": f for f in event['fields'].values()}
+            for key, val in tmp_fields.items():
+                if val == "" and fields_by_name[key]['entries']:
+                    rs.append_validation_error(
+                        (key, ValueError(n_("Must not be empty."))))
+
             registration['fields'] = {
                 key.removeprefix("fields."): val
                 for key, val in request_extractor(rs, field_params).items()
@@ -675,21 +733,19 @@ class EventRegistrationMixin(EventBaseFrontend):
         registration['mixed_lodging'] = (registration['mixed_lodging']
                                          and age.may_mix())
         new_id = self.eventproxy.create_registration(rs, registration, orga_input=False)
-        meta_info = self.coreproxy.get_meta_info(rs)
-        fee = self.eventproxy.calculate_fee(rs, new_id)
-        semester_fee = self.conf["MEMBERSHIP_FEE"]
 
-        subject = "Anmeldung für {}".format(rs.ambience['event']['title'])
+        payment_data = self._get_payment_data(rs, event_id)
+
+        subject = f"Anmeldung für {rs.ambience['event']['title']}"
         reply_to = (rs.ambience['event']['orga_address'] or
                     self.conf["EVENT_ADMIN_ADDRESS"])
-        reference = make_event_fee_reference(persona, rs.ambience['event'])
         self.do_mail(
             rs, "register",
             {'To': (rs.user.username,),
              'Subject': subject,
              'Reply-To': reply_to},
-            {'fee': fee, 'age': age, 'meta_info': meta_info,
-             'semester_fee': semester_fee, 'reference': reference})
+            {'age': age, 'mail_text': rs.ambience['event']['mail_text'],
+             **payment_data})
         rs.notify_return_code(new_id, success=n_("Registered for event."))
         return self.redirect(rs, "event/registration_status")
 
@@ -815,12 +871,16 @@ class EventRegistrationMixin(EventBaseFrontend):
             track_id for track_id, track in tracks.items()
             if const.RegistrationPartStati(stat(track)).is_involved()}
 
+        payment_parts = {part_id for part_id, reg_part in registration['parts'].items()
+                         if reg_part['status'].has_to_pay()}
+
         reg_questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(const.QuestionnaireUsages.registration,)))
         course_choice_params = self.get_course_choice_params(rs, event_id, orga=False)
         return self.render(rs, "registration/amend_registration", {
             'age': age, 'involved_tracks': involved_tracks,
-            'reg_questionnaire': reg_questionnaire,
+            'persona': persona, 'semester_fee': self.conf['MEMBERSHIP_FEE'],
+            'reg_questionnaire': reg_questionnaire, 'payment_parts': payment_parts,
             **course_choice_params,
         })
 
@@ -1242,26 +1302,26 @@ class EventRegistrationMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, 'event/checkin', {'part_ids': part_ids})
 
-    def _get_payment_data(self, rs: RequestState, event_id: int
-                          ) -> Optional[CdEDBObject]:
+    def _get_payment_data(self, rs: RequestState, event_id: int) -> CdEDBObject:
         reg_list = self.eventproxy.list_registrations(
             rs, event_id, persona_id=rs.user.persona_id)
         if not reg_list:
-            return None
+            return {}
         registration_id = unwrap(reg_list.keys())
         registration = self.eventproxy.get_registration(rs, registration_id)
         persona = self.coreproxy.get_event_user(rs, rs.user.persona_id, event_id)
 
         meta_info = self.coreproxy.get_meta_info(rs)
         reference = make_event_fee_reference(persona, rs.ambience['event'])
-        fee = self.eventproxy.calculate_fee(rs, registration_id)
+        complex_fee = self.eventproxy.calculate_complex_fee(rs, registration_id)
+        fee = complex_fee.amount
         to_pay = fee - registration['amount_paid']
 
         return {
             'registration': registration, 'persona': persona,
             'meta_info': meta_info, 'reference': reference, 'to_pay': to_pay,
             'iban': rs.ambience['event']['iban'], 'fee': fee,
-            'semester_fee': self.conf['MEMBERSHIP_FEE']
+            'complex_fee': complex_fee, 'semester_fee': self.conf['MEMBERSHIP_FEE'],
         }
 
     @access("event")

@@ -50,8 +50,9 @@
     </script>
 
     <div class="row">
+        {% set during_step_1 = period["billing_state"] or period["archival_notification_state"] %}
         <div class="col-md-12">
-            <div id="payment-request" class="panel {% if current_period_step == "billing" %}panel-primary{% else %}panel-default{% endif %}">
+            <div id="payment-request" class="panel {% if in_step_1 %}panel-primary{% else %}panel-default{% endif %}">
                 <div class="panel-heading">
                     <span class="pull-right">(01.01./01.07.)</span>
                     <h4 class="panel-title">{% trans %}Send Payment Requests & Archival Notification{% endtrans %}</h4>
@@ -74,17 +75,25 @@
                         </p>
                     </div>
                     <div class="col-md-4">
-                    {% if current_period_step == "billing" %}
-                        {% if period['billing_state'] %}
+                    {% if in_step_1 %}
+                        {% if during_step_1 %}
                             <p>
-                                {% trans state=period['billing_state']|cdedbid %}
-                                    Done up until {{ state }}.
-                                {% endtrans %}
-                                <br />
+                                {% if period['billing_state'] %}
+                                    {% trans state=period['billing_state']|cdedbid %}
+                                        Billing done up until {{ state }}.
+                                    {% endtrans %}
+                                    <br />
+                                {% endif %}
                                 {% trans count=period['billing_count'] %}
                                     {{ count }} billing emails have been sent so far.
                                 {% endtrans %}
                                 <br />
+                                {% if period['archival_notification_state'] %}
+                                    {% trans state=period['archival_notification_state']|cdedbid %}
+                                        Archival mails done up until {{ state }}.
+                                    {% endtrans %}
+                                    <br />
+                                {% endif %}
                                 {% trans count=period['archival_notification_count'] %}
                                     {{ count }} archival emails have been sent so far.
                                 {% endtrans %}
@@ -102,7 +111,7 @@
                                     readonly="finance" not in user.admin_views) }}
                             </div>
                             {{ util.input_submit(label=gettext("Send Mails"), icon="paper-plane", readonly="finance" not in user.admin_views,
-                                aclass="btn btn-default" if period["billing_state"] else "btn btn-primary") }}
+                                aclass="btn btn-default" if during_step_1 else "btn btn-primary") }}
                         </form>
                     {% else %}
                         <span class="text-success">
@@ -124,8 +133,9 @@
             </div>
         </div>
 
+        {% set during_step_2 = period['ejection_state'] or period['archival_state'] %}
         <div class="col-md-12">
-            <div id="eject-members" class="panel {% if current_period_step == "ejection" %}panel-primary{% else %}panel-default{% endif %}">
+            <div id="eject-members" class="panel {% if in_step_2 %}panel-primary{% else %}panel-default{% endif %}">
                 <div class="panel-heading">
                     <span class="pull-right">(01.02./01.08.)</span>
                     <h4 class="panel-title">{% trans %}Remove inactive Members & Perform Automatic Archival{% endtrans %}</h4>
@@ -147,17 +157,25 @@
                         </p>
                     </div>
                     <div class="col-md-4">
-                    {% if current_period_step == "ejection" %}
-                        {% if period['ejection_state'] %}
+                    {% if in_step_2 %}
+                        {% if during_step_2 %}
                             <p>
-                                {% trans state=period['ejection_state']|cdedbid %}
-                                    Done up until {{ state }}.
-                                {% endtrans %}
-                                <br />
+                                {% if period['ejection_state'] %}
+                                    {% trans state=period['ejection_state']|cdedbid %}
+                                        Ejection done up until {{ state }}.
+                                    {% endtrans %}
+                                    <br />
+                                {% endif %}
                                 {% trans count=period['ejection_count'] %}
                                     {{ count }} memberships have been ended so far.
                                 {% endtrans %}
                                 <br />
+                                {% if period['archival_state'] %}
+                                    {% trans state=period['archival_state']|cdedbid %}
+                                        Archival done up until {{ state }}.
+                                    {% endtrans %}
+                                    <br />
+                                {% endif %}
                                 {% trans count=period['archival_count'] %}
                                     {{ count }} accounts have been archived so far.
                                 {% endtrans %}
@@ -182,9 +200,9 @@
                         <form action="{{ cdedblink('cde/semester_eject') }}" method="POST" id="ejectform">
                             {{ util.anti_csrf_token('cde/semester_eject') }}
                             {{ util.input_submit(label=gettext("Process Accounts"), readonly="finance" not in user.admin_views,
-                                aclass="btn btn-default" if period["ejection_state"] else "btn btn-primary") }}
+                                aclass="btn btn-default" if during_step_2 else "btn btn-primary") }}
                         </form>
-                    {% elif current_period_step == "billing" %}
+                    {% elif in_step_1 %}
                         <span class="text-muted">{% trans %}To be done later.{% endtrans %}</span>
                     {% else %}
                         <span class="text-success">
@@ -206,8 +224,9 @@
             </div>
         </div>
 
+        {% set during_step_3 = period['balance_state'] %}
         <div class="col-md-12">
-            <div id="balance-update" class="panel {% if current_period_step == "balance" %}panel-primary{% else %}panel-default{% endif %}">
+            <div id="balance-update" class="panel {% if in_step_3 %}panel-primary{% else %}panel-default{% endif %}">
                 <div class="panel-heading">
                     <span class="pull-right">(15.02./15.08.)</span>
                     <h4 class="panel-title">{% trans %}Update Balances{% endtrans %}</h4>
@@ -228,12 +247,12 @@
                         </p>
                     </div>
                     <div class="col-md-4">
-                    {% if current_period_step in ["billing", "ejection"] %}
+                    {% if in_step_1 or in_step_2 %}
                         <span class="text-muted">{% trans %}To be done later.{% endtrans %}</span>
-                    {% elif current_period_step == "balance" %}
-                        {% if period['balance_state'] %}
+                    {% elif in_step_3 %}
+                        {% if during_step_3 %}
                             <p>
-                                {% trans state=period['balance_state'] %}
+                                {% trans state=period['balance_state']|cdedbid %}
                                     Done up until {{ state }}.
                                 {% endtrans %}
                                 <br />
@@ -259,7 +278,7 @@
                         <form action="{{ cdedblink('cde/semester_balance_update') }}" method="POST" id="balanceform">
                             {{ util.anti_csrf_token('cde/semester_balance_update') }}
                             {{ util.input_submit(label=gettext("Update Balances"), readonly="finance" not in user.admin_views,
-                                aclass="btn btn-default" if period["balance_state"] else "btn btn-primary") }}
+                                aclass="btn btn-default" if during_step_3 else "btn btn-primary") }}
                         </form>
                     {% endif %}
                     </div>

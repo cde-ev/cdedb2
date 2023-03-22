@@ -13,7 +13,7 @@ All parts are combined together in the `EventBackend` class via multiple inherit
 together with a handful of high-level methods, that use functionalities of multiple
 backend parts.
 """
-
+import abc
 import collections
 import copy
 import datetime
@@ -35,8 +35,8 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
-    COURSE_FIELDS, COURSE_SEGMENT_FIELDS, COURSE_TRACK_FIELDS, EVENT_FIELDS,
-    EVENT_PART_FIELDS, FEE_MODIFIER_FIELDS, FIELD_DEFINITION_FIELDS, LODGEMENT_FIELDS,
+    COURSE_FIELDS, COURSE_SEGMENT_FIELDS, COURSE_TRACK_FIELDS, EVENT_FEE_FIELDS,
+    EVENT_FIELDS, EVENT_PART_FIELDS, FIELD_DEFINITION_FIELDS, LODGEMENT_FIELDS,
     LODGEMENT_GROUP_FIELDS, PART_GROUP_FIELDS, PERSONA_EVENT_FIELDS,
     PERSONA_STATUS_FIELDS, QUESTIONNAIRE_ROW_FIELDS, REGISTRATION_FIELDS,
     REGISTRATION_PART_FIELDS, REGISTRATION_TRACK_FIELDS, STORED_EVENT_QUERY_FIELDS,
@@ -208,7 +208,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 ret[anid]['tracks'] = {}
                 ret[anid]['part_groups'] = {}
                 ret[anid]['track_groups'] = {}
-                ret[anid]['fee_modifiers'] = {}
+                ret[anid]['fees'] = {}
             part_data = self.sql_select(
                 rs, "event.event_parts", EVENT_PART_FIELDS,
                 event_ids, entity_key="event_id")
@@ -229,9 +229,9 @@ class EventBaseBackend(EventLowLevelBackend):
             track_group_track_data = self.sql_select(
                 rs, "event.track_group_tracks", ("track_group_id", "track_id"),
                 all_tracks.keys(), entity_key="track_id")
-            fee_modifier_data = self.sql_select(
-                rs, "event.fee_modifiers", FEE_MODIFIER_FIELDS,
-                all_parts.keys(), entity_key="part_id")
+            fee_data = self.sql_select(
+                rs, "event.event_fees", EVENT_FEE_FIELDS, event_ids,
+                entity_key="event_id")
             orga_data = self.sql_select(
                 rs, "event.orgas", ("persona_id", "event_id"), event_ids,
                 entity_key="event_id")
@@ -239,7 +239,6 @@ class EventBaseBackend(EventLowLevelBackend):
                 ret[d['event_id']]['orgas'].add(d['persona_id'])
             for d in part_data:
                 d['tracks'] = {}
-                d['fee_modifiers'] = {}
                 d['part_groups'] = {}
                 ret[d['event_id']]['parts'][d['id']] = d
             for d in part_group_data:
@@ -267,10 +266,8 @@ class EventBaseBackend(EventLowLevelBackend):
                 track_group['track_ids'].add(d['track_id'])
                 track = ret[event_id]['tracks'][d['track_id']]
                 track['track_groups'][d['track_group_id']] = track_group
-            for d in fee_modifier_data:
-                event_id = all_parts[d['part_id']]
-                ret[event_id]['fee_modifiers'][d['id']] = d
-                ret[event_id]['parts'][d['part_id']]['fee_modifiers'][d['id']] = d
+            for d in fee_data:
+                ret[d['event_id']]['fees'][d['id']] = d
             for event_id, fields in self._get_events_fields(rs, event_ids).items():
                 ret[event_id]['fields'] = fields
         for anid in event_ids:
@@ -415,8 +412,8 @@ class EventBaseBackend(EventLowLevelBackend):
         The syntax for updating the associated data on orgas, parts and
         fields is as follows:
 
-        * If the keys 'parts', 'fee_modifiers' or 'fields' are present,
-          the associated dict mapping the part, fee_modifier or field ids to
+        * If the keys 'parts', or 'fields' are present,
+          the associated dict mapping the part, or field ids to
           the respective data sets can contain an arbitrary number of entities,
           absent entities are not modified.
 
@@ -513,6 +510,8 @@ class EventBaseBackend(EventLowLevelBackend):
                     'event_id': new_id,
                 })
                 self.create_lodgement_group(rs, lg_data)
+            if fees := data.get('fees'):
+                self.set_event_fees(rs, new_id, fees)
             self.event_keeper_create(rs, new_id)
         return new_id
 
@@ -726,6 +725,71 @@ class EventBaseBackend(EventLowLevelBackend):
         return ret
 
     @access("event")
+    def set_event_fees(self, rs: RequestState, event_id: int, fees: CdEDBOptionalMap
+                       ) -> DefaultReturnCode:
+        """Create, delete and/or update fees for one event."""
+        event_id = affirm(vtypes.ID, event_id)
+
+        if not (self.is_admin(rs) or self.is_orga(rs, event_id=event_id)):
+            raise PrivilegeError(n_("Not privileged."))
+
+        ret = 1
+        if not fees:
+            return ret
+
+        with Atomizer(rs):
+            event = self.get_event(rs, event_id)
+            questionnaire = self.get_questionnaire(rs, event_id)
+            fees = affirm(vtypes.EventFeeSetter, fees, event=event,
+                          questionnaire=questionnaire)
+
+            existing_fees = {unwrap(e) for e in self.sql_select(
+                rs, "event.event_fees", ("id",), (event_id,), entity_key="event_id")}
+            new_fees = {x for x in fees if x < 0}
+            updated_fees = {x for x in fees if x > 0 and fees[x] is not None}
+            deleted_fees = {x for x in fees if x > 0 and fees[x] is None}
+            if not updated_fees | deleted_fees <= existing_fees:
+                raise ValueError(n_("Non-existing event fee specified."))
+
+            if updated_fees or deleted_fees:
+                current_fee_data = {e['id']: e for e in self.sql_select(
+                    rs, "event.event_fees", EVENT_FEE_FIELDS,
+                    updated_fees | deleted_fees)}
+
+                if deleted_fees:
+                    ret *= self.sql_delete(rs, "event.event_fees", deleted_fees)
+                    for x in mixed_existence_sorter(deleted_fees):
+                        current = current_fee_data[x]
+                        self.event_log(rs, const.EventLogCodes.fee_modifier_deleted,
+                                       event_id, change_note=current['title'])
+
+                for x in mixed_existence_sorter(updated_fees):
+                    updated_fee = copy.deepcopy(fees[x])
+                    assert updated_fee is not None
+                    updated_fee['id'] = x
+                    current = current_fee_data[x]
+                    if any(updated_fee[k] != current[k] for k in updated_fee):
+                        ret *= self.sql_update(rs, "event.event_fees", updated_fee)
+                        self.event_log(rs, const.EventLogCodes.fee_modifier_changed,
+                                       event_id, change_note=current['title'])
+
+            for x in mixed_existence_sorter(new_fees):
+                new_fee = copy.deepcopy(fees[x])
+                assert new_fee is not None
+                new_fee['event_id'] = event_id
+                ret *= self.sql_insert(rs, "event.event_fees", new_fee)
+                self.event_log(rs, const.EventLogCodes.fee_modifier_created, event_id,
+                               change_note=new_fee['title'])
+
+            self._update_registrations_amount_owed(rs, event_id)
+
+        return ret
+
+    @abc.abstractmethod
+    def _update_registrations_amount_owed(self, rs: RequestState, event_id: int
+                                          ) -> DefaultReturnCode: ...
+
+    @access("event")
     def check_orga_addition_limit(self, rs: RequestState,
                                   event_id: int) -> bool:
         """Implement a rate limiting check for orgas adding persons.
@@ -792,17 +856,14 @@ class EventBaseBackend(EventLowLevelBackend):
         """
         event_id = affirm(vtypes.ID, event_id)
         event = self.get_event(rs, event_id)
+        fees_by_field = self.get_event_fees_per_entity(rs, event_id).fields
         if data is not None:
             current = self.get_questionnaire(rs, event_id)
             current.update(data)
-            for v in current.values():
-                for e in v:
-                    if 'pos' in e:
-                        del e['pos']
             # FIXME what is the correct type here?
             data = affirm(vtypes.Questionnaire, current,  # type: ignore[assignment]
                           field_definitions=event['fields'],
-                          fee_modifiers=event['fee_modifiers'])
+                          fees_by_field=fees_by_field)
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=event_id)
@@ -887,7 +948,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 ('event.course_segments', "track_id", COURSE_SEGMENT_FIELDS),
                 ('event.orgas', "event_id", ('id', 'persona_id', 'event_id',)),
                 ('event.field_definitions', "event_id", FIELD_DEFINITION_FIELDS),
-                ('event.fee_modifiers', "part_id", FEE_MODIFIER_FIELDS),
+                ('event.event_fees', "event_id", EVENT_FEE_FIELDS),
                 ('event.lodgement_groups', "event_id", LODGEMENT_GROUP_FIELDS),
                 ('event.lodgements', "event_id", LODGEMENT_FIELDS),
                 ('event.registrations', "event_id", REGISTRATION_FIELDS),
@@ -1054,7 +1115,12 @@ class EventBaseBackend(EventLowLevelBackend):
         # Delete this later.
         # del event['orgas']
         del event['tracks']
-        del event['fee_modifiers']
+        event['fees'] = {
+            fee['title']: fee for fee in event['fees'].values()}
+        for fee in event['fees'].values():
+            del fee['id']
+            del fee['event_id']
+            del fee['title']
         for part in event['parts'].values():
             del part['id']
             del part['event_id']
@@ -1066,14 +1132,6 @@ class EventBaseBackend(EventLowLevelBackend):
                 del track['id']
                 del track['part_id']
                 del track['track_groups']
-            part['fee_modifiers'] = {fm['modifier_name']: fm
-                                     for fm in part['fee_modifiers'].values()}
-            for fm in part['fee_modifiers'].values():
-                del fm['id']
-                del fm['modifier_name']
-                del fm['part_id']
-                fm['field_name'] = event['fields'][fm['field_id']]['field_name']
-                del fm['field_id']
         for pg in event['part_groups'].values():
             del pg['id']
             del pg['event_id']
