@@ -391,6 +391,7 @@ class MlBackend(AbstractBackend):
                     mod_policy=const.ModerationPolicy(e['mod_policy']),
                     attachment_policy=const.AttachmentPolicy(e['attachment_policy']),
                     convert_html=e["convert_html"],
+                    roster_visibility=e["roster_visibility"],
                     is_active=e["is_active"],
                     moderators=set(),
                     whitelist=set(),

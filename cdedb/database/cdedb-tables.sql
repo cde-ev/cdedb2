@@ -1280,6 +1280,8 @@ CREATE TABLE ml.mailinglists (
         convert_html            boolean NOT NULL DEFAULT TRUE,
         -- see cdedb.database.constants.MailinglistTypes
         ml_type                 integer NOT NULL,
+        -- see cdedb.database.constants.MailinglistRosterVisibility
+        roster_visibility       integer NOT NULL,
         subject_prefix          varchar,
         -- in kB
         maxsize                 integer,

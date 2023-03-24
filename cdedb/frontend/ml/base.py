@@ -406,18 +406,29 @@ class MlBaseFrontend(AbstractUserFrontend):
             assembly['is_visible'] = self.assemblyproxy.may_assemble(
                 rs, assembly_id=assembly['id'])
 
+        mrv = const.MailinglistRosterVisibility
+        subscriber_ids = set()
+        if (ml.is_active
+                and (ml.roster_visibility == mrv.subscribers and state.is_subscribed()
+                     or ml.roster_visibility == mrv.viewers)):
+            sub_states = const.SubscriptionState.subscribing_states()
+            subscriber_ids = set(self.mlproxy.get_subscription_states(
+                rs, mailinglist_id, states=sub_states).keys())
+
         subscription_policy = self.mlproxy.get_subscription_policy(
             rs, rs.user.persona_id, mailinglist=ml)
-        allow_unsub = self.mlproxy.get_ml_type(rs, mailinglist_id).allow_unsub
-        personas = self.coreproxy.get_personas(rs, ml.moderators)
-        moderators = collections.OrderedDict(
-            (anid, personas[anid]) for anid in xsorted(
-                personas,
-                key=lambda anid: EntitySorter.persona(personas[anid])))
+        personas = self.coreproxy.get_personas(rs, ml.moderators | subscriber_ids)
+        moderators = [
+            personas[anid] for anid in xsorted(
+                personas, key=lambda anid: EntitySorter.persona(personas[anid]))
+            if anid in ml.moderators]
+        subscribers = [personas[anid] for anid in xsorted(
+                personas, key=lambda anid: EntitySorter.persona(personas[anid]))
+            if anid in subscriber_ids]
 
         return self.render(rs, "show_mailinglist", {
             'sub_address': sub_address, 'state': state,
-            'subscription_policy': subscription_policy, 'allow_unsub': allow_unsub,
+            'subscription_policy': subscription_policy, 'subscribers': subscribers,
             'event': event, 'assembly': assembly, 'moderators': moderators})
 
     @access("ml")
@@ -450,7 +461,6 @@ class MlBaseFrontend(AbstractUserFrontend):
         return self.render(rs, "change_mailinglist", {
             'event_entries': event_entries,
             'assembly_entries': assembly_entries,
-            'available_domains': ml.available_domains,
             'additional_fields': additional_fields,
             'restricted': restricted,
         })
@@ -519,12 +529,14 @@ class MlBaseFrontend(AbstractUserFrontend):
     @access("ml", modi={"POST"})
     @mailinglist_guard(allow_moderators=False)
     @REQUESTdatadict(*ADDITIONAL_TYPE_FIELDS.items())
-    @REQUESTdata("ml_type", "domain")
+    @REQUESTdata("ml_type", "domain", "roster_visibility")
     def change_ml_type(
         self, rs: RequestState, mailinglist_id: int, ml_type: const.MailinglistTypes,
-        domain: const.MailinglistDomain, data: CdEDBObject
+        domain: const.MailinglistDomain, data: CdEDBObject,
+        roster_visibility: const.MailinglistRosterVisibility,
     ) -> Response:
-        update = {"id": mailinglist_id, "domain": domain}
+        update = {"id": mailinglist_id, "domain": domain,
+                  "roster_visibility": roster_visibility}
         new_type = get_ml_type(ml_type)
         for field in new_type.get_additional_fields():
             update[field] = data[field]

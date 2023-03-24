@@ -50,8 +50,8 @@
             {% trans %}Moderators{% endtrans %}
         </dt>
         <dd id="moderator-list">
-            {% for moderator, persona in moderators.items() %} {# This is already sorted. #}
-                {{ util.persona_anchor(persona) }}{% if not loop.last %},{% endif %}
+            {% for moderator in moderators %} {# This is already sorted. #}
+                {{ util.persona_anchor(moderator) }}{% if not loop.last %},{% endif %}
             {% endfor %}
         </dd>
         <dt title="{% trans %}Moderator Contact{% endtrans %}">
@@ -96,7 +96,7 @@
                             {% endif %}
                         </dd>
                     </dl>
-                    {% if allow_unsub %}
+                    {% if ambience["mailinglist"].allow_unsub %}
                         <div class="p">
                             {% if sub_address %}
                                 <form action="{{ cdedblink('ml/change_address') }}" method="POST"
@@ -190,6 +190,21 @@
                     {% endif %}
                 {% endif %}
         {% endcall %}
+    {% endif %}
+
+    {% if subscribers %}
+        {% trans %}Currently, these people are subscribed to this mailinglist:{% endtrans %}
+        <div class="row" id="subscriber-list">
+            {% for list in subscribers | slice(2 if subscribers|length > 5 else 1) %}
+                <div class="col-sm-6">
+                    <ul class="nosp slim">
+                        {% for subscriber in list %}
+                            <li>{{ util.persona_anchor(subscriber) }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endfor %}
+        </div>
     {% endif %}
 
     {% if ambience['mailinglist'].has_management_view(user) %}

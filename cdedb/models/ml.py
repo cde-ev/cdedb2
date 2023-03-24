@@ -17,7 +17,9 @@ from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.roles import extract_roles
 from cdedb.common.validation.types import TypeMapping
-from cdedb.database.constants import MailinglistDomain, MailinglistTypes
+from cdedb.database.constants import (
+    MailinglistDomain, MailinglistRosterVisibility, MailinglistTypes,
+)
 from cdedb.models.common import CdEDataclass, requestdict_field_spec
 
 if TYPE_CHECKING:
@@ -81,6 +83,7 @@ class Mailinglist(CdEDataclass):
     mod_policy: const.ModerationPolicy
     attachment_policy: const.AttachmentPolicy
     convert_html: bool
+    roster_visibility: MailinglistRosterVisibility
     is_active: bool
 
     moderators: Set[vtypes.ID]
@@ -95,6 +98,8 @@ class Mailinglist(CdEDataclass):
 
     sortkey: ClassVar[MailinglistGroup] = MailinglistGroup.public
     available_domains: ClassVar[List[MailinglistDomain]] = [MailinglistDomain.lists]
+    available_roster_visibilities: ClassVar[List[MailinglistRosterVisibility]] = \
+        [MailinglistRosterVisibility.none]
     # default value for maxsize in KB
     maxsize_default: ClassVar = vtypes.PositiveInt(2048)
     allow_unsub: ClassVar[bool] = True
@@ -350,6 +355,9 @@ class TeamMeta(GeneralMailinglist):
     sortkey = MailinglistGroup.team
     viewer_roles = {"persona"}
     available_domains = [MailinglistDomain.lists]
+    available_roster_visibilities = [
+        MailinglistRosterVisibility.none, MailinglistRosterVisibility.subscribers,
+        MailinglistRosterVisibility.viewers]
     maxsize_default = vtypes.PositiveInt(4096)
 
 

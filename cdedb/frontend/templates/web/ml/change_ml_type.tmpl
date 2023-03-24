@@ -34,6 +34,8 @@
                 defaultvalue=ambience["mailinglist"].ml_type, label=gettext("Mailinglist Type")) }}
         {{ util.form_input_select(name="domain", label=gettext("Domain"),
                 entries=enums["MailinglistDomain"]|enum_entries(prefix="@")) }}
+        {{ util.form_input_select(name="roster_visibility", label=gettext("Roster Visibility"),
+                entries=enums["MailinglistRosterVisibility"]|enum_entries(processing=gettext)) }}
         <div id="additional-fields">
             <h3 class="heading-underline non-js-hint">{% trans %}Additional Fields{% endtrans %}</h3>
             <p class="text-info non-js-hint">

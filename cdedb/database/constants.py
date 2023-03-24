@@ -273,6 +273,13 @@ _DOMAIN_STR_MAP: Dict[MailinglistDomain, str] = {
 
 
 @enum.unique
+class MailinglistRosterVisibility(enum.IntEnum):
+    none = 1
+    subscribers = 2
+    viewers = 3
+
+
+@enum.unique
 class ModerationPolicy(enum.IntEnum):
     """Regulate posting of mail to a list."""
     unmoderated = 1  #:
