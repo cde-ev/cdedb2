@@ -23,7 +23,6 @@ from cdedb.common import (
     make_proxy, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
-from cdedb.common.fields import MOD_ALLOWED_FIELDS, RESTRICTED_MOD_ALLOWED_FIELDS
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.query.log_filter import LogFilterEntityLogLike
@@ -618,9 +617,9 @@ class MlBackend(AbstractBackend):
                 if not is_moderator:
                     raise PrivilegeError(n_(
                         "Need to be moderator or admin to change mailinglist."))
-                if not changed <= MOD_ALLOWED_FIELDS:
+                if not changed <= current.get_moderator_fields():
                     raise PrivilegeError(n_("Need to be admin to change this."))
-                if not changed <= RESTRICTED_MOD_ALLOWED_FIELDS and is_restricted:
+                if not changed <= current.restricted_moderator_fields and is_restricted:
                     raise PrivilegeError(n_(
                         "Restricted moderators are not allowed to change this."))
 

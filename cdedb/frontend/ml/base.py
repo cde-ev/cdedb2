@@ -18,10 +18,7 @@ from cdedb.common import (
     unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
-from cdedb.common.fields import (
-    FULL_MOD_REQUIRING_FIELDS, LOG_FIELDS_COMMON, MOD_ALLOWED_FIELDS,
-    RESTRICTED_MOD_ALLOWED_FIELDS,
-)
+from cdedb.common.fields import LOG_FIELDS_COMMON
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
@@ -447,10 +444,9 @@ class MlBaseFrontend(AbstractUserFrontend):
         merge_dicts(rs.values, ml.to_database())
         # restricted is only set if there are actually fields to which access is
         # restricted
-        has_restricted_fields = additional_fields & FULL_MOD_REQUIRING_FIELDS
         restricted = (not self.mlproxy.may_manage(rs, mailinglist_id,
                                                   allow_restricted=False)
-                      and has_restricted_fields)
+                      and ml.full_moderator_fields)
         return self.render(rs, "change_mailinglist", {
             'event_entries': event_entries,
             'assembly_entries': assembly_entries,
@@ -472,9 +468,9 @@ class MlBaseFrontend(AbstractUserFrontend):
             # admins may change everything except ml_type which got its own site
             allowed = set(data) - {'ml_type'}
         elif self.mlproxy.is_moderator(rs, mailinglist_id, allow_restricted=False):
-            allowed = MOD_ALLOWED_FIELDS
+            allowed = ml.get_moderator_fields()
         else:
-            allowed = RESTRICTED_MOD_ALLOWED_FIELDS
+            allowed = ml.restricted_moderator_fields
 
         # silently discard superfluous fields
         for field in ADDITIONAL_TYPE_FIELDS:
