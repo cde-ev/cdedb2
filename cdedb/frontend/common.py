@@ -852,7 +852,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         else:
             if not is_search and scope.includes_archived:
                 rs.values['qop_is_archived'] = query_mod.QueryOperators.equal.value
-                rs.values['qval_is_archived'] = True
+                rs.values['qval_is_archived'] = False
             rs.values['is_search'] = False
         return self.render(rs, scope.get_target(redirect=False), params)
 
