@@ -1214,17 +1214,21 @@ class FrontendTest(BackendTest):
                 return line.split(maxsplit=1)[-1]
         raise ValueError(f"Link [{num}] not found in mail [{index}].")
 
-    def assertTitle(self, title: str) -> None:
+    def assertTitle(self, title: str, exact: bool = True) -> None:
         """
         Assert that the tilte of the current page equals the given string.
 
         The actual title has a prefix, which is checked automatically.
+        :param lax: Whether presence instead of e
         """
         components = tuple(x.strip() for x in self.response.lxml.xpath(
             '/html/head/title/text()'))
         self.assertEqual("CdEDB –", components[0][:7])
         normalized = re.sub(r'\s+', ' ', components[0][7:].strip())
-        self.assertEqual(title.strip(), normalized)
+        if exact:
+            self.assertEqual(title.strip(), normalized)
+        else:
+            self.assertIn(title.strip(), normalized)
 
     def get_content(self, div: str = "content") -> str:
         """Retrieve the content of the (first) element with the given id."""
@@ -1726,13 +1730,14 @@ class FrontendTest(BackendTest):
         _check_deleted_data()
         # 2. Find user via archived search
         self.traverse({'href': '/' + realm + '/$'})
-        self.traverse("Alle Nutzer verwalten")
-        self.assertTitle("Vollständige Nutzerverwaltung")
+        self.traverse("Nutzer verwalten")
+        self.assertTitle("utzerverwaltung", exact=False)
         f = self.response.forms['queryform']
+        f['qop_is_archived'] = ""
         f['qop_given_names'] = QueryOperators.match.value
         f['qval_given_names'] = 'Zelda'
         self.submit(f)
-        self.assertTitle("Vollständige Nutzerverwaltung")
+        self.assertTitle("utzerverwaltung", exact=False)
         self.assertPresence("Ergebnis [1]", div='query-results')
         self.assertPresence("Zeruda", div='query-result')
         self.traverse({'description': 'Profil', 'href': '/core/persona/1001/show'})

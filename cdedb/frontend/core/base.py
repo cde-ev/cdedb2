@@ -832,8 +832,6 @@ class CoreBaseFrontend(AbstractFrontend):
         # Precise search didn't uniquely match, hence a fulltext search now. Results
         # will be a superset of the above, since all relevant fields are in fulltext.
         query.constraints = [('fulltext', QueryOperators.containsall, terms)]
-        if not include_archived:
-            query.constraints.extend([('archived', QueryOperators.equal, False)])
         result = self.coreproxy.submit_general_query(rs, query)
         if len(result) == 1:
             return self.redirect_show_user(rs, result[0]["id"])
@@ -1158,6 +1156,9 @@ class CoreBaseFrontend(AbstractFrontend):
                     const.Genders,
                     rs.gettext if download is None else rs.default_gettext)),
         }
+        if query and query.scope == QueryScope.core_user:
+            query.constraints.append(("is_archived", QueryOperators.equal, False))
+            query.scope = QueryScope.all_core_users
         return self.generic_user_search(
             rs, download, is_search, QueryScope.all_core_users,
             self.coreproxy.submit_general_query, choices=choices, query=query)

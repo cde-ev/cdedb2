@@ -606,14 +606,6 @@ class TestPrivacyFrontend(FrontendTest):
                              status="403 Zugriff auf CoreFrontend/* verweigert.")
                     self.assertTitle("403: Forbidden")
 
-                if self.user_in(*archive):
-                    self.get('/core/search/fulluser')
-                    self.assertTitle("Vollständige Nutzerverwaltung")
-                else:
-                    self.get('/core/search/fulluser',
-                             status="403 Zugriff auf CoreFrontend/* verweigert.")
-                    self.assertTitle("403: Forbidden")
-
                 if self.user_in(*(core | cde)):
                     self.get('/cde/search/user')
                     self.assertTitle("CdE-Nutzerverwaltung")
