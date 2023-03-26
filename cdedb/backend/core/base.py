@@ -1097,17 +1097,13 @@ class CoreBaseBackend(AbstractBackend):
     def change_persona_balance(self, rs: RequestState, persona_id: int,
                                balance: Union[str, decimal.Decimal],
                                log_code: const.FinanceLogCodes,
-                               change_note: str = None, trial_member: bool = None,
+                               change_note: str = None,
                                transaction_date: datetime.date = None
                                ) -> DefaultReturnCode:
-        """Special modification function for monetary aspects.
-
-        :param trial_member: If not None, set trial membership to this.
-        """
+        """Special modification function for monetary aspects."""
         persona_id = affirm(vtypes.ID, persona_id)
         balance = affirm(vtypes.NonNegativeDecimal, balance)
         log_code = affirm(const.FinanceLogCodes, log_code)
-        trial_member = affirm_optional(bool, trial_member)
         change_note = affirm_optional(str, change_note)
         transaction_date = affirm_optional(datetime.date, transaction_date)
         update: CdEDBObject = {
@@ -1121,9 +1117,6 @@ class CoreBaseBackend(AbstractBackend):
                     n_("Tried to credit balance to non-cde person."))
             if current['balance'] != balance:
                 update['balance'] = balance
-            if trial_member is not None:
-                if current['trial_member'] != trial_member:
-                    update['trial_member'] = trial_member
             if 'balance' in update or 'trial_member' in update:
                 ret = self.set_persona(
                     rs, update, may_wait=False, change_note=change_note,

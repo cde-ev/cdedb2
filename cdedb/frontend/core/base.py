@@ -1669,16 +1669,15 @@ class CoreBaseFrontend(AbstractFrontend):
             {'old_balance': old_balance, 'trial_member': trial_member})
 
     @access("finance_admin", modi={"POST"})
-    @REQUESTdata("new_balance", "trial_member", "change_note")
+    @REQUESTdata("new_balance", "change_note")
     def modify_balance(self, rs: RequestState, persona_id: int,
-                       new_balance: vtypes.NonNegativeDecimal, trial_member: bool,
+                       new_balance: vtypes.NonNegativeDecimal,
                        change_note: str) -> Response:
         """Set the new balance."""
         if rs.has_validation_errors():
             return self.modify_balance_form(rs, persona_id)
         persona = self.coreproxy.get_cde_user(rs, persona_id)
-        if (persona['balance'] == new_balance
-                and persona['trial_member'] == trial_member):
+        if persona['balance'] == new_balance:
             rs.notify("warning", n_("Nothing changed."))
             return self.redirect(rs, "core/modify_balance_form")
         if rs.ambience['persona']['is_archived']:
@@ -1686,8 +1685,7 @@ class CoreBaseFrontend(AbstractFrontend):
             return self.redirect_show_user(rs, persona_id)
         code = self.coreproxy.change_persona_balance(
             rs, persona_id, new_balance,
-            const.FinanceLogCodes.manual_balance_correction,
-            change_note=change_note, trial_member=trial_member)
+            const.FinanceLogCodes.manual_balance_correction, change_note=change_note)
         rs.notify_return_code(code)
         return self.redirect_show_user(rs, persona_id)
 
