@@ -1637,7 +1637,7 @@ class CoreBaseFrontend(AbstractFrontend):
         # We really don't want to go halfway here.
         with TransactionObserver(rs, self, "modify_membership"):
             code, revoked_permit, collateral_transaction = (
-                self.cdeproxy.change_membership(rs, persona_id, is_member))
+                self.cdeproxy.change_membership(rs, persona_id, is_member=is_member))
             rs.notify_return_code(code)
             if revoked_permit:
                 rs.notify("success", n_("Revoked active permit."))

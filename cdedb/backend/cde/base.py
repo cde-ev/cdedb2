@@ -340,13 +340,15 @@ class CdEBaseBackend(AbstractBackend):
         elif datum['resolution'] == LineResolutions.create:
             new_persona = copy.deepcopy(datum['persona'])
             new_persona.update({
-                'is_member': True,
-                'trial_member': trial_membership,
+                'is_member': False,
+                'trial_member': False,
                 'paper_expuls': True,
                 'donation': decimal.Decimal(0),
                 'is_searchable': consent,
             })
             persona_id = self.core.create_persona(rs, new_persona)
+            self.core.change_membership_easy_mode(
+                rs, persona_id, is_member=True, trial_member=trial_membership)
             ret = True
         elif datum['resolution'].is_modification():
             ret = False
@@ -417,16 +419,9 @@ class CdEBaseBackend(AbstractBackend):
                 if current['is_member']:
                     raise RuntimeError(n_("May not grant trial membership to member."))
                 code = self.core.change_membership_easy_mode(
-                    rs, datum['doppelganger_id'], is_member=True)
+                    rs, datum['doppelganger_id'], is_member=True, trial_member=True)
                 # This will be true if the user was not a member before.
                 ret = bool(code)
-                update = {
-                    'id': datum['doppelganger_id'],
-                    'trial_member': True,
-                }
-                self.core.change_persona(
-                    rs, update, may_wait=False,
-                    change_note="Probemitgliedschaft erneuert.")
             if datum['resolution'].do_update():
                 update = {'id': datum['doppelganger_id']}
                 for field in batch_fields:

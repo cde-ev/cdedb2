@@ -803,11 +803,21 @@ class CoreBaseBackend(AbstractBackend):
                     data['balance'] = decimal.Decimal('0.0')
                 else:
                     data['balance'] = tmp['balance']
-            ret = self.set_persona(
+            if data.get('trial_member') or data.get('is_member'):
+                is_member = data.get('is_member')
+                trial_member = data.get('trial_member')
+                if is_member is not None:
+                    del data['is_member']
+                if trial_member is not None:
+                    del data['trial_member']
+                # Trial membership implied granting membership here
+                if trial_member:
+                    is_member = True
+                ret = self.change_membership_easy_mode(
+                    rs, data['id'], is_member=is_member, trial_member=trial_member)
+            ret *= self.set_persona(
                 rs, data, may_wait=False, change_note=change_note,
-                allow_specials=("realms", "finance", "membership"))
-            if data.get('trial_member'):
-                ret *= self.change_membership_easy_mode(rs, data['id'], is_member=True)
+                allow_specials=("realms", "finance"))
             self.core_log(
                 rs, const.CoreLogCodes.realm_change, data['id'],
                 change_note=change_note)
