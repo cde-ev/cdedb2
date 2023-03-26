@@ -37,6 +37,8 @@
                             icon="euro-sign", active=(sidenav_active=='cde_parse')) }}
                     {{ util.href(cdedblink("cde/money_transfers_form"), gettext("Enter Bank Transfers"), aclass="list-group-item",
                             icon="euro-sign", active=(sidenav_active=='cde_transfers')) }}
+                {% endif %}
+                {% if "finance" in user.admin_views or "cde_user" in user.admin_views %}
                     {{ util.href(cdedblink("cde/show_semester"), gettext("Semester Management"), aclass="list-group-item",
                             icon="hourglass-half", active=(sidenav_active=='cde_semester')) }}
                 {% endif %}

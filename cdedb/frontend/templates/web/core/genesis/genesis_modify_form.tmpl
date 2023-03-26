@@ -36,14 +36,8 @@
                     name="realm", small=True, entries=realm_options,
                     label=gettext("Realm"), anid="realm-select") }}
             {% else %}
-                {% with (icon, caption) = {
-                        'ml': ('envelope', gettext("Mailinglists")),
-                        'event': ('chalkboard-teacher', gettext("Events")),
-                        'cde': ('education', gettext("Members")),
-                        'assembly': ('bullhorn', gettext("Assemblies"))
-                    }.get(values['realm']) %}
-                    {{ util.form_input_static(label=gettext("Realm"), small=True, icon=icon, value=caption) }}
-                {% endwith %}
+                {{ util.form_input_static(label=gettext("Realm"), small=True,
+                    value=util.realm_icon("is_" + ambience['genesis_case']['realm'] + "_realm", desc=True)) }}) }}
                 {# id is required for js script to work #}
                 {{ util.input_hidden(name="realm", anid="realm-select") }}
             {% endif %}

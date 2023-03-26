@@ -8,7 +8,7 @@ their symbolic names provided by this module should be used.
 """
 
 import enum
-from typing import Dict, Set
+from typing import Dict, Optional, Set
 
 from subman.machine import (  # pylint: disable=unused-import # noqa: F401
     SubscriptionAction, SubscriptionState,
@@ -108,8 +108,8 @@ class QuestionnaireUsages(enum.IntEnum):
         """Whether or not rows with this usage are allowed to be readonly."""
         return self == QuestionnaireUsages.additional
 
-    def allow_fee_modifier(self) -> bool:
-        """Whether or not rows with this usage may use fee modifier fields."""
+    def allow_fee_condition(self) -> bool:
+        """Whether or not rows with this usage may use fee condition fields."""
         return self == QuestionnaireUsages.registration
 
 
@@ -167,6 +167,15 @@ class GenesisStati(enum.IntEnum):
 
     def is_finalized(self) -> bool:
         return self in self.finalized_stati()
+
+    def get_icon(self) -> Optional[str]:
+        return {
+            GenesisStati.unconfirmed: "hourglass-start",
+            GenesisStati.to_review: "user-clock",
+            GenesisStati.successful: "check",
+            GenesisStati.existing_updated: "user-check",
+            GenesisStati.rejected: "ban",
+        }.get(self)
 
 
 @enum.unique
@@ -354,6 +363,7 @@ class FinanceLogCodes(enum.IntEnum):
     deduct_membership_fee = 11  #:
     end_trial_membership = 12  #:
     manual_balance_correction = 13  #:
+    remove_balance_on_archival = 14  #:
     grant_lastschrift = 20  #:
     revoke_lastschrift = 21  #:
     modify_lastschrift = 22  #:

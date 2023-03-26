@@ -31,7 +31,7 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import QueryConstraint, QueryOperators, QueryScope
 from cdedb.common.roles import PERSONA_DEFAULTS
 from cdedb.common.sorting import xsorted
-from cdedb.common.validation import (
+from cdedb.common.validation.validate import (
     PERSONA_FULL_CREATION, filter_none, get_errors, get_warnings,
 )
 from cdedb.filter import enum_entries_filter
@@ -297,6 +297,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             'is_member': True,
             'bub_search': False,
             'paper_expuls': True,
+            'donation': decimal.Decimal(0),
         }
         merge_dicts(rs.values, defaults)
         return super().create_user_form(rs)
@@ -312,6 +313,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             'is_active': True,
             'decided_search': False,
             'paper_expuls': True,
+            'donation': decimal.Decimal(0)
         }
         data.update(defaults)
         return super().create_user(rs, data)
@@ -398,6 +400,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             'display_name': persona['given_names'],
             'trial_member': False,
             'paper_expuls': True,
+            'donation': decimal.Decimal(0),
             'bub_search': False,
             'decided_search': False,
             'notes': None,

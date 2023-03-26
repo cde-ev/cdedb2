@@ -3,6 +3,7 @@
 """Everything regarding the role model of the CdEDB."""
 
 import collections
+import decimal
 from typing import TYPE_CHECKING, Any, Dict, List, Set
 
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
@@ -226,6 +227,7 @@ PERSONA_DEFAULTS = {
     'bub_search': None,
     'foto': None,
     'paper_expuls': None,
+    'donation': None,
 }
 
 #: Map of available privilege levels to those present in the SQL database
@@ -354,7 +356,7 @@ def roles_to_admin_views(roles: Set[Role]) -> Set[AdminView]:
 
 # This overrides the more general PERSONA_DEFAULTS dict with some realm-specific
 # defaults for genesis account creation.
-GENESIS_REALM_OVERRIDE = {
+GENESIS_REALM_OVERRIDE: Dict[str, Dict[str, Any]] = {
     'event': {
         'is_cde_realm': False,
         'is_event_realm': True,
@@ -382,5 +384,6 @@ GENESIS_REALM_OVERRIDE = {
         'decided_search': False,
         'bub_search': False,
         'paper_expuls': True,
+        'donation': decimal.Decimal(0),
     }
 }

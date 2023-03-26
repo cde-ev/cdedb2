@@ -334,6 +334,8 @@ class BasicTest(unittest.TestCase):
                 if table == 'core.personas':
                     if k == 'balance' and r[k]:
                         r[k] = decimal.Decimal(r[k])
+                    if k == 'donation' and r[k]:
+                        r[k] = decimal.Decimal(r[k])
                     if k == 'birthday' and r[k]:
                         r[k] = parse_date(r[k])
                 if k in {'transaction_date'} and r[k]:
@@ -1427,7 +1429,8 @@ class FrontendTest(BackendTest):
         if not container:
             raise AssertionError(
                 f"Input with name {f!r} is not contained in an .has-{kind} box")
-        msg = f"Expected error message not found near input with name {f!r}."
+        msg = f"Expected error message not found near input with name {f!r}:\n"
+        msg += container[0].text_content()
         self.assertIn(message, container[0].text_content(), msg)
 
     def assertNoLink(self, href_pattern: Union[str, Pattern[str]] = None,
@@ -1496,7 +1499,8 @@ class FrontendTest(BackendTest):
             else:
                 self.get("/assembly/log")
         elif realm == "ml":
-            entities = self.ml.get_mailinglists(self.key, entity_ids)
+            entities = {ml_id: ml.to_database() for ml_id, ml
+                        in self.ml.get_mailinglists(self.key, entity_ids).items()}
             if ml_id := kwargs.get('mailinglist_id'):
                 self.get(f"/ml/mailinglist/{ml_id}/log")
                 specific_log = True

@@ -145,10 +145,11 @@ class TestCdEFrontend(FrontendTest):
         member = {"Verschiedenes", "Datenschutzerklärung"}
         searchable = {"CdE-Mitglied suchen"}
         cde_admin_or_member = {"Mitglieder-Statistik"}
-        cde_admin = {"Nutzer verwalten", "Organisationen verwalten"}
+        cde_admin = {"Nutzer verwalten", "Organisationen verwalten",
+                     "Semesterverwaltung"}
         cde_admin_or_auditor = {"Finanz-Log", "CdE-Log", "Verg.-Veranstaltungen-Log"}
         finance_admin = {"Einzugsermächtigungen", "Kontoauszug parsen",
-                         "Überweisungen eintragen", "Semesterverwaltung"}
+                         "Überweisungen eintragen"}
 
         # non-members
         if self.user_in('annika', 'werner', 'martin'):
@@ -246,7 +247,7 @@ class TestCdEFrontend(FrontendTest):
 
         # Test Finance Admin View
         self.traverse({'href': '/cde/search/user'})
-        self.assertNoLink('/cde/semester/show')
+        self.traverse({'href': '/cde/semester/show'})
         self.assertNoLink('/cde/lastschrift/')
         self.realm_admin_view_profile('berta', 'cde')
         self.assertNoLink('/lastschrift')
@@ -856,10 +857,9 @@ class TestCdEFrontend(FrontendTest):
                       {'description': 'Einzugsermächtigungen'},
                       {'description': 'Bertålotta Beispiel'},)
         self.assertTitle("Einzugsermächtigung Bertålotta Beispiel")
-        self.assertPresence("42,23 €", div='amount', exact=True)
+        self.assertPresence("42,23 €", div='donation', exact=True)
         self.get("/cde/user/2/lastschrift/create")
         f = self.response.forms['createlastschriftform']
-        f['amount'] = 25
         f['iban'] = "DE12 5001 0517 0648 4898 90"
         self.submit(f, check_notification=False)
         self.assertPresence(
@@ -979,18 +979,31 @@ class TestCdEFrontend(FrontendTest):
             self.assertNotIn("receiptform3", self.response.forms)
 
     def test_membership_lastschrift_revoke(self) -> None:
+        # create a new lastschrift
+        self.login("farin")
+        self.admin_view_profile("charly")
+        self.traverse("Neue Einzugsermächtigung …", "Anlegen")
+        f = self.response.forms["createlastschriftform"]
+        f["donation"] = "25"
+        f["iban"] = "DE26370205000008068900"
+        self.submit(f)
+        self.logout()
+
+        # revoke membership
         self.login(USER_DICT["vera"])
-        self.admin_view_profile('berta')
-        self.assertPresence("Einzugsermächtigung", div="balance")
+        self.admin_view_profile('charly')
+        self.assertPresence("Einzugsermächtigung", div="lastschrift", exact=True)
         self.assertNonPresence("Neue Einzugsermächtigung", div="balance")
         self.traverse({'description': 'Status ändern'})
         f = self.response.forms['modifymembershipform']
         self.submit(f)
         self.assertPresence("Aktives Lastschriftmandat widerrufen", div="notifications")
         self.assertNonPresence("Einzugsermächtigung", div="balance")
+
+        # check lastschrift revoke
         self.logout()
         self.login(USER_DICT["farin"])
-        self.get('/cde/user/2/lastschrift')
+        self.get('/cde/user/3/lastschrift')
         self.assertPresence("Keine aktive Einzugsermächtigung")
 
     @as_users("farin")
@@ -1003,7 +1016,6 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Neue Einzugsermächtigung …'},
                       {'description': 'Anlegen'})
         f = self.response.forms["createlastschriftform"]
-        f["amount"] = 100.00
         f["iban"] = "DE12500105170648489890"
         self.submit(f)
         f = self.response.forms["generatetransactionform"]
@@ -1145,27 +1157,48 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("farin")
     def test_lastschrift_create(self) -> None:
+        # check creation link from profile
         self.admin_view_profile('charly')
         self.traverse({'description': 'Neue Einzugsermächtigung …'})
         self.assertPresence("Keine aktive Einzugsermächtigung – Anlegen",
                             div='active-permit', exact=True)
         self.traverse({'description': 'Anlegen'})
+
+        # create new lastschrift
         self.assertTitle("Neue Einzugsermächtigung (Charly C. Clown)")
         self.traverse({'description': "Einzugsermächtigungen"},
                       {'description': "Neue Einzugsermächtigung"})
         f = self.response.forms['createlastschriftform']
         self.assertTitle("Neue Einzugsermächtigung")
+        # check default value
+        self.assertEqual(f["donation"].value, "20.00")
         f['persona_id'] = "DB-3-5"
-        f['amount'] = "123.45"
         f['iban'] = "DE26370205000008068900"
+        f['donation'] = "25"
         f['notes'] = "grosze Siebte: Take on me"
         self.submit(f)
         self.assertTitle("Einzugsermächtigung Charly C. Clown")
-        self.assertIn("revokeform", self.response.forms)
-        self.traverse({'description': 'Bearbeiten'})
-        f = self.response.forms['changelastschriftform']
-        self.assertEqual("123.45", f['amount'].value)
-        self.assertEqual("grosze Siebte: Take on me", f['notes'].value)
+        self.assertPresence("25,00 €", div='donation', exact=True)
+        self.assertPresence("grosze Siebte: Take on me")
+        self.assertPresence("Bearbeiten")
+
+        # revoke lastschrift and create a new one
+        f = self.response.forms["revokeform"]
+        self.submit(f)
+        self.assertPresence("Keine aktive Einzugsermächtigung – Anlegen")
+        self.traverse("Anlegen")
+        self.assertTitle("Neue Einzugsermächtigung (Charly C. Clown)")
+        f = self.response.forms['createlastschriftform']
+        # take the current donation as default value
+        self.assertEqual(f["donation"].value, "25.00")
+        f["donation"] = "23.00"
+        f['iban'] = "DE26370205000008068900"
+        self.submit(f, check_notification=False)
+        # check the warning about the donation missmatch
+        self.assertValidationWarning("donation", "abweichende Spende von 25,00")
+        f = self.response.forms['createlastschriftform']
+        f["_magic_ignore_warnings"].checked = True
+        self.submit(f)
 
     @as_users("farin")
     def test_lastschrift_change(self) -> None:
@@ -1173,14 +1206,11 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Einzugsermächtigung'},
                       {'description': 'Bearbeiten'})
         f = self.response.forms['changelastschriftform']
-        self.assertEqual("42.23", f['amount'].value)
         self.assertEqual('Dagobert Anatidae', f['account_owner'].value)
         self.assertEqual('reicher Onkel', f['notes'].value)
-        f['amount'] = "27.16"
         f['account_owner'] = "Dagobert Beetlejuice"
         f['notes'] = "reicher Onkel (neu verheiratet)"
         self.submit(f)
-        self.assertPresence("27,16 €", div='amount', exact=True)
         self.assertPresence('Dagobert Beetlejuice', div='account-holder',
                             exact=True)
         self.assertPresence('reicher Onkel (neu verheiratet)', div='notes',
@@ -1218,7 +1248,7 @@ class TestCdEFrontend(FrontendTest):
     def test_lastschrift_subscription_form_fill_fail(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Weitere Informationen'},
-                      {'description': 'dieses Formular'})
+                      {'description': 'Teilnehmen'})
         self.assertTitle("Einzugsermächtigung ausfüllen")
         f = self.response.forms['filllastschriftform']
         f["db_id"] = "DB-1-8"
@@ -1902,38 +1932,20 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Mitglieder'}, link)
         self.assertTitle("Semesterverwaltung")
 
+        self.assertPresence("Semester Nummer 43", div='current-semester')
+
         # 1.1 Payment Request
-        self.assertPresence("Später zu erledigen.", div='eject-members')
-        self.assertPresence("Später zu erledigen.", div='balance-update')
-        self.assertPresence("Später zu erledigen.", div='next-semester')
-
-        f = self.response.forms['billform']
-        f['testrun'].checked = True
-        self.submit(f)
-        self.join_worker_thread('semester_bill', link)
-        self.assertTitle("Semesterverwaltung")
-
-        f = self.response.forms['billform']
-        f['addresscheck'].checked = True
-        self.submit(f)
-        self.join_worker_thread('semester_bill', link)
-        self.assertTitle("Semesterverwaltung")
+        # this is already done
+        self.assertPresence("Erledigt am", div='payment-request')
+        self.assertPresence("0 Zahlungsaufforderungen versandt", div='payment-request')
+        self.assertPresence("0 Archivierungsmails versandt", div='payment-request')
 
         # 1.2 Remove Inactive Members
-        self.assertPresence("Erledigt am", div='payment-request')
-        self.assertPresence("8 E-Mails versandt", div='payment-request')
+        self.assertPresence("Zu geringes Guthaben: 2 Mitglieder", div='eject-members')
+        self.assertPresence("Davon 0 mit Einzugsermächtigung.", div='eject-members')
+        self.assertPresence("Zusätzlich gibt es 2 Probemitglieder.",
+                            div='eject-members')
         self.assertPresence("Später zu erledigen.", div='balance-update')
-        self.assertPresence("Später zu erledigen.", div='next-semester')
-
-        self.assertPresence(
-            "Derzeit haben 2 Mitglieder ein zu niedriges Guthaben "
-            "(insgesamt 6,44 €, davon 0 mit einer aktiven Einzugsermächtigung)."
-            " Zusätzlich gibt es 2 Probemitglieder.", div='eject-members')
-        # Check error handling for bill
-        self.submit(f, check_notification=False)
-        self.assertPresence('Zahlungserinnerung bereits erledigt',
-                            div='notifications')
-        self.assertTitle("Semesterverwaltung")
 
         f = self.response.forms['ejectform']
         self.submit(f)
@@ -1943,14 +1955,14 @@ class TestCdEFrontend(FrontendTest):
         # 1.3 Update Balances
         self.assertPresence("Erledigt am", div='payment-request')
         self.assertPresence("Erledigt am", div='eject-members')
-        self.assertPresence("Später zu erledigen.", div='next-semester')
+        self.assertPresence("2 Mitgliedschaften beendet.", div="eject-members")
+        self.assertPresence("1 Benutzer archiviert.", div="eject-members")
 
-        self.assertPresence("Insgesamt 6 Mitglieder, 2 davon haben eine "
-                            "Probemitgliedschaft", div='balance-update')
+        self.assertPresence("Insgesamt 6 Mitglieder.", div='balance-update')
+        self.assertPresence("Davon 2 Probemitglieder.", div='balance-update')
         # Check error handling for eject
         self.submit(f, check_notification=False)
-        self.assertPresence('Falscher Zeitpunkt für Bereinigung',
-                            div='notifications')
+        self.assertPresence('Falscher Zeitpunkt für Bereinigung', div='notifications')
         self.assertTitle("Semesterverwaltung")
 
         f = self.response.forms['balanceform']
@@ -1958,40 +1970,35 @@ class TestCdEFrontend(FrontendTest):
         self.join_worker_thread('semester_balance_update', link)
         self.assertTitle("Semesterverwaltung")
 
-        # 1.4 Next Semester
-        self.assertPresence("Erledigt am", div='payment-request')
-        self.assertPresence("Erledigt am", div='eject-members')
-        self.assertPresence("Erledigt am", div='balance-update')
+        # 2.1 Payment Request
+        self.assertPresence("Später zu erledigen.", div='eject-members')
+        self.assertPresence("Später zu erledigen.", div='balance-update')
 
-        self.assertPresence("Semester Nummer 43", div='current-semester')
         # Check error handling for balance
         self.submit(f, check_notification=False)
         self.assertPresence('Falscher Zeitpunkt für Guthabenaktualisierung',
                             div='notifications')
         self.assertTitle("Semesterverwaltung")
 
-        f = self.response.forms['proceedform']
-        self.submit(f)
-        self.assertTitle("Semesterverwaltung")
-        self.assertPresence("Semester Nummer 44", div='current-semester')
-
-        # Check error handling for proceed
-        self.submit(f, check_notification=False)
-        self.assertPresence('Falscher Zeitpunkt für Beendigung des Semesters',
-                            div='notifications')
-        self.assertTitle("Semesterverwaltung")
-
-        # 2.1 Payment Request
+        # we advance the semester through the payment request
+        self.assertPresence("Semester Nummer 43", div='current-semester')
         f = self.response.forms['billform']
+        f['addresscheck'].checked = True
         self.submit(f)
         self.join_worker_thread('semester_bill', link)
         self.assertTitle("Semesterverwaltung")
+        self.assertPresence("Semester Nummer 44", div='current-semester')
 
         # 2.2 Remove Inactive Members
-        self.assertPresence(
-            "Derzeit haben 1 Mitglieder ein zu niedriges Guthaben "
-            "(insgesamt 1,00 €, davon 0 mit einer aktiven Einzugsermächtigung)."
-            " Zusätzlich gibt es 0 Probemitglieder.", div='eject-members')
+        self.assertPresence("Zu geringes Guthaben: 1 Mitglieder", div='eject-members')
+        self.assertPresence("Davon 0 mit Einzugsermächtigung.", div='eject-members')
+        self.assertPresence("Zusätzlich gibt es 0 Probemitglieder.",
+                            div='eject-members')
+
+        # Check error handling for bill
+        self.submit(f, check_notification=False)
+        self.assertPresence('Zahlungserinnerung bereits erledigt', div='notifications')
+        self.assertTitle("Semesterverwaltung")
 
         f = self.response.forms['ejectform']
         self.submit(f)
@@ -1999,35 +2006,49 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Semesterverwaltung")
 
         # 2.3 Update Balances
-        self.assertPresence("Insgesamt 5 Mitglieder, 0 davon haben eine "
-                            "Probemitgliedschaft", div='balance-update')
+        self.assertPresence("Insgesamt 5 Mitglieder.", div='balance-update')
+        self.assertPresence("Davon 0 Probemitglieder.", div='balance-update')
 
         f = self.response.forms['balanceform']
         self.submit(f)
         self.join_worker_thread('semester_balance_update', link)
         self.assertTitle("Semesterverwaltung")
 
-        # 2.4 Next Semester
+        # 3.1 Payment Request
         self.assertPresence("Semester Nummer 44", div='current-semester')
-
-        f = self.response.forms['proceedform']
+        f = self.response.forms['billform']
         self.submit(f)
+        self.join_worker_thread('semester_bill', link)
         self.assertTitle("Semesterverwaltung")
         self.assertPresence("Semester Nummer 45", div='current-semester')
-        self.assertIn('billform', self.response.forms)
 
         # Verify Log
         self.traverse({'description': 'CdE-Log'})
         self.assertTitle("CdE-Log [1–12 von 12]")
-        self.assertPresence("1 E-Mails versandt.", div="2-1002")
-        self.assertPresence("2 inaktive Mitglieder gestrichen.", div="3-1003")
-        self.assertPresence("1 Accounts archiviert.", div="4-1004")
-        self.assertPresence("2 Probemitgliedschaften beendet", div="5-1005")
-        self.assertPresence("16.00 € Guthaben abgebucht.", div="5-1005")
+        self.assertPresence("2 inaktive Mitglieder gestrichen.", div="1-1001")
+        self.assertPresence("1 Accounts archiviert.", div="2-1002")
+        self.assertPresence("2 Probemitgliedschaften beendet", div="3-1003")
+        self.assertPresence("16,00 € Guthaben abgebucht.", div="3-1003")
+        self.assertPresence("562,55 € Guthaben von 10 Exmitgliedern", div="3-1003")
+        self.assertPresence("Nächstes Semester", div="4-1004")
+        self.assertPresence("44", div="4-1004")
 
-        self.assertPresence("1 inaktive Mitglieder gestrichen.", div="9-1009")
-        self.assertPresence("0 Probemitgliedschaften beendet", div="11-1011")
-        self.assertPresence("20.00 € Guthaben abgebucht.", div="11-1011")
+        self.assertPresence("Zahlungsaufforderung mit Addresscheck", div="5-1005")
+        self.assertPresence("6 E-Mails versandt", div="5-1005")
+        self.assertPresence("Archivierungsbenachrichtigungen versandt", div="6-1006")
+        self.assertPresence("0 E-Mails versandt", div="6-1006")
+        self.assertPresence("1 inaktive Mitglieder gestrichen.", div="7-1007")
+        self.assertPresence("0 Accounts archiviert.", div="8-1008")
+        self.assertPresence("0 Probemitgliedschaften beendet", div="9-1009")
+        self.assertPresence("20,00 € Guthaben abgebucht.", div="9-1009")
+        self.assertPresence("1,00 € Guthaben von 1 Exmitgliedern", div="9-1009")
+        self.assertPresence("Nächstes Semester", div="10-1010")
+        self.assertPresence("45", div="10-1010")
+
+        self.assertPresence("Zahlungsaufforderung versendet", div="11-1011")
+        self.assertPresence("5 E-Mails versandt", div="11-1011")
+        self.assertPresence("Archivierungsbenachrichtigungen versandt", div="12-1012")
+        self.assertPresence("0 E-Mails versandt", div="12-1012")
 
         # Check that the weak references to all workers are dead.
         for name, ref in Worker.active_workers.items():
@@ -2715,61 +2736,53 @@ class TestCdEFrontend(FrontendTest):
         # First: generate data
         logs = []
 
-        # Payment Request
+        # Payment Request already done
         link = {'description': 'Semesterverwaltung'}
         self.traverse({'description': 'Mitglieder'}, link)
-        f = self.response.forms['billform']
-        self.submit(f)
-        self.join_worker_thread('semester_bill', link)
-        logs.append((1001, const.CdeLogCodes.semester_bill))
-        logs.append((1002, const.CdeLogCodes.automated_archival_notification_done))
 
         # Remove Inactive Members
         f = self.response.forms['ejectform']
         self.submit(f)
         self.join_worker_thread('semester_eject', link)
-        logs.append((1003, const.CdeLogCodes.semester_ejection))
-        logs.append((1004, const.CdeLogCodes.automated_archival_done))
+        logs.append((1001, const.CdeLogCodes.semester_ejection))
+        logs.append((1002, const.CdeLogCodes.automated_archival_done))
 
         # Update Balances
         f = self.response.forms['balanceform']
         self.submit(f)
         self.join_worker_thread('semester_balance_update', link)
-        logs.append((1005, const.CdeLogCodes.semester_balance_update))
-
-        # Next Semester
-        f = self.response.forms['proceedform']
-        self.submit(f)
-        logs.append((1006, const.CdeLogCodes.semester_advance))
+        logs.append((1003, const.CdeLogCodes.semester_balance_update))
 
         # Payment Request with addresscheck
+        # (the variant without addresscheck is tested in test_semester)
         f = self.response.forms['billform']
         f['addresscheck'].checked = True
         self.submit(f)
         self.join_worker_thread('semester_bill', link)
-        logs.append((1007, const.CdeLogCodes.semester_bill_with_addresscheck))
-        logs.append((1008, const.CdeLogCodes.automated_archival_notification_done))
+        logs.append((1004, const.CdeLogCodes.semester_advance))
+        logs.append((1005, const.CdeLogCodes.semester_bill_with_addresscheck))
+        logs.append((1006, const.CdeLogCodes.automated_archival_notification_done))
 
         # exPuls with addresscheck
         f = self.response.forms['addresscheckform']
         self.submit(f)
         self.join_worker_thread('expuls_addresscheck', link)
-        logs.append((1009, const.CdeLogCodes.expuls_addresscheck))
+        logs.append((1007, const.CdeLogCodes.expuls_addresscheck))
+
+        # Next exPuls
+        f = self.response.forms['proceedexpulsform']
+        self.submit(f)
+        logs.append((1008, const.CdeLogCodes.expuls_advance))
+
+        # exPuls without addresscheck
+        f = self.response.forms['noaddresscheckform']
+        self.submit(f)
+        logs.append((1009, const.CdeLogCodes.expuls_addresscheck_skipped))
 
         # Next exPuls
         f = self.response.forms['proceedexpulsform']
         self.submit(f)
         logs.append((1010, const.CdeLogCodes.expuls_advance))
-
-        # exPuls without addresscheck
-        f = self.response.forms['noaddresscheckform']
-        self.submit(f)
-        logs.append((1011, const.CdeLogCodes.expuls_addresscheck_skipped))
-
-        # Next exPuls
-        f = self.response.forms['proceedexpulsform']
-        self.submit(f)
-        logs.append((1012, const.CdeLogCodes.expuls_advance))
 
         # Now check it
         self.traverse({'description': "CdE-Log"})

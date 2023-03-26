@@ -15,7 +15,7 @@
     <p class="text-danger">
         {% trans %}
             The actions on this site affect all Members, therefore they are
-            basically irreversibel. Only use them, if You are absolutely sure
+            basically irreversible. Only use them, if You are absolutely sure
             what You are doing.
         {% endtrans %}
     </p>
@@ -39,8 +39,6 @@
                 "{{ gettext("All inactive Members will be removed. This cannot be undone and it can only be done once per Semester.") }}");
             $('#balanceform').cdedbProtectAction(
                 "{{ gettext("The Balance of all Members will be updated. This cannot be undone.") }}");
-            $('#proceedform').cdedbProtectAction(
-                "{{ gettext("The new Semester will be created.") }}");
             $('#addresscheckform').cdedbProtectAction(
                 "{{ gettext("Address-Check-Mails will be sent.") }}",
                 function() {
@@ -52,18 +50,52 @@
     </script>
 
     <div class="row">
-            <div class="col-md-6">
-            <div id="payment-request" class="panel {% if current_period_step == "billing" %}panel-primary{% else %}panel-default{% endif %}">
+        {% set during_step_1 = period["billing_state"] or period["archival_notification_state"] %}
+        <div class="col-md-12">
+            <div id="payment-request" class="panel {% if in_step_1 %}panel-primary{% else %}panel-default{% endif %}">
                 <div class="panel-heading">
                     <span class="pull-right">(01.01./01.07.)</span>
-                    <h4 class="panel-title">{% trans %}Send Payment Requests/Information{% endtrans %}</h4>
+                    <h4 class="panel-title">{% trans %}Send Payment Requests & Archival Notification{% endtrans %}</h4>
                 </div>
-                <div class="panel-body">
-                    {% if current_period_step == "billing" %}
-                        {% if period['billing_state'] %}
+                <div class="row panel-body">
+                    <div class="col-md-8">
+                        <p>
+                            {% trans lastschriften=util.href(cdedblink('cde/lastschrift_index'), gettext("Direct Debits"),
+                                                    readonly="finance" not in user.admin_views) %}
+                                The payment request is sent to all members.
+                                You may also include the semiannual address check in this mail.
+                                Make sure to initialize the {{ lastschriften }} after this.
+                            {% endtrans %}
+                        </p>
+                        <p>
+                            {% trans %}
+                                The archival notification is sent to all users which will be automatically archived.
+                                Those are all users which were not active for the last two years.
+                            {% endtrans %}
+                        </p>
+                    </div>
+                    <div class="col-md-4">
+                    {% if in_step_1 %}
+                        {% if during_step_1 %}
                             <p>
-                                {% trans state=period['billing_state']|cdedbid, count=period['billing_count'] %}
-                                    Done up until {{ state }}. {{ count }} emails have been sent so far.
+                                {% if period['billing_state'] %}
+                                    {% trans state=period['billing_state']|cdedbid %}
+                                        Billing done up until {{ state }}.
+                                    {% endtrans %}
+                                    <br />
+                                {% endif %}
+                                {% trans count=period['billing_count'] %}
+                                    {{ count }} billing emails have been sent so far.
+                                {% endtrans %}
+                                <br />
+                                {% if period['archival_notification_state'] %}
+                                    {% trans state=period['archival_notification_state']|cdedbid %}
+                                        Archival mails done up until {{ state }}.
+                                    {% endtrans %}
+                                    <br />
+                                {% endif %}
+                                {% trans count=period['archival_notification_count'] %}
+                                    {{ count }} archival emails have been sent so far.
                                 {% endtrans %}
                             </p>
                         {% endif %}
@@ -71,139 +103,185 @@
                                 class="strip-space">
                             {{ util.anti_csrf_token('cde/semester_bill') }}
                             <div class="checkbox">
-                                {{ util.input_checkbox("testrun", label=gettext("Only one Test-Mail")) }}
+                                {{ util.input_checkbox("testrun", label=gettext("Only one Test-Mail"),
+                                    readonly="finance" not in user.admin_views) }}
                             </div>
                             <div class="checkbox">
-                                {{ util.input_checkbox("addresscheck", label=gettext("Include Address-Check")) }}
+                                {{ util.input_checkbox("addresscheck", label=gettext("Include Address-Check"),
+                                    readonly="finance" not in user.admin_views) }}
                             </div>
-                            {{ util.input_submit(label=gettext("Send Mails"), icon="paper-plane") }}
+                            {{ util.input_submit(label=gettext("Send Mails"), icon="paper-plane", readonly="finance" not in user.admin_views,
+                                aclass="btn btn-default" if during_step_1 else "btn btn-primary") }}
                         </form>
                     {% else %}
                         <span class="text-success">
-                            {% trans date=period['billing_done']|datetime(lang=lang), count=period['billing_count'] %}
-                                Done on the {{ date }}. {{ count }} emails were sent.
+                            {% trans date=period['billing_done']|datetime(lang=lang) %}
+                                Done on the {{ date }}.
+                            {% endtrans %}
+                            <br />
+                            {% trans count=period['billing_count'] %}
+                                {{ count }} billing emails were sent.
+                            {% endtrans %}
+                            <br />
+                            {% trans count=period['archival_notification_count'] %}
+                                {{ count }} archival emails were sent.
                             {% endtrans %}
                         </span>
                     {% endif %}
+                    </div>
                 </div>
             </div>
+        </div>
 
-            <div id="eject-members" class="panel {% if current_period_step == "ejection" %}panel-primary{% else %}panel-default{% endif %}">
+        {% set during_step_2 = period['ejection_state'] or period['archival_state'] %}
+        <div class="col-md-12">
+            <div id="eject-members" class="panel {% if in_step_2 %}panel-primary{% else %}panel-default{% endif %}">
                 <div class="panel-heading">
                     <span class="pull-right">(01.02./01.08.)</span>
-                    <h4 class="panel-title">{% trans %}Remove inactive Members{% endtrans %}</h4>
+                    <h4 class="panel-title">{% trans %}Remove inactive Members & Perform Automatic Archival{% endtrans %}</h4>
                 </div>
-                <div class="panel-body">
-                    {% if current_period_step == "ejection" %}
-                        {% if period['ejection_state'] %}
+                <div class="row panel-body">
+                    <div class="col-md-8">
+                        <p>
+                            {% trans lastschriften=util.href(cdedblink('cde/lastschrift_index'), gettext("Direct Debits"),
+                                                    readonly="finance" not in user.admin_views) %}
+                                Eject all members whose balance is lower than the membership fee and who are not a trial member.
+                                Make sure to finalize all pending {{ lastschriften }} beforehand.
+                            {% endtrans %}
+                        </p>
+                        <p>
+                            {% trans %}
+                                Archive all users who received an archival notification in the previous step and took
+                                no measurements against this.
+                            {% endtrans %}
+                        </p>
+                    </div>
+                    <div class="col-md-4">
+                    {% if in_step_2 %}
+                        {% if during_step_2 %}
                             <p>
-                                {% trans state=period['ejection_state']|cdedbid,
-                                         count=period['ejection_count'],
-                                         balance=period['ejection_balance']|money(lang=lang) %}
-                                    Done up until {{ state }}.
+                                {% if period['ejection_state'] %}
+                                    {% trans state=period['ejection_state']|cdedbid %}
+                                        Ejection done up until {{ state }}.
+                                    {% endtrans %}
+                                    <br />
+                                {% endif %}
+                                {% trans count=period['ejection_count'] %}
                                     {{ count }} memberships have been ended so far.
-                                    A total of {{ balance }} has been deducted so far.
+                                {% endtrans %}
+                                <br />
+                                {% if period['archival_state'] %}
+                                    {% trans state=period['archival_state']|cdedbid %}
+                                        Archival done up until {{ state }}.
+                                    {% endtrans %}
+                                    <br />
+                                {% endif %}
+                                {% trans count=period['archival_count'] %}
+                                    {{ count }} accounts have been archived so far.
                                 {% endtrans %}
                             </p>
                         {% else %}
                             <p>
-                                {% trans low_count=stats['low_balance_members'],
-                                         low_total=stats['low_balance_total']|money(lang=lang),
-                                         trial_count=stats['trial_members'],
-                                         low_last_count=stats['lastschrift_low_balance_members'] -%}
-                                    {{ low_count }} members have insufficient balance (total of {{ low_total }})
-                                    right now ({{ low_last_count }} of these with an active lastschrift). Additionally
-                                    we have {{ trial_count }} trial members.
+                                {% trans low_count=stats['low_balance_members'] %}
+                                    {{ low_count }} members with insufficient balance.
+                                {% endtrans %}
+                                <br />
+                                <span {% if stats['lastschrift_low_balance_members'] > 0 %} class="text-danger" {% endif %}>
+                                    {% trans low_last_count=stats['lastschrift_low_balance_members'] %}
+                                        {{ low_last_count }} of these with a lastschrift.
+                                    {% endtrans %}
+                                </span>
+                                <br />
+                                {% trans trial_count=stats['trial_members'] %}
+                                    Additionally, we have {{ trial_count }} trial members.
                                 {% endtrans %}
                             </p>
                         {% endif %}
                         <form action="{{ cdedblink('cde/semester_eject') }}" method="POST" id="ejectform">
                             {{ util.anti_csrf_token('cde/semester_eject') }}
-                            {{ util.input_submit(label=gettext("Remove inactive Members")) }}
+                            {{ util.input_submit(label=gettext("Process Accounts"), readonly="finance" not in user.admin_views,
+                                aclass="btn btn-default" if during_step_2 else "btn btn-primary") }}
                         </form>
-                    {% elif current_period_step == "billing" %}
+                    {% elif in_step_1 %}
                         <span class="text-muted">{% trans %}To be done later.{% endtrans %}</span>
                     {% else %}
                         <span class="text-success">
-                            {% trans date=period['ejection_done']|datetime(lang=lang),
-                                     count=period['ejection_count'],
-                                     balance=period['ejection_balance']|money(lang=lang) %}
+                            {% trans date=period['ejection_done']|datetime(lang=lang) %}
                                 Done on the {{ date }}.
+                            {% endtrans %}
+                            <br />
+                            {% trans count=period['ejection_count'] %}
                                 {{ count }} memberships were ended.
-                                A total of {{ balance }} was deducted.
+                            {% endtrans %}
+                            <br />
+                            {% trans count=period['archival_count'] %}
+                                {{ count }} accounts were archived.
                             {% endtrans %}
                         </span>
                     {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-6">
-            <div id="balance-update" class="panel {% if current_period_step == "balance" %}panel-primary{% else %}panel-default{% endif %}">
+
+        {% set during_step_3 = period['balance_state'] %}
+        <div class="col-md-12">
+            <div id="balance-update" class="panel {% if in_step_3 %}panel-primary{% else %}panel-default{% endif %}">
                 <div class="panel-heading">
                     <span class="pull-right">(15.02./15.08.)</span>
                     <h4 class="panel-title">{% trans %}Update Balances{% endtrans %}</h4>
                 </div>
-                <div class="panel-body">
-                    {% if current_period_step in ["billing", "ejection"] %}
+                <div class="row panel-body">
+                    <div class="col-md-8">
+                        <p>
+                            {% trans %}
+                                Subtract the membership fee from all members. Trial members lose their trial membership
+                                instead and are normal members afterwards.
+                            {% endtrans %}
+                        </p>
+                        <p>
+                            {% trans %}
+                                Remove the remaining balance from all non-members, since losing your membership leaves your
+                                balance untouched.
+                            {% endtrans %}
+                        </p>
+                    </div>
+                    <div class="col-md-4">
+                    {% if in_step_1 or in_step_2 %}
                         <span class="text-muted">{% trans %}To be done later.{% endtrans %}</span>
-                    {% elif current_period_step == "balance" %}
-                        {% if period['balance_state'] %}
+                    {% elif in_step_3 %}
+                        {% if during_step_3 %}
                             <p>
-                                {% trans date=period['balance_done']|datetime(lang=lang),
-                                     count=period['balance_trialmembers'],
-                                     total=period['balance_total']|money(lang=lang),
-                                     state=period['balance_state'] %}
+                                {% trans state=period['balance_state']|cdedbid %}
                                     Done up until {{ state }}.
-                                    {{ count }} trial meberships have been ended so far.
+                                {% endtrans %}
+                                <br />
+                                {% trans total=period['balance_total']|money(lang=lang) %}
                                     A total of {{ total }} has been deducted so far.
+                                {% endtrans %}
+                                <br />
+                                {% trans count=period['balance_trialmembers'] %}
+                                    {{ count }} trial meberships have been ended so far.
                                 {% endtrans %}
                             </p>
                         {% else %}
                             <p>
-                                {% trans total_count=stats['total_members'],
-                                         trial_count=stats['trial_members'] %}
-                                    {{ total_count }} Members total, {{ trial_count }} of which have a Trial-Membership right now.
+                                {% trans total_count=stats['total_members'] %}
+                                    {{ total_count }} Members in total.
+                                {% endtrans %}
+                                <br />
+                                {% trans trial_count=stats['trial_members'] %}
+                                    {{ trial_count }} of these are trial members.
                                 {% endtrans %}
                             </p>
                         {% endif %}
                         <form action="{{ cdedblink('cde/semester_balance_update') }}" method="POST" id="balanceform">
                             {{ util.anti_csrf_token('cde/semester_balance_update') }}
-                            {{ util.input_submit(label=gettext("Update Balances")) }}
+                            {{ util.input_submit(label=gettext("Update Balances"), readonly="finance" not in user.admin_views,
+                                aclass="btn btn-default" if during_step_3 else "btn btn-primary") }}
                         </form>
-                    {% else %}
-                        <span class="text-success">
-                            {% trans date=period['balance_done']|datetime(lang=lang),
-                                     count=period['balance_trialmembers'],
-                                     total=period['balance_total']|money(lang=lang) %}
-                                Done on the {{ date }}.
-                                {{ count }} trial memberships were ended.
-                                A total of {{ total }} was deducted.
-                            {% endtrans %}
-                        </span>
                     {% endif %}
-                </div>
-            </div>
-
-            <div id="next-semester" class="panel {% if current_period_step == "advance" %}panel-primary{% else %}panel-default{% endif %}">
-                <div class="panel-heading">
-                    <span class="pull-right">(01.07./01.01.)</span>
-                    <h4 class="panel-title">{% trans %}Next Semester{% endtrans %}</h4>
-                </div>
-                <div class="panel-body">
-                    <p>
-                        {% trans %}
-                            The Semesterstate influences the display of Balances. This button should be pressed at the
-                            target date (give or take three weeks).
-                        {% endtrans %}
-                    </p>
-                    {% if current_period_step == "advance" %}
-                        <form action="{{ cdedblink('cde/semester_advance') }}" method="POST" id="proceedform">
-                            {{ util.anti_csrf_token('cde/semester_advance') }}
-                            {{ util.input_submit(label=gettext("Next Semester")) }}
-                        </form>
-                    {% else %}
-                        <span class="text-muted">{% trans %}To be done later.{% endtrans %}</span>
-                    {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
@@ -226,6 +304,8 @@
                 <th>{% trans %}Ejection Done{% endtrans %}</th>
                 <th>{% trans %}Accounts Archived{% endtrans %}</th>
                 <th>{% trans %}Automated Archival Done{% endtrans %}</th>
+                <th>{% trans %}Balance of Exmembers{% endtrans %}</th>
+                <th>{% trans %}Affected Exmembers{% endtrans %}</th>
                 <th>{% trans %}Trial Memberships Ended{% endtrans %}</th>
                 <th>{% trans %}Balance Deducted{% endtrans %}</th>
                 <th>{% trans %}Balance Update Done{% endtrans %}</th>
@@ -245,6 +325,8 @@
                     <td>{{ period['ejection_done']|datetime(lang=lang) }}</td>
                     <td>{{ period['archival_count'] }}</td>
                     <td>{{ period['archival_done']|datetime(lang=lang) }}</td>
+                    <td>{{ period['exmember_balance']|money(lang=lang) }}</td>
+                    <td>{{ period['exmember_count'] }}</td>
                     <td>{{ period['balance_trialmembers'] }}</td>
                     <td>{{ period['balance_total']|money(lang=lang) }}</td>
                     <td>{{ period['balance_done']|datetime(lang=lang) }}</td>
@@ -295,10 +377,12 @@
                                 class="strip-space">
                             {{ util.anti_csrf_token('cde/expuls_addresscheck') }}
                             <div class="checkbox">
-                                {{ util.input_checkbox("testrun", label=gettext("Only one Test-Mail")) }}
+                                {{ util.input_checkbox("testrun", label=gettext("Only one Test-Mail"),
+                                    readonly="finance" not in user.admin_views) }}
                             </div>
                             <div class="form-group">
-                            {{ util.input_submit(label=gettext("Send Mails"), icon="paper-plane") }}
+                            {{ util.input_submit(label=gettext("Send Mails"), icon="paper-plane",
+                                readonly="finance" not in user.admin_views) }}
                             </div>
                         </form>
                         <form action="{{ cdedblink('cde/expuls_addresscheck') }}" method="POST"
@@ -306,7 +390,7 @@
                             {{ util.anti_csrf_token('cde/expuls_addresscheck') }}
                             {{ util.input_hidden("skip", value=True) }}
                             {{ util.input_submit(label=gettext("Mark as done"), aclass="btn btn-warning",
-                                    icon="check-square") }}
+                                    icon="check-square", readonly="finance" not in user.admin_views) }}
                         </form>
                     {% endif %}
                 </div>
@@ -321,7 +405,7 @@
                     {% if expuls['addresscheck_done'] %}
                         <form action="{{ cdedblink('cde/expuls_advance') }}" method="POST" id="proceedexpulsform">
                             {{ util.anti_csrf_token('cde/expuls_advance') }}
-                            {{ util.input_submit(label=gettext("Next exPuls")) }}
+                            {{ util.input_submit(label=gettext("Next exPuls"), readonly="finance" not in user.admin_views) }}
                         </form>
                     {% else %}
                         <span class="text-muted">{% trans %}To be done later.{% endtrans %}</span>

@@ -123,6 +123,10 @@ class User:
         self.admin_views = self.available_admin_views & set(enabled_views)
 
 
+if TYPE_CHECKING:
+    from cdedb.frontend.common import AmbienceDict
+
+
 class RequestState(ConnectionContainer):
     """Container for request info. Besides this and db accesses the python
     code should be state-less. This data structure enables several
@@ -153,7 +157,7 @@ class RequestState(ConnectionContainer):
             gettext translation object.
         :param begin: time where we started to process the request
         """
-        self.ambience: Dict[str, CdEDBObject] = {}
+        self.ambience: "AmbienceDict" = {}  # type: ignore[typeddict-item]
         self.sessionkey = sessionkey
         self.apitoken = apitoken
         self.user = user
@@ -1107,21 +1111,6 @@ class TransactionType(enum.IntEnum):
         return display_str.get(self, str(self))
 
 
-class SemesterSteps(enum.Enum):
-    billing = 1
-    archival_notification = 2
-    ejection = 10
-    automated_archival = 11
-    balance = 20
-    advance = 30
-    error = 100
-
-    def __eq__(self, other: Any) -> bool:
-        if isinstance(other, str):
-            return self.name == other  # pylint: disable=comparison-with-callable
-        return super().__eq__(other)
-
-
 UMLAUT_MAP = {
     "ä": "ae", "æ": "ae",
     "Ä": "AE", "Æ": "AE",
@@ -1381,7 +1370,7 @@ IGNORE_WARNINGS_NAME = "_magic_ignore_warnings"
 #: If the partial export and import are unaffected the minor version may be
 #: incremented.
 #: If you increment this, it must be incremented in make_offline_vm.py as well.
-EVENT_SCHEMA_VERSION = (15, 7)
+EVENT_SCHEMA_VERSION = (16, 0)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3

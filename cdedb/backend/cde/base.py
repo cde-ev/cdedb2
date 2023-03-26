@@ -35,7 +35,7 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.query.log_filter import LogFilterFinanceLogLike, LogFilterLike
 from cdedb.common.roles import implying_realms
-from cdedb.common.validation import (
+from cdedb.common.validation.validate import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS, is_optional,
 )
 from cdedb.database.connection import Atomizer
@@ -343,6 +343,7 @@ class CdEBaseBackend(AbstractBackend):
                 'is_member': True,
                 'trial_member': trial_membership,
                 'paper_expuls': True,
+                'donation': decimal.Decimal(0),
                 'is_searchable': consent,
             })
             persona_id = self.core.create_persona(rs, new_persona)
@@ -375,6 +376,7 @@ class CdEBaseBackend(AbstractBackend):
                     'decided_search': False,
                     'trial_member': False,
                     'paper_expuls': True,
+                    'donation': decimal.Decimal(0),
                     'bub_search': False,
                     'pronouns_nametag': False,
                     'pronouns_profile': False,

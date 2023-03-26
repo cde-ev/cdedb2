@@ -60,8 +60,8 @@ import werkzeug.wrappers
 import werkzeug.wsgi
 
 import cdedb.common.query as query_mod
-import cdedb.common.validation as validate
 import cdedb.common.validation.types as vtypes
+import cdedb.common.validation.validate as validate
 import cdedb.database.constants as const
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
@@ -99,6 +99,7 @@ from cdedb.enums import ENUMS_DICT
 from cdedb.filter import (
     JINJA_FILTERS, cdedbid_filter, enum_entries_filter, safe_filter, sanitize_None,
 )
+from cdedb.models.ml import Mailinglist
 
 Attachment = typing.TypedDict(
     "Attachment", {'path': PathLike, 'filename': str, 'mimetype': str,
@@ -904,8 +905,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             s.send_message(msg)
             s.quit()
         else:
-            with tempfile.NamedTemporaryFile(mode='w', prefix="cdedb-mail-",
-                                             suffix=".txt", delete=False) as f:
+            with tempfile.NamedTemporaryFile(
+                    mode='w', prefix="cdedb-mail-", suffix=".txt", delete=False,
+                    encoding='UTF-8') as f:
                 f.write(str(msg))
                 self.logger.debug(f"Stored mail to {f.name}.")
                 ret = f.name
@@ -1310,7 +1312,7 @@ class CdEMailmanClient(mailmanclient.Client):
                 self.logger.exception("Mailman connection failed!")
             return None
 
-    def get_held_messages(self, dblist: CdEDBObject) -> Optional[
+    def get_held_messages(self, dblist: Mailinglist) -> Optional[
             List[mailmanclient.restobjects.held_message.HeldMessage]]:
         """Returns all held messages for mailman lists.
 
@@ -1320,20 +1322,20 @@ class CdEMailmanClient(mailmanclient.Client):
             self.logger.info("Skipping mailman query in dev/offline mode.")
             if self.conf["CDEDB_DEV"]:
                 # Some diversity regarding moderation.
-                if dblist['id'] % 2 == 0:
+                if dblist.id % 2 == 0:
                     return HELD_MESSAGE_SAMPLE
                 else:
                     return []
             return None
         else:
-            mmlist = self.get_list_safe(dblist['address'])
+            mmlist = self.get_list_safe(dblist.address)
             try:
                 return mmlist.held if mmlist else None
             except urllib.error.HTTPError:
                 self.logger.exception("Mailman connection failed!")
         return None
 
-    def get_held_message_count(self, dblist: CdEDBObject) -> Optional[int]:
+    def get_held_message_count(self, dblist: Mailinglist) -> Optional[int]:
         """Returns the number of held messages for a mailman list.
 
         If the list is not managed by mailman, this returns None instead.
@@ -1342,12 +1344,12 @@ class CdEMailmanClient(mailmanclient.Client):
             self.logger.info("Skipping mailman query in dev/offline mode.")
             if self.conf["CDEDB_DEV"]:
                 # Add some diversity.
-                if dblist['id'] % 2 == 0:
+                if dblist.id % 2 == 0:
                     return len(HELD_MESSAGE_SAMPLE)
                 else:
                     return 0
         else:
-            mmlist = self.get_list_safe(dblist['address'])
+            mmlist = self.get_list_safe(dblist.address)
             try:
                 return mmlist.get_held_count() if mmlist else None
             except urllib.error.HTTPError:
@@ -1476,8 +1478,35 @@ class Worker(threading.Thread):
         return worker
 
 
+AmbienceDict = typing.TypedDict(
+    "AmbienceDict",
+    {
+        'persona': CdEDBObject,
+        'privilege_change': CdEDBObject,
+        'genesis_case': CdEDBObject,
+        'lastschrift': CdEDBObject,
+        'transaction':  CdEDBObject,
+        'institution':  CdEDBObject,
+        'event': CdEDBObject,
+        'pevent': CdEDBObject,
+        'course': CdEDBObject,
+        'pcourse': CdEDBObject,
+        'registration': CdEDBObject,
+        'group': CdEDBObject,
+        'lodgement': CdEDBObject,
+        'part_group': CdEDBObject,
+        'track_group': CdEDBObject,
+        'fee': CdEDBObject,
+        'attachment': CdEDBObject,
+        'assembly': CdEDBObject,
+        'ballot': CdEDBObject,
+        'mailinglist': Mailinglist,
+    }
+)
+
+
 def reconnoitre_ambience(obj: AbstractFrontend,
-                         rs: RequestState) -> Dict[str, CdEDBObject]:
+                         rs: RequestState) -> AmbienceDict:
     """Provide automatic lookup of objects in a standard way.
 
     This creates an ambience dict providing objects for all ids passed
@@ -1547,6 +1576,10 @@ def reconnoitre_ambience(obj: AbstractFrontend,
               'track_group_id', 'track_group',
               ((lambda a: do_assert(a['track_group']['event_id']
                                     == a['event']['id'])),)),
+        # Dirty hack, that relies on the event being retrieved into ambience first.
+        Scout(lambda anid: ambience['event']['fees'][anid],  # type: ignore[has-type]
+              'fee_id', 'fee',
+              ((lambda a: do_assert(a['fee']['event_id'] == a['event']['id'])),)),
         Scout(lambda anid: obj.assemblyproxy.get_attachment(rs, anid),
               'attachment_id', 'attachment',
               ((lambda a: do_assert(a['attachment']['assembly_id']
@@ -1585,7 +1618,7 @@ def reconnoitre_ambience(obj: AbstractFrontend,
         if param in scouts_dict:
             for consistency_checker in scouts_dict[param].dependencies:
                 consistency_checker(ambience)
-    return ambience
+    return cast("AmbienceDict", ambience)
 
 
 F = TypeVar('F', bound=Callable[..., Any])
@@ -1648,9 +1681,14 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
                             rs, "error", n_("You must login."))])
                     ret.set_cookie("displaynote", notifications)
                     return ret
-                raise werkzeug.exceptions.Forbidden(
-                    rs.gettext("Access denied to {realm}/{endpoint}.").format(
-                        realm=obj.__class__.__name__, endpoint=fun.__name__))
+                msg = n_("Access denied to {realm}/{endpoint}.")
+                params = {
+                    'realm': obj.__class__.__name__,
+                    'endpoint': fun.__name__,
+                }
+                log_msg = msg.format(**params) + f" Roles: {rs.user.roles}."
+                _LOGGER.error(log_msg)
+                raise werkzeug.exceptions.Forbidden(rs.gettext(msg).format(**params))
 
         new_fun.access_list = access_list  # type: ignore[attr-defined]
         new_fun.modi = modi  # type: ignore[attr-defined]
@@ -1930,12 +1968,13 @@ def REQUESTdatadict(*proto_spec: Union[str, Tuple[str, str]]
             for name, argtype in spec:
                 if argtype == "str":
                     data[name] = rs.request.values.get(name, "")
+                    rs.values[name] = data[name]
                 elif argtype == "[str]":
                     data[name] = tuple(rs.request.values.getlist(name))
+                    rs.values.setlist(name, data[name])
                 else:
                     raise ValueError(n_("Invalid argtype {t} found.").format(
                         t=repr(argtype)))
-                rs.values[name] = data[name]
             return fun(obj, rs, *args, data=data, **kwargs)
 
         return cast(F, new_fun)
@@ -1983,8 +2022,9 @@ def request_extractor(
     return fun(None, rs)
 
 
-def request_dict_extractor(rs: RequestState,
-                           args: Collection[str]) -> CdEDBObject:
+def request_dict_extractor(
+        rs: RequestState, args: Collection[Union[str, Tuple[str, str]]]
+) -> CdEDBObject:
     """Utility to apply REQUESTdatadict later than usual.
 
     Like :py:meth:`request_extractor`.

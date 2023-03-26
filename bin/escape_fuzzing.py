@@ -67,7 +67,9 @@ def work(
     posted_urls.clear()
     posted_urls.update({
         '/core/logout', '/core/logout/all', '/core/locale',
-        '/event/event/1/lock', '/event/event/2/lock', '/event/event/3/lock'})
+        '/event/event/1/lock', '/event/event/2/lock', '/event/event/3/lock',
+        '/event/event/2/fee/10/delete', '/event/event/2/fee/11/delete',
+    })
     visited_urls.clear()
 
     # login as Anton and add the start page
@@ -205,7 +207,7 @@ def check(response_data: ResponseData, *, payload: str,
         try:
             new_response = form.submit()
             new_response = new_response.maybe_follow()
-        except webtest.app.AppError as e:
+        except Exception as e:
             log_error(f"Got error when posting to {form.action}: {fmt(e)}")
             continue
         posted_urls.add(form.action)
@@ -220,7 +222,7 @@ def check(response_data: ResponseData, *, payload: str,
         try:
             new_response = form.submit()
             new_response = new_response.maybe_follow()
-        except webtest.app.AppError as e:
+        except Exception as e:
             log_error(f"Got error when posting to {form.action} with payload: {fmt(e)}")
             continue
         ret.queue.append(ResponseData(new_response, form.action + " [P+token]", url))

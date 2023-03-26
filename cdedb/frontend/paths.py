@@ -233,8 +233,7 @@ CDEDB_PATHS = werkzeug.routing.Map((
                      endpoint="user_search"),
                 rule("/course", methods=_GET,
                      endpoint="past_course_search"),)),
-            rule("/i25p", methods=_GET,
-                 endpoint="i25p_index"),
+            rule("/i25p", endpoint="", redirect_to="cde/lastschrift/info"),
             sub("/lastschrift/", (
                 rule("/", methods=_GET,
                      endpoint="lastschrift_index"),
@@ -246,6 +245,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                      endpoint="lastschrift_subscription_form"),
                 rule("/form/fill", methods=_GET,
                      endpoint="lastschrift_subscription_form_fill"),
+                rule("/info", methods=_GET,
+                     endpoint="i25p_index"),
                 rule("/transaction/download", methods=_GET,
                      endpoint="lastschrift_download_sepapain"),
                 rule("/transaction/generate", methods=_POST,
@@ -329,8 +330,7 @@ CDEDB_PATHS = werkzeug.routing.Map((
                      endpoint="semester_eject"),
                 rule("/balance", methods=_POST,
                      endpoint="semester_balance_update"),
-                rule("/advance", methods=_POST,
-                     endpoint="semester_advance"),)),
+            )),
             sub('/expuls', (
                 rule("/address", methods=_POST,
                      endpoint="expuls_addresscheck"),
@@ -421,6 +421,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                          endpoint="configure_registration_form"),
                     rule("/config", methods=_POST,
                          endpoint="configure_registration"),
+                    rule("/fee", methods=_GET,
+                         endpoint="precompute_fee"),
                 )),
                 sub('/questionnaire', (
                     rule("/config", methods=_GET,
@@ -474,6 +476,16 @@ CDEDB_PATHS = werkzeug.routing.Map((
                          endpoint="group_summary"),
                     rule("/violations", methods=_GET,
                          endpoint="constraint_violations"),
+                )),
+                sub('/fee', (
+                    rule("/summary", methods=_GET, endpoint="fee_summary"),
+                    rule("/add", methods=_GET, endpoint="configure_fee_form"),
+                    rule("/add", methods=_POST, endpoint="configure_fee"),
+                    sub('/<int:fee_id>', (
+                        rule("/change", methods=_GET, endpoint="configure_fee_form"),
+                        rule("/change", methods=_POST, endpoint="configure_fee"),
+                        rule("/delete", methods=_POST, endpoint="delete_fee"),
+                    ))
                 )),
                 sub('/part', (
                     rule("/summary", methods=_GET,
