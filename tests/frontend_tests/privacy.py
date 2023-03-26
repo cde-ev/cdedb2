@@ -578,9 +578,6 @@ class TestPrivacyFrontend(FrontendTest):
         core = {
             USER_DICT['farin']['id'], USER_DICT['paul']['id']
         }
-        archive = {
-            USER_DICT['farin']['id'], USER_DICT['paul']['id']
-        }
         cde = {
             USER_DICT['farin']['id'], USER_DICT['quintus']['id']
         }
