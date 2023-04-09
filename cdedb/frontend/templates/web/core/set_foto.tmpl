@@ -25,7 +25,7 @@
     <div class="row">
         {% if foto %}
             <div class="col-md-5">
-                {{ util.heading(n_("Current Picture")) }}
+                {{ util.h(n_("Current Picture")) }}
                 <img src="{{ cdedblink('core/get_foto', {'foto': foto}) }}" class="profilepic img-thumbnail"
                     alt="{% trans %}Current Picture{% endtrans %}">
 
@@ -46,7 +46,7 @@
         {% endif %}
 
         <div class="col-md-7">
-            {{ util.heading(n_("Upload new Picture")) }}
+            {{ util.h(n_("Upload new Picture")) }}
             <p>
                 {% trans %}
                 	The Picture must meet the following Criteria:

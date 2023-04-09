@@ -87,7 +87,7 @@
     </p>
 
 
-    {{ util.heading(n_("Verify the result"), level=2, aclass="mosp") }}
+    {{ util.h(n_("Verify the result"), level=2, aclass="mosp") }}
 
         <p>
             {% trans %}
@@ -121,7 +121,7 @@
     <p>{{ util.href(staticurl("verify_vote.py"), gettext("Download Own Vote Verification Script"), icon="download") }}</p>
 
 
-    {{ util.heading(n_("Result file hash"), level=2, aclass="mosp") }}
+    {{ util.h(n_("Result file hash"), level=2, aclass="mosp") }}
 
         <p>
             {% if ambience['assembly']['presider_address'] %}
@@ -150,7 +150,7 @@
         <pre>{{ result_hash }}</pre>
 
 {% if preferential %}
-    {{ util.heading(n_("Cross Table of Preferences"), level=2, aclass="mosp") }}
+    {{ util.h(n_("Cross Table of Preferences"), level=2, aclass="mosp") }}
 
     <p>
         {% trans %}
@@ -193,7 +193,7 @@
 {% endif %}
 
 
-    {{ util.heading(n_("Votes"), level=2, aclass="mosp") }}
+    {{ util.h(n_("Votes"), level=2, aclass="mosp") }}
 
         <table class="table table-condensed table-hover">
             <thead>
@@ -222,7 +222,7 @@
         </table>
 
 
-    {{ util.heading(n_("Your Vote"), level=2, aclass="mosp") }}
+    {{ util.h(n_("Your Vote"), level=2, aclass="mosp") }}
 
     <div id="own-vote">
         {% if not attends %}
@@ -267,7 +267,7 @@
     </div>
 
 
-    {{ util.heading(n_("Voters"), level=2, aclass="mosp") }}
+    {{ util.h(n_("Voters"), level=2, aclass="mosp") }}
 
         <div class="row" id="voters-list">
             {% for list in result['voters'] | slice((3 if result['voters']|length > 20 else 2)

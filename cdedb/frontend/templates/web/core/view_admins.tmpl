@@ -18,7 +18,7 @@
     </p>
 
     {# Everyone can see meta admins #}
-   {{ util.heading(n_("Meta-Admins")) }}
+   {{ util.h(n_("Meta-Admins")) }}
     <div class="p">
         {% trans %}
             Meta-Admins may modify admin privileges of other users based on a
@@ -31,7 +31,7 @@
     </div>
 
     {# Everyone can see coreadmins #}
-   {{ util.heading(n_("Core-Admins")) }}
+   {{ util.h(n_("Core-Admins")) }}
     <div class="p">
         {% trans %}
             Core-Admins may view and edit any other user account.
@@ -44,7 +44,7 @@
     </div>
 
     {% if "cde" in user.roles %}
-       {{ util.heading(n_("CdE-Admins")) }}
+       {{ util.h(n_("CdE-Admins")) }}
         <div class="p">
             {% trans %}
                 CdE-Admins may create, view and edit CdE-Users.
@@ -57,7 +57,7 @@
     {% endif %}
 
     {% if "member" in user.roles %}
-       {{ util.heading(n_("Finance-Admins")) }}
+       {{ util.h(n_("Finance-Admins")) }}
         <div class="p">
             {% trans %}
                 Finance-Admins may manage direct debit authorizations and membership fee transactions.
@@ -71,7 +71,7 @@
     {% endif %}
 
     {% if "event" in user.roles %}
-       {{ util.heading(n_("Event-Admins")) }}
+       {{ util.h(n_("Event-Admins")) }}
         <div class="p">
             {% trans %}
                 Event-Admins may create DB-organized events and add and remove orgas to these events.
@@ -87,7 +87,7 @@
     {% endif %}
 
     {% if "ml" in user.roles %}
-       {{ util.heading(n_("Mailinglist-Admins")) }}
+       {{ util.h(n_("Mailinglist-Admins")) }}
         <div class="p">
             {% trans %}
                 Mailinglist-Admins may manage and create all types of mailinglists.
@@ -98,7 +98,7 @@
             {{ slice_admins(admins["ml"]) }}
         </div>
 
-       {{ util.heading(n_("CdElokal-Admins")) }}
+       {{ util.h(n_("CdElokal-Admins")) }}
         <div class="p">
             {% trans %}
                 CdElokal-Admins may manage and create CdElokal mailinglists.
@@ -111,7 +111,7 @@
     {% endif %}
 
     {% if "assembly" in user.roles %}
-       {{ util.heading(n_("Assembly-Admins")) }}
+       {{ util.h(n_("Assembly-Admins")) }}
         <div class="p">
             {% trans %}
                 Assembly-Admins may create and manage assemblies and ballots.
@@ -125,7 +125,7 @@
     {% endif %}
 
     {% if "cde" in user.roles %}
-       {{ util.heading(n_("Auditors")) }}
+       {{ util.h(n_("Auditors")) }}
         <div class="p">
             {% trans %}
                 Auditors may view all logs, in particular those related to finance administration,

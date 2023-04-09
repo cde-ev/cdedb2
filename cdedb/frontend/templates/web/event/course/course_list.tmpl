@@ -82,7 +82,7 @@
         <div id="list-courses">
         {% for anid, entry in courses %}
             <div class="hide-hover-container" id="course-{{ entry['id'] }}">
-                {{ util.heading(entry['nr'] + ". " + entry['title'], anchor="course-" + entry['id']|string,
+                {{ util.h(entry['nr'] + ". " + entry['title'], anchor="course-" + entry['id']|string,
                                 translate=False) }}
                 {% if ambience['event']['id'] in user.orga or 'event_orga' in user.admin_views %}
                     <div class="pull-right">

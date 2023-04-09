@@ -11,7 +11,7 @@
     {% else %}
         {% trans %}Here You can find the CdE’s general assemblies.{% endtrans %}
     {% endif %}
-    {{ util.heading(n_("Active Assemblies")) }}
+    {{ util.h(n_("Active Assemblies")) }}
     <ul class="spaced" id="active-assemblies">
         {% for assembly_id, assembly in assemblies|keydictsort(EntitySorter.assembly) %}
             {% if assembly['is_active'] %}
@@ -37,7 +37,7 @@
     </ul>
 
     {% if user.presider %}
-    {{ util.heading(n_("Presided Assemblies")) }}
+    {{ util.h(n_("Presided Assemblies")) }}
     <ul class="spaced" id="presided-assemblies">
         {% for assembly_id, assembly in assemblies|keydictsort(EntitySorter.assembly) %}
             {% if assembly_id in user.presider %}
@@ -62,7 +62,7 @@
     </ul>
     {% endif %}
 
-    {{ util.heading(n_("Inactive Assemblies")) }}
+    {{ util.h(n_("Inactive Assemblies")) }}
     <ul class="spaced" id="inactive-assemblies">
         {% for assembly_id, assembly in assemblies|keydictsort(EntitySorter.assembly, reverse=True) %}
             {% if not assembly['is_active'] %}

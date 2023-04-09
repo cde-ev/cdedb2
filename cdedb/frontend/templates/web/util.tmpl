@@ -890,7 +890,7 @@ mailto:
     Take care to put the title in n_() to do postpone localization to this macro (we need the english variant
     for uniform IDs). For headings not to be localized, just set translate=False.
 #}
-{% macro heading(title, level=3, underline=False, translate=True, anchor=none, aclass=none) %}
+{% macro h(title, level=3, underline=False, translate=True, anchor=none, aclass=none) %}
     {% if anchor is none and level != 1 %}
         {# TODO: convert spaces and other special chars? #}
         {% set anchor = title %}
@@ -920,7 +920,7 @@ mailto:
 {% macro context_heading(title,
                          subtitle=none, icon=none, icon_arialabel=none,
                          subtitle2=none, icon2=none, icon_arialabel2=none) %}
-    {% call heading(title, level=1) -%}
+    {% call h(title, level=1) -%}
         {% if subtitle and subtitle2 %}<div>{% endif %}
         {% if subtitle %}
             <small>

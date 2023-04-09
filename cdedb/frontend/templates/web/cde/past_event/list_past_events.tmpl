@@ -28,7 +28,7 @@
     </nav>
 
     {% for year, year_events in years|dictsort|reverse %}
-        {{ util.heading(year, level=4, underline=True, translate=False) }}
+        {{ util.h(year, level=4, underline=True, translate=False) }}
         <ul id="events-{{ year }}">
             {% for pevent_id in year_events %}
                 <li>

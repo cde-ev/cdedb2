@@ -26,7 +26,7 @@
                                            (n_("Current Ballots"), grouped_ballots.running, True),
                                            (n_("Concluded Ballots"), grouped_ballots.concluded, False))
                                        if sample %}
-        {{ util.heading(heading) }}
+        {{ util.h(heading) }}
         <ul class="flex-width">
             {% for ballot_id, ballot in sample|keydictsort(EntitySorter.ballot) %}
                 <li class="hide-hover-container clearfix-after">

@@ -66,7 +66,7 @@
             {% endcall %}
         {% endif %}
 
-        {{ util.heading(n_("My Data"), underline=true) }}
+        {{ util.h(n_("My Data"), underline=true) }}
         <dl class="dl-horizontal">
             <dt title="{% trans %}Full Name{% endtrans %}">{% trans %}Full Name{% endtrans %}</dt>
             <dd>
@@ -103,7 +103,7 @@
         </p>
 
         {% if ambience['event']['parts']|length > 1 %}
-            {{ util.heading(n_("Registration"), underline=true) }}
+            {{ util.h(n_("Registration"), underline=true) }}
         {% endif %}
 
         {% if ambience['event']['parts']|length > 1 %}
@@ -133,11 +133,11 @@
         {% endif %}
 
         {% if choice_objects %}
-            {{ util.heading(n_("Course Choices"), underline=true) }}
+            {{ util.h(n_("Course Choices"), underline=true) }}
             {{ generic_event.select_all_course_choices() }}
         {% endif %}
 
-        {{ util.heading(n_("Additional Information"), underline=true) }}
+        {{ util.h(n_("Additional Information"), underline=true) }}
         {{ generic_event.additional_registration_choices(age, reg_questionnaire) }}
 
         {% call util.form_input_general(displayerrors=False) %}
