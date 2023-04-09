@@ -385,7 +385,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                 (part_id,
                  f"{part['title']}"
                  f" ({date_filter(part['part_begin'], lang=rs.lang)}\u202f–\u202f"
-                 f"{date_filter(part['part_end'], lang=rs.lang)}")
+                 f"{date_filter(part['part_end'], lang=rs.lang)})")
                 for part_id, part
                 in keydictsort_filter(event['parts'], EntitySorter.event_part)]
 
