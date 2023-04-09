@@ -31,7 +31,10 @@ from cdedb.common.roles import ADMIN_KEYS, implying_realms
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.models.ml import (
-    ML_TYPE_MAP, BackendContainer, Mailinglist, MLType, get_ml_type,
+    ADDITIONAL_TYPE_FIELDS, ML_TYPE_MAP, AssemblyAssociatedMailinglist,
+    BackendContainer, EventAssociatedMailinglist,
+    EventAssociatedMeta as EventAssociatedMetaMailinglist, Mailinglist, MLType,
+    get_ml_type,
 )
 
 SubStates = Collection[const.SubscriptionState]
@@ -56,13 +59,19 @@ class MlBackend(AbstractBackend):
         return super().is_admin(rs)
 
     @access("ml")
-    def get_ml_type(self, rs: RequestState, mailinglist_id: int) -> MLType:
-        mailinglist_id = affirm(vtypes.ID, mailinglist_id)
-        data = self.sql_select_one(
-            rs, "ml.mailinglists", ("ml_type",), mailinglist_id)
-        if not data:
+    def get_ml_types(self, rs: RequestState, mailinglist_ids: Collection[int]
+                     ) -> Dict[int, MLType]:
+        mailinglist_ids = affirm_set(vtypes.ID, mailinglist_ids)
+        data = self.sql_select(rs, "ml.mailinglists",
+                               ["id", "ml_type"], mailinglist_ids)
+        ret = {datum["id"]: get_ml_type(datum["ml_type"]) for datum in data}
+        if len(ret) != len(mailinglist_ids):
             raise ValueError(n_("Unknown mailinglist_id."))
-        return get_ml_type(data['ml_type'])
+        return ret
+
+    class _GetMlTypeProtocol(Protocol):
+        def __call__(self, rs: RequestState, mailinglist_id: int) -> MLType: ...
+    get_ml_type: _GetMlTypeProtocol = singularize(get_ml_types)
 
     @overload
     def is_relevant_admin(self, rs: RequestState, *,
@@ -367,10 +376,15 @@ class MlBackend(AbstractBackend):
         """
         mailinglist_ids = affirm_set(vtypes.ID, mailinglist_ids)
         with Atomizer(rs):
-            data = self.sql_select(rs, "ml.mailinglists", Mailinglist.database_fields(),
-                                   mailinglist_ids)
-            ret: Dict[int, Mailinglist] = {
-                e['id']: get_ml_type(e['ml_type'])(
+            ml_types = self.get_ml_types(rs, mailinglist_ids)
+            fields = Mailinglist.database_fields()
+            fields.extend(ADDITIONAL_TYPE_FIELDS)
+            data = self.sql_select(rs, "ml.mailinglists", fields, mailinglist_ids)
+
+            ret: Dict[int, Mailinglist] = {}
+            for e in data:
+                ml_type = ml_types[e["id"]]
+                ml = ml_type(
                     id=e["id"],
                     title=e["title"],
                     local_part=e["local_part"],
@@ -385,12 +399,15 @@ class MlBackend(AbstractBackend):
                     subject_prefix=e["subject_prefix"],
                     maxsize=e["maxsize"],
                     notes=e["notes"],
-                    assembly_id=e["assembly_id"],
-                    event_id=e["event_id"],
-                    registration_stati=[const.RegistrationPartStati(v)
-                                        for v in e['registration_stati']],
-                ) for e in data
-            }
+                )
+                if isinstance(ml, EventAssociatedMetaMailinglist):
+                    ml.event_id = e["event_id"]
+                if isinstance(ml, EventAssociatedMailinglist):
+                    ml.registration_stati = [
+                        const.RegistrationPartStati(v) for v in e['registration_stati']]
+                if isinstance(ml, AssemblyAssociatedMailinglist):
+                    ml.assembly_id = e["assembly_id"]
+                ret[e["id"]] = ml
 
             # add moderators
             data = self.sql_select(
@@ -514,24 +531,59 @@ class MlBackend(AbstractBackend):
                             mailinglist_id, change_note=address)
         return ret
 
-    def _ml_type_transition(self, rs: RequestState, mailinglist_id: int,
-                            old_type: const.MailinglistTypes,
-                            new_type: const.MailinglistTypes) -> DefaultReturnCode:
-        old_type = get_ml_type(old_type)
-        new_type = get_ml_type(new_type)
-        # implicitly atomized context.
-        self.affirm_atomized_context(rs)
-        obsolete_fields = (
-            old_type.get_additional_fields().keys()
-            - new_type.get_additional_fields().keys()
-        )
-        if obsolete_fields:
-            setter = ", ".join(f"{f} = DEFAULT" for f in obsolete_fields)
-            query = f"UPDATE ml.mailinglists SET {setter} WHERE id = %s"
-            params = (mailinglist_id,)
-            return self.query_exec(rs, query, params)
-        else:
-            return 1
+    @access("ml")
+    def change_ml_type(self, rs: RequestState, mailinglist_id: int,
+                       ml_type: const.MailinglistTypes, update: CdEDBObject = None
+                       ) -> DefaultReturnCode:
+        """Change the type of a mailinglist.
+
+        To preserve data integrity, some additional changes may be specified via update.
+        """
+        ret = 1
+        update = update or {}
+        with Atomizer(rs):
+            new_type = get_ml_type(ml_type)
+            old_type = self.get_ml_type(rs, mailinglist_id)
+            obsolete_fields = (
+                old_type.get_additional_fields().keys()
+                - new_type.get_additional_fields().keys()
+            )
+
+            if not (new_type.is_relevant_admin(rs.user)
+                    and old_type.is_relevant_admin(rs.user)):
+                raise PrivilegeError("Not privileged to make this change.")
+
+            # check that the type change preserves the data integrity
+            ml = self.get_mailinglist(rs, mailinglist_id)
+            new_ml = ml.to_database()
+            new_ml.update(update)
+            for field in obsolete_fields:
+                del new_ml[field]
+            affirm(vtypes.Mailinglist, new_ml, subtype=new_type)
+
+            # Delete all unsubscriptions for mandatory list.
+            if not new_type.allow_unsub:
+                query = ("DELETE FROM ml.subscription_states "
+                         "WHERE mailinglist_id = %s "
+                         "AND subscription_state = ANY(%s)")
+                # noinspection PyTypeChecker
+                params = (mailinglist_id, self.subman.written_states -
+                          const.SubscriptionState.subscribing_states())
+                self.query_exec(rs, query, params)
+
+            # delete all obsolete additional fields
+            if obsolete_fields:
+                setter = ", ".join(f"{f} = DEFAULT" for f in obsolete_fields)
+                query = f"UPDATE ml.mailinglists SET {setter} WHERE id = %s"
+                ret *= self.query_exec(rs, query, (mailinglist_id,))
+
+            # perform the actual change
+            update.update({"id": mailinglist_id, "ml_type": ml_type})
+            ret *= self.sql_update(rs, "ml.mailinglists", update)
+
+        # update the subscription states
+        ret *= self.write_subscription_states(rs, (mailinglist_id,))
+        return ret
 
     @access("ml")
     def set_mailinglist(self, rs: RequestState,
@@ -545,20 +597,22 @@ class MlBackend(AbstractBackend):
         made. Most attributes of the mailinglist may set by moderators, but for
         some you need admin privileges.
         """
-        data = affirm(vtypes.Mailinglist, data)
-
         ret = 1
         with Atomizer(rs):
             current = self.get_mailinglist(rs, data['id'])
+            data = affirm(vtypes.Mailinglist, data,
+                          subtype=get_ml_type(current.ml_type))
             current_data = current.to_database()
+
             mdata = {k: v for k, v in data.items()
-                     if k in Mailinglist.database_fields()}
+                     if k in current.database_fields()}
             changed = {k for k, v in mdata.items()
                        if k not in current_data or v != current_data[k]}
             is_admin = self.is_relevant_admin(rs, mailinglist=current)
             is_moderator = self.is_moderator(rs, current.id)
             is_restricted = not self.is_moderator(rs, current.id,
                                                   allow_restricted=False)
+
             # determinate if changes are permitted
             if not is_admin:
                 if not is_moderator:
@@ -575,26 +629,10 @@ class MlBackend(AbstractBackend):
                     rs, dict(current_data, **mdata))
                 ret *= self.sql_update(rs, "ml.mailinglists", mdata)
                 self.ml_log(rs, const.MlLogCodes.list_changed, data['id'])
-            if 'ml_type' in changed:
-                # Check if privileges allow new state of the mailinglist.
-                if not self.is_relevant_admin(rs, mailinglist_id=data['id']):
-                    raise PrivilegeError("Not privileged to make this change.")
-                if not get_ml_type(data['ml_type']).allow_unsub:
-                    # Delete all unsubscriptions for mandatory list.
-                    query = ("DELETE FROM ml.subscription_states "
-                             "WHERE mailinglist_id = %s "
-                             "AND subscription_state = ANY(%s)")
-                    # noinspection PyTypeChecker
-                    params = (data['id'], self.subman.written_states -
-                              const.SubscriptionState.subscribing_states())
-                    self.query_exec(rs, query, params)
-                ret *= self._ml_type_transition(
-                    rs, data['id'], old_type=current.ml_type, new_type=data['ml_type'])
 
-            # only full moderators and admins can make subscription state
-            # related changes.
-            if is_admin or not is_restricted:
-                ret *= self.write_subscription_states(rs, (data['id'],))
+        # only full moderators and admins can make subscription state related changes.
+        if (is_admin or not is_restricted) and len(mdata) > 1:
+            ret *= self.write_subscription_states(rs, (data['id'],))
         return ret
 
     @access("ml")
@@ -613,6 +651,8 @@ class MlBackend(AbstractBackend):
             # The address is a readonly property, but we want to save it into the
             #  database for convenience.
             mdata["address"] = data.address
+            # The ml_type is not included in the to_database
+            mdata["ml_type"] = data.ml_type
             new_id = self.sql_insert(rs, "ml.mailinglists", mdata)
             self.ml_log(rs, const.MlLogCodes.list_created, new_id)
             if data.moderators:

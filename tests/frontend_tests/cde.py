@@ -13,7 +13,9 @@ from typing import Set, Tuple, cast
 import webtest
 
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, LineResolutions, RequestState, Role, now
+from cdedb.common import (
+    IGNORE_WARNINGS_NAME, CdEDBObject, LineResolutions, RequestState, Role, now,
+)
 from cdedb.common.i18n import (
     format_country_code, get_country_code_from_country, get_localized_country_codes,
 )
@@ -1157,26 +1159,65 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("farin")
     def test_lastschrift_create(self) -> None:
+        # check creation link from profile
         self.admin_view_profile('charly')
         self.traverse({'description': 'Neue Einzugsermächtigung …'})
         self.assertPresence("Keine aktive Einzugsermächtigung – Anlegen",
                             div='active-permit', exact=True)
         self.traverse({'description': 'Anlegen'})
+
+        # create new lastschrift
         self.assertTitle("Neue Einzugsermächtigung (Charly C. Clown)")
         self.traverse({'description': "Einzugsermächtigungen"},
                       {'description': "Neue Einzugsermächtigung"})
         f = self.response.forms['createlastschriftform']
         self.assertTitle("Neue Einzugsermächtigung")
+        # check default value
+        self.assertEqual(f["donation"].value, "20.00")
         f['persona_id'] = "DB-3-5"
         f['iban'] = "DE26370205000008068900"
+        f['donation'] = "25"
         f['notes'] = "grosze Siebte: Take on me"
         self.submit(f)
         self.assertTitle("Einzugsermächtigung Charly C. Clown")
-        self.assertPresence("20,00 €", div='donation', exact=True)
-        self.assertIn("revokeform", self.response.forms)
-        self.traverse({'description': 'Bearbeiten'})
-        f = self.response.forms['changelastschriftform']
-        self.assertEqual("grosze Siebte: Take on me", f['notes'].value)
+        self.assertPresence("25,00 €", div='donation', exact=True)
+        self.assertPresence("grosze Siebte: Take on me")
+        self.assertPresence("Bearbeiten")
+
+        # revoke lastschrift and create a new one
+        f = self.response.forms["revokeform"]
+        self.submit(f)
+        self.assertPresence("Keine aktive Einzugsermächtigung – Anlegen")
+        self.traverse("Anlegen")
+        self.assertTitle("Neue Einzugsermächtigung (Charly C. Clown)")
+        f = self.response.forms['createlastschriftform']
+        # take the current donation as default value
+        self.assertEqual(f["donation"].value, "25.00")
+        f["donation"] = "23.00"
+        f['iban'] = "DE26370205000008068900"
+        self.submit(f, check_notification=False)
+        # check the warning about the donation missmatch
+        self.assertValidationWarning("donation", "abweichende Spende von 25,00")
+        f = self.response.forms['createlastschriftform']
+        f[IGNORE_WARNINGS_NAME].checked = True
+        self.submit(f)
+
+    @as_users("berta")
+    def test_lastschrift_change_donation(self) -> None:
+        self.traverse(self.user['display_name'], "Bearbeiten")
+        f = self.response.forms['changedataform']
+        f['donation'] = "4200"
+        self.submit(f, check_notification=False)
+        self.assertValidationError('donation',
+            "Spende einer Lastschrift muss zwischen 2,00 € und 1.000,00 € sein.")
+        f = self.response.forms['changedataform']
+        f['donation'] = "3"
+        self.submit(f, check_notification=False)
+        self.assertValidationWarning('donation', "Du bist nicht der Eigentümer des")
+        f = self.response.forms['changedataform']
+        f[IGNORE_WARNINGS_NAME] = True
+        self.submit(f, check_notification=False)
+        self.assertNotification("Änderung wartet auf Bestätigung", 'info')
 
     @as_users("farin")
     def test_lastschrift_change(self) -> None:

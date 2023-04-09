@@ -25,7 +25,7 @@ from cdedb.common.fields import (
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
-from cdedb.common.validation import PERSONA_FULL_CREATION, filter_none
+from cdedb.common.validation.validate import PERSONA_FULL_CREATION, filter_none
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access,
@@ -33,7 +33,9 @@ from cdedb.frontend.common import (
     periodic,
 )
 from cdedb.models.ml import (
-    ADDITIONAL_TYPE_FIELDS, ML_TYPE_MAP, Mailinglist, MailinglistGroup, get_ml_type,
+    ADDITIONAL_TYPE_FIELDS, ML_TYPE_MAP, AssemblyAssociatedMailinglist,
+    EventAssociatedMeta as EventAssociatedMetaMailinglist, Mailinglist,
+    MailinglistGroup, get_ml_type,
 )
 
 
@@ -242,7 +244,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             })
 
     @access("ml", modi={"POST"})
-    @REQUESTdatadict(*Mailinglist.requestdict_fields())
+    @REQUESTdatadict(*Mailinglist.requestdict_fields(), *ADDITIONAL_TYPE_FIELDS.items())
     @REQUESTdata("ml_type", "moderators")
     def create_mailinglist(self, rs: RequestState, data: Dict[str, Any],
                            ml_type: const.MailinglistTypes,
@@ -251,13 +253,17 @@ class MlBaseFrontend(AbstractUserFrontend):
         data["id"] = -1
         data["moderators"] = moderators
         data["whitelist"] = []
-        data['ml_type'] = ml_type
-        data = check(rs, vtypes.Mailinglist, data, creation=True)
+        ml_class = get_ml_type(ml_type)
+        # silently discard superfluous fields
+        for field in ADDITIONAL_TYPE_FIELDS:
+            if field not in ml_class.get_additional_fields():
+                del data[field]
+        data = check(rs, vtypes.Mailinglist, data, creation=True, subtype=ml_class)
         if rs.has_validation_errors():
             return self.create_mailinglist_form(rs, ml_type=ml_type)
         assert data is not None
-        ml_type = data.pop('ml_type')
-        ml = get_ml_type(ml_type)(**data)
+
+        ml = ml_class(**data)
         if not self.coreproxy.verify_ids(rs, moderators, is_archived=False):
             rs.append_validation_error(
                 ("moderators", ValueError(n_(
@@ -389,7 +395,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                 rs, mailinglist_id, rs.user.persona_id, explicits_only=True)
 
         event = None
-        if ml.event_id:
+        if isinstance(ml, EventAssociatedMetaMailinglist) and ml.event_id:
             event = self.eventproxy.get_event(rs, ml.event_id)
             event['is_visible'] = (
                 "event_admin" in rs.user.roles
@@ -397,7 +403,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                 or event['is_visible'])
 
         assembly = None
-        if ml.assembly_id:
+        if isinstance(ml, AssemblyAssociatedMailinglist) and ml.assembly_id:
             all_assemblies = self.assemblyproxy.list_assemblies(rs)
             assembly = all_assemblies[ml.assembly_id]
             assembly['is_visible'] = self.assemblyproxy.may_assemble(
@@ -455,7 +461,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("ml", modi={"POST"})
     @mailinglist_guard()
-    @REQUESTdatadict(*Mailinglist.requestdict_fields())
+    @REQUESTdatadict(*Mailinglist.requestdict_fields(), *ADDITIONAL_TYPE_FIELDS.items())
     def change_mailinglist(self, rs: RequestState, mailinglist_id: int,
                            data: CdEDBObject) -> Response:
         """Modify simple attributes of mailinglists."""
@@ -470,12 +476,17 @@ class MlBaseFrontend(AbstractUserFrontend):
         else:
             allowed = RESTRICTED_MOD_ALLOWED_FIELDS
 
+        # silently discard superfluous fields
+        for field in ADDITIONAL_TYPE_FIELDS:
+            if field not in ml.get_additional_fields():
+                del data[field]
+
         # we discard every entry of not allowed fields silently
         current = ml.to_database()
         for key in set(data) - allowed:
             data[key] = current[key]
 
-        data = check(rs, vtypes.Mailinglist, data)
+        data = check(rs, vtypes.Mailinglist, data, subtype=get_ml_type(ml.ml_type))
         if rs.has_validation_errors():
             return self.change_mailinglist_form(rs, mailinglist_id)
         assert data is not None
@@ -512,22 +523,21 @@ class MlBaseFrontend(AbstractUserFrontend):
     @access("ml", modi={"POST"})
     @mailinglist_guard(allow_moderators=False)
     @REQUESTdatadict(*ADDITIONAL_TYPE_FIELDS.items())
-    @REQUESTdata("ml_type")
-    def change_ml_type(self, rs: RequestState, mailinglist_id: int,
-                       ml_type: const.MailinglistTypes, data: CdEDBObject) -> Response:
-        ml = rs.ambience['mailinglist']
-        data['id'] = mailinglist_id
-        data['ml_type'] = ml_type
-        data['domain'] = ml.domain
-        new_type = get_ml_type(data['ml_type'])
-        if data['domain'] not in new_type.available_domains:
-            data['domain'] = new_type.available_domains[0]
-        data = check(rs, vtypes.Mailinglist, data)
+    @REQUESTdata("ml_type", "domain")
+    def change_ml_type(
+        self, rs: RequestState, mailinglist_id: int, ml_type: const.MailinglistTypes,
+        domain: const.MailinglistDomain, data: CdEDBObject
+    ) -> Response:
+        update = {"id": mailinglist_id, "domain": domain}
+        new_type = get_ml_type(ml_type)
+        for field in new_type.get_additional_fields():
+            update[field] = data[field]
+        update = check(rs, vtypes.Mailinglist, update, subtype=new_type)
         if rs.has_validation_errors():
             return self.change_ml_type_form(rs, mailinglist_id)
-        assert data is not None
+        assert update is not None
 
-        code = self.mlproxy.set_mailinglist(rs, data)
+        code = self.mlproxy.change_ml_type(rs, mailinglist_id, ml_type, update)
         rs.notify_return_code(code)
         return self.redirect(rs, "ml/change_mailinglist")
 

@@ -4,14 +4,17 @@
 The `EventLowLevelBackend` class provides a collection of internal low-level helpers
 used by the `EventBaseBackend` and its subclasses.
 """
-
+import abc
 import collections
 import copy
+import dataclasses
 from pathlib import Path
 from typing import Any, Callable, Collection, Dict, Optional, Protocol, Set
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.fee_condition_parser.parsing as fcp_parsing
+import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_set_validation as affirm_set,
     affirm_validation as affirm, internal, singularize,
@@ -22,15 +25,24 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
-    COURSE_TRACK_FIELDS, EVENT_FIELD_SPEC, EVENT_PART_FIELDS, FEE_MODIFIER_FIELDS,
-    FIELD_DEFINITION_FIELDS, PART_GROUP_FIELDS, REGISTRATION_FIELDS,
+    COURSE_TRACK_FIELDS, EVENT_FIELD_SPEC, EVENT_PART_FIELDS, FIELD_DEFINITION_FIELDS,
+    PART_GROUP_FIELDS, REGISTRATION_FIELDS,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.sorting import mixed_existence_sorter
-from cdedb.common.validation import (
-    EVENT_FIELD_COMMON_FIELDS, parse_date, parse_datetime,
-)
+from cdedb.common.validation.validate import parse_date, parse_datetime
 from cdedb.database.query import DatabaseValue_s
+from cdedb.fee_condition_parser.evaluation import ReferencedNames, get_referenced_names
+
+
+@dataclasses.dataclass
+class EventFeesPerEntity:
+    """Simple container for data on event fee references.
+
+    Each member is a map of entities to a set of fees that reference that entity.
+    """
+    fields: Dict[int, Set[int]]
+    parts: Dict[int, Set[int]]
 
 
 class EventLowLevelBackend(AbstractBackend):
@@ -371,6 +383,50 @@ class EventLowLevelBackend(AbstractBackend):
             }
             self.sql_update(rs, table, new)
 
+    def _get_event_fee_references(self, rs: RequestState, event_id: int
+                                  ) -> Dict[int, ReferencedNames]:
+        """Retrieve a map of event fee id to collection of names referenced by it."""
+        return {
+            fd['id']: get_referenced_names(fcp_parsing.parse(fd['condition']))
+            for fd in self.sql_select(
+                rs, "event.event_fees", ("id", "condition",), (event_id,),
+                entity_key="event_id")
+        }
+
+    @access("event")
+    def get_event_fees_per_entity(self, rs: RequestState, event_id: int
+                                  ) -> EventFeesPerEntity:
+        """Retrieve maps of entites to all event fees, referencing that entity."""
+        field_names_to_id = {
+            e['field_name']: e['id'] for e in self.sql_select(
+                rs, "event.field_definitions", ("id", "field_name"), (event_id,),
+                entity_key="event_id")
+        }
+        part_names_to_id = {
+            e['shortname']: e['id'] for e in self.sql_select(
+                rs, "event.event_parts", ("id", "shortname"), (event_id,),
+                entity_key="event_id")
+        }
+
+        event_fee_references = self._get_event_fee_references(rs, event_id)
+        fields: Dict[int, Set[int]] = {
+            field_id: set() for field_id in field_names_to_id.values()}
+        parts: Dict[int, Set[int]] = {
+            part_id: set() for part_id in part_names_to_id.values()}
+        for fee_id, rn in event_fee_references.items():
+            for fn in rn.field_names:
+                fields[field_names_to_id[fn]].add(fee_id)
+            for pn in rn.part_names:
+                parts[part_names_to_id[pn]].add(fee_id)
+
+        return EventFeesPerEntity(
+            fields=fields, parts=parts
+        )
+
+    @abc.abstractmethod
+    def set_event_fees(self, rs: RequestState, event_id: int, fees: CdEDBOptionalMap
+                       ) -> DefaultReturnCode: ...
+
     @internal
     def _delete_event_part_blockers(self, rs: RequestState,
                                     part_id: int) -> DeletionBlockers:
@@ -378,11 +434,10 @@ class EventLowLevelBackend(AbstractBackend):
 
         Possible blockers:
 
-        * fee_modifiers: A modification to the fee for this part depending on
-                         registration fields.
-        * course_tracks: A course track in this part.
+        * event_fees:        An event fee referencing this part.
+        * course_tracks:     A course track in this part.
         * registration_part: A registration part for this part.
-        * part_group_parts: A link to a part group.
+        * part_group_parts:  A link to a part group.
 
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
@@ -390,11 +445,13 @@ class EventLowLevelBackend(AbstractBackend):
         part_id = affirm(vtypes.ID, part_id)
         blockers = {}
 
-        fee_modifiers = self.sql_select(
-            rs, "event.fee_modifiers", ("id",), (part_id,),
-            entity_key="part_id")
-        if fee_modifiers:
-            blockers["fee_modifiers"] = [e["id"] for e in fee_modifiers]
+        part = self.sql_select_one(rs, "event.event_parts",
+                                   ("event_id", "title"), part_id)
+        assert part is not None
+
+        event_fees_per_part = self.get_event_fees_per_entity(rs, part['event_id']).parts
+        if fee_ids := event_fees_per_part[part_id]:
+            blockers["event_fees"] = list(fee_ids)
 
         course_tracks = self.sql_select(
             rs, "event.course_tracks", ("id",), (part_id,),
@@ -441,13 +498,14 @@ class EventLowLevelBackend(AbstractBackend):
                                  "block": blockers.keys() - cascade,
                              })
 
+        part = self.sql_select_one(rs, "event.event_parts",
+                                   ("event_id", "title"), part_id)
+        assert part is not None
+
         ret = 1
         # Implicit atomized context.
         self.affirm_atomized_context(rs)
         if cascade:
-            if "fee_modifiers" in cascade:
-                ret *= self.sql_delete(rs, "event.fee_modifiers",
-                                       blockers["fee_modifiers"])
             if "course_tracks" in cascade:
                 track_cascade = ("course_segments", "registration_tracks",
                                  "course_choices", "track_group_tracks")
@@ -459,12 +517,14 @@ class EventLowLevelBackend(AbstractBackend):
             if "part_group_parts" in cascade:
                 ret *= self.sql_delete(rs, "event.part_group_parts",
                                        blockers["part_group_parts"])
+            if "event_fees" in cascade:
+                deletor: CdEDBOptionalMap = {
+                    anid: None for anid in blockers["event_fees"]
+                }
+                ret *= self.set_event_fees(rs, part['event_id'], deletor)
             blockers = self._delete_event_part_blockers(rs, part_id)
 
         if not blockers:
-            part = self.sql_select_one(rs, "event.event_parts",
-                                       ("event_id", "title"), part_id)
-            assert part is not None
             ret *= self.sql_delete_one(rs, "event.event_parts", part_id)
             self.event_log(rs, const.EventLogCodes.part_deleted,
                            event_id=part["event_id"],
@@ -510,41 +570,72 @@ class EventLowLevelBackend(AbstractBackend):
         for field in waitlist_field_data.values():
             self._validate_special_event_field(rs, event_id, "waitlist", field)
 
+        self.sql_defer_constraints(rs, "event.event_parts_event_id_shortname_key")
+
         for x in mixed_existence_sorter(new_parts):
             new_part = copy.deepcopy(parts[x])
             assert new_part is not None
             new_part['event_id'] = event_id
             tracks = new_part.pop('tracks', {})
-            fee_modifiers = new_part.pop('fee_modifiers', {})
             new_id = self.sql_insert(rs, "event.event_parts", new_part)
             ret *= new_id
             self.event_log(rs, const.EventLogCodes.part_created, event_id,
                            change_note=new_part['title'])
             ret *= self._set_tracks(rs, event_id, new_id, tracks)
-            ret *= self._set_event_fee_modifiers(rs, event_id, new_id, fee_modifiers)
 
         if updated_parts:
             # Retrieve current data, so we can check if anything actually changed.
             current_part_data = {e['id']: e for e in self.sql_select(
                 rs, "event.event_parts", EVENT_PART_FIELDS, updated_parts)}
+
             for x in mixed_existence_sorter(updated_parts):
                 updated = copy.deepcopy(parts[x])
                 assert updated is not None
-                updated['id'] = x
                 tracks = updated.pop('tracks', {})
-                fee_modifiers = updated.pop('fee_modifiers', {})
-                if any(updated[k] != current_part_data[x][k] for k in updated):
+                updated = {
+                    k: v for k, v in updated.items() if v != current_part_data[x][k]
+                }
+                if updated:
+                    updated['id'] = x
                     ret *= self.sql_update(rs, "event.event_parts", updated)
                     self.event_log(
                         rs, const.EventLogCodes.part_changed, event_id,
                         change_note=updated.get('title', current_part_data[x]['title']))
                 ret *= self._set_tracks(rs, event_id, x, tracks)
-                ret *= self._set_event_fee_modifiers(rs, event_id, x, fee_modifiers)
+
+            # Construct a dict of part shortname changes.
+            new_part_data = {e['id']: e for e in self.sql_select(
+                rs, "event.event_parts", EVENT_PART_FIELDS, updated_parts)}
+            changed_shortnames = {
+                old_shortname: new_shortname
+                for part_id, part in new_part_data.items()
+                if (old_shortname := current_part_data[part_id]['shortname'])
+                   != (new_shortname := part['shortname'])
+
+            }
+            if changed_shortnames:
+                # Substitute changed shortnames in existing fee conditions.
+                q = """SELECT id, condition FROM event.event_fees WHERE event_id = %s"""
+                fee_conditions: Dict[int, str] = {
+                    e['id']: e['condition'] for e in self.query_all(rs, q, (event_id,))}
+
+                # Update any fee conditions that changed
+                #  (i.e. those referencing a part which got a new shortname).
+                for fee_id, condition in fee_conditions.items():
+                    parse_result = fcp_parsing.parse(condition)
+                    new_condition = fcp_roundtrip.serialize(
+                        parse_result, part_substitutions=changed_shortnames)
+                    if new_condition != condition:
+                        log_msg = (f"Replacing fee ({fee_id}): '{condition}' with"
+                                   f" '{new_condition}' due to part shortname changes.")
+                        self.logger.debug(log_msg)
+                        self.sql_update(rs, "event.event_fees",
+                                        {'id': fee_id, 'condition': new_condition})
 
         if deleted_parts:
             # Recursively delete fee modifiers and tracks, but not registrations, since
             # this is only allowed if no registrations exist anyway.
-            cascade = ("fee_modifiers", "course_tracks", "part_group_parts")
+            cascade = ("course_tracks", "part_group_parts", "event_fees")
             for x in mixed_existence_sorter(deleted_parts):
                 ret *= self._delete_event_part(rs, part_id=x, cascade=cascade)
 
@@ -910,8 +1001,7 @@ class EventLowLevelBackend(AbstractBackend):
 
         Possible blockers:
 
-        * fee_modifiers:      A modification to the fee for a part depending on
-                              this event field.
+        * event_fees:         An event fee referencing this field.
         * questionnaire_rows: A questionnaire row that uses this field.
         * lodge_fields:       An event that uses this field for lodging wishes.
         * camping_mat_fields: An event that uses this field for camping mat
@@ -927,11 +1017,14 @@ class EventLowLevelBackend(AbstractBackend):
         field_id = affirm(vtypes.ID, field_id)
         blockers = {}
 
-        fee_modifiers = self.sql_select(
-            rs, "event.fee_modifiers", ("id",), (field_id,),
-            entity_key="field_id")
-        if fee_modifiers:
-            blockers["fee_modifiers"] = [e["id"] for e in fee_modifiers]
+        current = self.sql_select_one(
+            rs, "event.field_definitions", FIELD_DEFINITION_FIELDS, field_id)
+        assert current is not None
+
+        event_fees_per_field = self.get_event_fees_per_entity(
+            rs, current['event_id']).fields
+        if fee_ids := event_fees_per_field[field_id]:
+            blockers["event_fees"] = list(fee_ids)
 
         questionnaire_rows = self.sql_select(
             rs, "event.questionnaire_rows", ("id",), (field_id,),
@@ -995,51 +1088,53 @@ class EventLowLevelBackend(AbstractBackend):
                                  "block": blockers.keys() - cascade,
                              })
 
+        current = self.sql_select_one(
+            rs, "event.field_definitions", FIELD_DEFINITION_FIELDS, field_id)
+        assert current is not None
+
         ret = 1
         # implicit atomized context.
         self.affirm_atomized_context(rs)
         if cascade:
-            if "fee_modifiers" in cascade:
-                ret *= self.sql_delete(rs, "event.fee_modifiers",
-                                       blockers["fee_modifiers"])
             if "questionnaire_rows" in cascade:
                 ret *= self.sql_delete(rs, "event.questionnaire_rows",
-                                       blockers["fee_modifiers"])
+                                       blockers["questionnaire_rows"])
             if "lodge_fields" in cascade:
                 for anid in blockers["lodge_fields"]:
                     deletor = {
                         'id': anid,
                         'lodge_field': None,
                     }
-                    ret += self.sql_update(rs, "event.events", deletor)
+                    ret *= self.sql_update(rs, "event.events", deletor)
             if "camping_mat_fields" in cascade:
                 for anid in blockers["camping_mat_fields"]:
                     deletor = {
                         'id': anid,
                         'camping_mat_field': None,
                     }
-                    ret += self.sql_update(rs, "event.events", deletor)
+                    ret *= self.sql_update(rs, "event.events", deletor)
             if "course_room_fields" in cascade:
                 for anid in blockers["course_room_fields"]:
                     deletor = {
                         'id': anid,
                         'course_room_field': None,
                     }
-                    ret += self.sql_update(rs, "event.events", deletor)
+                    ret *= self.sql_update(rs, "event.events", deletor)
             if "waitlist_fields" in cascade:
                 for anid in blockers["waitlist_fields"]:
                     deletor = {
                         'id': anid,
                         'waitlist_field': None,
                     }
-                    ret += self.sql_update(rs, "event.event_parts", deletor)
+                    ret *= self.sql_update(rs, "event.event_parts", deletor)
+            if "event_fees" in cascade:
+                setter: CdEDBOptionalMap = {
+                    anid: None for anid in blockers["event_fees"]
+                }
+                ret *= self.set_event_fees(rs, current['event_id'], setter)
             blockers = self._delete_event_field_blockers(rs, field_id)
 
         if not blockers:
-            current = self.sql_select_one(
-                rs, "event.field_definitions", FIELD_DEFINITION_FIELDS,
-                field_id)
-            assert current is not None
             ret *= self.sql_delete_one(rs, "event.field_definitions", field_id)
             self._delete_field_values(rs, current)
             self.event_log(
@@ -1074,6 +1169,8 @@ class EventLowLevelBackend(AbstractBackend):
         if not updated_fields | deleted_fields <= existing_fields:
             raise ValueError(n_("Non-existing fields specified."))
 
+        event_fees_per_field = self.get_event_fees_per_entity(rs, event_id).fields
+
         # Do deletion first to avoid error due to duplicate field names.
         for x in mixed_existence_sorter(deleted_fields):
             # Only allow deletion of unused fields.
@@ -1088,10 +1185,6 @@ class EventLowLevelBackend(AbstractBackend):
                            change_note=new_field['field_name'])
 
         if updated_fields:
-            fee_modifier_fields = {unwrap(e) for e in self.sql_select(
-                rs, "event.fee_modifiers", ("field_id",),
-                updated_fields | deleted_fields,
-                entity_key="field_id")}
             current_field_data = {e['id']: e for e in self.sql_select(
                 rs, "event.field_definitions", FIELD_DEFINITION_FIELDS, updated_fields)}
             for x in mixed_existence_sorter(updated_fields):
@@ -1101,91 +1194,21 @@ class EventLowLevelBackend(AbstractBackend):
                 updated_field['event_id'] = event_id
                 current = current_field_data[x]
                 if any(updated_field[k] != current[k] for k in updated_field):
-                    if x in fee_modifier_fields:
-                        # Only optional fields of event fields associated with
-                        #  fee modifiers may be changed.
+                    if event_fees_per_field[x]:
+                        # Fields used in event fees may not have their kind
+                        #  or association changed.
                         if not all(updated_field[k] == current[k]
-                                   for k in EVENT_FIELD_COMMON_FIELDS
+                                   for k in ('kind', 'association')
                                    if k in updated_field):
-                            raise ValueError(n_("Cannot change field that is"
-                                                " associated with a fee modifier."))
+                            raise ValueError(n_(
+                                "Cannot change association or kind of a field"
+                                " referenced by an event fee."))
                     kind = current_field_data[x]['kind']
                     if updated_field.get('kind', kind) != kind:
                         self._cast_field_values(rs, current, updated_field['kind'])
                     ret *= self.sql_update(rs, "event.field_definitions", updated_field)
                     self.event_log(rs, const.EventLogCodes.field_updated, event_id,
                                    change_note=current_field_data[x]['field_name'])
-
-        return ret
-
-    @internal
-    def _set_event_fee_modifiers(self, rs: RequestState, event_id: int, part_id: int,
-                                 modifiers: CdEDBOptionalMap) -> DefaultReturnCode:
-        """Helper for creating, updating and deleting fee modifiers for one event part.
-
-        Used by `_set_event_parts`.
-
-        :note: This has to be called inside an atomized context.
-        """
-        ret = 1
-        if not modifiers:
-            return ret
-        self.affirm_atomized_context(rs)
-        has_registrations = self.has_registrations(rs, event_id)
-
-        existing_modifiers = {unwrap(e) for e in self.sql_select(
-            rs, "event.fee_modifiers", ("id",), (part_id,), entity_key="part_id")}
-        new_modifiers = {x for x in modifiers if x < 0}
-        updated_modifiers = {x for x in modifiers if x > 0 and modifiers[x] is not None}
-        deleted_modifiers = {x for x in modifiers if x > 0 and modifiers[x] is None}
-        if not updated_modifiers | deleted_modifiers <= existing_modifiers:
-            raise ValueError(n_("Non-existing fee modifier specified."))
-        if has_registrations and (new_modifiers or deleted_modifiers):
-            raise ValueError(n_("Cannot alter fee modifier once registrations exist."))
-
-        # Do some additional validation of the linked fields.
-        field_ids = {fm['field_id'] for fm in modifiers.values() if fm}
-        field_data = self._get_event_fields(rs, event_id, field_ids)
-        if len(field_ids) != len(field_data):
-            raise ValueError(n_("Unknown field."))
-        for field in field_data.values():
-            self._validate_special_event_field(rs, event_id, "fee_modifier", field)
-
-        # the order of deleting, updating and creating matters: The field of a deleted
-        # modifier may be used in another existing or new modifier at the same request.
-        if updated_modifiers or deleted_modifiers:
-            current_modifier_data = {e['id']: e for e in self.sql_select(
-                rs, "event.fee_modifiers", FEE_MODIFIER_FIELDS,
-                updated_modifiers | deleted_modifiers)}
-
-            if deleted_modifiers:
-                ret *= self.sql_delete(rs, "event.fee_modifiers", deleted_modifiers)
-                for x in mixed_existence_sorter(deleted_modifiers):
-                    current = current_modifier_data[x]
-                    self.event_log(rs, const.EventLogCodes.fee_modifier_deleted,
-                                   event_id, change_note=current['modifier_name'])
-
-            for x in mixed_existence_sorter(updated_modifiers):
-                updated_modifier = copy.deepcopy(modifiers[x])
-                assert updated_modifier is not None
-                updated_modifier['id'] = x
-                updated_modifier['part_id'] = part_id
-                current = current_modifier_data[x]
-                if any(updated_modifier[k] != current[k] for k in updated_modifier):
-                    if has_registrations:
-                        raise ValueError(n_(
-                            "Cannot alter fee modifier once registrations exist."))
-                    ret *= self.sql_update(rs, "event.fee_modifiers", updated_modifier)
-                    self.event_log(rs, const.EventLogCodes.fee_modifier_changed,
-                                   event_id, change_note=current['modifier_name'])
-
-        for x in mixed_existence_sorter(new_modifiers):
-            new_modifier = copy.deepcopy(modifiers[x])
-            assert new_modifier is not None
-            new_modifier['part_id'] = part_id
-            ret *= self.sql_insert(rs, "event.fee_modifiers", new_modifier)
-            self.event_log(rs, const.EventLogCodes.fee_modifier_created, event_id,
-                           change_note=new_modifier['modifier_name'])
 
         return ret
 
@@ -1197,7 +1220,7 @@ class EventLowLevelBackend(AbstractBackend):
         This will raise an error if the field is unfit.
 
         Valid values for `field_name` are "lodge_field", "camping_mat_field",
-        "course_room_field", "waitlist" and "fee_modifier".
+        "course_room_field", "waitlist".
         """
         self.affirm_atomized_context(rs)
         legal_field_kinds, legal_field_associations = EVENT_FIELD_SPEC[field_name]

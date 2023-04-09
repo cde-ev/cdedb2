@@ -2,7 +2,10 @@
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/event/generic.tmpl" as generic_event with context %}
-{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+    {{ util.cdedb_script('cdedb_register.js') }}
+{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
     {% trans title=ambience['event']['title'] %}
@@ -41,10 +44,42 @@
         {{ util.h(n_("Additional Information"), underline=true) }}
         {{ generic_event.additional_registration_choices(age, reg_questionnaire) }}
 
+        <div class="panel panel-primary">
+            <div class="panel-body">
+                {{ util.form_input_static(label=gettext("Fee"), anid="fee-preview",
+                                          value=gettext("Activate JavaScript for automatic fee preview.")) }}
+            </div>
+        </div>
+
+        {% if not persona["is_member"] %}
+            <div class="heading-underline text-info" style="font-weight: bold;">
+                <p id="nonmember-surcharge">
+                {% trans %}
+                    Because you are not a CdE-Member, you might have to pay an additional fee.
+                {% endtrans %}
+                </p>
+                {% if persona["is_cde_realm"] %}
+                    <p>
+                    {% trans semester_fee=semester_fee|money(lang=lang) %}
+                        You can instead just pay your regular membership fee of {{ semester_fee }} per semester and you won't have to pay the additional fee.
+                        If you choose to do so, please do so with two separate payments.
+                    {% endtrans %}
+                    </p>
+                {% endif %}
+            </div>
+        {% endif %}
+
         {{ util.form_input_submit(label=gettext("Save"), readonly=readonly,
                                   cancellink=cdedblink("event/registration_status")) }}
     </form>
     <script nonce="{{ csp_nonce }}">
-        $('#amendregistrationform').cdedbProtectChanges();
+        feePreviewConstants = {
+            'endpoint': '{{ cdedblink('event/precompute_fee') }}',
+            'persona_id': {{ user.persona_id }},
+            'is_member': {{ persona['is_member']|tojson }},
+            'is_orga': {{ (ambience['event']['id'] in user.orga)|tojson }},
+            'part_ids': {{ payment_parts|tojson }},
+        }
+        $('#amendregistrationform').cdedbProtectChanges().cdedbFeePreview(feePreviewConstants);
     </script>
 {% endblock %}

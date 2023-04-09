@@ -38,7 +38,7 @@ from cdedb.common.i18n import get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryScope
 from cdedb.common.sorting import EntitySorter, KeyFunction, Sortkey, xsorted
-from cdedb.common.validation import PERSONA_FULL_CREATION, filter_none
+from cdedb.common.validation.validate import PERSONA_FULL_CREATION, filter_none
 from cdedb.filter import enum_entries_filter, keydictsort_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access, event_guard, periodic,
@@ -166,6 +166,14 @@ class EventBaseFrontend(AbstractUserFrontend):
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
+
+    def is_orga(self, rs: RequestState, event_id: int) -> bool:
+        """Whether the user has orga access to the given event.
+
+        Note that this includes admins who are not orgas.
+        If necessary, this distinction should get a keyword argument.
+        """
+        return event_id in rs.user.orga or self.is_admin(rs)
 
     def is_locked(self, event: CdEDBObject) -> bool:
         """Shorthand to determine locking state of an event."""

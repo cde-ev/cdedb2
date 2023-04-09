@@ -1577,7 +1577,7 @@ class AssemblyBackend(AbstractBackend):
             }
             path = self.get_ballot_file_path(ballot_id)
             data = json_serialize(result)
-            with open(path, 'w') as f:
+            with open(path, 'w', encoding='UTF-8') as f:
                 f.write(data)
         ret = data.encode()
         return ret

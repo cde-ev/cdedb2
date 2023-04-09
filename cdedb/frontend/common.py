@@ -60,8 +60,8 @@ import werkzeug.wrappers
 import werkzeug.wsgi
 
 import cdedb.common.query as query_mod
-import cdedb.common.validation as validate
 import cdedb.common.validation.types as vtypes
+import cdedb.common.validation.validate as validate
 import cdedb.database.constants as const
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
@@ -908,8 +908,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             s.send_message(msg)
             s.quit()
         else:
-            with tempfile.NamedTemporaryFile(mode='w', prefix="cdedb-mail-",
-                                             suffix=".txt", delete=False) as f:
+            with tempfile.NamedTemporaryFile(
+                    mode='w', prefix="cdedb-mail-", suffix=".txt", delete=False,
+                    encoding='UTF-8') as f:
                 f.write(str(msg))
                 self.logger.debug(f"Stored mail to {f.name}.")
                 ret = f.name
@@ -1498,6 +1499,7 @@ AmbienceDict = typing.TypedDict(
         'lodgement': CdEDBObject,
         'part_group': CdEDBObject,
         'track_group': CdEDBObject,
+        'fee': CdEDBObject,
         'attachment': CdEDBObject,
         'assembly': CdEDBObject,
         'ballot': CdEDBObject,
@@ -1577,6 +1579,10 @@ def reconnoitre_ambience(obj: AbstractFrontend,
               'track_group_id', 'track_group',
               ((lambda a: do_assert(a['track_group']['event_id']
                                     == a['event']['id'])),)),
+        # Dirty hack, that relies on the event being retrieved into ambience first.
+        Scout(lambda anid: ambience['event']['fees'][anid],  # type: ignore[has-type]
+              'fee_id', 'fee',
+              ((lambda a: do_assert(a['fee']['event_id'] == a['event']['id'])),)),
         Scout(lambda anid: obj.assemblyproxy.get_attachment(rs, anid),
               'attachment_id', 'attachment',
               ((lambda a: do_assert(a['attachment']['assembly_id']
@@ -1678,9 +1684,14 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
                             rs, "error", n_("You must login."))])
                     ret.set_cookie("displaynote", notifications)
                     return ret
-                raise werkzeug.exceptions.Forbidden(
-                    rs.gettext("Access denied to {realm}/{endpoint}.").format(
-                        realm=obj.__class__.__name__, endpoint=fun.__name__))
+                msg = n_("Access denied to {realm}/{endpoint}.")
+                params = {
+                    'realm': obj.__class__.__name__,
+                    'endpoint': fun.__name__,
+                }
+                log_msg = msg.format(**params) + f" Roles: {rs.user.roles}."
+                _LOGGER.error(log_msg)
+                raise werkzeug.exceptions.Forbidden(rs.gettext(msg).format(**params))
 
         new_fun.access_list = access_list  # type: ignore[attr-defined]
         new_fun.modi = modi  # type: ignore[attr-defined]
@@ -1960,12 +1971,13 @@ def REQUESTdatadict(*proto_spec: Union[str, Tuple[str, str]]
             for name, argtype in spec:
                 if argtype == "str":
                     data[name] = rs.request.values.get(name, "")
+                    rs.values[name] = data[name]
                 elif argtype == "[str]":
                     data[name] = tuple(rs.request.values.getlist(name))
+                    rs.values.setlist(name, data[name])
                 else:
                     raise ValueError(n_("Invalid argtype {t} found.").format(
                         t=repr(argtype)))
-                rs.values[name] = data[name]
             return fun(obj, rs, *args, data=data, **kwargs)
 
         return cast(F, new_fun)
@@ -2013,8 +2025,9 @@ def request_extractor(
     return fun(None, rs)
 
 
-def request_dict_extractor(rs: RequestState,
-                           args: Collection[str]) -> CdEDBObject:
+def request_dict_extractor(
+        rs: RequestState, args: Collection[Union[str, Tuple[str, str]]]
+) -> CdEDBObject:
     """Utility to apply REQUESTdatadict later than usual.
 
     Like :py:meth:`request_extractor`.
@@ -2153,23 +2166,6 @@ def assembly_guard(fun: F) -> F:
         return fun(obj, rs, *args, **kwargs)
 
     return cast(F, new_fun)
-
-
-def check_dataclass(rs: RequestState, type_: Type[T], value: Any,
-                    name: str = None, **kwargs: Any) -> Optional[T]:
-    """Wrapper to call asserts in :py:mod:`cdedb.validation`.
-
-    This is similar to :func:`~cdedb.frontend.common.check_validation`
-    but used for dataclass objects.
-    """
-    if name is not None:
-        ret, errs = validate.validate_check_dataclass(
-            type_, value, ignore_warnings=rs.ignore_warnings, argname=name, **kwargs)
-    else:
-        ret, errs = validate.validate_check_dataclass(
-            type_, value, ignore_warnings=rs.ignore_warnings, **kwargs)
-    rs.extend_validation_errors(errs)
-    return ret
 
 
 def check_validation(rs: RequestState, type_: Type[T], value: Any,

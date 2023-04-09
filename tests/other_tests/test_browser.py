@@ -197,7 +197,7 @@ class TestBrowser(BrowserTest):
         page.wait_for_url("http://localhost:5000/cde/")
         page.get_by_role("button", name="Benutzer-Administration").click()
         page.wait_for_url("http://localhost:5000/cde/")
-        page.get_by_role("link", name="Nutzer verwalten").click()
+        page.get_by_role("link", name="Nutzer verwalten", exact=True).click()
         page.wait_for_url("http://localhost:5000/cde/search/user")
 
         page.get_by_placeholder("– Filter hinzufügen –").click()

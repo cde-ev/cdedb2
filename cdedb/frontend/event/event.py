@@ -9,7 +9,6 @@ This also includes all functionality directly avalable on the `show_event` page.
 
 import copy
 import datetime
-import decimal
 from collections import OrderedDict
 from typing import Collection, Optional, Set
 
@@ -25,8 +24,8 @@ from cdedb.common.fields import EVENT_FIELD_SPEC
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.sorting import EntitySorter, xsorted
-from cdedb.common.validation import (
-    EVENT_EXPOSED_FIELDS, EVENT_PART_COMMON_FIELDS,
+from cdedb.common.validation.validate import (
+    EVENT_EXPOSED_FIELDS, EVENT_FEE_COMMON_FIELDS, EVENT_PART_COMMON_FIELDS,
     EVENT_PART_CREATION_MANDATORY_FIELDS, EVENT_PART_GROUP_COMMON_FIELDS,
     EVENT_TRACK_GROUP_COMMON_FIELDS,
 )
@@ -280,6 +279,10 @@ class EventEventMixin(EventBaseFrontend):
         for course in courses.values():
             for track_id in course['segments']:
                 blocked_parts.add(rs.ambience['event']['tracks'][track_id]['part_id'])
+        part_fees = self.eventproxy.get_event_fees_per_entity(rs, event_id).parts
+        for part_id, fees in part_fees.items():
+            if fees:
+                blocked_parts.add(part_id)
         return blocked_parts
 
     def _deletion_blocked_tracks(self, rs: RequestState, event_id: int) -> Set[int]:
@@ -306,17 +309,7 @@ class EventEventMixin(EventBaseFrontend):
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
         referenced_parts = self._deletion_blocked_parts(rs, event_id)
 
-        fee_modifiers_by_part = {
-            part_id: {
-                e['id']: e
-                for e in rs.ambience['event']['fee_modifiers'].values()
-                if e['part_id'] == part_id
-            }
-            for part_id in rs.ambience['event']['parts']
-        }
-
         return self.render(rs, "event/part_summary", {
-            'fee_modifiers_by_part': fee_modifiers_by_part,
             'referenced_parts': referenced_parts,
             'has_registrations': has_registrations})
 
@@ -332,9 +325,11 @@ class EventEventMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.part_summary(rs, event_id)
         if self.eventproxy.has_registrations(rs, event_id):
-            raise ValueError(n_("Registrations exist, no deletion."))
+            rs.notify("error", n_("Registrations exist, no deletion."))
+            return self.part_summary(rs, event_id)
         if part_id in self._deletion_blocked_parts(rs, event_id):
-            raise ValueError(n_("This part can not be deleted."))
+            rs.notify("error", n_("This part can not be deleted."))
+            return self.part_summary(rs, event_id)
 
         event = {
             'id': event_id,
@@ -364,8 +359,10 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard()
+    @REQUESTdata("fee")
     @REQUESTdatadict(*EVENT_PART_CREATION_MANDATORY_FIELDS)
-    def add_part(self, rs: RequestState, event_id: int, data: CdEDBObject) -> Response:
+    def add_part(self, rs: RequestState, event_id: int, data: CdEDBObject,
+                 fee: vtypes.NonNegativeDecimal) -> Response:
         if self.eventproxy.has_registrations(rs, event_id):
             raise ValueError(n_("Registrations exist, no part creation possible."))
 
@@ -387,6 +384,14 @@ class EventEventMixin(EventBaseFrontend):
 
         event = {'id': event_id, 'parts': {-1: data}}
         code = self.eventproxy.set_event(rs, event)
+        if code:
+            new_fee = {
+                'title': data['title'],
+                'notes': "Automatisch erstellt.",
+                'amount': fee,
+                'condition': f"part.{data['shortname']}",
+            }
+            self.eventproxy.set_event_fees(rs, event_id, {-1: new_fee})
         rs.notify_return_code(code)
 
         return self.redirect(rs, "event/part_summary")
@@ -397,9 +402,6 @@ class EventEventMixin(EventBaseFrontend):
                          ) -> Response:
         part = rs.ambience['event']['parts'][part_id]
 
-        sorted_fee_modifier_ids = [
-            e["id"] for e in xsorted(part["fee_modifiers"].values(),
-                                     key=EntitySorter.fee_modifier)]
         sorted_track_ids = [
             e["id"] for e in xsorted(part["tracks"].values(),
                                      key=EntitySorter.course_track)]
@@ -421,9 +423,6 @@ class EventEventMixin(EventBaseFrontend):
                         readonly_synced_tracks.add(track_id)
                     else:
                         sync_groups.add(tg_id)
-        for m_id, m in rs.ambience['event']['fee_modifiers'].items():
-            for k in ('modifier_name', 'amount', 'field_id'):
-                current[drow_name(k, entity_id=m_id, prefix="fee_modifier")] = m[k]
         merge_dicts(rs.values, current)
 
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
@@ -431,11 +430,6 @@ class EventEventMixin(EventBaseFrontend):
 
         sorted_fields = xsorted(rs.ambience['event']['fields'].values(),
                                 key=EntitySorter.event_field)
-        legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['fee_modifier']
-        fee_modifier_fields = [
-            (field['id'], field['field_name']) for field in sorted_fields
-            if field['association'] in legal_assocs and field['kind'] in legal_datatypes
-        ]
         legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['waitlist']
         waitlist_fields = [
             (field['id'], field['field_name']) for field in sorted_fields
@@ -444,8 +438,6 @@ class EventEventMixin(EventBaseFrontend):
         return self.render(rs, "event/change_part", {
             'part_id': part_id,
             'sorted_track_ids': sorted_track_ids,
-            'sorted_fee_modifier_ids': sorted_fee_modifier_ids,
-            'fee_modifier_fields': fee_modifier_fields,
             'waitlist_fields': waitlist_fields,
             'referenced_tracks': referenced_tracks,
             'has_registrations': has_registrations,
@@ -462,7 +454,6 @@ class EventEventMixin(EventBaseFrontend):
         # this will be added at the end after processing the dynamic input and will only
         # yield false validation errors
         del data['tracks']
-        del data['fee_modifiers']
         data = check(rs, vtypes.EventPart, data)
         if rs.has_validation_errors():
             return self.change_part_form(rs, event_id, part_id)
@@ -505,73 +496,7 @@ class EventEventMixin(EventBaseFrontend):
         if new_tracks and has_registrations:
             raise ValueError(n_("Registrations exist, no track creation possible."))
 
-        #
-        # process the dynamic fee modifier input
-        #
-        fee_modifier_existing = [
-            mod['id'] for mod in rs.ambience['event']['fee_modifiers'].values()
-            if mod['part_id'] == part_id
-        ]
-        fee_modifier_spec = {
-            'modifier_name': vtypes.RestrictiveIdentifier,
-            'amount': decimal.Decimal,
-            'field_id': vtypes.ID,
-        }
-        fee_modifier_prefix = "fee_modifier"
-        # do not change fee modifiers once registrations exist
-        if has_registrations:
-            fee_modifier_data = dict()
-        else:
-            fee_modifier_data = process_dynamic_input(
-                rs, vtypes.EventFeeModifier, fee_modifier_existing, fee_modifier_spec,
-                prefix=fee_modifier_prefix)
-        if rs.has_validation_errors():
-            return self.change_part_form(rs, event_id, part_id)
-
-        # Check if each linked field exists and is inside the spec
-        legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['fee_modifier']
-        missing_msg = n_("Fee Modifier linked to non-existing field.")
-        spec_msg = n_("Fee Modifier linked to non-fitting field.")
-        for anid, modifier in fee_modifier_data.items():
-            if modifier is None:
-                continue
-            field = rs.ambience["event"]["fields"].get(modifier["field_id"])
-            if field is None:
-                rs.append_validation_error(
-                    (drow_name("field_id", anid, prefix=fee_modifier_prefix),
-                     ValueError(missing_msg)))
-            elif (field["association"] not in legal_assocs
-                  or field["kind"] not in legal_datatypes):
-                rs.append_validation_error(
-                    (drow_name("field_id", anid, prefix=fee_modifier_prefix),
-                     ValueError(spec_msg)))
-
-        # Check if each linked field and fee modifier name is unique.
-        used_fields: Set[int] = set()
-        used_names: Set[str] = set()
-        field_msg = n_("Must not have multiple fee modifiers linked to the same"
-                       " field in one event part.")
-        name_msg = n_("Must not have multiple fee modifiers with the same name "
-                      "in one event part.")
-        for anid, modifier in fee_modifier_data.items():
-            if modifier is None:
-                continue
-            if modifier['field_id'] in used_fields:
-                rs.append_validation_error(
-                    (drow_name("field_id", anid, prefix=fee_modifier_prefix),
-                     ValueError(field_msg)))
-            if modifier['modifier_name'] in used_names:
-                rs.append_validation_error(
-                    (drow_name("modifier_name", anid, prefix=fee_modifier_prefix),
-                     ValueError(name_msg)))
-            used_fields.add(modifier['field_id'])
-            used_names.add(modifier['modifier_name'])
-
-        if rs.has_validation_errors():
-            return self.change_part_form(rs, event_id, part_id)
-
         data['tracks'] = track_data
-        data['fee_modifiers'] = fee_modifier_data
         part_data = {part_id: data}
 
         # For every sync track group take the first track by id and propagate it's
@@ -603,6 +528,51 @@ class EventEventMixin(EventBaseFrontend):
         rs.notify_return_code(code)
 
         return self.redirect(rs, "event/part_summary")
+
+    @access("event")
+    @event_guard()
+    def fee_summary(self, rs: RequestState, event_id: int) -> Response:
+        """Show a summary of all event fees."""
+        return self.render(rs, "event/fee/fee_summary")
+
+    @access("event")
+    @event_guard()
+    def configure_fee_form(self, rs: RequestState, event_id: int, fee_id: int = None
+                           ) -> Response:
+        """Render form to change or create one event fee."""
+        if fee_id:
+            if fee_id not in rs.ambience['event']['fees']:
+                rs.notify("error", n_("Unknown fee."))
+                return self.redirect(rs, "event/fee_summary")
+            else:
+                merge_dicts(rs.values, rs.ambience['fee'])
+        return self.render(rs, "event/fee/configure_fee")
+
+    @access("event", modi={"POST"})
+    @event_guard()
+    @REQUESTdatadict(*EVENT_FEE_COMMON_FIELDS.keys())
+    def configure_fee(self, rs: RequestState, event_id: int, data: CdEDBObject,
+                      fee_id: int = None) -> Response:
+        """Submit changes to or creation of one event fee."""
+        questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
+        fee_data = check(rs, vtypes.EventFee, data, creation=fee_id is None,
+                         event=rs.ambience['event'], questionnaire=questionnaire)
+        if rs.has_validation_errors() or not fee_data:
+            return self.render(rs, "event/fee/configure_fee")
+        code = self.eventproxy.set_event_fees(rs, event_id, {fee_id or -1: fee_data})
+        rs.notify_return_code(code)
+        return self.redirect(rs, "event/fee_summary")
+
+    @access("event", modi={"POST"})
+    @event_guard()
+    def delete_fee(self, rs: RequestState, event_id: int, fee_id: int) -> Response:
+        """Delete one event fee."""
+        if fee_id not in rs.ambience['event']['fees']:
+            rs.notify("error", n_("Unknown fee."))
+            return self.redirect(rs, "event/fee_summary")
+        code = self.eventproxy.set_event_fees(rs, event_id, {fee_id: None})
+        rs.notify_return_code(code)
+        return self.redirect(rs, "event/fee_summary")
 
     @access("event")
     @event_guard()
@@ -849,9 +819,7 @@ class EventEventMixin(EventBaseFrontend):
                 subject_prefix=event['shortname'],
                 maxsize=EventOrgaMailinglist.maxsize_default,
                 is_active=True,
-                assembly_id=None,
                 event_id=event['id'],
-                registration_stati=[],
                 notes=None,
                 moderators=event['orgas'],
                 whitelist=set(),
@@ -876,7 +844,6 @@ class EventEventMixin(EventBaseFrontend):
                 subject_prefix=event['shortname'],
                 maxsize=EventAssociatedMailinglist.maxsize_default,
                 is_active=True,
-                assembly_id=None,
                 event_id=event["id"],
                 registration_stati=[const.RegistrationPartStati.participant],
                 notes=None,
@@ -896,33 +863,55 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event_admin", modi={"POST"})
     @REQUESTdata("part_begin", "part_end", "orga_ids", "create_track",
+                 "fee", "nonmember_surcharge",
                  "create_orga_list", "create_participant_list")
     @REQUESTdatadict(*EVENT_EXPOSED_FIELDS)
     def create_event(self, rs: RequestState, part_begin: datetime.date,
                      part_end: datetime.date, orga_ids: vtypes.CdedbIDList,
+                     fee: vtypes.NonNegativeDecimal,
+                     nonmember_surcharge: vtypes.NonNegativeDecimal,
                      create_track: bool, create_orga_list: bool,
                      create_participant_list: bool, data: CdEDBObject
                      ) -> Response:
         """Create a new event, organized via DB."""
         # multi part events will have to edit this later on
-        data["orgas"] = orga_ids
-        new_track = {
-            'title': data['title'],
-            'shortname': data['shortname'],
-            'num_choices': DEFAULT_NUM_COURSE_CHOICES,
-            'min_choices': DEFAULT_NUM_COURSE_CHOICES,
-            'sortkey': 1}
-        data['parts'] = {
-            -1: {
-                'title': data['title'],
-                'shortname': data['shortname'],
-                'part_begin': part_begin,
-                'part_end': part_end,
-                'fee': decimal.Decimal(0),
-                'waitlist_field': None,
-                'tracks': ({-1: new_track} if create_track else {}),
-            }
-        }
+        data.update({
+            'orgas': orga_ids,
+            'parts': {
+                -1: {
+                    'title': data['title'],
+                    'shortname': data['shortname'],
+                    'part_begin': part_begin,
+                    'part_end': part_end,
+                    'waitlist_field': None,
+                    'tracks': (
+                        {
+                            -1: {
+                                'title': data['title'],
+                                'shortname': data['shortname'],
+                                'num_choices': DEFAULT_NUM_COURSE_CHOICES,
+                                'min_choices': DEFAULT_NUM_COURSE_CHOICES,
+                                'sortkey': 0,
+                            },
+                        } if create_track else {}
+                    ),
+                },
+            },
+            'fees': {
+                -1: {
+                    'title': data['title'],
+                    'notes': "Automatisch erstellt.",
+                    'amount': fee,
+                    'condition': f"part.{data['shortname']}",
+                },
+                -2: {
+                    'title': "Externenzusatzbeitrag",
+                    'notes': "Automatisch erstellt",
+                    'amount': nonmember_surcharge,
+                    'condition': "any_part and not is_member",
+                }
+            },
+        })
         data = check(rs, vtypes.Event, data, creation=True)
         if orga_ids:
             if not self.coreproxy.verify_ids(rs, orga_ids, is_archived=False):
@@ -1081,7 +1070,7 @@ class EventEventMixin(EventBaseFrontend):
         blockers = self.eventproxy.delete_event_blockers(rs, event_id)
         cascade = {
             "registrations", "courses", "lodgement_groups", "lodgements",
-            "field_definitions", "course_tracks", "event_parts", "fee_modifiers",
+            "field_definitions", "course_tracks", "event_parts", "event_fees",
             "orgas", "questionnaire", "stored_queries", "log", "mailinglists",
             "part_groups"
         }

@@ -1,0 +1,60 @@
+{% set sidenav_active='event_fees' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+{% endblock %}
+{% set jshint='weak' %}
+
+{% block title %}
+    {% if ambience['fee'] %}
+        {% trans fee_title=ambience['fee']['title'], event_title=ambience['event']['title'] %}
+            Edit fee {{ fee_title }} ({{ event_title }})
+        {% endtrans %}
+    {% else %}
+        {% trans event_title=ambience['event']['title'] %}
+            Add Fee ({{ event_title }})
+        {% endtrans %}
+    {% endif %}
+{% endblock %}
+
+{% block heading %}
+    {{ util.doclink_("Handbuch_Orga_Teilnahmebeitraege") }}
+    {% if ambience['fee'] %}
+        {{ util.context_heading(gettext("Change fee %(fee_title)s")|format(fee_title=ambience['fee']['title']),
+                                ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+    {% else %}
+        {{ util.context_heading(gettext("Add Fee"),
+                                ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+    {% endif %}
+{% endblock %}
+
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+    {{ util.breadcrumb_link(cdedblink("event/fee_summary"), gettext("Fees")) }}
+    {% if ambience['fee'] %}
+        {{ util.breadcrumb_link("", ambience['fee']['title'], icon="coins", readonly=True) }}
+        {{ util.breadcrumb_link(cdedblink("event/configure_fee"), gettext("Change"), active=True) }}
+    {% else %}
+        {{ util.breadcrumb_link(cdedblink("event/configure_fee"), gettext("Add Fee"), active=True) }}
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+
+
+    <form action="{{ cdedblink('event/configure_fee') }}" method="POST" id="configureeventfeeform" class="form-horizontal">
+        {{ util.anti_csrf_token('event/configure_fee') }}
+        {{ util.form_input_text(name="title", label=gettext("Title")) }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Notes"), markdown=True) }}
+        {{ util.form_input_text(name="amount", label=gettext("Amount"), addon='€') }}
+        {{ util.form_input_text(name="condition", label=gettext("Condition")) }}
+
+        {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("event/fee_summary")) }}
+    </form>
+
+    <script nonce="{{ csp_nonce }}">
+        $('#configureeventfeeform').cdedbProtectChanges();
+    </script>
+{% endblock %}

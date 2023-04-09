@@ -81,7 +81,8 @@
     <h4 class="heading-underline">{% trans %}Moderation & Subscribers{% endtrans %}</h4>
         {{ util.form_input_select(name="mod_policy", label=gettext("Moderation"),
                 entries=enums['ModerationPolicy']|enum_entries(processing=gettext)) }}
-        {{ util.input_hidden(name="ml_type") }}
+        {# Needed for the javascript stuff to work #}
+        {{ util.input_hidden(name="ml_type", value=ambience["mailinglist"].ml_type) }}
         {% if readonly %}
             {{ util.form_input_static(label=gettext("Mailinglist Type"),
                     value=(gettext( enums['MailinglistTypes'](ambience['mailinglist']['ml_type'])|string ))) }}

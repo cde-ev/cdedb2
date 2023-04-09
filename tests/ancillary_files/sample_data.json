@@ -3899,6 +3899,7 @@
             "status": 12,
             "amount": "32.00",
             "issued_at": "2000-03-21T22:00:00+00:00",
+            "payment_date": "2000-04-04",
             "processed_at": "2012-03-22T20:22:22.222222+00:00",
             "tally": "0.00"
         },
@@ -3910,6 +3911,7 @@
             "status": 11,
             "amount": "32.00",
             "issued_at": "2000-03-22T22:00:00+00:00",
+            "payment_date": "2000-04-05",
             "processed_at": "2012-03-23T20:22:22.222222+00:00",
             "tally": "-4.50"
         },
@@ -3921,6 +3923,7 @@
             "status": 10,
             "amount": "42.23",
             "issued_at": "2012-02-21T22:00:00+00:00",
+            "payment_date": "2012-03-07",
             "processed_at": "2012-02-22T20:22:22.222222+00:00",
             "tally": "42.23"
         }
@@ -4121,7 +4124,6 @@
             "registration_soft_limit": "2200-10-30T00:00:00+00:00",
             "registration_hard_limit": "2221-10-30T00:00:00+00:00",
             "iban": "DE26370205000008068900",
-            "nonmember_surcharge": "5.00",
             "orga_address": "aka@example.cde",
             "registration_text": null,
             "mail_text": "Wir verwenden ein neues Kristallkugel-basiertes Kurszuteilungssystem; bis wir das ordentlich ans Laufen gebracht haben, müsst ihr leider etwas auf die Teilnehmerliste warten.",
@@ -4150,7 +4152,6 @@
             "registration_soft_limit": "2049-12-31T00:00:00+00:00",
             "registration_hard_limit": "2049-12-31T00:00:00+00:00",
             "iban": "DE26370205000008068900",
-            "nonmember_surcharge": "2.00",
             "orga_address": "",
             "registration_text": null,
             "mail_text": "",
@@ -4179,7 +4180,6 @@
             "registration_soft_limit": null,
             "registration_hard_limit": null,
             "iban": "DE26370205000008068900",
-            "nonmember_surcharge": "0.00",
             "orga_address": null,
             "registration_text": null,
             "mail_text": null,
@@ -4208,7 +4208,6 @@
             "registration_soft_limit": null,
             "registration_hard_limit": null,
             "iban": "DE26370205000008068900",
-            "nonmember_surcharge": "0.00",
             "orga_address": null,
             "registration_text": null,
             "mail_text": null,
@@ -4228,6 +4227,92 @@
             "course_room_field": null
         }
     ],
+    "event.event_fees": [
+        {
+            "event_id": 1,
+            "title": "Teilnahmebeitrag Warmup",
+            "amount": "10.50",
+            "condition": "part.Wu",
+            "notes": null
+        },
+        {
+            "event_id": 1,
+            "title": "Teilnahmebeitrag 1. Hälfte",
+            "amount": "123.00",
+            "condition": "part.1.H.",
+            "notes": null
+        },
+        {
+            "event_id": 1,
+            "title": "Teilnahmebeitrag 2. Hälfte",
+            "amount": "450.99",
+            "condition": "part.2.H.",
+            "notes": null
+        },
+        {
+            "event_id": 1,
+            "title": "Kinderpreis Warmup",
+            "amount": "-5.00",
+            "condition": "part.Wu and field.is_child",
+            "notes": null
+        },
+        {
+            "event_id": 1,
+            "title": "Kinderpreis 1. Hälfte",
+            "amount": "-12.00",
+            "condition": "part.1.H. and field.is_child",
+            "notes": null
+        },
+        {
+            "event_id": 1,
+            "title": "Kinderpreis 2. Hälfte",
+            "amount": "-19.00",
+            "condition": "part.2.H. and field.is_child",
+            "notes": null
+        },
+        {
+            "event_id": 1,
+            "title": "Externenzusatzbeitrag",
+            "amount": "5.00",
+            "condition": "any_part and not (is_member or field.is_child)",
+            "notes": null
+        },
+        {
+            "event_id": 1,
+            "title": "Mengenrabatt",
+            "amount": "-0.01",
+            "condition": "all_parts",
+            "notes": null
+        },
+        {
+            "event_id": 1,
+            "title": "Orgarabatt",
+            "amount": "-50.00",
+            "condition": "part.1.H. and part.2.H. and is_orga",
+            "notes": null
+        },
+        {
+            "event_id": 2,
+            "title": "Teilnahmebeitrag Party",
+            "amount": "15.00",
+            "condition": "part.Party",
+            "notes": null
+        },
+        {
+            "event_id": 2,
+            "title": "Externenzusatzbeitrag",
+            "amount": "2.00",
+            "condition": "any_part and not is_member",
+            "notes": null
+        },
+        {
+            "event_id": 4,
+            "title": "Unkostenbeitrag Silvesterfeier",
+            "amount": "4.20",
+            "condition": "part.Feier",
+            "notes": null
+        }
+    ],
     "event.event_parts": [
         {
             "id": 1,
@@ -4236,7 +4321,6 @@
             "shortname": "Wu",
             "part_begin": "2222-02-02",
             "part_end": "2222-02-02",
-            "fee": "10.50",
             "waitlist_field": null
         },
         {
@@ -4246,7 +4330,6 @@
             "shortname": "1.H.",
             "part_begin": "2222-11-01",
             "part_end": "2222-11-11",
-            "fee": "123.00",
             "waitlist_field": null
         },
         {
@@ -4256,7 +4339,6 @@
             "shortname": "2.H.",
             "part_begin": "2222-11-11",
             "part_end": "2222-11-30",
-            "fee": "450.99",
             "waitlist_field": null
         },
         {
@@ -4266,7 +4348,6 @@
             "shortname": "Party",
             "part_begin": "2050-01-15",
             "part_end": "2050-01-15",
-            "fee": "15.00",
             "waitlist_field": null
         },
         {
@@ -4276,7 +4357,6 @@
             "shortname": "cyta",
             "part_begin": "2003-01-02",
             "part_end": "2003-03-04",
-            "fee": "0.00",
             "waitlist_field": null
         },
         {
@@ -4286,7 +4366,6 @@
             "shortname": "O1",
             "part_begin": "3000-01-01",
             "part_end": "3000-02-01",
-            "fee": "0.00",
             "waitlist_field": null
         },
         {
@@ -4296,7 +4375,6 @@
             "shortname": "W1",
             "part_begin": "3000-01-01",
             "part_end": "3000-02-01",
-            "fee": "0.00",
             "waitlist_field": null
         },
         {
@@ -4306,7 +4384,6 @@
             "shortname": "K1",
             "part_begin": "3000-01-01",
             "part_end": "3000-02-01",
-            "fee": "0.00",
             "waitlist_field": null
         },
         {
@@ -4316,7 +4393,6 @@
             "shortname": "O2",
             "part_begin": "3000-02-01",
             "part_end": "3000-03-01",
-            "fee": "0.00",
             "waitlist_field": null
         },
         {
@@ -4326,7 +4402,6 @@
             "shortname": "W2",
             "part_begin": "3000-02-01",
             "part_end": "3000-03-01",
-            "fee": "0.00",
             "waitlist_field": null
         },
         {
@@ -4336,7 +4411,6 @@
             "shortname": "K2",
             "part_begin": "3000-02-01",
             "part_end": "3000-03-01",
-            "fee": "0.00",
             "waitlist_field": null
         },
         {
@@ -4346,7 +4420,6 @@
             "shortname": "Feier",
             "part_begin": "2999-12-31",
             "part_end": "3000-01-01",
-            "fee": "4.20",
             "waitlist_field": null
         }
     ],
@@ -4844,29 +4917,6 @@
             "association": 1,
             "checkin": true,
             "entries": null
-        }
-    ],
-    "event.fee_modifiers": [
-        {
-            "id": 1,
-            "part_id": 1,
-            "modifier_name": "is_child",
-            "amount": "-5.00",
-            "field_id": 7
-        },
-        {
-            "id": 2,
-            "part_id": 2,
-            "modifier_name": "is_child",
-            "amount": "-12.00",
-            "field_id": 7
-        },
-        {
-            "id": 3,
-            "part_id": 3,
-            "modifier_name": "is_child",
-            "amount": "-19.00",
-            "field_id": 7
         }
     ],
     "event.courses": [
@@ -5402,7 +5452,7 @@
             "orga_notes": null,
             "payment": "2014-03-03",
             "amount_paid": "0.00",
-            "amount_owed": "584.49",
+            "amount_owed": "534.48",
             "parental_agreement": true,
             "mixed_lodging": true,
             "checkin": null,
@@ -5444,7 +5494,7 @@
             "orga_notes": null,
             "payment": null,
             "amount_paid": "0.00",
-            "amount_owed": "584.49",
+            "amount_owed": "584.48",
             "parental_agreement": true,
             "mixed_lodging": false,
             "checkin": null,

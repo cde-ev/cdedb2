@@ -456,6 +456,10 @@ class LazyConfig(Config):
         self.__init()
         return super().__len__()
 
+    def __repr__(self) -> str:
+        self.__init()
+        return super().__repr__()
+
 
 class TestConfig(Config):
     """Main configuration for tests.

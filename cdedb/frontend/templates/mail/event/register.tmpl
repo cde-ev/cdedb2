@@ -1,4 +1,4 @@
-Hallo {{ user['display_name'] }},
+Hallo {{ persona['display_name'] }},
 
 Du hast dich erfolgreich zur Veranstaltung
     "{{ ambience['event']['title'] }}"
@@ -7,25 +7,19 @@ angemeldet.
 
 Beachte bitte, dass Deine Anmeldung erst mit Überweisung des Teilnahmebeitrags gültig wird.
 
-{% if ambience['event']['iban'] %}
-{% if ambience['event']['mail_text'] %}
-Überweise dazu bitte {{ fee|money }} plus möglicherweise unten erwähnte
-veranstaltungsspezifische Beträge auf das folgende Konto.
-{% else %}
+{% if iban %}
 Überweise dazu bitte {{ fee|money }} auf das folgende Konto.
-{% endif %}
 Achte bitte bei internationalen Überweisungen darauf, dass der
 Empfänger keine Gebühren zahlen muss.
 
 Kontoinhaber:     {{ meta_info['CdE_Konto_Inhaber'] }}
-IBAN:             {{ ambience['event']['iban']|iban }}
+IBAN:             {{ iban|iban }}
 BIC:              {{ meta_info['CdE_Konto_BIC'] }}
 Kreditinstitut:   {{ meta_info['CdE_Konto_Institut'] }}
 Verwendungszweck: {{ reference }}
 
-
-{% if "member" not in user.roles and ambience["event"]["nonmember_surcharge"] > 0 %}
-Da Du kein CdE-Mitglied bist, musst du einen zusätzlichen Beitrag in Höhe von {{ ambience["event"]["nonmember_surcharge"]|money }}
+{% if complex_fee.nonmember_surcharge %}
+Da Du kein CdE-Mitglied bist, musst Du einen zusätzlichen Beitrag in Höhe von {{ complex_fee.nonmember_surcharge_amount|money }}
 bezahlen (bereits in der obigen Summe enthalten).
 {% if "cde" in user.roles %}
 
@@ -34,6 +28,7 @@ und somit wieder Mitglied werden, woraufhin Du den zusätzlichen Beitrag nicht b
 Wenn Du dies tust, überweise Mitgliedsbeitrag und Teilnahmebeitrag bitte separat.
 {% endif %}
 {% endif %}
+
 {% else %}
 Wir werden Dir separat mitteilen, wie Du den Beitrag von {{ fee|money }}
 bezahlen kannst.

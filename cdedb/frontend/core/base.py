@@ -40,11 +40,11 @@ from cdedb.common.roles import (
     REALM_INHERITANCE, extract_roles, implied_realms,
 )
 from cdedb.common.sorting import EntitySorter, xsorted
-from cdedb.common.validation import (
+from cdedb.common.validation.types import CdedbID
+from cdedb.common.validation.validate import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
     PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS,
 )
-from cdedb.common.validation.types import CdedbID
 from cdedb.filter import enum_entries_filter, markdown_parse_safe, money_filter
 from cdedb.frontend.common import (
     AbstractFrontend, Headers, REQUESTdata, REQUESTdatadict, REQUESTfile,
@@ -1636,18 +1636,21 @@ class CoreBaseFrontend(AbstractFrontend):
             return self.modify_membership_form(rs, persona_id)
         # We really don't want to go halfway here.
         with TransactionObserver(rs, self, "modify_membership"):
-            code, revoked_permit, collateral_transactions = (
+            code, revoked_permit, collateral_transaction = (
                 self.cdeproxy.change_membership(rs, persona_id, is_member))
             rs.notify_return_code(code)
             if revoked_permit:
                 rs.notify("success", n_("Revoked active permit."))
-            if collateral_transactions:
+            if collateral_transaction:
+                transaction = self.cdeproxy.get_lastschrift_transaction(
+                    rs, collateral_transaction)
                 subject = ("Einzugsermächtigung zu ausstehender "
                            "Lastschrift widerrufen.")
                 self.do_mail(rs, "pending_lastschrift_revoked",
                              {'To': (self.conf["MANAGEMENT_ADDRESS"],),
                               'Subject': subject},
-                             {'persona_id': persona_id})
+                             {'persona_id': persona_id,
+                              'payment_date': transaction['payment_date']})
 
         return self.redirect_show_user(rs, persona_id)
 
