@@ -350,7 +350,7 @@ class CoreBaseBackend(AbstractBackend):
             fields_requiring_review = {
                 "birthday", "family_name", "given_names", "birth_name",
                 "gender", "address_supplement", "address", "postal_code",
-                "location", "country",
+                "location", "country", "donation",
             }
             all_changed_fields = {key for key, value in data.items()
                                   if value != committed_state[key]}

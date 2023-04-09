@@ -1206,12 +1206,18 @@ class TestCdEFrontend(FrontendTest):
     def test_lastschrift_change_donation(self) -> None:
         self.traverse(self.user['display_name'], "Bearbeiten")
         f = self.response.forms['changedataform']
+        f['donation'] = "4200"
+        self.submit(f, check_notification=False)
+        self.assertValidationError('donation',
+            "Spende einer Lastschrift muss zwischen 2,00 € und 1.000,00 € sein.")
+        f = self.response.forms['changedataform']
         f['donation'] = "3"
         self.submit(f, check_notification=False)
         self.assertValidationWarning('donation', "Du bist nicht der Eigentümer des")
         f = self.response.forms['changedataform']
         f[IGNORE_WARNINGS_NAME] = True
-        self.submit(f)
+        self.submit(f, check_notification=False)
+        self.assertNotification("Änderung wartet auf Bestätigung", 'info')
 
     @as_users("farin")
     def test_lastschrift_change(self) -> None:
