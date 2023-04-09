@@ -1589,8 +1589,8 @@ class TestCoreFrontend(FrontendTest):
         self.assertEqual(f['new_balance'].value, "22.20")
         self.assertFalse(f['trial_member'].checked)
         f['change_note'] = 'nop'
-        # Test 'Nothing changed!' warning
-        self.submit(f, check_notification=False)
+        # Test 'Nothing changed!' info
+        self.submit(f)
         self.assertPresence("Keine Änderungen", div="notifications")
         self.assertTitle("Guthaben anpassen für Ferdinand F. Findus")
         # Test missing change note entry warning
