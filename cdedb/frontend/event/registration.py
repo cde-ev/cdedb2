@@ -382,6 +382,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         part_options = None
         if len(event['parts']) > 1:
             part_options = [
+                # narrow non-breaking space below, the string is purely user-facing
                 (part_id,
                  f"{part['title']}"
                  f" ({date_filter(part['part_begin'], lang=rs.lang)}\u202f–\u202f"
