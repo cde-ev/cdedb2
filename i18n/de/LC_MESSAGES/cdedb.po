@@ -3925,7 +3925,7 @@ msgstr "Kein Account gefunden."
 #: cdedb/frontend/core/base.py:950
 msgid "Must provide id of the associated mailinglist to use this kind."
 msgstr ""
-"Um diese Art Anfrage zu benutzen muss die zugehörige Mailinglisten-ID "
+"Um diese Art Anfrage zu benutzen, muss die zugehörige Mailinglisten-ID "
 "angegeben werden."
 
 #: cdedb/frontend/core/base.py:1126
@@ -3938,7 +3938,7 @@ msgid ""
 "You are not the owner of the linked bank account. Make sure the owner agreed "
 "to the change before submitting it here."
 msgstr ""
-"Du bist nicht der Eigentümer des verlinkten Bankaccounts. Stelle sicher das "
+"Du bist nicht der Eigentümer des verlinkten Bankaccounts. Stelle sicher, dass "
 "der Eigentümer dieser Änderung zustimmt, bevor du sie vornimmst."
 
 #: cdedb/frontend/core/base.py:1179
@@ -3951,7 +3951,7 @@ msgid ""
 "Lastschrift donation is outside of %(min)s and %(max)s. The user will not be "
 "able to change this amount by himself."
 msgstr ""
-"Die Spende der Lastschrift is außerhalb von %(min)s und %(max)s. Der Nutzer "
+"Die Spende der Lastschrift ist außerhalb von %(min)s und %(max)s. Der Nutzer "
 "wird nicht in der Lage sein, den Betrag selbstständig zu ändern."
 
 #: cdedb/frontend/core/base.py:1322 cdedb/frontend/core/base.py:1346
