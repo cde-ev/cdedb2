@@ -109,9 +109,7 @@
 
         {% if ambience['event']['parts']|length > 1 %}
             {{ util.form_input_checkboxes(name="parts", label=gettext("Event Parts"),
-                                          entries=ambience['event']['parts']|keydictsort(EntitySorter.event_part)
-                                              |dict_entries('id', 'title')) }}
-
+                                          entries=part_options) }}
             <div class="panel panel-primary">
                 <div class="panel-body">
                     {{ util.form_input_static(label=gettext("Fee"), anid="fee-preview",
