@@ -52,7 +52,8 @@
             <h4 class="heading-underline">{% trans %}Membership{% endtrans %}</h4>
         {% endif %}
         {% if "donation" in shown_fields %}
-            {% if min_donation <= values["donation"] <= max_donation %}
+            {# Also display the form If user is changing their donation outside of the allowed range #}
+            {% if min_donation <= values["donation"] <= max_donation or errors.get("donation") %}
                 {{ util.form_input_text(name="donation", label=gettext("Annual Donation"), type="number",
                                         attributes='min="%(min)s" max="%(max)s" step="0.01"'|s|format(min=min_donation, max=max_donation), addon="€",
                                         info=gettext("You allow the CdE to withdraw this amount annually"
