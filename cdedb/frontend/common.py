@@ -809,7 +809,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             is served.
         :param is_search: signals whether the page was requested by an actual
             query or just to display the search form.
-        :param scope: The query scope of the search. Source for default queries
+        :param scope: The query scope of the search. Source for default queries.
         :param choices: Mapping of replacements of primary keys by human-readable
             strings for select fields in the javascript query form.
         :param submit_general_query: The backend query function to use to retrieve the

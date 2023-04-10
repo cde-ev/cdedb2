@@ -1219,7 +1219,7 @@ class FrontendTest(BackendTest):
         Assert that the tilte of the current page equals the given string.
 
         The actual title has a prefix, which is checked automatically.
-        :param lax: Whether presence instead of e
+        :param exact: If False, presence as substring suffices.
         """
         components = tuple(x.strip() for x in self.response.lxml.xpath(
             '/html/head/title/text()'))
