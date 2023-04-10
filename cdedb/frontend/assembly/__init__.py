@@ -104,21 +104,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                     is_search: bool) -> Response:
         """Perform search."""
         return self.generic_user_search(
-            rs, download, is_search, QueryScope.assembly_user, QueryScope.assembly_user,
-            self.assemblyproxy.submit_general_query)
-
-    @access("core_admin", "assembly_admin")
-    @REQUESTdata("download", "is_search")
-    def full_user_search(self, rs: RequestState, download: Optional[str],
-                             is_search: bool) -> Response:
-        """Perform search.
-
-        Archived users are somewhat special since they are not visible
-        otherwise.
-        """
-        return self.generic_user_search(
-            rs, download, is_search,
-            QueryScope.all_assembly_users, QueryScope.all_core_users,
+            rs, download, is_search, QueryScope.all_assembly_users,
             self.assemblyproxy.submit_general_query)
 
     @access("assembly_admin", "auditor")

@@ -578,9 +578,6 @@ class TestPrivacyFrontend(FrontendTest):
         core = {
             USER_DICT['farin']['id'], USER_DICT['paul']['id']
         }
-        archive = {
-            USER_DICT['farin']['id'], USER_DICT['paul']['id']
-        }
         cde = {
             USER_DICT['farin']['id'], USER_DICT['quintus']['id']
         }
@@ -603,14 +600,6 @@ class TestPrivacyFrontend(FrontendTest):
                     self.assertTitle("Allgemeine Nutzerverwaltung")
                 else:
                     self.get('/core/search/user',
-                             status="403 Zugriff auf CoreFrontend/* verweigert.")
-                    self.assertTitle("403: Forbidden")
-
-                if self.user_in(*archive):
-                    self.get('/core/search/fulluser')
-                    self.assertTitle("Vollständige Nutzerverwaltung")
-                else:
-                    self.get('/core/search/fulluser',
                              status="403 Zugriff auf CoreFrontend/* verweigert.")
                     self.assertTitle("403: Forbidden")
 

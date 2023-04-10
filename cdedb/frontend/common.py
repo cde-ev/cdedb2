@@ -798,7 +798,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
     def generic_user_search(self, rs: RequestState, download: Optional[str],
                             is_search: bool, scope: query_mod.QueryScope,
-                            default_scope: query_mod.QueryScope,
                             submit_general_query: Callable[[RequestState, Query],
                                                            Tuple[CdEDBObject, ...]], *,
                             choices: Mapping[str, Mapping[Any, str]] = None,
@@ -810,8 +809,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             is served.
         :param is_search: signals whether the page was requested by an actual
             query or just to display the search form.
-        :param scope: The query scope of the search.
-        :param default_scope: Use the default queries associated with this scope.
+        :param scope: The query scope of the search. Source for default queries.
         :param choices: Mapping of replacements of primary keys by human-readable
             strings for select fields in the javascript query form.
         :param submit_general_query: The backend query function to use to retrieve the
@@ -830,7 +828,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             query_input = scope.mangle_query_input(rs)
             query = check_validation(rs, vtypes.QueryInput, query_input, "query",
                                      spec=spec, allow_empty=False)
-        default_queries = DEFAULT_QUERIES[default_scope]
+        default_queries = DEFAULT_QUERIES[scope]
         choices_lists = {}
         if choices is None:
             choices = {}
@@ -854,7 +852,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         else:
             if not is_search and scope.includes_archived:
                 rs.values['qop_is_archived'] = query_mod.QueryOperators.equal.value
-                rs.values['qval_is_archived'] = True
+                rs.values['qval_is_archived'] = False
             rs.values['is_search'] = False
         return self.render(rs, scope.get_target(redirect=False), params)
 

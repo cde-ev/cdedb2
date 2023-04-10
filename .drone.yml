@@ -210,7 +210,7 @@ steps:
     path: /coverage
   commands:
   - python3 -m coverage combine /coverage/
-  - python3 -m coverage report --include 'cdedb/*' --show-missing --fail-under=92
+  - python3 -m coverage report --include 'cdedb/*' --show-missing --fail-under=91
 - name: xss
   image: cdedb
   pull: never

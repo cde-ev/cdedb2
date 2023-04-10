@@ -20,8 +20,6 @@
             {% if "core_user" in user.admin_views %}
                 {{ util.href(cdedblink("core/user_search"), gettext("Manage Users"), aclass="list-group-item",
                         icon="users", active=(sidenav_active=='core_manage_users')) }}
-                {{ util.href(cdedblink("core/full_user_search"), gettext("Search All Users"), aclass="list-group-item",
-                        icon="inbox", active=(sidenav_active=='core_manage_archive')) }}
                 {{ util.href(cdedblink("core/list_pending_changes"), gettext("Pending Changes"), aclass="list-group-item",
                         icon="check-square", active=(sidenav_active=='core_pending_changes')) }}
             {% endif %}

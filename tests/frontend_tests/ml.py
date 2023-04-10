@@ -61,47 +61,45 @@ class TestMlFrontend(FrontendTest):
         if self.user_in('martin'):
             ins = {"Übersicht"}
             out = {"Alle Mailinglisten", "Moderierte Mailinglisten",
-                   "Aktive Mailinglisten", "Nutzer verwalten", "Alle Nutzer verwalten",
-                   "Log"}
+                   "Aktive Mailinglisten", "Nutzer verwalten", "Log"}
         # Users with core admin privileges for some mailinglists:
         elif self.user_in('vera'):
             ins = {"Aktive Mailinglisten", "Administrierte Mailinglisten", "Log",
-                   "Nutzer verwalten", "Alle Nutzer verwalten"}
+                   "Nutzer verwalten"}
             out = {"Übersicht", "Alle Mailinglisten", "Moderierte Mailinglisten"}
         # Users with relative admin privileges for some mailinglists:
         elif self.user_in('viktor'):
             ins = {"Aktive Mailinglisten", "Administrierte Mailinglisten", "Log"}
             out = {"Übersicht", "Alle Mailinglisten", "Moderierte Mailinglisten",
-                   "Nutzer verwalten", "Alle Nutzer verwalten"}
+                   "Nutzer verwalten"}
         # Users with moderated mailinglists and relative admin privileges
         # for some mailinglists:
         elif self.user_in('annika'):
             ins = {"Aktive Mailinglisten", "Administrierte Mailinglisten",
                    "Moderierte Mailinglisten", "Log"}
-            out = {"Übersicht", "Alle Mailinglisten", "Nutzer verwalten",
-                   "Alle Nutzer verwalten"}
+            out = {"Übersicht", "Alle Mailinglisten", "Nutzer verwalten"}
         # Users with moderated mailinglists, but no admin privileges.
         elif self.user_in('berta'):
             ins = {"Aktive Mailinglisten", "Moderierte Mailinglisten", "Log"}
             out = {"Übersicht", "Administrierte Mailinglisten", "Alle Mailinglisten",
-                   "Nutzer verwalten", "Alle Nutzer verwalten"}
+                   "Nutzer verwalten"}
         # Users with full ml-admin privileges.
         elif self.user_in('nina'):
             ins = {"Aktive Mailinglisten", "Alle Mailinglisten",
-                   "Accounts verschmelzen", "Nutzer verwalten", "Alle Nutzer verwalten",
+                   "Accounts verschmelzen", "Nutzer verwalten",
                    "Log", "Moderierte Mailinglisten"}
             out = {"Übersicht"}
         # Users with moderated mailinglists with full ml-admin privileges.
         elif self.user_in('anton'):
             ins = {"Aktive Mailinglisten", "Alle Mailinglisten",
                    "Accounts verschmelzen", "Moderierte Mailinglisten",
-                   "Nutzer verwalten", "Alle Nutzer verwalten", "Log"}
+                   "Nutzer verwalten", "Log"}
             out = {"Übersicht"}
         # Auditors
         elif self.user_in('katarina'):
             ins = {"Übersicht", "Log"}
             out = {"Alle Mailinglisten", "Moderierte Mailinglisten",
-                   "Aktive Mailinglisten", "Nutzer verwalten", "Alle Nutzer verwalten"}
+                   "Aktive Mailinglisten", "Nutzer verwalten"}
         else:
             self.fail("Please adjust users for this tests.")
 
