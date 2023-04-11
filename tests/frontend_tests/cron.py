@@ -467,6 +467,7 @@ class TestCron(CronTest):
             'pass_extensions': ['pdf'],
             'pass_types': ['multipart', 'text/plain', 'application/pdf'],
             'convert_html_to_plaintext': True,
+            'collapse_alternatives': True,
             'dmarc_mitigate_action': 'wrap_message',
             'dmarc_mitigate_unconditionally': False,
             'dmarc_wrapped_message_text': 'Nachricht wegen DMARC eingepackt.',

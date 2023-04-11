@@ -120,7 +120,7 @@
             "data-checked": checked,
             "aria-hidden": "true"
         })|xmlattr }}></span>
-    {% if title %}<span class="sr-only">{{ title }}</span>{% endif %}
+    {%- if title %}<span class="sr-only">{{ title }}</span>{% endif %}
 {%- endmacro %}
 
 {# Special tri-state macro to represent subscription states

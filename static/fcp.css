@@ -1,0 +1,30 @@
+.block, .atom {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 10px;
+}
+.block::before, .atom::before {
+    position: absolute;
+    top: 90%;
+    height: 8px;
+    width: 100%;
+    content: "";
+    box-sizing: border-box;
+    border-radius: 0 0 3px 3px;
+}
+.block.true::before, .atom.true::before {
+    border: 3px green solid;
+    border-top: 0;
+}
+.block.false::before, .atom.false::before {
+    border: 1px red dashed;
+    border-top: 0;
+}
+.above .below {
+    position: absolute;
+    width: 100%;
+    left: 0;
+    top: 140%;
+    font-size: 0.75em;
+    text-align: center;
+}

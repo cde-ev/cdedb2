@@ -157,6 +157,10 @@ ul.slim {
     background-color: #a4eba4;
     background-image: linear-gradient(to right, #a4eba4 0, #fff 50%);
 }
+.form-control-nosp {
+    /* negative help-block margin */
+    margin-bottom: -5px;
+}
 .help-block {
     margin-bottom: 6px;
 }
@@ -423,6 +427,9 @@ h1.title {
 .float-along {
     display: block;
     overflow: hidden;
+}
+.float-right {
+    float: right;
 }
 .text-right-responsive {
     text-align: center;
@@ -1140,6 +1147,7 @@ ul.styleless {
 
 .list-button-float {
     float: right;
+    margin-left: 1em;
 }
 
 .clearfix-after::after {
@@ -1158,6 +1166,10 @@ ul.styleless {
 
 .clear-both {
     clear: both;
+}
+
+.flex-width {
+    width: fit-content;
 }
 
 /* Display icons in light gray. */

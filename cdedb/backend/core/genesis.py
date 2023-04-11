@@ -27,7 +27,7 @@ from cdedb.common.roles import (
     GENESIS_REALM_OVERRIDE, PERSONA_DEFAULTS, REALM_ADMINS, extract_realms,
     extract_roles, implied_realms,
 )
-from cdedb.common.validation import PERSONA_FULL_CREATION, filter_none
+from cdedb.common.validation.validate import PERSONA_FULL_CREATION, filter_none
 from cdedb.database.connection import Atomizer
 
 

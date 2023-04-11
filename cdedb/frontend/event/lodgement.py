@@ -19,8 +19,8 @@ from cdedb.common import (
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, Sortkey, xsorted
-from cdedb.common.validation import LODGEMENT_COMMON_FIELDS
 from cdedb.common.validation.types import VALIDATOR_LOOKUP
+from cdedb.common.validation.validate import LODGEMENT_COMMON_FIELDS
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, check_validation as check, drow_name,
@@ -351,10 +351,11 @@ class EventLodgementMxin(EventBaseFrontend):
     @access("event")
     @event_guard()
     @REQUESTdata('all_participants', 'part_id', 'show_lodgements',
-                 'show_lodgement_groups')
+                 'show_lodgement_groups', 'show_full_assigned_edges')
     def lodgement_wishes_graph(
             self, rs: RequestState, event_id: int, all_participants: bool,
-            part_id: Optional[int], show_lodgements: bool, show_lodgement_groups: bool
+            part_id: Optional[int], show_lodgements: bool, show_lodgement_groups: bool,
+            show_full_assigned_edges: bool
     ) -> Response:
         if rs.has_validation_errors():
             return self.lodgement_wishes_graph_form(rs, event_id)
@@ -372,6 +373,10 @@ class EventLodgementMxin(EventBaseFrontend):
             rs.append_validation_error(("show_lodgements", ValueError(msg)))
         if show_lodgement_groups and not part_id:
             rs.append_validation_error(("show_lodgement_groups", ValueError(msg)))
+        if not show_full_assigned_edges and not part_id:
+            rs.append_validation_error(("show_full_assigned_edges", ValueError(
+                n_("Edges between participants who are both assigned to a lodgement can"
+                   " only be hidden if the graph is restricted to a specific part."))))
         if rs.has_validation_errors():
             return self.lodgement_wishes_graph_form(rs, event_id)
 
@@ -390,7 +395,8 @@ class EventLodgementMxin(EventBaseFrontend):
             rs, registrations, wishes, lodgements, lodgement_groups, event, personas,
             filter_part_id=part_id, show_all=all_participants, cluster_part_id=part_id,
             cluster_by_lodgement=show_lodgements,
-            cluster_by_lodgement_group=show_lodgement_groups)
+            cluster_by_lodgement_group=show_lodgement_groups,
+            show_full_assigned_edges=show_full_assigned_edges)
         data: bytes = graph.pipe('svg')
         return self.send_file(rs, "image/svg+xml", data=data)
 
@@ -628,7 +634,7 @@ class EventLodgementMxin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.manage_inhabitants_form(rs, event_id, lodgement_id)
         # Iterate all registrations to find changed ones
-        code = 1
+        reg_data = []
         change_note = f"Bewohner von {rs.ambience['lodgement']['title']} geändert."
         for reg_id, reg in registrations.items():
             new_reg: CdEDBObject = {
@@ -657,7 +663,9 @@ class EventLodgementMxin(EventBaseFrontend):
                             False)
                     }
             if new_reg['parts']:
-                code *= self.eventproxy.set_registration(rs, new_reg, change_note)
+                reg_data.append(new_reg)
+
+        code = self.eventproxy.set_registrations(rs, reg_data, change_note)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/show_lodgement")
 
@@ -703,8 +711,7 @@ class EventLodgementMxin(EventBaseFrontend):
 
         code = 1
         change_note = ", ".join(change_notes) + "."
-        for new_reg in new_regs.values():
-            code *= self.eventproxy.set_registration(rs, new_reg, change_note)
+        code = self.eventproxy.set_registrations(rs, new_regs.values(), change_note)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/show_lodgement")
 

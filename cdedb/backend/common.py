@@ -23,7 +23,7 @@ import psycopg2.errors
 import psycopg2.extensions
 import psycopg2.extras
 
-import cdedb.common.validation as validate
+import cdedb.common.validation.validate as validate
 from cdedb.common import (
     CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Error, RequestState, Role,
     diacritic_patterns, glue, make_proxy, setup_logger, unwrap,
@@ -33,7 +33,7 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators
 from cdedb.common.query.log_filter import LogFilter, LogFilterLike, LogTable
 from cdedb.common.sorting import LOCALE
-from cdedb.common.validation import parse_date, parse_datetime
+from cdedb.common.validation.validate import parse_date, parse_datetime
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
 from cdedb.database.constants import FieldDatatypes, LockType
@@ -187,8 +187,10 @@ def access(*roles: Role) -> Callable[[F], F]:
                     **kwargs: Any) -> Any:
             if rs.user.roles.isdisjoint(roles):
                 raise PrivilegeError(
-                    n_("%(user_roles)s is disjoint from %(roles)s"),
-                    {"user_roles": rs.user.roles, "roles": roles}
+                    n_("%(user_roles)s is disjoint from %(roles)s"
+                       " for method %(method)s."),
+                    {"user_roles": rs.user.roles, "roles": roles,
+                     "method": function.__name__}
                 )
             return function(self, rs, *args, **kwargs)
 
@@ -470,7 +472,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
         log_code = log_filter.table.get_log_code_class()
 
         condition, params = log_filter.to_sql_condition()
-        columns = log_filter.get_columns()
+        columns = log_filter.get_columns_str()
 
         # The first query determines the absolute number of logs existing
         # matching the given criteria
@@ -608,6 +610,16 @@ def affirm_validation(assertion: Type[T], value: Any, **kwargs: Any) -> T:
     must **ignore** them always to reduce redundancy between frontend and backend.
     """
     return validate.validate_assert(assertion, value, ignore_warnings=True, **kwargs)
+
+
+def affirm_dataclass(assertion: Type[T], value: Any, **kwargs: Any) -> T:
+    """Wrapper to call asserts in :py:mod:`cdedb.validation`.
+
+    This is similar to :func:`~cdedb.backend.common.affirm_validation`
+    but used for dataclass objects.
+    """
+    return validate.validate_assert_dataclass(
+        assertion, value, ignore_warnings=True, **kwargs)
 
 
 def affirm_validation_optional(

@@ -37,10 +37,10 @@ BIC:              {{ meta_info['CdE_Konto_BIC'] }}
 Kreditinstitut:   {{ meta_info['CdE_Konto_Institut'] }}
 Verwendungszweck: {{ transaction_subject }}
 
-Noch einfacher ist die Teilnahme an der Initiative 25+.
+Noch einfacher ist die Teilnahme an der Lastschriftinitiative.
 Damit erlaubst Du uns einmal im Jahr den Mitgliedsbeitrag sowie eine
 zusätzliche Spende per Lastschrift direkt von Deinem Konto einzuziehen.
-Wie Du an der Initiative 25+ teilnehmen kannst erfährst Du unter [3].
+Wie Du an der Lastschriftinitiative teilnehmen kannst erfährst Du unter [3].
 {%- endif %}
 
 Falls Du möchtest, dass wir Deine Daten vollständig löschen, wende Dich
@@ -53,4 +53,6 @@ Die Datenbank
 
 [1]: {{ cdedblink("core/index") }}
 [2]: {{ cdedblink("core/reset_password_form") }}
+{% if persona['is_cde_realm'] -%}
 [3]: {{ cdedblink("cde/i25p_index") }}
+{%- endif %}

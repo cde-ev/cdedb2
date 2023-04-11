@@ -15,7 +15,9 @@ import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, GenesisDecision, RequestState, merge_dicts, now
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.n_ import n_
-from cdedb.common.validation import GENESIS_CASE_EXPOSED_FIELDS, PERSONA_COMMON_FIELDS
+from cdedb.common.validation.validate import (
+    GENESIS_CASE_EXPOSED_FIELDS, PERSONA_COMMON_FIELDS,
+)
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access, check_validation as check,
     periodic,
@@ -268,13 +270,22 @@ class CoreGenesisMixin(CoreBaseFrontend):
         realms = [realm for realm in REALM_SPECIFIC_GENESIS_FIELDS
                   if {"{}_admin".format(realm), 'core_admin'} & rs.user.roles]
         data = self.coreproxy.genesis_list_cases(
-            rs, stati=(const.GenesisStati.to_review,), realms=realms)
+            rs, realms=realms, stati={
+                const.GenesisStati.to_review, const.GenesisStati.successful,
+                const.GenesisStati.existing_updated, const.GenesisStati.rejected})
         cases = self.coreproxy.genesis_get_cases(rs, set(data))
-        cases_by_realm = {
-            realm: {k: v for k, v in cases.items() if v['realm'] == realm}
+        current_cases_by_realm = {
+            realm: {k: v for k, v in cases.items() if v['realm'] == realm
+                        and v['case_status'] == const.GenesisStati.to_review}
             for realm in realms}
+        concluded_cases = {k: v for k, v in cases.items()
+                           if v['case_status'] != const.GenesisStati.to_review}
+        created_account_ids = [case['persona_id'] for case in concluded_cases.values()
+                               if case['persona_id']]
+        personas = self.coreproxy.get_personas(rs, created_account_ids)
         return self.render(rs, "genesis/genesis_list_cases", {
-            'cases_by_realm': cases_by_realm})
+            'current_cases_by_realm': current_cases_by_realm,
+            'concluded_cases': concluded_cases, 'personas': personas})
 
     @access("core_admin", *("{}_admin".format(realm)
                             for realm in REALM_SPECIFIC_GENESIS_FIELDS))
@@ -364,12 +375,12 @@ class CoreGenesisMixin(CoreBaseFrontend):
             if self.coreproxy.verify_existence(rs, data['username']):
                 rs.append_validation_error(
                     ("username", ValueError(n_("Email address already taken."))))
-        if data.get('pevent_id') and data.get('pcourse_id'):
-            if data['pevent_id'] != self.pasteventproxy.get_past_course(
+        if data.get('pcourse_id'):
+            # Capture both course without event and with unassociated event
+            if data.get('pevent_id') != self.pasteventproxy.get_past_course(
                     rs, data['pcourse_id'])['pevent_id']:
-                rs.append_validation_error(("pcourse_id", ValueError(n_(
-                    "Course not associated with past event specified."))
-                ))
+                e = ValueError(n_("Course not associated with past event specified."))
+                rs.extend_validation_errors((("pcourse_id", e), ("pevent_id", e)))
         if rs.has_validation_errors():
             return self.genesis_modify_form(rs, genesis_case_id)
 

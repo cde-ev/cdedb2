@@ -26,6 +26,12 @@
             $('#createlistform').cdedbProtectChanges();
         });
     </script>
+     <p class="text-info">
+        {{ util.make_icon('info-circle') }}
+        {% trans %}
+            Note that mailinglist creation can take up to 15 minutes to take effect.
+        {% endtrans %}
+    </p>
     <form action="{{ cdedblink('ml/create_mailinglist') }}" method="POST" id="createlistform" class="form-horizontal">
         {{ util.anti_csrf_token('ml/create_mailinglist') }}
         <h4 class="heading-underline">{% trans %}Meta{% endtrans %}</h4>
@@ -104,6 +110,10 @@
             </script>
         {{ util.form_input_select(name="attachment_policy", label=gettext("MIME filter / Attachments"),
                 entries=enums['AttachmentPolicy']|enum_entries(processing=gettext)) }}
+        {{ util.form_input_checkbox(name="convert_html", defaultvalue=True,
+                label=gettext("Automatically convert HTML emails to plaintext"),
+                info=gettext("Disable this in cases of lists with external correspondence (e.g. business emails)"
+                             " as there are actors causing problems with malformed emails.")) }}
         {{ util.form_input_text(name="maxsize", label=gettext("max. message size (in kB)"), type="number",
                                 defaultvalue=maxsize_default) }}
         {{ util.form_input_submit(label=gettext("Create"), cancellink=cdedblink('ml/index')) }}

@@ -70,7 +70,7 @@
         {% endcall %}
     {% endif %}
     {% if participants %}
-        <ul id="list-participants">
+        <ul id="list-participants" class="flex-width">
             {% for anid, participant in participants.items() %} {# This dict is already sorted. #}
                 <li class="hide-hover-container clearfix-after">
                     {% if participant['instructor'] %}<strong>{% endif %}
@@ -90,7 +90,8 @@
                             {{ util.input_hidden(name="persona_id", value=anid) }}
                             {{ util.input_hidden(name="pcourse_id", value=values['pcourse_id']) }}
                             {{ util.input_hidden(name="course_page", value=True) }}
-                            {{ util.input_submit(title=gettext("Remove"), icon="minus", aclass="btn btn-xs btn-danger list-button-float",
+                            {{ util.input_submit(title=gettext("Remove"), icon="minus",
+                                    aclass="btn btn-xs btn-danger list-button-float",
                                     label="") }}
                         </form>
                     {% endif %}

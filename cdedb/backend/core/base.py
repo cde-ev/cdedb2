@@ -350,7 +350,7 @@ class CoreBaseBackend(AbstractBackend):
             fields_requiring_review = {
                 "birthday", "family_name", "given_names", "birth_name",
                 "gender", "address_supplement", "address", "postal_code",
-                "location", "country",
+                "location", "country", "donation",
             }
             all_changed_fields = {key for key, value in data.items()
                                   if value != committed_state[key]}
@@ -429,7 +429,7 @@ class CoreBaseBackend(AbstractBackend):
         that the reviewers won't get plagued too much.
 
         :param ack: whether to commit or refuse the change
-        :param reviewed: Signals wether the change was reviewed. This exists,
+        :param reviewed: Signals whether the change was reviewed. This exists,
           so that automatically resolved changes are not marked as reviewed.
         """
         if not ack:
@@ -470,8 +470,7 @@ class CoreBaseBackend(AbstractBackend):
             # commit changes
             ret = 0
             if len(udata) > 1:
-                ret = self.commit_persona(
-                    rs, udata, change_note="Änderung eingetragen.")
+                ret = self.commit_persona(rs, udata)
                 if not ret:
                     raise RuntimeError(n_("Modification failed."))
         return ret
@@ -644,8 +643,7 @@ class CoreBaseBackend(AbstractBackend):
             query += " WHERE " + " AND ".join(constraints)
         return unwrap(self.query_one(rs, query, params))
 
-    def commit_persona(self, rs: RequestState, data: CdEDBObject,
-                       change_note: Optional[str]) -> DefaultReturnCode:
+    def commit_persona(self, rs: RequestState, data: CdEDBObject) -> DefaultReturnCode:
         """Actually update a persona data set.
 
         This is the innermost layer of the changelog functionality and
@@ -655,8 +653,7 @@ class CoreBaseBackend(AbstractBackend):
             num = self.sql_update(rs, "core.personas", data)
             if not num:
                 raise ValueError(n_("Nonexistent user."))
-            current = unwrap(self.retrieve_personas(
-                rs, (data['id'],), columns=PERSONA_ALL_FIELDS))
+            current = self.retrieve_persona(rs, data['id'], columns=PERSONA_CDE_FIELDS)
             fulltext = self.create_fulltext(current)
             fulltext_update = {
                 'id': data['id'],
@@ -1107,8 +1104,8 @@ class CoreBaseBackend(AbstractBackend):
             'id': persona_id,
         }
         with Atomizer(rs):
-            current = unwrap(self.retrieve_personas(
-                rs, (persona_id,), ("balance", "is_cde_realm", "trial_member")))
+            current = self.retrieve_persona(
+                rs, persona_id, ("balance", "is_cde_realm", "trial_member"))
             if not current['is_cde_realm']:
                 raise RuntimeError(
                     n_("Tried to credit balance to non-cde person."))
@@ -1148,8 +1145,8 @@ class CoreBaseBackend(AbstractBackend):
             'is_member': is_member,
         }
         with Atomizer(rs):
-            current = unwrap(self.retrieve_personas(
-                rs, (persona_id,), ('is_member', 'balance', 'is_cde_realm')))
+            current = self.retrieve_persona(
+                rs, persona_id, ('is_member', 'balance', 'is_cde_realm'))
             if not current['is_cde_realm']:
                 raise RuntimeError(n_("Not a CdE account."))
             if current['is_member'] == is_member:
@@ -1163,11 +1160,11 @@ class CoreBaseBackend(AbstractBackend):
                 params = [persona_id]
                 if self.query_all(rs, query, params):
                     raise RuntimeError(n_("Active lastschrift permit found."))
-                delta = -current['balance']
-                new_balance = decimal.Decimal(0)
+                # Display this to be not surprised if you look at the finance log and
+                #  observe the decreasing of the total balance
+                delta = decimal.Decimal(0)
+                new_balance = current["balance"]
                 code = const.FinanceLogCodes.lose_membership
-                # Do not modify searchability.
-                update['balance'] = decimal.Decimal(0)
             else:
                 delta = None
                 new_balance = None
@@ -1391,12 +1388,12 @@ class CoreBaseBackend(AbstractBackend):
             if any(not ls['revoked_at'] for ls in lastschrift):
                 raise ArchiveError(n_("Active lastschrift exists."))
             query = ("UPDATE cde.lastschrift"
-                     " SET (amount, iban, account_owner, account_address)"
-                     " = (%s, %s, %s, %s)"
+                     " SET (iban, account_owner, account_address)"
+                     " = (%s, %s, %s)"
                      " WHERE persona_id = %s"
                      " AND revoked_at < now() - interval '14 month'")
             if lastschrift:
-                self.query_exec(rs, query, (0, "", "", "", persona_id))
+                self.query_exec(rs, query, ("", "", "", persona_id))
             #
             # 3. Remove complicated attributes (membership, foto and password)
             #
@@ -1449,6 +1446,9 @@ class CoreBaseBackend(AbstractBackend):
                 'title': None,
                 'name_supplement': None,
                 # 'gender' kept for later recognition
+                'pronouns': None,
+                'pronouns_profile': False,
+                'pronouns_nametag': False,
                 # 'birthday' kept for later recognition
                 'telephone': None,
                 'mobile': None,
@@ -1470,6 +1470,7 @@ class CoreBaseBackend(AbstractBackend):
                 'interests': None,
                 'free_form': None,
                 'balance': 0 if persona['balance'] is not None else None,
+                'donation': 0 if persona['donation'] is not None else None,
                 'decided_search': False,
                 'trial_member': False,
                 'bub_search': False,
@@ -1534,6 +1535,11 @@ class CoreBaseBackend(AbstractBackend):
             #
             self.sql_delete(rs, "core.log", (persona_id,), "persona_id")
             # finance log stays untouched to keep balance correct
+            # therefore, we log if the persona had any remaining balance
+            if persona["balance"]:
+                log_code = const.FinanceLogCodes.remove_balance_on_archival
+                self.finance_log(rs, log_code, persona_id, delta=-persona['balance'],
+                                 new_balance=decimal.Decimal("0"))
             self.sql_delete(rs, "cde.log", (persona_id,), "persona_id")
             # past event log stays untouched since we keep past events
             # event log stays untouched since events have a separate life cycle
@@ -1730,21 +1736,15 @@ class CoreBaseBackend(AbstractBackend):
         # all event users who are related to their event) or 'participant'
         # of the requested event (to get access to all event users who are also
         # 'participant' at the same event).
-        #
-        # This is a bit of a transgression since we access the event
-        # schema from the core backend, but we go for security instead of
-        # correctness here.
+        is_orga = False
         if event_id:
-            orga = ("SELECT event_id FROM event.orgas WHERE persona_id = %s"
-                    " AND event_id = %s")
-            is_orga = bool(
-                self.query_all(rs, orga, (rs.user.persona_id, event_id)))
-        else:
-            is_orga = False
+            is_orga = event_id in rs.user.orga
         if (persona_ids != {rs.user.persona_id}
                 and not (rs.user.roles
                          & {"event_admin", "cde_admin", "core_admin",
                             "droid_quick_partial_export"})):
+            # Accessing the event scheme from the core backend is a bit of a
+            # transgression, but we value the added security higher than correctness.
             query = """
                 SELECT DISTINCT
                     regs.id, regs.persona_id
@@ -2197,7 +2197,7 @@ class CoreBaseBackend(AbstractBackend):
     @access("anonymous")
     def verify_existence(self, rs: RequestState, email: str,
                          include_genesis: bool = True) -> bool:
-        """Check wether a certain email belongs to any persona."""
+        """Check whether a certain email belongs to any persona."""
         email = affirm(vtypes.Email, email)
         query = "SELECT COUNT(*) AS num FROM core.personas WHERE username = %s"
         num = unwrap(self.query_one(rs, query, (email,))) or 0

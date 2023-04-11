@@ -67,6 +67,8 @@
                                    anid="input_checkbox_is_searchable") }}
             {{ util.form_input_checkbox(name="paper_expuls", label=gettext("Printed exPuls"),
                                    anid="input_checkbox_is_searchable") }}
+            {{ util.form_input_text(name="donation", label=gettext("Annual Donation"), type="number",
+                                    attributes='min="0" step="0.01"'|s) }}
         {% endif %}
         {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="7", markdown=True) }}
 
@@ -82,13 +84,11 @@
     <div class="row">
         <div class="col-md-4">
             <div class="p button-par">
-                {% if not scope.includes_archived %}
-                    {{ util.href(cdedblink("{}/create_user_form".format(scope.realm)), gettext("Create User"),
-                            icon="plus", aclass="btn btn-success btn-sm") }}
-                    {% if scope.realm == 'cde' %}
-                        {{ util.href(cdedblink('cde/batch_admission'), gettext("Batch Admission"), icon="file-import",
-                                 aclass="btn btn-success btn-sm") }}
-                    {% endif %}
+                {{ util.href(cdedblink("{}/create_user_form".format(scope.realm)), gettext("Create User"),
+                        icon="plus", aclass="btn btn-success btn-sm") }}
+                {% if scope.realm == 'cde' %}
+                    {{ util.href(cdedblink('cde/batch_admission'), gettext("Batch Admission"), icon="file-import",
+                             aclass="btn btn-success btn-sm") }}
                 {% endif %}
             </div>
             {% if info %}

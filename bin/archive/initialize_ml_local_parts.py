@@ -51,7 +51,7 @@ with Atomizer(rs()):
                 domain = k
                 break
         else:
-            domain = atype.domains[0]
+            domain = atype.available_domains[0]
             print("Domain not found, defaulting to: {}".format(domain))
         setter = {
             'id': datum['id'],

@@ -160,6 +160,9 @@ CREATE TABLE core.personas (
         balance                 numeric(8, 2) DEFAULT NULL,
         CONSTRAINT personas_cde_balance
             CHECK(NOT is_cde_realm OR balance IS NOT NULL OR is_purged),
+        donation                numeric(8, 2) DEFAULT NULL,
+        CONSTRAINT personas_cde_donation
+            CHECK(NOT is_cde_realm OR donation IS NOT NULL OR is_purged),
         -- True if user decided (positive or negative) on searchability
         decided_search          boolean DEFAULT FALSE,
         CONSTRAINT personas_cde_consent
@@ -190,11 +193,13 @@ CREATE INDEX personas_is_assembly_realm_idx ON core.personas(is_assembly_realm);
 CREATE INDEX personas_is_member_idx ON core.personas(is_member);
 CREATE INDEX personas_is_searchable_idx ON core.personas(is_searchable);
 GRANT SELECT (id, username, password_hash, is_active, is_meta_admin, is_core_admin, is_cde_admin, is_finance_admin, is_event_admin, is_ml_admin, is_assembly_admin, is_cdelokal_admin, is_auditor, is_cde_realm, is_event_realm, is_ml_realm, is_assembly_realm, is_member, is_searchable, is_archived, is_purged) ON core.personas TO cdb_anonymous, cdb_ldap;
-GRANT UPDATE (username, password_hash) ON core.personas TO cdb_persona;
-GRANT SELECT, UPDATE (display_name, given_names, family_name, title, name_supplement, pronouns, pronouns_nametag, pronouns_profile, gender, birthday, telephone, mobile, address_supplement, address, postal_code, location, country, fulltext) ON core.personas TO cdb_persona;
 GRANT SELECT (display_name, given_names, family_name, title, name_supplement) ON core.personas TO cdb_ldap;
-GRANT SELECT, UPDATE ON core.personas TO cdb_member; -- TODO maybe restrict notes to cdb_admin
-GRANT INSERT ON core.personas TO cdb_admin;
+-- required for _changelog_resolve_change_unsafe
+GRANT SELECT ON core.personas TO cdb_persona;
+GRANT UPDATE (display_name, given_names, family_name, title, name_supplement, pronouns, pronouns_nametag, pronouns_profile, gender, birthday, telephone, mobile, address_supplement, address, postal_code, location, country, fulltext, username, password_hash) ON core.personas TO cdb_persona;
+GRANT UPDATE (birth_name, address_supplement2, address2, postal_code2, location2, country2, weblink, specialisation, affiliation, timeline, interests, free_form, decided_search, bub_search, foto, paper_expuls, is_searchable, donation) ON core.personas TO cdb_member;
+-- includes notes in addition to cdb_member
+GRANT UPDATE, INSERT ON core.personas TO cdb_admin;
 GRANT SELECT, UPDATE ON core.personas_id_seq TO cdb_admin;
 
 -- table for managing creation of new accounts by arbitrary request
@@ -414,6 +419,7 @@ CREATE TABLE core.changelog (
         interests               varchar,
         free_form               varchar,
         balance                 numeric(8, 2),
+        donation                numeric(8, 2),
         decided_search          boolean,
         trial_member            boolean,
         bub_search              boolean,
@@ -421,6 +427,8 @@ CREATE TABLE core.changelog (
         paper_expuls            boolean
 );
 CREATE INDEX changelog_code_idx ON core.changelog(code);
+CREATE INDEX changelog_persona_id_idx ON core.changelog(persona_id);
+-- SELECT can not be easily restricted here due to change displacement logic
 GRANT SELECT, INSERT ON core.changelog TO cdb_persona;
 GRANT SELECT, UPDATE ON core.changelog_id_seq TO cdb_persona;
 GRANT UPDATE (code) ON core.changelog TO cdb_persona;
@@ -466,6 +474,8 @@ CREATE TABLE cde.org_period (
         ejection_done           timestamp WITH TIME ZONE DEFAULT NULL,
         ejection_count          integer NOT NULL DEFAULT 0,
         ejection_balance        numeric(8, 2) NOT NULL DEFAULT 0,
+        exmember_balance        numeric(11, 2) NOT NULL DEFAULT 0,
+        exmember_count          integer NOT NULL DEFAULT 0,
         -- has the balance already been adjusted? If so, up to which ID
         -- (it is done incrementally)
         balance_state           integer REFERENCES core.personas(id),
@@ -503,7 +513,6 @@ CREATE TABLE cde.lastschrift (
         submitted_by            integer REFERENCES core.personas(id) NOT NULL,
         -- actual data
         persona_id              integer REFERENCES core.personas(id) NOT NULL,
-        amount                  numeric(8, 2) NOT NULL,
         iban                    varchar NOT NULL,
         -- if different from the paying member
         account_owner           varchar,
@@ -511,6 +520,8 @@ CREATE TABLE cde.lastschrift (
         -- validity
         granted_at              timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
         revoked_at              timestamp WITH TIME ZONE DEFAULT NULL,
+        -- we used different lastschrift subscription forms over the years
+        revision                integer NOT NULL DEFAULT 2,
         -- administrative comments
         notes                   varchar
 );
@@ -528,6 +539,7 @@ CREATE TABLE cde.lastschrift_transactions (
         status                  integer NOT NULL,
         amount                  numeric(8, 2) NOT NULL,
         issued_at               timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
+        payment_date            date DEFAULT NULL,
         processed_at            timestamp WITH TIME ZONE DEFAULT NULL,
         -- positive for money we got and negative if bounced with fee
         tally                   numeric(8, 2) DEFAULT NULL
@@ -690,7 +702,6 @@ CREATE TABLE event.events (
         -- automatically warned about registering late
         registration_hard_limit      timestamp WITH TIME ZONE,
         iban                         varchar,
-        nonmember_surcharge          numeric(8, 2) NOT NULL DEFAULT 0,
         orga_address                 varchar,
         registration_text            varchar,
         mail_text                    varchar,
@@ -721,16 +732,27 @@ GRANT INSERT, DELETE ON event.events TO cdb_admin;
 GRANT SELECT, UPDATE ON event.events_id_seq TO cdb_admin;
 GRANT SELECT ON event.events to cdb_anonymous;
 
+CREATE TABLE event.event_fees (
+        id                           serial PRIMARY KEY,
+        event_id                     integer NOT NULL REFERENCES event.events (id),
+        title                        varchar NOT NULL,
+        amount                       numeric(8, 2) NOT NULL,
+        condition                    varchar NOT NULL,
+        notes                        varchar
+);
+GRANT INSERT, SELECT, UPDATE, DELETE ON event.event_fees TO cdb_persona;
+GRANT SELECT, UPDATE on event.event_fees_id_seq TO cdb_persona;
+GRANT SELECT on event.event_fees TO cdb_anonymous;
+
 CREATE TABLE event.event_parts (
         id                      serial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
         title                   varchar NOT NULL,
         shortname               varchar NOT NULL,
+        UNIQUE (event_id, shortname) DEFERRABLE INITIALLY IMMEDIATE,
         -- we implicitly assume, that parts are non-overlapping
         part_begin              date NOT NULL,
         part_end                date NOT NULL,
-        -- fees are cummulative
-        fee                     numeric(8, 2) NOT NULL,
         -- reference to custom data field for waitlist management
         waitlist_field          integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
 );
@@ -838,22 +860,6 @@ ALTER TABLE event.events ADD FOREIGN KEY (lodge_field) REFERENCES event.field_de
 ALTER TABLE event.events ADD FOREIGN KEY (camping_mat_field) REFERENCES event.field_definitions(id);
 ALTER TABLE event.events ADD FOREIGN KEY (course_room_field) REFERENCES event.field_definitions(id);
 ALTER TABLE event.event_parts ADD FOREIGN KEY (waitlist_field) REFERENCES event.field_definitions(id);
-
-CREATE TABLE event.fee_modifiers (
-        id                      serial PRIMARY KEY,
-        -- the event part this modifier is available in.
-        part_id                 integer NOT NULL REFERENCES event.event_parts(id),
-        modifier_name           varchar NOT NULL,
-        -- the amount to modify the fee by. Can be negative.
-        amount                  numeric(8, 2) NOT NULL,
-        -- in which field do we save the information whether the modifier has been selected:
-        field_id                integer NOT NULL REFERENCES event.field_definitions(id),
-        UNIQUE (part_id, modifier_name),
-        UNIQUE (part_id, field_id)
-);
-GRANT INSERT, UPDATE, DELETE ON event.fee_modifiers TO cdb_persona;
-GRANT SELECT ON event.fee_modifiers TO cdb_anonymous;
-GRANT SELECT, UPDATE ON event.fee_modifiers_id_seq TO cdb_persona;
 
 CREATE TABLE event.courses (
         id                      serial PRIMARY KEY,
@@ -1271,6 +1277,7 @@ CREATE TABLE ml.mailinglists (
         mod_policy              integer NOT NULL,
         -- see cdedb.database.constants.AttachmentPolicy
         attachment_policy       integer NOT NULL,
+        convert_html            boolean NOT NULL DEFAULT TRUE,
         -- see cdedb.database.constants.MailinglistTypes
         ml_type                 integer NOT NULL,
         subject_prefix          varchar,

@@ -51,7 +51,7 @@ PERSONA_CDE_FIELDS = PERSONA_EVENT_FIELDS + (
     "address_supplement2", "address2", "postal_code2", "location2",
     "country2", "weblink", "specialisation", "affiliation", "timeline",
     "interests", "free_form", "balance", "decided_search", "trial_member",
-    "bub_search", "foto", "paper_expuls", "birth_name",
+    "bub_search", "foto", "paper_expuls", "birth_name", "donation",
 )
 
 #: Names of columns associated to a ml user.
@@ -93,7 +93,6 @@ REALM_SPECIFIC_GENESIS_FIELDS: Dict[Realm, Tuple[str, ...]] = {
             "country", "birth_name", "attachment_hash", "pevent_id", "pcourse_id"),
 }
 
-
 #: Fields of a pending privilege change.
 PRIVILEGE_CHANGE_FIELDS = (
     "id", "ctime", "ftime", "persona_id", "submitted_by", "status", "is_meta_admin",
@@ -112,7 +111,7 @@ PAST_EVENT_FIELDS = ("id", "title", "shortname", "institution", "description",
 #: Fields of an event organized via the CdEDB
 EVENT_FIELDS = (
     "id", "title", "institution", "description", "shortname", "registration_start",
-    "registration_soft_limit", "registration_hard_limit", "iban", "nonmember_surcharge",
+    "registration_soft_limit", "registration_hard_limit", "iban",
     "orga_address", "registration_text", "mail_text", "use_additional_questionnaire",
     "notes", "participant_info", "offline_lock", "is_visible",
     "is_course_list_visible", "is_course_state_visible", "is_participant_list_visible",
@@ -121,7 +120,7 @@ EVENT_FIELDS = (
 
 #: Fields of an event part organized via CdEDB
 EVENT_PART_FIELDS = ("id", "event_id", "title", "shortname", "part_begin",
-                     "part_end", "fee", "waitlist_field")
+                     "part_end", "waitlist_field")
 
 PART_GROUP_FIELDS = ("id", "event_id", "title", "shortname", "notes", "constraint_type")
 
@@ -139,8 +138,8 @@ FIELD_DEFINITION_FIELDS = (
     "checkin", "entries",
 )
 
-#: Fields of a modifier for an event_parts fee.
-FEE_MODIFIER_FIELDS = ("id", "part_id", "modifier_name", "amount", "field_id")
+#: Fields of a conditional event fee.
+EVENT_FEE_FIELDS = ("id", "event_id", "title", "amount", "condition", "notes")
 
 #: Fields of a concluded course
 PAST_COURSE_FIELDS = ("id", "pevent_id", "nr", "title", "description")
@@ -182,17 +181,10 @@ QUESTIONNAIRE_ROW_FIELDS = ("event_id", "field_id", "pos", "title", "info",
 STORED_EVENT_QUERY_FIELDS = (
     "id", "event_id", "query_name", "scope", "serialized_query")
 
-#: Fields of a mailing list entry (that is one mailinglist)
-MAILINGLIST_FIELDS = (
-    "id", "title", "address", "local_part", "domain", "description",
-    "mod_policy", "notes", "attachment_policy", "ml_type",
-    "subject_prefix", "maxsize", "is_active", "event_id", "registration_stati",
-    "assembly_id")
-
 #: Fields of a mailinglist which may be changed by all moderators, even restricted ones
 RESTRICTED_MOD_ALLOWED_FIELDS = {
-    "description", "mod_policy", "notes", "attachment_policy", "subject_prefix",
-    "maxsize"}
+    "description", "mod_policy", "notes", "attachment_policy", "convert_html",
+    "subject_prefix", "maxsize"}
 
 #: Fields of a mailinglist which require full moderator access to be changed
 FULL_MOD_REQUIRING_FIELDS = {
@@ -224,6 +216,7 @@ ORG_PERIOD_FIELDS = (
     "id", "billing_state", "billing_done", "billing_count",
     "ejection_state", "ejection_done", "ejection_count", "ejection_balance",
     "balance_state", "balance_done", "balance_trialmembers", "balance_total",
+    "exmember_balance", "exmember_count",
     "archival_notification_state", "archival_notification_count",
     "archival_notification_done", "archival_state", "archival_count", "archival_done",
     "semester_done")
@@ -234,13 +227,13 @@ EXPULS_PERIOD_FIELDS = (
 
 #: Fields of one direct debit permit
 LASTSCHRIFT_FIELDS = (
-    "id", "submitted_by", "persona_id", "amount", "iban",
+    "id", "submitted_by", "persona_id", "iban",
     "account_owner", "account_address", "granted_at", "revoked_at", "notes")
 
 #: Fields of one interaction on behalf of a direct debit permit
 LASTSCHRIFT_TRANSACTION_FIELDS = (
     "id", "submitted_by", "lastschrift_id", "period_id", "status", "amount",
-    "issued_at", "processed_at", "tally")
+    "issued_at", "payment_date", "processed_at", "tally")
 
 #: Datatype and Association of special purpose event fields
 EVENT_FIELD_SPEC: Dict[
@@ -250,12 +243,10 @@ EVENT_FIELD_SPEC: Dict[
         {const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),
     'course_room_field': ({const.FieldDatatypes.str}, {const.FieldAssociations.course}),
     'waitlist': ({const.FieldDatatypes.int}, {const.FieldAssociations.registration}),
-    'fee_modifier': (
-        {const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),
 }
 
 LOG_FIELDS_COMMON = ("codes", "persona_id", "submitted_by", "change_note", "offset",
-                     "length", "time_start", "time_stop")
+                     "length", "time_start", "time_stop", "download")
 
 FINANCE_LOG_FIELDS = ("delta_from", "delta_to", "new_balance_from", "new_balance_to",
                       "transaction_date_from", "transaction_date_to",

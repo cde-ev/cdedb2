@@ -17,7 +17,7 @@ from cdedb.common import (
 )
 from cdedb.common.query import QueryOperators
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
-from cdedb.common.validation import parse_datetime
+from cdedb.common.validation.validate import parse_datetime
 from cdedb.filter import datetime_filter
 from tests.common import (
     USER_DICT, FrontendTest, MultiAppFrontendTest, UserIdentifier, as_users, get_user,
@@ -174,19 +174,19 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         # not assembly admins
         if self.user_in("annika", "martin", "werner"):
             ins = everyone
-            out = {"Nutzer verwalten", "Alle Nutzer verwalten", "Log"}
+            out = {"Nutzer verwalten", "Log"}
         # core admins
         elif self.user_in("vera"):
-            ins = everyone | {"Nutzer verwalten", "Alle Nutzer verwalten"}
+            ins = everyone | {"Nutzer verwalten"}
             out = {"Log"}
         # assembly admins
         elif self.user_in("anton"):
-            ins = everyone | {"Nutzer verwalten", "Alle Nutzer verwalten", "Log"}
+            ins = everyone | {"Nutzer verwalten", "Log"}
             out = set()
         # auditors
         elif self.user_in("katarina"):
             ins = everyone | {"Log"}
-            out = {"Nutzer verwalten", "Alle Nutzer verwalten"}
+            out = {"Nutzer verwalten"}
         else:
             self.fail("Please adjust users for this tests.")
 
@@ -1171,13 +1171,20 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertEqual(data, self.response.body)
         self.response = saved_response
 
-        # Add a new version
+        # Add a new version and check prefilling works properly
         self.traverse({"href": "/assembly/assembly/1/attachment/1001/add"})
         self.assertNonPresence("Eine verknüpfte Abstimmung wurde bereits gesperrt",
                                div='static-notifications', check_div=True)
         f = self.response.forms['addattachmentversionform']
+        self.assertEqual(f['title'].value, "Vorläufige Beschlussvorlage")
+        f['title'] = ""
+        f['filename'] = "//"
+        self.submit(f, check_notification=False)
+        self.assertValidationError('filename', " Muss ein zulässiger Bezeichner sein")
+        self.assertEqual(f['title'].value, "")
         f['title'] = "Maßgebliche Beschlussvorlage"
         f['authors'] = "Der Vorstand"
+        f['filename'] = ""
         f['attachment'] = webtest.Upload("form.pdf", data, "application/octet-stream")
         self.submit(f)
 

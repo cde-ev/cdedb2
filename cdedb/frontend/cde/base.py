@@ -31,7 +31,7 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import QueryConstraint, QueryOperators, QueryScope
 from cdedb.common.roles import PERSONA_DEFAULTS
 from cdedb.common.sorting import xsorted
-from cdedb.common.validation import (
+from cdedb.common.validation.validate import (
     PERSONA_FULL_CREATION, filter_none, get_errors, get_warnings,
 )
 from cdedb.filter import enum_entries_filter
@@ -288,30 +288,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             'country2': OrderedDict(get_localized_country_codes(rs)),
         }
         return self.generic_user_search(
-            rs, download, is_search, QueryScope.cde_user, QueryScope.cde_user,
-            self.cdeproxy.submit_general_query, choices=choices)
-
-    @access("core_admin", "cde_admin")
-    @REQUESTdata("download", "is_search")
-    def full_user_search(self, rs: RequestState, download: Optional[str],
-                             is_search: bool) -> Response:
-        """Perform search.
-
-        Archived users are somewhat special since they are not visible
-        otherwise.
-        """
-        events = self.pasteventproxy.list_past_events(rs)
-        choices: Dict[str, Dict[Any, str]] = {
-            'pevent_id': OrderedDict(
-                xsorted(events.items(), key=operator.itemgetter(1))),
-            'gender': OrderedDict(
-                enum_entries_filter(
-                    const.Genders,
-                    rs.gettext if download is None else rs.default_gettext))
-        }
-        return self.generic_user_search(
-            rs, download, is_search,
-            QueryScope.all_cde_users, QueryScope.all_core_users,
+            rs, download, is_search, QueryScope.all_cde_users,
             self.cdeproxy.submit_general_query, choices=choices)
 
     @access("core_admin", "cde_admin")
@@ -320,6 +297,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             'is_member': True,
             'bub_search': False,
             'paper_expuls': True,
+            'donation': decimal.Decimal(0),
         }
         merge_dicts(rs.values, defaults)
         return super().create_user_form(rs)
@@ -335,6 +313,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             'is_active': True,
             'decided_search': False,
             'paper_expuls': True,
+            'donation': decimal.Decimal(0)
         }
         data.update(defaults)
         return super().create_user(rs, data)
@@ -421,6 +400,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             'display_name': persona['given_names'],
             'trial_member': False,
             'paper_expuls': True,
+            'donation': decimal.Decimal(0),
             'bub_search': False,
             'decided_search': False,
             'notes': None,
@@ -799,6 +779,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
                          total_to: Optional[decimal.Decimal],
                          members_from: Optional[int],
                          members_to: Optional[int],
+                         download: bool = False,
                          ) -> Response:
         """View financial activity."""
 
@@ -813,4 +794,4 @@ class CdEBaseFrontend(AbstractUserFrontend):
         }
 
         return self.generic_view_log(
-            rs, filter_params, "cde.finance_log", "view_finance_log")
+            rs, filter_params, "cde.finance_log", "view_finance_log", download)
