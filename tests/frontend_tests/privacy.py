@@ -469,14 +469,14 @@ class TestPrivacyFrontend(FrontendTest):
         #     self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
         #                                        check_div=False)
 
-    @as_users("annika", "inga", "nina", "quintus", "viktor")
+    @as_users("annika", "ludwig", "nina", "quintus", "viktor")
     @admin_views("ml_mod", "ml_mod_cde", "ml_mod_event", "ml_mod_assembly",
                  "ml_mod_cdelokal")
     def test_profile_as_relevant_ml_admin(self) -> None:
         ml_admin = 'nina'
         all_ml = (
             (64, 'janis', 'nina'),  # public
-            (65, 'janis', 'inga'),  # cdelokal
+            (65, 'janis', 'ludwig'),  # cdelokal
             (56, 'garcia', 'quintus'),  # team
             (9, 'garcia', 'annika'),  # event
             (5, 'kalif', 'viktor'),  # assembly
