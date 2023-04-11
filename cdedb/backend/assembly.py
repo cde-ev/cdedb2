@@ -548,7 +548,7 @@ class AssemblyBackend(AbstractBackend):
             for e in self.query_all(
                 rs, q, (assembly_id, const.AssemblyLogCodes.new_attendee, cutoff))
         }
-        if early_attendees.keys() & late_attendees.keys():
+        if early_attendees.keys() & late_attendees.keys():  # pragma: no cover
             raise ValueError("Unexpected overlap in early and late attendees.")
 
         return AssembyAttendees(
