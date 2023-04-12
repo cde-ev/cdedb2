@@ -949,7 +949,7 @@ class TestCdEFrontend(FrontendTest):
         f['qop_is_archived'] = ""
         f['qval_is_archived'] = ""
         self.submit(f)
-        self.assertPresence("Ergebnis [16]", div='query-results')
+        self.assertPresence("Ergebnis [17]", div='query-results')
         self.assertPresence("Anton", div='query-result')
         self.assertPresence("Hell", div='query-result')
         self.assertPresence("Lost", div='query-result')
@@ -2049,7 +2049,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("1 Accounts archiviert.", div="2-1002")
         self.assertPresence("2 Probemitgliedschaften beendet", div="3-1003")
         self.assertPresence("16,00 € Guthaben abgebucht.", div="3-1003")
-        self.assertPresence("562,55 € Guthaben von 10 Exmitgliedern", div="3-1003")
+        self.assertPresence("567,55 € Guthaben von 11 Exmitgliedern", div="3-1003")
         self.assertPresence("Nächstes Semester", div="4-1004")
         self.assertPresence("44", div="4-1004")
 
@@ -2835,7 +2835,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("vera")
     def test_changelog_meta(self) -> None:
         self.traverse({'description': 'Nutzerdaten-Log'})
-        self.assertTitle("Nutzerdaten-Log [1–32 von 32]")
+        self.assertTitle("Nutzerdaten-Log [1–33 von 33]")
         f = self.response.forms['logshowform']
         f['persona_id'] = "DB-2-7"
         self.submit(f)
@@ -2848,7 +2848,8 @@ class TestCdEFrontend(FrontendTest):
         personas_without_address = {
             USER_DICT["farin"]["id"], USER_DICT["katarina"]["id"],
             USER_DICT["martin"]["id"], USER_DICT["olaf"]["id"],
-            USER_DICT["vera"]["id"], USER_DICT["werner"]["id"]
+            USER_DICT["vera"]["id"], USER_DICT["werner"]["id"],
+            USER_DICT["ludwig"]["id"],
         }
         fake_rs = cast(RequestState, types.SimpleNamespace())
         fake_rs.translations = self.translations

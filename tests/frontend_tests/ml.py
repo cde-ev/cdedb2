@@ -1313,7 +1313,7 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['removewhitelistform1']
         self.submit(f)
 
-    @as_users("inga")
+    @as_users("ludwig")
     def test_cdelokal_admin(self) -> None:
         self.traverse({"description": "Mailinglisten"},
                       {"description": "Hogwarts"})

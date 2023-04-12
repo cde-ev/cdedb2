@@ -1239,7 +1239,7 @@
             "postal_code": "10999",
             "given_names": "Inga",
             "is_ml_admin": false,
-            "is_cdelokal_admin": true,
+            "is_cdelokal_admin": false,
             "is_auditor": false,
             "id": 9,
             "is_cde_realm": true,
