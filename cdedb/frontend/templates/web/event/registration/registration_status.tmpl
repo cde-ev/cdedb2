@@ -193,7 +193,7 @@
         {% set id_suffix = "group-{}".format(track_group['id']) if track_group else track['id'] %}
         {% set reg_track = registration['tracks'][track['id']] %}
 
-        <div class="col-md-6">
+        <div class="col-md-{{ 6 if filtered_choice_objects|length > 1 else 12 }}">
             <h3>
                 {% trans %}Course{% endtrans %}
                 {% if filtered_choice_objects|length > 1 %}
