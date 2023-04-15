@@ -1089,7 +1089,7 @@ span.color-legend {
 }
 .heading-supplement {
     /* Subheading without to much space above */
-    margin-top: -10px;
+    margin-top: -9px;
 }
 .nowrap {
     white-space: nowrap;

@@ -88,7 +88,7 @@
                        title="{% trans %}Permanent link{% endtrans %}">&para;</a>
                 </h3>
                 {% if ambience['event']['id'] in user.orga or 'event_orga' in user.admin_views %}
-                    <div class="pull-right">
+                    <div class="pull-right heading-supplement">
                         {{ util.href(cdedblink('event/show_course', {'course_id' : anid}), gettext("Details"),
                                      readonly=is_locked, icon='list', aclass='btn btn-xs btn-info hide-hover') }}
                         {{ util.href(cdedblink('event/change_course_form', {'course_id' : anid}), gettext("Edit"),
