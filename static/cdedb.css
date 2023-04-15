@@ -594,7 +594,7 @@ span.result-separator, code.result-separator {
 }
 
 /* <details> are clickable, show a cursor */
-details {
+details summary {
     cursor: pointer;
 }
 
