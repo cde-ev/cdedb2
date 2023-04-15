@@ -5943,7 +5943,7 @@ msgstr "E-Mail-Adresse bereits vorhanden. Bitte das Passwort zurücksetzen."
 
 #: cdedb/frontend/core/genesis.py:151 cdedb/frontend/core/genesis.py:153
 msgid "Email sent. Please follow the link contained in the email."
-msgstr "E-Mail verschickt. Bitte den enthaltenen Link besuchen."
+msgstr "E-Mail verschickt. Bitte besuche den in der E-Mail enthaltenen Link."
 
 #: cdedb/frontend/core/genesis.py:167 cdedb/frontend/core/genesis.py:169
 msgid "Verification failed. Please contact the administrators."
