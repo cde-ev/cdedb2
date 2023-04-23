@@ -172,7 +172,7 @@ class EventEventMixin(EventBaseFrontend):
         minor_form = self.eventproxy.get_minor_form(rs, event_id)
         return self.send_file(
             rs, data=minor_form, mimetype="application/pdf",
-            filename="Elternbrief {}.pdf".format(rs.ambience['event']['shortname']))
+            filename="Elternbrief CdE {}.pdf".format(rs.ambience['event']['shortname']))
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
