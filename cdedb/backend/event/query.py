@@ -38,7 +38,7 @@ def _get_field_select_columns(fields: CdEDBObjectMap,
     )
 
 
-class EventQueryBackend(EventBaseBackend):
+class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
     @access("event", "core_admin", "ml_admin")
     def submit_general_query(self, rs: RequestState, query: Query,
                              event_id: int = None) -> Tuple[CdEDBObject, ...]:

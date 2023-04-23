@@ -24,7 +24,7 @@ from cdedb.common.n_ import n_
 from cdedb.database.connection import Atomizer
 
 
-class EventCourseBackend(EventBaseBackend):
+class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
     @access("anonymous")
     def list_courses(self, rs: RequestState,
                         event_id: int) -> Dict[int, str]:

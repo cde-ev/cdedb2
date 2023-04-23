@@ -678,7 +678,7 @@ class AssemblyBackend(AbstractBackend):
 
         Possible blockers:
 
-        * assembly_is_locked: Wether the assembly has been locked. In contrast to
+        * assembly_is_locked: Whether the assembly has been locked. In contrast to
                               individual objects linked to the assembly, this does not
                               prevent deletion and cascading of this blocker will also
                               cascade it for the individual objects.
@@ -1577,7 +1577,7 @@ class AssemblyBackend(AbstractBackend):
             }
             path = self.get_ballot_file_path(ballot_id)
             data = json_serialize(result)
-            with open(path, 'w') as f:
+            with open(path, 'w', encoding='UTF-8') as f:
                 f.write(data)
         ret = data.encode()
         return ret

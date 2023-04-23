@@ -338,7 +338,7 @@ class TestLDAP(BasicTest):
             'uniqueMember': [
                 'uid=1,ou=users,dc=cde-ev,dc=de',
                 'uid=100,ou=users,dc=cde-ev,dc=de',
-                'uid=9,ou=users,dc=cde-ev,dc=de'
+                'uid=38,ou=users,dc=cde-ev,dc=de'
             ],
             'objectClass': ['groupOfUniqueNames']
         }

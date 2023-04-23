@@ -46,7 +46,7 @@ emilia@example.cde      DB-5-1    secret     event user
 ferdinand@example.cde   DB-6-X    secret     admin in all realms, but not globally
 garcia@example.cde      DB-7-8    secret     orga of an event
 hades                   DB-8-6    secret     archived member
-inga@example.cde        DB-9-4    secret     minor member and cdelokal admin
+inga@example.cde        DB-9-4    secret     minor member
 janis@example.cde       DB-10-8   secret     mailinglist user
 kalif@example.cde       DB-11-6   secret     assembly user
 lisa                    DB-12-4   secret     member with whacked data
@@ -61,6 +61,7 @@ werner@example.cde      DB-23-X   secret     former member, corresponding to Ver
 annika@example.cde      DB-27-2   secret     former member, corresponding to Akademieteam
 farin@example.cde       DB-32-9   secret     former member, corresponding to Finanzvorstand
 katarina@example.cde    DB-37-X   secret     auditor (Kassenprüfer)
+ludwig@example.cde      DB-38-8   secret     former member, corresponding to CdElokal-Koordination
 viktor@example.cde      DB-48-5   secret     assembly admin
 akira@example.cde       DB-100-7  secret     equal to Anton - to test sorting
 ======================= ========= ========== ================================================

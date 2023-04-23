@@ -378,7 +378,7 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
 
     def test(self, event: CdEDBObject, reg: CdEDBObject, part_id: int) -> bool:  # pylint: disable=arguments-differ
         """
-        Test wether the given registration fits into this statistic for the given part.
+        Test whether the given registration fits into this statistic for the given part.
         """
         part = reg['parts'][part_id]
         if self == self.pending:

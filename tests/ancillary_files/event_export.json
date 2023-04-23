@@ -203,7 +203,7 @@
             "real_persona_id": null
         },
         "3": {
-            "amount_owed": "584.49",
+            "amount_owed": "534.48",
             "amount_paid": "0.00",
             "event_id": 1,
             "checkin": null,
@@ -245,7 +245,7 @@
             "real_persona_id": null
         },
         "5": {
-            "amount_owed": "584.49",
+            "amount_owed": "584.48",
             "amount_paid": "0.00",
             "checkin": null,
             "event_id": 1,
@@ -282,29 +282,6 @@
             "payment": null,
             "persona_id": 2,
             "real_persona_id": null}
-    },
-    "event.fee_modifiers": {
-        "1": {
-            "amount": "-5.00",
-            "field_id": 7,
-            "id": 1,
-            "modifier_name": "is_child",
-            "part_id": 1
-        },
-        "2": {
-            "amount": "-12.00",
-            "field_id": 7,
-            "id": 2,
-            "modifier_name": "is_child",
-            "part_id": 2
-        },
-        "3": {
-            "amount": "-19.00",
-            "field_id": 7,
-            "id": 3,
-            "modifier_name": "is_child",
-            "part_id": 3
-        }
     },
     "event.field_definitions": {
         "2": {
@@ -427,8 +404,8 @@
         }
     },
     "EVENT_SCHEMA_VERSION": [
-        15,
-        7
+        16,
+        0
     ],
     "event.registration_parts": {
         "2": {
@@ -773,6 +750,19 @@
             "max_size": null,
             "instructors": "Stephen Hawking und Richard Feynman",
             "notes": null
+        },
+        "13": {
+            "id": 13,
+            "event_id": 1,
+            "nr": "ζ",
+            "title": "Extra-Kurs",
+            "description": "Besser spät als nie.",
+            "shortname": "Extra",
+            "instructors": null,
+            "min_size": null,
+            "max_size": null,
+            "notes": null,
+            "fields": {}
         }
     },
     "id": 1,
@@ -1117,6 +1107,24 @@
             "id": 11,
             "track_id": 2,
             "course_id": 5
+        },
+        "35": {
+            "is_active": false,
+            "id": 35,
+            "track_id": 1,
+            "course_id": 13
+        },
+        "36": {
+            "is_active": true,
+            "id": 36,
+            "track_id": 2,
+            "course_id": 13
+        },
+        "37": {
+            "is_active": true,
+            "id": 37,
+            "track_id": 3,
+            "course_id": 13
         }
     },
     "core.personas": {
@@ -1231,7 +1239,7 @@
             "postal_code": "10999",
             "given_names": "Inga",
             "is_ml_admin": false,
-            "is_cdelokal_admin": true,
+            "is_cdelokal_admin": false,
             "is_auditor": false,
             "id": 9,
             "is_cde_realm": true,
@@ -1415,7 +1423,6 @@
             "course_room_field": 2,
             "is_visible": true,
             "iban": "DE26370205000008068900",
-            "nonmember_surcharge": "5.00",
             "shortname": "TestAka",
             "use_additional_questionnaire": false,
             "is_archived": false,
@@ -1441,13 +1448,86 @@
             "title": "Gro\u00dfe Testakademie 2222"
         }
     },
+    "event.event_fees": {
+        "1": {
+            "id": 1,
+            "event_id": 1,
+            "title": "Teilnahmebeitrag Warmup",
+            "amount": "10.50",
+            "condition": "part.Wu",
+            "notes": null
+        },
+        "2": {
+            "id": 2,
+            "event_id": 1,
+            "title": "Teilnahmebeitrag 1. Hälfte",
+            "amount": "123.00",
+            "condition": "part.1.H.",
+            "notes": null
+        },
+        "3": {
+            "id": 3,
+            "event_id": 1,
+            "title": "Teilnahmebeitrag 2. Hälfte",
+            "amount": "450.99",
+            "condition": "part.2.H.",
+            "notes": null
+        },
+        "4": {
+            "id": 4,
+            "event_id": 1,
+            "title": "Kinderpreis Warmup",
+            "amount": "-5.00",
+            "condition": "part.Wu and field.is_child",
+            "notes": null
+        },
+        "5": {
+            "id": 5,
+            "event_id": 1,
+            "title": "Kinderpreis 1. Hälfte",
+            "amount": "-12.00",
+            "condition": "part.1.H. and field.is_child",
+            "notes": null
+        },
+        "6": {
+            "id": 6,
+            "event_id": 1,
+            "title": "Kinderpreis 2. Hälfte",
+            "amount": "-19.00",
+            "condition": "part.2.H. and field.is_child",
+            "notes": null
+        },
+        "7": {
+            "id": 7,
+            "event_id": 1,
+            "title": "Externenzusatzbeitrag",
+            "amount": "5.00",
+            "condition": "any_part and not (is_member or field.is_child)",
+            "notes": null
+        },
+        "8": {
+            "id": 8,
+            "event_id": 1,
+            "title": "Mengenrabatt",
+            "amount": "-0.01",
+            "condition": "all_parts",
+            "notes": null
+        },
+        "9": {
+            "id": 9,
+            "event_id": 1,
+            "title": "Orgarabatt",
+            "amount": "-50.00",
+            "condition": "part.1.H. and part.2.H. and is_orga",
+            "notes": null
+        }
+    },
     "event.event_parts": {
         "2": {
             "event_id": 1,
             "id": 2,
             "part_end": "2222-11-11",
             "part_begin": "2222-11-01",
-            "fee": "123.00",
             "shortname": "1.H.",
             "title": "Erste H\u00e4lfte",
             "waitlist_field": null
@@ -1457,7 +1537,6 @@
             "id": 1,
             "part_end": "2222-02-02",
             "part_begin": "2222-02-02",
-            "fee": "10.50",
             "shortname": "Wu",
             "title": "Warmup",
             "waitlist_field": null
@@ -1467,7 +1546,6 @@
             "id": 3,
             "part_end": "2222-11-30",
             "part_begin": "2222-11-11",
-            "fee": "450.99",
             "shortname": "2.H.",
             "title": "Zweite H\u00e4lfte",
             "waitlist_field": null

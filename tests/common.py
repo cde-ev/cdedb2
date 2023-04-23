@@ -334,6 +334,8 @@ class BasicTest(unittest.TestCase):
                 if table == 'core.personas':
                     if k == 'balance' and r[k]:
                         r[k] = decimal.Decimal(r[k])
+                    if k == 'donation' and r[k]:
+                        r[k] = decimal.Decimal(r[k])
                     if k == 'birthday' and r[k]:
                         r[k] = parse_date(r[k])
                 if k in {'transaction_date'} and r[k]:
@@ -780,6 +782,16 @@ USER_DICT: Dict[str, UserObject] = {
         'family_name': "Kassenprüfer",
         'default_name_format': "Katarina Kassenprüfer",
     },
+    "ludwig": {
+        'id': 38,
+        'DB-ID': "DB-38-8",
+        'username': "ludwig@example.cde",
+        'password': "secret",
+        'diplay_name': "Ludwig",
+        'given_names': "Ludwig",
+        'family_name': "Lokus",
+        'default_name_format': "Ludwig Lokus",
+    },
     "viktor": {
         'id': 48,
         'DB-ID': "DB-48-5",
@@ -1212,17 +1224,21 @@ class FrontendTest(BackendTest):
                 return line.split(maxsplit=1)[-1]
         raise ValueError(f"Link [{num}] not found in mail [{index}].")
 
-    def assertTitle(self, title: str) -> None:
+    def assertTitle(self, title: str, exact: bool = True) -> None:
         """
         Assert that the tilte of the current page equals the given string.
 
         The actual title has a prefix, which is checked automatically.
+        :param exact: If False, presence as substring suffices.
         """
         components = tuple(x.strip() for x in self.response.lxml.xpath(
             '/html/head/title/text()'))
         self.assertEqual("CdEDB –", components[0][:7])
         normalized = re.sub(r'\s+', ' ', components[0][7:].strip())
-        self.assertEqual(title.strip(), normalized)
+        if exact:
+            self.assertEqual(title.strip(), normalized)
+        else:
+            self.assertIn(title.strip(), normalized)
 
     def get_content(self, div: str = "content") -> str:
         """Retrieve the content of the (first) element with the given id."""
@@ -1427,7 +1443,8 @@ class FrontendTest(BackendTest):
         if not container:
             raise AssertionError(
                 f"Input with name {f!r} is not contained in an .has-{kind} box")
-        msg = f"Expected error message not found near input with name {f!r}."
+        msg = f"Expected error message not found near input with name {f!r}:\n"
+        msg += container[0].text_content()
         self.assertIn(message, container[0].text_content(), msg)
 
     def assertNoLink(self, href_pattern: Union[str, Pattern[str]] = None,
@@ -1496,7 +1513,8 @@ class FrontendTest(BackendTest):
             else:
                 self.get("/assembly/log")
         elif realm == "ml":
-            entities = self.ml.get_mailinglists(self.key, entity_ids)
+            entities = {ml_id: ml.to_database() for ml_id, ml
+                        in self.ml.get_mailinglists(self.key, entity_ids).items()}
             if ml_id := kwargs.get('mailinglist_id'):
                 self.get(f"/ml/mailinglist/{ml_id}/log")
                 specific_log = True
@@ -1725,13 +1743,14 @@ class FrontendTest(BackendTest):
         _check_deleted_data()
         # 2. Find user via archived search
         self.traverse({'href': '/' + realm + '/$'})
-        self.traverse("Alle Nutzer verwalten")
-        self.assertTitle("Vollständige Nutzerverwaltung")
+        self.traverse("Nutzer verwalten")
+        self.assertTitle("utzerverwaltung", exact=False)
         f = self.response.forms['queryform']
+        f['qop_is_archived'] = ""
         f['qop_given_names'] = QueryOperators.match.value
         f['qval_given_names'] = 'Zelda'
         self.submit(f)
-        self.assertTitle("Vollständige Nutzerverwaltung")
+        self.assertTitle("utzerverwaltung", exact=False)
         self.assertPresence("Ergebnis [1]", div='query-results')
         self.assertPresence("Zeruda", div='query-result')
         self.traverse({'description': 'Profil', 'href': '/core/persona/1001/show'})

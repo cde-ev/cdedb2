@@ -157,6 +157,10 @@ ul.slim {
     background-color: #a4eba4;
     background-image: linear-gradient(to right, #a4eba4 0, #fff 50%);
 }
+.form-control-nosp {
+    /* negative help-block margin */
+    margin-bottom: -5px;
+}
 .help-block {
     margin-bottom: 6px;
 }
@@ -424,6 +428,9 @@ h1.title {
     display: block;
     overflow: hidden;
 }
+.float-right {
+    float: right;
+}
 .text-right-responsive {
     text-align: center;
 }
@@ -587,7 +594,7 @@ span.result-separator, code.result-separator {
 }
 
 /* <details> are clickable, show a cursor */
-details {
+details summary {
     cursor: pointer;
 }
 
@@ -1082,7 +1089,7 @@ span.color-legend {
 }
 .heading-supplement {
     /* Subheading without to much space above */
-    margin-top: -10px;
+    margin-top: -9px;
 }
 .nowrap {
     white-space: nowrap;

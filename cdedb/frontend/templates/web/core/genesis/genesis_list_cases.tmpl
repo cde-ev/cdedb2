@@ -17,13 +17,19 @@
             $('.rejection-form').cdedbProtectAction("{{ gettext("The Account Request will be permanently deleted.") }}");
         });
     </script>
+    <h2>
+        {% trans %}
+            Current Account Requests
+        {% endtrans %}
+    </h2>
+    <div id="current-cases">
     {% with REALM_REQUEST_TITLES={'event': gettext('Event Account Requests'),
                                   'cde': gettext('CdE Account Requests'),
                                   'assembly': gettext('Assembly Account Requests'),
                                   'ml': gettext('Mailinglist Account Requests')} %}
-        {% for realm, cases in cases_by_realm.items() %}
+        {% for realm, current_cases in current_cases_by_realm.items() %}
             <h3>{{ REALM_REQUEST_TITLES[realm] }}</h3>
-            {% for genesis_case_id, entry in cases|keydictsort(EntitySorter.genesis_case) %}
+            {% for genesis_case_id, entry in current_cases|keydictsort(EntitySorter.genesis_case, reverse=True) %}
                 <div class="row" id="request-{{ genesis_case_id }}">
                     <div class="col-sm-3">
                         <p>
@@ -55,4 +61,42 @@
             {% endfor %}
         {% endfor %}
     {% endwith %}
+    </div>
+
+    <h2>
+        {% trans %}
+            Recently Concluded Account Requests
+        {% endtrans %}
+    </h2>
+
+    <div id="concluded-cases" class="list-group list-group-hover list-group-condensed">
+    {% for genesis_case_id, entry in concluded_cases|keydictsort(EntitySorter.genesis_case) %}
+        <div id="genesis-{{ genesis_case_id }}-row" class="row list-group-item
+                {%- if entry['case_status'] == enums['GenesisStati'].rejected %} list-group-item-muted{% endif %}">
+            <div class="col-sm-3">
+                {{ util.href(cdedblink('core/genesis_show_case', {'genesis_case_id': genesis_case_id}),
+                             util.persona_name(entry, only_given_names=True), icon="door-open") }}
+            </div>
+            <div class="col-sm-3">
+                <span>
+                {{ util.make_icon(enums['GenesisStati'](entry['case_status']).get_icon(),
+                                  title=gettext( enums['GenesisStati'](entry['case_status'])|string)) }}
+                {{ gettext( enums['GenesisStati'](entry['case_status'])|string) }}
+                </span>
+            </div>
+            <div class="col-sm-3">
+                {% if entry['persona_id'] %}
+                    {{ util.href(show_user_link(user, entry['persona_id']),
+                                 util.persona_name(personas[entry['persona_id']]), icon="user") -}}
+                {% else %}
+                    –
+                {% endif %}
+            </div>
+            <div class="col-sm-3 small">
+                {{ util.realm_icon("is_" + entry['realm'] + "_realm", desc=True) }}<br />
+                {{ entry['ctime']|datetime(formatstr="%d.%m.%Y %H:%M:%S") }}
+            </div>
+        </div>
+    {% endfor %}
+    </div>
 {% endblock %}

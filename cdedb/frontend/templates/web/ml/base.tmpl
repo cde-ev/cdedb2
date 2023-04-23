@@ -8,7 +8,7 @@
             {{ util.href(cdedblink("ml/show_mailinglist", {'mailinglist_id': data['id']}), gettext("Overview"),
                     icon="caret-right", aclass="list-group-item", active=(sidenav_active == 'ml_show')) }}
 
-            {% if data['id'] in user.moderator or ambience['mailinglist']['ml_type_class'].has_moderator_view(user) %}
+            {% if data['id'] in user.moderator or ambience['mailinglist'].has_moderator_view(user) %}
                 {{ util.href(cdedblink("ml/management", {'mailinglist_id': data['id']}), gettext("Management"),
                         aclass="list-group-item", icon="list", active=(sidenav_active == 'ml_manage')) }}
                 {{ util.href(cdedblink("ml/advanced_management", {'mailinglist_id': data['id']}), gettext("Advanced Management"),
@@ -16,13 +16,13 @@
                 {{ util.href(cdedblink("ml/message_moderation", {'mailinglist_id': data['id']}), gettext("Message Moderation"),
                         aclass="list-group-item", icon="envelope", active=(sidenav_active == 'ml_moderation')) }}
             {% endif %}
-            {% if data['id'] in user.moderator or ambience['mailinglist']['ml_type_class'].has_moderator_view(user)
-                                               or ambience['mailinglist']['ml_type_class'].has_management_view(user) %}
+            {% if data['id'] in user.moderator or ambience['mailinglist'].has_moderator_view(user)
+                                               or ambience['mailinglist'].has_management_view(user) %}
                 {{ util.href(cdedblink("ml/change_mailinglist_form", {'mailinglist_id': data['id']}),
                         gettext("Configuration"), aclass="list-group-item", icon="cog",
                         active=(sidenav_active == 'ml_change')) }}
             {% endif %}
-            {% if data['id'] in user.moderator or ambience['mailinglist']['ml_type_class'].has_moderator_view(user) %}
+            {% if data['id'] in user.moderator or ambience['mailinglist'].has_moderator_view(user) %}
                 {{ util.href(cdedblink("ml/view_ml_log", {'mailinglist_id': data['id']}), gettext("Log"),
                              aclass="list-group-item", icon="far fa-list-alt", active=(sidenav_active == 'ml_ml_log')) }}
             {% endif %}
@@ -36,7 +36,7 @@
 {% block navigation %}
     {% if ambience['mailinglist'] %}
         <p>
-            {% if not ambience['mailinglist']['is_active'] and ambience['mailinglist']['ml_type_class'].has_management_view(user) %}
+            {% if not ambience['mailinglist']['is_active'] and ambience['mailinglist'].has_management_view(user) %}
                 {{ util.href(cdedblink("ml/list_mailinglists"), gettext("Mailinglist-Overview"),
                              icon="arrow-alt-circle-up") }}
             {% else %}
@@ -84,8 +84,6 @@
                 {% if 'ml_user' in user.admin_views %}
                     {{ util.href(cdedblink("ml/user_search"), gettext("Manage Users"),
                             icon="users", aclass="list-group-item", active=(sidenav_active == 'ml_users')) }}
-                    {{ util.href(cdedblink("ml/full_user_search"), gettext("Search All Users"), aclass="list-group-item",
-                                 icon="inbox", active=(sidenav_active=='ml_manage_archive')) }}
                 {% endif %}
                 {% if user.moderator or user.admin_views.intersection(ALL_MGMT_ADMIN_VIEWS|list + ['auditor']) %}
                     {{ util.href(cdedblink("ml/view_log"), gettext("Log"), icon="far fa-list-alt", aclass="list-group-item",
@@ -103,14 +101,14 @@
         {% if user.persona_id in ambience['mailinglist']['moderators'] %}
             {{ util.admin_views_toggle([
                     (gettext("Mailinglist Administration"), ALL_MGMT_ADMIN_VIEWS,
-                    ambience['mailinglist']['ml_type_class'].management_admin_views()|list),
+                    ambience['mailinglist'].management_admin_views()|list),
                 ]) }}
         {% else %}
             {{ util.admin_views_toggle((
                     (gettext("Mailinglist Administration"), ALL_MGMT_ADMIN_VIEWS,
-                     ambience['mailinglist']['ml_type_class'].management_admin_views()|list),
+                     ambience['mailinglist'].management_admin_views()|list),
                     (gettext("Moderator Controls"), ALL_MOD_ADMIN_VIEWS,
-                     ambience['mailinglist']['ml_type_class'].moderator_admin_views()|list),
+                     ambience['mailinglist'].moderator_admin_views()|list),
                 )) }}
         {% endif %}
     {% else %}

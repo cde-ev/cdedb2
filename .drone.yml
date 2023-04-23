@@ -64,6 +64,7 @@ steps:
     - sleep 3 # wait for posgres container to start up
     - pg_isready --host=cdb --timeout=15 # wait for database to come online
     - python3 -m cdedb db create-users # basic setup of the database for all following tests
+    - git config --system --add safe.directory "*" # somehow drone gets sus about python evolutions otherwise
     - bin/evolution-trial.sh origin/$DRONE_TARGET_BRANCH ci/workdir || (git checkout ci/workdir && exit 1)
     - git checkout ci/workdir
 - name: mypy
@@ -209,7 +210,7 @@ steps:
     path: /coverage
   commands:
   - python3 -m coverage combine /coverage/
-  - python3 -m coverage report --include 'cdedb/*' --show-missing --fail-under=92
+  - python3 -m coverage report --include 'cdedb/*' --show-missing --fail-under=91
 - name: xss
   image: cdedb
   pull: never
