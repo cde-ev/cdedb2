@@ -418,6 +418,8 @@ class MemberOptOutMailinglist(AllMembersImplicitMeta, MemberMailinglist):
     role_map = OrderedDict([
         ("member", SubscriptionPolicy.subscribable)
     ])
+    # Disallow management by cde admins.
+    relevant_admins: ClassVar[Set[str]] = set()
 
 
 @dataclass
@@ -654,6 +656,8 @@ class GeneralMandatoryMailinglist(AllUsersImplicitMeta, Mailinglist):
     ])
     # For mandatory lists, ignore all unsubscriptions.
     allow_unsub = False
+    # Disallow management by cde admins.
+    relevant_admins: ClassVar[Set[str]] = set()
 
 
 @dataclass
@@ -661,6 +665,7 @@ class GeneralOptInMailinglist(GeneralMailinglist):
     role_map = OrderedDict([
         ("ml", SubscriptionPolicy.subscribable)
     ])
+    relevant_admins = {"core_admin"}
 
 
 @dataclass
