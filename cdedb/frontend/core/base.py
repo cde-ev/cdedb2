@@ -1663,7 +1663,7 @@ class CoreBaseFrontend(AbstractFrontend):
         persona = self.coreproxy.get_cde_user(rs, persona_id)
         if (persona['balance'] == new_balance
                 and persona['trial_member'] == trial_member):
-            rs.notify("warning", n_("Nothing changed."))
+            rs.notify("info", n_("Nothing changed."))
             return self.redirect(rs, "core/modify_balance_form")
         if rs.ambience['persona']['is_archived']:
             rs.notify("error", n_("Persona is archived."))
