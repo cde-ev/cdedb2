@@ -14290,7 +14290,7 @@ msgid ""
 "state currently."
 msgstr ""
 "Ausfallende Kurse werden nur für Orgas hier markiert. Andere Benutzer "
-"könnenden Status eines Kurses zur Zeit nicht sehen."
+"können den Status eines Kurses zur Zeit nicht sehen."
 
 #: cdedb/frontend/templates/web/event/course/course_list.tmpl:42
 #: cdedb/frontend/templates/web/event/course/course_list.tmpl:43
