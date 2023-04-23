@@ -11819,8 +11819,8 @@ msgid "Changenotes"
 msgstr "Änderungskommentar"
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:125
-msgid "Save profile"
-msgstr "Profil speichern"
+msgid "Save (including pending changes)"
+msgstr "Speichern (inklusive zu prüfender Änderungen)"
 
 #: cdedb/frontend/templates/web/core/admin_username_change.tmpl:4
 #, python-format
