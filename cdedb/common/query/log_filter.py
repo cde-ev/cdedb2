@@ -374,9 +374,3 @@ ALL_LOG_FILTERS: tuple[Type[GenericLogFilter], ...] = (
     MlLogFilter,
     PastEventLogFilter,
 )
-
-LOG_TABLE_FILTER_MAP: Mapping[str, Type[GenericLogFilter]] = {
-    cls.log_table: cls for cls in ALL_LOG_FILTERS
-}
-
-LOG_TABLE_FILTER_MAP_INV = {v: k for k, v in LOG_TABLE_FILTER_MAP.items()}
