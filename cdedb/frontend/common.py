@@ -83,11 +83,7 @@ from cdedb.common.i18n import format_country_code, get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query
 from cdedb.common.query.defaults import DEFAULT_QUERIES
-from cdedb.common.query.log_filter import (
-    LOG_TABLE_FILTER_MAP, AssemblyLogFilter, CdELogFilter, ChangelogLogFilter,
-    CoreLogFilter, EventLogFilter, FinanceLogFilter, GenericLogFilter, MlLogFilter,
-    PastEventLogFilter,
-)
+from cdedb.common.query.log_filter import GenericLogFilter
 from cdedb.common.roles import (
     ADMIN_KEYS, ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS, PERSONA_DEFAULTS,
     roles_to_db_role,
@@ -1125,8 +1121,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
     def generic_view_log(self, rs: RequestState, data: CdEDBObject,
                          filter_class: Type[GenericLogFilter],
-                         log_retriever: Callable[
-                             [RequestState, GenericLogFilter], CdEDBLog],
+                         log_retriever: Callable[..., CdEDBLog],
                          *, download: bool, template: str,
                          template_kwargs: CdEDBObject = None
                          ) -> werkzeug.Response:
