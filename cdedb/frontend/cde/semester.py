@@ -8,12 +8,13 @@ which requires "cde_admin". Note that every "finance_admin" is also a "cde_admin
 
 from werkzeug import Response
 
-from cdedb.common import RequestState, lastschrift_reference, unwrap
+from cdedb.common import CdEDBObject, RequestState, lastschrift_reference, unwrap
 from cdedb.common.n_ import n_
+from cdedb.common.query.log_filter import CdELogFilter
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
-    REQUESTdata, TransactionObserver, Worker, access, make_membership_fee_reference,
-    make_postal_address,
+    REQUESTdata, REQUESTdatadict, TransactionObserver, Worker, access,
+    make_membership_fee_reference, make_postal_address,
 )
 
 
@@ -292,7 +293,13 @@ class CdESemesterMixin(CdEBaseFrontend):
         rs.notify("success", n_("New expuls started."))
         return self.redirect(rs, "cde/show_semester")
 
+    @REQUESTdatadict(*CdELogFilter.requestdict_fields())
+    @REQUESTdata("download")
     @access("cde_admin", "auditor")
-    def view_cde_log(self, rs: RequestState) -> Response:
+    def view_cde_log(self, rs: RequestState, data: CdEDBObject, download: bool
+                     ) -> Response:
         """View semester activity."""
-        return self.generic_view_log(rs, "cde.log", "semester/view_cde_log")
+        return self.generic_view_log(
+            rs, data, CdELogFilter, self.cdeproxy.retrieve_cde_log,
+            download=download, template="semester/view_cde_log",
+        )

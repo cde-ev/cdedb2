@@ -32,6 +32,7 @@ from cdedb.common import (
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryScope
+from cdedb.common.query.log_filter import AssemblyLogFilter
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.types import CdedbID, Email
 from cdedb.common.validation.validate import (
@@ -120,22 +121,33 @@ class AssemblyFrontend(AbstractUserFrontend):
             QueryScope.all_assembly_users, QueryScope.all_core_users,
             self.assemblyproxy.submit_general_query)
 
+    @REQUESTdatadict(*AssemblyLogFilter.requestdict_fields())
+    @REQUESTdata("download")
     @access("assembly_admin", "auditor")
-    def view_log(self, rs: RequestState) -> Response:
+    def view_log(self, rs: RequestState, data: CdEDBObject, download: bool) -> Response:
         """View activities."""
         all_assemblies = self.assemblyproxy.list_assemblies(rs)
         may_view = lambda id_: self.assemblyproxy.may_assemble(rs, assembly_id=id_)
 
         return self.generic_view_log(
-            rs, "assembly.log", "view_log", {
-            'may_view': may_view, 'all_assemblies': all_assemblies,
-        })
+            rs, data, AssemblyLogFilter, self.assemblyproxy.retrieve_log,
+            download=download, template="view_log", template_kwargs={
+                'may_view': may_view, 'all_assemblies': all_assemblies,
+            },
+        )
 
+    @REQUESTdatadict(*AssemblyLogFilter.requestdict_fields())
+    @REQUESTdata("download")
     @access("assembly")
     @assembly_guard
-    def view_assembly_log(self, rs: RequestState, assembly_id: int) -> Response:
+    def view_assembly_log(self, rs: RequestState, assembly_id: int, data: CdEDBObject,
+                          download: bool) -> Response:
         """View activities."""
-        return self.generic_view_log(rs, "assembly.log", "view_assembly_log")
+        rs.values['assembly_id'] = data['assembly_id'] = assembly_id
+        return self.generic_view_log(
+            rs, data, AssemblyLogFilter, self.assemblyproxy.retrieve_log,
+            download=download, template="view_assembly_log",
+        )
 
     @access("assembly")
     def show_assembly(self, rs: RequestState, assembly_id: int) -> Response:

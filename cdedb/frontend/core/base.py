@@ -35,6 +35,7 @@ from cdedb.common.fields import (
 from cdedb.common.i18n import format_country_code
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
+from cdedb.common.query.log_filter import ChangelogLogFilter, CoreLogFilter
 from cdedb.common.roles import (
     ADMIN_KEYS, ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, REALM_ADMINS,
     REALM_INHERITANCE, extract_roles, implied_realms,
@@ -2213,15 +2214,26 @@ class CoreBaseFrontend(AbstractFrontend):
         rs.notify_return_code(code)
         return self.redirect_show_user(rs, persona_id)
 
+    @REQUESTdatadict(*ChangelogLogFilter.requestdict_fields())
+    @REQUESTdata("download")
     @access("core_admin", "auditor")
-    def view_changelog_meta(self, rs: RequestState) -> Response:
+    def view_changelog_meta(self, rs: RequestState, data: CdEDBObject, download: bool
+                            ) -> Response:
         """View changelog activity."""
-        return self.generic_view_log(rs, "core.changelog", "view_changelog_meta")
+        return self.generic_view_log(
+            rs, data, ChangelogLogFilter, self.coreproxy.retrieve_changelog_meta,
+            download=download, template="view_changelog_meta",
+        )
 
+    @REQUESTdatadict(*CoreLogFilter.requestdict_fields())
+    @REQUESTdata("download")
     @access("core_admin", "auditor")
-    def view_log(self, rs: RequestState) -> Response:
+    def view_log(self, rs: RequestState, data: CdEDBObject, download: bool) -> Response:
         """View activity."""
-        return self.generic_view_log(rs, "core.log", "view_log")
+        return self.generic_view_log(
+            rs, data, CoreLogFilter, self.coreproxy.retrieve_log,
+            download=download, template="view_log",
+        )
 
     @access("anonymous")
     def debug_email(self, rs: RequestState, token: str) -> Response:

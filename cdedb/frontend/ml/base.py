@@ -22,6 +22,7 @@ from cdedb.common.fields import (
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryScope
+from cdedb.common.query.log_filter import MlLogFilter
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import PERSONA_FULL_CREATION, filter_none
 from cdedb.filter import keydictsort_filter
@@ -334,18 +335,22 @@ class MlBaseFrontend(AbstractUserFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "ml/merge_accounts")
 
+    @REQUESTdatadict(*MlLogFilter.requestdict_fields())
+    @REQUESTdata("download")
     @access("ml")
-    def view_log(self, rs: RequestState) -> Response:
+    def view_log(self, rs: RequestState, data: CdEDBObject, download: bool) -> Response:
         """View activities."""
         relevant_mls = self.mlproxy.list_mailinglists(
             rs, active_only=False, managed='managed')
         mailinglists = self.mlproxy.get_mailinglists(rs, relevant_mls)
 
         return self.generic_view_log(
-            rs, "ml.log", "view_log", {
-            'all_mailinglists': mailinglists,
-            'may_view': lambda ml: self.mlproxy.may_view(rs, ml),
-        })
+            rs, data, MlLogFilter, self.mlproxy.retrieve_log,
+            download=download, template="view_log", template_kwargs={
+                'all_mailinglists': mailinglists,
+                'may_view': lambda ml: self.mlproxy.may_view(rs, ml),
+            },
+        )
 
     @access("ml")
     def show_mailinglist(self, rs: RequestState,
@@ -530,11 +535,18 @@ class MlBaseFrontend(AbstractUserFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "ml/list_mailinglists")
 
+    @REQUESTdatadict(*MlLogFilter.requestdict_fields())
+    @REQUESTdata("download")
     @access("ml")
     @mailinglist_guard()
-    def view_ml_log(self, rs: RequestState, mailinglist_id: int) -> Response:
+    def view_ml_log(self, rs: RequestState, mailinglist_id: int, data: CdEDBObject,
+                    download: bool) -> Response:
         """View activities pertaining to one list."""
-        return self.generic_view_log(rs, "ml.log", "view_ml_log")
+        rs.values['mailinglist_id'] = data['mailinglist_id'] = mailinglist_id
+        return self.generic_view_log(
+            rs, data, MlLogFilter, self.mlproxy.retrieve_log,
+            download=download, template="view_ml_log",
+        )
 
     @access("ml")
     @mailinglist_guard()

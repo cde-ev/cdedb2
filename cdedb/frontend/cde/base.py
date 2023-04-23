@@ -28,6 +28,7 @@ from cdedb.common import (
 from cdedb.common.i18n import get_country_code_from_country, get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryConstraint, QueryOperators, QueryScope
+from cdedb.common.query.log_filter import FinanceLogFilter
 from cdedb.common.roles import PERSONA_DEFAULTS
 from cdedb.common.sorting import xsorted
 from cdedb.common.validation.validate import (
@@ -780,7 +781,13 @@ class CdEBaseFrontend(AbstractUserFrontend):
         cde_misc = (meta_data.get("cde_misc") or rs.gettext("*Nothing here yet.*"))
         return self.render(rs, "view_misc", {"cde_misc": cde_misc})
 
+    @REQUESTdatadict(*FinanceLogFilter.requestdict_fields())
+    @REQUESTdata("download")
     @access("cde_admin", "auditor")
-    def view_finance_log(self, rs: RequestState) -> Response:
+    def view_finance_log(self, rs: RequestState, data: CdEDBObject, download: bool
+                         ) -> Response:
         """View financial activity."""
-        return self.generic_view_log(rs, "cde.finance_log", "view_finance_log")
+        return self.generic_view_log(
+            rs, data, FinanceLogFilter, self.cdeproxy.retrieve_finance_log,
+            download=download, template="view_finance_log",
+        )

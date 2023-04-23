@@ -71,11 +71,11 @@ from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.common import (
-    ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD, IGNORE_WARNINGS_NAME, CdEDBMultiDict,
-    CdEDBObject, CustomJSONEncoder, Error, Notification, NotificationType, PathLike,
-    RequestState, Role, User, _tdelta, asciificator, decode_parameter, encode_parameter,
-    glue, json_serialize, make_persona_name, make_proxy, merge_dicts, now, setup_logger,
-    unwrap,
+    ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD, IGNORE_WARNINGS_NAME, CdEDBLog,
+    CdEDBMultiDict, CdEDBObject, CustomJSONEncoder, Error, Notification,
+    NotificationType, PathLike, RequestState, Role, User, _tdelta, asciificator,
+    decode_parameter, encode_parameter, glue, json_serialize, make_persona_name,
+    make_proxy, merge_dicts, now, setup_logger, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
@@ -85,7 +85,8 @@ from cdedb.common.query import Query
 from cdedb.common.query.defaults import DEFAULT_QUERIES
 from cdedb.common.query.log_filter import (
     LOG_TABLE_FILTER_MAP, AssemblyLogFilter, CdELogFilter, ChangelogLogFilter,
-    CoreLogFilter, EventLogFilter, FinanceLogFilter, MlLogFilter, PastEventLogFilter,
+    CoreLogFilter, EventLogFilter, FinanceLogFilter, GenericLogFilter, MlLogFilter,
+    PastEventLogFilter,
 )
 from cdedb.common.roles import (
     ADMIN_KEYS, ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS, PERSONA_DEFAULTS,
@@ -1122,21 +1123,19 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             return n_("Anti CSRF token is invalid.")
         return None
 
-    def generic_view_log(self, rs: RequestState, table: str, template: str,
-                         template_kwargs: CdEDBObject = None) -> werkzeug.Response:
+    def generic_view_log(self, rs: RequestState, data: CdEDBObject,
+                         filter_class: Type[GenericLogFilter],
+                         log_retriever: Callable[
+                             [RequestState, GenericLogFilter], CdEDBLog],
+                         *, download: bool, template: str,
+                         template_kwargs: CdEDBObject = None
+                         ) -> werkzeug.Response:
         """Generic helper to retrieve log data and render the result.
 
-        This takes care of extracting and vallidating filter input.
+        This takes care of validating the filter input and retrieving log entries via
+        the passed backend method.
         """
-        # Determine if the user wants to download the log.
-        download = request_extractor(rs, {'download': bool})['download']
-
-        # Extract and validate filter input.
-        filter_class = LOG_TABLE_FILTER_MAP[table]
-
         # Take care not to overwrite existing parameters (which come in via URL).
-        data = request_dict_extractor(
-            rs, filter_class.requestdict_fields(), skip_existing=True)
 
         data = check_validation(rs, vtypes.LogFilter, data, subtype=filter_class)
         if rs.has_validation_errors() or data is None:
@@ -1149,24 +1148,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             log_filter = filter_class(**data)
 
         # Retrieve entry count and log entries.
-        if isinstance(log_filter, CoreLogFilter):
-            total, log = self.coreproxy.retrieve_log(rs, log_filter)
-        elif isinstance(log_filter, ChangelogLogFilter):
-            total, log = self.coreproxy.retrieve_changelog_meta(rs, log_filter)
-        elif isinstance(log_filter, FinanceLogFilter):
-            total, log = self.cdeproxy.retrieve_finance_log(rs, log_filter)
-        elif isinstance(log_filter, CdELogFilter):
-            total, log = self.cdeproxy.retrieve_cde_log(rs, log_filter)
-        elif isinstance(log_filter, PastEventLogFilter):
-            total, log = self.pasteventproxy.retrieve_past_log(rs, log_filter)
-        elif isinstance(log_filter, EventLogFilter):
-            total, log = self.eventproxy.retrieve_log(rs, log_filter)
-        elif isinstance(log_filter, AssemblyLogFilter):
-            total, log = self.assemblyproxy.retrieve_log(rs, log_filter)
-        elif isinstance(log_filter, MlLogFilter):
-            total, log = self.mlproxy.retrieve_log(rs, log_filter)
-        else:
-            raise RuntimeError(n_("Impossible."))
+        total, log = log_retriever(rs, log_filter)
 
         # Retrieve linked personas.
         persona_ids = log_filter.get_persona_ids(log)
@@ -1199,7 +1181,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
             csv_data = csv_output(log, columns, replace_newlines=True,
                                   substitutions=substitutions)
-            return self.send_csv_file(rs, "text/csv", f"{table}.csv", data=csv_data)
+            return self.send_csv_file(rs, "text/csv", f"{filter_class.log_table}.csv", data=csv_data)
         else:
             # Create pagination.
             loglinks = calculate_loglinks(rs, total, log_filter._offset,  # pylint: disable=protected-access

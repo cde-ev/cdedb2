@@ -19,6 +19,7 @@ import cdedb.common.validation.types as vtypes
 from cdedb.common import CdEDBObject, CdEDBObjectMap, RequestState, merge_dicts
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
+from cdedb.common.query.log_filter import PastEventLogFilter
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import (
     PAST_COURSE_COMMON_FIELDS, PAST_EVENT_FIELDS,
@@ -527,12 +528,17 @@ class CdEPastEventMixin(CdEBaseFrontend):
         else:
             return self.redirect(rs, "cde/show_past_event")
 
+    @REQUESTdatadict(*PastEventLogFilter.requestdict_fields())
+    @REQUESTdata("download")
     @access("cde_admin", "auditor")
-    def view_past_log(self, rs: RequestState) -> Response:
+    def view_past_log(self, rs: RequestState, data: CdEDBObject, download: bool
+                      ) -> Response:
         """View activities concerning concluded events."""
         pevent_ids = self.pasteventproxy.list_past_events(rs)
         pevents = self.pasteventproxy.get_past_events(rs, pevent_ids)
         return self.generic_view_log(
-            rs, "past_event.log", "past_event/view_past_log", {
-            'pevents': pevents
-        })
+            rs, data, PastEventLogFilter, self.pasteventproxy.retrieve_past_log,
+            download=download, template="past_event/view_past_log", template_kwargs={
+                'pevents': pevents,
+            },
+        )

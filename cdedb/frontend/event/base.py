@@ -35,6 +35,7 @@ from cdedb.common import (
 from cdedb.common.i18n import get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryScope
+from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.common.sorting import EntitySorter, KeyFunction, Sortkey, xsorted
 from cdedb.common.validation.validate import PERSONA_FULL_CREATION, filter_none
 from cdedb.filter import enum_entries_filter, keydictsort_filter
@@ -648,8 +649,10 @@ class EventBaseFrontend(AbstractUserFrontend):
             rs, event_id, registration_id=None, course_id=None)
         return self.render(rs, "base/constraint_violations", params)
 
+    @REQUESTdatadict(*EventLogFilter.requestdict_fields())
+    @REQUESTdata("download")
     @access("event_admin", "auditor")
-    def view_log(self, rs: RequestState) -> Response:
+    def view_log(self, rs: RequestState, data: CdEDBObject, download: bool) -> Response:
         """View activities concerning events organized via DB."""
         event_ids = self.eventproxy.list_events(rs)
         events = self.eventproxy.get_events(rs, event_ids)
@@ -658,20 +661,27 @@ class EventBaseFrontend(AbstractUserFrontend):
         else:
             registration_map = {}
         return self.generic_view_log(
-            rs, "event.log", "base/view_log", {
-            'all_events': events, 'registration_map': registration_map,
-        })
+            rs, data, EventLogFilter, self.eventproxy.retrieve_log,
+            download=download, template="base/view_log", template_kwargs={
+                'all_events': events, 'registration_map': registration_map,
+            },
+        )
 
+    @REQUESTdatadict(*EventLogFilter.requestdict_fields())
+    @REQUESTdata("download")
     @access("event")
     @event_guard()
-    def view_event_log(self, rs: RequestState, event_id: int) -> Response:
+    def view_event_log(self, rs: RequestState, event_id: int, data: CdEDBObject,
+                       download: bool) -> Response:
         """View activities concerning one event organized via DB."""
-
+        rs.values['event_id'] = data['event_id'] = event_id
         registration_map = self.eventproxy.get_registration_map(rs, (event_id,))
         return self.generic_view_log(
-            rs, "event.log", "base/view_event_log", {
-            'registration_map': registration_map
-        })
+            rs, data, EventLogFilter, self.eventproxy.retrieve_log,
+            download=download, template="base/view_event_log", template_kwargs={
+                'registration_map': registration_map,
+            },
+        )
 
     @periodic("event_keeper", 2)
     def event_keeper(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject:
