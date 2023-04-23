@@ -377,8 +377,7 @@ class EventBaseBackend(EventLowLevelBackend):
                     'event_id': event_id,
                 }
                 # on conflict do nothing
-                r = self.sql_insert(rs, "event.orgas", new_orga,
-                                    drop_on_conflict=True)
+                r = self.sql_insert(rs, "event.orgas", new_orga, drop_on_conflict=True)
                 if r:
                     self.event_log(rs, const.EventLogCodes.orga_added, event_id,
                                    persona_id=anid)
