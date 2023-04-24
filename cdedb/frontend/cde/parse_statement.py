@@ -405,7 +405,7 @@ class Transaction:
         else:
             # Check whether the original input can be reconstructed
             raw_amount = raw[StatementCSVKeys.amount]
-            reconstructed_amount = simplify_amount(data["amount"])
+            reconstructed_amount = number_to_german(data["amount"])
             if raw_amount != reconstructed_amount:
                 errors.append(
                     ("amount",
