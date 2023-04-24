@@ -97,13 +97,15 @@ T = TypeVar("T")
 class User:
     """Container for a persona."""
 
-    def __init__(self, persona_id: Optional[int] = None,
+    def __init__(self, *, persona_id: Optional[int] = None,
+                 droid_id: Optional[int] = None,
                  roles: Set[Role] = None, display_name: str = "",
                  given_names: str = "", family_name: str = "",
                  username: str = "", orga: Collection[int] = None,
                  moderator: Collection[int] = None,
                  presider: Collection[int] = None) -> None:
         self.persona_id = persona_id
+        self.droid_id = droid_id
         self.roles = roles or {"anonymous"}
         self.username = username
         self.display_name = display_name

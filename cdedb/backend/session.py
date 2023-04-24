@@ -15,8 +15,8 @@ from typing import Optional
 import psycopg2.extensions
 
 import cdedb.common.validation.types as vtypes
-from cdedb.backend.common import inspect_validation as inspect
-from cdedb.common import User, now, setup_logger
+from cdedb.backend.common import inspect_validation as inspect, verify_password
+from cdedb.common import PrivilegeError, User, n_, now, setup_logger
 from cdedb.common.fields import PERSONA_STATUS_FIELDS
 from cdedb.common.roles import droid_roles, extract_roles
 from cdedb.config import Config, SecretsConfig
@@ -143,13 +143,86 @@ class SessionBackend:
         Resolve an API token (originally submitted via header) into the
         User wrapper required for a :py:class:`cdedb.common.RequestState`.
         """
-        ret = User()
-        identity = self.api_token_lookup(apitoken)
-        if identity:
-            ret = User(roles=droid_roles(identity))
-            if self.conf['LOCKDOWN'] and 'droid_infra' not in ret.roles:
-                ret = User()
-        else:
-            # log message to be picked up by fail2ban
+        apitoken, errs = inspect(vtypes.PrintableASCII, apitoken)
+        if errs:
+            return User()
+
+        ret = None
+
+        for auth in {
+            self._lookup_droid_token,
+            self._lookup_orga_token,
+        }:
+            ret = auth(apitoken)
+            if ret is not None:
+                break
+
+        # Log invalid token access for fail2ban.
+        if ret is None:
             self.logger.warning(f"CdEDB invalid API token from {ip}")
+            ret = User()
+
+        # Prevent non-infrastructure droids from access during lockdown.
+        elif self.conf['LOCKDOWN'] and 'droid_infra' not in ret.roles:
+            ret = User()
+
         return ret
+
+    def _lookup_droid_token(self, apitoken: str) -> Optional[User]:
+        # Try finding apitoken in secrets config.
+        droid_identity = self.api_token_lookup(apitoken)
+        if droid_identity:
+            return User(roles=droid_roles(droid_identity))
+
+        # Otherwise return None.
+        return None
+
+    def _lookup_orga_token(self, apitoken: str) -> Optional[User]:
+        parsed_token, errs = inspect(vtypes.OrgaToken, apitoken)
+
+        # Wrong format. Probably not meant to be an orga token.
+        if errs or not parsed_token:
+            return None
+
+        identifier, secret = parsed_token
+
+        formatter = lambda d: f"{d['title']!r}({d['id']}) for event ({d['event_id']})"
+
+        with self.connpool["cdb_anonymous"] as conn:
+            with conn.cursor() as cur:
+                query = """
+                    SELECT id, event_id, title, expiration, secret_hash
+                    FROM event.orga_apitokens WHERE identifier = %s
+                """
+                cur.execute(query, (identifier,))
+                data = cur.fetchone()
+
+                # Not a valid orga token. Probably garbage input or deleted token.
+                if not data:
+                    self.logger.warning(
+                        f"Access using unknown orgatoken identifier: {identifier!r}.")
+                    return None
+
+                # Log latest access time.
+                query = """
+                    UPDATE event.orga_apitokens SET atime = now()
+                    WHERE id = %s
+                """
+                cur.execute(query, (data['id'],))
+
+        if data['secret_hash'] is None:
+            self.logger.warning(f"Access using inactive orgatoken {formatter(data)}.")
+            raise PrivilegeError(n_("This orga api token has been deactivated."))
+        if not verify_password(secret, data['secret_hash']):
+            self.logger.warning(
+                f"Invalid secret for orga token {formatter(data)}.")
+            raise PrivilegeError(n_("Invalid orga api token."))
+        if data['expiration'] and now() > data['expiration']:
+            self.logger.warning(f"Access using expired orgatoken {formatter(data)}")
+            raise PrivilegeError(n_("This orga api token has expired."))
+
+        return User(
+            droid_id=data['id'],
+            orga={data['event_id']},
+            roles=droid_roles("orga"),
+        )

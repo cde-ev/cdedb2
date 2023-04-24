@@ -46,6 +46,29 @@ class TestSessionBackend(BackendTest):
         self.assertIsInstance(user, User)
         self.assertEqual(USER_DICT["anton"]['id'], user.persona_id)
 
+    def test_tokenlookup(self) -> None:
+        # Invalid apitoken.
+        user = self.session.lookuptoken("random token", "127.0.0.0")
+        self.assertIsNone(user.persona_id)
+        self.assertEqual({"anonymous"}, user.roles)
+
+        # "resolve" droid api token.
+        user = self.session.lookuptoken(
+            self.secrets['API_TOKENS']['resolve'], "127.0.0.0")
+        self.assertIsNone(user.persona_id)
+        self.assertEqual(
+            {"anonymous", "droid", "droid_resolve", "droid_infra"}, user.roles)
+
+        # event specific orga droid.
+        user = self.session.lookuptoken(
+            "CdEDB-Orga-e3f6ed57b975e9b53e14d4129e540759b2a23ab372fb2ad6bf3d8f41ee54ad99",  # pylint: disable=line-too-long
+            "127.0.0.1")
+        self.assertIsNone(user.persona_id)
+        self.assertEqual(1, user.droid_id)
+        self.assertIn(1, user.orga)
+        self.assertEqual({"anonymous", "droid", "droid_orga"}, user.roles)
+
+
     def test_ip_mismatch(self) -> None:
         key = self.login(USER_DICT["anton"], ip="1.2.3.4")
         user = self.session.lookupsession(key, "1.2.3.4")

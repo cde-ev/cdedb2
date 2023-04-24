@@ -5444,6 +5444,17 @@
             "event_id": 4
         }
     ],
+    "event.orga_apitokens": [
+        {
+            "event_id": 1,
+            "identifier": "e3f6ed57b975e9b5",
+            "secret_hash": "$6$rounds=656000$1f7Kj.ufbAdZMs1g$p7lJI1z0wizeKrq/QkwT7oBw9koZWWp8a9eXNosww5m1t1G9ahyB.dKsIKaXNLVVipLRfYgXa8aV4zFnRJiH10",
+            "expiration": null,
+            "atime": null,
+            "title": "Garcias' technische Spielerei",
+            "notes": "Mal probieren, was diese API so alles kann."
+        }
+    ],
     "event.lodgement_groups": [
         {
             "event_id": 1,

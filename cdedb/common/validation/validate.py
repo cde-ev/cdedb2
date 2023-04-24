@@ -1152,6 +1152,19 @@ def _password_strength(
     return PasswordStrength(val)
 
 
+OrgaTokenPattern = re.compile(r'CdEDB-Orga-([0-9a-f]{16})([0-9a-f]{48})')
+
+@_add_typed_validator
+def _orga_token(
+        val: Any, argname: str = "orga_token", **kwargs: Any
+) -> OrgaToken:
+    val = _printable_ascii(val, argname, **kwargs)
+    if m := OrgaTokenPattern.fullmatch(val):
+        return OrgaToken((m.group(1), m.group(2)))
+    raise ValidationSummary(ValueError(
+        argname, n_("Wrong format for orga token.")))
+
+
 @_add_typed_validator
 def _email(
     val: Any, argname: str = None, **kwargs: Any

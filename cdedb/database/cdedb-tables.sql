@@ -909,6 +909,28 @@ GRANT INSERT, UPDATE, DELETE ON event.orgas TO cdb_admin;
 GRANT SELECT, UPDATE ON event.orgas_id_seq TO cdb_admin;
 GRANT SELECT ON event.orgas TO cdb_anonymous, cdb_ldap;
 
+CREATE TABLE event.orga_apitokens (
+        id                      serial PRIMARY KEY,
+        -- Event which this token grants access to.
+        event_id                integer NOT NULL REFERENCES event.events(id),
+        -- The api tokens consists of two parts. One identifying the token, one secret for authentication. Secret may be null for deauthorized tokens.
+        identifier              varchar NOT NULL UNIQUE,
+        secret_hash             varchar,
+        -- Creation, expiration and last access time of the token.
+        ctime                   timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
+        expiration              timestamp WITH TIME ZONE,
+        atime                   timestamp WITH TIME ZONE,
+        -- Descriptive title and addional notes about the token.
+        title                   varchar NOT NULL,
+        notes                   varchar
+);
+CREATE INDEX orga_apitokens_event_id_idx ON event.orga_apitokens(event_id);
+GRANT SELECT (id, event_id, identifier, secret_hash, expiration, title) ON event.orga_apitokens TO cdb_anonymous;
+GRANT UPDATE (atime) ON event.orga_apitokens TO cdb_anonymous;
+GRANT SELECT, INSERT, DELETE ON event.orga_apitokens TO cdb_persona;
+GRANT UPDATE (secret_hash, expiration, title, notes) ON event.orga_apitokens TO cdb_persona;
+GRANT SELECT, UPDATE ON event.orga_apitokens_id_seq TO cdb_persona;
+
 CREATE TABLE event.lodgement_groups (
         id                      serial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
