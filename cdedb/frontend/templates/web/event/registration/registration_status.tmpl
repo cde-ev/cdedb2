@@ -195,7 +195,7 @@
 
         <div class="col-md-{{ 6 if filtered_choice_objects|length > 1 else 12 }}">
             {{ util.h(gettext("Course") + (" {} {}".format(gettext("for"), cco['title']) if (filtered_choice_objects|length > 1) else ""),
-                      anchor="course-choices-" + cco['id']|string, translate=False) }}
+                      anchor="cco-" + cco['id']|string, translate=False) }}
 
             {% if ambience['event']['is_course_assignment_visible'] %}
                 <dl class="dl-horizontal" id="course-assignment-{{ id_suffix }}">

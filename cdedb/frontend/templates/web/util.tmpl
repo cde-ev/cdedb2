@@ -896,7 +896,7 @@ mailto:
     {% endif %}
     {# ids must not contain any whitespace #}
     {% if anchor %}
-        {% set anchor='_'.join(anchor.split()) %}
+        {% set anchor='_'.join((anchor|string).split()) %}
     {% endif %}
     <h{{ level }} class="
             {%- if level == 1 %}title {% endif -%}
