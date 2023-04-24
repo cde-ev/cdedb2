@@ -4,7 +4,7 @@ import dataclasses
 import datetime
 import decimal
 import enum  # pylint: disable=unused-import
-from typing import ClassVar, Collection, Mapping, Optional, Type
+from typing import ClassVar, Collection, Optional, Type
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const

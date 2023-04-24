@@ -1176,7 +1176,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
             csv_data = csv_output(log, columns, replace_newlines=True,
                                   substitutions=substitutions)
-            return self.send_csv_file(rs, "text/csv", f"{filter_class.log_table}.csv", data=csv_data)
+            return self.send_csv_file(
+                rs, "text/csv", f"{filter_class.log_table}.csv", data=csv_data)
         else:
             # Create pagination.
             loglinks = calculate_loglinks(rs, total, log_filter._offset,  # pylint: disable=protected-access
