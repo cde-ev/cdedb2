@@ -892,8 +892,11 @@ mailto:
 #}
 {% macro h(title, level=3, underline=False, translate=True, anchor=none, aclass=none) %}
     {% if anchor is none and level != 1 %}
-        {# TODO: convert spaces and other special chars? #}
         {% set anchor = title %}
+    {% endif %}
+    {# ids must not contain any whitespace #}
+    {% if anchor %}
+        {% set anchor='_'.join(anchor.split()) %}
     {% endif %}
     <h{{ level }} class="
             {%- if level == 1 %}title {% endif -%}
@@ -901,16 +904,16 @@ mailto:
             {%- if aclass %}{{ aclass }}{% endif -%}"
         {%- if anchor %} id="{{ anchor }}"{% endif -%}
     >
-        {% if translate %}
+        {%- if translate %}
             {{- gettext(title) -}}
         {% else %}
             {{- title -}}
-        {% endif %}
-        {% if caller %}
+        {% endif -%}
+        {%- if caller -%}
             {{ caller() }}
-        {% endif %}
+        {%- endif -%}
         {%- if anchor -%}
-            {{- nbsp }}<a class="headerlink" href="#{{ anchor }}"
+            {{- nbsp }}<a class="headerlink" href="#{{ anchor|urlencode }}"
                title="{% trans %}Permanent link{% endtrans %}">&para;</a>
         {%- endif %}
     </h{{ level }}>

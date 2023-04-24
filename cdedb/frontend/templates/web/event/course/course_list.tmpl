@@ -83,7 +83,7 @@
         {% for anid, entry in courses %}
             <div class="hide-hover-container" id="course-{{ entry['id'] }}">
                 {{ util.h(entry['nr'] + ". " + entry['title'], anchor="course-" + entry['id']|string,
-                                translate=False) }}
+                          translate=False) }}
                 {% if ambience['event']['id'] in user.orga or 'event_orga' in user.admin_views %}
                     <div class="pull-right">
                         {{ util.href(cdedblink('event/show_course', {'course_id' : anid}), gettext("Details"),
